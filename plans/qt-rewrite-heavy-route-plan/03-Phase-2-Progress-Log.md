@@ -29005,6 +29005,66 @@ Add malformed `42x` to each focused invalid list and assert exact message,
 exactly one registration for each exact full-name CTest, then run only these
 three exact CTests. Run no full suite.
 
-This matrix is recorded before implementation; F758 is selected but not
-implemented, and no F758 results are available. F707/F709 remain deferred,
+This matrix was recorded before implementation. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F758 selected-class query canonical ID validation - accepted - 2026-10-13
+
+F758 is accepted at commit
+`cde4b15fdce233546923fe23b338ae5435cfe8ef` (`Phase2 - Reuse canonical ID
+validation in selected-class queries`). The grade, subtitle, and subtitle-batch
+queries now reuse `Application::isCanonicalPositiveDecimalId`, preserving
+caller errors, duplicate and empty-batch behavior, output ordering, and
+post-read validation. Malformed `42x` coverage pins the exact error, code,
+nonrecoverability, and zero-call boundary.
+
+Under VS 18.10.1 x64 Developer, `ClassMngr` and all three focused query test
+targets built. Each exact full-name CTest registration appeared once; the
+three exact CTests passed 3/3 in 0.10 seconds. No full suite ran.
+This closes Batch 188; Batch 189 follows as recorded below.
+
+### Batch 189 discovery and F759 selection - recorded before implementation - 2026-10-13
+
+Batch 189 is the ordered ten-candidate shortlist from read-only discovery:
+
+1. **F759 - Roster availability and column-name batch queries:** reuse canonical positive-decimal ID validation and preserve both caller contracts.
+2. **F760 - Three roster reads:** assess canonical ID validation reuse across `roster_read_query`, `roster_print_class_info_read_query`, and `roster_template_print_source_read_query`.
+3. **F761 - Initial Setup teacher choices:** assess the teacher-choice query slice.
+4. **F762 - Class-teacher assignments:** assess the assignment slice.
+5. **F763 - Class Notes page:** assess the page slice.
+6. **F764 - Classes Navigation snapshot:** assess the snapshot slice.
+7. **F765 - Schedule Editor class info:** assess the class-information slice.
+8. **F766 - Schedule Builder source snapshot:** assess the source-snapshot slice.
+9. **F767 - Schedule Import state snapshot:** assess the import-state slice.
+10. **F768 - Speaking Evaluation read-query family:** assess the read-query slice.
+
+Sources, tests, and CMake mappings already exist for the shortlisted slices;
+reusing the existing helper requires no CMake inventory change. The shortlist
+is not exhaustive; mutations and Testing Class handlers remain for separate
+assessment.
+
+**F759 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`roster_availability_batch_read_query.h` and
+`roster_column_names_batch_read_query.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+Preserve the exact request contracts: malformed or noncanonical ClassIds
+return nonrecoverable `InvalidInput` with
+`Class IDs must be canonical positive integers.`; duplicate IDs return
+nonrecoverable `InvalidInput` with `Class IDs must be unique.` Canonicality
+precedes duplicate detection, and both failures occur before any port call.
+An empty valid batch remains successful without a call. Preserve port failures,
+caller response validation, and successful output: availability count/order
+and first-empty-row range, plus base-column forwarding; column-name
+count/order and ordered empty slots.
+
+Add malformed `42x` to both focused suites and assert exact message, code,
+recoverability, and zero calls. Split duplicate assertions as needed to pin
+the exact duplicate error, code, recoverability, and zero calls. Build
+`ClassMngr` and
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests` and
+`ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests`; confirm one
+registration for each exact CTest name, then run only those two exact CTests.
+Run no full suite. This matrix is recorded before implementation;
+verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.

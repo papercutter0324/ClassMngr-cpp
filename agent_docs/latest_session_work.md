@@ -32,10 +32,14 @@
   under VS 18.10.1 x64 Developer and the three full-name CTest registrations
   passed 3/3. F757 is committed at
   `04e95b2a545741c3e33903ac6c3af9383e9390fa`; its two query targets built and
-  the two exact CTests passed 2/2. F758 is selected in Batch 188 to reuse the
-  shared ID validator in the selected-class grade, subtitle, and subtitle
-  batch queries. Its caller-error and port-boundary matrix is recorded before
-  implementation.
+  the two exact CTests passed 2/2. F758 is accepted at
+  cde4b15fdce233546923fe23b338ae5435cfe8ef; the selected-class grade,
+  subtitle, and subtitle-batch tests passed 3/3 with one exact CTest
+  registration each under VS 18.10.1 x64 Developer. F759 is selected in
+  Batch 189 to reuse the validator in roster availability and column-names
+  batch queries; its pre-implementation matrix preserves each response
+  contract and adds malformed-ID and exact duplicate-error coverage. No full
+  suite ran for F758.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

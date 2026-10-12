@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F757 is accepted at `04e95b2a545741c3e33903ac6c3af9383e9390fa`; F758 is selected in Batch 188 to reuse canonical positive-decimal ID validation in three selected-class queries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F758 is accepted at `cde4b15fdce233546923fe23b338ae5435cfe8ef`; F759 is selected to reuse canonical positive-decimal ID validation in two roster batch queries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,18 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 188
+#### Active batch: Batch 189
 
-- F758 - Reuse canonical positive-decimal ID validation in three selected-class queries; preserve caller contracts and focused gates.
+- F759 - Roster availability and column-name batch queries - Reuse canonical positive-decimal ID validation and preserve both caller contracts.
+- F760 - Three roster reads - Reuse canonical positive-decimal ID validation across the roster read queries.
+- F761 - Initial Setup teacher choices - Assess and implement the selected teacher-choice query slice.
+- F762 - Class-teacher assignments - Assess and implement the selected assignment slice.
+- F763 - Class Notes page - Assess and implement the selected page slice.
+- F764 - Classes Navigation snapshot - Assess and implement the selected snapshot slice.
+- F765 - Schedule Editor class info - Assess and implement the selected class-information slice.
+- F766 - Schedule Builder source snapshot - Assess and implement the selected source-snapshot slice.
+- F767 - Schedule Import state snapshot - Assess and implement the selected import-state slice.
+- F768 - Speaking Evaluation read-query family - Assess and implement the selected read-query slice.
 
 ## Objective
 

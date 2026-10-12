@@ -4865,3 +4865,16 @@ grade, subtitle, and subtitle-batch reads. Preserve each singular or plural
 invalid-ID message, the batch duplicate-ID message and precedence, and the
 existing read behavior. F707/F709 remain deferred, and the Phase 2 exit gate
 remains open.
+
+## Phase 2 F758 acceptance and F759 selection — 2026-10-13
+
+F758 is accepted at `cde4b15fdce233546923fe23b338ae5435cfe8ef`. Three
+selected-class read queries now use the shared canonical-positive-decimal ID
+validator. The focused tests built and passed 3/3 under VS 18.10.1 x64
+Developer, with one exact CTest registration per target; no full suite ran.
+
+F759 is selected in Batch 189 to reuse that validator in the roster
+availability and column-names batch queries. Their request errors and
+pre-port boundaries match, while their response checks differ and remain
+query-specific. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
