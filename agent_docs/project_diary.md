@@ -4809,5 +4809,7 @@ is accepted at `006593ab40e4791bc9442056eea58961430e1e6c`; using
 `GregorianDate::fromComponents` removed a second Gregorian month-length table
 while preserving app-level `MM-DD` parsing and trimming. F755 reuses one
 canonical positive-decimal `int` rule across four class read queries, while
-leaving their distinct errors and read boundaries at the callers. F707/F709
+leaving their distinct errors and read boundaries at the callers. The focused
+test audit found some error details and malformed-ID cases were implicit, so
+the acceptance matrix now adds exact assertions before verification. F707/F709
 remain deferred and the Phase 2 exit gate remains open.

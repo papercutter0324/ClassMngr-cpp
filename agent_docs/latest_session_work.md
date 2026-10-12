@@ -26,8 +26,9 @@
   `006593ab40e4791bc9442056eea58961430e1e6c`; the Native English and GS Team
   test targets built and CTests #273/#274 passed 2/2. F755 is selected in
   Batch 185 to share canonical positive-decimal ID validation across four
-  class read queries. Its pre-implementation matrix is in the Phase 2
-  progress log. F707 and F709 remain deferred.
+  class read queries. Its pre-implementation matrix now includes exact
+  caller-error and malformed-ID assertions after the independent test audit.
+  F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.

@@ -4749,7 +4749,20 @@ positive decimal values that parse fully into `int` and round-trip through
 caller’s error code/message/recoverability, validation and port-read order,
 and `ClassesListReadQuery` duplicate-ID precedence. Run the existing focused
 tests, which cover zero, negative, leading-zero, malformed/trailing, and
-overflow IDs (plus co-teacher page plus/leading-whitespace cases). Build
+overflow IDs (plus co-teacher page plus/leading-whitespace cases). The audit
+found gaps in malformed/trailing inputs and exact caller-specific assertions;
+strengthen the four existing tests as follows:
+
+- Co-teacher page: add `42x`; assert exact invalid-ID and snapshot-mismatch
+  messages, nonrecoverability, and zero calls for invalid request IDs.
+- Teacher choices: add `42x`; assert its exact invalid-teacher-ID message,
+  nonrecoverability, and the existing one-port-call boundary.
+- ClassById: assert invalid-input recoverability is `true`; assert the exact
+  snapshot-mismatch message and retain the existing zero-call boundary.
+- ClassesList: add `42x`; assert the exact invalid-ID message separately from
+  the duplicate-ID message, retaining nonrecoverability and one port call.
+
+Build
 `ClassMngr` and the four corresponding query test targets; confirm exactly
 one registration for each and run only those four exact CTests. No full
 suite. F707 and F709 remain deferred. Phase 2 remains In Progress/Open with

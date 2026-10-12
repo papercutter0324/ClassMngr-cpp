@@ -28814,8 +28814,26 @@ the explicit next-generation source inventory in `cmake/next.cmake`.
 Preserve each caller's error code, exact message, recoverability, validation
 order, and port-read timing, including `ClassesListReadQuery` duplicate-ID
 precedence and handling. Existing focused tests cover zero, negative,
-leading-zero, malformed/trailing, and overflow IDs; the co-teacher page also
-covers plus signs and leading whitespace.
+leading-zero, and overflow IDs per caller; the co-teacher page also covers
+plus signs and leading whitespace. Strengthen the four existing suites with
+these explicit assertions:
+
+- Co-teacher page: add malformed `42x`; assert
+  `Class ID must be a canonical positive integer.`, nonrecoverable, and zero
+  calls. Its identity-mismatch case asserts
+  `A co-teacher page read returned a different class identifier.` and is
+  nonrecoverable.
+- Teacher choices: add malformed `42x` among returned teacher IDs; assert
+  `Co-teacher teacher choices contain an invalid teacher identifier.`,
+  nonrecoverable, and one port call.
+- Class by ID: assert the existing invalid-request `42x` case returns
+  `Class ID must be a canonical positive integer.`, recoverable, with zero
+  calls. Its identity-mismatch case asserts
+  `Class read returned a different class identifier.` and is nonrecoverable.
+- Classes list: add malformed `42x`; separately assert
+  `The classes list contains an invalid class identifier.` and
+  `The classes list contains a duplicate class identifier.`; both are
+  nonrecoverable, each after one port call.
 
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassCoTeacherPageReadQueryTests`,
