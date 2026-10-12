@@ -189,6 +189,56 @@ void SettingsManager::setSaveMode(
     set(Keys::SAVE_MODE, mode);
 }
 
+QSettings::Status SettingsManager::writeSaveModePreference(
+    const int mode,
+    const SaveModePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousMode =
+        m_settings->contains(Keys::SAVE_MODE_PREFERENCE);
+    const QVariant previousMode =
+        m_settings->value(Keys::SAVE_MODE_PREFERENCE);
+    m_settings->setValue(
+        Keys::SAVE_MODE_PREFERENCE,
+        mode
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore the attempted key before replacing this instance so its
+        // pending candidate cannot be retried during teardown.
+        if (hadPreviousMode)
+        {
+            m_settings->setValue(
+                Keys::SAVE_MODE_PREFERENCE,
+                previousMode
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::SAVE_MODE_PREFERENCE);
+        }
+
+        // A failed QSettings instance retains its error status. Recreate it so
+        // callers can read the restored value and retry a later write.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================

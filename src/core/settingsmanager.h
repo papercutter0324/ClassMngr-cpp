@@ -61,6 +61,9 @@ public:
         static constexpr auto SAVE_MODE =
             "app/saveMode";
 
+        static constexpr auto SAVE_MODE_PREFERENCE =
+            "options/saveMode";
+
         static constexpr auto WINDOW_GEOMETRY =
             "ui/windowGeometry";
 
@@ -151,6 +154,15 @@ public:
 
     QString getSaveMode() const;
     void setSaveMode(const QString& mode);
+
+    // An empty callback uses QSettings::sync/status. Injection lets boundary
+    // tests force a write failure without relying on filesystem permissions.
+    using SaveModePreferenceSync = std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeSaveModePreference(
+        int mode,
+        const SaveModePreferenceSync& synchronize = {}
+        );
 
     // =====================================================
     // Window Geometry

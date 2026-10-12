@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -18,7 +20,7 @@ public:
 
     [[nodiscard]] virtual SaveMode read() const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         SaveMode mode
         ) const = 0;
 };

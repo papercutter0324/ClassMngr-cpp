@@ -545,7 +545,26 @@ void MainWindow::initializeSidebar()
 
 void MainWindow::createActions()
 {
-    m_actions.createActions();
+    auto saveModePreferenceErrorHandler =
+        m_startupOptions.saveModePreferenceErrorHandler;
+    if (!saveModePreferenceErrorHandler)
+    {
+        saveModePreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Save Mode preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
+    m_actions.createActions(
+        m_startupOptions.saveModePreferencesPort,
+        std::move(saveModePreferenceErrorHandler)
+        );
 }
 
 void MainWindow::connectControllers()

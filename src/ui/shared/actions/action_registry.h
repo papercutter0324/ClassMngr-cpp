@@ -6,7 +6,20 @@
 #include "ui/shared/state/option_state.h"
 #include "ui/shared/constants/options.h"
 
+#include <functional>
+#include <memory>
+
 class QMenu;
+
+namespace ClassMngr::Next::Application
+{
+class SaveModePreferencesPort;
+}
+
+namespace ClassMngr::Next::Domain
+{
+struct OperationError;
+}
 
 class ActionRegistry : public QObject
 {
@@ -15,7 +28,14 @@ class ActionRegistry : public QObject
 public:
     explicit ActionRegistry(QObject* parent = nullptr);
 
-    void createActions();
+    void createActions(
+        std::shared_ptr<
+            ClassMngr::Next::Application::SaveModePreferencesPort
+            > saveModePreferencesPort = {},
+        std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )> saveModePreferenceErrorHandler = {}
+        );
     void retranslate();
     void refreshThemedIcons();
 
@@ -115,7 +135,14 @@ private:
     void createEditActions();
     void createPrintExportActions();
     void createClassActions();
-    void createOptionActions();
+    void createOptionActions(
+        std::shared_ptr<
+            ClassMngr::Next::Application::SaveModePreferencesPort
+            > saveModePreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& saveModePreferenceErrorHandler
+        );
     void createHelpActions();
     void createAdminActions();
 };

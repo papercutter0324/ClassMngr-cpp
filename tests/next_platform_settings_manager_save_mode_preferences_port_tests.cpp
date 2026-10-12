@@ -1,9 +1,12 @@
 #include "core/settingsmanager.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_save_mode_preferences_port.h"
 
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
+
+#include <string>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -32,6 +35,9 @@ private slots:
     void usesTheExactCanonicalKey();
     void mapsBothStoredSaveModes();
     void writesBothSaveModesForRoundTrip();
+    void invalidTypedSaveModeReturnsInvalidInputAndPreservesStoredValue();
+    void syncFailurePreservesPreviousValueAndAllowsRetry();
+    void syncFailurePreservesMissingValueAndUnrelatedSettings();
     void missingMalformedUnknownAndUnavailableDefaultToAutomatic();
 
 private:
@@ -110,13 +116,127 @@ writesBothSaveModesForRoundTrip()
     SettingsManager& settings = SettingsManager::instance();
     const SettingsManagerSaveModePreferencesPort port;
 
-    port.write(SaveMode::Manual);
+    QVERIFY(port.write(SaveMode::Manual));
     QCOMPARE(settings.get(saveModeKey()).toInt(), 1);
     QCOMPARE(port.read(), SaveMode::Manual);
 
-    port.write(SaveMode::Automatic);
+    QVERIFY(port.write(SaveMode::Automatic));
     QCOMPARE(settings.get(saveModeKey()).toInt(), 0);
     QCOMPARE(port.read(), SaveMode::Automatic);
+}
+
+void NextPlatformSettingsManagerSaveModePreferencesPortTests::
+invalidTypedSaveModeReturnsInvalidInputAndPreservesStoredValue()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerSaveModePreferencesPort port;
+
+    settings.set(saveModeKey(), 1);
+    const auto result = port.write(static_cast<SaveMode>(17));
+
+    QVERIFY(!result);
+    QCOMPARE(
+        result.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(settings.get(saveModeKey()).toInt(), 1);
+    QCOMPARE(port.read(), SaveMode::Manual);
+}
+
+void NextPlatformSettingsManagerSaveModePreferencesPortTests::
+syncFailurePreservesPreviousValueAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString unrelatedKey = QStringLiteral("options/unrelated");
+    settings.set(saveModeKey(), 0);
+    settings.set(unrelatedKey, 41);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerSaveModePreferencesPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedWrite = faultablePort.write(SaveMode::Manual);
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(saveModeKey()).toInt(), 0);
+    QCOMPARE(faultablePort.read(), SaveMode::Automatic);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 41);
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(saveModeKey()).toInt(), 0);
+
+    injectAccessError = false;
+    const auto retryResult = faultablePort.write(SaveMode::Manual);
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(settings.get(saveModeKey()).toInt(), 1);
+    QCOMPARE(faultablePort.read(), SaveMode::Manual);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 41);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(saveModeKey()).toInt(), 1);
+}
+
+void NextPlatformSettingsManagerSaveModePreferencesPortTests::
+syncFailurePreservesMissingValueAndUnrelatedSettings()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString unrelatedKey = QStringLiteral("options/unrelated");
+    settings.remove(saveModeKey());
+    settings.set(unrelatedKey, 29);
+    settings.sync();
+
+    const SettingsManagerSaveModePreferencesPort faultablePort(
+        [](QSettings&)
+        {
+            return QSettings::AccessError;
+        }
+        );
+
+    const auto failedWrite = faultablePort.write(SaveMode::Manual);
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(!settings.get(saveModeKey()).isValid());
+    QCOMPARE(faultablePort.read(), SaveMode::Automatic);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 29);
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(saveModeKey()));
 }
 
 void NextPlatformSettingsManagerSaveModePreferencesPortTests::

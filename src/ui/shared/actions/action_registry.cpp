@@ -28,6 +28,7 @@
 #include <QWidget>
 
 #include <string>
+#include <utility>
 
 namespace
 {
@@ -104,13 +105,23 @@ QAction* ActionRegistry::createCheckableAction(
 // Creation
 // =========================================================
 
-void ActionRegistry::createActions()
+void ActionRegistry::createActions(
+    std::shared_ptr<
+        ClassMngr::Next::Application::SaveModePreferencesPort
+        > saveModePreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> saveModePreferenceErrorHandler
+    )
 {
     createFileActions();
     createEditActions();
     createClassActions();
     createPrintExportActions();
-    createOptionActions();
+    createOptionActions(
+        std::move(saveModePreferencesPort),
+        saveModePreferenceErrorHandler
+        );
     createHelpActions();
     createAdminActions();
 }
@@ -723,10 +734,20 @@ void ActionRegistry::createClassActions()
 // Option Actions
 // =========================================================
 
-void ActionRegistry::createOptionActions()
+void ActionRegistry::createOptionActions(
+    std::shared_ptr<
+        ClassMngr::Next::Application::SaveModePreferencesPort
+        > saveModePreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& saveModePreferenceErrorHandler
+    )
 {
+    using ClassMngr::Next::Application::SaveModePreferencesPort;
+    using PreferenceSaveMode = ClassMngr::Next::Application::SaveMode;
+
     saveModeState =
-        new OptionState<SaveMode>(this);
+        new OptionState<::SaveMode>(this);
 
     auto automaticSaveAction =
         createCheckableAction(
@@ -740,40 +761,136 @@ void ActionRegistry::createOptionActions()
             tr("Save changes manually")
         );
 
-    saveModeState->addOption(SaveMode::Automatic, automaticSaveAction);
-    saveModeState->addOption(SaveMode::Manual, manualSaveAction);
+    saveModeState->addOption(
+        ::SaveMode::Automatic,
+        automaticSaveAction,
+        false
+        );
+    saveModeState->addOption(
+        ::SaveMode::Manual,
+        manualSaveAction,
+        false
+        );
 
-    saveModeState->onPersist = [](const SaveMode mode)
+    if (!saveModePreferencesPort)
     {
-        ClassMngr::Next::Application::SaveMode preference;
-        switch (mode)
-        {
-        case SaveMode::Automatic:
-            preference = ClassMngr::Next::Application::SaveMode::Automatic;
-            break;
+        saveModePreferencesPort =
+            std::make_shared<
+                ClassMngr::Next::Platform::
+                    SettingsManagerSaveModePreferencesPort
+                >();
+    }
 
-        case SaveMode::Manual:
-            preference = ClassMngr::Next::Application::SaveMode::Manual;
-            break;
-
-        default:
-            return;
-        }
-
-        ClassMngr::Next::Platform::
-            SettingsManagerSaveModePreferencesPort().write(
-                preference
-                );
-    };
-
-    const auto storedSaveMode =
-        ClassMngr::Next::Platform::
-            SettingsManagerSaveModePreferencesPort()
-            .read();
+    const auto storedSaveMode = saveModePreferencesPort->read();
     saveModeState->set(
         static_cast<::SaveMode>(
             storedSaveMode
             )
+        );
+
+    const auto writeSaveModePreference =
+        [saveModePreferencesPort](const ::SaveMode mode)
+            -> ClassMngr::Next::Domain::Result<void>
+        {
+            PreferenceSaveMode preference =
+                PreferenceSaveMode::Automatic;
+            switch (mode)
+            {
+            case ::SaveMode::Automatic:
+                preference = PreferenceSaveMode::Automatic;
+                break;
+
+            case ::SaveMode::Manual:
+                preference = PreferenceSaveMode::Manual;
+                break;
+
+            default:
+                return ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message = "Save Mode must be Automatic or Manual.",
+                    .recoverable = false
+                });
+            }
+
+            return saveModePreferencesPort->write(preference);
+        };
+
+    // Preserve programmatic OptionState::set() writes for existing callers.
+    // QAction changes use the persistence-first handler below and suppress the
+    // resulting onPersist callback for exactly that one successful commit.
+    const auto skipPersistForActionCommit =
+        std::make_shared<bool>(false);
+    saveModeState->onPersist = [
+        writeSaveModePreference,
+        saveModePreferenceErrorHandler,
+        skipPersistForActionCommit
+    ](const ::SaveMode mode)
+    {
+        if (*skipPersistForActionCommit)
+        {
+            *skipPersistForActionCommit = false;
+            return;
+        }
+
+        const auto saved = writeSaveModePreference(mode);
+        if (!saved && saveModePreferenceErrorHandler)
+        {
+            saveModePreferenceErrorHandler(saved.error());
+        }
+    };
+
+    const auto connectSaveModeAction =
+        [this, writeSaveModePreference, &saveModePreferenceErrorHandler,
+            skipPersistForActionCommit](
+            QAction* action,
+            const ::SaveMode mode
+            )
+        {
+            connect(
+                action,
+                &QAction::triggered,
+                this,
+                [this, writeSaveModePreference,
+                    saveModePreferenceErrorHandler,
+                    skipPersistForActionCommit, mode]()
+                {
+                    if (!saveModeState || saveModeState->current() == mode)
+                    {
+                        return;
+                    }
+
+                    const auto saved =
+                        writeSaveModePreference(mode);
+                    if (!saved)
+                    {
+                        if (QAction* previousAction =
+                                saveModeState->action(
+                                    saveModeState->current()
+                                    ))
+                        {
+                            previousAction->setChecked(true);
+                        }
+
+                        if (saveModePreferenceErrorHandler)
+                        {
+                            saveModePreferenceErrorHandler(saved.error());
+                        }
+                        return;
+                    }
+
+                    *skipPersistForActionCommit = true;
+                    saveModeState->set(mode);
+                }
+                );
+        };
+
+    connectSaveModeAction(
+        automaticSaveAction,
+        ::SaveMode::Automatic
+        );
+    connectSaveModeAction(
+        manualSaveAction,
+        ::SaveMode::Manual
         );
 
 
