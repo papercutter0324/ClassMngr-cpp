@@ -25705,4 +25705,54 @@ unchanged.
    `ClassMngrScheduleBuilderTests` and `ClassMngrSharedPolicyTests`. Add no
    CMake target and run no full suite.
 
-This matrix is recorded before implementation. Batch 167 is active with F692.
+This matrix was recorded before implementation.
+
+### F692 ScheduleBuilder display-time parser migration - accepted - 2026-10-12
+
+F692 is accepted at code/test commit
+`b04eccd6c3052c2e0621d8c117e7fd941f9b7380`. An initialized Windows x64
+Debug Ninja build succeeded for `ClassMngr`,
+`ClassMngrScheduleBuilderTests`, and `ClassMngrSharedPolicyTests`. Both planned
+CTests passed 2/2: `ClassMngrScheduleBuilderTests` and
+`ClassMngrSharedPolicyTests`. No full suite ran.
+
+**Decision: accept F692.** Batch 167 is complete.
+
+### Batch 168 shortlist and selection - recorded before F693 implementation - 2026-10-12
+
+Select roster-template start-time parsing as a behavior-preserving rule
+migration into Domain. Reuse F692's display-time parser with a restricted
+syntax allowlist so the roster template keeps its narrower accepted syntax.
+This moves another UI-owned parsing rule into the Domain boundary without
+widening ScheduleBuilder's default behavior.
+
+**F693 is selected:** add the parser allowlist, route roster-template start
+time parsing through its restricted Domain API, and preserve existing accepted
+and rejected input behavior.
+
+### F693 roster-template start-time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Extend `ScheduleValueParser::parseDisplayTime` with a typed syntax allowlist
+   such as `std::span<const DisplayTimeFormat>` or equivalent. Keep its
+   one-argument/default overload accepting exactly F692's existing eight
+   formats. Define restricted choices precisely enough to request only
+   `h:mm AP` and `H:mm`, preserving Qt's case-insensitive AM/PM behavior for
+   `h:mm ap`.
+2. Change `roster_template_print_shared_data.inc` to call the restricted
+   Domain parser and remove local `parsedStartTime`. Preserve trimming, the old
+   three accepted forms, rejected compact and seconds forms, invalid-time
+   fallback, daily labels and column mapping, duplicate-slot handling, and
+   start-time ordering. Do not widen ScheduleBuilder's default format set.
+3. Extend `tests/shared_policy_tests.cpp` to verify the restricted syntax and
+   unchanged default parser. Extend
+   `tests/roster_template_print_service_tests.cpp` for uppercase/lowercase
+   AM/PM, 24-hour mapping, rejected forms and fallback, and ordering. Keep the
+   existing ScheduleBuilder tests unchanged as regression coverage.
+4. Build `ClassMngr`, `ClassMngrSharedPolicyTests`,
+   `ClassMngrRosterTemplatePrintServiceTests`, and
+   `ClassMngrScheduleBuilderTests`; run exactly the CTests
+   `ClassMngrSharedPolicyTests`,
+   `ClassMngrRosterTemplatePrintServiceTests`, and
+   `ClassMngrScheduleBuilderTests`. Add no CMake target and run no full suite.
+
+This matrix is recorded before implementation. Batch 168 is active with F693.

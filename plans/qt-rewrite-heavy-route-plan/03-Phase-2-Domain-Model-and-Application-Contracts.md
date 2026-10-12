@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F692 is selected in Batch 167; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source macOS universal evidence remains open at 0/24.
+- Current note: F693 is selected in Batch 168; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source macOS universal evidence remains open at 0/24.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 167
+#### Active batch: Batch 168
 
-- F692 - Move ScheduleBuilder display-time parsing from its UI helper to a distinct Domain parser while preserving behavior; implement the pre-recorded migration and parser-test matrix.
+- F693 - Move roster-template start-time parsing to the Domain display-time parser with a restricted syntax allowlist; implement the pre-recorded migration and regression-test matrix.
 
 ## Objective
 
