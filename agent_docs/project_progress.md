@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F711 accepted; F712 selected)
+### Current state - 2026-10-12 (F712 accepted; F713 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-177 are complete; Batch 178 has F703-F711 complete and is active
-with F712, the Next Sub Prep schedule-summary parsing migration.
+Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
+with F713, the Schedule Widget slot-time parsing migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -150,10 +150,19 @@ exact registered CTest passed 1/1. Eight public-boundary cases reject padded
 starts and malformed ends across save, import-save, series-create, and
 series-edit; they verify the validator result and leave the seeded row and row
 count unchanged. Existing canonical conversion coverage remains. No full
-suite ran. F712 selects only the duplicated eight-format parse loops in the
-Next Sub Prep schedule-summary port; use the default Domain display-time
-parser, preserving the summary and navigation formatting/failure contracts.
-The database-backed public port test seam can supply raw times. F707 is
+suite ran. F712 is committed as
+`c38447fda31bb93ab47b04250a3a007ca5c97045`; `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` built in
+the Windows x64 Debug Ninja tree under the VS x64 Developer environment, and
+the exact registered CTest passed 1/1. SQL-backed public-port cases cover
+canonical, alternate AM/PM, trimmed valid, and malformed values, preserving
+summary `N/A` and malformed navigation fallback/order. No full suite ran.
+F713 selects only `scheduleStartMinute` in `schedule_widget.cpp`: use the
+explicit `HourMinute24Hour` and `PaddedHourMinute24Hour` Domain formats with
+raw whitespace rejection and retain the existing ASCII-digit grammar. Keep
+valid times, no-save warning behavior, and typed state persistence unchanged.
+Its public click-and-save fixture supports focused parity coverage; the test
+target needs the Domain parser source added directly in CMake. F707 remains
 deferred because its comparator chain has no observed app callsite; F709 is
 deferred because its public fixture does not readily supply malformed raw
 time text.

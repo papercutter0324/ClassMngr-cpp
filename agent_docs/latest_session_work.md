@@ -4,8 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 has F703-F711 complete and is active with
-  F712.
+  141-178 are complete with F707 and F709 deferred; Batch 179 is active with
+  F713.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -121,16 +121,25 @@
   and series-edit, preserving the seeded row and count. These cases do not
   reach the private conversion helpers. Existing canonical conversion
   coverage remains; no full suite ran.
-- F712 selects the duplicated eight-format parsing in
-  `ApplicationServicesSubPrepScheduleSummaryPort`, preserving trimmed input,
-  summary formatting and invalid-time handling, navigation formatting and its
-  malformed-text fallback. Its SQL-backed public test seam can inject raw
-  schedule times. Build `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, then
-  run only that exact registered CTest. F707 remains deferred because its
-  comparator chain has no caller; F709 remains deferred because malformed raw
-  text is not readily injectable through its existing fixture. The
-  preimplementation matrix is in the Phase 2 progress log.
+- F712 Next Sub Prep schedule-summary parsing is accepted and committed as
+  `c38447fda31bb93ab47b04250a3a007ca5c97045`. `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` built
+  in the Windows x64 Debug Ninja tree under the VS x64 Developer environment;
+  the exact registered CTest passed 1/1. SQL-backed public-port cases cover
+  canonical, alternate AM/PM, trimmed valid, and malformed times, including
+  distinct summary and navigation fallbacks and unknown ordering. No full
+  suite ran.
+- F713 selects `scheduleStartMinute` in `src/features/schedule/ui/schedule_widget.cpp`.
+  Migrate its strict unpadded/padded 24-hour parser to the explicit
+  `HourMinute24Hour` and `PaddedHourMinute24Hour` Domain formats; preserve
+  ASCII digits and reject surrounding whitespace, seconds, and AM/PM. Keep the
+  click warning and no-save behavior for invalid labels. Extend
+  `ClassMngrScheduleWidgetTests` through its public `setPreviewModel` and
+  `onCellClicked` seam. Add `schedule_value_parser.cpp` directly to this test
+  target because it does not link the runtime. Build `ClassMngr` and
+  `ClassMngrScheduleWidgetTests`, then run only its exact registered CTest of
+  the same name. F707 and F709 remain deferred. The preimplementation matrix
+  is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

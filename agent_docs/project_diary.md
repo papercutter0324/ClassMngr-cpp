@@ -4338,3 +4338,28 @@ The acceptance matrix is recorded in the Phase 2 progress log before
 implementation. F707 and F709 remain deferred for their documented callsite
 and malformed-input seam constraints. Phase 2 remains In Progress with Gates
 1 and 2 Partial.
+
+## Phase 2 Next Sub Prep schedule-summary parsing - 2026-10-12
+
+F712 is accepted and committed as
+`c38447fda31bb93ab47b04250a3a007ca5c97045`. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` built
+in the Windows x64 Debug Ninja tree under the VS x64 Developer environment.
+The exact registered CTest passed 1/1. SQL-backed public-port cases cover
+canonical 24-hour, alternate AM/PM, trimmed valid, and malformed raw values,
+preserving summary omission/`N/A`, navigation fallback, and unknown order. An
+initial focused failure was fixture validation (`student_name.english.too_long`);
+valid fixture names fixed it. The direct new case then passed, and the exact
+CTest passed. No full suite ran.
+
+F713 is selected in Batch 179 for the strict schedule-slot start-minute parser
+`scheduleStartMinute` in `schedule_widget.cpp`. Reuse the Domain parser with
+the explicit unpadded and padded 24-hour formats while preserving its ASCII
+digit shape, range checks, and no-whitespace acceptance. Invalid cell labels
+must continue warning without saving. The public preview-model/cell-click
+test seam covers persistence and the invalid-input path. Add the parser source
+to the focused Schedule Widget test target because it lacks the runtime link.
+The acceptance matrix is recorded in the Phase 2 progress log before
+implementation. F707 and F709 remain deferred for their documented missing
+app callsite and malformed-input fixture constraints. Phase 2 remains In
+Progress with Gates 1 and 2 Partial.

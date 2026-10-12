@@ -26634,4 +26634,52 @@ overload. Preserve trimming and minute conversion.
    `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. Run
    no full suite.
 
-This matrix is recorded before implementation. Batch 178 is active with F712.
+This matrix was recorded before implementation.
+
+### F712 Next Sub Prep schedule-summary input parser migration - accepted - 2026-10-12
+
+F712 is accepted at code/test commit
+`c38447fda31bb93ab47b04250a3a007ca5c97045`. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` built
+under the VS x64 Developer environment in the Windows x64 Debug Ninja tree.
+The exact registered CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed
+1/1. SQL-backed tests cover canonical, alternate AM/PM, whitespace-padded
+valid, and malformed values, including summary N/A/omission, navigation
+fallback, and unknown ordering. The initial focused failure was fixture
+validation (`student_name.english.too_long`); after correcting the fixtures,
+the direct case passed and then the exact CTest passed 1/1. No full suite ran.
+
+**Decision: accept F712.** Batch 178 is complete; F707 and F709 remain
+deferred.
+
+### Batch 179 - F713 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `scheduleStartMinute` in
+`src/features/schedule/ui/schedule_widget.cpp`. Its current parser accepts
+ASCII unpadded or padded 24-hour `H:mm`/`HH:mm`, rejects whitespace, seconds,
+AM/PM, and malformed input, and returns a minute offset. The public
+`ScheduleWidgetTests` seam uses `setPreviewModel` and `onCellClicked` to verify
+the saved value or warning without persistence.
+
+**F713 is selected:** replace only this parser with the Domain display-time
+parser while preserving its restricted syntax and invalid-click behavior.
+
+1. Use `ScheduleValueParser::parseDisplayTime` with the explicit
+   `HourMinute24Hour` and `PaddedHourMinute24Hour` allowlist. Because the
+   shared parser trims, require raw input to equal its trimmed form; preserve
+   ASCII digit grammar, ranges, minute-offset conversion, and invalid results.
+2. Preserve click behavior: a valid time is saved; invalid input warns and
+   does not save or change the preview state.
+3. Extend `ClassMngrScheduleWidgetTests` through the public click-save path
+   for `9:00`, `09:00`, whitespace-padded input, trailing whitespace, seconds,
+   AM/PM, full-width-digit input such as `９:00`, and malformed values. Assert
+   valid saved offsets; invalid cases warn, perform zero saves, and leave
+   state unchanged.
+4. `ClassMngrScheduleWidgetTests` directly compiles `schedule_widget.cpp`
+   without the runtime. Add `src/domain/rules/schedule_value_parser.cpp` only
+   to that test target's direct sources in CMake. Build `ClassMngr` and that
+   target; run only the exact registered CTest
+   `ClassMngrScheduleWidgetTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F713.
