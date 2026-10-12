@@ -50,6 +50,7 @@ private slots:
     void parsesDefaultDisplayTimeFormats();
     void trimsTimeWhitespaceAndOmitsSeconds();
     void formatsSharedAndDifferentMeetingTimes();
+    void paddedAndLowercaseWeekdaysKeepOrderingAndFallbackLabels();
     void filtersHiddenDaysAndInvalidTimes();
     void groupsSortsAndDeduplicatesVisibleClasses();
     void collapsesRepeatedClassLabelsInTeacherHeading();
@@ -139,6 +140,34 @@ void SubPrepClassInformationModelTests
             }
             ),
         QStringLiteral("MonWed 4pm & MonFri 6pm & TuesFri 5pm & Thurs 3pm")
+        );
+}
+
+void SubPrepClassInformationModelTests
+    ::paddedAndLowercaseWeekdaysKeepOrderingAndFallbackLabels()
+{
+    const QList<ClassTime> times{
+        meeting(QStringLiteral("monday"), QStringLiteral("6:00 PM")),
+        meeting(QStringLiteral("Friday"), QStringLiteral("3:00 PM")),
+        meeting(QStringLiteral(" Monday "), QStringLiteral("4:00 PM")),
+        meeting(QStringLiteral("Tuesday"), QStringLiteral("4:30 PM")),
+        meeting(QStringLiteral("Monday"), QStringLiteral("5:00 PM"))
+    };
+
+    QCOMPARE(
+        SubPrepClassInformation::formatMeetingTimes(
+            times,
+            {
+                QStringLiteral("monday"),
+                QStringLiteral("Friday"),
+                QStringLiteral(" Monday "),
+                QStringLiteral("Tuesday"),
+                QStringLiteral("Monday")
+            }
+            ),
+        QStringLiteral(
+            "Monday 4pm & Mon 5pm & Tues 4:30pm & Fri 3pm & monday 6pm"
+            )
         );
 }
 
