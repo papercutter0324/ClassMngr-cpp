@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F721.
+  F722.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -164,17 +164,22 @@
   passed 1/1 (2.22 seconds). Public presentation coverage verifies padded and
   lowercase weekday order/labels and exclusion of lowercase overlap
   candidates. No full suite ran; Developer initialization printed a
-  `vswhere.exe` recognition warning. F721 selects
-  `ScheduleImportRepository::dayIndex`. Preserve exact raw, untrimmed,
-  case-sensitive weekday matching with `parseWeekday` plus canonical-text
-  equality and `-1` fallback. Cover typed candidate schedule rejection and
-  intensive slot-state rejection for padded/lowercase values, with unchanged
-  persisted snapshots including transaction rollback; retain canonical
-  weekday success. The focused target already compiles repository and parser;
-  no CMake change is needed. Build `ClassMngr` and
-  `ClassMngrScheduleImportTests`, then run only that exact registered CTest.
-  F707 and F709 remain deferred. The preimplementation matrix is in the Phase
-  2 progress log.
+  `vswhere.exe` recognition warning. F721 is accepted and committed as
+  `ad19bacae399316361a5b362734ef2f3a1a92e74`. `dayIndex` now reuses
+  `parseWeekday` with raw-text equality and preserves `-1`. Candidate inputs
+  retain preflight `InvalidMeetingWeekday`; malformed time retains
+  `InvalidProjectedTime`; intensive slot-state padded/lowercase days return
+  the exact invalid-state message with full transaction rollback. `ClassMngr`
+  and `ClassMngrScheduleImportTests` built, and the exact registered CTest
+  passed 1/1. No full suite ran. F722 selects `stateTime` in
+  `src/features/schedule/ui/schedule_import_review_dialog.cpp`: require
+  canonical parsed text to equal raw `time.day`, preserving `-1` for padded,
+  lowercase, and unknown weekdays. Extend `reviewRejectsMalformedProjectedTime`
+  with valid-time padded/lowercase weekdays and assert the review remains
+  invalid with Import disabled. Build `ClassMngr` and
+  `ClassMngrScheduleImportDialogTests`, then run only that exact registered
+  CTest. F707 and F709 remain deferred. The preimplementation matrix is in
+  the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

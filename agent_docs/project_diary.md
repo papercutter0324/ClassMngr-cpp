@@ -4462,20 +4462,23 @@ the Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the exact
 registered CTest passed 1/1 in 2.22 seconds. A `vswhere.exe` warning printed
 during Developer initialization. No full suite ran.
 
-F721 is selected for `dayIndex` in
-`src/data/repositories/schedule_import_repository.cpp`. The current helper
-uses raw, untrimmed, case-sensitive `QStringList::indexOf` and returns `-1`
-for invalid days. Reuse `ScheduleValueParser::parseWeekday` but require
-canonical text to equal the raw day string so padded and lowercase spellings
-remain invalid. This helper serves candidate schedules and intensive slot
-states. Extend `typedApplyRejectsMalformedTimeBeforeWrites` with valid-time
-padded/lowercase candidate days and verify `InvalidProjectedTime` plus an
-unchanged persisted snapshot. Add padded/lowercase rejection to the public
-intensive apply coverage alongside `typedIntensiveApplyMapsModeAndSlotState`,
-ensuring rollback preserves the persisted snapshot including
-`intensive_slot_states`. Retain canonical weekday success. The focused
-`ClassMngrScheduleImportTests` target already compiles the parser and
-repository; no CMake change is needed. Build `ClassMngr` and that target, then
-run the exact registered CTest only. F707 and F709 remain deferred for their
-documented missing app callsite and malformed-input seam constraints. Phase 2
-remains In Progress with Gates 1 and 2 Partial.
+F721 is accepted and committed as `ad19bacae399316361a5b362734ef2f3a1a92e74`.
+The typed candidate route rejects malformed weekday spellings during plan
+eligibility before reaching the repository writer, so its exact public result
+remains `InvalidMeetingWeekday`; malformed times remain
+`InvalidProjectedTime`. Intensive slot-state values reach `dayIndex` directly,
+and the rollback case confirms invalid padded/lowercase days preserve the full
+snapshot including `intensive_slot_states`. This distinction keeps acceptance
+tests aligned with the public validation boundary. The focused
+`ClassMngrScheduleImportTests` CTest passed 1/1 after the final exact error
+assertion; no full suite ran.
+
+F722 selects `stateTime` in
+`src/features/schedule/ui/schedule_import_review_dialog.cpp`. Require parsed
+weekday text to equal raw `time.day`, retaining the `-1` fallback for padded,
+lowercase, and unknown values. Extend `reviewRejectsMalformedProjectedTime`
+with valid-time padded/lowercase weekdays and check invalid review status plus
+disabled Import. `ClassMngrScheduleImportDialogTests` already compiles the
+dialog and parser; no wiring change is needed. F707 and F709 remain deferred
+for their documented callsite and fixture constraints. Phase 2 remains In
+Progress with Gates 1 and 2 Partial.

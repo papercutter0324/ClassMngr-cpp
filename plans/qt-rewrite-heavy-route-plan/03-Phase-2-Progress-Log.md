@@ -27072,16 +27072,63 @@ spelling validation and transaction rollback behavior.
    canonical weekdays and the existing `-1` fallback.
 2. Extend the typed schedule-apply test
    `typedApplyRejectsMalformedTimeBeforeWrites` with valid-time candidates
-   using padded and lowercase weekdays. Expect `InvalidProjectedTime` and
-   verify the persisted snapshot is unchanged.
-3. Add padded and lowercase weekday rejection coverage for intensive slot
-   state, alongside `typedIntensiveApplyMapsModeAndSlotState` or in a focused
-   test. Verify transaction rollback leaves the persisted snapshot,
-   including `intensive_slot_states`, unchanged. Preserve existing canonical
-   weekday success cases.
+   using padded and lowercase weekdays. The malformed-time row must expect
+   `InvalidProjectedTime`; the padded and lowercase weekday rows are rejected
+   by `validateScheduleImportApplyRequest()` before
+   `resolvedScheduleEntries` and must expect `policyIssue.code ==
+   InvalidMeetingWeekday`. Verify the full persisted snapshot is unchanged
+   for every row.
+3. Add a dedicated public test in `tests/schedule_import_tests.cpp` named
+   `typedIntensiveApplyRejectsNoncanonicalSlotDaysWithRollback` (or an
+   equivalent focused case) for padded `u" Monday "` and lowercase
+   `u"monday"` intensive slot-state values. Assert invalid slot-state failure
+   and compare the full persisted snapshot, including
+   `intensive_slot_states`. Preserve existing canonical weekday success cases.
 4. `ClassMngrScheduleImportTests` already directly compiles the repository and
    parser, so no CMake change is needed. Build `ClassMngr` and that target; run
    only the exact registered CTest `ClassMngrScheduleImportTests`. Run no full
    suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F721.
+This matrix was recorded before implementation.
+
+### F721 Schedule Import weekday-index parser migration - accepted - 2026-10-12
+
+F721 is accepted at code/test commit
+`ad19bacae399316361a5b362734ef2f3a1a92e74`. The change migrates `dayIndex` in
+`src/data/repositories/schedule_import_repository.cpp` through
+`ScheduleValueParser::parseWeekday`, requiring canonical text to equal the raw
+input. Padded and lowercase weekdays retain the `-1` fallback. Public typed
+apply coverage distinguishes the errors: malformed time returns
+`InvalidProjectedTime`, while padded/lowercase candidate weekdays fail
+preflight with `policyIssue.code == InvalidMeetingWeekday`. Intensive
+slot-state invalid weekdays return the exact error
+`The import contains an invalid intensive slot state.`; the full persisted
+snapshot, including `intensive_slot_states`, remains unchanged.
+
+`ClassMngr` and `ClassMngrScheduleImportTests` built successfully. The exact
+registered CTest `ClassMngrScheduleImportTests` passed 1/1. No full suite ran.
+
+**Decision: accept F721.** Batch 179 continues with F722; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F722 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `stateTime` in
+`src/features/schedule/ui/schedule_import_review_dialog.cpp`.
+
+**F722 is selected:** reuse the Domain weekday parser while preserving exact
+raw weekday matching and the existing `-1` fallback.
+
+1. Migrate only `stateTime` to `ScheduleValueParser::parseWeekday` and accept
+   the parsed weekday only when its canonical text equals raw `time.day`.
+   Padded, lowercase, and unknown values continue to produce `-1`.
+2. Extend `reviewRejectsMalformedProjectedTime` in
+   `tests/schedule_import_dialog_tests.cpp` with valid-time inputs using
+   `monday` and ` Monday ` as the weekday. Assert the review marks each
+   schedule invalid and keeps Import disabled.
+3. `ClassMngrScheduleImportDialogTests` already includes the dialog and parser,
+   so no CMake wiring change is needed. Build `ClassMngr` and that target; run
+   only the exact registered CTest
+   `ClassMngrScheduleImportDialogTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F722.

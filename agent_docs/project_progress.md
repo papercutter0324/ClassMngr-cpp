@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F720 accepted; F721 selected)
+### Current state - 2026-10-12 (F721 accepted; F722 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F721, the schedule import repository weekday parser migration.
+with F722, the schedule import review weekday parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -235,20 +235,29 @@ from overlap warnings. `weekdayLabel` and filtering remain unchanged.
 `ClassMngr` and `ClassMngrScheduleImportDialogTests` built in the Windows x64
 Debug Ninja tree under VS 2026 x64 Developer; the exact registered CTest
 passed 1/1 (2.22 seconds). A `vswhere.exe` recognition warning printed; no
-full suite ran. F721 selects `dayIndex` in
-`src/data/repositories/schedule_import_repository.cpp`. Reuse
-`ScheduleValueParser::parseWeekday` with canonical text equal to the raw,
-untrimmed input, preserving the exact case-sensitive grammar and `-1`
-invalid fallback. The helper also validates intensive slot-state days, so
-cover both typed candidate schedules and intensive slot states: extend
-`typedApplyRejectsMalformedTimeBeforeWrites` with otherwise-valid padded and
-lowercase weekday rows, expecting `InvalidProjectedTime` and an unchanged
-persisted snapshot; add padded/lowercase rejection coverage alongside
-`typedIntensiveApplyMapsModeAndSlotState`, verifying transaction rollback and
-the snapshot including intensive slot states. Preserve canonical weekday
-success. `ClassMngrScheduleImportTests` already directly compiles the parser
-and repository; no CMake change is needed. Build `ClassMngr` and that target,
-then run only the exact registered CTest of that name. F707 remains deferred
+full suite ran. F721 `dayIndex` weekday parsing is accepted and committed as
+`ad19bacae399316361a5b362734ef2f3a1a92e74`. It reuses
+`ScheduleValueParser::parseWeekday` only when parsed canonical text equals the
+raw, untrimmed input, preserving the exact case-sensitive grammar and `-1`
+invalid fallback. Public typed-apply coverage preserves the distinct results:
+malformed time returns `InvalidProjectedTime`, while padded/lowercase
+candidate weekdays fail preflight with `policyIssue.code ==
+InvalidMeetingWeekday`. Intensive slot-state values directly exercise
+`dayIndex`; invalid padded/lowercase days return the exact invalid-slot-state
+error and leave the full persisted snapshot unchanged, including
+`intensive_slot_states`. `ClassMngr` and `ClassMngrScheduleImportTests` built;
+the exact registered CTest passed 1/1. No full suite ran.
+
+F722 selects `stateTime` in
+`src/features/schedule/ui/schedule_import_review_dialog.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` only when parsed canonical text equals
+raw `time.day`, keeping padded, lowercase, and unknown values at the `-1`
+fallback. Extend `reviewRejectsMalformedProjectedTime` with valid-time
+lowercase and padded weekday inputs; assert review marks each schedule
+invalid and keeps Import disabled. `ClassMngrScheduleImportDialogTests`
+already includes the dialog and parser; no CMake change is needed. Build
+`ClassMngr` and that target, then run only the exact registered CTest.
+F707 remains deferred
 because its comparator chain has no observed app callsite; F709 is deferred
 because its public fixture does not readily supply malformed raw time text.
 The current-source Phase 0
