@@ -4874,19 +4874,18 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F760 accepted; F761 selected)
+## Phase 2 current position — 2026-10-13 (F761 accepted; F762 selected)
 
-F760 is accepted at
-`8bbe55b6ae649d47fb76c1b9938065a2b4f627a2`. The roster read, roster print
-class-info, and roster template print-source queries now share
-`Application::isCanonicalPositiveDecimalId`, preserving their distinct
-input recoverability and response checks. In the existing Visual Studio 18
-x64 Debug tree, `ClassMngr` and all three focused targets built; each exact
-CTest registered once and the tests passed 3/3. No full suite ran.
+F761 is accepted at
+`d810ad104e8573979725ba1bde9d52121c929254`. Initial Setup teacher choices
+now use the shared validator for returned teacher IDs while keeping distinct
+post-read validation failures for malformed and duplicate IDs. The existing
+Visual Studio 18 x64 Debug tree built `ClassMngr` and the focused target;
+its exact CTest had one registration and passed 1/1. No full suite ran.
 
-F761 is selected in Batch 189 to reuse the helper for returned teacher IDs
-in Initial Setup teacher choices. Preserve post-read Validation failures,
-canonicality-before-duplicate precedence, and the unchanged successful
-snapshot. F707/F709 remain deferred. Phase 2 remains In Progress/Open with
-Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
-Windows x64 2/24 and macOS universal 0/24.
+F762 is selected in Batch 189 to reuse validation in class-teacher
+assignments. Preserve the query's behavior of clearing malformed returned
+teacher IDs to unassigned rows while retaining row count and order; no error
+is returned for these rows. F707/F709 remain deferred. Phase 2 remains
+In Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.

@@ -43,8 +43,11 @@
   roster read-query targets built and exact CTests passed 3/3, with one
   registration each, under Visual Studio 18 x64 Debug. The sandboxed build
   hit FileTracker access denial and the same build succeeded outside the
-  sandbox. F761 is selected in Batch 189 for Initial Setup teacher choices.
-  No full suite ran.
+  sandbox. F761 is accepted at d810ad104e8573979725ba1bde9d52121c929254;
+  its single focused CTest passed 1/1 with one registration under the same
+  Debug configuration. F762 is selected in Batch 189 for class-teacher
+  assignments; preserve malformed-ID normalization to unassigned rows. No
+  full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

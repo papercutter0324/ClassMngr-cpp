@@ -29164,6 +29164,43 @@ tests.
 Build `ClassMngr` and
 `ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests`. Confirm
 exactly one registration for that exact CTest name, then run only that exact
-CTest. Run no full suite. This matrix is recorded before implementation;
-F761 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
-remain Partial, and the formal exit gate remains Open.
+CTest. Run no full suite. This matrix was recorded before implementation.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.
+
+### F761 Initial Setup teacher choices canonical ID validation - accepted - 2026-10-13
+
+F761 is accepted at commit
+`d810ad104e8573979725ba1bde9d52121c929254`. The existing Visual Studio 18
+x64 Debug tree built `ClassMngr` and
+`ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests`. The exact
+CTest had one registration and passed 1/1. Sandboxed build setup hit
+FileTracker `E_ACCESSDENIED`; the same command succeeded outside the sandbox.
+No full suite ran.
+
+### F762 class-teacher assignments canonical ID validation - selected and acceptance matrix - 2026-10-13
+
+**F762 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`class_teacher_assignments_read_query.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+This query has no ID inputs. It reads the port once first and forwards source
+errors unchanged. For each returned optional teacher ID, reset a present
+noncanonical ID to `nullopt`; the query still succeeds. This path has no
+`Validation` error or message and does not check duplicates. Preserve
+assignment row count and order, other snapshot data, valid IDs, existing null
+optionals, and port failures.
+
+Add malformed `23x` to the returned teacher IDs. Assert query success, exactly
+one port call, unchanged row count/order, malformed IDs normalized to
+unassigned, and a valid `23` remaining assigned. Preserve coverage for
+malformed `0`, `01`, `-1`, and overflow IDs, already-unassigned optionals,
+and structured port errors.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests`. Confirm
+exactly one registration for that exact CTest name, then run only that CTest
+with the Debug configuration. Run no full suite. This matrix is recorded
+before implementation; F762 verification is pending. F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.

@@ -4908,3 +4908,18 @@ F761 is selected for Initial Setup teacher-choice reads. The query validates
 returned IDs after its port read; malformed IDs and duplicate IDs remain
 distinct nonrecoverable Validation failures. F707/F709 remain deferred;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+## Phase 2 F761 acceptance and F762 selection — 2026-10-13
+
+F761 is accepted at `d810ad104e8573979725ba1bde9d52121c929254`. Initial
+Setup teacher choices now use the shared canonical-ID validator while
+preserving separate post-read errors for malformed and duplicate IDs. The
+focused CTest passed 1/1 with one exact registration in the existing Visual
+Studio 18 x64 Debug tree. The sandboxed build failed at FileTracker access;
+the same build succeeded outside the sandbox. No full suite ran.
+
+F762 is selected for class-teacher assignments. Malformed returned teacher
+IDs continue to become unassigned optional IDs without dropping or reordering
+rows; this query returns no validation error for that case. F707/F709 remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
