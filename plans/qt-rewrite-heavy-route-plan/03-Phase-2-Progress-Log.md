@@ -28085,3 +28085,57 @@ Explorer and Investigator confirmed this is a live duplicate with a direct
 workflow test seam. HH:mm sharing was not selected because it would require a
 new cross-character-type API. This matrix is recorded before implementation.
 Batch 179 is active with F741; F707 and F709 remain deferred.
+
+### F741 Class Details save weekday parsing - accepted - 2026-10-12
+
+F741 is accepted at code/test commit
+`c518f0d4766538b5c584949e72a79845a7a18dfa`. The save workflow now uses
+`ScheduleKeyRules::parseWeekday` after `trimQtWhitespace`, preserving its
+case-insensitive weekday recognition, raw-time parsing, workflow order,
+validation result, and normalized save output. Tests cover all seven weekdays
+through conflict conversion, whitespace and mixed case, conflict/save
+weekday indices, and invalid-weekday validation before conflict/save calls;
+existing workflow-order and strict-time checks remain.
+
+Under Visual Studio 2026 x64 Developer, Ninja built `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests` in
+`build/windows-x64-debug-ninja`. Exactly one CTest registration (#213) was
+confirmed; the exact test passed 1/1 in 0.03 seconds (0.04 seconds total).
+The scoped diff check passed; no full suite ran. The `vswhere.exe` and
+LF-to-CRLF notices were nonblocking.
+
+**Decision: accept F741.** Batch 179 continues with F742; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F742 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the duplicate event-type classification in
+`src/next/application/sub_prep_calendar_event_intervals_query.h`, which already
+trims the type before classification. The shared Domain helper is
+`calendarEventTypeFromName`, declared in
+`src/next/domain/calendar_event_timing.h`.
+
+**F742 is selected:** reuse Domain event-type classification while preserving
+the query's accepted values and result contract.
+
+1. After the existing trim, use
+   `Domain::calendarEventTypeFromName(normalizedType)` instead of the duplicate
+   string comparisons. Keep only Vacation and Holiday enum values. Preserve
+   trim-before-classification, case sensitivity, trimmed output spelling
+   (`interval.eventType.assign(normalizedType)`), date filtering and ordering,
+   port behavior, errors, and result contract. Add a direct include of
+   `src/next/domain/calendar_event_timing.h` in the query header if its current
+   direct dependencies do not already provide the declaration.
+2. Keep the existing direct coverage in
+   `tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp`,
+   which checks padded accepted Vacation/Holiday values, lowercase rejection,
+   Other rejection, and normalized output.
+3. No CMake changes are expected. Build `ClassMngr` and
+   `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`, confirm
+   exactly one CTest registration named
+   `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`, and run
+   only that exact CTest. Run no full suite.
+
+The alternative class-ID helper was not selected because partial migration
+would leave comparable duplicates elsewhere. This matrix is recorded before
+implementation. Batch 179 is active with F742; F707 and F709 remain deferred.

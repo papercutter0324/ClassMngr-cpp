@@ -4665,3 +4665,18 @@ F741 is selected in Batch 179 to reuse `ScheduleKeyRules::parseWeekday` in
 ASCII-insensitive matching, and strict raw-time behavior. Its existing
 workflow focused test is recorded in the Phase 2 progress log. F707 and F709
 remain deferred.
+
+## F741 Class Details save workflow weekday-rule reuse - accepted - 2026-10-12
+
+F741 is accepted and committed as
+`c518f0d4766538b5c584949e72a79845a7a18dfa`. In the Windows x64 Debug Ninja
+tree under the VS 2026 x64 Developer environment, `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests` built. Exact CTest
+registration #213 (count 1) passed 1/1 in 0.03 seconds (0.04 seconds total).
+No full suite ran; the scoped diff check passed. Only nonblocking
+`vswhere.exe` and LF/CRLF warnings occurred.
+
+F742 is selected in Batch 179 to use `Domain::calendarEventTypeFromName` in
+Sub Prep interval filtering after existing trimming, preserving exact type,
+case, and output behavior. Its existing focused test is recorded in the Phase
+2 progress log. F707 and F709 remain deferred.

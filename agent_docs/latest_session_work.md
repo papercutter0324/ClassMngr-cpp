@@ -5,8 +5,8 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F741, reusing `ScheduleKeyRules::parseWeekday` in
-  `ClassDetailsSaveWorkflow`. F709 remains deferred after confirming raw SQL
+  F742, reusing `Domain::calendarEventTypeFromName` in Sub Prep interval
+  filtering. F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -250,8 +250,8 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740 is accepted and F741 is selected; the F741 matrix is in
-  the Phase 2 progress log. F707 and F709 remain deferred.
+  full suite ran. F740 and F741 are accepted; F742 is selected. Its matrix is
+  in the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
   `ClassMngrNextApplicationCalendarEventTests` built in
@@ -260,10 +260,17 @@
   ran; the scoped diff check passed. CMake reconfigured after detecting the
   header. Nonblocking warnings covered `vswhere.exe`, optional Vulkan, long
   paths for unrelated targets, and LF/CRLF line endings.
-- F741 is selected in Batch 179: reuse `ScheduleKeyRules::parseWeekday` in
-  `ClassDetailsSaveWorkflow`, preserving Qt whitespace trimming,
-  ASCII-insensitive matching, and strict raw-time behavior. Its existing
-  workflow focused test is recorded in the Phase 2 progress log.
+- F741 Class Details save workflow weekday-rule reuse is accepted and
+  committed as `c518f0d4766538b5c584949e72a79845a7a18dfa`. In the Windows x64
+  Debug Ninja tree under the VS 2026 x64 Developer environment,
+  `ClassMngr` and `ClassMngrNextApplicationClassDetailsSaveUseCaseTests` built;
+  exact CTest registration #213 (count 1) passed 1/1 in 0.03s (0.04s total).
+  No full suite ran; scoped diff check passed. Only nonblocking `vswhere.exe`
+  and LF/CRLF warnings occurred.
+- F742 is selected in Batch 179: use `Domain::calendarEventTypeFromName` in
+  Sub Prep interval filtering after existing trimming, preserving exact type,
+  case, and output behavior. Its existing focused test is recorded in the
+  Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.
