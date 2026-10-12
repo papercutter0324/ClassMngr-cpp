@@ -4874,22 +4874,23 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F772 accepted; F773 selected)
+## Phase 2 current position — 2026-10-13 (F773 accepted; F774 selected)
 
-F772 is accepted at
-`c249709dbf7cea7d651144605ccfe6ade38226e2`. Both Class Details query guards
-now use the shared int-range ID validator and reject overflow before the port
-while retaining their existing error metadata and query contracts. The two
-query CTests and the `ClassDetailsSaveUseCase` regression each registered once
-and passed 3/3 after the bounded Visual Studio 18 x64 Debug build succeeded
-outside the sandbox following FileTracker `E_ACCESSDENIED`. No full suite ran.
+F773 is accepted at
+`80fe2a2688bea4658cc495e6270b2e2da781c870`. The My Classes class-summary
+batch query now uses the shared canonical-positive-int validator and has its
+own direct app-less test target. The exact CTest registered once (#234) and
+passed 1/1 after the bounded Visual Studio 18 x64 Debug build succeeded
+outside the sandbox following FileTracker `E_ACCESSDENIED`. CMake reported an
+optional missing `WrapVulkanHeaders` package but configured and built. No full
+suite ran.
 
-F773 is selected for the My Classes class-summary batch query. Its local
-canonical positive-int parser matches the shared helper; replace it with the
-helper and add a direct app-less test target for the currently untested query.
-Cover empty/invalid/duplicate inputs before reads, valid `INT_MAX` forwarding,
-response count/order and teacher-ID validation, and exact port-failure
-forwarding. The source header is already in CMake; add only the focused test
-registration/source. F707/F709 remain deferred. Phase 2 remains
-In Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+F774 is selected to consolidate the equivalent canonical-positive-int
+predicates in Roster Save, Roster Row Transfer, and Speaking Evaluation Save.
+Preserve their distinct recoverable InvalidInput errors, validation order,
+port boundaries, row-transfer distinct-ID policy, and valid `INT_MAX`
+forwarding; strengthen error message and recoverability assertions. The shared
+helper is already in CMake, so no inventory edit is expected. F707/F709 remain
+deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial; separate
+current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
+0/24.

@@ -5096,3 +5096,17 @@ batch reader. Its private positive-int parser already matches the shared ID
 helper, but it has no direct query test; the existing class-summary CTest
 covers the projection. F773 will consolidate the parser and introduce focused
 coverage without changing the query behavior.
+
+## Phase 2 F773 acceptance and F774 selection — 2026-10-13
+
+F773 is accepted at `80fe2a2688bea4658cc495e6270b2e2da781c870`. Its dedicated
+query CTest registered once (#234) and passed 1/1 after the bounded build
+succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. CMake
+reported that optional `WrapVulkanHeaders` was unavailable; configure and
+build succeeded. No full suite ran.
+
+F774 groups three local canonical-positive-int validators whose acceptance
+semantics match the shared helper. Keep each use case's error metadata and
+validation precedence, and preserve Roster Row Transfer's distinct-class
+rule and read/save sequence. F707/F709 remain deferred, Gates 1/2 Partial, and
+the formal exit gate Open.

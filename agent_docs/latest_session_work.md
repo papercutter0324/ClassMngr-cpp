@@ -87,12 +87,16 @@
   at `c249709dbf7cea7d651144605ccfe6ade38226e2`; both query tests and the
   `ClassDetailsSaveUseCase` regression registered once and passed 3/3 after
   the bounded build succeeded outside the sandbox following FileTracker
-  access denial. F773 is selected for the My Classes class-summary batch
-  query: consolidate its equivalent int-range parser, add a dedicated
-  app-less test target, and cover empty/invalid/duplicate requests, valid
-  maximum-ID forwarding, response count/order and teacher-ID validation, and
-  port-failure forwarding. The existing query header is already in the CMake
-  source list. No full suite ran.
+  access denial. F773 is accepted at
+  `80fe2a2688bea4658cc495e6270b2e2da781c870`; its dedicated query CTest
+  registered once (#234) and passed 1/1 after the bounded build succeeded
+  outside the sandbox following FileTracker access denial. CMake reported an
+  optional unavailable `WrapVulkanHeaders` package, but configured and built.
+  F774 is selected to consolidate equivalent ID predicates in Roster Save,
+  Roster Row Transfer, and Speaking Evaluation Save while preserving their
+  distinct errors, validation order, transfer boundaries, and valid maximum
+  ID forwarding. Build/run their three existing focused CTests. No full suite
+  ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

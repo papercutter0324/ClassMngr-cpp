@@ -29690,6 +29690,53 @@ output order, and exact port-failure propagation.
 Build `ClassMngr` and
 `ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests`; confirm
 the exact CTest registers once, then run only it with `-C Debug`. Run no full
-suite. This matrix was recorded before implementation; F773 verification is
-pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
-formal exit gate remains Open.
+suite. This matrix was recorded before implementation. F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### F773 My Classes class-summary batch ID validation - accepted - 2026-10-13
+
+F773 is accepted at commit
+`80fe2a2688bea4658cc495e6270b2e2da781c870`. `ClassMngr` and the new focused
+My Classes class-summary batch test target built in the existing VS 18 x64
+Debug tree after the bounded build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. The exact CTest registered once (#234) and
+passed 1/1. CMake regeneration noted that optional `WrapVulkanHeaders` was
+unavailable because `Vulkan_INCLUDE_DIR` was missing; configuration and build
+completed. No full suite ran.
+
+### F774 Roster Save, Row Transfer, and Speaking Evaluation Save ID validation - selected and acceptance matrix - 2026-10-13
+
+**F774 is selected:** consolidate equivalent private canonical-positive-int
+predicates in `src/next/application/roster_save_use_case.h`,
+`roster_row_transfer_use_case.h`, and
+`speaking_evaluation_save_use_case.h` with
+`Application::isCanonicalPositiveDecimalId`. The helper is already in
+`cmake/next.cmake`; no CMake or source-ownership inventory change is expected.
+Keep the existing invalid-ID sets. Roster Save and Speaking Evaluation Save
+return recoverable `InvalidInput` with
+`Class ID must be a canonical positive integer.`; Row Transfer returns
+recoverable `InvalidInput` with
+`Transfer requires distinct canonical positive class IDs.` for invalid IDs
+and non-distinct source/target IDs. Assert zero calls at the relevant port
+boundary and preserve validation order: Roster Save checks ID before content;
+Row Transfer validates both canonical IDs and source/target distinctness
+before source work, read, or save; Speaking Evaluation Save validates
+ClassId before matrix structure or content checks.
+
+Add valid `2147483647` boundary cases in each use-case fake and verify the ID
+is forwarded unchanged. Preserve Row Transfer's read-then-atomic-save flow,
+request normalization, and port-failure behavior. Keep
+`ClassDetailsSaveUseCase` outside this slice.
+
+Cover the existing contracts in
+`tests/next_application_roster_save_use_case_tests.cpp`,
+`tests/next_application_roster_row_transfer_use_case_tests.cpp`, and
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp`. Build
+`ClassMngr` and `ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`, and
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`. Confirm each
+exact CTest registers once, then run only those three with `-C Debug`; run no
+full suite. This matrix was recorded before implementation; F774 verification
+is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and
+the formal exit gate remains Open.

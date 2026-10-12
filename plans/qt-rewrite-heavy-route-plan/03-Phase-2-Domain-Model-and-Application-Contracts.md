@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F772 is accepted at `c249709dbf7cea7d651144605ccfe6ade38226e2`; F773 is selected as the first Batch 191 slice for My Classes class-summary batch ID validation, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F773 is accepted at `80fe2a2688bea4658cc495e6270b2e2da781c870`; F774 is selected in active Batch 191 for canonical ID validation across Roster Save, Roster Row Transfer, and Speaking Evaluation Save, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 191
 
-- F773 - My Classes class-summary batch query - Reuse the shared canonical-ID validator and add focused query coverage.
+- F774 - Roster Save, Row Transfer, and Speaking Evaluation Save ID validation - Reuse the shared canonical-ID validator while preserving each use case's validation order and port behavior.
 
 ## Objective
 
