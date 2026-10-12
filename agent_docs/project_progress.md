@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F710 selected)
+### Current state - 2026-10-12 (F710 accepted; F711 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-177 are complete; Batch 178 has F703-F708 complete and is active
-with F710, the Schedule Print Excel time-label parser migration.
+Batches 141-177 are complete; Batch 178 has F703-F710 complete and is active
+with F711, the Calendar Event application-port time conversion migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -137,13 +137,20 @@ committed as `8c58fd0f07867ba2608a1f10a8ba3012422b35cf`; `ClassMngr` and
 the Windows x64 Debug Ninja tree under the VS 2026 x64 Developer Command
 Prompt, and the exact CTest passed 1/1. Padded and malformed start/end drafts
 verify fallback, preserve the valid counterpart, and serialize canonical
-widget values; no full suite ran. F710 selects only the Excel style
-`row.timeLabel` parse in `paintSchedule`: use the explicit `HH:mm` Domain
-format with raw-whitespace rejection, preserving even/odd/invalid cell colors
-and other print styles. Its matrix is recorded in the Phase 2 progress log.
-F707 is deferred because its comparator chain has no observed app callsite;
-F709 is deferred because its public fixture does not readily supply malformed
-raw time text. The current-source Phase 0
+widget values; no full suite ran. F710 is committed as
+`276ac0dd53e38eb6d021e020013eb7fbf57376cb`; `ClassMngr` and
+`ClassMngrSchedulePrintPdfTests` built in the Windows x64 Debug Ninja tree,
+and the exact CTest passed 1/1. Rendered PDF checks preserve gray for 09:00,
+yellow for 10:00, and gray for trailing-space and malformed labels. No full
+suite ran. F711 selects only the four Calendar Event port `legacyTime`
+helpers (save, import-save, series-create, and series-edit): use the explicit
+`PaddedHourMinute24Hour` Domain format and preserve exact canonical `HH:mm`
+acceptance with a raw-equals-trimmed guard and round-trip check. The focused
+port tests cover canonical conversion; padded and malformed public inputs are
+rejected by request validation before those private helpers. F707 is deferred
+because its comparator chain has no observed app callsite; F709 is deferred
+because its public fixture does not readily supply malformed raw time text.
+The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
 and F626 deferred. F666 Class Day

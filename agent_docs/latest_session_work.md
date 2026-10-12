@@ -4,8 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 has F703-F708 complete and is active with
-  F710.
+  141-177 are complete; Batch 178 has F703-F710 complete and is active with
+  F711.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -107,17 +107,23 @@
   Tests reject padded and malformed start/end values, verify the 09:00/10:00
   fallback and preserve timed, all-day, and unconfirmed draft behavior. No
   full suite ran.
-- F710 is selected for the Excel-only `row.timeLabel` parse in
-  `paintSchedule` (`schedule_print_service.cpp`). Use singleton
-  `PaddedHourMinute24Hour` with a raw-whitespace guard; keep valid even-hour
-  cells yellow, odd/invalid cells gray, non-Excel palette behavior unchanged,
-  and range-label formatting separate. Extend
-  `ClassMngrSchedulePrintPdfTests` through its existing service test seam;
-  the parser is already linked through runtime. Build `ClassMngr` and that
-  target, then run only its exact CTest. F707 remains deferred because its
-  comparator chain has no caller; F709 remains deferred because malformed
-  raw text is not readily injectable through its existing fixture. The
-  preimplementation matrix is in the Phase 2 progress log.
+- F710 Schedule Print Excel time-label parsing is accepted and committed as
+  `276ac0dd53e38eb6d021e020013eb7fbf57376cb`. `ClassMngr` and
+  `ClassMngrSchedulePrintPdfTests` built in the Windows x64 Debug Ninja tree;
+  its exact CTest passed 1/1. Rendered PDF checks preserve 09:00 gray, 10:00
+  yellow, and gray for trailing-space and malformed labels. No full suite ran.
+- F711 is selected for the four Calendar Event port `legacyTime` helpers:
+  save, import-save, series-create, and series-edit. Use the explicit
+  `PaddedHourMinute24Hour` Domain format and preserve exact canonical `HH:mm`
+  through raw-equals-trimmed and round-trip checks. The public port test target
+  already covers canonical conversion. Padded and malformed public requests
+  fail `request.validate()` before these private helpers, so record them as
+  boundary validation coverage rather than helper-path coverage. Build
+  `ClassMngr` and `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+  then run only its exact CTest. F707 remains deferred because its comparator
+  chain has no caller; F709 remains deferred because malformed raw text is
+  not readily injectable through its existing fixture. The preimplementation
+  matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

@@ -4291,3 +4291,25 @@ existing service test seam; runtime already links the parser. F707 is deferred
 because its helper chain has no observed app caller; F709 is deferred because
 its fixture does not readily allow malformed raw times. The F710 matrix is
 recorded before implementation in the Phase 2 progress log.
+
+## Phase 2 Schedule Print Excel time-label parsing - 2026-10-12
+
+F710 is accepted and committed as
+`276ac0dd53e38eb6d021e020013eb7fbf57376cb`. `ClassMngr` and
+`ClassMngrSchedulePrintPdfTests` built in the Windows x64 Debug Ninja tree;
+the exact CTest passed 1/1. Rendered PDF checks preserve gray for 09:00,
+yellow for 10:00, and gray for trailing-space and malformed labels. No full
+suite ran.
+
+F711 is selected in Batch 178 for the four Calendar Event port
+`legacyTime` helpers (single save, import-save, series-create, and
+series-edit). Use the explicit `PaddedHourMinute24Hour` Domain format while
+preserving exact canonical `HH:mm` with raw-equals-trimmed and round-trip
+checks. The public port test target verifies canonical conversion; malformed
+and padded inputs are rejected by request validation before the private
+helpers, so they must be described as boundary validation coverage. Preserve
+optional-time absence/clear behavior, error mapping, import and series save
+ordering, and transactions. The acceptance matrix is recorded in the Phase 2
+progress log before implementation. F707 and F709 remain deferred for their
+documented missing app callsite and raw-input fixture constraints. Phase 2
+remains In Progress with Gates 1 and 2 Partial.

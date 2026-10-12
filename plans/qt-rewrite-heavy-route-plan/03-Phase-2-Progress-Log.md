@@ -26537,4 +26537,51 @@ trims.
    `ClassMngrSchedulePrintPdfTests`; run only the exact CTest
    `ClassMngrSchedulePrintPdfTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 178 is active with F710.
+This matrix was recorded before implementation.
+
+### F710 Schedule-print Excel time parser migration - accepted - 2026-10-12
+
+F710 is accepted at code/test commit
+`276ac0dd53e38eb6d021e020013eb7fbf57376cb`. `ClassMngr` and
+`ClassMngrSchedulePrintPdfTests` built in Windows x64 Debug Ninja. The exact
+CTest `ClassMngrSchedulePrintPdfTests` passed 1/1. PDF checks confirmed 09:00
+gray, 10:00 yellow, and both `10:00 ` and malformed time labels gray. No full
+suite ran.
+
+**Decision: accept F710.** Batch 178 continues with F711; F707 and F709 remain
+deferred.
+
+### Batch 178 continuation - F711 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the four Calendar Event save/import/series-create/series-edit port time
+helpers. Preserve canonical `HH:mm` acceptance with the
+`PaddedHourMinute24Hour` parser and a raw-equals-trimmed guard. Public request
+validation rejects malformed or padded values before these helpers, so tests
+must distinguish that boundary validation from helper conversion; retain the
+existing canonical conversion coverage. Do not imply malformed public
+requests exercise private helpers.
+
+**F711 is selected:** migrate the four helper conversions to
+`ScheduleValueParser::parseDisplayTime` with `PaddedHourMinute24Hour` and the
+raw-equals-trimmed guard, preserving caller, validation, transaction, absence,
+and clear semantics.
+
+1. Replace only the four Calendar Event save/import/series-create/series-edit
+   port helper time conversions with
+   `ScheduleValueParser::parseDisplayTime` using the
+   `PaddedHourMinute24Hour` format. Require raw input to equal its trimmed form
+   so only exact canonical `HH:mm` remains accepted.
+2. Preserve caller behavior, public request validation, transaction semantics,
+   absent-value handling, and clear semantics.
+3. Extend the focused
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` while
+   retaining canonical conversion coverage. Padded or malformed public
+   requests are rejected by `request.validate()` before helper invocation;
+   test that boundary separately and do not count it as private-helper
+   malformed-input coverage.
+4. Build `ClassMngr` and
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; run only
+   the exact CTest `NextPlatformApplicationServicesCalendarEventPort`. Run no
+   full suite.
+
+This matrix is recorded before implementation. Batch 178 continues with F711.
