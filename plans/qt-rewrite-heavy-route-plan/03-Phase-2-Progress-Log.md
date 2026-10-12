@@ -30171,3 +30171,60 @@ run only `NextApplicationCalendarEvent`,
 full suite. Commit this matrix before source/test edits. Verification has not
 run; F783 is not yet accepted. F707/F709 remain deferred, Phase 2 Gates 1/2
 remain Partial, and the formal exit gate remains Open.
+
+### F783 Calendar title length parity - accepted - 2026-10-13
+
+F783 is accepted at commit
+`2e846967aca80bfc160cd20ffdf88a093c15b67d`. In the existing incremental
+Visual Studio 18 Windows x64 Debug tree, `ClassMngr` and the four focused
+targets `ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests` built. The sandbox FileTracker
+`E_ACCESSDENIED` required an identical bounded retry outside the sandbox.
+`NextApplicationCalendarEvent`,
+`NextApplicationCalendarEventImportUseCase`,
+`NextPlatformApplicationServicesCalendarEventPort`, and
+`ClassMngrCalendarEventCacheTests` each registered once and passed; 4/4
+focused CTests succeeded. No full suite ran.
+
+### Batch 197 discovery - 2026-10-13
+
+F784 was selected to bound CalendarPage month retention to the displayed
+month while preserving on-demand Upcoming ranges and reload on revisit. Raw-int
+ID contracts in co-teacher assignment and Native English/GS Team import
+profiles were deferred as lower-confidence architecture cleanup without a
+demonstrated behavior defect. Teacher reassignment's stricter Next notes and
+schedule validation was deferred because an existing Next test expects
+rejection and the intended policy is unresolved. Calendar projection
+materialization before the 4,096-event cap was deferred as a separate
+application/database change pending stronger bounded-reader evidence. No other
+slices were found.
+
+### F784 Calendar month retention - selected and acceptance matrix - 2026-10-13
+
+**F784 is selected:** in CalendarPage, bound `m_loadedMonths` to the currently
+displayed month so navigating across many months does not retain every
+previously visited month's month-cache entries. Preserve
+`m_onDemandRetainedRanges` for Next 30 Days/Next 10 Events, current-month
+rendering and queries, the ability to revisit and reload an evicted month, and
+existing invalidate/release clearing behavior. Preserve CalendarEventCache's
+discard of stale async results after retained-range changes.
+
+Use the existing
+`ClassMngrCalendarPageEventMutationParityTests` target and
+`CalendarPageEventMutationParity` CTest. Seed multiple months and navigate
+sequentially, waiting for each month load to settle. Assert
+`loadedMonthCount` is one and tracks the current month, while
+`cacheRetainedRangeCount` and `cacheEventCount` reflect only the current-month
+cache plus preserved on-demand Upcoming ranges; they must not grow with
+previously visited months. Verify Upcoming remains usable and an evicted month
+reloads on return. Assert release metrics remain zero. No CMake change is
+expected.
+
+Reuse `build/windows-x64-debug` with Visual Studio 18 x64 Debug. Build
+`ClassMngr` and `ClassMngrCalendarPageEventMutationParityTests`, confirm the
+exact CTest registers once, then run only `CalendarPageEventMutationParity`
+with `-C Debug --output-on-failure`. Run no full suite. Commit this matrix
+before source/test edits. Verification is pending; F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

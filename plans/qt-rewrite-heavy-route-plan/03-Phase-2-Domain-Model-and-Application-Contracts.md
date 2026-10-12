@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F782 is accepted at `06c2ec699536387446d391615fd5126a231e874f`; F783 is selected in Batch 196 to restore calendar title-length parity across UTF-8 request and projection boundaries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F783 is accepted at `2e846967aca80bfc160cd20ffdf88a093c15b67d`; F784 is selected in Batch 197 to bound CalendarPage `m_loadedMonths` to the displayed month while preserving `m_onDemandRetainedRanges` and reload on revisit, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -99,10 +99,18 @@ Treat this plan as an operational summary, not a history:
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
+- Batch 197 raw-int ID contract cleanup in co-teacher assignment and the
+  Native English/GS Team import profiles - deferred as lower-confidence
+  architecture work without a demonstrated behavior defect.
+- Batch 197 teacher reassignment parity - deferred until the stricter Next
+  notes/schedule validation policy is resolved against current tests.
+- Batch 197 Calendar projection materialization before its event cap -
+  deferred pending stronger bounded-reader evidence for a separate
+  application/database change.
 
-#### Active batch: Batch 196
+#### Active batch: Batch 197
 
-- F783 - Calendar title length parity - Apply the legacy 255 UTF-16-unit title limit consistently to UTF-8 application requests and projections.
+- F784 - Calendar month retention - Bound CalendarPage `m_loadedMonths` to the displayed month while preserving `m_onDemandRetainedRanges` and reload on revisit.
 
 ## Objective
 

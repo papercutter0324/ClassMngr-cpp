@@ -5255,3 +5255,23 @@ Defer the broader repeat-series typed-ID migration, the unclear course-stage
 Domain move, and unmeasured Class Transfer export copy reduction. F707/F709
 remain deferred, Gates 1/2 remain Partial, and the formal exit gate remains
 Open.
+
+## Phase 2 F783 acceptance and F784 selection - 2026-10-13
+
+F783 is accepted at `2e846967aca80bfc160cd20ffdf88a093c15b67d`. The `ClassMngr`
+and four focused Calendar targets built in the configured Visual Studio 18
+x64 Debug tree after the bounded build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`; the four exact CTests passed 4/4. No full suite
+ran. The user-requested CMake source-ownership optimization was evaluated and
+committed earlier in this continuation.
+
+Batch 197 selected F784 from the lifecycle evidence that `m_loadedMonths`
+accumulates every navigated month and those retained ranges keep old events in
+the cache until release or invalidation. The matrix bounds Calendar navigation
+to the displayed month's retained data, keeps separate Upcoming scopes intact,
+and checks eviction plus reload when returning to an older month. The review
+deferred typed raw-ID candidates, the co-teacher policy difference because
+current Next tests explicitly expect rejection, and projection overflow's
+pre-cap full materialization for a separate bounded-reader slice. F707/F709
+remain deferred, Gates 1/2 remain Partial, and the formal exit gate remains
+Open.

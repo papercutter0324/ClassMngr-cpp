@@ -3,13 +3,14 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-13.
-- Resume point: F782 is committed at `06c2ec699536387446d391615fd5126a231e874f`;
-  its focused CTest passed 1/1 after the bounded Debug build succeeded outside
-  the sandbox following FileTracker `E_ACCESSDENIED`. Batch 196 selected F783,
-  aligning Calendar title limits across Next write and read boundaries with
-  legacy's 255 UTF-16-code-unit rule. Its matrix is being recorded before
-  source or test edits. Keep the 4,096-event cap and bound projected titles at
-  765 UTF-8 bytes. The detailed matrix and exact targets are in
+- Resume point: F783 is committed at `2e846967aca80bfc160cd20ffdf88a093c15b67d`;
+  its four focused Calendar CTests passed 4/4 after the bounded Debug build
+  succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. Batch
+  197 selected F784 because month navigation accumulated retained cache ranges
+  and events for every previously visited month. The acceptance matrix is
+  being recorded before source or test edits; it bounds retention to the
+  displayed month while preserving Upcoming ranges and reload-on-revisit.
+  Exact evidence and target names are in
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F744 and
   F745 are accepted. The user-requested CMake source-ownership optimization

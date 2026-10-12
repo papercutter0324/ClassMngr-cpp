@@ -53,20 +53,21 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F782 accepted; F783 selected)
+### Current state - 2026-10-13 (F783 accepted; F784 selected)
 
-F782 is committed at `06c2ec699536387446d391615fd5126a231e874f`. Its focused
-Speaking Evaluation CTest passed 1/1 after the bounded Visual Studio 18 x64
-Debug build succeeded outside the sandbox following FileTracker
-`E_ACCESSDENIED`; no full suite ran. The separate CMake source-ownership
-optimization requested during this continuation is also committed.
+F783 is committed at `2e846967aca80bfc160cd20ffdf88a093c15b67d`. `ClassMngr`
+and its four focused Calendar targets built in the Visual Studio 18 x64 Debug
+tree after the bounded retry outside the sandbox following FileTracker
+`E_ACCESSDENIED`; the four exact CTests passed 4/4. No full suite ran. The
+separate CMake source-ownership optimization requested during this
+continuation is also committed.
 
-F783 addresses Calendar title parity: legacy validation caps at 255 UTF-16
-code units, while Next validators and projections currently count UTF-8 bytes.
-The acceptance matrix will align the write and read boundaries, retain the
-4,096-event projection cap, and bound title transport at 765 UTF-8 bytes.
-F707/F709 remain deferred; Gates 1/2 are Partial and the formal exit gate is
-Open. Detailed scope and exact target names are in the Phase 2 progress log.
+Batch 197 selected F784 after lifecycle review found that Calendar navigation
+retains every previously visited month until invalidation or release. F784
+will retain only the displayed month, preserve Upcoming-range retention, and
+verify old-month eviction and reload when revisited. F707/F709 remain
+deferred; Gates 1/2 are Partial and the formal exit gate is Open. Exact scope
+and target names are in the Phase 2 progress log.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
