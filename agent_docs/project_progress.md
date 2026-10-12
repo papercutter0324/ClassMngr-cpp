@@ -53,13 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F752 accepted; F753 selected)
+### Current state - 2026-10-13 (F753 accepted; F754 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-182 are complete with F707 and F709 deferred. F740-F752 are
-accepted; F753 will align birthday-schedule blank-name filtering with the
-shared Qt-compatible whitespace predicate. The separate CMake
+Batches 141-183 are complete with F707 and F709 deferred. F740-F753 are
+accepted; F754 will reuse Gregorian domain validation for month/day birthday
+values. The separate CMake
 source-ownership optimization was also completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
@@ -4720,14 +4720,25 @@ the Windows x64 Ninja Debug tree and VS 2026 x64 Developer environment,
 `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests` built. Unique
 CTest #229 passed 1/1 in 0.05 seconds (0.08 seconds total). No full suite ran.
 
-F753 is selected in Batch 183 to reuse `Application::isQtWhitespace` for the
-blank-name filter in `UpcomingBirthdayScheduleUseCase`, replacing the local
-Unicode whitespace predicate that omits U+0085. Add a U+0085-only display
-name to the existing blank-name regression case and verify it is omitted.
-Preserve ASCII birthday parsing, date arithmetic, bucketing, ordering, and
-all existing whitespace cases. Build `ClassMngr` and
-`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, confirm
-exactly one CTest registration, and run only that exact CTest. No full suite.
+F753 is accepted and committed as
+`ef92df3a0b881bccd0fbfb52b3f88e39ac291255` (`Phase2 - Share Qt whitespace rule
+in birthday schedule`). The schedule blank-name check now reuses
+`Application::isQtWhitespace`, recognizing U+0085 while preserving ASCII
+birthday parsing and all other schedule behavior. Under Windows x64 Ninja
+Debug with VS 2026 x64 Developer, `ClassMngr` and
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests` built. Unique
+CTest #193 passed 1/1 in 0.03 seconds (0.04 seconds total). No full suite ran.
+
+F754 is selected in Batch 184 to replace the manual leap-year-2000 month-day
+table in `isValidMonthDayBirthday` with
+`Domain::GregorianDate::fromComponents(2000, month, day)`. Preserve the
+application-owned Unicode trimming, blank-as-optional behavior, exact
+two-ASCII-digit `MM-DD` syntax, and leap-year-2000 rule. Extend the Native
+English Qt-parity cases with valid/invalid boundaries for 30-day months; keep
+and run the existing GS Team blank/leap/invalid-day test. Build `ClassMngr`
+and `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests` plus
+`ClassMngrNextApplicationGsTeamDirectorySaveTests`; confirm exactly one CTest
+registration for each and run only those two exact CTests. No full suite.
 F707 and F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1
 and 2 Partial; F625's assessment is accepted, F626 is deferred, and separate
 current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal

@@ -4802,6 +4802,11 @@ reject invalid input before persistence. F752 is accepted at
 `Domain::duplicateStudentNamePairGroups` kept first-seen pair/row ordering,
 but the caller still had to trim before grouping because the domain helper
 groups exact values. The focused test makes issue and duplicate-row ordering
-explicit. F753 reuses the existing Qt-compatible whitespace predicate in the
-birthday schedule because a separate local table omitted U+0085. F707/F709
-remain deferred and the Phase 2 exit gate remains open.
+explicit. F753 is accepted at
+`ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; its birthday schedule now shares
+the Qt-compatible whitespace predicate and filters U+0085-only names. F754
+reuses the Gregorian domain date rule for month/day birthday validity while
+leaving application text syntax and whitespace normalization in place. This
+is narrower than centralizing positive-decimal parsing across four queries
+and has direct date-policy coverage. F707/F709 remain deferred and the Phase
+2 exit gate remains open.

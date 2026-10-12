@@ -28737,3 +28737,47 @@ names.
 This matrix is recorded before implementation; F753 implementation has not
 started. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
 formal exit gate remains Open.
+
+### F753 Birthday schedule Qt whitespace filtering - accepted - 2026-10-13
+
+F753 is accepted at commit
+`ef92df3a0b881bccd0fbfb52b3f88e39ac291255` (`Phase2 - Share Qt whitespace
+rule in birthday schedule`). The birthday schedule name filter reuses
+`Application::isQtWhitespace`, including U+0085.
+
+Under Windows x64 Ninja Debug with VS 2026 x64 Developer,
+`ClassMngr` and
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests` built. The
+unique CTest #193 passed 1/1 (0.03 seconds test, 0.04 seconds total). No full
+suite ran.
+
+### Batch 184 continuation - F754 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F754 is selected:** reuse canonical Gregorian date validation for birthday
+month-day parsing.
+
+In `src/next/application/birthday_validation.h::isValidMonthDayBirthday`,
+keep the existing Qt-compatible Unicode trimming, exact two-ASCII-digit
+`MM-DD` syntax, and blank-as-optional behavior. After parsing, replace the
+manual month-length table with
+`Domain::GregorianDate::fromComponents(2000, month, day).has_value()`.
+Year 2000 preserves February 29. Keep caller validation, errors, and
+first-invalid-row behavior unchanged for the Native English and GS Team save
+policies.
+
+1. Extend `preservesQtBirthdayParsingBehavior` in
+   `tests/next_application_native_english_teacher_directory_save_tests.cpp`
+   with valid and invalid 30-day month boundaries, such as `04-30`,
+   `04-31`, `06-30`, and `06-31`. Retain the QDate parity oracle and
+   existing syntax, whitespace, and leap-day cases.
+2. Reuse the existing GS Team blank, leap-day, and invalid-day tests unchanged.
+3. Build `ClassMngr`,
+   `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`, and
+   `ClassMngrNextApplicationGsTeamDirectorySaveTests`. Confirm exactly one
+   CTest registration for each corresponding target name, then run only those
+   two exact CTests. Run no full suite.
+
+This matrix is recorded before implementation; F754 is selected but not
+implemented, and no F754 test results are available. F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.

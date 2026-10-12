@@ -20,10 +20,12 @@
   test target built under VS 18 x64 Developer, and unique CTest #265 passed
   1/1. F752 is committed as
   `1dee0b06543c053badfba56bef542417e7177efe`; its two targets built and
-  unique CTest #229 passed 1/1. F753 is selected in Batch 183 to use the
-  shared Qt-compatible whitespace rule for birthday-schedule blank names;
-  its pre-implementation matrix is in the Phase 2 progress log. F707 and
-  F709 remain deferred.
+  unique CTest #229 passed 1/1. F753 is committed as
+  `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; its targets built and unique
+  CTest #193 passed 1/1. F754 is selected in Batch 184 to reuse Gregorian
+  domain validation for month/day birthdays, preserving app-level text parsing
+  and trimming. Its pre-implementation matrix is in the Phase 2 progress log.
+  F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.

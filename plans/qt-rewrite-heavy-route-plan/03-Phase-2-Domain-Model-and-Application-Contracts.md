@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F752 is accepted at `1dee0b06543c053badfba56bef542417e7177efe`, and F753 is selected in Batch 183 to reuse Qt-compatible whitespace detection in birthday schedule blank-name filtering; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F753 is accepted at `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; F754 is selected in Batch 184 to reuse Gregorian date validation for birthday month-day parsing, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 183
+#### Active batch: Batch 184
 
-- F753 - Reuse Qt-compatible whitespace detection in upcoming birthday schedule blank-name filtering and cover U+0085-only names.
+- F754 - Reuse Gregorian date validation for birthday month-day parsing and cover 30-day month boundaries.
 
 ## Objective
 
