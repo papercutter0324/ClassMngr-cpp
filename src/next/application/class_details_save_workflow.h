@@ -1,11 +1,12 @@
 #pragma once
 
+#include "domain/rules/schedule_key_rules.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_validation_context_query.h"
 #include "next/application/class_details_validation_policy.h"
 
-#include <array>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -169,20 +170,29 @@ private:
 
     [[nodiscard]] static std::optional<int> weekday(std::u16string_view text)
     {
-        constexpr std::array names{u"Monday", u"Tuesday", u"Wednesday", u"Thursday",
-            u"Friday", u"Saturday", u"Sunday"};
-        auto trimmed = trimQtWhitespace(text);
-        for (auto& unit : trimmed)
-            if (unit >= u'A' && unit <= u'Z')
-                unit = static_cast<char16_t>(unit + u'a' - u'A');
-        for (std::size_t index = 0; index < names.size(); ++index)
-        {
-            std::u16string name(names[index]);
-            name[0] = static_cast<char16_t>(name[0] + u'a' - u'A');
-            if (trimmed == name)
-                return static_cast<int>(index);
-        }
-        return std::nullopt;
+        const std::u16string trimmed = trimQtWhitespace(text);
+        const auto parsed = ScheduleKeyRules::parseWeekday(
+            trimmed,
+            [](std::u16string_view left, std::u16string_view right)
+            {
+                if (left.size() != right.size())
+                    return false;
+                const auto lowercaseAscii = [](char16_t value)
+                {
+                    return value >= u'A' && value <= u'Z'
+                        ? static_cast<char16_t>(value + u'a' - u'A') : value;
+                };
+                for (std::size_t index = 0; index < left.size(); ++index)
+                {
+                    if (lowercaseAscii(left[index]) != lowercaseAscii(right[index]))
+                        return false;
+                }
+                return true;
+            }
+            );
+        if (!parsed)
+            return std::nullopt;
+        return static_cast<int>(parsed->value);
     }
 
     [[nodiscard]] static std::optional<std::vector<Domain::ScheduleTime>> scheduleTimes(

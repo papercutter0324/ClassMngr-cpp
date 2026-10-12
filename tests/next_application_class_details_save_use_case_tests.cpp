@@ -139,6 +139,8 @@ private slots:
     void workflowContextFailureAndMismatchFallBack();
     void workflowPreservesContextSnapshotTextDecoding();
     void workflowInvalidContextAndFieldsStopBeforeConflicts();
+    void workflowRawWeekdayConversionPreservesIndices();
+    void workflowInvalidWeekdayStopsBeforeConflicts();
     void workflowConflictAndQueryFailuresShortCircuit_data();
     void workflowConflictAndQueryFailuresShortCircuit();
     void workflowSaveFailureRetainsErrorAndOrder();
@@ -369,6 +371,79 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowInvalidContextAndField
         QVERIFY(!ports.saved);
         QVERIFY(ports.conflicts.empty());
     }
+}
+
+void NextApplicationClassDetailsSaveUseCaseTests::workflowRawWeekdayConversionPreservesIndices()
+{
+    WorkflowPorts ports;
+    auto input = workflowRequest();
+    input.input.regularTimes.clear();
+    input.input.intensiveTimes.clear();
+    const std::vector<std::u16string> rawDays{
+        u" \tmoNday\u00a0",
+        u"\u3000tUeSdaY ",
+        u"\u2003wEdNeSdAy\n",
+        u"\tTHuRsDaY\u202f",
+        u"\u00a0fRiDaY\r",
+        u"\u205fSaTuRdAy\u1680",
+        u"suNdAy\u2000 "
+    };
+    for (const auto& day : rawDays)
+    {
+        input.input.regularTimes.push_back({day, u"9:00 AM", u"9:50 AM"});
+        input.input.intensiveTimes.push_back({day, u"12:00 PM", u"12:50 PM"});
+    }
+
+    const auto result = runWorkflow(input, ports);
+    const auto* success = std::get_if<Application::ClassDetailsSaveWorkflowSuccess>(&result);
+    QVERIFY(success);
+    QCOMPARE(ports.calls, (std::vector<std::string>{"context", "regular", "intensive", "save"}));
+    QCOMPARE(ports.conflicts.size(), std::size_t(2));
+    QCOMPARE(ports.conflicts[0].mode, Application::ClassDetailsScheduleMode::Regular);
+    QCOMPARE(ports.conflicts[1].mode, Application::ClassDetailsScheduleMode::Intensive);
+    for (std::size_t mode = 0; mode < ports.conflicts.size(); ++mode)
+    {
+        const auto& candidates = ports.conflicts[mode].candidateTimes;
+        QCOMPARE(candidates.size(), rawDays.size());
+        for (std::size_t weekday = 0; weekday < rawDays.size(); ++weekday)
+            QCOMPARE(candidates[weekday].weekdayIndex(), static_cast<int>(weekday));
+    }
+
+    QVERIFY(ports.saved);
+    QVERIFY(ports.saved->regularTimes);
+    QCOMPARE(ports.saved->regularTimes->size(), rawDays.size());
+    QCOMPARE(success->normalized.regularTimes.size(), rawDays.size());
+    const std::vector<std::u16string> canonicalDays{
+        u"Monday", u"Tuesday", u"Wednesday", u"Thursday", u"Friday", u"Saturday", u"Sunday"};
+    for (std::size_t weekday = 0; weekday < rawDays.size(); ++weekday)
+    {
+        QCOMPARE(ports.saved->regularTimes->at(weekday).weekdayIndex(), static_cast<int>(weekday));
+        QCOMPARE(success->normalized.regularTimes[weekday].day, canonicalDays[weekday]);
+    }
+}
+
+void NextApplicationClassDetailsSaveUseCaseTests::workflowInvalidWeekdayStopsBeforeConflicts()
+{
+    WorkflowPorts ports;
+    auto input = workflowRequest();
+    input.input.regularTimes.front().day = u"Funday";
+
+    const auto result = runWorkflow(input, ports);
+    const auto* validation = std::get_if<Application::ClassDetailsValidationOutput>(&result);
+    QVERIFY(validation);
+    QCOMPARE(validation->issues.size(), std::size_t(1));
+    const auto& issue = validation->issues.front();
+    QCOMPARE(issue.code, Application::ClassDetailsValidationCode::InvalidWeekday);
+    QCOMPARE(issue.field, Application::ClassDetailsValidationField::ScheduleDay);
+    QVERIFY(issue.schedule);
+    QCOMPARE(*issue.schedule, Application::ClassDetailsValidationSchedule::Regular);
+    QCOMPARE(issue.row, std::size_t(0));
+    QVERIFY(issue.value);
+    QCOMPARE(*issue.value, std::u16string(u"Funday"));
+    QCOMPARE(ports.calls, (std::vector<std::string>{"context"}));
+    QCOMPARE(ports.contextIds.size(), std::size_t(1));
+    QVERIFY(ports.conflicts.empty());
+    QVERIFY(!ports.saved);
 }
 
 void NextApplicationClassDetailsSaveUseCaseTests::workflowConflictAndQueryFailuresShortCircuit_data()
