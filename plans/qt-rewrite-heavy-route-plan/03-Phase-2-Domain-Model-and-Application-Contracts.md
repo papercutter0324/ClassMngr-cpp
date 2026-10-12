@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F771 is accepted at `b9a09f304de1d9479fd91e0007a7f7018d226500`; F772 is selected to align Class Details application ID validation with int-backed adapters and repositories, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F772 is accepted at `c249709dbf7cea7d651144605ccfe6ade38226e2`; F773 is selected as the first Batch 191 slice for My Classes class-summary batch ID validation, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 190
+#### Active batch: Batch 191
 
-- F772 - Class Details ID-range alignment - Reject values outside the int-backed repository range at the application boundary; keep ClassDetailsSaveUseCase forwarding unchanged.
+- F773 - My Classes class-summary batch query - Reuse the shared canonical-ID validator and add focused query coverage.
 
 ## Objective
 

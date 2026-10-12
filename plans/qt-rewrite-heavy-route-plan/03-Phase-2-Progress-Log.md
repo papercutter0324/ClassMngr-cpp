@@ -29639,6 +29639,57 @@ Build `ClassMngr` and
 `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`. Confirm one
 registration for each exact CTest name, then run only those three CTests with
 `-C Debug`; run no full suite. Keep the existing `00042` save-use-case
-assertion as a regression check. This matrix is recorded before
-implementation; F772 verification is pending. F707/F709 remain deferred,
-Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+assertion as a regression check. This matrix was recorded before
+implementation. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial,
+and the formal exit gate remains Open.
+
+### F772 Class Details application ID-range alignment - accepted - 2026-10-13
+
+F772 is accepted at commit
+`c249709dbf7cea7d651144605ccfe6ade38226e2`. `ClassMngr`, both Class Details
+query targets, and `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`
+built in the existing VS 18 x64 Debug tree after the bounded build succeeded
+outside the sandbox following FileTracker `E_ACCESSDENIED`. Each exact CTest
+registered once; the two query tests and save-use-case regression passed 3/3.
+No full suite ran. Batch 190 is closed.
+
+### F773 My Classes class-summary batch ID validation - selected and acceptance matrix - 2026-10-13
+
+**F773 is selected as the first Batch 191 slice.** Replace the local
+canonical-positive-int parser in
+`src/next/application/my_classes_class_summary_batch_read_query.h` with
+`Application::isCanonicalPositiveDecimalId`; this query header is already in
+`cmake/next.cmake`. Remove newly unused `<charconv>` and `<system_error>`
+includes while retaining `<string>` and other required includes. No change to
+`cmake/next.cmake` or `cmake/source_ownership.cmake` is expected.
+
+There is no direct query CTest; the existing
+`ClassMngrNextApplicationClassSummaryTests` covers `ClassSummaryProjection`.
+Add `tests/next_application_my_classes_class_summary_batch_read_query_tests.cpp`
+and register it in `cmake/tests/next.cmake` as
+`NextApplicationMyClassesClassSummaryBatchReadQuery`, producing the exact
+target/CTest name
+`ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests`.
+
+Cover empty success with no read. Invalid request IDs `0`, `042`, `42x`,
+`-1`, and `2147483648` return nonrecoverable `InvalidInput` with the exact
+message `My Classes class IDs must be canonical positive integers.` and zero
+reads. Duplicate request IDs return nonrecoverable `InvalidInput` with
+`My Classes class IDs must be unique.` and zero reads. Invalid returned
+teacher IDs, including overflow, return nonrecoverable `Validation` with
+`A My Classes class-summary batch returned an invalid teacher identifier.`
+after exactly one read. Wrong response count returns nonrecoverable
+`Validation` with
+`A My Classes class-summary batch returned a different number of entries.`
+after exactly one read; wrong response order returns nonrecoverable
+`Validation` with
+`A My Classes class-summary batch returned entries in a different identifier order.`
+after exactly one read. Verify valid `2147483647` forwarding and
+output order, and exact port-failure propagation.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests`; confirm
+the exact CTest registers once, then run only it with `-C Debug`. Run no full
+suite. This matrix was recorded before implementation; F773 verification is
+pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
+formal exit gate remains Open.

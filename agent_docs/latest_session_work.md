@@ -83,13 +83,16 @@
   access denial. F771 is accepted at
   `b9a09f304de1d9479fd91e0007a7f7018d226500`; its exact dashboard CTest
   registered once (#156) and passed 1/1 after the bounded build succeeded
-  outside the sandbox following FileTracker access denial. F772 is selected
-  to align the Class Details validation-context and schedule-conflict query
-  guards with their concrete `int` adapters. Add `2147483648` rejection with
-  existing exact recoverable InvalidInput metadata and zero port calls; verify
-  `2147483647` forwards unchanged in both query tests. Build/run those two
-  query tests and the existing save-use-case regression for `00042`. No full
-  suite ran.
+  outside the sandbox following FileTracker access denial. F772 is accepted
+  at `c249709dbf7cea7d651144605ccfe6ade38226e2`; both query tests and the
+  `ClassDetailsSaveUseCase` regression registered once and passed 3/3 after
+  the bounded build succeeded outside the sandbox following FileTracker
+  access denial. F773 is selected for the My Classes class-summary batch
+  query: consolidate its equivalent int-range parser, add a dedicated
+  app-less test target, and cover empty/invalid/duplicate requests, valid
+  maximum-ID forwarding, response count/order and teacher-ID validation, and
+  port-failure forwarding. The existing query header is already in the CMake
+  source list. No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

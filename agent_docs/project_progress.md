@@ -4874,27 +4874,22 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F771 accepted; F772 selected)
+## Phase 2 current position — 2026-10-13 (F772 accepted; F773 selected)
 
-F771 is accepted at
-`b9a09f304de1d9479fd91e0007a7f7018d226500`. The Class Analytics Dashboard
-query now uses the shared canonical-positive-int validator, preserving its
-nonrecoverable error and pre-read rejection. Its exact CTest registered once
-(#156) and passed 1/1 after the bounded Visual Studio 18 x64 Debug build
-succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. No
-full suite ran. CTest inventory output also warned that an unrelated
-MainWindow visibility-preferences executable was missing.
+F772 is accepted at
+`c249709dbf7cea7d651144605ccfe6ade38226e2`. Both Class Details query guards
+now use the shared int-range ID validator and reject overflow before the port
+while retaining their existing error metadata and query contracts. The two
+query CTests and the `ClassDetailsSaveUseCase` regression each registered once
+and passed 3/3 after the bounded Visual Studio 18 x64 Debug build succeeded
+outside the sandbox following FileTracker `E_ACCESSDENIED`. No full suite ran.
 
-F772 is selected to align the Class Details validation-context and
-schedule-conflict query boundaries with their concrete `int` adapters. Reuse
-the shared helper so `2147483648` returns each query's existing recoverable
-InvalidInput error before a port call; preserve the valid `2147483647`
-forwarding case, existing invalid-ID behavior, identity checks, request
-ordering, and port-failure behavior. Build `ClassMngr`, both exact query test
-targets, and the existing Class Details save-use-case test target; confirm
-one exact CTest registration each and run only those three CTests with
-`-C Debug`. Preserve the tested `00042` forwarding in
-`ClassDetailsSaveUseCase`. The helper is already listed in CMake; no inventory
-edit is expected. F707/F709 remain deferred. Phase 2 remains In Progress/Open
-with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
-Windows x64 2/24 and macOS universal 0/24.
+F773 is selected for the My Classes class-summary batch query. Its local
+canonical positive-int parser matches the shared helper; replace it with the
+helper and add a direct app-less test target for the currently untested query.
+Cover empty/invalid/duplicate inputs before reads, valid `INT_MAX` forwarding,
+response count/order and teacher-ID validation, and exact port-failure
+forwarding. The source header is already in CMake; add only the focused test
+registration/source. F707/F709 remain deferred. Phase 2 remains
+In Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.

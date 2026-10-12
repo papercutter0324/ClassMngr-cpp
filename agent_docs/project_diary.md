@@ -5083,3 +5083,16 @@ will use the shared int-range helper so overflow fails before a port call with
 the existing error metadata. Keep the independently tested `00042`
 forwarding contract in `ClassDetailsSaveUseCase` intact. F707/F709 remain
 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+
+## Phase 2 F772 acceptance and F773 selection — 2026-10-13
+
+F772 is accepted at `c249709dbf7cea7d651144605ccfe6ade38226e2`. Both query
+tests and the `ClassDetailsSaveUseCase` regression registered once and passed
+3/3 after the bounded build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+Two independent Batch 191 surveys converged on the My Classes class-summary
+batch reader. Its private positive-int parser already matches the shared ID
+helper, but it has no direct query test; the existing class-summary CTest
+covers the projection. F773 will consolidate the parser and introduce focused
+coverage without changing the query behavior.
