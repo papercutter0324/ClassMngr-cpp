@@ -4132,3 +4132,15 @@ three direct model test targets must compile schedule_value_parser.cpp
 directly; linking the broad legacy ClassMngrDomain object target would
 duplicate existing test objects. Preserve visible-day filtering, invalid-time
 omission, ordering, grouping, and labels while making that migration.
+
+## F694-F695 continuation - 2026-10-12
+
+F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb. Its five
+Windows x64 Debug Ninja targets built, and the four focused CTests passed
+4/4. No full suite ran.
+
+For F695, ClassTimeValidator's h:mm AP round-trip check is part of its input
+contract. The generic display parser may accept forms that the validator's
+round-trip rejects. Route the parse through the restricted Domain overload but
+retain the caller's round-trip equality check so lowercase input still
+normalizes while padded, compact, and seconds forms remain invalid.

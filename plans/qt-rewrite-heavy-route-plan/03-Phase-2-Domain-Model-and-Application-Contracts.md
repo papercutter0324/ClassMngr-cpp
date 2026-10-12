@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F694 is selected in Batch 169; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F695 is selected in Batch 170; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 169
+#### Active batch: Batch 170
 
-- F694 - Move Sub Prep meeting-time parsing to the shared Domain display-time parser while preserving its behavior; implement the pre-recorded model migration and focused regression matrix.
+- F695 - Move ClassTimeValidator display-time parsing to the restricted Domain parser while preserving its canonical-first and normalized round-trip validation; implement the pre-recorded SharedPolicy and ClassDetails regression matrix.
 
 ## Objective
 

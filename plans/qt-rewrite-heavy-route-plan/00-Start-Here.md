@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-12
-- Current milestone: Phase 2 remains in progress: F693 was accepted at commit `504316a9c24c076e9d6aa474a5b713e9abd52e66`; F694, the Sub Prep meeting-time parser migration, is selected in Batch 169. Phase 2 Gates 1/2 remain Partial and the formal exit gate Open; F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F694 was accepted at commit `b1654499e391656b0e7abb5625a1e1af293bc5bb`; F695, ClassTimeValidator display-time parsing migration, is selected in Batch 170. Phase 2 Gates 1/2 remain Partial and the formal exit gate Open; F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

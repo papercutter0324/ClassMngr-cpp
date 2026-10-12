@@ -25808,4 +25808,55 @@ file directly into the existing model-test targets.
    `ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPageTests`, and
    `ClassMngrSharedPolicyTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 169 is active with F694.
+This matrix was recorded before implementation.
+
+### F694 Sub Prep meeting-time parser migration - accepted - 2026-10-12
+
+F694 is accepted at code/test commit
+`b1654499e391656b0e7abb5625a1e1af293bc5bb`. The Windows x64 Debug Ninja
+build passed for `ClassMngr`,
+`ClassMngrSubPrepClassInformationModelTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPageTests`, and
+`ClassMngrSharedPolicyTests`. The exact CTests passed 4/4:
+`ClassMngrSubPrepClassInformationModelTests`,
+`ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPageTests`, and
+`ClassMngrSharedPolicyTests`. No full suite ran.
+
+**Decision: accept F694.** Batch 169 is complete.
+
+### Batch 170 selection - recorded before F695 implementation - 2026-10-12
+
+Select ClassTimeValidator display-time parsing based on the complementary
+Explorer reports and direct source review. The migration can reuse the
+restricted Domain display-time parser while preserving the validator's
+canonical-first and uppercase normalized round-trip checks, so the accepted
+input contract remains unchanged.
+
+**F695 is selected:** replace the validator's `QTime::fromString` display-time
+parse with `ScheduleValueParser::parseDisplayTime` restricted to
+`DisplayTimeFormat::HourMinuteAmPmSpaced`; retain canonical parsing and the
+existing normalized round-trip check.
+
+### F695 ClassTimeValidator display-time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. In `src/domain/validation/class_time_validator.cpp`, replace
+   `QTime::fromString(normalized, "h:mm AP")` with
+   `ScheduleValueParser::parseDisplayTime` restricted to
+   `DisplayTimeFormat::HourMinuteAmPmSpaced`. Keep strict canonical
+   `parseTime` first and preserve the uppercase normalized round-trip check
+   `parsed->toString("h:mm AP") == value.trimmed().toUpper()`. Padded, compact,
+   and seconds AM/PM forms must remain rejected.
+2. Preserve lowercase AM/PM acceptance, trimming, normalized uppercase output,
+   invalid-format diagnostics, and end-not-after-start validation.
+3. Extend `tests/shared_policy_tests.cpp` with direct ClassTimeValidator cases:
+   canonical `HH:mm` accepted; lowercase AM/PM accepted and normalized
+   uppercase; padded, compact, and seconds forms rejected with
+   `schedule.time.invalid_format`; invalid endpoints do not also produce
+   end-order issues; equal or earlier valid end produces
+   `schedule.time.end_not_after_start`.
+4. Build `ClassMngr`, `ClassMngrSharedPolicyTests`, and
+   `ClassDetailsPageSaveParity`; run exactly the CTests
+   `ClassMngrSharedPolicyTests` and `ClassDetailsPageSaveParity`. Add no CMake
+   target changes and run no full suite.
+
+This matrix is recorded before implementation. Batch 170 is active with F695.
