@@ -25121,11 +25121,12 @@ preference snapshot, with one diagnostic and a successful retry.
 ### F683 Theme programmatic persistence acceptance matrix - recorded before implementation - 2026-10-12
 
 1. Restore standalone `ActionRegistry::themeState->set()` persistence through
-   `SettingsManagerThemePreferencesPort`, including the existing default
-   SystemDefault write when the key is absent. Preserve stored values
-   SystemDefault=2, Dark=0, Light=1 and the canonical key. Keep startup
-   hydration and direct programmatic values consistent with the existing
-   `ClassMngrAiCommentOptionsTests` contract.
+   `SettingsManagerThemePreferencesPort`. Preserve the pre-F672 behavior of
+   writing the canonical mapped Theme value during initial hydration whether
+   the key is absent, valid, or malformed, as well as on later direct state
+   changes. Preserve stored values SystemDefault=2, Dark=0, Light=1 and the
+   canonical key. Keep hydration and direct programmatic values consistent
+   with `ClassMngrAiCommentOptionsTests`.
 2. Keep the connected MainWindow ThemeController path as the only writer for
    live actions: use the failure-aware pre-commit path to persist and apply
    before OptionState commits, then refresh themed icons after a successful
@@ -25140,4 +25141,77 @@ preference snapshot, with one diagnostic and a successful retry.
    Preserve current theme controller failure, retry, and canonical-port
    coverage; add no CMake target.
 
-This matrix is recorded before implementation. Batch 158 is active with F683.
+This matrix was recorded before implementation. Batch 158 is complete with
+F683 accepted at commit `db3578b7aa3d24f0da956cf63e1ee6d870e0ae39`.
+
+### F683 Theme programmatic persistence - accepted - 2026-10-12
+
+`ClassMngr`, `ClassMngrAiCommentOptionsTests`,
+`ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests`,
+`ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrMainWindowThemeActionParityTests` built in the Windows x64 Debug
+Ninja tree under Visual Studio 2026 Developer Command Prompt v18.10.1. The
+four exact CTests passed 4/4. The two direct-set failures from F682 now pass;
+controller failure coverage confirms one checked write, previous-selection
+rollback before its single diagnostic, unchanged live theme/preference state,
+and successful retry. The direct ActionRegistry callback retains the prior
+hydration write behavior, and the connected ThemeController pre-commit gate
+prevents a duplicate save. The Visual Studio generator build hit FileTracker
+`E_ACCESSDENIED` before compilation; no full suite ran.
+
+**Decision: accept F683.** Batch 158 is complete.
+
+### Batch 159 shortlist and selection - recorded before F684 implementation - 2026-10-12
+
+The candidate scan compared PDF Page Spacing with AI Comment Custom Website
+and the PowerPoint Data Access Notice. Select Page Spacing because it is a
+cross-platform QAction preference with a direct void-write/live-viewer gap
+and existing focused port and MainWindow parity tests. AI Comment Custom
+Website has a more coupled boundary across URL persistence, provider
+persistence, validation, and modal cancellation; the PowerPoint integration
+is Apple-only. The two Page Spacing feature targets already cover its current
+value/key/default mapping and all four visible viewer effects.
+
+**F684 is selected:** add a checked SettingsManager write for the single
+`options/documentPageSpacing` key. Check sync status, restore the exact prior
+QVariant or key absence on failure, preserve unrelated settings, and allow
+retry; leave generic `SettingsManager::set`/`sync` behavior unchanged. Change
+`DocumentPageSpacingPreferencesPort::write` to return
+`[[nodiscard]] Domain::Result<void>`. Keep `None=0`, `Small=1`, `Medium=2`,
+`Large=3`; reject invalid writes as `InvalidInput` and report sync errors as
+recoverable `Technical` results. Preserve the existing `Small` fallback for
+missing, unavailable, and unknown numeric values; keep unchecked
+`QVariant::toInt()` behavior where malformed text maps to `None=0`.
+
+### F684 PDF Page Spacing failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked SettingsManager write for
+   `options/documentPageSpacing`. Check sync status, restore the exact prior
+   QVariant or absence on failure, preserve unrelated settings, allow retry,
+   and leave generic SettingsManager `set`/`sync` behavior unchanged.
+2. Return a typed result from the page-spacing port. Preserve the exact key,
+   `None=0`/`Small=1`/`Medium=2`/`Large=3`, missing/unavailable/unknown
+   numeric fallback to Small, and malformed-text-to-None `QVariant::toInt`
+   parity. Invalid enum writes return `InvalidInput`; sync failures return
+   recoverable `Technical` errors.
+3. Inject the typed port and diagnostic callback through ActionRegistry and
+   `MainWindowStartupOptions` without changing MainWindow's public constructor.
+   Preserve the legacy standalone startup-hydration and direct
+   `OptionState::set` persistence behavior. For connected MainWindow actions,
+   write before state commit and before applying the spacing to the viewer.
+   On failure preserve the checked action/current state and viewer spacing,
+   report exactly one diagnostic, and allow a successful retry. Retain
+   visible spacing effects None=0 px, Small=8 px, Medium=16 px, Large=32 px.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests`
+   with injected sync-failure mapping, exact prior-value/absent-key and
+   unrelated-value preservation, invalid enum handling, and retry. Extend
+   `ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests` to verify
+   QAction and programmatic failure rollback of selected state, stored value,
+   and live viewer spacing with one diagnostic, followed by retry; retain all
+   four successful parity cases. Keep
+   `ClassMngrAiCommentOptionsTests` as the standalone persistence regression
+   guard. Build `ClassMngr` and these three existing targets; run exactly the
+   three listed CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 159 is active with F684.

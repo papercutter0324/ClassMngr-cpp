@@ -3991,7 +3991,7 @@ Background slot passed when run directly; F682 did not change the Theme
 path. No full suite ran. F682 is committed as
 `086a55c07a806be21eb56e2a946712184f979a5c`.
 
-## F683 Theme programmatic persistence - selected - 2026-10-12
+## F683 Theme programmatic persistence - accepted - 2026-10-12
 
 F682's selected `ClassMngrAiCommentOptionsTests` regression target identifies
 the gap: standalone `ActionRegistry` calls to `themeState->set()` expect the
@@ -4002,5 +4002,30 @@ PDF Background regression. Restore the typed standalone persistence callback
 and keep MainWindow's failure-aware Theme path as the single writer for
 connected application actions. Preserve canonical enum values, the existing
 default persistence behavior, and the failure rollback/diagnostic contract.
-Batch 158 is active with F683; its acceptance matrix is in the Phase 2
-progress log.
+The restored callback writes the mapped Theme value during hydration and
+subsequent standalone programmatic changes. Once connected, ThemeController's
+pre-commit gate owns the single save/apply operation and suppresses the
+standalone callback. Failed writes leave state, action, live theme, and
+preference snapshot unchanged; the retry path still succeeds with one
+diagnostic.
+
+`ClassMngr` and the four selected targets built in the Windows x64 Debug Ninja
+tree under Visual Studio 2026 Developer Command Prompt v18.10.1. The exact
+CTests passed 4/4: `ClassMngrAiCommentOptionsTests`,
+`ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests`,
+`ClassMngrStartupVisualSettingsTests`, and
+`ClassMngrMainWindowThemeActionParityTests`. Both previously failing direct
+Theme slots now pass. The Visual Studio generator was blocked before
+compilation by FileTracker `E_ACCESSDENIED`; no full suite ran. F683 is
+committed as `db3578b7aa3d24f0da956cf63e1ee6d870e0ae39`.
+
+## F684 PDF Page Spacing checked persistence - selected - 2026-10-12
+
+The Page Spacing port writes through void SettingsManager calls, while
+MainWindow's OptionState `onChanged` immediately updates the PDF viewer. A
+failed write therefore cannot preserve the old selected action and visible
+spacing. Select this cross-platform candidate over AI Comment Custom Website,
+whose separate URL save, provider save, validation, and modal cancellation
+make its acceptance boundary broader; the PowerPoint notice is Apple-only.
+Keep the exact page-spacing key and legacy conversions. Batch 159 is active
+with F684; its acceptance matrix is in the Phase 2 progress log.

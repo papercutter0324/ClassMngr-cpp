@@ -180,14 +180,24 @@ viewport appearance, one diagnostic, zero startup writes, and retry; port
 coverage verifies exact prior-value or absent-key restoration and invalid
 input mapping. No full suite ran. Batch 157 is complete.
 
-F683 Theme programmatic persistence is selected in Batch 158. The F682 broad
-regression target exposed two existing `ClassMngrAiCommentOptionsTests`
-failures: standalone `ActionRegistry` calls to `themeState->set()` no longer
-persist after F672 moved Theme saving into MainWindow-only ThemeController
-handling. Restore typed Theme persistence for standalone OptionState changes
-while keeping the MainWindow controller's persistence-first failure handling
-and preventing a duplicate save. The exact acceptance matrix and four
-existing CTests are in the Phase 2 progress log.
+F683 Theme programmatic persistence is committed as
+`db3578b7aa3d24f0da956cf63e1ee6d870e0ae39`. The product and four selected
+test targets built in the Windows x64 Debug Ninja tree under VS 2026
+Developer Command Prompt v18.10.1; exact CTests passed 4/4. Both direct-set
+Theme cases exposed by F682 pass, and the Theme controller failure, rollback,
+diagnostic, and retry coverage remains green. The connected controller uses a
+single pre-commit write; standalone ActionRegistry retains its typed hydrated
+and programmatic persistence behavior. The Visual Studio generator attempt
+was blocked before compilation by FileTracker `E_ACCESSDENIED`; no full suite
+ran. Batch 158 is complete.
+
+F684 PDF Page Spacing checked persistence is selected in Batch 159. Its void
+SettingsManager port write cannot gate the MainWindow viewer-spacing update.
+Preserve the legacy key, None/Small/Medium/Large integer mapping, Small
+fallback for missing/unknown values, malformed-text QVariant conversion, and
+all four viewer effects. The acceptance matrix names the existing port,
+MainWindow parity, and OptionState regression CTests in the Phase 2 progress
+log.
 
 ### Current state - 2026-10-09
 

@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-157 are complete.
+  141-158 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -37,12 +37,18 @@
   feature targets built; the port and MainWindow parity CTests passed 2/2.
   The third selected CTest, `ClassMngrAiCommentOptionsTests`, has two existing
   Theme direct-set failures; its PDF Background slot passes directly. F682
-  does not change the Theme path. Batch 157 is complete; Batch 158 has
-  selected F683, Theme programmatic persistence, based on these direct-set
-  failures. F683 will restore standalone typed persistence while preserving
-  the connected ThemeController's single checked write and failure handling.
-  Its acceptance matrix is in the Phase 2 progress log; implementation starts
-  after the selection commit.
+  does not change the Theme path. Batch 157 is complete.
+- F683 Theme programmatic persistence is committed as
+  `db3578b7aa3d24f0da956cf63e1ee6d870e0ae39`. All four selected CTests passed
+  4/4, including both previously failing direct-set slots. ThemeController's
+  connected path keeps one pre-commit write and failure rollback; standalone
+  ActionRegistry persists the hydrated and direct programmatic values. The
+  Visual Studio generator was blocked before compilation by FileTracker; the
+  selected Ninja targets built under the VS developer environment.
+- Batch 159 has selected F684, PDF Page Spacing checked persistence. The
+  canonical key/mappings, legacy read conversion, and viewer behavior are
+  specified in the Phase 2 progress log; implementation starts after the
+  selection commit.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
