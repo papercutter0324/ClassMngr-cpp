@@ -4748,3 +4748,23 @@ print, and roster request/returned-meeting paths. The Phase 2 progress log
 records exact ordering, errors, test cases, and verification targets before
 implementation. F707 and F709 remain deferred, the formal Phase 2 exit gate
 remains Open, and the separate Phase 0 evidence gate remains incomplete.
+
+## F745 Sub Prep weekday validity - accepted - 2026-10-12
+
+F745 is committed as
+`d813248e74a42ae138d384536d9ed5568039566f` (`Phase2 - Share Sub Prep weekday
+validity`). It moved the Application-owned `SubPrepWeekday` enum into a
+dedicated header and shared its 1-7 validity rule across summary, print, and
+roster request validation and returned meetings, retaining their order and
+caller-specific errors. `ClassMngr` and the three query targets built in the
+Windows x64 Debug Ninja tree under VS 18 x64 Developer. Unique CTest
+registrations #204, #205, and #237 passed 3/3 in 1.11 seconds. No full suite
+ran.
+
+F746 is selected to share blank-and-bounded ID validation across Sub Prep
+print and roster source queries. Independent candidate reviews considered
+reusing testing-assignment key parsing but found its optional-input and error
+category semantics differ; the identical typed-ID policy has the smaller
+behavior surface and a roster coverage gap. The pre-implementation matrix is
+recorded in the Phase 2 progress log. F707/F709 remain deferred and the Phase
+2 exit gate remains open.

@@ -28351,3 +28351,73 @@ summary, print, and roster requests and returned meetings.
 This matrix is recorded before implementation. Batch 179 is active with F745;
 F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
 formal exit gate remains Open.
+
+### F745 Sub Prep weekday validity - accepted - 2026-10-12
+
+F745 is accepted at commit
+`d813248e74a42ae138d384536d9ed5568039566f` (`Phase2 - Share Sub Prep weekday
+validity`). The new `src/next/application/sub_prep_weekday.h` owns
+`SubPrepWeekday` and inline `isValidSubPrepWeekday`; summary, print, and roster
+request paths plus returned print and roster meetings use the helper while
+preserving caller-specific validation order and errors.
+
+Under the VS 18 x64 Developer environment, `ClassMngr` and all three query
+test targets built in `build/windows-x64-debug-ninja`. Exactly one CTest
+registration each was confirmed (#204, #205, #237); the focused CTests passed
+3/3 in 1.11 seconds, with individual durations 0.04, 0.32, and 0.74 seconds.
+No full suite ran. Build/reconfigure succeeded with only nonfatal notices:
+`VsDevCmd` reported that `vswhere.exe` was not recognized. CMake missed the
+optional `Vulkan_INCLUDE_DIR`/`WrapVulkanHeaders`, and four object-path length
+warnings were reported.
+
+### Batch 179 continuation - F746 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Two independent next-slice reviews differed. Select the Investigator's exact
+duplicated identifier rule: the print and roster `isValidId` predicates and
+blank checks match. The Explorer's assignment-parser reuse proposal is not
+selected because optional-empty handling, result categories, and messages
+differ despite the available `ScheduleKeyRules` helper.
+
+**F746 is selected:** share Sub Prep source identifier blankness and
+bounded-length validation across the print and roster queries.
+
+1. Add a cohesive Application header, suggested as
+   `src/next/application/sub_prep_source_validation.h`, and register it in
+   `cmake/next.cmake`. Factor shared `isBlank` and nonblank/bounded typed-ID
+   validity using one neutral named length bound with the existing value.
+   Include the header directly from the print and roster query headers and
+   replace their duplicated ID predicates.
+2. Preserve caller-specific errors, validation order, error code and
+   recoverability, and port read counts. Keep size-cap and duplicate-check
+   precedence unchanged. Do not merge `isOptionalText`: print rejects
+   whitespace-only optional text, while roster accepts it.
+3. Cover blank and overlength selected IDs at request validation, before any
+   reads. Print must return nonrecoverable `InvalidInput` with exact message
+   `Selected class identifiers must be non-blank and bounded.` Roster must
+   return nonrecoverable `InvalidInput` with exact message
+   `Selected roster-output class identifiers must be non-blank and bounded.`
+   Add returned blank/overlength cases for teacher IDs, class IDs, and
+   class-to-teacher references in both query suites; each follows one read
+   and returns nonrecoverable `Validation` with its exact caller-specific
+   message:
+   - Print teacher: `A Sub Prep print teacher identifier is malformed.`
+   - Print class: `A Sub Prep print class identifier is malformed.`
+   - Print class teacher reference:
+     `A Sub Prep print class has a malformed teacher identifier.`
+   - Roster teacher: `A roster-output teacher identifier is malformed.`
+   - Roster class: `A roster-output class identifier is malformed.`
+   - Roster class teacher reference:
+     `A roster-output class teacher identifier is malformed.`
+   Retain print's valid maximum-boundary coverage and add equivalent roster
+   boundary acceptance if the existing fixture supports it cleanly.
+4. Update `tests/next_application_sub_prep_print_source_query_tests.cpp` and
+   `tests/next_application_sub_prep_roster_output_source_query_tests.cpp`.
+   Build `ClassMngr` and both query test targets, confirm one registration
+   each (#205 and #237), and run only
+   `ClassMngrNextApplicationSubPrepPrintSourceQueryTests` and
+   `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F746;
+F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
+formal exit gate remains Open.

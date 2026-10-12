@@ -4644,10 +4644,20 @@ CTest inventory with SHA-256
 older 226-second configure observation was not causally attributed to this
 validation loop. No build or tests ran for this CMake change.
 
-F745 is selected to share Sub Prep weekday validation across summary, print,
-and roster requests and returned meetings. Its recorded matrix specifies the
-new application helper, direct includes, request and returned-value boundary
-cases, exact error contracts, and three focused CTests. F707 and F709 remain
-deferred. Phase 2 is In Progress/Open with Gates 1 and 2 Partial; F625's
-assessment is accepted, F626 is deferred, and separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+F745 is accepted at code commit
+`d813248e74a42ae138d384536d9ed5568039566f` (`Phase2 - Share Sub Prep weekday
+validity`). It moved `SubPrepWeekday` into an Application header and uses one
+validity helper in Sub Prep summary, print, and roster request and
+returned-meeting checks while preserving caller-specific validation order and
+errors. Under VS 18 x64 Developer, `ClassMngr` and all three query targets
+built in `build/windows-x64-debug-ninja`; exact CTest registrations #204,
+#205, and #237 (one each) passed 3/3 in 1.11 seconds (0.04, 0.32, and 0.74
+seconds). No full suite ran.
+
+F746 is selected to share blank-and-bounded source identifier validation
+across Sub Prep print and roster queries. Its matrix will cover blank and
+overlength request and returned teacher, class, and teacher-reference IDs,
+while preserving each caller's exact errors and read boundaries. F707 and
+F709 remain deferred. Phase 2 is In Progress/Open with Gates 1 and 2 Partial;
+F625's assessment is accepted, F626 is deferred, and separate current-source
+Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.

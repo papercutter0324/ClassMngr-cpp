@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F744 is accepted, the CMake source-ownership index optimization is committed, and F745 is selected to share Sub Prep weekday validation across summary, print, and roster requests and returned meetings; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and the separate Phase 0 current-source gate remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F745 is accepted at `d813248e74a42ae138d384536d9ed5568039566f` and F746 is selected to share Sub Prep source-identifier blankness and bounded-length validation across print and roster queries; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and the separate Phase 0 current-source gate remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F745 - Share SubPrepWeekday validity across summary, print, and roster request and returned-meeting validation while preserving each caller's order and errors.
+- F746 - Share Sub Prep source-identifier blankness and bounded-length validation across print and roster queries while preserving caller-specific errors and validation order.
 
 ## Objective
 

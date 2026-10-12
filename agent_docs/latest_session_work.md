@@ -5,9 +5,9 @@
 - Deployment: `phase2-cmake-20261012`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batch 179
   accepted F744, then the user-requested CMake source-ownership optimization
-  was evaluated, verified, and committed. F745 is selected next, sharing
-  Sub Prep weekday validity across summary, print, and roster request and
-  returned-meeting paths. F707 and F709 remain deferred.
+  was evaluated, verified, and committed. F745 is accepted; F746 is selected
+  to share blank-and-bounded source-ID validation across Sub Prep print and
+  roster queries. F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -252,7 +252,7 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740-F744 are accepted; the F745 matrix is in
+  full suite ran. F740-F745 are accepted; the F746 matrix is in
   the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
@@ -294,10 +294,10 @@
   focused CTests passed 3/3. The separate CMake optimization is committed at
   `cbfac3c1682ef99ad3558adb7da4871a87fa0020`. Two ordinary configurations
   passed in 40.942 and 30.165 seconds and preserved all 416 CTest names; the
-  earlier 226-second observation remains unattributed. F745 is selected to
-  share weekday validation across Sub Prep summary, print, and roster request
-  and returned-meeting paths; its matrix is recorded in the Phase 2 progress
-  log.
+  earlier 226-second observation remains unattributed. F745 is committed at
+  `d813248e74a42ae138d384536d9ed5568039566f`; its three focused CTests passed
+  3/3 in 1.11s. F746 is selected to share Sub Prep source-ID validation; the
+  detailed matrix is recorded in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.
