@@ -28653,3 +28653,44 @@ Preserve canonical `YYYY-MM-DD` syntax with ASCII digits, supported years
 This matrix is recorded before implementation; F751 is not complete. F707/F709
 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
 remains Open.
+
+### F751 Teacher import Gregorian date validation - accepted - 2026-10-13
+
+F751 is accepted at commit
+`990a5469b8a2268ddb27bc46d034ce5762ec4d31` (`Phase2 - Reuse Gregorian date
+validation in Teacher import`). `TeacherImportUseCase` now reuses
+`Domain::GregorianDate::fromIsoString` while retaining its source-date gate and
+pre-persistence failure behavior.
+
+Under VS 18 x64 Developer, `ClassMngr` and
+`ClassMngrNextApplicationTeacherImportUseCaseTests` built. Unique CTest #265
+passed 1/1 in 0.02 seconds. An initial shell lacked MSVC standard include
+paths; the Developer-environment rerun passed. No full suite ran.
+
+### Batch 182 continuation - F752 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F752 is selected and in progress:** replace the duplicate ordered
+student-name-pair grouping in
+`src/next/application/speaking_evaluation_validation.h` with
+`Domain::duplicateStudentNamePairGroups` from
+`src/next/domain/student_name_pair.h`.
+
+Preserve Unicode-aware trim before constructing and grouping pairs, exclude
+incomplete pairs, retain first-seen duplicate-group order and input-row order
+within groups, and emit English then Korean issues per row. Keep issue code
+`student_name.duplicate_pair`, Error severity, exact field names, columns 1/2,
+zero-based row indexes, and exact `duplicateRows` membership and order. The
+field values remain `English Name` for column 1 and `Korean Name` for column 2.
+
+Extend `tests/next_application_speaking_evaluation_save_use_case_tests.cpp`
+with interleaved duplicate groups, whitespace-equivalent names, and incomplete
+rows. Assert the exact issue sequence and no persistence after validation
+failure. Build `ClassMngr` and
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`; confirm exactly
+one CTest registration named
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`, then run only
+that exact CTest. Run no full suite.
+
+This matrix is recorded before implementation; F752 is not complete. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.

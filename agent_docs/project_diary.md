@@ -4794,9 +4794,11 @@ errors and validation order. `ClassMngr` and the three focused query targets
 built; unique CTests #204, #205, and #237 passed 3/3 in 1.11 seconds. No full
 suite ran.
 
-F751 is selected to replace the duplicate ISO/Gregorian parser in
-`TeacherImportUseCase` with `Domain::GregorianDate::fromIsoString`. Keep the
-existing source-date-valid flag and reject invalid dates as
-`InvalidPlan`/`InvalidSourceDate` before persistence starts. The focused
-acceptance matrix is recorded before implementation in the Phase 2 progress
-log. F707/F709 remain deferred and the Phase 2 exit gate remains open.
+F751 is accepted at `990a5469b8a2268ddb27bc46d034ce5762ec4d31`. Reusing
+`Domain::GregorianDate::fromIsoString` preserves canonical date parsing while
+removing the teacher-import duplicate; keep the caller's validation flag and
+reject invalid input before persistence. F752 is selected to reuse
+`Domain::duplicateStudentNamePairGroups` in speaking-evaluation validation.
+The caller must trim first because the domain helper groups exact name pairs;
+then it must preserve issue order and duplicate-row metadata. F707/F709
+remain deferred and the Phase 2 exit gate remains open.
