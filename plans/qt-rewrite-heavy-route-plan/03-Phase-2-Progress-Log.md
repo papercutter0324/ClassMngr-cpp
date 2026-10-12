@@ -29737,6 +29737,41 @@ Cover the existing contracts in
 `ClassMngrNextApplicationRosterRowTransferUseCaseTests`, and
 `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`. Confirm each
 exact CTest registers once, then run only those three with `-C Debug`; run no
-full suite. This matrix was recorded before implementation; F774 verification
-is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and
-the formal exit gate remains Open.
+full suite. This matrix was recorded before implementation. F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### F774 Roster Save, Row Transfer, and Speaking Evaluation Save ID validation - accepted - 2026-10-13
+
+F774 is accepted at commit
+`e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`. `ClassMngr` and the Roster Save,
+Roster Row Transfer, and Speaking Evaluation Save targets built after the
+bounded VS 18 x64 Debug retry outside the sandbox following FileTracker
+`E_ACCESSDENIED`. Each exact CTest registered once and all three passed 3/3.
+No full suite ran.
+
+### F775 Class Details Page query failure contracts - selected and acceptance matrix - 2026-10-13
+
+**F775 is selected:** strengthen only
+`tests/next_application_class_details_page_query_tests.cpp`. The query's IDs
+are opaque bounded strings, so do not apply the canonical positive-decimal
+helper or change production source. The query header is already inventoried,
+and its target and exact CTest
+`ClassMngrNextApplicationClassDetailsPageQueryTests` are already registered;
+no source or CMake change is expected.
+
+For whitespace-only and over-maximum-length typed IDs, assert nonrecoverable
+`InvalidInput` with the exact message
+`Selected class identifier must be non-blank and bounded.` and zero port
+reads. For the identity mismatch case, request `selected-class` and return a
+snapshot for `someone-else`; assert nonrecoverable `Validation` with
+`A class details page read returned a different class identifier.` and exactly
+one read with the original requested ID. Retain existing overall port-error
+forwarding and independent partial-field outcomes.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsPageQueryTests`; confirm the exact CTest
+registers once, then run only it with `-C Debug`. Run no full suite. This
+matrix was recorded before implementation; F775 verification is pending.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.

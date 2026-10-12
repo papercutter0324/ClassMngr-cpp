@@ -4874,23 +4874,22 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F773 accepted; F774 selected)
+## Phase 2 current position — 2026-10-13 (F774 accepted; F775 selected)
 
-F773 is accepted at
-`80fe2a2688bea4658cc495e6270b2e2da781c870`. The My Classes class-summary
-batch query now uses the shared canonical-positive-int validator and has its
-own direct app-less test target. The exact CTest registered once (#234) and
-passed 1/1 after the bounded Visual Studio 18 x64 Debug build succeeded
-outside the sandbox following FileTracker `E_ACCESSDENIED`. CMake reported an
-optional missing `WrapVulkanHeaders` package but configured and built. No full
-suite ran.
+F774 is accepted at
+`e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`. Roster Save, Roster Row
+Transfer, and Speaking Evaluation Save now use the shared canonical-positive-
+int validator while preserving distinct errors, precedence, and port behavior.
+Their exact CTests each registered once and passed 3/3 after the bounded
+Visual Studio 18 x64 Debug build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. No full suite ran.
 
-F774 is selected to consolidate the equivalent canonical-positive-int
-predicates in Roster Save, Roster Row Transfer, and Speaking Evaluation Save.
-Preserve their distinct recoverable InvalidInput errors, validation order,
-port boundaries, row-transfer distinct-ID policy, and valid `INT_MAX`
-forwarding; strengthen error message and recoverability assertions. The shared
-helper is already in CMake, so no inventory edit is expected. F707/F709 remain
+F775 is selected to pin exact Class Details Page query failure contracts in
+its existing focused test. Cover blank/oversized request IDs with the exact
+nonrecoverable InvalidInput message and zero reads, and mismatched returned
+identity with its exact nonrecoverable Validation message and one read. Keep
+opaque bounded IDs, overall port-error forwarding, and independent partial-
+field results unchanged. No source or CMake change is needed. F707/F709 remain
 deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial; separate
 current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
 0/24.

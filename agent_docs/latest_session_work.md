@@ -92,11 +92,14 @@
   registered once (#234) and passed 1/1 after the bounded build succeeded
   outside the sandbox following FileTracker access denial. CMake reported an
   optional unavailable `WrapVulkanHeaders` package, but configured and built.
-  F774 is selected to consolidate equivalent ID predicates in Roster Save,
-  Roster Row Transfer, and Speaking Evaluation Save while preserving their
-  distinct errors, validation order, transfer boundaries, and valid maximum
-  ID forwarding. Build/run their three existing focused CTests. No full suite
-  ran.
+  F774 is accepted at `e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`; its three
+  existing focused CTests each registered once and passed 3/3 after the
+  bounded build succeeded outside the sandbox following FileTracker access
+  denial. F775 is selected to strengthen the Class Details Page query test:
+  pin exact nonrecoverable invalid-ID and mismatched-identity errors, zero vs.
+  one read boundaries, and retain overall port-error/partial-field outcomes.
+  Keep opaque bounded IDs and make no production or CMake change. No full
+  suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

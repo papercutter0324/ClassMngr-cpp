@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-13
-- Current milestone: Phase 2 remains in progress: F773 was accepted at `80fe2a2688bea4658cc495e6270b2e2da781c870`, and F774 is selected in active Batch 191 to consolidate canonical ID checks in Roster Save, Roster Row Transfer, and Speaking Evaluation Save. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F774 was accepted at `e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`, and F775 is selected in active Batch 191 as a Class Details Page query failure-contract test slice. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

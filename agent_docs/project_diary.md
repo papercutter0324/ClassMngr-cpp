@@ -5110,3 +5110,16 @@ semantics match the shared helper. Keep each use case's error metadata and
 validation precedence, and preserve Roster Row Transfer's distinct-class
 rule and read/save sequence. F707/F709 remain deferred, Gates 1/2 Partial, and
 the formal exit gate Open.
+
+## Phase 2 F774 acceptance and F775 selection — 2026-10-13
+
+F774 is accepted at `e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`. The three
+existing focused CTests registered once and passed 3/3 after the bounded
+build succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`.
+No full suite ran.
+
+F775 strengthens only the Class Details Page query tests. The query has a
+bounded opaque-ID contract distinct from the canonical positive-decimal
+guards; preserve its production behavior while pinning exact invalid-ID and
+mismatched-identity errors, recoverability, and read boundaries. Retain its
+port-error and partial-field tests.
