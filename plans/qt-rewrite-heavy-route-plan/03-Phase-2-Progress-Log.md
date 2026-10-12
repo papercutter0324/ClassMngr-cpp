@@ -27263,4 +27263,56 @@ time parser, preserving the policy's existing outputs and other time formats.
    `ClassMngrNextApplicationClassDetailsValidationPolicyTests`. Run no full
    suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F725.
+This matrix was recorded before implementation.
+
+### F725 Class Details strict 24-hour parser migration - accepted - 2026-10-12
+
+F725 is accepted at code/test commit
+`834aa1c29375929112a39bab8ad986c2ba12f75c`. The strict 24-hour branch of
+the Qt-free `ClassDetailsValidationPolicy::parseTime` now uses the pure Domain
+time parser after the existing trim and maps parsed hour/minute to the
+existing total-minutes and display-time outputs. The separate 12-hour AM/PM
+branch remains unchanged. Policy coverage includes `00:00` -> `12:00 AM` and
+`23:59` -> `11:59 PM`, preserving existing normal-time and `25:00` invalid-row
+cases.
+
+`ClassMngr` and
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests` built
+successfully. The tester confirmed one exact CTest registration; the focused
+CTest passed 1/1. No full suite ran.
+
+**Decision: accept F725.** Batch 179 continues with F726; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F726 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `weekdayOrder` in
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h`.
+The SQL fixture filters `times.day IN (selected canonical days)`, so malformed
+lowercase or padded day rows cannot reach this mapping through the port.
+
+**F726 is selected:** replace the exact `QStringList::indexOf` mapping with
+`ScheduleValueParser::parseWeekday`, preserving canonical weekday ordering
+and rejecting noncanonical raw text.
+
+1. Migrate only `weekdayOrder` to `ScheduleValueParser::parseWeekday` and
+   require `parsed->text == day`. Preserve Monday-through-Sunday indexes and
+   `std::nullopt` for noncanonical raw values. Do not change callers or
+   abbreviations.
+2. Add a separate focused public test case in
+   `NextPlatformApplicationServicesSubPrepPrintSourcePortTests`, using the
+   same SQL fixture/helper pattern as
+   `parsesRawScheduleTimesAndKeepsMalformedNavigationFallback`. Insert all
+   seven canonical days in reverse row order with the same valid start time;
+   assert canonical summary/navigation day order and Monday's navigation
+   order/time. Preserve the existing raw-time malformed-navigation fallback
+   coverage. The SQL filter means this fixture cannot directly test how
+   malformed weekday strings reach `weekdayOrder`.
+3. `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+   already compiles the parser and port, so no CMake wiring change is needed.
+   Build `ClassMngr` and that target; run only the exact registered CTest
+   `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
+   Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F726;
+F707 and F709 remain deferred.

@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F725.
+  F726.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -186,14 +186,15 @@
   reuses `ScheduleKeyRules::parseWeekday` with its existing trim and ASCII
   comparator; padded invalid ` Funday ` reports the expected trimmed issue.
   `ClassMngrNextApplicationClassDetailsValidationPolicyTests` passed 1/1
-  (0.03 seconds). No full suite ran. F725 selects the strict 24-hour branch
-  of `ClassDetailsValidationPolicy::parseTime`: reuse the Domain time parser
-  after trim, preserve display formatting and total-minute conversion, and
-  leave the separate 12-hour AM/PM branch unchanged. Add `00:00`/`23:59`
-  boundary cases; existing `16:00` and malformed `25:00` cases remain. Build
-  `ClassMngr` and `ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
-  then run only that exact CTest. F707 and F709 remain deferred; the
-  preimplementation matrix is in the Phase 2 progress log.
+  (0.03 seconds). No full suite ran. F725 is accepted and committed as
+  `834aa1c29375929112a39bab8ad986c2ba12f75c`; the strict 24-hour branch now
+  reuses the Domain time parser while retaining total-minute/display
+  conversion and the separate AM/PM branch. Boundary coverage for `00:00`
+  and `23:59` passed with the existing normal and malformed cases. Both
+  targets built and the exact policy CTest passed 1/1. F726 selects the
+  Sub Prep `weekdayOrder` helper; the preimplementation matrix and public
+  SQL seam limitation are recorded in the Phase 2 progress log. F707 and
+  F709 remain deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

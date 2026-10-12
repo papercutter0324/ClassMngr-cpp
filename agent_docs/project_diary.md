@@ -4494,10 +4494,22 @@ comparator. The padded lowercase valid and padded invalid cases preserve
 canonicalization and trimmed error details. Its focused CTest passed 1/1; no
 full suite ran.
 
-F725 selects the strict 24-hour branch of
-`ClassDetailsValidationPolicy::parseTime`. Reuse the pure Domain time parser
-after trimming, while preserving conversion to minutes and the existing
-12-hour display format. Keep the separate 12-hour AM/PM branch unchanged.
-Boundary coverage at `00:00` and `23:59` will protect the conversion. F707 and
-F709 remain deferred for their documented callsite and fixture constraints.
-Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F725 is accepted and committed as
+`834aa1c29375929112a39bab8ad986c2ba12f75c`. The Qt-free Application policy
+now delegates strict 24-hour parsing to `ScheduleKeyRules::parseTime` after
+trimming and preserves its minute conversion and display output; the
+12-hour AM/PM branch is unchanged. Boundary cases verify `00:00` ->
+`12:00 AM` and `23:59` -> `11:59 PM`; existing normal and malformed cases
+remain. The focused policy CTest passed 1/1 after both targets built. No full
+suite ran.
+
+F726 selects `weekdayOrder` in the Sub Prep schedule-summary port. Reuse
+`ScheduleValueParser::parseWeekday` with a canonical-text equality guard,
+preserving the existing exact weekday mapping and invalid result. The public
+SQL-backed test path filters selected canonical days before `weekdayOrder`,
+so lowercase and padded raw values cannot reach this helper through the port.
+The planned test inserts all seven canonical weekdays in reverse order at a
+shared start time and checks summary/navigation order and Monday order/time.
+The focused port CTest will run after building `ClassMngr` and its test
+target. F707 and F709 remain deferred. Phase 2 remains In Progress with Gates
+1 and 2 Partial.

@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F724 accepted; F725 selected)
+### Current state - 2026-10-12 (F725 accepted; F726 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F725, the Class Details validation policy time parser migration.
+with F726, the Sub Prep schedule-summary weekday-order migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -280,18 +280,32 @@ Monday; a new padded invalid ` Funday ` case yields exactly one trimmed
 `ClassMngrNextApplicationClassDetailsValidationPolicyTests` built; the exact
 registered CTest passed 1/1 (0.03 seconds). No full suite ran.
 
-F725 selects the strict 24-hour branch of
-`ClassDetailsValidationPolicy::parseTime` in
-`src/next/application/class_details_validation_policy.h`. Reuse the pure
-Domain `ScheduleKeyRules::parseTime` after existing trimming, then preserve
-the total-minute conversion and `displayTime()` output. Keep the 12-hour
-AM/PM parser branch unchanged and avoid Qt dependencies. Add policy boundary
-coverage for `00:00` -> `12:00 AM` and `23:59` -> `11:59 PM`; existing
-`16:00`/`16:55` and malformed `25:00` coverage remain. Build `ClassMngr` and
-`ClassMngrNextApplicationClassDetailsValidationPolicyTests`; run only that
-exact registered CTest. No CMake change is needed. F707 remains deferred
-because its comparator chain has no observed app callsite; F709 is deferred
-because its public fixture does not readily supply malformed raw time text.
+F725 is accepted and committed as
+`834aa1c29375929112a39bab8ad986c2ba12f75c`. The Qt-free Application policy
+now delegates only strict 24-hour parsing to `ScheduleKeyRules::parseTime`
+after trimming, then preserves total-minute conversion and `displayTime()`;
+the separate 12-hour AM/PM parser is unchanged. Policy tests verify
+`00:00` -> `12:00 AM` and `23:59` -> `11:59 PM`, retaining existing
+`16:00`/`16:55` and malformed `25:00` coverage. `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests` built; the exact
+registered CTest passed 1/1. No full suite ran.
+
+F726 selects `weekdayOrder` in
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h`.
+Reuse `ScheduleValueParser::parseWeekday` with a canonical-text equality
+guard to preserve the exact Monday-through-Sunday lookup and `nullopt` for
+noncanonical raw values. Do not change callers or day abbreviations. The
+public SQL-backed test seam filters `times.day` by selected canonical days
+before records reach this helper, so lowercase and padded raw rows cannot
+exercise the helper through that port. Add focused coverage with all seven
+canonical weekdays inserted in reverse order at a shared valid time; assert
+canonical summary/navigation weekday ordering and Monday navigation order
+and minute value. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; run
+only that exact registered CTest. No CMake change is needed and no full suite
+will run. F707 remains deferred because its comparator chain has no observed
+app callsite; F709 is deferred because its public fixture does not readily
+supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
