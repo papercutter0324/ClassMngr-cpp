@@ -26883,4 +26883,56 @@ case-sensitive ordering, labels, abbreviations, and visible-day filtering.
    exact registered CTest `ClassMngrSubPrepClassInformationModelTests`. Run no
    full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F717.
+This matrix was recorded before implementation.
+
+### F717 SubPrep Class Information weekday-order parser migration - accepted - 2026-10-12
+
+F717 is accepted at source/test commit `2c2c2a2a`. The change is limited to
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp` and
+`tests/sub_prep_class_information_model_tests.cpp`. `dayOrder` now uses
+`ScheduleValueParser::parseWeekday` with canonical-text equality after trim,
+preserving case-sensitive matching and the max-int fallback. The public
+formatter test verifies that padded Monday sorts canonically while its
+fallback label remains `Monday`; lowercase `monday` remains unknown and last,
+with label `monday`. The raw spellings are included in `visibleDays`.
+
+`ClassMngr` and `ClassMngrSubPrepClassInformationModelTests` built in the
+existing Windows x64 Debug Ninja tree under VS 2026 x64 Developer. The exact
+registered CTest `ClassMngrSubPrepClassInformationModelTests` passed 1/1 in
+0.04 seconds; `git diff --check` passed. Developer-environment initialization
+printed a `vswhere.exe` warning. No full suite ran.
+
+**Decision: accept F717.** Batch 179 continues with F718; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F718 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayIndex` in `src/data/repositories/class_info_repository.cpp`. The
+current lookup uses the raw, untrimmed weekday spelling with case-sensitive
+matching and returns `-1` for invalid values. Invalid stored rows are skipped
+by the conflict query, which preserves canonical public conflict ordering.
+
+**F718 is selected:** reuse the Domain weekday parser while preserving raw,
+untrimmed, case-sensitive matching and invalid-row skipping.
+
+1. Migrate only `dayIndex` to `ScheduleValueParser::parseWeekday`. Since the
+   parser trims and accepts case-insensitively, require `parsed->text == day`
+   after parsing. Padded values such as ` Monday ` and lowercase `monday`
+   must remain invalid and use the existing `-1` fallback.
+2. Keep invalid stored rows skipped and preserve the canonical public conflict
+   ordering.
+3. Extend
+   `readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder` in
+   `tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`.
+   Save padded and lowercase weekday rows with valid overlapping times using
+   `ClassInfoRepository::saveClassInfo`; verify their raw spellings persist
+   and the public query still returns only the two canonical conflicts in
+   their existing order.
+4. `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+   links Runtime, which already compiles the parser, so no CMake source
+   addition is needed. Build `ClassMngr` and that target; run only the exact
+   registered CTest
+   `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`.
+   Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F718.

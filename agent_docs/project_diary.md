@@ -4412,19 +4412,32 @@ tree under VS 2026 x64 Developer; the exact registered CTest passed 1/1 in
 0.04 seconds. A `vswhere.exe` recognition warning printed during Developer
 initialization. No full suite ran.
 
-F717 is selected for `SubPrepClassInformation::dayOrder` in
-`src/features/sub_prep/ui/sub_prep_class_information_model.cpp`. It trims then
-uses an exact weekday lookup and returns `std::numeric_limits<int>::max()` for
-unknown values. Reuse `ScheduleValueParser::parseWeekday`, requiring canonical
-text to equal the trimmed input to retain case-sensitive ordering and the
-existing fallback. Preserve exact-canonical `dayAbbreviation` behavior and
-trimmed fallback labels. Add public formatting tests for padded Monday and
-lowercase Monday, including the exact raw spelling in `visibleDays` so the
-formatter does not filter the case under test. Padded Monday must sort as
-Monday while retaining the `Monday` fallback label; lowercase `monday` stays
-unknown and retains its lowercase label. The focused target already directly
-compiles the parser, so no CMake change is needed. Build `ClassMngr` and
-`ClassMngrSubPrepClassInformationModelTests`, then run that exact registered
-CTest only. F707 and F709 remain deferred for their documented missing app
-callsite and malformed-input seam constraints. Phase 2 remains In Progress
-with Gates 1 and 2 Partial.
+F717 is accepted in Batch 179 and committed as `2c2c2a2a`. The migration
+updates only `SubPrepClassInformation::dayOrder` to parse through
+`ScheduleValueParser::parseWeekday`, requiring canonical text to equal the
+trimmed input. This preserves trim, case-sensitive ordering, and the existing
+`std::numeric_limits<int>::max()` fallback. The public formatter test includes
+the exact padded and lowercase spellings in `visibleDays`; padded Monday sorts
+canonically but keeps fallback label `Monday`, and lowercase `monday` remains
+unknown and retains that lowercase label. `ClassMngr` and
+`ClassMngrSubPrepClassInformationModelTests` built in the Windows x64 Debug
+Ninja tree under VS 2026 x64 Developer; the exact registered CTest passed 1/1
+in 0.04 seconds. A `vswhere.exe` recognition warning printed during Developer
+initialization. No full suite ran.
+
+F718 is selected for `dayIndex` in
+`src/data/repositories/class_info_repository.cpp`. Existing behavior performs
+an exact lookup against the raw, untrimmed weekday and returns `-1` for an
+unknown value. Reuse `ScheduleValueParser::parseWeekday` but require canonical
+text to equal the raw input, preserving rejection of padded and lowercase
+spellings and the invalid-row skip in conflict queries. Add raw ` Monday `
+and `monday` rows with valid overlapping times to
+`readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder`; save through
+`ClassInfoRepository::saveClassInfo`, verify raw persistence, and assert the
+public query still returns only the canonical valid conflicts in repository
+order. The focused target already compiles the parser through Runtime, so no
+CMake change is needed. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
+then run that exact registered CTest only. F707 and F709 remain deferred for
+their documented missing app callsite and malformed-input seam constraints.
+Phase 2 remains In Progress with Gates 1 and 2 Partial.
