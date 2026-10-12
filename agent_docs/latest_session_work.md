@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-176 are complete; Batch 177 is active with F702. F625's assessment is
+  141-177 are complete; Batch 178 is active with F703. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -64,15 +64,24 @@
   `ClassMngrScheduleImportTests` built; the exact CTest passed 1/1 with fresh
   affected objects and executable after correcting the invalid-time fixture
   to use a valid Monday/Wednesday meeting pattern. No full suite ran.
-- F702 is selected in Batch 177 for Speaking Evaluation's `shortTime` folder
-  formatter. Reuse `ScheduleValueParser::parseDisplayTime` with the explicit
-  ordered six-format allowlist; preserve trimming, lowercase normalized path
-  text, omission of `:00`, and malformed-input fallback. Extend the public
-  `defaultOutputDirectory` test for all six forms, surrounding whitespace,
-  and malformed fallback. The existing test links `ClassMngrRuntime`, so no
-  source wiring is planned. Build `ClassMngr` and
-  `ClassMngrSpeakingEvalBatchReportServiceTests`; run only its exact CTest.
-  The pre-implementation matrix is in the Phase 2 progress log.
+- F702 Speaking Evaluation report-folder time parsing is accepted and
+  committed as `a8ca0f889932ab59e6ef47584a298dae18626b3d`. The standard
+  Visual Studio tree failed before compilation with FileTracker
+  `E_ACCESSDENIED`; the existing Windows x64 Debug Ninja build then rebuilt
+  the affected policy/test objects and both targets successfully. Exact CTest
+  `ClassMngrSpeakingEvalBatchReportServiceTests` passed 1/1. It covers all six
+  formats, trimmed input, malformed fallback, zero-minute omission, and
+  filesystem path sanitization. No full suite ran.
+- F703 is selected in Batch 178 for the Schedule Import review helpers
+  `compactTimeDisplay` and `reconciliationTimeDisplay`. Reuse the Domain
+  parser with only `HourMinuteAmPmSpaced` and preserve strict raw-input
+  behavior with a no-trim guard; retain the compact helper's raw fallback and
+  the reconciliation helper's HTML-escaped fallback. Extend the public
+  `compactMeetingText` case and test `classDifferences` output for successful,
+  padded, unsupported, and HTML-sensitive malformed values. CMake already
+  wires the parser into `ClassMngrScheduleImportDialogTests`; build `ClassMngr`
+  and that target, then run only its exact CTest. The pre-implementation
+  matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

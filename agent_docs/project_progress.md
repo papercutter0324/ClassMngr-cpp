@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F702 selected)
+### Current state - 2026-10-12 (F703 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-176 are complete; Batch 177 is active with F702, the Speaking
-Evaluation report-folder display-time parser migration. F689-F693 are complete;
+Batches 141-177 are complete; Batch 178 is active with F703, the Schedule
+Import review display-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -104,11 +104,16 @@ handling. No full suite ran. F701 is committed as
 `c95b476ca69bc1d3ae53a1b882c703b8f28170f5`; `ClassMngr` and
 `ClassMngrScheduleImportTests` built, and its exact CTest passed 1/1 with
 fresh affected objects and executable after correcting the malformed-time
-fixture to use a valid Monday/Wednesday pattern. No full suite ran. F702
-selects Speaking Evaluation's `shortTime` helper with the explicit six-format
-parser allowlist; preserve whitespace trimming, normalized folder text, and
-the existing malformed-input fallback. Its matrix is recorded before
-implementation in the Phase 2 progress log. The current-source Phase 0
+fixture to use a valid Monday/Wednesday pattern. No full suite ran. F702 is
+committed as `a8ca0f889932ab59e6ef47584a298dae18626b3d`; the standard
+Visual Studio tree hit FileTracker `E_ACCESSDENIED`, then `ClassMngr` and
+`ClassMngrSpeakingEvalBatchReportServiceTests` built in the existing Windows
+x64 Debug Ninja tree and its exact CTest passed 1/1 with fresh objects and
+executables. The six format cases, whitespace, malformed fallback, path
+sanitization, and zero-minute output are covered. No full suite ran. F703
+selects the paired Schedule Import review display-time helpers; its strict raw
+input and distinct fallback matrix is recorded before implementation in the
+Phase 2 progress log. The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
 and F626 deferred. F666 Class Day

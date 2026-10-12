@@ -26189,8 +26189,8 @@ existing malformed-input fallback.
    fallback `value.trimmed().remove(QLatin1Char(' ')).toLower()`.
 3. Extend public `defaultOutputDirectory` coverage in
    `tests/speaking_eval_batch_report_service_tests.cpp`: path suffixes for
-   `4:07 PM`, `4:07PM`, `04:07 PM`, and `04:07PM` produce `4:07pm`; `9:07`
-   and `09:07` produce `9:07am`; surrounding whitespace parses; malformed
+   `4:07 PM`, `4:07PM`, `04:07 PM`, and `04:07PM` produce `4-07pm`; `9:07`
+   and `09:07` produce `9-07am`, including surrounding whitespace; malformed
    ` No Time ` retains fallback `notime`.
 4. `ClassMngrSpeakingEvalBatchReportServiceTests` already links
    `ClassMngrRuntime`, supplying the policy and parser; make no CMake wiring
@@ -26199,3 +26199,82 @@ existing malformed-input fallback.
    `ClassMngrSpeakingEvalBatchReportServiceTests`. Run no full suite.
 
 This matrix is recorded before implementation. Batch 177 is active with F702.
+
+### F702 path expectation correction - 2026-10-12
+
+Verification-driven correction: `shortTime` normalizes minute-bearing times
+with a colon, while existing `safeFolderName()` sanitization changes the colon
+to a hyphen in public path components. Therefore the path suffixes are
+`4-07pm` and `9-07am`; malformed `notime` fallback and zero-minute `4pm`
+remain unchanged.
+
+### F702 Speaking Evaluation output time parser migration - accepted - 2026-10-12
+
+F702 is accepted at code/test commit
+`a8ca0f889932ab59e6ef47584a298dae18626b3d` (`Phase2 - Reuse Domain display-time
+parser in Speaking Evaluation output policy (F702)`). The Visual Studio/MSBuild
+attempt in `build/windows-x64-debug` failed before compilation with FileTracker
+`MSB4018 E_ACCESSDENIED`; `ClassMngr` and
+`ClassMngrSpeakingEvalBatchReportServiceTests` then built successfully in the
+existing `build/windows-x64-debug-ninja` tree under the VS 2026 x64
+environment. The exact CTest passed 1/1 in 8.51 seconds, with fresh policy
+and test objects and executables. The first target run reported 62 passed,
+7 failed, and 5 skipped; all seven new rows failed only because expectations
+omitted the existing `safeFolderName()` colon-to-hyphen conversion. Test
+expectations were corrected, production behavior stayed unchanged, and the
+final target passed. QTest reported unavailable `vswhere.exe` and existing
+unrelated `C4834` warnings. No full suite ran.
+
+**Decision: accept F702.** Batch 177 is complete.
+
+### Batch 178 shortlist and selection - recorded before F703 implementation - 2026-10-12
+
+The two sweeps produced this ordered shortlist:
+
+1. **Selected: Schedule Import display-helper pair** -
+   `compactTimeDisplay` and `reconciliationTimeDisplay` in
+   `src/features/schedule/ui/schedule_import_review_presentation.cpp`.
+2. Initial Setup Wizard `typedScheduleTimes`.
+3. Schedule Import repository intensive-slot parser.
+4. Calendar Event repository `eventFromQuery`.
+5. Sidebar controller `timeOrder`.
+6. Calendar Event dialog legacy draft parser.
+7. Calendar Page canonical `projectionTime`.
+8. Schedule-print service time parser.
+9. Next Calendar Event application-port conversion family.
+10. Next Sub Prep schedule-summary parsing/formatting pair.
+
+Select the Schedule Import helper pair: it has a direct `compactMeetingText`
+seam and a public reconciliation seam in `classDifferences`, and the parser
+source is already wired into `ClassMngrScheduleImportDialogTests`.
+
+**F703 is selected:** migrate only the two display helpers to
+`ScheduleValueParser::parseDisplayTime` with an explicit
+`HourMinuteAmPmSpaced` allowlist and a no-trim guard, preserving each helper's
+distinct success formatting and fallback.
+
+### F703 Schedule Import display-helper time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. In `src/features/schedule/ui/schedule_import_review_presentation.cpp`,
+   replace only the raw `QTime::fromString(value, "h:mm AP")` parsing in
+   `compactTimeDisplay` and `reconciliationTimeDisplay` with
+   `ScheduleValueParser::parseDisplayTime` restricted to
+   `HourMinuteAmPmSpaced`. Require `value == value.trimmed()` before accepting
+   a parse because the Domain parser trims. Do not add compact AM/PM or
+   24-hour formats.
+2. Preserve `compactTimeDisplay`'s successful omission of `:00` and raw-value
+   fallback. Preserve `reconciliationTimeDisplay`'s successful output with
+   minutes always present, including `:00`, and its
+   `value.toHtmlEscaped()` fallback.
+3. Extend public `compactMeetingText` coverage in
+   `tests/schedule_import_dialog_tests.cpp`: retain spaced-format success and
+   raw fallback for padded, compact AM/PM, and 24-hour input. Add a focused
+   public `classDifferences` case checking spaced `4:00 PM`/`4:07 PM` success,
+   original-value fallback for padded and unsupported compact/24-hour input,
+   and HTML escaping of malformed `<bad>`.
+4. `ClassMngrScheduleImportDialogTests` already compiles the parser and
+   presentation sources. Build `ClassMngr` and
+   `ClassMngrScheduleImportDialogTests`; run only the exact CTest
+   `ClassMngrScheduleImportDialogTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F703.

@@ -4227,3 +4227,20 @@ the default parser overload would add seconds formats. Calendar projection
 parsing is deferred because its malformed input is not directly injectable
 through the existing public test seam. F702 is selected in Batch 177, with its
 acceptance matrix recorded before implementation in the Phase 2 progress log.
+
+F702 Speaking Evaluation report-folder time parsing is accepted and committed
+as `a8ca0f889932ab59e6ef47584a298dae18626b3d`. The exact target CTest passed
+1/1 in the existing Windows x64 Debug Ninja tree after the standard Visual
+Studio build tree failed before compilation with FileTracker
+`E_ACCESSDENIED`. An initial run exposed test expectations that omitted the
+existing colon-to-hyphen filesystem sanitization; the matrix and assertions
+were corrected, preserving production behavior. All six accepted formats,
+trimmed input, malformed fallback, and zero-minute omission remain covered.
+
+For F703, the two independent parser-consumer sweeps selected the paired
+Schedule Import review display helpers. Their parser formats match, but their
+failure contracts differ: compact display returns raw input, while
+reconciliation HTML-escapes it. The Domain parser trims, so require exact
+raw/trimmed equality before parsing and keep the single `h:mm AP` allowlist.
+F703 is selected in Batch 178; its matrix is recorded before implementation
+in the Phase 2 progress log.
