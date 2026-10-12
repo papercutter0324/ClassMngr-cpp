@@ -29200,7 +29200,43 @@ and structured port errors.
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests`. Confirm
 exactly one registration for that exact CTest name, then run only that CTest
-with the Debug configuration. Run no full suite. This matrix is recorded
-before implementation; F762 verification is pending. F707/F709 remain
-deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
-Open.
+with the Debug configuration. Run no full suite. This matrix was recorded
+before implementation. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.
+
+### F762 class-teacher assignments canonical ID validation - accepted - 2026-10-13
+
+F762 is accepted at commit
+`ff020dfd4430ca2f583e81caf40e3c85c106367f`. The existing Visual Studio 18
+x64 Debug tree built `ClassMngr` and
+`ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests`. The exact
+CTest had one registration (#390) and passed 1/1. Sandboxed FileTracker access
+was denied; the same command succeeded outside the sandbox. No full suite ran.
+
+### F763 Class Notes page canonical ID validation - selected and acceptance matrix - 2026-10-13
+
+**F763 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`class_notes_page_read_query.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+The query has a singular ClassId input. An invalid ID returns nonrecoverable
+`InvalidInput` with `Class ID must be a canonical positive integer.` before
+any port call. Forward port errors unchanged. After one read, a returned
+class-ID mismatch returns nonrecoverable `Validation` with
+`A class notes page read returned a different class identifier.` On success,
+preserve the original snapshot, including notes and schedule UTF-16 values
+and stored whitespace. Class fields remain independent of the teacher display
+name result, so teacher `NotFound` can coexist with successful class fields.
+
+Add `42x` to invalid IDs and assert the exact input message, `InvalidInput`,
+nonrecoverability, and zero calls. Assert the exact identity-mismatch message,
+`Validation`, nonrecoverability, and one read. Preserve other invalid values,
+the full successful typed snapshot and independent teacher `NotFound`, and port
+error forwarding.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassNotesPageReadQueryTests`. Confirm exactly one
+registration for that exact CTest name, then run only that CTest with the
+Debug configuration. Run no full suite. This matrix is recorded before
+implementation; F763 verification is pending. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

@@ -4874,18 +4874,18 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F761 accepted; F762 selected)
+## Phase 2 current position — 2026-10-13 (F762 accepted; F763 selected)
 
-F761 is accepted at
-`d810ad104e8573979725ba1bde9d52121c929254`. Initial Setup teacher choices
-now use the shared validator for returned teacher IDs while keeping distinct
-post-read validation failures for malformed and duplicate IDs. The existing
-Visual Studio 18 x64 Debug tree built `ClassMngr` and the focused target;
-its exact CTest had one registration and passed 1/1. No full suite ran.
+F762 is accepted at
+`ff020dfd4430ca2f583e81caf40e3c85c106367f`. Class-teacher assignments now
+use the shared validator while preserving successful normalization of
+malformed returned IDs to unassigned rows. The existing Visual Studio 18
+x64 Debug tree built `ClassMngr` and the focused target; its exact CTest had
+one registration and passed 1/1. No full suite ran.
 
-F762 is selected in Batch 189 to reuse validation in class-teacher
-assignments. Preserve the query's behavior of clearing malformed returned
-teacher IDs to unassigned rows while retaining row count and order; no error
-is returned for these rows. F707/F709 remain deferred. Phase 2 remains
-In Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+F763 is selected in Batch 189 to reuse the helper in the Class Notes page
+query. Preserve its pre-read nonrecoverable invalid-ID result, post-read
+identity validation, and independent class-fields/teacher-name results.
+F707/F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1 and
+2 Partial; separate current-source Phase 0 evidence remains Windows x64 2/24
+and macOS universal 0/24.

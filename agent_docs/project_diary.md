@@ -4923,3 +4923,19 @@ IDs continue to become unassigned optional IDs without dropping or reordering
 rows; this query returns no validation error for that case. F707/F709 remain
 deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+## Phase 2 F762 acceptance and F763 selection — 2026-10-13
+
+F762 is accepted at `ff020dfd4430ca2f583e81caf40e3c85c106367f`. The
+class-teacher assignments query uses shared canonical-ID validation but
+continues to normalize malformed optional teacher IDs to nullopt without
+failing the query or dropping rows. Its exact CTest passed 1/1 with one
+registration in the existing Visual Studio 18 x64 Debug tree; the sandboxed
+FileTracker failure was resolved by running the same build outside the
+sandbox. No full suite ran.
+
+F763 is selected for the Class Notes page query. Its matrix keeps invalid
+request rejection before the port distinct from returned-identity validation
+after one read, and preserves independent class-field and teacher-name
+results. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.

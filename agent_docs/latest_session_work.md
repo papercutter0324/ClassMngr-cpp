@@ -45,8 +45,11 @@
   hit FileTracker access denial and the same build succeeded outside the
   sandbox. F761 is accepted at d810ad104e8573979725ba1bde9d52121c929254;
   its single focused CTest passed 1/1 with one registration under the same
-  Debug configuration. F762 is selected in Batch 189 for class-teacher
-  assignments; preserve malformed-ID normalization to unassigned rows. No
+  Debug configuration. F762 is accepted at
+  ff020dfd4430ca2f583e81caf40e3c85c106367f; its class-teacher assignments
+  target built and the exact CTest passed 1/1, with one registration. Its
+  sandboxed build hit FileTracker access denial and succeeded outside the
+  sandbox. F763 is selected in Batch 189 for the Class Notes page query. No
   full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
