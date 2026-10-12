@@ -28250,3 +28250,21 @@ and returned-meeting paths, differing error handling, and no roster fixture
 for an invalid returned weekday. This matrix is recorded before
 implementation. Batch 179 continues with F744; preserve the Phase 2 gate and
 F707/F709 deferred status.
+
+### F744 matrix correction - recorded before implementation - 2026-10-12
+
+The existing invalid-enum cases in the three query suites verify
+`InvalidInput` and zero port calls, but their generic helpers do not assert the
+exact message or `recoverable=false`. This correction supersedes step 2 above:
+edit the existing invalid-mode case in
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`,
+`tests/next_application_sub_prep_print_source_query_tests.cpp`, and
+`tests/next_application_sub_prep_roster_output_source_query_tests.cpp` to
+assert `InvalidInput`, nonrecoverable status, and zero calls, plus the exact
+message for each query: summary and print, `The Sub Prep schedule mode is
+invalid.`; roster, `The roster-output schedule mode is invalid.`.
+
+Keep the same build targets, exactly one CTest registration per target, and
+the exact three CTests specified in the F744 matrix; run no full suite. This
+correction is recorded before implementation. Preserve the Phase 2 gate and
+F707/F709 deferred status.

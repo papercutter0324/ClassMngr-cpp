@@ -4717,5 +4717,10 @@ missing Vulkan with Qt zlib fallback, and long object paths. No full suite ran.
 F744 is selected to share ScheduleViewMode validity across projection and the
 Sub Prep summary, print, and roster-output queries with
 `isValidScheduleViewMode` adjacent to the enum. Preserve guard positions,
-recoverability/codes, and the exact summary/print and roster messages. Its
-full matrix is in the Phase 2 progress log. F707 and F709 remain deferred.
+recoverability/codes, and the exact summary/print and roster messages. The
+three existing invalid-enum tests already assert `InvalidInput` and zero
+calls; extend each to assert its exact message and `recoverable=false`. Keep
+the target matrix unchanged. The weekday-range alternative was not selected
+because request and returned meeting paths differ in error handling and
+roster lacks a direct invalid returned-weekday assertion. F744's full matrix
+is in the Phase 2 progress log. F707 and F709 remain deferred.

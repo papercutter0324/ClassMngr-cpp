@@ -4626,8 +4626,10 @@ zlib fallback, and long object paths. No full suite ran.
 F744 is selected to share ScheduleViewMode validity across projection and
 Sub Prep summary, print, and roster-output query validation through
 `isValidScheduleViewMode` in `schedule_view_projection.h`, preserving each
-guard and exact failure contract. Its matrix is in the Phase 2 progress log.
-F707 and F709 remain deferred. Phase 2 is In Progress/Open with Gates 1 and 2
-Partial; F739-F742 remain accepted, F625's assessment is accepted, F626 is
-deferred, and separate current-source Phase 0 evidence remains Windows x64
-2/24 and macOS universal 0/24.
+guard and exact failure contract. Extend each existing invalid-mode query test
+to retain its `InvalidInput` and zero-call checks while asserting the exact
+message and `recoverable=false`. The target matrix is unchanged; details are
+in the Phase 2 progress log. F707 and F709 remain deferred. Phase 2 is In
+Progress/Open with Gates 1 and 2 Partial; F739-F742 remain accepted, F625's
+assessment is accepted, F626 is deferred, and separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.

@@ -292,9 +292,12 @@
 - F744 is selected in Batch 179: share ScheduleViewMode validity across the
   projection and Sub Prep summary, print, and roster-output query validators
   with `isValidScheduleViewMode` beside the enum. Preserve guard positions,
-  recoverability/codes, and exact validation messages. Existing direct tests
-  cover invalid enum values before all three ports, so no test edits are
-  expected; the detailed matrix is in the Phase 2 progress log.
+  error codes, recoverability, and messages. Extend each existing invalid-mode
+  test to retain `InvalidInput` and zero-call checks and assert
+  `recoverable=false` plus the exact message: summary/print, “The Sub Prep
+  schedule mode is invalid.”; roster, “The roster-output schedule mode is
+  invalid.” The target matrix is unchanged; the detailed matrix is in the
+  Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.
