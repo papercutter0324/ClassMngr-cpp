@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/calendar_event_query_port.h"
+#include "next/domain/calendar_event_timing.h"
 
 #include <chrono>
 #include <cctype>
@@ -272,8 +273,11 @@ public:
                     SubPrepCalendarEventIntervalsQueryDetail::trim(
                         interval.eventType
                         );
-                if (normalizedType != "Vacation"
-                    && normalizedType != "Holiday")
+                const auto eventType =
+                    Domain::calendarEventTypeFromName(normalizedType);
+                if (!eventType
+                    || (*eventType != Domain::CalendarEventType::Vacation
+                        && *eventType != Domain::CalendarEventType::Holiday))
                 {
                     continue;
                 }
