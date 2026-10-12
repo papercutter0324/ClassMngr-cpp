@@ -548,6 +548,78 @@ void SettingsManager::setSidebarTooltipsEnabled(
         );
 }
 
+QSettings::Status SettingsManager::writeSidebarDisplayPreferences(
+    const bool sidebarTooltipsEnabled,
+    const bool sidebarMarqueeEnabled,
+    const SidebarDisplayPreferencesSync& synchronize
+    )
+{
+    const bool hadPreviousTooltips =
+        m_settings->contains(Keys::SIDEBAR_TOOLTIPS_ENABLED);
+    const QVariant previousTooltips =
+        m_settings->value(Keys::SIDEBAR_TOOLTIPS_ENABLED);
+    const bool hadPreviousMarquee =
+        m_settings->contains(Keys::SIDEBAR_MARQUEE_ENABLED);
+    const QVariant previousMarquee =
+        m_settings->value(Keys::SIDEBAR_MARQUEE_ENABLED);
+
+    m_settings->setValue(
+        Keys::SIDEBAR_TOOLTIPS_ENABLED,
+        sidebarTooltipsEnabled
+        );
+    m_settings->setValue(
+        Keys::SIDEBAR_MARQUEE_ENABLED,
+        sidebarMarqueeEnabled
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore the attempted values before replacing this instance so its
+        // pending candidates cannot be retried during teardown.
+        if (hadPreviousTooltips)
+        {
+            m_settings->setValue(
+                Keys::SIDEBAR_TOOLTIPS_ENABLED,
+                previousTooltips
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::SIDEBAR_TOOLTIPS_ENABLED);
+        }
+
+        if (hadPreviousMarquee)
+        {
+            m_settings->setValue(
+                Keys::SIDEBAR_MARQUEE_ENABLED,
+                previousMarquee
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::SIDEBAR_MARQUEE_ENABLED);
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see both restored preferences and retries can work.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 bool SettingsManager::sidebarMarqueeEnabled() const
 {
     return get(

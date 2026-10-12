@@ -54,6 +54,7 @@ class ExcelImportTimeoutPreferencesPort;
 class FontSizePreferencesPort;
 class LanguagePreferencesPort;
 class SaveModePreferencesPort;
+class SidebarDisplayPreferencesPort;
 }
 
 namespace ClassMngr::Next::Domain
@@ -94,6 +95,12 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> languagePreferenceErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::SidebarDisplayPreferencesPort
+        > sidebarDisplayPreferencesPort;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> sidebarDisplayPreferencesErrorHandler;
     std::shared_ptr<
         ClassMngr::Next::Application::AiCommentProviderPreferencesPort
         > aiCommentProviderPreferencesPort;

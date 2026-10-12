@@ -253,6 +253,17 @@ public:
         bool enabled
         );
 
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores both prior keys before returning.
+    using SidebarDisplayPreferencesSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeSidebarDisplayPreferences(
+        bool sidebarTooltipsEnabled,
+        bool sidebarMarqueeEnabled,
+        const SidebarDisplayPreferencesSync& synchronize = {}
+        );
+
     bool sidebarMarqueeEnabled() const;
     void setSidebarMarqueeEnabled(
         bool enabled

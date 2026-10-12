@@ -2,10 +2,12 @@
 #include "next/application/sidebar_display_preferences.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -45,6 +47,8 @@ private slots:
     void preservesLegacyQVariantCoercion();
     void invalidSettingsUseEnabledDefaults();
     void roundTripsBothValuesAndKeys();
+    void syncFailureRestoresPreviousValuesAndAllowsRetry();
+    void syncFailureRestoresBothAbsentKeysAndPreservesUnrelatedSetting();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -185,6 +189,138 @@ roundTripsBothValuesAndKeys()
             expected.sidebarMarqueeEnabled
             );
     }
+}
+
+void NextPlatformSettingsManagerSidebarDisplayPreferencesPortTests::
+syncFailureRestoresPreviousValuesAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString tooltipsKey = sidebarTooltipsKey();
+    const QString marqueeKey = sidebarMarqueeKey();
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    const QVariant previousTooltips = QStringLiteral("false");
+    const QVariant previousMarquee = 0;
+    settings.set(tooltipsKey, previousTooltips);
+    settings.set(marqueeKey, previousMarquee);
+    settings.set(unrelatedKey, QStringLiteral("keep-me"));
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    SettingsManagerSidebarDisplayPreferencesPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const SidebarDisplayPreferencesSaveRequest rejectedRequest{
+        .sidebarTooltipsEnabled = true,
+        .sidebarMarqueeEnabled = true
+    };
+    const auto failedSave = faultablePort.save(rejectedRequest);
+    QVERIFY(!failedSave);
+    QCOMPARE(failedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedSave.error().recoverable);
+    QVERIFY(
+        failedSave.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(tooltipsKey), previousTooltips);
+    QCOMPARE(settings.get(marqueeKey), previousMarquee);
+    QCOMPARE(settings.get(unrelatedKey), QVariant(QStringLiteral("keep-me")));
+    const auto restored = faultablePort.load();
+    QVERIFY(restored);
+    QVERIFY(!restored.value().sidebarTooltipsEnabled);
+    QVERIFY(!restored.value().sidebarMarqueeEnabled);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(tooltipsKey), previousTooltips);
+    QCOMPARE(persistedSettings.value(marqueeKey), previousMarquee);
+    QCOMPARE(
+        persistedSettings.value(unrelatedKey),
+        QVariant(QStringLiteral("keep-me"))
+        );
+
+    injectAccessError = false;
+    const SidebarDisplayPreferencesSaveRequest retryRequest{
+        .sidebarTooltipsEnabled = false,
+        .sidebarMarqueeEnabled = true
+    };
+    const auto retryResult = faultablePort.save(retryRequest);
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    const auto retried = faultablePort.load();
+    QVERIFY(retried);
+    QVERIFY(retried.value() == retryRequest);
+    QCOMPARE(settings.get(tooltipsKey).toBool(), false);
+    QCOMPARE(settings.get(marqueeKey).toBool(), true);
+    QCOMPARE(settings.get(unrelatedKey), QVariant(QStringLiteral("keep-me")));
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(tooltipsKey).toBool(), false);
+    QCOMPARE(persistedSettings.value(marqueeKey).toBool(), true);
+    QCOMPARE(
+        persistedSettings.value(unrelatedKey),
+        QVariant(QStringLiteral("keep-me"))
+        );
+}
+
+void NextPlatformSettingsManagerSidebarDisplayPreferencesPortTests::
+syncFailureRestoresBothAbsentKeysAndPreservesUnrelatedSetting()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString tooltipsKey = sidebarTooltipsKey();
+    const QString marqueeKey = sidebarMarqueeKey();
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    settings.remove(tooltipsKey);
+    settings.remove(marqueeKey);
+    settings.set(unrelatedKey, 73);
+    settings.sync();
+
+    SettingsManagerSidebarDisplayPreferencesPort faultablePort(
+        [](QSettings&)
+        {
+            return QSettings::AccessError;
+        }
+        );
+    const auto failedSave = faultablePort.save({
+        .sidebarTooltipsEnabled = false,
+        .sidebarMarqueeEnabled = false
+    });
+    QVERIFY(!failedSave);
+    QCOMPARE(failedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedSave.error().recoverable);
+    QVERIFY(!settings.get(tooltipsKey).isValid());
+    QVERIFY(!settings.get(marqueeKey).isValid());
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 73);
+    const auto restored = faultablePort.load();
+    QVERIFY(restored);
+    QVERIFY(restored.value().sidebarTooltipsEnabled);
+    QVERIFY(restored.value().sidebarMarqueeEnabled);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(tooltipsKey));
+    QVERIFY(!persistedSettings.contains(marqueeKey));
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 73);
 }
 
 QTEST_APPLESS_MAIN(NextPlatformSettingsManagerSidebarDisplayPreferencesPortTests)

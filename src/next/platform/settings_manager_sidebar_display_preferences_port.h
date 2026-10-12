@@ -6,6 +6,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -16,7 +19,12 @@ class SettingsManagerSidebarDisplayPreferencesPort final
     : public Application::SidebarDisplayPreferencesPort
 {
 public:
-    SettingsManagerSidebarDisplayPreferencesPort() = default;
+    explicit SettingsManagerSidebarDisplayPreferencesPort(
+        SettingsManager::SidebarDisplayPreferencesSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::SidebarDisplayPreferencesResult load()
         const override
@@ -44,26 +52,32 @@ public:
         const Application::SidebarDisplayPreferencesSaveRequest& request
         ) override
     {
-        SettingsManager& settings = SettingsManager::instance();
-        settings.set(
-            QString::fromUtf8(
-                SettingsManager::Keys::SIDEBAR_TOOLTIPS_ENABLED
-                ),
-            request.sidebarTooltipsEnabled
-            );
-        settings.set(
-            QString::fromUtf8(
-                SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED
-                ),
-            request.sidebarMarqueeEnabled
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeSidebarDisplayPreferences(
+                request.sidebarTooltipsEnabled,
+                request.sidebarMarqueeEnabled,
+                m_synchronize
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Application::SidebarDisplayPreferencesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save Sidebar Display preferences: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
 
-        // The legacy SettingsManager API is void and therefore exposes no
-        // persistence failure to translate into the typed result.
         return Application::SidebarDisplayPreferencesSaveResult::success();
     }
 
 private:
+    SettingsManager::SidebarDisplayPreferencesSync m_synchronize;
+
     [[nodiscard]] static bool readEnabled(const QVariant& value)
     {
         // Invalid or unavailable legacy values retain the enabled default.

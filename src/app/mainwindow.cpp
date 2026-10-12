@@ -641,6 +641,22 @@ void MainWindow::createActions()
             };
     }
 
+    auto sidebarDisplayPreferencesErrorHandler =
+        m_startupOptions.sidebarDisplayPreferencesErrorHandler;
+    if (!sidebarDisplayPreferencesErrorHandler)
+    {
+        sidebarDisplayPreferencesErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Sidebar Display preferences could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
         std::move(saveModePreferenceErrorHandler),
@@ -653,7 +669,9 @@ void MainWindow::createActions()
         m_startupOptions.aiCommentProviderPreferencesPort,
         std::move(aiCommentProviderPreferenceErrorHandler),
         m_startupOptions.languagePreferencesPort,
-        std::move(languagePreferenceErrorHandler)
+        std::move(languagePreferenceErrorHandler),
+        m_startupOptions.sidebarDisplayPreferencesPort,
+        std::move(sidebarDisplayPreferencesErrorHandler)
         );
 }
 
@@ -975,15 +993,35 @@ void MainWindow::connectSignals()
     connect(
         m_actions.showSidebarTooltips,
         &QAction::toggled,
-        ui->sidebarWidget,
-        &Sidebar::setOverflowTooltipsEnabled
+        this,
+        [this](const bool enabled)
+        {
+            if (
+                m_actions.showSidebarTooltips->isChecked() != enabled
+                )
+            {
+                return;
+            }
+
+            ui->sidebarWidget->setOverflowTooltipsEnabled(enabled);
+        }
         );
 
     connect(
         m_actions.animateSidebarText,
         &QAction::toggled,
-        ui->sidebarWidget,
-        &Sidebar::setOverflowMarqueeEnabled
+        this,
+        [this](const bool enabled)
+        {
+            if (
+                m_actions.animateSidebarText->isChecked() != enabled
+                )
+            {
+                return;
+            }
+
+            ui->sidebarWidget->setOverflowMarqueeEnabled(enabled);
+        }
         );
 
     connect(

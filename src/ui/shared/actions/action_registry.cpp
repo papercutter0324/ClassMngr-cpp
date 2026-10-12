@@ -142,7 +142,13 @@ void ActionRegistry::createActions(
         > languagePreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> languagePreferenceErrorHandler
+        )> languagePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::SidebarDisplayPreferencesPort
+        > sidebarDisplayPreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> sidebarDisplayPreferencesErrorHandler
     )
 {
     createFileActions();
@@ -161,7 +167,9 @@ void ActionRegistry::createActions(
         std::move(aiCommentProviderPreferencesPort),
         aiCommentProviderPreferenceErrorHandler,
         std::move(languagePreferencesPort),
-        languagePreferenceErrorHandler
+        languagePreferenceErrorHandler,
+        std::move(sidebarDisplayPreferencesPort),
+        sidebarDisplayPreferencesErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -811,7 +819,13 @@ void ActionRegistry::createOptionActions(
         > languagePreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& languagePreferenceErrorHandler
+        )>& languagePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::SidebarDisplayPreferencesPort
+        > sidebarDisplayPreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& sidebarDisplayPreferencesErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -2068,10 +2082,15 @@ void ActionRegistry::createOptionActions(
 
     ClassMngr::Next::Application::SidebarDisplayPreferences
         sidebarDisplayPreferences;
-    ClassMngr::Next::Platform::
-        SettingsManagerSidebarDisplayPreferencesPort
-        sidebarDisplayPreferencesPort;
-    if (const auto loaded = sidebarDisplayPreferencesPort.load(); loaded)
+    if (!sidebarDisplayPreferencesPort)
+    {
+        sidebarDisplayPreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerSidebarDisplayPreferencesPort
+            >();
+    }
+
+    if (const auto loaded = sidebarDisplayPreferencesPort->load(); loaded)
     {
         sidebarDisplayPreferences = loaded.value();
     }
@@ -2084,23 +2103,60 @@ void ActionRegistry::createOptionActions(
         sidebarDisplayPreferences.sidebarMarqueeEnabled
         );
 
-    const auto saveSidebarDisplayPreferences = [this]()
+    const auto lastSavedSidebarDisplayPreferences =
+        std::make_shared<
+            ClassMngr::Next::Application::SidebarDisplayPreferences
+            >(sidebarDisplayPreferences);
+    const auto skipSidebarDisplaySaveForRollback =
+        std::make_shared<bool>(false);
+    const auto saveSidebarDisplayPreferences =
+        [this, sidebarDisplayPreferencesPort,
+            sidebarDisplayPreferencesErrorHandler,
+            lastSavedSidebarDisplayPreferences,
+            skipSidebarDisplaySaveForRollback](QAction* triggeringAction)
     {
-        ClassMngr::Next::Platform::
-            SettingsManagerSidebarDisplayPreferencesPort port;
-        (void)port.save({
+        if (*skipSidebarDisplaySaveForRollback)
+        {
+            *skipSidebarDisplaySaveForRollback = false;
+            return;
+        }
+
+        const ClassMngr::Next::Application::SidebarDisplayPreferences candidate{
             .sidebarTooltipsEnabled = showSidebarTooltips->isChecked(),
             .sidebarMarqueeEnabled = animateSidebarText->isChecked()
-        });
+        };
+        const auto saved = sidebarDisplayPreferencesPort->save(candidate);
+        if (saved)
+        {
+            *lastSavedSidebarDisplayPreferences = candidate;
+            return;
+        }
+
+        const bool previousChecked = triggeringAction == showSidebarTooltips
+            ? lastSavedSidebarDisplayPreferences->sidebarTooltipsEnabled
+            : lastSavedSidebarDisplayPreferences->sidebarMarqueeEnabled;
+        *skipSidebarDisplaySaveForRollback = true;
+        triggeringAction->setChecked(previousChecked);
+        // setChecked emits toggled synchronously when it changes the value;
+        // the nested handler consumes the flag. Clear it if it did not emit.
+        if (*skipSidebarDisplaySaveForRollback)
+        {
+            *skipSidebarDisplaySaveForRollback = false;
+        }
+
+        if (sidebarDisplayPreferencesErrorHandler)
+        {
+            sidebarDisplayPreferencesErrorHandler(saved.error());
+        }
     };
 
     connect(
         showSidebarTooltips,
         &QAction::toggled,
         this,
-        [saveSidebarDisplayPreferences](const bool)
+        [saveSidebarDisplayPreferences, this](const bool)
         {
-            saveSidebarDisplayPreferences();
+            saveSidebarDisplayPreferences(showSidebarTooltips);
         }
         );
 
@@ -2108,9 +2164,9 @@ void ActionRegistry::createOptionActions(
         animateSidebarText,
         &QAction::toggled,
         this,
-        [saveSidebarDisplayPreferences](const bool)
+        [saveSidebarDisplayPreferences, this](const bool)
         {
-            saveSidebarDisplayPreferences();
+            saveSidebarDisplayPreferences(animateSidebarText);
         }
         );
 
