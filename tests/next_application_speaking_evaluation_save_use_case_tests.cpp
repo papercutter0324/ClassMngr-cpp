@@ -120,6 +120,7 @@ class NextApplicationSpeakingEvaluationSaveUseCaseTests final : public QObject
 
 private slots:
     void rejectsInvalidClassIdsWithoutCallingPort();
+    void acceptsMaximumClassIdAndForwardsUnchanged();
     void rejectsIncompleteMatrixAndInvalidCoordinates();
     void normalizesValidRequestBeforePortAndPreservesUnicodeAndCellOrder();
     void rejectsInvalidContentBeforeCallingPort();
@@ -150,10 +151,52 @@ rejectsInvalidClassIdsWithoutCallingPort()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
     }
+
+    Application::SpeakingEvaluationSaveRequest invalidIdAndMatrix =
+        request("42x");
+    invalidIdAndMatrix.evaluation.rows.pop_back();
+    const auto precedenceResult =
+        Application::SpeakingEvaluationSaveUseCase::execute(
+            invalidIdAndMatrix,
+            port
+            );
+    QVERIFY(!precedenceResult);
+    QCOMPARE(
+        precedenceResult.error().code,
+        Domain::ErrorCode::InvalidInput
+        );
+    QCOMPARE(
+        precedenceResult.error().message,
+        std::string("Class ID must be a canonical positive integer.")
+        );
+    QVERIFY(precedenceResult.error().recoverable);
+    QCOMPARE(port.callCount, 0);
 
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationSpeakingEvaluationSaveUseCaseTests::
+acceptsMaximumClassIdAndForwardsUnchanged()
+{
+    RecordingSpeakingEvaluationSavePort port;
+
+    const auto result = Application::SpeakingEvaluationSaveUseCase::execute(
+        request("2147483647"),
+        port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->classId.value(), std::string("2147483647"));
 }
 
 void NextApplicationSpeakingEvaluationSaveUseCaseTests::

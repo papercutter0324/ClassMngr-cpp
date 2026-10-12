@@ -135,9 +135,31 @@ bool invalidIdsPreventReadAndSave()
         Ports ports;
         const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
         const auto* error = std::get_if<Domain::OperationError>(&result);
-        if (!error || error->code != Domain::ErrorCode::InvalidInput || !ports.calls.empty()) return false;
+        if (!error || error->code != Domain::ErrorCode::InvalidInput
+            || error->message != "Transfer requires distinct canonical positive class IDs."
+            || !error->recoverable || !ports.calls.empty()
+            || ports.saved || ports.readId)
+            return false;
     }
     return true;
+}
+
+bool maximumClassIdForwardsThroughReadAndSave()
+{
+    auto req = request();
+    req.targetClassId = id("2147483647");
+    Ports ports;
+
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
+    return ok && ports.calls == std::vector<std::string>{"read", "save"}
+        && ports.readId == req.targetClassId
+        && ports.readId->value() == "2147483647"
+        && ports.saved.has_value()
+        && ports.saved->sourceClassId == req.sourceClassId
+        && ports.saved->sourceClassId.value() == "1"
+        && ports.saved->targetClassId == req.targetClassId
+        && ports.saved->targetClassId.value() == "2147483647";
 }
 
 bool rejectsPreparationWithoutSave()
@@ -272,6 +294,7 @@ int main()
         {"invalid and empty source",invalidSourcePreventsReadAndSave},
         {"invalid remaining source roster",invalidRemainingSourceRosterPreventsReadAndSave},
         {"invalid IDs",invalidIdsPreventReadAndSave},
+        {"maximum class ID forwarding",maximumClassIdForwardsThroughReadAndSave},
         {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},
         {"empty target base columns and row zero",emptyTargetUsesCanonicalBaseAndRowZero},
         {"warning-only roster preparation",warningOnlySnapshotPreparationStillSaves},

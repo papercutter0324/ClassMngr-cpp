@@ -1,13 +1,13 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 #include "next/application/roster_snapshot.h"
 #include "next/application/roster_save_preparation.h"
 
-#include <charconv>
+#include <cstdint>
 #include <string>
-#include <system_error>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -59,7 +59,7 @@ public:
         const RosterSaveCaseInsensitiveEquals& caseInsensitiveEquals
         )
     {
-        if (!isCanonicalPositiveClassId(request.classId.value()))
+        if (!isCanonicalPositiveDecimalId(request.classId.value()))
         {
             return Domain::Result<void>::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -145,26 +145,6 @@ private:
         return result;
     }
 
-    [[nodiscard]] static bool isCanonicalPositiveClassId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
 };
 
 } // namespace ClassMngr::Next::Application

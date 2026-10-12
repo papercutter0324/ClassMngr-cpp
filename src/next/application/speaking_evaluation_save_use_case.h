@@ -1,12 +1,11 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 #include "next/application/speaking_evaluation_validation.h"
 
-#include <charconv>
 #include <string>
-#include <system_error>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -30,7 +29,7 @@ public:
         const SpeakingEvaluationSavePort& port
         )
     {
-        if (!isCanonicalPositiveClassId(request.classId.value()))
+        if (!isCanonicalPositiveDecimalId(request.classId.value()))
         {
             return failure("Class ID must be a canonical positive integer.");
         }
@@ -80,27 +79,6 @@ private:
             .message = std::move(message),
             .recoverable = true
         });
-    }
-
-    [[nodiscard]] static bool isCanonicalPositiveClassId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
     }
 
     [[nodiscard]] static bool hasCompleteMatrix(

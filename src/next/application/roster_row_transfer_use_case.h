@@ -1,12 +1,12 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/roster_column_projection.h"
 #include "next/application/roster_read_query.h"
 #include "next/application/roster_row_removal.h"
 #include "next/application/roster_row_transfer_preparation.h"
 #include "next/application/roster_save_preparation.h"
 
-#include <charconv>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -66,8 +66,8 @@ public:
         CaseInsensitiveEquals&& caseInsensitiveEquals
         )
     {
-        if (!canonicalId(request.sourceClassId)
-            || !canonicalId(request.targetClassId)
+        if (!isCanonicalPositiveDecimalId(request.sourceClassId.value())
+            || !isCanonicalPositiveDecimalId(request.targetClassId.value())
             || request.sourceClassId == request.targetClassId)
         {
             return Domain::OperationError{
@@ -150,16 +150,6 @@ private:
             for (auto& cell : row)
                 cell = RosterSavePreparationDetail::snapshotText(cell);
         return snapshot;
-    }
-
-    [[nodiscard]] static bool canonicalId(const Domain::ClassId& id)
-    {
-        const auto& value = id.value();
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(), value.data() + value.size(), parsed);
-        return error == std::errc{} && end == value.data() + value.size()
-            && parsed > 0 && std::to_string(parsed) == value;
     }
 
     template <typename CaseInsensitiveEquals>

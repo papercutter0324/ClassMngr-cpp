@@ -65,6 +65,7 @@ class NextApplicationRosterSaveUseCaseTests final : public QObject
 
 private slots:
     void invalidClassIdsDoNotReachPort();
+    void acceptsMaximumClassIdAndForwardsUnchanged();
     void preservesCompleteSnapshotAndAllowFlag();
     void preservesPortFailure();
     void invalidRosterDoesNotReachPortAndIdTakesPriority();
@@ -95,10 +96,30 @@ void NextApplicationRosterSaveUseCaseTests::invalidClassIdsDoNotReachPort()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
     }
 
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationRosterSaveUseCaseTests::
+acceptsMaximumClassIdAndForwardsUnchanged()
+{
+    RecordingRosterSavePort port;
+    const Application::RosterSaveRequest value = request("2147483647");
+
+    const auto result = Application::RosterSaveUseCase::execute(value, port, equals);
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->classId.value(), std::string("2147483647"));
 }
 
 void NextApplicationRosterSaveUseCaseTests::preservesCompleteSnapshotAndAllowFlag()
