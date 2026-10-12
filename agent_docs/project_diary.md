@@ -4813,3 +4813,22 @@ leaving their distinct errors and read boundaries at the callers. The focused
 test audit found some error details and malformed-ID cases were implicit, so
 the acceptance matrix now adds exact assertions before verification. F707/F709
 remain deferred and the Phase 2 exit gate remains open.
+
+## Phase 2 F755 acceptance and F756 selection — 2026-10-13
+
+F755 is accepted at `ae93c500716e1c23552178b1b61d2e29e1f14439`. One shared
+canonical positive-decimal `int` validator now serves four class read queries
+without merging their caller-specific error or read behavior. The four exact
+query CTests passed after their targets and `ClassMngr` built under VS 18.10.1
+x64 Developer. The audit exposed a useful test-matrix lesson: add malformed
+trailing characters and exact error/recoverability assertions where a prior
+test checked only an error code.
+
+F756 is selected in Batch 186 to apply the same helper to the three My Classes
+batch queries. Its pre-implementation matrix keeps invalid/duplicate request
+validation before reads, the callers' exact error strings, empty-input
+behavior, and class-information's post-read returned-teacher validation.
+The returned-teacher failure must stay after its one required port call. The
+helper is already in the Application source inventory, so this slice should
+not need a CMake change. F707 and F709 remain deferred; Phase 2's exit gate
+remains open.

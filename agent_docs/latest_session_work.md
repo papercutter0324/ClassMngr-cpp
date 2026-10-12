@@ -24,10 +24,12 @@
   `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; its targets built and unique
   CTest #193 passed 1/1. F754 is committed as
   `006593ab40e4791bc9442056eea58961430e1e6c`; the Native English and GS Team
-  test targets built and CTests #273/#274 passed 2/2. F755 is selected in
-  Batch 185 to share canonical positive-decimal ID validation across four
-  class read queries. Its pre-implementation matrix now includes exact
-  caller-error and malformed-ID assertions after the independent test audit.
+  test targets built and CTests #273/#274 passed 2/2. F755 is committed at
+  `ae93c500716e1c23552178b1b61d2e29e1f14439`; the application target and four
+  read-query test targets built under VS 18.10.1 x64 Developer, and the four
+  unique CTests passed 4/4. F756 is selected in Batch 186 to reuse the shared
+  positive-decimal ID validator in three My Classes batch queries. Its exact
+  caller-error and port-boundary matrix is recorded before implementation.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

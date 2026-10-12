@@ -28843,6 +28843,63 @@ Build `ClassMngr` and
 CTest registration for each corresponding name, then run only those four
 exact CTests. Run no full suite.
 
-This matrix is recorded before implementation; F755 is selected but not
-implemented, and no F755 results are available. F707/F709 remain deferred,
+This matrix was recorded before implementation. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F755 canonical positive-decimal ID validation - accepted - 2026-10-13
+
+F755 is accepted at commit
+`ae93c500716e1c23552178b1b61d2e29e1f14439`. It shares canonical
+positive-decimal ID validation across the co-teacher page, teacher choices,
+class-by-ID, and classes-list queries while preserving caller errors,
+recoverability, validation order, and read boundaries.
+
+Under VS 18.10.1 x64 Developer/MSVC 14.51.36231, `ClassMngr` and all four
+query test targets built. Each exact CTest registration count was one; the
+four exact CTests passed 4/4 in 0.13 seconds. No full suite ran.
+
+**Decision: accept F755.** Batch 186 continues with F756; F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### Batch 186 continuation - F756 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F756 is selected:** reuse the existing
+`Application::isCanonicalPositiveDecimalId` in
+`my_classes_class_information_batch_read_query.h`,
+`my_classes_student_count_batch_read_query.h`, and
+`my_classes_teacher_profile_batch_read_query.h`. The helper is already in
+`cmake/next.cmake`; no CMake change is expected.
+
+Preserve each caller's exact result, validation/read order, and successful
+read, ordering, count, and row behavior. Class-information and student-count
+invalid ClassIds return nonrecoverable `InvalidInput` with
+`My Classes class IDs must be canonical positive integers.`; duplicate IDs
+return nonrecoverable `InvalidInput` with
+`My Classes class IDs must be unique.` Both cases make zero port calls.
+Teacher-profile invalid TeacherIds return nonrecoverable `InvalidInput` with
+`My Classes teacher IDs must be canonical positive integers.`; duplicate IDs
+return nonrecoverable `InvalidInput` with
+`My Classes teacher IDs must be unique.` Both cases make zero calls. An empty
+valid request remains successful with no port call. The class-information
+query still validates an optional returned teacher ID after one port read;
+malformed `19x` returns nonrecoverable `Validation` with
+`A My Classes class-information batch returned an invalid teacher identifier.`
+
+Add `42x` to each invalid-request test array and assert exact messages,
+recoverability, and call boundaries. In the class-information test, add
+malformed returned teacher ID `19x` alongside existing leading-zero `019`;
+assert the exact post-read `Validation` message, nonrecoverability, and one
+port call. Build `ClassMngr` and
+`ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests`,
+`ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests`, and
+`ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`. Confirm
+exactly one CTest registration for each of
+`NextApplicationMyClassesClassInformationBatchReadQuery`,
+`NextApplicationMyClassesStudentCountBatchReadQuery`, and
+`NextApplicationMyClassesTeacherProfileBatchReadQuery`; then run only those
+three exact CTests. Run no full suite.
+
+This matrix is recorded before implementation; F756 is selected but not
+implemented, and no F756 results are available. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

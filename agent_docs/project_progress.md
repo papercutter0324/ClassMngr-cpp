@@ -4769,3 +4769,59 @@ suite. F707 and F709 remain deferred. Phase 2 remains In Progress/Open with
 Gates 1 and 2 Partial; F625's assessment is accepted, F626 is deferred, and
 separate current-source Phase 0 evidence remains Windows x64 2/24 and macOS
 universal 0/24.
+
+## Phase 2 current position — 2026-10-13 (F755 accepted; F756 selected)
+
+F755 is accepted and committed as
+`ae93c500716e1c23552178b1b61d2e29e1f14439` (`Phase2 - Share canonical
+positive decimal ID validation`). The shared Application helper now serves
+the co-teacher page, teacher-choice, ClassById, and classes-list queries while
+preserving their distinct error contracts and validation/read boundaries.
+Under VS 18.10.1 x64 Developer with the existing Windows x64 Debug Ninja
+tree, `ClassMngr` and all four focused query test targets built. Each exact
+CTest name had one registration; the four focused CTests passed 4/4 in 0.13
+seconds. CMake reconfigured after detecting the new helper. The build also
+reported missing optional `WrapVulkanHeaders` and unrelated object-path-length
+warnings; neither blocked the requested targets. No full suite ran.
+
+F756 is selected in Batch 186 to reuse
+`Application::isCanonicalPositiveDecimalId` in
+`MyClassesClassInformationBatchReadQuery`,
+`MyClassesStudentCountBatchReadQuery`, and
+`MyClassesTeacherProfileBatchReadQuery`. Replace only their duplicate local
+positive-decimal parsers; the helper is already registered in
+`cmake/next.cmake`, so no CMake inventory change is expected. Preserve each
+caller's error code, exact message, recoverability,
+validation/duplicate precedence, and zero-port-call boundary for invalid and
+duplicate request IDs. Keep successful empty requests port-free and existing
+nonempty reads, entry-count/order checks, and row-level results unchanged.
+The focused tests must assert these exact caller contracts:
+
+- Class information: invalid IDs return `InvalidInput` with
+  `My Classes class IDs must be canonical positive integers.`; duplicate IDs
+  return `InvalidInput` with `My Classes class IDs must be unique.`. Both are
+  nonrecoverable and make zero port calls.
+- Student count: invalid and duplicate class IDs return the same respective
+  `InvalidInput` messages as class information, remain nonrecoverable, and
+  make zero port calls.
+- Teacher profile: invalid IDs return `InvalidInput` with
+  `My Classes teacher IDs must be canonical positive integers.`; duplicate
+  IDs return `InvalidInput` with `My Classes teacher IDs must be unique.`.
+  Both are nonrecoverable and make zero port calls.
+- Class information validates an optional returned teacher ID only after
+  one port read; a malformed ID returns `Validation` with
+  `A My Classes class-information batch returned an invalid teacher identifier.`
+  and is nonrecoverable.
+
+Strengthen the three focused tests before verification: add `42x` to each
+invalid request-ID set; assert the exact messages above. For class
+information, also exercise a returned teacher ID of `19x` and assert its
+exact post-read validation contract; preserve the existing leading-zero
+returned-teacher case. Build `ClassMngr` and
+`ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests`,
+`ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests`, and
+`ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`; confirm
+exactly one CTest registration for each, then run only those three exact
+CTest names. No full suite. F707 and F709 remain deferred. Phase 2 remains In
+Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.
