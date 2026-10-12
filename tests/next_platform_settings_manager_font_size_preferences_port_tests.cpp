@@ -2,8 +2,11 @@
 #include "next/application/font_size_preferences.h"
 #include "next/platform/settings_manager_font_size_preferences_port.h"
 
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
+
+#include <string>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -34,6 +37,8 @@ private slots:
     void writesAllFontSizeValuesForRoundTrip();
     void missingAndUnknownValuesDefaultToNormal();
     void unavailableSettingsDefaultToNormal();
+    void syncFailurePreservesPreviousValueAndAllowsRetry();
+    void syncFailurePreservesMissingValueAndUnrelatedSettings();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -120,7 +125,7 @@ writesAllFontSizeValuesForRoundTrip()
 
     for (int index = 0; index < 4; ++index)
     {
-        port.write(expectedFontSizes[index]);
+        QVERIFY(port.write(expectedFontSizes[index]));
         QCOMPARE(
             settings.get(fontSizeKey()).toInt(),
             expectedStoredValues[index]
@@ -131,8 +136,13 @@ writesAllFontSizeValuesForRoundTrip()
             );
     }
 
-    port.write(
+    const auto invalidWrite = port.write(
         static_cast<FontSize>(99)
+        );
+    QVERIFY(!invalidWrite);
+    QCOMPARE(
+        invalidWrite.error().code,
+        Domain::ErrorCode::InvalidInput
         );
     QCOMPARE(
         settings.get(fontSizeKey()).toInt(),
@@ -191,6 +201,106 @@ unavailableSettingsDefaultToNormal()
         FontSize::Normal
         );
     QVERIFY(!SettingsManager::instance().get(fontSizeKey()).isValid());
+}
+
+void NextPlatformSettingsManagerFontSizePreferencesPortTests::
+syncFailurePreservesPreviousValueAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = fontSizeKey();
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    settings.set(key, 2);
+    settings.set(unrelatedKey, 41);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerFontSizePreferencesPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedWrite = faultablePort.write(FontSize::ExtraLarge);
+    QVERIFY(!failedWrite);
+    QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(key).toInt(), 2);
+    QCOMPARE(faultablePort.read(), FontSize::Large);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 41);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(key).toInt(), 2);
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 41);
+
+    injectAccessError = false;
+    const auto retryResult = faultablePort.write(FontSize::ExtraLarge);
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(settings.get(key).toInt(), 4);
+    QCOMPARE(faultablePort.read(), FontSize::ExtraLarge);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 41);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(key).toInt(), 4);
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 41);
+}
+
+void NextPlatformSettingsManagerFontSizePreferencesPortTests::
+syncFailurePreservesMissingValueAndUnrelatedSettings()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = fontSizeKey();
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    settings.remove(key);
+    settings.set(unrelatedKey, 29);
+    settings.sync();
+
+    const SettingsManagerFontSizePreferencesPort faultablePort(
+        [](QSettings&)
+        {
+            return QSettings::AccessError;
+        }
+        );
+
+    const auto failedWrite = faultablePort.write(FontSize::Large);
+    QVERIFY(!failedWrite);
+    QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QVERIFY(!settings.get(key).isValid());
+    QCOMPARE(faultablePort.read(), FontSize::Normal);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 29);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(key));
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 29);
 }
 
 QTEST_APPLESS_MAIN(

@@ -118,7 +118,13 @@ void ActionRegistry::createActions(
         > automaticUpdatePreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> automaticUpdatePreferenceErrorHandler
+        )> automaticUpdatePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::FontSizePreferencesPort
+        > fontSizePreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> fontSizePreferenceErrorHandler
     )
 {
     createFileActions();
@@ -129,7 +135,9 @@ void ActionRegistry::createActions(
         std::move(saveModePreferencesPort),
         saveModePreferenceErrorHandler,
         std::move(automaticUpdatePreferencesPort),
-        automaticUpdatePreferenceErrorHandler
+        automaticUpdatePreferenceErrorHandler,
+        std::move(fontSizePreferencesPort),
+        fontSizePreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -755,7 +763,13 @@ void ActionRegistry::createOptionActions(
         > automaticUpdatePreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& automaticUpdatePreferenceErrorHandler
+        )>& automaticUpdatePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::FontSizePreferencesPort
+        > fontSizePreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& fontSizePreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1072,57 +1086,131 @@ void ActionRegistry::createOptionActions(
 
     fontSizeState->addOption(
         FontSize::Small,
-        smallFontAction
+        smallFontAction,
+        false
         );
     fontSizeState->addOption(
         FontSize::Normal,
-        normalFontAction
+        normalFontAction,
+        false
         );
     fontSizeState->addOption(
         FontSize::Large,
-        largeFontAction
+        largeFontAction,
+        false
         );
     fontSizeState->addOption(
         FontSize::ExtraLarge,
-        extraLargeFontAction
+        extraLargeFontAction,
+        false
         );
 
-    fontSizeState->onPersist =
-        [](const ::FontSize fontSize)
+    if (!fontSizePreferencesPort)
     {
-        ClassMngr::Next::Application::FontSize preference;
-        switch (fontSize)
+        fontSizePreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerFontSizePreferencesPort
+            >();
+    }
+
+    const auto writeFontSizePreference =
+        [fontSizePreferencesPort](const ::FontSize fontSize)
+            -> ClassMngr::Next::Domain::Result<void>
         {
-        case ::FontSize::Small:
-            preference = ClassMngr::Next::Application::FontSize::Small;
-            break;
+            ClassMngr::Next::Application::FontSize preference;
+            switch (fontSize)
+            {
+            case ::FontSize::Small:
+                preference =
+                    ClassMngr::Next::Application::FontSize::Small;
+                break;
 
-        case ::FontSize::Normal:
-            preference = ClassMngr::Next::Application::FontSize::Normal;
-            break;
+            case ::FontSize::Normal:
+                preference =
+                    ClassMngr::Next::Application::FontSize::Normal;
+                break;
 
-        case ::FontSize::Large:
-            preference = ClassMngr::Next::Application::FontSize::Large;
-            break;
+            case ::FontSize::Large:
+                preference =
+                    ClassMngr::Next::Application::FontSize::Large;
+                break;
 
-        case ::FontSize::ExtraLarge:
-            preference = ClassMngr::Next::Application::FontSize::ExtraLarge;
-            break;
+            case ::FontSize::ExtraLarge:
+                preference =
+                    ClassMngr::Next::Application::FontSize::ExtraLarge;
+                break;
 
-        default:
-            return;
-        }
+            default:
+                return ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message =
+                        "Font Size must be Small, Normal, Large, or Extra Large.",
+                    .recoverable = false
+                });
+            }
 
-        ClassMngr::Next::Platform::
-            SettingsManagerFontSizePreferencesPort().write(
-                preference
+            return fontSizePreferencesPort->write(preference);
+        };
+
+    // Preserve programmatic OptionState::set() writes for existing callers.
+    // QAction changes persist first and suppress the duplicate onPersist call
+    // for the one successful state commit.
+    const auto skipFontSizePersistForActionCommit =
+        std::make_shared<bool>(false);
+
+    const auto connectFontSizeAction =
+        [this, writeFontSizePreference, fontSizePreferenceErrorHandler,
+            skipFontSizePersistForActionCommit](
+            QAction* action,
+            const ::FontSize fontSize
+            )
+        {
+            connect(
+                action,
+                &QAction::triggered,
+                this,
+                [this, writeFontSizePreference,
+                    fontSizePreferenceErrorHandler,
+                    skipFontSizePersistForActionCommit,
+                    fontSizeSize = fontSize]()
+                {
+                    if (!fontSizeState
+                        || fontSizeState->current() == fontSizeSize)
+                    {
+                        return;
+                    }
+
+                    const auto saved =
+                        writeFontSizePreference(fontSizeSize);
+                    if (!saved)
+                    {
+                        if (QAction* previousAction =
+                                fontSizeState->action(
+                                    fontSizeState->current()
+                                    ))
+                        {
+                            previousAction->setChecked(true);
+                        }
+
+                        if (fontSizePreferenceErrorHandler)
+                        {
+                            fontSizePreferenceErrorHandler(saved.error());
+                        }
+                        return;
+                    }
+
+                    *skipFontSizePersistForActionCommit = true;
+                    fontSizeState->set(fontSizeSize);
+                }
                 );
-    };
+        };
 
-    const auto storedFontSize =
-        ClassMngr::Next::Platform::
-            SettingsManagerFontSizePreferencesPort()
-            .read();
+    connectFontSizeAction(smallFontAction, ::FontSize::Small);
+    connectFontSizeAction(normalFontAction, ::FontSize::Normal);
+    connectFontSizeAction(largeFontAction, ::FontSize::Large);
+    connectFontSizeAction(extraLargeFontAction, ::FontSize::ExtraLarge);
+
+    const auto storedFontSize = fontSizePreferencesPort->read();
     ::FontSize legacyFontSize = ::FontSize::Normal;
     switch (storedFontSize)
     {
@@ -1142,6 +1230,28 @@ void ActionRegistry::createOptionActions(
     fontSizeState->set(
         legacyFontSize
         );
+
+    // Hydration selects the stored option without writing it back. Programmatic
+    // state changes made after initialization retain the legacy persistence
+    // callback, while QAction changes use the checked persistence-first path.
+    fontSizeState->onPersist = [
+        writeFontSizePreference,
+        fontSizePreferenceErrorHandler,
+        skipFontSizePersistForActionCommit
+    ](const ::FontSize fontSize)
+    {
+        if (*skipFontSizePersistForActionCommit)
+        {
+            *skipFontSizePersistForActionCommit = false;
+            return;
+        }
+
+        const auto saved = writeFontSizePreference(fontSize);
+        if (!saved && fontSizePreferenceErrorHandler)
+        {
+            fontSizePreferenceErrorHandler(saved.error());
+        }
+    };
 
     documentPageSpacingState =
         new OptionState<DocumentPageSpacing>(this);

@@ -49,6 +49,7 @@ namespace ClassMngr::Next::Application
 {
 class AutomaticUpdatePreferencesPort;
 class ExcelImportTimeoutPreferencesPort;
+class FontSizePreferencesPort;
 class SaveModePreferencesPort;
 }
 
@@ -78,6 +79,12 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> automaticUpdatePreferenceErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::FontSizePreferencesPort
+        > fontSizePreferencesPort;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> fontSizePreferenceErrorHandler;
 };
 
 // =========================================================

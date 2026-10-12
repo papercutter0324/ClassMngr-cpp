@@ -64,6 +64,9 @@ public:
         static constexpr auto SAVE_MODE_PREFERENCE =
             "options/saveMode";
 
+        static constexpr auto FONT_SIZE_PREFERENCE =
+            "options/fontSize";
+
         static constexpr auto WINDOW_GEOMETRY =
             "ui/windowGeometry";
 
@@ -162,6 +165,16 @@ public:
     [[nodiscard]] QSettings::Status writeSaveModePreference(
         int mode,
         const SaveModePreferenceSync& synchronize = {}
+        );
+
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores the previous key before returning.
+    using FontSizePreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeFontSizePreference(
+        int fontSize,
+        const FontSizePreferenceSync& synchronize = {}
         );
 
     // =====================================================

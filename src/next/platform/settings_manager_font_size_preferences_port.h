@@ -6,17 +6,25 @@
 
 #include <QString>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the startup font-size read. The legacy
-// SettingsManager singleton and integer conversion stay here; ActionRegistry
-// remains the compatibility bridge and menu owner for this option.
+// Qt-boundary adapter for the font-size preference. The legacy SettingsManager
+// singleton and integer conversion stay here; ActionRegistry remains the
+// compatibility bridge and menu owner for this option.
 class SettingsManagerFontSizePreferencesPort final
     : public Application::FontSizePreferencesPort
 {
 public:
-    SettingsManagerFontSizePreferencesPort() = default;
+    explicit SettingsManagerFontSizePreferencesPort(
+        SettingsManager::FontSizePreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::FontSize read() const override
     {
@@ -41,7 +49,7 @@ public:
         }
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::FontSize fontSize
         ) const override
     {
@@ -65,16 +73,39 @@ public:
             break;
 
         default:
-            return;
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Font Size must be Small, Normal, Large, or Extra Large.",
+                .recoverable = false
+            });
         }
 
-        SettingsManager::instance().set(
-            key(),
-            storedValue
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeFontSizePreference(
+                storedValue,
+                m_synchronize
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save Font Size preference: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:
+    SettingsManager::FontSizePreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(

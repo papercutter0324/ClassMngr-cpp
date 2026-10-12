@@ -577,11 +577,29 @@ void MainWindow::createActions()
             };
     }
 
+    auto fontSizePreferenceErrorHandler =
+        m_startupOptions.fontSizePreferenceErrorHandler;
+    if (!fontSizePreferenceErrorHandler)
+    {
+        fontSizePreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Font Size preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
         std::move(saveModePreferenceErrorHandler),
         m_startupOptions.automaticUpdatePreferencesPort,
-        std::move(automaticUpdatePreferenceErrorHandler)
+        std::move(automaticUpdatePreferenceErrorHandler),
+        m_startupOptions.fontSizePreferencesPort,
+        std::move(fontSizePreferenceErrorHandler)
         );
 }
 

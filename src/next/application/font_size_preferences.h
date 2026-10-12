@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -20,7 +22,7 @@ public:
 
     [[nodiscard]] virtual FontSize read() const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         FontSize fontSize
         ) const = 0;
 };

@@ -239,6 +239,56 @@ QSettings::Status SettingsManager::writeSaveModePreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeFontSizePreference(
+    const int fontSize,
+    const FontSizePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousFontSize =
+        m_settings->contains(Keys::FONT_SIZE_PREFERENCE);
+    const QVariant previousFontSize =
+        m_settings->value(Keys::FONT_SIZE_PREFERENCE);
+    m_settings->setValue(
+        Keys::FONT_SIZE_PREFERENCE,
+        fontSize
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore this key before replacing the failed instance so its
+        // pending candidate cannot be retried during teardown.
+        if (hadPreviousFontSize)
+        {
+            m_settings->setValue(
+                Keys::FONT_SIZE_PREFERENCE,
+                previousFontSize
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::FONT_SIZE_PREFERENCE);
+        }
+
+        // Reopen the store so reads see the restored value and a later write
+        // can retry with a clean QSettings status.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================
