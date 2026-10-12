@@ -241,6 +241,42 @@ void updateFailureDoesNotReload()
         "failed update should not reload or claim a successful write");
 }
 
+void reloadIdentifierMismatchReportsCompletedWrite()
+{
+    std::vector<std::string> calls;
+    FakePolicy policy;
+    FakePort port;
+    policy.calls = &calls;
+    port.calls = &calls;
+    port.canonical = profile(9);
+
+    const auto result = TeacherProfileEditUseCase::execute(
+        TeacherProfileEditRequest::fromIntId(8, fields()), policy, port);
+
+    require(!result && result.error().kind
+                == TeacherProfileEditFailureKind::ReloadFailed,
+        "mismatched reload identity should be a reload failure");
+    require(result.error().cause.code == Domain::ErrorCode::Validation,
+        "mismatched reload identity should report a validation error");
+    require(result.error().cause.message
+                == "Teacher profile edit reload returned a different teacher identifier.",
+        "mismatched reload identity should preserve its exact message");
+    require(!result.error().cause.recoverable,
+        "mismatched reload identity should be nonrecoverable");
+    require(result.error().writeSucceeded,
+        "mismatched reload identity should report the completed write");
+    require(calls == std::vector<std::string>{"validate", "update", "reload"},
+        "mismatched reload should preserve validation, update, reload ordering");
+    require(policy.inputs.size() == 1
+                && policy.inputs.front() == profile(8, fields()),
+        "validation should receive the requested teacher ID");
+    require(port.updates.size() == 1
+                && port.updates.front().id.value() == "8",
+        "exactly one update should receive the requested teacher ID");
+    require(port.reloads.size() == 1 && port.reloads.front().value() == "8",
+        "exactly one reload should request the requested teacher ID");
+}
+
 void reloadFailureReportsCompletedWrite()
 {
     FakePolicy policy;
@@ -287,6 +323,7 @@ int main()
         invalidInputsDoNotWrite();
         validSavePreservesFieldsOrderAndCanonicalReturn();
         updateFailureDoesNotReload();
+        reloadIdentifierMismatchReportsCompletedWrite();
         reloadFailureReportsCompletedWrite();
         validationIssueArgumentsAreBounded();
     }

@@ -232,6 +232,19 @@ public:
             });
         }
 
+        if (reloadResult.value().id != candidate.id)
+        {
+            return std::unexpected(TeacherProfileEditFailure{
+                .kind = TeacherProfileEditFailureKind::ReloadFailed,
+                .cause = {
+                    .code = Domain::ErrorCode::Validation,
+                    .message = "Teacher profile edit reload returned a different teacher identifier.",
+                    .recoverable = false
+                },
+                .writeSucceeded = true
+            });
+        }
+
         return std::move(reloadResult).value();
     }
 };
