@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/domain/domain_types.h"
+#include "next/domain/student_name_pair.h"
 
 #include <algorithm>
 #include <array>
@@ -719,14 +720,8 @@ inline void appendDuplicateNameIssues(
     SpeakingEvaluationValidationResult& result
     )
 {
-    struct PairGroup final
-    {
-        std::u16string english;
-        std::u16string korean;
-        std::vector<int> rows;
-    };
-
-    std::vector<PairGroup> groups;
+    std::vector<std::optional<Domain::StudentNamePair>> namePairsByRow;
+    namePairsByRow.reserve(result.normalizedRequest.evaluation.rows.size());
     for (std::size_t rowIndex = 0;
          rowIndex < result.normalizedRequest.evaluation.rows.size();
          ++rowIndex)
@@ -736,38 +731,28 @@ inline void appendDuplicateNameIssues(
         const std::u16string korean = trim(cell(row, 2));
         if (english.empty() || korean.empty())
         {
+            namePairsByRow.push_back(std::nullopt);
             continue;
         }
 
-        auto group = std::ranges::find_if(
-            groups,
-            [&english, &korean](const PairGroup& candidate)
-            {
-                return candidate.english == english
-                    && candidate.korean == korean;
-            }
+        namePairsByRow.push_back(
+            Domain::StudentNamePair::fromNames(english, korean)
             );
-        if (group == groups.end())
-        {
-            groups.push_back({english, korean, {
-                static_cast<int>(rowIndex)
-            }});
-        }
-        else
-        {
-            group->rows.push_back(static_cast<int>(rowIndex));
-        }
     }
 
-    for (const PairGroup& group : groups)
+    const auto duplicateGroups = Domain::duplicateStudentNamePairGroups(
+        namePairsByRow
+        );
+    for (const auto& group : duplicateGroups)
     {
-        if (group.rows.size() < 2)
+        std::vector<int> duplicateRows;
+        duplicateRows.reserve(group.rowIndexes.size());
+        for (const std::size_t rowIndex : group.rowIndexes)
         {
-            continue;
+            duplicateRows.push_back(static_cast<int>(rowIndex));
         }
 
-        const std::vector<int> duplicateRows = group.rows;
-        for (const int row : group.rows)
+        for (const int row : duplicateRows)
         {
             for (const int column : {1, 2})
             {

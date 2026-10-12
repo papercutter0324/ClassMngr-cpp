@@ -123,6 +123,7 @@ private slots:
     void rejectsIncompleteMatrixAndInvalidCoordinates();
     void normalizesValidRequestBeforePortAndPreservesUnicodeAndCellOrder();
     void rejectsInvalidContentBeforeCallingPort();
+    void groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder();
     void preservesQuestionableKoreanLengthWarningAndAllowSemantics();
     void preservesEmptyDeltaAsAllCellsRequest();
     void preservesPortFailure();
@@ -389,6 +390,149 @@ rejectsInvalidContentBeforeCallingPort()
         "validation.length.out_of_bounds",
         "evaluationName"
         ));
+}
+
+void NextApplicationSpeakingEvaluationSaveUseCaseTests::
+groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
+{
+    RecordingSpeakingEvaluationSavePort port;
+    auto value = request("42");
+    clearRows(value);
+    value.evaluationName = u"Fall";
+
+    setStudent(
+        value,
+        0,
+        u"\u3000Alice\u3000",
+        u"\u3000\uAE40\uBBFC\uC9C0\u3000"
+        );
+    setStudent(value, 1, u"Bob", u"\uBC15\uC9C0\uBBFC");
+    setStudent(
+        value,
+        2,
+        u"\u2003Alice\u2003",
+        u"\u2003\uAE40\uBBFC\uC9C0\u2003"
+        );
+    setStudent(value, 3, u" Bob ", u" \uBC15\uC9C0\uBBFC ");
+    setStudent(value, 4, u" Alice ", u"");
+    setStudent(value, 5, u"Bob", u"\uBC15\uC9C0\uBBFC");
+    setStudent(value, 6, u"Alice", u"\uAE40\uBBFC\uC9C0");
+    setStudent(value, 7, u"", u" \uBC15\uC9C0\uBBFC ");
+
+    const auto saveResult = Application::SpeakingEvaluationSaveUseCase::execute(
+        value,
+        port
+        );
+    QVERIFY(!saveResult);
+    QCOMPARE(saveResult.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        saveResult.error().message,
+        std::string("Speaking evaluation content is invalid.")
+        );
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
+
+    const auto validation = Application::validateAndNormalizeSpeakingEvaluation(
+        value
+        );
+    QVERIFY(validation.hasErrors());
+    QCOMPARE(
+        validation.normalizedRequest.evaluation.rows[0][1],
+        std::u16string(u"Alice")
+        );
+    QCOMPARE(
+        validation.normalizedRequest.evaluation.rows[0][2],
+        std::u16string(u"\uAE40\uBBFC\uC9C0")
+        );
+    QCOMPARE(
+        validation.normalizedRequest.evaluation.rows[2][1],
+        std::u16string(u"Alice")
+        );
+    QCOMPARE(
+        validation.normalizedRequest.evaluation.rows[2][2],
+        std::u16string(u"\uAE40\uBBFC\uC9C0")
+        );
+
+    struct ExpectedDuplicateIssue final
+    {
+        int row;
+        int column;
+        std::vector<int> duplicateRows;
+    };
+    const std::vector<ExpectedDuplicateIssue> expectedDuplicateIssues{
+        {0, 1, {0, 2, 6}},
+        {0, 2, {0, 2, 6}},
+        {2, 1, {0, 2, 6}},
+        {2, 2, {0, 2, 6}},
+        {6, 1, {0, 2, 6}},
+        {6, 2, {0, 2, 6}},
+        {1, 1, {1, 3, 5}},
+        {1, 2, {1, 3, 5}},
+        {3, 1, {1, 3, 5}},
+        {3, 2, {1, 3, 5}},
+        {5, 1, {1, 3, 5}},
+        {5, 2, {1, 3, 5}}
+    };
+    QCOMPARE(validation.issues.size(), expectedDuplicateIssues.size() + 2);
+
+    const auto& incompleteEnglish = validation.issues[0];
+    QCOMPARE(
+        incompleteEnglish.code,
+        std::string("speaking_evaluation.student_name.required")
+        );
+    QCOMPARE(incompleteEnglish.field, std::string("rows[4].Korean Name"));
+    QCOMPARE(incompleteEnglish.row, 4);
+    QCOMPARE(incompleteEnglish.column, 2);
+    QCOMPARE(
+        incompleteEnglish.severity,
+        Application::SpeakingEvaluationValidationSeverity::Error
+        );
+    QVERIFY(!incompleteEnglish.arguments.contains("duplicateRows"));
+
+    const auto& incompleteKorean = validation.issues[1];
+    QCOMPARE(
+        incompleteKorean.code,
+        std::string("speaking_evaluation.student_name.required")
+        );
+    QCOMPARE(incompleteKorean.field, std::string("rows[7].English Name"));
+    QCOMPARE(incompleteKorean.row, 7);
+    QCOMPARE(incompleteKorean.column, 1);
+    QCOMPARE(
+        incompleteKorean.severity,
+        Application::SpeakingEvaluationValidationSeverity::Error
+        );
+    QVERIFY(!incompleteKorean.arguments.contains("duplicateRows"));
+
+    for (std::size_t index = 0; index < expectedDuplicateIssues.size(); ++index)
+    {
+        const auto& issue = validation.issues[index + 2];
+        const auto& expected = expectedDuplicateIssues[index];
+        const std::string expectedField = expected.column == 1
+            ? "English Name"
+            : "Korean Name";
+
+        QCOMPARE(issue.code, std::string("student_name.duplicate_pair"));
+        QCOMPARE(issue.field, expectedField);
+        QCOMPARE(issue.row, expected.row);
+        QCOMPARE(issue.column, expected.column);
+        QCOMPARE(
+            issue.severity,
+            Application::SpeakingEvaluationValidationSeverity::Error
+            );
+        QCOMPARE(issue.arguments.size(), std::size_t(1));
+        QVERIFY(issue.arguments.contains("duplicateRows"));
+        const auto* duplicateRows = std::get_if<std::vector<int>>(
+            &issue.arguments.at("duplicateRows")
+            );
+        QVERIFY(duplicateRows != nullptr);
+        QCOMPARE(duplicateRows->size(), expected.duplicateRows.size());
+        for (std::size_t rowIndex = 0;
+             rowIndex < expected.duplicateRows.size();
+             ++rowIndex)
+        {
+            QCOMPARE((*duplicateRows)[rowIndex], expected.duplicateRows[rowIndex]);
+        }
+    }
 }
 
 void NextApplicationSpeakingEvaluationSaveUseCaseTests::
