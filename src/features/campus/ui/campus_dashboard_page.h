@@ -6,6 +6,7 @@
 #include "domain/models/campus_info.h"
 #include "next/application/campus_dashboard_campus_save_port.h"
 #include "next/application/campus_dashboard_selected_campus_read_port.h"
+#include "next/application/last_selected_campus_port.h"
 
 #include <QList>
 #include <QPointer>
@@ -39,6 +40,10 @@ struct CampusDashboardPageDependencies final
     // campusDirectory when this is null.
     const ClassMngr::Next::Application::CampusDashboardCampusSavePort*
         campusSavePort = nullptr;
+    // Optional, non-owning preference dependency. Production uses the
+    // SettingsManager adapter when this is null.
+    const ClassMngr::Next::Application::LastSelectedCampusPort*
+        lastSelectedCampusPort = nullptr;
 };
 
 class CampusDashboardPage : public BasePage
@@ -339,6 +344,8 @@ private:
     QString m_campusDirectory;
     const ClassMngr::Next::Application::CampusDashboardSelectedCampusReadPort*
         m_selectedCampusReadPort = nullptr;
+    const ClassMngr::Next::Application::LastSelectedCampusPort*
+        m_lastSelectedCampusPort = nullptr;
     std::unique_ptr<
         ClassMngr::Next::Application::CampusDashboardCampusSavePort
         > m_ownedCampusSavePort;

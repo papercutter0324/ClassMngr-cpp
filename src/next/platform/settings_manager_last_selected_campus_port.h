@@ -6,6 +6,8 @@
 #include <QString>
 #include <QVariant>
 
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -16,7 +18,12 @@ class SettingsManagerLastSelectedCampusPort final
     : public Application::LastSelectedCampusPort
 {
 public:
-    SettingsManagerLastSelectedCampusPort() = default;
+    explicit SettingsManagerLastSelectedCampusPort(
+        SettingsManager::LastCampusJsonIdPreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] std::optional<Domain::CampusId> read()
         const override
@@ -40,16 +47,29 @@ public:
             );
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const std::optional<Domain::CampusId>& campusId
         ) const override
     {
-        SettingsManager::instance().set(
-            key(),
-            campusId.has_value()
-                ? QString::fromStdString(campusId->value())
-                : QString()
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeLastCampusJsonIdPreference(
+                campusId.has_value()
+                    ? QString::fromStdString(campusId->value())
+                    : QString(),
+                m_synchronize
+                );
+
+        if (status == QSettings::NoError)
+        {
+            return Domain::Result<void>::success();
+        }
+
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message =
+                "The last-selected campus preference could not be saved.",
+            .recoverable = true
+        });
     }
 
 private:
@@ -59,6 +79,8 @@ private:
             SettingsManager::Keys::LAST_CAMPUS_JSON_ID
             );
     }
+
+    SettingsManager::LastCampusJsonIdPreferenceSync m_synchronize;
 };
 
 } // namespace ClassMngr::Next::Platform

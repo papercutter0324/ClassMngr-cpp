@@ -48,6 +48,7 @@ CampusDashboardPage::CampusDashboardPage(
             : std::move(dependencies.campusDirectory)
         )
     , m_selectedCampusReadPort(dependencies.selectedCampusReadPort)
+    , m_lastSelectedCampusPort(dependencies.lastSelectedCampusPort)
     , m_campusSavePort(dependencies.campusSavePort)
 {
     if (!m_campusSavePort)
@@ -595,12 +596,6 @@ void CampusDashboardPage::loadSelectedCampus()
     m_currentCampusComboIndex =
         m_campusCombo->currentIndex();
 
-    ClassMngr::Next::Platform::SettingsManagerLastSelectedCampusPort().write(
-        ClassMngr::Next::Domain::CampusId::fromString(
-            m_currentCampus.id.toStdString()
-            )
-        );
-
     populateFields(m_currentCampus);
 
     m_dirty = false;
@@ -611,7 +606,27 @@ void CampusDashboardPage::loadSelectedCampus()
     }
 
     updateCampusSaveButton();
-    setStatus(QString());
+
+    const auto typedCampusId =
+        ClassMngr::Next::Domain::CampusId::fromString(
+            m_currentCampus.id.toStdString()
+            );
+    const ClassMngr::Next::Domain::Result<void> preferenceWrite = [&]()
+    {
+        if (m_lastSelectedCampusPort)
+        {
+            return m_lastSelectedCampusPort->write(typedCampusId);
+        }
+
+        return ClassMngr::Next::Platform::
+            SettingsManagerLastSelectedCampusPort().write(typedCampusId);
+    }();
+
+    setStatus(
+        preferenceWrite
+            ? QString()
+            : tr("The selected campus could not be saved as your last campus.")
+        );
 }
 
 void CampusDashboardPage::handleFieldEdited()

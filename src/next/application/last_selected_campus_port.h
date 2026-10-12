@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/domain/domain_types.h"
+#include "next/domain/operation_result.h"
 
 #include <optional>
 
@@ -17,7 +18,7 @@ public:
     [[nodiscard]] virtual std::optional<Domain::CampusId> read()
         const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         const std::optional<Domain::CampusId>& campusId
         ) const = 0;
 };

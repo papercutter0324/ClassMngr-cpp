@@ -632,6 +632,58 @@ void SettingsManager::setLastCampusJsonId(
         );
 }
 
+QSettings::Status SettingsManager::writeLastCampusJsonIdPreference(
+    const QString& campusId,
+    const LastCampusJsonIdPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousCampusId =
+        m_settings->contains(Keys::LAST_CAMPUS_JSON_ID);
+    const QVariant previousCampusId =
+        m_settings->value(Keys::LAST_CAMPUS_JSON_ID);
+
+    m_settings->setValue(
+        Keys::LAST_CAMPUS_JSON_ID,
+        campusId
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore only the attempted preference before destroying this
+        // instance, so unrelated settings and the legacy integer key remain
+        // untouched and the failed candidate cannot be retried on teardown.
+        if (hadPreviousCampusId)
+        {
+            m_settings->setValue(
+                Keys::LAST_CAMPUS_JSON_ID,
+                previousCampusId
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::LAST_CAMPUS_JSON_ID);
+        }
+
+        // A failed QSettings instance retains its status. Reopen the store so
+        // the restored value is visible and a later write can retry.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Sidebar
 // =========================================================

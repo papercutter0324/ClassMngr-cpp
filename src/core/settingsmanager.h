@@ -270,6 +270,17 @@ public:
         const QString& campusId
         );
 
+    // An empty callback uses QSettings::sync/status. This checked writer is
+    // limited to the JSON campus preference and restores its prior state on
+    // sync failure so callers can retry without disturbing other settings.
+    using LastCampusJsonIdPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeLastCampusJsonIdPreference(
+        const QString& campusId,
+        const LastCampusJsonIdPreferenceSync& synchronize = {}
+        );
+
     // =====================================================
     // Sidebar
     // =====================================================
