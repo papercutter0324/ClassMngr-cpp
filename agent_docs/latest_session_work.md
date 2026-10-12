@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-153 are complete.
+  141-154 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -23,10 +23,13 @@
   `fd1dd763503a60deb54ffa1b00c3221b20bca264`; its two focused CTests passed.
 - F678 AI Comment Voice typed persistence and action rollback is committed as
   `c3ab5a7a4308e0c52230f2047a240e1c97d31348`; its two focused CTests passed.
-- F679 AI Comment Provider typed persistence and action rollback is
-  selected/current in Batch 154. Its acceptance matrix and exact CTests are in
-  the Phase 2 progress log; implementation begins after this selection record
-  is committed.
+- F679 AI Comment Provider typed persistence and action rollback is committed
+  as `e907cf058618a3554d926b189b1111b1059b27d3`; its three selected CTests
+  passed.
+- F680 Language Preference typed persistence and action rollback is
+  selected/current in Batch 155. Its acceptance matrix and three exact existing
+  CTests are in the Phase 2 progress log; implementation starts after the
+  selection commit.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -5438,13 +5441,16 @@ one sync attempt and diagnostic on action failure, unchanged action/storage,
 prompt voice after failure, and successful retry. No full suite ran. Batch 153
 is complete.
 
-F679 AI Comment Provider persistence failure feedback is selected/current in
-Batch 154. Provider selection affects the labels/actions in subsequently
-created report and batch dialogs. The shortlist compared provider with PDF
+F679 AI Comment Provider failure feedback is accepted in Batch 154. The
+provider port, standard action, and Custom Website action tests passed 3/3.
+Failure preserves the prior provider, dialog labels, and custom URL, with one
+diagnostic; retry succeeds. Commit: `e907cf058618a3554d926b189b1111b1059b27d3`.
+
+F680 Language Preference persistence failure feedback is selected/current in
+Batch 155. Language actions affect the preference, LanguageService, global
+font, and translated UI. The shortlist compared Language Preference with PDF
 viewer background/page spacing, Sidebar Display, and the Apple-only PowerPoint
-notice; provider was selected for its downstream dialog/provider URL effect
-and existing focused tests. Custom Website also stores a separate URL and
-uses a modal entry/validation flow, so failure must retain the old provider
-and URL while a successful retry preserves the existing URL selection flow.
-The acceptance matrix and three exact existing CTests are in the Phase 2
-progress log. Implementation begins after this selection record is committed.
+notice. Language was selected for its broader live application effect and
+existing controller, settings-port, and MainWindow retranslation coverage. The
+three existing CTests are recorded with the acceptance matrix in the Phase 2
+progress log.

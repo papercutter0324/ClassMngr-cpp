@@ -24858,3 +24858,77 @@ errors map to diagnostic `Technical` results.
    target.
 
 This matrix is recorded before implementation. Batch 154 is active with F679.
+
+### F679 AI Comment Provider failure feedback - accepted - 2026-10-12
+
+F679 is accepted at code/test commit
+`e907cf058618a3554d926b189b1111b1059b27d3`. `ClassMngr` and the three
+selected test targets built in `build/windows-x64-debug-ninja` under the
+Visual Studio 2026 developer environment. The exact CTests passed 3/3:
+`ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests`,
+`ClassMngrMainWindowAiCommentProviderActionParityTests`, and
+`ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests`. Coverage
+verifies provider mappings/defaults, invalid input and sync-error results,
+prior/absent-key and unrelated-setting preservation, retry, zero startup
+writes, standard action rollback, one diagnostic, unchanged report/batch
+labels, Custom Website URL preservation on failure, and successful retry with
+provider persistence before URL change. Programmatic state-write failures are
+reported without rollback. No full suite ran.
+
+**Decision: accept F679.** Batch 154 is complete; Batch 155 is active with
+F680. Continue the one-commit-per-slice sequence.
+
+### Batch 155 shortlist and selection - recorded before F680 implementation - 2026-10-12
+
+The candidate scan compared Language Preference, PDF Viewer Background, PDF
+page spacing, Sidebar Display, and the PowerPoint Data Access Notice. Language
+Preference is selected because it controls the stored language, LanguageService,
+global font, and live UI translation. A failed void settings write can leave
+the action and live language state inconsistent with storage. Existing typed
+port, controller, and MainWindow retranslation CTests cover those boundaries.
+Sidebar and PDF settings have narrower live effects; the PowerPoint notice is
+Apple-only. No new CMake target or platform-specific gate is needed.
+
+**F680 is selected:** add an opt-in checked SettingsManager write for the
+language integer preference at `options/language`, synchronizing QSettings and
+restoring the prior key (including absence) on failure, while preserving
+unrelated settings and retry. Keep generic `SettingsManager::set`/`sync`
+behavior unchanged. Preserve canonical SystemDefault=0, English=1, and
+Korean=5 values and the existing legacy English migration from 2/3/4 to 1.
+Change `LanguagePreferencesPort::write` to
+`[[nodiscard]] Domain::Result<void>`; map invalid enum inputs to
+`InvalidInput` and sync failures to diagnostic `Technical` results.
+
+### F680 Language Preference failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked SettingsManager write for the language integer. Check QSettings
+   sync, restore the previous key including absence on failure, preserve
+   unrelated settings, and allow retry. Leave generic SettingsManager
+   `set`/`sync` behavior unchanged. Preserve read defaults and one-time legacy
+   English migration values 2/3/4 to canonical 1.
+2. Change `LanguagePreferencesPort::write` to
+   `[[nodiscard]] Domain::Result<void>`. Preserve SystemDefault=0, English=1,
+   Korean=5, and legacy migration behavior. Invalid enum inputs return
+   `InvalidInput`; storage errors return diagnostic `Technical` results.
+3. Inject the typed language preference port and error handler through
+   MainWindow startup options without changing its public constructor. Make
+   language QActions persistence-first. On failure, preserve the prior stored
+   value, checked action, OptionState, LanguageService locale, global font, and
+   translated UI; invoke one diagnostic and avoid a duplicate write. On retry,
+   update storage, selection, language, font, and translations together.
+   Startup hydration performs no ordinary preference write (while legacy-value
+   migration remains intact). Programmatic `OptionState::set()` retains its
+   existing commit and callback behavior while reporting a typed write failure.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests` with
+   injected sync failure, prior/absent-key and unrelated-setting preservation,
+   invalid enum mapping, and retry. Extend `ClassMngrLanguagePreferencePortTests`
+   with QAction rollback, programmatic error reporting, and successful retry
+   alongside its existing controller checks. Extend
+   `ClassMngrMainWindowDocumentCatalogRetranslationParityTests` to verify the
+   real MainWindow keeps its existing English language, font, selected action,
+   and translated document Sidebar unchanged on a failed save, then retranslates
+   to Korean after retry. Build `ClassMngr` and these three existing targets;
+   run exactly these three CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 155 is active with F680.

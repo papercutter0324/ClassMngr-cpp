@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F679)
+### Current state - 2026-10-12 (F680)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-153 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-154 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -139,15 +139,23 @@ unrelated-setting preservation, no startup write, one diagnostic and sync
 attempt on action failure, unchanged stored/action state, prompt voice after
 failure, and successful retry. No full suite ran. Batch 153 is complete.
 
-F679 AI Comment Provider typed persistence and action rollback is
-selected/current in Batch 154. Its acceptance matrix is recorded in the Phase
-2 progress log. A failed provider save must preserve the selected/stored
-provider and subsequent report/batch provider labels, with one diagnostic; a
-successful retry must update the preference and subsequent labels together.
-The custom website route must keep its URL dialog and preserve both prior
-selection and URL on a failed provider write. The existing port, provider
-action, and custom-website action CTests are selected; no CMake target is
-needed.
+F679 AI Comment Provider typed persistence and action rollback is committed
+as `e907cf058618a3554d926b189b1111b1059b27d3`. `ClassMngr` and all three
+selected targets built in the Windows x64 Debug Ninja tree under the VS 2026
+developer environment; the provider port, standard action, and Custom Website
+action CTests passed 3/3. Coverage verifies failure rollback, one diagnostic,
+unchanged report/batch provider labels and Custom Website URL, successful
+retry, and programmatic failure reporting. No full suite ran. Batch 154 is
+complete.
+
+F680 Language Preference typed persistence and action rollback is
+selected/current in Batch 155. A failed language save can leave the selected
+menu item and live language/font/retranslation state inconsistent with stored
+settings. The existing settings port, language controller, and MainWindow
+retranslation CTests will cover checked writes, QAction rollback, retry,
+startup hydration without a write, and programmatic persistence behavior.
+Exact acceptance and all three existing CTests are recorded in the Phase 2
+progress log; no CMake target is needed.
 
 ### Current state - 2026-10-09
 

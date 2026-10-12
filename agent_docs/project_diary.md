@@ -3928,13 +3928,22 @@ one diagnostic; retry updates selection and prompts together. Startup
 hydration performs no preference write. Both selected CTests passed 2/2.
 F678 is committed as `c3ab5a7a4308e0c52230f2047a240e1c97d31348`.
 
-## F679 AI Comment Provider persistence failure feedback - selected - 2026-10-12
+## F679 AI Comment Provider persistence failure feedback - accepted - 2026-10-12
 
-Provider choice is read by report and batch dialogs when they build provider
-labels, prompt actions, and URLs. A failed write can leave the selected menu
-provider inconsistent with subsequent dialogs. F679 will make provider
-selection persistence-first, preserve the previous provider on failure, report
-one diagnostic, and permit retry. The Custom Website choice has its own URL
-dialog and key; a failed provider commit must retain the prior selection and
-URL, while the existing URL-validation and successful selection flow remain
-intact.
+Provider selection now persists before it changes the selected option. A
+failed write keeps the previous provider and subsequent report/batch provider
+labels; the Custom Website path also retains the previous URL. Failures report
+one diagnostic, and retry updates storage and the selected provider together.
+Startup hydration still performs no write. The three focused CTests passed
+3/3; no full suite ran. F679 is committed as
+`e907cf058618a3554d926b189b1111b1059b27d3`.
+
+## F680 Language Preference persistence failure feedback - selected - 2026-10-12
+
+Language selection updates the persisted preference, LanguageService, global
+font, and translated UI. A failed void write can leave these states out of
+step. F680 will add a checked typed language write and make its QAction
+persistence-first, preserving the selected action and live language state on
+failure. One diagnostic and retry are required. Startup hydration and existing
+programmatic OptionState persistence remain intact. The full acceptance
+matrix and three exact existing CTests are in the Phase 2 progress log.
