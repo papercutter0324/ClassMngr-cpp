@@ -1,5 +1,7 @@
 #include "schedule_time_formatter.h"
 
+#include "domain/rules/schedule_value_parser.h"
+
 #include <QTime>
 
 namespace ScheduleTimeFormatter
@@ -9,16 +11,15 @@ QString displayTime(
     bool use24h
     )
 {
-    const QTime time =
-        QTime::fromString(
-            timeLabel,
-            QStringLiteral("HH:mm")
-            );
+    const auto parsedTime =
+        ScheduleValueParser::parseTime(timeLabel);
 
-    if (!time.isValid())
+    if (!parsedTime || parsedTime->text != timeLabel)
     {
         return timeLabel;
     }
+
+    const QTime time = parsedTime->value;
 
     if (use24h)
     {
@@ -38,16 +39,15 @@ QString rangeLabel(
     bool use24h
     )
 {
-    const QTime start =
-        QTime::fromString(
-            startLabel,
-            QStringLiteral("HH:mm")
-            );
+    const auto parsedStart =
+        ScheduleValueParser::parseTime(startLabel);
 
-    if (!start.isValid())
+    if (!parsedStart || parsedStart->text != startLabel)
     {
         return startLabel;
     }
+
+    const QTime start = parsedStart->value;
 
     const QTime end =
         start.addSecs(

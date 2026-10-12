@@ -1,4 +1,5 @@
 #include "features/schedule/ui/schedule_view_model.h"
+#include "features/schedule/ui/schedule_time_formatter.h"
 
 #include <QtTest>
 
@@ -91,6 +92,10 @@ private slots:
     void regularSchedulesIgnoreIntensiveTrimming();
     void footerTotalsMatchExcelScreenshotConvention();
     void teacherRoomLineRespectsSelectedNameLanguage();
+    void displayTimeFormatsCanonicalTime();
+    void displayTimePreservesMalformedAndWhitespacePaddedLabels();
+    void rangeLabelFormatsDurationsAndMidnightCrossing();
+    void rangeLabelPreservesMalformedStart();
     void testingModeFiltersAffectedGradesAndPreservesPriority();
     void testingModeSuppressesAffectedGradesWithoutAssignments();
     void testingClassAssignmentsOverrideUnderlyingCells();
@@ -411,6 +416,92 @@ void SchedulePrintModelTests::teacherRoomLineRespectsSelectedNameLanguage()
     QCOMPARE(
         scheduleTeacherRoomLine(scheduleEntry, true),
         QStringLiteral("박지혜 413")
+        );
+}
+
+void SchedulePrintModelTests::displayTimeFormatsCanonicalTime()
+{
+    QCOMPARE(
+        ScheduleTimeFormatter::displayTime(
+            QStringLiteral("09:05"),
+            false
+            ),
+        QStringLiteral("9:05 AM")
+        );
+    QCOMPARE(
+        ScheduleTimeFormatter::displayTime(
+            QStringLiteral("09:05"),
+            true
+            ),
+        QStringLiteral("09:05")
+        );
+}
+
+void SchedulePrintModelTests
+    ::displayTimePreservesMalformedAndWhitespacePaddedLabels()
+{
+    QCOMPARE(
+        ScheduleTimeFormatter::displayTime(
+            QStringLiteral("not-a-time"),
+            false
+            ),
+        QStringLiteral("not-a-time")
+        );
+    QCOMPARE(
+        ScheduleTimeFormatter::displayTime(
+            QStringLiteral(" 09:05 "),
+            false
+            ),
+        QStringLiteral(" 09:05 ")
+        );
+}
+
+void SchedulePrintModelTests
+    ::rangeLabelFormatsDurationsAndMidnightCrossing()
+{
+    QCOMPARE(
+        ScheduleTimeFormatter::rangeLabel(
+            QStringLiteral("09:05"),
+            false,
+            false
+            ),
+        QStringLiteral("9:05 -\n9:55 AM")
+        );
+    QCOMPARE(
+        ScheduleTimeFormatter::rangeLabel(
+            QStringLiteral("09:05"),
+            true,
+            true
+            ),
+        QStringLiteral("09:05 - 10:00")
+        );
+    QCOMPARE(
+        ScheduleTimeFormatter::rangeLabel(
+            QStringLiteral("23:40"),
+            false,
+            false
+            ),
+        QStringLiteral("11:40 PM\n- 12:30 AM")
+        );
+}
+
+void SchedulePrintModelTests::rangeLabelPreservesMalformedStart()
+{
+    QCOMPARE(
+        ScheduleTimeFormatter::rangeLabel(
+            QStringLiteral("not-a-time"),
+            false,
+            false
+            ),
+        QStringLiteral("not-a-time")
+        );
+    QCOMPARE(
+        ScheduleTimeFormatter::rangeLabel(
+            QStringLiteral(" 09:05 "),
+            false,
+            false
+            ),
+        QStringLiteral(" 09:05 ")
         );
 }
 

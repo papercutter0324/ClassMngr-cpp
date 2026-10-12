@@ -35,6 +35,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrSchedulePrintModelTests
         tests/schedule_print_model_tests.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
     )
