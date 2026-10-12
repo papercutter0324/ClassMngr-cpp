@@ -289,6 +289,57 @@ QSettings::Status SettingsManager::writeFontSizePreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeAiCommentVoicePreference(
+    const int voice,
+    const AiCommentVoicePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousVoice =
+        m_settings->contains(Keys::AI_COMMENT_VOICE_PREFERENCE);
+    const QVariant previousVoice =
+        m_settings->value(Keys::AI_COMMENT_VOICE_PREFERENCE);
+
+    m_settings->setValue(
+        Keys::AI_COMMENT_VOICE_PREFERENCE,
+        voice
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Remove the pending candidate before destroying this instance so it
+        // cannot be retried during teardown.
+        if (hadPreviousVoice)
+        {
+            m_settings->setValue(
+                Keys::AI_COMMENT_VOICE_PREFERENCE,
+                previousVoice
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::AI_COMMENT_VOICE_PREFERENCE);
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see the restored preference and retries can succeed.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================

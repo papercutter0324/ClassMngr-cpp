@@ -2,15 +2,20 @@
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
+#include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QSettings>
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <memory>
+#include <string>
 #include <utility>
 
 namespace
@@ -53,6 +58,33 @@ private:
     MainWindow& m_window;
     ::AiCommentVoice m_originalVoice;
 };
+
+QString promptFromBatchDialog(const SpeakingEvalReportData& report)
+{
+    SpeakingEvalAiBatchDialog dialog(
+        {
+            {
+                report.englishName,
+                report,
+                0
+            }
+        }
+        );
+
+    auto* const createPromptButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalAiBatchCreatePrompt")
+        );
+    auto* const promptEdit = dialog.findChild<QPlainTextEdit*>(
+        QStringLiteral("speakingEvalAiBatchPrompt")
+        );
+    if (!createPromptButton || !promptEdit || !createPromptButton->isEnabled())
+    {
+        return {};
+    }
+
+    createPromptButton->click();
+    return promptEdit->toPlainText();
+}
 }
 
 class MainWindowAiCommentVoiceActionParityTests final : public QObject
@@ -62,6 +94,7 @@ class MainWindowAiCommentVoiceActionParityTests final : public QObject
 private slots:
     void initTestCase();
     void thirdPersonActionControlsBatchPromptVoice();
+    void failedThirdPersonActionPreservesPromptVoiceAndAllowsRetry();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -240,6 +273,177 @@ thirdPersonActionControlsBatchPromptVoice()
         );
     QVERIFY(
         !directPrompt.contains(
+            QStringLiteral(
+                "use they/their rather than guessing gender."
+                )
+            )
+        );
+}
+
+void MainWindowAiCommentVoiceActionParityTests::
+failedThirdPersonActionPreservesPromptVoiceAndAllowsRetry()
+{
+    using namespace ClassMngr::Next::Application;
+    using ClassMngr::Next::Domain::ErrorCode;
+    using ClassMngr::Next::Domain::OperationError;
+    using ClassMngr::Next::Platform::
+        SettingsManagerAiCommentVoicePreferencesPort;
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.clear();
+    settings.sync();
+
+    const QString preferenceKey = QString::fromUtf8(
+        OptionKeys::AiCommentVoice
+        );
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    settings.set(preferenceKey, 0);
+    settings.set(unrelatedKey, 53);
+    settings.sync();
+
+    bool injectAccessError = false;
+    int synchronizationAttempts = 0;
+    const auto preferences = std::make_shared<
+        SettingsManagerAiCommentVoicePreferencesPort
+        >(
+            [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+            {
+                ++synchronizationAttempts;
+                if (injectAccessError)
+                {
+                    return QSettings::AccessError;
+                }
+
+                settings.sync();
+                return settings.status();
+            }
+            );
+
+    int diagnosticCount = 0;
+    OperationError lastDiagnostic;
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.aiCommentVoicePreferencesPort = preferences;
+    startupOptions.aiCommentVoicePreferenceErrorHandler =
+        [&diagnosticCount, &lastDiagnostic](const OperationError& error)
+        {
+            ++diagnosticCount;
+            lastDiagnostic = error;
+        };
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    auto* const state = window.actions().aiCommentVoiceState;
+    QVERIFY(state);
+    QCOMPARE(state->current(), ::AiCommentVoice::DirectToStudent);
+    AiCommentVoiceRestorer voiceRestorer(
+        window,
+        ::AiCommentVoice::DirectToStudent
+        );
+
+    QAction* const directAction =
+        state->action(::AiCommentVoice::DirectToStudent);
+    QAction* const thirdPersonAction =
+        state->action(::AiCommentVoice::ThirdPerson);
+    QVERIFY(directAction);
+    QVERIFY(thirdPersonAction);
+    QVERIFY(directAction->isChecked());
+    QVERIFY(!thirdPersonAction->isChecked());
+
+    const QVariant storedPreferenceBeforeFailure = settings.get(preferenceKey);
+    const QString reportFile = m_settingsDirectory.filePath(
+        QStringLiteral("PaperCloud/ClassMngr.ini")
+        );
+    QSettings persistedSettings(
+        reportFile,
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(preferenceKey).toInt(), 0);
+
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Synthetic Student");
+    report.grade = 4;
+    report.comments.clear();
+    report.notes = QStringLiteral(
+        "[Did Well]\nClear pronunciation\n"
+        "[Needs Improvement]\nAdd supporting details"
+        );
+
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(diagnosticCount, 0);
+    injectAccessError = true;
+    thirdPersonAction->trigger();
+    injectAccessError = false;
+
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(lastDiagnostic.code, ErrorCode::Technical);
+    QVERIFY(lastDiagnostic.recoverable);
+    QVERIFY(
+        lastDiagnostic.message.find("AccessError") != std::string::npos
+        );
+    QCOMPARE(state->current(), ::AiCommentVoice::DirectToStudent);
+    QVERIFY(directAction->isChecked());
+    QVERIFY(!thirdPersonAction->isChecked());
+    QCOMPARE(settings.get(preferenceKey).toInt(), 0);
+    QCOMPARE(settings.get(preferenceKey), storedPreferenceBeforeFailure);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(preferenceKey).toInt(), 0);
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 53);
+
+    const QString promptAfterFailure = promptFromBatchDialog(report);
+    QVERIFY(!promptAfterFailure.isEmpty());
+    QVERIFY(
+        promptAfterFailure.contains(
+            QStringLiteral(
+                "Address the student directly as \"you\" and use STD_NAME naturally."
+                )
+            )
+        );
+    QVERIFY(
+        !promptAfterFailure.contains(
+            QStringLiteral("Write for a parent or guardian")
+            )
+        );
+
+    injectAccessError = false;
+    thirdPersonAction->trigger();
+
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(state->current(), ::AiCommentVoice::ThirdPerson);
+    QVERIFY(!directAction->isChecked());
+    QVERIFY(thirdPersonAction->isChecked());
+    QCOMPARE(settings.get(preferenceKey).toInt(), 1);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(preferenceKey).toInt(), 1);
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 53);
+
+    const QString promptAfterRetry = promptFromBatchDialog(report);
+    QVERIFY(!promptAfterRetry.isEmpty());
+    QVERIFY(
+        promptAfterRetry.contains(
+            QStringLiteral("Write for a parent or guardian")
+            )
+        );
+    QVERIFY(
+        promptAfterRetry.contains(
             QStringLiteral(
                 "use they/their rather than guessing gender."
                 )

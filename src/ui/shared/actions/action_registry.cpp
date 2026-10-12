@@ -124,7 +124,13 @@ void ActionRegistry::createActions(
         > fontSizePreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> fontSizePreferenceErrorHandler
+        )> fontSizePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentVoicePreferencesPort
+        > aiCommentVoicePreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> aiCommentVoicePreferenceErrorHandler
     )
 {
     createFileActions();
@@ -137,7 +143,9 @@ void ActionRegistry::createActions(
         std::move(automaticUpdatePreferencesPort),
         automaticUpdatePreferenceErrorHandler,
         std::move(fontSizePreferencesPort),
-        fontSizePreferenceErrorHandler
+        fontSizePreferenceErrorHandler,
+        std::move(aiCommentVoicePreferencesPort),
+        aiCommentVoicePreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -769,7 +777,13 @@ void ActionRegistry::createOptionActions(
         > fontSizePreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& fontSizePreferenceErrorHandler
+        )>& fontSizePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentVoicePreferencesPort
+        > aiCommentVoicePreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& aiCommentVoicePreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1609,54 +1623,157 @@ void ActionRegistry::createOptionActions(
 
     aiCommentVoiceState =
         new OptionState<AiCommentVoice>(this);
-    aiCommentVoiceState->addOption(
-        AiCommentVoice::DirectToStudent,
+    auto directToStudentVoiceAction =
         createCheckableAction(
             tr("Direct to Student"),
             tr("Write AI comments directly to the student")
-            )
-        );
-    aiCommentVoiceState->addOption(
-        AiCommentVoice::ThirdPerson,
+            );
+    auto thirdPersonVoiceAction =
         createCheckableAction(
             tr("Third Person"),
             tr("Write AI comments for a parent or guardian")
-            )
+            );
+    aiCommentVoiceState->addOption(
+        AiCommentVoice::DirectToStudent,
+        directToStudentVoiceAction,
+        false
         );
-    aiCommentVoiceState->onPersist = [](const ::AiCommentVoice voice)
+    aiCommentVoiceState->addOption(
+        AiCommentVoice::ThirdPerson,
+        thirdPersonVoiceAction,
+        false
+        );
+
+    if (!aiCommentVoicePreferencesPort)
     {
-        ClassMngr::Next::Application::AiCommentVoice preference;
-        switch (voice)
+        aiCommentVoicePreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerAiCommentVoicePreferencesPort
+            >();
+    }
+
+    using PreferenceAiCommentVoice =
+        ClassMngr::Next::Application::AiCommentVoice;
+    const auto writeAiCommentVoicePreference =
+        [aiCommentVoicePreferencesPort](const ::AiCommentVoice voice)
+            -> ClassMngr::Next::Domain::Result<void>
         {
-        case ::AiCommentVoice::DirectToStudent:
-            preference = ClassMngr::Next::Application::
-                AiCommentVoice::DirectToStudent;
-            break;
+            PreferenceAiCommentVoice preference;
+            switch (voice)
+            {
+            case ::AiCommentVoice::DirectToStudent:
+                preference = PreferenceAiCommentVoice::DirectToStudent;
+                break;
 
-        case ::AiCommentVoice::ThirdPerson:
-            preference = ClassMngr::Next::Application::
-                AiCommentVoice::ThirdPerson;
-            break;
+            case ::AiCommentVoice::ThirdPerson:
+                preference = PreferenceAiCommentVoice::ThirdPerson;
+                break;
 
-        default:
-            return;
-        }
+            default:
+                return ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message =
+                        "AI Comment Voice must be Direct to Student or Third Person.",
+                    .recoverable = false
+                });
+            }
 
-        ClassMngr::Next::Platform::
-            SettingsManagerAiCommentVoicePreferencesPort().write(
-                preference
+            return aiCommentVoicePreferencesPort->write(preference);
+        };
+
+    const auto skipAiCommentVoicePersistForActionCommit =
+        std::make_shared<bool>(false);
+    const auto connectAiCommentVoiceAction =
+        [this, writeAiCommentVoicePreference,
+            aiCommentVoicePreferenceErrorHandler,
+            skipAiCommentVoicePersistForActionCommit](
+            QAction* action,
+            const ::AiCommentVoice voice
+            )
+        {
+            connect(
+                action,
+                &QAction::triggered,
+                this,
+                [this, action, writeAiCommentVoicePreference,
+                    aiCommentVoicePreferenceErrorHandler,
+                    skipAiCommentVoicePersistForActionCommit, voice]()
+                {
+                    if (!aiCommentVoiceState
+                        || aiCommentVoiceState->current() == voice)
+                    {
+                        return;
+                    }
+
+                    const auto saved =
+                        writeAiCommentVoicePreference(voice);
+                    if (!saved)
+                    {
+                        if (QAction* previousAction =
+                                aiCommentVoiceState->action(
+                                    aiCommentVoiceState->current()
+                                    ))
+                        {
+                            previousAction->setChecked(true);
+                        }
+                        else
+                        {
+                            action->setChecked(false);
+                        }
+
+                        if (aiCommentVoicePreferenceErrorHandler)
+                        {
+                            aiCommentVoicePreferenceErrorHandler(
+                                saved.error()
+                                );
+                        }
+                        return;
+                    }
+
+                    *skipAiCommentVoicePersistForActionCommit = true;
+                    aiCommentVoiceState->set(voice);
+                }
                 );
-    };
+        };
+
+    connectAiCommentVoiceAction(
+        directToStudentVoiceAction,
+        ::AiCommentVoice::DirectToStudent
+        );
+    connectAiCommentVoiceAction(
+        thirdPersonVoiceAction,
+        ::AiCommentVoice::ThirdPerson
+        );
+
     const auto storedAiCommentVoice =
-        ClassMngr::Next::Platform::
-            SettingsManagerAiCommentVoicePreferencesPort()
-            .read();
+        aiCommentVoicePreferencesPort->read();
     aiCommentVoiceState->set(
-        storedAiCommentVoice ==
-                ClassMngr::Next::Application::AiCommentVoice::ThirdPerson
+        storedAiCommentVoice == PreferenceAiCommentVoice::ThirdPerson
             ? ::AiCommentVoice::ThirdPerson
             : ::AiCommentVoice::DirectToStudent
         );
+
+    // Attach after startup hydration so selecting the stored value does not
+    // write it back. Programmatic OptionState::set() retains its established
+    // persistence callback; action changes use the checked path above.
+    aiCommentVoiceState->onPersist = [
+        writeAiCommentVoicePreference,
+        aiCommentVoicePreferenceErrorHandler,
+        skipAiCommentVoicePersistForActionCommit
+    ](const ::AiCommentVoice voice)
+    {
+        if (*skipAiCommentVoicePersistForActionCommit)
+        {
+            *skipAiCommentVoicePersistForActionCommit = false;
+            return;
+        }
+
+        const auto saved = writeAiCommentVoicePreference(voice);
+        if (!saved && aiCommentVoicePreferenceErrorHandler)
+        {
+            aiCommentVoicePreferenceErrorHandler(saved.error());
+        }
+    };
 
 
     showSidebarTooltips =

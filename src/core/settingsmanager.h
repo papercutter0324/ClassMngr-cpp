@@ -67,6 +67,9 @@ public:
         static constexpr auto FONT_SIZE_PREFERENCE =
             "options/fontSize";
 
+        static constexpr auto AI_COMMENT_VOICE_PREFERENCE =
+            "options/aiCommentVoice";
+
         static constexpr auto WINDOW_GEOMETRY =
             "ui/windowGeometry";
 
@@ -175,6 +178,16 @@ public:
     [[nodiscard]] QSettings::Status writeFontSizePreference(
         int fontSize,
         const FontSizePreferenceSync& synchronize = {}
+        );
+
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores the previous key before returning.
+    using AiCommentVoicePreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeAiCommentVoicePreference(
+        int voice,
+        const AiCommentVoicePreferenceSync& synchronize = {}
         );
 
     // =====================================================
