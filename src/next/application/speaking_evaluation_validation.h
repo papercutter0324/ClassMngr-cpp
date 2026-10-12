@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/student_name_pair.h"
 
@@ -823,16 +824,14 @@ validateAndNormalizeSpeakingEvaluation(
     };
 
     const std::string& classId = result.normalizedRequest.classId.value();
-    int parsedClassId = 0;
-    const auto [classIdEnd, classIdError] = std::from_chars(
-        classId.data(),
-        classId.data() + classId.size(),
-        parsedClassId
-        );
-    if (classIdError != std::errc{}
-        || classIdEnd != classId.data() + classId.size()
-        || parsedClassId <= 0)
+    if (!isCanonicalPositiveDecimalId(classId))
     {
+        int parsedClassId = 0;
+        (void)std::from_chars(
+            classId.data(),
+            classId.data() + classId.size(),
+            parsedClassId
+            );
         appendIssue(
             result,
             "speaking_evaluation.class_id.invalid",

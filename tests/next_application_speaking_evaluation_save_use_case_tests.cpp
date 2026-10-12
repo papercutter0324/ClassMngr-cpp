@@ -3,6 +3,7 @@
 #include <QtTest/QtTest>
 
 #include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -120,6 +121,7 @@ class NextApplicationSpeakingEvaluationSaveUseCaseTests final : public QObject
 
 private slots:
     void rejectsInvalidClassIdsWithoutCallingPort();
+    void rejectsNoncanonicalLeadingZeroClassIdDirectly();
     void acceptsMaximumClassIdAndForwardsUnchanged();
     void rejectsIncompleteMatrixAndInvalidCoordinates();
     void normalizesValidRequestBeforePortAndPreservesUnicodeAndCellOrder();
@@ -181,6 +183,35 @@ rejectsInvalidClassIdsWithoutCallingPort()
 
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationSpeakingEvaluationSaveUseCaseTests::
+rejectsNoncanonicalLeadingZeroClassIdDirectly()
+{
+    const auto validation = Application::validateAndNormalizeSpeakingEvaluation(
+        request("01")
+        );
+
+    QVERIFY(validation.hasErrors());
+    QCOMPARE(validation.issues.size(), std::size_t(1));
+
+    const Application::SpeakingEvaluationValidationIssue& issue =
+        validation.issues.front();
+    QCOMPARE(issue.code, std::string("speaking_evaluation.class_id.invalid"));
+    QCOMPARE(issue.field, std::string("classId"));
+    QCOMPARE(issue.row, -1);
+    QCOMPARE(issue.column, -1);
+    QCOMPARE(
+        issue.severity,
+        Application::SpeakingEvaluationValidationSeverity::Error
+        );
+    QCOMPARE(issue.arguments.size(), std::size_t(1));
+    QVERIFY(issue.arguments.contains("value"));
+    const auto* parsedClassId = std::get_if<std::int64_t>(
+        &issue.arguments.at("value")
+        );
+    QVERIFY(parsedClassId != nullptr);
+    QCOMPARE(*parsedClassId, std::int64_t(1));
 }
 
 void NextApplicationSpeakingEvaluationSaveUseCaseTests::
