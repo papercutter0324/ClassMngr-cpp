@@ -70,6 +70,9 @@ public:
         static constexpr auto DOCUMENT_VIEWER_BACKGROUND_PREFERENCE =
             "options/documentViewerBackground";
 
+        static constexpr auto DOCUMENT_PAGE_SPACING_PREFERENCE =
+            "options/documentPageSpacing";
+
         static constexpr auto LANGUAGE_PREFERENCE =
             "options/language";
 
@@ -227,6 +230,16 @@ public:
     [[nodiscard]] QSettings::Status writeDocumentViewerBackgroundPreference(
         int background,
         const DocumentViewerBackgroundPreferenceSync& synchronize = {}
+        );
+
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores the previous key before returning.
+    using DocumentPageSpacingPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeDocumentPageSpacingPreference(
+        int spacing,
+        const DocumentPageSpacingPreferenceSync& synchronize = {}
         );
 
     // =====================================================

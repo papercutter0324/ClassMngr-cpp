@@ -154,7 +154,13 @@ void ActionRegistry::createActions(
         > documentViewerBackgroundPreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> documentViewerBackgroundPreferenceErrorHandler
+        )> documentViewerBackgroundPreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::DocumentPageSpacingPreferencesPort
+        > documentPageSpacingPreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> documentPageSpacingPreferenceErrorHandler
     )
 {
     createFileActions();
@@ -177,7 +183,9 @@ void ActionRegistry::createActions(
         std::move(sidebarDisplayPreferencesPort),
         sidebarDisplayPreferencesErrorHandler,
         std::move(documentViewerBackgroundPreferencesPort),
-        documentViewerBackgroundPreferenceErrorHandler
+        documentViewerBackgroundPreferenceErrorHandler,
+        std::move(documentPageSpacingPreferencesPort),
+        documentPageSpacingPreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -839,7 +847,13 @@ void ActionRegistry::createOptionActions(
         > documentViewerBackgroundPreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& documentViewerBackgroundPreferenceErrorHandler
+        )>& documentViewerBackgroundPreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::DocumentPageSpacingPreferencesPort
+        > documentPageSpacingPreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& documentPageSpacingPreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1499,7 +1513,9 @@ void ActionRegistry::createOptionActions(
         );
 
     documentPageSpacingState->onPersist =
-        [](const ::DocumentPageSpacing spacing)
+        [documentPageSpacingPreferencesPort](
+            const ::DocumentPageSpacing spacing
+            )
     {
         ClassMngr::Next::Application::DocumentPageSpacing preference;
         switch (spacing)
@@ -1528,21 +1544,77 @@ void ActionRegistry::createOptionActions(
             return;
         }
 
-        ClassMngr::Next::Platform::
-            SettingsManagerDocumentPageSpacingPreferencesPort().write(
-                preference
+        if (documentPageSpacingPreferencesPort)
+        {
+            static_cast<void>(
+                documentPageSpacingPreferencesPort->write(preference)
                 );
+            return;
+        }
+
+        static_cast<void>(
+            ClassMngr::Next::Platform::
+                SettingsManagerDocumentPageSpacingPreferencesPort().write(
+                    preference
+                    )
+            );
     };
 
     const auto storedDocumentPageSpacing =
-        ClassMngr::Next::Platform::
-            SettingsManagerDocumentPageSpacingPreferencesPort()
-            .read();
+        documentPageSpacingPreferencesPort
+            ? documentPageSpacingPreferencesPort->read()
+            : ClassMngr::Next::Platform::
+                SettingsManagerDocumentPageSpacingPreferencesPort()
+                .read();
     documentPageSpacingState->set(
         static_cast<::DocumentPageSpacing>(
             storedDocumentPageSpacing
             )
         );
+
+    if (documentPageSpacingPreferencesPort)
+    {
+        using PreferenceDocumentPageSpacing =
+            ClassMngr::Next::Application::DocumentPageSpacing;
+        documentPageSpacingState->onBeforeCommit =
+            [documentPageSpacingPreferencesPort](
+                const ::DocumentPageSpacing spacing
+                ) -> ClassMngr::Next::Domain::Result<void>
+            {
+                switch (spacing)
+                {
+                case ::DocumentPageSpacing::None:
+                    return documentPageSpacingPreferencesPort->write(
+                        PreferenceDocumentPageSpacing::None
+                        );
+
+                case ::DocumentPageSpacing::Small:
+                    return documentPageSpacingPreferencesPort->write(
+                        PreferenceDocumentPageSpacing::Small
+                        );
+
+                case ::DocumentPageSpacing::Medium:
+                    return documentPageSpacingPreferencesPort->write(
+                        PreferenceDocumentPageSpacing::Medium
+                        );
+
+                case ::DocumentPageSpacing::Large:
+                    return documentPageSpacingPreferencesPort->write(
+                        PreferenceDocumentPageSpacing::Large
+                        );
+
+                default:
+                    return ClassMngr::Next::Domain::Result<void>::failure({
+                        .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                        .message =
+                            "Document Page Spacing selection is invalid.",
+                        .recoverable = false
+                    });
+                }
+            };
+        documentPageSpacingState->onCommitFailed =
+            documentPageSpacingPreferenceErrorHandler;
+    }
 
     documentViewerBackgroundState =
         new OptionState<DocumentViewerBackground>(this);

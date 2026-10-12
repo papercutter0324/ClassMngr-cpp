@@ -2,22 +2,28 @@
 
 #include "core/settingsmanager.h"
 #include "next/application/document_page_spacing_preferences.h"
-#include "ui/shared/state/option_state_keys.h"
 
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the document-page spacing read. The legacy
-// SettingsManager default and QVariant integer conversion stay here;
-// ActionRegistry remains the compatibility bridge and UI owner.
+// Qt-boundary adapter for document-page spacing reads and writes. The legacy
+// SettingsManager default and QVariant integer conversion stay here.
 class SettingsManagerDocumentPageSpacingPreferencesPort final
     : public Application::DocumentPageSpacingPreferencesPort
 {
 public:
-    SettingsManagerDocumentPageSpacingPreferencesPort() = default;
+    explicit SettingsManagerDocumentPageSpacingPreferencesPort(
+        SettingsManager::DocumentPageSpacingPreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::DocumentPageSpacing read()
         const override
@@ -51,7 +57,7 @@ public:
         }
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::DocumentPageSpacing spacing
         ) const override
     {
@@ -75,20 +81,43 @@ public:
             break;
 
         default:
-            return;
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Document Page Spacing must be None, Small, Medium, or Large.",
+                .recoverable = false
+            });
         }
 
-        SettingsManager::instance().set(
-            key(),
-            storedSpacing
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeDocumentPageSpacingPreference(
+                storedSpacing,
+                m_synchronize
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save Document Page Spacing preference: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:
+    SettingsManager::DocumentPageSpacingPreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(
-            OptionKeys::DocumentPageSpacing
+            SettingsManager::Keys::DOCUMENT_PAGE_SPACING_PREFERENCE
             );
     }
 };

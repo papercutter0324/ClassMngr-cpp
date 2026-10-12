@@ -1,15 +1,21 @@
 #include "app/mainwindow.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "next/domain/operation_result.h"
+#include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
 #include <QPdfView>
+#include <QSettings>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QtTest>
 
+#include <memory>
+#include <string>
 #include <utility>
 
 namespace
@@ -17,13 +23,18 @@ namespace
 class DocumentPageSpacingRestorer final
 {
 public:
-    explicit DocumentPageSpacingRestorer(MainWindow& window)
+    DocumentPageSpacingRestorer(
+        MainWindow& window,
+        bool& injectAccessError
+        )
         : m_window(window)
+        , m_injectAccessError(injectAccessError)
     {
     }
 
     ~DocumentPageSpacingRestorer()
     {
+        m_injectAccessError = false;
         auto* const state = m_window.actions().documentPageSpacingState;
         if (state)
         {
@@ -47,6 +58,7 @@ public:
 
 private:
     MainWindow& m_window;
+    bool& m_injectAccessError;
 };
 }
 
@@ -82,8 +94,42 @@ allSizesUpdateViewerAndPersist()
     LanguageService languageService;
     QVERIFY(languageService.setLanguage(Language::English));
 
+    SettingsManager& settings = SettingsManager::instance();
     MainWindowStartupOptions startupOptions;
     startupOptions.loadMostRecentDatabase = false;
+    bool injectAccessError = false;
+    int synchronizationAttempts = 0;
+    const auto pageSpacingPreferences =
+        std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerDocumentPageSpacingPreferencesPort
+            >(
+                [&injectAccessError, &synchronizationAttempts](
+                    QSettings& settings
+                    )
+                {
+                    ++synchronizationAttempts;
+                    if (injectAccessError)
+                    {
+                        return QSettings::AccessError;
+                    }
+
+                    settings.sync();
+                    return settings.status();
+                }
+                );
+    int diagnosticCount = 0;
+    ClassMngr::Next::Domain::OperationError lastDiagnostic;
+    startupOptions.documentPageSpacingPreferencesPort =
+        pageSpacingPreferences;
+    startupOptions.documentPageSpacingPreferenceErrorHandler =
+        [&diagnosticCount, &lastDiagnostic](
+            const ClassMngr::Next::Domain::OperationError& error
+            )
+        {
+            ++diagnosticCount;
+            lastDiagnostic = error;
+        };
 
     MainWindow window(
         [](const QString&) {},
@@ -92,7 +138,11 @@ allSizesUpdateViewerAndPersist()
         nullptr,
         std::move(startupOptions)
         );
-    DocumentPageSpacingRestorer spacingRestorer(window);
+    DocumentPageSpacingRestorer spacingRestorer(
+        window,
+        injectAccessError
+        );
+    QCOMPARE(diagnosticCount, 0);
 
     PageManager* const pageManager = window.pageManager();
     QVERIFY(pageManager);
@@ -132,6 +182,7 @@ allSizesUpdateViewerAndPersist()
     const QString spacingKey = QString::fromUtf8(
         OptionKeys::DocumentPageSpacing
         );
+    const int startupSynchronizationAttempts = synchronizationAttempts;
 
     QVERIFY(largeAction->isEnabled());
     largeAction->trigger();
@@ -144,6 +195,7 @@ allSizesUpdateViewerAndPersist()
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 3);
     QCOMPARE(view->pageSpacing(), 32);
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 1);
 
     QVERIFY(noneAction->isEnabled());
     noneAction->trigger();
@@ -156,6 +208,7 @@ allSizesUpdateViewerAndPersist()
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 0);
     QCOMPARE(view->pageSpacing(), 0);
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 2);
 
     QVERIFY(mediumAction->isEnabled());
     mediumAction->trigger();
@@ -168,6 +221,7 @@ allSizesUpdateViewerAndPersist()
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 2);
     QCOMPARE(view->pageSpacing(), 16);
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 3);
 
     QVERIFY(smallAction->isEnabled());
     smallAction->trigger();
@@ -180,6 +234,71 @@ allSizesUpdateViewerAndPersist()
     SettingsManager::instance().sync();
     QCOMPARE(SettingsManager::instance().get(spacingKey).toInt(), 1);
     QCOMPARE(view->pageSpacing(), 8);
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 4);
+    QCOMPARE(diagnosticCount, 0);
+
+    injectAccessError = true;
+    largeAction->trigger();
+
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 5);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(
+        lastDiagnostic.code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(lastDiagnostic.recoverable);
+    QVERIFY(
+        lastDiagnostic.message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(state->current(), ::DocumentPageSpacing::Small);
+    QVERIFY(smallAction->isChecked());
+    QVERIFY(!noneAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    QCOMPARE(settings.get(spacingKey), QVariant(1));
+    QCOMPARE(view->pageSpacing(), 8);
+
+    injectAccessError = false;
+    largeAction->trigger();
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 6);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(state->current(), ::DocumentPageSpacing::Large);
+    QVERIFY(largeAction->isChecked());
+    QVERIFY(!noneAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
+    QCOMPARE(settings.get(spacingKey), QVariant(3));
+    QCOMPARE(view->pageSpacing(), 32);
+
+    injectAccessError = true;
+    state->set(::DocumentPageSpacing::Medium);
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 7);
+    QCOMPARE(diagnosticCount, 2);
+    QCOMPARE(
+        lastDiagnostic.code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(lastDiagnostic.recoverable);
+    QCOMPARE(state->current(), ::DocumentPageSpacing::Large);
+    QVERIFY(largeAction->isChecked());
+    QVERIFY(!noneAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(!mediumAction->isChecked());
+    QCOMPARE(settings.get(spacingKey), QVariant(3));
+    QCOMPARE(view->pageSpacing(), 32);
+
+    injectAccessError = false;
+    state->set(::DocumentPageSpacing::Medium);
+    QCOMPARE(synchronizationAttempts, startupSynchronizationAttempts + 8);
+    QCOMPARE(diagnosticCount, 2);
+    QCOMPARE(state->current(), ::DocumentPageSpacing::Medium);
+    QVERIFY(mediumAction->isChecked());
+    QVERIFY(!noneAction->isChecked());
+    QVERIFY(!smallAction->isChecked());
+    QVERIFY(!largeAction->isChecked());
+    QCOMPARE(settings.get(spacingKey), QVariant(2));
+    QCOMPARE(view->pageSpacing(), 16);
 }
 
 QTEST_MAIN(MainWindowDocumentViewerPageSpacingActionParityTests)

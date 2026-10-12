@@ -16,6 +16,7 @@
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "next/platform/application_services_document_catalog_port.h"
+#include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/calendar/ui/calendar_page.h"
@@ -673,6 +674,29 @@ void MainWindow::createActions()
             };
     }
 
+    if (!m_startupOptions.documentPageSpacingPreferencesPort)
+    {
+        m_startupOptions.documentPageSpacingPreferencesPort =
+            std::make_shared<ClassMngr::Next::Platform::
+                SettingsManagerDocumentPageSpacingPreferencesPort>();
+    }
+
+    auto documentPageSpacingPreferenceErrorHandler =
+        m_startupOptions.documentPageSpacingPreferenceErrorHandler;
+    if (!documentPageSpacingPreferenceErrorHandler)
+    {
+        documentPageSpacingPreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Document Page Spacing preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
         std::move(saveModePreferenceErrorHandler),
@@ -689,7 +713,9 @@ void MainWindow::createActions()
         m_startupOptions.sidebarDisplayPreferencesPort,
         std::move(sidebarDisplayPreferencesErrorHandler),
         m_startupOptions.documentViewerBackgroundPreferencesPort,
-        std::move(documentViewerBackgroundPreferenceErrorHandler)
+        std::move(documentViewerBackgroundPreferenceErrorHandler),
+        m_startupOptions.documentPageSpacingPreferencesPort,
+        std::move(documentPageSpacingPreferenceErrorHandler)
         );
 }
 

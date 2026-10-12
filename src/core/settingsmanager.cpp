@@ -495,6 +495,59 @@ QSettings::Status SettingsManager::writeDocumentViewerBackgroundPreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeDocumentPageSpacingPreference(
+    const int spacing,
+    const DocumentPageSpacingPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousSpacing =
+        m_settings->contains(Keys::DOCUMENT_PAGE_SPACING_PREFERENCE);
+    const QVariant previousSpacing =
+        m_settings->value(Keys::DOCUMENT_PAGE_SPACING_PREFERENCE);
+
+    m_settings->setValue(
+        Keys::DOCUMENT_PAGE_SPACING_PREFERENCE,
+        spacing
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore the attempted value before destroying this instance so it
+        // cannot be retried during teardown.
+        if (hadPreviousSpacing)
+        {
+            m_settings->setValue(
+                Keys::DOCUMENT_PAGE_SPACING_PREFERENCE,
+                previousSpacing
+                );
+        }
+        else
+        {
+            m_settings->remove(
+                Keys::DOCUMENT_PAGE_SPACING_PREFERENCE
+                );
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see the restored preference and retries can work.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================

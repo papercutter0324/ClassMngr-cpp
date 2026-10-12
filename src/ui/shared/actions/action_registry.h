@@ -16,6 +16,7 @@ namespace ClassMngr::Next::Application
 class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class AutomaticUpdatePreferencesPort;
+class DocumentPageSpacingPreferencesPort;
 class DocumentViewerBackgroundPreferencesPort;
 class FontSizePreferencesPort;
 class LanguagePreferencesPort;
@@ -84,7 +85,13 @@ public:
             > documentViewerBackgroundPreferencesPort = {},
         std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )> documentViewerBackgroundPreferenceErrorHandler = {}
+            )> documentViewerBackgroundPreferenceErrorHandler = {},
+        std::shared_ptr<
+            ClassMngr::Next::Application::DocumentPageSpacingPreferencesPort
+            > documentPageSpacingPreferencesPort = {},
+        std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )> documentPageSpacingPreferenceErrorHandler = {}
         );
     void retranslate();
     void refreshThemedIcons();
@@ -234,7 +241,13 @@ private:
             > documentViewerBackgroundPreferencesPort,
         const std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )>& documentViewerBackgroundPreferenceErrorHandler
+            )>& documentViewerBackgroundPreferenceErrorHandler,
+        std::shared_ptr<
+            ClassMngr::Next::Application::DocumentPageSpacingPreferencesPort
+            > documentPageSpacingPreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& documentPageSpacingPreferenceErrorHandler
         );
     void createHelpActions();
     void createAdminActions();
