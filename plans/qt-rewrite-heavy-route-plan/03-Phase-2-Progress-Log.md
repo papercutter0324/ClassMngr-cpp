@@ -26147,3 +26147,55 @@ repository behavior.
    `ClassMngrScheduleImportTests`. Run no full suite.
 
 This matrix is recorded before implementation. Batch 176 is active with F701.
+
+### F701 Schedule Import repository time parser migration - accepted - 2026-10-12
+
+F701 is accepted at implementation/test commit
+`c95b476ca69bc1d3ae53a1b882c703b8f28170f5` (`Phase2 - Reuse Domain
+display-time parser in Schedule Import repository (F701)`). `ClassMngr` and
+`ClassMngrScheduleImportTests` built. The exact CTest
+`ClassMngrScheduleImportTests` passed 1/1 on corrected Monday+Wednesday
+fixtures, with fresh affected objects and executable. An earlier verifier
+attempt used invalid single-day fixtures that failed class-meeting validation
+before reaching time validation; the corrected final fixtures exercised the
+time path. No full suite ran.
+
+**Decision: accept F701.** Batch 176 is complete.
+
+### Batch 177 shortlist and selection - recorded before F702 implementation - 2026-10-12
+
+The shortlist compared `shortTime` in
+`src/features/speaking_eval/services/speaking_eval_report_output_policy.cpp`,
+CalendarPage's canonical projection helper, and the Calendar Event dialog.
+Select `shortTime`: the Speaking Evaluation service exposes an efficient
+public test seam; CalendarPage lacks one for malformed input, while the dialog
+would add UI fallback scope.
+
+**F702 is selected:** migrate only `shortTime` to
+`ScheduleValueParser::parseDisplayTime` with an explicit ordered six-format
+allowlist, preserving trimmed input, lowercase successful output, and the
+existing malformed-input fallback.
+
+### F702 Speaking Evaluation report output time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. In `src/features/speaking_eval/services/speaking_eval_report_output_policy.cpp`,
+   migrate only `shortTime` to `ScheduleValueParser::parseDisplayTime` using
+   the ordered allowlist `HourMinuteAmPmSpaced`, `HourMinuteAmPmCompact`,
+   `PaddedHourMinuteAmPmSpaced`, `PaddedHourMinuteAmPmCompact`,
+   `HourMinute24Hour`, and `PaddedHourMinute24Hour`. Keep
+   `value.trimmed()` as parse input; do not use the default overload, which
+   also accepts seconds formats.
+2. Preserve successful lowercase output and omission of `:00`; preserve the
+   fallback `value.trimmed().remove(QLatin1Char(' ')).toLower()`.
+3. Extend public `defaultOutputDirectory` coverage in
+   `tests/speaking_eval_batch_report_service_tests.cpp`: path suffixes for
+   `4:07 PM`, `4:07PM`, `04:07 PM`, and `04:07PM` produce `4:07pm`; `9:07`
+   and `09:07` produce `9:07am`; surrounding whitespace parses; malformed
+   ` No Time ` retains fallback `notime`.
+4. `ClassMngrSpeakingEvalBatchReportServiceTests` already links
+   `ClassMngrRuntime`, supplying the policy and parser; make no CMake wiring
+   change. Build `ClassMngr` and
+   `ClassMngrSpeakingEvalBatchReportServiceTests`; run only the exact CTest
+   `ClassMngrSpeakingEvalBatchReportServiceTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 177 is active with F702.

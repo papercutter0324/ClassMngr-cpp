@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-175 are complete; Batch 176 is active with F701. F625's assessment is
+  141-176 are complete; Batch 177 is active with F702. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -59,15 +59,20 @@
   and executables. Coverage includes all four supported formats, trimmed
   input, malformed review status with Import disabled, and compact-AM/PM
   overlap handling. No full suite ran.
-- F701 is selected in Batch 176 for the `timeMinutes` helper in
-  `schedule_import_repository.cpp`, which duplicates F700's four
-  ordered formats, trim behavior, minute conversion, and `-1` failure result.
-  Use an explicit allowlist; preserve import validation and raw persisted
-  times. Add typed repository-path coverage for the four formats, trimming,
-  malformed rejection without writes, and parser source wiring in
-  `ClassMngrScheduleImportTests`. Build `ClassMngr` and that target; run only
-  its exact CTest. The acceptance matrix is recorded before implementation
-  in the Phase 2 progress log.
+- F701 Schedule Import repository parser migration is accepted and committed
+  as `c95b476ca69bc1d3ae53a1b882c703b8f28170f5`. `ClassMngr` and
+  `ClassMngrScheduleImportTests` built; the exact CTest passed 1/1 with fresh
+  affected objects and executable after correcting the invalid-time fixture
+  to use a valid Monday/Wednesday meeting pattern. No full suite ran.
+- F702 is selected in Batch 177 for Speaking Evaluation's `shortTime` folder
+  formatter. Reuse `ScheduleValueParser::parseDisplayTime` with the explicit
+  ordered six-format allowlist; preserve trimming, lowercase normalized path
+  text, omission of `:00`, and malformed-input fallback. Extend the public
+  `defaultOutputDirectory` test for all six forms, surrounding whitespace,
+  and malformed fallback. The existing test links `ClassMngrRuntime`, so no
+  source wiring is planned. Build `ClassMngr` and
+  `ClassMngrSpeakingEvalBatchReportServiceTests`; run only its exact CTest.
+  The pre-implementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F701 selected)
+### Current state - 2026-10-12 (F702 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-175 are complete; Batch 176 is active with F701, the
-Schedule Import repository display-time parser migration. F689-F693 are complete;
+Batches 141-176 are complete; Batch 177 is active with F702, the Speaking
+Evaluation report-folder display-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -100,9 +100,15 @@ ran. F700 is committed as
 tree. The exact CTest passed 1/1 with fresh review-helper and test objects
 and executables. Coverage includes all four supported formats, trimming,
 malformed review status with Import disabled, and compact-AM/PM overlap
-handling. No full suite ran. F701 selects the Schedule Import repository's
-matching four-format `timeMinutes` helper; its allowlist and public-path
-acceptance matrix are in the Phase 2 progress log. The current-source Phase 0
+handling. No full suite ran. F701 is committed as
+`c95b476ca69bc1d3ae53a1b882c703b8f28170f5`; `ClassMngr` and
+`ClassMngrScheduleImportTests` built, and its exact CTest passed 1/1 with
+fresh affected objects and executable after correcting the malformed-time
+fixture to use a valid Monday/Wednesday pattern. No full suite ran. F702
+selects Speaking Evaluation's `shortTime` helper with the explicit six-format
+parser allowlist; preserve whitespace trimming, normalized folder text, and
+the existing malformed-input fallback. Its matrix is recorded before
+implementation in the Phase 2 progress log. The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
 and F626 deferred. F666 Class Day

@@ -4213,3 +4213,17 @@ parser, preserving -1 failure behavior, raw persisted time strings, and
 existing validation/write behavior. The matrix is recorded before
 implementation in the Phase 2 progress log. Phase 2 remains In Progress with
 Gates 1 and 2 Partial.
+
+## Phase 2 Speaking Evaluation report-folder time parser - 2026-10-12
+
+F701 Schedule Import repository time parsing is accepted and committed as
+`c95b476ca69bc1d3ae53a1b882c703b8f28170f5`. Its focused repository tests
+passed after correcting the malformed-time case to reach the projection-time
+validation path. For F702, prefer Speaking Evaluation's `shortTime` helper:
+the public default-output-directory service test observes its result directly,
+and the batch service test target already links the runtime containing the
+Domain parser. Keep the explicit six-format allowlist and existing fallback;
+the default parser overload would add seconds formats. Calendar projection
+parsing is deferred because its malformed input is not directly injectable
+through the existing public test seam. F702 is selected in Batch 177, with its
+acceptance matrix recorded before implementation in the Phase 2 progress log.
