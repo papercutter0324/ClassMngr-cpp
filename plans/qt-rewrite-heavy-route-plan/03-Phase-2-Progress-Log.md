@@ -25539,4 +25539,60 @@ recovery for an injected handle after a genuine latched QSettings error.
    `ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`
    and `ClassMngrDialogServicesTests`. Add no CMake target.
 
-This matrix is recorded before implementation. Batch 164 is active with F689.
+This matrix was recorded before implementation.
+
+### F689 file-dialog directory preferences checked persistence - accepted - 2026-10-12
+
+F689 is accepted at code/test commit
+`15757b9c95bb4b21448a93844e60c4c323bebc50`. The Ninja build of `ClassMngr`,
+`ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`,
+and `ClassMngrDialogServicesTests` succeeded after Visual Studio developer
+environment initialization. The exact CTests passed 2/2:
+`ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests` and
+`ClassMngrDialogServicesTests`. The standard Visual Studio generator stopped
+at `ZERO_CHECK` with FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+**Decision: accept F689.** Batch 164 is complete.
+
+### Batch 165 shortlist and selection - recorded before F690 implementation - 2026-10-12
+
+Select Upcoming Birthday Dismissal checked persistence. Explorer found one
+production caller after the birthday dialog closes, plus existing port and
+NavigationTeacherRead test targets. This is a bounded caller package and does
+not overlap F689's file-dialog directory preferences.
+
+**F690 is selected:** add checked persistence for
+`notifications/upcomingBirthdaysDismissedDate`, preserving invalid-date no-op
+behavior, generic SettingsManager behavior, canonical date conversion, and the
+default production adapter. Return `[[nodiscard]] Domain::Result<void>` from
+the port and report persistence failure after the dismissal dialog closes.
+
+### F690 Upcoming Birthday Dismissal checked persistence acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked SettingsManager write for only
+   `notifications/upcomingBirthdaysDismissedDate`. Preserve invalid-date
+   no-op behavior and generic set behavior; check sync, restore the exact prior
+   QVariant or key absence on failure, preserve unrelated values, and allow a
+   later retry through a recreated QSettings object.
+2. Return `[[nodiscard]] Domain::Result<void>` from the dismissal port's write
+   operation. Preserve canonical date conversion and invalid-input no-op
+   behavior; map persistence failure to recoverable `Technical`.
+3. Add optional borrowed port injection to `SidebarController` while retaining
+   the default production adapter. Handle failure only after `dialog.exec()`
+   returns, show one warning after close, and do not undo the completed
+   dismissal action. An unchecked close must neither write nor warn.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests`
+   with typed-value and absent-key rollback, unrelated-key preservation,
+   injected sync failure, typed error, retry, and existing date/key conversion
+   coverage. Extend `ClassMngrNavigationTeacherReadTests` with the passed
+   ISO-today value, one warning after dialog close, and unchecked no-write and
+   no-warning behavior.
+5. Build `ClassMngr`,
+   `ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests`,
+   and `ClassMngrNavigationTeacherReadTests`; run exactly the CTests
+   `ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests`
+   and `ClassMngrNavigationTeacherReadTests`. Add no target and run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 165 is active with F690.
