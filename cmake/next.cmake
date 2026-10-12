@@ -299,6 +299,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_slot_state_read_query.h
     src/next/application/schedule_testing_class_choices_query.h
     src/next/application/testing_class_details_read_query.h
+    src/next/application/testing_class_required_fields_validation.h
     src/next/application/testing_class_details_update.h
     src/next/application/testing_class_details_update_use_case.h
     src/next/application/testing_class_create.h

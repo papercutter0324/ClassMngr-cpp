@@ -1,7 +1,7 @@
 #pragma once
 
 #include "domain/rules/schedule_key_rules.h"
-#include "next/application/qt_compatible_text.h"
+#include "next/application/testing_class_required_fields_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -49,24 +49,15 @@ struct TestingClassCreateRequest final
                 );
         }
 
-        if (trimQtWhitespace(name).empty())
+        const auto requiredFieldsResult = validateTestingClassRequiredFields(
+            name,
+            grade,
+            level,
+            room
+            );
+        if (!requiredFieldsResult)
         {
-            return validationFailure("Testing class name is required.");
-        }
-
-        if (trimQtWhitespace(grade).empty())
-        {
-            return validationFailure("Testing class grade is required.");
-        }
-
-        if (trimQtWhitespace(level).empty())
-        {
-            return validationFailure("Testing class level is required.");
-        }
-
-        if (trimQtWhitespace(room).empty())
-        {
-            return validationFailure("Testing class room is required.");
+            return requiredFieldsResult;
         }
 
         if (assignmentDay)
