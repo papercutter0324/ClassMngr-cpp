@@ -28071,9 +28071,10 @@ while preserving its input normalization and failure contract.
    `tests/next_application_class_details_save_use_case_tests.cpp` to cover
    Monday-Sunday through raw conflict conversion using mixed ASCII case and
    Qt whitespace, and verify the resulting weekday indices in conflict and
-   save schedules. Also verify invalid weekdays retain the existing regular-
-   conflict failure stage/message and call order. Keep existing workflow-order
-   and strict-time tests unchanged.
+   save schedules. For invalid weekdays, verify the existing
+   `ClassDetailsValidationOutput` with `InvalidWeekday`/`ScheduleDay` after
+   only the context call, with no conflict or save calls. Keep existing
+   workflow-order and strict-time tests unchanged.
 3. No CMake changes are expected. Build `ClassMngr` and
    `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`, confirm exactly
    one CTest registration named
