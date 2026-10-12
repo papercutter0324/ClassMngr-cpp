@@ -322,6 +322,68 @@ void ClassTabNavigationTests::classTabsSortByLevelThenDay()
     QCOMPARE(model.gradeGroups.first().classes.at(1).classId, 2);
     QCOMPARE(model.gradeGroups.first().classes.at(2).classId, 1);
     QCOMPARE(model.gradeGroups.first().classes.at(3).classId, 4);
+
+    const QList<ClassTabNavigation::ClassEntry> paddedWeekdayEntries{
+        classEntry(
+            20,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral(" Friday "), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            21,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral(" Monday "), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            22,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Wednesday "), QStringLiteral("4:00 PM"))}
+            )
+    };
+    const ClassTabNavigation::Model paddedWeekdayModel =
+        ClassTabNavigation::build(
+            paddedWeekdayEntries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+    QCOMPARE(paddedWeekdayModel.gradeGroups.size(), 1);
+    QCOMPARE(classIds(paddedWeekdayModel), QList<int>({21, 22, 20}));
+
+    const QList<ClassTabNavigation::ClassEntry> unknownWeekdayEntries{
+        classEntry(
+            30,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("6:00 PM"))}
+            ),
+        classEntry(
+            31,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Tuesday"), QStringLiteral("1:00 PM"))}
+            ),
+        classEntry(
+            32,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Funday"), QStringLiteral("2:00 PM"))}
+            ),
+        classEntry(
+            33,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("monday"), QStringLiteral("3:00 PM"))}
+            )
+    };
+    const ClassTabNavigation::Model unknownWeekdayModel =
+        ClassTabNavigation::build(
+            unknownWeekdayEntries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+    QCOMPARE(unknownWeekdayModel.gradeGroups.size(), 1);
+    QCOMPARE(classIds(unknownWeekdayModel), QList<int>({30, 31, 32, 33}));
 }
 
 void ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats()

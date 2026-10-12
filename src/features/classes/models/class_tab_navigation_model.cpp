@@ -196,9 +196,16 @@ int dayOrder(
     const QString& day
     )
 {
+    const QString trimmed = day.trimmed();
+    const auto parsed = ScheduleValueParser::parseWeekday(trimmed);
+    if (!parsed || parsed->text != trimmed)
+    {
+        return UnknownOrder;
+    }
+
     const int index =
         ClassInfoConfig::Days.indexOf(
-            day.trimmed()
+            parsed->text
             );
 
     return index >= 0
