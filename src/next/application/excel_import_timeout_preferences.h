@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 namespace ClassMngr::Next::Application
 {
 
@@ -50,8 +52,8 @@ struct ExcelImportTimeoutPreferences final
 };
 
 // Persistence is deliberately expressed as read/write operations. Concrete
-// adapters own the storage mechanism and may normalize unsupported input at
-// their boundary while the application contract remains singleton-free.
+// adapters own the storage mechanism and reject unsupported writes while the
+// application contract remains singleton-free.
 class ExcelImportTimeoutPreferencesPort
 {
 public:
@@ -59,7 +61,7 @@ public:
 
     [[nodiscard]] virtual ExcelImportTimeoutPreferences read() const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         const ExcelImportTimeoutPreferences& preferences
         ) const = 0;
 };

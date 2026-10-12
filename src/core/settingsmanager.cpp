@@ -377,6 +377,58 @@ void SettingsManager::setExcelImportTimeoutSeconds(
         );
 }
 
+QSettings::Status SettingsManager::writeExcelImportTimeoutPreference(
+    const int seconds,
+    const ExcelImportTimeoutPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousTimeout =
+        m_settings->contains(Keys::EXCEL_IMPORT_TIMEOUT_SECONDS);
+    const QVariant previousTimeout =
+        m_settings->value(Keys::EXCEL_IMPORT_TIMEOUT_SECONDS);
+    m_settings->setValue(
+        Keys::EXCEL_IMPORT_TIMEOUT_SECONDS,
+        isSupportedExcelImportTimeoutSeconds(seconds)
+            ? seconds
+            : DefaultExcelImportTimeoutSeconds
+        );
+
+    QSettings::Status status;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore this key in the failed instance before destroying it. That
+        // prevents its cached candidate from being retried during teardown.
+        if (hadPreviousTimeout)
+        {
+            m_settings->setValue(
+                Keys::EXCEL_IMPORT_TIMEOUT_SECONDS,
+                previousTimeout
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::EXCEL_IMPORT_TIMEOUT_SECONDS);
+        }
+
+        // Replace the failed instance so its candidate and latched error do
+        // not affect reads or a later retry.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Updates
 // =========================================================

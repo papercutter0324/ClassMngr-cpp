@@ -213,6 +213,16 @@ public:
         int seconds
         );
 
+    // An empty callback uses QSettings::sync/status. Injection lets boundary
+    // tests force a failed write without relying on filesystem permissions.
+    using ExcelImportTimeoutPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeExcelImportTimeoutPreference(
+        int seconds,
+        const ExcelImportTimeoutPreferenceSync& synchronize = {}
+        );
+
     // =====================================================
     // Updates
     // =====================================================

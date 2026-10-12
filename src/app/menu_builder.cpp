@@ -895,27 +895,47 @@ void addNavigationPreferencesTab(
 
 void populatePreferencesDialog(
     DialogShell* dialog,
-    MainWindow* window
+    MainWindow* window,
+    std::shared_ptr<
+        ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+        > excelImportTimeoutPreferencesPort
     );
 
 class PreferencesDialog final : public DialogShell
 {
 public:
-    explicit PreferencesDialog(MainWindow* window)
+    explicit PreferencesDialog(
+        MainWindow* window,
+        std::shared_ptr<
+            ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+            > excelImportTimeoutPreferencesPort
+        )
         : DialogShell(QStringLiteral("preferences"), window)
     {
-        populatePreferencesDialog(this, window);
+        populatePreferencesDialog(
+            this,
+            window,
+            std::move(excelImportTimeoutPreferencesPort)
+            );
     }
 };
 
 void populatePreferencesDialog(
     DialogShell* dialog,
-    MainWindow* window
+    MainWindow* window,
+    std::shared_ptr<
+        ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+        > excelImportTimeoutPreferencesPort
     )
 {
     auto& actions = window->actions();
-    const ClassMngr::Next::Platform::
-        SettingsManagerExcelImportTimeoutPort excelImportTimeoutPort;
+    if (!excelImportTimeoutPreferencesPort)
+    {
+        excelImportTimeoutPreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerExcelImportTimeoutPort
+            >();
+    }
 
     dialog->setObjectName(
         QStringLiteral("preferencesDialog")
@@ -1021,7 +1041,7 @@ void populatePreferencesDialog(
         preferencesText("5 Minutes"), 300);
     excelImportTimeout->setCurrentIndex(
         excelImportTimeout->findData(
-            excelImportTimeoutPort.read().seconds
+            excelImportTimeoutPreferencesPort->read().seconds
             )
         );
     excelImportTimeout->setToolTip(
@@ -1037,15 +1057,34 @@ void populatePreferencesDialog(
         excelImportTimeout,
         Qt::AlignLeft
         );
+    int lastSavedTimeoutIndex = excelImportTimeout->currentIndex();
     QObject::connect(
         excelImportTimeout,
         QOverload<int>::of(&QComboBox::currentIndexChanged),
-        [excelImportTimeout, excelImportTimeoutPort](int index)
+        excelImportTimeout,
+        [window,
+         excelImportTimeout,
+         excelImportTimeoutPreferencesPort,
+         lastSavedTimeoutIndex](const int index) mutable
         {
-            excelImportTimeoutPort.write({
+            const auto saved = excelImportTimeoutPreferencesPort->write({
                 .seconds = excelImportTimeout->itemData(index).toInt()
+                });
+            if (!saved)
+            {
+                {
+                    const QSignalBlocker signalBlocker(excelImportTimeout);
+                    excelImportTimeout->setCurrentIndex(lastSavedTimeoutIndex);
                 }
-                );
+                DialogServices::showWarning(
+                    window,
+                    preferencesText("Unable to Save Preference"),
+                    QString::fromStdString(saved.error().message)
+                    );
+                return;
+            }
+
+            lastSavedTimeoutIndex = index;
         }
         );
     generalLayout->addWidget(excelImportGroup);
@@ -1323,10 +1362,16 @@ void populatePreferencesDialog(
 }
 
 void showPreferencesDialog(
-    MainWindow* window
+    MainWindow* window,
+    std::shared_ptr<
+        ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+        > excelImportTimeoutPreferencesPort
     )
 {
-    PreferencesDialog dialog(window);
+    PreferencesDialog dialog(
+        window,
+        std::move(excelImportTimeoutPreferencesPort)
+        );
     dialog.exec();
 }
 
@@ -1338,10 +1383,18 @@ void showPreferencesDialog(
 //  QMenu* editMenu;
 //  ...
 
-void MenuBuilder::build(MainWindow* window)
+void MenuBuilder::build(
+    MainWindow* window,
+    std::shared_ptr<
+        ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+        > excelImportTimeoutPreferencesPort
+    )
 {
     buildFileMenu(window);
-    buildEditMenu(window);
+    buildEditMenu(
+        window,
+        std::move(excelImportTimeoutPreferencesPort)
+        );
     buildClassMenu(window);
     buildPrintExportMenu(window);
     buildHelpMenu(window);
@@ -1407,7 +1460,12 @@ void MenuBuilder::buildFileMenu(MainWindow* window)
     fileMenu->addAction(actions.exitApp);
 }
 
-void MenuBuilder::buildEditMenu(MainWindow* window)
+void MenuBuilder::buildEditMenu(
+    MainWindow* window,
+    std::shared_ptr<
+        ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+        > excelImportTimeoutPreferencesPort
+    )
 {
     auto& a = window->actions();
 
@@ -1441,9 +1499,14 @@ void MenuBuilder::buildEditMenu(MainWindow* window)
         preferencesAction,
         &QAction::triggered,
         window,
-        [window]()
+        [window,
+         excelImportTimeoutPreferencesPort =
+            std::move(excelImportTimeoutPreferencesPort)]()
         {
-            showPreferencesDialog(window);
+            showPreferencesDialog(
+                window,
+                excelImportTimeoutPreferencesPort
+                );
         }
         );
 }

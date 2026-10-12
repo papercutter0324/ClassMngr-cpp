@@ -10,6 +10,7 @@
 #include "next/application/class_selection_reset_policy.h"
 #include "next/application/evaluation_default_policy_preferences.h"
 #include "next/application/middle_school_analytics_preferences.h"
+#include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "next/platform/application_services_class_visibility_preferences_port.h"
 #include "next/platform/application_services_class_day_filter_reset_policy_port.h"
 #include "next/platform/application_services_class_selection_reset_policy_port.h"
@@ -20,6 +21,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDir>
 #include <QDialog>
 #include <QMessageBox>
@@ -177,6 +179,7 @@ private slots:
     void evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh();
     void dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
     void classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
+    void excelImportTimeoutFailureRestoresSelectionAndAllowsRetry();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsDirectory;
@@ -1685,6 +1688,225 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount);
     QCOMPARE(policyAfterRetry, QStringLiteral("on_page_leave"));
     QCOMPARE(auditsAfterRetry, 1);
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+excelImportTimeoutFailureRestoresSelectionAndAllowsRetry()
+{
+    using ClassMngr::Next::Platform::
+        SettingsManagerExcelImportTimeoutPort;
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = QString::fromUtf8(
+        SettingsManager::Keys::EXCEL_IMPORT_TIMEOUT_SECONDS
+        );
+    settings.setExcelImportTimeoutSeconds(60);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const auto makeFaultablePort =
+        [&injectAccessError, &synchronizationAttempts]()
+        {
+            return std::make_shared<SettingsManagerExcelImportTimeoutPort>(
+                [&injectAccessError, &synchronizationAttempts](
+                    QSettings& settings
+                    )
+                {
+                    ++synchronizationAttempts;
+                    if (injectAccessError)
+                    {
+                        return QSettings::AccessError;
+                    }
+
+                    settings.sync();
+                    return settings.status();
+                }
+                );
+        };
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.excelImportTimeoutPreferencesPort = makeFaultablePort();
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool preferencesDialogObserved = false;
+    bool failedSelectionRestored = false;
+    bool retrySelectionUpdated = false;
+    bool warningObserved = false;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    QString scriptFailure;
+    int selectionAfterFailure = -1;
+    int selectionAfterRetry = -1;
+    int storedAfterFailure = -1;
+    int storedAfterRetry = -1;
+    int effectiveAfterFailure = -1;
+    int effectiveAfterRetry = -1;
+    int attemptsAfterFailure = -1;
+    int attemptsAfterRetry = -1;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            const auto fail = [&](const QString& reason)
+            {
+                scriptFailure = reason;
+                if (dialog)
+                {
+                    dialog->reject();
+                }
+            };
+            if (!dialog)
+            {
+                fail(QStringLiteral("Preferences dialog was not opened."));
+                return;
+            }
+
+            auto* const timeout = dialog->findChild<QComboBox*>(
+                QStringLiteral("preferencesExcelImportTimeout")
+                );
+            if (!timeout)
+            {
+                fail(QStringLiteral("Excel import timeout control was missing."));
+                return;
+            }
+
+            const int priorIndex = timeout->findData(60);
+            const int candidateIndex = timeout->findData(300);
+            if (priorIndex < 0 || candidateIndex < 0
+                || timeout->currentIndex() != priorIndex)
+            {
+                fail(QStringLiteral(
+                    "Initial timeout selection did not match storage."
+                    ));
+                return;
+            }
+            preferencesDialogObserved = true;
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QWidget* const activeModal =
+                        QApplication::activeModalWidget();
+                    auto* const warning = qobject_cast<QMessageBox*>(
+                        activeModal
+                        );
+                    if (!warning)
+                    {
+                        if (activeModal)
+                        {
+                            activeModal->close();
+                        }
+                        scriptFailure = QStringLiteral(
+                            "Timeout preference write failure did not surface a warning dialog."
+                            );
+                        return;
+                    }
+
+                    ++warningCount;
+                    warningObserved = true;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    warning->accept();
+                }
+                );
+
+            timeout->setCurrentIndex(candidateIndex);
+            if (!scriptFailure.isEmpty())
+            {
+                dialog->reject();
+                return;
+            }
+
+            selectionAfterFailure = timeout->currentData().toInt();
+            storedAfterFailure = settings.get(key).toInt();
+            effectiveAfterFailure = settings.excelImportTimeoutSeconds();
+            attemptsAfterFailure = synchronizationAttempts;
+            failedSelectionRestored =
+                timeout->currentIndex() == priorIndex;
+            if (!warningObserved
+                || warningCount != 1
+                || warningTitle != QStringLiteral("Unable to Save Preference")
+                || !warningText.contains(QStringLiteral("AccessError"))
+                || !failedSelectionRestored
+                || selectionAfterFailure != 60
+                || storedAfterFailure != 60
+                || effectiveAfterFailure != 60
+                || attemptsAfterFailure != 1)
+            {
+                fail(QStringLiteral(
+                    "Failed timeout write did not preserve persisted and displayed state."
+                    ));
+                return;
+            }
+
+            injectAccessError = false;
+            timeout->setCurrentIndex(candidateIndex);
+            selectionAfterRetry = timeout->currentData().toInt();
+            storedAfterRetry = settings.get(key).toInt();
+            effectiveAfterRetry = settings.excelImportTimeoutSeconds();
+            attemptsAfterRetry = synchronizationAttempts;
+            retrySelectionUpdated =
+                timeout->currentIndex() == candidateIndex;
+            if (!retrySelectionUpdated
+                || selectionAfterRetry != 300
+                || storedAfterRetry != 300
+                || effectiveAfterRetry != 300
+                || attemptsAfterRetry != 2
+                || warningCount != 1)
+            {
+                fail(QStringLiteral(
+                    "Successful timeout retry did not persist and display the selected value."
+                    ));
+                return;
+            }
+
+            dialog->accept();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(preferencesDialogObserved);
+    QVERIFY(warningObserved);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningText.contains(QStringLiteral("AccessError")));
+    QVERIFY(failedSelectionRestored);
+    QCOMPARE(selectionAfterFailure, 60);
+    QCOMPARE(storedAfterFailure, 60);
+    QCOMPARE(effectiveAfterFailure, 60);
+    QCOMPARE(attemptsAfterFailure, 1);
+    QVERIFY(retrySelectionUpdated);
+    QCOMPARE(selectionAfterRetry, 300);
+    QCOMPARE(storedAfterRetry, 300);
+    QCOMPARE(effectiveAfterRetry, 300);
+    QCOMPARE(attemptsAfterRetry, 2);
 }
 
 QTEST_MAIN(MainWindowClassVisibilityPreferencesFailureTests)

@@ -633,7 +633,10 @@ void MainWindow::connectControllers()
 
 void MainWindow::buildMenus()
 {
-    MenuBuilder::build(this);
+    MenuBuilder::build(
+        this,
+        m_startupOptions.excelImportTimeoutPreferencesPort
+        );
 }
 
 void MainWindow::retranslateUi()

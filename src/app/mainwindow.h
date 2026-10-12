@@ -45,12 +45,20 @@ class LanguageController;
 class FontSizeController;
 class LanguageService;
 
+namespace ClassMngr::Next::Application
+{
+class ExcelImportTimeoutPreferencesPort;
+}
+
 struct MainWindowStartupOptions
 {
     bool loadMostRecentDatabase = true;
     QString initialDatabasePath;
     std::unique_ptr<ThemeService> startupThemeService;
     std::function<void(const QString&, const QString&)> checkpointCallback;
+    std::shared_ptr<
+        ClassMngr::Next::Application::ExcelImportTimeoutPreferencesPort
+        > excelImportTimeoutPreferencesPort;
 };
 
 // =========================================================

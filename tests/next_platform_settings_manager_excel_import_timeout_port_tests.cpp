@@ -1,5 +1,6 @@
 #include "core/settingsmanager.h"
 #include "next/application/excel_import_timeout_preferences.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 
 #include <QTemporaryDir>
@@ -33,9 +34,11 @@ private slots:
     void cleanup();
     void missingSettingUsesDefault();
     void supportedValuesAreAcceptedByContract();
-    void invalidInputNormalizesToDefault();
+    void invalidInputReturnsErrorAndPreservesStoredValue();
     void preservesLegacySettingsKey();
     void supportedValuesRoundTripThroughSettingsManager();
+    void syncFailurePreservesPreviousValueAndAllowsRetry();
+    void syncFailurePreservesMissingValueAndUnrelatedSettings();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -96,7 +99,7 @@ supportedValuesAreAcceptedByContract()
 }
 
 void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
-invalidInputNormalizesToDefault()
+invalidInputReturnsErrorAndPreservesStoredValue()
 {
     SettingsManager& settings = SettingsManager::instance();
     const QString key = timeoutSettingsKey();
@@ -106,8 +109,14 @@ invalidInputNormalizesToDefault()
     QCOMPARE(port.read().seconds, kDefaultExcelImportTimeoutSeconds);
     QCOMPARE(settings.get(key).toInt(), 90);
 
-    port.write({.seconds = 90});
-    QCOMPARE(settings.get(key).toInt(), kDefaultExcelImportTimeoutSeconds);
+    const auto invalidWrite = port.write({.seconds = 90});
+    QVERIFY(!invalidWrite);
+    QCOMPARE(
+        invalidWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!invalidWrite.error().recoverable);
+    QCOMPARE(settings.get(key).toInt(), 90);
     QCOMPARE(port.read().seconds, kDefaultExcelImportTimeoutSeconds);
 }
 
@@ -121,7 +130,7 @@ preservesLegacySettingsKey()
     QCOMPARE(key, QStringLiteral("imports/excelTimeoutSeconds"));
     settings.set(QStringLiteral("imports/unrelatedValue"), 17);
 
-    port.write({.seconds = 300});
+    QVERIFY(port.write({.seconds = 300}));
 
     QCOMPARE(settings.get(key).toInt(), 300);
     QCOMPARE(
@@ -138,7 +147,7 @@ supportedValuesRoundTripThroughSettingsManager()
 
     for (const int seconds : supportedValues)
     {
-        port.write({.seconds = seconds});
+        QVERIFY(port.write({.seconds = seconds}));
         QCOMPARE(port.read().seconds, seconds);
         QCOMPARE(
             SettingsManager::instance()
@@ -147,6 +156,89 @@ supportedValuesRoundTripThroughSettingsManager()
             seconds
             );
     }
+}
+
+void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
+syncFailurePreservesPreviousValueAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = timeoutSettingsKey();
+    const QString unrelatedKey = QStringLiteral("imports/unrelatedValue");
+    settings.set(key, 60);
+    settings.set(unrelatedKey, 17);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerExcelImportTimeoutPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedWrite = faultablePort.write({.seconds = 300});
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(key).toInt(), 60);
+    QCOMPARE(faultablePort.read().seconds, 60);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 17);
+
+    injectAccessError = false;
+    const auto retryResult = faultablePort.write({.seconds = 300});
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(settings.get(key).toInt(), 300);
+    QCOMPARE(faultablePort.read().seconds, 300);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 17);
+}
+
+void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
+syncFailurePreservesMissingValueAndUnrelatedSettings()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = timeoutSettingsKey();
+    const QString unrelatedKey = QStringLiteral("imports/unrelatedValue");
+    settings.remove(key);
+    settings.set(unrelatedKey, 29);
+    settings.sync();
+
+    const SettingsManagerExcelImportTimeoutPort faultablePort(
+        [](QSettings&)
+        {
+            return QSettings::AccessError;
+        }
+        );
+
+    const auto failedWrite = faultablePort.write({.seconds = 30});
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(!settings.get(key).isValid());
+    QCOMPARE(
+        faultablePort.read().seconds,
+        kDefaultExcelImportTimeoutSeconds
+        );
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 29);
 }
 
 QTEST_APPLESS_MAIN(NextPlatformSettingsManagerExcelImportTimeoutPortTests)
