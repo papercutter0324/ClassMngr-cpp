@@ -29359,6 +29359,72 @@ wrong-order scenario.
 Build `ClassMngr` and
 `ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`. Confirm the
 exact full-name CTest is registered once, then run only that CTest with
+`-C Debug`. Run no full suite. This matrix was recorded before implementation.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.
+
+### F766 Schedule Builder source snapshot - accepted - 2026-10-13
+
+F766 is accepted at commit
+`a96246480d4939c00873a98b11ffa1ae10763118`. In the existing Visual Studio 18
+2026 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests` built. The exact
+CTest registered once and passed 1/1. Sandboxed build hit FileTracker
+`E_ACCESSDENIED`; the same build succeeded outside the sandbox. No full suite
+ran.
+
+### F767 Schedule Import state snapshot - selected and acceptance matrix - 2026-10-13
+
+**F767 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`schedule_import_state_snapshot.h`; the helper is already listed in
+`cmake/next.cmake`, so no inventory change is needed.
+
+The query reads the port once first and forwards structured failures
+unchanged. For returned-snapshot validation failures, return
+`ScheduleImportStateSnapshotFailureKind::InvalidSnapshot` from source
+`Snapshot`, with one port read and these exact messages:
+
+- Invalid or duplicate teacher ID: `The schedule import state source returned an invalid or duplicate teacher ID.`
+- Invalid or duplicate class ID: `The schedule import state source returned an invalid or duplicate class ID.`
+- Invalid class-teacher assignment other than sentinel `-1`: `The schedule import state source returned an invalid teacher assignment.`
+
+Preserve acceptance of `-1`, successful source ordering and all snapshot
+fields, and structured port-error forwarding. Do not add cross-list teacher
+membership checks or change adapter behavior.
+
+Add invalid teacher `42x`, a duplicate valid teacher ID, invalid class `42x`,
+the exact existing duplicate-class failure, and invalid assignment `42x`.
+Assert each failure's kind, source, exact message, and one-read boundary while
+retaining existing success and error coverage.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportStateSnapshotTests`. Confirm one
+registration for the exact full-name CTest, then run only that CTest with
 `-C Debug`. Run no full suite. This matrix is recorded before implementation;
-F766 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
+F767 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
 remain Partial, and the formal exit gate remains Open.
+
+### Batch 190 read-only discovery - for after F768; selection pending - 2026-10-13
+
+Two independent read-only audits converged on these ranked candidates for
+after F768; none is selected for implementation yet:
+
+1. **Testing Class helper consolidation:** `testing_class_create.h`,
+   `testing_class_details_update.h`, and `testing_class_delete.h`; focused
+   CTests `ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
+   `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`, and
+   `ClassMngrNextApplicationTestingClassDeleteUseCaseTests`.
+2. **Class and Teacher Delete helper consolidation:** `class_delete.h` and
+   `teacher_delete.h`; focused CTests
+   `ClassMngrNextApplicationClassDeleteUseCaseTests` and
+   `ClassMngrNextApplicationTeacherDeleteUseCaseTests`.
+3. **Class Analytics Dashboard ID guard:**
+   `class_analytics_dashboard_read_query.h` and
+   `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`.
+4. **Provisional Class Details policy decision:** validation-context and
+   schedule-conflict queries currently accept arbitrary-length digit IDs that
+   may exceed the shared helper's `int` range. Decide range semantics first;
+   preserve the tested leading-zero forwarding contract in
+   `ClassDetailsSaveUseCase` and avoid a blanket validator sweep.
+
+Batch 189 continues with F768. Batch 190 candidate selection remains pending.

@@ -4984,3 +4984,23 @@ the port read first, checks invalid and duplicate returned IDs after one read,
 and preserves port-error forwarding, empty success, and source output order
 and fields. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and
 the formal exit gate remains Open.
+
+## Phase 2 F766 acceptance and F767 selection — 2026-10-13
+
+F766 is accepted at `a96246480d4939c00873a98b11ffa1ae10763118`. The Schedule
+Builder source snapshot handler now reuses the shared canonical-ID validator.
+Its exact CTest registered once and passed 1/1 in the Visual Studio 18 x64
+Debug tree after the same build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. The tests pin invalid and duplicate response
+messages, nonrecoverable Validation, one read per failure, and forwarded
+source errors. No full suite ran.
+
+F767 is selected for the Schedule Import state snapshot. Its matrix preserves
+the port-first read and structured failures; covers invalid/duplicate teacher
+and class IDs plus invalid assignments with exact failure metadata; and keeps
+`-1`, source order, and successful snapshot fields. Batch190 discovery found
+four post-F768 candidate groups: Testing Class use cases, Class/Teacher Delete,
+Class Analytics Dashboard, and a conditional Class Details ID-range decision.
+Selection is pending. Preserve the tested leading-zero forwarding behavior in
+ClassDetailsSaveUseCase. F707/F709 remain deferred; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

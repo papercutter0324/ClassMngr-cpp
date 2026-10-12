@@ -4874,22 +4874,25 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F765 accepted; F766 selected)
+## Phase 2 current position — 2026-10-13 (F766 accepted; F767 selected)
 
-F765 is accepted at
-`041f503a03cdcfa21012bbb5a5df3460a920743c`. The Schedule Editor class-info
-query now reuses the shared canonical-ID validator. Its test pins exact
-invalid-ID and returned-ID mismatch messages, error recoverability, and
-zero/one port calls while preserving forwarded port errors and successful
-UTF-16 snapshot fields. In the existing Visual Studio 18 x64 Debug tree,
-`ClassMngr` and `ClassMngrNextApplicationScheduleEditorClassInfoQueryTests`
-built; the exact CTest had one registration (#236) and passed 1/1. The sandbox
-build hit FileTracker `E_ACCESSDENIED`; the same build succeeded outside the
-sandbox. No full suite ran.
+F766 is accepted at
+`a96246480d4939c00873a98b11ffa1ae10763118`. The Schedule Builder source
+snapshot handler now reuses the shared canonical-ID validator while retaining
+the port-first read and raw returned order and fields. Its focused test pins
+invalid and duplicate response messages, Validation/nonrecoverable results,
+one read per failure, and forwarded port errors. In the existing Visual Studio
+18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests` built; the exact
+CTest registered once and passed 1/1. The sandbox build hit FileTracker
+`E_ACCESSDENIED`; the same build succeeded outside the sandbox. No full suite
+ran.
 
-F766 is selected in Batch 189 for the Schedule Builder source snapshot. Keep
-the port-first read, validate only returned IDs, preserve exact source errors
-and successful snapshots, and test invalid/duplicate response metadata and
-single-read behavior. F707/F709 remain deferred. Phase 2 remains In
-Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+F767 is selected in Batch 189 for the Schedule Import state snapshot handler.
+Reuse the shared ID helper while preserving all existing snapshot and
+structured port-failure behavior; pin invalid/duplicate teacher and class IDs
+and invalid assignments with exact failure metadata and one read. Batch 190
+discovery identified four candidate groups for after F768; selection is
+pending. F707/F709 remain deferred. Phase 2 remains In Progress/Open with
+Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
+Windows x64 2/24 and macOS universal 0/24.
