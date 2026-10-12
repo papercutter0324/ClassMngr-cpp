@@ -1795,6 +1795,70 @@ void ScheduleImportTests::filtersClassOptionsByGradeAndDayGroup()
             )
         );
 
+    ScheduleImportClassCandidate paddedMixedCaseCandidate = candidate;
+    paddedMixedCaseCandidate.times.first().day =
+        QStringLiteral(" mOnDaY ");
+    ClassInfo paddedMixedCaseExisting = existing;
+    paddedMixedCaseExisting.classTimes.first().day =
+        QStringLiteral(" wEdNeSdAy ");
+    QVERIFY(
+        scheduleImportClassOptionIsEligible(
+            paddedMixedCaseCandidate,
+            paddedMixedCaseExisting,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    ScheduleImportClassCandidate mixedGroupCandidate = candidate;
+    mixedGroupCandidate.times.append({
+        QStringLiteral("Tuesday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:55 PM")
+    });
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            mixedGroupCandidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    ScheduleImportClassCandidate rejectedDayCandidate = candidate;
+    rejectedDayCandidate.times.first().day = QStringLiteral("Saturday");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            rejectedDayCandidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+    rejectedDayCandidate.times.first().day = QStringLiteral("Sunday");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            rejectedDayCandidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+    rejectedDayCandidate.times.first().day = QStringLiteral("Funday");
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            rejectedDayCandidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
+    ScheduleImportClassCandidate emptyDayCandidate = candidate;
+    emptyDayCandidate.times.clear();
+    QVERIFY(
+        !scheduleImportClassOptionIsEligible(
+            emptyDayCandidate,
+            existing,
+            ScheduleImportKind::Normal
+            )
+        );
+
     existing.classTimes.first().day =
         QStringLiteral("Tuesday");
     QVERIFY(

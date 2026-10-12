@@ -129,17 +129,27 @@ int scheduleImportDayGroup(
     int group = 0;
     for (const ClassTime& time : times)
     {
-        const QString day =
-            time.day.trimmed().toCaseFolded();
-        const int dayGroup =
-            day == QStringLiteral("monday")
-                || day == QStringLiteral("wednesday")
-                || day == QStringLiteral("friday")
-                ? 1
-                : day == QStringLiteral("tuesday")
-                    || day == QStringLiteral("thursday")
-                    ? 2
-                    : 0;
+        const auto weekday =
+            ScheduleValueParser::parseWeekday(time.day);
+        int dayGroup = 0;
+        if (weekday)
+        {
+            switch (weekday->value)
+            {
+            case ScheduleValueParser::Weekday::Monday:
+            case ScheduleValueParser::Weekday::Wednesday:
+            case ScheduleValueParser::Weekday::Friday:
+                dayGroup = 1;
+                break;
+            case ScheduleValueParser::Weekday::Tuesday:
+            case ScheduleValueParser::Weekday::Thursday:
+                dayGroup = 2;
+                break;
+            case ScheduleValueParser::Weekday::Saturday:
+            case ScheduleValueParser::Weekday::Sunday:
+                break;
+            }
+        }
         if (dayGroup == 0 || (group != 0 && group != dayGroup))
         {
             return 0;
