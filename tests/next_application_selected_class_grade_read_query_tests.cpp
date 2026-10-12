@@ -85,12 +85,20 @@ validatesSelectedClassIdBeforePortCall()
              std::string("042"),
              std::string("+42"),
              std::string("42 "),
+             std::string("42x"),
              std::string("2147483648")
          })
     {
         const auto result = query.execute(classId(value));
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Selected class ID must be a canonical positive integer."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
     }
 
     QCOMPARE(port.callCount, 0);

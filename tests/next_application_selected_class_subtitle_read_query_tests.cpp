@@ -101,11 +101,19 @@ rejectsInvalidTypedIdsBeforeCallingPort()
     FakeReadPort port;
     const SelectedClassSubtitleReadQuery query(port);
 
-    for (const std::string value : {"0", "042", "-42", " 42", "42 "})
+    for (const std::string value : {
+             "0", "042", "-42", " 42", "42 ", "42x"
+         })
     {
         const auto result = query.execute(classId(value));
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Selected class ID must be a canonical positive integer."
+                )
+            );
         QVERIFY(!result.error().recoverable);
     }
     QVERIFY(port.requests.empty());

@@ -112,7 +112,7 @@ rejectsNoncanonicalAndDuplicateIdsBeforePortRead()
     FakeBatchReadPort port;
     const Application::SelectedClassSubtitleBatchReadQuery query(port);
     const std::vector<std::string> invalidIds{
-        "0", "01", "-1", "+4", " 4", "2147483648"
+        "0", "01", "-1", "+4", " 4", "42x", "2147483648"
     };
 
     for (const std::string& value : invalidIds)
@@ -120,11 +120,24 @@ rejectsNoncanonicalAndDuplicateIdsBeforePortRead()
         const auto result = query.execute({classId(value)});
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Selected class IDs must be canonical positive integers."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
     }
+    QCOMPARE(port.callCount, 0);
 
     const auto duplicate = query.execute({classId("4"), classId("4")});
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        duplicate.error().message,
+        std::string("Selected class IDs must be unique.")
+        );
+    QVERIFY(!duplicate.error().recoverable);
     QCOMPARE(port.callCount, 0);
 }
 
