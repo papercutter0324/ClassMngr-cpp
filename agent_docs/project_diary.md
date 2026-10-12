@@ -4768,9 +4768,16 @@ request IDs and returned teacher, class, and teacher-reference IDs while
 preserving caller-specific errors and read counts. Two query CTests passed;
 no full suite ran.
 
-F747 reuses the same typed-ID validator in the schedule-summary query. Keep
-its size-limit-before-whitespace-scan behavior, class-scope and validation
-precedence, and exact caller message. Independent reviewers agreed this is an
-exact duplicate. The earlier F746 candidate review rejected testing-assignment
-key parsing because its optional-input and error-category semantics differ.
-F707/F709 remain deferred and the Phase 2 exit gate remains open.
+F747 is accepted and committed as
+`892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`. The schedule-summary query now
+uses the shared source-ID validator and retains size-limit-before-whitespace-
+scan behavior. The summary, print, and roster query tests passed 3/3; no full
+suite ran.
+
+F748 adds a focused test that two identical whitespace-only visible IDs fail
+ID validation before duplicate detection, preserving the exact error and
+zero-read boundary. Explorer found a separate local Gregorian-date parser in
+the Sub Prep calendar query, but reusing the Domain parser would need a
+conversion from its date value to the query's `sys_days` representation and
+broader boundary review. The direct F747 precedence gap is the smaller next
+slice. F707/F709 remain deferred and the Phase 2 exit gate remains open.

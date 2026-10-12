@@ -53,13 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F746 accepted; F747 selected)
+### Current state - 2026-10-13 (F747 accepted; F748 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-178 are complete with F707 and F709 deferred. F740-F746 are
-accepted; F747 will reuse bounded source-ID validation in the Sub Prep
-schedule-summary query. The separate CMake source-ownership optimization was
+Batches 141-178 are complete with F707 and F709 deferred. F740-F747 are
+accepted; F748 will test the schedule-summary query's malformed-ID-before-
+duplicate precedence. The separate CMake source-ownership optimization was
 also completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
@@ -4663,13 +4663,22 @@ read boundaries. Under VS 18 x64 Developer, `ClassMngr` and both query test
 targets built; unique CTest registrations #205 and #237 passed 2/2 in 1.08
 seconds. No full suite ran.
 
-F747 is selected to reuse that validator in the schedule-summary query.
-Preserve its scope-size check, ID-before-duplicate order, exact invalid-input
-message, and pre-read failure behavior. Cover blank and 257-byte IDs with zero
-reads and nonrecoverable `InvalidInput`, plus a valid 256-byte ID forwarded to
-the reader. Keep size/empty rejection before whitespace scanning. Build and
-run the summary, print, and roster query tests because the shared helper
-changes; no full suite. F707 and F709 remain deferred. Phase 2 remains
-In Progress/Open with Gates 1 and 2 Partial; F625's assessment is accepted,
-F626 is deferred, and separate current-source Phase 0 evidence remains
-Windows x64 2/24 and macOS universal 0/24.
+F747 is accepted and committed as
+`892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5` (`Phase2 - Reuse source identifier
+validation in schedule summary`). It removed the duplicate identifier rule
+from the summary query and reused F746's shared check, retaining
+length-before-whitespace scanning and the existing validation order. Under
+VS 18 x64 Developer, `ClassMngr` and the summary, print, and roster query test
+targets built. Unique CTest registrations #204, #205, and #237 passed 3/3 in
+1.09 seconds. No full suite ran.
+
+F748 is selected as a focused contract test in
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`: two
+identical whitespace-only visible IDs must return nonrecoverable `InvalidInput`
+with the exact message `Visible class identifiers must be non-blank and
+bounded.` before duplicate detection and with zero reads. Build
+`ClassMngr` and the summary query test target; confirm registration #204 is
+unique and run only that exact CTest. No full suite. F707 and F709 remain
+deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
+F625's assessment is accepted, F626 is deferred, and separate current-source
+Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.

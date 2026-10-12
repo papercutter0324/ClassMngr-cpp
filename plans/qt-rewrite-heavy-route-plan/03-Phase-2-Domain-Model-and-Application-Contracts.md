@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F746 is accepted at `8cab6fa9e60a0a04f949fc9f28c484687507199c`, and F747 is selected to reuse its shared typed-ID validator in the Sub Prep schedule summary query; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F747 is accepted at `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`, and F748 is selected to test malformed visible-class ID validation before duplicate detection in the Sub Prep schedule summary query; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F747 - Reuse shared typed-ID validation in the Sub Prep schedule summary query while preserving scope, duplicate, weekday, mode, and read ordering.
+- F748 - Add test-only coverage that malformed visible-class ID validation precedes duplicate detection in the Sub Prep schedule summary query.
 
 ## Objective
 

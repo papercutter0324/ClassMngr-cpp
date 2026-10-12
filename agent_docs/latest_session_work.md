@@ -5,11 +5,12 @@
 - Deployment: `phase2-cmake-20261012`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. F744 and
   F745 are accepted. The user-requested CMake source-ownership optimization
-  was evaluated, verified, and committed. F746 is accepted at
+  was evaluated, verified, and committed. F746 is committed at
   `8cab6fa9e60a0a04f949fc9f28c484687507199c`; its print and roster query
-  targets built, and their exact focused CTests passed 2/2. F747 is selected
-  to reuse the shared bounded source-ID rule in the schedule-summary query.
-  F707 and F709 remain deferred.
+  CTests passed 2/2. F747 is committed at
+  `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`; its summary, print, and roster
+  query CTests passed 3/3. F748 is selected to lock the schedule-summary
+  malformed-ID-before-duplicate contract. F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -254,7 +255,7 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740-F746 are accepted; the F747 matrix is in
+  full suite ran. F740-F747 are accepted; the F748 matrix is in
   the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
@@ -300,8 +301,10 @@
   `d813248e74a42ae138d384536d9ed5568039566f`; its three focused CTests passed
   3/3 in 1.11s. F746 is committed at
   `8cab6fa9e60a0a04f949fc9f28c484687507199c`; its exact print and roster
-  CTests passed 2/2. F747 shares source-ID validation with schedule summary;
-  its detailed matrix is recorded in the Phase 2 progress log.
+  CTests passed 2/2. F747 is committed at
+  `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`; its exact summary, print, and
+  roster CTests passed 3/3. F748 adds a summary-query precedence test; its
+  detailed matrix is recorded in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

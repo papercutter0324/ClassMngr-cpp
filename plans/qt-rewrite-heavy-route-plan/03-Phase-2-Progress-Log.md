@@ -28471,3 +28471,46 @@ Acceptance criteria were defined before implementation and are recorded here.
 Batch 179 is active with F747;
 F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
 formal exit gate remains Open.
+
+### F747 Sub Prep schedule-summary source identifier validation - accepted - 2026-10-13
+
+F747 is accepted at commit
+`892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5` (`Phase2 - Reuse source identifier
+validation in schedule summary`). The schedule-summary query reuses
+`SubPrepSourceValidationDetail::isValidId`, retaining its empty/length
+short-circuit before the whitespace scan and the caller's validation and error
+order.
+
+The focused build succeeded for `ClassMngr` and the schedule-summary, print,
+and roster query targets. CTest registrations #204, #205, and #237 were each
+unique; exactly those three tests passed 3/3 in 1.09 seconds. No full suite
+ran.
+
+**Decision: accept F747.** Batch 179 continues with F748; F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### Batch 179 continuation - F748 selection and acceptance matrix - 2026-10-13
+
+F747 review found an untested validation-precedence branch in
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`.
+
+**F748 is selected:** add test-only coverage that per-ID validation takes
+precedence over duplicate detection for visible class IDs.
+
+1. In the existing schedule-summary query test file, submit a request with two
+   identical whitespace-only `visibleClassIds`. Assert nonrecoverable
+   `InvalidInput`, the exact existing message
+   `Visible class identifiers must be non-blank and bounded.`, and zero reader
+   calls. The assertion must distinguish this malformed-ID result from the
+   duplicate-ID error.
+2. Make no production edits. Build `ClassMngr` and
+   `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`; confirm CTest
+   registration #204 appears exactly once, then run only that exact test. Run
+   no full suite.
+
+A separate local Gregorian date parser remains deferred: reusing
+`Domain::GregorianDate::fromIsoString` would require conversion to the query's
+`std::chrono::sys_days` representation and a broader date-boundary review.
+Acceptance criteria were defined before the test change and are recorded here. F707/F709 remain deferred;
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
