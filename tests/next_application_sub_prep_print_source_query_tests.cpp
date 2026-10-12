@@ -310,9 +310,7 @@ invalidRequestsAreRejectedBeforeRead()
         oversizedClassScope,
         duplicateDays,
         oversizedDayList,
-        invalidMode,
-        blankClassId,
-        longClassId
+        invalidMode
     };
     for (const auto& request : invalidRequests)
     {
@@ -326,6 +324,17 @@ invalidRequestsAreRejectedBeforeRead()
                 );
             QVERIFY(!result.error().recoverable);
         }
+    }
+
+    for (const auto& request : {blankClassId, longClassId})
+    {
+        const auto result = query.execute(request);
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Selected class identifiers must be non-blank and bounded.")
+            );
+        QVERIFY(!result.error().recoverable);
     }
 
     QCOMPARE(readPort.calls, 0);
@@ -534,44 +543,80 @@ rejectsOutOfScopeAndDuplicateClassesAllOrNothing()
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
 rejectsMalformedIdentifiersAndMissingOrUnusedTeachers()
 {
-    FakeReadPort readPort;
-    const SubPrepPrintSourceQuery query(readPort);
+    const auto verifyMalformedIdentifier = [](
+                                           SubPrepPrintSourceInput input,
+                                           const char* expectedMessage
+                                           )
+    {
+        FakeReadPort malformedReadPort;
+        malformedReadPort.result =
+            SubPrepPrintSourceReadResult::success(std::move(input));
+        const SubPrepPrintSourceQuery malformedQuery(malformedReadPort);
+        const auto result = malformedQuery.execute(validRequest());
+
+        verifyError(result, ErrorCode::Validation);
+        QCOMPARE(result.error().message, std::string(expectedMessage));
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(malformedReadPort.calls, 1);
+    };
+
+    auto malformedTeacherId = validInput();
+    const auto blankTeacherId = teacherId(" \t ");
+    malformedTeacherId.teachers.push_back(teacher(blankTeacherId.value()));
+    verifyMalformedIdentifier(
+        std::move(malformedTeacherId),
+        "A Sub Prep print teacher identifier is malformed."
+        );
+
+    malformedTeacherId = validInput();
+    const auto overlongTeacherId = teacherId(std::string(
+        kSubPrepPrintSourceMaxIdentifierLength + 1,
+        't'
+        ));
+    malformedTeacherId.teachers.push_back(
+        teacher(overlongTeacherId.value())
+        );
+    verifyMalformedIdentifier(
+        std::move(malformedTeacherId),
+        "A Sub Prep print teacher identifier is malformed."
+        );
 
     auto malformedClassId = validInput();
     malformedClassId.classes.front().id = classId(" \t ");
-    readPort.result = SubPrepPrintSourceReadResult::success(malformedClassId);
-    verifyValidationError(query.execute(validRequest()));
+    verifyMalformedIdentifier(
+        std::move(malformedClassId),
+        "A Sub Prep print class identifier is malformed."
+        );
 
     malformedClassId = validInput();
     malformedClassId.classes.front().id = classId(std::string(
         kSubPrepPrintSourceMaxIdentifierLength + 1,
         'c'
         ));
-    readPort.result = SubPrepPrintSourceReadResult::success(malformedClassId);
-    verifyValidationError(query.execute(validRequest()));
-
-    auto malformedTeacherId = validInput();
-    malformedTeacherId.teachers.front().id = teacherId(" \t ");
-    readPort.result = SubPrepPrintSourceReadResult::success(malformedTeacherId);
-    verifyValidationError(query.execute(validRequest()));
-
-    malformedTeacherId = validInput();
-    malformedTeacherId.teachers.front().id = teacherId(std::string(
-        kSubPrepPrintSourceMaxIdentifierLength + 1,
-        't'
-        ));
-    malformedTeacherId.classes.front().teacherId =
-        malformedTeacherId.teachers.front().id;
-    readPort.result = SubPrepPrintSourceReadResult::success(malformedTeacherId);
-    verifyValidationError(query.execute(validRequest()));
+    verifyMalformedIdentifier(
+        std::move(malformedClassId),
+        "A Sub Prep print class identifier is malformed."
+        );
 
     auto malformedClassTeacherReference = validInput();
     malformedClassTeacherReference.classes.front().teacherId =
         teacherId(" \t ");
-    readPort.result = SubPrepPrintSourceReadResult::success(
-        malformedClassTeacherReference
+    verifyMalformedIdentifier(
+        std::move(malformedClassTeacherReference),
+        "A Sub Prep print class has a malformed teacher identifier."
         );
-    verifyValidationError(query.execute(validRequest()));
+
+    malformedClassTeacherReference = validInput();
+    malformedClassTeacherReference.classes.front().teacherId = teacherId(
+        std::string(kSubPrepPrintSourceMaxIdentifierLength + 1, 't')
+        );
+    verifyMalformedIdentifier(
+        std::move(malformedClassTeacherReference),
+        "A Sub Prep print class has a malformed teacher identifier."
+        );
+
+    FakeReadPort readPort;
+    const SubPrepPrintSourceQuery query(readPort);
 
     auto missingTeacher = validInput();
     missingTeacher.classes.front().teacherId = teacherId("missing-teacher");
@@ -583,16 +628,7 @@ rejectsMalformedIdentifiersAndMissingOrUnusedTeachers()
     readPort.result = SubPrepPrintSourceReadResult::success(unusedTeacher);
     verifyValidationError(query.execute(validRequest()));
 
-    auto overlongClassTeacherReference = validInput();
-    overlongClassTeacherReference.classes.front().teacherId = teacherId(
-        std::string(kSubPrepPrintSourceMaxIdentifierLength + 1, 't')
-        );
-    readPort.result = SubPrepPrintSourceReadResult::success(
-        overlongClassTeacherReference
-        );
-    verifyValidationError(query.execute(validRequest()));
-
-    QCOMPARE(readPort.calls, 8);
+    QCOMPARE(readPort.calls, 2);
 }
 
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::

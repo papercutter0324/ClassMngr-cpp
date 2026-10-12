@@ -154,10 +154,11 @@ private slots:
     void requestAndSourceOwnTypedBoundedValues();
     void invalidRequestsAreRejectedBeforeRead();
     void invalidWeekdaysAreRejectedBeforeRead();
+    void acceptsMaximumIdentifierLength();
     void emptyScopeReturnsWithoutRead();
     void forwardsExactScopeAndPreservesSourceOrder();
     void propagatesReadFailure();
-    void rejectsOutOfScopeDuplicateAndInvalidTeacherData();
+    void rejectsOutOfScopeDuplicateAndMalformedTeacherData();
     void rejectsInvalidAndUnselectedMeetingWeekdays();
     void rejectsUnrequestedColumnsAndMalformedRows();
     void acceptsMaximumPerClassRowsAndColumns();
@@ -241,6 +242,30 @@ invalidRequestsAreRejectedBeforeRead()
             );
     }
     verifyInvalid(std::move(request));
+
+    const auto verifyMalformedSelectedClassId = [](const std::string& id)
+    {
+        FakeReadPort readPort;
+        auto malformedRequest = validRequest();
+        malformedRequest.selectedClassIds = {classId(id)};
+        SubPrepRosterOutputSourceQuery query(readPort);
+        const auto result = query.execute(malformedRequest);
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Selected roster-output class identifiers must be non-blank and bounded."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    };
+    verifyMalformedSelectedClassId(" \t ");
+    verifyMalformedSelectedClassId(std::string(
+        kSubPrepPrintSourceMaxIdentifierLength + 1,
+        'c'
+        ));
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
@@ -263,6 +288,38 @@ invalidWeekdaysAreRejectedBeforeRead()
         QVERIFY(!result.error().recoverable);
         QCOMPARE(readPort.calls, 0);
     }
+}
+
+void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
+acceptsMaximumIdentifierLength()
+{
+    const auto maximumClassId = std::string(
+        kSubPrepPrintSourceMaxIdentifierLength,
+        'c'
+        );
+    const auto maximumTeacherId = std::string(
+        kSubPrepPrintSourceMaxIdentifierLength,
+        't'
+        );
+    auto request = validRequest();
+    request.selectedClassIds = {classId(maximumClassId)};
+
+    auto input = validInput();
+    input.teachers.front().id = teacherId(maximumTeacherId);
+    input.classes.front().id = classId(maximumClassId);
+    input.classes.front().teacherId = teacherId(maximumTeacherId);
+
+    FakeReadPort readPort;
+    setInput(readPort, std::move(input));
+    SubPrepRosterOutputSourceQuery query(readPort);
+    const auto result = query.execute(request);
+
+    QVERIFY(result);
+    QCOMPARE(readPort.calls, 1);
+    QCOMPARE(result.value().classes().size(), std::size_t(1));
+    QCOMPARE(result.value().classes().front().id, classId(maximumClassId));
+    QCOMPARE(result.value().teachers().size(), std::size_t(1));
+    QCOMPARE(result.value().teachers().front().id, teacherId(maximumTeacherId));
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
@@ -333,7 +390,7 @@ propagatesReadFailure()
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
-rejectsOutOfScopeDuplicateAndInvalidTeacherData()
+rejectsOutOfScopeDuplicateAndMalformedTeacherData()
 {
     const auto verifyInvalidSource = [](
                                   SubPrepRosterOutputSourceInput input
@@ -366,6 +423,79 @@ rejectsOutOfScopeDuplicateAndInvalidTeacherData()
     input = validInput();
     input.classes.front().teacherId.reset();
     verifyInvalidSource(std::move(input));
+
+    const auto verifyMalformedIdentifier = [](
+                                           SubPrepRosterOutputSourceInput input,
+                                           const char* expectedMessage
+                                           )
+    {
+        FakeReadPort malformedReadPort;
+        setInput(malformedReadPort, std::move(input));
+        SubPrepRosterOutputSourceQuery malformedQuery(malformedReadPort);
+        const auto result = malformedQuery.execute(validRequest());
+
+        verifyError(result, ErrorCode::Validation);
+        QCOMPARE(result.error().message, std::string(expectedMessage));
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(malformedReadPort.calls, 1);
+    };
+
+    auto malformedTeacher = validInput();
+    const auto blankTeacherId = teacherId(" \t ");
+    auto blankIdTeacher = validTeacher();
+    blankIdTeacher.id = blankTeacherId;
+    malformedTeacher.teachers.push_back(std::move(blankIdTeacher));
+    verifyMalformedIdentifier(
+        std::move(malformedTeacher),
+        "A roster-output teacher identifier is malformed."
+        );
+
+    malformedTeacher = validInput();
+    const auto overlongTeacherId = teacherId(std::string(
+        kSubPrepPrintSourceMaxIdentifierLength + 1,
+        't'
+        ));
+    auto overlongIdTeacher = validTeacher();
+    overlongIdTeacher.id = overlongTeacherId;
+    malformedTeacher.teachers.push_back(std::move(overlongIdTeacher));
+    verifyMalformedIdentifier(
+        std::move(malformedTeacher),
+        "A roster-output teacher identifier is malformed."
+        );
+
+    auto malformedClass = validInput();
+    malformedClass.classes.front().id = classId(" \t ");
+    verifyMalformedIdentifier(
+        std::move(malformedClass),
+        "A roster-output class identifier is malformed."
+        );
+
+    malformedClass = validInput();
+    malformedClass.classes.front().id = classId(std::string(
+        kSubPrepPrintSourceMaxIdentifierLength + 1,
+        'c'
+        ));
+    verifyMalformedIdentifier(
+        std::move(malformedClass),
+        "A roster-output class identifier is malformed."
+        );
+
+    auto malformedTeacherReference = validInput();
+    malformedTeacherReference.classes.front().teacherId =
+        teacherId(" \t ");
+    verifyMalformedIdentifier(
+        std::move(malformedTeacherReference),
+        "A roster-output class teacher identifier is malformed."
+        );
+
+    malformedTeacherReference = validInput();
+    malformedTeacherReference.classes.front().teacherId = teacherId(
+        std::string(kSubPrepPrintSourceMaxIdentifierLength + 1, 't')
+        );
+    verifyMalformedIdentifier(
+        std::move(malformedTeacherReference),
+        "A roster-output class teacher identifier is malformed."
+        );
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::

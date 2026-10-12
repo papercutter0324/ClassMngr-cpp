@@ -2,17 +2,15 @@
 
 #include "next/application/class_summary_projection.h"
 #include "next/application/schedule_view_projection.h"
+#include "next/application/sub_prep_source_validation.h"
 #include "next/application/sub_prep_weekday.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <optional>
 #include <set>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -20,7 +18,7 @@ namespace ClassMngr::Next::Application
 {
 
 inline constexpr std::size_t kSubPrepPrintSourceMaxIdentifierLength =
-    kSummaryMaxIdentifierLength;
+    kSubPrepSourceMaxIdentifierLength;
 inline constexpr std::size_t kSubPrepPrintSourceMaxClassIds =
     kClassSummaryMaxEntries;
 inline constexpr std::size_t kSubPrepPrintSourceMaxSelectedDays = 7;
@@ -202,30 +200,14 @@ using SubPrepPrintSourceQueryResult = Domain::Result<SubPrepPrintSource>;
 namespace SubPrepPrintSourceQueryDetail
 {
 
-[[nodiscard]] inline bool isBlank(
-    const std::string_view value
-    ) noexcept
-{
-    return value.empty()
-        || std::all_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
-}
-
 [[nodiscard]] inline bool isOptionalText(
     const std::string& value,
     const std::size_t maxLength
     ) noexcept
 {
     return value.empty()
-        || (!isBlank(value) && value.size() <= maxLength);
+        || (!SubPrepSourceValidationDetail::isBlank(value)
+            && value.size() <= maxLength);
 }
 
 template <typename TypedId>
@@ -233,8 +215,7 @@ template <typename TypedId>
     const TypedId& id
     ) noexcept
 {
-    return !isBlank(id.value())
-        && id.value().size() <= kSubPrepPrintSourceMaxIdentifierLength;
+    return SubPrepSourceValidationDetail::isValidId(id);
 }
 
 [[nodiscard]] inline Domain::OperationError invalidInput(

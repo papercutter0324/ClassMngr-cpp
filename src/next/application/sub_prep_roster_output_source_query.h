@@ -2,17 +2,15 @@
 
 #include "next/application/schedule_view_projection.h"
 #include "next/application/sub_prep_print_source_query.h"
+#include "next/application/sub_prep_source_validation.h"
 #include "next/application/sub_prep_weekday.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <optional>
 #include <set>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -171,21 +169,6 @@ using SubPrepRosterOutputSourceQueryResult =
 namespace SubPrepRosterOutputSourceQueryDetail
 {
 
-[[nodiscard]] inline bool isBlank(const std::string_view value) noexcept
-{
-    return value.empty()
-        || std::all_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
-}
-
 [[nodiscard]] inline bool isOptionalText(
     const std::string& value,
     const std::size_t maxBytes
@@ -197,8 +180,7 @@ namespace SubPrepRosterOutputSourceQueryDetail
 template <typename TypedId>
 [[nodiscard]] inline bool isValidId(const TypedId& id) noexcept
 {
-    return !isBlank(id.value())
-        && id.value().size() <= kSubPrepPrintSourceMaxIdentifierLength;
+    return SubPrepSourceValidationDetail::isValidId(id);
 }
 
 [[nodiscard]] inline Domain::OperationError invalidInput(
@@ -297,7 +279,7 @@ template <typename TypedId>
     std::set<std::string> selectedColumns;
     for (const auto& column : request.selectedExtraColumns)
     {
-        if (isBlank(column)
+        if (SubPrepSourceValidationDetail::isBlank(column)
             || column.size() > kSubPrepRosterOutputMaxColumnNameBytes)
         {
             return Domain::Result<void>::failure(
@@ -587,7 +569,7 @@ template <typename TypedId>
         std::set<std::string> rosterColumns;
         for (const auto& column : classRecord.rosterColumns)
         {
-            if (isBlank(column)
+            if (SubPrepSourceValidationDetail::isBlank(column)
                 || column.size() > kSubPrepRosterOutputMaxColumnNameBytes)
             {
                 return Domain::Result<void>::failure(
