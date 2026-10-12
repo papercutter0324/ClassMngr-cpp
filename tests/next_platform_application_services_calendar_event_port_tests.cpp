@@ -3612,15 +3612,44 @@ rejectsPartialSourceTimesAndProjectionOverflow()
         static_cast<qsizetype>(kCalendarEventProjectionMaxEvents + 1)
         );
 
+    // Make the final ordered source row invalid for projection. The raw-row
+    // capacity boundary must win before the adapter converts that row.
+    QSqlQuery malformedOverflowRow(
+        services.dataService()->databaseSession()->database()
+        );
+    malformedOverflowRow.prepare(QStringLiteral(
+        "UPDATE calendar_events SET title=? WHERE id=?"
+        ));
+    malformedOverflowRow.addBindValue(QString(
+        static_cast<int>(kCalendarEventSummaryMaxTitleUtf8Bytes + 1),
+        QChar('z')
+        ));
+    malformedOverflowRow.addBindValue(saved->back());
+    QVERIFY(malformedOverflowRow.exec());
+    QCOMPARE(malformedOverflowRow.numRowsAffected(), 1);
+
     const auto overflow = port.projection(
         QDate(2026, 11, 1),
         QDate(2026, 11, 1)
         );
     verifyFailure(overflow, ErrorCode::InvalidInput);
-    QVERIFY(
-        overflow.error().message.find("bounded") != std::string::npos
-        || overflow.error().message.find("capacity") != std::string::npos
+    QCOMPARE(
+        QString::fromStdString(overflow.error().message),
+        QStringLiteral(
+            "Calendar event range exceeds its bounded projection capacity."
+            )
         );
+
+    QSqlQuery restoreOverflowRow(
+        services.dataService()->databaseSession()->database()
+        );
+    restoreOverflowRow.prepare(QStringLiteral(
+        "UPDATE calendar_events SET title=? WHERE id=?"
+        ));
+    restoreOverflowRow.addBindValue(QStringLiteral("Overflow 4096"));
+    restoreOverflowRow.addBindValue(saved->back());
+    QVERIFY(restoreOverflowRow.exec());
+    QCOMPARE(restoreOverflowRow.numRowsAffected(), 1);
 
     ApplicationServicesCalendarEventImportSignatureQueryPort importPort(
         services

@@ -397,6 +397,7 @@ private slots:
     void injectedInvalidTimesAreFilteredByCacheAndModel();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
     void projectionQueryAndCacheUseUtf16TitleBounds();
+    void projectionQueryBoundsRetainedRowsAndPreservesConversionErrors();
     void typedDateProjectionPreservesModelParityAndFiltering();
     void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
@@ -883,6 +884,216 @@ void CalendarEventCacheTests::projectionQueryAndCacheUseUtf16TitleBounds()
     QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
     QVERIFY(!cache.isRangeLoaded(rangeStart, rangeEnd));
     QVERIFY(!cache.rangeError(rangeStart, rangeEnd).isEmpty());
+}
+
+void CalendarEventCacheTests::
+projectionQueryBoundsRetainedRowsAndPreservesConversionErrors()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("projection-capacity.db"));
+    const QString connectionName =
+        QStringLiteral("calendar-event-cache-capacity-%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    constexpr std::size_t maxEvents = ClassMngr::Next::Application::
+        kCalendarEventProjectionMaxEvents;
+    const QDate eventDate(2026, 7, 15);
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+        QVERIFY(database.transaction());
+
+        // SQLite permits an explicit row id of zero. Its blank title would
+        // fail projection conversion if invalid ids were not filtered first.
+        QSqlQuery invalidIdInsert(database);
+        invalidIdInsert.prepare(R"(
+            INSERT INTO calendar_events (
+                id,
+                title,
+                event_type,
+                time_status,
+                repeat_series_id,
+                all_day,
+                start_date,
+                start_time,
+                end_date,
+                end_time
+            )
+            VALUES (0, '', 'Other', 'Timed', NULL, 0, ?, '09:00', ?, '10:00')
+        )");
+        invalidIdInsert.addBindValue(eventDate.toString(Qt::ISODate));
+        invalidIdInsert.addBindValue(eventDate.toString(Qt::ISODate));
+        QVERIFY(invalidIdInsert.exec());
+
+        QSqlQuery validInsert(database);
+        QVERIFY(validInsert.prepare(R"(
+            INSERT INTO calendar_events (
+                title,
+                event_type,
+                time_status,
+                repeat_series_id,
+                all_day,
+                start_date,
+                start_time,
+                end_date,
+                end_time
+            )
+            VALUES (?, 'Other', 'Timed', NULL, 0, ?, '09:00', ?, '10:00')
+        )"));
+
+        const auto insertValidRows =
+            [&validInsert, &eventDate](const std::size_t firstIndex,
+                                       const std::size_t count)
+        {
+            for (std::size_t index = firstIndex;
+                 index < firstIndex + count;
+                 ++index)
+            {
+                validInsert.bindValue(
+                    0,
+                    QStringLiteral("valid-%1").arg(
+                        static_cast<qulonglong>(index),
+                        5,
+                        10,
+                        QLatin1Char('0')
+                        )
+                    );
+                validInsert.bindValue(1, eventDate.toString(Qt::ISODate));
+                validInsert.bindValue(2, eventDate.toString(Qt::ISODate));
+                if (!validInsert.exec())
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        QVERIFY(insertValidRows(0, maxEvents));
+        QVERIFY(database.commit());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    const auto atLimit = CalendarEventProjectionQuery::loadRange(
+        databasePath,
+        eventDate,
+        eventDate
+        );
+    QVERIFY(atLimit);
+    QCOMPARE(atLimit.value().eventCount(), maxEvents);
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QVERIFY(database.transaction());
+        QSqlQuery validInsert(database);
+        QVERIFY(validInsert.prepare(R"(
+            INSERT INTO calendar_events (
+                title,
+                event_type,
+                time_status,
+                repeat_series_id,
+                all_day,
+                start_date,
+                start_time,
+                end_date,
+                end_time
+            )
+            VALUES (?, 'Other', 'Timed', NULL, 0, ?, '09:00', ?, '10:00')
+        )"));
+        validInsert.addBindValue(QStringLiteral("valid-04096"));
+        validInsert.addBindValue(eventDate.toString(Qt::ISODate));
+        validInsert.addBindValue(eventDate.toString(Qt::ISODate));
+        QVERIFY(validInsert.exec());
+        QVERIFY(database.commit());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    const auto overLimit = CalendarEventProjectionQuery::loadRange(
+        databasePath,
+        eventDate,
+        eventDate
+        );
+    QVERIFY(!overLimit);
+    QCOMPARE(
+        overLimit.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QCOMPARE(
+        QString::fromStdString(overLimit.error().message),
+        QStringLiteral("Calendar event collection exceeds its bounded limit.")
+        );
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        QVERIFY(database.transaction());
+        QSqlQuery malformedInsert(database);
+        QVERIFY(malformedInsert.prepare(R"(
+            INSERT INTO calendar_events (
+                title,
+                event_type,
+                time_status,
+                repeat_series_id,
+                all_day,
+                start_date,
+                start_time,
+                end_date,
+                end_time
+            )
+            VALUES (?, 'Other', 'Timed', NULL, 0, ?, '09:00', ?, '10:00')
+        )"));
+        malformedInsert.addBindValue(QString(
+            static_cast<int>(
+                ClassMngr::Next::Application::
+                    kCalendarEventSummaryMaxTitleUtf8Bytes + 1
+                ),
+            QChar('z')
+            ));
+        malformedInsert.addBindValue(eventDate.toString(Qt::ISODate));
+        malformedInsert.addBindValue(eventDate.toString(Qt::ISODate));
+        QVERIFY(malformedInsert.exec());
+        QVERIFY(database.commit());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    const auto malformedAfterOverflow =
+        CalendarEventProjectionQuery::loadRange(
+            databasePath,
+            eventDate,
+            eventDate
+            );
+    QVERIFY(!malformedAfterOverflow);
+    QCOMPARE(
+        malformedAfterOverflow.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QCOMPARE(
+        QString::fromStdString(malformedAfterOverflow.error().message),
+        QStringLiteral(
+            "A calendar event contains invalid or unbounded projection metadata."
+            )
+        );
 }
 
 void CalendarEventCacheTests::typedDateProjectionPreservesModelParityAndFiltering()

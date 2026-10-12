@@ -159,6 +159,36 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsInRange(
 {
     QList<CalendarEvent> events;
 
+    const Status visited = visitCalendarEventsInRange(
+        startDate,
+        endDate,
+        [&events](const CalendarEvent& event)
+        {
+            events.append(event);
+            return CalendarEventRangeVisitDecision::Continue;
+        }
+        );
+    if (!visited)
+    {
+        return std::unexpected(visited.error());
+    }
+
+    return events;
+}
+
+Status CalendarEventRepository::visitCalendarEventsInRange(
+    const QDate& startDate,
+    const QDate& endDate,
+    const CalendarEventRangeVisitor& visitor
+    )
+{
+    if (!visitor)
+    {
+        return std::unexpected(
+            QObject::tr("Loading calendar events failed: no range visitor was provided.")
+            );
+    }
+
     if (
         !startDate.isValid()
         || !endDate.isValid()
@@ -210,12 +240,32 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsInRange(
 
     while (query.next())
     {
-        events.append(
-            eventFromQuery(query)
+        if (
+            visitor(eventFromQuery(query))
+            == CalendarEventRangeVisitDecision::Stop
+            )
+        {
+            return {};
+        }
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading calendar events in range"),
+                {},
+                QObject::tr("from %1 to %2")
+                    .arg(
+                        startDate.toString(Qt::ISODate),
+                        endDate.toString(Qt::ISODate)
+                        )
+                ).userMessage()
             );
     }
 
-    return events;
+    return {};
 }
 
 Result<QList<CalendarEventDateInterval>>

@@ -3,6 +3,7 @@
 #include "core/result.h"
 #include "domain/models/calendar_event.h"
 
+#include <functional>
 #include <QList>
 #include <QSqlDatabase>
 #include <QString>
@@ -35,6 +36,16 @@ struct CalendarEventSaveOutcome final
     QString diagnostic;
 };
 
+enum class CalendarEventRangeVisitDecision
+{
+    Continue,
+    Stop
+};
+
+using CalendarEventRangeVisitor = std::function<
+    CalendarEventRangeVisitDecision(const CalendarEvent&)
+    >;
+
 class CalendarEventRepository
 {
 public:
@@ -49,6 +60,12 @@ public:
     [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsInRange(
         const QDate& startDate,
         const QDate& endDate
+        );
+
+    [[nodiscard]] Status visitCalendarEventsInRange(
+        const QDate& startDate,
+        const QDate& endDate,
+        const CalendarEventRangeVisitor& visitor
         );
 
     [[nodiscard]] Result<QList<CalendarEventDateInterval>>

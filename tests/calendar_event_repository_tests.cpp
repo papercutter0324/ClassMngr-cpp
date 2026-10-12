@@ -148,6 +148,7 @@ private slots:
     void rangeQueryIncludesEventsThatOverlapRange();
     void intervalRangeQueryReturnsFullInclusiveIntervals();
     void rangeQuerySortsByDateTimeAndTitle();
+    void rangeVisitorPreservesOrderAndStopsAtRequestedPrefix();
     void upcomingQueryExcludesPastEventsAndLimitsResults();
     void nextEventQueryFindsEarliestFutureStartDate();
     void schemaCreatesEndDateIndex();
@@ -382,6 +383,109 @@ void CalendarEventRepositoryTests::rangeQuerySortsByDateTimeAndTitle()
                 QStringLiteral("Alpha"),
                 QStringLiteral("Beta"),
                 QStringLiteral("Later Date")
+            })
+            );
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void CalendarEventRepositoryTests::
+rangeVisitorPreservesOrderAndStopsAtRequestedPrefix()
+{
+    const QString connectionName =
+        QStringLiteral("calendar_event_repository_visitor_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+
+        CalendarEventRepository repository(database);
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Later Date"),
+                QDate(2026, 7, 11),
+                QTime(8, 0),
+                QDate(2026, 7, 11),
+                QTime(9, 0)
+                )
+            );
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Beta"),
+                QDate(2026, 7, 10),
+                QTime(9, 0),
+                QDate(2026, 7, 10),
+                QTime(10, 0)
+                )
+            );
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Alpha"),
+                QDate(2026, 7, 10),
+                QTime(9, 0),
+                QDate(2026, 7, 10),
+                QTime(10, 0)
+                )
+            );
+        saveCalendarEventOrFail(repository,
+            makeEvent(
+                QStringLiteral("Early Time"),
+                QDate(2026, 7, 10),
+                QTime(8, 0),
+                QDate(2026, 7, 10),
+                QTime(9, 0)
+                )
+            );
+
+        QStringList visitedTitles;
+        const Status visited = repository.visitCalendarEventsInRange(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31),
+            [&visitedTitles](const CalendarEvent& event)
+            {
+                visitedTitles.append(event.title);
+                return CalendarEventRangeVisitDecision::Continue;
+            }
+            );
+        QVERIFY(visited);
+        QCOMPARE(
+            visitedTitles,
+            QStringList({
+                QStringLiteral("Early Time"),
+                QStringLiteral("Alpha"),
+                QStringLiteral("Beta"),
+                QStringLiteral("Later Date")
+            })
+            );
+
+        QStringList stoppedPrefix;
+        int callbackCount = 0;
+        const Status stopped = repository.visitCalendarEventsInRange(
+            QDate(2026, 7, 1),
+            QDate(2026, 7, 31),
+            [&stoppedPrefix, &callbackCount](const CalendarEvent& event)
+            {
+                ++callbackCount;
+                stoppedPrefix.append(event.title);
+                return callbackCount == 2
+                    ? CalendarEventRangeVisitDecision::Stop
+                    : CalendarEventRangeVisitDecision::Continue;
+            }
+            );
+        QVERIFY(stopped);
+        QCOMPARE(callbackCount, 2);
+        QCOMPARE(
+            stoppedPrefix,
+            QStringList({
+                QStringLiteral("Early Time"),
+                QStringLiteral("Alpha")
             })
             );
     }

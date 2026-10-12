@@ -25,6 +25,8 @@ using Summary =
     ClassMngr::Next::Application::CalendarEventSummary;
 using ProjectionInput =
     ClassMngr::Next::Application::CalendarEventProjectionInput;
+using SummaryConversionResult =
+    ClassMngr::Next::Domain::Result<std::optional<Summary>>;
 using ErrorCode =
     ClassMngr::Next::Domain::ErrorCode;
 
@@ -108,147 +110,225 @@ std::optional<std::string> optionalBoundedUtf8(
     return boundedUtf8(trimmed, maximumBytes);
 }
 
-ProjectionResult projectionFromEvents(
-    const QList<CalendarEvent>& events
+SummaryConversionResult summaryFromEvent(
+    const CalendarEvent& source,
+    const std::int32_t order
     )
 {
-    ProjectionInput input;
-    input.events.reserve(
-        static_cast<std::size_t>(events.size())
+    // The legacy cache ignores records that cannot become a canonical
+    // indexed event. Keep that filtering at the query boundary so a
+    // malformed row does not prevent the rest of a valid range from
+    // loading.
+    if (
+        source.id <= 0
+        || !source.startDate.isValid()
+        || !source.endDate.isValid()
+        || source.endDate < source.startDate
+        )
+    {
+        return SummaryConversionResult::success(std::nullopt);
+    }
+
+    const auto eventId =
+        ClassMngr::Next::Domain::CalendarEventId::fromString(
+            std::to_string(source.id)
+            );
+    const auto title = boundedUtf8(
+        source.title,
+        ClassMngr::Next::Application::
+            kCalendarEventSummaryMaxTitleUtf8Bytes
+        );
+    const auto startDate = boundedUtf8(
+        source.startDate.toString(Qt::ISODate),
+        ClassMngr::Next::Application::kCalendarEventSummaryMaxDateLength
+        );
+    const auto endDate = boundedUtf8(
+        source.endDate.toString(Qt::ISODate),
+        ClassMngr::Next::Application::kCalendarEventSummaryMaxDateLength
+        );
+    const auto eventType = boundedUtf8(
+        source.eventType,
+        ClassMngr::Next::Application::kCalendarEventSummaryMaxEventTypeLength
+        );
+    const auto timeStatus = boundedUtf8(
+        source.timeStatus,
+        ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeStatusLength
         );
 
-    for (const CalendarEvent& source : events)
+    const QString normalizedRepeatSeriesId =
+        source.repeatSeriesId.trimmed();
+    std::optional<std::string> repeatSeriesId;
+    if (!normalizedRepeatSeriesId.isEmpty())
     {
-        // The legacy cache ignores records that cannot become a canonical
-        // indexed event. Keep that filtering at the query boundary so a
-        // malformed row does not prevent the rest of a valid range from
-        // loading.
-        if (
-            source.id <= 0
-            || !source.startDate.isValid()
-            || !source.endDate.isValid()
-            || source.endDate < source.startDate
+        repeatSeriesId = boundedUtf8(
+            normalizedRepeatSeriesId,
+            ClassMngr::Next::Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
+            );
+    }
+
+    if (
+        !eventId
+        || !title
+        || !startDate
+        || !endDate
+        || !eventType
+        || !timeStatus
+        || (
+            !normalizedRepeatSeriesId.isEmpty()
+            && !repeatSeriesId
             )
-        {
-            continue;
-        }
+        )
+    {
+        return failure<std::optional<Summary>>(
+            ErrorCode::InvalidInput,
+            QStringLiteral(
+                "A calendar event contains invalid or unbounded projection metadata."
+                ),
+            "A calendar event contains invalid or unbounded projection metadata."
+            );
+    }
 
-        const auto eventId =
-            ClassMngr::Next::Domain::CalendarEventId::fromString(
-                std::to_string(source.id)
-                );
-        const auto title = boundedUtf8(
-            source.title,
-            ClassMngr::Next::Application::
-                kCalendarEventSummaryMaxTitleUtf8Bytes
-            );
-        const auto startDate = boundedUtf8(
-            source.startDate.toString(Qt::ISODate),
-            ClassMngr::Next::Application::kCalendarEventSummaryMaxDateLength
-            );
-        const auto endDate = boundedUtf8(
-            source.endDate.toString(Qt::ISODate),
-            ClassMngr::Next::Application::kCalendarEventSummaryMaxDateLength
-            );
-        const auto eventType = boundedUtf8(
-            source.eventType,
-            ClassMngr::Next::Application::kCalendarEventSummaryMaxEventTypeLength
-            );
-        const auto timeStatus = boundedUtf8(
-            source.timeStatus,
-            ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeStatusLength
-            );
-
-        const QString normalizedRepeatSeriesId =
-            source.repeatSeriesId.trimmed();
-        std::optional<std::string> repeatSeriesId;
-        if (!normalizedRepeatSeriesId.isEmpty())
+    std::optional<std::string> startTime;
+    std::optional<std::string> endTime;
+    if (!source.allDay)
+    {
+        const bool hasStartTime = source.startTime.isValid();
+        const bool hasEndTime = source.endTime.isValid();
+        if (hasStartTime != hasEndTime)
         {
-            repeatSeriesId = boundedUtf8(
-                normalizedRepeatSeriesId,
-                ClassMngr::Next::Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
-                );
-        }
-
-        if (
-            !eventId
-            || !title
-            || !startDate
-            || !endDate
-            || !eventType
-            || !timeStatus
-            || (
-                !normalizedRepeatSeriesId.isEmpty()
-                && !repeatSeriesId
-                )
-            )
-        {
-            return failure<Projection>(
+            return failure<std::optional<Summary>>(
                 ErrorCode::InvalidInput,
                 QStringLiteral(
-                    "A calendar event contains invalid or unbounded projection metadata."
+                    "A timed calendar event has a partial time range."
                     ),
-                "A calendar event contains invalid or unbounded projection metadata."
+                "A timed calendar event has a partial time range."
                 );
         }
 
-        std::optional<std::string> startTime;
-        std::optional<std::string> endTime;
-        if (!source.allDay)
+        if (hasStartTime)
         {
-            const bool hasStartTime = source.startTime.isValid();
-            const bool hasEndTime = source.endTime.isValid();
-            if (hasStartTime != hasEndTime)
+            startTime = boundedUtf8(
+                source.startTime.toString(QStringLiteral("HH:mm")),
+                ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeLength
+                );
+            endTime = boundedUtf8(
+                source.endTime.toString(QStringLiteral("HH:mm")),
+                ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeLength
+                );
+            if (!startTime || !endTime)
             {
-                return failure<Projection>(
+                return failure<std::optional<Summary>>(
                     ErrorCode::InvalidInput,
                     QStringLiteral(
-                        "A timed calendar event has a partial time range."
-                        ),
-                    "A timed calendar event has a partial time range."
-                    );
-            }
-
-            if (hasStartTime)
-            {
-                startTime = boundedUtf8(
-                    source.startTime.toString(QStringLiteral("HH:mm")),
-                    ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeLength
-                    );
-                endTime = boundedUtf8(
-                    source.endTime.toString(QStringLiteral("HH:mm")),
-                    ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeLength
-                    );
-                if (!startTime || !endTime)
-                {
-                    return failure<Projection>(
-                        ErrorCode::InvalidInput,
-                        QStringLiteral(
-                            "A calendar event contains invalid or unbounded time metadata."
-                            ),
                         "A calendar event contains invalid or unbounded time metadata."
-                        );
-                }
+                        ),
+                    "A calendar event contains invalid or unbounded time metadata."
+                    );
             }
         }
+    }
 
-        input.events.push_back({
-            *eventId,
-            std::nullopt,
-            std::nullopt,
-            *title,
-            *startDate,
-            *endDate,
-            std::move(startTime),
-            std::move(endTime),
-            std::string{},
-            std::string{},
-            static_cast<std::int32_t>(input.events.size()),
-            source.allDay,
-            *eventType,
-            *timeStatus,
-            std::move(repeatSeriesId)
-        });
+    return SummaryConversionResult::success(Summary{
+        *eventId,
+        std::nullopt,
+        std::nullopt,
+        *title,
+        *startDate,
+        *endDate,
+        std::move(startTime),
+        std::move(endTime),
+        std::string{},
+        std::string{},
+        order,
+        source.allDay,
+        *eventType,
+        *timeStatus,
+        std::move(repeatSeriesId)
+    });
+}
+
+ProjectionResult projectionFromRange(
+    CalendarEventRepository& repository,
+    const QDate& startDate,
+    const QDate& endDate
+    )
+{
+    constexpr std::size_t retainedEventLimit =
+        ClassMngr::Next::Application::kCalendarEventProjectionMaxEvents + 1;
+
+    ProjectionInput input;
+
+    std::optional<ClassMngr::Next::Domain::OperationError> conversionError;
+    const Status visited = repository.visitCalendarEventsInRange(
+        startDate,
+        endDate,
+        [&input, &conversionError, retainedEventLimit](
+            const CalendarEvent& source
+            )
+        {
+            if (conversionError)
+            {
+                return CalendarEventRangeVisitDecision::Continue;
+            }
+
+            auto converted = summaryFromEvent(
+                source,
+                static_cast<std::int32_t>(input.events.size())
+                );
+            if (!converted)
+            {
+                conversionError = converted.error();
+                return CalendarEventRangeVisitDecision::Continue;
+            }
+
+            if (
+                converted.value()
+                && input.events.size() < retainedEventLimit
+                )
+            {
+                if (input.events.size() == input.events.capacity())
+                {
+                    const std::size_t requiredCapacity =
+                        input.events.size() + 1;
+                    std::size_t nextCapacity = input.events.capacity();
+                    if (nextCapacity == 0)
+                    {
+                        nextCapacity = 1;
+                    }
+                    else if (nextCapacity <= retainedEventLimit / 2)
+                    {
+                        nextCapacity *= 2;
+                    }
+                    else
+                    {
+                        nextCapacity = retainedEventLimit;
+                    }
+
+                    if (nextCapacity < requiredCapacity)
+                    {
+                        nextCapacity = requiredCapacity;
+                    }
+
+                    // Keep allocation on demand and cap every reserve request
+                    // at the projection limit plus its overflow sentinel.
+                    input.events.reserve(nextCapacity);
+                }
+
+                input.events.push_back(std::move(*converted.value()));
+            }
+
+            return CalendarEventRangeVisitDecision::Continue;
+        }
+        );
+
+    if (!visited)
+    {
+        return technicalFailure<Projection>(visited.error());
+    }
+
+    if (conversionError)
+    {
+        return ProjectionResult::failure(std::move(*conversionError));
     }
 
     const auto projection = Projection::create(std::move(input));
@@ -396,17 +476,7 @@ CalendarEventProjectionQuery::loadRange(
         [startDate, endDate](QSqlDatabase& database)
         {
             CalendarEventRepository repository(database);
-            const ::Result<QList<CalendarEvent>> events =
-                repository.loadCalendarEventsInRange(
-                    startDate,
-                    endDate
-                    );
-            if (!events)
-            {
-                return technicalFailure<Projection>(events.error());
-            }
-
-            return projectionFromEvents(*events);
+            return projectionFromRange(repository, startDate, endDate);
         }
         );
 }

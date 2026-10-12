@@ -218,11 +218,27 @@ public:
                     );
             }
 
-            const ::Result<QList<CalendarEvent>> loaded =
-                repository->loadCalendarEventsInRange(startDate, endDate);
-            if (!loaded)
+            QList<CalendarEvent> events;
+            std::size_t rawRowCount = 0;
+            const Status visited = repository->visitCalendarEventsInRange(
+                startDate,
+                endDate,
+                [&events, &rawRowCount](const CalendarEvent& event)
+                {
+                    ++rawRowCount;
+                    if (rawRowCount
+                        > Application::kCalendarEventProjectionMaxEvents)
+                    {
+                        return CalendarEventRangeVisitDecision::Stop;
+                    }
+
+                    events.append(event);
+                    return CalendarEventRangeVisitDecision::Continue;
+                }
+                );
+            if (!visited)
             {
-                const QString repositoryError = loaded.error();
+                const QString repositoryError = visited.error();
                 if (!session->isOpen())
                 {
                     return failure(
@@ -242,11 +258,8 @@ public:
                     );
             }
 
-            const QList<CalendarEvent>& events = loaded.value();
-            if (events.size()
-                > static_cast<qsizetype>(
-                    Application::kCalendarEventProjectionMaxEvents
-                    ))
+            if (rawRowCount
+                > Application::kCalendarEventProjectionMaxEvents)
             {
                 return failure(
                     Domain::ErrorCode::InvalidInput,
