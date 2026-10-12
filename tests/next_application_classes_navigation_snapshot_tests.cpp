@@ -62,6 +62,17 @@ void NextApplicationClassesNavigationSnapshotTests::
 rejectsNonCanonicalAndDuplicateIdsWithoutCallingPort()
 {
     RecordingClassesNavigationReadPort port;
+    const auto malformedResult = ClassesNavigationSnapshotQueryHandler::execute(
+        {.classes = {sourceClass("42x", u"Name")}},
+        port
+        );
+    QVERIFY(!malformedResult);
+    QCOMPARE(malformedResult.error().message,
+             std::string("Class IDs must be canonical positive integers."));
+    QCOMPARE(malformedResult.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(malformedResult.error().recoverable);
+    QVERIFY(port.requests.empty());
+
     for (const std::string& invalid : {
              "0", "-42", "+42", "042", "42 ", "class-42",
              "999999999999999999999"
@@ -85,7 +96,10 @@ rejectsNonCanonicalAndDuplicateIdsWithoutCallingPort()
     const auto duplicateResult =
         ClassesNavigationSnapshotQueryHandler::execute(duplicateQuery, port);
     QVERIFY(!duplicateResult);
+    QCOMPARE(duplicateResult.error().message,
+             std::string("Class IDs must be unique."));
     QCOMPARE(duplicateResult.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(duplicateResult.error().recoverable);
     QVERIFY(port.requests.empty());
 }
 
@@ -181,17 +195,26 @@ propagatesPortErrorAndRejectsMalformedSnapshots()
     };
     port.result = ClassesNavigationSnapshotResult::failure(sourceError);
 
+    port.requests.clear();
     auto result = ClassesNavigationSnapshotQueryHandler::execute(
         requested,
         port
         );
     QVERIFY(!result);
     QVERIFY(result.error() == sourceError);
+    QCOMPARE(port.requests.size(), std::size_t(1));
 
     port.result = ClassesNavigationSnapshotResult::success({});
+    port.requests.clear();
     result = ClassesNavigationSnapshotQueryHandler::execute(requested, port);
     QVERIFY(!result);
+    QCOMPARE(result.error().message,
+             std::string(
+                 "A classes navigation read returned a different number of entries."
+                 ));
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.requests.size(), std::size_t(1));
 
     port.result = ClassesNavigationSnapshotResult::success({
         .classes = {{
@@ -199,9 +222,16 @@ propagatesPortErrorAndRejectsMalformedSnapshots()
             .className = u"Class 42"
         }}
     });
+    port.requests.clear();
     result = ClassesNavigationSnapshotQueryHandler::execute(requested, port);
     QVERIFY(!result);
+    QCOMPARE(result.error().message,
+             std::string(
+                 "A classes navigation read changed class identity or order."
+                 ));
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.requests.size(), std::size_t(1));
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassesNavigationSnapshotTests)
