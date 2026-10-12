@@ -663,6 +663,7 @@ private slots:
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
     void standaloneSchedulePageDeactivationRetainsRenderedResources();
+    void rendererWeekdayHeadersTranslateCanonicalDaysAndKeepFallbacks();
     void rendererSkipsUnchangedAndUpdatesOnlyChangedCells();
     void delegatePreservesContentColorsMarkersAndGeometry();
     void projectionHitTestingPreservesCommands();
@@ -3385,6 +3386,56 @@ void ScheduleWidgetTests
             ),
         table
         );
+}
+
+void ScheduleWidgetTests::
+rendererWeekdayHeadersTranslateCanonicalDaysAndKeepFallbacks()
+{
+    ScheduleViewModel model;
+    model.days = {
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday"),
+        QStringLiteral(" Monday "),
+        QStringLiteral("monday"),
+        QStringLiteral("Funday"),
+        QString()
+    };
+
+    QTableWidget table;
+    ScheduleTableRenderer::initialize(&table);
+    static_cast<void>(ScheduleTableRenderer::render(
+        &table,
+        std::make_shared<const ScheduleViewModel>(model),
+        {.cellParent = &table}
+        ));
+
+    const QStringList expectedHeaders{
+        QCoreApplication::translate("ScheduleWidget", "Time"),
+        QCoreApplication::translate("ScheduleWidget", "Monday"),
+        QCoreApplication::translate("ScheduleWidget", "Tuesday"),
+        QCoreApplication::translate("ScheduleWidget", "Wednesday"),
+        QCoreApplication::translate("ScheduleWidget", "Thursday"),
+        QCoreApplication::translate("ScheduleWidget", "Friday"),
+        QCoreApplication::translate("ScheduleWidget", "Saturday"),
+        QCoreApplication::translate("ScheduleWidget", "Sunday"),
+        QStringLiteral(" Monday "),
+        QStringLiteral("monday"),
+        QStringLiteral("Funday"),
+        QString()
+    };
+    QCOMPARE(table.columnCount(), expectedHeaders.size());
+    for (int column = 0; column < expectedHeaders.size(); ++column)
+    {
+        const QTableWidgetItem* const header =
+            table.horizontalHeaderItem(column);
+        QVERIFY(header);
+        QCOMPARE(header->text(), expectedHeaders.at(column));
+    }
 }
 
 void ScheduleWidgetTests

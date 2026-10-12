@@ -5,6 +5,7 @@
 #include "schedule_widget_geometry.h"
 
 #include "core/fontmanager.h"
+#include "domain/rules/schedule_value_parser.h"
 
 #include <algorithm>
 
@@ -71,32 +72,27 @@ QString weekdayLabel(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
     {
+        return day;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return translate("Monday");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return translate("Tuesday");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return translate("Wednesday");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return translate("Thursday");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return translate("Friday");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
+    case ScheduleValueParser::Weekday::Saturday:
         return translate("Saturday");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
+    case ScheduleValueParser::Weekday::Sunday:
         return translate("Sunday");
     }
     return day;
