@@ -107,7 +107,12 @@ invalidTypedIdsAreRejectedBeforePortCall()
         const auto result = query.execute(id);
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Selected class identifier must be non-blank and bounded.")
+            );
         QVERIFY(!result.error().recoverable);
+        QVERIFY(readPort.requests.empty());
     }
     QVERIFY(readPort.requests.empty());
 }
@@ -233,7 +238,13 @@ rejectsSnapshotClassIdMismatch()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("A class details page read returned a different class identifier.")
+        );
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(readPort.requests.size(), std::size_t(1));
+    QCOMPARE(readPort.requests.front().value(), std::string("selected-class"));
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassDetailsPageQueryTests)
