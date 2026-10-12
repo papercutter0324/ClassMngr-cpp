@@ -1,6 +1,7 @@
 #include "sub_prep_class_information_model.h"
 
 #include "core/utils/sidebar_node_naming.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
 
 #include <algorithm>
@@ -84,41 +85,6 @@ QString dayAbbreviation(
     }
 
     return day.trimmed();
-}
-
-QTime parseTime(
-    const QString& value
-    )
-{
-    const QString trimmed =
-        value.trimmed();
-
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    for (const QString& format : formats)
-    {
-        const QTime parsed =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (parsed.isValid())
-        {
-            return parsed;
-        }
-    }
-
-    return {};
 }
 
 QString compactTime(
@@ -228,13 +194,16 @@ QPair<int, int> firstMeetingOrder(
             continue;
         }
 
-        const QTime time =
-            parseTime(meeting.startTime);
+        const auto parsedTime =
+            ScheduleValueParser::parseDisplayTime(meeting.startTime);
 
-        if (!time.isValid())
+        if (!parsedTime)
         {
             continue;
         }
+
+        const QTime time =
+            *parsedTime;
 
         const QPair<int, int> candidate{
             dayOrder(meeting.day),
@@ -271,13 +240,16 @@ QString SubPrepClassInformation::formatMeetingTimes(
             continue;
         }
 
-        const QTime time =
-            parseTime(source.startTime);
+        const auto parsedTime =
+            ScheduleValueParser::parseDisplayTime(source.startTime);
 
-        if (!time.isValid())
+        if (!parsedTime)
         {
             continue;
         }
+
+        const QTime time =
+            *parsedTime;
 
         meetings.append(
             {

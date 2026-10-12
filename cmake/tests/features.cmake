@@ -332,6 +332,7 @@ qt_add_executable(ClassMngrClassTransferTests
         tests/sub_prep_class_information_model_tests.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
     )
@@ -361,6 +362,7 @@ qt_add_executable(ClassMngrClassTransferTests
         tests/sub_prep_print_source_mapper_tests.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
         src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp

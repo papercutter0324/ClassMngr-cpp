@@ -1851,6 +1851,7 @@ qt_add_executable(ClassMngrSubPrepPageTests
         tests/sub_prep_page_tests.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/campus/data/campus_json_codec.cpp
         src/features/campus/data/campus_json_repository.cpp
         src/features/classes/config/class_info_config.cpp

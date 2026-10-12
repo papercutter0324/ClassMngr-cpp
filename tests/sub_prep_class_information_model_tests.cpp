@@ -46,6 +46,9 @@ class SubPrepClassInformationModelTests : public QObject
     Q_OBJECT
 
 private slots:
+    void parsesDefaultDisplayTimeFormats_data();
+    void parsesDefaultDisplayTimeFormats();
+    void trimsTimeWhitespaceAndOmitsSeconds();
     void formatsSharedAndDifferentMeetingTimes();
     void filtersHiddenDaysAndInvalidTimes();
     void groupsSortsAndDeduplicatesVisibleClasses();
@@ -55,13 +58,73 @@ private slots:
 };
 
 void SubPrepClassInformationModelTests
+    ::parsesDefaultDisplayTimeFormats_data()
+{
+    QTest::addColumn<QString>("startTime");
+    QTest::addColumn<QString>("expected");
+
+    QTest::newRow("12-hour-space-one-digit")
+        << QStringLiteral("4:05 PM") << QStringLiteral("Mon 4:05pm");
+    QTest::newRow("12-hour-compact-one-digit")
+        << QStringLiteral("4:05PM") << QStringLiteral("Mon 4:05pm");
+    QTest::newRow("12-hour-space-two-digits")
+        << QStringLiteral("04:05 PM") << QStringLiteral("Mon 4:05pm");
+    QTest::newRow("12-hour-compact-two-digits")
+        << QStringLiteral("04:05PM") << QStringLiteral("Mon 4:05pm");
+    QTest::newRow("24-hour-one-digit")
+        << QStringLiteral("4:05") << QStringLiteral("Mon 4:05am");
+    QTest::newRow("24-hour-two-digits")
+        << QStringLiteral("04:05") << QStringLiteral("Mon 4:05am");
+    QTest::newRow("24-hour-seconds-one-digit")
+        << QStringLiteral("4:05:37") << QStringLiteral("Mon 4:05am");
+    QTest::newRow("24-hour-seconds-two-digits")
+        << QStringLiteral("04:05:37") << QStringLiteral("Mon 4:05am");
+}
+
+void SubPrepClassInformationModelTests
+    ::parsesDefaultDisplayTimeFormats()
+{
+    QFETCH(QString, startTime);
+    QFETCH(QString, expected);
+
+    QCOMPARE(
+        SubPrepClassInformation::formatMeetingTimes(
+            {meeting(QStringLiteral("Monday"), startTime)},
+            {QStringLiteral("Monday")}
+            ),
+        expected
+        );
+}
+
+void SubPrepClassInformationModelTests
+    ::trimsTimeWhitespaceAndOmitsSeconds()
+{
+    QCOMPARE(
+        SubPrepClassInformation::formatMeetingTimes(
+            {
+                meeting(
+                    QStringLiteral("Monday"),
+                    QStringLiteral(" \t16:05:37\r\n")
+                    )
+            },
+            {QStringLiteral("Monday")}
+            ),
+        QStringLiteral("Mon 4:05pm")
+        );
+}
+
+void SubPrepClassInformationModelTests
     ::formatsSharedAndDifferentMeetingTimes()
 {
     const QList<ClassTime> times{
-        meeting(QStringLiteral("Wednesday"), QStringLiteral("4:00 PM")),
         meeting(QStringLiteral("Friday"), QStringLiteral("5:00 PM")),
+        meeting(QStringLiteral("Wednesday"), QStringLiteral("4:00 PM")),
+        meeting(QStringLiteral("Monday"), QStringLiteral("6:00 PM")),
         meeting(QStringLiteral("Monday"), QStringLiteral("4:00 PM")),
-        meeting(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))
+        meeting(QStringLiteral("Monday"), QStringLiteral("4:00 PM")),
+        meeting(QStringLiteral("Tuesday"), QStringLiteral("5:00 PM")),
+        meeting(QStringLiteral("Friday"), QStringLiteral("6:00 PM")),
+        meeting(QStringLiteral("Thursday"), QStringLiteral("3:00 PM"))
     };
 
     QCOMPARE(
@@ -75,7 +138,7 @@ void SubPrepClassInformationModelTests
                 QStringLiteral("Friday")
             }
             ),
-        QStringLiteral("MonWed 4pm & Fri 5pm")
+        QStringLiteral("MonWed 4pm & MonFri 6pm & TuesFri 5pm & Thurs 3pm")
         );
 }
 
