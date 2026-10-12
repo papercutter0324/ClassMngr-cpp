@@ -418,6 +418,34 @@ void ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats()
                 )
             )
         );
+
+    const auto labelForWeekday = [](const QString& day, const QString& time)
+    {
+        const QList<ClassTabNavigation::ClassEntry> weekdayEntries{
+            classEntry(
+                2,
+                QStringLiteral("E4"),
+                QStringLiteral("Perseus"),
+                {classTime(day, time)}
+                )
+        };
+
+        return ClassTabNavigation::build(weekdayEntries)
+            .flatClasses.first().label;
+    };
+
+    QVERIFY(
+        labelForWeekday(QStringLiteral(" Monday "), QStringLiteral("9:00"))
+            .endsWith(QStringLiteral("M 9:00"))
+        );
+    QVERIFY(
+        labelForWeekday(QStringLiteral("monday"), QStringLiteral("10:00"))
+            .endsWith(QStringLiteral("monday 10:00"))
+        );
+    QVERIFY(
+        labelForWeekday(QStringLiteral(" Funday "), QStringLiteral("11:00"))
+            .endsWith(QStringLiteral("Funday 11:00"))
+        );
 }
 
 void ClassTabNavigationTests::malformedDisplayTimeUsesCompactFallback()

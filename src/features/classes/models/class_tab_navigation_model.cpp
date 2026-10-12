@@ -160,36 +160,32 @@ QString dayCode(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
+    const QString trimmed = day.trimmed();
+    const auto parsed = ScheduleValueParser::parseWeekday(trimmed);
+    if (!parsed || parsed->text != trimmed)
     {
+        return trimmed;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return QStringLiteral("M");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return QStringLiteral("T");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return QStringLiteral("W");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return QStringLiteral("Th");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return QStringLiteral("F");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
+    case ScheduleValueParser::Weekday::Saturday:
         return QStringLiteral("Sat");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
+    case ScheduleValueParser::Weekday::Sunday:
         return QStringLiteral("Sun");
     }
 
-    return day.trimmed();
+    return trimmed;
 }
 
 int dayOrder(
