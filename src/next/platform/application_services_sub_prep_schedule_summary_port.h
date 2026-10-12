@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/domain/teacher_display_name.h"
 
@@ -595,25 +596,8 @@ private:
 
     [[nodiscard]] static QTime parseTime(const QString& value)
     {
-        const QStringList formats{
-            QStringLiteral("h:mm AP"),
-            QStringLiteral("h:mmAP"),
-            QStringLiteral("hh:mm AP"),
-            QStringLiteral("hh:mmAP"),
-            QStringLiteral("H:mm"),
-            QStringLiteral("HH:mm"),
-            QStringLiteral("H:mm:ss"),
-            QStringLiteral("HH:mm:ss")
-        };
-        for (const QString& format : formats)
-        {
-            const QTime parsed = QTime::fromString(value.trimmed(), format);
-            if (parsed.isValid())
-            {
-                return parsed;
-            }
-        }
-        return {};
+        const auto parsed = ScheduleValueParser::parseDisplayTime(value);
+        return parsed ? *parsed : QTime{};
     }
 
     [[nodiscard]] static QString compactTime(const QTime& time)
@@ -638,32 +622,19 @@ private:
             return {};
         }
 
-        const QStringList formats{
-            QStringLiteral("h:mm AP"),
-            QStringLiteral("h:mmAP"),
-            QStringLiteral("hh:mm AP"),
-            QStringLiteral("hh:mmAP"),
-            QStringLiteral("H:mm"),
-            QStringLiteral("HH:mm"),
-            QStringLiteral("H:mm:ss"),
-            QStringLiteral("HH:mm:ss")
-        };
         const bool usesMeridiem =
             trimmed.contains(QStringLiteral("AM"), Qt::CaseInsensitive)
             || trimmed.contains(QStringLiteral("PM"), Qt::CaseInsensitive);
-        for (const QString& format : formats)
+        const auto parsed =
+            ScheduleValueParser::parseDisplayTime(trimmed);
+        if (parsed)
         {
-            const QTime time = QTime::fromString(trimmed, format);
-            if (!time.isValid())
-            {
-                continue;
-            }
             if (!usesMeridiem)
             {
-                return time.toString(QStringLiteral("H:mm"));
+                return parsed->toString(QStringLiteral("H:mm"));
             }
 
-            QString formatted = time.toString(QStringLiteral("h:mm AP"));
+            QString formatted = parsed->toString(QStringLiteral("h:mm AP"));
             formatted.remove(QStringLiteral(" AM"));
             formatted.remove(QStringLiteral(" PM"));
             return formatted;

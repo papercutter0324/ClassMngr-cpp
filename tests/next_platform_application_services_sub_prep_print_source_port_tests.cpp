@@ -285,6 +285,7 @@ private slots:
     void queryEmptyScopeDoesNotReadAndNonemptyReadFailurePropagates();
     void rejectsNoncanonicalClassIdAliasesBeforeReading();
     void maximumClassScopeFitsSqliteBindLimits();
+    void parsesRawScheduleTimesAndKeepsMalformedNavigationFallback();
     void perClassMeetingOverflowSurfacesValidation();
     void aggregateMeetingOverflowSurfacesValidation();
     void boundaryReturnsOwningTypedValues();
@@ -2073,6 +2074,126 @@ maximumClassScopeFitsSqliteBindLimits()
     QVERIFY(result);
     QVERIFY(result.value().classes.empty());
     QVERIFY(result.value().teachers.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+parsesRawScheduleTimesAndKeepsMalformedNavigationFallback()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("schedule-time-parsing")
+        );
+    QVERIFY(teacher > 0);
+    const int mixedSchedule = createClass(
+        services,
+        QStringLiteral("Mixed schedule times"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    const int malformedOnlySchedule = createClass(
+        services,
+        QStringLiteral("Malformed-only schedule"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(mixedSchedule > 0);
+    QVERIFY(malformedOnlySchedule > 0);
+
+    // Insert raw legacy values through SQL so this exercises the public port's
+    // conversion boundary, including its distinct summary and navigation
+    // fallbacks for malformed input.
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        mixedSchedule,
+        QStringLiteral("Monday"),
+        QStringLiteral("09:15")
+        ));
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        mixedSchedule,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("2:30 PM")
+        ));
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        mixedSchedule,
+        QStringLiteral("Wednesday"),
+        QStringLiteral(" 11:00 AM ")
+        ));
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        mixedSchedule,
+        QStringLiteral("Thursday"),
+        QStringLiteral(" 7:xx pM ")
+        ));
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        malformedOnlySchedule,
+        QStringLiteral("Monday"),
+        QStringLiteral(" 8:bad aM ")
+        ));
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(mixedSchedule), classId(malformedOnlySchedule)},
+        {
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Wednesday,
+            SubPrepWeekday::Thursday
+        },
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(2));
+    const auto& mixed = result.value().classes[0];
+    QCOMPARE(mixed.id, classId(mixedSchedule));
+    QCOMPARE(
+        mixed.meetingText,
+        std::string("Mon 9:15am & Tues 2:30pm & Wed 11am")
+        );
+    QCOMPARE(
+        mixed.navigationLabel,
+        utf8(QStringLiteral("Perseus • M 9:15; T 2:30; W 11:00; Th 7:xx"))
+        );
+    QCOMPARE(mixed.navigationFirstDayOrder, 0);
+    QCOMPARE(mixed.navigationFirstTimeOrder, 9 * 60 + 15);
+
+    // The malformed-only meeting has no summary label, while navigation keeps
+    // the trimmed legacy fallback after removing its literal AM/PM suffix.
+    const auto& malformedOnly = result.value().classes[1];
+    QCOMPARE(malformedOnly.id, classId(malformedOnlySchedule));
+    QCOMPARE(malformedOnly.meetingText, std::string("N/A"));
+    QCOMPARE(
+        malformedOnly.navigationLabel,
+        utf8(QStringLiteral("Perseus • M 8:bad"))
+        );
+    QCOMPARE(malformedOnly.navigationFirstDayOrder, 0);
+    QCOMPARE(
+        malformedOnly.navigationFirstTimeOrder,
+        kClassSummaryUnknownNavigationOrder
+        );
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
