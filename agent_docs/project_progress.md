@@ -53,21 +53,22 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F783 accepted; F784 selected)
+### Current state - 2026-10-13 (F784 accepted; F785 selected)
 
-F783 is committed at `2e846967aca80bfc160cd20ffdf88a093c15b67d`. `ClassMngr`
-and its four focused Calendar targets built in the Visual Studio 18 x64 Debug
-tree after the bounded retry outside the sandbox following FileTracker
-`E_ACCESSDENIED`; the four exact CTests passed 4/4. No full suite ran. The
-separate CMake source-ownership optimization requested during this
-continuation is also committed.
+F784 is committed at `64511319ee00918b7b85ff23a81b734e8c075660`. `ClassMngr`
+and `ClassMngrCalendarPageEventMutationParityTests` built in the Visual Studio
+18 x64 Debug tree after the bounded retry outside the sandbox following
+FileTracker `E_ACCESSDENIED`; the exact registered CTest passed 1/1. The
+four-month regression verified bounded month retention, eviction, and reload
+on revisit. No full suite ran. The user-requested CMake source-ownership
+optimization is also committed.
 
-Batch 197 selected F784 after lifecycle review found that Calendar navigation
-retains every previously visited month until invalidation or release. F784
-will retain only the displayed month, preserve Upcoming-range retention, and
-verify old-month eviction and reload when revisited. F707/F709 remain
-deferred; Gates 1/2 are Partial and the formal exit gate is Open. Exact scope
-and target names are in the Phase 2 progress log.
+Batch 198 selected F785 because both Calendar range-read paths materialize
+every repository row before enforcing the 4,096 projection cap. F785 will use
+an ordered visitor to bound application-owned row/projection storage while
+preserving capacity failures and validation order. F707/F709 remain deferred;
+Gates 1/2 are Partial and the formal exit gate is Open. Exact scope and target
+names are in the Phase 2 progress log.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

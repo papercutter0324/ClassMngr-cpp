@@ -5256,6 +5256,28 @@ Domain move, and unmeasured Class Transfer export copy reduction. F707/F709
 remain deferred, Gates 1/2 remain Partial, and the formal exit gate remains
 Open.
 
+## Phase 2 F784 acceptance and F785 selection - 2026-10-13
+
+F784 is accepted at `64511319ee00918b7b85ff23a81b734e8c075660`. The
+incremental Visual Studio 18 Windows x64 Debug build of `ClassMngr` and
+`ClassMngrCalendarPageEventMutationParityTests` succeeded after the identical
+bounded retry outside the sandbox following FileTracker `E_ACCESSDENIED`.
+The exact registered CTest, `ClassMngrCalendarPageEventMutationParityTests`,
+passed 1/1; no full suite ran. The regression navigated four sequential months
+in CurrentMonth scope, confirmed one retained month/range/event at a time,
+observed eviction of the previous month's event, and confirmed it reloaded on
+return. Existing Upcoming and release tests remained intact.
+
+Batch 198 selected F785 after independent review confirmed that Calendar range
+queries construct a complete `QList` before the 4,096-row projection cap is
+applied. F785 will add an ordered row visitor, stop the platform adapter at
+the 4,097th raw row, and keep the feature query's projection input bounded
+while preserving later metadata validation and existing error precedence.
+This bounds application-owned row/projection storage; it does not claim a
+measured process-heap or database-driver bound. The broad contract review
+found no other equally narrow slice. F707/F709 remain deferred, Gates 1/2
+remain Partial, and the formal exit gate remains Open.
+
 ## Phase 2 F783 acceptance and F784 selection - 2026-10-13
 
 F783 is accepted at `2e846967aca80bfc160cd20ffdf88a093c15b67d`. The `ClassMngr`

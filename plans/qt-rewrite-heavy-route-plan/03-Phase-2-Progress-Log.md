@@ -30212,19 +30212,80 @@ existing invalidate/release clearing behavior. Preserve CalendarEventCache's
 discard of stale async results after retained-range changes.
 
 Use the existing
-`ClassMngrCalendarPageEventMutationParityTests` target and
-`CalendarPageEventMutationParity` CTest. Seed multiple months and navigate
-sequentially, waiting for each month load to settle. Assert
-`loadedMonthCount` is one and tracks the current month, while
-`cacheRetainedRangeCount` and `cacheEventCount` reflect only the current-month
-cache plus preserved on-demand Upcoming ranges; they must not grow with
-previously visited months. Verify Upcoming remains usable and an evicted month
-reloads on return. Assert release metrics remain zero. No CMake change is
-expected.
+`ClassMngrCalendarPageEventMutationParityTests` target and exact CTest
+`ClassMngrCalendarPageEventMutationParityTests` (the CMake helper derives both
+names from `CalendarPageEventMutationParity`). In CurrentMonth scope, seed
+four sequential months and wait for each month load to settle. Assert
+`loadedMonthCount`, `cacheRetainedRangeCount`, `cacheLoadedRangeCount`, and
+`cacheEventCount` stay exactly one with zero on-demand ranges. Verify a prior
+month's event is evicted and reloads when revisited. Keep the existing Next30,
+Next10, and release tests unchanged. No CMake change is expected.
 
 Reuse `build/windows-x64-debug` with Visual Studio 18 x64 Debug. Build
 `ClassMngr` and `ClassMngrCalendarPageEventMutationParityTests`, confirm the
-exact CTest registers once, then run only `CalendarPageEventMutationParity`
-with `-C Debug --output-on-failure`. Run no full suite. Commit this matrix
-before source/test edits. Verification is pending; F707/F709 remain deferred,
-Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+exact CTest registers once, then run only
+`ClassMngrCalendarPageEventMutationParityTests` with `-C Debug
+--output-on-failure`. Run no full suite. Commit this matrix before
+source/test edits. The acceptance result follows below; F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### F784 Calendar month retention - accepted - 2026-10-13
+
+F784 is accepted at commit
+`64511319ee00918b7b85ff23a81b734e8c075660`. The incremental Visual Studio 18
+Windows x64 Debug build of `ClassMngr` and
+`ClassMngrCalendarPageEventMutationParityTests` succeeded after the sandbox
+ZERO_CHECK FileTracker `E_ACCESSDENIED` was followed by the identical bounded
+command succeeding outside the sandbox. The exact CTest
+`ClassMngrCalendarPageEventMutationParityTests` registered once and passed
+1/1. No full suite ran.
+
+### Batch 198 discovery - 2026-10-13
+
+F785 was selected because `CalendarEventRepository::loadCalendarEventsInRange`
+materializes a full `QList`, while both Calendar read boundaries convert and
+validate rows around the 4,096-event cap. The Batch 197 raw-int ID contracts
+and teacher-reassignment policy remain deferred. No other equally narrow
+candidate was found; Batch 198 contains only F785.
+
+### F785 Calendar bounded range reads - selected and acceptance matrix - 2026-10-13
+
+**F785 is selected:** add an ordered repository range visitor/callback with
+early-stop support while preserving the existing full-list loader. Use the
+visitor in the platform Calendar port to stop at raw row 4,097 and return the
+existing InvalidInput overflow result. Use it in
+`CalendarEventProjectionQuery::loadRange` to avoid full-list materialization,
+skip malformed ID/date rows as today, and continue checking later projection
+metadata so conversion errors retain their current precedence. Retain at most
+4,097 summaries (the one-over-cap sentinel), then return the existing
+4,096-event projection-cap error.
+
+Preserve SQL order and error mapping, in-capacity output order, duplicate and
+field validation behavior, and all other projection semantics. The improvement
+is limited to bounding application-owned row/projection storage; the SQL
+driver/database may still buffer or sort results, so this is not a heap-use
+claim.
+
+Require repository visitor coverage that verifies source ordering and that
+stopping the callback visits only the requested ordered prefix. Preserve the
+platform adapter's 4,097-row `InvalidInput` result and exact message
+`Calendar event range exceeds its bounded projection capacity.` In the cache
+projection query, assert that 4,096 valid summaries succeed while a raw
+`id=0` row is skipped; 4,097 valid summaries return `InvalidInput` with exact
+message `Calendar event collection exceeds its bounded limit.`; and an invalid
+metadata row ordered after those 4,097 valid rows still wins with the existing
+conversion error `A calendar event contains invalid or unbounded projection
+metadata.` Preserve the existing SQL fixtures and transaction behavior. No
+CMake change is expected.
+
+Reuse `build/windows-x64-debug` with Visual Studio 18 x64 Debug. Build
+`ClassMngr`, `ClassMngrCalendarEventRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests`. Confirm each corresponding exact CTest
+registers once, then run only `ClassMngrCalendarEventRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests` with `-C Debug --output-on-failure`. Run no
+full suite. Commit this matrix before F785 source/test edits. F707/F709 remain
+deferred; Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.

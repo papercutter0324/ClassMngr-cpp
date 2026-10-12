@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F783 is accepted at `2e846967aca80bfc160cd20ffdf88a093c15b67d`; F784 is selected in Batch 197 to bound CalendarPage `m_loadedMonths` to the displayed month while preserving `m_onDemandRetainedRanges` and reload on revisit, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F784 is accepted at `64511319ee00918b7b85ff23a81b734e8c075660`; F785 is selected in Batch 198 to bound application-owned Calendar range-read and projection storage while preserving overflow and conversion-error precedence, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -104,13 +104,10 @@ Treat this plan as an operational summary, not a history:
   architecture work without a demonstrated behavior defect.
 - Batch 197 teacher reassignment parity - deferred until the stricter Next
   notes/schedule validation policy is resolved against current tests.
-- Batch 197 Calendar projection materialization before its event cap -
-  deferred pending stronger bounded-reader evidence for a separate
-  application/database change.
 
-#### Active batch: Batch 197
+#### Active batch: Batch 198
 
-- F784 - Calendar month retention - Bound CalendarPage `m_loadedMonths` to the displayed month while preserving `m_onDemandRetainedRanges` and reload on revisit.
+- F785 - Calendar bounded range reads - Add an early-stoppable ordered repository visitor and use it at both Calendar read boundaries to bound application-owned storage while preserving validation and overflow semantics.
 
 ## Objective
 
