@@ -87,7 +87,10 @@ typedScheduleTimes(const QList<ClassTime>& values)
     result.reserve(static_cast<std::size_t>(values.size()));
     for (const ClassTime& value : values)
     {
-        const int weekday = days.indexOf(value.day);
+        const auto parsedDay = ScheduleValueParser::parseWeekday(value.day);
+        const int weekday = parsedDay && parsedDay->text == value.day
+            ? days.indexOf(parsedDay->text)
+            : -1;
         if (weekday < 0
             || value.startTime != value.startTime.trimmed()
             || value.endTime != value.endTime.trimmed())

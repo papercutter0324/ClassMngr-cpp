@@ -8,6 +8,8 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "app/services/feature_services.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/widgets/sectioncards/class_time_row.h"
+#include "ui/shared/widgets/sections/class_schedule_section.h"
 
 #include <QApplication>
 #include <QBuffer>
@@ -144,6 +146,7 @@ private slots:
     void missingAndUnavailableDisplayNameStayEmpty();
     void classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher();
     void classDetailsShowsTeacherReadFailureAndLeavesChoicesEmpty();
+    void classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass();
     void personalDetailsRoutesToClassDetailsWhenTeachersExist();
     void personalDetailsRoutesToTeacherEntryWhenNoTeachersExist();
     void blankTeacherEntrySkipsWhenTeachersExist();
@@ -156,6 +159,100 @@ private slots:
 private:
     QTemporaryDir m_directory;
 };
+
+void InitialSetupWizardTests::
+classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass()
+{
+    const QStringList invalidWeekdays{
+        QStringLiteral("monday"),
+        QStringLiteral(" Monday ")
+    };
+
+    for (const QString& invalidWeekday : invalidWeekdays)
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        Teacher teacher;
+        teacher.teacherEn = QStringLiteral("F723 Setup Teacher");
+        teacher.teacherKr = QStringLiteral("Setup Teacher");
+        TeacherRepository* const teacherRepository =
+            services.databaseSession()->teacherRepository();
+        QVERIFY(teacherRepository);
+        const auto teacherId = teacherRepository->createTeacher(teacher);
+        QVERIFY(teacherId);
+
+        ClassInfo draft;
+        draft.teacherId = *teacherId;
+        draft.classGrade = QStringLiteral("E4");
+        draft.classLevel = QStringLiteral("Theseus");
+        draft.readingBook = QStringLiteral("Reading Explorer 1");
+        draft.essayBook = QStringLiteral("4A");
+        draft.classColor = QStringLiteral("#123456");
+        draft.fontColor = QStringLiteral("#FFFFFF");
+
+        FakeUserPromptService prompts;
+        [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+        InitialSetupWizard wizard(&services);
+        wizard.setClassDraft(draft);
+        wizard.setStartId(InitialSetupWizard::ClassTimesPage);
+        wizard.show();
+        QApplication::processEvents();
+        QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassTimesPage);
+
+        auto* schedules = wizard.findChild<ClassScheduleSection*>(
+            QStringLiteral("setupClassSchedules")
+            );
+        QVERIFY(schedules);
+        QVERIFY(!schedules->regularRows().isEmpty());
+        ClassTimeRow* const row = schedules->regularRows().constFirst();
+        QVERIFY(row);
+        row->setStartTime(QStringLiteral("9:00 AM"));
+        row->setEndTime(QStringLiteral("9:55 AM"));
+        row->dayCombo()->addItem(invalidWeekday, invalidWeekday);
+        row->dayCombo()->setCurrentIndex(row->dayCombo()->count() - 1);
+        QCOMPARE(row->day(), invalidWeekday);
+        QCOMPARE(row->startTime(), QStringLiteral("9:00 AM"));
+        QCOMPARE(row->endTime(), QStringLiteral("9:55 AM"));
+
+        auto* next = wizard.button(QWizard::NextButton);
+        QVERIFY(next);
+        next->click();
+        QApplication::processEvents();
+
+        QCOMPARE(wizard.currentId(), InitialSetupWizard::ClassTimesPage);
+        QCOMPARE(prompts.messages.size(), 1);
+        QCOMPARE(
+            prompts.messages.constFirst().severity,
+            PromptSeverity::Warning
+            );
+        QCOMPARE(
+            prompts.messages.constFirst().message,
+            QStringLiteral("The class information could not be saved.")
+            );
+
+        DatabaseSession* const session = services.databaseSession();
+        QVERIFY(session);
+        QSqlQuery query(session->database());
+        QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM classes")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 1);
+        QVERIFY(query.exec(QStringLiteral("SELECT name FROM classes")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), QString());
+        QVERIFY(!query.next());
+
+        QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM class_info")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+        QVERIFY(query.exec(QStringLiteral("SELECT COUNT(*) FROM class_times")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM class_intensive_times")));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toInt(), 0);
+    }
+}
 
 void InitialSetupWizardTests::
 classDetailsShowsOrderedPreferredTeacherNamesAndSelectsSingleTeacher()
