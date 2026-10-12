@@ -114,6 +114,7 @@ private slots:
     void requestUsesTypedOwnedValues();
     void emptyVisibilityReturnsEmptyProjectionWithoutRead();
     void invalidRequestsAreRejectedBeforeRead();
+    void acceptsMaximumBoundaryVisibleClassIdentifier();
     void invalidWeekdaysAreRejectedBeforeRead();
     void forwardsExactScopeAndReturns96ClassProjection();
     void projectionOrderingIsDeterministicForEqualOrders();
@@ -217,12 +218,14 @@ invalidRequestsAreRejectedBeforeRead()
     auto blankClassId = validRequest();
     blankClassId.visibleClassIds = {classId("  ")};
 
+    auto overlongClassId = validRequest();
+    overlongClassId.visibleClassIds = {classId(std::string(257, 'c'))};
+
     const std::vector<SubPrepScheduleScopeRequest> invalidRequests{
         duplicateClasses,
         oversizedClassScope,
         duplicateDays,
-        invalidMode,
-        blankClassId
+        invalidMode
     };
     for (const auto& request : invalidRequests)
     {
@@ -238,7 +241,55 @@ invalidRequestsAreRejectedBeforeRead()
         }
     }
 
+    for (const auto& request : {blankClassId, overlongClassId})
+    {
+        const auto result = query.execute(request);
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Visible class identifiers must be non-blank and bounded.")
+            );
+        QVERIFY(!result.error().recoverable);
+    }
+
+    auto overLimitWithBlankId = oversizedClassScope;
+    overLimitWithBlankId.visibleClassIds.front() = classId(" \t ");
+    const auto overLimitResult = query.execute(overLimitWithBlankId);
+    verifyError(overLimitResult, ErrorCode::InvalidInput);
+    QCOMPARE(
+        overLimitResult.error().message,
+        std::string("Visible Sub Prep class scope exceeds its bounded limit.")
+        );
+    QVERIFY(!overLimitResult.error().recoverable);
+
     QCOMPARE(readPort.calls, 0);
+}
+
+void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::
+acceptsMaximumBoundaryVisibleClassIdentifier()
+{
+    const std::string maximumClassIdentifier(256, 'c');
+    auto request = validRequest();
+    request.visibleClassIds = {classId(maximumClassIdentifier)};
+    request.selectedDays = {SubPrepWeekday::Monday};
+
+    auto input = validInput();
+    input.classes = {
+        summary(maximumClassIdentifier, teacherId("teacher-1"), 0)
+    };
+    input.classes.front().displayLabel = "Class at identifier boundary";
+
+    FakeReadPort readPort;
+    readPort.result =
+        SubPrepScheduleSummaryReadResult::success(std::move(input));
+    const SubPrepScheduleSummaryQuery query(readPort);
+    const auto result = query.execute(request);
+
+    QVERIFY(result);
+    QCOMPARE(readPort.calls, 1);
+    QVERIFY(readPort.lastRequest == request);
+    QCOMPARE(result.value().classes().size(), std::size_t(1));
+    QCOMPARE(result.value().classes().front().id, classId(maximumClassIdentifier));
 }
 
 void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::

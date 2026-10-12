@@ -34,8 +34,13 @@ namespace SubPrepSourceValidationDetail
 template <typename TypedId>
 [[nodiscard]] inline bool isValidId(const TypedId& id) noexcept
 {
-    return !isBlank(id.value())
-        && id.value().size() <= kSubPrepSourceMaxIdentifierLength;
+    const auto& value = id.value();
+    if (value.empty() || value.size() > kSubPrepSourceMaxIdentifierLength)
+    {
+        return false;
+    }
+
+    return !isBlank(value);
 }
 
 } // namespace SubPrepSourceValidationDetail

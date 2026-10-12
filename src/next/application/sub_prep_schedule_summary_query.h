@@ -2,13 +2,12 @@
 
 #include "next/application/class_summary_projection.h"
 #include "next/application/schedule_view_projection.h"
+#include "next/application/sub_prep_source_validation.h"
 #include "next/application/sub_prep_weekday.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <set>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -193,27 +192,6 @@ private:
         };
     }
 
-    [[nodiscard]] static bool isValidIdentifier(
-        const std::string_view value
-        ) noexcept
-    {
-        if (value.empty() || value.size() > kSummaryMaxIdentifierLength)
-        {
-            return false;
-        }
-
-        return !std::all_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
-    }
-
     [[nodiscard]] static Domain::Result<void> validateRequest(
         const SubPrepScheduleScopeRequest& request
         )
@@ -231,7 +209,7 @@ private:
         std::set<Domain::ClassId> classIds;
         for (const auto& classId : request.visibleClassIds)
         {
-            if (!isValidIdentifier(classId.value()))
+            if (!SubPrepSourceValidationDetail::isValidId(classId))
             {
                 return Domain::Result<void>::failure(
                     invalidInput(
