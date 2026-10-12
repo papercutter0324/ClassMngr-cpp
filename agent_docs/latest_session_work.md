@@ -13,9 +13,10 @@
   `f773cb0bea7867bc7e47912848317343a2d67e07`; its summary-query CTest passed
   1/1. F749 is committed at
   `318f0b3a1806e21ff4eded355f981ee17fe46112`; its interval-query CTest #307
-  passed 1/1. F750 is selected to share selected-weekday validation across
-  the Sub Prep summary, print, and roster queries. F707 and F709 remain
-  deferred.
+  passed 1/1. F750 is committed at
+  `a129057b77c08f6fceef1bdaa0d3ea00008b8cc0`; its three exact query CTests
+  passed 3/3. F751 is selected to reuse Gregorian-date validation in teacher
+  imports. F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -260,7 +261,7 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740-F749 are accepted; the F750 matrix is in
+  full suite ran. F740-F750 are accepted; the F751 matrix is in
   the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
@@ -312,8 +313,9 @@
   `f773cb0bea7867bc7e47912848317343a2d67e07`; its exact summary-query CTest
   passed 1/1. F749 reuses Gregorian-date validation in Sub Prep calendar
   intervals and is committed at `318f0b3a1806e21ff4eded355f981ee17fe46112`;
-  CTest #307 passed 1/1. F750's selected-weekday validation matrix is in the
-  Phase 2 progress log.
+  CTest #307 passed 1/1. F750 is committed at
+  `a129057b77c08f6fceef1bdaa0d3ea00008b8cc0`; its three query CTests passed
+  3/3. F751's teacher-import date matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

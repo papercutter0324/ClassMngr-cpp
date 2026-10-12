@@ -28613,3 +28613,43 @@ CTest registrations. Run no full suite.
 This matrix is recorded before implementation; F750 is not complete. F707/F709
 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
 remains Open.
+
+### F750 Sub Prep selected-day request validation - accepted - 2026-10-13
+
+F750 is accepted at commit
+`a129057b77c08f6fceef1bdaa0d3ea00008b8cc0` (`Phase2 - Share Sub Prep
+selected-day validation`). It centralizes selected-day count, weekday-enum,
+and duplicate validation across the schedule-summary, print-source, and
+roster-output queries while preserving caller-specific errors and precedence.
+
+Under VS 18 x64 Developer, `ClassMngr` and the summary, print, and roster
+query test targets built. Unique CTest registrations #204, #205, and #237
+passed 3/3 in 1.11 seconds. An initial build outside the Developer
+environment lacked MSVC include paths; the Developer-environment rerun passed
+with a nonfatal `vswhere.exe` notice. No full suite ran.
+
+### Batch 181 continuation - F751 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F751 is selected and in progress:** replace `TeacherImportUseCase`'s
+duplicate ISO/Gregorian date parser with
+`Domain::GregorianDate::fromIsoString`.
+
+Preserve canonical `YYYY-MM-DD` syntax with ASCII digits, supported years
+0001-9999, and Gregorian/leap-date validity. Retain the
+`request.validation.sourceDateValid` gate and the existing `InvalidPlan` /
+`InvalidSourceDate` result behavior before persistence begins.
+
+1. Cover invalid `2023-02-29` as `InvalidPlan` / `InvalidSourceDate` with zero
+   transaction or persistence calls.
+2. Cover valid leap date `2024-02-29` as accepted and forwarded unchanged to
+   persistence. Also verify a valid ISO date with
+   `request.validation.sourceDateValid=false` remains rejected before
+   persistence.
+3. In `tests/next_application_teacher_import_use_case_tests.cpp`, build
+   `ClassMngr` and
+   `ClassMngrNextApplicationTeacherImportUseCaseTests`; confirm exactly one
+   CTest registration, then run only that test. Run no full suite.
+
+This matrix is recorded before implementation; F751 is not complete. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.

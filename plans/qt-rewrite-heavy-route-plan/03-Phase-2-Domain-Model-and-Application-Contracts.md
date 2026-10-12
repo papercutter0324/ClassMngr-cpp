@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F749 is accepted at `318f0b3a1806e21ff4eded355f981ee17fe46112`, and F750 is selected in Batch 180 to centralize selected-day validation across three Sub Prep queries; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F750 is accepted at `a129057b77c08f6fceef1bdaa0d3ea00008b8cc0`, and F751 is selected in Batch 181 to reuse canonical Gregorian-date parsing in TeacherImportUseCase; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 180
+#### Active batch: Batch 181
 
-- F750 - Extract shared selected-day request validation for Sub Prep schedule summary, print source, and roster-output source queries while preserving caller-specific errors and validation order.
+- F751 - Reuse `Domain::GregorianDate::fromIsoString` in `TeacherImportUseCase`, preserving source-date validation and pre-persistence failure behavior.
 
 ## Objective
 

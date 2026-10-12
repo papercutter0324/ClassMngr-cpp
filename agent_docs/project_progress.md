@@ -53,15 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F749 accepted; F750 selected)
+### Current state - 2026-10-13 (F750 accepted; F751 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-179 are complete with F707 and F709 deferred. F740-F749 are
-accepted; F750 will share selected-weekday request validation across the Sub
-Prep schedule-summary, print-source, and roster-output queries. The separate
-CMake source-ownership optimization was also completed during this
-continuation.
+Batches 141-180 are complete with F707 and F709 deferred. F740-F750 are
+accepted; F751 will reuse canonical Gregorian-date validation in the teacher
+import use case. The separate CMake source-ownership optimization was also
+completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -4688,18 +4687,27 @@ validation for Sub Prep intervals`). It reuses
 range comparisons. `ClassMngr` and the interval-query test target built;
 unique CTest #307 passed 1/1 in 0.05 seconds. No full suite ran.
 
-F750 is selected to share selected-weekday request validation across
-`SubPrepScheduleSummaryQuery`, `SubPrepPrintSourceQuery`, and
-`SubPrepRosterOutputSourceQuery`. Extract the common seven-day maximum,
-weekday-enum validity, and duplicate check while keeping caller-specific
-error messages. Preserve count-before-item validation, invalid-before-
-duplicate validation, and each query's surrounding order: summary/print mode
-checks follow selected days, while roster mode and extra-column checks remain
-after them. Add focused assertions for endpoint-specific exact messages,
-nonrecoverable `InvalidInput`, zero reads, and over-limit precedence (including
-the current coverage gaps); do not weaken existing assertions. Build
-`ClassMngr` and the three query test targets, confirm one CTest registration
-for each, and run only those three exact CTests. No full suite. F707 and F709
+F750 is accepted at commit
+`a129057b77c08f6fceef1bdaa0d3ea00008b8cc0` (`Phase2 - Share Sub Prep
+selected-day validation`). One shared typed validator now enforces the seven-
+day maximum, weekday-enum validity, and duplicate rejection for the schedule-
+summary, print-source, and roster-output queries. Each query retains its own
+error messages and surrounding validation order. Under VS 18 x64 Developer,
+`ClassMngr` and all three query test targets built. Unique CTest registrations
+#204, #205, and #237 passed 3/3 in 1.11 seconds. No full suite ran. An initial
+build outside the Developer environment lacked MSVC standard-library include
+paths; the Developer-environment rerun passed, with only a nonfatal
+`vswhere.exe` notice.
+
+F751 is selected to replace `TeacherImportUseCase`'s duplicate ISO/Gregorian
+date parser with `Domain::GregorianDate::fromIsoString`. Preserve canonical
+`YYYY-MM-DD` syntax, ASCII digits, supported years 0001-9999, leap-day
+validity, the existing `request.validation.sourceDateValid` gate, and the
+`InvalidPlan`/`InvalidSourceDate` result. Add focused coverage proving an
+invalid source date is rejected before persistence begins and a valid leap
+date is forwarded unchanged to persistence. Build `ClassMngr` and
+`ClassMngrNextApplicationTeacherImportUseCaseTests`, confirm exactly one CTest
+registration, and run only that exact test. No full suite. F707 and F709
 remain deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
 F625's assessment is accepted, F626 is deferred, and separate current-source
 Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.

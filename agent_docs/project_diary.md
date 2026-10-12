@@ -4786,10 +4786,17 @@ query now uses `Domain::GregorianDate::fromIsoString` while retaining
 `std::chrono::sys_days` comparisons. `ClassMngr` and its query test target
 built; unique CTest #307 passed 1/1 in 0.05 seconds. No full suite ran.
 
-F750 is selected to extract the common selected-weekday count, enum-validity,
-and duplicate checks from the schedule-summary, print-source, and
-roster-output queries. The checks follow the same order, but messages differ
-by query; preserve those messages and all surrounding validation order. The
-focused acceptance matrix is recorded before implementation in the Phase 2
-progress log. F707/F709 remain deferred and the Phase 2 exit gate remains
-open.
+F750 is accepted and committed as
+`a129057b77c08f6fceef1bdaa0d3ea00008b8cc0`. A shared typed validator now
+handles selected-day count, weekday validity, and duplicate checks for the
+summary, print, and roster-output queries while preserving caller-specific
+errors and validation order. `ClassMngr` and the three focused query targets
+built; unique CTests #204, #205, and #237 passed 3/3 in 1.11 seconds. No full
+suite ran.
+
+F751 is selected to replace the duplicate ISO/Gregorian parser in
+`TeacherImportUseCase` with `Domain::GregorianDate::fromIsoString`. Keep the
+existing source-date-valid flag and reject invalid dates as
+`InvalidPlan`/`InvalidSourceDate` before persistence starts. The focused
+acceptance matrix is recorded before implementation in the Phase 2 progress
+log. F707/F709 remain deferred and the Phase 2 exit gate remains open.
