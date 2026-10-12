@@ -30351,3 +30351,77 @@ CTest registers once, then run only
 --output-on-failure`. Run no full suite. Commit this matrix before
 F786 source/test edits. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
 Partial, and the formal exit gate remains Open.
+
+### F786 Calendar title whitespace parity - accepted - 2026-10-13
+
+F786 was committed and accepted at `fdcfcf0f63a94449bf0ba9dfa77dd17131bb2437`.
+
+### Batch 201 discovery - 2026-10-13
+
+F787 was selected to align Qt-free workspace UTF-8 blank-path checks with
+`QString::trimmed().isEmpty()` across the existing application, state, legacy
+gateway, and application-services workspace-port boundaries. No CMake/source
+ownership inventory change is expected. F707/F709 remain deferred.
+
+### F787 workspace UTF-8 blank-path parity - selected and acceptance matrix - 2026-10-13
+
+**F787 is selected:** add a shared strict UTF-8 Qt-whitespace-only predicate
+beside `isQtWhitespace` in `src/next/application/qt_compatible_text.h`. Reuse
+or extract the strict decoder from
+`src/next/application/calendar_event_title_validation.h` so workspace code
+does not depend on Calendar and UTF-8 decoding is not duplicated. Apply the
+predicate at all existing byte-based workspace blank guards:
+
+- `WorkspaceUseCase`: create/open locations, save-as/export destinations, and
+  session validation.
+- `WorkspaceState`: opened-session validation and `markSavedAs` location.
+- `LegacyWorkspaceGateway`: request, session, and returned-path guards.
+- `ApplicationServicesWorkspacePort`: the `std::string_view` path blank
+  overload. Keep the `QString` overload unchanged.
+
+Empty strings and fully valid UTF-8 strings made only of the existing Qt
+whitespace code points are blank. Malformed UTF-8 returns false from the blank
+predicate so each existing path decoder and error mapper retains responsibility
+for its current error. Do not trim or rewrite nonblank paths. Preserve error
+codes, exact messages, validation precedence, and zero-downstream-call
+behavior: Unicode-whitespace-only input must fail at its earliest existing
+blank guard as `InvalidInput`, not reach the concrete Qt port and become
+`Technical`.
+
+Extend only the existing tests: `tests/next_application_contract_tests.cpp`,
+`tests/next_application_state_tests.cpp`,
+`tests/next_platform_legacy_workspace_gateway_tests.cpp`,
+`tests/next_platform_application_services_workspace_port_tests.cpp`, and
+`tests/next_application_calendar_event_tests.cpp` if decoder extraction affects
+Calendar. Cover at least U+00A0 NO-BREAK SPACE, U+3000 IDEOGRAPHIC SPACE, and
+existing ASCII whitespace. Assert exact existing error contracts and zero
+gateway/port/service calls for rejected paths; State rejection leaves the
+prior session unchanged; ordinary nonblank Unicode-containing paths remain
+accepted and untrimmed; malformed UTF-8 follows its existing validation and
+mapping path; and Calendar title behavior remains covered.
+
+Production targets are `src/next/application/workspace_use_case.h`,
+`src/next/application/workspace_state.h`,
+`src/next/application/qt_compatible_text.h`, and
+`src/next/application/calendar_event_title_validation.h` (only if extracting
+its decoder), plus `src/next/platform/legacy_workspace_gateway.h` and
+`src/next/platform/application_services_workspace_port.h`. Build `ClassMngr`,
+`ClassMngrNextApplicationContractTests`,
+`ClassMngrNextApplicationStateTests`,
+`ClassMngrNextPlatformLegacyWorkspaceGatewayTests`,
+`ClassMngrNextPlatformApplicationServicesWorkspacePortTests`, and
+`ClassMngrNextApplicationCalendarEventTests`. The five test targets' exact
+CTest names match their target names, and each must register once. In the
+existing Visual Studio 18 x64 Debug tree `build/windows-x64-debug`, use only
+these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextApplicationContractTests ClassMngrNextApplicationStateTests ClassMngrNextPlatformLegacyWorkspaceGatewayTests ClassMngrNextPlatformApplicationServicesWorkspacePortTests ClassMngrNextApplicationCalendarEventTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^(ClassMngrNextApplicationContractTests|ClassMngrNextApplicationStateTests|ClassMngrNextPlatformLegacyWorkspaceGatewayTests|ClassMngrNextPlatformApplicationServicesWorkspacePortTests|ClassMngrNextApplicationCalendarEventTests)$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(ClassMngrNextApplicationContractTests|ClassMngrNextApplicationStateTests|ClassMngrNextPlatformLegacyWorkspaceGatewayTests|ClassMngrNextPlatformApplicationServicesWorkspacePortTests|ClassMngrNextApplicationCalendarEventTests)$"
+```
+
+Run no full suite. Existing headers and tests are already in explicit
+manifests, so no CMake inventory change is expected. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
