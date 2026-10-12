@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F696 is selected in Batch 171; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F697 is selected in Batch 172; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 171
+#### Active batch: Batch 172
 
-- F696 - Move schedule-time formatting's two canonical HH:mm parses to the Domain parser while preserving input semantics, rendering, offsets, and invalid fallback; implement the pre-recorded model regression matrix.
+- F697 - Move class-tab start-time parsing to the shared Domain display-time parser while preserving compact formatting, fallback, and sorting behavior; implement the pre-recorded model and direct-test-source matrix.
 
 ## Objective
 

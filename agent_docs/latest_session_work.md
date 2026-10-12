@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-170 are complete; Batch 171 is active with F696. F625's assessment is
+  141-171 are complete; Batch 172 is active with F697. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -25,15 +25,22 @@
   2/2. The first plain-shell build lacked MSVC standard-header paths; the
   Developer Command Prompt retry produced fresh binaries before CTest. No full
   suite ran.
-- F696 `ScheduleTimeFormatter` canonical-time parsing is selected in Batch
-  171. Migrate only its two `HH:mm` parsing sites to the Domain canonical-time
-  parser. Preserve exact input semantics despite the parser's trimming,
-  unchanged invalid-label fallback, 12/24-hour display, and the 50/55-minute
-  range behavior. Add direct formatter regression cases to
-  `tests/schedule_print_model_tests.cpp`, and compile
-  `src/domain/rules/schedule_value_parser.cpp` into
-  `ClassMngrSchedulePrintModelTests`. Build `ClassMngr` and that target; run
-  only CTest `ClassMngrSchedulePrintModelTests`. The acceptance matrix is
+- F696 `ScheduleTimeFormatter` canonical-time parsing is accepted and
+  committed as `1437528297279a0814b664eafd5dc8622c5d069e`. `ClassMngr` and
+  `ClassMngrSchedulePrintModelTests` built in the Windows x64 Debug Ninja tree
+  under the VS 2026 x64 developer environment; the exact CTest passed 1/1.
+  The focused cases preserve malformed and whitespace-padded labels, 12/24h
+  output, 50/55-minute ranges, and midnight crossing. No full suite ran.
+- F697 `ClassTabNavigationModel` display-time parsing is selected in Batch
+  172. Replace the duplicated eight-format loops in `compactStartTime` and
+  `timeOrder` with `ScheduleValueParser::parseDisplayTime`, preserving trimmed
+  input, label formatting and malformed fallback, `UnknownOrder`, and seconds
+  omission from minute ordering. Extend
+  `tests/class_tab_navigation_model_tests.cpp`; compile the parser source into
+  its test target and the separately compiled Classes Page test target.
+  `ClassMngrSubPrepPageTests` already compiles that parser source. Build
+  `ClassMngr`, the navigation, Classes Page, and Sub Prep Page targets; run
+  only CTest `ClassMngrClassTabNavigationModelTests`. The acceptance matrix is
   recorded before implementation in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked

@@ -4153,9 +4153,20 @@ Debug Ninja tree under the VS 2026 developer environment; the two exact CTests
 passed 2/2. A plain shell initially lacked MSVC standard-header paths, and the
 Developer Command Prompt retry built fresh executables. No full suite ran.
 
-F696 is selected in Batch 171 for `ScheduleTimeFormatter`'s two canonical
-`HH:mm` parsing sites. Preserve its exact input grammar, invalid-label
-fallback, 12-hour/24-hour output, and 50/55-minute range behavior while
-reusing the Domain canonical-time parser. The existing schedule print-model
-test target will gain direct formatter cases and compile the parser source.
-Its acceptance matrix is recorded in the Phase 2 progress log.
+F696 is committed as `1437528297279a0814b664eafd5dc8622c5d069e`. The product
+and schedule print-model test targets built in the Windows x64 Debug Ninja
+tree under the VS 2026 x64 developer environment, and the exact focused CTest
+passed 1/1. Direct cases preserve malformed and whitespace-padded labels,
+12/24-hour display, 50/55-minute ranges, and midnight crossing. No full suite
+ran.
+
+F697 is selected in Batch 172 for the two duplicate display-time format loops
+in `ClassTabNavigationModel`. The Domain display-time parser uses the same
+eight Qt formats in the same order and trims input as the current code does.
+Retain compact label rendering and its malformed-label fallback, unknown sort
+order on invalid input, and omission of seconds from minute ordering. Extend
+the navigation model tests and add the parser source to standalone navigation
+and Classes Page test targets; the Sub Prep Page target already compiles it.
+Build the product and all three directly affected test targets, then run only
+the focused navigation model CTest. The acceptance matrix is in the Phase 2
+progress log.

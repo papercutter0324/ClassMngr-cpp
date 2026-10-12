@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F696 selected)
+### Current state - 2026-10-12 (F697 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-170 are complete; Batch 171 is active with F696, the
-ScheduleTimeFormatter canonical-time parser migration. F689-F693 are complete;
+Batches 141-171 are complete; Batch 172 is active with F697, the
+ClassTabNavigationModel display-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -67,8 +67,14 @@ its five requested Ninja targets built and its four focused CTests passed
 `ClassMngrClassDetailsPageSaveParityTests` built in the Windows x64 Debug
 Ninja tree under the VS 2026 developer environment, and both exact CTests
 passed 2/2. The first shell lacked MSVC standard-header paths; the
-Developer Command Prompt retry built the fresh test executables. No full
-suite ran. The current-source Phase 0 evidence remains Windows x64 2/24 and
+Developer Command Prompt retry built the fresh test executables. F696 is
+committed as `1437528297279a0814b664eafd5dc8622c5d069e`; `ClassMngr` and
+`ClassMngrSchedulePrintModelTests` built in the Windows x64 Debug Ninja tree
+under the VS 2026 x64 developer environment, and the exact CTest passed 1/1
+with a fresh test executable and object. No full suite ran. F697 selects the
+two matching display-time loops in `ClassTabNavigationModel`; the acceptance
+matrix and direct-source test target dependencies are recorded in the Phase 2
+progress log. The current-source Phase 0 evidence remains Windows x64 2/24 and
 macOS universal 0/24; it is separate from the historical Phase 0 closure
 described above. F625 remains accepted and F626 deferred. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset

@@ -25909,4 +25909,50 @@ fallback.
 4. Build `ClassMngr` and `ClassMngrSchedulePrintModelTests`; run only the CTest
    `ClassMngrSchedulePrintModelTests`. Do not add a target or run other tests.
 
-This matrix is recorded before implementation. Batch 171 is active with F696.
+This matrix was recorded before implementation.
+
+### F696 Schedule time formatter parser migration - accepted - 2026-10-12
+
+F696 is accepted at commit
+`1437528297279a0814b664eafd5dc8622c5d069e` (`Phase2 - Use Domain parser in
+ScheduleTimeFormatter (F696)`). The Windows x64 Ninja build from the Visual
+Studio 2026 x64 Developer Command Prompt built `ClassMngr` and
+`ClassMngrSchedulePrintModelTests`; the exact CTest passed 1/1. Verification
+used a fresh binary and source object. The commit contains only the three
+intended paths. No full suite ran.
+
+**Decision: accept F696.** Batch 171 is complete.
+
+### Batch 172 selection - recorded before F697 implementation - 2026-10-12
+
+Select the duplicate time-format loops in
+`src/features/classes/models/class_tab_navigation_model.cpp` for migration to
+the default `ScheduleValueParser::parseDisplayTime`. Both loops match the
+parser's exact eight ordered Qt formats and trimmed-input behavior; moving
+only parsing preserves the model's compact display and sorting policies.
+
+**F697 is selected:** replace parsing in `compactStartTime` and `timeOrder`,
+add the Domain parser source to direct test compilations, and preserve existing
+display fallback and ordering behavior.
+
+### F697 class-tab navigation time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Replace only the parsing loops in `compactStartTime` and `timeOrder` with
+   default `ScheduleValueParser::parseDisplayTime`, retaining its exact eight
+   ordered Qt formats (`h:mm AP`, `h:mmAP`, `hh:mm AP`, `hh:mmAP`, `H:mm`,
+   `HH:mm`, `H:mm:ss`, `HH:mm:ss`) and trimmed-input behavior.
+2. Preserve compact 12-hour/24-hour display, AM/PM removal from malformed
+   fallback, `UnknownOrder` from `timeOrder`, and omission of seconds from
+   minute sorting.
+3. Extend `tests/class_tab_navigation_model_tests.cpp` for accepted display
+   variants and fallback/sort behavior. Add
+   `src/domain/rules/schedule_value_parser.cpp` to the directly compiled
+   `ClassMngrClassTabNavigationModelTests` sources in
+   `cmake/tests/features.cmake` and `ClassMngrClassesPageTests` sources in
+   `cmake/tests/pages_and_output.cmake`; `ClassMngrSubPrepPageTests` already
+   includes the parser source.
+4. Build `ClassMngr`, `ClassMngrClassTabNavigationModelTests`,
+   `ClassMngrClassesPageTests`, and `ClassMngrSubPrepPageTests`; run only the
+   CTest `ClassMngrClassTabNavigationModelTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 172 is active with F697.
