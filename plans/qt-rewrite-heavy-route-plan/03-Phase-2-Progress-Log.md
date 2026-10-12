@@ -25656,4 +25656,53 @@ workspace operations.
    `ClassMngrFileControllerWorkspaceLifecycleTests`. Add no target and run no
    full suite.
 
-This matrix is recorded before implementation. Batch 166 is active with F691.
+This matrix was recorded before implementation.
+
+### F691 Recent Workspace History checked persistence - accepted - 2026-10-12
+
+F691 is accepted at code/test commit
+`f3f8b689bc922e29e767f7ddcf7ada9b0b820109`. The Windows x64 Debug Ninja
+tree built `ClassMngr`,
+`ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. The exact CTests passed
+2/2: `ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests` and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. No full suite ran.
+
+**Decision: accept F691.** Batch 166 is complete.
+
+### Batch 167 shortlist and selection - recorded before F692 implementation - 2026-10-12
+
+Select ScheduleBuilder display-time parsing as a Phase 2 rule migration, not a
+defect fix. `ScheduleBuilder::parseTime` currently trims and tries eight
+explicit display formats, while `ScheduleValueParser::parseTime` deliberately
+remains strict canonical `HH:mm`. Existing ScheduleBuilder tests cover those
+formats and invalid start/end behavior; `SharedPolicyTests::timeParsing`
+covers the canonical rule. DataService still notes “Port time parsing
+helpers.” Moving this rule out of the UI helper preserves behavior while
+advancing the Phase 2 migration goal.
+
+**F692 is selected:** add a distinct Domain-level display-time parser and route
+ScheduleBuilder conversion through it, keeping canonical `parseTime`
+unchanged.
+
+### F692 ScheduleBuilder display-time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a distinct `ScheduleValueParser::parseDisplayTime` (or similarly
+   explicit API) that trims and preserves exactly these eight existing
+   formats: `h:mm AP`, `h:mmAP`, `hh:mm AP`, `hh:mmAP`, `H:mm`, `HH:mm`,
+   `H:mm:ss`, and `HH:mm:ss`. Return an explicit invalid result for rejected
+   input. Do not widen or change canonical `parseTime`.
+2. Route ScheduleBuilder start/end conversion through the Domain parser and
+   remove its private UI parser. Preserve output `HH:mm` buckets, invalid-start
+   skipping, valid starts with invalid ends, ordering and collisions, schedule
+   offsets, and `:55`/intensive-row rules.
+3. Add deterministic tests for all eight formats, whitespace, and invalid
+   input in domain/builder coverage while retaining strict canonical parser
+   assertions. Extend the existing `tests/schedule_builder_tests.cpp` and
+   `tests/shared_policy_tests.cpp`.
+4. Build `ClassMngr`, `ClassMngrScheduleBuilderTests`, and
+   `ClassMngrSharedPolicyTests`; run exactly the CTests
+   `ClassMngrScheduleBuilderTests` and `ClassMngrSharedPolicyTests`. Add no
+   CMake target and run no full suite.
+
+This matrix is recorded before implementation. Batch 167 is active with F692.
