@@ -1,11 +1,11 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/schedule_import_state_projection.h"
 
-#include <charconv>
 #include <set>
 #include <string>
-#include <system_error>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -97,7 +97,7 @@ public:
         std::set<std::string> teacherIds;
         for (const auto& teacher : snapshot->teachers)
         {
-            if (!isCanonicalPositiveId(teacher.id.value())
+            if (!isCanonicalPositiveDecimalId(teacher.id.value())
                 || !teacherIds.insert(teacher.id.value()).second)
             {
                 return invalidSnapshot(
@@ -109,7 +109,7 @@ public:
         std::set<std::string> classIds;
         for (const auto& classroom : snapshot->classes)
         {
-            if (!isCanonicalPositiveId(classroom.id.value())
+            if (!isCanonicalPositiveDecimalId(classroom.id.value())
                 || !classIds.insert(classroom.id.value()).second)
             {
                 return invalidSnapshot(
@@ -117,7 +117,7 @@ public:
                     );
             }
             if (classroom.teacherId.value() != "-1"
-                && !isCanonicalPositiveId(classroom.teacherId.value()))
+                && !isCanonicalPositiveDecimalId(classroom.teacherId.value()))
             {
                 return invalidSnapshot(
                     "The schedule import state source returned an invalid teacher assignment."
@@ -138,27 +138,6 @@ private:
             ScheduleImportStateSnapshotFailureSource::Snapshot,
             std::move(message)
         };
-    }
-
-    [[nodiscard]] static bool isCanonicalPositiveId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
     }
 };
 

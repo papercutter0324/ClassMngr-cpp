@@ -49,6 +49,7 @@ class NextApplicationScheduleImportStateSnapshotTests final : public QObject
 private slots:
     void returnsCompleteSnapshotInSourceOrder();
     void preservesStructuredUnavailableAndReadFailures();
+    void rejectsInvalidOrDuplicateIdentifiers_data();
     void rejectsInvalidOrDuplicateIdentifiers();
 };
 
@@ -117,6 +118,7 @@ preservesStructuredUnavailableAndReadFailures()
         std::get_if<ScheduleImportStateSnapshotFailure>(&result);
     QVERIFY(unavailableResult);
     QVERIFY(*unavailableResult == unavailable);
+    QCOMPARE(port.readCount, 1);
 
     const ScheduleImportStateSnapshotFailure readFailure{
         ScheduleImportStateSnapshotFailureKind::RepositoryReadFailed,
@@ -133,17 +135,99 @@ preservesStructuredUnavailableAndReadFailures()
 }
 
 void NextApplicationScheduleImportStateSnapshotTests::
+rejectsInvalidOrDuplicateIdentifiers_data()
+{
+    QTest::addColumn<int>("scenario");
+    QTest::addColumn<QString>("expectedMessage");
+
+    const QString invalidTeacherMessage = QStringLiteral(
+        "The schedule import state source returned an invalid or duplicate teacher ID."
+        );
+    const QString invalidClassMessage = QStringLiteral(
+        "The schedule import state source returned an invalid or duplicate class ID."
+        );
+    const QString invalidAssignmentMessage = QStringLiteral(
+        "The schedule import state source returned an invalid teacher assignment."
+        );
+
+    QTest::newRow("invalid_teacher_id")
+        << 0 << invalidTeacherMessage;
+    QTest::newRow("duplicate_valid_teacher_id")
+        << 1 << invalidTeacherMessage;
+    QTest::newRow("existing_noncanonical_teacher_id_case")
+        << 2 << invalidTeacherMessage;
+    QTest::newRow("invalid_class_id")
+        << 3 << invalidClassMessage;
+    QTest::newRow("existing_duplicate_class_id_case")
+        << 4 << invalidClassMessage;
+    QTest::newRow("invalid_teacher_assignment")
+        << 5 << invalidAssignmentMessage;
+}
+
+void NextApplicationScheduleImportStateSnapshotTests::
 rejectsInvalidOrDuplicateIdentifiers()
 {
+    QFETCH(int, scenario);
+    QFETCH(QString, expectedMessage);
+
     RecordingScheduleImportStateSnapshotReadPort port;
     ScheduleImportStateSnapshot snapshot;
-    snapshot.teachers = {
-        {teacherId("7"), u"First", u"Room"},
-        {teacherId("07"), u"Duplicate", u"Room"}
-    };
+
+    switch (scenario)
+    {
+    case 0:
+        snapshot.teachers = {{teacherId("42x"), u"Invalid", u"Room"}};
+        break;
+    case 1:
+        snapshot.teachers = {
+            {teacherId("7"), u"First", u"Room"},
+            {teacherId("7"), u"Duplicate", u"Room"}
+        };
+        break;
+    case 2:
+        snapshot.teachers = {
+            {teacherId("7"), u"First", u"Room"},
+            {teacherId("07"), u"Existing case", u"Room"}
+        };
+        break;
+    case 3:
+        snapshot.classes = {
+            {
+                classId("42x"), teacherId("7"), u"Invalid class", u"E4",
+                u"Hercules", u"#FFFFFF", {}, {}
+            }
+        };
+        break;
+    case 4:
+        snapshot.classes = {
+            {
+                classId("42"), teacherId("7"), u"First", u"E4",
+                u"Hercules", u"#FFFFFF", {}, {}
+            },
+            {
+                classId("42"), teacherId("7"), u"Duplicate", u"E5",
+                u"Athena", u"#FFFFFF", {}, {}
+            }
+        };
+        break;
+    case 5:
+        snapshot.classes = {
+            {
+                classId("42"), teacherId("42x"), u"Invalid assignment",
+                u"E4", u"Hercules", u"#FFFFFF", {}, {}
+            }
+        };
+        break;
+    default:
+        QFAIL("Unexpected invalid snapshot test scenario.");
+        return;
+    }
+
     port.result = snapshot;
 
-    auto result = ScheduleImportStateSnapshotQueryHandler::execute({}, port);
+    const auto result =
+        ScheduleImportStateSnapshotQueryHandler::execute({}, port);
+    QCOMPARE(port.readCount, 1);
     const auto* failure =
         std::get_if<ScheduleImportStateSnapshotFailure>(&result);
     QVERIFY(failure);
@@ -155,26 +239,7 @@ rejectsInvalidOrDuplicateIdentifiers()
         failure->source,
         ScheduleImportStateSnapshotFailureSource::Snapshot
         );
-
-    snapshot.teachers.clear();
-    snapshot.classes = {
-        {
-            classId("42"), teacherId("7"), u"First", u"E4", u"Hercules",
-            u"#FFFFFF", {}, {}
-        },
-        {
-            classId("42"), teacherId("7"), u"Second", u"E5", u"Athena",
-            u"#FFFFFF", {}, {}
-        }
-    };
-    port.result = snapshot;
-    result = ScheduleImportStateSnapshotQueryHandler::execute({}, port);
-    failure = std::get_if<ScheduleImportStateSnapshotFailure>(&result);
-    QVERIFY(failure);
-    QCOMPARE(
-        failure->kind,
-        ScheduleImportStateSnapshotFailureKind::InvalidSnapshot
-        );
+    QCOMPARE(failure->message, expectedMessage.toStdString());
 }
 
 QTEST_APPLESS_MAIN(NextApplicationScheduleImportStateSnapshotTests)
