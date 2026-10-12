@@ -52,8 +52,12 @@
   sandbox. F763 is accepted at 9a982bc324b100d1ee2e45a5186cdccf7c61d580;
   its exact Class Notes CTest passed 1/1 with one registration under Visual
   Studio 18 x64 Debug. The sandbox build hit FileTracker access denial and
-  the same build succeeded outside the sandbox. F764 is selected in Batch 189
-  for Classes Navigation snapshot validation. No full suite ran.
+  the same build succeeded outside the sandbox. F764 is accepted at
+  `80c2963e57572ff9ed74542c37e3fc5fbf7d7746`; its Classes Navigation target
+  built and its exact CTest had one registration (#224) and passed 1/1 under
+  Visual Studio 18 x64 Debug. The sandbox build hit FileTracker access denial
+  and the same build succeeded outside the sandbox. F765 is selected in Batch
+  189 for schedule-editor class-info query validation. No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

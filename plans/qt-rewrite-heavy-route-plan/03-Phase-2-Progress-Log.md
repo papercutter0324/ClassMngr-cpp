@@ -29280,6 +29280,43 @@ successful output/order fixtures.
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassesNavigationSnapshotTests`. Confirm one
 registration for that exact CTest name, then run only that CTest with the
-Debug configuration. Run no full suite. This matrix is recorded before
-implementation; F764 verification is pending. F707/F709 remain deferred,
-Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+Debug configuration. Run no full suite. This matrix was recorded before
+implementation. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial,
+and the formal exit gate remains Open.
+
+### F764 Classes Navigation snapshot canonical ID validation - accepted - 2026-10-13
+
+F764 is accepted at commit
+`80c2963e57572ff9ed74542c37e3fc5fbf7d7746`. The existing Visual Studio 18
+x64 Debug tree built `ClassMngr` and
+`ClassMngrNextApplicationClassesNavigationSnapshotTests`. The exact CTest
+registered once (#224) and passed 1/1. No full suite ran.
+
+### F765 Schedule Editor class info - selected and acceptance matrix - 2026-10-13
+
+**F765 is selected:** inspect/refactor the Schedule Editor class-info query
+at `src/next/application/schedule_editor_class_info_query.h`; if source
+refactoring is part of the slice, reuse
+`Application::isCanonicalPositiveDecimalId`. The helper is already in the
+CMake source inventory, so no inventory change is needed. Keep coverage in
+`tests/next_application_schedule_editor_class_info_query_tests.cpp`.
+
+An invalid ClassId returns recoverable `InvalidInput` with
+`Selected class identifier must be a canonical positive integer.` before
+the port call. A returned snapshot with a different ClassId returns
+nonrecoverable `Validation` with
+`The schedule editor read returned a different class identifier.` after one
+read. Forward port errors unchanged and preserve successful snapshots and
+UTF-16 fields. There are no duplicate or empty-request scenarios.
+
+In the existing malformed `42x` case, assert the exact message and
+recoverable=true alongside the result code and zero calls. In the existing
+returned-ID mismatch case, assert the exact message alongside `Validation`,
+recoverable=false, and one call.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationScheduleEditorClassInfoQueryTests`. Confirm exactly
+one registration for that exact CTest name, then run only that CTest with
+`-C Debug`. Run no full suite. This matrix is recorded before implementation;
+F765 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
+remain Partial, and the formal exit gate remains Open.

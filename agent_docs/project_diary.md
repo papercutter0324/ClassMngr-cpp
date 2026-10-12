@@ -4954,3 +4954,19 @@ preserves recoverable invalid/duplicate request errors and nonrecoverable
 response errors, plus empty success and raw ordered output. F707/F709 remain
 deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+## Phase 2 F764 acceptance and F765 selection — 2026-10-13
+
+F764 is accepted at `80c2963e57572ff9ed74542c37e3fc5fbf7d7746`. The Classes
+Navigation snapshot handler now uses the shared canonical-ID validator. Its
+focused test pins request and response errors, read counts, port-error
+forwarding, empty success, and ordered output. The exact CTest had one
+registration and passed 1/1 in the Visual Studio 18 x64 Debug tree after the
+same build succeeded outside the sandbox following FileTracker
+`E_ACCESSDENIED`. No full suite ran.
+
+F765 is selected for the schedule-editor class-info query. Its matrix pins
+invalid and mismatched class IDs with exact errors and port-call behavior,
+while preserving forwarded port errors and successful UTF-16 snapshot fields.
+F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.

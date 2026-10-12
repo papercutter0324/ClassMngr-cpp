@@ -4874,18 +4874,22 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F763 accepted; F764 selected)
+## Phase 2 current position — 2026-10-13 (F764 accepted; F765 selected)
 
-F763 is accepted at
-`9a982bc324b100d1ee2e45a5186cdccf7c61d580`. The Class Notes page query now
-uses the shared validator while preserving its invalid-input boundary,
-returned-identity check, and independent class/teacher results. In the
-existing Visual Studio 18 x64 Debug tree, `ClassMngr` and the focused target
-built; the exact CTest had one registration and passed 1/1. No full suite ran.
+F764 is accepted at
+`80c2963e57572ff9ed74542c37e3fc5fbf7d7746`. The Classes Navigation snapshot
+handler now reuses the shared canonical-ID validator. Its focused test pins
+recoverable pre-read invalid and duplicate requests, one-read count and
+identity failures, port-error forwarding, empty success, and ordered output.
+In the existing Visual Studio 18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationClassesNavigationSnapshotTests` built; the exact
+CTest had one registration (#224) and passed 1/1. The sandbox build hit
+FileTracker `E_ACCESSDENIED`; the same build succeeded outside the sandbox.
+No full suite ran.
 
-F764 is selected in Batch 189 to reuse the helper in the Classes Navigation
-snapshot handler. Preserve its recoverable pre-read invalid/duplicate results,
-empty-input success, post-read validation, and raw ordered snapshot fields.
-F707/F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1 and
-2 Partial; separate current-source Phase 0 evidence remains Windows x64 2/24
-and macOS universal 0/24.
+F765 is selected in Batch 189 for the schedule-editor class-info query. Reuse
+the shared validator and pin the exact invalid-ID and returned-ID mismatch
+errors, recoverability, and port-call counts while preserving successful
+snapshot fields and unchanged port errors. F707/F709 remain deferred. Phase 2
+remains In Progress/Open with Gates 1 and 2 Partial; separate current-source
+Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
