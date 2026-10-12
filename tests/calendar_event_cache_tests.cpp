@@ -174,6 +174,9 @@ struct InjectedQueryState final
     int rangeCalls = 0;
     int nextEventCalls = 0;
     std::optional<
+        ClassMngr::Next::Application::CalendarEventProjection
+        > rangeProjection;
+    std::optional<
         ClassMngr::Next::Application::CalendarEventRangeRequest
         > lastRangeRequest;
     std::optional<
@@ -229,6 +232,13 @@ public:
     {
         ++m_state->rangeCalls;
         m_state->lastRangeRequest = request;
+        if (m_state->rangeProjection)
+        {
+            return ClassMngr::Next::Application::
+                CalendarEventProjectionResult::success(
+                    *m_state->rangeProjection
+                    );
+        }
         return ClassMngr::Next::Application::CalendarEventProjectionResult::success(
             injectedProjection()
             );
@@ -379,6 +389,7 @@ class CalendarEventCacheTests : public QObject
 private slots:
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
+    void injectedInvalidTimesAreFilteredByCacheAndModel();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
     void typedDateProjectionPreservesModelParityAndFiltering();
     void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
@@ -523,6 +534,98 @@ void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
     QCOMPARE(nextEventSpy.at(0).at(0).toDate(), QDate(2026, 7, 10));
     QCOMPARE(state->createCalls, 2);
     QCOMPARE(state->nextEventCalls, 1);
+}
+
+void CalendarEventCacheTests::injectedInvalidTimesAreFilteredByCacheAndModel()
+{
+    const auto state = std::make_shared<InjectedQueryState>();
+
+    const auto timedSummary = [](
+        const std::string& id,
+        const std::string& title,
+        std::string startTime,
+        std::string endTime,
+        const int order
+        )
+    {
+        return ClassMngr::Next::Application::CalendarEventSummary{
+            *ClassMngr::Next::Domain::CalendarEventId::fromString(id),
+            std::nullopt,
+            std::nullopt,
+            title,
+            "2026-07-10",
+            "2026-07-10",
+            std::move(startTime),
+            std::move(endTime),
+            {},
+            {},
+            order,
+            false,
+            "Meeting",
+            "Timed",
+            std::nullopt
+        };
+    };
+
+    ClassMngr::Next::Application::CalendarEventProjectionInput input;
+    input.events.push_back(
+        timedSummary("42", "Canonical event", "09:00", "10:00", 0)
+        );
+    input.events.push_back(
+        timedSummary("43", "Malformed event", "not-a-time", "10:00", 1)
+        );
+    input.events.push_back(
+        timedSummary("44", "Whitespace event", " 09:00 ", "10:00", 2)
+        );
+    input.events.push_back(
+        timedSummary("45", "Malformed end event", "09:00", "not-a-time", 3)
+        );
+    input.events.push_back(
+        timedSummary("46", "Whitespace end event", "09:00", " 10:00 ", 4)
+        );
+    const auto projection =
+        ClassMngr::Next::Application::CalendarEventProjection::create(
+            std::move(input)
+            );
+    QVERIFY(projection);
+    state->rangeProjection = projection.value();
+
+    CalendarEventCache cache(
+        std::make_shared<InjectedQueryFactory>(state)
+        );
+    cache.setDatabasePath(QStringLiteral("injected-invalid-time-calendar.db"));
+
+    const QDate eventDate(2026, 7, 10);
+    cache.requestRange(eventDate, eventDate);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(eventDate, eventDate),
+        5000
+        );
+
+    const auto typedProjection = cache.eventProjectionForDate(eventDate);
+    QCOMPARE(typedProjection.eventCount(), std::size_t(5));
+
+    const QList<CalendarEvent> legacyEvents =
+        cache.eventsForDate(eventDate);
+    QCOMPARE(legacyEvents.size(), 1);
+    QCOMPARE(legacyEvents.first().title, QStringLiteral("Canonical event"));
+
+    CalendarEventModel model(&cache);
+    const QVariantList modelEvents = model.eventsForDate(2026, 7, 10);
+    QCOMPARE(modelEvents.size(), 1);
+    const QVariantMap modelEvent = modelEvents.first().toMap();
+    QCOMPARE(
+        modelEvent.value(QStringLiteral("title")).toString(),
+        QStringLiteral("Canonical event")
+        );
+    QCOMPARE(
+        modelEvent.value(QStringLiteral("start")).toDateTime(),
+        QDateTime(legacyEvents.first().startDate, legacyEvents.first().startTime)
+        );
+    QCOMPARE(
+        modelEvent.value(QStringLiteral("end")).toDateTime(),
+        QDateTime(legacyEvents.first().endDate, legacyEvents.first().endTime)
+        );
 }
 
 void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCleansConnections()
@@ -800,6 +903,14 @@ void CalendarEventCacheTests::typedDateProjectionPreservesModelParityAndFilterin
         visible.at(2).toMap().value(QStringLiteral("title")).toString(),
         QStringLiteral("BDG meeting")
         );
+    QCOMPARE(
+        visible.at(2).toMap().value(QStringLiteral("start")).toDateTime(),
+        QDateTime(legacyEvents.at(3).startDate, legacyEvents.at(3).startTime)
+        );
+    QCOMPARE(
+        visible.at(2).toMap().value(QStringLiteral("end")).toDateTime(),
+        QDateTime(legacyEvents.at(3).endDate, legacyEvents.at(3).endTime)
+        );
     QVERIFY(visible.at(0).toMap().value(QStringLiteral("allDay")).toBool());
     QCOMPARE(
         visible.at(1).toMap().value(QStringLiteral("start")).toDateTime(),
@@ -1073,6 +1184,44 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
             QVERIFY(!legacy.endTime.isValid());
         }
     }
+
+    CalendarEventModel model(&cache);
+    const QVariantList julyEleventhEvents =
+        model.eventsForDate(2026, 7, 11);
+    const QVariantList julyTwelfthEvents =
+        model.eventsForDate(2026, 7, 12);
+    QCOMPARE(julyEleventhEvents.size(), 3);
+    QCOMPARE(julyTwelfthEvents.size(), 1);
+    QCOMPARE(
+        julyEleventhEvents.at(2).toMap()
+            .value(QStringLiteral("title")).toString(),
+        QStringLiteral("SNU meeting")
+        );
+    QCOMPARE(
+        julyEleventhEvents.at(2).toMap()
+            .value(QStringLiteral("start")).toDateTime(),
+        QDateTime(legacyEvents.at(2).startDate, legacyEvents.at(2).startTime)
+        );
+    QCOMPARE(
+        julyEleventhEvents.at(2).toMap()
+            .value(QStringLiteral("end")).toDateTime(),
+        QDateTime(legacyEvents.at(2).endDate, legacyEvents.at(2).endTime)
+        );
+    QCOMPARE(
+        julyTwelfthEvents.at(0).toMap()
+            .value(QStringLiteral("title")).toString(),
+        QStringLiteral("BDG meeting")
+        );
+    QCOMPARE(
+        julyTwelfthEvents.at(0).toMap()
+            .value(QStringLiteral("start")).toDateTime(),
+        QDateTime(legacyEvents.at(3).startDate, legacyEvents.at(3).startTime)
+        );
+    QCOMPARE(
+        julyTwelfthEvents.at(0).toMap()
+            .value(QStringLiteral("end")).toDateTime(),
+        QDateTime(legacyEvents.at(3).endDate, legacyEvents.at(3).endTime)
+        );
 
     QVERIFY(
         cache.eventProjectionInRange(

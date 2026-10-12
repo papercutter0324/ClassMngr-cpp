@@ -1,6 +1,7 @@
 #include "calendar_event_model.h"
 
 #include "calendar_event_cache.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "next/application/calendar_event_visibility_policy.h"
 
@@ -143,18 +144,26 @@ QVariantList CalendarEventModel::eventsForDate(
                 continue;
             }
 
-            startTime = QTime::fromString(
-                projectionText(*event.startTime),
-                QStringLiteral("HH:mm")
-                );
-            endTime = QTime::fromString(
-                projectionText(*event.endTime),
-                QStringLiteral("HH:mm")
-                );
-            if (!startTime.isValid() || !endTime.isValid())
+            const QString rawStartTime =
+                projectionText(*event.startTime);
+            const QString rawEndTime =
+                projectionText(*event.endTime);
+            const auto parsedStartTime =
+                ScheduleValueParser::parseTime(rawStartTime);
+            const auto parsedEndTime =
+                ScheduleValueParser::parseTime(rawEndTime);
+            if (
+                !parsedStartTime
+                || parsedStartTime->text != rawStartTime
+                || !parsedEndTime
+                || parsedEndTime->text != rawEndTime
+                )
             {
                 continue;
             }
+
+            startTime = parsedStartTime->value;
+            endTime = parsedEndTime->value;
         }
 
         QVariantMap value;

@@ -1,5 +1,6 @@
 #include "calendar_event_cache.h"
 
+#include "domain/rules/schedule_value_parser.h"
 #include "features/calendar/calendar_event_projection_query.h"
 
 #include <QSet>
@@ -212,18 +213,26 @@ std::optional<CalendarEvent> legacyEventFromProjection(
 
     if (!summary.allDay && summary.startTime && summary.endTime)
     {
-        event.startTime = QTime::fromString(
-            projectionText(*summary.startTime),
-            QStringLiteral("HH:mm")
-            );
-        event.endTime = QTime::fromString(
-            projectionText(*summary.endTime),
-            QStringLiteral("HH:mm")
-            );
-        if (!event.startTime.isValid() || !event.endTime.isValid())
+        const QString rawStartTime =
+            projectionText(*summary.startTime);
+        const QString rawEndTime =
+            projectionText(*summary.endTime);
+        const auto parsedStartTime =
+            ScheduleValueParser::parseTime(rawStartTime);
+        const auto parsedEndTime =
+            ScheduleValueParser::parseTime(rawEndTime);
+        if (
+            !parsedStartTime
+            || parsedStartTime->text != rawStartTime
+            || !parsedEndTime
+            || parsedEndTime->text != rawEndTime
+            )
         {
             return std::nullopt;
         }
+
+        event.startTime = parsedStartTime->value;
+        event.endTime = parsedEndTime->value;
     }
 
     return event;
