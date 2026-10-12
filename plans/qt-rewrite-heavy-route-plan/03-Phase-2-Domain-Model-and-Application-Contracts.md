@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F778 is accepted at `284789308c686e421c2a6c3f89811acf4371784f`; F779 is selected in Batch 192 to move passive `DocumentContentReference` ownership to Domain, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F779 is accepted at `4f8b2748a4b078f6dff74078b45909353446deb5`; F780 is selected in Batch 193 to share positive-decimal `int` parsing while preserving caller-specific contracts, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 192
+#### Active batch: Batch 193
 
-- F779 - DocumentContentReference Domain ownership - Move the passive value to Domain and migrate all consumers without an Application compatibility alias.
+- F780 - Positive-decimal ID parser reuse - Share the full-parse, positive-`int` parser across three Application callers while preserving canonical parsing and caller-specific behavior.
 
 No other slices were found.
 

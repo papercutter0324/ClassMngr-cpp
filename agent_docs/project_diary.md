@@ -5176,3 +5176,21 @@ catalog metadata and adapter-facing contracts while document bytes and viewer
 objects remain Platform/UI-owned. Use a dedicated Domain header and migrate
 all repository call sites, with no lasting Application alias. Keep existing
 Application length/nonblank checks and Platform resource resolution intact.
+
+## Phase 2 F779 acceptance and F780 selection — 2026-10-13
+
+F779 is accepted at `4f8b2748a4b078f6dff74078b45909353446deb5`; its seven
+focused CTests passed 7/7 after the bounded build succeeded outside the
+sandbox following FileTracker `E_ACCESSDENIED`. No full suite ran. The Domain
+header was added to the explicit Next Domain manifest; the existing ownership
+checker already records that entire manifest, so no separate path entry was
+needed.
+
+F780 consolidates three positive-int ID parsers that share full-consumption,
+positive-range, and leading-zero behavior. Keep their different error
+metadata and validation order, and retain a separate canonical spelling
+check for Teacher IDs and Class Transfer. Defer `DocumentFolderMetadata`
+placement because its role remains an Application catalog projection and a
+Domain migration would cross the wider catalog record/use-case boundary;
+defer `StudentNamePairText` replacement because incomplete-row handling differs
+from the Domain name-pair invariant.

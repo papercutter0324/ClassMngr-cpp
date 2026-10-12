@@ -29927,3 +29927,82 @@ CTests with `-C Debug` and no full suite:
 
 Commit this matrix before any source/test edits. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F779 DocumentContentReference Domain ownership - accepted - 2026-10-13
+
+F779 is accepted at commit
+`4f8b2748a4b078f6dff74078b45909353446deb5`. In the existing incremental
+Visual Studio 18 Windows x64 Debug tree `build/windows-x64-debug`,
+`ClassMngr` and six document-content/catalog/resource/PageManager/Sidebar
+targets plus `ClassMngrNextDomainContractTests` built. The seven exact CTests
+registered once and passed 7/7. Sandbox `ZERO_CHECK` failed with FileTracker
+`E_ACCESSDENIED`; the identical bounded build succeeded outside the sandbox.
+Production/tests search found no old `Application::DocumentContentReference`
+names. `cmake/source_ownership.cmake` already covers the complete
+`CLASSMNGR_NEXT_DOMAIN_SOURCES` manifest, so adding the Domain header to that
+manifest provided ownership coverage without a direct registry edit. No full
+suite ran.
+
+### Batch 193 discovery - 2026-10-13
+
+`DocumentFolderMetadata` placement was deferred: current Application
+projection ownership and the wider catalog entry/use-case boundaries do not
+establish a smaller coherent Domain move. `StudentNamePairText` migration was
+also deferred because its incomplete-row semantics differ from
+`Domain::StudentNamePair`. F780 was selected because three production parsers
+share full-consumption, positive-`int` semantics and existing focused tests
+protect their caller-specific contracts. No other slices were found.
+
+### F780 Positive-decimal ID parser reuse - selected and acceptance matrix - 2026-10-13
+
+**F780 is selected:** add
+`parsePositiveDecimalId(std::string_view) -> std::optional<int>` to
+`src/next/application/positive_decimal_id_validation.h`, using
+`std::from_chars`, full input consumption, and the positive `int` range.
+Accept leading zeroes without normalizing the input. Refactor
+`parseCanonicalPositiveDecimalId` to use this parser and additionally require
+canonical spelling, so `00042` remains valid for permissive callers and
+invalid for canonical callers. Keep `isCanonicalPositiveDecimalId` and its
+behavior intact.
+
+Replace only the duplicated positive-`int` ClassId checks in
+`src/next/application/class_details_save_use_case.h`,
+`src/next/application/class_notes_save_port.h`, and
+`src/next/application/schedule_testing_assignment_save.h`. Preserve
+caller-owned error codes, exact messages, recoverability, validation order,
+port boundaries, and forwarding of the original typed ID. Class Details
+validates Class ID before optional Teacher ID and retains recoverable
+`InvalidInput` with `Class ID must be a positive integer.` Class Notes keeps
+its 10,000 UTF-16-code-unit checks before ID validation and retains
+nonrecoverable `InvalidInput` with
+`Class identifier must be a positive integer.` Schedule Testing applies the
+shared check only to `AssignTestingClass`, retains
+`A valid testing class is required.`, and preserves other mutation/day/time
+validation precedence. Transfer Apply remains canonical and retains
+class-before-teacher validation precedence.
+
+In `tests/next_application_class_transfer_tests.cpp`, cover permissive parsing
+of `1`, `42`, padded `00042`, and `INT_MAX`; reject empty, zero, signs and
+negative values, nondigit/trailing text, overflow, and very long digit input.
+Assert canonical parsing still rejects padded IDs and existing Class/Teacher
+use remains unchanged. In
+`tests/next_application_class_details_save_use_case_tests.cpp`,
+`tests/next_application_class_notes_save_port_tests.cpp`, and
+`tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp`,
+retain or extend assertions that padded IDs are accepted and forwarded
+unchanged where a port receives them, invalid values retain their structured
+errors and cause zero port calls, and existing validation order holds. Add a
+padded-ID Schedule Testing assignment success case if one is not already
+covered.
+
+No CMake or ownership change is expected; the four exact target/CTest names
+are already registered. Commit this matrix before source/test edits. Reuse
+the incremental Visual Studio 18 Windows x64 Debug tree
+`build/windows-x64-debug`. Build `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrNextApplicationClassNotesSavePortTests`,
+`ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests`, and
+`ClassMngrNextApplicationClassTransferTests`. Confirm each exact CTest
+registers once, then run only these four with `-C Debug --output-on-failure`;
+run no full suite. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.

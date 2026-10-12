@@ -111,11 +111,15 @@
   `ClassMngrNextApplicationClassTransferTests` built in the existing VS 18 x64
   Debug tree, and the exact CTest registered once (#241) and passed 1/1 after
   the same bounded outside-sandbox retry for FileTracker `E_ACCESSDENIED`.
-  No full suite ran. F779 is selected to move the passive document-content
-  reference into a dedicated Domain header and migrate every in-repository
-  use, preserving its value semantics and current validation/resource owners.
-  Its pre-implementation matrix and exact focused targets are in the Phase 2
-  progress log. F707 and F709 remain deferred.
+  No full suite ran. F779 is accepted at
+  `4f8b2748a4b078f6dff74078b45909353446deb5`; its seven focused targets built
+  after the outside-sandbox FileTracker retry, and the seven exact CTests
+  registered once and passed 7/7. No full suite ran. F780 is selected to share
+  full-parse positive-int validation across Class Details, Class Notes, and
+  Schedule Testing, preserving padded IDs, exact caller errors, and validation
+  order while keeping Class Transfer's canonical spelling check strict. Its
+  pre-implementation matrix is in the Phase 2 progress log. F707 remains
+  deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
