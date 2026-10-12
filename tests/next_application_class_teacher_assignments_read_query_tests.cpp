@@ -91,6 +91,7 @@ treatsMalformedTeacherIdsAsUnassignedWithoutDroppingRows()
             {.teacherId = teacherId("01")},
             {.teacherId = teacherId("-1")},
             {.teacherId = teacherId("2147483648")},
+            {.teacherId = teacherId("23x")},
             {.teacherId = teacherId("23")}
         }
     });
@@ -99,14 +100,15 @@ treatsMalformedTeacherIdsAsUnassignedWithoutDroppingRows()
     const auto result = query.execute();
 
     QVERIFY(result);
-    QCOMPARE(result.value().assignments.size(), std::size_t(5));
-    for (std::size_t index = 0; index < 4; ++index)
+    QCOMPARE(port.callCount, 1);
+    QCOMPARE(result.value().assignments.size(), std::size_t(6));
+    for (std::size_t index = 0; index < 5; ++index)
     {
         QVERIFY(!result.value().assignments[index].teacherId);
     }
-    QVERIFY(result.value().assignments[4].teacherId);
+    QVERIFY(result.value().assignments[5].teacherId);
     QCOMPARE(
-        result.value().assignments[4].teacherId->value(),
+        result.value().assignments[5].teacherId->value(),
         std::string("23")
         );
 }
