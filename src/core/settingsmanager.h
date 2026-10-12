@@ -399,6 +399,16 @@ public:
         const QString& path
         );
 
+    // An empty callback uses QSettings::sync/status. The checked writer
+    // restores the exact prior key state on failure so callers can retry.
+    using LastDatabaseDirectoryPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeLastDatabaseDirectoryPreference(
+        const QString& path,
+        const LastDatabaseDirectoryPreferenceSync& synchronize = {}
+        );
+
 private:
     // =====================================================
     // Private Constructor

@@ -8,18 +8,24 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the last database directory. The legacy
-// SettingsManager singleton and its synchronized setter remain confined here;
-// callers consume only the typed UTF-8 string boundary.
+// SettingsManager singleton and checked preference-specific writer remain
+// confined here; callers consume the typed UTF-8 read/write boundary.
 class SettingsManagerLastDatabaseDirectoryPort final
     : public Application::LastDatabaseDirectoryPort
 {
 public:
-    SettingsManagerLastDatabaseDirectoryPort() = default;
+    explicit SettingsManagerLastDatabaseDirectoryPort(
+        SettingsManager::LastDatabaseDirectoryPreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] std::string read() const override
     {
@@ -32,15 +38,31 @@ public:
         return toUtf8(storedDirectory);
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const std::string& directory
         ) const override
     {
-        // Use the legacy setter so its existing QSettings synchronization
-        // behavior remains unchanged.
-        SettingsManager::instance().setLastDatabaseDirectory(
-            fromUtf8(directory)
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeLastDatabaseDirectoryPreference(
+                fromUtf8(directory),
+                m_synchronize
+                );
+        if (status == QSettings::NoError)
+        {
+            return Domain::Result<void>::success();
+        }
+
+        const char* statusName = status == QSettings::AccessError
+            ? "AccessError (settings could not be written)"
+            : "FormatError (settings contain invalid data)";
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::string(
+                "The last database directory preference could not be saved: "
+                "QSettings "
+                ) + statusName + ".",
+            .recoverable = true
+        });
     }
 
 private:
@@ -71,6 +93,8 @@ private:
             static_cast<qsizetype>(value.size())
             );
     }
+
+    SettingsManager::LastDatabaseDirectoryPreferenceSync m_synchronize;
 };
 
 } // namespace ClassMngr::Next::Platform

@@ -75,12 +75,26 @@ QString qtWorkspacePath(
 FileController::FileController(
     ApplicationServices* services,
     MainWindow* window,
-    QObject* parent
+    QObject* parent,
+    ClassMngr::Next::Application::LastDatabaseDirectoryPort*
+        lastDatabaseDirectoryPort
     )
     : QObject(parent)
     , m_services(services)
     , m_window(window)
+    , m_lastDatabaseDirectoryPort(lastDatabaseDirectoryPort)
 {
+    if (!m_lastDatabaseDirectoryPort)
+    {
+        m_ownedLastDatabaseDirectoryPort =
+            std::make_unique<
+                ClassMngr::Next::Platform::
+                    SettingsManagerLastDatabaseDirectoryPort
+                >();
+        m_lastDatabaseDirectoryPort =
+            m_ownedLastDatabaseDirectoryPort.get();
+    }
+
     if (!m_services)
     {
         return;
@@ -1287,8 +1301,7 @@ QString FileController::databaseDialogDirectory() const
     }
 
     const std::string lastDirectoryValue =
-        ClassMngr::Next::Platform::
-            SettingsManagerLastDatabaseDirectoryPort().read();
+        m_lastDatabaseDirectoryPort->read();
     const QString lastDirectory =
         QString::fromUtf8(
             lastDirectoryValue.data(),
@@ -1359,10 +1372,18 @@ void FileController::rememberDatabaseDirectory(
         return;
     }
 
-    ClassMngr::Next::Platform::
-        SettingsManagerLastDatabaseDirectoryPort().write(
+    const auto result =
+        m_lastDatabaseDirectoryPort->write(
             utf8Path(directoryPath)
             );
+    if (!result)
+    {
+        DialogServices::showWarning(
+            m_window,
+            tr("Settings"),
+            domainErrorMessage(result.error())
+            );
+    }
 }
 
 void FileController::setLoadedFileState()

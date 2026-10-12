@@ -1183,3 +1183,54 @@ void SettingsManager::setLastDatabaseDirectory(
 
     sync();
 }
+
+QSettings::Status SettingsManager::writeLastDatabaseDirectoryPreference(
+    const QString& path,
+    const LastDatabaseDirectoryPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousDirectory =
+        m_settings->contains(Keys::LAST_DATABASE_DIRECTORY);
+    const QVariant previousDirectory =
+        m_settings->value(Keys::LAST_DATABASE_DIRECTORY);
+
+    m_settings->setValue(
+        Keys::LAST_DATABASE_DIRECTORY,
+        path
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore only this preference before destroying the failed
+        // instance, so its pending candidate cannot be retried on teardown.
+        if (hadPreviousDirectory)
+        {
+            m_settings->setValue(
+                Keys::LAST_DATABASE_DIRECTORY,
+                previousDirectory
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::LAST_DATABASE_DIRECTORY);
+        }
+
+        // QSettings keeps its error latched. Reopen it so reads observe the
+        // restored value and a later checked write can retry successfully.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}

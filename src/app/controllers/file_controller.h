@@ -19,6 +19,7 @@ class SelectionState;
 class WorkspaceCoordinator;
 class WorkspaceState;
 class WorkspaceUseCase;
+class LastDatabaseDirectoryPort;
 }
 
 namespace ClassMngr::Next::Platform
@@ -36,7 +37,9 @@ public:
     explicit FileController(
         ApplicationServices* services,
         MainWindow* window,
-        QObject* parent = nullptr
+        QObject* parent = nullptr,
+        ClassMngr::Next::Application::LastDatabaseDirectoryPort*
+            lastDatabaseDirectoryPort = nullptr
         );
 
     ~FileController() override;
@@ -159,6 +162,13 @@ private:
     MainWindow* m_window{};
 
     ActionRegistry* m_actions{};
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::LastDatabaseDirectoryPort
+        > m_ownedLastDatabaseDirectoryPort;
+
+    ClassMngr::Next::Application::LastDatabaseDirectoryPort*
+        m_lastDatabaseDirectoryPort{};
 
     QString m_currentFile;
 

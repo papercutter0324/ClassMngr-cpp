@@ -257,6 +257,7 @@ private slots:
     void saveAsWarnsAndPreservesStaleCoordinatorState();
     void saveAsUsesLegacyFallbackForCompatibilityWorkspace();
     void exportUsesCoordinatorForOpenWorkspaceAndPreservesState();
+    void preferenceWriteFailureDoesNotFailCreateAndCanRetry();
     void exportWarnsAndPreservesStaleCoordinatorState();
     void exportUsesLegacyFallbackForCompatibilityWorkspace();
     void exportPreservesDialogPolicyAndNoOpenGuard();
@@ -320,9 +321,10 @@ storedDirectoryFallbackIsUsedByFileDialogs()
 
     ClassMngr::Next::Platform::
         SettingsManagerLastDatabaseDirectoryPort directoryPort;
-    directoryPort.write(
+    const auto stored = directoryPort.write(
         storedDirectory.path().toUtf8().toStdString()
         );
+    QVERIFY(stored);
 
     FakeFileDialogService fileDialogs;
     fileDialogs.scriptedSaveFiles.enqueue(std::nullopt);
@@ -2013,6 +2015,104 @@ void FileControllerWorkspaceLifecycleTests::exportUsesCoordinatorForOpenWorkspac
     controller.autosave();
     QVERIFY(prompts.messages.isEmpty());
     QCOMPARE(services.currentDatabasePath(), normalizedSourcePath);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+preferenceWriteFailureDoesNotFailCreateAndCanRetry()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString previousDirectory =
+        QDir(workspaceRoot.path()).filePath(QStringLiteral("previous-directory"));
+    QVERIFY(QDir().mkpath(previousDirectory));
+    const QString firstRequestedPath =
+        QDir(workspaceRoot.path()).filePath(QStringLiteral("first-create/profile"));
+    const QString retryRequestedPath =
+        QDir(workspaceRoot.path()).filePath(QStringLiteral("retry-create/profile"));
+    const QString firstWorkspacePath = QFileInfo(
+        firstRequestedPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+    const QString retryWorkspacePath = QFileInfo(
+        retryRequestedPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+
+    SettingsManager::instance().setLastDatabaseDirectory(previousDirectory);
+    SettingsManager::instance().sync();
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(firstRequestedPath)
+        );
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(retryRequestedPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    ClassMngr::Next::Platform::SettingsManagerLastDatabaseDirectoryPort
+        directoryPort(
+            [&injectAccessError, &synchronizationAttempts](QSettings& target)
+            {
+                ++synchronizationAttempts;
+                if (injectAccessError)
+                {
+                    return QSettings::AccessError;
+                }
+
+                target.sync();
+                return target.status();
+            }
+            );
+
+    ApplicationServices services;
+    FileController controller(
+        &services,
+        nullptr,
+        nullptr,
+        &directoryPort
+        );
+
+    const bool createdDespitePreferenceFailure =
+        controller.createNewDatabaseInteractive();
+
+    QVERIFY(createdDespitePreferenceFailure);
+    QVERIFY(QFileInfo::exists(firstWorkspacePath));
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Settings"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(
+        QStringLiteral("last database directory preference could not be saved")
+        ));
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), firstWorkspacePath);
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        previousDirectory
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+
+    injectAccessError = false;
+    const bool retriedCreate = controller.createNewDatabaseInteractive();
+
+    QVERIFY(retriedCreate);
+    QVERIFY(QFileInfo::exists(retryWorkspacePath));
+    QCOMPARE(prompts.messages.size(), 1);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), retryWorkspacePath);
+    QCOMPARE(
+        SettingsManager::instance().getLastDatabaseDirectory(),
+        QFileInfo(retryWorkspacePath).absoluteDir().absolutePath()
+        );
+    QCOMPARE(synchronizationAttempts, 2);
 }
 
 void FileControllerWorkspaceLifecycleTests::exportWarnsAndPreservesStaleCoordinatorState()

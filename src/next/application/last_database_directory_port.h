@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <string>
 
 namespace ClassMngr::Next::Application
@@ -14,7 +16,7 @@ public:
 
     [[nodiscard]] virtual std::string read() const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         const std::string& directory
         ) const = 0;
 };

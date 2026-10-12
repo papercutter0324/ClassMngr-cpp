@@ -59,6 +59,8 @@ private slots:
     void missingAndEmptyValuesReadAsEmpty();
     void roundTripsUnicodeUtf8Paths();
     void persistsThroughTheSynchronizedLegacySetter();
+    void failedWriteRestoresExactPreviousValuePreservesOtherSettingsAndRetries();
+    void failedWriteRestoresAbsentKeyAndAllowsRetry();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -127,7 +129,8 @@ roundTripsUnicodeUtf8Paths()
         );
 
     const SettingsManagerLastDatabaseDirectoryPort port;
-    port.write(utf8(expectedPath));
+    const auto written = port.write(utf8(expectedPath));
+    QVERIFY(written);
 
     QCOMPARE(fromUtf8(port.read()), expectedPath);
     QCOMPARE(
@@ -145,7 +148,8 @@ persistsThroughTheSynchronizedLegacySetter()
         QStringLiteral("C:/persisted/database-directory");
 
     const SettingsManagerLastDatabaseDirectoryPort port;
-    port.write(utf8(expectedPath));
+    const auto written = port.write(utf8(expectedPath));
+    QVERIFY(written);
 
     QSettings persistedSettings(
         QDir(m_settingsRoot.path()).filePath(
@@ -159,6 +163,180 @@ persistsThroughTheSynchronizedLegacySetter()
         persistedSettings.value(directoryKey()).toString(),
         expectedPath
         );
+}
+
+void NextPlatformSettingsManagerLastDatabaseDirectoryPortTests::
+failedWriteRestoresExactPreviousValuePreservesOtherSettingsAndRetries()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = directoryKey();
+    const QString unrelatedKey = QStringLiteral("files/unrelatedSetting");
+    const QString recentFilesKey = QString::fromUtf8(
+        SettingsManager::Keys::RECENT_FILES
+        );
+    const QString lastFileKey = QString::fromUtf8(
+        SettingsManager::Keys::LAST_FILE
+        );
+    const QVariant previousValue = QVariant::fromValue(
+        QByteArray("prior\0value", 11)
+        );
+    const QVariant unrelatedValue = QStringLiteral("leave-unchanged");
+    const QVariant recentFilesValue = QStringList{
+        QStringLiteral("legacy-first.tps"),
+        QStringLiteral("legacy-second.tps")
+    };
+    const QVariant lastFileValue = QStringLiteral("legacy-last.tps");
+    settings.set(key, previousValue);
+    settings.set(unrelatedKey, unrelatedValue);
+    settings.set(recentFilesKey, recentFilesValue);
+    settings.set(lastFileKey, lastFileValue);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerLastDatabaseDirectoryPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& target)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            target.sync();
+            return target.status();
+        }
+        );
+
+    const QString replacementPath =
+        QStringLiteral("C:/replacement/database-directory");
+    const auto failedWrite = faultablePort.write(utf8(replacementPath));
+    QVERIFY(!failedWrite);
+    QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(!failedWrite.error().message.empty());
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(key), previousValue);
+    QCOMPARE(
+        settings.get(key).metaType().id(),
+        previousValue.metaType().id()
+        );
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    QCOMPARE(settings.get(recentFilesKey), recentFilesValue);
+    QCOMPARE(settings.get(lastFileKey), lastFileValue);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(key), previousValue);
+    QCOMPARE(
+        persistedSettings.value(key).metaType().id(),
+        previousValue.metaType().id()
+        );
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+    QCOMPARE(persistedSettings.value(recentFilesKey), recentFilesValue);
+    QCOMPARE(persistedSettings.value(lastFileKey), lastFileValue);
+
+    injectAccessError = false;
+    const auto retry = faultablePort.write(utf8(replacementPath));
+    QVERIFY(retry);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(settings.get(key), QVariant(replacementPath));
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    QCOMPARE(settings.get(recentFilesKey), recentFilesValue);
+    QCOMPARE(settings.get(lastFileKey), lastFileValue);
+
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(key), QVariant(replacementPath));
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+    QCOMPARE(persistedSettings.value(recentFilesKey), recentFilesValue);
+    QCOMPARE(persistedSettings.value(lastFileKey), lastFileValue);
+}
+
+void NextPlatformSettingsManagerLastDatabaseDirectoryPortTests::
+failedWriteRestoresAbsentKeyAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = directoryKey();
+    const QString unrelatedKey = QStringLiteral("files/unrelatedSetting");
+    const QString recentFilesKey = QString::fromUtf8(
+        SettingsManager::Keys::RECENT_FILES
+        );
+    const QString lastFileKey = QString::fromUtf8(
+        SettingsManager::Keys::LAST_FILE
+        );
+    const QVariant unrelatedValue = 73;
+    const QVariant recentFilesValue = QStringList{
+        QStringLiteral("legacy-first.tps"),
+        QStringLiteral("legacy-second.tps")
+    };
+    const QVariant lastFileValue = QStringLiteral("legacy-last.tps");
+    settings.remove(key);
+    settings.set(unrelatedKey, unrelatedValue);
+    settings.set(recentFilesKey, recentFilesValue);
+    settings.set(lastFileKey, lastFileValue);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerLastDatabaseDirectoryPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& target)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            target.sync();
+            return target.status();
+        }
+        );
+
+    const QString replacementPath =
+        QStringLiteral("C:/new/database-directory");
+    const auto failedWrite = faultablePort.write(utf8(replacementPath));
+    QVERIFY(!failedWrite);
+    QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(!failedWrite.error().message.empty());
+    QCOMPARE(synchronizationAttempts, 1);
+    QVERIFY(!settings.get(key).isValid());
+    QVERIFY(faultablePort.read().empty());
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    QCOMPARE(settings.get(recentFilesKey), recentFilesValue);
+    QCOMPARE(settings.get(lastFileKey), lastFileValue);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(key));
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+    QCOMPARE(persistedSettings.value(recentFilesKey), recentFilesValue);
+    QCOMPARE(persistedSettings.value(lastFileKey), lastFileValue);
+
+    injectAccessError = false;
+    const auto retry = faultablePort.write(utf8(replacementPath));
+    QVERIFY(retry);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(settings.get(key), QVariant(replacementPath));
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    QCOMPARE(settings.get(recentFilesKey), recentFilesValue);
+    QCOMPARE(settings.get(lastFileKey), lastFileValue);
+
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(key), QVariant(replacementPath));
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+    QCOMPARE(persistedSettings.value(recentFilesKey), recentFilesValue);
+    QCOMPARE(persistedSettings.value(lastFileKey), lastFileValue);
 }
 
 QTEST_APPLESS_MAIN(NextPlatformSettingsManagerLastDatabaseDirectoryPortTests)
