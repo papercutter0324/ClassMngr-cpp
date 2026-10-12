@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F769 is accepted at `78405abad6052396ad367aa3c0962bec8f4677da`; F770 is selected for Testing Class helper consolidation, with F771/F772 provisional and F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F770 is accepted at `1971a3ff5a1609ee89185624c0340561907350cd`; F771 is selected for the Class Analytics Dashboard ID guard, with F772 provisional and F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 190
 
-- F770 - Testing Class helper consolidation - Consolidate canonical ID parsers across create, details-update, and delete while preserving field validation order.
-- F771 - Class Analytics Dashboard ID guard - Assess canonical ID validation reuse in the dashboard query.
+- F771 - Class Analytics Dashboard ID guard - Reuse canonical ID validation and preserve read order and failure behavior.
 - F772 - Class Details range-contract assessment - Decide whether shared `int`-range validation applies before implementation; keep provisional.
 
 ## Objective

@@ -29476,7 +29476,8 @@ Two independent read-only audits converged on the candidate set. Original
 discovery order was Testing Class helper consolidation, Class/Teacher Delete
 helper consolidation, Class Analytics Dashboard ID guard, then Class Details
 range assessment. F769 was selected from the second candidate and accepted;
-F770 is selected next, while F771/F772 remain provisional.
+F770 was selected from the first and accepted. F771 is selected next; F772
+remains provisional.
 
 - **F769 - Class and Teacher Delete helper consolidation:**
   `src/next/application/class_delete.h` and `teacher_delete.h`; CTests
@@ -29561,7 +29562,39 @@ Build `ClassMngr` and
 `tests/next_application_testing_class_details_update_use_case_tests.cpp`,
 and `tests/next_application_testing_class_delete_use_case_tests.cpp`,
 respectively. Confirm one registration for each exact CTest name, then run
-only those three CTests with `-C Debug`. Run no full suite. This matrix is
-recorded before implementation; F770 verification is pending. F771/F772
-remain provisional. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
-Partial, and the formal exit gate remains Open.
+only those three CTests with `-C Debug`. Run no full suite. This matrix was
+recorded before implementation. F771 is selected and F772 remains provisional.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.
+
+### F770 Testing Class helper consolidation - accepted - 2026-10-13
+
+F770 is accepted at commit
+`1971a3ff5a1609ee89185624c0340561907350cd`. In the Visual Studio 18.10.1
+x64 Debug tree, `ClassMngr` and all three Testing Class targets built. The
+exact CTests registered once (#375 Create, #374 Details Update, #377 Delete)
+and passed 3/3 after an identical build retry outside the sandbox from
+FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+### F771 Class Analytics Dashboard ID guard - selected and acceptance matrix - 2026-10-13
+
+**F771 is selected:** replace the equivalent local `int`-bounded canonical
+ID predicate in `src/next/application/class_analytics_dashboard_read_query.h`
+with `Application::isCanonicalPositiveDecimalId`. The helper is already in
+`cmake/next.cmake`; no inventory change is needed. Keep focused coverage in
+`tests/next_application_class_analytics_dashboard_read_query_tests.cpp`.
+
+Invalid ClassIds `0`, `007`, `-1`, `17x`, and `2147483648` return
+nonrecoverable `InvalidInput` with
+`Class ID must be a canonical positive integer.` before either port is read.
+Add a valid upper-bound request `2147483647`; verify success and unchanged
+forwarding to both roster and evaluation-batch reads by capturing the IDs in
+the fake port. Preserve roster-then-batch read order, one batch read, existing
+evaluation/YTD behavior, and failure without a partial dashboard.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`. Confirm that
+exact CTest name is registered once, then run only that CTest with `-C Debug`.
+Run no full suite. This matrix was recorded before implementation; F771
+verification is pending. F772 remains provisional. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

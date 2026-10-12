@@ -4874,24 +4874,24 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F769 accepted; F770 selected)
+## Phase 2 current position — 2026-10-13 (F770 accepted; F771 selected)
 
-F769 is accepted at
-`78405abad6052396ad367aa3c0962bec8f4677da`. Class Delete and Teacher Delete
-now use the shared canonical-ID validator while preserving their separate
-messages and pre-port rejection. Tests cover trailing-text IDs with exact
-recoverable InvalidInput details and zero calls. In the existing Visual Studio
-18 x64 Debug tree, `ClassMngr` and both focused targets built; the exact CTests
-registered once (#378/#379) and passed 2/2. The sandbox build hit FileTracker
-`E_ACCESSDENIED`; the same build succeeded outside the sandbox. No full suite
-ran.
+F770 is accepted at
+`1971a3ff5a1609ee89185624c0340561907350cd`. Testing Class create,
+details-update, and delete now share canonical positive-decimal ID validation
+while preserving field-specific errors and validation order. The three exact
+CTest registrations (#375/#374/#377) passed 3/3 in the Visual Studio 18 x64
+Debug tree after the same build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. No full suite ran.
 
-F770 is selected in Batch 190 for Testing Class create, details-update, and
-delete ID validation. Reuse the shared helper while preserving field-specific
-messages and ID-validation order; add trailing-text cases where not already
-covered and pin exact delete errors. F771 Class Analytics Dashboard ID
-validation and F772 the conditional Class Details range-policy assessment
-remain provisional. Preserve the tested leading-zero forwarding behavior in
+F771 is selected for the Class Analytics Dashboard ID guard. Reuse the shared
+validator; cover `0`, `007`, `-1`, `17x`, and `2147483648` with the exact
+nonrecoverable InvalidInput message and zero reads; preserve the valid
+`2147483647` boundary and assert unchanged forwarding to both ports. Keep
+roster-before-batch ordering, evaluation/YTD behavior, and read-failure
+behavior. The helper and focused test are already in CMake inventories; no
+inventory edit is expected. F772's Class Details range-policy decision
+remains provisional. Preserve the tested leading-zero forwarding behavior in
 `ClassDetailsSaveUseCase`. F707/F709 remain deferred. Phase 2 remains In
 Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24.

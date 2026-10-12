@@ -77,9 +77,14 @@
   and teacher delete targets built, each exact CTest registered once (#378,
   #379), and both passed in Visual Studio 18 x64 Debug. The sandbox build hit
   FileTracker access denial and succeeded outside the sandbox on retry. F770
-  is selected in Batch 190 for Testing Class ID validation. F771 Class
-  Analytics Dashboard and F772 the conditional Class Details range-policy
-  assessment remain provisional. No full suite ran.
+  is accepted at `1971a3ff5a1609ee89185624c0340561907350cd`; its create,
+  update, and delete CTests registered once (#375/#374/#377) and passed 3/3
+  after the same build succeeded outside the sandbox following FileTracker
+  access denial. F771 is selected for Class Analytics Dashboard ID validation:
+  reject `0`, `007`, `-1`, `17x`, and `2147483648` with exact nonrecoverable
+  InvalidInput metadata and zero reads; verify `2147483647` succeeds and is
+  forwarded unchanged to both ports. F772's Class Details range-policy
+  assessment remains provisional. No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

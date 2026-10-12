@@ -5054,3 +5054,17 @@ the conditional Class Details range-policy decision remain provisional.
 Preserve the tested leading-zero forwarding behavior in
 `ClassDetailsSaveUseCase`. F707/F709 remain deferred; Phase 2 Gates 1/2 remain
 Partial and the formal exit gate remains Open.
+
+## Phase 2 F770 acceptance and F771 selection — 2026-10-13
+
+F770 is accepted at `1971a3ff5a1609ee89185624c0340561907350cd`. The Testing
+Class create, details-update, and delete CTests registered once (#375/#374/#377)
+and passed 3/3 in the Visual Studio 18 x64 Debug tree after a successful
+out-of-sandbox retry from FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+F771 is selected to consolidate the Class Analytics Dashboard ID guard. Its
+matrix preserves the exact nonrecoverable error and zero reads for invalid
+IDs, covers the `INT_MAX` boundary, and checks that both ports receive the
+valid boundary ID unchanged. Keep existing read ordering, YTD selection, and
+failure behavior. F772 remains provisional; F707/F709 remain deferred, Gates
+1/2 Partial, and the formal exit gate Open.
