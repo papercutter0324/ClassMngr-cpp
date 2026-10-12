@@ -95,11 +95,15 @@
   F774 is accepted at `e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`; its three
   existing focused CTests each registered once and passed 3/3 after the
   bounded build succeeded outside the sandbox following FileTracker access
-  denial. F775 is selected to strengthen the Class Details Page query test:
-  pin exact nonrecoverable invalid-ID and mismatched-identity errors, zero vs.
-  one read boundaries, and retain overall port-error/partial-field outcomes.
-  Keep opaque bounded IDs and make no production or CMake change. No full
-  suite ran.
+  denial. F775 is accepted at `5ac1107fe87a6b1eba266c995467c61bbcd899a2`;
+  `ClassMngr` and the Class Details Page query test target built in the
+  existing VS 18 x64 Debug tree, the exact CTest registered once (#232), and
+  passed 1/1. The sandbox build hit FileTracker `E_ACCESSDENIED`; the same
+  bounded build succeeded outside the sandbox. No full suite ran. F776 is
+  selected to reject a successful Teacher Profile Edit reload that returns a
+  different teacher ID while preserving the completed-write marker. The
+  production-plus-test acceptance matrix is recorded in the Phase 2 progress
+  log.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

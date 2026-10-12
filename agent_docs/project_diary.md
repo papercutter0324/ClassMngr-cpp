@@ -5123,3 +5123,17 @@ bounded opaque-ID contract distinct from the canonical positive-decimal
 guards; preserve its production behavior while pinning exact invalid-ID and
 mismatched-identity errors, recoverability, and read boundaries. Retain its
 port-error and partial-field tests.
+
+## Phase 2 F775 acceptance and F776 selection — 2026-10-13
+
+F775 is accepted at `5ac1107fe87a6b1eba266c995467c61bbcd899a2`; its exact
+focused CTest registered once and passed 1/1 after the bounded Debug build
+succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`. No full
+suite ran.
+
+F776 will check the successful reload identity in the Teacher Profile Edit
+application use case itself. The concrete adapter already checks repository
+identity, but the application port also needs to enforce its returned-value
+contract for alternate implementations. Report a mismatch as reload failure
+after the write and preserve `writeSucceeded=true` so callers know the write
+completed even though the canonical reload could not be trusted.

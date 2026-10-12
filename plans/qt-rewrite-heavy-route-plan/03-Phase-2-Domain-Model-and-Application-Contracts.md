@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F774 is accepted at `e0481c1564a77fa0e85ae1edd3c0c9dfb5e5f8fa`; F775 is selected in active Batch 191 for focused Class Details Page query failure-contract tests, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F775 is accepted at `5ac1107fe87a6b1eba266c995467c61bbcd899a2`; F776 is selected in active Batch 191 to verify Teacher Profile Edit rejects a successful reload for a different teacher, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 191
 
-- F775 - Class Details Page query failure contracts - Strengthen invalid-input and returned-identity assertions without changing production behavior.
+- F776 - Teacher Profile Edit reload identity - Reject a mismatched successful reload response and pin update/reload ordering and failure metadata.
 
 ## Objective
 

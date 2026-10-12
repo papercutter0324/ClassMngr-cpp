@@ -4893,3 +4893,18 @@ field results unchanged. No source or CMake change is needed. F707/F709 remain
 deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial; separate
 current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
 0/24.
+
+## Phase 2 current position — 2026-10-13 (F775 accepted; F776 selected)
+
+F775 is accepted at `5ac1107fe87a6b1eba266c995467c61bbcd899a2`. Its exact
+Class Details Page query CTest registered once (#232) and passed 1/1 after
+`ClassMngr` and the focused target built in the existing Visual Studio 18 x64
+Debug tree. The sandbox build hit FileTracker `E_ACCESSDENIED`; the same
+bounded build succeeded outside the sandbox. No full suite ran.
+
+F776 adds an application-level identity check to Teacher Profile Edit reload:
+a successful reload for a different teacher must fail as `ReloadFailed`,
+preserve `writeSucceeded=true`, and report nonrecoverable `Validation`. The
+acceptance matrix is recorded in the Phase 2 progress log. F707/F709 remain
+deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial; the
+formal exit gate remains Open.

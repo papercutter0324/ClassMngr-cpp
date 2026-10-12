@@ -29772,6 +29772,40 @@ forwarding and independent partial-field outcomes.
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassDetailsPageQueryTests`; confirm the exact CTest
 registers once, then run only it with `-C Debug`. Run no full suite. This
-matrix was recorded before implementation; F775 verification is pending.
-F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
-exit gate remains Open.
+matrix was recorded before implementation. F707/F709 remain deferred, Phase 2
+Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F775 Class Details Page query failure contracts - accepted - 2026-10-13
+
+F775 is accepted at commit
+`5ac1107fe87a6b1eba266c995467c61bbcd899a2`. In the existing incremental VS
+18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsPageQueryTests` built. The exact CTest
+registered once (#232) and passed 1/1. Sandbox FileTracker
+`E_ACCESSDENIED` required the same bounded build retry outside the sandbox.
+No full suite ran.
+
+### F776 Teacher Profile Edit reload identity - selected and acceptance matrix - 2026-10-13
+
+**F776 is selected:** in
+`src/next/application/teacher_profile_edit_use_case.h`, reject a successful
+profile reload whose teacher ID differs from the requested ID. Cover it in
+`tests/next_application_teacher_profile_edit_tests.cpp`; the existing exact
+target/CTest `ClassMngrNextApplicationTeacherProfileEditTests` is already
+registered, so no CMake or source-ownership change is expected.
+
+For a valid request for TeacherId `8`, let validation and update succeed and
+have `persistence.reload(8)` return a successful profile with ID `9`. Return
+`TeacherProfileEditFailureKind::ReloadFailed` with `ErrorCode::Validation`,
+the exact nonrecoverable message
+`Teacher profile edit reload returned a different teacher identifier.`, and
+`writeSucceeded=true`. Assert exactly one update and one reload, ID `8` reaches
+both calls, update precedes reload, and the mismatched profile is not returned
+as success. Preserve same-ID canonical reload success, update-failure
+no-reload, and reload-failure `writeSucceeded` behavior.
+
+Build `ClassMngr` and `ClassMngrNextApplicationTeacherProfileEditTests`;
+confirm the exact CTest registers once, then run only it with `-C Debug`. Run
+no full suite. This matrix was recorded before implementation; F776
+verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.
