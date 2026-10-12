@@ -4541,14 +4541,21 @@ Sunday, unknown, and empty-candidate rejection. `ClassMngr` and
 `ClassMngrScheduleImportTests` built; the exact CTest passed 1/1. No full
 suite ran.
 
-F730 is selected to migrate `ClassesPage::hasWeekendClasses` in
-`src/features/classes/ui/classes_page.cpp`. Parse with the shared weekday
-parser and return true only for parsed Saturday/Sunday, preserving trimmed
-case-insensitive recognition across regular and intensive times. Add a
-deterministic schedule-time control to the existing page test stubs; verify
-padded/mixed-case weekend rows in both sources and hidden filter state for
-weekday, unknown, and no-time cases. Build `ClassMngr` and
-`ClassMngrClassesPageTests`; run only that exact CTest. An older target run
-had nine unrelated failures; a later F528 run passed CTest 1/1 and direct
-40/40, so report current failures separately. No full suite is planned. Phase
-2 remains In Progress with Gates 1 and 2 Partial.
+F730 is accepted in Batch 179 and committed as
+`ffcc98b426844fbc46267fd90f7f511d5b13b2d3`. The Classes page weekend filter
+uses the shared weekday parser across regular and intensive rows. Reset-safe
+test controls cover padded/mixed-case weekends, weekdays, unknown values, and
+no-time rows in the separate data-driven
+`weekendFilterUsesRegularAndIntensiveScheduleRows` slot; keeping it separate
+preserves the existing filter-interaction sequence. `ClassMngr` and
+`ClassMngrClassesPageTests` built, the sole matching CTest registration passed
+1/1, and no full suite ran.
+
+F731 is selected in Batch 179 for `ClassTabNavigationModel::dayCode`. Parse
+with `ScheduleValueParser::parseWeekday`, but apply weekday abbreviations only
+when the returned canonical text equals the trimmed input. Keep trimmed raw
+fallback labels for lowercase and unknown values; leave `dayOrder` and time
+formatting unchanged. Extend the existing display-format test with padded
+canonical labels and lowercase/unknown fallbacks. Build `ClassMngr` and
+`ClassMngrClassTabNavigationModelTests`, then run only its exact CTest. Phase 2
+remains In Progress with Gates 1 and 2 Partial.

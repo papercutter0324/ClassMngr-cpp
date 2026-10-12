@@ -27493,5 +27493,49 @@ detection across regular and intensive schedules.
    difference for exotic Unicode is outside the supported ordinary English
    weekday labels.
 
-This matrix is recorded before implementation. Batch 179 is active with F730;
+This matrix was recorded before implementation.
+
+### F730 Classes Page weekend-filter weekday parser migration - accepted - 2026-10-12
+
+F730 is accepted at code/test commit
+`ffcc98b426844fbc46267fd90f7f511d5b13b2d3`. `hasWeekendClasses` now uses
+`ScheduleValueParser::parseWeekday` and continues to scan regular and
+intensive rows for Saturday or Sunday. The schedule test stub adds per-class
+regular/intensive row control with reset-safe defaults. The separate
+data-driven `weekendFilterUsesRegularAndIntensiveScheduleRows` slot covers
+padded/mixed-case Saturday in regular rows, Sunday in intensive rows, and
+weekday, unknown, and no-time cases. It was added beside the planned filter
+interaction slot, preserving that slot's sequence.
+
+`ClassMngr` and `ClassMngrClassesPageTests` built successfully; exactly one
+CTest registration was confirmed, and the test passed 1/1. No full suite ran.
+Historical reports include nine unrelated full-target failures and a later
+F528 pass of 1/1 plus direct 40/40; current focused verification passed.
+
+**Decision: accept F730.** Batch 179 continues with F731; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F731 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayCode` in
+`src/features/classes/models/class_tab_navigation_model.cpp`.
+`scheduleText` trims raw labels before calling `dayCode`.
+
+**F731 is selected:** reuse the Domain weekday parser for label canonicalization
+while preserving the trimmed fallback for noncanonical text.
+
+1. Migrate only `dayCode` to `ScheduleValueParser::parseWeekday`. Require
+   parsed canonical text to equal the trimmed input before mapping Monday,
+   Tuesday, Wednesday, Thursday, Friday, Saturday, and Sunday abbreviations.
+   Otherwise return the trimmed raw text, preserving lowercase and unknown
+   labels. Leave `dayOrder` and time behavior unchanged.
+2. Extend `ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats`
+   with padded canonical and lowercase/unknown fallback-label assertions.
+   Retain coverage for all seven canonical abbreviations and all eight time
+   formats.
+3. The parser and model are already in the focused target. Build `ClassMngr`
+   and `ClassMngrClassTabNavigationModelTests`; run only the exact same-named
+   registered CTest. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F731;
 F707 and F709 remain deferred.

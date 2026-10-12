@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F729 accepted; F730 selected)
+### Current state - 2026-10-12 (F730 accepted; F731 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F730, the Classes page weekend-detection parser migration.
+with F731, the Class Tab Navigation weekday-label parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -330,19 +330,29 @@ Sunday, unknown, and empty-candidate rejection. `ClassMngr` and
 `ClassMngrScheduleImportTests` built; the exact CTest passed 1/1. No full
 suite ran.
 
-F730 selects `ClassesPage::hasWeekendClasses` in
-`src/features/classes/ui/classes_page.cpp`. Reuse
-`ScheduleValueParser::parseWeekday` and return true only for Saturday or
-Sunday, preserving trimmed case-insensitive recognition and checks across
-regular and intensive times. Add deterministic schedule-time control to the
-existing page test stubs and cover padded/mixed-case weekend rows in both
-sources, plus weekday, unknown, and no-time rows that keep the weekend filter
-hidden. Build `ClassMngr` and `ClassMngrClassesPageTests`; run only that exact
-CTest. No CMake change or full suite is planned. The target had unrelated
-historical failures in one earlier run and a later 1/1 CTest plus 40/40 direct
-pass; report any current failures separately. F707 remains deferred because
-its comparator chain has no observed app callsite; F709 is deferred because
-its public fixture does not readily supply malformed raw time text.
+F730 is accepted and committed as
+`ffcc98b426844fbc46267fd90f7f511d5b13b2d3`. `ClassesPage::hasWeekendClasses`
+now uses `ScheduleValueParser::parseWeekday` for Saturday/Sunday detection
+across regular and intensive rows. Reset-safe page-test controls feed both
+sources. The separate data-driven
+`weekendFilterUsesRegularAndIntensiveScheduleRows` slot covers padded/mixed-
+case weekend values, weekdays, unknown values, and no-time rows while leaving
+the existing filter-interaction sequence intact. `ClassMngr` and
+`ClassMngrClassesPageTests` built; exactly one registration was confirmed and
+the focused CTest passed 1/1. No full suite ran.
+
+F731 is selected in Batch 179 to migrate `ClassTabNavigationModel::dayCode`
+in `src/features/classes/models/class_tab_navigation_model.cpp` to the shared
+weekday parser. Require parsed canonical text to equal the already-trimmed
+input before applying the seven weekday abbreviations; keep the trimmed raw
+fallback for lowercase and unknown labels. Leave `dayOrder` and time
+formatting unchanged. Extend
+`ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats` for padded
+canonical labels and lowercase/unknown fallbacks. Build `ClassMngr` and
+`ClassMngrClassTabNavigationModelTests`; run only that exact CTest. No full
+suite is planned. F707 remains deferred because its comparator chain has no
+observed app callsite; F709 is deferred because its public fixture does not
+readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
