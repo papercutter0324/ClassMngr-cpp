@@ -4,7 +4,22 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-161 are complete; Batch 162 is active with F687.
+  141-168 are complete; Batch 169 is active with F694.
+- F693 roster display-time grammar migration is accepted and committed as
+  504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
+  passed for ClassMngr and the SharedPolicy, RosterTemplatePrintService, and
+  ScheduleBuilder test targets. The three focused CTests passed 3/3. The test
+  fixture uses 16:00 for an afternoon value because Qt parses 4:00 with H:mm
+  as 04:00. No full suite ran.
+- F694 Sub Prep meeting-time parser migration is selected in Batch 169. Reuse
+  the default eight-format Domain parser and preserve filtering, invalid-time
+  omission, ordering, grouping, and labels. Add the parser implementation
+  source to the three direct Sub Prep model test targets; do not link the broad
+  legacy domain object target. Build ClassMngr plus those three targets and
+  SharedPolicy; run their four exact CTests. Implementation has not begun.
+- Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
+  slices add no route evidence. Preserve the existing unrelated untracked
+  %SystemDrive%/, Windows Performance Analyzer/, and txt paths.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as

@@ -25755,4 +25755,57 @@ and rejected input behavior.
    `ClassMngrRosterTemplatePrintServiceTests`, and
    `ClassMngrScheduleBuilderTests`. Add no CMake target and run no full suite.
 
-This matrix is recorded before implementation. Batch 168 is active with F693.
+This matrix was recorded before implementation.
+
+### F693 roster-template start-time parser migration - accepted - 2026-10-12
+
+F693 is accepted at code/test commit
+`504316a9c24c076e9d6aa474a5b713e9abd52e66`. The Windows x64 Debug Ninja
+build passed for `ClassMngr`, `ClassMngrSharedPolicyTests`,
+`ClassMngrRosterTemplatePrintServiceTests`, and
+`ClassMngrScheduleBuilderTests`. The exact CTests passed 3/3:
+`ClassMngrSharedPolicyTests`,
+`ClassMngrRosterTemplatePrintServiceTests`, and
+`ClassMngrScheduleBuilderTests`. No full suite ran. F693 preserved
+ScheduleValueParser's default eight formats and moved roster parsing to a
+two-format allowlist; daily labels/order and ByDay mapping were regression-
+tested.
+
+**Decision: accept F693.** Batch 168 is complete.
+
+### Batch 169 selection - recorded before F694 implementation - 2026-10-12
+
+Select Sub Prep meeting-time parsing for a behavior-preserving Phase 2 rule
+migration. `sub_prep_class_information_model.cpp` duplicates the eight-format
+parser now owned by `ScheduleValueParser::parseDisplayTime`; moving the model
+to that parser removes the duplicate while retaining existing input and output
+behavior. The Sub Prep class-information model tests provide the focused
+regression surface.
+
+**F694 is selected:** replace the duplicate Sub Prep parser with the default
+`ScheduleValueParser::parseDisplayTime` implementation and wire its source
+file directly into the existing model-test targets.
+
+### F694 Sub Prep meeting-time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Replace the duplicate eight-format parser in
+   `src/features/sub_prep/ui/sub_prep_class_information_model.cpp` with the
+   default `ScheduleValueParser::parseDisplayTime`. Preserve trimming and all
+   accepted formats.
+2. Preserve visible-day filtering, invalid-time omission, ordering/grouping,
+   and formatted labels; seconds remain omitted from the output labels.
+3. Add
+   `src/domain/rules/schedule_value_parser.cpp` to the direct source lists for
+   `ClassMngrSubPrepClassInformationModelTests`,
+   `ClassMngrSubPrepPrintSourceMapperTests`, and
+   `ClassMngrSubPrepPageTests`, resolving the implementation without linking
+   the large legacy `ClassMngrDomain` object target. Extend
+   `tests/sub_prep_class_information_model_tests.cpp` for preserved behavior.
+4. Build `ClassMngr`, `ClassMngrSubPrepClassInformationModelTests`,
+   `ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPageTests`, and
+   `ClassMngrSharedPolicyTests`; run exactly the CTests
+   `ClassMngrSubPrepClassInformationModelTests`,
+   `ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPageTests`, and
+   `ClassMngrSharedPolicyTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 169 is active with F694.

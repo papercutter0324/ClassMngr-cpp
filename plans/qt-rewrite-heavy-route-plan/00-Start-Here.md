@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-12
-- Current milestone: Phase 2 remains in progress: F667 was accepted at commit `528e031ba1f3a549c04c901cd8f39a8c610269b9`; F668, Calendar event-type color save-failure feedback and persisted-color restoration, is selected in Batch 143. F625/F626 remain deferred pending owner-specific retention evidence, the current-source Phase 0 gate remains open for macOS universal evidence (0/24) with F629 awaiting a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F693 was accepted at commit `504316a9c24c076e9d6aa474a5b713e9abd52e66`; F694, the Sub Prep meeting-time parser migration, is selected in Batch 169. Phase 2 Gates 1/2 remain Partial and the formal exit gate Open; F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

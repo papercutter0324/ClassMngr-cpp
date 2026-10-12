@@ -53,11 +53,15 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F688 selected)
+### Current state - 2026-10-12 (F694 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-162 are complete; Batch 163 is active with F688. F666 Class Day
+Batches 141-168 are complete; Batch 169 is active with F694, the Sub Prep
+meeting-time parser migration. F689-F693 are complete; their acceptance
+details and commit hashes are recorded in the Phase 2 progress log. F693 is
+committed as 504316a9c24c076e9d6aa474a5b713e9abd52e66; its four Ninja targets
+built and its three focused CTests passed 3/3. No full suite ran. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
 Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
@@ -234,7 +238,7 @@ and clears the status. The Visual Studio generator stopped at ZERO_CHECK with
 FileTracker `E_ACCESSDENIED` before compilation; no full suite ran. Batch 162
 is complete.
 
-F688 Last Database Directory checked persistence is selected in Batch 163. The
+F688 Last Database Directory checked persistence was selected in Batch 163. The
 port writes `files/lastDirectory` through a void SettingsManager path after
 successful load, Save As, and export operations. The selected slice checks this
 single preference write and reports a failure without undoing the completed

@@ -4111,5 +4111,24 @@ load, Save As, and export paths into one void `files/lastDirectory` preference
 write. Select this cross-platform candidate over the Apple-only PowerPoint
 notice. Add a checked typed write and one warning on failure while preserving
 each already-completed file operation. Existing port, workspace lifecycle,
-and MainWindow Save As/export tests provide focused coverage. Batch 163 is
-active; the exact matrix is in the Phase 2 progress log.
+and MainWindow Save As/export tests provide focused coverage. Batch 163 was
+active when F688 was selected and has since completed; the exact matrix and
+acceptance are in the Phase 2 progress log.
+
+## F692-F694 display-time parsing - 2026-10-12
+
+F692 centralized ScheduleBuilder's eight display-time formats in the Domain
+parser without changing its strict canonical time parser. F693 added a typed
+format allowlist so roster printing could share that implementation while
+retaining its narrower spaced AM/PM and H:mm grammar. The default overload
+keeps all eight F692 formats. F693 is committed as
+504316a9c24c076e9d6aa474a5b713e9abd52e66; the four-target Windows x64 Debug
+Ninja build and three focused CTests passed. No full suite ran.
+
+The roster test confirmed that Qt's H:mm format reads 4:00 as 04:00. Use an
+explicit 16:00 fixture when asserting an afternoon result. F694 reuses the
+default parser in Sub Prep's duplicate eight-format meeting-time reader. Its
+three direct model test targets must compile schedule_value_parser.cpp
+directly; linking the broad legacy ClassMngrDomain object target would
+duplicate existing test objects. Preserve visible-day filtering, invalid-time
+omission, ordering, grouping, and labels while making that migration.
