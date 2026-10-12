@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -21,7 +22,12 @@ class SettingsManagerRecentWorkspaceHistoryPort final
     : public Application::RecentWorkspaceHistoryPort
 {
 public:
-    SettingsManagerRecentWorkspaceHistoryPort() = default;
+    explicit SettingsManagerRecentWorkspaceHistoryPort(
+        SettingsManager::RecentWorkspaceHistoryPreferencesSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::RecentWorkspaceHistory load()
         const override
@@ -51,7 +57,7 @@ public:
         return history;
     }
 
-    void save(
+    [[nodiscard]] Domain::Result<void> save(
         const Application::RecentWorkspaceHistory& history
         ) const override
     {
@@ -64,23 +70,52 @@ public:
             storedPaths.append(fromUtf8(path.value()));
         }
 
-        SettingsManager& settings = SettingsManager::instance();
-        settings.setRecentFiles(storedPaths);
-        settings.setLastFile(
-            history.lastPath.has_value()
-                ? fromUtf8(history.lastPath->value())
-                : QString()
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeRecentWorkspaceHistoryPreferences(
+                storedPaths,
+                history.lastPath.has_value()
+                    ? fromUtf8(history.lastPath->value())
+                    : QString(),
+                m_synchronize
+                );
+        return resultForStatus(status, "save");
     }
 
-    void clear() const override
+    [[nodiscard]] Domain::Result<void> clear() const override
     {
-        SettingsManager& settings = SettingsManager::instance();
-        settings.clearRecentFiles();
-        settings.setLastFile(QString());
+        const QSettings::Status status =
+            SettingsManager::instance().writeRecentWorkspaceHistoryPreferences(
+                QStringList(),
+                QString(),
+                m_synchronize
+                );
+        return resultForStatus(status, "clear");
     }
 
 private:
+    [[nodiscard]] static Domain::Result<void> resultForStatus(
+        const QSettings::Status status,
+        const char* operation
+        )
+    {
+        if (status == QSettings::NoError)
+        {
+            return Domain::Result<void>::success();
+        }
+
+        const char* statusName = status == QSettings::AccessError
+            ? "AccessError (settings could not be written)"
+            : "FormatError (settings contain invalid data)";
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::string(
+                "Unable to "
+                ) + operation + " recent workspace history: QSettings "
+                    + statusName + ".",
+            .recoverable = true
+        });
+    }
+
     [[nodiscard]] static std::string toUtf8(
         const QString& value
         )
@@ -101,6 +136,8 @@ private:
             static_cast<qsizetype>(value.size())
             );
     }
+
+    SettingsManager::RecentWorkspaceHistoryPreferencesSync m_synchronize;
 };
 
 } // namespace ClassMngr::Next::Platform

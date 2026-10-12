@@ -6,6 +6,7 @@
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/platform/settings_manager_last_database_directory_port.h"
+#include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -18,6 +19,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -36,6 +38,12 @@ bool writeFile(
     }
 
     return file.write(contents) == contents.size();
+}
+
+QSettings::Status syncAndReturnAccessError(QSettings& settings)
+{
+    settings.sync();
+    return QSettings::AccessError;
 }
 
 QByteArray readFile(
@@ -234,6 +242,9 @@ private slots:
     void recentFilesKeepNewestFirstAndCapAtTen();
     void pruningRemovesMissingPathAndClearsLastFile();
     void clearRecentFilesClearsListAndLastFile();
+    void successfulOpenSurvivesRecentHistoryPersistenceFailure();
+    void failedRecentHistoryClearWarnsAndPreservesMenu();
+    void failedRecentHistoryPruneWarnsAndPreservesHistory();
     void recentFilesPreserveUnicodePaths();
     void startupUsesListFirstAndLastFileFallback();
     void normalCreateReplacesExistingTarget();
@@ -720,6 +731,214 @@ clearRecentFilesClearsListAndLastFile()
     QVERIFY(settings.getRecentFiles().isEmpty());
     QVERIFY(settings.getLastFile().isEmpty());
     QCOMPARE(settings.getLastDatabaseDirectory(), directory);
+}
+
+void FileControllerWorkspaceLifecycleTests::
+successfulOpenSurvivesRecentHistoryPersistenceFailure()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString requestedPath = workspaceRoot.filePath(
+        QStringLiteral("opened-after-history-failure.tps")
+        );
+    const QString normalizedPath = QFileInfo(requestedPath).absoluteFilePath();
+    const QString previousPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("previous-workspace.tps"))
+        ).absoluteFilePath();
+    const QString olderPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("older-workspace.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(normalizedPath));
+    seedServices.closeDatabase();
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList previousHistory{previousPath, olderPath};
+    settings.setRecentFiles(previousHistory);
+    settings.setLastFile(previousPath);
+    settings.sync();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    int synchronizationAttempts = 0;
+    ClassMngr::Next::Platform::SettingsManagerRecentWorkspaceHistoryPort
+        historyPort(
+            [&synchronizationAttempts](QSettings& target)
+            {
+                ++synchronizationAttempts;
+                return syncAndReturnAccessError(target);
+            }
+            );
+    ApplicationServices services;
+    FileController controller(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        &historyPort
+        );
+    ActionRegistry actions;
+    connectFileActions(controller, actions);
+
+    controller.loadDatabaseOnStartup(requestedPath);
+
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), normalizedPath);
+    QVERIFY(actions.saveFile->isEnabled());
+    QVERIFY(actions.closeFile->isEnabled());
+    QCOMPARE(settings.getRecentFiles(), previousHistory);
+    QCOMPARE(settings.getLastFile(), previousPath);
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Recent Files"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(QStringLiteral("history")));
+    QVERIFY(warning.details.contains(QStringLiteral("AccessError")));
+}
+
+void FileControllerWorkspaceLifecycleTests::
+failedRecentHistoryClearWarnsAndPreservesMenu()
+{
+    const QString firstPath = QStringLiteral("first-recent.tps");
+    const QString secondPath = QStringLiteral("second-recent.tps");
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList priorHistory{firstPath, secondPath};
+    settings.setRecentFiles(priorHistory);
+    settings.setLastFile(firstPath);
+    settings.sync();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    int synchronizationAttempts = 0;
+    ClassMngr::Next::Platform::SettingsManagerRecentWorkspaceHistoryPort
+        historyPort(
+            [&synchronizationAttempts](QSettings& target)
+            {
+                ++synchronizationAttempts;
+                return syncAndReturnAccessError(target);
+            }
+            );
+    FileController controller(
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &historyPort
+        );
+    ActionRegistry actions;
+    QMenu recentFilesMenu;
+    actions.recentFilesMenu = &recentFilesMenu;
+    connectFileActions(controller, actions);
+    controller.populateRecentMenu();
+
+    QCOMPARE(recentFilesMenu.actions().size(), 4);
+    recentFilesMenu.actions().constLast()->trigger();
+
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.getRecentFiles(), priorHistory);
+    QCOMPARE(settings.getLastFile(), firstPath);
+    QCOMPARE(recentFilesMenu.actions().size(), 4);
+    QCOMPARE(recentFilesMenu.actions().at(0)->data().toString(), firstPath);
+    QCOMPARE(recentFilesMenu.actions().at(1)->data().toString(), secondPath);
+    QVERIFY(recentFilesMenu.actions().at(2)->isSeparator());
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Recent Files"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(QStringLiteral("cleared")));
+    QVERIFY(warning.details.contains(QStringLiteral("AccessError")));
+}
+
+void FileControllerWorkspaceLifecycleTests::
+failedRecentHistoryPruneWarnsAndPreservesHistory()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString rawMissingPath = workspaceRoot.filePath(
+        QStringLiteral("missing-workspace")
+        );
+    const QString normalizedMissingPath = QFileInfo(
+        rawMissingPath + QStringLiteral(".tps")
+        ).absoluteFilePath();
+    const QString retainedPath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("retained-workspace.tps"))
+        ).absoluteFilePath();
+    QVERIFY(!QFileInfo::exists(normalizedMissingPath));
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QStringList priorHistory{
+        rawMissingPath,
+        normalizedMissingPath,
+        retainedPath
+    };
+    settings.setRecentFiles(priorHistory);
+    settings.setLastFile(rawMissingPath);
+    settings.sync();
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    int synchronizationAttempts = 0;
+    ClassMngr::Next::Platform::SettingsManagerRecentWorkspaceHistoryPort
+        historyPort(
+            [&synchronizationAttempts](QSettings& target)
+            {
+                ++synchronizationAttempts;
+                return syncAndReturnAccessError(target);
+            }
+            );
+    FileController controller(
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &historyPort
+        );
+    ActionRegistry actions;
+    QMenu recentFilesMenu;
+    actions.recentFilesMenu = &recentFilesMenu;
+    connectFileActions(controller, actions);
+
+    controller.loadMostRecentDatabase();
+
+    QVERIFY(!QFileInfo::exists(normalizedMissingPath));
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.getRecentFiles(), priorHistory);
+    QCOMPARE(settings.getLastFile(), rawMissingPath);
+    QCOMPARE(recentFilesMenu.actions().size(), 5);
+    QCOMPARE(
+        recentFilesMenu.actions().at(0)->data().toString(),
+        rawMissingPath
+        );
+    QCOMPARE(
+        recentFilesMenu.actions().at(1)->data().toString(),
+        normalizedMissingPath
+        );
+    QCOMPARE(
+        recentFilesMenu.actions().at(2)->data().toString(),
+        retainedPath
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Recent Files"));
+    QCOMPARE(
+        static_cast<int>(warning.severity),
+        static_cast<int>(PromptSeverity::Warning)
+        );
+    QVERIFY(warning.message.contains(QStringLiteral("updated")));
+    QVERIFY(warning.details.contains(QStringLiteral("AccessError")));
 }
 
 void FileControllerWorkspaceLifecycleTests::recentFilesPreserveUnicodePaths()

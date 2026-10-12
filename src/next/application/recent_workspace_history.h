@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
 #include "next/application/workspace_contracts.h"
 
 #include <cstddef>
@@ -42,8 +43,8 @@ struct RecentWorkspaceHistory final
         ) = default;
 };
 
-// Persistence remains void because the legacy SettingsManager operations do
-// not report a status. The outer adapter owns all Qt and legacy conversion.
+// Persistence reports recoverable adapter failures without exposing Qt or
+// legacy storage details to application callers.
 class RecentWorkspaceHistoryPort
 {
 public:
@@ -51,11 +52,11 @@ public:
 
     [[nodiscard]] virtual RecentWorkspaceHistory load() const = 0;
 
-    virtual void save(
+    [[nodiscard]] virtual Domain::Result<void> save(
         const RecentWorkspaceHistory& history
         ) const = 0;
 
-    virtual void clear() const = 0;
+    [[nodiscard]] virtual Domain::Result<void> clear() const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

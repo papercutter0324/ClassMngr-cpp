@@ -3,6 +3,8 @@
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 
 #include <QByteArray>
+#include <QDir>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QStringList>
 #include <QtTest/QtTest>
@@ -46,6 +48,19 @@ QString lastDirectoryKey()
         );
 }
 
+QSettings::Status syncAndReturnAccessError(QSettings& settings)
+{
+    settings.sync();
+    return QSettings::AccessError;
+}
+
+QString settingsFilePath(const QTemporaryDir& settingsRoot)
+{
+    return QDir(settingsRoot.path()).filePath(
+        QStringLiteral("PaperCloud/ClassMngr.ini")
+        );
+}
+
 } // namespace
 
 class NextPlatformSettingsManagerRecentWorkspaceHistoryPortTests final
@@ -61,6 +76,9 @@ private slots:
     void saveRoundTripsTypedHistoryAndLastPath();
     void mostRecentPathUsesListBeforeLastFileFallback();
     void clearClearsRecentAndLastFileWithoutTouchingDirectory();
+    void failedSaveRestoresExactTypedPairAndPreservesDirectory();
+    void failedSaveRestoresAbsentPairAndPreservesDirectory();
+    void failedSaveReturnsRecoverableTechnicalAndCanRetry();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -147,7 +165,8 @@ saveRoundTripsTypedHistoryAndLastPath()
     };
 
     const SettingsManagerRecentWorkspaceHistoryPort port;
-    port.save(expected);
+    const Domain::Result<void> saveResult = port.save(expected);
+    QVERIFY(saveResult);
 
     SettingsManager& settings = SettingsManager::instance();
     QCOMPARE(
@@ -169,20 +188,20 @@ mostRecentPathUsesListBeforeLastFileFallback()
         std::string("last-fallback.tps")
         );
 
-    port.save({
+    QVERIFY(port.save({
         .paths = {listPath},
         .lastPath = lastPath
-    });
+    }));
     const RecentWorkspaceHistory withList = port.load();
     QVERIFY(
         withList.mostRecentDatabasePath().has_value()
         && *withList.mostRecentDatabasePath() == listPath
         );
 
-    port.save({
+    QVERIFY(port.save({
         .paths = {},
         .lastPath = lastPath
-    });
+    }));
     const RecentWorkspaceHistory withFallback = port.load();
     QVERIFY(
         withFallback.mostRecentDatabasePath().has_value()
@@ -198,11 +217,11 @@ clearClearsRecentAndLastFileWithoutTouchingDirectory()
     settings.set(lastDirectoryKey(), directory);
 
     const SettingsManagerRecentWorkspaceHistoryPort port;
-    port.save({
+    QVERIFY(port.save({
         .paths = {RecentWorkspacePath(std::string("recent.tps"))},
         .lastPath = RecentWorkspacePath(std::string("recent.tps"))
-    });
-    port.clear();
+    }));
+    QVERIFY(port.clear());
 
     const RecentWorkspaceHistory cleared = port.load();
     QVERIFY(cleared.paths.empty());
@@ -210,6 +229,135 @@ clearClearsRecentAndLastFileWithoutTouchingDirectory()
     QVERIFY(settings.get(recentFilesKey()).toStringList().isEmpty());
     QVERIFY(settings.get(lastFileKey()).toString().isEmpty());
     QCOMPARE(settings.get(lastDirectoryKey()).toString(), directory);
+}
+
+void NextPlatformSettingsManagerRecentWorkspaceHistoryPortTests::
+failedSaveRestoresExactTypedPairAndPreservesDirectory()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QVariant previousRecent = QByteArray("legacy recent value");
+    const QVariant previousLast = 47;
+    const QVariant unrelatedDirectory = QStringList{
+        QStringLiteral("legacy directory value"),
+        QStringLiteral("preserve this too")
+    };
+    settings.set(recentFilesKey(), previousRecent);
+    settings.set(lastFileKey(), previousLast);
+    settings.set(lastDirectoryKey(), unrelatedDirectory);
+    settings.sync();
+
+    int synchronizationAttempts = 0;
+    const SettingsManagerRecentWorkspaceHistoryPort port(
+        [&synchronizationAttempts](QSettings& target)
+        {
+            ++synchronizationAttempts;
+            return syncAndReturnAccessError(target);
+        }
+        );
+    const Domain::Result<void> result = port.save({
+        .paths = {RecentWorkspacePath(std::string("replacement.tps"))},
+        .lastPath = RecentWorkspacePath(std::string("replacement.tps"))
+    });
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(recentFilesKey()), previousRecent);
+    QCOMPARE(settings.get(recentFilesKey()).metaType(), previousRecent.metaType());
+    QCOMPARE(settings.get(lastFileKey()), previousLast);
+    QCOMPARE(settings.get(lastFileKey()).metaType(), previousLast.metaType());
+    QCOMPARE(settings.get(lastDirectoryKey()), unrelatedDirectory);
+    QCOMPARE(
+        settings.get(lastDirectoryKey()).metaType(),
+        unrelatedDirectory.metaType()
+        );
+}
+
+void NextPlatformSettingsManagerRecentWorkspaceHistoryPortTests::
+failedSaveRestoresAbsentPairAndPreservesDirectory()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    settings.remove(recentFilesKey());
+    settings.remove(lastFileKey());
+    const QVariant unrelatedDirectory = QByteArray("directory stays untouched");
+    settings.set(lastDirectoryKey(), unrelatedDirectory);
+    settings.sync();
+
+    QSettings persistedSettings(
+        settingsFilePath(m_settingsRoot),
+        QSettings::IniFormat
+        );
+    QVERIFY(!persistedSettings.contains(recentFilesKey()));
+    QVERIFY(!persistedSettings.contains(lastFileKey()));
+
+    const SettingsManagerRecentWorkspaceHistoryPort port(
+        syncAndReturnAccessError
+        );
+    const Domain::Result<void> result = port.save({
+        .paths = {RecentWorkspacePath(std::string("new-recent.tps"))},
+        .lastPath = RecentWorkspacePath(std::string("new-last.tps"))
+    });
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(!settings.get(recentFilesKey()).isValid());
+    QVERIFY(!settings.get(lastFileKey()).isValid());
+    persistedSettings.sync();
+    QVERIFY(!persistedSettings.contains(recentFilesKey()));
+    QVERIFY(!persistedSettings.contains(lastFileKey()));
+    QCOMPARE(settings.get(lastDirectoryKey()), unrelatedDirectory);
+}
+
+void NextPlatformSettingsManagerRecentWorkspaceHistoryPortTests::
+failedSaveReturnsRecoverableTechnicalAndCanRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QVariant previousRecent = QStringList{
+        QStringLiteral("previous.tps")
+    };
+    const QVariant previousLast = QStringLiteral("previous.tps");
+    settings.set(recentFilesKey(), previousRecent);
+    settings.set(lastFileKey(), previousLast);
+    settings.sync();
+
+    bool failFirstWrite = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerRecentWorkspaceHistoryPort port(
+        [&failFirstWrite, &synchronizationAttempts](QSettings& target)
+        {
+            ++synchronizationAttempts;
+            target.sync();
+            if (failFirstWrite)
+            {
+                failFirstWrite = false;
+                return QSettings::AccessError;
+            }
+            return target.status();
+        }
+        );
+
+    const RecentWorkspaceHistory replacement{
+        .paths = {RecentWorkspacePath(std::string("retry.tps"))},
+        .lastPath = RecentWorkspacePath(std::string("retry.tps"))
+    };
+    const Domain::Result<void> firstResult = port.save(replacement);
+    QVERIFY(!firstResult);
+    QCOMPARE(firstResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(firstResult.error().recoverable);
+    QCOMPARE(settings.get(recentFilesKey()), previousRecent);
+    QCOMPARE(settings.get(lastFileKey()), previousLast);
+
+    const Domain::Result<void> retryResult = port.save(replacement);
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(
+        settings.get(recentFilesKey()).toStringList(),
+        QStringList{QStringLiteral("retry.tps")}
+        );
+    QCOMPARE(settings.get(lastFileKey()).toString(), QStringLiteral("retry.tps"));
 }
 
 QTEST_APPLESS_MAIN(NextPlatformSettingsManagerRecentWorkspaceHistoryPortTests)

@@ -1164,6 +1164,78 @@ void SettingsManager::setLastFile(
     sync();
 }
 
+QSettings::Status SettingsManager::writeRecentWorkspaceHistoryPreferences(
+    const QStringList& recentFiles,
+    const QString& lastFile,
+    const RecentWorkspaceHistoryPreferencesSync& synchronize
+    )
+{
+    const bool hadPreviousRecentFiles =
+        m_settings->contains(Keys::RECENT_FILES);
+    const QVariant previousRecentFiles =
+        m_settings->value(Keys::RECENT_FILES);
+    const bool hadPreviousLastFile =
+        m_settings->contains(Keys::LAST_FILE);
+    const QVariant previousLastFile =
+        m_settings->value(Keys::LAST_FILE);
+
+    m_settings->setValue(
+        Keys::RECENT_FILES,
+        recentFiles
+        );
+    m_settings->setValue(
+        Keys::LAST_FILE,
+        lastFile
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore both history keys before destroying this instance so its
+        // failed candidates cannot be retried during teardown.
+        if (hadPreviousRecentFiles)
+        {
+            m_settings->setValue(
+                Keys::RECENT_FILES,
+                previousRecentFiles
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::RECENT_FILES);
+        }
+
+        if (hadPreviousLastFile)
+        {
+            m_settings->setValue(
+                Keys::LAST_FILE,
+                previousLastFile
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::LAST_FILE);
+        }
+
+        // Reopen after a failure because QSettings keeps the status latched;
+        // unrelated preferences remain untouched and a later write can retry.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 QString SettingsManager::getLastDatabaseDirectory() const
 {
     return get(

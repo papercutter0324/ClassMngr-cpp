@@ -77,12 +77,15 @@ FileController::FileController(
     MainWindow* window,
     QObject* parent,
     ClassMngr::Next::Application::LastDatabaseDirectoryPort*
-        lastDatabaseDirectoryPort
+        lastDatabaseDirectoryPort,
+    ClassMngr::Next::Application::RecentWorkspaceHistoryPort*
+        recentWorkspaceHistoryPort
     )
     : QObject(parent)
     , m_services(services)
     , m_window(window)
     , m_lastDatabaseDirectoryPort(lastDatabaseDirectoryPort)
+    , m_recentWorkspaceHistoryPort(recentWorkspaceHistoryPort)
 {
     if (!m_lastDatabaseDirectoryPort)
     {
@@ -93,6 +96,17 @@ FileController::FileController(
                 >();
         m_lastDatabaseDirectoryPort =
             m_ownedLastDatabaseDirectoryPort.get();
+    }
+
+    if (!m_recentWorkspaceHistoryPort)
+    {
+        m_ownedRecentWorkspaceHistoryPort =
+            std::make_unique<
+                ClassMngr::Next::Platform::
+                    SettingsManagerRecentWorkspaceHistoryPort
+                >();
+        m_recentWorkspaceHistoryPort =
+            m_ownedRecentWorkspaceHistoryPort.get();
     }
 
     if (!m_services)
@@ -799,11 +813,8 @@ void FileController::updateRecentFiles(
     const QString normalizedPath =
         normalizeInputFilePath(filePath);
 
-    const ClassMngr::Next::Platform::
-        SettingsManagerRecentWorkspaceHistoryPort
-        recentWorkspaceHistoryPort;
     ClassMngr::Next::Application::RecentWorkspaceHistory history =
-        recentWorkspaceHistoryPort.load();
+        m_recentWorkspaceHistoryPort->load();
 
     const ClassMngr::Next::Application::RecentWorkspacePath rawPath(
         utf8Path(filePath)
@@ -818,7 +829,16 @@ void FileController::updateRecentFiles(
             rawPath,
             normalizedPathValue
             );
-    recentWorkspaceHistoryPort.save(history);
+    const auto saved = m_recentWorkspaceHistoryPort->save(history);
+    if (!saved)
+    {
+        DialogServices::showWarning(
+            m_window,
+            tr("Recent Files"),
+            tr("The recent workspace history could not be saved."),
+            domainErrorMessage(saved.error())
+            );
+    }
 
     rememberDatabaseDirectory(normalizedPath);
 
@@ -840,11 +860,8 @@ void FileController::populateRecentMenu()
 
     menu->clear();
 
-    const ClassMngr::Next::Platform::
-        SettingsManagerRecentWorkspaceHistoryPort
-        recentWorkspaceHistoryPort;
     const ClassMngr::Next::Application::RecentWorkspaceHistory history =
-        recentWorkspaceHistoryPort.load();
+        m_recentWorkspaceHistoryPort->load();
 
     if (history.paths.empty())
     {
@@ -915,12 +932,18 @@ void FileController::populateRecentMenu()
 
 void FileController::clearRecentFiles()
 {
-    const ClassMngr::Next::Platform::
-        SettingsManagerRecentWorkspaceHistoryPort
-        recentWorkspaceHistoryPort;
-    recentWorkspaceHistoryPort.clear();
+    const auto cleared = m_recentWorkspaceHistoryPort->clear();
 
     populateRecentMenu();
+    if (!cleared)
+    {
+        DialogServices::showWarning(
+            m_window,
+            tr("Recent Files"),
+            tr("The recent workspace history could not be cleared."),
+            domainErrorMessage(cleared.error())
+            );
+    }
 }
 
 void FileController::autosave()
@@ -1233,11 +1256,8 @@ void FileController::enterNoDatabaseState()
 
 QString FileController::mostRecentDatabasePath() const
 {
-    const ClassMngr::Next::Platform::
-        SettingsManagerRecentWorkspaceHistoryPort
-        recentWorkspaceHistoryPort;
     const ClassMngr::Next::Application::RecentWorkspaceHistory history =
-        recentWorkspaceHistoryPort.load();
+        m_recentWorkspaceHistoryPort->load();
 
     const std::optional<
         ClassMngr::Next::Application::RecentWorkspacePath
@@ -1254,11 +1274,8 @@ void FileController::pruneRecentFile(
     const QString normalizedPath =
         normalizeInputFilePath(filePath);
 
-    const ClassMngr::Next::Platform::
-        SettingsManagerRecentWorkspaceHistoryPort
-        recentWorkspaceHistoryPort;
     ClassMngr::Next::Application::RecentWorkspaceHistory history =
-        recentWorkspaceHistoryPort.load();
+        m_recentWorkspaceHistoryPort->load();
 
     const ClassMngr::Next::Application::RecentWorkspacePath rawPath(
         utf8Path(filePath)
@@ -1274,7 +1291,16 @@ void FileController::pruneRecentFile(
             normalizedPathValue
             );
 
-    recentWorkspaceHistoryPort.save(history);
+    const auto saved = m_recentWorkspaceHistoryPort->save(history);
+    if (!saved)
+    {
+        DialogServices::showWarning(
+            m_window,
+            tr("Recent Files"),
+            tr("The recent workspace history could not be updated."),
+            domainErrorMessage(saved.error())
+            );
+    }
 }
 
 QString FileController::databaseDialogDirectory() const

@@ -394,6 +394,17 @@ public:
         const QString& path
         );
 
+    // An empty callback uses QSettings::sync/status. The checked paired
+    // writer restores both prior key states on failure so callers can retry.
+    using RecentWorkspaceHistoryPreferencesSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeRecentWorkspaceHistoryPreferences(
+        const QStringList& recentFiles,
+        const QString& lastFile,
+        const RecentWorkspaceHistoryPreferencesSync& synchronize = {}
+        );
+
     QString getLastDatabaseDirectory() const;
 
     void setLastDatabaseDirectory(
