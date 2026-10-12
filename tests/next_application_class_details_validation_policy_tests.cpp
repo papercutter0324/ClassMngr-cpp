@@ -58,6 +58,7 @@ class NextApplicationClassDetailsValidationPolicyTests final : public QObject
 
 private slots:
     void normalizesAgainstTheSuppliedCatalogAndRawScheduleRows();
+    void normalizesStrictTwentyFourHourTimeBoundaries();
     void reportsInvalidWeekdayAfterTrimmingRawScheduleDay();
     void reportsDisallowedGradeAndLevelAgainstTheCatalog();
     void reportsDisallowedCatalogValuesInLegacyFieldOrder();
@@ -99,6 +100,30 @@ normalizesAgainstTheSuppliedCatalogAndRawScheduleRows()
     QCOMPARE(
         output.normalized.regularTimes[0].endTime,
         std::u16string(u"4:55 PM")
+        );
+}
+
+void NextApplicationClassDetailsValidationPolicyTests::
+normalizesStrictTwentyFourHourTimeBoundaries()
+{
+    ClassDetailsValidationInput input = validInput();
+    input.regularTimes = {
+        {u"Monday", u"00:00", u"00:55"},
+        {u"Tuesday", u"23:00", u"23:59"}
+    };
+
+    const ClassDetailsValidationOutput output =
+        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+
+    QVERIFY(!output.hasErrors());
+    QCOMPARE(output.normalized.regularTimes.size(), std::size_t(2));
+    QCOMPARE(
+        output.normalized.regularTimes[0].startTime,
+        std::u16string(u"12:00 AM")
+        );
+    QCOMPARE(
+        output.normalized.regularTimes[1].endTime,
+        std::u16string(u"11:59 PM")
         );
 }
 

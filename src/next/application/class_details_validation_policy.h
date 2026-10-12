@@ -315,20 +315,11 @@ private:
         )
     {
         const std::u16string trimmed = trim(value);
-        if (trimmed.size() == 5
-            && trimmed[2] == u':'
-            && isDigit(trimmed[0])
-            && isDigit(trimmed[1])
-            && isDigit(trimmed[3])
-            && isDigit(trimmed[4]))
+        if (const auto parsed24Hour = ScheduleKeyRules::parseTime(trimmed))
         {
-            const int hour = twoDigits(trimmed[0], trimmed[1]);
-            const int minute = twoDigits(trimmed[3], trimmed[4]);
-            if (hour <= 23 && minute <= 59)
-            {
-                const int minutes = hour * 60 + minute;
-                return ParsedTime{minutes, displayTime(minutes)};
-            }
+            const int minutes = static_cast<int>(parsed24Hour->hour * 60
+                                                 + parsed24Hour->minute);
+            return ParsedTime{minutes, displayTime(minutes)};
         }
 
         std::u16string upper = trimmed;
