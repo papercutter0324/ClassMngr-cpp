@@ -27537,5 +27537,47 @@ while preserving the trimmed fallback for noncanonical text.
    and `ClassMngrClassTabNavigationModelTests`; run only the exact same-named
    registered CTest. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F731;
+This matrix was recorded before implementation.
+
+### F731 Class Tab Navigation weekday-label parser migration - accepted - 2026-10-12
+
+F731 is accepted at code/test commit
+`69fb384063c8d76f092ddd54876777adfeaf9313`. `dayCode` now uses
+`ScheduleValueParser::parseWeekday` with an exact canonical-text guard and
+preserves the trimmed fallback for lowercase and unknown labels. The seven
+weekday abbreviations and eight display-time formats remain covered. Public
+model assertions verify ` Monday ` -> `M 9:00`, `monday` -> `monday 10:00`,
+and ` Funday ` -> `Funday 11:00`.
+
+`ClassMngr` and `ClassMngrClassTabNavigationModelTests` built successfully.
+Exactly one matching CTest registration was confirmed; the exact CTest passed
+1/1. No full suite ran.
+
+**Decision: accept F731.** Batch 179 continues with F732; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F732 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `scheduleWeekday` in `src/features/schedule/ui/schedule_widget.cpp`,
+called by `scheduleSlotStateSaveRequest` on the public slot click-save path.
+
+**F732 is selected:** reuse the Domain weekday parser while preserving the
+exact, unpadded, case-sensitive click-save grammar.
+
+1. Migrate only `scheduleWeekday` to `ScheduleValueParser::parseWeekday` and
+   require `parsed->text == value` for the raw input, without trimming. Map
+   parsed weekdays explicitly to the corresponding
+   `Application::ScheduleWeekday`; return `std::nullopt` otherwise.
+2. Preserve the invalid-click warning, zero-save behavior, preview state, and
+   all other parsing and time behavior.
+3. Extend `tests/schedule_widget_tests.cpp` with a focused data-driven public
+   click-save weekday test. Assert each of the seven canonical labels saves
+   the corresponding day. Padded, lowercase, unknown, and empty inputs must
+   warn, perform no save, and retain preview state.
+4. The target already includes `schedule_value_parser.cpp` from F713, so no
+   CMake change is needed. Build `ClassMngr` and
+   `ClassMngrScheduleWidgetTests`; confirm exactly one same-named CTest
+   registration and run only that exact CTest. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F732;
 F707 and F709 remain deferred.

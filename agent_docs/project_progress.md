@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F730 accepted; F731 selected)
+### Current state - 2026-10-12 (F731 accepted; F732 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F731, the Class Tab Navigation weekday-label parser migration.
+with F732, the Schedule Widget weekday decoder migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -341,18 +341,26 @@ the existing filter-interaction sequence intact. `ClassMngr` and
 `ClassMngrClassesPageTests` built; exactly one registration was confirmed and
 the focused CTest passed 1/1. No full suite ran.
 
-F731 is selected in Batch 179 to migrate `ClassTabNavigationModel::dayCode`
-in `src/features/classes/models/class_tab_navigation_model.cpp` to the shared
-weekday parser. Require parsed canonical text to equal the already-trimmed
-input before applying the seven weekday abbreviations; keep the trimmed raw
-fallback for lowercase and unknown labels. Leave `dayOrder` and time
-formatting unchanged. Extend
-`ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats` for padded
-canonical labels and lowercase/unknown fallbacks. Build `ClassMngr` and
-`ClassMngrClassTabNavigationModelTests`; run only that exact CTest. No full
-suite is planned. F707 remains deferred because its comparator chain has no
-observed app callsite; F709 is deferred because its public fixture does not
-readily supply malformed raw time text.
+F731 is accepted and committed as
+`69fb384063c8d76f092ddd54876777adfeaf9313`. Class Tab Navigation weekday
+labels now reuse `ScheduleValueParser::parseWeekday` with an exact
+canonical-text guard, preserving trimmed lowercase and unknown fallbacks.
+Coverage retains all seven weekday abbreviations and eight display-time
+formats and adds padded canonical, lowercase, and unknown fallback labels.
+`ClassMngr` and `ClassMngrClassTabNavigationModelTests` built; exactly one
+matching CTest registration was confirmed and the focused CTest passed 1/1. No
+full suite ran.
+
+F732 is selected in Batch 179 to migrate `scheduleWeekday` in
+`src/features/schedule/ui/schedule_widget.cpp` to `ScheduleValueParser` while
+preserving exact, case-sensitive, unpadded weekday acceptance. Extend the
+public slot click-save tests for all seven canonical labels and padded,
+lowercase, unknown, and empty rejection with warning, no save, and retained
+preview state. The focused target already includes the parser; no CMake change
+is expected. Build `ClassMngr` and `ClassMngrScheduleWidgetTests`; run only
+that exact CTest. No full suite is planned. F707 remains deferred because its
+comparator chain has no observed app callsite; F709 is deferred because its
+public fixture does not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

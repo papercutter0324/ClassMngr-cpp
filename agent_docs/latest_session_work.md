@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F731, the Class Tab Navigation weekday-label parser migration.
+  F732, the Schedule Widget weekday decoder migration.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -206,9 +206,13 @@
   the empty-existing fallback. Its focused CTest passed 1/1. F730 is accepted
   and committed as `ffcc98b426844fbc46267fd90f7f511d5b13b2d3`; its regular and
   intensive weekend filter coverage passed the exact focused CTest 1/1. F731
-  selects `ClassTabNavigationModel::dayCode` with a canonical-text guard and
-  trimmed fallback coverage; its matrix is in the Phase 2 progress log. No
-  full suite ran. F707 and F709 remain deferred.
+  is accepted and committed as `69fb384063c8d76f092ddd54876777adfeaf9313`;
+  its seven weekday abbreviations and time formats remain, with padded,
+  lowercase, and unknown fallback assertions, and its focused CTest passed
+  1/1. F732 selects the Schedule Widget weekday decoder with exact raw-text
+  equality and public click-save acceptance/rejection coverage; its matrix is
+  in the Phase 2 progress log. No full suite ran. F707 and F709 remain
+  deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

@@ -4551,11 +4551,19 @@ preserves the existing filter-interaction sequence. `ClassMngr` and
 `ClassMngrClassesPageTests` built, the sole matching CTest registration passed
 1/1, and no full suite ran.
 
-F731 is selected in Batch 179 for `ClassTabNavigationModel::dayCode`. Parse
-with `ScheduleValueParser::parseWeekday`, but apply weekday abbreviations only
-when the returned canonical text equals the trimmed input. Keep trimmed raw
-fallback labels for lowercase and unknown values; leave `dayOrder` and time
-formatting unchanged. Extend the existing display-format test with padded
-canonical labels and lowercase/unknown fallbacks. Build `ClassMngr` and
-`ClassMngrClassTabNavigationModelTests`, then run only its exact CTest. Phase 2
-remains In Progress with Gates 1 and 2 Partial.
+F731 is accepted in Batch 179 and committed as
+`69fb384063c8d76f092ddd54876777adfeaf9313`. `ClassTabNavigationModel::dayCode`
+uses `ScheduleValueParser::parseWeekday` and maps labels only when parsed
+canonical text equals the trimmed input. Lowercase and unknown labels retain
+their trimmed fallback. Existing seven-day and eight time-format assertions
+remain; added public model cases cover padded Monday, lowercase monday, and
+padded unknown Funday labels. The focused model CTest passed 1/1 after both
+targets built; no full suite ran.
+
+F732 is selected in Batch 179 for `ScheduleWidget::scheduleWeekday`. Reuse the
+shared weekday parser with raw canonical-text equality to preserve the
+current exact, case-sensitive, unpadded grammar. The public click-save test
+will cover all seven canonical weekdays plus padded, lowercase, unknown, and
+empty rejection while asserting warning, zero saves, and preview retention.
+The existing focused target already compiles the parser. Phase 2 remains In
+Progress with Gates 1 and 2 Partial.
