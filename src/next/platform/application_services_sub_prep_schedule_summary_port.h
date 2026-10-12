@@ -581,17 +581,12 @@ private:
         const QString& day
         )
     {
-        static const QStringList days{
-            QStringLiteral("Monday"),
-            QStringLiteral("Tuesday"),
-            QStringLiteral("Wednesday"),
-            QStringLiteral("Thursday"),
-            QStringLiteral("Friday"),
-            QStringLiteral("Saturday"),
-            QStringLiteral("Sunday")
-        };
-        const int index = days.indexOf(day);
-        return index < 0 ? std::nullopt : std::optional<int>(index);
+        const auto parsed = ScheduleValueParser::parseWeekday(day);
+        if (!parsed || parsed->text != day)
+        {
+            return std::nullopt;
+        }
+        return static_cast<int>(parsed->value);
     }
 
     [[nodiscard]] static QTime parseTime(const QString& value)

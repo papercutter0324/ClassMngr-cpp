@@ -285,6 +285,7 @@ private slots:
     void queryEmptyScopeDoesNotReadAndNonemptyReadFailurePropagates();
     void rejectsNoncanonicalClassIdAliasesBeforeReading();
     void maximumClassScopeFitsSqliteBindLimits();
+    void ordersAllCanonicalWeekdaysInSummariesAndNavigation();
     void parsesRawScheduleTimesAndKeepsMalformedNavigationFallback();
     void perClassMeetingOverflowSurfacesValidation();
     void aggregateMeetingOverflowSurfacesValidation();
@@ -2074,6 +2075,83 @@ maximumClassScopeFitsSqliteBindLimits()
     QVERIFY(result);
     QVERIFY(result.value().classes.empty());
     QVERIFY(result.value().teachers.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+ordersAllCanonicalWeekdaysInSummariesAndNavigation()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("summary")
+        );
+    QVERIFY(teacher > 0);
+    const int classWithAllWeekdays = createClass(
+        services,
+        QStringLiteral("All weekdays"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
+    QVERIFY(classWithAllWeekdays > 0);
+
+    const QString canonicalWeekdays[] = {
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    for (int index = 6; index >= 0; --index)
+    {
+        QVERIFY(insertScheduleMeeting(
+            services,
+            QStringLiteral("class_times"),
+            classWithAllWeekdays,
+            canonicalWeekdays[index],
+            QStringLiteral("09:15")
+            ));
+    }
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(classWithAllWeekdays)},
+        {
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Wednesday,
+            SubPrepWeekday::Thursday,
+            SubPrepWeekday::Friday,
+            SubPrepWeekday::Saturday,
+            SubPrepWeekday::Sunday
+        },
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    const auto& summary = result.value().classes.front();
+    QCOMPARE(summary.id, classId(classWithAllWeekdays));
+    QCOMPARE(
+        summary.meetingText,
+        std::string("MonTuesWedThursFriSatSun 9:15am")
+        );
+    QCOMPARE(
+        summary.navigationLabel,
+        utf8(QStringLiteral("Perseus \u2022 M/T/W/Th/F/Sat/Sun 9:15"))
+        );
+    QCOMPARE(summary.navigationFirstDayOrder, 0);
+    QCOMPARE(summary.navigationFirstTimeOrder, 9 * 60 + 15);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
