@@ -252,6 +252,20 @@ invalidRequestsAreRejectedBeforeRead()
         QVERIFY(!result.error().recoverable);
     }
 
+    auto duplicateBlankClassIds = validRequest();
+    duplicateBlankClassIds.visibleClassIds = {
+        classId(" \t "),
+        classId(" \t ")
+    };
+    const auto duplicateBlankResult = query.execute(duplicateBlankClassIds);
+    verifyError(duplicateBlankResult, ErrorCode::InvalidInput);
+    QCOMPARE(
+        duplicateBlankResult.error().message,
+        std::string("Visible class identifiers must be non-blank and bounded.")
+        );
+    QVERIFY(!duplicateBlankResult.error().recoverable);
+    QCOMPARE(readPort.calls, 0);
+
     auto overLimitWithBlankId = oversizedClassScope;
     overLimitWithBlankId.visibleClassIds.front() = classId(" \t ");
     const auto overLimitResult = query.execute(overLimitWithBlankId);
