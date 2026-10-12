@@ -354,6 +354,7 @@ private slots:
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
+    void summaryScopeFiltersPreviewDaysAndKeepsFirstSeenOrder();
     void scheduleDisplayModeRefreshesClassInformationInPlace();
     void pageDeactivationReleasesClassInformationForTheNextEntry();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
@@ -920,6 +921,56 @@ void SubPrepPageTests
             QStringLiteral("subPrepTeacherSectionCard")
             ),
         detailsCard
+        );
+}
+
+void SubPrepPageTests
+    ::summaryScopeFiltersPreviewDaysAndKeepsFirstSeenOrder()
+{
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    activatePage(harness.page);
+
+    auto* const scheduleWidget = harness.page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    QVERIFY(scheduleWidget);
+
+    ScheduleViewModel preview;
+    preview.days = {
+        QStringLiteral("monday"),
+        QStringLiteral(" Monday "),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday")
+    };
+    ScheduleRowView row;
+    ScheduleCellView tuesdayCell;
+    tuesdayCell.day = QStringLiteral("Tuesday");
+    ScheduleEntry entry;
+    entry.classId = 42;
+    tuesdayCell.entries.append(entry);
+    row.cells.append(tuesdayCell);
+    preview.rows.append(row);
+    scheduleWidget->setPreviewModel(preview);
+
+    const int rebuildCountBeforeRefresh =
+        harness.page.runtimeMetrics().classInformationRebuildCount;
+    harness.page.refresh();
+
+    QCOMPARE(
+        harness.page.runtimeMetrics().classInformationRebuildCount,
+        rebuildCountBeforeRefresh + 1
+        );
+    const auto& selectedDays = harness.summaryReadPort.lastRequest.selectedDays;
+    QCOMPARE(selectedDays.size(), std::size_t(2));
+    QCOMPARE(
+        static_cast<int>(selectedDays[0]),
+        static_cast<int>(SubPrepWeekday::Tuesday)
+        );
+    QCOMPARE(
+        static_cast<int>(selectedDays[1]),
+        static_cast<int>(SubPrepWeekday::Monday)
         );
 }
 

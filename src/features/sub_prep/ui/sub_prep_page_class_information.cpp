@@ -1,6 +1,7 @@
 #include "sub_prep_page_p.h"
 
 #include "core/startup_profiler.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "next/application/sub_prep_class_details_query.h"
 #include "next/application/sub_prep_class_information_state.h"
 #include "next/application/sub_prep_print_source_query.h"
@@ -142,32 +143,27 @@ std::optional<Application::SubPrepWeekday> weekdayFor(
     )
 {
     using Application::SubPrepWeekday;
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
     {
+        return std::nullopt;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return SubPrepWeekday::Monday;
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return SubPrepWeekday::Tuesday;
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return SubPrepWeekday::Wednesday;
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return SubPrepWeekday::Thursday;
-    }
-    if (day == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return SubPrepWeekday::Friday;
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
+    case ScheduleValueParser::Weekday::Saturday:
         return SubPrepWeekday::Saturday;
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
+    case ScheduleValueParser::Weekday::Sunday:
         return SubPrepWeekday::Sunday;
     }
     return std::nullopt;
