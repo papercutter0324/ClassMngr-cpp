@@ -25477,4 +25477,66 @@ round-trip. Map sync failures to recoverable `Technical` results.
    persistence. Build `ClassMngr` and the three existing targets; run exactly
    the corresponding three CTests. Add no CMake target.
 
-This matrix is recorded before implementation. Batch 163 is active with F688.
+This matrix was recorded before implementation.
+
+### F688 Last Database Directory checked persistence - accepted - 2026-10-12
+
+F688 is accepted at code/test commit
+`7185170f0efcb89db7c97d7da2a57144fa6eec7f`. The reused Windows x64 Debug
+Ninja tree `build/windows-x64-debug-ninja` built `ClassMngr`,
+`ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests`,
+`ClassMngrFileControllerWorkspaceLifecycleTests`, and
+`ClassMngrMainWindowSaveAsExportParityTests`. The exact CTests passed 3/3:
+`ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests`,
+`ClassMngrFileControllerWorkspaceLifecycleTests`, and
+`ClassMngrMainWindowSaveAsExportParityTests`. The standard Visual Studio tree
+stopped at `ZERO_CHECK` before compilation with FileTracker `E_ACCESSDENIED`.
+The commit contains exactly eight production/test paths. No full suite ran.
+
+**Decision: accept F688.** Batch 163 is complete.
+
+### Batch 164 shortlist and selection - recorded before F689 implementation - 2026-10-12
+
+The shortlist compared per-purpose file-dialog directory preferences, Recent
+Workspace History, and Custom AI Website URL. Select the file-dialog preference
+because `QtFileDialogService::rememberDirectory` centralizes one write after
+accepted nonempty open-file, multi-open, save-with-options, and directory
+selection flows, while cancel and empty results return before writing. The
+existing QSettings adapter and DialogServices tests cover the persistence and
+caller seams. Recent Workspace History spans multiple settings and callers
+without an injected failure seam; Custom AI Website URL has two-key ordering
+but no current failure-injection seam.
+
+**F689 is selected:** make each purpose-specific QSettings write checked,
+restore the exact prior QVariant or key absence after sync failure, preserve
+unrelated values, and return `[[nodiscard]] Domain::Result<void>` with
+recoverable `Technical` errors. Preserve all eight purpose keys and their
+existing conversions. Default writes use a fresh local QSettings object per
+call, enabling retry on a later accepted operation; do not claim same-object
+recovery for an injected handle after a genuine latched QSettings error.
+
+### F689 file-dialog directory preference persistence acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add checked per-purpose QSettings writes. On sync failure, restore the exact
+   prior QVariant or key absence and preserve unrelated keys; retain all eight
+   existing purpose keys and their current conversions.
+2. Return `[[nodiscard]] Domain::Result<void>` from
+   `FileDialogDirectoryPreferencesPort::writeDirectory`. Map persistence
+   failures to recoverable `Technical` results without changing successful
+   conversion behavior.
+3. On a failed preference save after an accepted nonempty open-file,
+   multi-open, save-with-options, or directory selection, report one warning
+   while keeping the accepted file selection successful. Cancel and empty
+   results must neither write nor warn, and save-with-options must not perform
+   a duplicate preference write.
+4. Verify a later accepted production operation retries through its fresh
+   local QSettings object. Do not require same-object recovery from an injected
+   handle after a genuine latched QSettings error.
+5. Extend the existing adapter and DialogServices tests across open,
+   multi-open, save, and directory selection. Build `ClassMngr`,
+   `ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`,
+   and `ClassMngrDialogServicesTests`; run exactly the CTests
+   `ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`
+   and `ClassMngrDialogServicesTests`. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 164 is active with F689.

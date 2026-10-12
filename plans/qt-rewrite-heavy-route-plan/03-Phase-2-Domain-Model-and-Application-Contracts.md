@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F667 is accepted at commit `528e031ba1f3a549c04c901cd8f39a8c610269b9`; F668 (Calendar event-type color save-failure feedback and persisted-color restoration) is selected in Batch 143, while F625/F626 and current-source macOS universal evidence (0/24) remain open.
+- Current note: F689 is selected in Batch 164; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source macOS universal evidence remains open at 0/24.
 
 ### Slice discovery batches
 
@@ -94,9 +94,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 143
+#### Active batch: Batch 164
 
-- F668 - Report Calendar event-type color save failures and restore the persisted color; implement the pre-recorded UI and persistence matrix.
+- F689 - Report per-purpose file-dialog directory preference save failures while preserving accepted selections; implement the pre-recorded persistence and DialogServices matrix.
 
 ## Objective
 
