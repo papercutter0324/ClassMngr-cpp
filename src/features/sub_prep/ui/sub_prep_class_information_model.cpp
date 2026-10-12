@@ -41,49 +41,55 @@ QString dayAbbreviation(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
+    {
+        return day.trimmed();
+    }
+
+    if (parsed->text == QStringLiteral("Monday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",
             "Mon"
             );
     }
-    if (day == QStringLiteral("Tuesday"))
+    if (parsed->text == QStringLiteral("Tuesday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",
             "Tues"
             );
     }
-    if (day == QStringLiteral("Wednesday"))
+    if (parsed->text == QStringLiteral("Wednesday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",
             "Wed"
             );
     }
-    if (day == QStringLiteral("Thursday"))
+    if (parsed->text == QStringLiteral("Thursday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",
             "Thurs"
             );
     }
-    if (day == QStringLiteral("Friday"))
+    if (parsed->text == QStringLiteral("Friday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",
             "Fri"
             );
     }
-    if (day == QStringLiteral("Saturday"))
+    if (parsed->text == QStringLiteral("Saturday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",
             "Sat"
             );
     }
-    if (day == QStringLiteral("Sunday"))
+    if (parsed->text == QStringLiteral("Sunday"))
     {
         return QCoreApplication::translate(
             "SubPrepClassInformation",

@@ -51,6 +51,8 @@ private slots:
     void trimsTimeWhitespaceAndOmitsSeconds();
     void formatsSharedAndDifferentMeetingTimes();
     void paddedAndLowercaseWeekdaysKeepOrderingAndFallbackLabels();
+    void weekendAndFallbackWeekdaysKeepExpectedLabels_data();
+    void weekendAndFallbackWeekdaysKeepExpectedLabels();
     void filtersHiddenDaysAndInvalidTimes();
     void groupsSortsAndDeduplicatesVisibleClasses();
     void collapsesRepeatedClassLabelsInTeacherHeading();
@@ -168,6 +170,37 @@ void SubPrepClassInformationModelTests
         QStringLiteral(
             "Monday 4pm & Mon 5pm & Tues 4:30pm & Fri 3pm & monday 6pm"
             )
+        );
+}
+
+void SubPrepClassInformationModelTests
+    ::weekendAndFallbackWeekdaysKeepExpectedLabels_data()
+{
+    QTest::addColumn<QString>("day");
+    QTest::addColumn<QString>("expected");
+
+    QTest::newRow("canonical-saturday")
+        << QStringLiteral("Saturday") << QStringLiteral("Sat 4pm");
+    QTest::newRow("canonical-sunday")
+        << QStringLiteral("Sunday") << QStringLiteral("Sun 4pm");
+    QTest::newRow("padded-unknown")
+        << QStringLiteral(" Funday ") << QStringLiteral("Funday 4pm");
+    QTest::newRow("empty-weekday")
+        << QString() << QStringLiteral(" 4pm");
+}
+
+void SubPrepClassInformationModelTests
+    ::weekendAndFallbackWeekdaysKeepExpectedLabels()
+{
+    QFETCH(QString, day);
+    QFETCH(QString, expected);
+
+    QCOMPARE(
+        SubPrepClassInformation::formatMeetingTimes(
+            {meeting(day, QStringLiteral("4:00 PM"))},
+            {day}
+            ),
+        expected
         );
 }
 
