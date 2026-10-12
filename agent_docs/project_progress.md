@@ -4826,3 +4826,50 @@ those three exact CTest registrations. No full suite. F707 and F709 remain
 deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
 separate current-source Phase 0 evidence remains Windows x64 2/24 and macOS
 universal 0/24.
+
+## Phase 2 current position — 2026-10-13 (F756 accepted; F757 selected)
+
+F756 is accepted and committed as
+`1fdabd5a4b656c68baaa0426def3e8ffe5af4b2b` (`Phase2 - Reuse canonical
+positive decimal ID validation in My Classes batches`). The three My Classes
+batch queries now reuse the Application validator, including the class-
+information returned-teacher check after the port read. Under VS 18.10.1 x64
+Developer/MSVC 14.51.36231, `ClassMngr` and all three focused query targets
+built. CTest registered each full `ClassMngr...Tests` name once; all three
+passed 3/3 in 0.10 seconds. No full suite ran.
+
+F757 is selected in Batch 187 to reuse
+`Application::isCanonicalPositiveDecimalId` in
+`TeacherProfileReadQuery` and `TeacherDisplayNameBatchReadQuery`. Replace
+their local canonical-ID predicates only; the helper is already in
+`cmake/next.cmake`, so no CMake inventory change is expected. Preserve these
+caller contracts and read boundaries:
+
+- Teacher profile: invalid IDs return `InvalidInput` with
+  `Teacher ID must be a canonical positive integer.`, recoverable, before any
+  port call. Preserve the exact mismatched-snapshot `Validation` error and
+  nonrecoverability after one port read.
+- Teacher display-name batch: invalid request IDs return nonrecoverable
+  `InvalidInput` with `Teacher IDs must be canonical positive integers.`;
+  duplicate IDs return nonrecoverable `InvalidInput` with
+  `Teacher IDs must be unique.`. Both fail before the port read; empty input
+  remains successful without a read. For returned rows, preserve validation
+  order (canonical ID, requested membership, duplicate identity, requested
+  order), partial results, and row order. A noncanonical returned ID remains
+  nonrecoverable `Validation` with
+  `A teacher display name batch returned a noncanonical teacher identifier.`
+  after one port call.
+
+Extend the two focused tests: add `42x` to both invalid-ID cases and assert
+the exact invalid-input messages and recoverability/read boundaries. Assert
+the profile mismatch's exact message. In the batch output test, retain the
+leading-zero returned ID and add malformed `42x`, asserting the exact
+noncanonical-output error, nonrecoverability, and one call for each failed
+read; retain unexpected, duplicate, misordered, empty, and partial-result
+coverage. Build `ClassMngr` and
+`ClassMngrNextApplicationTeacherProfileReadQueryTests` plus
+`ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests`; confirm one
+CTest registration for each exact full name and run only those two CTests.
+No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
+with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
+Windows x64 2/24 and macOS universal 0/24.

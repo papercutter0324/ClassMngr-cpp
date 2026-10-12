@@ -27,9 +27,13 @@
   test targets built and CTests #273/#274 passed 2/2. F755 is committed at
   `ae93c500716e1c23552178b1b61d2e29e1f14439`; the application target and four
   read-query test targets built under VS 18.10.1 x64 Developer, and the four
-  unique CTests passed 4/4. F756 is selected in Batch 186 to reuse the shared
-  positive-decimal ID validator in three My Classes batch queries. Its exact
-  caller-error and port-boundary matrix is recorded before implementation.
+  unique CTests passed 4/4. F756 is committed at
+  `1fdabd5a4b656c68baaa0426def3e8ffe5af4b2b`; its three query targets built
+  under VS 18.10.1 x64 Developer and the three full-name CTest registrations
+  passed 3/3. F757 is selected in Batch 187 to reuse the canonical positive-
+  decimal ID validator in the teacher-profile and teacher-display-name batch
+  queries. Its caller-error and port-boundary matrix is recorded before
+  implementation.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

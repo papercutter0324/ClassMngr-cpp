@@ -4832,3 +4832,20 @@ The returned-teacher failure must stay after its one required port call. The
 helper is already in the Application source inventory, so this slice should
 not need a CMake change. F707 and F709 remain deferred; Phase 2's exit gate
 remains open.
+
+## Phase 2 F756 acceptance and F757 selection — 2026-10-13
+
+F756 is accepted at `1fdabd5a4b656c68baaa0426def3e8ffe5af4b2b`. Sharing the
+existing canonical positive-decimal ID helper across the three My Classes
+batch queries preserved their input/duplicate checks and class-information's
+post-read teacher-ID validation. `ClassMngr` and the three focused query test
+targets built under VS 18.10.1 x64 Developer; each full-name CTest
+registration appeared once and the three tests passed 3/3. No full suite ran.
+
+F757 is selected in Batch 187 to extend this reuse to the single-teacher
+profile and teacher-display-name batch queries. The matrix preserves the
+profile's recoverable invalid-input failure before a port read, the batch's
+nonrecoverable pre-read invalid/duplicate checks, and post-read canonical
+returned-ID validation before membership, duplicate, and order checks. Add
+trailing-text IDs and exact messages to make those contracts explicit.
+F707/F709 remain deferred, and the Phase 2 exit gate remains open.
