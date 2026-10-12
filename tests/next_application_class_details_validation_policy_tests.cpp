@@ -58,6 +58,7 @@ class NextApplicationClassDetailsValidationPolicyTests final : public QObject
 
 private slots:
     void normalizesAgainstTheSuppliedCatalogAndRawScheduleRows();
+    void reportsInvalidWeekdayAfterTrimmingRawScheduleDay();
     void reportsDisallowedGradeAndLevelAgainstTheCatalog();
     void reportsDisallowedCatalogValuesInLegacyFieldOrder();
     void preservesLegacyValidationIssueOrderAndMalformedRowDetails();
@@ -98,6 +99,34 @@ normalizesAgainstTheSuppliedCatalogAndRawScheduleRows()
     QCOMPARE(
         output.normalized.regularTimes[0].endTime,
         std::u16string(u"4:55 PM")
+        );
+}
+
+void NextApplicationClassDetailsValidationPolicyTests::
+reportsInvalidWeekdayAfterTrimmingRawScheduleDay()
+{
+    ClassDetailsValidationInput input = validInput();
+    input.regularTimes = {{u" Funday ", u"16:00", u"16:55"}};
+
+    const ClassDetailsValidationOutput output =
+        ClassDetailsValidationPolicy::normalizeAndValidate(input, catalog());
+
+    QCOMPARE(output.issues.size(), std::size_t(1));
+    QCOMPARE(output.issues[0].code, ClassDetailsValidationCode::InvalidWeekday);
+    QCOMPARE(
+        output.issues[0].field,
+        ClassDetailsValidationField::ScheduleDay
+        );
+    QCOMPARE(
+        output.issues[0].schedule.value(),
+        ClassDetailsValidationSchedule::Regular
+        );
+    QCOMPARE(output.issues[0].row, std::size_t(0));
+    QCOMPARE(output.issues[0].value.value(), std::u16string(u"Funday"));
+    QCOMPARE(output.normalized.regularTimes.size(), std::size_t(1));
+    QCOMPARE(
+        output.normalized.regularTimes[0].day,
+        std::u16string(u"Funday")
         );
 }
 

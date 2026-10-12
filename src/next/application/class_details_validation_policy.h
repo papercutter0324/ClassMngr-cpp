@@ -1,5 +1,6 @@
 #pragma once
 
+#include "domain/rules/schedule_key_rules.h"
 #include "next/application/qt_compatible_text.h"
 
 #include <algorithm>
@@ -288,19 +289,16 @@ private:
         std::u16string_view value
         )
     {
-        static constexpr std::u16string_view weekdays[]{
-            u"Monday", u"Tuesday", u"Wednesday", u"Thursday",
-            u"Friday", u"Saturday", u"Sunday"
-        };
         const std::u16string trimmed = trim(value);
-        for (std::size_t index = 0; index < std::size(weekdays); ++index)
+        const auto parsed = ScheduleKeyRules::parseWeekday(
+            trimmed,
+            equalsCaseInsensitive
+            );
+        if (!parsed)
         {
-            if (equalsCaseInsensitive(trimmed, weekdays[index]))
-            {
-                return static_cast<int>(index);
-            }
+            return std::nullopt;
         }
-        return std::nullopt;
+        return static_cast<int>(parsed->value);
     }
 
     [[nodiscard]] static std::u16string weekdayName(int index)
