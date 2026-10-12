@@ -149,6 +149,20 @@ forwardsExactValuesForEachMutation()
     QVERIFY(port.lastRequest->classId.has_value());
     QCOMPARE(port.lastRequest->classId->value(), std::string("42"));
     QVERIFY(port.lastRequest->replaceExisting);
+
+    request = validPlainRequest();
+    request.mutation =
+        Application::ScheduleTestingAssignmentMutation::AssignTestingClass;
+    request.day = u"Wednesday";
+    request.startTime = u"11:00";
+    request.classId = Domain::ClassId::fromString("00042");
+    result = executeSave(request, port);
+    QVERIFY(result);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.callCount, 4);
+    QCOMPARE(port.lastRequest->mutation, request.mutation);
+    QVERIFY(port.lastRequest->classId.has_value());
+    QCOMPARE(port.lastRequest->classId->value(), std::string("00042"));
 }
 
 void NextApplicationScheduleTestingAssignmentSaveUseCaseTests::

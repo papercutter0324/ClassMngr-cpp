@@ -165,6 +165,18 @@ invalidClassIdsDoNotReachPort()
             std::string("Class ID must be a positive integer."));
         QVERIFY(result.error().recoverable);
     }
+
+    Application::ClassDetailsSaveRequest invalidBoth = request("0");
+    invalidBoth.teacherId = Domain::TeacherId::fromString("0");
+    const auto precedenceResult =
+        Application::ClassDetailsSaveUseCase::execute(invalidBoth, port);
+    QVERIFY(!precedenceResult);
+    QCOMPARE(precedenceResult.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        precedenceResult.error().message,
+        std::string("Class ID must be a positive integer.")
+        );
+    QVERIFY(precedenceResult.error().recoverable);
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
 }

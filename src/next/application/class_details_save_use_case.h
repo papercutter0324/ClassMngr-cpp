@@ -5,7 +5,6 @@
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_time.h"
 
-#include <charconv>
 #include <optional>
 #include <string>
 #include <vector>
@@ -45,7 +44,7 @@ public:
         const ClassDetailsSavePort& port
         )
     {
-        if (!isPositiveInteger(request.classId.value()))
+        if (!parsePositiveDecimalId(request.classId.value()))
         {
             return Domain::Result<void>::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -65,25 +64,6 @@ public:
         }
 
         return port.saveClassDetails(request);
-    }
-
-private:
-    [[nodiscard]] static bool isPositiveInteger(const std::string& value)
-    {
-        if (value.empty())
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0;
     }
 };
 

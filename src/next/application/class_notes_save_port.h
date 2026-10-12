@@ -1,12 +1,11 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <charconv>
 #include <cstddef>
 #include <string>
-#include <system_error>
 
 namespace ClassMngr::Next::Application
 {
@@ -47,16 +46,7 @@ validateClassNotesSaveRequest(
         });
     }
 
-    const std::string& classId = request.classId.value();
-    int parsedClassId = 0;
-    const auto parseResult = std::from_chars(
-        classId.data(),
-        classId.data() + classId.size(),
-        parsedClassId
-        );
-    if (parseResult.ec != std::errc{}
-        || parseResult.ptr != classId.data() + classId.size()
-        || parsedClassId <= 0)
+    if (!parsePositiveDecimalId(request.classId.value()))
     {
         return Domain::Result<void>::failure({
             .code = Domain::ErrorCode::InvalidInput,

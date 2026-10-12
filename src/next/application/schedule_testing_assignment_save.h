@@ -1,14 +1,13 @@
 #pragma once
 
 #include "domain/rules/schedule_key_rules.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <charconv>
 #include <optional>
 #include <string>
-#include <system_error>
 #include <utility>
 
 namespace ClassMngr::Next::Application
@@ -92,16 +91,7 @@ private:
         const Domain::ClassId& id
         )
     {
-        const std::string& value = id.value();
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0;
+        return parsePositiveDecimalId(id.value()).has_value();
     }
 
     [[nodiscard]] static Domain::Result<void> invalidInput(

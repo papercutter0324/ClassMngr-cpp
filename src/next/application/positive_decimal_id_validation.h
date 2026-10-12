@@ -9,11 +9,11 @@
 namespace ClassMngr::Next::Application
 {
 
-[[nodiscard]] inline std::optional<int> parseCanonicalPositiveDecimalId(
+[[nodiscard]] inline std::optional<int> parsePositiveDecimalId(
     const std::string_view value
     )
 {
-    if (value.empty() || value.front() < '1' || value.front() > '9')
+    if (value.empty())
     {
         return std::nullopt;
     }
@@ -26,8 +26,19 @@ namespace ClassMngr::Next::Application
         );
     if (error != std::errc{}
         || end != value.data() + value.size()
-        || parsed <= 0
-        || std::to_string(parsed) != value)
+        || parsed <= 0)
+    {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
+[[nodiscard]] inline std::optional<int> parseCanonicalPositiveDecimalId(
+    const std::string_view value
+    )
+{
+    const std::optional<int> parsed = parsePositiveDecimalId(value);
+    if (!parsed || std::to_string(*parsed) != value)
     {
         return std::nullopt;
     }

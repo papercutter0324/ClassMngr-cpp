@@ -236,7 +236,8 @@ private slots:
     void existingNextContractsRemainUsable();
     void applyRequestKeepsChoicesSeparateAndPreservesOrder();
     void applyValidationRetainsDecisionIssuesAndOrder();
-    void positiveDecimalIdParserUsesCanonicalIntRange();
+    void positiveDecimalIdParserUsesPositiveIntRange();
+    void canonicalPositiveDecimalIdParserUsesCanonicalIntRange();
     void applyDestinationIdHandlesMaximumAndRejectsMalformedValues();
     void applyValidationRejectsMalformedTargetsBeforeDecisionIssues();
 
@@ -1374,7 +1375,45 @@ void NextApplicationClassTransferTests::applyValidationRetainsDecisionIssuesAndO
 }
 
 void NextApplicationClassTransferTests::
-positiveDecimalIdParserUsesCanonicalIntRange()
+positiveDecimalIdParserUsesPositiveIntRange()
+{
+    const int maximum = std::numeric_limits<int>::max();
+    const std::string maximumText = std::to_string(maximum);
+    struct ParseCase final
+    {
+        std::string value;
+        std::optional<int> expected;
+    };
+    const std::vector<ParseCase> cases{
+        {"1", 1},
+        {"42", 42},
+        {"00042", 42},
+        {maximumText, maximum},
+        {"", std::nullopt},
+        {"0", std::nullopt},
+        {"+1", std::nullopt},
+        {"-1", std::nullopt},
+        {"-42", std::nullopt},
+        {"letters", std::nullopt},
+        {"42x", std::nullopt},
+        {"42 ", std::nullopt},
+        {"2147483648", std::nullopt},
+        {std::string(4096, '9'), std::nullopt}
+    };
+
+    for (const ParseCase& testCase : cases)
+    {
+        const auto parsed = parsePositiveDecimalId(testCase.value);
+        QCOMPARE(parsed.has_value(), testCase.expected.has_value());
+        if (testCase.expected)
+        {
+            QCOMPARE(parsed.value(), testCase.expected.value());
+        }
+    }
+}
+
+void NextApplicationClassTransferTests::
+canonicalPositiveDecimalIdParserUsesCanonicalIntRange()
 {
     const int maximum = std::numeric_limits<int>::max();
     const std::string maximumText = std::to_string(maximum);
@@ -1391,6 +1430,7 @@ positiveDecimalIdParserUsesCanonicalIntRange()
         {"0", std::nullopt},
         {"01", std::nullopt},
         {"042", std::nullopt},
+        {"00042", std::nullopt},
         {"+1", std::nullopt},
         {"-1", std::nullopt},
         {"x", std::nullopt},
@@ -1435,7 +1475,7 @@ applyDestinationIdHandlesMaximumAndRejectsMalformedValues()
     QCOMPARE(parsedTeacherId.value(), maximum);
 
     for (const std::string& malformed : {
-             "0", "042", "-1", "42x", "2147483648"
+             "0", "042", "00042", "-1", "42x", "2147483648"
          })
     {
         const auto classId = ClassId::fromString(malformed);
@@ -1452,7 +1492,9 @@ void NextApplicationClassTransferTests::applyValidationRejectsMalformedTargetsBe
 {
     const auto review = validReviewRequest();
     const ClassTransferApplyCandidates candidates{review.classes, review.teachers};
-    for (std::string raw : {"0","-2","01","+1","1 ","x","2147483648"})
+    for (std::string raw : {
+             "0", "-2", "01", "00042", "+1", "1 ", "x", "2147483648"
+         })
     {
         ClassTransferApplyRequest choices{review.classResolutions,review.teacherResolutions};
         choices.classes[0].targetClassId = *ClassId::fromString(raw);
@@ -1472,6 +1514,13 @@ void NextApplicationClassTransferTests::applyValidationRejectsMalformedTargetsBe
         choices.teachers[0].action = ClassTransferReviewTeacherAction::KeepExisting;
         result = validateClassTransferApplyRequest(choices, candidates);
         QCOMPARE(result.issues[0].code, ClassTransferReviewDecisionIssueCode::TeacherActionMissingTarget);
+
+        choices = {review.classResolutions,review.teacherResolutions};
+        choices.classes[0].targetClassId = *ClassId::fromString(raw);
+        choices.teachers[1].targetTeacherId = *TeacherId::fromString(raw);
+        result = validateClassTransferApplyRequest(choices, candidates);
+        QCOMPARE(result.issues.size(), std::size_t(1));
+        QCOMPARE(result.issues[0].code, ClassTransferReviewDecisionIssueCode::ReplaceClassMissingTarget);
     }
 }
 
