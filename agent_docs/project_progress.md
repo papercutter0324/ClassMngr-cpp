@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F727 accepted; F728 selected)
+### Current state - 2026-10-12 (F728 accepted; F729 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F728, the Schedule Import meeting-weekday parser migration.
+with F729, the Schedule Import weekday-group parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -309,15 +309,26 @@ Monday reach the summary request, preserving first-seen order and
 deduplication. `ClassMngr` and `ClassMngrSubPrepPageTests` built; the exact
 registered CTest passed 1/1. No full suite ran.
 
-F728 selects `scheduleImportWeekday` in
-`src/domain/rules/schedule_import_rules.cpp`. Reuse
-`ScheduleValueParser::parseWeekday` with exact canonical-text equality, map
-Monday through Friday only, and preserve rejection of Saturday, Sunday, and
-other invalid inputs plus the existing meeting-pattern error. Extend
-`validatesCourseMeetingPatterns()` with lowercase and padded weekday cases
-that assert the exact generic error while retaining canonical and Saturday
-coverage. Build `ClassMngr` and `ClassMngrScheduleImportTests`; run only that
-exact registered CTest. No CMake change or full suite is planned. F707 remains
+F728 is accepted and committed as
+`128de4d1670a78cd259630c013747abb005b2aae`. Schedule Import's
+`scheduleImportWeekday` uses `ScheduleValueParser::parseWeekday` with exact
+canonical-text equality and explicit Monday-Friday mapping; weekends and
+invalid values remain rejected. Public meeting-pattern coverage asserts the
+exact generic error for lowercase and padded weekdays while retaining
+canonical, duplicate, and Saturday cases. `ClassMngr` and
+`ClassMngrScheduleImportTests` built; the exact registered CTest passed 1/1.
+No full suite ran.
+
+F729 selects `scheduleImportDayGroup` in
+`src/domain/rules/schedule_import_rules.cpp`. Reuse the shared parser's trim
+and case-insensitive weekday recognition without requiring canonical-text
+equality. Preserve Monday/Wednesday/Friday group 1 and Tuesday/Thursday group
+2; weekends, invalid/empty input, and mixed groups return 0. Keep equal
+nonzero-group compatibility and the separate eligibility fallback for empty
+existing times. Extend `filtersClassOptionsByGradeAndDayGroup()` with padded
+and mixed-case acceptance and invalid/mixed-group rejection while preserving
+existing cases. Build `ClassMngr` and `ClassMngrScheduleImportTests`; run only
+that exact CTest. No CMake change or full suite is planned. F707 remains
 deferred because its comparator chain has no observed app callsite; F709 is
 deferred because its public fixture does not readily supply malformed raw time
 text.

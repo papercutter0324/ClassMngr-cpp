@@ -4520,12 +4520,23 @@ Monday reach the summary request, preserving first-seen order and
 deduplication. `ClassMngr` and `ClassMngrSubPrepPageTests` built; the exact
 registered CTest passed 1/1. No full suite ran.
 
-F728 is selected in `scheduleImportWeekday` in
-`src/domain/rules/schedule_import_rules.cpp`. Reuse the shared weekday parser
-with exact canonical-text equality, map Monday-Friday only, and preserve
-Saturday/Sunday/invalid rejection and the existing generic meeting-pattern
-error. Extend `validatesCourseMeetingPatterns()` with lowercase and padded
-weekday cases and assert the exact error, retaining canonical and Saturday
-coverage. Build `ClassMngr` and `ClassMngrScheduleImportTests`; run only that
-exact CTest. No full suite is planned. Phase 2 remains In Progress with Gates
-1 and 2 Partial.
+F728 is accepted and committed as
+`128de4d1670a78cd259630c013747abb005b2aae`. Schedule Import's
+`scheduleImportWeekday` uses `ScheduleValueParser::parseWeekday` with exact
+canonical-text equality and explicit Monday-Friday mapping; weekends and
+invalid values remain rejected. Public meeting-pattern coverage asserts the
+exact generic error for lowercase and padded weekdays while retaining
+canonical, duplicate, and Saturday cases. `ClassMngr` and
+`ClassMngrScheduleImportTests` built; the exact registered CTest passed 1/1.
+No full suite ran.
+
+F729 is selected to migrate `scheduleImportDayGroup` in
+`src/domain/rules/schedule_import_rules.cpp`. Reuse the shared parser's trim
+and case-insensitive weekday recognition without canonical-text equality;
+preserve Monday/Wednesday/Friday group 1, Tuesday/Thursday group 2, and zero
+for weekends, invalid/empty input, or mixed groups. Keep the equal-nonzero
+compatibility rule and empty-existing-times eligibility fallback. Extend
+`filtersClassOptionsByGradeAndDayGroup()` for padded/mixed-case acceptance and
+mixed/weekend/unknown/empty rejection. Build `ClassMngr` and
+`ClassMngrScheduleImportTests`; run only that exact CTest. No full suite is
+planned. Phase 2 remains In Progress with Gates 1 and 2 Partial.

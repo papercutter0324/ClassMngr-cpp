@@ -27400,5 +27400,51 @@ course-meeting weekday contract.
    `ClassMngrScheduleImportTests`; run only the exact registered CTest
    `ClassMngrScheduleImportTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F728;
+This matrix was recorded before implementation.
+
+### F728 Schedule Import course-meeting weekday parser migration - accepted - 2026-10-12
+
+F728 is accepted at code/test commit
+`128de4d1670a78cd259630c013747abb005b2aae`. `scheduleImportWeekday` now uses
+`ScheduleValueParser::parseWeekday` with canonical-text equality, explicitly
+maps Monday through Friday, and continues to reject weekends and invalid
+values. `validatesCourseMeetingPatterns()` covers lowercase and padded
+rejection while retaining canonical and Saturday cases, including the exact
+error `Each imported class must have exactly one meeting per scheduled weekday.`
+
+`ClassMngr` and `ClassMngrScheduleImportTests` built successfully. The exact
+registered CTest `ClassMngrScheduleImportTests` passed 1/1. No full suite ran.
+
+**Decision: accept F728.** Batch 179 continues with F729; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F729 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `scheduleImportDayGroup` in
+`src/domain/rules/schedule_import_rules.cpp`.
+
+**F729 is selected:** reuse the Domain weekday parser with trim and
+case-insensitive semantics to preserve day-group matching.
+
+1. Migrate only `scheduleImportDayGroup` to
+   `ScheduleValueParser::parseWeekday`, applying trim/case-insensitive
+   canonicalization without requiring canonical-text equality. Preserve
+   Monday/Wednesday/Friday group 1, Tuesday/Thursday group 2, and zero for
+   weekends, invalid or empty values, and mixed groups. Preserve compatibility
+   when nonzero groups match and the empty-existing-times eligibility fallback.
+2. Extend `ScheduleImportTests::filtersClassOptionsByGradeAndDayGroup` with
+   deterministic cases for: padded/mixed-case compatible weekdays; rejection
+   of a mixed Monday+Tuesday candidate; rejection of Saturday and Sunday;
+   rejection of one unknown label; and rejection of empty candidate days
+   against nonempty existing days. Retain and assert the existing
+   empty-existing-times eligibility fallback.
+3. The parser is already compiled in `ClassMngrScheduleImportTests`, so no
+   CMake wiring change is needed. Build `ClassMngr` and
+   `ClassMngrScheduleImportTests`; run only the exact registered CTest
+   `ClassMngrScheduleImportTests`. Run no full suite.
+4. The legacy `toCaseFolded` behavior and the parser's Qt case-insensitive
+   comparator can differ for exotic Unicode. Ordinary English weekday labels
+   are the supported domain for this migration.
+
+This matrix is recorded before implementation. Batch 179 is active with F729;
 F707 and F709 remain deferred.

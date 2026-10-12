@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F727 is accepted and F728, the Schedule Import meeting-weekday parser migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F728 is accepted and F729, the Schedule Import weekday-group parser migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -101,7 +101,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F728 - Move Schedule Import's meeting-weekday mapping to the shared weekday parser while preserving exact canonical matching and the Monday-Friday policy.
+- F729 - Move Schedule Import's weekday grouping to the shared parser while preserving trimmed, case-insensitive group compatibility and invalid-input behavior.
 
 ## Objective
 
