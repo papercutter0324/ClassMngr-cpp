@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F717 accepted; F718 selected)
+### Current state - 2026-10-12 (F718 accepted; F719 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F718, the ClassInfoRepository weekday parsing migration.
+with F719, the ClassTransferRepository weekday parsing migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -205,21 +205,31 @@ padded Monday sorts canonically but retains label `Monday`, while lowercase
 `ClassMngrSubPrepClassInformationModelTests` built in the Windows x64 Debug
 Ninja tree under VS 2026 x64 Developer; the exact registered CTest passed 1/1
 (0.04 seconds). A `vswhere.exe` recognition warning printed; no full suite ran.
-F718 selects `dayIndex` in
-`src/data/repositories/class_info_repository.cpp`. Reuse
-`ScheduleValueParser::parseWeekday`, requiring its canonical text to equal
-the raw, untrimmed input so padded and lowercase spellings remain invalid.
-Preserve the current `-1` fallback and ensure invalid stored weekday rows are
-still skipped from conflict queries. Extend the public
-`readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder` test by saving
-overlapping rows with raw ` Monday ` and `monday` values; verify the raw values
-persist and the public query returns only the canonical valid conflicts in
-repository order. Runtime already compiles `schedule_value_parser.cpp`; no
-CMake change is needed. Build `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
-then run only the exact registered CTest of that name. F707 remains deferred
-because its comparator chain has no observed app callsite; F709 is deferred
-because its public fixture does not readily supply malformed raw time text.
+F718 is committed as `7e8929c7`. It migrates
+`ClassInfoRepository::dayIndex` through `ScheduleValueParser::parseWeekday`
+while requiring canonical text to equal the raw, untrimmed input, preserving
+the `-1` invalid fallback. Raw padded and lowercase weekday rows persist but
+remain skipped by conflict queries; the public query still returns only
+canonical Monday and Tuesday conflicts in repository order. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+built in the Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the
+exact registered CTest passed 1/1 (0.25 seconds). A `vswhere.exe` recognition
+warning printed during Developer initialization; no full suite ran. F719
+selects `dayIndex` in `src/data/repositories/class_transfer_repository.cpp`.
+Reuse `ScheduleValueParser::parseWeekday` and require its canonical text to
+equal the raw day string to preserve the existing exact, untrimmed,
+case-sensitive weekday grammar. Keep the `-1` invalid result and preflight
+rejection before import writes. Extend the public `DataService::importClasses`
+test `schedulePreflightParsesSundayOvernightAndEqualEndpoints` with valid-time
+rows using lowercase `monday` and padded ` Monday `; verify both remain
+invalid and existing canonical Monday/Sunday cases still pass, with zero
+SQLite changes and unchanged destination class, teacher, and schedule state.
+The focused `ClassMngrClassTransferTests` target already directly compiles
+`schedule_value_parser.cpp`; no CMake change is needed. Build `ClassMngr` and
+`ClassMngrClassTransferTests`, then run only the exact registered CTest of
+that name. F707 remains deferred because its comparator chain has no observed
+app callsite; F709 is deferred because its public fixture does not readily
+supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

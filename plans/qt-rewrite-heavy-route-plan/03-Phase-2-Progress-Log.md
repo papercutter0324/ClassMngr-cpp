@@ -26935,4 +26935,53 @@ untrimmed, case-sensitive matching and invalid-row skipping.
    `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`.
    Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F718.
+This matrix was recorded before implementation.
+
+### F718 Class Info weekday-index parser migration - accepted - 2026-10-12
+
+F718 is accepted at source/test commit `7e8929c7`. The change is limited to
+`src/data/repositories/class_info_repository.cpp` and
+`tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`.
+`dayIndex` now uses `ScheduleValueParser::parseWeekday` and requires canonical
+text to equal the raw weekday, preserving the `-1` fallback and rejection of
+padded or lowercase spellings. The test persists ` Monday ` and `monday` rows
+with valid overlapping times exactly as supplied; the public query returns
+only canonical Monday and Tuesday conflicts in repository order.
+
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+built successfully. The exact registered CTest of the same name passed 1/1 in
+0.25 seconds; `git diff --check` passed. Developer-environment initialization
+printed a `vswhere.exe` warning. No full suite ran.
+
+**Decision: accept F718.** Batch 179 continues with F719; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F719 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayIndex` in
+`src/data/repositories/class_transfer_repository.cpp`. It currently matches
+raw canonical English weekday names exactly, without trimming or case
+folding; invalid values return `-1`, and `candidateForTime` rejects them
+before writes.
+
+**F719 is selected:** reuse the Domain weekday parser while retaining exact
+raw-spelling validation and preflight rejection.
+
+1. Migrate only `dayIndex` to `ScheduleValueParser::parseWeekday`. Since the
+   parser trims and accepts case-insensitively, require `parsed->text == day`
+   for the raw input. Keep lowercase `monday` and padded ` Monday ` invalid
+   with the existing `-1` fallback; canonical weekday inputs remain accepted.
+2. Preserve invalid-schedule preflight rejection before writes, zero SQLite
+   changes, and unchanged destination class, teacher, and schedule state.
+3. Extend the public `DataService::importClasses` test
+   `schedulePreflightParsesSundayOvernightAndEqualEndpoints` in
+   `tests/class_transfer_tests.cpp` with valid-time rows using lowercase and
+   padded weekdays. Assert both remain invalid before writes while the
+   existing canonical Monday and Sunday cases continue to pass.
+4. `ClassMngrClassTransferTests` already directly compiles
+   `schedule_value_parser.cpp`, so no CMake wiring change is needed. Build
+   `ClassMngr` and that target; run only the exact registered CTest
+   `ClassMngrClassTransferTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F719.

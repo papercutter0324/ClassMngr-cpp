@@ -4425,19 +4425,29 @@ Ninja tree under VS 2026 x64 Developer; the exact registered CTest passed 1/1
 in 0.04 seconds. A `vswhere.exe` recognition warning printed during Developer
 initialization. No full suite ran.
 
-F718 is selected for `dayIndex` in
-`src/data/repositories/class_info_repository.cpp`. Existing behavior performs
-an exact lookup against the raw, untrimmed weekday and returns `-1` for an
-unknown value. Reuse `ScheduleValueParser::parseWeekday` but require canonical
-text to equal the raw input, preserving rejection of padded and lowercase
-spellings and the invalid-row skip in conflict queries. Add raw ` Monday `
-and `monday` rows with valid overlapping times to
-`readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder`; save through
-`ClassInfoRepository::saveClassInfo`, verify raw persistence, and assert the
-public query still returns only the canonical valid conflicts in repository
-order. The focused target already compiles the parser through Runtime, so no
-CMake change is needed. Build `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
-then run that exact registered CTest only. F707 and F709 remain deferred for
-their documented missing app callsite and malformed-input seam constraints.
-Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F718 is accepted in Batch 179 and committed as `7e8929c7`. The migration
+updates only `ClassInfoRepository::dayIndex`, requiring
+`ScheduleValueParser::parseWeekday` output to equal the raw input. Padded and
+lowercase stored weekday rows persist but are skipped from conflict queries;
+the public query still returns only canonical Monday and Tuesday conflicts in
+repository order. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+built in the Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the
+exact registered CTest passed 1/1 in 0.25 seconds. A `vswhere.exe` warning
+printed during Developer initialization. No full suite ran.
+
+F719 is selected for `dayIndex` in
+`src/data/repositories/class_transfer_repository.cpp`. Existing behavior
+exact-matches the raw weekday string without trimming or case folding and
+returns `-1` for invalid values, which rejects the import during schedule
+preflight before writes. Reuse `ScheduleValueParser::parseWeekday` but require
+canonical text to equal the raw input. Add valid-time `monday` and
+` Monday ` rows to the public `DataService::importClasses` test
+`schedulePreflightParsesSundayOvernightAndEqualEndpoints`; verify they remain
+invalid, existing canonical Monday/Sunday entries still pass, and there are
+zero SQLite changes with destination class, teacher, and schedule state
+unchanged. The `ClassMngrClassTransferTests` target already compiles the
+parser, so no CMake change is needed. Build `ClassMngr` and that target, then
+run the exact registered CTest only. F707 and F709 remain deferred for their
+documented missing app callsite and malformed-input seam constraints. Phase 2
+remains In Progress with Gates 1 and 2 Partial.
