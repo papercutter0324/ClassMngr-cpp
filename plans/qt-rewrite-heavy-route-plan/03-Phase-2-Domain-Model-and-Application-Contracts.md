@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F779 is accepted at `4f8b2748a4b078f6dff74078b45909353446deb5`; F780 is selected in Batch 193 to share positive-decimal `int` parsing while preserving caller-specific contracts, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F780 is accepted at `9e549c1dd5500271435019cebf0a104401417317`; F781 is selected in Batch 194 to reject malformed Teacher IDs at the Teacher Profile Edit boundary, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,11 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 193
+#### Active batch: Batch 194
 
-- F780 - Positive-decimal ID parser reuse - Share the full-parse, positive-`int` parser across three Application callers while preserving canonical parsing and caller-specific behavior.
-
-No other slices were found.
+- F781 - Teacher Profile Edit malformed ID boundary - Reject noncanonical typed Teacher IDs before policy validation or persistence.
 
 ## Objective
 

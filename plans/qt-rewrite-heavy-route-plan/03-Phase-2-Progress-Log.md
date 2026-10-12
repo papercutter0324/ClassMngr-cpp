@@ -30006,3 +30006,48 @@ the incremental Visual Studio 18 Windows x64 Debug tree
 registers once, then run only these four with `-C Debug --output-on-failure`;
 run no full suite. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
 Partial, and the formal exit gate remains Open.
+
+### F780 Positive-decimal ID parser reuse - accepted - 2026-10-13
+
+F780 is accepted at commit
+`9e549c1dd5500271435019cebf0a104401417317`. `ClassMngr` and the four
+focused targets built in the existing Visual Studio 18 x64 Debug tree after
+the bounded build retry outside the sandbox following FileTracker
+`E_ACCESSDENIED`. Exact CTests #212, #213, #241, and #382 passed 4/4. No full
+suite ran.
+
+### Batch 194 discovery - 2026-10-13
+
+The Teacher Profile Edit boundary was selected because `TeacherId::fromString`
+accepts any nonempty value while the production persistence adapter rejects
+noncanonical positive-decimal IDs; the use case already defines an
+`InvalidTeacherId` failure contract before policy or persistence calls. The
+calendar repeat-enum move to Domain remains a broader ownership-only candidate
+with additional UI mapping changes. Lifecycle review found no narrower
+2.5/2.6 gap. F781 is the selected candidate for this batch.
+
+### F781 Teacher Profile Edit malformed ID boundary - selected and acceptance matrix - 2026-10-13
+
+**F781 is selected:** in
+`src/next/application/teacher_profile_edit_use_case.h`, reject a supplied
+`Domain::TeacherId` whose value is not a canonical positive decimal, before
+validation-policy or persistence calls. Preserve the existing
+`TeacherProfileEditFailureKind::InvalidTeacherId` result:
+`ErrorCode::InvalidInput`, exact message `Teacher ID must be positive.`, and
+`recoverable=true`. Keep missing and nonpositive-ID behavior unchanged.
+
+Extend `invalidInputsDoNotWrite()` in
+`tests/next_application_teacher_profile_edit_tests.cpp` with malformed typed
+IDs such as `not-an-id` and `08`. Assert the structured failure and zero
+validation-policy, update, and reload calls. Preserve the valid
+validate-then-update-then-reload sequence, unchanged ID forwarding and
+successful returned profile, plus F776's reload-identity mismatch result
+with `writeSucceeded=true` after the update.
+
+No CMake or source-ownership change is expected. The exact target/CTest
+`ClassMngrNextApplicationTeacherProfileEditTests` is already registered.
+Reuse `build/windows-x64-debug` (Visual Studio 18, x64 Debug), build
+`ClassMngr` and that target, confirm the exact CTest registers once, then run
+only that CTest with `-C Debug`. Run no full suite. Commit this matrix before
+source/test edits. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.

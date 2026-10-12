@@ -114,11 +114,13 @@
   No full suite ran. F779 is accepted at
   `4f8b2748a4b078f6dff74078b45909353446deb5`; its seven focused targets built
   after the outside-sandbox FileTracker retry, and the seven exact CTests
-  registered once and passed 7/7. No full suite ran. F780 is selected to share
-  full-parse positive-int validation across Class Details, Class Notes, and
-  Schedule Testing, preserving padded IDs, exact caller errors, and validation
-  order while keeping Class Transfer's canonical spelling check strict. Its
-  pre-implementation matrix is in the Phase 2 progress log. F707 remains
+  registered once and passed 7/7. No full suite ran. F780 is committed at
+  `9e549c1dd5500271435019cebf0a104401417317`; its four focused CTests passed
+  4/4 after the bounded build succeeded outside the sandbox following
+  FileTracker `E_ACCESSDENIED`. F781 will reject malformed or noncanonical
+  present Teacher IDs at the Teacher Profile Edit use-case boundary before
+  validation or persistence, preserving the current structured error shape.
+  Its pre-implementation matrix is in the Phase 2 progress log. F707 remains
   deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

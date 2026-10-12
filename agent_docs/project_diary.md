@@ -5194,3 +5194,23 @@ placement because its role remains an Application catalog projection and a
 Domain migration would cross the wider catalog record/use-case boundary;
 defer `StudentNamePairText` replacement because incomplete-row handling differs
 from the Domain name-pair invariant.
+
+## Phase 2 F780 acceptance and F781 selection — 2026-10-13
+
+F780 is accepted at `9e549c1dd5500271435019cebf0a104401417317`; `ClassMngr`
+and its four focused targets built after the bounded Visual Studio 18 x64
+Debug build succeeded outside the sandbox following FileTracker
+`E_ACCESSDENIED`. The four exact CTests registered once and passed 4/4. No
+full suite ran.
+
+Batch 194 compared a concrete Teacher Profile Edit input-boundary gap with a
+broader Calendar repeat-frequency Domain ownership move. The lifecycle review
+found no narrower uncovered 2.5/2.6 behavior. F781 selects the malformed
+Teacher ID boundary: `TeacherId::fromString` accepts nonempty text, but the
+production persistence adapter requires a canonical positive decimal ID.
+Reject malformed present IDs at the use-case entry with the existing
+`InvalidTeacherId` failure shape before policy or persistence calls. Preserve
+valid save sequencing, the F776 reload-mismatch result, and all existing error
+metadata. The acceptance matrix and exact target are recorded in the Phase 2
+progress log. F707/F709 remain deferred, Gates 1/2 remain Partial, and the
+formal exit gate remains Open.

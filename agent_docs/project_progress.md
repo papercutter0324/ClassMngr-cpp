@@ -4937,16 +4937,19 @@ precedence. Its acceptance matrix is recorded in the Phase 2 progress log.
 F707/F709 remain deferred; Gates 1/2 are Partial and the formal exit gate is
 Open.
 
-## Phase 2 current position — 2026-10-13 (F779 accepted; F780 selected)
+## Phase 2 current position — 2026-10-13 (F780 accepted; F781 selected)
 
-F779 is accepted at `4f8b2748a4b078f6dff74078b45909353446deb5`. In the
-existing Visual Studio 18 Windows x64 Debug tree, `ClassMngr` and seven
-focused test targets built after an identical bounded retry outside the
-sandbox for FileTracker `E_ACCESSDENIED`; all seven exact CTests registered
-once and passed. No full suite ran.
+F780 is committed as `9e549c1dd5500271435019cebf0a104401417317`. In the
+existing Visual Studio 18 Windows x64 Debug tree, `ClassMngr` and four focused
+targets built after the bounded retry outside the sandbox for FileTracker
+`E_ACCESSDENIED`. The exact CTests registered once and passed 4/4; no full
+suite ran. The shared parser preserves permissive leading-zero handling in
+Class Details, Class Notes, and Schedule Testing while keeping canonical
+Class Transfer validation strict.
 
-F780 shares the full-parse, positive-int parser used by Class Details, Class
-Notes, and Schedule Testing while preserving their padded-ID acceptance,
-original ID forwarding, caller-specific errors, and validation order. The
-canonical Class Transfer parser remains strict. F707/F709 remain deferred;
-Gates 1/2 are Partial and the formal exit gate remains Open.
+F781 will reject a present malformed or noncanonical `TeacherId` at the
+Teacher Profile Edit use-case boundary before validation or persistence. Keep
+the established `InvalidTeacherId` / `InvalidInput` failure, message, and
+recoverability unchanged. Its pre-implementation matrix is recorded in the
+Phase 2 progress log. F707/F709 remain deferred; Gates 1/2 are Partial and the
+formal exit gate remains Open.
