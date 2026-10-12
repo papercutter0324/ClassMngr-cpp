@@ -2099,7 +2099,7 @@ void ClassTransferTests::
         destinationBeforeInvalid->classTimes;
     const QList<ClassTime> intensiveScheduleBeforeInvalid =
         destinationBeforeInvalid->intensiveTimes;
-    const QList<ClassTime> malformedSchedules{
+    const QList<ClassTime> invalidSchedules{
         {
             QStringLiteral("Monday"),
             QStringLiteral("4:75 PM"),
@@ -2109,9 +2109,19 @@ void ClassTransferTests::
             QStringLiteral("Monday"),
             QStringLiteral("4:00 PM"),
             QStringLiteral("not a time")
+        },
+        {
+            QStringLiteral("monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:30 PM")
+        },
+        {
+            QStringLiteral(" Monday "),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:30 PM")
         }
     };
-    const QStringList malformedScheduleErrors{
+    const QStringList invalidScheduleErrors{
         QStringLiteral(
             "E4 Theseus contains an invalid regular schedule entry: "
             "Monday 4:75 PM\u20134:00 PM"
@@ -2119,27 +2129,35 @@ void ClassTransferTests::
         QStringLiteral(
             "E4 Theseus contains an invalid regular schedule entry: "
             "Monday 4:00 PM\u2013not a time"
+            ),
+        QStringLiteral(
+            "E4 Theseus contains an invalid regular schedule entry: "
+            "monday 4:00 PM\u20134:30 PM"
+            ),
+        QStringLiteral(
+            "E4 Theseus contains an invalid regular schedule entry: "
+            " Monday  4:00 PM\u20134:30 PM"
             )
     };
     QString sqlError;
     for (qsizetype index = 0;
-         index < malformedSchedules.size();
+         index < invalidSchedules.size();
          ++index)
     {
         package.classes.first().info.classTimes.first() =
-            malformedSchedules.at(index);
+            invalidSchedules.at(index);
         const auto changesBefore =
             sqliteTotalChanges(database, &sqlError);
         QVERIFY2(changesBefore.has_value(), qPrintable(sqlError));
 
-        const auto invalidTimeResult = service.importClasses(
+        const auto invalidScheduleResult = service.importClasses(
             package,
             createAllPlan(package)
             );
-        QVERIFY(!invalidTimeResult.has_value());
+        QVERIFY(!invalidScheduleResult.has_value());
         QCOMPARE(
-            invalidTimeResult.error(),
-            malformedScheduleErrors.at(index)
+            invalidScheduleResult.error(),
+            invalidScheduleErrors.at(index)
             );
         QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
                  teachersBefore);

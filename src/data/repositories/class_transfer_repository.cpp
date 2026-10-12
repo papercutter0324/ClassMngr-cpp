@@ -238,6 +238,12 @@ int dayIndex(
     const QString& day
     )
 {
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
+    {
+        return -1;
+    }
+
     static const QStringList Days{
         QStringLiteral("Monday"),
         QStringLiteral("Tuesday"),
@@ -248,7 +254,7 @@ int dayIndex(
         QStringLiteral("Sunday")
     };
 
-    return Days.indexOf(day);
+    return Days.indexOf(parsed->text);
 }
 
 int timeToMinutes(
