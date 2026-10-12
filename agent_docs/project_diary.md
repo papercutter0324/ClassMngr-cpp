@@ -5278,6 +5278,29 @@ measured process-heap or database-driver bound. The broad contract review
 found no other equally narrow slice. F707/F709 remain deferred, Gates 1/2
 remain Partial, and the formal exit gate remains Open.
 
+## Phase 2 F785 acceptance and F786 selection - 2026-10-13
+
+F785 is accepted at commit
+`3f47a158dfd7c5f6ee7b0abcd7d29d52f567b4dd`. The bounded Visual Studio 18
+Windows x64 Debug build built `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests` after the identical outside-sandbox retry
+following ZERO_CHECK FileTracker `E_ACCESSDENIED`. Each exact CTest registered
+once and the three focused tests passed 3/3. No full suite ran. Coverage checks
+ordered visitor stop-prefix behavior; raw-row overflow precedence and its
+exact platform error; ID 0 filtering at the 4,096-summary boundary; and the
+projection overflow and later metadata-error messages.
+
+Batch 199 selected F786 because Application Calendar title validators use
+byte-wise whitespace checks while both Qt dialog conversion and the Calendar
+projection query treat Unicode-whitespace-only titles as blank. NBSP and
+ideographic space give direct regression cases. F285 remains deferred because
+its creation flow needs a product decision; the Calendar cache repeated-sort
+hypothesis remains deferred until its UI-thread cost is measured. F786's
+pre-implementation matrix is in the Phase 2 progress log. F707/F709 remain
+deferred, Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
 ## Phase 2 F783 acceptance and F784 selection - 2026-10-13
 
 F783 is accepted at `2e846967aca80bfc160cd20ffdf88a093c15b67d`. The `ClassMngr`

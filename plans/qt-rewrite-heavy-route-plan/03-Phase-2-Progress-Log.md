@@ -30289,3 +30289,63 @@ registers once, then run only `ClassMngrCalendarEventRepositoryTests`,
 full suite. Commit this matrix before F785 source/test edits. F707/F709 remain
 deferred; Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
 Open.
+
+### F785 Calendar bounded range reads - accepted - 2026-10-13
+
+F785 is accepted at commit
+`3f47a158dfd7c5f6ee7b0abcd7d29d52f567b4dd`. The final Visual Studio 18 x64
+Debug build in `build/windows-x64-debug` built `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests`. The sandbox ZERO_CHECK FileTracker
+`E_ACCESSDENIED` was followed by the identical bounded command succeeding
+outside the sandbox. The exact CTests
+`ClassMngrCalendarEventRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests` each registered once and passed; 3/3
+focused CTests succeeded. No full suite ran. Regression evidence covers
+ordered visitor-stop prefix behavior; the exact platform capacity error on a
+malformed raw 4,097th row; skipping `id=0` while accepting 4,096 summaries;
+the exact projection
+limit error at 4,097 summaries; and precedence of a later metadata error.
+Four unrelated untracked files remained untouched.
+
+### Batch 199 discovery - 2026-10-13
+
+F786 was selected for a narrow mismatch in title blankness rules: the legacy
+and Next dialogs trim titles with `QString::trimmed`, and the projection
+query's `boundedUtf8` rejects titles that become empty after that trim, while
+Qt-free Application title validators use byte-wise `std::isspace` and accept
+valid Unicode whitespace such as U+00A0 NO-BREAK SPACE. F285 was surfaced but
+remains explicitly deferred pending product intent. The repeated-sort cache
+hypothesis is unmeasured and deferred. F786 is the selected candidate because
+the cross-boundary consistency gap is demonstrated.
+
+### F786 Calendar title whitespace parity - selected and acceptance matrix - 2026-10-13
+
+**F786 is selected:** add or reuse a shared title-only UTF-8 blank predicate
+that matches the Qt-compatible whitespace set in
+`qt_compatible_text.h`. Apply it to calendar projection, edit draft, single
+save, and series-edit title validation. Leave generic ID and other-field blank
+rules unchanged. Preserve F783's 255 UTF-16-unit bound, malformed UTF-8
+rejection, ordinary nonblank Unicode title acceptance, existing error code
+and message, and field-validation ordering.
+
+In `tests/next_application_calendar_event_tests.cpp`, cover Unicode-whitespace-
+only titles (at minimum U+00A0 NO-BREAK SPACE, ideographic space, and existing
+ASCII whitespace) across projection, edit draft, single save, series edit,
+import save, and series create. Assert a title containing non-whitespace
+content remains accepted and retain all existing title-boundary tests.
+
+Expected production files are
+`src/next/application/calendar_event_title_validation.h`,
+`calendar_event_projection.h`, `calendar_event_edit_draft.h`,
+`calendar_event_save_port.h`, and `calendar_event_series_edit_port.h`.
+`ClassMngrNextApplicationCalendarEventTests` and the exact CTest
+`NextApplicationCalendarEvent` already exist, so no CMake change is expected.
+In `build/windows-x64-debug` with Visual Studio 18 x64 Debug, build
+`ClassMngr` and `ClassMngrNextApplicationCalendarEventTests`, confirm the exact
+CTest registers once, then run only `NextApplicationCalendarEvent` with
+`-C Debug --output-on-failure`. Run no full suite. Commit this matrix before
+F786 source/test edits. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.
