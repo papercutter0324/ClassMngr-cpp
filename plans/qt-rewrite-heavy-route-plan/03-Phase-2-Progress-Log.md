@@ -25855,8 +25855,58 @@ existing normalized round-trip check.
    end-order issues; equal or earlier valid end produces
    `schedule.time.end_not_after_start`.
 4. Build `ClassMngr`, `ClassMngrSharedPolicyTests`, and
-   `ClassDetailsPageSaveParity`; run exactly the CTests
-   `ClassMngrSharedPolicyTests` and `ClassDetailsPageSaveParity`. Add no CMake
-   target changes and run no full suite.
+   `ClassMngrClassDetailsPageSaveParityTests`; run exactly the CTests
+   `ClassMngrSharedPolicyTests` and
+   `ClassMngrClassDetailsPageSaveParityTests`. Add no CMake target changes and
+   run no full suite.
 
-This matrix is recorded before implementation. Batch 170 is active with F695.
+This matrix was recorded before implementation.
+
+### F695 ClassTimeValidator display-time parser migration - accepted - 2026-10-12
+
+F695 is accepted at code/test commit
+`b5bf5672cf826180cbcc8964738f3450adaad365`. `ClassMngr`,
+`ClassMngrSharedPolicyTests`, and `ClassMngrClassDetailsPageSaveParityTests`
+built successfully. The exact CTests passed 2/2:
+`ClassMngrSharedPolicyTests` and
+`ClassMngrClassDetailsPageSaveParityTests`. The initial shell lacked MSVC
+`INCLUDE`; retrying from the Visual Studio 2026 Developer Command Prompt
+supplied it and completed the build. No full suite ran.
+
+**Decision: accept F695.** Batch 170 is complete.
+
+### Batch 171 selection - recorded before F696 implementation - 2026-10-12
+
+Select the two canonical-time parsing calls in
+`src/features/schedule/ui/schedule_time_formatter.cpp` for a behavior-
+preserving migration to `ScheduleValueParser::parseTime`. This slice keeps the
+formatter's original input acceptance and raw fallback while moving its
+canonical `HH:mm` rule to Domain.
+
+**F696 is selected:** replace only those two parses with the Domain parser,
+preserving exact original input semantics, rendering, offsets, and invalid
+fallback.
+
+### F696 Schedule time formatter parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Replace only the two canonical `HH:mm` parses in
+   `src/features/schedule/ui/schedule_time_formatter.cpp` with
+   `ScheduleValueParser::parseTime`. Because the Domain parser trims, require
+   its canonical text to equal the original input to preserve exact acceptance
+   semantics. Preserve the raw fallback for invalid input.
+2. Preserve 12-hour and 24-hour rendering, minute offsets 50 and 55, and the
+   invalid-time fallback. The focused cases assert `displayTime("09:05", false)`
+   is `9:05 AM`, `displayTime("09:05", true)` is `09:05`, and malformed input
+   is returned unchanged. For ranges, assert 09:05 with a 50-minute offset
+   renders `9:05 -\n9:55 AM`, a 55-minute 24-hour range renders
+   `09:05 - 10:00`, and a 50-minute range from 23:40 crosses midnight as
+   `11:40 PM\n- 12:30 AM`; malformed start input remains unchanged.
+3. Add regression coverage in `tests/schedule_print_model_tests.cpp` for the
+   preserved parsing and formatting behavior. Add
+   `src/domain/rules/schedule_value_parser.cpp` to the
+   `ClassMngrSchedulePrintModelTests` sources in
+   `cmake/tests/models_and_services.cmake`.
+4. Build `ClassMngr` and `ClassMngrSchedulePrintModelTests`; run only the CTest
+   `ClassMngrSchedulePrintModelTests`. Do not add a target or run other tests.
+
+This matrix is recorded before implementation. Batch 171 is active with F696.

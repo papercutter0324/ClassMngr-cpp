@@ -4144,3 +4144,18 @@ contract. The generic display parser may accept forms that the validator's
 round-trip rejects. Route the parse through the restricted Domain overload but
 retain the caller's round-trip equality check so lowercase input still
 normalizes while padded, compact, and seconds forms remain invalid.
+
+## F695-F696 continuation - 2026-10-12
+
+F695 is committed as `b5bf5672cf826180cbcc8964738f3450adaad365`. The product,
+SharedPolicy, and ClassDetails save-parity targets built in the Windows x64
+Debug Ninja tree under the VS 2026 developer environment; the two exact CTests
+passed 2/2. A plain shell initially lacked MSVC standard-header paths, and the
+Developer Command Prompt retry built fresh executables. No full suite ran.
+
+F696 is selected in Batch 171 for `ScheduleTimeFormatter`'s two canonical
+`HH:mm` parsing sites. Preserve its exact input grammar, invalid-label
+fallback, 12-hour/24-hour output, and 50/55-minute range behavior while
+reusing the Domain canonical-time parser. The existing schedule print-model
+test target will gain direct formatter cases and compile the parser source.
+Its acceptance matrix is recorded in the Phase 2 progress log.

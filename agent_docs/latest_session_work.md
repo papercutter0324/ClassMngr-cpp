@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-169 are complete; Batch 170 is active with F695. F625's assessment is
+  141-170 are complete; Batch 171 is active with F696. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -17,14 +17,24 @@
   Debug Ninja targets built and the four exact CTests passed 4/4. Coverage
   verifies all eight formats, trimming, invalid-time omission, ordering,
   grouping, and seconds omission from labels. No full suite ran.
-- F695 ClassTimeValidator display-time parsing is selected in Batch 170.
-  Use the restricted Domain AM/PM parser after strict canonical parsing, while
-  preserving the existing normalized round-trip guard. Test canonical input,
-  lowercase AM/PM normalization, rejection of padded/compact/seconds forms,
-  invalid-format diagnostics, and end-order validation in SharedPolicy.
-  Build ClassMngr, ClassMngrSharedPolicyTests, and ClassDetailsPageSaveParity;
-  run exactly the two owning CTests. No CMake change is planned. Implementation
-  has not begun.
+- F695 ClassTimeValidator display-time parsing is accepted and committed as
+  `b5bf5672cf826180cbcc8964738f3450adaad365`. `ClassMngr`,
+  `ClassMngrSharedPolicyTests`, and
+  `ClassMngrClassDetailsPageSaveParityTests` built in the Windows x64 Debug
+  Ninja tree under the VS 2026 developer environment. Both exact CTests passed
+  2/2. The first plain-shell build lacked MSVC standard-header paths; the
+  Developer Command Prompt retry produced fresh binaries before CTest. No full
+  suite ran.
+- F696 `ScheduleTimeFormatter` canonical-time parsing is selected in Batch
+  171. Migrate only its two `HH:mm` parsing sites to the Domain canonical-time
+  parser. Preserve exact input semantics despite the parser's trimming,
+  unchanged invalid-label fallback, 12/24-hour display, and the 50/55-minute
+  range behavior. Add direct formatter regression cases to
+  `tests/schedule_print_model_tests.cpp`, and compile
+  `src/domain/rules/schedule_value_parser.cpp` into
+  `ClassMngrSchedulePrintModelTests`. Build `ClassMngr` and that target; run
+  only CTest `ClassMngrSchedulePrintModelTests`. The acceptance matrix is
+  recorded before implementation in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.
