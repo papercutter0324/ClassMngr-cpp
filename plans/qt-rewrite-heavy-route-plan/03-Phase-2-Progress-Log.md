@@ -24704,3 +24704,77 @@ Preserve the public MainWindow constructor and ordinary startup/success parity.
    Add no CMake target.
 
 This matrix is recorded before implementation. Batch 152 is active with F677.
+
+### F677 Font Size failure feedback - accepted - 2026-10-12
+
+F677 is accepted at code/test commit
+`fd1dd763503a60deb54ffa1b00c3221b20bca264`. `ClassMngr` and both selected
+test targets built in the Windows x64 Debug Ninja tree under the VS developer
+environment. The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests` and
+`ClassMngrMainWindowFontSizeActionParityTests`. The port tests verify the
+Small=-2, Normal=0, Large=2, and ExtraLarge=4 mapping, unknown stored values
+defaulting to Normal, invalid enum handling, Technical sync-error mapping,
+prior/absent-key restoration, and retry. The MainWindow test verifies failure
+rollback of the selected action, stored setting, FontManager offset, and
+QApplication font, one diagnostic callback, no duplicate write, and successful
+retry. Verification found a duplicate startup write; attaching `onPersist`
+after preference hydration removed it while preserving action writes. No full
+suite ran.
+
+**Decision: accept F677.** Batch 152 is complete; Batch 153 is active with
+F678. Continue the one-commit-per-slice sequence.
+
+### Batch 153 shortlist and selection - recorded before F678 implementation - 2026-10-12
+
+The candidate scan compared AI Comment Voice, AI Comment Provider, PDF Viewer
+Background, Sidebar Display, and PowerPoint Data Access Notice. AI Comment
+Voice is selected because the menu determines whether later report and batch
+prompts address a student directly or use third-person parent/guardian
+wording. Those dialogs read the stored preference when building prompts, so a
+failed void write can leave the visible choice inconsistent with subsequent
+prompt wording. Existing port and MainWindow action tests cover the relevant
+settings and prompt paths. Sidebar Display has narrower impact; PowerPoint's
+notice path is Apple-only. No CMake target or platform-specific gate is needed.
+
+**F678 is selected:** add an opt-in checked SettingsManager write for the
+AI Comment Voice integer preference that synchronizes QSettings, restores the
+previous key including absence on failure, and permits retry. Keep generic
+`SettingsManager::set`/`sync` behavior and the current default/read behavior
+unchanged. Change the application port to `[[nodiscard]] Domain::Result<void>`;
+map invalid enum inputs to `InvalidInput` and storage errors to diagnostic
+`Technical`. Preserve enum values DirectToStudent=0 and ThirdPerson=1, with
+unknown stored values defaulting to DirectToStudent. Make the checkable QAction
+write first; failure must preserve the stored preference, selected action,
+OptionState, and voice used by subsequent prompts, invoke one diagnostic
+warning, and avoid a duplicate write. A successful retry updates the stored
+value, selected action, and subsequent prompt audience together. Preserve the
+public MainWindow constructor and startup behavior.
+
+### F678 AI Comment Voice failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked SettingsManager write for the AI Comment Voice integer. Check
+   QSettings sync, preserve the previous key including absence on failure,
+   preserve unrelated settings, and permit a successful retry. Leave generic
+   SettingsManager `set`/`sync` behavior unchanged.
+2. Change `AiCommentVoicePreferencesPort::write` to return
+   `[[nodiscard]] Domain::Result<void>`. Preserve DirectToStudent=0,
+   ThirdPerson=1, and unknown stored values defaulting to DirectToStudent.
+   Map invalid enum values to `InvalidInput` and sync failures to diagnostic
+   `Technical` results.
+3. Make the AI Comment Voice QAction persistence-first. On failure, restore
+   the previous checked action and OptionState without writing again; preserve
+   the stored voice and the voice subsequent report/batch prompts will use;
+   invoke one diagnostic warning. On retry, persist the new voice and keep the
+   action, state, and subsequent prompt audience aligned. Preserve startup
+   selection and successful behavior.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests`
+   with injected sync failure, prior/absent-key and unrelated-setting
+   preservation, invalid enum mapping, and retry. Extend
+   `ClassMngrMainWindowAiCommentVoiceActionParityTests` to verify real action
+   rollback, one diagnostic callback, storage preservation, and retry. Build
+   `ClassMngr` and both existing targets; run exactly those two CTests. Add no
+   CMake target.
+
+This matrix is recorded before implementation. Batch 153 is active with F678.

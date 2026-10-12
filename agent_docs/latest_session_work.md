@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-151 are complete.
+  141-152 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -19,10 +19,12 @@
   `72cc672f22ec23c19e6c0181b6c81bb451cd6148`; its two focused CTests passed.
 - F676 Automatic Update preference failure feedback is committed as
   `09b848e46c75f5247c4de3796c1db9f22f27d2ea`; its two focused CTests passed.
-- F677 Font Size typed persistence and action rollback is selected/current in
-  Batch 152. Its acceptance matrix and exact CTests are recorded in the Phase
-  2 progress log; implementation begins after this selection record is
-  committed.
+- F677 Font Size typed persistence and action rollback is committed as
+  `fd1dd763503a60deb54ffa1b00c3221b20bca264`; its two focused CTests passed.
+- F678 AI Comment Voice typed persistence and action rollback is
+  selected/current in Batch 153. Its acceptance matrix and exact CTests are in
+  the Phase 2 progress log; implementation begins after this selection record
+  is committed.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -5349,7 +5351,7 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
 
-## Resumed Phase 2 after F670; F672-F676 accepted and F677 selected - 2026-10-12
+## Resumed Phase 2 after F670; F672-F677 accepted and F678 selected - 2026-10-12
 
 F671 Custom Color Palette typed persistence and caller feedback is committed
 as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
@@ -5412,10 +5414,23 @@ absent keys and unrelated settings, checkbox/storage rollback, one diagnostic
 callback, and successful retry. The default warning title and diagnostic
 binding were source-reviewed; no full suite ran. Batch 151 is complete.
 
-F677 Font Size persistence failure feedback is selected/current in Batch 152.
-Font Size changes the live application-wide font through FontSizeController,
-while a void write can leave it inconsistent with the next launch's saved
-choice. The shortlist selected Font Size over PDF viewer background, AI
-provider/voice, sidebar display, and the macOS-only PowerPoint notice. The
-acceptance matrix and exact port/MainWindow CTests are in the Phase 2 progress
-log. Implementation begins after this selection record is committed.
+F677 Font Size typed persistence and action rollback is committed as
+`fd1dd763503a60deb54ffa1b00c3221b20bca264`. `ClassMngr` and both selected test
+targets built in the Windows x64 Debug Ninja tree under the VS developer
+environment. Exact CTests
+`ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests` and
+`ClassMngrMainWindowFontSizeActionParityTests` passed 2/2. Coverage verifies
+failure rollback of selected action, stored setting, FontManager offset and
+QApplication font; invalid enum handling; single-write failure feedback; and
+successful retry. A duplicate startup write found during verification was
+fixed by attaching `onPersist` after preference hydration. No full suite ran.
+Batch 152 is complete.
+
+F678 AI Comment Voice persistence failure feedback is selected/current in
+Batch 153. The menu distinguishes direct-to-student from third-person
+parent/guardian wording, and subsequent report/batch dialogs read the stored
+voice when building prompts. A failed write can leave the menu and prompt
+audience disagreeing. The shortlist selected voice over AI Provider, PDF
+background, sidebar display, and the Apple-only PowerPoint notice. The matrix
+and exact port/MainWindow CTests are in the Phase 2 progress log.
+Implementation begins after this selection record is committed.

@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F677)
+### Current state - 2026-10-12 (F678)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-151 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-152 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -121,13 +121,21 @@ verifies QSettings failure mapping, previous and absent-key restoration,
 unrelated-setting preservation, one warning callback, checkbox/storage
 rollback, and successful retry. No full suite ran. Batch 151 is complete.
 
-F677 Font Size typed persistence and action rollback is selected/current in
-Batch 152. Its acceptance matrix is recorded in the Phase 2 progress log. A
-failed write must preserve the stored preference, checked action, OptionState,
-FontManager offset, and application font, with one diagnostic warning. A
-successful retry must update persistence, selection, and the live application
-font together. The exact existing port and MainWindow action CTests are
-selected; no CMake target is needed.
+F677 Font Size typed persistence and action rollback is committed as
+`fd1dd763503a60deb54ffa1b00c3221b20bca264`. `ClassMngr` and both focused test
+targets built in the Windows x64 Debug Ninja tree under the VS developer
+environment; the exact port and MainWindow action CTests passed 2/2. Coverage
+verifies typed error/invalid-value mapping, preservation of previous and
+absent settings, unchanged selected/live font state on failure, one diagnostic,
+and successful retry. No full suite ran. Batch 152 is complete.
+
+F678 AI Comment Voice typed persistence and action rollback is selected/current
+in Batch 153. Its acceptance matrix is recorded in the Phase 2 progress log.
+A failed write must restore the selected voice and preserve the stored voice
+and prompt audience, with one diagnostic warning. A successful retry must
+update the preference and the voice used in subsequent prompts. The existing
+port and MainWindow prompt-parity CTests are selected; no CMake target is
+needed.
 
 ### Current state - 2026-10-09
 

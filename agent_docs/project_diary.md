@@ -3910,10 +3910,21 @@ action remain unchanged. `ClassMngr` and both focused targets built; the exact
 two port and action CTests passed. F676 is committed as
 `09b848e46c75f5247c4de3796c1db9f22f27d2ea`.
 
-## F677 Font Size persistence failure feedback - selected - 2026-10-12
+## F677 Font Size persistence failure feedback - accepted - 2026-10-12
 
-Font Size writes through a void port before FontSizeController applies the
-choice to the application font. A failed write can leave the current UI using
-a size that will not survive restart. F677 will add checked typed persistence
-and keep the action, stored value, FontManager offset, and application font
-consistent on failure, with one diagnostic and a successful retry.
+Font Size now uses a checked typed write before committing the selected action
+and applying FontSizeController. Failure preserves the old setting, checked
+action, FontManager offset, and QApplication font, with one diagnostic and a
+successful retry. Startup hydration occurs before the persistence callback is
+attached, so initialization does not issue an extra write; later programmatic
+sets retain their write behavior. Both selected CTests passed 2/2. F677 is
+committed as `fd1dd763503a60deb54ffa1b00c3221b20bca264`.
+
+## F678 AI Comment Voice persistence failure feedback - selected - 2026-10-12
+
+The AI Comment Voice action changes between direct-to-student and
+third-person-for-guardian wording, while report and batch dialogs read the
+stored voice when building prompts. A failed write can make the menu disagree
+with the prompt audience. F678 will make the choice persistence-first, retain
+the previous action and prompt voice on failure, report one diagnostic, and
+permit a successful retry.
