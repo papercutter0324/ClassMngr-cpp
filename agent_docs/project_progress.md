@@ -167,13 +167,27 @@ environment; the settings-port and MainWindow overflow-action CTests passed
 setting preservation, retry, one diagnostic, action rollback, and unchanged
 live Sidebar behavior. No full suite ran. Batch 156 is complete.
 
-F682 PDF Viewer Background checked persistence and action rollback is selected
-in Batch 157. Its existing port and MainWindow parity tests cover the canonical
-values and their effect on the viewer and viewport, but persistence currently
-uses a void SettingsManager write. The selected CTests will cover typed sync
-failure, rollback of selection/storage/effective rendering, diagnostics, and
-retry. The full acceptance matrix is in the Phase 2 progress log; no CMake
-target is needed.
+F682 PDF Viewer Background checked persistence and action rollback is committed
+as `086a55c07a806be21eb56e2a946712184f979a5c`. `ClassMngr` and the two feature
+targets built in the Windows x64 Debug Ninja tree under the VS 2026 developer
+environment. The port and MainWindow parity CTests passed 2/2. The existing
+`ClassMngrAiCommentOptionsTests` CTest remains red in two Theme direct-set
+assertions (`themeDefaultsToSystemDefaultAndPersists` and
+`saveModeStartupAndWritesCanonicalValues`); its Document Viewer Background
+slot passes directly. F682 does not modify the Theme path. Coverage verifies
+failed-write rollback of action, selected state, stored value, and viewer /
+viewport appearance, one diagnostic, zero startup writes, and retry; port
+coverage verifies exact prior-value or absent-key restoration and invalid
+input mapping. No full suite ran. Batch 157 is complete.
+
+F683 Theme programmatic persistence is selected in Batch 158. The F682 broad
+regression target exposed two existing `ClassMngrAiCommentOptionsTests`
+failures: standalone `ActionRegistry` calls to `themeState->set()` no longer
+persist after F672 moved Theme saving into MainWindow-only ThemeController
+handling. Restore typed Theme persistence for standalone OptionState changes
+while keeping the MainWindow controller's persistence-first failure handling
+and preventing a duplicate save. The exact acceptance matrix and four
+existing CTests are in the Phase 2 progress log.
 
 ### Current state - 2026-10-09
 

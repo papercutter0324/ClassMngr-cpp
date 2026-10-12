@@ -25076,4 +25076,68 @@ failures return recoverable `Technical` results.
    CTests to retain direct programmatic OptionState persistence coverage. Add
    no CMake target.
 
-This matrix is recorded before implementation. Batch 157 is active with F682.
+This matrix was recorded before implementation. Batch 157 is complete with
+F682 accepted at commit `086a55c07a806be21eb56e2a946712184f979a5c`.
+
+### F682 PDF Viewer Background failure feedback - accepted - 2026-10-12
+
+`ClassMngr` and the settings-port and MainWindow parity targets built in
+`build/windows-x64-debug-ninja` under Visual Studio 2026 Developer Command
+Prompt v18.10.1. The exact feature CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests`
+and `ClassMngrMainWindowDocumentViewerBackgroundActionParityTests`. The
+selected `ClassMngrAiCommentOptionsTests` CTest failed in two Theme direct-set
+assertions (`themeDefaultsToSystemDefaultAndPersists`, expected 2, got 0;
+`saveModeStartupAndWritesCanonicalValues`, expected 1, got 0). Its PDF
+Background slot passed when run directly. F682 changes no Theme code. Failure
+coverage checks typed sync diagnostics, exact prior-value/absent-key rollback,
+unrelated-setting preservation, action/state/viewer/viewport/palette rollback,
+zero startup writes, one diagnostic, direct programmatic persistence, and
+successful retry. No full suite ran.
+
+**Decision: accept F682.** Batch 157 is complete.
+
+### Batch 158 shortlist and selection - recorded before F683 implementation - 2026-10-12
+
+The shortlist compared the two currently failing Theme direct-set cases in
+`ClassMngrAiCommentOptionsTests` with PDF Page Spacing. Select Theme because
+the red target demonstrates a concrete regression introduced when F672 moved
+Theme persistence from ActionRegistry into MainWindow-only ThemeController
+handling. Standalone `ActionRegistry` users have no persistence callback, so
+programmatic Theme selections and default initialization stop updating the
+canonical setting. PDF Page Spacing has a similar void-write/live-update gap,
+but its two existing tests pass and provide no immediate regression evidence.
+The F683 fix must not add a second write to the connected MainWindow path or
+weaken ThemeController's rollback and error reporting.
+
+**F683 is selected:** restore checked typed Theme preference writes for
+standalone ActionRegistry state changes and preserve the existing
+SystemDefault/Dark/Light stored values (2/0/1) and missing-key default
+persistence behavior. Keep ThemeController as the single persistence/apply
+path after it connects to MainWindow actions. Failed connected writes must
+continue to preserve the current option, checked action, live theme and
+preference snapshot, with one diagnostic and a successful retry.
+
+### F683 Theme programmatic persistence acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Restore standalone `ActionRegistry::themeState->set()` persistence through
+   `SettingsManagerThemePreferencesPort`, including the existing default
+   SystemDefault write when the key is absent. Preserve stored values
+   SystemDefault=2, Dark=0, Light=1 and the canonical key. Keep startup
+   hydration and direct programmatic values consistent with the existing
+   `ClassMngrAiCommentOptionsTests` contract.
+2. Keep the connected MainWindow ThemeController path as the only writer for
+   live actions: use the failure-aware pre-commit path to persist and apply
+   before OptionState commits, then refresh themed icons after a successful
+   commit. On failure restore the old checked action/state, do not apply a
+   partial theme, and report one diagnostic. Avoid a duplicate write from the
+   standalone persistence callback when the controller is connected.
+3. Build `ClassMngr` and the four existing targets
+   `ClassMngrAiCommentOptionsTests`,
+   `ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests`,
+   `ClassMngrStartupVisualSettingsTests`, and
+   `ClassMngrMainWindowThemeActionParityTests`; run exactly those four CTests.
+   Preserve current theme controller failure, retry, and canonical-port
+   coverage; add no CMake target.
+
+This matrix is recorded before implementation. Batch 158 is active with F683.

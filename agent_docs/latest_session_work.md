@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-156 are complete.
+  141-157 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -33,9 +33,16 @@
   `e644a60a604c19d6895336659b0f7a538b1a3903`; its two selected CTests passed
   2/2.
 - F682 PDF Viewer Background checked persistence and action rollback is
-  selected in Batch 157. Its acceptance matrix and three exact existing CTests
-  are in the Phase 2 progress log; implementation starts after the selection
-  commit.
+  committed as `086a55c07a806be21eb56e2a946712184f979a5c`. The product and two
+  feature targets built; the port and MainWindow parity CTests passed 2/2.
+  The third selected CTest, `ClassMngrAiCommentOptionsTests`, has two existing
+  Theme direct-set failures; its PDF Background slot passes directly. F682
+  does not change the Theme path. Batch 157 is complete; Batch 158 has
+  selected F683, Theme programmatic persistence, based on these direct-set
+  failures. F683 will restore standalone typed persistence while preserving
+  the connected ThemeController's single checked write and failure handling.
+  Its acceptance matrix is in the Phase 2 progress log; implementation starts
+  after the selection commit.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
