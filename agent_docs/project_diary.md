@@ -4436,18 +4436,34 @@ built in the Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the
 exact registered CTest passed 1/1 in 0.25 seconds. A `vswhere.exe` warning
 printed during Developer initialization. No full suite ran.
 
-F719 is selected for `dayIndex` in
-`src/data/repositories/class_transfer_repository.cpp`. Existing behavior
-exact-matches the raw weekday string without trimming or case folding and
-returns `-1` for invalid values, which rejects the import during schedule
-preflight before writes. Reuse `ScheduleValueParser::parseWeekday` but require
-canonical text to equal the raw input. Add valid-time `monday` and
-` Monday ` rows to the public `DataService::importClasses` test
-`schedulePreflightParsesSundayOvernightAndEqualEndpoints`; verify they remain
-invalid, existing canonical Monday/Sunday entries still pass, and there are
-zero SQLite changes with destination class, teacher, and schedule state
-unchanged. The `ClassMngrClassTransferTests` target already compiles the
-parser, so no CMake change is needed. Build `ClassMngr` and that target, then
-run the exact registered CTest only. F707 and F709 remain deferred for their
-documented missing app callsite and malformed-input seam constraints. Phase 2
-remains In Progress with Gates 1 and 2 Partial.
+F719 is accepted in Batch 179 and committed as `0b10a848`. It updates only
+`ClassTransferRepository::dayIndex`, parsing through
+`ScheduleValueParser::parseWeekday` while requiring canonical text to equal
+the raw day. This keeps the exact, untrimmed, case-sensitive weekday grammar
+and `-1` invalid result. The public `DataService::importClasses` preflight
+test includes valid-time lowercase and padded weekday schedules and verifies
+they are rejected before writes, with zero SQLite changes and unchanged class,
+teacher, and schedule state. Existing canonical Monday/Sunday cases still
+pass. `ClassMngr` and `ClassMngrClassTransferTests` built in the Windows x64
+Debug Ninja tree under VS 2026 x64 Developer; the exact registered CTest
+passed 1/1 in 4.50 seconds. A `vswhere.exe` warning printed during Developer
+initialization. No full suite ran.
+
+F720 is selected for `weekdayIndex` in
+`src/features/schedule/ui/schedule_import_review_presentation.cpp`. Existing
+behavior trims input, performs a case-sensitive weekday lookup, and returns
+`std::numeric_limits<int>::max()` for unknown values. Reuse
+`ScheduleValueParser::parseWeekday` but require canonical text to equal the
+trimmed input: padded canonical days remain valid, lowercase `monday` stays
+unknown. Preserve exact-spelling `weekdayLabel` abbreviations and trimmed
+fallback labels. Extend the public
+`compactMeetingTextParsesAndOrdersDisplayFormats` and
+`reviewWarnsForOverlappingProjectedTimes` tests to cover padded/lowercase
+ordering and labels, and keep lowercase weekdays excluded from overlap
+projection. Keep parsing in the Qt presentation adapter. The focused target
+already directly compiles the parser and presentation source, so no CMake
+change is needed. Build `ClassMngr` and
+`ClassMngrScheduleImportDialogTests`, then run that exact registered CTest
+only. F707 and F709 remain deferred for their documented missing app callsite
+and malformed-input seam constraints. Phase 2 remains In Progress with Gates
+1 and 2 Partial.

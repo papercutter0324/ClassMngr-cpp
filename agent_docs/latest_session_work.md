@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F719.
+  F720.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -158,22 +158,21 @@
   service rejected the malformed row; the final build and test passed. A
   `vswhere.exe` recognition warning printed during Developer-environment
   initialization. No full suite ran.
-- F716 and F717 are accepted as commits `6fb6120a` and `2c2c2a2a`. F718 is
-  accepted and committed as `7e8929c7`. `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
-  built; the exact registered CTest passed 1/1 (0.25 seconds). The public
-  conflict query still returns only canonical Monday and Tuesday conflicts in
-  repository order after raw padded/lowercase rows are persisted. No full
-  suite ran; Developer-environment initialization printed a `vswhere.exe`
-  recognition warning. F719 selects `ClassTransferRepository::dayIndex`.
-  Preserve raw, untrimmed, case-sensitive matching with `parseWeekday` plus
-  canonical-text equality, retaining the `-1` invalid result and preflight
-  rejection before import writes. Extend the public import test with valid-time
-  rows using lowercase/padded weekdays; verify invalid results, zero SQLite
-  changes, and unchanged destination class/teacher/schedule state. The focused
-  target already directly compiles the parser; no CMake change is needed.
-  Build `ClassMngr` and `ClassMngrClassTransferTests`, then run only that exact
-  registered CTest. F707 and F709 remain deferred. The preimplementation
+- F716-F718 are accepted in commits `6fb6120a`, `2c2c2a2a`, and `7e8929c7`.
+  F719 is accepted and committed as `0b10a848`. `ClassMngr` and
+  `ClassMngrClassTransferTests` built; the exact registered CTest passed 1/1
+  (4.50 seconds). Public import preflight rejects valid-time lowercase/padded
+  weekday schedules with zero SQLite changes and unchanged class, teacher,
+  and schedule state. No full suite ran; Developer initialization printed a
+  `vswhere.exe` recognition warning. F720 selects
+  `ScheduleImportReviewPresentation::weekdayIndex`. Preserve trim and
+  case-sensitive matching with `parseWeekday` plus canonical-text equality,
+  retaining the max-int unknown fallback and exact-spelling labels. Test
+  padded/lowercase ordering, labels, and overlap projection through existing
+  public tests. Keep the Qt parser in this presentation adapter. The focused
+  target already compiles the adapter and parser; no CMake change is needed.
+  Build `ClassMngr` and `ClassMngrScheduleImportDialogTests`, then run only the
+  exact registered CTest. F707 and F709 remain deferred. The preimplementation
   matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked

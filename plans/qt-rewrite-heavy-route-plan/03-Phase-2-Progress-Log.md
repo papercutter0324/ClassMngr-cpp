@@ -26984,4 +26984,55 @@ raw-spelling validation and preflight rejection.
    `ClassMngr` and that target; run only the exact registered CTest
    `ClassMngrClassTransferTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F719.
+This matrix was recorded before implementation.
+
+### F719 Class Transfer weekday-index parser migration - accepted - 2026-10-12
+
+F719 is accepted at source/test commit `0b10a848`. The change is limited to
+`src/data/repositories/class_transfer_repository.cpp` and
+`tests/class_transfer_tests.cpp`. `dayIndex` now uses
+`ScheduleValueParser::parseWeekday` and requires canonical text to equal the
+raw input. Lowercase `monday` and padded ` Monday ` remain invalid with the
+existing `-1` fallback, so preflight rejects them before writes. The public
+`DataService::importClasses` test verifies exact errors, zero SQLite changes,
+and unchanged class, teacher, and schedule state; existing canonical cases
+remain valid.
+
+`ClassMngr` and `ClassMngrClassTransferTests` built successfully. The exact
+registered CTest `ClassMngrClassTransferTests` passed 1/1 in 4.50 seconds;
+`git diff --check` passed. Developer-environment initialization printed a
+`vswhere.exe` warning. No full suite ran.
+
+**Decision: accept F719.** Batch 179 continues with F720; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F720 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `weekdayIndex` in
+`src/features/schedule/ui/schedule_import_review_presentation.cpp`. It trims
+then performs a case-sensitive lookup in `ClassInfoConfig::Days`, using
+`std::numeric_limits<int>::max()` for unknown weekdays. The helper affects
+compact meeting ordering and overlap projection.
+
+**F720 is selected:** reuse the Domain weekday parser in this Qt UI adapter,
+preserving trimmed, case-sensitive weekday behavior and keeping Qt parsing
+outside the Next Application contract.
+
+1. Migrate only `weekdayIndex` to `ScheduleValueParser::parseWeekday` and
+   require `parsed->text == trimmed`. Padded canonical names remain accepted;
+   lowercase names remain unknown with the existing max-int fallback.
+2. Preserve `weekdayLabel`'s exact-spelling abbreviation behavior and trimmed
+   fallback labels. Keep lowercase weekdays excluded from overlap projection.
+3. Extend public presentation coverage in
+   `tests/schedule_import_dialog_tests.cpp`, especially
+   `compactMeetingTextParsesAndOrdersDisplayFormats` and
+   `reviewWarnsForOverlappingProjectedTimes`. Verify padded and lowercase
+   weekday ordering and fallback labels, and verify lowercase weekdays remain
+   excluded from overlap projection.
+4. `ClassMngrScheduleImportDialogTests` already directly compiles the
+   presentation source and parser through
+   `cmake/tests/pages_and_output.cmake`, so no CMake wiring change is needed.
+   Build `ClassMngr` and that target; run only the exact registered CTest
+   `ClassMngrScheduleImportDialogTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F720.
