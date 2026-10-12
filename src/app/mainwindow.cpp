@@ -609,6 +609,22 @@ void MainWindow::createActions()
             };
     }
 
+    auto aiCommentProviderPreferenceErrorHandler =
+        m_startupOptions.aiCommentProviderPreferenceErrorHandler;
+    if (!aiCommentProviderPreferenceErrorHandler)
+    {
+        aiCommentProviderPreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The AI Comment Provider preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
         std::move(saveModePreferenceErrorHandler),
@@ -617,7 +633,9 @@ void MainWindow::createActions()
         m_startupOptions.fontSizePreferencesPort,
         std::move(fontSizePreferenceErrorHandler),
         m_startupOptions.aiCommentVoicePreferencesPort,
-        std::move(aiCommentVoicePreferenceErrorHandler)
+        std::move(aiCommentVoicePreferenceErrorHandler),
+        m_startupOptions.aiCommentProviderPreferencesPort,
+        std::move(aiCommentProviderPreferenceErrorHandler)
         );
 }
 

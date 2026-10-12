@@ -2,21 +2,27 @@
 
 #include "core/settingsmanager.h"
 #include "next/application/ai_comment_provider_preferences.h"
-#include "ui/shared/state/option_state_keys.h"
 
 #include <QString>
+
+#include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
 
-// Qt-boundary adapter for the AI-comment provider read. The legacy
-// SettingsManager singleton and integer conversion stay here; ActionRegistry
-// remains the compatibility writer and UI owner for this option.
+// Qt-boundary adapter for the AI-comment provider preference. The legacy
+// SettingsManager singleton, checked write, and integer conversion stay here.
 class SettingsManagerAiCommentProviderPreferencesPort final
     : public Application::AiCommentProviderPreferencesPort
 {
 public:
-    SettingsManagerAiCommentProviderPreferencesPort() = default;
+    explicit SettingsManagerAiCommentProviderPreferencesPort(
+        SettingsManager::AiCommentProviderPreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::AiCommentProvider read() const override
     {
@@ -49,7 +55,7 @@ public:
         }
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::AiCommentProvider provider
         ) const override
     {
@@ -77,20 +83,45 @@ public:
             break;
 
         default:
-            return;
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "AI Comment Provider must be ChatGPT, Gemini, Claude, "
+                    "Microsoft Copilot, or Custom Website.",
+                .recoverable = false
+            });
         }
 
-        SettingsManager::instance().set(
-            key(),
-            storedValue
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeAiCommentProviderPreference(
+                storedValue,
+                m_synchronize
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save AI Comment Provider preference: "
+                    "QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:
+    SettingsManager::AiCommentProviderPreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(
-            OptionKeys::AiCommentProvider
+            SettingsManager::Keys::AI_COMMENT_PROVIDER_PREFERENCE
             );
     }
 };

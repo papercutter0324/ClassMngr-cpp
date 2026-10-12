@@ -70,6 +70,9 @@ public:
         static constexpr auto AI_COMMENT_VOICE_PREFERENCE =
             "options/aiCommentVoice";
 
+        static constexpr auto AI_COMMENT_PROVIDER_PREFERENCE =
+            "options/aiCommentProvider";
+
         static constexpr auto WINDOW_GEOMETRY =
             "ui/windowGeometry";
 
@@ -188,6 +191,16 @@ public:
     [[nodiscard]] QSettings::Status writeAiCommentVoicePreference(
         int voice,
         const AiCommentVoicePreferenceSync& synchronize = {}
+        );
+
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores the previous key before returning.
+    using AiCommentProviderPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeAiCommentProviderPreference(
+        int provider,
+        const AiCommentProviderPreferenceSync& synchronize = {}
         );
 
     // =====================================================

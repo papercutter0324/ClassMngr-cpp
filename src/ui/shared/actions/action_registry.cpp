@@ -130,7 +130,13 @@ void ActionRegistry::createActions(
         > aiCommentVoicePreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> aiCommentVoicePreferenceErrorHandler
+        )> aiCommentVoicePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentProviderPreferencesPort
+        > aiCommentProviderPreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> aiCommentProviderPreferenceErrorHandler
     )
 {
     createFileActions();
@@ -145,7 +151,9 @@ void ActionRegistry::createActions(
         std::move(fontSizePreferencesPort),
         fontSizePreferenceErrorHandler,
         std::move(aiCommentVoicePreferencesPort),
-        aiCommentVoicePreferenceErrorHandler
+        aiCommentVoicePreferenceErrorHandler,
+        std::move(aiCommentProviderPreferencesPort),
+        aiCommentProviderPreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -783,7 +791,13 @@ void ActionRegistry::createOptionActions(
         > aiCommentVoicePreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& aiCommentVoicePreferenceErrorHandler
+        )>& aiCommentVoicePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentProviderPreferencesPort
+        > aiCommentProviderPreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& aiCommentProviderPreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1435,33 +1449,37 @@ void ActionRegistry::createOptionActions(
     aiCommentProviderState =
         new OptionState<AiCommentProvider>(this);
 
-    aiCommentProviderState->addOption(
+    QAction* chatGptProviderAction = aiCommentProviderState->addOption(
         AiCommentProvider::ChatGPT,
         createCheckableAction(
             tr("ChatGPT"),
             tr("Open ChatGPT for AI comment prompts")
-            )
+            ),
+        false
         );
-    aiCommentProviderState->addOption(
+    QAction* geminiProviderAction = aiCommentProviderState->addOption(
         AiCommentProvider::Gemini,
         createCheckableAction(
             tr("Gemini"),
             tr("Open Gemini for AI comment prompts")
-            )
+            ),
+        false
         );
-    aiCommentProviderState->addOption(
+    QAction* claudeProviderAction = aiCommentProviderState->addOption(
         AiCommentProvider::Claude,
         createCheckableAction(
             tr("Claude"),
             tr("Open Claude for AI comment prompts")
-            )
+            ),
+        false
         );
-    aiCommentProviderState->addOption(
+    QAction* copilotProviderAction = aiCommentProviderState->addOption(
         AiCommentProvider::MicrosoftCopilot,
         createCheckableAction(
             tr("Microsoft Copilot"),
             tr("Open Microsoft Copilot for AI comment prompts")
-            )
+            ),
+        false
         );
     QAction* customAiWebsiteAction =
         aiCommentProviderState->addOption(
@@ -1473,68 +1491,76 @@ void ActionRegistry::createOptionActions(
             false
             );
 
-    aiCommentProviderState->onPersist =
-        [](const ::AiCommentProvider provider)
+    if (!aiCommentProviderPreferencesPort)
     {
-        ClassMngr::Next::Application::AiCommentProvider preference;
-        switch (provider)
+        aiCommentProviderPreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerAiCommentProviderPreferencesPort
+            >();
+    }
+
+    using PreferenceAiCommentProvider =
+        ClassMngr::Next::Application::AiCommentProvider;
+    const auto writeAiCommentProviderPreference =
+        [aiCommentProviderPreferencesPort](
+            const ::AiCommentProvider provider
+            ) -> ClassMngr::Next::Domain::Result<void>
         {
-        case ::AiCommentProvider::ChatGPT:
-            preference = ClassMngr::Next::Application::
-                AiCommentProvider::ChatGPT;
-            break;
+            switch (provider)
+            {
+            case ::AiCommentProvider::ChatGPT:
+                return aiCommentProviderPreferencesPort->write(
+                    PreferenceAiCommentProvider::ChatGPT
+                    );
 
-        case ::AiCommentProvider::Gemini:
-            preference = ClassMngr::Next::Application::
-                AiCommentProvider::Gemini;
-            break;
+            case ::AiCommentProvider::Gemini:
+                return aiCommentProviderPreferencesPort->write(
+                    PreferenceAiCommentProvider::Gemini
+                    );
 
-        case ::AiCommentProvider::Claude:
-            preference = ClassMngr::Next::Application::
-                AiCommentProvider::Claude;
-            break;
+            case ::AiCommentProvider::Claude:
+                return aiCommentProviderPreferencesPort->write(
+                    PreferenceAiCommentProvider::Claude
+                    );
 
-        case ::AiCommentProvider::MicrosoftCopilot:
-            preference = ClassMngr::Next::Application::
-                AiCommentProvider::MicrosoftCopilot;
-            break;
+            case ::AiCommentProvider::MicrosoftCopilot:
+                return aiCommentProviderPreferencesPort->write(
+                    PreferenceAiCommentProvider::MicrosoftCopilot
+                    );
 
-        case ::AiCommentProvider::CustomWebsite:
-            preference = ClassMngr::Next::Application::
-                AiCommentProvider::CustomWebsite;
-            break;
+            case ::AiCommentProvider::CustomWebsite:
+                return aiCommentProviderPreferencesPort->write(
+                    PreferenceAiCommentProvider::CustomWebsite
+                    );
 
-        default:
-            return;
-        }
-
-        ClassMngr::Next::Platform::
-            SettingsManagerAiCommentProviderPreferencesPort().write(
-                preference
-                );
-    };
+            default:
+                return ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message = "AI Comment Provider selection is invalid.",
+                    .recoverable = false
+                });
+            }
+        };
 
     const auto storedAiCommentProvider =
-        ClassMngr::Next::Platform::
-            SettingsManagerAiCommentProviderPreferencesPort()
-            .read();
+        aiCommentProviderPreferencesPort->read();
     ::AiCommentProvider legacyAiCommentProvider =
         ::AiCommentProvider::ChatGPT;
     switch (storedAiCommentProvider)
     {
-    case ClassMngr::Next::Application::AiCommentProvider::Gemini:
+    case PreferenceAiCommentProvider::Gemini:
         legacyAiCommentProvider = ::AiCommentProvider::Gemini;
         break;
-    case ClassMngr::Next::Application::AiCommentProvider::Claude:
+    case PreferenceAiCommentProvider::Claude:
         legacyAiCommentProvider = ::AiCommentProvider::Claude;
         break;
-    case ClassMngr::Next::Application::AiCommentProvider::MicrosoftCopilot:
+    case PreferenceAiCommentProvider::MicrosoftCopilot:
         legacyAiCommentProvider = ::AiCommentProvider::MicrosoftCopilot;
         break;
-    case ClassMngr::Next::Application::AiCommentProvider::CustomWebsite:
+    case PreferenceAiCommentProvider::CustomWebsite:
         legacyAiCommentProvider = ::AiCommentProvider::CustomWebsite;
         break;
-    case ClassMngr::Next::Application::AiCommentProvider::ChatGPT:
+    case PreferenceAiCommentProvider::ChatGPT:
     default:
         break;
     }
@@ -1562,13 +1588,124 @@ void ActionRegistry::createOptionActions(
             );
     }
 
+    const auto skipAiCommentProviderPersistForActionCommit =
+        std::make_shared<bool>(false);
+    aiCommentProviderState->onPersist =
+        [writeAiCommentProviderPreference,
+            aiCommentProviderPreferenceErrorHandler,
+            skipAiCommentProviderPersistForActionCommit](
+            const ::AiCommentProvider provider
+            )
+        {
+            if (*skipAiCommentProviderPersistForActionCommit)
+            {
+                *skipAiCommentProviderPersistForActionCommit = false;
+                return;
+            }
+
+            // Preserve the existing programmatic OptionState::set behavior;
+            // action-triggered writes use the checked path before set().
+            const auto saved = writeAiCommentProviderPreference(provider);
+            if (!saved && aiCommentProviderPreferenceErrorHandler)
+            {
+                aiCommentProviderPreferenceErrorHandler(saved.error());
+            }
+        };
+
+    const auto restoreProviderAction = [this](
+        const ::AiCommentProvider previousProvider
+        )
+    {
+        if (QAction* previousAction =
+                aiCommentProviderState->action(previousProvider))
+        {
+            previousAction->setChecked(true);
+        }
+    };
+    const auto connectProviderAction =
+        [this, writeAiCommentProviderPreference,
+            aiCommentProviderPreferenceErrorHandler,
+            skipAiCommentProviderPersistForActionCommit,
+            restoreProviderAction](
+            QAction* action,
+            const ::AiCommentProvider provider
+            )
+        {
+            connect(
+                action,
+                &QAction::triggered,
+                this,
+                [this, action, writeAiCommentProviderPreference,
+                    aiCommentProviderPreferenceErrorHandler,
+                    skipAiCommentProviderPersistForActionCommit,
+                    restoreProviderAction, provider]()
+                {
+                    if (!aiCommentProviderState)
+                    {
+                        return;
+                    }
+
+                    if (aiCommentProviderState->current() == provider)
+                    {
+                        if (QAction* selectedAction =
+                                aiCommentProviderState->action(provider))
+                        {
+                            selectedAction->setChecked(true);
+                        }
+                        return;
+                    }
+
+                    const ::AiCommentProvider previousProvider =
+                        aiCommentProviderState->current();
+                    const auto saved =
+                        writeAiCommentProviderPreference(provider);
+                    if (!saved)
+                    {
+                        restoreProviderAction(previousProvider);
+                        action->setChecked(false);
+                        if (aiCommentProviderPreferenceErrorHandler)
+                        {
+                            aiCommentProviderPreferenceErrorHandler(
+                                saved.error()
+                                );
+                        }
+                        return;
+                    }
+
+                    *skipAiCommentProviderPersistForActionCommit = true;
+                    aiCommentProviderState->set(provider);
+                }
+                );
+        };
+
+    connectProviderAction(
+        chatGptProviderAction,
+        ::AiCommentProvider::ChatGPT
+        );
+    connectProviderAction(
+        geminiProviderAction,
+        ::AiCommentProvider::Gemini
+        );
+    connectProviderAction(
+        claudeProviderAction,
+        ::AiCommentProvider::Claude
+        );
+    connectProviderAction(
+        copilotProviderAction,
+        ::AiCommentProvider::MicrosoftCopilot
+        );
+
     connect(
         customAiWebsiteAction,
         &QAction::triggered,
         this,
-        [this]()
+        [this, customAiWebsiteAction,
+            aiCommentProviderPreferenceErrorHandler,
+            writeAiCommentProviderPreference,
+            skipAiCommentProviderPersistForActionCommit,
+            restoreProviderAction]()
         {
-            const AiCommentProvider previousProvider =
+            const ::AiCommentProvider previousProvider =
                 aiCommentProviderState->current();
             const ClassMngr::Next::Platform::
                 SettingsManagerAiCommentCustomWebsitePort
@@ -1593,17 +1730,13 @@ void ActionRegistry::createOptionActions(
 
             if (!accepted)
             {
-                aiCommentProviderState
-                    ->action(previousProvider)
-                    ->setChecked(true);
+                restoreProviderAction(previousProvider);
                 return;
             }
 
             if (!isValidCustomAiWebsiteUrl(enteredUrl))
             {
-                aiCommentProviderState
-                    ->action(previousProvider)
-                    ->setChecked(true);
+                restoreProviderAction(previousProvider);
                 DialogServices::showWarning(
                     qobject_cast<QWidget*>(parent()),
                     tr("Invalid AI Website"),
@@ -1612,11 +1745,36 @@ void ActionRegistry::createOptionActions(
                 return;
             }
 
+            if (previousProvider != ::AiCommentProvider::CustomWebsite)
+            {
+                const auto saved = writeAiCommentProviderPreference(
+                    ::AiCommentProvider::CustomWebsite
+                    );
+                if (!saved)
+                {
+                    restoreProviderAction(previousProvider);
+                    customAiWebsiteAction->setChecked(false);
+                    if (aiCommentProviderPreferenceErrorHandler)
+                    {
+                        aiCommentProviderPreferenceErrorHandler(
+                            saved.error()
+                            );
+                    }
+                    return;
+                }
+            }
+
+            // Keep the established URL adapter behavior, but only after the
+            // provider preference has committed successfully.
             customWebsitePort.write(
                 enteredUrl.toUtf8().toStdString()
                 );
+            if (previousProvider != ::AiCommentProvider::CustomWebsite)
+            {
+                *skipAiCommentProviderPersistForActionCommit = true;
+            }
             aiCommentProviderState->set(
-                AiCommentProvider::CustomWebsite
+                ::AiCommentProvider::CustomWebsite
                 );
         }
         );

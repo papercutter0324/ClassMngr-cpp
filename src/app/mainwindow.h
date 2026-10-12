@@ -48,6 +48,7 @@ class LanguageService;
 namespace ClassMngr::Next::Application
 {
 class AutomaticUpdatePreferencesPort;
+class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class ExcelImportTimeoutPreferencesPort;
 class FontSizePreferencesPort;
@@ -86,6 +87,12 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> fontSizePreferenceErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentProviderPreferencesPort
+        > aiCommentProviderPreferencesPort;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> aiCommentProviderPreferenceErrorHandler;
     std::shared_ptr<
         ClassMngr::Next::Application::AiCommentVoicePreferencesPort
         > aiCommentVoicePreferencesPort;

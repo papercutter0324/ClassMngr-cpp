@@ -340,6 +340,57 @@ QSettings::Status SettingsManager::writeAiCommentVoicePreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeAiCommentProviderPreference(
+    const int provider,
+    const AiCommentProviderPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousProvider =
+        m_settings->contains(Keys::AI_COMMENT_PROVIDER_PREFERENCE);
+    const QVariant previousProvider =
+        m_settings->value(Keys::AI_COMMENT_PROVIDER_PREFERENCE);
+
+    m_settings->setValue(
+        Keys::AI_COMMENT_PROVIDER_PREFERENCE,
+        provider
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Remove the pending candidate before destroying this instance so it
+        // cannot be retried during teardown.
+        if (hadPreviousProvider)
+        {
+            m_settings->setValue(
+                Keys::AI_COMMENT_PROVIDER_PREFERENCE,
+                previousProvider
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::AI_COMMENT_PROVIDER_PREFERENCE);
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see the restored value and retries can succeed.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================

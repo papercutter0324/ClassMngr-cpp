@@ -13,6 +13,7 @@ class QMenu;
 
 namespace ClassMngr::Next::Application
 {
+class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class AutomaticUpdatePreferencesPort;
 class FontSizePreferencesPort;
@@ -55,7 +56,13 @@ public:
             > aiCommentVoicePreferencesPort = {},
         std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )> aiCommentVoicePreferenceErrorHandler = {}
+            )> aiCommentVoicePreferenceErrorHandler = {},
+        std::shared_ptr<
+            ClassMngr::Next::Application::AiCommentProviderPreferencesPort
+            > aiCommentProviderPreferencesPort = {},
+        std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )> aiCommentProviderPreferenceErrorHandler = {}
         );
     void retranslate();
     void refreshThemedIcons();
@@ -180,7 +187,13 @@ private:
             > aiCommentVoicePreferencesPort,
         const std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )>& aiCommentVoicePreferenceErrorHandler
+            )>& aiCommentVoicePreferenceErrorHandler,
+        std::shared_ptr<
+            ClassMngr::Next::Application::AiCommentProviderPreferencesPort
+            > aiCommentProviderPreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& aiCommentProviderPreferenceErrorHandler
         );
     void createHelpActions();
     void createAdminActions();

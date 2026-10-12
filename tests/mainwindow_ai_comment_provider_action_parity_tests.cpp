@@ -3,13 +3,18 @@
 #include "core/settingsmanager.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
+#include "ui/shared/state/option_state_keys.h"
 
 #include <QAction>
 #include <QPushButton>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <memory>
+#include <string>
 #include <utility>
 
 namespace
@@ -62,6 +67,7 @@ class MainWindowAiCommentProviderActionParityTests final : public QObject
 private slots:
     void initTestCase();
     void providerActionsUpdateProviderAndBatchDialogLabel();
+    void failedStandardProviderActionRestoresStateAndAllowsRetry();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -94,7 +100,7 @@ providerActionsUpdateProviderAndBatchDialogLabel()
     QVERIFY(languageService.setLanguage(Language::English));
 
     const SettingsManagerAiCommentProviderPreferencesPort preferences;
-    preferences.write(PersistedProvider::ChatGPT);
+    QVERIFY(preferences.write(PersistedProvider::ChatGPT));
     SettingsManager::instance().sync();
 
     MainWindowStartupOptions startupOptions;
@@ -350,6 +356,173 @@ providerActionsUpdateProviderAndBatchDialogLabel()
         chatGptCopyOpenButton->text(),
         QStringLiteral("Copy Prompt and Open ChatGPT")
         );
+}
+
+void MainWindowAiCommentProviderActionParityTests::
+failedStandardProviderActionRestoresStateAndAllowsRetry()
+{
+    using LegacyProvider = ::AiCommentProvider;
+    using PersistedProvider =
+        ClassMngr::Next::Application::AiCommentProvider;
+    using ClassMngr::Next::Domain::ErrorCode;
+    using ClassMngr::Next::Domain::OperationError;
+    using ClassMngr::Next::Platform::
+        SettingsManagerAiCommentProviderPreferencesPort;
+
+    SettingsManager& settings = SettingsManager::instance();
+    settings.clear();
+    settings.set(
+        QString::fromUtf8(OptionKeys::AiCommentProvider),
+        static_cast<int>(PersistedProvider::ChatGPT)
+        );
+    settings.set(QStringLiteral("options/unrelatedValue"), 53);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const auto preferences =
+        std::make_shared<SettingsManagerAiCommentProviderPreferencesPort>(
+            [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+            {
+                ++synchronizationAttempts;
+                if (injectAccessError)
+                {
+                    return QSettings::AccessError;
+                }
+
+                settings.sync();
+                return settings.status();
+            }
+            );
+
+    int diagnosticCount = 0;
+    OperationError lastDiagnostic;
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.aiCommentProviderPreferencesPort = preferences;
+    startupOptions.aiCommentProviderPreferenceErrorHandler =
+        [&diagnosticCount, &lastDiagnostic](const OperationError& error)
+        {
+            ++diagnosticCount;
+            lastDiagnostic = error;
+        };
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(diagnosticCount, 0);
+    auto* const state = window.actions().aiCommentProviderState;
+    QVERIFY(state);
+    QCOMPARE(state->current(), LegacyProvider::ChatGPT);
+    QAction* const chatGptAction = state->action(LegacyProvider::ChatGPT);
+    QAction* const geminiAction = state->action(LegacyProvider::Gemini);
+    QAction* const claudeAction = state->action(LegacyProvider::Claude);
+    QAction* const microsoftCopilotAction =
+        state->action(LegacyProvider::MicrosoftCopilot);
+    QAction* const customWebsiteAction =
+        state->action(LegacyProvider::CustomWebsite);
+    QVERIFY(chatGptAction);
+    QVERIFY(geminiAction);
+    QVERIFY(claudeAction);
+    QVERIFY(microsoftCopilotAction);
+    QVERIFY(customWebsiteAction);
+
+    const QVariant storedProviderBeforeFailure = settings.get(
+        QString::fromUtf8(OptionKeys::AiCommentProvider)
+        );
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    const QVariant unrelatedValueBeforeFailure = settings.get(unrelatedKey);
+
+    SpeakingEvalReportData report;
+    report.englishName = QStringLiteral("Synthetic Student");
+    report.grade = 4;
+    const QList<SpeakingEvalBatchReportService::StudentReport> reports{
+        {
+            report.englishName,
+            report,
+            0
+        }
+    };
+    const auto verifyDialogLabels = [&reports](const QString& providerLabel)
+    {
+        SpeakingEvalReportDialog reportDialog(reports, 0, nullptr, true);
+        QPushButton* const reportButton = reportDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalCopyOpenAiPromptButton")
+            );
+        QVERIFY(reportButton);
+        QVERIFY(reportButton->text().contains(providerLabel));
+
+        SpeakingEvalAiBatchDialog batchDialog(reports);
+        QPushButton* const batchButton = batchDialog.findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCopyOpen")
+            );
+        QVERIFY(batchButton);
+        QVERIFY(batchButton->text().contains(providerLabel));
+    };
+
+    QVERIFY(geminiAction->isEnabled());
+    geminiAction->trigger();
+
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(lastDiagnostic.code, ErrorCode::Technical);
+    QVERIFY(lastDiagnostic.recoverable);
+    QVERIFY(
+        lastDiagnostic.message.find("AccessError") != std::string::npos
+        );
+    QCOMPARE(state->current(), LegacyProvider::ChatGPT);
+    QVERIFY(chatGptAction->isChecked());
+    QVERIFY(!geminiAction->isChecked());
+    QVERIFY(!claudeAction->isChecked());
+    QVERIFY(!microsoftCopilotAction->isChecked());
+    QVERIFY(!customWebsiteAction->isChecked());
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::AiCommentProvider)),
+        storedProviderBeforeFailure
+        );
+    QCOMPARE(preferences->read(), PersistedProvider::ChatGPT);
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValueBeforeFailure);
+    verifyDialogLabels(QStringLiteral("ChatGPT"));
+
+    injectAccessError = false;
+    geminiAction->trigger();
+
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(state->current(), LegacyProvider::Gemini);
+    QVERIFY(geminiAction->isChecked());
+    QVERIFY(!chatGptAction->isChecked());
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::AiCommentProvider)).toInt(),
+        static_cast<int>(PersistedProvider::Gemini)
+        );
+    QCOMPARE(preferences->read(), PersistedProvider::Gemini);
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValueBeforeFailure);
+    verifyDialogLabels(QStringLiteral("Gemini"));
+
+    injectAccessError = true;
+    state->set(LegacyProvider::Claude);
+
+    QCOMPARE(synchronizationAttempts, 3);
+    QCOMPARE(diagnosticCount, 2);
+    QCOMPARE(lastDiagnostic.code, ErrorCode::Technical);
+    QCOMPARE(state->current(), LegacyProvider::Claude);
+    QVERIFY(claudeAction->isChecked());
+    QVERIFY(!geminiAction->isChecked());
+    QCOMPARE(
+        settings.get(QString::fromUtf8(OptionKeys::AiCommentProvider)).toInt(),
+        static_cast<int>(PersistedProvider::Gemini)
+        );
+    QCOMPARE(preferences->read(), PersistedProvider::Gemini);
 }
 
 QTEST_MAIN(MainWindowAiCommentProviderActionParityTests)
