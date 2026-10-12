@@ -7,6 +7,7 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/ui/class_co_teacher_page.h"
 #include "features/classes/ui/class_details_page.h"
 #include "features/classes/ui/class_notes_page.h"
@@ -1754,11 +1755,10 @@ bool ClassesPage::hasWeekendClasses(
     {
         for (const ClassTime& time : times)
         {
-            const QString day = time.day.trimmed().toCaseFolded();
-            if (
-                day == QStringLiteral("saturday")
-                || day == QStringLiteral("sunday")
-                )
+            const auto parsed = ScheduleValueParser::parseWeekday(time.day);
+            if (parsed
+                && (parsed->value == ScheduleValueParser::Weekday::Saturday
+                    || parsed->value == ScheduleValueParser::Weekday::Sunday))
             {
                 return true;
             }

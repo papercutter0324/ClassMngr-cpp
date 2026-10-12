@@ -50,6 +50,8 @@ QHash<int, QString> classLevels;
 QHash<int, QString> classRooms;
 QSet<int> classesWithEmptyRegularHours;
 QHash<int, QString> classNameOverrides;
+QHash<int, QList<ClassTime>> classNavigationRegularScheduleRows;
+QHash<int, QList<ClassTime>> classNavigationIntensiveScheduleRows;
 QHash<QString, QString> testingBlocks;
 QHash<int, TestingClass> testingClasses;
 QHash<QString, int> testingClassAssignments;
@@ -165,6 +167,8 @@ void reset()
     classRooms.clear();
     classesWithEmptyRegularHours.clear();
     classNameOverrides.clear();
+    classNavigationRegularScheduleRows.clear();
+    classNavigationIntensiveScheduleRows.clear();
     testingBlocks.clear();
     testingClasses.clear();
     testingClassAssignments.clear();
@@ -426,6 +430,22 @@ void setDistinctIntensiveDays(
     )
 {
     distinctIntensiveDays = distinct;
+}
+
+void setClassNavigationScheduleRows(
+    const int classId,
+    QList<ClassTime> regularRows,
+    QList<ClassTime> intensiveRows
+    )
+{
+    classNavigationRegularScheduleRows.insert(
+        classId,
+        std::move(regularRows)
+        );
+    classNavigationIntensiveScheduleRows.insert(
+        classId,
+        std::move(intensiveRows)
+        );
 }
 
 void setClassesNavigationReadFailure(
@@ -1197,6 +1217,21 @@ ClassInfoRepository::loadClassesNavigationRecords(
                 regular.endTime = QStringLiteral("9:50 AM");
                 record.intensiveTimes.append(regular);
             }
+        }
+
+        if (ScheduleWidgetTestStubs::classNavigationRegularScheduleRows
+                .contains(classId))
+        {
+            record.regularTimes =
+                ScheduleWidgetTestStubs::classNavigationRegularScheduleRows
+                    .value(classId);
+        }
+        if (ScheduleWidgetTestStubs::classNavigationIntensiveScheduleRows
+                .contains(classId))
+        {
+            record.intensiveTimes =
+                ScheduleWidgetTestStubs::classNavigationIntensiveScheduleRows
+                    .value(classId);
         }
 
         records.append(std::move(record));

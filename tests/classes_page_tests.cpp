@@ -70,6 +70,11 @@ void setSelectedClassSubtitleTeacherId(int teacherId);
 void setIncludeAlternativeMatchingClass(bool include);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
+void setClassNavigationScheduleRows(
+    int classId,
+    QList<ClassTime> regularRows,
+    QList<ClassTime> intensiveRows
+    );
 void setClassesNavigationReadFailure(bool fails);
 extern int legacyClassListReadCount;
 extern int repositoryClassListReadCount;
@@ -347,6 +352,8 @@ private slots:
     void evaluationDefaultPolicyDefaultsToAllAndPersists();
     void visibilityScopePortIsAppliedOnInitialLoadAndRefresh();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
+    void weekendFilterUsesRegularAndIntensiveScheduleRows_data();
+    void weekendFilterUsesRegularAndIntensiveScheduleRows();
     void dayFiltersResetOnPageLeaveAfterHideAndShow();
     void navigationReleaseCachesSnapshotAndEditorsAcrossReentry();
     void diagnosticMetricsTrackDeferredScheduleRowsAndNavigationRoots();
@@ -819,6 +826,109 @@ void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()
     QVERIFY(
         gradeTabs(&page)->selectionVisible()
         );
+}
+
+void ClassesPageTests::
+weekendFilterUsesRegularAndIntensiveScheduleRows_data()
+{
+    QTest::addColumn<QStringList>("regularDays");
+    QTest::addColumn<QStringList>("intensiveDays");
+    QTest::addColumn<int>("displayMode");
+    QTest::addColumn<bool>("weekendFilterVisible");
+
+    const int regularMode = static_cast<int>(ScheduleDisplayMode::Regular);
+    const int intensiveMode = static_cast<int>(ScheduleDisplayMode::Intensive);
+    QTest::newRow("padded-mixed-saturday-regular")
+        << QStringList{QStringLiteral(" sAtUrDaY ")}
+        << QStringList{}
+        << regularMode
+        << true;
+    QTest::newRow("padded-mixed-sunday-intensive")
+        << QStringList{QStringLiteral("Monday")}
+        << QStringList{QStringLiteral(" sUnDaY ")}
+        << intensiveMode
+        << true;
+    QTest::newRow("weekday-only")
+        << QStringList{QStringLiteral("Monday"), QStringLiteral("Friday")}
+        << QStringList{}
+        << regularMode
+        << false;
+    QTest::newRow("unknown-day")
+        << QStringList{QStringLiteral("Funday")}
+        << QStringList{}
+        << regularMode
+        << false;
+    QTest::newRow("no-schedule-times")
+        << QStringList{}
+        << QStringList{}
+        << regularMode
+        << false;
+}
+
+void ClassesPageTests::
+weekendFilterUsesRegularAndIntensiveScheduleRows()
+{
+    QFETCH(QStringList, regularDays);
+    QFETCH(QStringList, intensiveDays);
+    QFETCH(int, displayMode);
+    QFETCH(bool, weekendFilterVisible);
+
+    const auto scheduleRows = [](
+        const QStringList& days,
+        const QString& startTime,
+        const QString& endTime
+        )
+    {
+        QList<ClassTime> rows;
+        rows.reserve(days.size());
+        for (const QString& day : days)
+        {
+            ClassTime row;
+            row.day = day;
+            row.startTime = startTime;
+            row.endTime = endTime;
+            rows.append(row);
+        }
+        return rows;
+    };
+
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(false);
+    const QList<ClassTime> regularRows = scheduleRows(
+        regularDays,
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")
+        );
+    const QList<ClassTime> intensiveRows = scheduleRows(
+        intensiveDays,
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+        );
+    ScheduleWidgetTestStubs::setClassNavigationScheduleRows(
+        42,
+        regularRows,
+        intensiveRows
+        );
+
+    ApplicationServices services;
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42));
+    page.setScheduleDisplayMode(
+        static_cast<ScheduleDisplayMode>(displayMode)
+        );
+    page.show();
+    QApplication::processEvents();
+
+    QCOMPARE(
+        page.runtimeMetrics().classInfoScheduleRowCount,
+        regularRows.size() + intensiveRows.size()
+        );
+    const auto* const weekendFilter = dayFilterButton(
+        &page,
+        QStringLiteral("classesWeekendFilterButton")
+        );
+    QVERIFY(weekendFilter);
+    QCOMPARE(weekendFilter->isVisible(), weekendFilterVisible);
 }
 
 void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
