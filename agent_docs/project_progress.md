@@ -4874,18 +4874,18 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F762 accepted; F763 selected)
+## Phase 2 current position — 2026-10-13 (F763 accepted; F764 selected)
 
-F762 is accepted at
-`ff020dfd4430ca2f583e81caf40e3c85c106367f`. Class-teacher assignments now
-use the shared validator while preserving successful normalization of
-malformed returned IDs to unassigned rows. The existing Visual Studio 18
-x64 Debug tree built `ClassMngr` and the focused target; its exact CTest had
-one registration and passed 1/1. No full suite ran.
+F763 is accepted at
+`9a982bc324b100d1ee2e45a5186cdccf7c61d580`. The Class Notes page query now
+uses the shared validator while preserving its invalid-input boundary,
+returned-identity check, and independent class/teacher results. In the
+existing Visual Studio 18 x64 Debug tree, `ClassMngr` and the focused target
+built; the exact CTest had one registration and passed 1/1. No full suite ran.
 
-F763 is selected in Batch 189 to reuse the helper in the Class Notes page
-query. Preserve its pre-read nonrecoverable invalid-ID result, post-read
-identity validation, and independent class-fields/teacher-name results.
+F764 is selected in Batch 189 to reuse the helper in the Classes Navigation
+snapshot handler. Preserve its recoverable pre-read invalid/duplicate results,
+empty-input success, post-read validation, and raw ordered snapshot fields.
 F707/F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1 and
 2 Partial; separate current-source Phase 0 evidence remains Windows x64 2/24
 and macOS universal 0/24.

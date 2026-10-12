@@ -49,8 +49,11 @@
   ff020dfd4430ca2f583e81caf40e3c85c106367f; its class-teacher assignments
   target built and the exact CTest passed 1/1, with one registration. Its
   sandboxed build hit FileTracker access denial and succeeded outside the
-  sandbox. F763 is selected in Batch 189 for the Class Notes page query. No
-  full suite ran.
+  sandbox. F763 is accepted at 9a982bc324b100d1ee2e45a5186cdccf7c61d580;
+  its exact Class Notes CTest passed 1/1 with one registration under Visual
+  Studio 18 x64 Debug. The sandbox build hit FileTracker access denial and
+  the same build succeeded outside the sandbox. F764 is selected in Batch 189
+  for Classes Navigation snapshot validation. No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

@@ -29237,6 +29237,49 @@ error forwarding.
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassNotesPageReadQueryTests`. Confirm exactly one
 registration for that exact CTest name, then run only that CTest with the
+Debug configuration. Run no full suite. This matrix was recorded before
+implementation. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial,
+and the formal exit gate remains Open.
+
+### F763 Class Notes page canonical ID validation - accepted - 2026-10-13
+
+F763 is accepted at commit
+`9a982bc324b100d1ee2e45a5186cdccf7c61d580`. The existing Visual Studio 18
+x64 Debug tree built `ClassMngr` and
+`ClassMngrNextApplicationClassNotesPageReadQueryTests`. The exact CTest had
+one registration and passed 1/1. Sandboxed FileTracker access was denied; the
+same build succeeded outside the sandbox. No full suite ran.
+
+### F764 Classes Navigation snapshot canonical ID validation - selected and acceptance matrix - 2026-10-13
+
+**F764 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`classes_navigation_snapshot.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+Request validation occurs before the port: noncanonical ClassIds return
+recoverable `InvalidInput` with
+`Class IDs must be canonical positive integers.`; duplicate IDs return
+recoverable `InvalidInput` with `Class IDs must be unique.` Canonicality
+precedes duplicate detection. An empty request succeeds without a port call.
+After one read, forward source errors unchanged. A count mismatch returns
+nonrecoverable `Validation` with
+`A classes navigation read returned a different number of entries.` A
+response class-ID or class-name mismatch at the requested index returns
+nonrecoverable `Validation` with
+`A classes navigation read changed class identity or order.` Preserve the raw
+ordered snapshot, exact Unicode names, schedules including raw values, and
+teacher names.
+
+Add `42x` and assert the exact invalid message, `InvalidInput`, recoverability,
+and zero reads. Pin the exact duplicate message, code, recoverability, and
+zero reads. Pin both response messages, `Validation`, nonrecoverability, and
+one read using the existing count and mismatched-ID fixtures; do not add new
+wrong-name or reorder scenarios. Preserve empty success, source errors, and
+successful output/order fixtures.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassesNavigationSnapshotTests`. Confirm one
+registration for that exact CTest name, then run only that CTest with the
 Debug configuration. Run no full suite. This matrix is recorded before
-implementation; F763 verification is pending. F707/F709 remain deferred,
+implementation; F764 verification is pending. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

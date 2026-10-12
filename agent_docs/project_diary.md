@@ -4939,3 +4939,18 @@ request rejection before the port distinct from returned-identity validation
 after one read, and preserves independent class-field and teacher-name
 results. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
+
+## Phase 2 F763 acceptance and F764 selection — 2026-10-13
+
+F763 is accepted at `9a982bc324b100d1ee2e45a5186cdccf7c61d580`. The
+Class Notes page query now shares canonical class-ID validation while
+retaining exact input and returned-identity contracts. Its focused CTest
+passed 1/1 with one registration in the existing Visual Studio 18 x64 Debug
+tree. Sandboxed FileTracker access was denied; the same build succeeded
+outside the sandbox. No full suite ran.
+
+F764 is selected for the Classes Navigation snapshot handler. Its matrix
+preserves recoverable invalid/duplicate request errors and nonrecoverable
+response errors, plus empty success and raw ordered output. F707/F709 remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
