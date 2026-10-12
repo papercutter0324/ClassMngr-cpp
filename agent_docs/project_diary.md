@@ -4251,10 +4251,22 @@ build passed for the product and Schedule Import dialog test target; its exact
 CTest passed 1/1. Direct compact and public `classDifferences` cases cover
 spaced conversion, raw padded/unsupported fallback, and HTML escaping.
 
-F704 is selected from the existing Batch 178 shortlist for Initial Setup
-Wizard `typedScheduleTimes`. Keep the exact weekday lookup out of scope; use
-the single spaced AM/PM format and reject padded raw values before parsing.
-Test through the public wizard save path by adding padded/malformed items to
-the existing row combos, then assert the warning, retained times page, and no
-detail/time writes. Its acceptance matrix is recorded before implementation
-in the Phase 2 progress log.
+F704 is accepted and committed as
+`b665f09240470e78b08df7686fb4337a1bce052b`. `ClassMngr` and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests` built in the existing
+Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the exact CTest
+passed 1/1. Public wizard-flow cases reject padded end and malformed start
+values, retain the blank class after failure, and confirm no details or
+schedule writes. No full suite ran.
+
+F705 is selected in Batch 178 for `writeIntensiveSlotStates` in the Schedule
+Import repository. Migrate only the raw `HH:mm` time conversion to the
+explicit padded 24-hour Domain parser with a raw-whitespace guard. Preserve
+exact weekday and state validation, duplicate raw day/time detection, error
+message, original string persistence, and transaction rollback. The public
+`ScheduleImportRepository::apply` seam can verify canonical persistence and
+reject padded, AM/PM, seconds and malformed values while retaining the prior
+seeded slot rows. Characterize one-digit-hour input against the existing Qt
+`HH:mm` parser; add no hour-width restriction. The parser is already linked to
+`ClassMngrScheduleImportTests`; no CMake change is expected. The acceptance
+matrix is recorded before implementation in the Phase 2 progress log.

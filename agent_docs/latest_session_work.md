@@ -4,7 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 has F703 complete and is active with F704.
+  141-177 are complete; Batch 178 has F703 and F704 complete and is active
+  with F705.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -79,14 +80,23 @@
   Debug Ninja tree; exact CTest passed 1/1. Tests preserve compact `:00`
   omission, successful minute display, raw padded/unsupported fallback, and
   reconciliation HTML escaping. No full suite ran.
-- F704 is selected for `typedScheduleTimes` in the Initial Setup Wizard. Use
-  only `HourMinuteAmPmSpaced` and a raw-whitespace guard; preserve exact
-  weekday handling and invalid schedule rejection. Existing public wizard
-  tests can inject padded/malformed combo items, then verify the failed-save
-  page/warning and absence of detail/time writes. The target already links the
-  Domain parser through `ClassMngrRuntime`. Build `ClassMngr` and
-  `ClassMngrInitialSetupWizardClassCreateSaveParityTests`; run only its exact
-  CTest. The pre-implementation matrix is in the Phase 2 progress log.
+- F704 Initial Setup Wizard `typedScheduleTimes` parsing is committed as
+  `b665f09240470e78b08df7686fb4337a1bce052b`. `ClassMngr` and
+  `ClassMngrInitialSetupWizardClassCreateSaveParityTests` built in the
+  existing Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the
+  exact CTest passed 1/1. Padded end and malformed start cases verify a
+  retained blank class with no details or schedule writes. No full suite ran.
+- F705 is selected for the intensive-slot parser in
+  `writeIntensiveSlotStates`. Use only the explicit padded `HH:mm` format and
+  a raw-whitespace guard; preserve verbatim database values, weekday/state/
+  duplicate-key checks, error behavior and transaction rollback. Public apply
+  tests should keep canonical `09:00` persistence and reject padded, AM/PM,
+  seconds and malformed input while preserving prior rows. Characterize a
+  one-digit-hour value against the existing Qt `HH:mm` parser; add no hour-
+  width restriction.
+  `ClassMngrScheduleImportTests` already links the Domain parser; build that
+  target with `ClassMngr` and run only its exact CTest. The pre-implementation
+  matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

@@ -26328,3 +26328,48 @@ existing failure and save behavior directly testable.
    no full suite.
 
 This matrix is recorded before implementation. Batch 178 is active with F704.
+
+### F704 Initial Setup Wizard schedule-time parser migration - accepted - 2026-10-12
+
+F704 is accepted at code/test commit
+`b665f09240470e78b08df7686fb4337a1bce052b`. `ClassMngr` and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests` built successfully in
+the existing `build/windows-x64-debug-ninja` tree under the VS 2026 x64
+Developer environment. The exact CTest target passed 1/1. The only reported
+warning was unavailable `vswhere.exe`; build and test succeeded. No full suite
+ran.
+
+**Decision: accept F704.** Batch 178 continues with F705.
+
+### F705 Schedule Import intensive-slot time parser migration selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `writeIntensiveSlotStates` in
+`src/data/repositories/schedule_import_repository.cpp`; its raw slot start-time
+parse is a bounded repository migration with an existing public
+`ScheduleImportRepository::apply` seam and focused test coverage.
+
+**F705 is selected:** migrate only raw slot `startTime` to
+`ScheduleValueParser::parseDisplayTime` with the singleton
+`PaddedHourMinute24Hour` allowlist, preserving exact raw-input and persistence
+behavior.
+
+1. Replace only `QTime::fromString(raw, "HH:mm")` in
+   `writeIntensiveSlotStates` with `parseDisplayTime` restricted to
+   `PaddedHourMinute24Hour`; require `raw == raw.trimmed()` before accepting a
+   parse because the shared parser trims.
+2. Preserve exact weekday mapping, allowed state values (`empty`, `essay`,
+   `lunch`), duplicate raw day+time key behavior, the generic invalid
+   intensive-slot error, original string binding/persistence, and transaction
+   application/rollback behavior.
+3. Extend `appliesIntensiveSlotStatesSnapshot` through public
+   `ScheduleImportRepository::apply`: verify canonical `HH:mm` is accepted
+   and persisted verbatim; reject surrounding whitespace, AM/PM, seconds, and
+   malformed values while retaining seeded database state on failure.
+   Characterize the one-digit-hour input against the existing Qt `HH:mm`
+   parser and do not add an hour-width restriction.
+4. `ClassMngrScheduleImportTests` already compiles the parser source through
+   `cmake/tests/features.cmake`; make no CMake change. Build `ClassMngr` and
+   `ClassMngrScheduleImportTests`; run only that exact CTest target. Run no
+   full suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F705.

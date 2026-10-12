@@ -53,12 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F704 selected)
+### Current state - 2026-10-12 (F705 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-177 are complete; Batch 178 has F703 complete and is active with
-F704, the Initial Setup Wizard schedule-time parser migration. F689-F693 are complete;
+Batches 141-177 are complete; Batch 178 has F703 and F704 complete and is
+active with F705, the Schedule Import intensive-slot time parser migration.
+F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -115,10 +116,16 @@ committed as `aedb61b51fd3c7de938bee8dfb2124fd9c0c5f1c`; `ClassMngr` and
 `ClassMngrScheduleImportDialogTests` built in the existing Windows x64 Debug
 Ninja tree, and the exact CTest passed 1/1. Coverage preserves compact/raw
 and reconciliation/HTML-escaped fallback behavior; no full suite ran. F704
-selects the Initial Setup Wizard `typedScheduleTimes` parser with one spaced
-AM/PM format and a raw-whitespace guard; preserve weekday lookup and invalid
-schedule rejection. Its matrix is recorded before implementation in the Phase
-2 progress log. The current-source Phase 0
+is committed as `b665f09240470e78b08df7686fb4337a1bce052b`; `ClassMngr` and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests` built in the existing
+Windows x64 Debug Ninja tree under the VS 2026 x64 Developer environment. The
+exact CTest passed 1/1. New public-flow cases reject an outer-padded end time
+and malformed start hour, retaining the blank class and writing no detail or
+schedule rows; no full suite ran. F705 selects only the intensive-slot
+`HH:mm` conversion in `writeIntensiveSlotStates`: use the explicit padded
+24-hour Domain format with a raw-whitespace guard, preserving verbatim
+persistence, slot validation and transaction behavior. Its matrix is
+recorded in the Phase 2 progress log. The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
 and F626 deferred. F666 Class Day

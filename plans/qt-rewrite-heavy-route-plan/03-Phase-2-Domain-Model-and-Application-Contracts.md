@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F704 is selected in Batch 178; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F705 is selected in Batch 178; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -96,7 +96,14 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 178
 
-- F704 - Move Initial Setup Wizard schedule-time parsing to Domain with a strict spaced AM/PM format; preserve weekday mapping, row order, and save/failure behavior.
+- F705 - Move Schedule Import intensive-slot start-time parsing to Domain with strict padded 24-hour input; preserve slot-state validation, raw key and persistence text, and transaction behavior.
+- F706 - Migrate Calendar Event repository `eventFromQuery` time parsing while preserving query conversion behavior.
+- F707 - Migrate Sidebar controller `timeOrder` parsing while preserving ordering behavior.
+- F708 - Migrate Calendar Event dialog legacy draft parsing while preserving draft behavior.
+- F709 - Migrate Calendar Page canonical `projectionTime` parsing while preserving projection behavior.
+- F710 - Migrate schedule-print service time parsing while preserving formatting behavior.
+- F711 - Migrate the Next Calendar Event application-port conversion family.
+- F712 - Migrate the Next Sub Prep schedule-summary parsing and formatting pair.
 
 ## Objective
 
