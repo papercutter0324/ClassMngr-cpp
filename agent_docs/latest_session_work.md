@@ -4,8 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 has F703-F710 complete and is active with
-  F711.
+  141-177 are complete; Batch 178 has F703-F711 complete and is active with
+  F712.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -112,18 +112,25 @@
   `ClassMngrSchedulePrintPdfTests` built in the Windows x64 Debug Ninja tree;
   its exact CTest passed 1/1. Rendered PDF checks preserve 09:00 gray, 10:00
   yellow, and gray for trailing-space and malformed labels. No full suite ran.
-- F711 is selected for the four Calendar Event port `legacyTime` helpers:
-  save, import-save, series-create, and series-edit. Use the explicit
-  `PaddedHourMinute24Hour` Domain format and preserve exact canonical `HH:mm`
-  through raw-equals-trimmed and round-trip checks. The public port test target
-  already covers canonical conversion. Padded and malformed public requests
-  fail `request.validate()` before these private helpers, so record them as
-  boundary validation coverage rather than helper-path coverage. Build
-  `ClassMngr` and `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
-  then run only its exact CTest. F707 remains deferred because its comparator
-  chain has no caller; F709 remains deferred because malformed raw text is
-  not readily injectable through its existing fixture. The preimplementation
-  matrix is in the Phase 2 progress log.
+- F711 Calendar Event port time parsing is accepted and committed as
+  `147715182c75f2ed874cece287a4b8ac496ec5f2`. `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` built in
+  the Windows x64 Debug Ninja tree under the VS x64 Developer environment;
+  its exact registered CTest passed 1/1. Eight public-boundary cases reject
+  padded starts and malformed ends across save, import-save, series-create,
+  and series-edit, preserving the seeded row and count. These cases do not
+  reach the private conversion helpers. Existing canonical conversion
+  coverage remains; no full suite ran.
+- F712 selects the duplicated eight-format parsing in
+  `ApplicationServicesSubPrepScheduleSummaryPort`, preserving trimmed input,
+  summary formatting and invalid-time handling, navigation formatting and its
+  malformed-text fallback. Its SQL-backed public test seam can inject raw
+  schedule times. Build `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, then
+  run only that exact registered CTest. F707 remains deferred because its
+  comparator chain has no caller; F709 remains deferred because malformed raw
+  text is not readily injectable through its existing fixture. The
+  preimplementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

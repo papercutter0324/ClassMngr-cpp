@@ -26581,7 +26581,57 @@ and clear semantics.
    malformed-input coverage.
 4. Build `ClassMngr` and
    `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; run only
-   the exact CTest `NextPlatformApplicationServicesCalendarEventPort`. Run no
+   the exact registered CTest
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. Run no
    full suite.
 
-This matrix is recorded before implementation. Batch 178 continues with F711.
+This matrix was recorded before implementation.
+
+### F711 Calendar Event port time parser migration - accepted - 2026-10-12
+
+F711 is accepted at code/test commit
+`147715182c75f2ed874cece287a4b8ac496ec5f2`. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` built in
+Windows x64 Debug Ninja under the VS x64 Developer environment. The exact
+registered CTest `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`
+passed 1/1. Eight public-boundary cases across save/import/series create/edit
+verify `InvalidInput`, trigger-guarded no persistence, and unchanged seeded
+row/count for padded starts or malformed ends; these do not exercise private
+helpers. Existing canonical conversion coverage remains. No full suite ran.
+
+**Decision: accept F711.** Batch 178 continues with F712; F707 and F709 remain
+deferred.
+
+### Batch 178 continuation - F712 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the duplicated eight-format input parsers `parseTime` and
+`compactNavigationStartTime` in
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h`.
+Reuse the default `ScheduleValueParser::parseDisplayTime` overload, which
+matches their formats and trimming behavior.
+
+**F712 is selected:** migrate only these two parsing loops while preserving
+meeting-text and navigation fallback, ordering, and `compactTime` formatting.
+
+1. Replace the duplicated `parseTime` and `compactNavigationStartTime` format
+loops with the default eight-format `ScheduleValueParser::parseDisplayTime`
+overload. Preserve trimming and minute conversion.
+2. Preserve meeting-text invalid omission/N/A, unknown navigation order when
+   no valid times exist, compact valid output (24-hour `H:mm`; AM/PM input as
+   `h:mm` without the suffix), and malformed nonblank navigation fallback
+   (trimmed text with literal AM/PM removal). Keep `compactTime` unchanged.
+3. Test through the public summary port using raw `start_time` inserted by the
+   SQL fixture. Assert meeting text, navigation text, and ordering for
+   canonical, alternate AM/PM, whitespace-padded valid, and malformed values.
+   With malformed-only input, meeting text must be N/A/omitted, navigation
+   must retain the legacy nonblank fallback after trimming and removing
+   literal AM/PM substrings, and navigation ordering must remain unknown.
+   Keep any port-query failure assertion distinct from malformed-input
+   fallback assertions.
+4. No CMake change is expected. Build `ClassMngr` and
+   `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; run
+   only the exact registered CTest
+   `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. Run
+   no full suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F712.

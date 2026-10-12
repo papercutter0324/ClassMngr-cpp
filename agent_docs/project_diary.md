@@ -4313,3 +4313,28 @@ ordering, and transactions. The acceptance matrix is recorded in the Phase 2
 progress log before implementation. F707 and F709 remain deferred for their
 documented missing app callsite and raw-input fixture constraints. Phase 2
 remains In Progress with Gates 1 and 2 Partial.
+
+## Phase 2 Calendar Event port time parsing - 2026-10-12
+
+F711 is accepted and committed as
+`147715182c75f2ed874cece287a4b8ac496ec5f2`. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` built in the
+Windows x64 Debug Ninja tree under the VS x64 Developer environment. The exact
+registered CTest passed 1/1. Eight public-boundary cases reject padded starts
+and malformed ends across save, import-save, series-create, and series-edit.
+They confirm request-validation errors, trigger-guarded no-save behavior, and
+preservation of the seeded row and row count. Existing canonical conversion
+coverage remains. No full suite ran.
+
+F712 is selected in Batch 178 for the paired input parsing loops in the Next
+Sub Prep schedule-summary port. Replace only the duplicated eight-format
+parse loops with the default Domain display-time parser, which keeps the same
+format set and trimming behavior. Preserve meeting-summary invalid-time
+omission and `N/A`, unknown navigation ordering, compact valid navigation
+formatting, and the malformed-text fallback that can retain nonblank input.
+The public SQL-backed port fixture can inject raw values and assert
+`meetingText`, navigation text, and ordering; no CMake change is expected.
+The acceptance matrix is recorded in the Phase 2 progress log before
+implementation. F707 and F709 remain deferred for their documented callsite
+and malformed-input seam constraints. Phase 2 remains In Progress with Gates
+1 and 2 Partial.

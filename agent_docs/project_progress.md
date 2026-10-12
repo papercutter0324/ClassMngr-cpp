@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F710 accepted; F711 selected)
+### Current state - 2026-10-12 (F711 accepted; F712 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-177 are complete; Batch 178 has F703-F710 complete and is active
-with F711, the Calendar Event application-port time conversion migration.
+Batches 141-177 are complete; Batch 178 has F703-F711 complete and is active
+with F712, the Next Sub Prep schedule-summary parsing migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -142,14 +142,21 @@ widget values; no full suite ran. F710 is committed as
 `ClassMngrSchedulePrintPdfTests` built in the Windows x64 Debug Ninja tree,
 and the exact CTest passed 1/1. Rendered PDF checks preserve gray for 09:00,
 yellow for 10:00, and gray for trailing-space and malformed labels. No full
-suite ran. F711 selects only the four Calendar Event port `legacyTime`
-helpers (save, import-save, series-create, and series-edit): use the explicit
-`PaddedHourMinute24Hour` Domain format and preserve exact canonical `HH:mm`
-acceptance with a raw-equals-trimmed guard and round-trip check. The focused
-port tests cover canonical conversion; padded and malformed public inputs are
-rejected by request validation before those private helpers. F707 is deferred
-because its comparator chain has no observed app callsite; F709 is deferred
-because its public fixture does not readily supply malformed raw time text.
+suite ran. F711 is committed as
+`147715182c75f2ed874cece287a4b8ac496ec5f2`; `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` built in the
+Windows x64 Debug Ninja tree under the VS x64 Developer environment, and the
+exact registered CTest passed 1/1. Eight public-boundary cases reject padded
+starts and malformed ends across save, import-save, series-create, and
+series-edit; they verify the validator result and leave the seeded row and row
+count unchanged. Existing canonical conversion coverage remains. No full
+suite ran. F712 selects only the duplicated eight-format parse loops in the
+Next Sub Prep schedule-summary port; use the default Domain display-time
+parser, preserving the summary and navigation formatting/failure contracts.
+The database-backed public port test seam can supply raw times. F707 is
+deferred because its comparator chain has no observed app callsite; F709 is
+deferred because its public fixture does not readily supply malformed raw
+time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
