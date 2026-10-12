@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-172 are complete; Batch 173 is active with F698. F625's assessment is
+  141-173 are complete; Batch 174 is active with F699. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -38,16 +38,24 @@
   passed 1/1 with the final whitespace-padded input case included. Tests cover
   all eight formats, malformed compact fallback, invalid-time ordering, and
   seconds omission from minute ordering. No full suite ran.
-- F698 `ScheduleViewModel` canonical-time parsing is selected in Batch 173.
-  Reuse `ScheduleValueParser::parseTime` only when its returned canonical text
-  equals the original `HH:mm` label, preserving behavior despite parser
-  trimming. Keep the inclusive 15:00 cutoff, malformed/padded fallback to
-  Essay, and weekend/intensive rules. Extend
-  `tests/schedule_print_model_tests.cpp` with the canonical 15:55/16:00
-  boundary and malformed/padded fallbacks. Its test target already compiles
-  both parser and model, so no CMake edit is planned. Build `ClassMngr` and
-  `ClassMngrSchedulePrintModelTests`; run only that exact CTest. The acceptance
-  matrix is recorded before implementation in the Phase 2 progress log.
+- F698 `ScheduleViewModel` canonical-time parsing is accepted and committed as
+  `9ff01caa2b2b7214f529f235c8fb1732ff16166f`. `ClassMngr` and
+  `ClassMngrSchedulePrintModelTests` built in the Windows x64 Debug Ninja tree;
+  the exact CTest passed 1/1 with fresh helper/model and test objects and
+  executable. Coverage verifies the inclusive 15:00 cutoff, 15:55 empty
+  state, 16:00 Essay state, malformed/padded Essay fallback, and existing
+  weekend/intensive behavior. No full suite ran.
+- F699 migrates the projected start/end time conversions in both
+  `CalendarEventCache` and `CalendarEventModel` through
+  `ScheduleValueParser::parseTime`. Require successful canonical text equal to
+  the original projection string, preserving raw rejection despite parser
+  trimming; retain each consumer's invalid-event behavior and date, ordering,
+  all-day, and unknown-time handling. Extend the shared
+  `ClassMngrCalendarEventCacheTests` for model parity and malformed/padded
+  injected projections, and add the parser source to its CMake source list.
+  Build `ClassMngr` and the target; run only CTest
+  `ClassMngrCalendarEventCacheTests`. The acceptance matrix is recorded before
+  implementation in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

@@ -4167,11 +4167,20 @@ in the Windows x64 Debug Ninja tree. The exact navigation model CTest passed
 display formats, trimmed input, malformed compact fallback, invalid-time
 sorting, and seconds omission from minute ordering. No full suite ran.
 
-F698 is selected in Batch 173 for the single canonical `HH:mm` conversion in
-`ScheduleViewModel::isRegularEarlyEmptySlot`. Reuse `ScheduleValueParser::parseTime`
-only when its canonical text exactly matches the input, preserving untrimmed
-input acceptance. Keep the inclusive 15:00 cutoff, malformed/padded Essay
-fallback, and weekend/intensive behavior. The existing schedule print-model
-target already compiles both parser and model; add boundary and invalid-label
-cases and run its exact focused CTest after building the product and target.
-The acceptance matrix is recorded in the Phase 2 progress log.
+F698 is committed as `9ff01caa2b2b7214f529f235c8fb1732ff16166f`. `ClassMngr`
+and `ClassMngrSchedulePrintModelTests` built in the Windows x64 Debug Ninja
+tree; the focused CTest passed 1/1 with fresh helper/model and test objects
+and executable. Coverage verifies 15:00/15:55 empty, 16:00 Essay, malformed
+and whitespace-padded Essay fallback, plus weekend/intensive behavior. No
+full suite ran.
+
+F699 is selected in Batch 174 to migrate the paired projected-time conversions
+in both `CalendarEventCache` and `CalendarEventModel`. Both consume the same
+application projection, but projection validation allows nonblank malformed
+time text; require parser success and exact canonical-text equality to retain
+raw-input rejection. Preserve the cache's drop and model's skip behavior for
+invalid timed events, plus all-day/unknown-time handling, dates, ordering, and
+metadata. Add model parity and malformed/padded injected-projection tests to
+the shared calendar cache target, add the parser source to that target, then
+build product/target and run only its exact CTest. The matrix is recorded in
+the Phase 2 progress log.

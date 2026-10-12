@@ -25999,4 +25999,51 @@ weekends, and intensive rows.
 4. Build `ClassMngr` and `ClassMngrSchedulePrintModelTests`; run only the CTest
    `ClassMngrSchedulePrintModelTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 173 is active with F698.
+This matrix was recorded before implementation.
+
+### F698 ScheduleViewModel early empty-slot time parser migration - accepted - 2026-10-12
+
+F698 is accepted at code/test commit
+`9ff01caa2b2b7214f529f235c8fb1732ff16166f` (`Phase2 - Reuse Domain parser
+in ScheduleViewModel (F698)`). `ClassMngr` and
+`ClassMngrSchedulePrintModelTests` built successfully. The exact CTest
+`ClassMngrSchedulePrintModelTests` passed 1/1 with fresh helper/model and test
+objects. No full suite ran.
+
+**Decision: accept F698.** Batch 173 is complete.
+
+### Batch 174 selection - recorded before F699 implementation - 2026-10-12
+
+Select the paired projected-time conversions in both
+`src/features/calendar/ui/calendar_event_cache.cpp` and
+`src/features/calendar/ui/calendar_event_model.cpp`. They consume the same
+`CalendarEventProjection`; limiting the migration to the cache would leave
+duplicate handling. Require exact canonical-text equality after parsing so
+the parser's trimming does not expand the accepted projection text.
+
+**F699 is selected:** replace only the start/end canonical `HH:mm`
+conversions in both consumers with `ScheduleValueParser::parseTime`, while
+preserving each consumer's existing invalid-event behavior.
+
+### F699 calendar projected-time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Replace only the start/end `QTime` canonical `HH:mm` conversions in
+   `calendar_event_cache.cpp` and `calendar_event_model.cpp` with
+   `ScheduleValueParser::parseTime`. Accept a value only when parsing succeeds
+   and `CanonicalTime.text` exactly equals the original projection text;
+   `CalendarEventProjection` permits arbitrary nonblank bounded strings, and
+   the parser trims.
+2. Preserve cache behavior that drops an invalid or partial event and model
+   behavior that skips it. Preserve paired-time, all-day, and unknown-time
+   handling plus date parsing, filtering, ordering, and metadata.
+3. Extend `tests/calendar_event_cache_tests.cpp` to assert model start/end
+   parity directly and verify injected malformed or padded projected times
+   remain rejected/skipped in both consumers. Add
+   `src/domain/rules/schedule_value_parser.cpp` to the directly compiled
+   `ClassMngrCalendarEventCacheTests` sources in
+   `cmake/tests/data_and_imports.cmake`; this target already compiles both
+   consumers.
+4. Build `ClassMngr` and `ClassMngrCalendarEventCacheTests`; run only the CTest
+   `ClassMngrCalendarEventCacheTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 174 is active with F699.

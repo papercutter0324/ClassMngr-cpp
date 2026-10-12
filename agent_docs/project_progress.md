@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F698 selected)
+### Current state - 2026-10-12 (F699 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-172 are complete; Batch 173 is active with F698, the
-ScheduleViewModel canonical-time parser migration. F689-F693 are complete;
+Batches 141-173 are complete; Batch 174 is active with F699, the
+CalendarEventProjection canonical-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -81,7 +81,14 @@ progress log. F697 is committed as
 focused navigation-model CTest passed 1/1 with a fresh test executable and
 object. No full suite ran. F698 selects the `ScheduleViewModel` canonical
 `HH:mm` cutoff parse; its behavior-parity guard and test matrix are recorded
-in the Phase 2 progress log. The current-source Phase 0 evidence remains
+in the Phase 2 progress log. F698 is committed as
+`9ff01caa2b2b7214f529f235c8fb1732ff16166f`; `ClassMngr` and
+`ClassMngrSchedulePrintModelTests` built in the Windows x64 Debug Ninja tree,
+and the exact focused CTest passed 1/1 with fresh helper/model and test
+objects and executable. No full suite ran. F699 selects the paired projected-
+time conversions in `CalendarEventCache` and `CalendarEventModel`; its
+canonical-text guards and shared target matrix are recorded in the Phase 2
+progress log. The current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24; it is separate from the historical Phase 0 closure
 described above. F625 remains accepted and F626 deferred. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
