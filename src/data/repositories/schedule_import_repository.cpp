@@ -23,7 +23,6 @@
 #include <QSet>
 #include <QSqlError>
 #include <QSqlQuery>
-#include <QTime>
 
 #include <algorithm>
 #include <array>
@@ -857,6 +856,9 @@ Status writeIntensiveSlotStates(
         QStringLiteral("essay"),
         QStringLiteral("lunch")
     };
+    constexpr std::array startTimeFormats{
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+    };
 
     QSet<QString> keys;
     QSqlQuery query(database);
@@ -868,16 +870,17 @@ Status writeIntensiveSlotStates(
     for (const IntensiveSlotState& state : states)
     {
         const int day = dayIndex(state.day);
-        const QTime startTime =
-            QTime::fromString(
+        const auto startTime =
+            ScheduleValueParser::parseDisplayTime(
                 state.startTime,
-                QStringLiteral("HH:mm")
+                startTimeFormats
                 );
         const QString key =
             state.day + QLatin1Char('\x1f') + state.startTime;
         if (
             day < 0
-            || !startTime.isValid()
+            || state.startTime != state.startTime.trimmed()
+            || !startTime
             || !validStates.contains(state.state)
             || keys.contains(key)
             )

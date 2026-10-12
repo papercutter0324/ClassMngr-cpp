@@ -42,6 +42,8 @@ private slots:
     void rejectsAmbiguousIntensiveTimesWithCellDiagnostic();
     void convertsIntensiveTimesAcrossNoon();
     void appliesIntensiveSlotStatesSnapshot();
+    void appliesIntensiveSlotStateTimesWithLegacyQtSemantics_data();
+    void appliesIntensiveSlotStateTimesWithLegacyQtSemantics();
     void validatesCourseMeetingPatterns();
     void partitionsRepeatedCourseIntoValidClasses();
     void filtersClassOptionsByGradeAndDayGroup();
@@ -1372,6 +1374,162 @@ void ScheduleImportTests::appliesIntensiveSlotStatesSnapshot()
         QCOMPARE(query.value(1).toString(), QStringLiteral("09:00"));
         QCOMPARE(query.value(2).toString(), QStringLiteral("empty"));
         QVERIFY(!query.next());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+appliesIntensiveSlotStateTimesWithLegacyQtSemantics_data()
+{
+    QTest::addColumn<QString>("startTime");
+    QTest::addColumn<bool>("expectedValid");
+
+    QTest::newRow("surrounding-whitespace")
+        << QStringLiteral(" 09:00 ")
+        << false;
+    QTest::newRow("am-pm-format")
+        << QStringLiteral("09:00 AM")
+        << false;
+    QTest::newRow("seconds-format")
+        << QStringLiteral("09:00:00")
+        << false;
+    QTest::newRow("malformed")
+        << QStringLiteral("not-a-time")
+        << false;
+    QTest::newRow("one-digit-hour-matches-legacy-qt")
+        << QStringLiteral("9:00")
+        << QTime::fromString(
+               QStringLiteral("9:00"),
+               QStringLiteral("HH:mm")
+               ).isValid();
+}
+
+void ScheduleImportTests::
+appliesIntensiveSlotStateTimesWithLegacyQtSemantics()
+{
+    QFETCH(QString, startTime);
+    QFETCH(bool, expectedValid);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-intensive-state-time-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        execOrFail(
+            query,
+            QStringLiteral(
+                "INSERT INTO intensive_slot_states "
+                "(day, start_time, state) "
+                "VALUES ('Friday', '20:00', 'lunch')"
+                )
+            );
+
+        ScheduleImportClassCandidate candidate;
+        candidate.teacherKey = QStringLiteral("\uAE40\uD558\uB298");
+        candidate.teacherKr = QStringLiteral("\uAE40\uD558\uB298");
+        candidate.rooms = {QStringLiteral("413")};
+        candidate.classGrade = QStringLiteral("E5");
+        candidate.classLevel = QStringLiteral("Zeus");
+        candidate.times = {
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("9:00 AM"),
+                QStringLiteral("9:55 AM")
+            },
+            {
+                QStringLiteral("Wednesday"),
+                QStringLiteral("9:00 AM"),
+                QStringLiteral("9:55 AM")
+            }
+        };
+
+        ScheduleImportPlan plan;
+        plan.kind = ScheduleImportKind::Intensive;
+        plan.unknownCellsAcknowledged = true;
+        plan.candidates = {candidate};
+        plan.intensiveSlotStates = {
+            {QStringLiteral("Monday"), startTime, QStringLiteral("essay")}
+        };
+        plan.teachers = {
+            {
+                candidate.teacherKey,
+                ScheduleImportTeacherAction::Create,
+                -1,
+                QStringLiteral("413")
+            }
+        };
+        plan.classes = {
+            {0, ScheduleImportClassAction::CreateNew, -1}
+        };
+
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.apply(plan);
+        if (expectedValid)
+        {
+            const QString error =
+                imported.has_value() ? QString() : imported.error();
+            QVERIFY2(imported.has_value(), qPrintable(error));
+
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "SELECT day, start_time, state "
+                    "FROM intensive_slot_states"
+                    )
+                );
+            QVERIFY(query.next());
+            QCOMPARE(query.value(0).toString(), QStringLiteral("Monday"));
+            QCOMPARE(query.value(1).toString(), startTime);
+            QCOMPARE(query.value(2).toString(), QStringLiteral("essay"));
+            QVERIFY(!query.next());
+        }
+        else
+        {
+            QVERIFY(!imported.has_value());
+            QCOMPARE(
+                imported.error(),
+                QStringLiteral(
+                    "The import contains an invalid intensive slot state."
+                    )
+                );
+
+            execOrFail(
+                query,
+                QStringLiteral(
+                    "SELECT day, start_time, state "
+                    "FROM intensive_slot_states"
+                    )
+                );
+            QVERIFY(query.next());
+            QCOMPARE(query.value(0).toString(), QStringLiteral("Friday"));
+            QCOMPARE(query.value(1).toString(), QStringLiteral("20:00"));
+            QCOMPARE(query.value(2).toString(), QStringLiteral("lunch"));
+            QVERIFY(!query.next());
+
+            for (const QString& table : {
+                     QStringLiteral("teachers"),
+                     QStringLiteral("classes"),
+                     QStringLiteral("class_info"),
+                     QStringLiteral("class_times"),
+                     QStringLiteral("class_intensive_times")
+                 })
+            {
+                execOrFail(
+                    query,
+                    QStringLiteral("SELECT COUNT(*) FROM ") + table
+                    );
+                QVERIFY(query.next());
+                QCOMPARE(query.value(0).toInt(), 0);
+            }
+        }
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
