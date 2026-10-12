@@ -27131,4 +27131,49 @@ raw weekday matching and the existing `-1` fallback.
    only the exact registered CTest
    `ClassMngrScheduleImportDialogTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F722.
+This matrix was recorded before implementation.
+
+### F722 Schedule Import Review state-time parser migration - accepted - 2026-10-12
+
+F722 is accepted at code/test commit
+`671b2bac90641874ffa22e1e0e5ef29a1e5a8ea7`. `stateTime` now uses the parsed
+canonical weekday only when it equals raw `time.day`; padded, lowercase, and
+unknown values retain the `-1` fallback. The public
+`reviewRejectsMalformedProjectedTime` test preserves malformed-time behavior
+and confirms valid-time `monday` and ` Monday ` inputs make review invalid and
+keep Import disabled.
+
+`ClassMngr` and `ClassMngrScheduleImportDialogTests` built successfully. The
+exact registered CTest `ClassMngrScheduleImportDialogTests` passed 1/1 in
+2.32 seconds. No full suite ran.
+
+**Decision: accept F722.** Batch 179 continues with F723; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F723 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `typedScheduleTimes` in
+`src/features/setup/ui/initial_setup_wizard.cpp`.
+
+**F723 is selected:** reuse the Domain weekday parser while preserving the
+exact `days.indexOf` match and `-1` invalid fallback.
+
+1. Migrate only `typedScheduleTimes` to `ScheduleValueParser::parseWeekday`.
+   Accept a parsed weekday only when its canonical text equals the raw
+   weekday; preserve `-1` for padded, lowercase, and unknown values.
+2. Add public coverage in `tests/initial_setup_wizard_tests.cpp`. Start
+   `InitialSetupWizard` at `ClassTimesPage` with a valid class draft and
+   database; find `setupClassSchedules`, take the first `regularRows()` row,
+   set `monday` and ` Monday ` through
+   `dayCombo()->setItemData(currentIndex, day)`, and set valid start/end
+   times. After clicking Next, assert the wizard remains on `ClassTimesPage`
+   and the fake prompt records the exact warning
+   `The class information could not be saved.`
+3. Because class creation precedes schedule validation, assert the existing
+   side effect of one blank `classes` row and no rows in `class_info`,
+   `class_times`, or `class_intensive_times`.
+4. No CMake wiring change appears needed. Build `ClassMngr` and
+   `ClassMngrInitialSetupWizardTests`; run only the exact registered CTest
+   `ClassMngrInitialSetupWizardTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F723.

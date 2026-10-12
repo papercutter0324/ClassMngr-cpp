@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F721 accepted; F722 selected)
+### Current state - 2026-10-12 (F722 accepted; F723 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F722, the schedule import review weekday parser migration.
+with F723, the initial setup wizard weekday parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -248,16 +248,29 @@ error and leave the full persisted snapshot unchanged, including
 `intensive_slot_states`. `ClassMngr` and `ClassMngrScheduleImportTests` built;
 the exact registered CTest passed 1/1. No full suite ran.
 
-F722 selects `stateTime` in
-`src/features/schedule/ui/schedule_import_review_dialog.cpp`. Reuse
+F722 is accepted and committed as
+`671b2cac90641874ffa22e1e0e5ef29a1e5a8ea7`. It updates `stateTime` in
+`src/features/schedule/ui/schedule_import_review_dialog.cpp` to reuse
 `ScheduleValueParser::parseWeekday` only when parsed canonical text equals
 raw `time.day`, keeping padded, lowercase, and unknown values at the `-1`
-fallback. Extend `reviewRejectsMalformedProjectedTime` with valid-time
-lowercase and padded weekday inputs; assert review marks each schedule
-invalid and keeps Import disabled. `ClassMngrScheduleImportDialogTests`
-already includes the dialog and parser; no CMake change is needed. Build
-`ClassMngr` and that target, then run only the exact registered CTest.
-F707 remains deferred
+fallback. `reviewRejectsMalformedProjectedTime` retains malformed-time
+coverage and confirms valid-time lowercase/padded weekdays make review
+invalid with Import disabled. `ClassMngr` and
+`ClassMngrScheduleImportDialogTests` built; the exact registered CTest passed
+1/1 (2.32 seconds). No full suite ran.
+
+F723 selects `typedScheduleTimes` in
+`src/features/setup/ui/initial_setup_wizard.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` only when parsed canonical text equals the
+raw day, preserving exact weekday matching and the `-1` invalid result. Add a
+public wizard test that injects lowercase and padded day data into the first
+regular schedule row with valid schedule times and a valid class draft. On
+Next, assert the wizard stays on ClassTimesPage and records the exact warning
+`The class information could not be saved.` Preserve the existing preflight
+side effect: one blank `classes` row is inserted before schedule validation,
+while `class_info`, `class_times`, and `class_intensive_times` remain empty.
+Build `ClassMngr` and `ClassMngrInitialSetupWizardTests`; run only that exact
+registered CTest. No CMake change is needed. F707 remains deferred
 because its comparator chain has no observed app callsite; F709 is deferred
 because its public fixture does not readily supply malformed raw time text.
 The current-source Phase 0

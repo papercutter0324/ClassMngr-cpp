@@ -4473,12 +4473,20 @@ tests aligned with the public validation boundary. The focused
 `ClassMngrScheduleImportTests` CTest passed 1/1 after the final exact error
 assertion; no full suite ran.
 
-F722 selects `stateTime` in
-`src/features/schedule/ui/schedule_import_review_dialog.cpp`. Require parsed
-weekday text to equal raw `time.day`, retaining the `-1` fallback for padded,
-lowercase, and unknown values. Extend `reviewRejectsMalformedProjectedTime`
-with valid-time padded/lowercase weekdays and check invalid review status plus
-disabled Import. `ClassMngrScheduleImportDialogTests` already compiles the
-dialog and parser; no wiring change is needed. F707 and F709 remain deferred
-for their documented callsite and fixture constraints. Phase 2 remains In
-Progress with Gates 1 and 2 Partial.
+F722 is accepted and committed as
+`671b2cac90641874ffa22e1e0e5ef29a1e5a8ea7`. The review dialog now reuses the
+weekday parser while requiring canonical text to equal raw `time.day`; this
+retains the `-1` result for padded, lowercase, and unknown labels. Its public
+test verifies both valid-time malformed weekdays keep the review invalid and
+Import disabled while retaining malformed-time coverage. The focused dialog
+CTest passed 1/1; no full suite ran.
+
+F723 selects `typedScheduleTimes` in
+`src/features/setup/ui/initial_setup_wizard.cpp`. A public test can inject
+malformed weekday data through the schedule row's item data. Preserve the
+validation boundary and its existing side effect: the blank class row is
+created before schedule parsing, while class details and schedule rows are
+not saved after rejection. Assert the wizard stays on ClassTimesPage, records
+the exact warning, and leaves one blank class with no detail or schedule
+records. F707 and F709 remain deferred for their documented callsite and
+fixture constraints. Phase 2 remains In Progress with Gates 1 and 2 Partial.

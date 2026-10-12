@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F722.
+  F723.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -171,15 +171,22 @@
   `InvalidProjectedTime`; intensive slot-state padded/lowercase days return
   the exact invalid-state message with full transaction rollback. `ClassMngr`
   and `ClassMngrScheduleImportTests` built, and the exact registered CTest
-  passed 1/1. No full suite ran. F722 selects `stateTime` in
-  `src/features/schedule/ui/schedule_import_review_dialog.cpp`: require
-  canonical parsed text to equal raw `time.day`, preserving `-1` for padded,
-  lowercase, and unknown weekdays. Extend `reviewRejectsMalformedProjectedTime`
-  with valid-time padded/lowercase weekdays and assert the review remains
-  invalid with Import disabled. Build `ClassMngr` and
-  `ClassMngrScheduleImportDialogTests`, then run only that exact registered
-  CTest. F707 and F709 remain deferred. The preimplementation matrix is in
-  the Phase 2 progress log.
+  passed 1/1. No full suite ran. F722 is accepted and committed as
+  `671b2cac90641874ffa22e1e0e5ef29a1e5a8ea7`; `stateTime` preserves exact raw
+  weekday matching and `-1` for padded/lowercase/unknown values. The public
+  dialog test keeps malformed-time coverage and confirms invalid review plus
+  disabled Import for valid-time lowercase/padded weekdays. `ClassMngr` and
+  `ClassMngrScheduleImportDialogTests` built; the exact CTest passed 1/1
+  (2.32 seconds). No full suite ran. F723 selects `typedScheduleTimes` in
+  `src/features/setup/ui/initial_setup_wizard.cpp`, preserving exact raw day
+  matching and `-1`. Add a public setup wizard test with valid schedule times
+  and injected lowercase/padded item data. Rejection must keep
+  `ClassTimesPage`, show `The class information could not be saved.`, retain
+  one blank `classes` row, and leave `class_info`, `class_times`, and
+  `class_intensive_times` empty. Build `ClassMngr` and
+  `ClassMngrInitialSetupWizardTests`, then run only that exact registered
+  CTest. No CMake change is needed. F707 and F709 remain deferred; the
+  preimplementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.
