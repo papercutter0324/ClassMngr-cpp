@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/calendar_event_repository.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_import_save_port.h"
 
@@ -13,6 +14,7 @@
 #include <QStringList>
 #include <QTime>
 
+#include <array>
 #include <exception>
 #include <optional>
 #include <string>
@@ -241,13 +243,21 @@ private:
         )
     {
         const QString text = legacyText(value);
-        const QTime time = QTime::fromString(
+        if (text != text.trimmed())
+        {
+            return {};
+        }
+
+        constexpr std::array allowedFormats{
+            ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+        };
+        const auto parsed = ScheduleValueParser::parseDisplayTime(
             text,
-            QStringLiteral("HH:mm")
+            allowedFormats
             );
-        return time.isValid()
-                && time.toString(QStringLiteral("HH:mm")) == text
-            ? time
+        return parsed
+                && parsed->toString(QStringLiteral("HH:mm")) == text
+            ? *parsed
             : QTime();
     }
 

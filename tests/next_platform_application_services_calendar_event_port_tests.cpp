@@ -213,6 +213,30 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
     };
 }
 
+enum class CalendarEventWriteOperation
+{
+    Save,
+    ImportSave,
+    SeriesCreate,
+    SeriesEdit
+};
+
+void setInvalidTime(
+    CalendarEventSaveRequest& request,
+    const QString& value,
+    const bool startTime
+    )
+{
+    if (startTime)
+    {
+        request.startTime = value.toStdString();
+    }
+    else
+    {
+        request.endTime = value.toStdString();
+    }
+}
+
 template <typename Value>
 void verifyFailure(
     const Domain::Result<Value>& result,
@@ -223,6 +247,19 @@ void verifyFailure(
     QCOMPARE(result.error().code, expectedCode);
     QVERIFY(!result.error().message.empty());
     QVERIFY(!result.error().recoverable);
+}
+
+template <typename Value>
+void verifyPublicTimeBoundaryFailure(
+    const Domain::Result<void>& requestValidation,
+    const Domain::Result<Value>& portResult,
+    const std::string& expectedMessage
+    )
+{
+    verifyFailure(requestValidation, ErrorCode::InvalidInput);
+    QCOMPARE(requestValidation.error().message, expectedMessage);
+    verifyFailure(portResult, ErrorCode::InvalidInput);
+    QCOMPARE(portResult.error().message, expectedMessage);
 }
 
 } // namespace
@@ -258,6 +295,8 @@ private slots:
     void reportsMissingCalendarEventUpdateStructurally();
     void reportsCalendarEventUpdateSqlFailureStructurally();
     void reportsInvalidSaveRequestStructurally();
+    void rejectsPaddedAndMalformedTypedTimesAtPublicBoundary_data();
+    void rejectsPaddedAndMalformedTypedTimesAtPublicBoundary();
     void reportsUnavailableSaveSessionStructurally();
     void reportsSaveServiceFailureStructurally();
     void createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity();
@@ -1418,6 +1457,214 @@ reportsInvalidSaveRequestStructurally()
         port.saveEvent(invalidUpdateId),
         ErrorCode::InvalidInput
         );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+rejectsPaddedAndMalformedTypedTimesAtPublicBoundary_data()
+{
+    QTest::addColumn<int>("operation");
+    QTest::addColumn<QString>("invalidTime");
+    QTest::addColumn<bool>("startTime");
+
+    QTest::newRow("save-padded-start")
+        << static_cast<int>(CalendarEventWriteOperation::Save)
+        << QStringLiteral(" 09:15")
+        << true;
+    QTest::newRow("save-malformed-end")
+        << static_cast<int>(CalendarEventWriteOperation::Save)
+        << QStringLiteral("10:60")
+        << false;
+    QTest::newRow("import-padded-start")
+        << static_cast<int>(CalendarEventWriteOperation::ImportSave)
+        << QStringLiteral(" 09:15")
+        << true;
+    QTest::newRow("import-malformed-end")
+        << static_cast<int>(CalendarEventWriteOperation::ImportSave)
+        << QStringLiteral("10:60")
+        << false;
+    QTest::newRow("series-create-padded-start")
+        << static_cast<int>(CalendarEventWriteOperation::SeriesCreate)
+        << QStringLiteral(" 09:15")
+        << true;
+    QTest::newRow("series-create-malformed-end")
+        << static_cast<int>(CalendarEventWriteOperation::SeriesCreate)
+        << QStringLiteral("10:60")
+        << false;
+    QTest::newRow("series-edit-padded-start")
+        << static_cast<int>(CalendarEventWriteOperation::SeriesEdit)
+        << QStringLiteral(" 09:15")
+        << true;
+    QTest::newRow("series-edit-malformed-end")
+        << static_cast<int>(CalendarEventWriteOperation::SeriesEdit)
+        << QStringLiteral("10:60")
+        << false;
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+rejectsPaddedAndMalformedTypedTimesAtPublicBoundary()
+{
+    QFETCH(int, operation);
+    QFETCH(QString, invalidTime);
+    QFETCH(bool, startTime);
+
+    const auto operationKind =
+        static_cast<CalendarEventWriteOperation>(operation);
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    CalendarEventRepository* const repository =
+        session->calendarEventRepository();
+    QVERIFY(repository);
+
+    const QString repeatSeriesId =
+        QStringLiteral("series-invalid-public-time-boundary");
+    CalendarEvent original = makeEvent(
+        QStringLiteral("Untouched boundary fixture"),
+        QDate(2026, 12, 10),
+        QDate(2026, 12, 10)
+        );
+    original.eventType = QStringLiteral("Meeting");
+    original.timeStatus = QStringLiteral("Timed");
+    original.startTime = QTime(8, 0);
+    original.endTime = QTime(9, 0);
+    original.repeatSeriesId = repeatSeriesId;
+    const auto seeded = repository->saveCalendarEvent(original);
+    QVERIFY(seeded);
+    const int originalEventId = *seeded;
+    const auto seededEvent = repository->getCalendarEvent(originalEventId);
+    QVERIFY(seededEvent);
+    original = *seededEvent;
+
+    const QString triggerSql = operationKind == CalendarEventWriteOperation::SeriesEdit
+        ? QStringLiteral(
+            "CREATE TRIGGER reject_invalid_typed_time_update "
+            "BEFORE UPDATE ON calendar_events "
+            "BEGIN SELECT RAISE(ABORT, 'invalid typed time reached update'); END"
+            )
+        : QStringLiteral(
+            "CREATE TRIGGER reject_invalid_typed_time_insert "
+            "BEFORE INSERT ON calendar_events "
+            "BEGIN SELECT RAISE(ABORT, 'invalid typed time reached insert'); END"
+            );
+    QSqlQuery persistenceGuard(session->database());
+    QVERIFY2(
+        persistenceGuard.exec(triggerSql),
+        qPrintable(persistenceGuard.lastError().text())
+        );
+
+    QSqlQuery countBefore(session->database());
+    QVERIFY(countBefore.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events"
+        )));
+    QVERIFY(countBefore.next());
+    const int originalRowCount = countBefore.value(0).toInt();
+    QCOMPARE(originalRowCount, 1);
+
+    // These public-port cases assert typed request validation. The requests
+    // reject before private legacyTime helpers, so this is not helper-path
+    // parsing coverage.
+    const std::string expectedMessage =
+        operationKind == CalendarEventWriteOperation::SeriesEdit
+            ? "Calendar repeat-series edit times must be valid canonical 24-hour times."
+            : "Calendar event times must be valid canonical 24-hour times.";
+
+    switch (operationKind)
+    {
+    case CalendarEventWriteOperation::Save:
+    {
+        CalendarEventSaveRequest request = validSaveRequest();
+        request.title = "Rejected non-canonical typed time";
+        setInvalidTime(request, invalidTime, startTime);
+        const auto requestValidation = request.validate();
+        ApplicationServicesCalendarEventSavePort port(services);
+        const auto savedResult = port.saveEvent(request);
+        verifyPublicTimeBoundaryFailure(
+            requestValidation,
+            savedResult,
+            expectedMessage
+            );
+        break;
+    }
+
+    case CalendarEventWriteOperation::ImportSave:
+    {
+        CalendarEventImportSaveRequest request = validImportSaveRequest();
+        request.events.front().startTime = "09:15";
+        request.events.front().endTime = "10:45";
+        setInvalidTime(request.events.front(), invalidTime, startTime);
+        const auto requestValidation = request.validate();
+        ApplicationServicesCalendarEventImportSavePort port(services);
+        const auto savedResult = port.saveImportedEvents(request);
+        verifyPublicTimeBoundaryFailure(
+            requestValidation,
+            savedResult,
+            expectedMessage
+            );
+        break;
+    }
+
+    case CalendarEventWriteOperation::SeriesCreate:
+    {
+        CalendarEventSeriesCreateRequest request = seriesCreateRequest(
+            "series-invalid-typed-time",
+            {{QDate(2026, 12, 15), QDate(2026, 12, 15)}},
+            QStringLiteral("Rejected non-canonical typed time"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed")
+            );
+        setInvalidTime(request.occurrences.front(), invalidTime, startTime);
+        const auto requestValidation = request.validate();
+        ApplicationServicesCalendarEventSeriesCreatePort port(services);
+        const auto savedResult = port.createRepeatSeries(request);
+        verifyPublicTimeBoundaryFailure(
+            requestValidation,
+            savedResult,
+            expectedMessage
+            );
+        break;
+    }
+
+    case CalendarEventWriteOperation::SeriesEdit:
+    {
+        CalendarEventSeriesEditRequest request = validSeriesEditRequest();
+        request.repeatSeriesId = repeatSeriesId.toStdString();
+        if (startTime)
+        {
+            request.startTime = invalidTime.toStdString();
+        }
+        else
+        {
+            request.endTime = invalidTime.toStdString();
+        }
+        const auto requestValidation = request.validate();
+        ApplicationServicesCalendarEventSeriesEditPort port(services);
+        const auto savedResult = port.editRepeatSeriesFromDate(request);
+        verifyPublicTimeBoundaryFailure(
+            requestValidation,
+            savedResult,
+            expectedMessage
+            );
+        break;
+    }
+    }
+
+    QSqlQuery countAfter(session->database());
+    QVERIFY(countAfter.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events"
+        )));
+    QVERIFY(countAfter.next());
+    QCOMPARE(countAfter.value(0).toInt(), originalRowCount);
+
+    const auto unchanged = repository->getCalendarEvent(originalEventId);
+    QVERIFY(unchanged);
+    QCOMPARE(unchanged->title, original.title);
+    QCOMPARE(unchanged->startDate, original.startDate);
+    QCOMPARE(unchanged->endDate, original.endDate);
+    QCOMPARE(unchanged->startTime, original.startTime);
+    QCOMPARE(unchanged->endTime, original.endTime);
+    QCOMPARE(unchanged->repeatSeriesId, original.repeatSeriesId);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
