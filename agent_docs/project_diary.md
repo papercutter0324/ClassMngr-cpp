@@ -4761,10 +4761,16 @@ Windows x64 Debug Ninja tree under VS 18 x64 Developer. Unique CTest
 registrations #204, #205, and #237 passed 3/3 in 1.11 seconds. No full suite
 ran.
 
-F746 is selected to share blank-and-bounded ID validation across Sub Prep
-print and roster source queries. Independent candidate reviews considered
-reusing testing-assignment key parsing but found its optional-input and error
-category semantics differ; the identical typed-ID policy has the smaller
-behavior surface and a roster coverage gap. The pre-implementation matrix is
-recorded in the Phase 2 progress log. F707/F709 remain deferred and the Phase
-2 exit gate remains open.
+F746 is accepted and committed as
+`8cab6fa9e60a0a04f949fc9f28c484687507199c`. One blank-and-bounded typed-ID
+rule now serves the Sub Prep print and roster queries. The tests isolate
+request IDs and returned teacher, class, and teacher-reference IDs while
+preserving caller-specific errors and read counts. Two query CTests passed;
+no full suite ran.
+
+F747 reuses the same typed-ID validator in the schedule-summary query. Keep
+its size-limit-before-whitespace-scan behavior, class-scope and validation
+precedence, and exact caller message. Independent reviewers agreed this is an
+exact duplicate. The earlier F746 candidate review rejected testing-assignment
+key parsing because its optional-input and error-category semantics differ.
+F707/F709 remain deferred and the Phase 2 exit gate remains open.

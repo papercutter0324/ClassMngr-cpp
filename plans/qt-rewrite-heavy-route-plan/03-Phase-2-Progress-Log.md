@@ -28421,3 +28421,53 @@ bounded-length validation across the print and roster queries.
 This matrix is recorded before implementation. Batch 179 is active with F746;
 F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
 formal exit gate remains Open.
+
+### F746 Sub Prep source identifier validation - accepted - 2026-10-13
+
+F746 is accepted at commit
+`8cab6fa9e60a0a04f949fc9f28c484687507199c` (`Phase2 - Share Sub Prep source
+identifier validation`). It added
+`src/next/application/sub_prep_source_validation.h`, registered the header in
+`cmake/next.cmake`, and reused shared blank-and-bounded typed-ID validation in
+the Sub Prep print and roster queries while preserving caller errors and read
+boundaries.
+
+The VS 18 x64 Developer build succeeded for `ClassMngr` and the print and
+roster query targets. Their CTest registrations (#205 and #237) were each
+unique; exactly those two tests passed 2/2 in 1.08 seconds. No full suite ran.
+Nonfatal notices reported unavailable `vswhere.exe`, missing optional Vulkan
+headers, and four object-path length warnings.
+
+### Batch 179 continuation - F747 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+Reuse the F746 typed-ID validator in
+`src/next/application/sub_prep_schedule_summary_query.h`.
+
+**F747 is selected:** apply shared blank-and-bounded typed-ID validation to
+the Sub Prep schedule summary query while preserving its request and read
+contract.
+
+1. Replace the local `isValidIdentifier` rule with the shared validator from
+   `src/next/application/sub_prep_source_validation.h`. Preserve the exact
+   message `Visible class identifiers must be non-blank and bounded.` and
+   reject empty or over-256-byte IDs before the whitespace scan. Keep the
+   visible-class scope-size check before ID validation, ID validation before
+   duplicate detection, and weekday/mode checks after those checks.
+2. In
+   `tests/next_application_sub_prep_schedule_summary_query_tests.cpp`, verify
+   blank/whitespace and 257-byte visible class IDs return nonrecoverable
+   `InvalidInput` with that exact message and zero reads. Verify a 256-byte
+   ID passes and is forwarded to the reader unchanged. Verify an over-cap
+   visible-class scope containing an invalid ID still returns the scope-cap
+   error first.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+   `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`, and
+   `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`. Confirm
+   exactly one CTest registration each (#204, #205, #237), then run only those
+   three exact CTests. Run no full suite.
+
+Acceptance criteria were defined before implementation and are recorded here.
+Batch 179 is active with F747;
+F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
+formal exit gate remains Open.

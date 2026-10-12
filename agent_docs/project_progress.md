@@ -53,13 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F739 accepted; F740 selected)
+### Current state - 2026-10-13 (F746 accepted; F747 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F740, consolidating Gregorian date conversion for the Calendar recurrence
-and series-edit Application planners in the Qt-free Domain layer.
+Batches 141-178 are complete with F707 and F709 deferred. F740-F746 are
+accepted; F747 will reuse bounded source-ID validation in the Sub Prep
+schedule-summary query. The separate CMake source-ownership optimization was
+also completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -4654,10 +4655,21 @@ built in `build/windows-x64-debug-ninja`; exact CTest registrations #204,
 #205, and #237 (one each) passed 3/3 in 1.11 seconds (0.04, 0.32, and 0.74
 seconds). No full suite ran.
 
-F746 is selected to share blank-and-bounded source identifier validation
-across Sub Prep print and roster queries. Its matrix will cover blank and
-overlength request and returned teacher, class, and teacher-reference IDs,
-while preserving each caller's exact errors and read boundaries. F707 and
-F709 remain deferred. Phase 2 is In Progress/Open with Gates 1 and 2 Partial;
-F625's assessment is accepted, F626 is deferred, and separate current-source
-Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
+F746 is accepted and committed as
+`8cab6fa9e60a0a04f949fc9f28c484687507199c` (`Phase2 - Share Sub Prep source
+identifier validation`). The shared blank-and-bounded typed-ID rule now
+serves the print and roster queries while preserving each caller's errors and
+read boundaries. Under VS 18 x64 Developer, `ClassMngr` and both query test
+targets built; unique CTest registrations #205 and #237 passed 2/2 in 1.08
+seconds. No full suite ran.
+
+F747 is selected to reuse that validator in the schedule-summary query.
+Preserve its scope-size check, ID-before-duplicate order, exact invalid-input
+message, and pre-read failure behavior. Cover blank and 257-byte IDs with zero
+reads and nonrecoverable `InvalidInput`, plus a valid 256-byte ID forwarded to
+the reader. Keep size/empty rejection before whitespace scanning. Build and
+run the summary, print, and roster query tests because the shared helper
+changes; no full suite. F707 and F709 remain deferred. Phase 2 remains
+In Progress/Open with Gates 1 and 2 Partial; F625's assessment is accepted,
+F626 is deferred, and separate current-source Phase 0 evidence remains
+Windows x64 2/24 and macOS universal 0/24.

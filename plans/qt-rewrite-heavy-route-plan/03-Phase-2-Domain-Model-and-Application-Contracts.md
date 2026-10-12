@@ -50,10 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-12
+- Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F745 is accepted at `d813248e74a42ae138d384536d9ed5568039566f` and F746 is selected to share Sub Prep source-identifier blankness and bounded-length validation across print and roster queries; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and the separate Phase 0 current-source gate remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F746 is accepted at `8cab6fa9e60a0a04f949fc9f28c484687507199c`, and F747 is selected to reuse its shared typed-ID validator in the Sub Prep schedule summary query; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F746 - Share Sub Prep source-identifier blankness and bounded-length validation across print and roster queries while preserving caller-specific errors and validation order.
+- F747 - Reuse shared typed-ID validation in the Sub Prep schedule summary query while preserving scope, duplicate, weekday, mode, and read ordering.
 
 ## Objective
 
