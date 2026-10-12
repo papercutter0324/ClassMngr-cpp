@@ -29123,6 +29123,47 @@ Build `ClassMngr` and
 `ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests`, and
 `ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests`. Confirm
 exactly one registration for each exact CTest name, then run only those three
-exact CTests. Run no full suite. This matrix is recorded before implementation;
-F760 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
+exact CTests. Run no full suite. This matrix was recorded before implementation.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.
+
+### F760 roster read canonical ID validation - accepted - 2026-10-13
+
+F760 is accepted at commit
+`8bbe55b6ae649d47fb76c1b9938065a2b4f627a2`. In the existing Visual Studio 18
+x64 Debug tree, `ClassMngr` and all three focused targets built. Each exact
+CTest name had one registration; the three exact CTests passed 3/3 in 0.09
+seconds. No full suite ran. Sandboxed MSBuild FileTracker initialization
+failed with `E_ACCESSDENIED`; the same build succeeded outside the sandbox.
+
+### F761 Initial Setup teacher choices canonical ID validation - selected and acceptance matrix - 2026-10-13
+
+**F761 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`initial_setup_teacher_choices_read_query.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+The query has no ID request arguments. It reads the port once, forwards any
+port failure unchanged, then validates returned rows; invalid IDs produce
+`Validation` failures rather than being normalized. A noncanonical teacher
+ID returns nonrecoverable `Validation` with
+`Initial setup teacher choices contain an invalid teacher identifier.` A
+duplicate canonical ID returns nonrecoverable `Validation` with
+`Initial setup teacher choices contain a duplicate teacher identifier.`
+Canonicality is checked before duplicate detection. A valid empty snapshot
+succeeds after one port call. Preserve the original snapshot, teacher order,
+and all UTF-16 name fields.
+
+Add malformed `17x` and a repeated malformed case such as `01,01`; keep the
+invalid-ID and canonical-duplicate cases separate. Assert the exact invalid
+and duplicate messages, `Validation`, nonrecoverability, and one port call
+for each; verify `01,01` takes the invalid-ID branch before duplicate
+detection. Preserve existing zero/`01`/negative/overflow coverage, ordered
+snapshot and name-field coverage, empty success, and structured port-error
+tests.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests`. Confirm
+exactly one registration for that exact CTest name, then run only that exact
+CTest. Run no full suite. This matrix is recorded before implementation;
+F761 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
 remain Partial, and the formal exit gate remains Open.

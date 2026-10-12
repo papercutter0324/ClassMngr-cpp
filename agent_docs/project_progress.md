@@ -4874,19 +4874,19 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F759 accepted; F760 selected)
+## Phase 2 current position — 2026-10-13 (F760 accepted; F761 selected)
 
-F759 is accepted at
-`6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932`. The roster availability and
-column-names batch queries now share `Application::isCanonicalPositiveDecimalId`.
-Their request errors, empty-input behavior, and query-specific response
-checks remain intact. Under the Visual Studio 18 x64 Debug configuration,
-`ClassMngr` and both focused targets built; each exact CTest registered once
-and both passed 2/2. No full suite ran.
+F760 is accepted at
+`8bbe55b6ae649d47fb76c1b9938065a2b4f627a2`. The roster read, roster print
+class-info, and roster template print-source queries now share
+`Application::isCanonicalPositiveDecimalId`, preserving their distinct
+input recoverability and response checks. In the existing Visual Studio 18
+x64 Debug tree, `ClassMngr` and all three focused targets built; each exact
+CTest registered once and the tests passed 3/3. No full suite ran.
 
-F760 is selected in Batch 189 to reuse the same helper across the roster read,
-roster print class-info, and roster template print-source queries. Preserve
-their distinct invalid-input recoverability/messages and existing
-pre-read/post-read boundaries. F707/F709 remain deferred. Phase 2 remains
-In Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+F761 is selected in Batch 189 to reuse the helper for returned teacher IDs
+in Initial Setup teacher choices. Preserve post-read Validation failures,
+canonicality-before-duplicate precedence, and the unchanged successful
+snapshot. F707/F709 remain deferred. Phase 2 remains In Progress/Open with
+Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
+Windows x64 2/24 and macOS universal 0/24.

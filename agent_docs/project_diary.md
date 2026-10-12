@@ -4893,3 +4893,18 @@ matrix keeps the singular roster read's recoverable input failure distinct
 from the print queries' nonrecoverable failures and preserves their
 query-specific response checks. F707/F709 remain deferred; Phase 2 Gates 1/2
 remain Partial and the formal exit gate remains Open.
+
+## Phase 2 F760 acceptance and F761 selection — 2026-10-13
+
+F760 is accepted at `8bbe55b6ae649d47fb76c1b9938065a2b4f627a2`. The three
+roster read queries now reuse the shared positive-decimal ID validator while
+retaining their caller-specific error/recoverability and read/result checks.
+Their three focused CTests passed 3/3 in the existing Visual Studio 18 x64
+Debug tree, with one registration per exact test name. The restricted build
+failed at FileTracker access; the same build succeeded outside the sandbox.
+No full suite ran.
+
+F761 is selected for Initial Setup teacher-choice reads. The query validates
+returned IDs after its port read; malformed IDs and duplicate IDs remain
+distinct nonrecoverable Validation failures. F707/F709 remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

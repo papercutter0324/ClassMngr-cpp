@@ -38,9 +38,13 @@
   6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932; its two roster batch-query
   targets built under Visual Studio 18 x64 Debug and both exact CTests passed
   2/2. The sandboxed build hit FileTracker access denial and the same command
-  succeeded outside the sandbox; CTest required the Debug configuration. F760
-  is selected in Batch 189 across the roster read and two print queries,
-  preserving their distinct input and response contracts. No full suite ran.
+  succeeded outside the sandbox; CTest required the Debug configuration.
+  F760 is accepted at 8bbe55b6ae649d47fb76c1b9938065a2b4f627a; its three
+  roster read-query targets built and exact CTests passed 3/3, with one
+  registration each, under Visual Studio 18 x64 Debug. The sandboxed build
+  hit FileTracker access denial and the same build succeeded outside the
+  sandbox. F761 is selected in Batch 189 for Initial Setup teacher choices.
+  No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

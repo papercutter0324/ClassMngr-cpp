@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F759 is accepted at `6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932`; F760 is selected to reuse canonical positive-decimal ID validation across three roster reads, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F760 is accepted at `8bbe55b6ae649d47fb76c1b9938065a2b4f627a2`; F761 is selected to reuse canonical positive-decimal ID validation in Initial Setup teacher choices, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 189
 
-- F760 - Three roster reads - Reuse canonical positive-decimal ID validation and preserve the three query contracts.
-- F761 - Initial Setup teacher choices - Assess and implement the selected teacher-choice query slice.
+- F761 - Initial Setup teacher choices - Reuse canonical positive-decimal ID validation and preserve returned-row validation and order.
 - F762 - Class-teacher assignments - Assess and implement the selected assignment slice.
 - F763 - Class Notes page - Assess and implement the selected page slice.
 - F764 - Classes Navigation snapshot - Assess and implement the selected snapshot slice.
