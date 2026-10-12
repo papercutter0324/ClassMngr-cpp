@@ -11,8 +11,11 @@
   `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`; its summary, print, and roster
   query CTests passed 3/3. F748 is committed at
   `f773cb0bea7867bc7e47912848317343a2d67e07`; its summary-query CTest passed
-  1/1. F749 is selected to reuse Domain Gregorian-date validation in the Sub
-  Prep calendar-interval query. F707 and F709 remain deferred.
+  1/1. F749 is committed at
+  `318f0b3a1806e21ff4eded355f981ee17fe46112`; its interval-query CTest #307
+  passed 1/1. F750 is selected to share selected-weekday validation across
+  the Sub Prep summary, print, and roster queries. F707 and F709 remain
+  deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -257,7 +260,7 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740-F748 are accepted; the F749 matrix is in
+  full suite ran. F740-F749 are accepted; the F750 matrix is in
   the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
@@ -308,7 +311,9 @@
   roster CTests passed 3/3. F748 is committed at
   `f773cb0bea7867bc7e47912848317343a2d67e07`; its exact summary-query CTest
   passed 1/1. F749 reuses Gregorian-date validation in Sub Prep calendar
-  intervals; its detailed matrix is recorded in the Phase 2 progress log.
+  intervals and is committed at `318f0b3a1806e21ff4eded355f981ee17fe46112`;
+  CTest #307 passed 1/1. F750's selected-weekday validation matrix is in the
+  Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

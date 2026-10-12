@@ -4780,11 +4780,16 @@ identical whitespace-only visible IDs report the malformed-ID error before
 duplicate detection, nonrecoverably and with zero reads. CTest #204 passed;
 no full suite ran.
 
-F749 reuses `Domain::GregorianDate::fromIsoString` in the Sub Prep
-calendar-interval query while retaining `std::chrono::sys_days` for its
-comparisons. The query has a local duplicate ISO/Gregorian parser. Preserve
-invalid-reference and malformed-returned-row behavior, and cover the lower
-year boundary. Two other candidates exposed real query test gaps, but they
-would form test-only slices; production parser reuse better fits the plan's
-preference for cohesive implementation slices. F707/F709 remain deferred and
-the Phase 2 exit gate remains open.
+F749 is accepted and committed as
+`318f0b3a1806e21ff4eded355f981ee17fe46112`. The Sub Prep calendar-interval
+query now uses `Domain::GregorianDate::fromIsoString` while retaining
+`std::chrono::sys_days` comparisons. `ClassMngr` and its query test target
+built; unique CTest #307 passed 1/1 in 0.05 seconds. No full suite ran.
+
+F750 is selected to extract the common selected-weekday count, enum-validity,
+and duplicate checks from the schedule-summary, print-source, and
+roster-output queries. The checks follow the same order, but messages differ
+by query; preserve those messages and all surrounding validation order. The
+focused acceptance matrix is recorded before implementation in the Phase 2
+progress log. F707/F709 remain deferred and the Phase 2 exit gate remains
+open.

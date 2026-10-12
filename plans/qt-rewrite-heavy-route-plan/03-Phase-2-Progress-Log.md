@@ -28509,9 +28509,9 @@ precedence over duplicate detection for visible class IDs.
    registration #204 appears exactly once, then run only that exact test. Run
    no full suite.
 
-A separate local Gregorian date parser remains deferred: reusing
-`Domain::GregorianDate::fromIsoString` would require conversion to the query's
-`std::chrono::sys_days` representation and a broader date-boundary review.
+At F748 selection time, reuse of the Gregorian date parser remained deferred
+pending a `std::chrono::sys_days` conversion and date-boundary review; F749
+subsequently resolved that candidate.
 Acceptance criteria were defined before the test change and are recorded here. F707/F709 remain deferred;
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
@@ -28558,3 +28558,58 @@ The duplicate-ID and unused-teacher test-only candidates remain deferred under
 the Phase 2 test-scope policy. This matrix is recorded before implementation;
 F749 is not complete. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
 Partial, and the formal exit gate remains Open.
+
+### F749 Sub Prep calendar-interval Gregorian date validation - accepted - 2026-10-13
+
+F749 is accepted at commit
+`318f0b3a1806e21ff4eded355f981ee17fe46112` (`Phase2 - Reuse Gregorian date
+validation for Sub Prep intervals`). The query now reuses
+`Domain::GregorianDate::fromIsoString` and converts the valid components to
+`std::chrono::sys_days`. Its date-window, filtering, read, and error behavior
+remain covered by the existing cases plus the year-0001 boundary case.
+
+`ClassMngr` and
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests` built; the
+unique CTest #307 passed 1/1 in 0.05 seconds. No full suite ran.
+
+**Decision: accept F749.** Batch 180 continues with F750; F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### Batch 180 continuation - F750 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F750 is selected and in progress:** extract common selected-day request
+validation used by `SubPrepScheduleSummaryQuery`,
+`SubPrepPrintSourceQuery`, and `SubPrepRosterOutputSourceQuery`.
+
+Centralize the seven-day maximum, `SubPrepWeekday` enum validity, and duplicate
+detection while retaining caller-specific exact errors. Preserve the current
+count-before-item checks, invalid-weekday-before-duplicate precedence, and the
+subsequent summary/print mode checks and roster mode/extra-column checks. Keep
+empty-day and read behavior unchanged. The current exact request errors are:
+
+- Summary and print: `Selected Sub Prep days exceed the weekly limit.`,
+  `A selected Sub Prep weekday is invalid.`, and
+  `Selected Sub Prep weekdays must be unique.`
+- Roster output: `Selected roster-output days exceed the weekly limit.`,
+  `A selected roster-output weekday is invalid.`, and
+  `Selected roster-output weekdays must be unique.`
+
+Add focused assertions for each endpoint's exact size, invalid-weekday, and
+duplicate errors, nonrecoverable `InvalidInput`, and zero reads. Cover
+over-limit precedence where current coverage is incomplete; do not weaken
+existing tests.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+`ClassMngrNextApplicationSubPrepPrintSourceQueryTests`, and
+`ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`. Confirm exactly
+one CTest registration for each of
+`NextApplicationSubPrepScheduleSummaryQuery`,
+`NextApplicationSubPrepPrintSourceQuery`, and
+`NextApplicationSubPrepRosterOutputSourceQuery`, then run only those exact
+CTest registrations. Run no full suite.
+
+This matrix is recorded before implementation; F750 is not complete. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.

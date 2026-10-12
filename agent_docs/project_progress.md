@@ -53,14 +53,15 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F748 accepted; F749 selected)
+### Current state - 2026-10-13 (F749 accepted; F750 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-178 are complete with F707 and F709 deferred. F740-F748 are
-accepted; F749 will reuse canonical Gregorian-date validation in the Sub Prep
-calendar-interval query. The separate CMake source-ownership optimization
-was also completed during this continuation.
+Batches 141-179 are complete with F707 and F709 deferred. F740-F749 are
+accepted; F750 will share selected-weekday request validation across the Sub
+Prep schedule-summary, print-source, and roster-output queries. The separate
+CMake source-ownership optimization was also completed during this
+continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -4680,16 +4681,25 @@ with nonrecoverable `InvalidInput` and zero reads. `ClassMngr` and the summary
 query target built; unique CTest #204 passed 1/1 in 0.04 seconds. No full
 suite ran.
 
-F749 is selected to replace the duplicate Sub Prep calendar-interval ISO date
-parser with `Domain::GregorianDate::fromIsoString`, converting valid
-components to `std::chrono::sys_days` for the existing range comparisons.
-Preserve canonical syntax, years 0001-9999, Gregorian/leap-day validity,
-invalid-reference rejection before reads, malformed interval-row skipping,
-inclusive overlap, and event filtering. Add coverage that reference
-`0001-01-01` yields `0001-01-01` through `0002-12-31`; retain maximum-year and
-invalid-date coverage. Build `ClassMngr` and the interval-query test target,
-confirm unique CTest #307, and run only that test. No full suite. F707 and
-F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1 and 2
-Partial; F625's assessment is accepted, F626 is deferred, and separate
-current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
-0/24.
+F749 is accepted at commit
+`318f0b3a1806e21ff4eded355f981ee17fe46112` (`Phase2 - Reuse Gregorian date
+validation for Sub Prep intervals`). It reuses
+`Domain::GregorianDate::fromIsoString` and preserves `std::chrono::sys_days`
+range comparisons. `ClassMngr` and the interval-query test target built;
+unique CTest #307 passed 1/1 in 0.05 seconds. No full suite ran.
+
+F750 is selected to share selected-weekday request validation across
+`SubPrepScheduleSummaryQuery`, `SubPrepPrintSourceQuery`, and
+`SubPrepRosterOutputSourceQuery`. Extract the common seven-day maximum,
+weekday-enum validity, and duplicate check while keeping caller-specific
+error messages. Preserve count-before-item validation, invalid-before-
+duplicate validation, and each query's surrounding order: summary/print mode
+checks follow selected days, while roster mode and extra-column checks remain
+after them. Add focused assertions for endpoint-specific exact messages,
+nonrecoverable `InvalidInput`, zero reads, and over-limit precedence (including
+the current coverage gaps); do not weaken existing assertions. Build
+`ClassMngr` and the three query test targets, confirm one CTest registration
+for each, and run only those three exact CTests. No full suite. F707 and F709
+remain deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
+F625's assessment is accepted, F626 is deferred, and separate current-source
+Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
