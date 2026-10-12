@@ -2,13 +2,13 @@
 
 #include "next/application/schedule_view_projection.h"
 #include "next/application/sub_prep_print_source_query.h"
+#include "next/application/sub_prep_weekday.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <set>
 #include <string>
@@ -201,15 +201,6 @@ template <typename TypedId>
         && id.value().size() <= kSubPrepPrintSourceMaxIdentifierLength;
 }
 
-[[nodiscard]] inline bool isValidWeekday(
-    const SubPrepWeekday weekday
-    ) noexcept
-{
-    const auto value = static_cast<std::uint8_t>(weekday);
-    return value >= static_cast<std::uint8_t>(SubPrepWeekday::Monday)
-        && value <= static_cast<std::uint8_t>(SubPrepWeekday::Sunday);
-}
-
 [[nodiscard]] inline Domain::OperationError invalidInput(
     const char* message
     )
@@ -274,7 +265,7 @@ template <typename TypedId>
     std::set<SubPrepWeekday> selectedDays;
     for (const auto day : request.selectedDays)
     {
-        if (!isValidWeekday(day))
+        if (!isValidSubPrepWeekday(day))
         {
             return Domain::Result<void>::failure(
                 invalidInput("A selected roster-output weekday is invalid.")
@@ -562,7 +553,7 @@ template <typename TypedId>
         totalMeetings += classRecord.meetings.size();
         for (const auto& meeting : classRecord.meetings)
         {
-            if (!isValidWeekday(meeting.weekday)
+            if (!isValidSubPrepWeekday(meeting.weekday)
                 || !selectedDays.contains(meeting.weekday))
             {
                 return Domain::Result<void>::failure(

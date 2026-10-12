@@ -153,11 +153,12 @@ class ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests final
 private slots:
     void requestAndSourceOwnTypedBoundedValues();
     void invalidRequestsAreRejectedBeforeRead();
+    void invalidWeekdaysAreRejectedBeforeRead();
     void emptyScopeReturnsWithoutRead();
     void forwardsExactScopeAndPreservesSourceOrder();
     void propagatesReadFailure();
     void rejectsOutOfScopeDuplicateAndInvalidTeacherData();
-    void rejectsMeetingsOutsideSelectedDays();
+    void rejectsInvalidAndUnselectedMeetingWeekdays();
     void rejectsUnrequestedColumnsAndMalformedRows();
     void acceptsMaximumPerClassRowsAndColumns();
     void rejectsAggregateRowCellAndTextOverflow();
@@ -240,6 +241,28 @@ invalidRequestsAreRejectedBeforeRead()
             );
     }
     verifyInvalid(std::move(request));
+}
+
+void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
+invalidWeekdaysAreRejectedBeforeRead()
+{
+    for (const auto weekday : {0, 8})
+    {
+        FakeReadPort readPort;
+        auto request = validRequest();
+        request.selectedDays = {static_cast<SubPrepWeekday>(weekday)};
+
+        SubPrepRosterOutputSourceQuery query(readPort);
+        const auto result = query.execute(request);
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("A selected roster-output weekday is invalid.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    }
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
@@ -346,17 +369,44 @@ rejectsOutOfScopeDuplicateAndInvalidTeacherData()
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::
-rejectsMeetingsOutsideSelectedDays()
+rejectsInvalidAndUnselectedMeetingWeekdays()
 {
-    auto input = validInput();
-    input.classes.front().meetings.front().weekday = SubPrepWeekday::Friday;
+    for (const auto weekday : {0, 8})
+    {
+        auto input = validInput();
+        input.classes.front().meetings.front().weekday =
+            static_cast<SubPrepWeekday>(weekday);
+
+        FakeReadPort readPort;
+        setInput(readPort, std::move(input));
+        SubPrepRosterOutputSourceQuery query(readPort);
+        const auto result = query.execute(validRequest());
+
+        verifyError(result, ErrorCode::Validation);
+        QCOMPARE(
+            result.error().message,
+            std::string("A roster-output meeting is outside the requested days.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 1);
+    }
+
+    auto unselectedInput = validInput();
+    unselectedInput.classes.front().meetings.front().weekday =
+        SubPrepWeekday::Friday;
 
     FakeReadPort readPort;
-    setInput(readPort, std::move(input));
+    setInput(readPort, std::move(unselectedInput));
     SubPrepRosterOutputSourceQuery query(readPort);
     const auto result = query.execute(validRequest());
 
     verifyError(result, ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("A roster-output meeting is outside the requested days.")
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(readPort.calls, 1);
 }
 
 void ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests::

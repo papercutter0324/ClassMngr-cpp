@@ -114,6 +114,7 @@ private slots:
     void requestUsesTypedOwnedValues();
     void emptyVisibilityReturnsEmptyProjectionWithoutRead();
     void invalidRequestsAreRejectedBeforeRead();
+    void invalidWeekdaysAreRejectedBeforeRead();
     void forwardsExactScopeAndReturns96ClassProjection();
     void projectionOrderingIsDeterministicForEqualOrders();
     void gatewayFailureIsPropagatedStructurally();
@@ -210,9 +211,6 @@ invalidRequestsAreRejectedBeforeRead()
     auto duplicateDays = validRequest();
     duplicateDays.selectedDays.push_back(SubPrepWeekday::Monday);
 
-    auto invalidDay = validRequest();
-    invalidDay.selectedDays = {static_cast<SubPrepWeekday>(0)};
-
     auto invalidMode = validRequest();
     invalidMode.mode = static_cast<ScheduleViewMode>(255);
 
@@ -223,7 +221,6 @@ invalidRequestsAreRejectedBeforeRead()
         duplicateClasses,
         oversizedClassScope,
         duplicateDays,
-        invalidDay,
         invalidMode,
         blankClassId
     };
@@ -242,6 +239,28 @@ invalidRequestsAreRejectedBeforeRead()
     }
 
     QCOMPARE(readPort.calls, 0);
+}
+
+void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::
+invalidWeekdaysAreRejectedBeforeRead()
+{
+    for (const auto weekday : {0, 8})
+    {
+        FakeReadPort readPort;
+        auto request = validRequest();
+        request.selectedDays = {static_cast<SubPrepWeekday>(weekday)};
+
+        const SubPrepScheduleSummaryQuery query(readPort);
+        const auto result = query.execute(request);
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("A selected Sub Prep weekday is invalid.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    }
 }
 
 void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::

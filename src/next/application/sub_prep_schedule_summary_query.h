@@ -2,11 +2,11 @@
 
 #include "next/application/class_summary_projection.h"
 #include "next/application/schedule_view_projection.h"
+#include "next/application/sub_prep_weekday.h"
 
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
-#include <cstdint>
 #include <set>
 #include <string_view>
 #include <utility>
@@ -14,19 +14,6 @@
 
 namespace ClassMngr::Next::Application
 {
-
-// Application-owned weekday values keep the Sub Prep request independent of
-// Qt and of the localized day labels used by the current page.
-enum class SubPrepWeekday : std::uint8_t
-{
-    Monday = 1,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    Sunday
-};
 
 inline constexpr std::size_t kSubPrepScheduleScopeMaxVisibleClasses =
     kClassSummaryMaxEntries;
@@ -273,9 +260,7 @@ private:
         std::set<SubPrepWeekday> selectedDays;
         for (const auto day : request.selectedDays)
         {
-            const auto dayValue = static_cast<std::uint8_t>(day);
-            if (dayValue < static_cast<std::uint8_t>(SubPrepWeekday::Monday)
-                || dayValue > static_cast<std::uint8_t>(SubPrepWeekday::Sunday))
+            if (!isValidSubPrepWeekday(day))
             {
                 return Domain::Result<void>::failure(
                     invalidInput("A selected Sub Prep weekday is invalid.")

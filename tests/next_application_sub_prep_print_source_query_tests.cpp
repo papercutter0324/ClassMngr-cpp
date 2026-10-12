@@ -152,6 +152,7 @@ class ClassMngrNextApplicationSubPrepPrintSourceQueryTests final
 private slots:
     void requestAndResultsOwnTypedValues();
     void invalidRequestsAreRejectedBeforeRead();
+    void invalidWeekdaysAreRejectedBeforeRead();
     void emptyClassesOrDaysReturnWithoutRead();
     void forwardsExactScopePreservesPortOrderAndTeacherReferences();
     void propagatesReadPortFailure();
@@ -159,7 +160,8 @@ private slots:
     void acceptsEmptyOptionalTextFields();
     void rejectsOutOfScopeAndDuplicateClassesAllOrNothing();
     void rejectsMalformedIdentifiersAndMissingOrUnusedTeachers();
-    void rejectsDuplicateTeacherIdsAndInvalidMeetingWeekdays();
+    void rejectsDuplicateTeacherIds();
+    void rejectsInvalidMeetingWeekdaysBeforeSelectedDayMembership();
     void rejectsMeetingsOutsideSelectedDaysAllOrNothing();
     void acceptsMaximumBoundaryTextLengths();
     void rejectsMalformedAndOverBoundTextAllOrNothing();
@@ -291,9 +293,6 @@ invalidRequestsAreRejectedBeforeRead()
         SubPrepWeekday::Monday
     };
 
-    auto invalidDay = validRequest();
-    invalidDay.selectedDays = {static_cast<SubPrepWeekday>(0)};
-
     auto invalidMode = validRequest();
     invalidMode.mode = static_cast<ScheduleViewMode>(255);
 
@@ -311,7 +310,6 @@ invalidRequestsAreRejectedBeforeRead()
         oversizedClassScope,
         duplicateDays,
         oversizedDayList,
-        invalidDay,
         invalidMode,
         blankClassId,
         longClassId
@@ -331,6 +329,28 @@ invalidRequestsAreRejectedBeforeRead()
     }
 
     QCOMPARE(readPort.calls, 0);
+}
+
+void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
+invalidWeekdaysAreRejectedBeforeRead()
+{
+    for (const auto weekday : {0, 8})
+    {
+        FakeReadPort readPort;
+        auto request = validRequest();
+        request.selectedDays = {static_cast<SubPrepWeekday>(weekday)};
+
+        const SubPrepPrintSourceQuery query(readPort);
+        const auto result = query.execute(request);
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("A selected Sub Prep weekday is invalid.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    }
 }
 
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
@@ -576,7 +596,7 @@ rejectsMalformedIdentifiersAndMissingOrUnusedTeachers()
 }
 
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
-rejectsDuplicateTeacherIdsAndInvalidMeetingWeekdays()
+rejectsDuplicateTeacherIds()
 {
     FakeReadPort readPort;
     const SubPrepPrintSourceQuery query(readPort);
@@ -586,13 +606,31 @@ rejectsDuplicateTeacherIdsAndInvalidMeetingWeekdays()
     readPort.result = SubPrepPrintSourceReadResult::success(duplicateTeacher);
     verifyValidationError(query.execute(validRequest()));
 
-    auto invalidWeekday = validInput();
-    invalidWeekday.classes.front().meetings.front().weekday =
-        static_cast<SubPrepWeekday>(0);
-    readPort.result = SubPrepPrintSourceReadResult::success(std::move(invalidWeekday));
-    verifyValidationError(query.execute(validRequest()));
+    QCOMPARE(readPort.calls, 1);
+}
 
-    QCOMPARE(readPort.calls, 2);
+void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
+rejectsInvalidMeetingWeekdaysBeforeSelectedDayMembership()
+{
+    for (const auto weekday : {0, 8})
+    {
+        FakeReadPort readPort;
+        auto input = validInput();
+        input.classes.front().meetings.front().weekday =
+            static_cast<SubPrepWeekday>(weekday);
+        readPort.result = SubPrepPrintSourceReadResult::success(std::move(input));
+
+        const SubPrepPrintSourceQuery query(readPort);
+        const auto result = query.execute(validRequest());
+
+        verifyError(result, ErrorCode::Validation);
+        QCOMPARE(
+            result.error().message,
+            std::string("A Sub Prep print meeting has an invalid weekday.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 1);
+    }
 }
 
 void ClassMngrNextApplicationSubPrepPrintSourceQueryTests::
@@ -610,6 +648,11 @@ rejectsMeetingsOutsideSelectedDaysAllOrNothing()
     const auto result = query.execute(validRequest());
 
     verifyValidationError(result);
+    QCOMPARE(
+        result.error().message,
+        std::string("A Sub Prep print meeting is outside the requested days.")
+        );
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(readPort.calls, 1);
 }
 
