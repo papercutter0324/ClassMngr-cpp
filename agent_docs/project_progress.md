@@ -53,13 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F738 accepted; F739 selected)
+### Current state - 2026-10-12 (F739 accepted; F740 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F739, moving the Calendar repeat-until default date rule into the
-Qt-free Application recurrence contract.
+with F740, consolidating Gregorian date conversion for the Calendar recurrence
+and series-edit Application planners in the Qt-free Domain layer.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -422,12 +422,24 @@ refreshed the page after a second repository save and observed deferred tab
 deletion; preparing all rows before initial construction resolved that test
 fixture issue. The scoped diff check passed; no full suite ran.
 
-F739 is selected to move Calendar Event's repeat-until default date rule into
-the existing Qt-free Application recurrence contract; its acceptance matrix
-is recorded in the Phase 2 progress log. F707 remains deferred because its
-comparator chain has no observed app callsite. F709 remains deferred because
-the raw-SQL fixture path converts malformed stored text to invalid `QTime`s
-before projection, leaving no public seam for malformed projection text.
+F739 is accepted and committed as
+`61e244f7f03668a8a6bc0b9af9e7ae395c1f06ef`. The Calendar recurrence
+Application contract now supplies the repeat-until date default, while the UI
+adapter converts ISO strings to `QDate` and retains its current-date fallback
+and existing repeat conditions. The app-less contract and dialog tests cover
+weekday selection, leap and range boundaries, invalid inputs, constructor and
+start-date updates, and preservation of an enabled user-selected end date.
+`ClassMngr` and both focused targets built incrementally; exactly one CTest
+registration was found for each, and the two exact CTests passed 2/2 in 0.57s.
+The scoped diff check passed; no full suite ran.
+
+F740 is selected to consolidate the duplicate Gregorian date conversion in
+the Calendar recurrence and series-edit Application planners into a Qt-free
+Domain helper; its acceptance matrix is recorded in the Phase 2 progress log.
+F707 remains deferred because its comparator chain has no observed app
+callsite. F709 remains deferred because the raw-SQL fixture path converts
+malformed stored text to invalid `QTime`s before projection, leaving no public
+seam for malformed projection text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

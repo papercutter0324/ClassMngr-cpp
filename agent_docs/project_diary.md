@@ -4629,8 +4629,22 @@ refreshed after a second repository save and failed to find one tab because
 the old one is removed through `deleteLater`; preloading the rows before page
 construction fixed the fixture. Scoped diff check passed; no full suite ran.
 
-F739 is selected in Batch 179 to move Calendar Event's repeat-until default
-date rule into the existing Qt-free Application recurrence contract. The
-selection matrix is recorded before implementation in the Phase 2 progress
-log. F707 and F709 remain deferred; Phase 2 remains In Progress with Gates 1
-and 2 Partial.
+F739 is accepted in Batch 179 and committed as
+`61e244f7f03668a8a6bc0b9af9e7ae395c1f06ef`. The Qt-free Application
+recurrence contract now computes the latest same-weekday date in the input
+year; the dialog only handles ISO/QDate conversion and preserves its existing
+fallback and update conditions. Its app-less and dialog tests cover all
+weekdays, leap/non-leap years, supported range limits, malformed dates, the
+constructor and start-date defaults, and preservation of a user-selected end
+date when recurrence is enabled. `ClassMngr` and the two focused targets built
+incrementally; one exact CTest registration per target was confirmed, and
+both CTests passed (2/2, 0.57s total). Scoped diff check passed; no full suite
+ran.
+
+F740 is selected in Batch 179 to share Qt-free Gregorian date conversion
+across Calendar repeat-occurrence and series-edit planners. Its pre-code
+acceptance matrix is recorded in the Phase 2 progress log. The series-create
+page acceptance gap was not selected because it has no production/core change
+to justify a test-only slice; birthday parser sharing has lower value and
+intentionally different whitespace boundaries. F707 and F709 remain deferred;
+Phase 2 remains In Progress with Gates 1 and 2 Partial.

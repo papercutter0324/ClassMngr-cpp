@@ -27956,3 +27956,64 @@ small Qt boundary adapter.
 
 This matrix is recorded before implementation. Batch 179 is active with F739;
 F707 and F709 remain deferred.
+
+### F739 repeat-until default end date - accepted - 2026-10-12
+
+F739 is accepted at code/test commit
+`61e244f7f03668a8a6bc0b9af9e7ae395c1f06ef`. The Qt-free Application
+contract now exposes
+`ClassMngr::Next::Application::defaultCalendarEventRepeatUntilDate(std::string_view)`,
+returning `std::optional<std::string>` and reusing Gregorian date details.
+The calendar dialog adapts between `QDate` and ISO text, preserves its
+`QDate::currentDate()` fallback and existing repeat/change conditions.
+
+The app-less tests cover seven weekdays, leap/non-leap years, 0001/9999
+boundaries, and malformed, empty, impossible, padded, and zero-year inputs.
+The dialog test verifies constructor and changed-start defaults and preserves
+a user-selected `2026-11-30` when recurrence is enabled and start changes from
+`2026-10-13` to `2026-10-14`. Incremental Ninja build in
+`build/windows-x64-debug-ninja` under the Visual Studio x64 Developer
+environment built `ClassMngr`, `ClassMngrNextApplicationCalendarEventTests`,
+and `ClassMngrDialogShellTests`, including the changed dialog and both test
+sources. Exactly one CTest registration each was confirmed. The exact tests
+passed: DialogShell 1/1 in 0.27 seconds and NextApplicationCalendarEvent 1/1
+in 0.29 seconds (0.57 seconds total). Scoped diff check passed; no full suite
+ran. The `vswhere.exe` warning and LF-to-CRLF warnings were nonblocking.
+
+**Decision: accept F739.** Batch 179 continues with F740; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F740 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Share the duplicated Qt-free Gregorian date conversion in
+`src/next/application/calendar_event_repeat_occurrence_plan.h` and
+`src/next/application/calendar_event_series_edit_plan.h` through a new Domain
+header, `src/next/domain/gregorian_date.h`.
+
+**F740 is selected:** centralize canonical Gregorian date parsing, ordinal
+conversion, and formatting while preserving both Application planners' public
+behavior.
+
+1. Add the shared Domain helper using wide (`int64_t`) zero-based day numbers,
+   with `0001-01-01 == 0`. Support exact canonical ISO parse/format for dates
+   from `0001-01-01` through `9999-12-31`, Gregorian leap-year and month-length
+   rules, and optional ordinal conversions that reject values outside that
+   date range. Add the new header to `cmake/next.cmake`'s Domain source
+   inventory.
+2. Migrate both Application planners to the shared helper and remove their
+   duplicate leap-year, ordinal, and date-format conversion implementations.
+   Preserve all public outputs, ordering, validation and error mappings,
+   recurrence behavior, monthly clipping, maximum occurrence count, and range
+   boundaries. Preserve F739 helper behavior.
+3. Extend `tests/next_application_calendar_event_tests.cpp` with pure
+   round-trip and Domain boundary tests. Keep the existing repeat-occurrence
+   planner and series-edit cases unchanged and passing.
+4. Build `ClassMngr` and `ClassMngrNextApplicationCalendarEventTests`, confirm
+   exactly one matching CTest registration, and run only the exact CTest
+   `ClassMngrNextApplicationCalendarEventTests`. Run no full suite.
+
+The repeat-series page case was not selected because the plan identified only
+a test-only opportunity, with no production issue. Birthday parser sharing was
+not selected because its value is small and its whitespace rules deliberately
+differ. This matrix is recorded before implementation. Batch 179 is active
+with F740; F707 and F709 remain deferred.

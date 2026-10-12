@@ -5,10 +5,10 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F739, moving the repeat-until default date policy into the Qt-free Calendar
-  recurrence Application contract. F709 remains deferred after confirming
-  raw SQL values become invalid `QTime`s before the public page's
-  projection-string helper.
+  F740, consolidating Gregorian date conversion for the Calendar recurrence
+  and series-edit planners in the Qt-free Domain layer. F709 remains deferred
+  after confirming raw SQL values become invalid `QTime`s before the public
+  page's projection-string helper.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -242,8 +242,18 @@
   `N/A`; the exact focused CTest passed 1/1. Its first test attempt refreshed
   after a second fixture save and hit deferred old-tab cleanup; moving every
   schedule row into the initial fixture load fixed the seam, and the scoped
-  diff check passed. No full suite ran. F739 is selected; its acceptance
-  matrix is in the Phase 2 progress log. F707 and F709 remain deferred.
+  diff check passed. No full suite ran. F739 is accepted and committed at
+  `61e244f7f03668a8a6bc0b9af9e7ae395c1f06ef`. The new Qt-free Application
+  helper calculates the final same-weekday date in the year; the Calendar
+  dialog uses it through an ISO/QDate adapter and retains the prior fallback
+  and update conditions. Incremental builds of `ClassMngr`,
+  `ClassMngrNextApplicationCalendarEventTests`, and `ClassMngrDialogShellTests`
+  passed. Exactly one CTest registration was found for each; the two exact
+  CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
+  invalid inputs, dialog defaults and start-date changes, and preservation of
+  a chosen end date under enabled recurrence. Scoped diff check passed; no
+  full suite ran. F740 is selected; its matrix is in the Phase 2 progress log.
+  F707 and F709 remain deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.
