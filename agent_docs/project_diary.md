@@ -5236,3 +5236,22 @@ the document-entry ownership candidate remains deferred because the value also
 contains localized display data. Lifecycle review found no new production-
 backed gap. The F782 matrix is in the Phase 2 progress log. F707/F709 remain
 deferred, Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+## Phase 2 F782 acceptance and F783 selection - 2026-10-13
+
+F782 is accepted at `06c2ec699536387446d391615fd5126a231e874f`; its exact
+Speaking Evaluation CTest registered once and passed 1/1 after the bounded
+Visual Studio 18 x64 Debug build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+Batch 196 selected the observable Calendar title parity defect: legacy
+validation counts 255 UTF-16 code units, while Next write contracts and
+projection bounds count UTF-8 bytes. The matrix covers draft, single save,
+repeat create/edit, import, application summaries, and both Qt read adapters.
+Keep the existing 4,096-event cap and bound title payloads at 765 UTF-8 bytes;
+this raises the theoretical worst-case title payload by about 2.1 MB across a
+full projection, so it is a bounded compatibility cost, not a memory saving.
+Defer the broader repeat-series typed-ID migration, the unclear course-stage
+Domain move, and unmeasured Class Transfer export copy reduction. F707/F709
+remain deferred, Gates 1/2 remain Partial, and the formal exit gate remains
+Open.

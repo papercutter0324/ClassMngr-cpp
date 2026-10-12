@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F781 is accepted at `6a067c32b9a70819252d69541f5de5c31fa946b`; F782 is selected in Batch 195 to align Speaking Evaluation class-ID validation with the canonical positive-ID contract, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F782 is accepted at `06c2ec699536387446d391615fd5126a231e874f`; F783 is selected in Batch 196 to restore calendar title-length parity across UTF-8 request and projection boundaries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 195
+#### Active batch: Batch 196
 
-- F782 - Speaking Evaluation class ID validation consistency - Reject noncanonical IDs in direct validator calls while preserving the issue contract and use-case behavior.
+- F783 - Calendar title length parity - Apply the legacy 255 UTF-16-unit title limit consistently to UTF-8 application requests and projections.
 
 ## Objective
 

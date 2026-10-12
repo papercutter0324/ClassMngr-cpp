@@ -30102,3 +30102,72 @@ build `ClassMngr` and that target, confirm the exact CTest registers once,
 then run only it with `-C Debug --output-on-failure`. Run no full suite.
 Commit this matrix before source/test edits. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F782 Speaking Evaluation class ID validation consistency - accepted - 2026-10-13
+
+F782 is accepted at commit
+`06c2ec699536387446d391615fd5126a231e874f`. In the existing
+`build/windows-x64-debug` Visual Studio 18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests` built after the
+same bounded build succeeded outside the sandbox following FileTracker
+`E_ACCESSDENIED`. The exact CTest registered once (#229) and passed 1/1; no
+full suite ran. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial,
+and the formal exit gate remains Open.
+
+### Batch 196 discovery - 2026-10-13
+
+F783 was selected to fix the verified calendar title-parity defect: legacy
+validation counts UTF-16 units while Next request paths count UTF-8 bytes, and
+summary projection currently permits a different byte cap. The typed
+`CalendarEventSeriesId` API migration was deferred because it has plan support
+but no behavior defect; moving school-stage into Domain was deferred because
+concept and fallback ownership are unclear; Class Transfer export copy
+reduction was deferred because its impact is unmeasured. No other slices were
+found.
+
+### F783 Calendar title length parity - selected and acceptance matrix - 2026-10-13
+
+**F783 is selected:** add a shared Qt-free UTF-8 title validation/count helper
+(for example, `src/next/application/calendar_event_title_validation.h`) that
+rejects malformed UTF-8, counts Unicode scalar values as UTF-16 code units
+(supplementary scalars count two), and enforces a maximum of 255 units. Preserve
+existing ASCII blank/whitespace rules, structured errors, and validation order.
+Apply it to the calendar edit draft, single-save request, series-edit request,
+and every occurrence/import path sharing save-request validation.
+
+Retain 255 ASCII accept / 256 reject. Cover 86 Hangul syllables (258 UTF-8
+bytes) accepted, 255 Hangul (765 bytes) accepted, 256 rejected, 253 ASCII
+units plus a supplementary scalar accepted, 254 plus that scalar rejected,
+and malformed UTF-8 rejection. Prefer existing application tests, and verify
+the main save use case forwards a multibyte title unchanged to persistence.
+
+Update application projection validation to the same 255 UTF-16-unit limit
+and define `kCalendarEventSummaryMaxTitleUtf8Bytes` as 765. Use that transport
+ceiling in both
+`src/next/platform/application_services_calendar_event_port.h` and
+`src/features/calendar/calendar_event_projection_query.cpp`; retain the unit
+check in the application projection. Preserve the 4,096-event cap, ordering,
+conversion behavior, and all other projection caps. The maximum additional
+title payload versus the prior 256-byte transport cap is
+`4,096 * (765 - 256) = 2,084,864` bytes (about 1.99 MiB); this is a bounded
+payload increase, not a memory optimization.
+
+Expected production surface: the shared helper; calendar edit draft, save,
+and series-edit contracts; `calendar_event_projection.h`; the Next platform
+calendar port and feature projection-query adapter. Add the helper to the
+explicit CMake Next Application source manifest and ownership coverage if
+required. No CMake test-registration change is expected.
+
+Build `ClassMngr` and these targets in the existing
+`build/windows-x64-debug` Visual Studio 18 x64 Debug tree:
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarEventCacheTests`. Confirm each exact CTest registers once;
+run only `NextApplicationCalendarEvent`,
+`NextApplicationCalendarEventImportUseCase`,
+`NextPlatformApplicationServicesCalendarEventPort`, and
+`ClassMngrCalendarEventCacheTests` with `-C Debug --output-on-failure`. Run no
+full suite. Commit this matrix before source/test edits. Verification has not
+run; F783 is not yet accepted. F707/F709 remain deferred, Phase 2 Gates 1/2
+remain Partial, and the formal exit gate remains Open.
