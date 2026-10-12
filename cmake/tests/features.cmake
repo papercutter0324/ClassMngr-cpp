@@ -16,6 +16,7 @@ qt_add_executable(ClassMngrClassTransferTests
         src/data/repositories/class_info_repository.cpp
         src/data/repositories/class_repository.cpp
         src/data/repositories/class_transfer_repository.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/data/repositories/intensive_slot_state_repository.cpp
         src/data/repositories/testing_block_repository.cpp
         src/data/repositories/testing_class_repository.cpp

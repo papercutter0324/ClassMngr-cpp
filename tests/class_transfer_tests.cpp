@@ -2012,8 +2012,47 @@ void ClassTransferTests::
              QStringLiteral("12:30 am"));
 
     package.classes.first().info.classTimes.first() = {
+        QStringLiteral("Sunday"),
+        QStringLiteral("11:00   pm"),
+        QStringLiteral("1:00 AM")
+    };
+    const auto repeatedWhitespaceResult = service.importClasses(
+        package,
+        createAllPlan(package)
+        );
+    QVERIFY(!repeatedWhitespaceResult.has_value());
+    QCOMPARE(
+        repeatedWhitespaceResult.error(),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Theseus \u2014 Sunday 11:00   pm\u20131:00 AM "
+            "conflicts with E6 Gaia \u2014 Monday 12:30 am\u20131:30 AM"
+            )
+        );
+    QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+             teachersBefore);
+    QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+             classesBefore);
+    const auto repeatedWhitespaceDestination =
+        service.loadClassInfo(destinationClass);
+    QVERIFY(repeatedWhitespaceDestination);
+    QCOMPARE(repeatedWhitespaceDestination->classTimes.size(), 1);
+    QCOMPARE(
+        repeatedWhitespaceDestination->classTimes.first().day,
+        QStringLiteral("Monday")
+        );
+    QCOMPARE(
+        repeatedWhitespaceDestination->classTimes.first().startTime,
+        QStringLiteral("12:30 am")
+        );
+    QCOMPARE(
+        repeatedWhitespaceDestination->classTimes.first().endTime,
+        QStringLiteral("1:30 AM")
+        );
+
+    package.classes.first().info.classTimes.first() = {
         QStringLiteral("Monday"),
-        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:0 PM"),
         QStringLiteral("4:00 PM")
     };
     package.classes.first().info.intensiveTimes.first().day =
@@ -2036,7 +2075,7 @@ void ClassTransferTests::
         equalEndpointResult.error(),
         QStringLiteral(
             "Schedule conflicts prevent this import:\n\n"
-            "Regular schedule: E4 Theseus \u2014 Monday 4:00 PM\u20134:00 PM "
+            "Regular schedule: E4 Theseus \u2014 Monday 4:0 PM\u20134:00 PM "
             "conflicts with E6 Gaia \u2014 Tuesday 3:30 PM\u20134:30 PM"
             )
         );
@@ -2049,8 +2088,120 @@ void ClassTransferTests::
     QCOMPARE(service.loadClassInfo(destinationClass)->classTimes.first().startTime,
              QStringLiteral("3:30 PM"));
 
-    package.classes.first().info.classTimes.first().day =
-        QStringLiteral("Funday");
+    const QSqlDatabase database =
+        service.databaseSession()->database();
+    const auto destinationBeforeInvalid =
+        service.loadClassInfo(destinationClass);
+    QVERIFY(destinationBeforeInvalid);
+    QCOMPARE(destinationBeforeInvalid->classTimes.size(), 1);
+    QCOMPARE(destinationBeforeInvalid->intensiveTimes.size(), 1);
+    const QList<ClassTime> regularScheduleBeforeInvalid =
+        destinationBeforeInvalid->classTimes;
+    const QList<ClassTime> intensiveScheduleBeforeInvalid =
+        destinationBeforeInvalid->intensiveTimes;
+    const QList<ClassTime> malformedSchedules{
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:75 PM"),
+            QStringLiteral("4:00 PM")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("not a time")
+        }
+    };
+    const QStringList malformedScheduleErrors{
+        QStringLiteral(
+            "E4 Theseus contains an invalid regular schedule entry: "
+            "Monday 4:75 PM\u20134:00 PM"
+            ),
+        QStringLiteral(
+            "E4 Theseus contains an invalid regular schedule entry: "
+            "Monday 4:00 PM\u2013not a time"
+            )
+    };
+    QString sqlError;
+    for (qsizetype index = 0;
+         index < malformedSchedules.size();
+         ++index)
+    {
+        package.classes.first().info.classTimes.first() =
+            malformedSchedules.at(index);
+        const auto changesBefore =
+            sqliteTotalChanges(database, &sqlError);
+        QVERIFY2(changesBefore.has_value(), qPrintable(sqlError));
+
+        const auto invalidTimeResult = service.importClasses(
+            package,
+            createAllPlan(package)
+            );
+        QVERIFY(!invalidTimeResult.has_value());
+        QCOMPARE(
+            invalidTimeResult.error(),
+            malformedScheduleErrors.at(index)
+            );
+        QCOMPARE(service.getAllTeachers().value_or(QList<Teacher>{}).size(),
+                 teachersBefore);
+        QCOMPARE(service.getClasses().value_or(QList<Classroom>{}).size(),
+                 classesBefore);
+
+        const auto changesAfter = sqliteTotalChanges(database, &sqlError);
+        QVERIFY2(changesAfter.has_value(), qPrintable(sqlError));
+        QCOMPARE(*changesAfter - *changesBefore, qlonglong(0));
+
+        const auto destinationAfterInvalid =
+            service.loadClassInfo(destinationClass);
+        QVERIFY(destinationAfterInvalid);
+        QCOMPARE(
+            destinationAfterInvalid->classTimes.size(),
+            regularScheduleBeforeInvalid.size()
+            );
+        QCOMPARE(
+            destinationAfterInvalid->intensiveTimes.size(),
+            intensiveScheduleBeforeInvalid.size()
+            );
+        for (qsizetype scheduleIndex = 0;
+             scheduleIndex < regularScheduleBeforeInvalid.size();
+             ++scheduleIndex)
+        {
+            QCOMPARE(
+                destinationAfterInvalid->classTimes.at(scheduleIndex).day,
+                regularScheduleBeforeInvalid.at(scheduleIndex).day
+                );
+            QCOMPARE(
+                destinationAfterInvalid->classTimes.at(scheduleIndex).startTime,
+                regularScheduleBeforeInvalid.at(scheduleIndex).startTime
+                );
+            QCOMPARE(
+                destinationAfterInvalid->classTimes.at(scheduleIndex).endTime,
+                regularScheduleBeforeInvalid.at(scheduleIndex).endTime
+                );
+        }
+        for (qsizetype scheduleIndex = 0;
+             scheduleIndex < intensiveScheduleBeforeInvalid.size();
+             ++scheduleIndex)
+        {
+            QCOMPARE(
+                destinationAfterInvalid->intensiveTimes.at(scheduleIndex).day,
+                intensiveScheduleBeforeInvalid.at(scheduleIndex).day
+                );
+            QCOMPARE(
+                destinationAfterInvalid->intensiveTimes.at(scheduleIndex).startTime,
+                intensiveScheduleBeforeInvalid.at(scheduleIndex).startTime
+                );
+            QCOMPARE(
+                destinationAfterInvalid->intensiveTimes.at(scheduleIndex).endTime,
+                intensiveScheduleBeforeInvalid.at(scheduleIndex).endTime
+                );
+        }
+    }
+
+    package.classes.first().info.classTimes.first() = {
+        QStringLiteral("Funday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:00 PM")
+    };
     const auto invalidScheduleResult = service.importClasses(
         package,
         createAllPlan(package)

@@ -9,6 +9,7 @@
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/classroom.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
 
@@ -20,6 +21,7 @@
 #include <QStringList>
 
 #include <algorithm>
+#include <array>
 #include <map>
 #include <optional>
 #include <string>
@@ -282,19 +284,23 @@ int timeToMinutes(
         return -1;
     }
 
-    if (period == QStringLiteral("AM"))
+    const QString normalizedTime = QStringLiteral("%1:%2 %3")
+        .arg(hour)
+        .arg(minute, 2, 10, QLatin1Char('0'))
+        .arg(period);
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
+    };
+    const auto parsed = ScheduleValueParser::parseDisplayTime(
+        normalizedTime,
+        allowedFormats
+        );
+    if (!parsed)
     {
-        if (hour == 12)
-        {
-            hour = 0;
-        }
-    }
-    else if (hour != 12)
-    {
-        hour += 12;
+        return -1;
     }
 
-    return hour * 60 + minute;
+    return parsed->hour() * 60 + parsed->minute();
 }
 
 std::optional<ClassMngr::Next::Application::ClassTransferScheduleCandidate>
