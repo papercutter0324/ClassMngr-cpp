@@ -4578,8 +4578,14 @@ canonical translations and those raw fallbacks. `ClassMngr` and
 `ClassMngrScheduleWidgetTests` built; the focused CTest passed 1/1. No full
 suite ran.
 
-F734 is selected in Batch 179 for `isScheduleWeekendDay` in
-`schedule_view_model.cpp`. Parse with raw canonical-text equality so only
-exact Saturday/Sunday remain weekend days. Cover all weekdays and padded,
-lowercase, unknown, and empty labels through default-slot-state and toggling
-behavior. Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F734 is accepted in Batch 179 and committed as
+`bfee9ab989aa9fb41c5303c1ab0bff4e9952929b`. `isScheduleWeekendDay` uses the
+shared parser with raw canonical-text equality, so only exact Saturday/Sunday
+remain weekend days. Coverage includes all weekdays plus padded/lowercase
+weekend, unknown, and empty labels through default-slot state and toggling.
+The exact focused CTest passed 1/1 after both targets built; no full suite ran.
+
+F735 is selected for `SubPrepClassInformation::dayAbbreviation`. Preserve the
+exact raw canonical guard, existing translation context, and trimmed fallback;
+the full preimplementation matrix is recorded in the Phase 2 progress log.
+Phase 2 remains In Progress with Gates 1 and 2 Partial.

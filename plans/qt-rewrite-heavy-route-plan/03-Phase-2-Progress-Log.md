@@ -27671,3 +27671,56 @@ case-sensitive, unpadded weekend recognition.
 
 This matrix is recorded before implementation. Batch 179 is active with F734;
 F707 and F709 remain deferred.
+
+### F734 Schedule View Model weekend parsing - accepted - 2026-10-12
+
+F734 is accepted at code/test commit
+`bfee9ab989aa9fb41c5303c1ab0bff4e9952929b`. `isScheduleWeekendDay` now uses
+`ScheduleValueParser::parseWeekday` and requires exact raw canonical-text
+equality, so only canonical Saturday and Sunday count as weekend days. Its
+existing use in default-slot state and slot-toggling policy is unchanged. The
+focused test covers all seven canonical weekdays plus padded and lowercase
+weekend labels, unknown, and empty labels through both default-slot and
+toggling behavior.
+
+`ClassMngr` and `ClassMngrSchedulePrintModelTests` built successfully. Exactly
+one matching CTest registration was confirmed and the focused CTest passed
+1/1. The scoped diff check passed. No full suite ran.
+
+**Decision: accept F734.** Batch 179 continues with F735; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F735 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayAbbreviation` in
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp`, called by
+`SubPrepClassInformation::formatMeetingTimes`. The helper currently translates
+exact English weekday names with the `SubPrepClassInformation` context and
+returns `day.trimmed()` for other inputs. Existing tests cover canonical
+Monday-Friday abbreviations and padded/lowercase fallback labels.
+
+**F735 is selected:** reuse the Domain weekday parser for canonical
+abbreviation selection while preserving the helper's trimmed fallback.
+
+1. Migrate only `dayAbbreviation` to
+   `ScheduleValueParser::parseWeekday`, and translate only when
+   `parsed->text == day` for the raw input. Preserve the existing
+   `SubPrepClassInformation` translation context and weekday abbreviations;
+   otherwise return `day.trimmed()`, including for padded, lowercase,
+   unknown, and empty input. Leave time formatting, grouping, filtering,
+   ordering, and callers unchanged.
+2. Extend the direct `formatMeetingTimes` test seam in
+   `tests/sub_prep_class_information_model_tests.cpp`. Add canonical Saturday
+   and Sunday abbreviation assertions (Monday-Friday are already covered),
+   retain padded/lowercase cases, and cover a padded unknown day. Include an
+   empty day with a valid 4:00 PM time and exact empty-string visibility; the
+   existing formatting expression preserves its separator, so its fallback
+   output is ` 4pm`.
+3. `ClassMngrSubPrepClassInformationModelTests` already compiles the parser
+   and model, so no CMake wiring change is needed. Build `ClassMngr` and that
+   target; confirm exactly one same-named CTest registration and run only the
+   exact CTest `ClassMngrSubPrepClassInformationModelTests`. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F735;
+F707 and F709 remain deferred.

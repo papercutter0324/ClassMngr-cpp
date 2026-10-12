@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F734, the schedule view-model weekend classification migration.
+  F735, the Sub Prep class-information weekday abbreviation migration.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -215,10 +215,13 @@
   labels. Its focused CTest passed 1/1. F733 is accepted and committed as
   `6cf69d4f519b0c5be49471676ecd54f2ed9541b4`; its public renderer test covers
   all seven translated weekday headers and exact raw fallbacks for padded,
-  lowercase, unknown, and empty labels. Its focused CTest passed 1/1. F734
-  selects exact canonical Saturday/Sunday classification in the schedule
-  view model with default-state and toggling coverage; its matrix is in the
-  Phase 2 progress log. No full suite ran. F707 and F709 remain deferred.
+  lowercase, unknown, and empty labels. Its focused CTest passed 1/1. F734 is
+  accepted at `bfee9ab989aa9fb41c5303c1ab0bff4e9952929b`; exact canonical
+  Saturday/Sunday classification in the schedule view model is covered
+  through default-state and toggling, with the exact CTest passing 1/1. F735
+  selects the Sub Prep class-information weekday abbreviation helper; its
+  matrix is in the Phase 2 progress log. No full suite ran. F707 and F709
+  remain deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

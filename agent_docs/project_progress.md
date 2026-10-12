@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F733 accepted; F734 selected)
+### Current state - 2026-10-12 (F734 accepted; F735 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F734, the schedule view-model weekend classification migration.
+with F735, the Sub Prep class-information weekday abbreviation migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -370,16 +370,22 @@ canonical translations and those four fallback cases. `ClassMngr` and
 `ClassMngrScheduleWidgetTests` built; exactly one matching registration was
 confirmed and the focused CTest passed 1/1. No full suite ran.
 
-F734 is selected in Batch 179 to migrate `isScheduleWeekendDay` in
-`src/features/schedule/ui/schedule_view_model.cpp` to the shared weekday
-parser while preserving exact, case-sensitive, unpadded classification. Test
-all seven canonical days plus padded/lowercase weekend labels, unknown, and
-empty values through default-slot-state and toggling behavior. Build
-`ClassMngr` and `ClassMngrSchedulePrintModelTests`; run only that exact CTest.
-The target already compiles the parser; no CMake change or full suite is
-planned. F707 remains deferred because its comparator chain has no observed
-app callsite; F709 is deferred because its public fixture does not readily
-supply malformed raw time text.
+F734 is accepted and committed as
+`bfee9ab989aa9fb41c5303c1ab0bff4e9952929b`. `isScheduleWeekendDay` now uses
+the shared weekday parser with raw canonical-text equality, so only exact
+Saturday/Sunday are weekend days. Coverage exercises all seven weekdays plus
+padded/lowercase weekend, unknown, and empty labels through default-slot and
+toggling behavior. `ClassMngr` and `ClassMngrSchedulePrintModelTests` built;
+the sole matching CTest passed 1/1 and scoped diff-check passed. No full suite
+ran.
+
+F735 is selected for `SubPrepClassInformation::dayAbbreviation`. The helper
+will reuse the shared parser only when canonical parsed text equals the raw
+day, preserving the existing translation context and trimmed fallback for
+noncanonical input. The matrix is recorded in the Phase 2 progress log.
+F707 remains deferred because its comparator chain has no observed app
+callsite; F709 is deferred because its public fixture does not readily supply
+malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

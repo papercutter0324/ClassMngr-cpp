@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F733 is accepted and F734, the schedule view-model weekend classification migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F734 is accepted and F735, the Sub Prep class-information weekday abbreviation migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -101,7 +101,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F734 - Move schedule view-model weekend classification to the shared parser while preserving exact canonical input behavior.
+- F735 - Move Sub Prep class-information weekday abbreviation recognition to the shared parser while preserving exact canonical display behavior.
 
 ## Objective
 
