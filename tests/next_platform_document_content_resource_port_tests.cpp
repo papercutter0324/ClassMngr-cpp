@@ -1,4 +1,5 @@
 #include "core/resource_packs/resource_pack_manager.h"
+#include "next/domain/document_content_reference.h"
 #include "next/platform/document_content_resource_port.h"
 
 #include <QDir>
@@ -16,6 +17,7 @@
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
+using ClassMngr::Next::Domain::DocumentContentReference;
 using ClassMngr::Next::Platform::DocumentContentResource;
 using ClassMngr::Next::Platform::DocumentContentResourcePort;
 

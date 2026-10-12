@@ -2,6 +2,7 @@
 
 #include "core/resource_packs/resource_pack_manager.h"
 #include "next/application/document_content_session.h"
+#include "next/domain/document_content_reference.h"
 #include "ui/shared/pages/basepage.h"
 
 #include <QString>
@@ -25,7 +26,7 @@ struct PdfViewerDocumentDescriptor
     QString exportFileName;
     bool printEnabled = false;
     ResourcePackLease resourceLease;
-    std::optional<ClassMngr::Next::Application::DocumentContentReference>
+    std::optional<ClassMngr::Next::Domain::DocumentContentReference>
         contentReference;
 };
 

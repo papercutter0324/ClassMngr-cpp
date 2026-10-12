@@ -1,5 +1,6 @@
 #include "next/domain/course.h"
 #include "next/domain/calendar_event_timing.h"
+#include "next/domain/document_content_reference.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
 #include "next/domain/operation_result.h"
@@ -29,6 +30,7 @@ class NextDomainContractTests final : public QObject
 private slots:
     void typedIdentifiersRejectEmptyValues();
     void typedIdentifiersRemainDistinct();
+    void documentContentReferencesHaveValueSemantics();
     void resultCarriesValueOrStructuredError();
     void scheduleTimesAcceptWeekdayAndMinuteBoundaries();
     void scheduleTimesRejectInvalidDaysAndIntervals();
@@ -79,6 +81,33 @@ void NextDomainContractTests::typedIdentifiersRemainDistinct()
     QVERIFY(first.has_value());
     QVERIFY(second.has_value());
     QVERIFY(*first == *second);
+}
+
+void NextDomainContractTests::documentContentReferencesHaveValueSemantics()
+{
+    static_assert(std::is_same_v<DocumentContentReference::Text, std::string>);
+    static_assert(std::is_copy_constructible_v<DocumentContentReference>);
+    static_assert(std::is_copy_assignable_v<DocumentContentReference>);
+
+    const DocumentContentReference empty;
+    QVERIFY(empty.empty());
+    QVERIFY(empty.value().empty());
+    QVERIFY(empty.text().empty());
+
+    const DocumentContentReference explicitValue(
+        DocumentContentReference::Text("resource://documents/lesson.pdf")
+        );
+    QVERIFY(!explicitValue.empty());
+    QVERIFY(explicitValue.value() == "resource://documents/lesson.pdf");
+    QVERIFY(explicitValue.text() == explicitValue.value());
+
+    const DocumentContentReference copied(explicitValue);
+    QVERIFY(copied == explicitValue);
+    QVERIFY(copied.value() == explicitValue.text());
+
+    DocumentContentReference assigned;
+    assigned = explicitValue;
+    QVERIFY(assigned == explicitValue);
 }
 
 void NextDomainContractTests::resultCarriesValueOrStructuredError()

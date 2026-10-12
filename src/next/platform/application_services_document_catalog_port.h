@@ -2,6 +2,7 @@
 
 #include "core/application_services.h"
 #include "next/application/document_catalog_projection.h"
+#include "next/domain/document_content_reference.h"
 
 #include <QDir>
 #include <QString>
@@ -192,7 +193,7 @@ public:
 
                 const bool exportable = document.exportingEnabled
                     && document.exportFile.has_value();
-                std::optional<Application::DocumentContentReference>
+                std::optional<Domain::DocumentContentReference>
                     exportReference;
                 if (exportable)
                 {
@@ -220,7 +221,7 @@ public:
                     document.order,
                     document.printingEnabled,
                     exportable,
-                    Application::DocumentContentReference(*contentReference),
+                    Domain::DocumentContentReference(*contentReference),
                     std::move(exportReference)
                 });
             }

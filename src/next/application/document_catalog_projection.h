@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/document_content_session.h"
+#include "next/domain/document_content_reference.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -64,10 +65,10 @@ struct DocumentEntryMetadata final
     std::int32_t order = 0;
     bool printable = false;
     bool exportable = false;
-    DocumentContentReference contentReference;
-    std::optional<DocumentContentReference> exportReference;
+    Domain::DocumentContentReference contentReference;
+    std::optional<Domain::DocumentContentReference> exportReference;
 
-    [[nodiscard]] const std::optional<DocumentContentReference>&
+    [[nodiscard]] const std::optional<Domain::DocumentContentReference>&
     exportContentReference() const noexcept
     {
         return exportReference;
@@ -155,7 +156,7 @@ namespace DocumentCatalogProjectionDetail
 }
 
 [[nodiscard]] inline bool isValidReference(
-    const DocumentContentReference& reference
+    const Domain::DocumentContentReference& reference
     ) noexcept
 {
     return !isBlank(reference.value())

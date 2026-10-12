@@ -2,6 +2,7 @@
 
 #include "core/resource_packs/resource_pack_manager.h"
 #include "next/application/document_content_session.h"
+#include "next/domain/document_content_reference.h"
 #include "next/domain/operation_result.h"
 
 #include <QDir>
@@ -32,8 +33,8 @@ struct DocumentContentResource final
 using DocumentContentResourceResult =
     Domain::Result<DocumentContentResource>;
 
-// Resolves application content references at the resource-pack boundary. The
-// application layer supplies only its Qt-free reference values; this adapter
+// Resolves domain content references at the resource-pack boundary. The
+// Domain layer supplies only Qt-free reference values; this adapter
 // owns the Qt path conversion, resource existence checks, and lease lifetime.
 class DocumentContentResourcePort final
 {
@@ -59,8 +60,8 @@ public:
         ) = delete;
 
     [[nodiscard]] DocumentContentResourceResult resolve(
-        const Application::DocumentContentReference& primaryReference,
-        const std::optional<Application::DocumentContentReference>&
+        const Domain::DocumentContentReference& primaryReference,
+        const std::optional<Domain::DocumentContentReference>&
             exportReference = std::nullopt
         ) const
     {
@@ -168,7 +169,7 @@ private:
     }
 
     [[nodiscard]] static Domain::Result<QString> relativePath(
-        const Application::DocumentContentReference& reference
+        const Domain::DocumentContentReference& reference
         )
     {
         const std::string_view value = reference.value();

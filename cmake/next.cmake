@@ -31,6 +31,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/calendar_event_timing.h
     src/next/domain/gregorian_date.h
     src/next/domain/domain_types.h
+    src/next/domain/document_content_reference.h
     src/next/domain/korean_teacher_key.h
     src/next/domain/native_english_teacher_id.h
     src/next/domain/gs_team_member_id.h

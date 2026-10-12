@@ -1,4 +1,5 @@
 #include "next/application/document_catalog_projection.h"
+#include "next/domain/document_content_reference.h"
 
 #include <QtTest/QtTest>
 
@@ -10,6 +11,7 @@
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Domain;
+using ClassMngr::Next::Domain::DocumentContentReference;
 
 namespace
 {

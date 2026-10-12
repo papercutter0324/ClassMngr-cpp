@@ -2,6 +2,7 @@
 #include "ui/shared/constants/gui_constants.h"
 #include "features/documents/document_catalog.h"
 #include "next/application/document_catalog_projection.h"
+#include "next/domain/document_content_reference.h"
 
 #include <QApplication>
 #include <QDir>
@@ -25,7 +26,7 @@ using DocumentCatalogProjection =
 using DocumentCatalogProjectionInput =
     ClassMngr::Next::Application::DocumentCatalogProjectionInput;
 using DocumentContentReference =
-    ClassMngr::Next::Application::DocumentContentReference;
+    ClassMngr::Next::Domain::DocumentContentReference;
 
 QTreeWidgetItem* childWithKey(
     QTreeWidgetItem* parent,

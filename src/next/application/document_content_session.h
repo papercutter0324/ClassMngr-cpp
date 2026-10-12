@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/domain/document_content_reference.h"
 #include "next/domain/operation_result.h"
 
 #include <algorithm>
@@ -27,44 +28,6 @@ enum class DocumentContentPhase
     Ready,
     Failed,
     Released
-};
-
-class DocumentContentReference final
-{
-public:
-    using Text = std::string;
-
-    DocumentContentReference() = default;
-
-    explicit DocumentContentReference(
-        Text text
-        )
-        : m_text(std::move(text))
-    {
-    }
-
-    [[nodiscard]] bool empty() const noexcept
-    {
-        return m_text.empty();
-    }
-
-    [[nodiscard]] const Text& value() const noexcept
-    {
-        return m_text;
-    }
-
-    [[nodiscard]] const Text& text() const noexcept
-    {
-        return m_text;
-    }
-
-    friend bool operator==(
-        const DocumentContentReference&,
-        const DocumentContentReference&
-        ) = default;
-
-private:
-    Text m_text;
 };
 
 // Identifies one accepted document-content request. Adapters must retain the
@@ -103,7 +66,7 @@ private:
 class DocumentContentSnapshot final
 {
 public:
-    using Reference = DocumentContentReference;
+    using Reference = Domain::DocumentContentReference;
 
     DocumentContentSnapshot() = default;
 
@@ -112,13 +75,14 @@ public:
         return m_phase;
     }
 
-    [[nodiscard]] const std::optional<Reference>& reference() const noexcept
+    [[nodiscard]] const std::optional<Domain::DocumentContentReference>&
+    reference() const noexcept
     {
         return m_reference;
     }
 
-    [[nodiscard]] const std::optional<Reference>& contentReference() const
-        noexcept
+    [[nodiscard]] const std::optional<Domain::DocumentContentReference>&
+    contentReference() const noexcept
     {
         return m_reference;
     }
@@ -138,7 +102,7 @@ private:
     friend class DocumentContentSession;
 
     DocumentContentPhase m_phase = DocumentContentPhase::Idle;
-    std::optional<Reference> m_reference;
+    std::optional<Domain::DocumentContentReference> m_reference;
     std::optional<Domain::OperationError> m_error;
 };
 
@@ -148,7 +112,7 @@ private:
 class DocumentContentSession final
 {
 public:
-    using Reference = DocumentContentReference;
+    using Reference = Domain::DocumentContentReference;
     using SessionToken = DocumentContentSessionToken;
 
     DocumentContentSession() = default;
@@ -159,7 +123,7 @@ public:
     }
 
     [[nodiscard]] Domain::Result<SessionToken> request(
-        Reference reference
+        Domain::DocumentContentReference reference
         )
     {
         if (!isValidReference(reference))
@@ -204,7 +168,7 @@ public:
         std::string reference
         )
     {
-        return request(Reference(std::move(reference)));
+        return request(Domain::DocumentContentReference(std::move(reference)));
     }
 
     [[nodiscard]] Domain::Result<void> beginLoading(
@@ -320,7 +284,7 @@ private:
     }
 
     [[nodiscard]] static bool isValidReference(
-        const Reference& reference
+        const Domain::DocumentContentReference& reference
         ) noexcept
     {
         if (reference.value().empty()

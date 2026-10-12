@@ -3,6 +3,7 @@
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "next/domain/document_content_reference.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/pages/pdf_viewer_page.h"
 
@@ -349,7 +350,7 @@ void PageManagerTests::leavingPdfViewerReleasesTheDocument()
 void PageManagerTests::referencedPdfLoadTracksReadyAndRelease()
 {
     using ClassMngr::Next::Application::DocumentContentPhase;
-    using ClassMngr::Next::Application::DocumentContentReference;
+    using ClassMngr::Next::Domain::DocumentContentReference;
 
     ApplicationServices services;
     PageManager pages;
@@ -404,7 +405,7 @@ void PageManagerTests::referencedPdfLoadTracksReadyAndRelease()
 void PageManagerTests::referencedPdfFailureCanStartANewGeneration()
 {
     using ClassMngr::Next::Application::DocumentContentPhase;
-    using ClassMngr::Next::Application::DocumentContentReference;
+    using ClassMngr::Next::Domain::DocumentContentReference;
     using ClassMngr::Next::Domain::ErrorCode;
 
     ApplicationServices services;
@@ -467,7 +468,7 @@ void PageManagerTests::referencedPdfFailureCanStartANewGeneration()
 void PageManagerTests::referencedPdfReplacementUsesTheCurrentGeneration()
 {
     using ClassMngr::Next::Application::DocumentContentPhase;
-    using ClassMngr::Next::Application::DocumentContentReference;
+    using ClassMngr::Next::Domain::DocumentContentReference;
 
     ApplicationServices services;
     PageManager pages;
