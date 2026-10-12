@@ -11,6 +11,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "domain/validation/class_info_validator.h"
+#include "domain/validation/class_time_validator.h"
 #include "domain/validation/roster_validator.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "domain/validation/teacher_validator.h"
@@ -63,6 +64,12 @@ private slots:
     void structuredNameValidation();
     void structuredTimeValidation_data();
     void structuredTimeValidation();
+    void classTimeValidatorAcceptsAndNormalizes_data();
+    void classTimeValidatorAcceptsAndNormalizes();
+    void classTimeValidatorRejectsInvalidFormats_data();
+    void classTimeValidatorRejectsInvalidFormats();
+    void classTimeValidatorChecksEndOrdering_data();
+    void classTimeValidatorChecksEndOrdering();
     void structuredColorAndFileNameValidation_data();
     void structuredColorAndFileNameValidation();
     void enumAndRangeValidation_data();
@@ -732,6 +739,152 @@ void SharedPolicyTests::structuredTimeValidation()
             [&code](const ValidationIssue& issue) { return issue.code == code; }
             ));
     }
+}
+
+void SharedPolicyTests::classTimeValidatorAcceptsAndNormalizes_data()
+{
+    QTest::addColumn<QString>("start");
+    QTest::addColumn<QString>("end");
+    QTest::addColumn<QString>("normalizedStart");
+    QTest::addColumn<QString>("normalizedEnd");
+
+    QTest::newRow("canonical-24-hour")
+        << QStringLiteral("16:05") << QStringLiteral("16:10")
+        << QStringLiteral("4:05 PM") << QStringLiteral("4:10 PM");
+    QTest::newRow("lowercase-pm")
+        << QStringLiteral("4:05 pm") << QStringLiteral("4:10 pm")
+        << QStringLiteral("4:05 PM") << QStringLiteral("4:10 PM");
+    QTest::newRow("trimmed-lowercase-pm")
+        << QStringLiteral("  4:05 pm  ") << QStringLiteral("\t4:10 pm\r\n")
+        << QStringLiteral("4:05 PM") << QStringLiteral("4:10 PM");
+    QTest::newRow("lowercase-am")
+        << QStringLiteral("4:05 am") << QStringLiteral("4:10 am")
+        << QStringLiteral("4:05 AM") << QStringLiteral("4:10 AM");
+}
+
+void SharedPolicyTests::classTimeValidatorAcceptsAndNormalizes()
+{
+    QFETCH(QString, start);
+    QFETCH(QString, end);
+    QFETCH(QString, normalizedStart);
+    QFETCH(QString, normalizedEnd);
+
+    const ClassTime input{
+        QStringLiteral("Monday"),
+        start,
+        end
+    };
+    const ValidationResult result = ClassTimeValidator::validate(
+        {input}, QStringLiteral("classTimes")
+        );
+    QVERIFY(result.isValid());
+
+    const ClassTime normalized = ClassTimeValidator::normalized(input);
+    QCOMPARE(normalized.startTime, normalizedStart);
+    QCOMPARE(normalized.endTime, normalizedEnd);
+    QVERIFY(ClassTimeValidator::validate(
+        {normalized}, QStringLiteral("classTimes")
+        ).isValid());
+}
+
+void SharedPolicyTests::classTimeValidatorRejectsInvalidFormats_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("invalidStart");
+
+    QTest::newRow("padded-am-pm-start")
+        << QStringLiteral("04:05 PM") << true;
+    QTest::newRow("padded-am-pm-end")
+        << QStringLiteral("04:05 PM") << false;
+    QTest::newRow("compact-am-pm-start")
+        << QStringLiteral("4:05PM") << true;
+    QTest::newRow("compact-am-pm-end")
+        << QStringLiteral("4:05PM") << false;
+    QTest::newRow("12-hour-seconds-start")
+        << QStringLiteral("4:05:00 PM") << true;
+    QTest::newRow("12-hour-seconds-end")
+        << QStringLiteral("4:05:00 PM") << false;
+    QTest::newRow("24-hour-seconds-start")
+        << QStringLiteral("16:05:00") << true;
+    QTest::newRow("24-hour-seconds-end")
+        << QStringLiteral("16:05:00") << false;
+}
+
+void SharedPolicyTests::classTimeValidatorRejectsInvalidFormats()
+{
+    QFETCH(QString, input);
+    QFETCH(bool, invalidStart);
+
+    const QString start = invalidStart ? input : QStringLiteral("5:00 PM");
+    const QString end = invalidStart ? QStringLiteral("4:00 PM") : input;
+    const ValidationResult result = ClassTimeValidator::validate(
+        {{QStringLiteral("Monday"), start, end}},
+        QStringLiteral("classTimes")
+        );
+
+    QCOMPARE(result.issues().size(), 1);
+    const ValidationIssue& issue = result.issues().first();
+    QCOMPARE(issue.code, QStringLiteral("schedule.time.invalid_format"));
+    QCOMPARE(
+        issue.field,
+        QStringLiteral("classTimes[0].%1")
+            .arg(invalidStart ? QStringLiteral("startTime")
+                              : QStringLiteral("endTime"))
+        );
+    QCOMPARE(issue.row, 0);
+    QCOMPARE(issue.column, invalidStart ? 1 : 2);
+    QCOMPARE(int(issue.severity), int(ValidationSeverity::Error));
+    QCOMPARE(issue.arguments.value(QStringLiteral("value")).toString(), input);
+    QVERIFY(std::none_of(
+        result.issues().cbegin(),
+        result.issues().cend(),
+        [](const ValidationIssue& candidate) {
+            return candidate.code == QStringLiteral(
+                "schedule.time.end_not_after_start");
+        }
+        ));
+}
+
+void SharedPolicyTests::classTimeValidatorChecksEndOrdering_data()
+{
+    QTest::addColumn<QString>("start");
+    QTest::addColumn<QString>("end");
+    QTest::addColumn<bool>("ordered");
+
+    QTest::newRow("end-after-start")
+        << QStringLiteral("4:05 PM") << QStringLiteral("4:10 PM") << true;
+    QTest::newRow("equal-times")
+        << QStringLiteral("4:05 PM") << QStringLiteral("4:05 PM") << false;
+    QTest::newRow("earlier-end")
+        << QStringLiteral("4:10 PM") << QStringLiteral("4:05 PM") << false;
+}
+
+void SharedPolicyTests::classTimeValidatorChecksEndOrdering()
+{
+    QFETCH(QString, start);
+    QFETCH(QString, end);
+    QFETCH(bool, ordered);
+
+    const ValidationResult result = ClassTimeValidator::validate(
+        {{QStringLiteral("Monday"), start, end}},
+        QStringLiteral("classTimes")
+        );
+    QCOMPARE(result.isValid(), ordered);
+    if (ordered)
+    {
+        QVERIFY(result.issues().isEmpty());
+        return;
+    }
+
+    QCOMPARE(result.issues().size(), 1);
+    const ValidationIssue& issue = result.issues().first();
+    QCOMPARE(issue.code, QStringLiteral("schedule.time.end_not_after_start"));
+    QCOMPARE(issue.field, QStringLiteral("classTimes[0].endTime"));
+    QCOMPARE(issue.row, 0);
+    QCOMPARE(issue.column, 2);
+    QCOMPARE(int(issue.severity), int(ValidationSeverity::Error));
+    QCOMPARE(issue.arguments.value(QStringLiteral("start")).toString(), start);
+    QCOMPARE(issue.arguments.value(QStringLiteral("end")).toString(), end);
 }
 
 void SharedPolicyTests::structuredColorAndFileNameValidation_data()

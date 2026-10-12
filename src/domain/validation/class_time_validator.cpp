@@ -8,6 +8,7 @@
 #include <QTime>
 #include <QVariantList>
 
+#include <array>
 #include <optional>
 
 namespace
@@ -34,14 +35,20 @@ std::optional<QTime> parseClassTime(const QString& value)
     }
 
     const QString normalized = value.trimmed().toUpper();
-    const QTime parsed = QTime::fromString(normalized, QStringLiteral("h:mm AP"));
-    if (!parsed.isValid()
-        || parsed.toString(QStringLiteral("h:mm AP")) != normalized)
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
+    };
+    const auto parsed = ScheduleValueParser::parseDisplayTime(
+        normalized,
+        allowedFormats
+        );
+    if (!parsed
+        || parsed->toString(QStringLiteral("h:mm AP")) != normalized)
     {
         return std::nullopt;
     }
 
-    return parsed;
+    return *parsed;
 }
 
 QString timeKey(const QTime& value)
