@@ -795,9 +795,49 @@ classInformationFieldsAndTeacherAssociationUseTypedReads()
             .endTime = QStringLiteral("12:05 pm")
         },
         {
+            .day = QStringLiteral("Wednesday"),
+            .startTime = QStringLiteral("11:05 am"),
+            .endTime = QStringLiteral("12:05 pm")
+        },
+        {
+            .day = QStringLiteral("Thursday"),
+            .startTime = QStringLiteral("11:05 am"),
+            .endTime = QStringLiteral("12:05 pm")
+        },
+        {
+            .day = QStringLiteral("Saturday"),
+            .startTime = QStringLiteral("11:05 am"),
+            .endTime = QStringLiteral("12:05 pm")
+        },
+        {
+            .day = QStringLiteral("Sunday"),
+            .startTime = QStringLiteral("11:05 am"),
+            .endTime = QStringLiteral("12:05 pm")
+        },
+        {
             .day = QStringLiteral("Monday"),
             .startTime = QStringLiteral("9:00 AM"),
             .endTime = QStringLiteral("9:45 AM")
+        },
+        {
+            .day = QStringLiteral(" Monday "),
+            .startTime = QStringLiteral("1:01 PM"),
+            .endTime = QStringLiteral("1:02 PM")
+        },
+        {
+            .day = QStringLiteral("monday"),
+            .startTime = QStringLiteral("2:01 PM"),
+            .endTime = QStringLiteral("2:02 PM")
+        },
+        {
+            .day = QStringLiteral(" Funday "),
+            .startTime = QStringLiteral("3:01 PM"),
+            .endTime = QStringLiteral("3:02 PM")
+        },
+        {
+            .day = QString(),
+            .startTime = QStringLiteral("4:01 PM"),
+            .endTime = QStringLiteral("4:02 PM")
         }
     };
     info.intensiveTimes = {
@@ -834,7 +874,10 @@ classInformationFieldsAndTeacherAssociationUseTypedReads()
         );
     QVERIFY(regularSchedule);
     QCOMPARE(regularSchedule->text(), QStringLiteral(
-        "Tues 11:05 am-12:05 pm; Mon 9:00 AM-9:45 AM"));
+        "Tues/Wed/Thurs/Sat/Sun 11:05 am-12:05 pm; "
+        "Mon 9:00 AM-9:45 AM; Monday 1:01 PM-1:02 PM; "
+        "monday 2:01 PM-2:02 PM; Funday 3:01 PM-3:02 PM; "
+        "N/A 4:01 PM-4:02 PM"));
     QLabel* const intensiveSchedule = infoRowValueLabelFor(
         *classPage,
         QStringLiteral("Intensive")

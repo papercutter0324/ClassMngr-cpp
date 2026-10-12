@@ -7,6 +7,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/teacher.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/models/class_tab_navigation_model.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/my_classes_class_summary_batch_read_query.h"
@@ -250,33 +251,26 @@ QString dayAbbreviation(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (parsed && parsed->text == day)
     {
-        return MyClassesPage::tr("Mon");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
-        return MyClassesPage::tr("Tues");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
-        return MyClassesPage::tr("Wed");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
-        return MyClassesPage::tr("Thurs");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
-        return MyClassesPage::tr("Fri");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
-        return MyClassesPage::tr("Sat");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
-        return MyClassesPage::tr("Sun");
+        switch (parsed->value)
+        {
+        case ScheduleValueParser::Weekday::Monday:
+            return MyClassesPage::tr("Mon");
+        case ScheduleValueParser::Weekday::Tuesday:
+            return MyClassesPage::tr("Tues");
+        case ScheduleValueParser::Weekday::Wednesday:
+            return MyClassesPage::tr("Wed");
+        case ScheduleValueParser::Weekday::Thursday:
+            return MyClassesPage::tr("Thurs");
+        case ScheduleValueParser::Weekday::Friday:
+            return MyClassesPage::tr("Fri");
+        case ScheduleValueParser::Weekday::Saturday:
+            return MyClassesPage::tr("Sat");
+        case ScheduleValueParser::Weekday::Sunday:
+            return MyClassesPage::tr("Sun");
+        }
     }
 
     return day.trimmed();
