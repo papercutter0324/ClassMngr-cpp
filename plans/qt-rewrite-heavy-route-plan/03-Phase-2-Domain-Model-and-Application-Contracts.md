@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F739 is accepted and F740, consolidating Gregorian date conversion for Calendar recurrence and series-edit planners in the Qt-free Domain layer, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F740 is accepted at `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df` and F741, reusing `ScheduleKeyRules::parseWeekday` in `ClassDetailsSaveWorkflow`, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F740 - Share canonical Gregorian date parsing, formatting, and day-number conversion across the Calendar recurrence and series-edit Application planners.
+- F741 - Reuse `ScheduleKeyRules::parseWeekday` in `ClassDetailsSaveWorkflow`, preserving Qt whitespace trimming, ASCII-insensitive matching, and strict raw-time behavior.
 
 ## Objective
 

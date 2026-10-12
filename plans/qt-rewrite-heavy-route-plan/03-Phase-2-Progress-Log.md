@@ -28030,3 +28030,57 @@ a test-only opportunity, with no production issue. Birthday parser sharing was
 not selected because its value is small and its whitespace rules deliberately
 differ. This matrix is recorded before implementation. Batch 179 is active
 with F740; F707 and F709 remain deferred.
+
+### F740 Shared Gregorian date value - accepted - 2026-10-12
+
+F740 is accepted at code/test commit
+`9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. The new Qt-free Domain
+`GregorianDate` uses an `int64_t` day number over `0001-01-01` through
+`9999-12-31`. Both Application planners now use it, and
+`CalendarEventTiming::isCanonicalDate` delegates to its canonical parser. The
+new header is registered in the CMake Domain inventory.
+
+In `build/windows-x64-debug-ninja`, the Visual Studio 2026 x64 Developer
+build produced `ClassMngr` and `ClassMngrNextApplicationCalendarEventTests`.
+Exactly one CTest registration (#246) was confirmed; the exact test passed
+1/1 in 0.29 seconds. The scoped diff check passed; no full suite ran. The
+`vswhere.exe` lookup, optional Vulkan headers, and long object-directory path
+notices were nonblocking. No unrelated untracked paths were changed.
+
+**Decision: accept F740.** F739 remains accepted; Batch 179 continues with
+F741. F707 and F709 remain deferred.
+
+### Batch 179 continuation - F741 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the duplicate weekday-name matcher in
+`src/next/application/class_details_save_workflow.h`. The shared parser is
+`ScheduleKeyRules::parseWeekday` in
+`src/domain/rules/schedule_key_rules.h`; the workflow has a direct test seam in
+`tests/next_application_class_details_save_use_case_tests.cpp`.
+
+**F741 is selected:** reuse the Domain weekday parser in the save workflow
+while preserving its input normalization and failure contract.
+
+1. Replace only the private duplicate weekday-name matching with
+   `ScheduleKeyRules::parseWeekday`. Keep `trimQtWhitespace` before parsing
+   and preserve the equivalent ASCII case-insensitive comparison. Invalid
+   weekdays retain the existing null result. Keep the raw-time parser,
+   workflow order, error stage/message, and normalized save output unchanged;
+   add the direct header dependency if needed.
+2. Extend only
+   `tests/next_application_class_details_save_use_case_tests.cpp` to cover
+   Monday-Sunday through raw conflict conversion using mixed ASCII case and
+   Qt whitespace, and verify the resulting weekday indices in conflict and
+   save schedules. Also verify invalid weekdays retain the existing regular-
+   conflict failure stage/message and call order. Keep existing workflow-order
+   and strict-time tests unchanged.
+3. No CMake changes are expected. Build `ClassMngr` and
+   `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`, confirm exactly
+   one CTest registration named
+   `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`, and run only that
+   exact CTest. Run no full suite.
+
+Explorer and Investigator confirmed this is a live duplicate with a direct
+workflow test seam. HH:mm sharing was not selected because it would require a
+new cross-character-type API. This matrix is recorded before implementation.
+Batch 179 is active with F741; F707 and F709 remain deferred.

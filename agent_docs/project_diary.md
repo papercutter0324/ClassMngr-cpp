@@ -4648,3 +4648,20 @@ page acceptance gap was not selected because it has no production/core change
 to justify a test-only slice; birthday parser sharing has lower value and
 intentionally different whitespace boundaries. F707 and F709 remain deferred;
 Phase 2 remains In Progress with Gates 1 and 2 Partial.
+
+## F740 Calendar Gregorian date conversion - accepted - 2026-10-12
+
+F740 is accepted and committed as
+`9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
+`ClassMngrNextApplicationCalendarEventTests` built in the existing Windows x64
+Debug Ninja tree under the VS 2026 x64 Developer environment. Exact CTest
+registration #246 (count 1) passed 1/1 in 0.29 seconds; no full suite ran.
+The scoped diff check passed. CMake reconfigured after detecting the header;
+nonblocking warnings included `vswhere.exe`, optional Vulkan, long paths for
+unrelated targets, and LF/CRLF line endings.
+
+F741 is selected in Batch 179 to reuse `ScheduleKeyRules::parseWeekday` in
+`ClassDetailsSaveWorkflow`, preserving Qt whitespace trimming,
+ASCII-insensitive matching, and strict raw-time behavior. Its existing
+workflow focused test is recorded in the Phase 2 progress log. F707 and F709
+remain deferred.

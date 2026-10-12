@@ -4580,3 +4580,22 @@ F517 is accepted in Batch 93. The paired packaged Windows x64 Release `lifecycle
 F518 is accepted in Batch 94. PageManager and the selected Classes editor now report value-only recursive descendant counts. Independent tests and the packaged Windows x64 Release paired `lifecycle-classes`/`lifecycle-sub-prep` run passed; both route harnesses exited 0 and validation passed. Per-page JSON keys matched instantiated pages at the Classes checkpoints and settled snapshots; class/editor counts were recorded across both leave/re-entry cycles. No data reads were added on fresh Classes re-entry. Five-second working sets remain over 262,144,000 bytes: Classes 267,280,384 and Sub Prep 262,733,824. The Classes subtree count changed with refresh and re-entry, so the data identifies widget-count movement but does not attribute memory. The standard Visual Studio Debug tree remains blocked before compilation by FileTracker `E_ACCESSDENIED`; focused checks passed in the existing Ninja tree. The full 24-route Windows/macOS gate and visual parity remain open. Batch 95/F519 will compare schedule-row and navigation-root descendants across refresh, event-loop return, and leave before selecting any memory remedy.
 
 F519 is accepted in Batch 95. Focused tests and the fresh packaged Windows x64 Release paired routes passed. Current/live schedule rows showed deferred cleanup from 8/24 after refresh 1 to 9/9 at the natural event-loop return; direct navigation roots showed 1/2 after refresh, 1/1 after the normal return, 0/0 on synchronous leave, and 1/1 on re-entry. The Classes route added no class or class-info reads on re-entry. Five-second working sets remain over 262,144,000 bytes: Classes 267,591,680 and Sub Prep 263,360,512. This establishes the widget cleanup timing, not a byte attribution. The standard Visual Studio Debug tree still fails before compilation at FileTracker `E_ACCESSDENIED`; focused Ninja checks passed. The full 24-route Windows/macOS gate and visual parity remain open. Batch 96/F520 will assess whether synchronous disposal of replaced tab roots is safe and useful before any deletion policy changes.
+
+## Phase 2 current progress - 2026-10-12
+
+F740 Gregorian date conversion across the Calendar recurrence and series-edit
+planners is accepted and committed as
+`9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. In the existing Windows x64
+Debug Ninja tree under the VS 2026 x64 Developer environment, `ClassMngr` and
+`ClassMngrNextApplicationCalendarEventTests` built; exact CTest registration
+#246 (count 1) passed 1/1 in 0.29 seconds. The scoped diff check passed; no
+full suite ran.
+
+F741 is selected in Batch 179 to reuse `ScheduleKeyRules::parseWeekday` in
+`ClassDetailsSaveWorkflow`, preserving Qt whitespace trimming,
+ASCII-insensitive matching, and strict raw-time behavior. Its existing
+workflow focused test and full matrix are recorded in the Phase 2 progress
+log. F707 and F709 remain deferred. Phase 2 is In Progress/Open with Gates 1
+and 2 Partial; F739 remains accepted, F625's assessment is accepted, F626 is
+deferred, and separate current-source Phase 0 evidence remains Windows x64
+2/24 and macOS universal 0/24.
