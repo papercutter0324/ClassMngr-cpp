@@ -62,10 +62,6 @@ private:
         ScheduleEntry entry;
     };
 
-    QTime parseTime(
-        const QString& value
-        ) const;
-
     QList<ScheduleRow> buildRows(
         int startHour,
         int finalHour,

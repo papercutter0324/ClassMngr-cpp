@@ -2,6 +2,8 @@
 
 #include "domain/rules/schedule_key_rules.h"
 
+#include <QStringList>
+
 #include <string>
 #include <string_view>
 
@@ -81,6 +83,41 @@ Result<CanonicalTime> parseTime(QStringView input)
             ),
         normalized
     };
+}
+
+Result<QTime> parseDisplayTime(QStringView input)
+{
+    const QString trimmed = input.trimmed().toString();
+    if (trimmed.isEmpty())
+    {
+        return std::unexpected(
+            QStringLiteral("Invalid display time.")
+            );
+    }
+
+    const QStringList formats{
+        QStringLiteral("h:mm AP"),
+        QStringLiteral("h:mmAP"),
+        QStringLiteral("hh:mm AP"),
+        QStringLiteral("hh:mmAP"),
+        QStringLiteral("H:mm"),
+        QStringLiteral("HH:mm"),
+        QStringLiteral("H:mm:ss"),
+        QStringLiteral("HH:mm:ss")
+    };
+
+    for (const QString& format : formats)
+    {
+        const QTime time = QTime::fromString(trimmed, format);
+        if (time.isValid())
+        {
+            return time;
+        }
+    }
+
+    return std::unexpected(
+        QStringLiteral("Invalid display time.")
+        );
 }
 
 } // namespace ScheduleValueParser

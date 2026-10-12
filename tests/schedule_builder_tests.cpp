@@ -140,8 +140,7 @@ void ScheduleBuilderTests::appliesBlankDayAndVisibleDayRules()
 void ScheduleBuilderTests::
 retainsAcceptedTimeFormatsAndSkipsInvalidStartsOnly()
 {
-    ScheduleBuilderSourceClass source = scheduleClass(42);
-    source.regularSchedule = {
+    const std::vector<ScheduleBuilderSourceScheduleRow> inputRows{
         time(u"Monday", u"4:00 PM", u"invalid end"),
         time(u"Monday", u"4:00PM", u""),
         time(u"Monday", u"04:00 PM", u"not a time"),
@@ -152,21 +151,53 @@ retainsAcceptedTimeFormatsAndSkipsInvalidStartsOnly()
         time(u"Monday", u"04:00:00", u"4:50 PM"),
         time(u"Monday", u"invalid start", u"4:55 PM")
     };
+    ScheduleBuilderSourceSnapshot source;
+    for (std::size_t index = 0; index < inputRows.size(); ++index)
+    {
+        ScheduleBuilderSourceClass entry = scheduleClass(
+            42 + static_cast<int>(index)
+            );
+        entry.regularSchedule = {inputRows[index]};
+        source.classes.push_back(std::move(entry));
+    }
 
     const ScheduleBuildResult result = build(
-        {.classes = {source}},
+        source,
         false,
         {QStringLiteral("Monday")}
         );
 
-    QCOMPARE(result.schedule[QStringLiteral("Monday")]
-                 [QStringLiteral("16:00")]
-                     .size(),
-             4);
-    QCOMPARE(result.schedule[QStringLiteral("Monday")]
-                 [QStringLiteral("04:00")]
-                     .size(),
-             4);
+    QCOMPARE(result.schedule.keys(), QStringList{QStringLiteral("Monday")});
+    const auto daySchedule = result.schedule.value(QStringLiteral("Monday"));
+    QCOMPARE(
+        daySchedule.keys(),
+        (QStringList{QStringLiteral("04:00"), QStringLiteral("16:00")})
+        );
+
+    const QList<ScheduleEntry> twelveHourEntries =
+        daySchedule.value(QStringLiteral("16:00"));
+    QCOMPARE(twelveHourEntries.size(), 4);
+    for (int index = 0; index < twelveHourEntries.size(); ++index)
+    {
+        // All four starts remain scheduled despite their invalid/empty ends.
+        QCOMPARE(twelveHourEntries.at(index).classId, 42 + index);
+    }
+
+    const QList<ScheduleEntry> twentyFourHourEntries =
+        daySchedule.value(QStringLiteral("04:00"));
+    QCOMPARE(twentyFourHourEntries.size(), 4);
+    for (int index = 0; index < twentyFourHourEntries.size(); ++index)
+    {
+        QCOMPARE(twentyFourHourEntries.at(index).classId, 46 + index);
+    }
+
+    for (const QList<ScheduleEntry>& entries : daySchedule)
+    {
+        for (const ScheduleEntry& entry : entries)
+        {
+            QVERIFY(entry.classId != 50);
+        }
+    }
     QVERIFY(!result.uses55Endings);
 }
 

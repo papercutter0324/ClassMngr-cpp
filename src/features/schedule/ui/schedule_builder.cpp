@@ -1,5 +1,7 @@
 #include "schedule_builder.h"
 
+#include "domain/rules/schedule_value_parser.h"
+
 #include <QTime>
 
 #include <charconv>
@@ -93,16 +95,23 @@ ScheduleBuildResult ScheduleBuilder::build(
                 continue;
             }
 
-            const QTime startTime =
-                parseTime(QString::fromStdU16String(time.startTime));
+            const QString startText =
+                QString::fromStdU16String(time.startTime);
+            const auto parsedStartTime =
+                ScheduleValueParser::parseDisplayTime(startText);
 
-            if (!startTime.isValid())
+            if (!parsedStartTime)
             {
                 continue;
             }
+            const QTime startTime = *parsedStartTime;
 
+            const QString endText =
+                QString::fromStdU16String(time.endTime);
+            const auto parsedEndTime =
+                ScheduleValueParser::parseDisplayTime(endText);
             const QTime endTime =
-                parseTime(QString::fromStdU16String(time.endTime));
+                parsedEndTime ? *parsedEndTime : QTime{};
 
             int adjustedHour =
                 startTime.hour();
@@ -187,46 +196,6 @@ ScheduleBuildResult ScheduleBuilder::build(
     }
 
     return result;
-}
-
-QTime ScheduleBuilder::parseTime(
-    const QString& value
-    ) const
-{
-    const QString trimmed =
-        value.trimmed();
-
-    if (trimmed.isEmpty())
-    {
-        return {};
-    }
-
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    for (const QString& format : formats)
-    {
-        const QTime time =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (time.isValid())
-        {
-            return time;
-        }
-    }
-
-    return {};
 }
 
 QList<ScheduleRow> ScheduleBuilder::buildRows(

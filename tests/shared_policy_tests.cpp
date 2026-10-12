@@ -34,6 +34,8 @@ private slots:
     void weekdayParsing();
     void timeParsing_data();
     void timeParsing();
+    void displayTimeParsing_data();
+    void displayTimeParsing();
     void sqlFailurePreservesContext_data();
     void sqlFailurePreservesContext();
     void schemaFailureRollsBack();
@@ -129,6 +131,60 @@ void SharedPolicyTests::timeParsing()
     if (result)
     {
         QCOMPARE(result->text, canonical);
+    }
+}
+
+void SharedPolicyTests::displayTimeParsing_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("valid");
+    QTest::addColumn<QString>("canonical");
+
+    QTest::newRow("12-hour-space-one-digit")
+        << QStringLiteral("4:05 PM") << true << QStringLiteral("16:05");
+    QTest::newRow("12-hour-compact-one-digit")
+        << QStringLiteral("4:05PM") << true << QStringLiteral("16:05");
+    QTest::newRow("12-hour-space-two-digits")
+        << QStringLiteral("04:05 PM") << true << QStringLiteral("16:05");
+    QTest::newRow("12-hour-compact-two-digits")
+        << QStringLiteral("04:05PM") << true << QStringLiteral("16:05");
+    QTest::newRow("24-hour-one-digit")
+        << QStringLiteral("4:05") << true << QStringLiteral("04:05");
+    QTest::newRow("24-hour-two-digits")
+        << QStringLiteral("04:05") << true << QStringLiteral("04:05");
+    QTest::newRow("24-hour-seconds-one-digit")
+        << QStringLiteral("4:05:00") << true << QStringLiteral("04:05");
+    QTest::newRow("24-hour-seconds-two-digits")
+        << QStringLiteral("04:05:00") << true << QStringLiteral("04:05");
+    QTest::newRow("trimmed-whitespace")
+        << QStringLiteral(" \t04:05 PM\r\n") << true
+        << QStringLiteral("16:05");
+    QTest::newRow("empty") << QString() << false << QString();
+    QTest::newRow("unrecognized")
+        << QStringLiteral("not a time") << false << QString();
+    QTest::newRow("invalid-hour")
+        << QStringLiteral("24:05") << false << QString();
+    QTest::newRow("invalid-minute")
+        << QStringLiteral("4:60 PM") << false << QString();
+    QTest::newRow("invalid-second")
+        << QStringLiteral("04:05:60") << false << QString();
+}
+
+void SharedPolicyTests::displayTimeParsing()
+{
+    QFETCH(QString, input);
+    QFETCH(bool, valid);
+    QFETCH(QString, canonical);
+
+    const auto result = ScheduleValueParser::parseDisplayTime(input);
+    QCOMPARE(result.has_value(), valid);
+    if (result)
+    {
+        QCOMPARE(result->toString(QStringLiteral("HH:mm")), canonical);
+    }
+    else
+    {
+        QVERIFY(!result.error().isEmpty());
     }
 }
 

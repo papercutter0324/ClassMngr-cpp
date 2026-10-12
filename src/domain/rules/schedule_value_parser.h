@@ -34,5 +34,6 @@ struct CanonicalTime
 
 [[nodiscard]] Result<CanonicalWeekday> parseWeekday(QStringView input);
 [[nodiscard]] Result<CanonicalTime> parseTime(QStringView input);
+[[nodiscard]] Result<QTime> parseDisplayTime(QStringView input);
 
 } // namespace ScheduleValueParser
