@@ -212,7 +212,18 @@ invalidRequestsAreRejectedBeforeRead()
 
     request = validRequest();
     request.mode = static_cast<ScheduleViewMode>(255);
-    verifyInvalid(std::move(request));
+    {
+        FakeReadPort readPort;
+        SubPrepRosterOutputSourceQuery query(readPort);
+        const auto result = query.execute(request);
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("The roster-output schedule mode is invalid.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 0);
+    }
 
     request = validRequest();
     request.selectedExtraColumns = {"Notes", "Notes"};

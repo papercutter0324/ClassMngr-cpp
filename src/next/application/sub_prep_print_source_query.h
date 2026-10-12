@@ -247,14 +247,6 @@ template <typename TypedId>
         && dayValue <= static_cast<std::uint8_t>(SubPrepWeekday::Sunday);
 }
 
-[[nodiscard]] inline bool isValidMode(
-    const ScheduleViewMode mode
-    ) noexcept
-{
-    return mode == ScheduleViewMode::Regular
-        || mode == ScheduleViewMode::Intensive;
-}
-
 [[nodiscard]] inline Domain::OperationError invalidInput(
     const char* message
     )
@@ -333,7 +325,7 @@ template <typename TypedId>
         }
     }
 
-    if (!isValidMode(request.mode))
+    if (!isValidScheduleViewMode(request.mode))
     {
         return Domain::Result<void>::failure(
             invalidInput("The Sub Prep schedule mode is invalid.")

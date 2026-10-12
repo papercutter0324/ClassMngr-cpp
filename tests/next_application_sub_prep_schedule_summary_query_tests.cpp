@@ -229,7 +229,16 @@ invalidRequestsAreRejectedBeforeRead()
     };
     for (const auto& request : invalidRequests)
     {
-        verifyError(query.execute(request), ErrorCode::InvalidInput);
+        const auto result = query.execute(request);
+        verifyError(result, ErrorCode::InvalidInput);
+        if (request.mode == static_cast<ScheduleViewMode>(255))
+        {
+            QCOMPARE(
+                result.error().message,
+                std::string("The Sub Prep schedule mode is invalid.")
+                );
+            QVERIFY(!result.error().recoverable);
+        }
     }
 
     QCOMPARE(readPort.calls, 0);

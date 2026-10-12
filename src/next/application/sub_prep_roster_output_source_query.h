@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_view_projection.h"
 #include "next/application/sub_prep_print_source_query.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -209,12 +210,6 @@ template <typename TypedId>
         && value <= static_cast<std::uint8_t>(SubPrepWeekday::Sunday);
 }
 
-[[nodiscard]] inline bool isValidMode(const ScheduleViewMode mode) noexcept
-{
-    return mode == ScheduleViewMode::Regular
-        || mode == ScheduleViewMode::Intensive;
-}
-
 [[nodiscard]] inline Domain::OperationError invalidInput(
     const char* message
     )
@@ -293,7 +288,7 @@ template <typename TypedId>
         }
     }
 
-    if (!isValidMode(request.mode))
+    if (!isValidScheduleViewMode(request.mode))
     {
         return Domain::Result<void>::failure(
             invalidInput("The roster-output schedule mode is invalid.")

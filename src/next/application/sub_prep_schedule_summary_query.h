@@ -290,8 +290,7 @@ private:
             }
         }
 
-        if (request.mode != ScheduleViewMode::Regular
-            && request.mode != ScheduleViewMode::Intensive)
+        if (!isValidScheduleViewMode(request.mode))
         {
             return Domain::Result<void>::failure(
                 invalidInput("The Sub Prep schedule mode is invalid.")

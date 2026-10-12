@@ -36,6 +36,14 @@ enum class ScheduleViewMode
     Intensive
 };
 
+[[nodiscard]] inline bool isValidScheduleViewMode(
+    const ScheduleViewMode mode
+    ) noexcept
+{
+    return mode == ScheduleViewMode::Regular
+        || mode == ScheduleViewMode::Intensive;
+}
+
 // A schedule cell is display/navigation metadata only. An absent class or
 // teacher reference is an explicit empty or missing-record fallback; this
 // projection does not own or resolve a class/teacher record graph.
@@ -181,14 +189,6 @@ template <typename TypedId>
         != values.cend();
 }
 
-[[nodiscard]] inline bool isValidMode(
-    const ScheduleViewMode mode
-    ) noexcept
-{
-    return mode == ScheduleViewMode::Regular
-        || mode == ScheduleViewMode::Intensive;
-}
-
 [[nodiscard]] inline Domain::Result<void> validateCell(
     const ScheduleViewCell& cell,
     const std::vector<std::int32_t>& existingOrders,
@@ -244,7 +244,7 @@ template <typename TypedId>
             );
     }
 
-    if (!isValidMode(cell.mode))
+    if (!isValidScheduleViewMode(cell.mode))
     {
         return Domain::Result<void>::failure(
             invalidInput("Schedule cell mode is invalid.")
