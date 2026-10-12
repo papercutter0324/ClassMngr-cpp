@@ -33,13 +33,14 @@
   passed 3/3. F757 is committed at
   `04e95b2a545741c3e33903ac6c3af9383e9390fa`; its two query targets built and
   the two exact CTests passed 2/2. F758 is accepted at
-  cde4b15fdce233546923fe23b338ae5435cfe8ef; the selected-class grade,
-  subtitle, and subtitle-batch tests passed 3/3 with one exact CTest
-  registration each under VS 18.10.1 x64 Developer. F759 is selected in
-  Batch 189 to reuse the validator in roster availability and column-names
-  batch queries; its pre-implementation matrix preserves each response
-  contract and adds malformed-ID and exact duplicate-error coverage. No full
-  suite ran for F758.
+  cde4b15fdce233546923fe23b338ae5435cfe8ef; its three selected-class query
+  CTests passed 3/3 under VS 18.10.1 x64 Developer. F759 is accepted at
+  6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932; its two roster batch-query
+  targets built under Visual Studio 18 x64 Debug and both exact CTests passed
+  2/2. The sandboxed build hit FileTracker access denial and the same command
+  succeeded outside the sandbox; CTest required the Debug configuration. F760
+  is selected in Batch 189 across the roster read and two print queries,
+  preserving their distinct input and response contracts. No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

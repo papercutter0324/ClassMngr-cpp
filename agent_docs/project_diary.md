@@ -4878,3 +4878,18 @@ availability and column-names batch queries. Their request errors and
 pre-port boundaries match, while their response checks differ and remain
 query-specific. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+## Phase 2 F759 acceptance and F760 selection — 2026-10-13
+
+F759 is accepted at `6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932`. The two
+roster batch queries now share canonical positive-decimal ID validation,
+preserving exact request errors, empty-input behavior, and their distinct
+response checks. The existing Visual Studio 18 x64 Debug build completed and
+both exact CTests passed 2/2; no full suite ran. The restricted FileTracker
+access failure was resolved by rerunning the same build outside the sandbox.
+
+F760 is selected in Batch 189 for the remaining roster read queries. Its
+matrix keeps the singular roster read's recoverable input failure distinct
+from the print queries' nonrecoverable failures and preserves their
+query-specific response checks. F707/F709 remain deferred; Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.

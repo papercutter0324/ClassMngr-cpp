@@ -4874,21 +4874,19 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F758 accepted; F759 selected)
+## Phase 2 current position — 2026-10-13 (F759 accepted; F760 selected)
 
-F758 is accepted at
-`cde4b15fdce233546923fe23b338ae5435cfe8ef`. Three selected-class queries
-now share `Application::isCanonicalPositiveDecimalId`; their caller-specific
-errors, read boundaries, and output checks remain intact. Under VS 18.10.1
-x64 Developer, `ClassMngr` and all three focused targets built; each exact
-CTest registration appeared once and the tests passed 3/3 in 0.10 seconds.
-No full suite ran.
+F759 is accepted at
+`6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932`. The roster availability and
+column-names batch queries now share `Application::isCanonicalPositiveDecimalId`.
+Their request errors, empty-input behavior, and query-specific response
+checks remain intact. Under the Visual Studio 18 x64 Debug configuration,
+`ClassMngr` and both focused targets built; each exact CTest registered once
+and both passed 2/2. No full suite ran.
 
-F759 is selected in Batch 189: reuse the shared validator in the roster
-availability and roster column-names batch queries. Preserve each query's
-response checks and outputs; add malformed-ID and exact duplicate-error
-coverage at the existing port boundary. The remaining ordered Batch 189
-candidates are recorded in the Phase 2 plan. F707/F709 remain deferred.
-Phase 2 remains In Progress/Open with Gates 1 and 2 Partial; separate
-current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
-0/24.
+F760 is selected in Batch 189 to reuse the same helper across the roster read,
+roster print class-info, and roster template print-source queries. Preserve
+their distinct invalid-input recoverability/messages and existing
+pre-read/post-read boundaries. F707/F709 remain deferred. Phase 2 remains
+In Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.

@@ -29065,6 +29065,64 @@ the exact duplicate error, code, recoverability, and zero calls. Build
 `ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests` and
 `ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests`; confirm one
 registration for each exact CTest name, then run only those two exact CTests.
-Run no full suite. This matrix is recorded before implementation;
-verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
-Partial, and the formal exit gate remains Open.
+Run no full suite. This matrix was recorded before implementation. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.
+
+### F759 roster batch query canonical ID validation - accepted - 2026-10-13
+
+F759 is accepted at commit
+`6f100bc1ad0e3cb5eb81fa2a036d5d35b0e1c932`. In the existing
+`build/windows-x64-debug` Visual Studio 18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests` and
+`ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests` built
+successfully. Each exact CTest name had one registration; the corrected exact
+CTest run passed 2/2. The initial restricted
+build failed with FileTracker `E_ACCESSDENIED`; the same build succeeded
+outside the sandbox. The first CTest invocation omitted `-C Debug` and was
+corrected. No full suite ran.
+
+### F760 three roster reads canonical ID validation - selected and acceptance matrix - 2026-10-13
+
+**F760 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`roster_read_query.h`, `roster_print_class_info_read_query.h`, and
+`roster_template_print_source_read_query.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is expected.
+
+Preserve each query's exact contract:
+
+- `RosterReadUseCase`: an invalid ClassId returns recoverable `InvalidInput`
+  with `Class ID must be a canonical positive integer.` before the port. A
+  valid request reads once and forwards the full result. Keep the successful
+  empty raw roster, row/column order, UTF-16 values, and source failures; this
+  query has no returned-ID check, duplicate handling, or batch-empty path.
+- `RosterPrintClassInfoReadQuery`: an invalid ClassId returns nonrecoverable
+  `InvalidInput` with
+  `Roster print class ID must be a canonical positive integer.` before the
+  read. A returned class mismatch returns nonrecoverable `Validation` with
+  `A roster print class information read returned a different class
+  identifier.` after one read. Preserve port failures and print field
+  selection.
+- `RosterTemplatePrintSourceReadQuery`: an empty request succeeds without a
+  read. Invalid or duplicate IDs return nonrecoverable `InvalidInput` with
+  `Roster print class IDs must be canonical, positive, and unique.` before
+  the read. After one read, preserve nonrecoverable count validation with
+  `Roster print batch returned a different number of classes.` and identity,
+  nested class-info ID, and order validation with
+  `Roster print batch returned a different class identity or order.` Preserve
+  requested order and snapshot fields.
+
+Add/assert malformed `42x` for `RosterReadUseCase` and the template query.
+Pin exact invalid messages, result codes, recoverability, and call boundaries
+for all three; pin the print-class mismatch message/code/recoverability and
+one-read boundary; and pin both template post-read messages, nonrecoverability,
+and one-read boundaries. Retain existing error and output fixtures.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationRosterReadQueryTests`,
+`ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests`, and
+`ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests`. Confirm
+exactly one registration for each exact CTest name, then run only those three
+exact CTests. Run no full suite. This matrix is recorded before implementation;
+F760 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
+remain Partial, and the formal exit gate remains Open.
