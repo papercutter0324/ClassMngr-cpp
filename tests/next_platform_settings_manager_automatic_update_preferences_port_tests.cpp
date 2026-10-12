@@ -1,11 +1,14 @@
 #include "core/settingsmanager.h"
 #include "next/application/automatic_update_preferences.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -37,6 +40,8 @@ private slots:
     void preservesLegacyQVariantCoercion();
     void unavailableSettingUsesEnabledDefault();
     void roundTripsThroughSettingsManager();
+    void syncFailurePreservesPreviousValueAndAllowsRetry();
+    void syncFailurePreservesMissingValueAndUnrelatedSettings();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -86,7 +91,7 @@ preservesLegacySettingsKey()
     QCOMPARE(key, QStringLiteral("updates/automaticChecksEnabled"));
     settings.set(QStringLiteral("updates/unrelatedValue"), 17);
 
-    port.write({.automaticChecksEnabled = false});
+    QVERIFY(port.write({.automaticChecksEnabled = false}));
 
     QCOMPARE(settings.get(key).toBool(), false);
     QCOMPARE(
@@ -133,7 +138,7 @@ roundTripsThroughSettingsManager()
 
     for (const bool expected : {true, false})
     {
-        port.write({.automaticChecksEnabled = expected});
+        QVERIFY(port.write({.automaticChecksEnabled = expected}));
         const AutomaticUpdatePreferences loaded = port.read();
 
         QCOMPARE(loaded.automaticChecksEnabled, expected);
@@ -144,6 +149,118 @@ roundTripsThroughSettingsManager()
             expected
             );
     }
+}
+
+void NextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests::
+syncFailurePreservesPreviousValueAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = automaticChecksEnabledKey();
+    const QString unrelatedKey = QStringLiteral("updates/unrelatedValue");
+    settings.set(key, true);
+    settings.set(unrelatedKey, 41);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerAutomaticUpdatePreferencesPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedWrite = faultablePort.write({
+        .automaticChecksEnabled = false
+    });
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QVERIFY(settings.get(key).toBool());
+    QVERIFY(faultablePort.read().automaticChecksEnabled);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 41);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(persistedSettings.value(key).toBool());
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 41);
+
+    injectAccessError = false;
+    const auto retryResult = faultablePort.write({
+        .automaticChecksEnabled = false
+    });
+    QVERIFY(retryResult);
+    QCOMPARE(synchronizationAttempts, 2);
+    QVERIFY(!settings.get(key).toBool());
+    QVERIFY(!faultablePort.read().automaticChecksEnabled);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 41);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.value(key).toBool());
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 41);
+}
+
+void NextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests::
+syncFailurePreservesMissingValueAndUnrelatedSettings()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = automaticChecksEnabledKey();
+    const QString unrelatedKey = QStringLiteral("updates/unrelatedValue");
+    settings.remove(key);
+    settings.set(unrelatedKey, 29);
+    settings.sync();
+
+    const SettingsManagerAutomaticUpdatePreferencesPort faultablePort(
+        [](QSettings&)
+        {
+            return QSettings::AccessError;
+        }
+        );
+
+    const auto failedWrite = faultablePort.write({
+        .automaticChecksEnabled = false
+    });
+    QVERIFY(!failedWrite);
+    QCOMPARE(
+        failedWrite.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(failedWrite.error().recoverable);
+    QVERIFY(
+        failedWrite.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QVERIFY(!settings.get(key).isValid());
+    QVERIFY(faultablePort.read().automaticChecksEnabled);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 29);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(key));
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 29);
 }
 
 QTEST_APPLESS_MAIN(

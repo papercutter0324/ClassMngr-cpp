@@ -6,6 +6,9 @@
 #include <QString>
 #include <QVariant>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -16,7 +19,12 @@ class SettingsManagerAutomaticUpdatePreferencesPort final
     : public Application::AutomaticUpdatePreferencesPort
 {
 public:
-    SettingsManagerAutomaticUpdatePreferencesPort() = default;
+    explicit SettingsManagerAutomaticUpdatePreferencesPort(
+        SettingsManager::AutomaticUpdatePreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::AutomaticUpdatePreferences read()
         const override
@@ -33,19 +41,37 @@ public:
         };
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::AutomaticUpdatePreferences& preferences
         ) const override
     {
-        SettingsManager::instance().set(
-            QString::fromUtf8(
-                SettingsManager::Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED
-                ),
-            preferences.automaticChecksEnabled
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeAutomaticUpdatePreference(
+                preferences.automaticChecksEnabled,
+                m_synchronize
+                );
+
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save Automatically Check for Updates "
+                    "preference: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:
+    SettingsManager::AutomaticUpdatePreferenceSync m_synchronize;
+
     [[nodiscard]] static bool readEnabled(const QVariant& value)
     {
         // Invalid or unavailable legacy values retain the enabled default.

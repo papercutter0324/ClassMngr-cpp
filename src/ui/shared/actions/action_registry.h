@@ -13,6 +13,7 @@ class QMenu;
 
 namespace ClassMngr::Next::Application
 {
+class AutomaticUpdatePreferencesPort;
 class SaveModePreferencesPort;
 }
 
@@ -34,7 +35,13 @@ public:
             > saveModePreferencesPort = {},
         std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )> saveModePreferenceErrorHandler = {}
+            )> saveModePreferenceErrorHandler = {},
+        std::shared_ptr<
+            ClassMngr::Next::Application::AutomaticUpdatePreferencesPort
+            > automaticUpdatePreferencesPort = {},
+        std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )> automaticUpdatePreferenceErrorHandler = {}
         );
     void retranslate();
     void refreshThemedIcons();
@@ -141,7 +148,13 @@ private:
             > saveModePreferencesPort,
         const std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )>& saveModePreferenceErrorHandler
+            )>& saveModePreferenceErrorHandler,
+        std::shared_ptr<
+            ClassMngr::Next::Application::AutomaticUpdatePreferencesPort
+            > automaticUpdatePreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& automaticUpdatePreferenceErrorHandler
         );
     void createHelpActions();
     void createAdminActions();

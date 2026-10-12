@@ -501,6 +501,59 @@ void SettingsManager::setAutomaticUpdateChecksEnabled(
         );
 }
 
+QSettings::Status SettingsManager::writeAutomaticUpdatePreference(
+    const bool enabled,
+    const AutomaticUpdatePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousPreference =
+        m_settings->contains(Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED);
+    const QVariant previousPreference =
+        m_settings->value(Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED);
+
+    m_settings->setValue(
+        Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED,
+        enabled
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Remove the pending candidate before destroying this instance so
+        // QSettings cannot retry it during teardown.
+        if (hadPreviousPreference)
+        {
+            m_settings->setValue(
+                Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED,
+                previousPreference
+                );
+        }
+        else
+        {
+            m_settings->remove(
+                Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED
+                );
+        }
+
+        // A failed instance keeps its error status. Reopen the store so reads
+        // see the previous value and a later write can retry cleanly.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 QString SettingsManager::skippedUpdateVersion() const
 {
     return get(

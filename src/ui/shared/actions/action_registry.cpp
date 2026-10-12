@@ -24,6 +24,7 @@
 #include <QIcon>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QSignalBlocker>
 #include <QStyle>
 #include <QWidget>
 
@@ -111,7 +112,13 @@ void ActionRegistry::createActions(
         > saveModePreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> saveModePreferenceErrorHandler
+        )> saveModePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AutomaticUpdatePreferencesPort
+        > automaticUpdatePreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> automaticUpdatePreferenceErrorHandler
     )
 {
     createFileActions();
@@ -120,7 +127,9 @@ void ActionRegistry::createActions(
     createPrintExportActions();
     createOptionActions(
         std::move(saveModePreferencesPort),
-        saveModePreferenceErrorHandler
+        saveModePreferenceErrorHandler,
+        std::move(automaticUpdatePreferencesPort),
+        automaticUpdatePreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -740,7 +749,13 @@ void ActionRegistry::createOptionActions(
         > saveModePreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& saveModePreferenceErrorHandler
+        )>& saveModePreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AutomaticUpdatePreferencesPort
+        > automaticUpdatePreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& automaticUpdatePreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1599,23 +1614,53 @@ void ActionRegistry::createOptionActions(
             tr("Automatically Check for Updates"),
             tr("Check GitHub Releases for a newer version when ClassMngr starts")
             );
-    const ClassMngr::Next::Platform::
-        SettingsManagerAutomaticUpdatePreferencesPort
-        automaticUpdatePreferencesPort;
+    if (!automaticUpdatePreferencesPort)
+    {
+        automaticUpdatePreferencesPort =
+            std::make_shared<
+                ClassMngr::Next::Platform::
+                    SettingsManagerAutomaticUpdatePreferencesPort
+                >();
+    }
+
+    const bool initiallyEnabled =
+        automaticUpdatePreferencesPort->read().automaticChecksEnabled;
     automaticallyCheckForUpdates->setChecked(
-        automaticUpdatePreferencesPort.read().automaticChecksEnabled
+        initiallyEnabled
         );
+    const auto committedAutomaticUpdateChecksEnabled =
+        std::make_shared<bool>(initiallyEnabled);
     connect(
         automaticallyCheckForUpdates,
         &QAction::toggled,
         this,
-        [](bool enabled)
+        [this,
+            automaticUpdatePreferencesPort,
+            automaticUpdatePreferenceErrorHandler,
+            committedAutomaticUpdateChecksEnabled](const bool enabled)
         {
-            const ClassMngr::Next::Platform::
-                SettingsManagerAutomaticUpdatePreferencesPort port;
-            port.write({
+            const auto saved = automaticUpdatePreferencesPort->write({
                 .automaticChecksEnabled = enabled
             });
+            if (!saved)
+            {
+                {
+                    const QSignalBlocker blocker(
+                        automaticallyCheckForUpdates
+                        );
+                    automaticallyCheckForUpdates->setChecked(
+                        *committedAutomaticUpdateChecksEnabled
+                        );
+                }
+
+                if (automaticUpdatePreferenceErrorHandler)
+                {
+                    automaticUpdatePreferenceErrorHandler(saved.error());
+                }
+                return;
+            }
+
+            *committedAutomaticUpdateChecksEnabled = enabled;
         }
         );
 

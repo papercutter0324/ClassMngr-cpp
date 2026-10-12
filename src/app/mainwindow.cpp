@@ -561,9 +561,27 @@ void MainWindow::createActions()
             };
     }
 
+    auto automaticUpdatePreferenceErrorHandler =
+        m_startupOptions.automaticUpdatePreferenceErrorHandler;
+    if (!automaticUpdatePreferenceErrorHandler)
+    {
+        automaticUpdatePreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Automatically Check for Updates preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
-        std::move(saveModePreferenceErrorHandler)
+        std::move(saveModePreferenceErrorHandler),
+        m_startupOptions.automaticUpdatePreferencesPort,
+        std::move(automaticUpdatePreferenceErrorHandler)
         );
 }
 

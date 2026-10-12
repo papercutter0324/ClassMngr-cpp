@@ -47,6 +47,7 @@ class LanguageService;
 
 namespace ClassMngr::Next::Application
 {
+class AutomaticUpdatePreferencesPort;
 class ExcelImportTimeoutPreferencesPort;
 class SaveModePreferencesPort;
 }
@@ -71,6 +72,12 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> saveModePreferenceErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::AutomaticUpdatePreferencesPort
+        > automaticUpdatePreferencesPort;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> automaticUpdatePreferenceErrorHandler;
 };
 
 // =========================================================

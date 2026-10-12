@@ -1,16 +1,19 @@
 #include "app/mainwindow.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 
 #include <QAction>
 #include <QApplication>
 #include <QDir>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QtTest>
 
 #include <memory>
+#include <string>
 #include <utility>
 
 namespace
@@ -56,6 +59,7 @@ class MainWindowAutomaticUpdatePreferenceActionParityTests final
 private slots:
     void initTestCase();
     void actionPersistsDisabledAndEnabledPreferences();
+    void failedActionRestoresPreferenceAndSuccessfulRetryPersists();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsDirectory;
@@ -131,6 +135,111 @@ actionPersistsDisabledAndEnabledPreferences()
     action->trigger();
     QVERIFY(action->isChecked());
     QVERIFY(preferences.read().automaticChecksEnabled);
+}
+
+void MainWindowAutomaticUpdatePreferenceActionParityTests::
+failedActionRestoresPreferenceAndSuccessfulRetryPersists()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = QString::fromUtf8(
+        SettingsManager::Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED
+        );
+    const QString unrelatedKey = QStringLiteral("updates/unrelatedValue");
+    settings.set(key, true);
+    settings.set(unrelatedKey, 53);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    auto automaticUpdatePreferences = std::make_shared<
+        ClassMngr::Next::Platform::
+            SettingsManagerAutomaticUpdatePreferencesPort
+        >(
+            [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+            {
+                ++synchronizationAttempts;
+                if (injectAccessError)
+                {
+                    return QSettings::AccessError;
+                }
+
+                settings.sync();
+                return settings.status();
+            }
+            );
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.automaticUpdatePreferencesPort =
+        automaticUpdatePreferences;
+    int warningCount = 0;
+    ClassMngr::Next::Domain::OperationError warningError;
+    startupOptions.automaticUpdatePreferenceErrorHandler =
+        [&warningCount, &warningError](
+            const ClassMngr::Next::Domain::OperationError& error
+            )
+        {
+            ++warningCount;
+            warningError = error;
+        };
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    QAction* const action = window.actions().automaticallyCheckForUpdates;
+    QVERIFY(action);
+    AutomaticUpdatePreferenceRestorer preferenceRestorer(*action);
+    QVERIFY(action->isCheckable());
+    QVERIFY(action->isChecked());
+    QVERIFY(automaticUpdatePreferences->read().automaticChecksEnabled);
+
+    action->trigger();
+    QVERIFY(action->isChecked());
+    QVERIFY(automaticUpdatePreferences->read().automaticChecksEnabled);
+    QVERIFY(settings.get(key).toBool());
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(
+        warningError.code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(warningError.recoverable);
+    QVERIFY(
+        warningError.message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+
+    QSettings persistedSettings(
+        m_settingsDirectory->filePath(
+            QStringLiteral("PaperCloud/ClassMngr.ini")
+            ),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(persistedSettings.value(key).toBool());
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 53);
+
+    injectAccessError = false;
+    action->trigger();
+    QVERIFY(!action->isChecked());
+    QVERIFY(!automaticUpdatePreferences->read().automaticChecksEnabled);
+    QVERIFY(!settings.get(key).toBool());
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.value(key).toBool());
+    QCOMPARE(persistedSettings.value(unrelatedKey).toInt(), 53);
 }
 
 QTEST_MAIN(MainWindowAutomaticUpdatePreferenceActionParityTests)
