@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <string>
 #include <string_view>
 
@@ -29,7 +31,7 @@ public:
         FileDialogPurpose purpose
         ) const = 0;
 
-    virtual void writeDirectory(
+    [[nodiscard]] virtual Domain::Result<void> writeDirectory(
         FileDialogPurpose purpose,
         std::string_view utf8Directory
         ) const = 0;

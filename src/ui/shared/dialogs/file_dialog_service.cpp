@@ -1,5 +1,6 @@
 #include "file_dialog_service.h"
 
+#include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/file_dialog_icon_style.h"
 
 #include <QCheckBox>
@@ -163,13 +164,25 @@ void QtFileDialogService::rememberDirectory(
         : QFileInfo(selectedPath).absolutePath();
 
     const QByteArray encodedDirectory = directory.toUtf8();
-    m_directoryPreferences.writeDirectory(
+    const auto result = m_directoryPreferences.writeDirectory(
         purpose,
         std::string_view(
             encodedDirectory.constData(),
             static_cast<std::size_t>(encodedDirectory.size())
             )
         );
+    if (!result)
+    {
+        const std::string& message = result.error().message;
+        DialogServices::showWarning(
+            nullptr,
+            QStringLiteral("File Dialog Preferences"),
+            QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())
+                )
+            );
+    }
 }
 
 std::optional<QString> QtFileDialogService::openFile(

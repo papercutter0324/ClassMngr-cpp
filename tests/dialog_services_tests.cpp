@@ -39,16 +39,33 @@ public:
         return it == directories.end() ? std::string() : it->second;
     }
 
-    void writeDirectory(
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void> writeDirectory(
         const FileDialogPurpose purpose,
         const std::string_view utf8Directory
         ) const override
     {
+        ++writeCount;
+        lastWrittenPurpose = purpose;
+        lastWrittenDirectory = std::string(utf8Directory);
+        if (failWrites)
+        {
+            return ClassMngr::Next::Domain::Result<void>::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = "simulated recoverable settings failure",
+                .recoverable = true
+            });
+        }
+
         directories[purpose] = std::string(utf8Directory);
+        return ClassMngr::Next::Domain::Result<void>::success();
     }
 
     mutable std::map<FileDialogPurpose, std::string> directories;
     mutable int readCount = 0;
+    mutable int writeCount = 0;
+    mutable FileDialogPurpose lastWrittenPurpose = FileDialogPurpose::General;
+    mutable std::string lastWrittenDirectory;
+    bool failWrites = false;
 };
 
 template<typename Dialog>
@@ -98,6 +115,11 @@ private slots:
     void saveFileReturnsAccessoryChoice();
     void openFileCanonicalizesAndRemembersPurposeDirectory();
     void selectedDirectoryCanonicalizesAndRemembersPurposeDirectory();
+    void qtFileDialogPreferenceFailurePreservesAcceptedSelection_data();
+    void qtFileDialogPreferenceFailurePreservesAcceptedSelection();
+    void qtFileDialogCancellationDoesNotWriteOrWarn_data();
+    void qtFileDialogCancellationDoesNotWriteOrWarn();
+    void qtFileDialogAcceptedEmptyMultiOpenDoesNotWriteOrWarn();
 };
 
 void DialogServicesTests::cleanup()
@@ -1039,6 +1061,263 @@ selectedDirectoryCanonicalizesAndRemembersPurposeDirectory()
         preferences.directories.at(FileDialogPurpose::ClassTransfer),
         canonicalDirectory.toUtf8().toStdString()
         );
+}
+
+void DialogServicesTests::
+qtFileDialogPreferenceFailurePreservesAcceptedSelection_data()
+{
+    QTest::addColumn<QString>("operation");
+
+    QTest::newRow("open one file") << QStringLiteral("open-file");
+    QTest::newRow("open multiple files") << QStringLiteral("open-files");
+    QTest::newRow("save one file") << QStringLiteral("save-file");
+    QTest::newRow("select a directory") << QStringLiteral("directory");
+}
+
+void DialogServicesTests::qtFileDialogPreferenceFailurePreservesAcceptedSelection()
+{
+    QFETCH(QString, operation);
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString openPath = temporaryDirectory.filePath(
+        QStringLiteral("selected.xlsx")
+        );
+    QFile file(openPath);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.close();
+    const QString selectedDirectory = temporaryDirectory.filePath(
+        QStringLiteral("selected-directory")
+        );
+    QVERIFY(QDir().mkpath(selectedDirectory));
+    const QString savePath = temporaryDirectory.filePath(
+        QStringLiteral("export.pdf")
+        );
+
+    InMemoryFileDialogDirectoryPreferences preferences;
+    preferences.failWrites = true;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    const FileDialogPurpose purpose = operation == QStringLiteral("open-file")
+        ? FileDialogPurpose::ImportWorkbook
+        : operation == QStringLiteral("open-files")
+            ? FileDialogPurpose::TeacherProfile
+            : operation == QStringLiteral("save-file")
+                ? FileDialogPurpose::GeneratedPdf
+                : FileDialogPurpose::ClassTransfer;
+    QTimer::singleShot(
+        0,
+        [operation, openPath, selectedDirectory, savePath]()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            if (operation == QStringLiteral("directory"))
+            {
+                dialog->setDirectory(selectedDirectory);
+            }
+            else
+            {
+                dialog->selectFile(
+                    operation == QStringLiteral("save-file")
+                        ? savePath
+                        : openPath
+                    );
+            }
+            static_cast<QDialog*>(dialog)->accept();
+        }
+        );
+
+    QString expectedRememberedDirectory;
+    if (operation == QStringLiteral("open-file"))
+    {
+        const std::optional<QString> result = service.openFile(
+            OpenFileRequest{
+                .title = QStringLiteral("Open one"),
+                .purpose = purpose,
+                .initialDirectory = temporaryDirectory.path()
+            }
+            );
+        QVERIFY(result.has_value());
+        QCOMPARE(*result, QFileInfo(openPath).canonicalFilePath());
+        expectedRememberedDirectory = temporaryDirectory.path();
+    }
+    else if (operation == QStringLiteral("open-files"))
+    {
+        const QStringList result = service.openFiles(
+            OpenFileRequest{
+                .title = QStringLiteral("Open many"),
+                .purpose = purpose,
+                .initialDirectory = temporaryDirectory.path()
+            }
+            );
+        QCOMPARE(result.size(), 1);
+        QCOMPARE(result.first(), QFileInfo(openPath).canonicalFilePath());
+        expectedRememberedDirectory = temporaryDirectory.path();
+    }
+    else if (operation == QStringLiteral("save-file"))
+    {
+        const std::optional<QString> result = service.saveFile(
+            SaveFileRequest{
+                .title = QStringLiteral("Save one"),
+                .purpose = purpose,
+                .initialDirectory = temporaryDirectory.path(),
+                .suggestedFileName = QStringLiteral("export.pdf")
+            }
+            );
+        QVERIFY(result.has_value());
+        QCOMPARE(*result, QDir::cleanPath(savePath));
+        expectedRememberedDirectory = temporaryDirectory.path();
+    }
+    else
+    {
+        const std::optional<QString> result = service.selectDirectory(
+            DirectoryRequest{
+                .title = QStringLiteral("Choose directory"),
+                .purpose = purpose,
+                .initialDirectory = temporaryDirectory.path()
+            }
+            );
+        QVERIFY(result.has_value());
+        expectedRememberedDirectory =
+            QFileInfo(selectedDirectory).canonicalFilePath();
+        QCOMPARE(*result, expectedRememberedDirectory);
+    }
+
+    QCOMPARE(preferences.writeCount, 1);
+    QCOMPARE(preferences.lastWrittenPurpose, purpose);
+    QCOMPARE(
+        preferences.lastWrittenDirectory,
+        expectedRememberedDirectory.toUtf8().toStdString()
+        );
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.first().title,
+        QStringLiteral("File Dialog Preferences")
+        );
+    QVERIFY(
+        prompts.messages.first().message.contains(
+            QStringLiteral("simulated recoverable settings failure")
+            )
+        );
+}
+
+void DialogServicesTests::qtFileDialogCancellationDoesNotWriteOrWarn_data()
+{
+    QTest::addColumn<QString>("operation");
+
+    QTest::newRow("cancel open one") << QStringLiteral("open-file");
+    QTest::newRow("cancel open multiple") << QStringLiteral("open-files");
+    QTest::newRow("cancel save") << QStringLiteral("save-file");
+    QTest::newRow("cancel directory") << QStringLiteral("directory");
+}
+
+void DialogServicesTests::qtFileDialogCancellationDoesNotWriteOrWarn()
+{
+    QFETCH(QString, operation);
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    InMemoryFileDialogDirectoryPreferences preferences;
+    preferences.failWrites = true;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QTimer::singleShot(
+        0,
+        []()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            dialog->reject();
+        }
+        );
+
+    if (operation == QStringLiteral("open-file"))
+    {
+        QVERIFY(!service.openFile(
+            OpenFileRequest{
+                .title = QStringLiteral("Open one"),
+                .purpose = FileDialogPurpose::ImportWorkbook,
+                .initialDirectory = temporaryDirectory.path()
+            }
+            ).has_value());
+    }
+    else if (operation == QStringLiteral("open-files"))
+    {
+        QVERIFY(service.openFiles(
+            OpenFileRequest{
+                .title = QStringLiteral("Open many"),
+                .purpose = FileDialogPurpose::TeacherProfile,
+                .initialDirectory = temporaryDirectory.path()
+            }
+            ).isEmpty());
+    }
+    else if (operation == QStringLiteral("save-file"))
+    {
+        QVERIFY(!service.saveFile(
+            SaveFileRequest{
+                .title = QStringLiteral("Save one"),
+                .purpose = FileDialogPurpose::GeneratedPdf,
+                .initialDirectory = temporaryDirectory.path(),
+                .suggestedFileName = QStringLiteral("export.pdf")
+            }
+            ).has_value());
+    }
+    else
+    {
+        QVERIFY(!service.selectDirectory(
+            DirectoryRequest{
+                .title = QStringLiteral("Choose directory"),
+                .purpose = FileDialogPurpose::ClassTransfer,
+                .initialDirectory = temporaryDirectory.path()
+            }
+            ).has_value());
+    }
+
+    QCOMPARE(preferences.writeCount, 0);
+    QVERIFY(prompts.messages.isEmpty());
+}
+
+void DialogServicesTests::
+qtFileDialogAcceptedEmptyMultiOpenDoesNotWriteOrWarn()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    InMemoryFileDialogDirectoryPreferences preferences;
+    preferences.failWrites = true;
+    QtFileDialogService service(preferences, FileDialogBackend::Qt);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QTimer::singleShot(
+        0,
+        []()
+        {
+            auto* dialog = findServiceDialog<QFileDialog>(
+                QStringLiteral("classmngrFileDialog")
+                );
+            QVERIFY(dialog);
+            dialog->selectFile(QString());
+            static_cast<QDialog*>(dialog)->done(QDialog::Accepted);
+        }
+        );
+
+    const QStringList result = service.openFiles(
+        OpenFileRequest{
+            .title = QStringLiteral("Open many"),
+            .purpose = FileDialogPurpose::ImportWorkbook,
+            .initialDirectory = temporaryDirectory.path()
+        }
+        );
+    QVERIFY(result.isEmpty());
+    QCOMPARE(preferences.writeCount, 0);
+    QVERIFY(prompts.messages.isEmpty());
 }
 
 QTEST_MAIN(DialogServicesTests)

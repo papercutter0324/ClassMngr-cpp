@@ -4,6 +4,7 @@
 
 #include <QSettings>
 #include <QString>
+#include <QVariant>
 
 #include <cstddef>
 #include <string>
@@ -41,7 +42,7 @@ public:
             );
     }
 
-    void writeDirectory(
+    [[nodiscard]] Domain::Result<void> writeDirectory(
         const Application::FileDialogPurpose purpose,
         const std::string_view utf8Directory
         ) const override
@@ -54,15 +55,55 @@ public:
 
         if (m_settings)
         {
-            m_settings->setValue(key, directory);
-            return;
+            return writeChecked(*m_settings, key, directory);
         }
 
+        // Keep default operations isolated so each accepted dialog operation
+        // gets a fresh QSettings instance and can retry after a failed write.
         QSettings settings;
-        settings.setValue(key, directory);
+        return writeChecked(settings, key, directory);
     }
 
 private:
+    [[nodiscard]] static Domain::Result<void> writeChecked(
+        QSettings& settings,
+        const QString& key,
+        const QString& directory
+        )
+    {
+        const bool hadPreviousValue = settings.contains(key);
+        const QVariant previousValue = settings.value(key);
+
+        settings.setValue(key, directory);
+        settings.sync();
+        const QSettings::Status status = settings.status();
+        if (status == QSettings::NoError)
+        {
+            return Domain::Result<void>::success();
+        }
+
+        if (hadPreviousValue)
+        {
+            settings.setValue(key, previousValue);
+        }
+        else
+        {
+            settings.remove(key);
+        }
+
+        const char* statusName = status == QSettings::AccessError
+            ? "AccessError (settings could not be written)"
+            : "FormatError (settings contain invalid data)";
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::string(
+                "Unable to save file dialog directory preference: "
+                "QSettings "
+                ) + statusName + ".",
+            .recoverable = true
+        });
+    }
+
     [[nodiscard]] static QString defaultSettingsValue(
         const QString& key
         )
