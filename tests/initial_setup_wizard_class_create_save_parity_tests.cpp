@@ -9,6 +9,7 @@
 
 #include <QApplication>
 #include <QAbstractButton>
+#include <QComboBox>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSqlQuery>
@@ -199,6 +200,8 @@ class InitialSetupWizardClassCreateSaveParityTests final : public QObject
 private slots:
     void createFailureLeavesIdUnsetAndCanRetry();
     void detailsFailureRetainsBlankClassAndRetryReusesId();
+    void paddedScheduleTimeLeavesBlankClassAndDoesNotSaveDetails();
+    void malformedScheduleTimeLeavesBlankClassAndDoesNotSaveDetails();
     void successfulSaveAdvancesWithDetailsAndTeacher();
 };
 
@@ -408,6 +411,94 @@ detailsFailureRetainsBlankClassAndRetryReusesId()
         {QStringLiteral("retry_advanced"),
          fixture.wizard->currentId() == InitialSetupWizard::CompletionPage}
     });
+}
+
+void InitialSetupWizardClassCreateSaveParityTests::
+paddedScheduleTimeLeavesBlankClassAndDoesNotSaveDetails()
+{
+    WizardFixture fixture;
+    QVERIFY(fixture.open());
+
+    ClassScheduleSection* const schedules = fixture.wizard->findChild<
+        ClassScheduleSection*>(QStringLiteral("setupClassSchedules"));
+    QVERIFY(schedules);
+    QVERIFY(!schedules->regularRows().isEmpty());
+    ClassTimeRow* const row = schedules->regularRows().constFirst();
+    QVERIFY(row);
+    const QString paddedEndTime = QStringLiteral(" 9:55 AM ");
+    row->endCombo()->addItem(paddedEndTime);
+    row->endCombo()->setCurrentIndex(row->endCombo()->count() - 1);
+    QCOMPARE(row->endTime(), paddedEndTime);
+
+    QVERIFY(fixture.advance());
+    QCOMPARE(fixture.wizard->currentId(), InitialSetupWizard::ClassTimesPage);
+    const int createdId = fixture.wizard->createdClassId();
+    QVERIFY(createdId > 0);
+    QCOMPARE(fixture.count(QStringLiteral("classes")), 1);
+    QCOMPARE(
+        fixture.text(
+            QStringLiteral("SELECT name FROM classes WHERE id = ?"),
+            createdId
+            ),
+        QString()
+        );
+    QCOMPARE(fixture.count(QStringLiteral("class_info")), 0);
+    QCOMPARE(fixture.count(QStringLiteral("class_times")), 0);
+    QCOMPARE(fixture.count(QStringLiteral("class_intensive_times")), 0);
+    QCOMPARE(fixture.prompts.messages.size(), 1);
+    QCOMPARE(
+        fixture.prompts.messages.constFirst().title,
+        QStringLiteral("Create Class")
+        );
+    QCOMPARE(
+        fixture.prompts.messages.constFirst().message,
+        QStringLiteral("The class information could not be saved.")
+        );
+}
+
+void InitialSetupWizardClassCreateSaveParityTests::
+malformedScheduleTimeLeavesBlankClassAndDoesNotSaveDetails()
+{
+    WizardFixture fixture;
+    QVERIFY(fixture.open());
+
+    ClassScheduleSection* const schedules = fixture.wizard->findChild<
+        ClassScheduleSection*>(QStringLiteral("setupClassSchedules"));
+    QVERIFY(schedules);
+    QVERIFY(!schedules->regularRows().isEmpty());
+    ClassTimeRow* const row = schedules->regularRows().constFirst();
+    QVERIFY(row);
+    const QString malformedHour = QStringLiteral("not-a-time");
+    row->startHourCombo()->addItem(malformedHour);
+    row->startHourCombo()->setCurrentIndex(
+        row->startHourCombo()->count() - 1
+        );
+    QCOMPARE(row->startTime(), QStringLiteral("not-a-time:00 AM"));
+
+    QVERIFY(fixture.advance());
+    QCOMPARE(fixture.wizard->currentId(), InitialSetupWizard::ClassTimesPage);
+    const int createdId = fixture.wizard->createdClassId();
+    QVERIFY(createdId > 0);
+    QCOMPARE(fixture.count(QStringLiteral("classes")), 1);
+    QCOMPARE(
+        fixture.text(
+            QStringLiteral("SELECT name FROM classes WHERE id = ?"),
+            createdId
+            ),
+        QString()
+        );
+    QCOMPARE(fixture.count(QStringLiteral("class_info")), 0);
+    QCOMPARE(fixture.count(QStringLiteral("class_times")), 0);
+    QCOMPARE(fixture.count(QStringLiteral("class_intensive_times")), 0);
+    QCOMPARE(fixture.prompts.messages.size(), 1);
+    QCOMPARE(
+        fixture.prompts.messages.constFirst().title,
+        QStringLiteral("Create Class")
+        );
+    QCOMPARE(
+        fixture.prompts.messages.constFirst().message,
+        QStringLiteral("The class information could not be saved.")
+        );
 }
 
 void InitialSetupWizardClassCreateSaveParityTests::

@@ -4,6 +4,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "domain/models/teacher.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
@@ -33,6 +34,7 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <optional>
 #include <string>
@@ -61,7 +63,6 @@
 #include <QScrollArea>
 #include <QSignalBlocker>
 #include <QTimer>
-#include <QTime>
 #include <QVBoxLayout>
 
 namespace
@@ -70,6 +71,10 @@ std::optional<std::vector<ClassMngr::Next::Domain::ScheduleTime>>
 typedScheduleTimes(const QList<ClassTime>& values)
 {
     using ClassMngr::Next::Domain::ScheduleTime;
+
+    constexpr std::array allowedTimeFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
+    };
 
     const QStringList days{
         QStringLiteral("Monday"), QStringLiteral("Tuesday"),
@@ -83,23 +88,30 @@ typedScheduleTimes(const QList<ClassTime>& values)
     for (const ClassTime& value : values)
     {
         const int weekday = days.indexOf(value.day);
-        const QTime start = QTime::fromString(
+        if (weekday < 0
+            || value.startTime != value.startTime.trimmed()
+            || value.endTime != value.endTime.trimmed())
+        {
+            return std::nullopt;
+        }
+
+        const auto start = ScheduleValueParser::parseDisplayTime(
             value.startTime,
-            QStringLiteral("h:mm AP")
+            allowedTimeFormats
             );
-        const QTime end = QTime::fromString(
+        const auto end = ScheduleValueParser::parseDisplayTime(
             value.endTime,
-            QStringLiteral("h:mm AP")
+            allowedTimeFormats
             );
-        if (weekday < 0 || !start.isValid() || !end.isValid())
+        if (!start || !end)
         {
             return std::nullopt;
         }
 
         const auto time = ScheduleTime::fromMinutes(
             weekday,
-            start.hour() * 60 + start.minute(),
-            end.hour() * 60 + end.minute()
+            start->hour() * 60 + start->minute(),
+            end->hour() * 60 + end->minute()
             );
         if (!time)
         {
