@@ -27,6 +27,7 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QColor>
 #include <QDialogButtonBox>
 #include <QEvent>
 #include <QFile>
@@ -109,6 +110,7 @@ private slots:
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
     void compactMeetingTextParsesAndOrdersDisplayFormats();
+    void classDifferencesNormalizeSpacedTimesAndEscapeRawFallbacks();
     void reviewWarningsUseDedicatedTab();
     void intensiveModeChoiceReflectsExistingSchedule();
     void regularPreviewShowsFullEssayGrid();
@@ -2204,6 +2206,16 @@ void ScheduleImportDialogTests
         },
         {
             QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("5:00 PM")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:07 PM"),
+            QStringLiteral("5:07 PM")
+        },
+        {
+            QStringLiteral("Monday"),
             QStringLiteral("4:15PM"),
             QStringLiteral("5:10PM")
         },
@@ -2226,6 +2238,11 @@ void ScheduleImportDialogTests
             QStringLiteral("Monday"),
             QStringLiteral("not-a-time"),
             QStringLiteral("5:15 PM")
+        },
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral(" 4:15 PM "),
+            QStringLiteral(" 5:15 PM ")
         }
     };
 
@@ -2233,7 +2250,85 @@ void ScheduleImportDialogTests
         ScheduleImportReviewPresentation::compactMeetingText(times),
         QStringLiteral(
             "Mon. not-a-time / Mon.  9:40  / Mon. 9:45 / Mon. 09:50 / "
-            "Mon. 4:15PM / Mon. 4:20pm"
+            "Mon. 4pm / Mon. 4:07pm / Mon. 4:15PM / Mon. 4:20pm / "
+            "Tues.  4:15 PM "
+            )
+        );
+}
+
+void ScheduleImportDialogTests
+    ::classDifferencesNormalizeSpacedTimesAndEscapeRawFallbacks()
+{
+    ScheduleImportClassCandidate candidate;
+    candidate.classGrade = QStringLiteral("Grade 7");
+    candidate.classLevel = QStringLiteral("A");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:07 PM"),
+            QStringLiteral("5:07 PM")
+        },
+        {
+            QStringLiteral("Tuesday"),
+            QStringLiteral(" 4:07 PM "),
+            QStringLiteral(" 5:07 PM ")
+        },
+        {
+            QStringLiteral("Wednesday"),
+            QStringLiteral("4:15PM"),
+            QStringLiteral("5:15PM")
+        },
+        {
+            QStringLiteral("Thursday"),
+            QStringLiteral("16:20"),
+            QStringLiteral("17:20")
+        },
+        {
+            QStringLiteral("Friday"),
+            QStringLiteral("<bad>"),
+            QStringLiteral("<bad>")
+        }
+    };
+
+    const ImportState::ScheduleImportStateReadClassSnapshot existing{
+        *ImportDomain::ClassId::fromString("1"),
+        *ImportDomain::TeacherId::fromString("2"),
+        u"Class",
+        u"Grade 7",
+        u"A",
+        u"#ffffff",
+        {
+            {u"Monday", u"4:00 PM", u"5:00 PM"},
+            {u"Tuesday", u"4:00 PM", u"5:00 PM"},
+            {u"Wednesday", u"4:00 PM", u"5:00 PM"},
+            {u"Thursday", u"4:00 PM", u"5:00 PM"},
+            {u"Friday", u"4:00 PM", u"5:00 PM"}
+        },
+        {},
+        u""
+    };
+
+    QCOMPARE(
+        ScheduleImportReviewPresentation::classDifferences(
+            candidate,
+            &existing,
+            nullptr,
+            1,
+            ScheduleImportKind::Normal,
+            QStringLiteral("#ffffff"),
+            QColor(QStringLiteral("#123456")),
+            QColor(QStringLiteral("#654321"))
+            ),
+        QStringLiteral(
+            "<span style=\"color:#123456\"><b style=\"color:#654321\">"
+            "Changes:</b><ul style=\"margin-top:2px; margin-bottom:0px;\">"
+            "<li><b>Days:</b><br>"
+            "Mon. 4:00pm - 5:00pm \u2192 Mon. 4:07pm - 5:07pm<br>"
+            "Tues. 4:00pm - 5:00pm \u2192 Tues.  4:07 PM  -  5:07 PM <br>"
+            "Wed. 4:00pm - 5:00pm \u2192 Wed. 4:15PM - 5:15PM<br>"
+            "Thurs. 4:00pm - 5:00pm \u2192 Thurs. 16:20 - 17:20<br>"
+            "Fri. 4:00pm - 5:00pm \u2192 Fri. &lt;bad&gt; - &lt;bad&gt;"
+            "</li></ul></span>"
             )
         );
 }

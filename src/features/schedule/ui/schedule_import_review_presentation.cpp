@@ -107,15 +107,25 @@ QString compactTimeDisplay(
     const QString& value
     )
 {
-    const QTime time =
-        QTime::fromString(
-            value,
-            QStringLiteral("h:mm AP")
-            );
-    if (!time.isValid())
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
+    };
+    const QString trimmedValue = value.trimmed();
+    if (value != trimmedValue)
     {
         return value;
     }
+
+    const auto parsedTime =
+        ScheduleValueParser::parseDisplayTime(
+            value,
+            allowedFormats
+            );
+    if (!parsedTime)
+    {
+        return value;
+    }
+    const QTime& time = *parsedTime;
 
     const QString minutePart =
         time.minute() == 0
@@ -136,15 +146,25 @@ QString reconciliationTimeDisplay(
     const QString& value
     )
 {
-    const QTime time =
-        QTime::fromString(
-            value,
-            QStringLiteral("h:mm AP")
-            );
-    if (!time.isValid())
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced
+    };
+    const QString trimmedValue = value.trimmed();
+    if (value != trimmedValue)
     {
         return value.toHtmlEscaped();
     }
+
+    const auto parsedTime =
+        ScheduleValueParser::parseDisplayTime(
+            value,
+            allowedFormats
+            );
+    if (!parsedTime)
+    {
+        return value.toHtmlEscaped();
+    }
+    const QTime& time = *parsedTime;
 
     return QStringLiteral("%1:%2%3")
         .arg(
