@@ -28960,6 +28960,51 @@ registration each for the exact CTest names
 `ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests`, then run
 only those two exact CTests. Run no full suite.
 
-This matrix is recorded before implementation; F757 is selected but not
-implemented, and no F757 results are available. F707/F709 remain deferred,
+This matrix was recorded before implementation. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F757 teacher query canonical ID validation - accepted - 2026-10-13
+
+F757 is accepted at commit
+`04e95b2a545741c3e33903ac6c3af9383e9390fa`. The teacher-profile and teacher
+display-name batch queries reuse `Application::isCanonicalPositiveDecimalId`
+while preserving their caller contracts.
+
+Under VS 18.10.1 x64 Developer, `ClassMngr` and both query test targets built.
+Each exact full-name CTest registration count was one; the two CTests passed
+2/2 in 0.07 seconds. No full suite ran.
+
+**Decision: accept F757.** Batch 188 continues with F758; F707/F709 remain
+deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
+Open.
+
+### Batch 188 continuation - F758 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F758 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`selected_class_grade_read_query.h`,
+`selected_class_subtitle_read_query.h`, and
+`selected_class_subtitle_batch_read_query.h`. The helper is already in
+`cmake/next.cmake`; no CMake change is expected.
+
+Preserve the exact contracts and success behavior. An invalid singular
+ClassId returns nonrecoverable `InvalidInput` with
+`Selected class ID must be a canonical positive integer.` An invalid batch
+ClassId returns nonrecoverable `InvalidInput` with
+`Selected class IDs must be canonical positive integers.` A duplicate batch
+ID returns nonrecoverable `InvalidInput` with
+`Selected class IDs must be unique.` All are rejected before the port, with
+canonicality checked before duplicate detection. Keep batch empty-request
+success with no call, duplicate and post-read count/order checks, singular
+read errors and identity mismatch, and successful projections unchanged.
+
+Add malformed `42x` to each focused invalid list and assert exact message,
+`InvalidInput`, nonrecoverability, and zero port calls. Build `ClassMngr` and
+`ClassMngrNextApplicationSelectedClassGradeReadQueryTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests`, and
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`. Confirm
+exactly one registration for each exact full-name CTest, then run only these
+three exact CTests. Run no full suite.
+
+This matrix is recorded before implementation; F758 is selected but not
+implemented, and no F758 results are available. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

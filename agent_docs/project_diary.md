@@ -4849,3 +4849,19 @@ nonrecoverable pre-read invalid/duplicate checks, and post-read canonical
 returned-ID validation before membership, duplicate, and order checks. Add
 trailing-text IDs and exact messages to make those contracts explicit.
 F707/F709 remain deferred, and the Phase 2 exit gate remains open.
+
+## Phase 2 F757 acceptance and F758 selection — 2026-10-13
+
+F757 is accepted at `04e95b2a545741c3e33903ac6c3af9383e9390fa`. The single
+teacher-profile query and teacher-display-name batch query now use the shared
+canonical positive-decimal ID check. The profile query keeps its recoverable
+invalid-request result before the read; the batch query keeps its
+nonrecoverable request checks and post-read returned-ID validation order.
+`ClassMngr` and both focused targets built under VS 18.10.1 x64 Developer;
+their exact CTests passed 2/2. No full suite ran.
+
+F758 is selected in Batch 188 to share the same helper across selected-class
+grade, subtitle, and subtitle-batch reads. Preserve each singular or plural
+invalid-ID message, the batch duplicate-ID message and precedence, and the
+existing read behavior. F707/F709 remain deferred, and the Phase 2 exit gate
+remains open.

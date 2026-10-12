@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F756 is accepted at `1fdabd5a4b656c68baaa0426def3e8ffe5af4b2b`; F757 is selected in Batch 187 to reuse canonical positive-decimal ID validation in two teacher queries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F757 is accepted at `04e95b2a545741c3e33903ac6c3af9383e9390fa`; F758 is selected in Batch 188 to reuse canonical positive-decimal ID validation in three selected-class queries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 187
+#### Active batch: Batch 188
 
-- F757 - Reuse canonical positive-decimal ID validation in two teacher queries; preserve caller contracts and focused gates.
+- F758 - Reuse canonical positive-decimal ID validation in three selected-class queries; preserve caller contracts and focused gates.
 
 ## Objective
 

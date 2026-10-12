@@ -4873,3 +4873,40 @@ CTest registration for each exact full name and run only those two CTests.
 No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
+
+## Phase 2 current position — 2026-10-13 (F757 accepted; F758 selected)
+
+F757 is accepted and committed as
+`04e95b2a545741c3e33903ac6c3af9383e9390fa` (`Phase2 - Reuse canonical
+positive decimal ID validation in teacher queries`). The profile and teacher
+display-name batch queries now share the Application validator while keeping
+their different invalid-input contracts and validation boundaries. Under VS
+18.10.1 x64 Developer, `ClassMngr` and both focused test targets built. Each
+full-name CTest registration appeared once; both tests passed 2/2 in 0.07
+seconds. No full suite ran.
+
+F758 is selected in Batch 188 to reuse
+`Application::isCanonicalPositiveDecimalId` in
+`SelectedClassGradeReadQuery`, `SelectedClassSubtitleReadQuery`, and
+`SelectedClassSubtitleBatchReadQuery`. Replace only the three local
+positive-decimal validators; the helper is already in
+`cmake/next.cmake`, so no CMake inventory change is expected. Preserve the
+singular and plural caller-specific errors, nonrecoverable `InvalidInput`,
+and pre-port validation. Grade and subtitle invalid IDs use
+`Selected class ID must be a canonical positive integer.`; batch invalid IDs
+use `Selected class IDs must be canonical positive integers.` and duplicate
+IDs use `Selected class IDs must be unique.` Keep batch duplicate detection
+after canonicality validation, successful empty input without a port call,
+and existing successful reads, count/order validation, and output behavior.
+
+Add `42x` to each focused invalid-ID case and assert exact messages, codes,
+nonrecoverability, and zero port calls. Retain the batch duplicate, empty,
+and post-read count/order checks; preserve the singular query read-failure
+and identity-mismatch behavior. Build `ClassMngr` and
+`ClassMngrNextApplicationSelectedClassGradeReadQueryTests`,
+`ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests`, and
+`ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests`; confirm
+one CTest registration for each exact full name and run only those three
+CTest registrations. No full suite. F707/F709 remain deferred. Phase 2
+remains In Progress/Open with Gates 1 and 2 Partial; separate current-source
+Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
