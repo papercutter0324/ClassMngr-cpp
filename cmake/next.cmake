@@ -88,6 +88,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_calendar_event_intervals_query.h
     src/next/application/campus_directory_projection.h
     src/next/application/class_summary_projection.h
+    src/next/application/positive_decimal_id_validation.h
     src/next/application/class_co_teacher_assignment_use_case.h
     src/next/application/class_co_teacher_page_read_snapshot.h
     src/next/application/class_co_teacher_page_read_port.h

@@ -85,6 +85,7 @@ rejectsNonCanonicalIdsBeforePort()
             result.error().message,
             std::string("Class ID must be a canonical positive integer.")
             );
+        QVERIFY(result.error().recoverable);
         QCOMPARE(port.callCount, 0);
     }
 }
@@ -116,6 +117,10 @@ propagatesPortErrorAndRejectsMismatchedIdentity()
     result = query.execute(requested);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Class read returned a different class identifier.")
+        );
     QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 2);
 }

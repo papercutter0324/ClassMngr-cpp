@@ -1,10 +1,9 @@
 #pragma once
 
 #include "next/application/classes_list_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 
-#include <charconv>
 #include <string>
-#include <system_error>
 #include <unordered_set>
 #include <utility>
 
@@ -33,7 +32,7 @@ public:
         seenClassIds.reserve(source.value().classes.size());
         for (const ClassesListEntry& classroom : source.value().classes)
         {
-            if (!isCanonicalPositiveClassId(classroom.classId.value()))
+            if (!isCanonicalPositiveDecimalId(classroom.classId.value()))
             {
                 return failure(
                     Domain::ErrorCode::Validation,
@@ -54,27 +53,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static bool isCanonicalPositiveClassId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
-
     [[nodiscard]] static ClassesListReadResult failure(
         const Domain::ErrorCode code,
         std::string message

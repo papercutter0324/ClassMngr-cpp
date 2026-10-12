@@ -76,6 +76,7 @@ rejectsNonCanonicalClassIdsBeforePortCall()
         classId("01"),
         classId("+2"),
         classId(" 3"),
+        classId("42x"),
         classId("2147483648")
     };
 
@@ -84,6 +85,11 @@ rejectsNonCanonicalClassIdsBeforePortCall()
         const auto result = query.execute(id);
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class ID must be a canonical positive integer.")
+            );
+        QVERIFY(!result.error().recoverable);
     }
     QCOMPARE(port.callCount, 0);
     QVERIFY(port.requests.empty());
@@ -166,6 +172,13 @@ propagatesPortErrorAndRejectsIdentityMismatch()
     result = query.execute(classId("7"));
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "A co-teacher page read returned a different class identifier."
+            )
+        );
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 2);
 }
 

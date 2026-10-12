@@ -107,7 +107,8 @@ rejectsInvalidTeacherIdentities()
         "-1",
         "01",
         "2147483648",
-        "teacher"
+        "teacher",
+        "42x"
     };
     for (const std::string& invalidIdentity : invalidIdentities)
     {
@@ -135,6 +136,12 @@ rejectsInvalidTeacherIdentities()
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Co-teacher teacher choices contain an invalid teacher identifier."
+                )
+            );
         QVERIFY(!result.error().recoverable);
         QCOMPARE(port.callCount, 1);
     }

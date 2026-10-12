@@ -1,10 +1,8 @@
 #pragma once
 
 #include "next/application/class_co_teacher_teacher_choices_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 
-#include <charconv>
-#include <string>
-#include <system_error>
 #include <utility>
 
 namespace ClassMngr::Next::Application
@@ -33,7 +31,7 @@ public:
         auto snapshot = std::move(source.value());
         for (const ClassCoTeacherTeacherChoice& teacher : snapshot.teachers)
         {
-            if (!isCanonicalPositiveInteger(teacher.teacherId.value()))
+            if (!isCanonicalPositiveDecimalId(teacher.teacherId.value()))
             {
                 return ClassCoTeacherTeacherChoicesResult::failure({
                     .code = Domain::ErrorCode::Validation,
@@ -50,27 +48,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static bool isCanonicalPositiveInteger(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
-
     const ClassCoTeacherTeacherChoicesReadPort& m_port;
 };
 

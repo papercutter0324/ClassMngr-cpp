@@ -104,16 +104,18 @@ preservesEmptyResultAndPortFailure()
 void NextApplicationClassesListReadQueryTests::
 rejectsInvalidOrDuplicateClassIds()
 {
-    const std::vector<std::vector<std::string>> invalidRows{
-        {"0"},
-        {"01"},
-        {"-1"},
-        {"2147483648"},
-        {"42", "42"}
+    const std::vector<std::pair<std::vector<std::string>, std::string>> invalidRows{
+        {{"0"}, "The classes list contains an invalid class identifier."},
+        {{"01"}, "The classes list contains an invalid class identifier."},
+        {{"-1"}, "The classes list contains an invalid class identifier."},
+        {{"42x"}, "The classes list contains an invalid class identifier."},
+        {{"2147483648"}, "The classes list contains an invalid class identifier."},
+        {{"42", "42"}, "The classes list contains a duplicate class identifier."}
     };
 
-    for (const auto& ids : invalidRows)
+    for (const auto& row : invalidRows)
     {
+        const auto& ids = row.first;
         RecordingClassesListReadPort port;
         ClassesListSnapshot snapshot;
         for (const std::string& id : ids)
@@ -129,6 +131,7 @@ rejectsInvalidOrDuplicateClassIds()
         const ClassesListReadResult result = query.execute();
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(result.error().message, row.second);
         QVERIFY(!result.error().recoverable);
         QCOMPARE(port.callCount, 1);
     }
