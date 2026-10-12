@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F700 selected)
+### Current state - 2026-10-12 (F701 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-174 are complete; Batch 175 is active with F700, the
-Schedule Import review minute parser migration. F689-F693 are complete;
+Batches 141-175 are complete; Batch 176 is active with F701, the
+Schedule Import repository display-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -94,11 +94,18 @@ progress log. F699 is committed as
 and the focused CTest passed 1/1 with fresh adapter objects and test
 executable. The final tests reject malformed and padded starts and ends in
 both consumers while retaining the injected typed projection; no full suite
-ran. F700 selects the two matching four-format Schedule Import review parsers;
-its explicit allowlist and test matrix are in the Phase 2 progress log. The
-current-source Phase 0 evidence remains
-Windows x64 2/24 and macOS universal 0/24; it is separate from the historical Phase 0 closure
-described above. F625 remains accepted and F626 deferred. F666 Class Day
+ran. F700 is committed as
+`ec0728b15f3ac59571fa9415d3058425e9f07b69`; `ClassMngr` and
+`ClassMngrScheduleImportDialogTests` built in the Windows x64 Debug Ninja
+tree. The exact CTest passed 1/1 with fresh review-helper and test objects
+and executables. Coverage includes all four supported formats, trimming,
+malformed review status with Import disabled, and compact-AM/PM overlap
+handling. No full suite ran. F701 selects the Schedule Import repository's
+matching four-format `timeMinutes` helper; its allowlist and public-path
+acceptance matrix are in the Phase 2 progress log. The current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
+from the historical Phase 0 closure described above. F625 remains accepted
+and F626 deferred. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
 Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as

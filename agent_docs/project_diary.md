@@ -4190,3 +4190,26 @@ fallbacks. Extend presentation and review-dialog tests to cover supported
 formats, trimming, invalid time, and order; add parser source to the dialog
 test target because the formatter migration already depends on it. The exact
 build/CTest matrix is in the Phase 2 progress log.
+
+## Phase 2 Schedule Import repository time parser - 2026-10-12
+
+F700 is accepted and committed as
+`ec0728b15f3ac59571fa9415d3058425e9f07b69`. `ClassMngr` and
+`ClassMngrScheduleImportDialogTests` built in the Windows x64 Debug Ninja
+tree, and the exact CTest passed 1/1 with fresh review-helper and test objects
+and executables. Coverage includes all four supported display-time formats,
+trimmed input, malformed review status with Import disabled, and compact
+AM/PM through the review overlap path. No full suite ran.
+
+Batch 175 is complete. Read-only discovery compared the Schedule Import
+repository's matching four-format parser with the Calendar Page's canonical
+projection formatter. F701 selects the repository helper because it has the
+same explicit format and trim contract as F700 and can be verified through
+the typed repository path. The Calendar Page candidate is deferred because
+its private rendering helper has no direct malformed/padded projection test
+seam. F701 is selected in Batch 176: migrate only
+the repository's `timeMinutes` helper to the explicit four-format Domain
+parser, preserving -1 failure behavior, raw persisted time strings, and
+existing validation/write behavior. The matrix is recorded before
+implementation in the Phase 2 progress log. Phase 2 remains In Progress with
+Gates 1 and 2 Partial.

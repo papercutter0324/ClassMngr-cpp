@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-174 are complete; Batch 175 is active with F700. F625's assessment is
+  141-175 are complete; Batch 176 is active with F701. F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -52,17 +52,22 @@
   start/end parity and malformed/padded start/end rejection in both cache and
   model, with all five injected typed projection records retained. Adapter
   objects and the test executable were fresh; no full suite ran.
-- F700 migrates both Schedule Import review minute parsers to
-  `ScheduleValueParser::parseDisplayTime` with the ordered four-format
-  allowlist (`h:mm AP`, `h:mmAP`, `H:mm`, `HH:mm`). Preserve trimming,
-  minute conversion, and `-1` fallback. Leave the two untrimmed display
-  helpers and their distinct raw/HTML-escaped fallbacks unchanged. Extend the
-  presentation and review-dialog test paths for supported variants, trimming,
-  and invalid input. Add the parser source to
-  `ClassMngrScheduleImportDialogTests`, which also needs it for the formatter
-  port. Build `ClassMngr` and that target; run only its exact CTest. The
-  acceptance matrix is recorded before implementation in the Phase 2 progress
-  log.
+- F700 is accepted and committed as
+  `ec0728b15f3ac59571fa9415d3058425e9f07b69`. `ClassMngr` and
+  `ClassMngrScheduleImportDialogTests` built in the Windows x64 Debug Ninja
+  tree; the exact CTest passed 1/1 with fresh review-helper and test objects
+  and executables. Coverage includes all four supported formats, trimmed
+  input, malformed review status with Import disabled, and compact-AM/PM
+  overlap handling. No full suite ran.
+- F701 is selected in Batch 176 for the `timeMinutes` helper in
+  `schedule_import_repository.cpp`, which duplicates F700's four
+  ordered formats, trim behavior, minute conversion, and `-1` failure result.
+  Use an explicit allowlist; preserve import validation and raw persisted
+  times. Add typed repository-path coverage for the four formats, trimming,
+  malformed rejection without writes, and parser source wiring in
+  `ClassMngrScheduleImportTests`. Build `ClassMngr` and that target; run only
+  its exact CTest. The acceptance matrix is recorded before implementation
+  in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

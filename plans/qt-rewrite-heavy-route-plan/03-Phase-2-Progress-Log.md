@@ -26098,4 +26098,52 @@ failure behavior.
    F696. Build `ClassMngr` and `ClassMngrScheduleImportDialogTests`; run only
    the CTest `ClassMngrScheduleImportDialogTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 175 is active with F700.
+This matrix was recorded before implementation.
+
+### F700 Schedule Import review time parser migration - accepted - 2026-10-12
+
+F700 is accepted at code/test commit
+`ec0728b15f3ac59571fa9415d3058425e9f07b69`. The exact selected build for
+`ClassMngr` and `ClassMngrScheduleImportDialogTests` succeeded. The exact CTest
+`ClassMngrScheduleImportDialogTests` passed 1/1; the independent verifier
+confirmed fresh review-helper and test objects and executables. CMake setup
+emitted harmless warnings: `vswhere.exe` was unavailable; optional
+WrapVulkanHeaders/Vulkan were not found and Qt used its zlib fallback; and
+unrelated object-path lengths produced warnings. No full suite ran.
+
+**Decision: accept F700.** Batch 175 is complete.
+
+### Batch 176 shortlist and selection - recorded before F701 implementation - 2026-10-12
+
+The shortlist compared Schedule Import repository time parsing with
+CalendarPage's canonical projection helper. Select `timeMinutes` in
+`src/data/repositories/schedule_import_repository.cpp`: it duplicates F700's
+four-format, trimmed, minutes/-1 contract and reaches both public repository
+state validation and persisted-row resolution. Defer the CalendarPage helper;
+its private rendering path has no direct malformed/padded projection test
+seam.
+
+**F701 is selected:** migrate only `timeMinutes` to
+`ScheduleValueParser::parseDisplayTime` with an explicit ordered four-format
+allowlist; preserve caller rejection, raw persisted start/end text, and other
+repository behavior.
+
+### F701 Schedule Import repository time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Migrate only `timeMinutes` to `ScheduleValueParser::parseDisplayTime` with
+   the ordered allowlist `HourMinuteAmPmSpaced`, `HourMinuteAmPmCompact`,
+   `HourMinute24Hour`, and `PaddedHourMinute24Hour`. Preserve trimming,
+   hour/minute conversion, and -1 on failure; do not use the default
+   eight-format API.
+2. Preserve caller rejection behavior, raw persisted start/end text, and all
+   other repository behavior.
+3. Extend `tests/schedule_import_tests.cpp` through the typed public import
+   path: prove all four formats and trimmed text remain accepted and persist
+   unchanged; malformed time must yield `InvalidProjectedTime` and cause no
+   writes.
+4. Add `src/domain/rules/schedule_value_parser.cpp` to the direct sources for
+   `ClassMngrScheduleImportTests` in `cmake/tests/features.cmake`. Build
+   `ClassMngr` and `ClassMngrScheduleImportTests`; run only the CTest
+   `ClassMngrScheduleImportTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 176 is active with F701.
