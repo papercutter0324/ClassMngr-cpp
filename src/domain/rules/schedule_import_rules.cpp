@@ -312,32 +312,27 @@ QString scheduleImportWeekdayDisplayName(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
     {
+        return day;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return QObject::tr("Monday");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return QObject::tr("Tuesday");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return QObject::tr("Wednesday");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return QObject::tr("Thursday");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return QObject::tr("Friday");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
+    case ScheduleValueParser::Weekday::Saturday:
         return QObject::tr("Saturday");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
+    case ScheduleValueParser::Weekday::Sunday:
         return QObject::tr("Sunday");
     }
     return day;

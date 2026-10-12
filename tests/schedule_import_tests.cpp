@@ -44,6 +44,8 @@ private slots:
     void appliesIntensiveSlotStatesSnapshot();
     void appliesIntensiveSlotStateTimesWithLegacyQtSemantics_data();
     void appliesIntensiveSlotStateTimesWithLegacyQtSemantics();
+    void scheduleImportWeekdayDisplayName_data();
+    void scheduleImportWeekdayDisplayName();
     void validatesCourseMeetingPatterns();
     void partitionsRepeatedCourseIntoValidClasses();
     void filtersClassOptionsByGradeAndDayGroup();
@@ -1534,6 +1536,45 @@ appliesIntensiveSlotStateTimesWithLegacyQtSemantics()
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::scheduleImportWeekdayDisplayName_data()
+{
+    QTest::addColumn<QString>("day");
+    QTest::addColumn<QString>("expectedDisplayName");
+
+    QTest::newRow("monday")
+        << QStringLiteral("Monday") << QObject::tr("Monday");
+    QTest::newRow("tuesday")
+        << QStringLiteral("Tuesday") << QObject::tr("Tuesday");
+    QTest::newRow("wednesday")
+        << QStringLiteral("Wednesday") << QObject::tr("Wednesday");
+    QTest::newRow("thursday")
+        << QStringLiteral("Thursday") << QObject::tr("Thursday");
+    QTest::newRow("friday")
+        << QStringLiteral("Friday") << QObject::tr("Friday");
+    QTest::newRow("saturday")
+        << QStringLiteral("Saturday") << QObject::tr("Saturday");
+    QTest::newRow("sunday")
+        << QStringLiteral("Sunday") << QObject::tr("Sunday");
+    QTest::newRow("padded-canonical")
+        << QStringLiteral(" Monday ") << QStringLiteral(" Monday ");
+    QTest::newRow("lowercase")
+        << QStringLiteral("monday") << QStringLiteral("monday");
+    QTest::newRow("padded-unknown")
+        << QStringLiteral(" Funday ") << QStringLiteral(" Funday ");
+    QTest::newRow("empty") << QString() << QString();
+}
+
+void ScheduleImportTests::scheduleImportWeekdayDisplayName()
+{
+    QFETCH(QString, day);
+    QFETCH(QString, expectedDisplayName);
+
+    QCOMPARE(
+        ::scheduleImportWeekdayDisplayName(day),
+        expectedDisplayName
+        );
 }
 
 void ScheduleImportTests::validatesCourseMeetingPatterns()
