@@ -4560,10 +4560,19 @@ remain; added public model cases cover padded Monday, lowercase monday, and
 padded unknown Funday labels. The focused model CTest passed 1/1 after both
 targets built; no full suite ran.
 
-F732 is selected in Batch 179 for `ScheduleWidget::scheduleWeekday`. Reuse the
-shared weekday parser with raw canonical-text equality to preserve the
-current exact, case-sensitive, unpadded grammar. The public click-save test
-will cover all seven canonical weekdays plus padded, lowercase, unknown, and
-empty rejection while asserting warning, zero saves, and preview retention.
-The existing focused target already compiles the parser. Phase 2 remains In
-Progress with Gates 1 and 2 Partial.
+F732 is accepted in Batch 179 and committed as
+`00e4a17e45d376f61c3d113b8bc1436110224d29`. `ScheduleWidget::scheduleWeekday`
+uses the shared weekday parser with raw canonical-text equality, preserving
+exact, case-sensitive, unpadded input. The public click-save test covers all
+seven canonical days and rejects padded, lowercase, unknown, and empty labels
+with warning, no save, and preview retention. `ClassMngr` and
+`ClassMngrScheduleWidgetTests` built; the one registered CTest passed 1/1. No
+full suite ran.
+
+F733 is selected in Batch 179 for `ScheduleTableRenderer::weekdayLabel`.
+Reuse the shared parser only for exact canonical text; keep the
+`ScheduleWidget` translation context and return padded, lowercase, unknown,
+and empty labels unchanged. Extend the existing widget test target through
+the public renderer seam with seven canonical header checks and raw-fallback
+cases. The target already compiles the parser. Phase 2 remains In Progress
+with Gates 1 and 2 Partial.

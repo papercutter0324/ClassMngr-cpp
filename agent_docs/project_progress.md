@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F731 accepted; F732 selected)
+### Current state - 2026-10-12 (F732 accepted; F733 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F732, the Schedule Widget weekday decoder migration.
+with F733, the Schedule table weekday-header translation migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -351,14 +351,26 @@ formats and adds padded canonical, lowercase, and unknown fallback labels.
 matching CTest registration was confirmed and the focused CTest passed 1/1. No
 full suite ran.
 
-F732 is selected in Batch 179 to migrate `scheduleWeekday` in
-`src/features/schedule/ui/schedule_widget.cpp` to `ScheduleValueParser` while
-preserving exact, case-sensitive, unpadded weekday acceptance. Extend the
-public slot click-save tests for all seven canonical labels and padded,
-lowercase, unknown, and empty rejection with warning, no save, and retained
-preview state. The focused target already includes the parser; no CMake change
-is expected. Build `ClassMngr` and `ClassMngrScheduleWidgetTests`; run only
-that exact CTest. No full suite is planned. F707 remains deferred because its
+F732 is accepted and committed as
+`00e4a17e45d376f61c3d113b8bc1436110224d29`. Schedule Widget weekday decoding
+now uses `ScheduleValueParser::parseWeekday` with raw exact canonical-text
+equality and explicit mapping to `Application::ScheduleWeekday`. The public
+click-save test covers all seven accepted labels and padded, lowercase,
+unknown, and empty rejection, including warning, zero saves, and preview-state
+retention. `ClassMngr` and `ClassMngrScheduleWidgetTests` built; exactly one
+matching CTest registration was confirmed and the focused CTest passed 1/1.
+No full suite ran.
+
+F733 is selected in Batch 179 to migrate
+`ScheduleTableRenderer::weekdayLabel` in
+`src/features/schedule/ui/schedule_table_renderer.cpp` to the shared weekday
+parser while preserving exact canonical translation and raw fallback labels.
+Extend the existing widget test target through public
+`ScheduleTableRenderer::render` for all seven translated headers and padded,
+lowercase, unknown, and empty fallback labels. The target already compiles the
+parser; no CMake change is expected. Build `ClassMngr` and
+`ClassMngrScheduleWidgetTests`; run only that exact CTest. No full suite is
+planned. F707 remains deferred because its
 comparator chain has no observed app callsite; F709 is deferred because its
 public fixture does not readily supply malformed raw time text.
 The current-source Phase 0

@@ -27579,5 +27579,49 @@ exact, unpadded, case-sensitive click-save grammar.
    `ClassMngrScheduleWidgetTests`; confirm exactly one same-named CTest
    registration and run only that exact CTest. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F732;
+This matrix was recorded before implementation.
+
+### F732 Schedule Widget slot-save weekday parser migration - accepted - 2026-10-12
+
+F732 is accepted at code/test commit
+`00e4a17e45d376f61c3d113b8bc1436110224d29`. `scheduleWeekday` now uses
+`ScheduleValueParser::parseWeekday` with raw exact canonical-text equality
+and explicitly maps Monday through Sunday to `Application::ScheduleWeekday`.
+Padded, lowercase, unknown, and empty inputs remain invalid. The data-driven
+public `onCellClicked` test verifies all seven canonical labels save the
+expected weekday; invalid labels warn, perform zero saves, and retain preview
+state.
+
+`ClassMngr` and `ClassMngrScheduleWidgetTests` built successfully. Exactly one
+matching CTest registration was confirmed; the exact CTest passed 1/1.
+`git diff --check` passed. No full suite ran.
+
+**Decision: accept F732.** Batch 179 continues with F733; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F733 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `ScheduleTableRenderer::weekdayLabel` in
+`src/features/schedule/ui/schedule_table_renderer.cpp`. The current mapping
+translates exact canonical English weekday labels through
+`QCoreApplication::translate("ScheduleWidget", source)` and returns unknown,
+padded, and lowercase labels unchanged.
+
+**F733 is selected:** reuse the Domain weekday parser for canonical label
+selection while preserving raw fallback text.
+
+1. Migrate only `weekdayLabel` to `ScheduleValueParser::parseWeekday` and
+   require `parsed->text == day` on the raw input. Translate only canonical
+   weekday labels through the existing `ScheduleWidget` context; preserve the
+   exact raw text for padded, lowercase, unknown, and empty values. Leave all
+   other renderer behavior unchanged.
+2. Extend `tests/schedule_widget_tests.cpp` through public
+   `ScheduleTableRenderer::render` coverage for all seven canonical translated
+   headers and raw fallbacks for padded, lowercase, unknown, and empty labels.
+3. `ClassMngrScheduleWidgetTests` already compiles the renderer and parser, so
+   no CMake change is needed. Build `ClassMngr` and that target; confirm
+   exactly one same-named CTest registration and run only that exact CTest.
+   Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F733;
 F707 and F709 remain deferred.
