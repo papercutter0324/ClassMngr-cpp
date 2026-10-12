@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F723.
+  F724.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -177,15 +177,18 @@
   dialog test keeps malformed-time coverage and confirms invalid review plus
   disabled Import for valid-time lowercase/padded weekdays. `ClassMngr` and
   `ClassMngrScheduleImportDialogTests` built; the exact CTest passed 1/1
-  (2.32 seconds). No full suite ran. F723 selects `typedScheduleTimes` in
-  `src/features/setup/ui/initial_setup_wizard.cpp`, preserving exact raw day
-  matching and `-1`. Add a public setup wizard test with valid schedule times
-  and injected lowercase/padded item data. Rejection must keep
-  `ClassTimesPage`, show `The class information could not be saved.`, retain
-  one blank `classes` row, and leave `class_info`, `class_times`, and
-  `class_intensive_times` empty. Build `ClassMngr` and
-  `ClassMngrInitialSetupWizardTests`, then run only that exact registered
-  CTest. No CMake change is needed. F707 and F709 remain deferred; the
+  (2.32 seconds). No full suite ran. F723 is accepted and committed as
+  `ad80828cc0acf2290aa4ba8627f6b060bf314060`. The setup wizard test verifies
+  valid-time malformed weekday rejection, the exact warning, one blank class
+  row, and no details or schedule rows; `ClassMngrInitialSetupWizardTests`
+  passed 1/1 (1.75 seconds). No full suite ran. F724 selects
+  `ClassDetailsValidationPolicy::weekdayIndex`, reusing
+  `ScheduleKeyRules::parseWeekday` after the policy's existing trim and with
+  its ASCII case-insensitive comparator so the Application policy remains
+  Qt-free. Add padded-invalid `Funday` coverage for the exact issue details;
+  existing `validInput()` protects padded lowercase canonicalization. Build
+  `ClassMngr` and `ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+  then run only that exact CTest. F707 and F709 remain deferred; the
   preimplementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked

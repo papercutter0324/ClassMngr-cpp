@@ -4481,12 +4481,17 @@ test verifies both valid-time malformed weekdays keep the review invalid and
 Import disabled while retaining malformed-time coverage. The focused dialog
 CTest passed 1/1; no full suite ran.
 
-F723 selects `typedScheduleTimes` in
-`src/features/setup/ui/initial_setup_wizard.cpp`. A public test can inject
-malformed weekday data through the schedule row's item data. Preserve the
-validation boundary and its existing side effect: the blank class row is
-created before schedule parsing, while class details and schedule rows are
-not saved after rejection. Assert the wizard stays on ClassTimesPage, records
-the exact warning, and leaves one blank class with no detail or schedule
-records. F707 and F709 remain deferred for their documented callsite and
-fixture constraints. Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F723 is accepted and committed as `ad80828cc0acf2290aa4ba8627f6b060bf314060`.
+Its public test preserves the setup wizard's create-before-schedule-validation
+behavior: malformed weekdays keep the wizard on ClassTimesPage, show the
+exact warning, leave one blank class row, and save no details or schedules.
+The focused wizard CTest passed 1/1; no full suite ran.
+
+F724 selects `ClassDetailsValidationPolicy::weekdayIndex`. Keep this
+Application policy Qt-free by reusing `ScheduleKeyRules::parseWeekday` with
+its existing case-insensitive comparator after its own whitespace trim.
+Existing tests already cover padded lowercase canonical input; add padded
+invalid ` Funday ` coverage for the invalid-weekday issue and normalized
+reported value. F707 and F709 remain deferred for their documented callsite
+and fixture constraints. Phase 2 remains In Progress with Gates 1 and 2
+Partial.

@@ -27176,4 +27176,48 @@ exact `days.indexOf` match and `-1` invalid fallback.
    `ClassMngrInitialSetupWizardTests`; run only the exact registered CTest
    `ClassMngrInitialSetupWizardTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F723.
+This matrix was recorded before implementation.
+
+### F723 Initial Setup Wizard weekday parser migration - accepted - 2026-10-12
+
+F723 is accepted at code/test commit
+`ad80828cc0acf2290aa4ba8627f6b060bf314060`. `typedScheduleTimes` preserves
+strict raw weekday equality. Public wizard coverage verifies valid-time
+`monday` and ` Monday ` inputs are rejected with the exact warning
+`The class information could not be saved.` Because class creation precedes
+schedule validation, one blank `classes` row remains while
+`class_info`, `class_times`, and `class_intensive_times` remain empty.
+
+`ClassMngr` and `ClassMngrInitialSetupWizardTests` built successfully. The
+exact registered CTest `ClassMngrInitialSetupWizardTests` passed 1/1 in 1.75
+seconds. No full suite ran.
+
+**Decision: accept F723.** Batch 179 continues with F724; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F724 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `ClassDetailsValidationPolicy::weekdayIndex` in
+`src/next/application/class_details_validation_policy.h`. This policy remains
+Qt-free.
+
+**F724 is selected:** reuse `ScheduleKeyRules::parseWeekday` while preserving
+the policy's canonical weekday and invalid-input contract.
+
+1. Migrate only `weekdayIndex` to `ScheduleKeyRules::parseWeekday`. Apply the
+   existing `trim(value)` and pass the existing `equalsCaseInsensitive`
+   comparator. Preserve Monday-through-Sunday enum/index order,
+   `std::nullopt` for invalid weekdays, and current padded/lowercase
+   canonicalization. Existing `validInput()` coverage protects padded
+   lowercase `u" monday "` mapping to Monday.
+2. Add a focused policy test with padded invalid weekday `u" Funday "` and
+   valid times. Assert exactly one `InvalidWeekday` issue on `ScheduleDay`,
+   Regular row 0, with normalized issue value `Funday`.
+3. The parser header is already in the Application include graph, so no CMake
+   wiring change is needed. Build `ClassMngr` and
+   `ClassMngrNextApplicationClassDetailsValidationPolicyTests`; run only the
+   exact registered CTest
+   `ClassMngrNextApplicationClassDetailsValidationPolicyTests`. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F724.
