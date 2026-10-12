@@ -16,12 +16,15 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QPushButton>
+#include <QVariant>
 #include <QtTest/QtTest>
 
 #include <memory>
@@ -224,12 +227,15 @@ void setAutomaticChecksEnabled(const bool enabled)
     SettingsManager::instance().sync();
 }
 
-void setSkippedUpdateVersion(const std::string& version)
+[[nodiscard]] bool setSkippedUpdateVersion(const std::string& version)
 {
     const ClassMngr::Next::Platform::
         SettingsManagerSkippedUpdateVersionPort
         skippedUpdateVersionPort;
-    skippedUpdateVersionPort.write({.skippedVersion = version});
+    const auto result = skippedUpdateVersionPort.write({
+        .skippedVersion = version
+    });
+    return static_cast<bool>(result);
 }
 
 UpdateDialog* automaticUpdateDialog()
@@ -291,6 +297,7 @@ private slots:
     void unconfiguredStartupDoesNotDispatch();
     void staleSkippedVersionClearsAndSynchronizesOpenDialog();
     void exactSkippedVersionIsKeptAndSuppressesPrompt();
+    void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsRoot;
@@ -446,7 +453,7 @@ staleSkippedVersionClearsAndSynchronizesOpenDialog()
 
     // The stale value is cleared before prompt eligibility is evaluated, so
     // the available update opens the automatic prompt.
-    setSkippedUpdateVersion("1.5.0");
+    QVERIFY(setSkippedUpdateVersion("1.5.0"));
     QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
     QTRY_COMPARE(succeededSpy.count(), 1);
     QCOMPARE(server.requestCount(), 1);
@@ -471,7 +478,7 @@ staleSkippedVersionClearsAndSynchronizesOpenDialog()
         secondaryButton->text(),
         QStringLiteral("Notify Me About This Version")
         );
-    setSkippedUpdateVersion("1.5.0");
+    QVERIFY(setSkippedUpdateVersion("1.5.0"));
 
     QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
     QTRY_COMPARE(succeededSpy.count(), 2);
@@ -488,7 +495,7 @@ exactSkippedVersionIsKeptAndSuppressesPrompt()
 {
     QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
     setAutomaticChecksEnabled(true);
-    setSkippedUpdateVersion("2.0.0");
+    QVERIFY(setSkippedUpdateVersion("2.0.0"));
 
     LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
     QVERIFY(server.listen());
@@ -508,6 +515,148 @@ exactSkippedVersionIsKeptAndSuppressesPrompt()
         std::optional<std::string>("2.0.0")
         );
     QVERIFY(!controller.hasVisibleDialog());
+}
+
+void UpdateControllerAutomaticStartupTests::
+failedAutomaticSkipKeepsDialogOpenAndAllowsRetry()
+{
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    setAutomaticChecksEnabled(true);
+
+    const QString skippedVersionKey = QString::fromUtf8(
+        SettingsManager::Keys::SKIPPED_UPDATE_VERSION
+        );
+    SettingsManager& settings = SettingsManager::instance();
+    settings.remove(skippedVersionKey);
+    settings.sync();
+
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    UpdateService service(configurationFor(server.url()));
+    QSignalSpy succeededSpy(&service, &UpdateService::checkSucceeded);
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    auto skippedUpdateVersionPreferences = std::make_shared<
+        ClassMngr::Next::Platform::
+            SettingsManagerSkippedUpdateVersionPort
+        >(
+            [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+            {
+                ++synchronizationAttempts;
+                if (injectAccessError)
+                {
+                    return QSettings::AccessError;
+                }
+
+                settings.sync();
+                return settings.status();
+            }
+            );
+    UpdateController controller(
+        &service,
+        nullptr,
+        skippedUpdateVersionPreferences
+        );
+
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeededSpy.count(), 1);
+    QTRY_VERIFY(controller.hasVisibleDialog());
+    QCOMPARE(server.requestCount(), 1);
+
+    UpdateDialog* const dialog = automaticUpdateDialog();
+    QVERIFY(dialog);
+    QVERIFY(dialog->isVisible());
+    QVERIFY(dialog->property("automaticUpdatePrompt").toBool());
+    auto* const secondaryButton = dialog->findChild<QPushButton*>(
+        QStringLiteral("updateSecondaryButton")
+        );
+    auto* const detailsLabel = dialog->findChild<QLabel*>(
+        QStringLiteral("programUpdateDetails")
+        );
+    QVERIFY(secondaryButton);
+    QVERIFY(detailsLabel);
+    QVERIFY(detailsLabel->isVisible());
+    QCOMPARE(secondaryButton->text(), QStringLiteral("Skip This Version"));
+    QVERIFY(!settings.get(skippedVersionKey).isValid());
+    QVERIFY(
+        !detailsLabel->text().contains(
+            QStringLiteral("could not be saved"),
+            Qt::CaseInsensitive
+            )
+        );
+
+    secondaryButton->click();
+
+    QVERIFY(controller.hasVisibleDialog());
+    QVERIFY(dialog->isVisible());
+    QVERIFY(dialog->property("automaticUpdatePrompt").toBool());
+    QCOMPARE(secondaryButton->text(), QStringLiteral("Skip This Version"));
+    QCOMPARE(synchronizationAttempts, 1);
+    QVERIFY(!settings.get(skippedVersionKey).isValid());
+    QVERIFY(
+        !skippedUpdateVersionPreferences->read().skippedVersion.has_value()
+        );
+    QVERIFY(
+        detailsLabel->text().contains(
+            QStringLiteral("The skipped update version could not be saved:"),
+            Qt::CaseInsensitive
+            )
+        );
+    QCOMPARE(
+        detailsLabel->text().count(
+            QStringLiteral("The skipped update version could not be saved:")
+            ),
+        1
+        );
+    QCOMPARE(detailsLabel->text().count(QStringLiteral("AccessError")), 1);
+
+    // Hiding does not finish the automatic dialog. A subsequent eligible
+    // update result must be able to show it again, which proves the failed
+    // save did not set automatic-prompt suppression.
+    dialog->hide();
+    QVERIFY(!controller.hasVisibleDialog());
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeededSpy.count(), 2);
+    QCOMPARE(server.requestCount(), 2);
+    QTRY_VERIFY(controller.hasVisibleDialog());
+    QVERIFY(dialog->isVisible());
+    QCOMPARE(secondaryButton->text(), QStringLiteral("Skip This Version"));
+    QVERIFY(!settings.get(skippedVersionKey).isValid());
+    QCOMPARE(synchronizationAttempts, 1);
+
+    injectAccessError = false;
+    secondaryButton->click();
+
+    QTRY_VERIFY(!controller.hasVisibleDialog());
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(settings.get(skippedVersionKey), QVariant(QStringLiteral("2.0.0")));
+    QCOMPARE(
+        skippedUpdateVersionPreferences->read().skippedVersion,
+        std::optional<std::string>("2.0.0")
+        );
+    QSettings persistedSettings(
+        QDir(m_settingsRoot->path()).filePath(
+            QStringLiteral("PaperCloud/ClassMngr.ini")
+            ),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(
+        persistedSettings.value(skippedVersionKey),
+        QVariant(QStringLiteral("2.0.0"))
+        );
+
+    // A later newer result clears the now-stale stored value. The automatic
+    // prompt remains suppressed after the successful Skip Version operation.
+    server.setBody(validReleaseResponse(QStringLiteral("2.1.0")));
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeededSpy.count(), 3);
+    QCOMPARE(server.requestCount(), 3);
+    QVERIFY(!controller.hasVisibleDialog());
+    QVERIFY(!settings.get(skippedVersionKey).isValid());
+    QCOMPARE(synchronizationAttempts, 2);
 }
 
 QTEST_MAIN(UpdateControllerAutomaticStartupTests)

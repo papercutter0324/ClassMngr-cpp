@@ -29,6 +29,15 @@ public:
     void setSkippedVersion(
         const QString& version
         );
+    void setSkipVersionResultHandlingEnabled(
+        bool enabled
+        );
+    void completeSkipVersion(
+        const QString& version
+        );
+    void showSkippedVersionSaveFailure(
+        const QString& message
+        );
 
 signals:
     void skipVersionRequested(
@@ -163,4 +172,5 @@ private:
     SecondaryAction m_secondaryAction = SecondaryAction::None;
     bool m_hasResult = false;
     bool m_startupComplete = false;
+    bool m_skipVersionResultHandlingEnabled = false;
 };

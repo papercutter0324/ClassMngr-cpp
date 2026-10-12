@@ -1,7 +1,16 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <QObject>
 #include <QPointer>
+
+#include <memory>
+
+namespace ClassMngr::Next::Application
+{
+class SkippedUpdateVersionPreferencesPort;
+}
 
 class ActionRegistry;
 class MainWindow;
@@ -16,7 +25,11 @@ class UpdateController : public QObject
 public:
     explicit UpdateController(
         UpdateService* service,
-        QObject* parent = nullptr
+        QObject* parent = nullptr,
+        std::shared_ptr<
+            ClassMngr::Next::Application::
+                SkippedUpdateVersionPreferencesPort
+            > skippedUpdateVersionPreferencesPort = {}
         );
 
     void attachMainWindow(
@@ -34,7 +47,7 @@ private:
     [[nodiscard]] bool reconcileSkippedVersion(
         const UpdateCheckResult& result
         );
-    void skipVersion(
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void> skipVersion(
         const QString& version
         );
     void unskipVersion();
@@ -46,6 +59,9 @@ private:
 
 private:
     UpdateService* m_service = nullptr;
+    std::shared_ptr<
+        ClassMngr::Next::Application::SkippedUpdateVersionPreferencesPort
+        > m_skippedUpdateVersionPreferencesPort;
     QPointer<MainWindow> m_window;
     QPointer<UpdateDialog> m_dialog;
     bool m_automaticCheckStarted = false;

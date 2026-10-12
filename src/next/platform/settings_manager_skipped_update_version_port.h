@@ -5,6 +5,9 @@
 
 #include <QString>
 
+#include <string>
+#include <utility>
+
 namespace ClassMngr::Next::Platform
 {
 
@@ -15,7 +18,12 @@ class SettingsManagerSkippedUpdateVersionPort final
     : public Application::SkippedUpdateVersionPreferencesPort
 {
 public:
-    SettingsManagerSkippedUpdateVersionPort() = default;
+    explicit SettingsManagerSkippedUpdateVersionPort(
+        SettingsManager::SkippedUpdateVersionPreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::SkippedUpdateVersionPreferences read()
         const override
@@ -38,7 +46,7 @@ public:
         };
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::SkippedUpdateVersionPreferences& preferences
         ) const override
     {
@@ -46,12 +54,27 @@ public:
             ? QString::fromStdString(*preferences.skippedVersion).trimmed()
             : QString();
 
-        SettingsManager::instance().set(
-            QString::fromUtf8(
-                SettingsManager::Keys::SKIPPED_UPDATE_VERSION
-                ),
-            version
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().writeSkippedUpdateVersionPreference(
+                version,
+                m_synchronize
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save skipped update version preference: "
+                    "QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
     void clear() const override
@@ -62,6 +85,9 @@ public:
                 )
             );
     }
+
+private:
+    SettingsManager::SkippedUpdateVersionPreferenceSync m_synchronize;
 };
 
 } // namespace ClassMngr::Next::Platform

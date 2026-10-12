@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/operation_result.h"
+
 #include <optional>
 #include <string>
 
@@ -31,7 +33,7 @@ public:
     [[nodiscard]] virtual SkippedUpdateVersionPreferences read()
         const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         const SkippedUpdateVersionPreferences& preferences
         ) const = 0;
 

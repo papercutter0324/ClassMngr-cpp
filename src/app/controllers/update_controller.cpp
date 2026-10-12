@@ -18,6 +18,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace
 {
@@ -37,12 +38,27 @@ ClassMngr::Next::Application::UpdateVersion toApplicationVersion(
 
 UpdateController::UpdateController(
     UpdateService* service,
-    QObject* parent
+    QObject* parent,
+    std::shared_ptr<
+        ClassMngr::Next::Application::
+            SkippedUpdateVersionPreferencesPort
+        > skippedUpdateVersionPreferencesPort
     )
     : QObject(parent)
     , m_service(service)
+    , m_skippedUpdateVersionPreferencesPort(
+        std::move(skippedUpdateVersionPreferencesPort)
+        )
 {
     Q_ASSERT(m_service);
+
+    if (!m_skippedUpdateVersionPreferencesPort)
+    {
+        m_skippedUpdateVersionPreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerSkippedUpdateVersionPort
+            >();
+    }
 
     connect(
         m_service,
@@ -90,11 +106,8 @@ bool UpdateController::reconcileSkippedVersion(
     const UpdateCheckResult& result
     )
 {
-    const ClassMngr::Next::Platform::
-        SettingsManagerSkippedUpdateVersionPort
-        skippedUpdateVersionPort;
     const auto storedSkippedVersion =
-        skippedUpdateVersionPort.read().skippedVersion;
+        m_skippedUpdateVersionPreferencesPort->read().skippedVersion;
 
     using ClassMngr::Next::Application::
         SkippedUpdateVersionPolicyInput;
@@ -138,7 +151,7 @@ bool UpdateController::reconcileSkippedVersion(
         decideSkippedUpdateVersion(input);
     if (decision.clearStoredVersion)
     {
-        skippedUpdateVersionPort.clear();
+        m_skippedUpdateVersionPreferencesPort->clear();
         if (m_dialog)
         {
             m_dialog->setSkippedVersion(QString());
@@ -148,7 +161,7 @@ bool UpdateController::reconcileSkippedVersion(
     return decision.suppressAutomaticPrompt;
 }
 
-void UpdateController::skipVersion(
+ClassMngr::Next::Domain::Result<void> UpdateController::skipVersion(
     const QString& version
     )
 {
@@ -156,25 +169,29 @@ void UpdateController::skipVersion(
         Version::parse(version);
     if (!parsed)
     {
-        return;
+        return ClassMngr::Next::Domain::Result<void>::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+            .message = "The selected update version is invalid.",
+            .recoverable = false
+        });
     }
 
-    const ClassMngr::Next::Platform::
-        SettingsManagerSkippedUpdateVersionPort
-        skippedUpdateVersionPort;
-    skippedUpdateVersionPort.write({
-        .skippedVersion = parsed->toString().toStdString()
+    const auto saved = m_skippedUpdateVersionPreferencesPort->write({
+        .skippedVersion = parsed->toString().toUtf8().toStdString()
     });
+    if (!saved)
+    {
+        return saved;
+    }
+
     m_automaticPromptSuppressed =
         true;
+    return ClassMngr::Next::Domain::Result<void>::success();
 }
 
 void UpdateController::unskipVersion()
 {
-    const ClassMngr::Next::Platform::
-        SettingsManagerSkippedUpdateVersionPort
-        skippedUpdateVersionPort;
-    skippedUpdateVersionPort.clear();
+    m_skippedUpdateVersionPreferencesPort->clear();
     m_automaticPromptSuppressed =
         false;
 }
@@ -315,11 +332,8 @@ UpdateDialog* UpdateController::ensureDialog(
     bool automaticPrompt
     )
 {
-    const ClassMngr::Next::Platform::
-        SettingsManagerSkippedUpdateVersionPort
-        skippedUpdateVersionPort;
     const auto skipped =
-        skippedUpdateVersionPort.read().skippedVersion;
+        m_skippedUpdateVersionPreferencesPort->read().skippedVersion;
     const QString skippedText = skipped.has_value()
         ? QString::fromStdString(*skipped)
         : QString();
@@ -359,11 +373,25 @@ UpdateDialog* UpdateController::ensureDialog(
     m_dialog =
         dialog;
 
+    dialog->setSkipVersionResultHandlingEnabled(true);
+
     connect(
         dialog,
         &UpdateDialog::skipVersionRequested,
         this,
-        &UpdateController::skipVersion
+        [this, dialog](const QString& version)
+        {
+            const auto saved = skipVersion(version);
+            if (!saved)
+            {
+                dialog->showSkippedVersionSaveFailure(
+                    QString::fromStdString(saved.error().message)
+                    );
+                return;
+            }
+
+            dialog->completeSkipVersion(version);
+        }
         );
     connect(
         dialog,

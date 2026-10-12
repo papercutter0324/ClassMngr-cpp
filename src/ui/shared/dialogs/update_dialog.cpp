@@ -53,6 +53,31 @@ void UpdateDialog::setSkippedVersion(
     }
 }
 
+void UpdateDialog::setSkipVersionResultHandlingEnabled(
+    const bool enabled
+    )
+{
+    m_skipVersionResultHandlingEnabled = enabled;
+}
+
+void UpdateDialog::completeSkipVersion(
+    const QString& version
+    )
+{
+    m_skippedVersion = version.trimmed();
+    reject();
+}
+
+void UpdateDialog::showSkippedVersionSaveFailure(
+    const QString& message
+    )
+{
+    showOperationFailure(
+        tr("The skipped update version could not be saved: %1")
+            .arg(message)
+        );
+}
+
 void UpdateDialog::refreshForOpen()
 {
     if (m_service->isBusy())
@@ -199,11 +224,18 @@ void UpdateDialog::handleSecondaryAction()
     case SecondaryAction::SkipVersion:
         if (m_hasResult && m_result.updateAvailable)
         {
-            m_skippedVersion =
+            const QString requestedVersion =
                 m_result.latestVersion.toString();
             emit skipVersionRequested(
-                m_skippedVersion
+                requestedVersion
                 );
+
+            if (m_skipVersionResultHandlingEnabled)
+            {
+                return;
+            }
+
+            m_skippedVersion = requestedVersion;
             reject();
         }
         return;

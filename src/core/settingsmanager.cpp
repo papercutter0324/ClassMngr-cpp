@@ -935,6 +935,57 @@ QSettings::Status SettingsManager::writeAutomaticUpdatePreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeSkippedUpdateVersionPreference(
+    const QString& version,
+    const SkippedUpdateVersionPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousVersion =
+        m_settings->contains(Keys::SKIPPED_UPDATE_VERSION);
+    const QVariant previousVersion =
+        m_settings->value(Keys::SKIPPED_UPDATE_VERSION);
+
+    m_settings->setValue(
+        Keys::SKIPPED_UPDATE_VERSION,
+        version
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore the attempted value before destroying this instance so it
+        // cannot be retried during teardown.
+        if (hadPreviousVersion)
+        {
+            m_settings->setValue(
+                Keys::SKIPPED_UPDATE_VERSION,
+                previousVersion
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::SKIPPED_UPDATE_VERSION);
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see the restored preference and retries can work.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 QString SettingsManager::skippedUpdateVersion() const
 {
     return get(

@@ -343,6 +343,16 @@ public:
         const AutomaticUpdatePreferenceSync& synchronize = {}
         );
 
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores the previous key before returning.
+    using SkippedUpdateVersionPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeSkippedUpdateVersionPreference(
+        const QString& version,
+        const SkippedUpdateVersionPreferenceSync& synchronize = {}
+        );
+
     QString skippedUpdateVersion() const;
     void setSkippedUpdateVersion(
         const QString& version
