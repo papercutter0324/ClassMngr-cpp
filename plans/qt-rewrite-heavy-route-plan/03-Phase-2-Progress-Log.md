@@ -28694,3 +28694,46 @@ that exact CTest. Run no full suite.
 This matrix is recorded before implementation; F752 is not complete. F707/F709
 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
 remains Open.
+
+### F752 Speaking Evaluation duplicate name-pair grouping - accepted - 2026-10-13
+
+F752 is accepted at commit
+`1dee0b06543c053badfba56bef542417e7177efe` (`Phase2 - Reuse ordered duplicate
+name grouping in speaking evaluation`). It replaces the duplicate ordered
+grouping loop with `Domain::duplicateStudentNamePairGroups`, preserving Unicode
+trim, incomplete-pair exclusion, first-seen group and row order, issue
+metadata, `duplicateRows`, and pre-persistence validation.
+
+Under Windows x64 Ninja Debug with VS 2026 x64 Developer,
+`ClassMngr` and
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests` built. The unique
+CTest #229 passed 1/1 in 0.05 seconds (0.08 seconds total). No full suite ran.
+
+### Batch 183 continuation - F753 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F753 is selected:** reuse the shared QString::trimmed-compatible whitespace
+predicate in upcoming birthday schedule blank-name filtering.
+
+Source review found that `upcoming_birthday_schedule_use_case.h` has a local
+Unicode whitespace table that omits U+0085, while
+`qt_compatible_text.h` has `isQtWhitespace` which includes it. The existing
+`omitsInvalidBirthdaysAndBlankNames` case already covers empty, NBSP, and tab
+names.
+
+1. Use `isQtWhitespace` from
+   `src/next/application/qt_compatible_text.h` in the birthday schedule's
+   blank-name predicate. Preserve ASCII birthday parsing, date arithmetic,
+   bucketing, ordering, and existing whitespace semantics.
+2. Add a U+0085-only display name to
+   `omitsInvalidBirthdaysAndBlankNames` in
+   `tests/next_application_upcoming_birthday_schedule_use_case_tests.cpp` and
+   verify it is omitted.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`; confirm
+   exactly one CTest registration named
+   `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, then run
+   only that exact CTest. Run no full suite.
+
+This matrix is recorded before implementation; F753 implementation has not
+started. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
+formal exit gate remains Open.

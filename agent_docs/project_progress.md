@@ -53,14 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F751 accepted; F752 selected)
+### Current state - 2026-10-13 (F752 accepted; F753 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-181 are complete with F707 and F709 deferred. F740-F751 are
-accepted; F752 will reuse the domain student-name-pair grouping helper in
-speaking-evaluation validation. The separate CMake source-ownership
-optimization was also completed during this continuation.
+Batches 141-182 are complete with F707 and F709 deferred. F740-F752 are
+accepted; F753 will align birthday-schedule blank-name filtering with the
+shared Qt-compatible whitespace predicate. The separate CMake
+source-ownership optimization was also completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -4709,19 +4709,26 @@ x64 Developer, `ClassMngr` and
 passed 1/1 in 0.02 seconds. An initial shell lacked MSVC include paths; the
 Developer-environment rerun passed. No full suite ran.
 
-F752 is selected in Batch 182 to replace the ordered duplicate-name-pair
-grouping loop in `speaking_evaluation_validation.h` with the existing
-`Domain::duplicateStudentNamePairGroups` helper. Preserve Unicode-aware trim
-before grouping; exclude incomplete pairs; preserve first-seen group order,
-source-row order within each group, and English-then-Korean issue order for
-each row. Keep issue code `student_name.duplicate_pair`, Error severity,
-field names, columns 1/2, zero-based row indexes, and exact `duplicateRows`
-membership/order. Extend the speaking-evaluation save tests with interleaved
-duplicate groups, whitespace-equivalent names, and incomplete rows; assert the
-exact issue sequence and no persistence after validation failure. Build
-`ClassMngr` and `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`,
-confirm exactly one CTest registration, and run only that exact CTest. No
-full suite. F707 and F709 remain deferred. Phase 2 remains In Progress/Open
-with Gates 1 and 2 Partial; F625's assessment is accepted, F626 is deferred,
-and separate current-source Phase 0 evidence remains Windows x64 2/24 and
-macOS universal 0/24.
+F752 is accepted and committed as
+`1dee0b06543c053badfba56bef542417e7177efe` (`Phase2 - Reuse ordered duplicate
+name grouping in speaking evaluation`). Speaking-evaluation validation now
+uses `Domain::duplicateStudentNamePairGroups`, retaining Unicode trimming,
+incomplete-pair exclusion, first-seen group and row order, issue metadata,
+duplicate-row metadata, and the pre-persistence validation boundary. Under
+the Windows x64 Ninja Debug tree and VS 2026 x64 Developer environment,
+`ClassMngr` and
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests` built. Unique
+CTest #229 passed 1/1 in 0.05 seconds (0.08 seconds total). No full suite ran.
+
+F753 is selected in Batch 183 to reuse `Application::isQtWhitespace` for the
+blank-name filter in `UpcomingBirthdayScheduleUseCase`, replacing the local
+Unicode whitespace predicate that omits U+0085. Add a U+0085-only display
+name to the existing blank-name regression case and verify it is omitted.
+Preserve ASCII birthday parsing, date arithmetic, bucketing, ordering, and
+all existing whitespace cases. Build `ClassMngr` and
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, confirm
+exactly one CTest registration, and run only that exact CTest. No full suite.
+F707 and F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1
+and 2 Partial; F625's assessment is accepted, F626 is deferred, and separate
+current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
+0/24.

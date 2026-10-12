@@ -4797,8 +4797,11 @@ suite ran.
 F751 is accepted at `990a5469b8a2268ddb27bc46d034ce5762ec4d31`. Reusing
 `Domain::GregorianDate::fromIsoString` preserves canonical date parsing while
 removing the teacher-import duplicate; keep the caller's validation flag and
-reject invalid input before persistence. F752 is selected to reuse
-`Domain::duplicateStudentNamePairGroups` in speaking-evaluation validation.
-The caller must trim first because the domain helper groups exact name pairs;
-then it must preserve issue order and duplicate-row metadata. F707/F709
+reject invalid input before persistence. F752 is accepted at
+`1dee0b06543c053badfba56bef542417e7177efe`. Reusing
+`Domain::duplicateStudentNamePairGroups` kept first-seen pair/row ordering,
+but the caller still had to trim before grouping because the domain helper
+groups exact values. The focused test makes issue and duplicate-row ordering
+explicit. F753 reuses the existing Qt-compatible whitespace predicate in the
+birthday schedule because a separate local table omitted U+0085. F707/F709
 remain deferred and the Phase 2 exit gate remains open.

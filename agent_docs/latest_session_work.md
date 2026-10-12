@@ -18,10 +18,12 @@
   passed 3/3. F751 is committed as
   `990a5469b8a2268ddb27bc46d034ce5762ec4d31`; `ClassMngr` and its use-case
   test target built under VS 18 x64 Developer, and unique CTest #265 passed
-  1/1. F752 is selected in Batch 182 to reuse the ordered domain
-  student-name-pair grouping helper in speaking-evaluation validation. Its
-  pre-implementation matrix is in the Phase 2 progress log. F707 and F709
-  remain deferred.
+  1/1. F752 is committed as
+  `1dee0b06543c053badfba56bef542417e7177efe`; its two targets built and
+  unique CTest #229 passed 1/1. F753 is selected in Batch 183 to use the
+  shared Qt-compatible whitespace rule for birthday-schedule blank names;
+  its pre-implementation matrix is in the Phase 2 progress log. F707 and
+  F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
