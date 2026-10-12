@@ -190,7 +190,8 @@ suite ran. F716 selects `dayOrder` in
 `class_tab_navigation_model.cpp`. Reuse `ScheduleValueParser::parseWeekday`
 but require its canonical text to equal the already-trimmed input, preserving
 the current case-sensitive behavior: padded canonical weekdays remain
-accepted, while lowercase and unknown spellings remain unknown. Add public
+accepted, while lowercase and unknown spellings retain `UnknownOrder` (1000)
+and sort last. Add public
 `ClassTabNavigation::build` ordering cases for padded canonical and
 lowercase/unknown weekdays alongside the existing navigation-model tests.
 The target already directly compiles `schedule_value_parser.cpp`; no CMake

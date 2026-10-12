@@ -26819,10 +26819,11 @@ existing trimmed, case-sensitive weekday ordering behavior.
 
 1. Migrate only `dayOrder` to `ScheduleValueParser::parseWeekday`. Since the
    Domain parser accepts case-insensitively, require its canonical text to
-   equal the trimmed original input; return unknown `-1` on parse failure or
-   mismatch. Preserve trimming and padded canonical acceptance.
-2. Preserve lowercase and unknown weekday ordering and existing label
-   behavior.
+   equal the trimmed original input. On parse failure or mismatch return the
+   current `UnknownOrder` value (1000), so unknown weekdays continue to sort
+   last. Preserve trimming and padded canonical acceptance.
+2. Preserve lowercase and unknown weekday last-place ordering and existing
+   label behavior.
 3. Extend public `ClassTabNavigation::build` coverage in
    `tests/class_tab_navigation_model_tests.cpp` around
    `classTabsSortByLevelThenDay`, adding padded canonical and lowercase/unknown
