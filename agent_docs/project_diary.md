@@ -4160,13 +4160,18 @@ passed 1/1. Direct cases preserve malformed and whitespace-padded labels,
 12/24-hour display, 50/55-minute ranges, and midnight crossing. No full suite
 ran.
 
-F697 is selected in Batch 172 for the two duplicate display-time format loops
-in `ClassTabNavigationModel`. The Domain display-time parser uses the same
-eight Qt formats in the same order and trims input as the current code does.
-Retain compact label rendering and its malformed-label fallback, unknown sort
-order on invalid input, and omission of seconds from minute ordering. Extend
-the navigation model tests and add the parser source to standalone navigation
-and Classes Page test targets; the Sub Prep Page target already compiles it.
-Build the product and all three directly affected test targets, then run only
-the focused navigation model CTest. The acceptance matrix is in the Phase 2
-progress log.
+F697 is committed as `0e6ddf5a6ec06cb1f76b8e9534890edd43327114`. The product,
+ClassTab navigation model, Classes Page, and Sub Prep Page test targets built
+in the Windows x64 Debug Ninja tree. The exact navigation model CTest passed
+1/1 with a fresh executable and test object. Coverage includes all eight
+display formats, trimmed input, malformed compact fallback, invalid-time
+sorting, and seconds omission from minute ordering. No full suite ran.
+
+F698 is selected in Batch 173 for the single canonical `HH:mm` conversion in
+`ScheduleViewModel::isRegularEarlyEmptySlot`. Reuse `ScheduleValueParser::parseTime`
+only when its canonical text exactly matches the input, preserving untrimmed
+input acceptance. Keep the inclusive 15:00 cutoff, malformed/padded Essay
+fallback, and weekend/intensive behavior. The existing schedule print-model
+target already compiles both parser and model; add boundary and invalid-label
+cases and run its exact focused CTest after building the product and target.
+The acceptance matrix is recorded in the Phase 2 progress log.

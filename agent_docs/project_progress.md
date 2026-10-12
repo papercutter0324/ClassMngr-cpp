@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F697 selected)
+### Current state - 2026-10-12 (F698 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-171 are complete; Batch 172 is active with F697, the
-ClassTabNavigationModel display-time parser migration. F689-F693 are complete;
+Batches 141-172 are complete; Batch 173 is active with F698, the
+ScheduleViewModel canonical-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -74,8 +74,15 @@ under the VS 2026 x64 developer environment, and the exact CTest passed 1/1
 with a fresh test executable and object. No full suite ran. F697 selects the
 two matching display-time loops in `ClassTabNavigationModel`; the acceptance
 matrix and direct-source test target dependencies are recorded in the Phase 2
-progress log. The current-source Phase 0 evidence remains Windows x64 2/24 and
-macOS universal 0/24; it is separate from the historical Phase 0 closure
+progress log. F697 is committed as
+`0e6ddf5a6ec06cb1f76b8e9534890edd43327114`; `ClassMngr`,
+`ClassMngrClassTabNavigationModelTests`, `ClassMngrClassesPageTests`, and
+`ClassMngrSubPrepPageTests` built in the Windows x64 Debug Ninja tree, and the
+focused navigation-model CTest passed 1/1 with a fresh test executable and
+object. No full suite ran. F698 selects the `ScheduleViewModel` canonical
+`HH:mm` cutoff parse; its behavior-parity guard and test matrix are recorded
+in the Phase 2 progress log. The current-source Phase 0 evidence remains
+Windows x64 2/24 and macOS universal 0/24; it is separate from the historical Phase 0 closure
 described above. F625 remains accepted and F626 deferred. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
 Policy as `528e031b`; F668 Calendar

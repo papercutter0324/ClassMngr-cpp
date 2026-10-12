@@ -25955,4 +25955,48 @@ display fallback and ordering behavior.
    `ClassMngrClassesPageTests`, and `ClassMngrSubPrepPageTests`; run only the
    CTest `ClassMngrClassTabNavigationModelTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 172 is active with F697.
+This matrix was recorded before implementation.
+
+### F697 class-tab navigation time parser migration - accepted - 2026-10-12
+
+F697 is accepted at code/test commit
+`0e6ddf5a6ec06cb1f76b8e9534890edd43327114` (`Phase2 - Reuse Domain
+display-time parser in ClassTabNavigationModel (F697)`). The Windows x64 Ninja
+build passed for `ClassMngr`, `ClassMngrClassTabNavigationModelTests`,
+`ClassMngrClassesPageTests`, and `ClassMngrSubPrepPageTests`. The exact CTest
+`ClassMngrClassTabNavigationModelTests` passed 1/1; its final padded-input test
+object and executable were fresh. No full suite ran.
+
+**Decision: accept F697.** Batch 172 is complete.
+
+### Batch 173 selection - recorded before F698 implementation - 2026-10-12
+
+Select `isRegularEarlyEmptySlot` in
+`src/features/schedule/ui/schedule_view_model.cpp` based on convergent
+read-only Explorer and Investigator recommendations. Replace only its
+canonical `HH:mm` parse with `ScheduleValueParser::parseTime`; require the
+parsed `CanonicalTime.text` to equal the original label so parser trimming
+does not admit padded input.
+
+**F698 is selected:** migrate this one parse while preserving the inclusive
+early-hour cutoff and existing Essay fallback for malformed or padded labels,
+weekends, and intensive rows.
+
+### F698 early empty-slot time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+1. In `isRegularEarlyEmptySlot`, replace only the canonical `HH:mm` parse in
+   `src/features/schedule/ui/schedule_view_model.cpp` with
+   `ScheduleValueParser::parseTime`. Treat input as valid only when parsing
+   succeeds and `CanonicalTime.text` equals the original `timeLabel`,
+   preserving exact unpadded input semantics.
+2. Preserve the inclusive `hour <= 15` cutoff, malformed and whitespace-
+   padded fallback to Essay, and existing weekend/intensive rules.
+3. Extend `tests/schedule_print_model_tests.cpp`; existing coverage includes
+   15:00/16:00, weekends, and intensive rows. Add direct canonical 15:55/16:00
+   boundary assertions plus malformed and whitespace-padded Essay fallback.
+   `ClassMngrSchedulePrintModelTests` already compiles the parser and helper;
+   make no CMake edit.
+4. Build `ClassMngr` and `ClassMngrSchedulePrintModelTests`; run only the CTest
+   `ClassMngrSchedulePrintModelTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 173 is active with F698.
