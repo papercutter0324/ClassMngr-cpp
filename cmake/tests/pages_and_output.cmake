@@ -1779,6 +1779,7 @@ qt_add_executable(ClassMngrScheduleImportDialogTests
         src/core/settingsmanager.cpp
         src/core/utils/colorutils.cpp
         src/domain/models/classroom.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/calendar/calendar_workbook_reader.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/schedule/schedule_settings_preferences.cpp

@@ -6,6 +6,7 @@
 #include "data/database/database_session.h"
 #include "domain/models/teacher.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
+#include "features/schedule/ui/schedule_import_review_presentation.h"
 #include "features/schedule/ui/schedule_import_review_dialog.h"
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/ui/schedule_widget_delegates.h"
@@ -107,6 +108,7 @@ private slots:
     void acceptedReviewCanTearDownSourceDialog();
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
+    void compactMeetingTextParsesAndOrdersDisplayFormats();
     void reviewWarningsUseDedicatedTab();
     void intensiveModeChoiceReflectsExistingSchedule();
     void regularPreviewShowsFullEssayGrid();
@@ -127,6 +129,7 @@ private slots:
     void targetlessClassSkipIsAllowed();
     void reviewWarnsForDuplicateClassTargets();
     void reviewWarnsForOverlappingProjectedTimes();
+    void reviewRejectsMalformedProjectedTime();
     void reviewWarnsWhenRetainedIntensiveClassOverlaps();
     void checkedInOverlapWorkbookPresentsReviewConflict();
     void reviewPreviewUsesSavedScheduleDisplaySettings();
@@ -2191,6 +2194,51 @@ void ScheduleImportDialogTests
 }
 
 void ScheduleImportDialogTests
+    ::compactMeetingTextParsesAndOrdersDisplayFormats()
+{
+    const QList<ClassTime> times{
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:20 PM"),
+            QStringLiteral("5:15 PM")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("4:15PM"),
+            QStringLiteral("5:10PM")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("9:45"),
+            QStringLiteral("10:40")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("09:50"),
+            QStringLiteral("10:45")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral(" 9:40 "),
+            QStringLiteral("10:35")
+        },
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("not-a-time"),
+            QStringLiteral("5:15 PM")
+        }
+    };
+
+    QCOMPARE(
+        ScheduleImportReviewPresentation::compactMeetingText(times),
+        QStringLiteral(
+            "Mon. not-a-time / Mon.  9:40  / Mon. 9:45 / Mon. 09:50 / "
+            "Mon. 4:15PM / Mon. 4:20pm"
+            )
+        );
+}
+
+void ScheduleImportDialogTests
     ::reviewWarningsUseDedicatedTab()
 {
     ApplicationServices services;
@@ -4101,8 +4149,8 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
         candidate(
             QStringLiteral("이선생"),
             QStringLiteral("Athena"),
-            QStringLiteral("4:30 PM"),
-            QStringLiteral("5:25 PM")
+            QStringLiteral("4:30PM"),
+            QStringLiteral("5:25PM")
             )
     };
 
@@ -4138,6 +4186,51 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
     QVERIFY(import);
     QVERIFY(!import->isEnabled());
     warning->accept();
+}
+
+void ScheduleImportDialogTests::reviewRejectsMalformedProjectedTime()
+{
+    ApplicationServices services;
+    ScheduleImportReviewRequest request;
+    request.kind = ScheduleImportKind::Normal;
+    request.user.name = QStringLiteral("Alice");
+
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("김선생");
+    candidate.teacherKr = QStringLiteral("김선생");
+    candidate.rooms = {QStringLiteral("413")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {
+            QStringLiteral("Monday"),
+            QStringLiteral("not-a-time"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+    request.user.classes = {candidate};
+
+    ScheduleImportReviewDialog review(
+        &services,
+        request
+        );
+    QVERIFY(review.prepare());
+    review.show();
+
+    auto* status = review.findChild<QLabel*>(
+        QStringLiteral("scheduleImportReviewStatus")
+        );
+    QVERIFY(status);
+    QTRY_VERIFY(
+        status->text().contains(
+            QStringLiteral("contains an invalid time")
+            )
+        );
+    auto* import = review.findChild<QPushButton*>(
+        QStringLiteral("scheduleImportAcceptButton")
+        );
+    QVERIFY(import);
+    QVERIFY(!import->isEnabled());
 }
 
 void ScheduleImportDialogTests

@@ -2,6 +2,7 @@
 
 #include "core/utils/colorutils.h"
 #include "domain/rules/schedule_import_rules.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
 #include "features/schedule/ui/schedule_widget.h"
@@ -16,6 +17,7 @@
 #include <QTime>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <string>
 #include <utility>
@@ -30,27 +32,20 @@ int timeMinutes(
     const QString& value
     )
 {
-    QTime time;
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm")
+    constexpr std::array timeFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced,
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmCompact,
+        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour,
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
     };
-    for (const QString& format : formats)
-    {
-        time =
-            QTime::fromString(
-                value.trimmed(),
-                format
-                );
-        if (time.isValid())
-        {
-            break;
-        }
-    }
-    return time.isValid()
-        ? time.hour() * 60 + time.minute()
+    const auto parsedTime =
+        ScheduleValueParser::parseDisplayTime(
+            value.trimmed(),
+            timeFormats
+            );
+
+    return parsedTime
+        ? parsedTime->hour() * 60 + parsedTime->minute()
         : -1;
 }
 
