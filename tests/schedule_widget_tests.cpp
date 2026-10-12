@@ -658,6 +658,8 @@ private slots:
     void regularSlotToggleUsesSharedPersistenceHandler();
     void previewCellClickAcceptsOnlyStrict24HourTimeLabels_data();
     void previewCellClickAcceptsOnlyStrict24HourTimeLabels();
+    void previewCellClickAcceptsOnlyCanonicalWeekdays_data();
+    void previewCellClickAcceptsOnlyCanonicalWeekdays();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
     void standaloneSchedulePageDeactivationRetainsRenderedResources();
@@ -3147,6 +3149,121 @@ previewCellClickAcceptsOnlyStrict24HourTimeLabels()
         widget.scheduleModel().rows.first().cells.first();
     QCOMPARE(retainedCell.day, QStringLiteral("Monday"));
     QCOMPARE(retainedCell.timeLabel, timeLabel);
+    QCOMPARE(retainedCell.defaultSlotState, scheduleEmptySlotState());
+    QCOMPARE(retainedCell.slotState, scheduleEmptySlotState());
+    QVERIFY(retainedCell.slotTogglingEnabled);
+}
+
+void ScheduleWidgetTests::
+previewCellClickAcceptsOnlyCanonicalWeekdays_data()
+{
+    QTest::addColumn<QString>("weekdayLabel");
+    QTest::addColumn<bool>("valid");
+
+    QTest::addRow("canonical Monday")
+        << QStringLiteral("Monday") << true;
+    QTest::addRow("canonical Tuesday")
+        << QStringLiteral("Tuesday") << true;
+    QTest::addRow("canonical Wednesday")
+        << QStringLiteral("Wednesday") << true;
+    QTest::addRow("canonical Thursday")
+        << QStringLiteral("Thursday") << true;
+    QTest::addRow("canonical Friday")
+        << QStringLiteral("Friday") << true;
+    QTest::addRow("canonical Saturday")
+        << QStringLiteral("Saturday") << true;
+    QTest::addRow("canonical Sunday")
+        << QStringLiteral("Sunday") << true;
+    QTest::addRow("padded")
+        << QStringLiteral(" Monday ") << false;
+    QTest::addRow("lowercase")
+        << QStringLiteral("monday") << false;
+    QTest::addRow("unknown")
+        << QStringLiteral("Funday") << false;
+    QTest::addRow("empty")
+        << QString() << false;
+}
+
+void ScheduleWidgetTests::
+previewCellClickAcceptsOnlyCanonicalWeekdays()
+{
+    QFETCH(QString, weekdayLabel);
+    QFETCH(bool, valid);
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    ScheduleViewModel preview;
+    preview.days = {weekdayLabel};
+    ScheduleRowView row;
+    row.timeLabel = QStringLiteral("09:15");
+    ScheduleCellView cell;
+    cell.day = weekdayLabel;
+    cell.timeLabel = row.timeLabel;
+    cell.defaultSlotState = scheduleEmptySlotState();
+    cell.slotState = scheduleEmptySlotState();
+    cell.slotTogglingEnabled = true;
+    row.cells.append(cell);
+    preview.rows.append(row);
+    widget.setPreviewModel(preview);
+
+    const ScheduleViewModel* const previewBefore =
+        &widget.scheduleModel();
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "onCellClicked",
+            Qt::DirectConnection,
+            Q_ARG(int, 0),
+            Q_ARG(int, 1)
+            )
+        );
+
+    if (valid)
+    {
+        QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 1);
+        QCOMPARE(
+            ScheduleWidgetTestStubs::lastSavedSlotDay,
+            weekdayLabel
+            );
+        QCOMPARE(
+            ScheduleWidgetTestStubs::lastSavedSlotStartTime,
+            QStringLiteral("09:15")
+            );
+        QVERIFY(prompts.messages.isEmpty());
+        return;
+    }
+
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Update Schedule")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("The selected schedule slot is invalid.")
+        );
+
+    QCOMPARE(&widget.scheduleModel(), previewBefore);
+    QCOMPARE(widget.scheduleModel().days, preview.days);
+    QCOMPARE(widget.scheduleModel().rows.size(), 1);
+    QCOMPARE(
+        widget.scheduleModel().rows.first().timeLabel,
+        QStringLiteral("09:15")
+        );
+    QCOMPARE(widget.scheduleModel().rows.first().cells.size(), 1);
+    const ScheduleCellView& retainedCell =
+        widget.scheduleModel().rows.first().cells.first();
+    QCOMPARE(retainedCell.day, weekdayLabel);
+    QCOMPARE(retainedCell.timeLabel, QStringLiteral("09:15"));
     QCOMPARE(retainedCell.defaultSlotState, scheduleEmptySlotState());
     QCOMPARE(retainedCell.slotState, scheduleEmptySlotState());
     QVERIFY(retainedCell.slotTogglingEnabled);

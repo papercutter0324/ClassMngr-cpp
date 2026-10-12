@@ -61,32 +61,27 @@ using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
 {
     using ClassMngr::Next::Application::ScheduleWeekday;
 
-    if (value == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(value);
+    if (!parsed || parsed->text != value)
     {
+        return std::nullopt;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return ScheduleWeekday::Monday;
-    }
-    if (value == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return ScheduleWeekday::Tuesday;
-    }
-    if (value == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return ScheduleWeekday::Wednesday;
-    }
-    if (value == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return ScheduleWeekday::Thursday;
-    }
-    if (value == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return ScheduleWeekday::Friday;
-    }
-    if (value == QStringLiteral("Saturday"))
-    {
+    case ScheduleValueParser::Weekday::Saturday:
         return ScheduleWeekday::Saturday;
-    }
-    if (value == QStringLiteral("Sunday"))
-    {
+    case ScheduleValueParser::Weekday::Sunday:
         return ScheduleWeekday::Sunday;
     }
 
