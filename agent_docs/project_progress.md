@@ -53,12 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F682)
+### Current state - 2026-10-12 (F685)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-156 are complete. F666 Class Day Filter Reset Policy is committed
-as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
+Batches 141-159 are complete; Batch 160 is active with F685. F666 Class Day
+Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
+Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
 F671 Custom Color Palette typed persistence and caller feedback as
@@ -191,13 +192,23 @@ and programmatic persistence behavior. The Visual Studio generator attempt
 was blocked before compilation by FileTracker `E_ACCESSDENIED`; no full suite
 ran. Batch 158 is complete.
 
-F684 PDF Page Spacing checked persistence is selected in Batch 159. Its void
-SettingsManager port write cannot gate the MainWindow viewer-spacing update.
-Preserve the legacy key, None/Small/Medium/Large integer mapping, Small
-fallback for missing/unknown values, malformed-text QVariant conversion, and
-all four viewer effects. The acceptance matrix names the existing port,
-MainWindow parity, and OptionState regression CTests in the Phase 2 progress
-log.
+F684 PDF Page Spacing checked persistence is committed as
+`73948dfa0f9d302be8a1cd5bfb767ee090d242a3`. `ClassMngr` and all three
+selected targets built in the Windows x64 Debug Ninja tree under Visual
+Studio 2026 Developer Command Prompt v18.10.1. The exact port, MainWindow
+parity, and standalone OptionState regression CTests passed 3/3. Failure tests
+verify exact previous-value or absent-key restoration, unrelated-setting
+preservation, invalid-input mapping, action/programmatic rollback, one
+diagnostic, and retry. No full suite ran. Batch 159 is complete.
+
+F685 Skip Version checked persistence is selected in Batch 160. The skipped
+version port's void write cannot preserve the update prompt when QSettings
+fails. The selected slice makes the Skip Version action persist before closing
+the dialog or suppressing later prompts; on failure, the stored key and open
+dialog remain unchanged and one diagnostic is shown. The exact-key port and
+UpdateController integration acceptance matrix is recorded in the Phase 2
+progress log. Legacy clear behavior for unskip and stale-version cleanup is
+outside this slice.
 
 ### Current state - 2026-10-09
 

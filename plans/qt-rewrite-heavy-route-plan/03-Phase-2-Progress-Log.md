@@ -25215,3 +25215,69 @@ missing, unavailable, and unknown numeric values; keep unchecked
    three listed CTests. Add no CMake target.
 
 This matrix is recorded before implementation. Batch 159 is active with F684.
+
+### F684 PDF Page Spacing checked persistence - accepted - 2026-10-12
+
+F684 is accepted at code/test commit
+`73948dfa0f9d302be8a1cd5bfb767ee090d242a3`. The final ActionRegistry
+injection alignment was rebuilt with `ClassMngr` and all three selected test
+targets in the Windows x64 Debug Ninja tree under Visual Studio 2026 Developer
+Command Prompt v18.10.1. The exact CTests passed 3/3:
+`ClassMngrAiCommentOptionsTests`,
+`ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests`,
+and `ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests`. Coverage
+verifies exact previous-value or absent-key restoration, unrelated setting
+preservation, invalid writes, action and programmatic failure rollback, one
+diagnostic, and retry while retaining all four visible spacing values. No full
+suite ran.
+
+**Decision: accept F684.** Batch 159 is complete.
+
+### Batch 160 shortlist and selection - recorded before F685 implementation - 2026-10-12
+
+The scan compared three preference gaps. AI Comment Custom Website has a
+strong cross-platform test base, but selection updates provider and URL keys;
+an atomic fix needs a composite transaction and revises F679's accepted
+provider-before-URL ordering. PowerPoint Data Access Notice is a single
+boolean, but its action is Apple-only. Select Skipped Update Version for a
+single-key, cross-platform slice backed by existing port and automatic-update
+controller tests. Its void write lets the Skip Version action close its dialog
+and suppress prompts in memory even when persistence fails.
+
+**F685 is selected:** make the Skip Version action use a checked write for the
+canonical `updates/skippedVersion` key. The settings-specific write checks
+QSettings sync, restores the exact previous QVariant or key absence on failure,
+preserves unrelated settings, and permits retry; generic SettingsManager
+`set`/`sync` behavior stays unchanged. Change the skipped-version port's
+`write` to `[[nodiscard]] Domain::Result<void>`, preserving trimmed UTF-8
+values, the existing read conversion, and empty-value write semantics.
+Storage errors map to recoverable `Technical` results. Invalid version text is
+still rejected by `UpdateController` before persistence.
+
+### F685 Skip Version failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked SettingsManager write for only
+   `updates/skippedVersion`. Check sync status, restore the exact previous
+   QVariant or key absence on failure, preserve unrelated settings, allow
+   retry, and leave generic `SettingsManager::set`/`sync` behavior unchanged.
+2. Return `[[nodiscard]] Domain::Result<void>` from the skipped-version port's
+   write. Preserve UTF-8 trimming, read behavior, and the exact key. Map sync
+   failures to recoverable `Technical` errors. Keep `clear()` behavior and its
+   unskip/stale-version callers unchanged in this slice.
+3. Route the UpdateController Skip Version request through a result-aware
+   handler. Persist before the update dialog closes or automatic prompt
+   suppression changes. On failure, keep the dialog open, retain its previous
+   skipped-version display and stored value, leave suppression unchanged, and
+   present one diagnostic. A successful retry persists the selected version,
+   closes the dialog, and suppresses the automatic prompt as before. Preserve
+   invalid-version rejection and successful Skip Version behavior.
+4. Extend the existing
+   `ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests` with
+   exact previous-value/absent-key restoration, unrelated-setting
+   preservation, Technical mapping, and retry. Extend the existing
+   `ClassMngrUpdateControllerAutomaticStartupTests` to exercise a real
+   automatic update dialog: injected storage failure leaves it open with no
+   suppression, then retry succeeds. Build `ClassMngr` and these two existing
+   targets; run exactly the two listed CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 160 is active with F685.

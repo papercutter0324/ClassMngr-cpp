@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-158 are complete.
+  141-159 are complete; Batch 160 is active.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -45,10 +45,15 @@
   ActionRegistry persists the hydrated and direct programmatic values. The
   Visual Studio generator was blocked before compilation by FileTracker; the
   selected Ninja targets built under the VS developer environment.
-- Batch 159 has selected F684, PDF Page Spacing checked persistence. The
-  canonical key/mappings, legacy read conversion, and viewer behavior are
-  specified in the Phase 2 progress log; implementation starts after the
-  selection commit.
+- F684 PDF Page Spacing checked persistence is committed as
+  `73948dfa0f9d302be8a1cd5bfb767ee090d242a3`. The product and all three
+  selected targets built in the Windows x64 Debug Ninja tree under VS 2026
+  Developer Command Prompt v18.10.1; the exact port, MainWindow parity, and
+  standalone OptionState regression CTests passed 3/3. Failure and retry
+  coverage is accepted; no full suite ran.
+- Batch 160 selected F685, Skip Version checked persistence. The exact key,
+  checked port write, dialog failure/retry behavior, and two existing CTests
+  are specified in the Phase 2 progress log before implementation.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

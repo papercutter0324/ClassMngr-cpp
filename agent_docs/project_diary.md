@@ -4029,3 +4029,28 @@ whose separate URL save, provider save, validation, and modal cancellation
 make its acceptance boundary broader; the PowerPoint notice is Apple-only.
 Keep the exact page-spacing key and legacy conversions. Batch 159 is active
 with F684; its acceptance matrix is in the Phase 2 progress log.
+
+## F684 PDF Page Spacing checked persistence - accepted - 2026-10-12
+
+The checked page-spacing write now returns typed errors and restores the exact
+previous QVariant or absent key after sync failure. Standalone hydration and
+direct `OptionState::set` persistence remain intact. Connected QAction and
+programmatic changes save before committing state or applying viewer spacing;
+failure preserves the action, state, storage, and live spacing, reports one
+diagnostic, and allows retry. `ClassMngr` plus the port, MainWindow parity, and
+standalone `ClassMngrAiCommentOptionsTests` targets built; the exact three
+CTests passed 3/3. No full suite ran. F684 is committed as
+`73948dfa0f9d302be8a1cd5bfb767ee090d242a3`. Batch 159 is complete.
+
+## F685 Skip Version checked persistence - selected - 2026-10-12
+
+The candidate scan compared the Custom Website URL/provider pair, the skipped
+update version, and the PowerPoint data-access notice. Select the skipped
+version's single-key write because its cross-platform port and automatic-update
+controller tests already cover the surrounding behavior; a failed Skip
+Version write currently closes the dialog and suppresses prompts in memory.
+F685 makes that action persist before close/suppression, leaving the stored
+value and dialog open on failure with one diagnostic and a successful retry.
+Existing read, trimming, key, and successful behavior stay intact. The legacy
+clear path for unskip and stale-version cleanup is deferred. Batch 160 is
+active; the full matrix is in the Phase 2 progress log.
