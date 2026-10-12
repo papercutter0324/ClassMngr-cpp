@@ -1582,6 +1582,26 @@ void ScheduleImportTests::validatesCourseMeetingPatterns()
         QStringLiteral(" Theseus "),
         {QStringLiteral("Wednesday"), QStringLiteral("Monday")}
         ));
+    QCOMPARE(
+        scheduleImportMeetingPatternError(candidate(
+            QStringLiteral("E4"),
+            QStringLiteral("Theseus"),
+            {QStringLiteral("monday"), QStringLiteral("Wednesday")}
+            )),
+        QStringLiteral(
+            "Each imported class must have exactly one meeting per scheduled weekday."
+            )
+        );
+    QCOMPARE(
+        scheduleImportMeetingPatternError(candidate(
+            QStringLiteral("E4"),
+            QStringLiteral("Theseus"),
+            {QStringLiteral(" Monday "), QStringLiteral("Wednesday")}
+            )),
+        QStringLiteral(
+            "Each imported class must have exactly one meeting per scheduled weekday."
+            )
+        );
     QVERIFY(!valid(
         QStringLiteral("E4"),
         QStringLiteral("Theseus"),

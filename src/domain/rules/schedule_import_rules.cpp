@@ -1,5 +1,6 @@
 #include "schedule_import_rules.h"
 
+#include "domain/rules/schedule_value_parser.h"
 #include "next/domain/course.h"
 
 #include <QObject>
@@ -95,25 +96,27 @@ QString scheduleImportWeekdayName(Weekday weekday)
 
 std::optional<Weekday> scheduleImportWeekday(const QString& day)
 {
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
     {
+        return std::nullopt;
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return Weekday::Monday;
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return Weekday::Tuesday;
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return Weekday::Wednesday;
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return Weekday::Thursday;
-    }
-    if (day == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return Weekday::Friday;
+    case ScheduleValueParser::Weekday::Saturday:
+    case ScheduleValueParser::Weekday::Sunday:
+        return std::nullopt;
     }
     return std::nullopt;
 }
