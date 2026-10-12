@@ -132,7 +132,9 @@ propagatesReadErrorsAndRejectsInvalidIdentifiers()
     auto result = ScheduleBuilderSourceQueryHandler::execute({}, port);
     QVERIFY(!result);
     QVERIFY(result.error() == readError);
+    QCOMPARE(port.readCount, 1);
 
+    port.readCount = 0;
     ScheduleBuilderSourceClass invalid = sourceClass("042");
     port.result = ScheduleBuilderSourceResult::success({
         .classes = {invalid}
@@ -140,7 +142,25 @@ propagatesReadErrorsAndRejectsInvalidIdentifiers()
     result = ScheduleBuilderSourceQueryHandler::execute({}, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(result.error().message,
+             std::string("A schedule source returned an invalid class ID."));
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.readCount, 1);
 
+    port.readCount = 0;
+    invalid = sourceClass("42x");
+    port.result = ScheduleBuilderSourceResult::success({
+        .classes = {invalid}
+    });
+    result = ScheduleBuilderSourceQueryHandler::execute({}, port);
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(result.error().message,
+             std::string("A schedule source returned an invalid class ID."));
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.readCount, 1);
+
+    port.readCount = 0;
     ScheduleBuilderSourceClass duplicate = sourceClass("43");
     port.result = ScheduleBuilderSourceResult::success({
         .classes = {duplicate, duplicate}
@@ -148,6 +168,10 @@ propagatesReadErrorsAndRejectsInvalidIdentifiers()
     result = ScheduleBuilderSourceQueryHandler::execute({}, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(result.error().message,
+             std::string("A schedule source returned duplicate class IDs."));
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.readCount, 1);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationScheduleBuilderSourceSnapshotTests)

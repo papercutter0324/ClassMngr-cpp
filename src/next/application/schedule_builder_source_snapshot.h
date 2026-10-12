@@ -1,12 +1,11 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <charconv>
 #include <set>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -93,7 +92,7 @@ public:
         std::set<std::string> classIds;
         for (const ScheduleBuilderSourceClass& entry : source.value().classes)
         {
-            if (!isCanonicalPositiveClassId(entry.classId.value()))
+            if (!isCanonicalPositiveDecimalId(entry.classId.value()))
             {
                 return failure(
                     Domain::ErrorCode::Validation,
@@ -125,26 +124,6 @@ private:
         });
     }
 
-    [[nodiscard]] static bool isCanonicalPositiveClassId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
 };
 
 } // namespace ClassMngr::Next::Application
