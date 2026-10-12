@@ -29806,6 +29806,45 @@ no-reload, and reload-failure `writeSucceeded` behavior.
 
 Build `ClassMngr` and `ClassMngrNextApplicationTeacherProfileEditTests`;
 confirm the exact CTest registers once, then run only it with `-C Debug`. Run
-no full suite. This matrix was recorded before implementation; F776
-verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
-Partial, and the formal exit gate remains Open.
+no full suite. This matrix was recorded before implementation. F707/F709
+remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
+remains Open.
+
+### F776 Teacher Profile Edit reload identity - accepted - 2026-10-13
+
+F776 is accepted at commit
+`a9fc10566d3c419a1f456670be3a70748d157d5c8`. In the existing incremental VS
+18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationTeacherProfileEditTests` built. The exact CTest
+registered once (#267) and passed 1/1. Sandbox MSBuild FileTracker
+`E_ACCESSDENIED` required an identical bounded retry outside the sandbox. No
+full suite ran.
+
+### F777 Class Details Save optional Teacher ID validation - selected and acceptance matrix - 2026-10-13
+
+**F777 is selected:** in
+`src/next/application/class_details_save_use_case.h`, replace only the
+duplicate private validator for optional `request.teacherId` with
+`Application::isCanonicalPositiveDecimalId`. Retain the distinct `classId`
+positive-int policy unchanged, including acceptance and forwarding of
+`00042`. Test in
+`tests/next_application_class_details_save_use_case_tests.cpp`; no CMake or
+source-ownership change is expected.
+
+Keep forwarding coverage for ClassId `00042` and TeacherId `8`, and add valid
+TeacherId `2147483647` forwarding unchanged. For invalid optional TeacherIds
+`0`, `08`, `-2`, and `2147483648`, assert the existing `InvalidInput` message
+`Teacher ID must be a canonical positive integer.`, recoverable=true, and
+zero calls. Retain all other behavior.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`; confirm the exact
+CTest `NextApplicationClassDetailsSaveUseCase` registers once, then run only
+that CTest with `-C Debug`. Run no full suite. This matrix was recorded before
+implementation; F777 verification is pending. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+The next Batch 191 candidate is **F778 - Class Transfer Apply destination
+ID parsing**, to consolidate canonical positive-int parsing while preserving
+its parsed-int result behavior; its acceptance matrix will be recorded when
+selected.

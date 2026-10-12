@@ -4908,3 +4908,17 @@ preserve `writeSucceeded=true`, and report nonrecoverable `Validation`. The
 acceptance matrix is recorded in the Phase 2 progress log. F707/F709 remain
 deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial; the
 formal exit gate remains Open.
+
+## Phase 2 current position — 2026-10-13 (F776 accepted; F777 selected)
+
+F776 is accepted at `a9fc10566d3c419a1f456670be3a70748d157d5c`. The Teacher
+Profile Edit target built in the existing Visual Studio 18 x64 Debug tree;
+its exact CTest registered once (#267) and passed 1/1 after the same bounded
+build succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`.
+No full suite ran.
+
+F777 reuses the canonical positive-decimal helper for the optional Teacher ID
+in Class Details Save while retaining its separate permissive Class ID policy
+and the `00042` forwarding contract. The acceptance matrix is in the Phase 2
+progress log. F707/F709 remain deferred; Gates 1/2 are Partial and the formal
+Phase 2 exit gate remains Open.

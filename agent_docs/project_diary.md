@@ -5137,3 +5137,15 @@ identity, but the application port also needs to enforce its returned-value
 contract for alternate implementations. Report a mismatch as reload failure
 after the write and preserve `writeSucceeded=true` so callers know the write
 completed even though the canonical reload could not be trusted.
+
+## Phase 2 F776 acceptance and F777 selection — 2026-10-13
+
+F776 is accepted at `a9fc10566d3c419a1f456670be3a70748d157d5c8`; its exact
+Teacher Profile Edit CTest registered once and passed 1/1 after the bounded
+Debug build succeeded outside the sandbox following FileTracker
+`E_ACCESSDENIED`. No full suite ran.
+
+F777 reuses an existing shared validator only for Class Details Save's
+optional Teacher ID, whose local parser has the same canonical positive-int
+rules. Keep the class ID validator separate because its established contract
+accepts and forwards `00042`.

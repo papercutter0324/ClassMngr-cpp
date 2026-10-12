@@ -100,10 +100,13 @@
   existing VS 18 x64 Debug tree, the exact CTest registered once (#232), and
   passed 1/1. The sandbox build hit FileTracker `E_ACCESSDENIED`; the same
   bounded build succeeded outside the sandbox. No full suite ran. F776 is
-  selected to reject a successful Teacher Profile Edit reload that returns a
-  different teacher ID while preserving the completed-write marker. The
-  production-plus-test acceptance matrix is recorded in the Phase 2 progress
-  log.
+  accepted at `a9fc10566d3c419a1f456670be3a70748d157d5c8`; its Teacher Profile
+  Edit target built, the exact CTest registered once (#267), and passed 1/1
+  after the identical bounded retry outside the sandbox following FileTracker
+  `E_ACCESSDENIED`. F777 reuses the shared canonical-positive-decimal helper
+  for only the optional Teacher ID in Class Details Save, preserving the
+  class ID's `00042` forwarding behavior. Its production-plus-test matrix is
+  recorded in the Phase 2 progress log.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

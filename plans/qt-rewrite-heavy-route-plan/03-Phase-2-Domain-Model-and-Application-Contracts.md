@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F775 is accepted at `5ac1107fe87a6b1eba266c995467c61bbcd899a2`; F776 is selected in active Batch 191 to verify Teacher Profile Edit rejects a successful reload for a different teacher, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F776 is accepted at `a9fc10566d3c419a1f456670be3a70748d157d5c8`; F777 is selected in active Batch 191 for Class Details Save optional Teacher ID validation while preserving its distinct ClassId policy, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,7 +102,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 191
 
-- F776 - Teacher Profile Edit reload identity - Reject a mismatched successful reload response and pin update/reload ordering and failure metadata.
+- F777 - Class Details Save optional Teacher ID validation - Reuse the shared validator for teacherId while retaining the separate classId forwarding contract.
+- F778 - Class Transfer Apply destination ID - Consolidate canonical positive-int parsing while preserving parsed-ID behavior.
 
 ## Objective
 
