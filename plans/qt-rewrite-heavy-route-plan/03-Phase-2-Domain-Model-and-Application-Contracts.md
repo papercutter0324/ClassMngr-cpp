@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F764 is accepted at `80c2963e57572ff9ed74542c37e3fc5fbf7d7746`; F765 is selected for the Schedule Editor class-info query, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F765 is accepted at `041f503a03cdcfa21012bbb5a5df3460a920743c`; F766 is selected for the Schedule Builder source snapshot, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 189
 
-- F765 - Schedule Editor class info - Reuse the canonical positive-decimal ID helper if source refactoring is in scope; preserve query behavior.
-- F766 - Schedule Builder source snapshot - Assess and implement the selected source-snapshot slice.
+- F766 - Schedule Builder source snapshot - Preserve returned snapshot validation and ordering, reusing the shared ID helper if removing a duplicate predicate.
 - F767 - Schedule Import state snapshot - Assess and implement the selected import-state slice.
 - F768 - Speaking Evaluation read-query family - Assess and implement the selected read-query slice.
 

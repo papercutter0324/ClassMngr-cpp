@@ -29317,6 +29317,48 @@ recoverable=false, and one call.
 Build `ClassMngr` and
 `ClassMngrNextApplicationScheduleEditorClassInfoQueryTests`. Confirm exactly
 one registration for that exact CTest name, then run only that CTest with
+`-C Debug`. Run no full suite. This matrix was recorded before implementation.
+F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal
+exit gate remains Open.
+
+### F765 Schedule Editor class info - accepted - 2026-10-13
+
+F765 is accepted at commit
+`041f503a03cdcfa21012bbb5a5df3460a920743c`. In `build/windows-x64-debug`,
+Visual Studio 18.10.1 x64 built `ClassMngr` and
+`ClassMngrNextApplicationScheduleEditorClassInfoQueryTests`. The exact CTest
+registered once (#236) and passed 1/1 with `-C Debug`. The initial sandboxed
+build hit FileTracker `E_ACCESSDENIED`; the same command succeeded outside the
+sandbox. No full suite ran.
+
+### F766 Schedule Builder source snapshot - selected and acceptance matrix - 2026-10-13
+
+**F766 is selected:** preserve the Schedule Builder source snapshot contract
+in `src/next/application/schedule_builder_source_snapshot.h`, with focused
+coverage in `tests/next_application_schedule_builder_source_snapshot_tests.cpp`.
+If the slice removes a duplicate ID predicate, reuse
+`Application::isCanonicalPositiveDecimalId`; the helper is already in
+`cmake/next.cmake`, so no inventory change is needed.
+
+The query has no input IDs. It reads the port once first and forwards port
+errors unchanged. A returned noncanonical class ID yields nonrecoverable
+`Validation` with `A schedule source returned an invalid class ID.` Returned
+duplicate IDs yield nonrecoverable `Validation` with
+`A schedule source returned duplicate class IDs.` An empty returned snapshot
+succeeds after one read. Do not compare returned IDs with requested IDs or
+impose an expected order; preserve the returned snapshot as-is, including
+class order, class and teacher fields, and raw regular and intensive schedule
+values.
+
+Existing tests cover successful output, empty-source success after one read,
+source errors, noncanonical `042`, and duplicates. Add `42x`; assert exact
+invalid and duplicate messages, `Validation`, recoverable=false, and one read
+for each validation failure. Keep all existing coverage and add no separate
+wrong-order scenario.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests`. Confirm the
+exact full-name CTest is registered once, then run only that CTest with
 `-C Debug`. Run no full suite. This matrix is recorded before implementation;
-F765 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
+F766 verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2
 remain Partial, and the formal exit gate remains Open.

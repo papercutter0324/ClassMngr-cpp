@@ -4874,22 +4874,22 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F764 accepted; F765 selected)
+## Phase 2 current position — 2026-10-13 (F765 accepted; F766 selected)
 
-F764 is accepted at
-`80c2963e57572ff9ed74542c37e3fc5fbf7d7746`. The Classes Navigation snapshot
-handler now reuses the shared canonical-ID validator. Its focused test pins
-recoverable pre-read invalid and duplicate requests, one-read count and
-identity failures, port-error forwarding, empty success, and ordered output.
-In the existing Visual Studio 18 x64 Debug tree, `ClassMngr` and
-`ClassMngrNextApplicationClassesNavigationSnapshotTests` built; the exact
-CTest had one registration (#224) and passed 1/1. The sandbox build hit
-FileTracker `E_ACCESSDENIED`; the same build succeeded outside the sandbox.
-No full suite ran.
+F765 is accepted at
+`041f503a03cdcfa21012bbb5a5df3460a920743c`. The Schedule Editor class-info
+query now reuses the shared canonical-ID validator. Its test pins exact
+invalid-ID and returned-ID mismatch messages, error recoverability, and
+zero/one port calls while preserving forwarded port errors and successful
+UTF-16 snapshot fields. In the existing Visual Studio 18 x64 Debug tree,
+`ClassMngr` and `ClassMngrNextApplicationScheduleEditorClassInfoQueryTests`
+built; the exact CTest had one registration (#236) and passed 1/1. The sandbox
+build hit FileTracker `E_ACCESSDENIED`; the same build succeeded outside the
+sandbox. No full suite ran.
 
-F765 is selected in Batch 189 for the schedule-editor class-info query. Reuse
-the shared validator and pin the exact invalid-ID and returned-ID mismatch
-errors, recoverability, and port-call counts while preserving successful
-snapshot fields and unchanged port errors. F707/F709 remain deferred. Phase 2
-remains In Progress/Open with Gates 1 and 2 Partial; separate current-source
-Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
+F766 is selected in Batch 189 for the Schedule Builder source snapshot. Keep
+the port-first read, validate only returned IDs, preserve exact source errors
+and successful snapshots, and test invalid/duplicate response metadata and
+single-read behavior. F707/F709 remain deferred. Phase 2 remains In
+Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
+evidence remains Windows x64 2/24 and macOS universal 0/24.

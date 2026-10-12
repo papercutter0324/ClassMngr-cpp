@@ -4970,3 +4970,17 @@ invalid and mismatched class IDs with exact errors and port-call behavior,
 while preserving forwarded port errors and successful UTF-16 snapshot fields.
 F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal
 exit gate remains Open.
+
+## Phase 2 F765 acceptance and F766 selection — 2026-10-13
+
+F765 is accepted at `041f503a03cdcfa21012bbb5a5df3460a920743c`. The Schedule
+Editor class-info query now uses the shared canonical-ID validator. Its exact
+CTest had one registration (#236) and passed 1/1 in the Visual Studio 18 x64
+Debug tree after the same build succeeded outside the sandbox following
+FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+F766 is selected for the Schedule Builder source snapshot. Its matrix keeps
+the port read first, checks invalid and duplicate returned IDs after one read,
+and preserves port-error forwarding, empty success, and source output order
+and fields. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and
+the formal exit gate remains Open.
