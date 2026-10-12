@@ -4569,10 +4569,17 @@ with warning, no save, and preview retention. `ClassMngr` and
 `ClassMngrScheduleWidgetTests` built; the one registered CTest passed 1/1. No
 full suite ran.
 
-F733 is selected in Batch 179 for `ScheduleTableRenderer::weekdayLabel`.
-Reuse the shared parser only for exact canonical text; keep the
-`ScheduleWidget` translation context and return padded, lowercase, unknown,
-and empty labels unchanged. Extend the existing widget test target through
-the public renderer seam with seven canonical header checks and raw-fallback
-cases. The target already compiles the parser. Phase 2 remains In Progress
-with Gates 1 and 2 Partial.
+F733 is accepted in Batch 179 and committed as
+`6cf69d4f519b0c5be49471676ecd54f2ed9541b4`. Schedule table weekday headers
+use the shared parser with exact raw canonical-text matching, preserve the
+`ScheduleWidget` translation context, and leave padded, lowercase, unknown,
+and empty labels unchanged. The public renderer test covers all seven
+canonical translations and those raw fallbacks. `ClassMngr` and
+`ClassMngrScheduleWidgetTests` built; the focused CTest passed 1/1. No full
+suite ran.
+
+F734 is selected in Batch 179 for `isScheduleWeekendDay` in
+`schedule_view_model.cpp`. Parse with raw canonical-text equality so only
+exact Saturday/Sunday remain weekend days. Cover all weekdays and padded,
+lowercase, unknown, and empty labels through default-slot-state and toggling
+behavior. Phase 2 remains In Progress with Gates 1 and 2 Partial.

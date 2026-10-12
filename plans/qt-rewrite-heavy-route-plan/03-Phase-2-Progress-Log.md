@@ -27623,5 +27623,51 @@ selection while preserving raw fallback text.
    exactly one same-named CTest registration and run only that exact CTest.
    Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F733;
+This matrix was recorded before implementation.
+
+### F733 Schedule Table Renderer weekday-label parser migration - accepted - 2026-10-12
+
+F733 is accepted at code/test commit
+`6cf69d4f519b0c5be49471676ecd54f2ed9541b4`. `ScheduleTableRenderer::weekdayLabel`
+now uses `ScheduleValueParser::parseWeekday` with raw exact canonical-text
+equality, translates the seven canonical labels through the existing
+`ScheduleWidget` context, and preserves padded, lowercase, unknown, and empty
+raw fallbacks. The public-render test
+`rendererWeekdayHeadersTranslateCanonicalDaysAndKeepFallbacks` covers all
+seven translated headers and those four raw fallbacks.
+
+`ClassMngr` and `ClassMngrScheduleWidgetTests` built successfully. Exactly one
+CTest registration was confirmed; the exact test passed 1/1. The scoped
+`git diff --check` passed. No full suite ran.
+
+**Decision: accept F733.** Batch 179 continues with F734; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F734 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `isScheduleWeekendDay` in
+`src/features/schedule/ui/schedule_view_model.cpp`. It is used by
+`scheduleDefaultSlotState` and `scheduleSlotTogglingEnabled`.
+
+**F734 is selected:** reuse the Domain weekday parser while preserving exact,
+case-sensitive, unpadded weekend recognition.
+
+1. Migrate only `isScheduleWeekendDay` to
+   `ScheduleValueParser::parseWeekday`, requiring `parsed->text == day` on the
+   raw input. Return true only for parsed Saturday or Sunday. Leave slot-state
+   and toggling policy unchanged.
+2. Add a focused data-driven test in `tests/schedule_print_model_tests.cpp`
+   that checks all seven canonical days plus padded/lowercase weekend,
+   unknown, and empty labels through both
+   `scheduleDefaultSlotState(day, "16:00", false)` and
+   `scheduleSlotTogglingEnabled(day, false, false)`. Canonical Saturday and
+   Sunday yield an empty default state and enabled toggling; all other inputs
+   yield the weekday essay default and disabled toggling. Preserve existing
+   intensive and override coverage.
+3. `ClassMngrSchedulePrintModelTests` already compiles the parser and model,
+   so no CMake change is needed. Build `ClassMngr` and that target; confirm
+   exactly one same-named CTest registration and run only that exact CTest.
+   Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F734;
 F707 and F709 remain deferred.
