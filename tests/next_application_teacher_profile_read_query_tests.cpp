@@ -107,6 +107,7 @@ propagatesPortErrorAndRejectsMismatchedIdentity()
     QCOMPARE(port.callCount, 1);
     QVERIFY(port.requests.back() == teacherId(7));
 
+    const int callsBeforeMismatch = port.callCount;
     port.result = TeacherProfileReadResult::success({
         .teacherId = teacherId(8),
         .fields = fields()
@@ -114,15 +115,28 @@ propagatesPortErrorAndRejectsMismatchedIdentity()
     result = query.execute(teacherId(7));
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Teacher profile read returned a different teacher identifier.")
+        );
     QVERIFY(!result.error().recoverable);
-    QCOMPARE(port.callCount, 2);
+    QCOMPARE(port.callCount, callsBeforeMismatch + 1);
 
-    const auto nonCanonicalId = Domain::TeacherId::fromString("07");
-    QVERIFY(nonCanonicalId);
-    result = query.execute(*nonCanonicalId);
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
-    QCOMPARE(port.callCount, 2);
+    const int callsBeforeInvalidIds = port.callCount;
+    for (const std::string& value : {std::string("07"), std::string("42x")})
+    {
+        const auto nonCanonicalId = Domain::TeacherId::fromString(value);
+        QVERIFY(nonCanonicalId);
+        result = query.execute(*nonCanonicalId);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Teacher ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, callsBeforeInvalidIds);
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationTeacherProfileReadQueryTests)

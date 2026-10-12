@@ -1,10 +1,7 @@
 #pragma once
 
 #include "next/application/teacher_profile_read_port.h"
-
-#include <charconv>
-#include <string>
-#include <system_error>
+#include "next/application/positive_decimal_id_validation.h"
 
 namespace ClassMngr::Next::Application
 {
@@ -23,7 +20,7 @@ public:
         const Domain::TeacherId& id
         ) const
     {
-        if (!isCanonicalPositiveId(id))
+        if (!isCanonicalPositiveDecimalId(id.value()))
         {
             return TeacherProfileReadResult::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -51,23 +48,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static bool isCanonicalPositiveId(
-        const Domain::TeacherId& id
-        )
-    {
-        const std::string& value = id.value();
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
-
     const TeacherProfileReadPort& m_port;
 };
 

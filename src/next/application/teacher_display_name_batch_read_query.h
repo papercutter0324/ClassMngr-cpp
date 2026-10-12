@@ -1,10 +1,9 @@
 #pragma once
 
 #include "next/application/teacher_display_name_batch_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 
-#include <charconv>
 #include <string>
-#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -32,7 +31,7 @@ public:
         for (std::size_t index = 0; index < teacherIds.size(); ++index)
         {
             const std::string& value = teacherIds[index].value();
-            if (!isCanonicalPositiveId(value))
+            if (!isCanonicalPositiveDecimalId(value))
             {
                 return invalidInput(
                     "Teacher IDs must be canonical positive integers."
@@ -65,7 +64,7 @@ public:
              loaded.value())
         {
             const std::string& value = snapshot.teacherId.value();
-            if (!isCanonicalPositiveId(value))
+            if (!isCanonicalPositiveDecimalId(value))
             {
                 return validationFailure(
                     "A teacher display name batch returned a noncanonical teacher identifier."
@@ -103,27 +102,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static bool isCanonicalPositiveId(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
-
     [[nodiscard]] static TeacherDisplayNameBatchReadResult invalidInput(
         std::string message
         )

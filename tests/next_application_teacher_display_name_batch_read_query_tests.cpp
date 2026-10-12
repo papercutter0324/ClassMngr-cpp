@@ -98,17 +98,27 @@ rejectsInvalidAndDuplicateInputBeforeCallingPort()
 
     for (const std::string& invalid : {
              std::string("0"), std::string("01"), std::string("-1"),
-             std::string("2147483648")})
+             std::string("42x"), std::string("2147483648")})
     {
         const auto result = query.execute({teacherId(invalid)});
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Teacher IDs must be canonical positive integers.")
+            );
+        QVERIFY(!result.error().recoverable);
     }
     QCOMPARE(port.callCount, 0);
 
     const auto duplicate = query.execute({teacherId("7"), teacherId("7")});
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        duplicate.error().message,
+        std::string("Teacher IDs must be unique.")
+        );
+    QVERIFY(!duplicate.error().recoverable);
     QCOMPARE(port.callCount, 0);
 }
 
@@ -127,6 +137,29 @@ rejectsUnexpectedDuplicateAndMisorderedOutputIdentity()
     auto result = query.execute(requested);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "A teacher display name batch returned a noncanonical teacher identifier."
+            )
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 1);
+
+    port.result = TeacherDisplayNameBatchReadResult::success({
+        snapshot("42x", u"Noncanonical trailing characters")
+    });
+    result = query.execute(requested);
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "A teacher display name batch returned a noncanonical teacher identifier."
+            )
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 2);
 
     port.result = TeacherDisplayNameBatchReadResult::success({
         snapshot("3", u"Unexpected")
@@ -134,6 +167,7 @@ rejectsUnexpectedDuplicateAndMisorderedOutputIdentity()
     result = query.execute(requested);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(port.callCount, 3);
 
     port.result = TeacherDisplayNameBatchReadResult::success({
         snapshot("1", u"First"), snapshot("1", u"Duplicate")
@@ -141,6 +175,7 @@ rejectsUnexpectedDuplicateAndMisorderedOutputIdentity()
     result = query.execute(requested);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(port.callCount, 4);
 
     port.result = TeacherDisplayNameBatchReadResult::success({
         snapshot("2", u"Second"), snapshot("1", u"First")
@@ -148,7 +183,7 @@ rejectsUnexpectedDuplicateAndMisorderedOutputIdentity()
     result = query.execute(requested);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
-    QCOMPARE(port.callCount, 4);
+    QCOMPARE(port.callCount, 5);
 }
 
 void NextApplicationTeacherDisplayNameBatchReadQueryTests::
