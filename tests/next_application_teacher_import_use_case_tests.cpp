@@ -554,6 +554,48 @@ void reviewAndPlanRejectionPrecedePersistence()
     }
 }
 
+void sourceDateValidationPrecedesPersistenceAndPreservesIsoDate()
+{
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2023-02-29";
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::InvalidSourceDate,
+                "invalid Gregorian source date was not rejected as an invalid plan");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "invalid Gregorian source date reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2024-02-29";
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(result.has_value(), "valid leap-day source date was rejected");
+        require(persistence.state.latestSourceDateIso == "2024-02-29",
+                "valid leap-day source date was not forwarded unchanged");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2024-02-29";
+        request.validation.sourceDateValid = false;
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::InvalidSourceDate,
+                "source date marked invalid by validation was not rejected");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "source date rejected by validation reached persistence");
+    }
+}
+
 void ambiguousMatchRollsBackEarlierWrites()
 {
     TeacherImportUseCaseRequest request = emptyValidRequest();
@@ -656,6 +698,7 @@ int main()
         successfulOrchestrationAcrossNamespaces();
         noMatchCreatesAcrossAllNamespaces();
         reviewAndPlanRejectionPrecedePersistence();
+        sourceDateValidationPrecedesPersistenceAndPreservesIsoDate();
         ambiguousMatchRollsBackEarlierWrites();
         queryWriteAndCommitFailuresRollBack();
     }

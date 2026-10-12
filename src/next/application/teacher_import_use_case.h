@@ -6,6 +6,7 @@
 #include "next/application/native_english_teacher_import_update.h"
 #include "next/application/teacher_import_match_cardinality.h"
 #include "next/application/teacher_import_plan_validation.h"
+#include "next/domain/gregorian_date.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -250,47 +251,6 @@ struct TeacherImportUseCaseError final
 namespace Detail
 {
 
-[[nodiscard]] inline bool isTeacherImportIsoDate(
-    const std::string_view value
-    ) noexcept
-{
-    if (value.size() != 10 || value[4] != '-' || value[7] != '-')
-    {
-        return false;
-    }
-    for (std::size_t index = 0; index < value.size(); ++index)
-    {
-        if (index != 4 && index != 7
-            && (value[index] < '0' || value[index] > '9'))
-        {
-            return false;
-        }
-    }
-
-    const auto number = [&value](const std::size_t first, const std::size_t count)
-    {
-        int result = 0;
-        for (std::size_t index = first; index < first + count; ++index)
-        {
-            result = result * 10 + value[index] - '0';
-        }
-        return result;
-    };
-    const int year = number(0, 4);
-    const int month = number(5, 2);
-    const int day = number(8, 2);
-    if (year == 0 || month < 1 || month > 12)
-    {
-        return false;
-    }
-    constexpr int daysPerMonth[] = {
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-    const bool leapYear = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-    const int daysInMonth = month == 2 && leapYear
-        ? 29 : daysPerMonth[month - 1];
-    return day >= 1 && day <= daysInMonth;
-}
-
 [[nodiscard]] inline TeacherImportUseCaseError invalidRequestError()
 {
     return {.kind = TeacherImportUseCaseErrorKind::InvalidRequest};
@@ -427,7 +387,9 @@ public:
         }
 
         validation.sourceDateValid = validation.sourceDateValid
-            && Detail::isTeacherImportIsoDate(request.sourceDateIso);
+            && Domain::GregorianDate::fromIsoString(
+                request.sourceDateIso
+                ).has_value();
         const TeacherImportPlanValidationIssue validationIssue =
             validateTeacherImportPlan(validation);
         if (validationIssue != TeacherImportPlanValidationIssue::None)
