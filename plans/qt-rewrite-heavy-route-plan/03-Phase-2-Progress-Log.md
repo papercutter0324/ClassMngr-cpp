@@ -25395,8 +25395,8 @@ to recoverable `Technical` results.
    `SettingsManager::set`/`sync` behavior unchanged.
 2. Return a typed result from `LastSelectedCampusPort::write`. Preserve the
    canonical string key, typed CampusId conversion, and `nullopt` mapping to
-   an empty string (not key removal). Invalid identifiers remain rejected at
-   the typed CampusId boundary; storage failures are recoverable `Technical`
+   an empty string (not key removal), including the page's existing optional
+   string-to-CampusId conversion. Storage failures are recoverable `Technical`
    results.
 3. Inject the optional last-selected port through
    `CampusDashboardPageDependencies` without changing existing public
@@ -25414,4 +25414,67 @@ to recoverable `Technical` results.
    cases. Build `ClassMngr` and these two existing targets, then run exactly
    their two CTests. Add no CMake target.
 
-This matrix is recorded before implementation. Batch 162 is active with F687.
+This matrix was recorded before implementation. Batch 162 is complete.
+
+### F687 Last Selected Campus checked persistence - accepted - 2026-10-12
+
+F687 is accepted at code/test commit
+`6b7c01fa255637689a30fe355431827896b03985`. `ClassMngr` and the two selected
+targets built in the Windows x64 Debug Ninja tree under the Visual Studio 2026
+x64 developer environment. The exact CTests passed 2/2:
+`NextPlatformSettingsManagerLastSelectedCampusPort` and
+`ClassMngrCampusDashboardPageTests`. Port coverage verifies exact QVariant or
+absent-key restoration, unrelated and legacy integer-key preservation,
+recoverable Technical errors, and retry. Page coverage verifies one status
+diagnostic on preference failure while retaining the successfully loaded
+campus and its data, then a successful save that clears the diagnostic. The
+Visual Studio generator stopped at ZERO_CHECK with FileTracker
+`E_ACCESSDENIED` before compilation. No full suite ran.
+
+**Decision: accept F687.** Batch 162 is complete.
+
+### Batch 163 shortlist and selection - recorded before F688 implementation - 2026-10-12
+
+The shortlist compared Last Database Directory and PowerPoint Data Access
+Notice. Select Last Database Directory because it is cross-platform and one
+`rememberDatabaseDirectory()` helper handles its single preference after
+successful load, Save As, and export operations. The PowerPoint notice is
+Apple-only. The directory helper has three operation call sites and a later
+file-dialog convenience effect, so failure handling must preserve each
+already-completed file operation. Existing port, FileController lifecycle,
+and MainWindow Save As/export tests provide focused regression coverage.
+
+**F688 is selected:** add checked persistence for `files/lastDirectory`,
+restore the exact previous QVariant or key absence after sync failure, preserve
+unrelated settings, and permit retry without changing generic SettingsManager
+behavior. Return `[[nodiscard]] Domain::Result<void>` from
+`LastDatabaseDirectoryPort::write`, preserving the exact key and UTF-8 path
+round-trip. Map sync failures to recoverable `Technical` results.
+
+### F688 Last Database Directory checked persistence acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked SettingsManager write for only `files/lastDirectory`.
+   Check sync status, restore the exact prior QVariant or key absence on
+   failure, preserve unrelated settings, and allow retry. Leave generic
+   `SettingsManager::setLastDatabaseDirectory` behavior unchanged.
+2. Return a typed result from `LastDatabaseDirectoryPort::write`. Preserve the
+   exact key, UTF-8 read/write conversion, and synchronized successful-write
+   behavior. Sync failures return recoverable `Technical` errors.
+3. Give `FileController` an optional injectable last-directory port for
+   deterministic tests. Keep `rememberDatabaseDirectory()` as the shared
+   preference path after successful load, Save As, and export. If saving the
+   preference fails, show one warning and keep the completed file operation,
+   active workspace, and return status successful. A later operation can
+   retry; retain current file-dialog directory fallback behavior.
+4. Extend
+   `NextPlatformSettingsManagerLastDatabaseDirectoryPort` with injected sync
+   failure, exact prior-value/absent-key rollback, unrelated-setting
+   preservation, typed error mapping, and retry. Extend
+   `FileControllerWorkspaceLifecycle` with a successful file operation whose
+   preference save fails, asserting one warning and unchanged successful
+   workspace result. Retain
+   `MainWindowSaveAsExportParity` for existing successful Save As/export
+   persistence. Build `ClassMngr` and the three existing targets; run exactly
+   the corresponding three CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 163 is active with F688.

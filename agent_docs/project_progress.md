@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F687 selected)
+### Current state - 2026-10-12 (F688 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-161 are complete; Batch 162 is active with F687. F666 Class Day
+Batches 141-162 are complete; Batch 163 is active with F688. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
 Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
@@ -222,12 +222,24 @@ update prompt, and clears successfully on a later check. Invalid stored text
 was not separately failure-injected, and no full suite ran. Batch 161 is
 complete.
 
-F687 Last Selected Campus checked persistence is selected in Batch 162. The
-port writes `campus/lastSelectedJsonId` through unchecked SettingsManager
-storage after a selected campus loads; failure currently has no typed result
-or caller feedback. The slice will preserve a successfully loaded campus while
-reporting a preference-save failure, with checked rollback and retry. The full
-acceptance matrix is recorded in the Phase 2 progress log.
+F687 Last Selected Campus checked persistence is committed as
+`6b7c01fa255637689a30fe355431827896b03985`. `ClassMngr` and the port and
+CampusDashboardPage test targets built in the Windows x64 Debug Ninja tree
+under the Visual Studio 2026 x64 developer environment; the exact two CTests
+passed 2/2. Tests verify exact QVariant or absent-key rollback, unrelated and
+legacy integer-key preservation, Technical errors, retry, and that a failed
+preference save keeps the newly loaded campus selected and displayed while
+showing one status diagnostic. A later successful selection saves the value
+and clears the status. The Visual Studio generator stopped at ZERO_CHECK with
+FileTracker `E_ACCESSDENIED` before compilation; no full suite ran. Batch 162
+is complete.
+
+F688 Last Database Directory checked persistence is selected in Batch 163. The
+port writes `files/lastDirectory` through a void SettingsManager path after
+successful load, Save As, and export operations. The selected slice checks this
+single preference write and reports a failure without undoing the completed
+file operation. The exact acceptance matrix is recorded in the Phase 2
+progress log.
 
 ### Current state - 2026-10-09
 

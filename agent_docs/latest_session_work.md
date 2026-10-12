@@ -66,10 +66,18 @@
   retains storage/display and allows an eligible newer update prompt, then
   clears on a later check. Invalid stored text was not separately
   failure-injected; no full suite ran. Batch 161 is complete.
-- Batch 162 selected F687 Last Selected Campus checked persistence. The
-  `campus/lastSelectedJsonId` port write is unchecked after the selected campus
-  loads successfully. The acceptance matrix checks save failure feedback
-  without rolling back the loaded campus; see the Phase 2 progress log before
+- F687 Last Selected Campus checked persistence is committed as
+  `6b7c01fa255637689a30fe355431827896b03985`. `ClassMngr` and two selected
+  targets built under the Windows x64 Debug Ninja/VS 2026 environment; both
+  selected CTests passed 2/2. The Visual Studio generator stopped before
+  compilation at ZERO_CHECK with FileTracker `E_ACCESSDENIED`. Failure coverage
+  verifies exact rollback/retry and that preference failure preserves the
+  successfully loaded campus while showing one diagnostic. No full suite ran;
+  Batch 162 is complete.
+- Batch 163 selected F688 Last Database Directory checked persistence. The
+  `files/lastDirectory` port write follows successful load, Save As, and export
+  operations. The selected matrix checks a failed preference save without
+  undoing the completed file operation; see the Phase 2 progress log before
   implementation.
 
 ## Historical handoff - phase2_resume_20260929 (F384)

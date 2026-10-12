@@ -4091,14 +4091,25 @@ v18.10.1; the exact three CTests passed 3/3. Invalid stored text was not
 separately failure-injected; no full suite ran. Commit:
 `31511035b7f0d492a37241ac454523a99716c7a7`.
 
-## F687 Last Selected Campus checked persistence - selected - 2026-10-12
+## F687 Last Selected Campus checked persistence - accepted - 2026-10-12
 
-The SettingsManager adapter writes `campus/lastSelectedJsonId` without a typed
-result, and `CampusDashboardPage::loadSelectedCampus()` ignores persistence
-status after loading the selected campus. Select this single-key cross-platform
-slice over Last Database Directory, whose writes span more post-operation
-paths and affect a later file-dialog convenience setting. Checked persistence
-must preserve the successfully loaded campus and report a save failure through
-the page's status surface; port and dashboard tests already cover the
-surrounding boundary. Batch 162 is active; the exact matrix is in the Phase 2
-progress log.
+The checked `campus/lastSelectedJsonId` writer restores the exact previous
+QVariant or absent key after sync failure and returns a typed `Technical`
+result. The dashboard reports a failed preference save while retaining the
+successfully loaded campus and its visible data. A later selection saves and
+clears the diagnostic. `ClassMngr` and the port/dashboard test targets built
+in the Windows x64 Debug Ninja tree under the Visual Studio 2026 x64
+developer environment; the exact two CTests passed 2/2. The Visual Studio
+generator stopped at ZERO_CHECK with FileTracker `E_ACCESSDENIED`; no full
+suite ran. F687 is committed as
+`6b7c01fa255637689a30fe355431827896b03985`. Batch 162 is complete.
+
+## F688 Last Database Directory checked persistence - selected - 2026-10-12
+
+`FileController::rememberDatabaseDirectory()` funnels successful database
+load, Save As, and export paths into one void `files/lastDirectory` preference
+write. Select this cross-platform candidate over the Apple-only PowerPoint
+notice. Add a checked typed write and one warning on failure while preserving
+each already-completed file operation. Existing port, workspace lifecycle,
+and MainWindow Save As/export tests provide focused coverage. Batch 163 is
+active; the exact matrix is in the Phase 2 progress log.
