@@ -160,22 +160,33 @@ function(classmngr_check_source_ownership)
         )
     endif()
 
+    # Build a normalized-path lookup once, preserving first-seen owner order
+    # while recording each owner only once per path.
+    if(owned_path_count GREATER 0)
+        math(EXPR last_owner_index "${owned_path_count} - 1")
+        foreach(index RANGE 0 ${last_owner_index})
+            list(GET owned_paths ${index} owned_path)
+            list(GET owned_targets ${index} owner)
+            string(SHA256 owned_path_key "${owned_path}")
+            set(owner_index_property
+                "CLASSMNGR_SOURCE_OWNERS_${owned_path_key}"
+            )
+            get_property(owners GLOBAL PROPERTY "${owner_index_property}")
+            if(NOT owner IN_LIST owners)
+                list(APPEND owners "${owner}")
+                set_property(GLOBAL PROPERTY "${owner_index_property}"
+                    "${owners}"
+                )
+            endif()
+        endforeach()
+    endif()
+
     set(missing_sources)
     set(duplicate_sources)
     foreach(source IN LISTS normalized_inventory)
-        set(owners)
-        if(owned_path_count GREATER 0)
-            math(EXPR last_owner_index "${owned_path_count} - 1")
-            foreach(index RANGE 0 ${last_owner_index})
-                list(GET owned_paths ${index} owned_path)
-                if("${owned_path}" STREQUAL "${source}")
-                    list(GET owned_targets ${index} owner)
-                    if(NOT owner IN_LIST owners)
-                        list(APPEND owners "${owner}")
-                    endif()
-                endif()
-            endforeach()
-        endif()
+        string(SHA256 source_key "${source}")
+        set(owner_index_property "CLASSMNGR_SOURCE_OWNERS_${source_key}")
+        get_property(owners GLOBAL PROPERTY "${owner_index_property}")
 
         list(LENGTH owners owner_count)
         if(owner_count EQUAL 0)
