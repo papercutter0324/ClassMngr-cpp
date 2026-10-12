@@ -3938,12 +3938,23 @@ Startup hydration still performs no write. The three focused CTests passed
 3/3; no full suite ran. F679 is committed as
 `e907cf058618a3554d926b189b1111b1059b27d3`.
 
-## F680 Language Preference persistence failure feedback - selected - 2026-10-12
+## F680 Language Preference persistence failure feedback - accepted - 2026-10-12
 
-Language selection updates the persisted preference, LanguageService, global
-font, and translated UI. A failed void write can leave these states out of
-step. F680 will add a checked typed language write and make its QAction
-persistence-first, preserving the selected action and live language state on
-failure. One diagnostic and retry are required. Startup hydration and existing
-programmatic OptionState persistence remain intact. The full acceptance
-matrix and three exact existing CTests are in the Phase 2 progress log.
+Language changes now use checked typed persistence. A failed QAction save
+preserves the selected action, LanguageService locale, global font, and
+translated UI, reports one diagnostic, and allows retry. Startup hydration
+does not make an ordinary write; programmatic OptionState changes retain
+their prior callback behavior while reporting failures. The three selected
+CTests passed 3/3; no full suite ran. F680 is committed as
+`b85bfd582dde286e86413ba00c4f42c52c0a0644`.
+
+## F681 Sidebar Display persistence failure feedback - selected - 2026-10-12
+
+Sidebar tooltips and overflowing-text marquee are both stored through void
+SettingsManager calls. A failed write can leave the checked controls or live
+Sidebar behavior inconsistent with the saved values. F681 will add one
+checked write for both settings, restore both exact prior values on sync
+failure, and preserve the prior action and live behavior with one diagnostic.
+Retry must align storage, controls, and Sidebar behavior. Existing defaults,
+legacy QVariant coercion, key names, and successful behavior stay intact.
+The full matrix and two exact existing CTests are in the Phase 2 progress log.

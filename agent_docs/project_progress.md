@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F680)
+### Current state - 2026-10-12 (F681)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-154 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-155 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -148,13 +148,23 @@ unchanged report/batch provider labels and Custom Website URL, successful
 retry, and programmatic failure reporting. No full suite ran. Batch 154 is
 complete.
 
-F680 Language Preference typed persistence and action rollback is
-selected/current in Batch 155. A failed language save can leave the selected
-menu item and live language/font/retranslation state inconsistent with stored
-settings. The existing settings port, language controller, and MainWindow
-retranslation CTests will cover checked writes, QAction rollback, retry,
-startup hydration without a write, and programmatic persistence behavior.
-Exact acceptance and all three existing CTests are recorded in the Phase 2
+F680 Language Preference typed persistence and action rollback is committed
+as `b85bfd582dde286e86413ba00c4f42c52c0a0644`. `ClassMngr` and all three
+selected targets built in the Windows x64 Debug Ninja tree under the VS 2026
+developer environment; the settings port, language controller, and MainWindow
+retranslation CTests passed 3/3. Failure coverage verifies previous/absent-key
+restoration, unrelated-setting preservation, invalid input and Technical error
+mapping, startup hydration without an ordinary write, QAction rollback of the
+selected language and live font/translation, one diagnostic, successful retry,
+and programmatic failure reporting without rollback. No full suite ran.
+Batch 155 is complete.
+
+F681 Sidebar Display checked persistence and action rollback is selected in
+Batch 156. Its two settings are currently saved through void calls; failed
+storage can leave the tooltip and marquee actions or live Sidebar behavior out
+of sync with stored preferences. The existing settings-port and MainWindow
+overflow-action CTests will cover both-key rollback, action/live behavior,
+diagnostic feedback, and retry. The exact acceptance matrix is in the Phase 2
 progress log; no CMake target is needed.
 
 ### Current state - 2026-10-09

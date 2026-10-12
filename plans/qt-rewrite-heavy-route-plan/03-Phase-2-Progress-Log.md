@@ -24932,3 +24932,73 @@ Change `LanguagePreferencesPort::write` to
    run exactly these three CTests. Add no CMake target.
 
 This matrix is recorded before implementation. Batch 155 is active with F680.
+
+### F680 Language Preference failure feedback - accepted - 2026-10-12
+
+F680 is accepted at code/test commit
+`b85bfd582dde286e86413ba00c4f42c52c0a0644`. `ClassMngr` and the three
+selected test targets built in `build/windows-x64-debug-ninja` under Visual
+Studio 2026 Developer Command Prompt v18.10.1, with MSVC 19.51.36257.0
+(toolset 14.51.36231). The exact CTests passed 3/3:
+`ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests`,
+`ClassMngrLanguagePreferencePortTests`, and
+`ClassMngrMainWindowDocumentCatalogRetranslationParityTests`. Coverage verifies
+canonical 0/1/5 values and legacy 2/3/4 migration, invalid enum and Technical
+sync-error mapping, previous/absent-key and unrelated-setting preservation,
+startup hydration without an ordinary write, action/storage/live locale/font/
+translation preservation on failure, one diagnostic, successful retry, and
+programmatic OptionState failure reporting without rollback. No full suite ran.
+
+**Decision: accept F680.** Batch 155 is complete; Batch 156 is active with
+F681. Continue the one-commit-per-slice sequence.
+
+### Batch 156 shortlist and selection - recorded before F681 implementation - 2026-10-12
+
+The candidate scan compared Sidebar Display, PDF Viewer Background, PDF Page
+Spacing, and the PowerPoint Data Access Notice. Sidebar Display is selected
+because it controls both overflow tooltips and marquee behavior across the
+application. Its typed port currently writes both keys using void
+SettingsManager calls and returns success unconditionally. A failed save can
+therefore leave stored values inconsistent with the actions and live Sidebar.
+The port and MainWindow parity CTests already cover both values and their live
+effects. The PDF candidates have similar cross-platform failure paths but
+narrower effects; the PowerPoint notice is Apple-only. No CMake target or
+platform-specific gate is needed.
+
+**F681 is selected:** add an opt-in checked SettingsManager write for the
+`options/sidebarTooltipsEnabled` and `options/sidebarMarqueeEnabled` keys. Sync
+both together, restore each previous value exactly (including absence) on
+failure, preserve unrelated settings, and allow retry. Leave generic
+`SettingsManager::set`/`sync` behavior unchanged. Change
+`SettingsManagerSidebarDisplayPreferencesPort::save` to return a diagnostic
+recoverable `Technical` result on sync failure. Keep the enabled defaults,
+existing key names, and QVariant boolean coercion unchanged.
+
+### F681 Sidebar Display failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked SettingsManager write for both Sidebar Display keys. Check
+   QSettings sync, preserve both prior QVariant values and absence per key on
+   failure, preserve unrelated settings, and allow retry. Leave generic
+   SettingsManager `set`/`sync` behavior unchanged.
+2. Make `SettingsManagerSidebarDisplayPreferencesPort::save` return a
+   recoverable `Technical` result on sync errors. Keep typed booleans, enabled
+   defaults for unavailable keys, legacy QVariant-to-bool coercion, and the
+   exact existing keys unchanged.
+3. Inject the typed Sidebar Display port and error handler through MainWindow
+   startup options without changing its public constructor. Route both checkable
+   actions through the checked write before the live Sidebar responds. On
+   failure, restore the triggering checked action without a second save, keep
+   both stored preferences and both effective Sidebar behaviors unchanged, and
+   report one diagnostic. On retry, persist both values and update action and
+   live behavior together. Startup hydration performs no save.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests`
+   with injected sync failures for existing values and absent keys, exact prior
+   value/unrelated-setting preservation, Technical mapping, and retry. Extend
+   `ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests` to verify a
+   real tooltip QAction failure preserves the selected action, persisted
+   preference, and overflow tooltip with one diagnostic, then succeeds on
+   retry; retain its marquee success coverage. Build `ClassMngr` and these two
+   existing targets; run exactly these two CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 156 is active with F681.

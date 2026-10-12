@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-154 are complete.
+  141-155 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -26,10 +26,12 @@
 - F679 AI Comment Provider typed persistence and action rollback is committed
   as `e907cf058618a3554d926b189b1111b1059b27d3`; its three selected CTests
   passed.
-- F680 Language Preference typed persistence and action rollback is
-  selected/current in Batch 155. Its acceptance matrix and three exact existing
-  CTests are in the Phase 2 progress log; implementation starts after the
-  selection commit.
+- F680 Language Preference typed persistence and action rollback is committed
+  as `b85bfd582dde286e86413ba00c4f42c52c0a0644`; its three selected CTests
+  passed 3/3.
+- F681 Sidebar Display checked persistence and action rollback is selected in
+  Batch 156. Its acceptance matrix and two exact existing CTests are in the
+  Phase 2 progress log; implementation starts after the selection commit.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -5446,11 +5448,17 @@ provider port, standard action, and Custom Website action tests passed 3/3.
 Failure preserves the prior provider, dialog labels, and custom URL, with one
 diagnostic; retry succeeds. Commit: `e907cf058618a3554d926b189b1111b1059b27d3`.
 
-F680 Language Preference persistence failure feedback is selected/current in
-Batch 155. Language actions affect the preference, LanguageService, global
-font, and translated UI. The shortlist compared Language Preference with PDF
-viewer background/page spacing, Sidebar Display, and the Apple-only PowerPoint
-notice. Language was selected for its broader live application effect and
-existing controller, settings-port, and MainWindow retranslation coverage. The
-three existing CTests are recorded with the acceptance matrix in the Phase 2
-progress log.
+F680 Language Preference failure feedback is accepted in Batch 155. The
+settings-port, controller, and MainWindow retranslation CTests built and
+passed 3/3. Failure preserves the prior selection, stored setting, live locale,
+font, and translated UI; retry updates them together. Commit:
+`b85bfd582dde286e86413ba00c4f42c52c0a0644`.
+
+F681 Sidebar Display checked persistence is selected/current in Batch 156.
+The shortlist compared Sidebar Display with PDF Viewer Background, PDF Page
+Spacing, and the Apple-only PowerPoint notice. Sidebar was selected for its
+two live behaviors, existing typed preferences port, and parity tests for
+overflow tooltip and marquee effects. One failed save must preserve both
+preference keys, both actions, and the effective Sidebar behavior before retry.
+The two existing CTests and full acceptance matrix are in the Phase 2 progress
+log.
