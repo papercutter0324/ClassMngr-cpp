@@ -1362,6 +1362,15 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME NextApplicationMyClassesClassSummaryBatchReadQuery
+    SOURCES
+        tests/next_application_my_classes_class_summary_batch_read_query_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextApplicationMyClassesTeacherProfileBatchReadQuery
     SOURCES
         tests/next_application_my_classes_teacher_profile_batch_read_query_tests.cpp
