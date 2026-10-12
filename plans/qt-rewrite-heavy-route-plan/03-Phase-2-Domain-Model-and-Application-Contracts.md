@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F706 is selected in Batch 178; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F708 is selected in Batch 178 and F707 is deferred pending an observed app callsite; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -90,14 +90,14 @@ Treat this plan as an operational summary, not a history:
 - F629 - Deferred pending a suitable packaged macOS universal Phase 0 matrix
   runner; none is exposed in this Windows x64 session. This does not establish
   global runner unavailability; resume when a suitable runner is accessible.
+- F707 - Deferred from Batch 178: the `sidebarClassNodeLessThan`/`timeOrder`
+  helper chain has no observed app callsite; revisit when a live use is found.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
 #### Active batch: Batch 178
 
-- F706 - Migrate Calendar Event repository `eventFromQuery` time parsing while preserving query conversion behavior.
-- F707 - Migrate Sidebar controller `timeOrder` parsing while preserving ordering behavior.
 - F708 - Migrate Calendar Event dialog legacy draft parsing while preserving draft behavior.
 - F709 - Migrate Calendar Page canonical `projectionTime` parsing while preserving projection behavior.
 - F710 - Migrate schedule-print service time parsing while preserving formatting behavior.

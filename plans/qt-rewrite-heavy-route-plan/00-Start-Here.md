@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-12
-- Current milestone: Phase 2 remains in progress: F705 was accepted at commit `102a47332711ca680f4968ba9b58979d8b0ad9cb`; F706, Calendar Event repository query conversion, is active in Batch 178. Phase 2 Gates 1/2 remain Partial and the formal exit gate Open; F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F706 was accepted at commit `6b536764c36f7baa96da14c912d78f63d8d8eca7`; F708, Calendar Event dialog legacy draft parsing, is active in Batch 178. F707 is deferred because its helper chain has no observed app callsite. Phase 2 Gates 1/2 remain Partial and the formal exit gate Open; F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

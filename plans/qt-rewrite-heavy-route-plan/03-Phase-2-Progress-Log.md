@@ -26426,3 +26426,60 @@ This matrix is recorded before implementation. Batch 178 is active with F706.
 5. Schedule-print service time parser.
 6. Next Calendar Event application-port conversion family.
 7. Next Sub Prep schedule-summary parsing/formatting pair.
+
+### F706 Calendar Event repository query time parser migration - accepted - 2026-10-12
+
+F706 is accepted at code/test commit
+`6b536764c36f7baa96da14c912d78f63d8d8eca7`. `ClassMngr` and
+`ClassMngrCalendarEventRepositoryTests` were rebuilt in the existing
+`build/windows-x64-debug-ninja` tree; the exact CTest passed 1/1. No full suite
+ran.
+
+**Decision: accept F706.** Batch 178 continues with F708; F707 is deferred.
+
+### Batch 178 remaining shortlist after F706 acceptance
+
+F707's `sidebarClassNodeLessThan`/`timeOrder` helper chain has no observed app
+callsite, so defer it until a live use is found. Select F708 because
+`legacyEventFromDraft` has a direct public `CalendarEventDialog` draft seam.
+F709 remains a candidate, although its public Calendar Page fixture supplies
+valid `QTime` values through the repository/port and does not readily expose
+malformed raw text.
+
+1. **Selected: Calendar Event dialog legacy draft parser** - migrate only the
+   start/end draft times while preserving dialog fallback and event behavior.
+2. Calendar Page canonical `projectionTime`.
+3. Schedule-print service time parser.
+4. Next Calendar Event application-port conversion family.
+5. Next Sub Prep schedule-summary parsing/formatting pair.
+
+### F708 Calendar Event dialog legacy draft time parser migration selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+F708 is selected from Batch 178: migrate only start/end draft-time parsing in
+`legacyEventFromDraft` in
+`src/features/calendar/ui/calendar_event_dialog.cpp`. The public
+`CalendarEventDialog` draft seam supports focused compatibility coverage.
+
+**F708 is selected:** use `ScheduleValueParser::parseDisplayTime` with the
+singleton `PaddedHourMinute24Hour` allowlist and preserve parser strictness
+with a raw-equals-trimmed guard.
+
+1. Replace only start/end draft time parsing with the singleton
+   `PaddedHourMinute24Hour` parser and require each raw value to equal its
+   trimmed value before accepting a parse. Preserve canonical `HH:mm` values;
+   surrounding-whitespace and malformed raw values remain invalid `QTime`s.
+2. Preserve the invalid-time fallback: invalid draft times remain invalid, and
+   `loadEvent` continues to display its 09:00/10:00 defaults. Preserve
+   repeat-series checks, timed `eventData()` `HH:mm` output, all-day and
+   unconfirmed clearing of optional times, and every other field.
+3. Extend `tests/dialog_shell_tests.cpp` through the public dialog draft seam
+   to cover canonical, surrounding-whitespace, and malformed draft values
+   through the constructor, widgets, and `eventData()` as appropriate. Assert
+   fallback display and optional-time behavior without changing other draft
+   fields.
+4. `ClassMngrDialogShellTests` already links the runtime parser; no CMake
+   change is expected. Build `ClassMngr` and
+   `ClassMngrDialogShellTests`; run only that exact CTest target. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F708.

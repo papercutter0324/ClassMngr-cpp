@@ -4268,13 +4268,21 @@ verbatim persistence, whitespace/AM-PM/seconds/malformed rejection with
 rollback, and existing Qt `HH:mm` behavior for a one-digit hour. No full
 suite ran.
 
-F706 is selected in Batch 178 for `eventFromQuery` in the Calendar Event
-repository. Migrate only the start/end time columns to the explicit
-`PaddedHourMinute24Hour` Domain format with a raw-whitespace guard. Preserve
-invalid-QTime fallback, date parsing, repeat-series trimming and all other
-field mappings. Use `getCalendarEvent` to verify canonical round-trip and
-padded/malformed stored values while checking other event fields remain
-intact. Its test target does not yet link the parser source, so add
-`schedule_value_parser.cpp` there if required. The focused target is
-`ClassMngrCalendarEventRepositoryTests`; the matrix is recorded before
-implementation in the Phase 2 progress log.
+F706 is accepted and committed as
+`6b536764c36f7baa96da14c912d78f63d8d8eca7`. `ClassMngr` and
+`ClassMngrCalendarEventRepositoryTests` built in the Windows x64 Debug Ninja
+tree; exact CTest passed 1/1. Canonical times round-trip, padded/malformed
+values leave only the affected `QTime` invalid, and one-digit input preserves
+Qt `HH:mm` behavior through `getCalendarEvent`. No full suite ran.
+
+F708 is selected from the remaining Batch 178 candidates because
+`legacyEventFromDraft` has a direct public dialog draft seam. Migrate only
+start/end parsing to `PaddedHourMinute24Hour` with a raw-whitespace guard.
+Preserve invalid `QTime` fallback, 09:00/10:00 load defaults, repeat-series
+handling, timed `HH:mm` output, and all-day/unconfirmed clearing. Cover
+canonical, padded and malformed draft values in `ClassMngrDialogShellTests`;
+the target already links the Domain parser through runtime. F707 is deferred
+until its unreferenced comparator chain has a live caller; F709 is deferred
+because its existing fixture does not readily inject malformed raw time
+text. The F708 acceptance matrix is recorded before implementation in the
+Phase 2 progress log.
