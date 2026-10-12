@@ -532,6 +532,8 @@ private slots:
     void speakingEvalModelDuplicateValidationPreservesRowsAndIncompleteNames();
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
+    void defaultOutputDirectoryNormalizesClassScheduleTime_data();
+    void defaultOutputDirectoryNormalizesClassScheduleTime();
     void batchArchivePathUsesOutputFolderName();
     void zipWriterRejectsMissingAndDuplicateEntries();
     void reportDateUsesShortMonthsForStandardTemplate();
@@ -679,6 +681,57 @@ void SpeakingEvalBatchReportServiceTests::defaultOutputDirectoryIncludesClassSch
             ),
         QDir::cleanPath(
             QStringLiteral("C:/Documents/DYB/SpeakingEvals/E5 Zeus (MW - 4pm)/Winter")
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    defaultOutputDirectoryNormalizesClassScheduleTime_data()
+{
+    QTest::addColumn<QString>("startTime");
+    QTest::addColumn<QString>("expectedTime");
+
+    QTest::newRow("hour minute am pm spaced")
+        << QStringLiteral("4:07 PM") << QStringLiteral("4-07pm");
+    QTest::newRow("hour minute am pm compact")
+        << QStringLiteral("4:07PM") << QStringLiteral("4-07pm");
+    QTest::newRow("padded hour minute am pm spaced")
+        << QStringLiteral("04:07 PM") << QStringLiteral("4-07pm");
+    QTest::newRow("padded hour minute am pm compact")
+        << QStringLiteral("04:07PM") << QStringLiteral("4-07pm");
+    QTest::newRow("24 hour")
+        << QStringLiteral("9:07") << QStringLiteral("9-07am");
+    QTest::newRow("padded 24 hour")
+        << QStringLiteral("09:07") << QStringLiteral("9-07am");
+    QTest::newRow("surrounding whitespace")
+        << QStringLiteral("  4:07 PM  ") << QStringLiteral("4-07pm");
+    QTest::newRow("malformed fallback")
+        << QStringLiteral(" No Time ") << QStringLiteral("notime");
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    defaultOutputDirectoryNormalizesClassScheduleTime()
+{
+    QFETCH(QString, startTime);
+    QFETCH(QString, expectedTime);
+
+    ClassInfo classInfo;
+    classInfo.classGrade = QStringLiteral("E5");
+    classInfo.classLevel = QStringLiteral("Zeus");
+    classInfo.classTimes = {
+        { QStringLiteral("Monday"), startTime, QStringLiteral("4:50 PM") }
+    };
+
+    QCOMPARE(
+        SpeakingEvalBatchReportService::defaultOutputDirectory(
+            classInfo,
+            QStringLiteral("Winter"),
+            QStringLiteral("C:/Documents")
+            ),
+        QDir::cleanPath(
+            QStringLiteral(
+                "C:/Documents/DYB/SpeakingEvals/E5 Zeus (M - %1)/Winter"
+                ).arg(expectedTime)
             )
         );
 }

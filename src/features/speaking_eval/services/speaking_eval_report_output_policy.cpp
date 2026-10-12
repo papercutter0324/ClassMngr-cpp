@@ -1,12 +1,15 @@
 #include "speaking_eval_report_output_policy.h"
 
 #include "core/utils/file_name_utils.h"
+#include "domain/rules/schedule_value_parser.h"
 
 #include <QDir>
 #include <QObject>
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <QTime>
+
+#include <array>
 
 namespace
 {
@@ -36,22 +39,27 @@ QString shortDay(const QString& day)
 
 QString shortTime(const QString& value)
 {
-    const QStringList formats{
-        QStringLiteral("h:mm AP"), QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"), QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"), QStringLiteral("HH:mm")
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced,
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmCompact,
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinuteAmPmSpaced,
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinuteAmPmCompact,
+        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour,
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
     };
-    for (const QString& format : formats)
+
+    const auto parsed = ScheduleValueParser::parseDisplayTime(
+        value.trimmed(),
+        allowedFormats
+        );
+    if (parsed)
     {
-        const QTime time = QTime::fromString(value.trimmed(), format);
-        if (time.isValid())
-        {
-            return time.toString(
-                time.minute() == 0
-                    ? QStringLiteral("hap")
-                    : QStringLiteral("h:mmap")
-                ).toLower();
-        }
+        const QTime time = *parsed;
+        return time.toString(
+            time.minute() == 0
+                ? QStringLiteral("hap")
+                : QStringLiteral("h:mmap")
+            ).toLower();
     }
     return value.trimmed().remove(QLatin1Char(' ')).toLower();
 }
