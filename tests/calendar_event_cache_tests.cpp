@@ -139,6 +139,11 @@ QString projectionText(
         );
 }
 
+QString repeatedHangulTitle(const int count)
+{
+    return QString(count, QChar(0xAC00));
+}
+
 void createDatabase(
     const QString& databasePath
     )
@@ -391,6 +396,7 @@ private slots:
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
     void injectedInvalidTimesAreFilteredByCacheAndModel();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
+    void projectionQueryAndCacheUseUtf16TitleBounds();
     void typedDateProjectionPreservesModelParityAndFiltering();
     void typedRangeProjectionPreservesOrderingMetadataAndLegacyParity();
     void nextEventLookupUsesProjectionQueryAndDeduplicates();
@@ -752,6 +758,131 @@ void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCle
     QVERIFY(!allDayEvents.first().startTime.isValid());
     QVERIFY(!allDayEvents.first().endTime.isValid());
     QCOMPARE(connectionNameSet(), connectionsBeforeQuery);
+}
+
+void CalendarEventCacheTests::projectionQueryAndCacheUseUtf16TitleBounds()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    const QString databasePath =
+        temporaryDirectory.filePath(QStringLiteral("calendar.db"));
+    createDatabase(databasePath);
+
+    const QString acceptedTitle = repeatedHangulTitle(255);
+    QCOMPARE(acceptedTitle.toUtf8().size(), 765);
+    const QString connectionName =
+        QStringLiteral("calendar-event-cache-title-boundary-%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        insertRawEvent(
+            database,
+            acceptedTitle,
+            QStringLiteral("Other"),
+            QStringLiteral("Unknown"),
+            QString(),
+            false,
+            QDate(2026, 7, 15),
+            QString(),
+            QDate(2026, 7, 15),
+            QString()
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+
+    const auto queried = CalendarEventProjectionQuery::loadRange(
+        databasePath,
+        QDate(2026, 7, 1),
+        QDate(2026, 7, 31)
+        );
+    QVERIFY(queried);
+    QCOMPARE(queried.value().eventCount(), std::size_t(2));
+    const std::string acceptedTitleUtf8 = acceptedTitle.toUtf8().toStdString();
+    bool queryProjectedAcceptedTitle = false;
+    for (const auto& event : queried.value().events())
+    {
+        if (event.title == acceptedTitleUtf8)
+        {
+            queryProjectedAcceptedTitle = true;
+            break;
+        }
+    }
+    QVERIFY(queryProjectedAcceptedTitle);
+
+    CalendarEventCache cache;
+    cache.setDatabasePath(databasePath);
+    const QDate rangeStart(2026, 7, 1);
+    const QDate rangeEnd(2026, 7, 31);
+    cache.requestRange(rangeStart, rangeEnd);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(rangeStart, rangeEnd),
+        5000
+        );
+    const auto cached = cache.eventProjectionInRange(rangeStart, rangeEnd);
+    bool cacheProjectedAcceptedTitle = false;
+    for (const auto& event : cached.events())
+    {
+        if (event.title == acceptedTitleUtf8)
+        {
+            cacheProjectedAcceptedTitle = true;
+            break;
+        }
+    }
+    QVERIFY(cacheProjectedAcceptedTitle);
+
+    const QString rejectedTitle = repeatedHangulTitle(256);
+    QCOMPARE(rejectedTitle.toUtf8().size(), 768);
+    const QString rejectedConnectionName =
+        QStringLiteral("calendar-event-cache-overlong-title-%1").arg(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            rejectedConnectionName
+            );
+        database.setDatabaseName(databasePath);
+        QVERIFY(database.open());
+        insertRawEvent(
+            database,
+            rejectedTitle,
+            QStringLiteral("Other"),
+            QStringLiteral("Unknown"),
+            QString(),
+            false,
+            QDate(2026, 7, 16),
+            QString(),
+            QDate(2026, 7, 16),
+            QString()
+            );
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(rejectedConnectionName);
+
+    const auto rejectedQuery = CalendarEventProjectionQuery::loadRange(
+        databasePath,
+        rangeStart,
+        rangeEnd
+        );
+    QVERIFY(!rejectedQuery);
+    QCOMPARE(
+        rejectedQuery.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+
+    cache.invalidate();
+    cache.requestRange(rangeStart, rangeEnd);
+    QTRY_VERIFY_WITH_TIMEOUT(!cache.isLoading(), 5000);
+    QVERIFY(!cache.isRangeLoaded(rangeStart, rangeEnd));
+    QVERIFY(!cache.rangeError(rangeStart, rangeEnd).isEmpty());
 }
 
 void CalendarEventCacheTests::typedDateProjectionPreservesModelParityAndFiltering()

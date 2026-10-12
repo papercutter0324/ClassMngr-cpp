@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/application/calendar_event_title_validation.h"
+
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -14,7 +16,8 @@ namespace ClassMngr::Next::Application
 {
 
 inline constexpr std::size_t kCalendarEventSaveMaxIdentifierLength = 256;
-inline constexpr std::size_t kCalendarEventSaveMaxTitleLength = 255;
+inline constexpr std::size_t kCalendarEventSaveMaxTitleLength =
+    kCalendarEventTitleMaxUtf16Units;
 inline constexpr std::size_t kCalendarEventSaveMaxDateLength = 10;
 inline constexpr std::size_t kCalendarEventSaveMaxTimeLength = 5;
 inline constexpr std::size_t kCalendarEventSaveMaxEventTypeLength = 64;
@@ -165,7 +168,8 @@ namespace CalendarEventSaveRequestDetail
             );
     }
 
-    if (!isRequiredText(
+    if (isBlank(request.title)
+        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
             request.title,
             kCalendarEventSaveMaxTitleLength
             )

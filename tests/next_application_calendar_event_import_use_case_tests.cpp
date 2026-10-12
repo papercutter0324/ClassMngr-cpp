@@ -13,6 +13,16 @@ using namespace ClassMngr::Next::Application;
 namespace
 {
 
+std::string repeatedHangulTitle(const std::size_t count)
+{
+    QString title;
+    for (std::size_t index = 0; index < count; ++index)
+    {
+        title.append(QChar(0xAC00));
+    }
+    return title.toUtf8().toStdString();
+}
+
 class FakeSignatureQueryPort final : public CalendarEventImportSignatureQueryPort
 {
 public:
@@ -254,10 +264,11 @@ candidateIdFailsBeforeCallingEitherPort()
 void NextApplicationCalendarEventImportUseCaseTests::
 acceptedCandidatesStayOrderedAndCountsMatch()
 {
+    const std::string multibyteTitle = repeatedHangulTitle(86);
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 4;
     request.candidates = {
-        candidate(signature(u"new-a"), "First accepted"),
+        candidate(signature(u"new-a"), multibyteTitle),
         candidate(signature(u"existing"), "Existing duplicate"),
         candidate(signature(u"new-b"), "Second accepted"),
         candidate(signature(u"new-a"), "In-batch duplicate")
@@ -288,9 +299,10 @@ acceptedCandidatesStayOrderedAndCountsMatch()
     QCOMPARE(savePort.callCount, 1);
     QCOMPARE(savePort.lastRequest.events.size(), std::size_t(2));
     QCOMPARE(
-        QString::fromStdString(savePort.lastRequest.events.at(0).title),
-        QStringLiteral("First accepted")
+        savePort.lastRequest.events.at(0).title,
+        multibyteTitle
         );
+    QCOMPARE(savePort.lastRequest.events.at(0).title.size(), std::size_t(258));
     QCOMPARE(
         QString::fromStdString(savePort.lastRequest.events.at(1).title),
         QStringLiteral("Second accepted")

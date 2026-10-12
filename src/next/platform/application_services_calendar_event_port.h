@@ -317,7 +317,7 @@ private:
             );
         const auto title = boundedUtf8(
             source.title,
-            Application::kCalendarEventSummaryMaxTitleLength
+            Application::kCalendarEventSummaryMaxTitleUtf8Bytes
             );
         const auto startDateText = boundedUtf8(
             source.startDate.toString(Qt::ISODate),

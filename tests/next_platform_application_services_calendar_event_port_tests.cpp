@@ -63,6 +63,16 @@ using ClassMngr::Next::Platform::
 namespace
 {
 
+std::string repeatedHangulTitle(const std::size_t count)
+{
+    QString title;
+    for (std::size_t index = 0; index < count; ++index)
+    {
+        title.append(QChar(0xAC00));
+    }
+    return title.toUtf8().toStdString();
+}
+
 QString databasePath(QTemporaryDir& directory)
 {
     return directory.filePath(
@@ -291,6 +301,7 @@ private slots:
     void rejectsInvalidImportBatchBeforeCreatingAnyRows();
     void reportsImportBatchFailureWithoutPartialRows();
     void reportsUnavailableImportSaveSessionStructurally();
+    void titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite();
     void createsAndUpdatesValidEventWithTypedIdMapping();
     void reportsMissingCalendarEventUpdateStructurally();
     void reportsCalendarEventUpdateSqlFailureStructurally();
@@ -753,6 +764,67 @@ projectsByIdAsOwnedTypedMetadata()
     QVERIFY(!projected.campusId.has_value());
     QVERIFY(projected.location.empty());
     QVERIFY(projected.notes.empty());
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+titleAdaptersUseUtf16UnitBoundariesForSqlReadAndWrite()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const QDate eventDate(2026, 12, 10);
+
+    ApplicationServicesCalendarEventSavePort savePort(services);
+    CalendarEventSaveRequest acceptedRequest = validSaveRequest();
+    const std::string acceptedTitle = repeatedHangulTitle(255);
+    QCOMPARE(acceptedTitle.size(), std::size_t(765));
+    acceptedRequest.title = acceptedTitle;
+    const auto saved = savePort.saveEvent(acceptedRequest);
+    QVERIFY(saved);
+
+    bool idConverted = false;
+    const int legacyId = QString::fromStdString(saved.value().value()).toInt(
+        &idConverted
+        );
+    QVERIFY(idConverted);
+    QVERIFY(legacyId > 0);
+    CalendarEventRepository* const repository =
+        services.databaseSession()->calendarEventRepository();
+    QVERIFY(repository);
+    const auto stored = repository->getCalendarEvent(legacyId);
+    QVERIFY(stored);
+    QCOMPARE(stored->title.toUtf8().toStdString(), acceptedTitle);
+
+    ApplicationServicesCalendarEventPort readPort(services);
+    const auto projected = readPort.projection(eventDate, eventDate);
+    QVERIFY(projected);
+    QCOMPARE(projected.value().eventCount(), std::size_t(1));
+    QCOMPARE(projected.value().events().front().title, acceptedTitle);
+
+    CalendarEventSaveRequest rejectedRequest = validSaveRequest();
+    rejectedRequest.title = repeatedHangulTitle(256);
+    verifyFailure(
+        savePort.saveEvent(rejectedRequest),
+        ErrorCode::InvalidInput
+        );
+
+    QSqlQuery rawInsert(
+        services.dataService()->databaseSession()->database()
+        );
+    rawInsert.prepare(QStringLiteral(
+        "INSERT INTO calendar_events ("
+        "title, event_type, time_status, repeat_series_id, all_day, "
+        "start_date, start_time, end_date, end_time) "
+        "VALUES (?, 'Other', 'Timed', NULL, 0, ?, ?, ?, ?)"
+        ));
+    rawInsert.addBindValue(QString(256, QChar(0xAC00)));
+    rawInsert.addBindValue(eventDate.toString(Qt::ISODate));
+    rawInsert.addBindValue(QStringLiteral("09:00"));
+    rawInsert.addBindValue(eventDate.toString(Qt::ISODate));
+    rawInsert.addBindValue(QStringLiteral("10:00"));
+    QVERIFY(rawInsert.exec());
+
+    const auto rejectedProjection = readPort.projection(eventDate, eventDate);
+    verifyFailure(rejectedProjection, ErrorCode::InvalidInput);
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::

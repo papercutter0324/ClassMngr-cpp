@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/calendar_event_title_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -21,7 +22,10 @@ namespace ClassMngr::Next::Application
 // projection never becomes an unbounded calendar or recurrence store.
 inline constexpr std::size_t kCalendarEventProjectionMaxEvents = 4'096;
 inline constexpr std::size_t kCalendarEventSummaryMaxIdentifierLength = 256;
-inline constexpr std::size_t kCalendarEventSummaryMaxTitleLength = 256;
+inline constexpr std::size_t kCalendarEventSummaryMaxTitleLength =
+    kCalendarEventTitleMaxUtf16Units;
+inline constexpr std::size_t kCalendarEventSummaryMaxTitleUtf8Bytes =
+    kCalendarEventTitleMaxUtf8Bytes;
 inline constexpr std::size_t kCalendarEventSummaryMaxDateLength = 32;
 inline constexpr std::size_t kCalendarEventSummaryMaxTimeLength = 32;
 inline constexpr std::size_t kCalendarEventSummaryMaxEventTypeLength = 64;
@@ -285,7 +289,8 @@ template <typename TypedId>
             );
     }
 
-    if (!isRequiredText(
+    if (isBlank(event.title)
+        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
             event.title,
             kCalendarEventSummaryMaxTitleLength
             )

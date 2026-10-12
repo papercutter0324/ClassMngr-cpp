@@ -139,7 +139,8 @@ ProjectionResult projectionFromEvents(
                 );
         const auto title = boundedUtf8(
             source.title,
-            ClassMngr::Next::Application::kCalendarEventSummaryMaxTitleLength
+            ClassMngr::Next::Application::
+                kCalendarEventSummaryMaxTitleUtf8Bytes
             );
         const auto startDate = boundedUtf8(
             source.startDate.toString(Qt::ISODate),

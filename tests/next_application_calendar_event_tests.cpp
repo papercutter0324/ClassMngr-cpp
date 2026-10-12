@@ -263,6 +263,16 @@ std::vector<CalendarEventCampusCode> campusCodes(
     return result;
 }
 
+std::string repeatedHangulTitle(const std::size_t count)
+{
+    QString title;
+    for (std::size_t index = 0; index < count; ++index)
+    {
+        title.append(QChar(0xAC00));
+    }
+    return title.toUtf8().toStdString();
+}
+
 class FakeCalendarEventSeriesCreatePort final
     : public CalendarEventSeriesCreatePort
 {
@@ -417,6 +427,7 @@ private slots:
     void orderingAndSafeValueLookupsAreDeterministic();
     void duplicateAndInvalidValuesReturnStructuredInputErrors();
     void exactCapsAreAcceptedAndOverflowIsRejected();
+    void titleBoundsUseUtf16UnitsAndRejectMalformedUtf8();
     void saveRequestBoundsAndOptionalIdRemainTyped();
     void saveRequestAllDayAndTimeStatusPolicyIsExplicit();
     void calendarEventSaveUseCaseForwardsRequestAndResultOnce();
@@ -1088,6 +1099,81 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
 }
 
 void NextApplicationCalendarEventTests::
+titleBoundsUseUtf16UnitsAndRejectMalformedUtf8()
+{
+    const std::string ascii255(255, 'a');
+    const std::string ascii256(256, 'a');
+    const std::string hangul86 = repeatedHangulTitle(86);
+    const std::string hangul255 = repeatedHangulTitle(255);
+    const std::string hangul256 = repeatedHangulTitle(256);
+    const std::string supplementary = "\xF0\x9F\x98\x80";
+    const std::string ascii253AndSupplementary =
+        std::string(253, 'a') + supplementary;
+    const std::string ascii254AndSupplementary =
+        std::string(254, 'a') + supplementary;
+    const std::string malformedUtf8{
+        static_cast<char>(0xF0),
+        static_cast<char>(0x28),
+        static_cast<char>(0x8C),
+        static_cast<char>(0x28)
+    };
+
+    QCOMPARE(hangul86.size(), std::size_t(258));
+    QCOMPARE(hangul255.size(), std::size_t(765));
+    QCOMPARE(hangul256.size(), std::size_t(768));
+
+    const auto conforms = [&](const auto& acceptsTitle)
+    {
+        return acceptsTitle(ascii255)
+            && !acceptsTitle(ascii256)
+            && acceptsTitle(hangul86)
+            && acceptsTitle(hangul255)
+            && !acceptsTitle(hangul256)
+            && acceptsTitle(ascii253AndSupplementary)
+            && !acceptsTitle(ascii254AndSupplementary)
+            && !acceptsTitle(malformedUtf8);
+    };
+
+    QVERIFY(conforms([](const std::string& title)
+    {
+        auto event = calendarEventSummary("title-contract");
+        event.title = title;
+        return static_cast<bool>(CalendarEventProjection::validate(event));
+    }));
+    QVERIFY(conforms([](const std::string& title)
+    {
+        auto request = validSaveRequest();
+        request.title = title;
+        return static_cast<bool>(request.validate());
+    }));
+    QVERIFY(conforms([](const std::string& title)
+    {
+        auto draft = validEditDraft();
+        draft.title = title;
+        return static_cast<bool>(draft.validate());
+    }));
+    QVERIFY(conforms([](const std::string& title)
+    {
+        auto request = validSeriesEditRequest();
+        request.title = title;
+        return static_cast<bool>(request.validate());
+    }));
+    QVERIFY(conforms([](const std::string& title)
+    {
+        CalendarEventImportSaveRequest request;
+        request.events.push_back(validSaveRequest());
+        request.events.front().title = title;
+        return static_cast<bool>(request.validate());
+    }));
+    QVERIFY(conforms([](const std::string& title)
+    {
+        auto request = validSeriesCreateRequest();
+        request.occurrences.front().title = title;
+        return static_cast<bool>(request.validate());
+    }));
+}
+
+void NextApplicationCalendarEventTests::
 saveRequestBoundsAndOptionalIdRemainTyped()
 {
     auto createRequest = validSaveRequest();
@@ -1200,7 +1286,7 @@ calendarEventSaveUseCaseForwardsRequestAndResultOnce()
 
     CalendarEventSaveRequest request = validSaveRequest();
     request.id = calendarEventId("event-42");
-    request.title = "Detached occurrence update";
+    request.title = repeatedHangulTitle(86);
 
     FakeCalendarEventSavePort port;
     const CalendarEventId savedId = calendarEventId("event-42");
@@ -1923,7 +2009,10 @@ importSaveRequestBoundsOrderedCreateBatchAndNoOp()
         request.events.push_back(std::move(event));
     }
 
+    request.events.front().title = repeatedHangulTitle(255);
+
     QVERIFY(request.validate());
+    QCOMPARE(request.events.front().title.size(), std::size_t(765));
     QCOMPARE(request.events.size(), kCalendarEventImportSaveMaxEvents);
 
     request.events.push_back(validSaveRequest());
@@ -2238,6 +2327,20 @@ seriesCreateRequestBoundsAndOccurrencesRemainTyped()
     auto oversizedOccurrences = exactCapacity;
     oversizedOccurrences.occurrences.push_back(validSaveRequest());
     QVERIFY(!oversizedOccurrences.validate());
+
+    auto maximumTitleOccurrence = request;
+    maximumTitleOccurrence.occurrences.front().title =
+        repeatedHangulTitle(255);
+    QCOMPARE(
+        maximumTitleOccurrence.occurrences.front().title.size(),
+        std::size_t(765)
+        );
+    QVERIFY(maximumTitleOccurrence.validate());
+
+    auto overlongTitleOccurrence = maximumTitleOccurrence;
+    overlongTitleOccurrence.occurrences.front().title =
+        repeatedHangulTitle(256);
+    QVERIFY(!overlongTitleOccurrence.validate());
 
     auto invalidOccurrence = request;
     invalidOccurrence.occurrences.front().startDate = "2026-02-30";
@@ -2618,7 +2721,7 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
 
     CalendarEventSaveRequest seed = validSaveRequest();
     seed.id = calendarEventId("event-existing");
-    seed.title = "Repeat workshop";
+    seed.title = repeatedHangulTitle(86);
     seed.startDate = "2026-09-20";
     seed.endDate = "2026-09-21";
     seed.startTime = "08:30";
@@ -3077,6 +3180,7 @@ repeatSeriesEditUseCaseForwardsRequestAndResultOnce()
 {
     auto request = validSeriesEditRequest();
     request.repeatSeriesId = " \t series-1 \t";
+    request.title = repeatedHangulTitle(86);
     FakeCalendarEventSeriesEditPort port;
 
     const CalendarEventSeriesEditResult result =

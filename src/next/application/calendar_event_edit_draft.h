@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/application/calendar_event_title_validation.h"
+
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -17,7 +19,8 @@ inline constexpr std::size_t kCalendarEventEditDraftMaxIdentifierLength =
     256;
 inline constexpr std::size_t
     kCalendarEventEditDraftMaxRepeatSeriesIdLength = 128;
-inline constexpr std::size_t kCalendarEventEditDraftMaxTitleLength = 255;
+inline constexpr std::size_t kCalendarEventEditDraftMaxTitleLength =
+    kCalendarEventTitleMaxUtf16Units;
 inline constexpr std::size_t kCalendarEventEditDraftMaxDateLength = 10;
 inline constexpr std::size_t kCalendarEventEditDraftMaxTimeLength = 5;
 inline constexpr std::size_t kCalendarEventEditDraftMaxEventTypeLength = 64;
@@ -177,7 +180,8 @@ validateCalendarEventEditDraft(
             );
     }
 
-    if (!isRequiredText(
+    if (isBlank(draft.title)
+        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
             draft.title,
             kCalendarEventEditDraftMaxTitleLength
             )
