@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/startup_profiler.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/roster_print_class_info_read_query.h"
 #include "next/application/roster_read_query.h"
@@ -33,6 +34,7 @@
 #include <QVector>
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <string>
 

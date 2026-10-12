@@ -2,8 +2,7 @@
 
 #include "domain/rules/schedule_key_rules.h"
 
-#include <QStringList>
-
+#include <array>
 #include <string>
 #include <string_view>
 
@@ -43,6 +42,31 @@ namespace
     }
 
     return Weekday::Monday;
+}
+
+[[nodiscard]] QString qtFormat(const DisplayTimeFormat format)
+{
+    switch (format)
+    {
+    case DisplayTimeFormat::HourMinuteAmPmSpaced:
+        return QStringLiteral("h:mm AP");
+    case DisplayTimeFormat::HourMinuteAmPmCompact:
+        return QStringLiteral("h:mmAP");
+    case DisplayTimeFormat::PaddedHourMinuteAmPmSpaced:
+        return QStringLiteral("hh:mm AP");
+    case DisplayTimeFormat::PaddedHourMinuteAmPmCompact:
+        return QStringLiteral("hh:mmAP");
+    case DisplayTimeFormat::HourMinute24Hour:
+        return QStringLiteral("H:mm");
+    case DisplayTimeFormat::PaddedHourMinute24Hour:
+        return QStringLiteral("HH:mm");
+    case DisplayTimeFormat::HourMinute24HourWithSeconds:
+        return QStringLiteral("H:mm:ss");
+    case DisplayTimeFormat::PaddedHourMinute24HourWithSeconds:
+        return QStringLiteral("HH:mm:ss");
+    }
+
+    return {};
 }
 }
 
@@ -87,6 +111,25 @@ Result<CanonicalTime> parseTime(QStringView input)
 
 Result<QTime> parseDisplayTime(QStringView input)
 {
+    constexpr std::array allDisplayFormats{
+        DisplayTimeFormat::HourMinuteAmPmSpaced,
+        DisplayTimeFormat::HourMinuteAmPmCompact,
+        DisplayTimeFormat::PaddedHourMinuteAmPmSpaced,
+        DisplayTimeFormat::PaddedHourMinuteAmPmCompact,
+        DisplayTimeFormat::HourMinute24Hour,
+        DisplayTimeFormat::PaddedHourMinute24Hour,
+        DisplayTimeFormat::HourMinute24HourWithSeconds,
+        DisplayTimeFormat::PaddedHourMinute24HourWithSeconds
+    };
+
+    return parseDisplayTime(input, allDisplayFormats);
+}
+
+Result<QTime> parseDisplayTime(
+    QStringView input,
+    const std::span<const DisplayTimeFormat> allowedFormats
+    )
+{
     const QString trimmed = input.trimmed().toString();
     if (trimmed.isEmpty())
     {
@@ -95,19 +138,14 @@ Result<QTime> parseDisplayTime(QStringView input)
             );
     }
 
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
-    for (const QString& format : formats)
+    for (const DisplayTimeFormat allowedFormat : allowedFormats)
     {
+        const QString format = qtFormat(allowedFormat);
+        if (format.isEmpty())
+        {
+            continue;
+        }
+
         const QTime time = QTime::fromString(trimmed, format);
         if (time.isValid())
         {

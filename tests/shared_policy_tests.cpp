@@ -24,6 +24,7 @@
 #include <QUuid>
 
 #include <algorithm>
+#include <array>
 
 class SharedPolicyTests final : public QObject
 {
@@ -36,6 +37,8 @@ private slots:
     void timeParsing();
     void displayTimeParsing_data();
     void displayTimeParsing();
+    void restrictedDisplayTimeParsing_data();
+    void restrictedDisplayTimeParsing();
     void sqlFailurePreservesContext_data();
     void sqlFailurePreservesContext();
     void schemaFailureRollsBack();
@@ -177,6 +180,78 @@ void SharedPolicyTests::displayTimeParsing()
     QFETCH(QString, canonical);
 
     const auto result = ScheduleValueParser::parseDisplayTime(input);
+    QCOMPARE(result.has_value(), valid);
+    if (result)
+    {
+        QCOMPARE(result->toString(QStringLiteral("HH:mm")), canonical);
+    }
+    else
+    {
+        QVERIFY(!result.error().isEmpty());
+    }
+}
+
+void SharedPolicyTests::restrictedDisplayTimeParsing_data()
+{
+    QTest::addColumn<QString>("input");
+    QTest::addColumn<bool>("valid");
+    QTest::addColumn<QString>("canonical");
+
+    QTest::newRow("spaced-uppercase-am-pm")
+        << QStringLiteral("4:05 PM") << true << QStringLiteral("16:05");
+    QTest::newRow("spaced-lowercase-am-pm")
+        << QStringLiteral("4:05 pm") << true << QStringLiteral("16:05");
+    QTest::newRow("trimmed-spaced-am-pm")
+        << QStringLiteral(" \t4:05 PM\r\n") << true
+        << QStringLiteral("16:05");
+    QTest::newRow("one-digit-24-hour")
+        << QStringLiteral("4:05") << true << QStringLiteral("04:05");
+    QTest::newRow("afternoon-24-hour")
+        << QStringLiteral("17:05") << true << QStringLiteral("17:05");
+
+    const QString paddedAmPm = QStringLiteral("04:05 PM");
+    const QTime legacyPaddedAmPm = QTime::fromString(
+        paddedAmPm,
+        QStringLiteral("h:mm AP")
+        );
+    QTest::newRow("padded-am-pm-matches-legacy-grammar")
+        << paddedAmPm << legacyPaddedAmPm.isValid()
+        << (legacyPaddedAmPm.isValid()
+                ? legacyPaddedAmPm.toString(QStringLiteral("HH:mm"))
+                : QString());
+
+    const QString padded24Hour = QStringLiteral("04:05");
+    const QTime legacyPadded24Hour = QTime::fromString(
+        padded24Hour,
+        QStringLiteral("H:mm")
+        );
+    QTest::newRow("padded-24-hour-matches-legacy-grammar")
+        << padded24Hour << legacyPadded24Hour.isValid()
+        << (legacyPadded24Hour.isValid()
+                ? legacyPadded24Hour.toString(QStringLiteral("HH:mm"))
+                : QString());
+
+    QTest::newRow("compact-am-pm-is-not-roster-syntax")
+        << QStringLiteral("4:05PM") << false << QString();
+    QTest::newRow("padded-compact-am-pm-is-not-roster-syntax")
+        << QStringLiteral("04:05PM") << false << QString();
+    QTest::newRow("seconds-are-not-roster-syntax")
+        << QStringLiteral("4:05:00") << false << QString();
+    QTest::newRow("padded-seconds-are-not-roster-syntax")
+        << QStringLiteral("04:05:00") << false << QString();
+}
+
+void SharedPolicyTests::restrictedDisplayTimeParsing()
+{
+    QFETCH(QString, input);
+    QFETCH(bool, valid);
+    QFETCH(QString, canonical);
+
+    constexpr std::array formats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced,
+        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour
+    };
+    const auto result = ScheduleValueParser::parseDisplayTime(input, formats);
     QCOMPARE(result.has_value(), valid);
     if (result)
     {

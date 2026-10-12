@@ -982,6 +982,7 @@ private slots:
     void requestSaveRostersPdfPreservesRosterSnapshotOutput();
     void requestSaveRostersPdfPreservesClassInfoProjectionForAllTemplates();
     void buildByDayCellValuesMapsClassToTimeBlock();
+    void buildByDayCellValuesUsesLegacyTwelveAndTwentyFourHourStarts();
     void buildByDayCellValuesWritesTwentyFiveStudentRows();
     void buildByDayCellValuesUsesTeacherFallback();
     void buildByDayCellValuesRejectsDuplicateSlots();
@@ -990,6 +991,7 @@ private slots:
     void buildDailyCellValuesMapsClassSectionsAndFallbackNames();
     void buildDailyCellValuesWritesTwentyFiveStudentRows();
     void buildDailyCellValuesOrdersByStartTimeAndAllowsDuplicateSlots();
+    void buildDailyCellValuesPreservesLegacyStartParsingAndOrdering();
     void availablePerClassExtraInfoColumnsFiltersRequiredAndEvaluationColumns();
     void buildPerClassExtraInfoCellValuesMapsSelectedColumnsAndMissingCells();
     void buildPerClassExtraInfoCellValuesCapsColumnsByOrientation();
@@ -1728,6 +1730,84 @@ void RosterTemplatePrintServiceTests::buildByDayCellValuesMapsClassToTimeBlock()
     QVERIFY(hasCellValue(values, QStringLiteral("Monday"), ZoomPasswordRow, 2, QStringLiteral("zoom-pw")));
 }
 
+void RosterTemplatePrintServiceTests::
+    buildByDayCellValuesUsesLegacyTwelveAndTwentyFourHourStarts()
+{
+    const QList<RosterTemplatePrintService::RosterClassData> classes{
+        sampleRosterClass(
+            1,
+            QStringLiteral("Monday"),
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("M4"),
+            QStringLiteral("Upper")
+            ),
+        sampleRosterClass(
+            2,
+            QStringLiteral("Tuesday"),
+            QStringLiteral(" 5:00 pm "),
+            QStringLiteral("T5"),
+            QStringLiteral("Lower")
+            ),
+        sampleRosterClass(
+            3,
+            QStringLiteral("Wednesday"),
+            QStringLiteral("18:00"),
+            QStringLiteral("W6"),
+            QStringLiteral("Six")
+            ),
+        sampleRosterClass(
+            4,
+            QStringLiteral("Thursday"),
+            QStringLiteral("4:00PM"),
+            QStringLiteral("X4"),
+            QStringLiteral("Compact")
+            ),
+        sampleRosterClass(
+            5,
+            QStringLiteral("Friday"),
+            QStringLiteral("5:00:00"),
+            QStringLiteral("X5"),
+            QStringLiteral("Seconds")
+            )
+    };
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildByDayCellValues(classes, &error);
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QVERIFY(hasCellValue(
+        values,
+        QStringLiteral("Monday"),
+        LevelRow,
+        2,
+        QStringLiteral("M4 Upper")
+        ));
+    QVERIFY(hasCellValue(
+        values,
+        QStringLiteral("Tuesday"),
+        LevelRow,
+        4,
+        QStringLiteral("T5 Lower")
+        ));
+    QVERIFY(hasCellValue(
+        values,
+        QStringLiteral("Wednesday"),
+        LevelRow,
+        6,
+        QStringLiteral("W6 Six")
+        ));
+    QVERIFY(std::none_of(
+        values.cbegin(),
+        values.cend(),
+        [](const RosterTemplatePrintService::RosterCellValue& value)
+        {
+            return value.day == QStringLiteral("Thursday")
+                || value.day == QStringLiteral("Friday");
+        }
+        ));
+}
+
 void RosterTemplatePrintServiceTests::buildByDayCellValuesWritesTwentyFiveStudentRows()
 {
     RosterTemplatePrintService::RosterClassData data =
@@ -2053,6 +2133,104 @@ void RosterTemplatePrintServiceTests::
     QVERIFY(hasCellValue(values, QStringLiteral("Tuesday"), DailyFirstSectionRow, DailyHeaderColumn, QStringLiteral("E5 Athena (4 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
     QVERIFY(hasCellValue(values, QStringLiteral("Tuesday"), DailyFirstSectionRow + DailyRowsPerSection, DailyHeaderColumn, QStringLiteral("M2 Tigris (4 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
     QVERIFY(hasCellValue(values, QStringLiteral("Tuesday"), DailyFirstSectionRow + (DailyRowsPerSection * 2), DailyHeaderColumn, QStringLiteral("E6 Poseidon (6 p.m. / Emma / Room 506 / Zoom: zoom ") + QString(QChar(0x2022)) + QStringLiteral(" PW zoom-pw)")));
+}
+
+void RosterTemplatePrintServiceTests::
+    buildDailyCellValuesPreservesLegacyStartParsingAndOrdering()
+{
+    const QList<RosterTemplatePrintService::RosterClassData> classes{
+        sampleRosterClass(
+            1,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("5:05 PM"),
+            QStringLiteral("C2"),
+            QStringLiteral("Late")
+            ),
+        sampleRosterClass(
+            2,
+            QStringLiteral("Tuesday"),
+            QStringLiteral(" 4:00PM "),
+            QStringLiteral("D2"),
+            QStringLiteral("Compact")
+            ),
+        sampleRosterClass(
+            3,
+            QStringLiteral("Tuesday"),
+            QStringLiteral(" 4:00 pm "),
+            QStringLiteral("B2"),
+            QStringLiteral("TwelveHour")
+            ),
+        sampleRosterClass(
+            4,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("16:00"),
+            QStringLiteral("A2"),
+            QStringLiteral("TwentyFourHour")
+            ),
+        sampleRosterClass(
+            5,
+            QStringLiteral("Tuesday"),
+            QStringLiteral("4:30:00"),
+            QStringLiteral("E2"),
+            QStringLiteral("Seconds")
+            )
+    };
+
+    QString error;
+    const QList<RosterTemplatePrintService::RosterCellValue> values =
+        RosterTemplatePrintService::buildDailyCellValues(classes, &error);
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    const auto expectedHeader = [](const QString& label, const QString& time)
+    {
+        return QStringLiteral("%1 (%2 / Emma / Room 506 / Zoom: zoom ")
+            .arg(label, time)
+            + QString(QChar(0x2022))
+            + QStringLiteral(" PW zoom-pw)");
+    };
+    const QStringList expectedHeaders{
+        expectedHeader(QStringLiteral("A2 TwentyFourHour"), QStringLiteral("4 p.m.")),
+        expectedHeader(QStringLiteral("B2 TwelveHour"), QStringLiteral("4 p.m.")),
+        expectedHeader(QStringLiteral("C2 Late"), QStringLiteral("5:05 p.m.")),
+        expectedHeader(QStringLiteral("D2 Compact"), QStringLiteral("4:00PM")),
+        expectedHeader(QStringLiteral("E2 Seconds"), QStringLiteral("4:30:00"))
+    };
+    QStringList actualHeaders;
+    for (const auto& value : values)
+    {
+        if (
+            value.day == QStringLiteral("Tuesday")
+            && value.column == DailyHeaderColumn
+            && value.row >= DailyFirstSectionRow
+            && (value.row - DailyFirstSectionRow) % DailyRowsPerSection == 0
+        )
+        {
+            actualHeaders.append(
+                QStringLiteral("%1=%2").arg(value.row).arg(value.value)
+                );
+        }
+    }
+
+    for (int index = 0; index < expectedHeaders.size(); ++index)
+    {
+        const QString expectedHeader = expectedHeaders.at(index);
+        QVERIFY2(
+            hasCellValue(
+                values,
+                QStringLiteral("Tuesday"),
+                DailyFirstSectionRow + (DailyRowsPerSection * index),
+                DailyHeaderColumn,
+                expectedHeader
+                ),
+            qPrintable(
+                QStringLiteral("Missing section %1 header: %2")
+                    .arg(index)
+                    .arg(expectedHeader)
+                + QStringLiteral("; actual: %1")
+                    .arg(actualHeaders.join(QStringLiteral(" | ")))
+                )
+            );
+    }
 }
 
 void RosterTemplatePrintServiceTests::

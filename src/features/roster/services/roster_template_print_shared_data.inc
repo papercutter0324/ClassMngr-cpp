@@ -171,25 +171,17 @@ QTime parsedStartTime(
     const QString& startTime
     )
 {
-    const QString trimmed =
-        startTime.trimmed();
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced,
+        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour
+    };
 
-    QTime time =
-        QTime::fromString(trimmed, QStringLiteral("h:mm AP"));
+    const auto parsed = ScheduleValueParser::parseDisplayTime(
+        startTime,
+        allowedFormats
+        );
 
-    if (!time.isValid())
-    {
-        time =
-            QTime::fromString(trimmed, QStringLiteral("h:mm ap"));
-    }
-
-    if (!time.isValid())
-    {
-        time =
-            QTime::fromString(trimmed, QStringLiteral("H:mm"));
-    }
-
-    return time;
+    return parsed ? *parsed : QTime{};
 }
 
 QString dailyPageKey(
