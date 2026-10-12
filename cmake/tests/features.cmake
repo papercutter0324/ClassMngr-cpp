@@ -302,6 +302,7 @@ qt_add_executable(ClassMngrClassTransferTests
 
     qt_add_executable(ClassMngrClassTabNavigationModelTests
         tests/class_tab_navigation_model_tests.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/classes/models/class_tab_navigation_model.cpp
         src/ui/shared/widgets/sidebar/sidebar_definitions.cpp

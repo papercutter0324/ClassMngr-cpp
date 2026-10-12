@@ -1,5 +1,6 @@
 #include "class_tab_navigation_model.h"
 
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
 #include "next/application/class_day_filter_policy.h"
 
@@ -101,17 +102,6 @@ QString compactStartTime(
         return QString();
     }
 
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
-
     const bool usesMeridiem =
         trimmed.contains(
             QStringLiteral("AM"),
@@ -122,37 +112,33 @@ QString compactStartTime(
             Qt::CaseInsensitive
             );
 
-    for (const QString& format : formats)
+    const auto parsedTime =
+        ScheduleValueParser::parseDisplayTime(trimmed);
+
+    if (parsedTime)
     {
-        const QTime time =
-            QTime::fromString(
-                trimmed,
-                format
-                );
+        const QTime time = *parsedTime;
 
-        if (time.isValid())
+        if (usesMeridiem)
         {
-            if (usesMeridiem)
-            {
-                QString formatted =
-                    time.toString(
-                        QStringLiteral("h:mm AP")
-                        );
-
-                formatted.remove(
-                    QStringLiteral(" AM")
-                    );
-                formatted.remove(
-                    QStringLiteral(" PM")
-                    );
-
-                return formatted;
-            }
-
-            return time.toString(
-                QStringLiteral("H:mm")
+            QString formatted =
+                time.toString(
+                    QStringLiteral("h:mm AP")
                 );
+
+            formatted.remove(
+                QStringLiteral(" AM")
+                );
+            formatted.remove(
+                QStringLiteral(" PM")
+                );
+
+            return formatted;
         }
+
+        return time.toString(
+            QStringLiteral("H:mm")
+            );
     }
 
     QString fallback =
@@ -463,32 +449,15 @@ int timeOrder(
         return UnknownOrder;
     }
 
-    const QStringList formats{
-        QStringLiteral("h:mm AP"),
-        QStringLiteral("h:mmAP"),
-        QStringLiteral("hh:mm AP"),
-        QStringLiteral("hh:mmAP"),
-        QStringLiteral("H:mm"),
-        QStringLiteral("HH:mm"),
-        QStringLiteral("H:mm:ss"),
-        QStringLiteral("HH:mm:ss")
-    };
+    const auto parsedTime =
+        ScheduleValueParser::parseDisplayTime(trimmed);
 
-    for (const QString& format : formats)
+    if (!parsedTime)
     {
-        const QTime time =
-            QTime::fromString(
-                trimmed,
-                format
-                );
-
-        if (time.isValid())
-        {
-            return (time.hour() * 60) + time.minute();
-        }
+        return UnknownOrder;
     }
 
-    return UnknownOrder;
+    return (parsedTime->hour() * 60) + parsedTime->minute();
 }
 
 int firstDayOrder(

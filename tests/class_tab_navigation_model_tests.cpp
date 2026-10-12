@@ -68,6 +68,10 @@ private slots:
     void moreThanSixClassesUseOrderedGradeGroups();
     void gradeModeLabelsUseLevelAndSchedule();
     void classTabsSortByLevelThenDay();
+    void classTimeLabelsAcceptDisplayFormats();
+    void malformedDisplayTimeUsesCompactFallback();
+    void invalidDisplayTimesSortLast();
+    void secondsDoNotAffectMinuteOrdering();
     void duplicateLabelsAreDisambiguated();
     void dayFilterLeavesAllClassesVisibleWhenEmpty();
     void dayFilterNormalizesRawQtDayValues();
@@ -318,6 +322,108 @@ void ClassTabNavigationTests::classTabsSortByLevelThenDay()
     QCOMPARE(model.gradeGroups.first().classes.at(1).classId, 2);
     QCOMPARE(model.gradeGroups.first().classes.at(2).classId, 1);
     QCOMPARE(model.gradeGroups.first().classes.at(3).classId, 4);
+}
+
+void ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {
+                classTime(QStringLiteral("Monday"), QStringLiteral("4:05 PM")),
+                classTime(QStringLiteral("Tuesday"), QStringLiteral("4:10PM")),
+                classTime(QStringLiteral("Wednesday"), QStringLiteral("04:15 PM")),
+                classTime(QStringLiteral("Thursday"), QStringLiteral("04:20PM")),
+                classTime(QStringLiteral("Friday"), QStringLiteral(" 9:25 ")),
+                classTime(QStringLiteral("Saturday"), QStringLiteral("16:30")),
+                classTime(QStringLiteral("Sunday"), QStringLiteral("9:35:45")),
+                classTime(QStringLiteral("Monday"), QStringLiteral("16:40:30"))
+            }
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(entries);
+
+    QCOMPARE(model.flatClasses.size(), 1);
+    QVERIFY(
+        model.flatClasses.first().label.endsWith(
+            QStringLiteral(
+                "M 4:05; T 4:10; W 4:15; Th 4:20; F 9:25; "
+                "Sat 16:30; Sun 9:35; M 16:40"
+                )
+            )
+        );
+}
+
+void ClassTabNavigationTests::malformedDisplayTimeUsesCompactFallback()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:99 PM"))}
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(entries);
+
+    QCOMPARE(model.flatClasses.size(), 1);
+    QVERIFY(
+        model.flatClasses.first().label.endsWith(
+            QStringLiteral("M 4:99")
+            )
+        );
+}
+
+void ClassTabNavigationTests::invalidDisplayTimesSortLast()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("not-a-time"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(entries);
+
+    QCOMPARE(classIds(model), QList<int>({2, 1}));
+}
+
+void ClassTabNavigationTests::secondsDoNotAffectMinuteOrdering()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("16:00:59"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("16:00:01"))}
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(entries);
+
+    QCOMPARE(classIds(model), QList<int>({1, 2}));
 }
 
 void ClassTabNavigationTests::duplicateLabelsAreDisambiguated()

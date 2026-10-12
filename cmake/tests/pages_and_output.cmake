@@ -1652,6 +1652,7 @@ qt_add_executable(ClassMngrClassesPageTests
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
+        src/domain/rules/schedule_value_parser.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/classes/models/class_tab_navigation_model.cpp
         src/features/classes/models/class_tab_navigation_model.h
