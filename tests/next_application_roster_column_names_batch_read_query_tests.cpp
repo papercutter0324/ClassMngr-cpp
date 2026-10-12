@@ -50,7 +50,8 @@ class NextApplicationRosterColumnNamesBatchReadQueryTests final
 private slots:
     void returnsOrderedClassColumnNamesAndSuccessfulEmptySlots();
     void emptyRequestDoesNotCallPort();
-    void rejectsInvalidAndDuplicateIdsBeforePortCall();
+    void rejectsInvalidIdsBeforePortCall();
+    void rejectsDuplicateIdsBeforePortCall();
     void preservesStructuredPortFailure();
     void rejectsMismatchedResultCountAndIdentifierOrder();
 };
@@ -94,14 +95,14 @@ emptyRequestDoesNotCallPort()
 }
 
 void NextApplicationRosterColumnNamesBatchReadQueryTests::
-rejectsInvalidAndDuplicateIdsBeforePortCall()
+rejectsInvalidIdsBeforePortCall()
 {
     const std::vector<std::vector<std::string>> invalidRows{
         {"0"},
         {"01"},
         {"-1"},
         {"2147483648"},
-        {"42", "42"}
+        {"42x"}
     };
 
     for (const auto& ids : invalidRows)
@@ -117,8 +118,28 @@ rejectsInvalidAndDuplicateIdsBeforePortCall()
         const auto result = query.execute(requestedIds);
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Class IDs must be canonical positive integers.")
+            );
+        QVERIFY(!result.error().recoverable);
         QCOMPARE(port.callCount, 0);
     }
+}
+
+void NextApplicationRosterColumnNamesBatchReadQueryTests::
+rejectsDuplicateIdsBeforePortCall()
+{
+    RecordingRosterColumnNamesBatchReadPort port;
+    const RosterColumnNamesBatchReadQuery query(port);
+
+    const auto result = query.execute({classId("42"), classId("42")});
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(result.error().message, std::string("Class IDs must be unique."));
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 0);
 }
 
 void NextApplicationRosterColumnNamesBatchReadQueryTests::

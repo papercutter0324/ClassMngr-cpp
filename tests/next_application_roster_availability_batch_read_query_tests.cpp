@@ -196,6 +196,21 @@ batchQueryValidatesRequestsAndPreservesFailure()
     const auto nonCanonical = query.execute({classId("01")}, baseColumns);
     QVERIFY(!nonCanonical);
     QCOMPARE(nonCanonical.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        nonCanonical.error().message,
+        std::string("Class IDs must be canonical positive integers.")
+        );
+    QVERIFY(!nonCanonical.error().recoverable);
+    QCOMPARE(port.calls, 0);
+
+    const auto malformed = query.execute({classId("42x")}, baseColumns);
+    QVERIFY(!malformed);
+    QCOMPARE(malformed.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        malformed.error().message,
+        std::string("Class IDs must be canonical positive integers.")
+        );
+    QVERIFY(!malformed.error().recoverable);
     QCOMPARE(port.calls, 0);
 
     const auto duplicate = query.execute(
@@ -204,6 +219,11 @@ batchQueryValidatesRequestsAndPreservesFailure()
         );
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        duplicate.error().message,
+        std::string("Class IDs must be unique.")
+        );
+    QVERIFY(!duplicate.error().recoverable);
     QCOMPARE(port.calls, 0);
 
     port.error = Domain::OperationError{
