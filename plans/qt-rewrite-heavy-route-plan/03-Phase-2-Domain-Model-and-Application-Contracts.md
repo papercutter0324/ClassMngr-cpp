@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F780 is accepted at `9e549c1dd5500271435019cebf0a104401417317`; F781 is selected in Batch 194 to reject malformed Teacher IDs at the Teacher Profile Edit boundary, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F781 is accepted at `6a067c32b9a70819252d69541f5de5c31fa946b`; F782 is selected in Batch 195 to align Speaking Evaluation class-ID validation with the canonical positive-ID contract, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 194
+#### Active batch: Batch 195
 
-- F781 - Teacher Profile Edit malformed ID boundary - Reject noncanonical typed Teacher IDs before policy validation or persistence.
+- F782 - Speaking Evaluation class ID validation consistency - Reject noncanonical IDs in direct validator calls while preserving the issue contract and use-case behavior.
 
 ## Objective
 

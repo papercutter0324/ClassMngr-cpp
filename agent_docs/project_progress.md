@@ -4937,19 +4937,18 @@ precedence. Its acceptance matrix is recorded in the Phase 2 progress log.
 F707/F709 remain deferred; Gates 1/2 are Partial and the formal exit gate is
 Open.
 
-## Phase 2 current position — 2026-10-13 (F780 accepted; F781 selected)
+## Phase 2 current position — 2026-10-13 (F781 accepted; F782 selected)
 
-F780 is committed as `9e549c1dd5500271435019cebf0a104401417317`. In the
-existing Visual Studio 18 Windows x64 Debug tree, `ClassMngr` and four focused
-targets built after the bounded retry outside the sandbox for FileTracker
-`E_ACCESSDENIED`. The exact CTests registered once and passed 4/4; no full
-suite ran. The shared parser preserves permissive leading-zero handling in
-Class Details, Class Notes, and Schedule Testing while keeping canonical
-Class Transfer validation strict.
+F781 is committed as `6a067c32b9a70819252d69541f5de5c31fa946b6`. In the
+existing Visual Studio 18 Windows x64 Debug tree, `ClassMngr` and the focused
+Teacher Profile Edit target built after the bounded retry outside the sandbox
+for FileTracker `E_ACCESSDENIED`. Its exact CTest registered once and passed
+1/1; no full suite ran. The use case now rejects missing and present
+noncanonical Teacher IDs before policy or persistence while preserving the
+existing `InvalidTeacherId` result.
 
-F781 will reject a present malformed or noncanonical `TeacherId` at the
-Teacher Profile Edit use-case boundary before validation or persistence. Keep
-the established `InvalidTeacherId` / `InvalidInput` failure, message, and
-recoverability unchanged. Its pre-implementation matrix is recorded in the
+F782 will align Speaking Evaluation validation's class-ID grammar with its
+save boundary: reject padded positive IDs such as `01` while preserving the
+existing structured validation issue. Its pre-implementation matrix is in the
 Phase 2 progress log. F707/F709 remain deferred; Gates 1/2 are Partial and the
 formal exit gate remains Open.

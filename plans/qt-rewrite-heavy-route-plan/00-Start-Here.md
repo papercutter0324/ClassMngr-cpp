@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-13
-- Current milestone: Phase 2 remains in progress: F780 was accepted at `9e549c1dd5500271435019cebf0a104401417317`, and F781 is selected in Batch 194 to reject malformed Teacher IDs at the Teacher Profile Edit boundary while preserving its existing failure contract. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F781 was accepted at `6a067c32b9a70819252d69541f5de5c31fa946b`, and F782 is selected in Batch 195 to align Speaking Evaluation validation with the canonical positive class-ID contract. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

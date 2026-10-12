@@ -117,9 +117,12 @@
   registered once and passed 7/7. No full suite ran. F780 is committed at
   `9e549c1dd5500271435019cebf0a104401417317`; its four focused CTests passed
   4/4 after the bounded build succeeded outside the sandbox following
-  FileTracker `E_ACCESSDENIED`. F781 will reject malformed or noncanonical
-  present Teacher IDs at the Teacher Profile Edit use-case boundary before
-  validation or persistence, preserving the current structured error shape.
+  FileTracker `E_ACCESSDENIED`. F781 is committed as
+  `6a067c32b9a70819252d69541f5de5c31fa946b6`; the Teacher Profile Edit target
+  built and its exact CTest passed 1/1 after the bounded build succeeded
+  outside the sandbox following FileTracker `E_ACCESSDENIED`. F782 will align
+  Speaking Evaluation's direct validation with its save boundary by rejecting
+  padded positive class IDs while preserving the existing structured issue.
   Its pre-implementation matrix is in the Phase 2 progress log. F707 remains
   deferred.
   F709 remains deferred after confirming raw SQL

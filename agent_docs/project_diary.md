@@ -5214,3 +5214,25 @@ valid save sequencing, the F776 reload-mismatch result, and all existing error
 metadata. The acceptance matrix and exact target are recorded in the Phase 2
 progress log. F707/F709 remain deferred, Gates 1/2 remain Partial, and the
 formal exit gate remains Open.
+
+## Phase 2 F781 acceptance and F782 selection — 2026-10-13
+
+F781 is accepted at `6a067c32b9a70819252d69541f5de5c31fa946b6`. The use case
+now rejects missing and present noncanonical `TeacherId` values before the
+validation policy or persistence port and preserves the existing
+`InvalidTeacherId` error kind, cause, and recoverability. `ClassMngr` and the
+Teacher Profile Edit target built in the Visual Studio 18 x64 Debug tree after
+the bounded build succeeded outside the sandbox following FileTracker
+`E_ACCESSDENIED`; the exact CTest registered once and passed 1/1. No full suite
+ran.
+
+Batch 195 selected F782 after finding that Speaking Evaluation's validation
+accepts padded positive class IDs such as `01`, while its save use case rejects
+them before validation or persistence. Keep the existing validation issue
+shape and its parsed numeric detail, and preserve canonical success and save
+precedence. Broader Teacher Import review compaction remains deferred because
+the memory benefit is unmeasured and the change crosses UI/Application models;
+the document-entry ownership candidate remains deferred because the value also
+contains localized display data. Lifecycle review found no new production-
+backed gap. The F782 matrix is in the Phase 2 progress log. F707/F709 remain
+deferred, Gates 1/2 remain Partial, and the formal exit gate remains Open.

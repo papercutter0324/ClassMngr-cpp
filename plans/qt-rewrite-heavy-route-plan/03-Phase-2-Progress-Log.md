@@ -30051,3 +30051,54 @@ Reuse `build/windows-x64-debug` (Visual Studio 18, x64 Debug), build
 only that CTest with `-C Debug`. Run no full suite. Commit this matrix before
 source/test edits. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
 Partial, and the formal exit gate remains Open.
+
+### F781 Teacher Profile Edit malformed ID boundary - accepted - 2026-10-13
+
+F781 is accepted at commit
+`6a067c32b9a70819252d69541f5de5c31fa946b`. `ClassMngr` and
+`ClassMngrNextApplicationTeacherProfileEditTests` built in the existing
+`build/windows-x64-debug` Visual Studio 18 x64 Debug tree. Sandbox MSBuild
+FileTracker `E_ACCESSDENIED` required an identical bounded retry outside the
+sandbox. The exact CTest registered once and passed 1/1; no full suite ran.
+The boundary rejects missing and present noncanonical IDs before policy or
+persistence calls while preserving `InvalidTeacherId`, `InvalidInput`,
+`Teacher ID must be positive.`, and recoverable=true. Coverage includes
+missing, `0`, `08`, and `not-an-id`; valid ordering and F776 reload-mismatch
+coverage remain intact.
+
+### Batch 195 discovery - 2026-10-13
+
+Speaking Evaluation validation was selected for a narrow contract fix:
+its local `from_chars` check accepts leading-zero `01`, while Save Use Case
+rejects it before the port; the validator is also a direct UI-feedback API.
+Teacher import's full-candidate duplication has an unmeasured broader memory
+effect and is deferred. Moving the document entry value risks mixing stable
+fields with localized projection `displayName`, so it is deferred. Lifecycle
+and projection review found no other uncovered gap; queue overflow remains
+deferred without a production consumer and policy. No other slices were found.
+
+### F782 Speaking Evaluation class ID validation consistency - selected and acceptance matrix - 2026-10-13
+
+**F782 is selected:** in
+`src/next/application/speaking_evaluation_validation.h`, make
+`validateAndNormalizeSpeakingEvaluation` enforce the canonical positive
+class-ID grammar used by Save Use Case. Preserve the invalid-ID issue code,
+field, row, column, severity, and parsed numeric `value` argument; retain
+normalization behavior, all other validation, and Save Use Case validation
+precedence.
+
+Add a direct validator regression in
+`tests/next_application_speaking_evaluation_save_use_case_tests.cpp` using
+`request("01")` and an otherwise-valid fixture. Assert exactly one Error
+issue with code `speaking_evaluation.class_id.invalid`, field `classId`, row
+and column `-1`, and argument `value` equal to parsed integer `1`. Preserve
+existing Save Use Case rejection/no-port coverage and valid canonical `42`
+and `INT_MAX` behavior.
+
+No CMake or source-ownership change is expected. The exact target/CTest
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests` is already
+registered. Reuse `build/windows-x64-debug` (Visual Studio 18, x64 Debug),
+build `ClassMngr` and that target, confirm the exact CTest registers once,
+then run only it with `-C Debug --output-on-failure`. Run no full suite.
+Commit this matrix before source/test edits. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
