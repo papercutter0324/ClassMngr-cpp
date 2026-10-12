@@ -27314,5 +27314,49 @@ and rejecting noncanonical raw text.
    `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
    Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F726;
+This matrix was recorded before implementation.
+
+### F726 SubPrep schedule-summary weekday-order parser migration - accepted - 2026-10-12
+
+F726 is accepted at code/test commit
+`feea6f5ebf1b917d55fc1b8b7b9edb65728dcaf8`. `weekdayOrder` now uses
+`ScheduleValueParser::parseWeekday` with canonical-text equality, preserving
+Monday-through-Sunday order and rejecting noncanonical raw text. The focused
+SQL-backed test inserts all seven canonical weekdays in reverse order at
+09:15 and verifies sorted summary/navigation text plus Monday navigation
+order/time 0/555. Existing malformed-time fallback coverage is unchanged.
+
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` built
+successfully. One exact CTest registration was confirmed; the focused CTest
+passed 1/1. No full suite ran. The repository filters
+`times.day IN (selected canonical days)`, so malformed raw weekday values
+cannot directly reach the migrated helper through this port.
+
+**Decision: accept F726.** Batch 179 continues with F727; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F727 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `weekdayFor` in
+`src/features/sub_prep/ui/sub_prep_page_class_information.cpp`.
+
+**F727 is selected:** reuse the Domain weekday parser while preserving the
+exact case-sensitive input contract and mapping to the Application enum.
+
+1. Migrate only `weekdayFor` to `ScheduleValueParser::parseWeekday` and
+   require `parsed->text == day`. Map each parsed weekday to its corresponding
+   `Application::SubPrepWeekday`; Monday starts at enum value 1, so do not cast
+   the parser's zero-based enum directly. Preserve schedule-scope selected-day
+   first-seen order and deduplication, and preserve the print-selection error
+   `A selected schedule weekday is invalid.`
+2. Add public page coverage in `tests/sub_prep_page_tests.cpp`. Inject preview
+   schedule days `Monday`, `monday`, ` Monday `, `Tuesday`, `Monday`; assert
+   the captured summary request contains Monday and Tuesday once each in
+   first-seen order.
+3. `ClassMngrSubPrepPageTests` already includes the parser and source, so no
+   CMake wiring change is needed. Build `ClassMngr` and that target; run only
+   the exact registered CTest `ClassMngrSubPrepPageTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F727;
 F707 and F709 remain deferred.

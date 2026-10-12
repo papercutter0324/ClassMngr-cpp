@@ -4503,13 +4503,19 @@ trimming and preserves its minute conversion and display output; the
 remain. The focused policy CTest passed 1/1 after both targets built. No full
 suite ran.
 
-F726 selects `weekdayOrder` in the Sub Prep schedule-summary port. Reuse
-`ScheduleValueParser::parseWeekday` with a canonical-text equality guard,
-preserving the existing exact weekday mapping and invalid result. The public
-SQL-backed test path filters selected canonical days before `weekdayOrder`,
-so lowercase and padded raw values cannot reach this helper through the port.
-The planned test inserts all seven canonical weekdays in reverse order at a
-shared start time and checks summary/navigation order and Monday order/time.
-The focused port CTest will run after building `ClassMngr` and its test
-target. F707 and F709 remain deferred. Phase 2 remains In Progress with Gates
-1 and 2 Partial.
+F726 is accepted and committed as
+`feea6f5ebf1b917d55fc1b8b7b9edb65728dcaf8`. The Sub Prep summary port reuses
+`ScheduleValueParser::parseWeekday` with exact canonical-text matching. The
+SQL-backed public test verifies Monday-through-Sunday summary and navigation
+ordering after reverse insertion and confirms Monday navigation order/time
+0/555; malformed raw weekdays cannot reach this helper through the port's
+selected-day SQL filter. Its focused CTest passed 1/1. No full suite ran.
+
+F727 selects `weekdayFor` in the Sub Prep page. Reuse the shared weekday
+parser with exact canonical-text matching and preserve mapping to
+`SubPrepWeekday`, selected-day first-seen order/deduplication, and the
+existing invalid print-selection message. The public page test will inject
+canonical, lowercase, padded, and repeated schedule days, then inspect the
+captured summary request. Its focused page CTest will run after building
+`ClassMngr` and `ClassMngrSubPrepPageTests`. F707 and F709 remain deferred.
+Phase 2 remains In Progress with Gates 1 and 2 Partial.

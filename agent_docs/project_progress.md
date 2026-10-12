@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F725 accepted; F726 selected)
+### Current state - 2026-10-12 (F726 accepted; F727 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F726, the Sub Prep schedule-summary weekday-order migration.
+with F727, the Sub Prep page weekday-mapping migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -290,18 +290,25 @@ the separate 12-hour AM/PM parser is unchanged. Policy tests verify
 `ClassMngrNextApplicationClassDetailsValidationPolicyTests` built; the exact
 registered CTest passed 1/1. No full suite ran.
 
-F726 selects `weekdayOrder` in
-`src/next/platform/application_services_sub_prep_schedule_summary_port.h`.
-Reuse `ScheduleValueParser::parseWeekday` with a canonical-text equality
-guard to preserve the exact Monday-through-Sunday lookup and `nullopt` for
-noncanonical raw values. Do not change callers or day abbreviations. The
-public SQL-backed test seam filters `times.day` by selected canonical days
-before records reach this helper, so lowercase and padded raw rows cannot
-exercise the helper through that port. Add focused coverage with all seven
-canonical weekdays inserted in reverse order at a shared valid time; assert
-canonical summary/navigation weekday ordering and Monday navigation order
-and minute value. Build `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; run
+F726 is accepted and committed as
+`feea6f5ebf1b917d55fc1b8b7b9edb65728dcaf8`. The Sub Prep summary port now
+uses `ScheduleValueParser::parseWeekday` with exact canonical-text matching
+for weekday order. Reverse-inserted canonical weekdays remain Monday-through-
+Sunday in the meeting summary and navigation label, with navigation order 0
+and time offset 555 for Monday at 09:15. The repository SQL filter keeps
+noncanonical weekday rows from reaching this helper through the public port.
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+built; the exact CTest passed 1/1. No full suite ran.
+
+F727 selects `weekdayFor` in
+`src/features/sub_prep/ui/sub_prep_page_class_information.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` only when the returned canonical text
+matches the raw input, and map to the corresponding `SubPrepWeekday` enum
+value. Preserve first-seen order and deduplication in schedule scope requests
+and the existing invalid print-selection message. Add a public page test with
+preview days `Monday`, `monday`, ` Monday `, `Tuesday`, and repeated `Monday`;
+assert the captured request contains only Monday and Tuesday, once each and
+in first-seen order. Build `ClassMngr` and `ClassMngrSubPrepPageTests`; run
 only that exact registered CTest. No CMake change is needed and no full suite
 will run. F707 remains deferred because its comparator chain has no observed
 app callsite; F709 is deferred because its public fixture does not readily
