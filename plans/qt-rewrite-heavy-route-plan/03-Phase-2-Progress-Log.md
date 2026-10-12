@@ -30341,11 +30341,13 @@ Expected production files are
 `src/next/application/calendar_event_title_validation.h`,
 `calendar_event_projection.h`, `calendar_event_edit_draft.h`,
 `calendar_event_save_port.h`, and `calendar_event_series_edit_port.h`.
-`ClassMngrNextApplicationCalendarEventTests` and the exact CTest
-`NextApplicationCalendarEvent` already exist, so no CMake change is expected.
+`ClassMngrNextApplicationCalendarEventTests` and its exact registered CTest
+`ClassMngrNextApplicationCalendarEventTests` already exist (the CMake helper's
+NAME input is `NextApplicationCalendarEvent`), so no CMake change is expected.
 In `build/windows-x64-debug` with Visual Studio 18 x64 Debug, build
 `ClassMngr` and `ClassMngrNextApplicationCalendarEventTests`, confirm the exact
-CTest registers once, then run only `NextApplicationCalendarEvent` with
-`-C Debug --output-on-failure`. Run no full suite. Commit this matrix before
+CTest registers once, then run only
+`ClassMngrNextApplicationCalendarEventTests` with `-C Debug
+--output-on-failure`. Run no full suite. Commit this matrix before
 F786 source/test edits. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
 Partial, and the formal exit gate remains Open.
