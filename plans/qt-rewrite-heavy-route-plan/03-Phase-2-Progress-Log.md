@@ -25002,3 +25002,78 @@ existing key names, and QVariant boolean coercion unchanged.
    existing targets; run exactly these two CTests. Add no CMake target.
 
 This matrix is recorded before implementation. Batch 156 is active with F681.
+
+### F681 Sidebar Display failure feedback - accepted - 2026-10-12
+
+F681 is accepted at code/test commit
+`e644a60a604c19d6895336659b0f7a538b1a3903`. `ClassMngr` and the two selected
+targets built in `build/windows-x64-debug-ninja` under Visual Studio 2026
+Developer Command Prompt v18.10.1, using MSVC 19.51.36257.0 (toolset
+14.51.36231). The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests` and
+`ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests`. Coverage checks
+failure rollback for exact prior values and absent keys, unrelated settings,
+recoverable Technical results, retry, zero startup writes, one diagnostic,
+checked-action rollback, and unchanged overflow tooltip/marquee behavior. No
+full suite ran.
+
+**Decision: accept F681.** Batch 156 is complete; Batch 157 is active with
+F682. Continue the one-commit-per-slice sequence.
+
+### Batch 157 shortlist and selection - recorded before F682 implementation - 2026-10-12
+
+The candidate scan compared PDF Viewer Background, PDF Page Spacing, and the
+PowerPoint Data Access Notice. Select PDF Viewer Background because its
+existing cross-platform MainWindow test covers three actions and their effects
+on the viewer, viewport, and palette, while its port test covers canonical
+values, defaults, invalid values, and round trips. Both needed tests already
+exist. The Background target avoids the additional Qt PdfWidgets dependency
+of Page Spacing; the PowerPoint action integration is Apple-only. The current
+port writes through void SettingsManager calls, and OptionState commits its
+selection before invoking that write without receiving a result to gate the
+viewer update, leaving no failure rollback path. No CMake target or
+platform-specific gate is needed.
+
+**F682 is selected:** add a checked SettingsManager write for the
+`options/documentViewerBackground` key. Check QSettings sync, restore the
+previous QVariant exactly or restore key absence on failure, preserve
+unrelated settings, and allow retry; leave generic `SettingsManager::set` and
+`sync` behavior unchanged. Change
+`DocumentViewerBackgroundPreferencesPort::write` to return
+`[[nodiscard]] Domain::Result<void>`. Preserve `Default=0`, `White=1`,
+`Black=2`, the existing read fallback to Default for missing/invalid/unknown
+values, and the exact key. Invalid enum input returns `InvalidInput`; sync
+failures return recoverable `Technical` results.
+
+### F682 PDF Viewer Background failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked SettingsManager write for the one background key.
+   Check sync status, restore the exact prior QVariant or absence on failure,
+   preserve unrelated settings, and allow retry. Leave generic
+   `SettingsManager::set`/`sync` behavior unchanged.
+2. Change the typed port write to `[[nodiscard]] Domain::Result<void>`. Keep
+   canonical enum/key mappings and the Default fallback for missing, invalid,
+   or unknown stored values. Reject invalid enum values as `InvalidInput`;
+   map sync failures to recoverable `Technical` errors with a diagnostic.
+3. Inject the typed port and error handler via `MainWindowStartupOptions`
+   without changing the public MainWindow constructor. Add a failure-aware
+   pre-commit path for OptionState so both QAction-triggered and direct
+   programmatic selection persist before changing current state or invoking
+   `onChanged`. On failure restore the prior checked action/current state,
+   preserve stored data and the open viewer/viewport properties and palette,
+   report exactly one diagnostic, and allow retry. Hydrate the startup value
+   without saving. Preserve successful `Default`/`White`/`Black` behavior and
+   direct `OptionState::set` persistence.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests`
+   with injected sync failures, previous-value/absent-key and unrelated-value
+   preservation, error mapping, invalid enum input, and retry. Extend
+   `ClassMngrMainWindowDocumentViewerBackgroundActionParityTests` to cover
+   zero startup writes, failed QAction rollback of selection/storage/viewer
+   appearance with one diagnostic, then retry; retain all three successful
+   background parity checks. Build `ClassMngr` plus the two feature targets
+   and existing `ClassMngrAiCommentOptionsTests`; run exactly these three
+   CTests to retain direct programmatic OptionState persistence coverage. Add
+   no CMake target.
+
+This matrix is recorded before implementation. Batch 157 is active with F682.

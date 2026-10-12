@@ -3958,3 +3958,27 @@ failure, and preserve the prior action and live behavior with one diagnostic.
 Retry must align storage, controls, and Sidebar behavior. Existing defaults,
 legacy QVariant coercion, key names, and successful behavior stay intact.
 The full matrix and two exact existing CTests are in the Phase 2 progress log.
+
+## F681 Sidebar Display persistence failure feedback - accepted - 2026-10-12
+
+Sidebar tooltips and overflowing-text marquee now use a checked two-key write.
+A failed sync restores both exact previous values or absences, preserves
+unrelated settings and the live Sidebar behavior, rolls back the selected
+action, and reports one diagnostic. Retry persists both values and applies
+the new behavior. The settings-port and MainWindow overflow-action CTests
+passed 2/2; no full suite ran. F681 is committed as
+`e644a60a604c19d6895336659b0f7a538b1a3903`.
+
+## F682 PDF Viewer Background failure feedback - selected - 2026-10-12
+
+The PDF Viewer Background port currently writes through the void
+SettingsManager API, and OptionState changes its value before invoking that
+write without receiving a result to gate the viewer update. A failed sync can
+therefore leave the checked action, selected state, stored setting, and viewer
+appearance out of sync. F682 will add checked
+typed persistence and a pre-commit path that preserves the prior selection,
+stored value, viewer/viewport properties, and palette on failure, with one
+diagnostic and a successful retry. Keep the `Default`/`White`/`Black` mapping,
+canonical key, and direct programmatic OptionState persistence. Batch 157's
+acceptance matrix names the two feature tests and the existing OptionState
+regression CTest.

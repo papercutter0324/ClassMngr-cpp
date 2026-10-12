@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-155 are complete.
+  141-156 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -29,9 +29,13 @@
 - F680 Language Preference typed persistence and action rollback is committed
   as `b85bfd582dde286e86413ba00c4f42c52c0a0644`; its three selected CTests
   passed 3/3.
-- F681 Sidebar Display checked persistence and action rollback is selected in
-  Batch 156. Its acceptance matrix and two exact existing CTests are in the
-  Phase 2 progress log; implementation starts after the selection commit.
+- F681 Sidebar Display checked persistence and action rollback is committed as
+  `e644a60a604c19d6895336659b0f7a538b1a3903`; its two selected CTests passed
+  2/2.
+- F682 PDF Viewer Background checked persistence and action rollback is
+  selected in Batch 157. Its acceptance matrix and three exact existing CTests
+  are in the Phase 2 progress log; implementation starts after the selection
+  commit.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -5462,3 +5466,18 @@ overflow tooltip and marquee effects. One failed save must preserve both
 preference keys, both actions, and the effective Sidebar behavior before retry.
 The two existing CTests and full acceptance matrix are in the Phase 2 progress
 log.
+
+F681 Sidebar Display checked persistence and action rollback is accepted in
+Batch 156. `ClassMngr` and the settings-port and MainWindow overflow-action
+targets built; the exact CTests passed 2/2. Failure coverage verifies
+preservation of both stored values (including absent keys), unrelated
+settings, checked actions, and live Sidebar behavior, one diagnostic, and
+successful retry. No full suite ran. Commit: `e644a60a604c19d6895336659b0f7a538b1a3903`.
+
+F682 PDF Viewer Background is selected in Batch 157. Its void write cannot
+report a QSettings sync failure, and OptionState commits the selection before
+invoking that write, with no result to gate the viewer update. Selection must
+use a typed checked write and a pre-commit gate that preserves action, state,
+stored value, viewer and viewport appearance on failure; retry must update all
+together. Preserve Default/White/Black mappings and the existing direct
+OptionState persistence contract. The matrix is in the Phase 2 progress log.

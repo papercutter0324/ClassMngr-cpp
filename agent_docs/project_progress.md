@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F681)
+### Current state - 2026-10-12 (F682)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-155 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-156 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -159,13 +159,21 @@ selected language and live font/translation, one diagnostic, successful retry,
 and programmatic failure reporting without rollback. No full suite ran.
 Batch 155 is complete.
 
-F681 Sidebar Display checked persistence and action rollback is selected in
-Batch 156. Its two settings are currently saved through void calls; failed
-storage can leave the tooltip and marquee actions or live Sidebar behavior out
-of sync with stored preferences. The existing settings-port and MainWindow
-overflow-action CTests will cover both-key rollback, action/live behavior,
-diagnostic feedback, and retry. The exact acceptance matrix is in the Phase 2
-progress log; no CMake target is needed.
+F681 Sidebar Display checked persistence and action rollback is committed as
+`e644a60a604c19d6895336659b0f7a538b1a3903`. `ClassMngr` and both selected
+targets built in the Windows x64 Debug Ninja tree under the VS 2026 developer
+environment; the settings-port and MainWindow overflow-action CTests passed
+2/2. Coverage verifies exact prior and absent-key restoration, unrelated
+setting preservation, retry, one diagnostic, action rollback, and unchanged
+live Sidebar behavior. No full suite ran. Batch 156 is complete.
+
+F682 PDF Viewer Background checked persistence and action rollback is selected
+in Batch 157. Its existing port and MainWindow parity tests cover the canonical
+values and their effect on the viewer and viewport, but persistence currently
+uses a void SettingsManager write. The selected CTests will cover typed sync
+failure, rollback of selection/storage/effective rendering, diagnostics, and
+retry. The full acceptance matrix is in the Phase 2 progress log; no CMake
+target is needed.
 
 ### Current state - 2026-10-09
 
