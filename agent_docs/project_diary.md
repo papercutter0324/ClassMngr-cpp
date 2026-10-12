@@ -4594,6 +4594,15 @@ Sunday, padded unknown, and empty weekday (` 4pm`); existing Monday-Friday
 and padded/lowercase coverage remains. The exact focused CTest passed 1/1
 after both targets rebuilt; no full suite ran.
 
-F736 is selected for `ScheduleImportReviewPresentation::weekdayLabel`; its
-preimplementation matrix is recorded in the Phase 2 progress log. Phase 2
-remains In Progress with Gates 1 and 2 Partial.
+F736 is accepted in Batch 179 and committed as
+`13928d509ac62a95654df715a867a54abfbed128`. Schedule Import Review weekday
+labels now use the shared parser with raw canonical-text equality, preserving
+the seven translated labels and trimmed fallback. The focused formatter test
+covers Monday-Sunday plus padded canonical, lowercase, padded unknown, and
+empty fallback labels. `ClassMngr` and `ClassMngrScheduleImportDialogTests`
+rebuilt; exactly one CTest registration was found and the exact test passed
+1/1 in 2.29s. No full suite ran.
+
+F737 is selected for `scheduleImportWeekdayDisplayName`; its preimplementation
+matrix is recorded in the Phase 2 progress log. Phase 2 remains In Progress
+with Gates 1 and 2 Partial.

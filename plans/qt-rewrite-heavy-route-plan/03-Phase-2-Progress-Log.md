@@ -27780,3 +27780,53 @@ labels while preserving existing translation and trimmed-fallback behavior.
 
 This matrix is recorded before implementation. Batch 179 is active with F736;
 F707 and F709 remain deferred.
+
+### F736 Schedule Import Review weekday-label formatting - accepted - 2026-10-12
+
+F736 is accepted at code/test commit
+`13928d509ac62a95654df715a867a54abfbed128`. `ScheduleImportReviewPresentation::weekdayLabel`
+now uses `ScheduleValueParser::parseWeekday` and translates only exact raw
+canonical weekdays. It preserves the seven existing `QObject::tr` labels and
+returns `day.trimmed()` for other inputs. The new data-driven test
+`compactMeetingTextUsesCanonicalWeekdayLabels` covers Monday through Sunday,
+padded canonical, lowercase, padded unknown, and empty labels; the empty day
+with a valid 4:00 PM time retains the ` 4pm` output.
+
+`ClassMngr` and `ClassMngrScheduleImportDialogTests` rebuilt the changed
+sources and executable in the existing Windows x64 Debug Ninja tree after an
+initial plain-shell build could not find MSVC's `utility` header. The Visual
+Studio x64 Developer retry succeeded with a nonblocking `vswhere` warning.
+Exactly one CTest registration (#126) was confirmed; the exact focused CTest
+passed 1/1 in 2.29 seconds. The scoped diff check passed. No full suite ran.
+
+**Decision: accept F736.** Batch 179 continues with F737; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F737 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the public `scheduleImportWeekdayDisplayName` helper in
+`src/domain/rules/schedule_import_rules.cpp`, invoked by
+`scheduleImportMeetingPatternError`. F728 and F729 migrated the separate
+`scheduleImportWeekday` and `scheduleImportDayGroup` helpers; they did not
+change this display-name helper.
+
+**F737 is selected:** reuse the Domain weekday parser to choose canonical
+display names while preserving exact raw fallback text.
+
+1. Migrate only `scheduleImportWeekdayDisplayName` to
+   `ScheduleValueParser::parseWeekday`, and translate only if
+   `parsed->text == day` for the raw input. Preserve the existing translated
+   Monday-through-Sunday labels and `QObject::tr` context. Return the exact
+   raw input for padded, lowercase, unknown, and empty values.
+2. Add focused data-driven direct assertions through the existing public
+   header in `tests/schedule_import_tests.cpp`, preferably in a separate slot
+   so the course-meeting test remains unchanged. Cover all seven canonical
+   display names plus padded, lowercase, unknown, and empty raw fallbacks.
+3. `ClassMngrScheduleImportTests` already compiles the parser and links the
+   rule source into the runtime target, so no CMake wiring change is needed.
+   Build `ClassMngr` and `ClassMngrScheduleImportTests`; confirm exactly one
+   same-named CTest registration and run only that exact CTest. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F737;
+F707 and F709 remain deferred.

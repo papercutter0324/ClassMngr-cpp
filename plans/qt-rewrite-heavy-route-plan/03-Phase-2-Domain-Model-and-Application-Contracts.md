@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F735 is accepted and F736, the Schedule Import Review weekday-label migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F736 is accepted and F737, the Schedule Import weekday display-name migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -101,7 +101,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F736 - Move Schedule Import Review weekday-label recognition to the shared parser while preserving exact canonical display behavior.
+- F737 - Move Schedule Import weekday display-name recognition to the shared parser while preserving exact canonical text and raw fallback behavior.
 
 ## Objective
 
