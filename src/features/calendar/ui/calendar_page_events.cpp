@@ -462,6 +462,7 @@ void CalendarPage::refreshCalendarData()
     const QDate visibleMonthEnd =
         visibleMonth.addMonths(1).addDays(-1);
 
+    m_loadedMonths.clear();
     m_loadedMonths.insert(visibleMonth);
     updateCalendarCacheRetention();
 

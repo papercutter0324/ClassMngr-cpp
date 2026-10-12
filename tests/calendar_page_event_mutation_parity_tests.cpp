@@ -928,6 +928,7 @@ private slots:
     void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
     void monthGridCellsMatchCalendarEventModelDateProjection();
     void currentMonthUpcomingRowsMatchVisibleCalendarRange();
+    void currentMonthNavigationEvictsPriorMonthResources();
     void next30DaysIncludesBoundariesAndFiltersEventTypes();
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
     void completedEmptyNextTenSearchShowsItsEmptyLabel();
@@ -1925,6 +1926,159 @@ currentMonthUpcomingRowsMatchVisibleCalendarRange()
         },
         {QStringLiteral("rows"), transcriptRows(actualRows)}
     });
+}
+
+void CalendarPageEventMutationParityTests::
+currentMonthNavigationEvictsPriorMonthResources()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    constexpr int NavigatedMonthCount = 4;
+    const QDate today = QDate::currentDate();
+    const QDate firstMonth = QDate(
+        qMax(today.year(), 2026),
+        today.month(),
+        1
+        ).addMonths(2);
+    QList<QDate> eventDates;
+    QStringList eventTitles;
+    for (int monthIndex = 0; monthIndex < NavigatedMonthCount; ++monthIndex)
+    {
+        const QDate eventDate = firstMonth.addMonths(monthIndex).addDays(7);
+        const QString title = QStringLiteral("F784 Retained Month %1")
+            .arg(monthIndex + 1);
+        CalendarEvent event;
+        event.title = title;
+        event.eventType = QStringLiteral("Holiday");
+        event.timeStatus = QStringLiteral("All Day");
+        event.allDay = true;
+        event.startDate = eventDate;
+        event.endDate = eventDate;
+        const int eventId = saveFixtureEvent(workspace, event, &setupError);
+        QVERIFY2(eventId > 0, qPrintable(setupError));
+        eventDates.append(eventDate);
+        eventTitles.append(title);
+    }
+
+    CalendarPage page(&workspace.services);
+    auto* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(
+        static_cast<int>(UpcomingEventsScope::CurrentMonth)
+        );
+    QCOMPARE(
+        tabs->currentIndex(),
+        static_cast<int>(UpcomingEventsScope::CurrentMonth)
+        );
+
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+    CalendarEventModel* const model = calendarModel(page);
+    QVERIFY(model);
+    CalendarEventCache* const cache =
+        page.findChild<CalendarEventCache*>();
+    QVERIFY(cache);
+
+    for (int monthIndex = 0; monthIndex < NavigatedMonthCount; ++monthIndex)
+    {
+        const QDate month = firstMonth.addMonths(monthIndex);
+        QVERIFY(root->setProperty(
+            "shownDate",
+            QDateTime(month, QTime(0, 0))
+            ));
+        QCOMPARE(
+            root->property("shownDate").toDateTime().date(),
+            month
+            );
+
+        QTRY_VERIFY_WITH_TIMEOUT(
+            model->isMonthLoaded(month.year(), month.month()),
+            10000
+            );
+        QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 10000);
+
+        const CalendarPageRuntimeMetrics metrics = page.runtimeMetrics();
+        QCOMPARE(metrics.loadedMonthCount, 1);
+        QCOMPARE(metrics.cacheRetainedRangeCount, 1);
+        QCOMPARE(metrics.cacheLoadedRangeCount, 1);
+        QCOMPARE(metrics.cacheEventCount, 1);
+        QCOMPARE(metrics.onDemandRetainedRangeCount, 0);
+        const QVariantList currentEvents = model->eventsForDate(
+            eventDates.at(monthIndex).year(),
+            eventDates.at(monthIndex).month(),
+            eventDates.at(monthIndex).day()
+            );
+        QCOMPARE(currentEvents.size(), 1);
+        QCOMPARE(
+            currentEvents.constFirst().toMap()
+                .value(QStringLiteral("title")).toString(),
+            eventTitles.at(monthIndex)
+            );
+
+        if (monthIndex > 0)
+        {
+            const QDate previousMonth = firstMonth.addMonths(monthIndex - 1);
+            const QDate previousEventDate = eventDates.at(monthIndex - 1);
+            QVERIFY(!model->isMonthLoaded(
+                previousMonth.year(),
+                previousMonth.month()
+                ));
+            QVERIFY(model->eventsForDate(
+                previousEventDate.year(),
+                previousEventDate.month(),
+                previousEventDate.day()
+                ).isEmpty());
+        }
+    }
+
+    const QDate evictedMonth = firstMonth;
+    const QDate evictedEventDate = eventDates.constFirst();
+    QVERIFY(!model->isMonthLoaded(
+        evictedMonth.year(),
+        evictedMonth.month()
+        ));
+    QVERIFY(model->eventsForDate(
+        evictedEventDate.year(),
+        evictedEventDate.month(),
+        evictedEventDate.day()
+        ).isEmpty());
+
+    QVERIFY(root->setProperty(
+        "shownDate",
+        QDateTime(evictedMonth, QTime(0, 0))
+        ));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(evictedMonth.year(), evictedMonth.month()),
+        10000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 10000);
+
+    const QVariantList reloadedEvents = model->eventsForDate(
+        evictedEventDate.year(),
+        evictedEventDate.month(),
+        evictedEventDate.day()
+        );
+    QCOMPARE(reloadedEvents.size(), 1);
+    QCOMPARE(
+        reloadedEvents.constFirst().toMap()
+            .value(QStringLiteral("title")).toString(),
+        eventTitles.constFirst()
+        );
+    const CalendarPageRuntimeMetrics reloadedMetrics = page.runtimeMetrics();
+    QCOMPARE(reloadedMetrics.loadedMonthCount, 1);
+    QCOMPARE(reloadedMetrics.cacheRetainedRangeCount, 1);
+    QCOMPARE(reloadedMetrics.cacheLoadedRangeCount, 1);
+    QCOMPARE(reloadedMetrics.cacheEventCount, 1);
+    QCOMPARE(reloadedMetrics.onDemandRetainedRangeCount, 0);
 }
 
 void CalendarPageEventMutationParityTests::
