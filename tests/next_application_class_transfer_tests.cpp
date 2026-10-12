@@ -2,6 +2,7 @@
 #include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
 #include "next/application/class_transfer_apply_request.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/schedule_view_projection.h"
 
 #include <QtTest/QtTest>
@@ -9,6 +10,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -234,6 +236,8 @@ private slots:
     void existingNextContractsRemainUsable();
     void applyRequestKeepsChoicesSeparateAndPreservesOrder();
     void applyValidationRetainsDecisionIssuesAndOrder();
+    void positiveDecimalIdParserUsesCanonicalIntRange();
+    void applyDestinationIdHandlesMaximumAndRejectsMalformedValues();
     void applyValidationRejectsMalformedTargetsBeforeDecisionIssues();
 
 };
@@ -1366,6 +1370,81 @@ void NextApplicationClassTransferTests::applyValidationRetainsDecisionIssuesAndO
             QCOMPARE(actual.issues[index].targetClassId, expected.issues[index].targetClassId);
             QCOMPARE(actual.issues[index].targetTeacherId, expected.issues[index].targetTeacherId);
         }
+    }
+}
+
+void NextApplicationClassTransferTests::
+positiveDecimalIdParserUsesCanonicalIntRange()
+{
+    const int maximum = std::numeric_limits<int>::max();
+    const std::string maximumText = std::to_string(maximum);
+    struct ParseCase final
+    {
+        std::string value;
+        std::optional<int> expected;
+    };
+    const std::vector<ParseCase> cases{
+        {"1", 1},
+        {"42", 42},
+        {maximumText, maximum},
+        {"", std::nullopt},
+        {"0", std::nullopt},
+        {"01", std::nullopt},
+        {"042", std::nullopt},
+        {"+1", std::nullopt},
+        {"-1", std::nullopt},
+        {"x", std::nullopt},
+        {"42x", std::nullopt},
+        {"42 ", std::nullopt},
+        {"2147483648", std::nullopt},
+        {std::string(4096, '9'), std::nullopt}
+    };
+
+    for (const ParseCase& testCase : cases)
+    {
+        const auto parsed = parseCanonicalPositiveDecimalId(testCase.value);
+        QCOMPARE(
+            isCanonicalPositiveDecimalId(testCase.value),
+            parsed.has_value()
+            );
+        QCOMPARE(parsed.has_value(), testCase.expected.has_value());
+        if (testCase.expected)
+        {
+            QCOMPARE(parsed.value(), testCase.expected.value());
+        }
+    }
+}
+
+void NextApplicationClassTransferTests::
+applyDestinationIdHandlesMaximumAndRejectsMalformedValues()
+{
+    const int maximum = std::numeric_limits<int>::max();
+    const std::string maximumText = std::to_string(maximum);
+
+    const auto maximumClassId = ClassId::fromString(maximumText);
+    QVERIFY(maximumClassId.has_value());
+    const auto parsedClassId = classTransferApplyDestinationId(*maximumClassId);
+    QVERIFY(parsedClassId.has_value());
+    QCOMPARE(parsedClassId.value(), maximum);
+
+    const auto maximumTeacherId = TeacherId::fromString(maximumText);
+    QVERIFY(maximumTeacherId.has_value());
+    const auto parsedTeacherId =
+        classTransferApplyDestinationId(*maximumTeacherId);
+    QVERIFY(parsedTeacherId.has_value());
+    QCOMPARE(parsedTeacherId.value(), maximum);
+
+    for (const std::string& malformed : {
+             "0", "042", "-1", "42x", "2147483648"
+         })
+    {
+        const auto classId = ClassId::fromString(malformed);
+        QVERIFY(classId.has_value());
+        QVERIFY(!classTransferApplyDestinationId(*classId).has_value());
+
+        const auto teacherId = TeacherId::fromString(malformed);
+        QVERIFY(teacherId.has_value());
+        QVERIFY(!classTransferApplyDestinationId(*teacherId).has_value());
     }
 }
 

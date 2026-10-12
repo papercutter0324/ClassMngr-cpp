@@ -1,8 +1,8 @@
 #pragma once
 
 #include "next/application/class_transfer_projection.h"
+#include "next/application/positive_decimal_id_validation.h"
 
-#include <charconv>
 #include <optional>
 #include <string>
 #include <vector>
@@ -27,13 +27,7 @@ struct ClassTransferApplyCandidates final
 template <typename TypedId>
 [[nodiscard]] inline std::optional<int> classTransferApplyDestinationId(const TypedId& id)
 {
-    const auto& value = id.value();
-    int parsed = 0;
-    const auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), parsed);
-    if (error != std::errc{} || end != value.data() + value.size()
-        || parsed <= 0 || std::to_string(parsed) != value)
-        return std::nullopt;
-    return parsed;
+    return parseCanonicalPositiveDecimalId(id.value());
 }
 
 [[nodiscard]] inline ClassTransferReviewDecisionRequest classTransferApplyReviewRequest(
