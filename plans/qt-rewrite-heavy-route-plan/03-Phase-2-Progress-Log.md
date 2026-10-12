@@ -24489,3 +24489,70 @@ public MainWindow constructor.
    existing targets; run exactly those two CTests. Add no CMake target.
 
 This matrix is recorded before implementation. Batch 149 is active with F674.
+
+### F674 Excel Import Timeout persistence feedback - accepted - 2026-10-12
+
+F674 is accepted at code commit
+`60b0159f2c3590634a116e3deecc673c0b9ac83e`. The `ClassMngr` target and both
+selected test targets built in the Windows x64 Ninja tree under the VS
+developer environment. The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests` and
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. The port tests
+cover status-to-Technical mapping, invalid input, previous value and absent-key
+preservation, unrelated persisted settings, and successful retry. The UI test
+uses the real Preferences action/dialog/combo and an injected typed port; it
+verifies one diagnostic warning, no recursive write, selection/storage/effective
+timeout rollback, then successful retry. The Visual Studio build tree failed
+before compilation at FileTracker with `E_ACCESSDENIED`; Ninja verification
+used the initialized VS developer environment. No full suite ran.
+
+**Decision: accept F674.** Batch 149 is complete; Batch 150 is active with
+F675. Continue the one-commit-per-slice sequence.
+
+### Batch 150 shortlist and selection - recorded before F675 implementation - 2026-10-12
+
+The candidate scan compared Last Selected Campus, Automatic Update Checks,
+Save Mode, and other SettingsManager-backed preferences. Save Mode has the
+clearest immediate consequence: its action callback changes the selected mode,
+then applies it to both FileController and PageManager, where it starts or
+stops autosave timers. A failed settings write can leave the current session
+using one mode while the next launch restores another; specifically, an
+unsaved switch to Automatic can leave pages in Manual mode after restart.
+Upcoming Birthday Dismissal remains excluded because the stored date has no
+production reader or distinct failure consequence.
+
+**F675 is selected:** add an opt-in checked SettingsManager Save Mode write
+that returns `QSettings::Status` and restores the previous key before replacing
+a failed settings object. Preserve the existing generic `set`/`sync` behavior
+and mode mapping. Return typed InvalidInput/Technical results from the port.
+Make the Save Mode action persist before applying the live mode; on failure,
+restore the previous OptionState value and checked action, skip the live-mode
+callback, and show one `Unable to Save Preference` warning with the diagnostic.
+After recovery, a successful retry must update persisted and live mode
+together. Keep other OptionState users' behavior unchanged.
+
+### F675 Save Mode failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked Save Mode persistence path that syncs QSettings, reports its
+   status, preserves the previous value (including absence) on failure, and
+   permits retry after recovery. Preserve generic SettingsManager `set`/`sync`
+   behavior and the existing Automatic/Manual storage mapping.
+2. Change the Save Mode preferences port to return
+   `[[nodiscard]] Domain::Result<void>`. Preserve read/default behavior; map
+   invalid values to `InvalidInput` and storage errors to diagnostic
+   `Technical` results.
+3. Make the Save Mode action transaction persistence-first. Failure must leave
+   the stored value, OptionState current value, checked QAction, FileController
+   mode, PageManager mode, and effective autosave timer state on the previous
+   mode; invoke one diagnostic warning and do not apply the failed candidate.
+   Successful retry updates stored and effective state together. Preserve
+   startup selection and normal success parity.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests` with
+   injected failure, prior-value preservation, and retry. Extend
+   `ClassMngrMainWindowSaveModeActionParityTests` to verify QAction rollback,
+   one warning, unchanged effective mode on failure, and successful retry.
+   Build `ClassMngr` and both existing targets, and run exactly those two
+   CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 150 is active with F675.

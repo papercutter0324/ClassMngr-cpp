@@ -96,12 +96,21 @@ preservation, one warning across repeated retries, suppression reset on
 database clear and successful correction, and a later new warning episode.
 No full suite ran. Batch 148 is complete.
 
-F674 Excel Import Timeout typed persistence and UI rollback is selected/current
-in Batch 149. Its acceptance matrix is recorded in the Phase 2 progress log.
-The preference combo must restore its prior selection and report a diagnostic
-if a checked QSettings write fails; subsequent import validation must keep
-using the prior stored timeout. A retry after storage recovers must update the
-combo and persisted value together.
+F674 Excel Import Timeout typed persistence and UI rollback is committed as
+`60b0159f2c3590634a116e3deecc673c0b9ac83e`. `ClassMngr` and both selected
+test targets built in the Windows x64 Ninja tree under the VS developer
+environment; the exact CTests passed 2/2. Failure coverage verifies checked
+sync error mapping, previous and absent key preservation, unrelated persisted
+setting preservation, real Preferences QAction rollback, one diagnostic
+warning, and retry. The Visual Studio tree was blocked before compilation by
+FileTracker `E_ACCESSDENIED`; no full suite ran. Batch 149 is complete.
+
+F675 Save Mode typed persistence and action rollback is selected/current in
+Batch 150. Its acceptance matrix is recorded in the Phase 2 progress log. A
+failed save-mode write must leave the persisted value, checked action,
+OptionState, and effective autosave mode on the previous selection, with one
+diagnostic warning. The successful retry must update persistence and effective
+mode together.
 
 ### Current state - 2026-10-09
 

@@ -3877,12 +3877,22 @@ CTests passed 2/2, including fallback, ID normalization, repeat, reset, and
 recovery paths. F673 is committed as
 `d9e8398d375c1e4c07e41feb0b3b3d81fe767cf6`.
 
-## F674 Excel Import Timeout feedback - selected - 2026-10-12
+## F674 Excel Import Timeout feedback - accepted - 2026-10-12
 
-Unlike Upcoming Birthday Dismissal, whose saved date currently has no reader,
-the Excel Import Timeout is read later by workbook validation. A failed save
-can leave the preference combo showing a timeout that import will not use.
-F674 adds a checked typed write and restores the previous combo selection on
-failure, with one diagnostic warning and a successful retry path. Keep generic
-SettingsManager writes unchanged and use a test seam confined to the existing
-private PreferencesDialog boundary.
+The Excel Import Timeout is read later by workbook validation, so a failed
+save could leave the Preferences combo showing a timeout that import would not
+use. F674 adds a checked typed write and restores the previous combo selection
+on failure. Its real Preferences QAction test confirms the prior effective and
+stored values, one diagnostic warning, and a successful retry. Both focused
+CTests passed 2/2; the Visual Studio tree was blocked before compilation by
+FileTracker, so verification used Ninja under the VS developer environment.
+F674 is committed as `60b0159f2c3590634a116e3deecc673c0b9ac83e`.
+
+## F675 Save Mode persistence failure - selected - 2026-10-12
+
+Save Mode is applied to both FileController and PageManager, which starts or
+stops autosave timers. Its current void persistence callback runs before the
+live-mode callback but cannot report a failed write. F675 will make the mode
+change transactional: a failed write keeps the saved and effective mode and
+checked action unchanged, reports one diagnostic warning, and permits a
+successful retry. Keep the generic SettingsManager write behavior unchanged.

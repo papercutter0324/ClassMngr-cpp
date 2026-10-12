@@ -3,24 +3,21 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
-- Phase 2 remains In Progress/Open. Batches 141-144 are complete; Gates 1 and 2
-  remain Partial.
-- F669 Schedule Display Preferences failure feedback is committed as
-  `400decffe4840bd337d5c9f8fe80d644b88aa743`. The independent focused CTests
-  passed 2/2. The UI case verifies warning/diagnostic, five-control and stored
-  value rollback, no failure refresh, and successful retry.
-- F670 Sub Prep remembered-name save-failure feedback is committed as
-  `8cc1a68fec154d8db858e08f81d5f7de784bd79f`. The independent focused CTests
-  passed 2/2 and direct QtTest passed 3/3. Its UI test uses the target's
-  settings-repository stub for the typed failure; the port CTest covers the
-  SQLite-triggered failure.
-- F671 Custom Color Palette typed persistence and caller feedback is
-  selected/current. Its preimplementation matrix is in the Phase 2 progress
-  log. Preserve no/closed-session no-op behavior, report repository/write
-  errors through the shared chooser to all seven callers, and preserve valid
-  selection and cancel behavior.
-- Stop point: F671 implementation has not started. After it is committed,
-  begin the next Phase 2 slice selection.
+- Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
+  141-149 are complete.
+- F671 Custom Color Palette typed persistence and caller feedback is committed
+  as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
+- F672 Theme preference typed persistence/action rollback is committed as
+  `a6543994484b5b504383c95251a29997b71c3788`; three selected CTests passed.
+- F673 Personal Details campus-correction failure feedback is committed as
+  `d9e8398d375c1e4c07e41feb0b3b3d81fe767cf6`; its two selected CTests passed.
+- F674 Excel Import Timeout typed persistence/UI rollback is committed as
+  `60b0159f2c3590634a116e3deecc673c0b9ac83e`; its two selected CTests passed.
+  The Visual Studio build tree was blocked before compilation by FileTracker;
+  the selected Ninja targets built under the VS developer environment.
+- F675 Save Mode typed persistence and action rollback is selected/current in
+  Batch 150; its matrix is recorded in the Phase 2 progress log. Begin
+  implementation after this selection record is committed.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -5347,7 +5344,7 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
 
-## Resumed Phase 2 after F670; F672-F673 accepted and F674 selected - 2026-10-12
+## Resumed Phase 2 after F670; F672-F674 accepted and F675 selected - 2026-10-12
 
 F671 Custom Color Palette typed persistence and caller feedback is committed
 as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
@@ -5377,11 +5374,19 @@ normalization failures, one warning across repeated writes, stored and
 displayed state, suppression reset after database clear and successful retry,
 and a later warning after recovery. No full suite ran. Batch 148 is complete.
 
-F674 Excel Import Timeout typed persistence and UI rollback is selected/current
-in Batch 149. Discovery found that the private `PreferencesDialog` combo writes
-on selection, while teacher workbook validation later reads the port value; a
-failed write can leave the combo and effective timeout out of sync. The
-upcoming-birthday dismissal date has no current reader, so its failure has no
-separate demonstrated effect. F674's acceptance matrix and exact CTests are in
-the Phase 2 progress log. Implementation begins after the selection record is
-committed.
+F674 Excel Import Timeout typed persistence and UI rollback is committed as
+`60b0159f2c3590634a116e3deecc673c0b9ac83e`. The product and both focused test
+targets built in the Windows x64 Ninja tree under the VS developer
+environment. Exact CTests
+`ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests` and
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests` passed 2/2. The
+Visual Studio tree was blocked before compilation by FileTracker
+`E_ACCESSDENIED`; no full suite ran. Batch 149 is complete.
+
+F675 Save Mode typed persistence and action rollback is selected/current in
+Batch 150. Source review shows `OptionState` updates the selected value and
+checked action before its void persistence callback, then applies the live mode
+to FileController and PageManager; autosave uses that mode. Acceptance requires
+failure rollback before live mode application, one diagnostic warning, and a
+successful retry. The exact CTests and matrix are in the Phase 2 progress log.
+Implementation begins after the selection record is committed.
