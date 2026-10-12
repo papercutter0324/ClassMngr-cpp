@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-160 are complete; Batch 161 is active with F686.
+  141-161 are complete; Batch 162 is active with F687.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -57,11 +57,19 @@
   Command Prompt v18.10.1; the exact port and automatic-startup CTests passed
   2/2. The automatic prompt remains open with one diagnostic on write failure
   and completes after retry. No full suite ran; Batch 160 is complete.
-- Batch 161 selected F686 checked Skip Version clear. The port and both clear
-  callers must consume a typed checked-removal result. User Unskip preserves
+- F686 checked Skip Version clear is accepted at commit
+  `31511035b7f0d492a37241ac454523a99716c7a7`.
+  `ClassMngr` and three selected targets built in the Windows x64 Debug Ninja
+  tree under VS 2026 Developer Command Prompt v18.10.1; the exact port,
+  automatic-startup, and updater CTests passed 3/3. User Unskip preserves
   dialog/suppression state on failure and permits retry; stale cleanup failure
-  preserves storage/display and still permits an eligible newer update prompt.
-  Its exact acceptance matrix is in the Phase 2 progress log before
+  retains storage/display and allows an eligible newer update prompt, then
+  clears on a later check. Invalid stored text was not separately
+  failure-injected; no full suite ran. Batch 161 is complete.
+- Batch 162 selected F687 Last Selected Campus checked persistence. The
+  `campus/lastSelectedJsonId` port write is unchecked after the selected campus
+  loads successfully. The acceptance matrix checks save failure feedback
+  without rolling back the loaded campus; see the Phase 2 progress log before
   implementation.
 
 ## Historical handoff - phase2_resume_20260929 (F384)

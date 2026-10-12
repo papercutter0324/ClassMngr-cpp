@@ -25347,4 +25347,71 @@ SettingsManager behavior. Change the skipped-version port `clear()` to return
    dialog behavior. Build `ClassMngr` and these three existing targets; run
    exactly the three corresponding CTests. Add no CMake target.
 
-This matrix is recorded before implementation. Batch 161 is active with F686.
+This matrix was recorded before implementation. Batch 161 is complete.
+
+### F686 checked Skip Version clear - accepted - 2026-10-12
+
+F686 is accepted at code/test commit
+`31511035b7f0d492a37241ac454523a99716c7a7`. `ClassMngr` and the three selected
+targets built in the Windows x64 Debug Ninja tree under Visual Studio 2026
+Developer Command Prompt v18.10.1 with Qt 6.12.0. The exact CTests passed 3/3:
+`ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and `ClassMngrUpdaterTests`.
+Coverage verifies exact QVariant/absence restoration, unrelated-setting
+preservation, typed Technical errors, and retry. User Unskip failure preserves
+dialog state and suppression with one diagnostic; retry clears the value and
+resets suppression. Failed stale cleanup preserves storage/display and permits
+an eligible prompt; a later check clears the stale key/display. Exact-match
+suppression remains covered. Invalid stored text was not separately
+failure-injected. No full suite ran.
+
+**Decision: accept F686.** Batch 161 is complete.
+
+### Batch 162 shortlist and selection - recorded before F687 implementation - 2026-10-12
+
+The shortlist compared Last Selected Campus with Last Database Directory.
+Select Last Selected Campus because one successful dashboard selection writes
+one preference through a void port, and the existing cross-platform port and
+CampusDashboardPage test targets already cover its key, fallback, and caller
+behavior. Last Database Directory affects several file-dialog fallback paths
+and would be a broader caller package. `CampusDashboardPageDependencies`
+already supports injecting selected-campus read/save ports, giving the
+preference path a proportionate failure-injection seam.
+
+**F687 is selected:** check the `campus/lastSelectedJsonId` write, restore the
+exact previous QVariant or absent key after sync failure, preserve unrelated
+settings and `campus/lastSelectedId`, and permit retry without changing
+generic SettingsManager behavior. Return `[[nodiscard]] Domain::Result<void>`
+from `LastSelectedCampusPort::write`, preserving valid CampusId conversion
+and the existing `nullopt`-to-empty-string storage behavior. Map sync failures
+to recoverable `Technical` results.
+
+### F687 Last Selected Campus persistence acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked SettingsManager write for only
+   `campus/lastSelectedJsonId`. Check sync status, restore the exact prior
+   QVariant or key absence on failure, preserve unrelated settings and the
+   legacy integer `campus/lastSelectedId`, and allow retry. Leave generic
+   `SettingsManager::set`/`sync` behavior unchanged.
+2. Return a typed result from `LastSelectedCampusPort::write`. Preserve the
+   canonical string key, typed CampusId conversion, and `nullopt` mapping to
+   an empty string (not key removal). Invalid identifiers remain rejected at
+   the typed CampusId boundary; storage failures are recoverable `Technical`
+   results.
+3. Inject the optional last-selected port through
+   `CampusDashboardPageDependencies` without changing existing public
+   constructor behavior. After a successful selected-campus read, a failed
+   preference write must leave the selected campus and its displayed data
+   intact, report exactly one inline status diagnostic, and allow a later
+   successful selection to persist and clear the diagnostic. Persistence
+   failure must not roll back the successful campus read.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests` with
+   injected sync failure, exact prior-value/absent-key restoration,
+   unrelated-setting preservation, typed error mapping, and retry. Extend
+   `ClassMngrCampusDashboardPageTests` with selection preservation, one failure
+   diagnostic, and successful retry; retain fallback and successful-write
+   cases. Build `ClassMngr` and these two existing targets, then run exactly
+   their two CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 162 is active with F687.

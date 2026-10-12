@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F686 selected)
+### Current state - 2026-10-12 (F687 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-160 are complete; Batch 161 is active with F686. F666 Class Day
+Batches 141-161 are complete; Batch 162 is active with F687. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
 Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
@@ -210,15 +210,24 @@ value or absent-key restoration, unrelated-setting preservation, a visible
 diagnostic, an open automatic prompt, and successful retry before suppression.
 No full suite ran. Batch 160 is complete.
 
-F686 checked Skip Version clear is selected in Batch 161. The same key has two
-void clear callers: the dialog's user-initiated Unskip action and background
-stale-version reconciliation. The slice adds exact-key checked removal and a
-typed port result. User Unskip must clear the dialog and automatic suppression
-only after persistence; failure keeps the stored/displayed version and action,
-leaves suppression unchanged, presents one diagnostic, and allows retry.
-Failed stale cleanup preserves storage/display and must not suppress a newer
-eligible update prompt. The full acceptance matrix is recorded in the Phase 2
-progress log.
+F686 checked Skip Version clear is accepted at commit
+`31511035b7f0d492a37241ac454523a99716c7a7`. `ClassMngr`
+and the port, automatic-update controller, and updater dialog targets built in
+the Windows x64 Debug Ninja tree under Visual Studio 2026 Developer Command
+Prompt v18.10.1; the exact three CTests passed 3/3. Checked removal restores
+the exact previous QVariant or key absence on failure. User Unskip preserves
+the dialog and prompt-suppression state, reports one diagnostic, and retries
+successfully; failed stale cleanup retains storage/display, permits a newer
+update prompt, and clears successfully on a later check. Invalid stored text
+was not separately failure-injected, and no full suite ran. Batch 161 is
+complete.
+
+F687 Last Selected Campus checked persistence is selected in Batch 162. The
+port writes `campus/lastSelectedJsonId` through unchecked SettingsManager
+storage after a selected campus loads; failure currently has no typed result
+or caller feedback. The slice will preserve a successfully loaded campus while
+reporting a preference-save failure, with checked rollback and retry. The full
+acceptance matrix is recorded in the Phase 2 progress log.
 
 ### Current state - 2026-10-09
 

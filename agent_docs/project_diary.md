@@ -4077,3 +4077,28 @@ is a separate background case: a failed removal preserves the setting and
 display, does not suppress an eligible newer update prompt, and can retry on a
 later check. The full matrix is in the Phase 2 progress log; Batch 161 is
 active.
+
+## F686 checked Skip Version clear - accepted - 2026-10-12
+
+The checked clear restores the exact saved value or key absence after sync
+failure and preserves unrelated settings. User Unskip now preserves the
+displayed state and automatic-prompt suppression on failure, shows one
+diagnostic, and clears the setting only after success. Stale cleanup keeps a
+newer update eligible for prompting after a failed removal and succeeds on a
+later check. `ClassMngr` and the three selected targets built in the Windows
+x64 Debug Ninja tree under Visual Studio 2026 Developer Command Prompt
+v18.10.1; the exact three CTests passed 3/3. Invalid stored text was not
+separately failure-injected; no full suite ran. Commit:
+`31511035b7f0d492a37241ac454523a99716c7a7`.
+
+## F687 Last Selected Campus checked persistence - selected - 2026-10-12
+
+The SettingsManager adapter writes `campus/lastSelectedJsonId` without a typed
+result, and `CampusDashboardPage::loadSelectedCampus()` ignores persistence
+status after loading the selected campus. Select this single-key cross-platform
+slice over Last Database Directory, whose writes span more post-operation
+paths and affect a later file-dialog convenience setting. Checked persistence
+must preserve the successfully loaded campus and report a save failure through
+the page's status surface; port and dashboard tests already cover the
+surrounding boundary. Batch 162 is active; the exact matrix is in the Phase 2
+progress log.
