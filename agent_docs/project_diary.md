@@ -4680,3 +4680,20 @@ F742 is selected in Batch 179 to use `Domain::calendarEventTypeFromName` in
 Sub Prep interval filtering after existing trimming, preserving exact type,
 case, and output behavior. Its existing focused test is recorded in the Phase
 2 progress log. F707 and F709 remain deferred.
+
+## F742 Sub Prep calendar interval event-type classification - accepted - 2026-10-12
+
+F742 is accepted and committed as
+`e8487f180550e03f62c4efa5c098baaf0ea6f473`. It reuses Domain event-type
+classification after trimming, preserving the exact-case Vacation/Holiday
+filter and trimmed output. Existing tests were reused unchanged. In the
+Windows x64 Debug Ninja tree under VS 2026 x64 Developer, `ClassMngr` and
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests` built; the
+single CTest registration #307 passed 1/1 in 0.05 seconds (0.06 total). No
+full suite ran; the scoped diff check passed. Only nonblocking `vswhere` and
+LF/CRLF warnings occurred.
+
+F743 is selected to share required-field validation across Testing Class
+create/update via `testing_class_required_fields_validation.h`, preserving
+field and error order. Its matrix is recorded in the Phase 2 progress log.
+F707 and F709 remain deferred.

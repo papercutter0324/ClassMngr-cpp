@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F741 is accepted at `c518f0d4766538b5c584949e72a79845a7a18dfa` and F742, reusing `Domain::calendarEventTypeFromName` in Sub Prep interval filtering after existing trimming, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F742 is accepted at `e8487f180550e03f62c4efa5c098baaf0ea6f473` and F743, sharing required-field validation across Testing Class create/update via `testing_class_required_fields_validation.h`, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F742 - Reuse `Domain::calendarEventTypeFromName` in Sub Prep interval filtering after existing trimming while preserving exact event-type behavior.
+- F743 - Share Testing Class required-field validation across create/update while preserving field and error order.
 
 ## Objective
 

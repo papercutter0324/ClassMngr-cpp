@@ -28139,3 +28139,60 @@ the query's accepted values and result contract.
 The alternative class-ID helper was not selected because partial migration
 would leave comparable duplicates elsewhere. This matrix is recorded before
 implementation. Batch 179 is active with F742; F707 and F709 remain deferred.
+
+### F742 Sub Prep calendar-event interval type classification - accepted - 2026-10-12
+
+F742 is accepted at code commit
+`e8487f180550e03f62c4efa5c098baaf0ea6f473`. The query now classifies the
+trimmed event type with the shared Domain
+`calendarEventTypeFromName` helper while retaining case-sensitive acceptance
+of Vacation/Holiday, trimmed output spelling, filtering, ordering, and result
+behavior. Existing direct tests cover padded accepted values, lowercase and
+Other rejection, normalized spelling, order, full intervals, and malformed,
+reversed, and out-of-window filtering; no test edits were needed.
+
+In `build/windows-x64-debug-ninja`, the Visual Studio 2026 x64 Developer build
+produced `ClassMngr` and
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`. Exactly one
+CTest registration (#307) was confirmed; the exact test passed 1/1 in 0.05
+seconds (0.06 seconds total). The scoped diff check passed; no full suite ran.
+The `vswhere.exe` and LF-to-CRLF warnings were nonblocking. The existing test
+does not isolate an exact-touching query-window boundary; that filter was
+unchanged and outside the classification change.
+
+**Decision: accept F742.** Batch 179 continues with F743; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F743 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Share the identical required-field policy in
+`src/next/application/testing_class_create.h` and
+`src/next/application/testing_class_details_update.h` through new
+`src/next/application/testing_class_required_fields_validation.h`.
+
+**F743 is selected:** centralize only the ordered name/grade/level/room
+validation, preserving each caller's other checks and sequencing.
+
+1. Add the free function
+   `ClassMngr::Next::Application::validateTestingClassRequiredFields(std::u16string_view name, std::u16string_view grade, std::u16string_view level, std::u16string_view room) -> Domain::Result<void>`.
+   It applies `trimQtWhitespace` and checks name, grade, level, then room,
+   preserving the exact current Validation errors/text and `recoverable=true`.
+   Each caller returns its failure at the existing point. In Create, keep the
+   earlier teacher-ID and assignment-pair checks before this helper, and
+   assignment validity after it. In Details Update, keep class-ID and
+   teacher-ID checks before it. Do not consolidate ID or assignment logic.
+2. Add the new header to the Application inventory in `cmake/next.cmake`.
+   Preserve existing tests for each required field, ordering, Unicode
+   whitespace, error results, and absence of port calls; no test changes are
+   expected.
+3. Build `ClassMngr`,
+   `ClassMngrNextApplicationTestingClassCreateUseCaseTests`, and
+   `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`; confirm
+   exactly one registration for each and run only those exact CTests. Run no
+   full suite.
+
+Candidate B, the three Sub Prep `ScheduleViewMode` checks, was not selected
+because it spans three query scopes with distinct error text. Candidate A has
+direct existing coverage. This matrix is recorded before implementation.
+Batch 179 is active with F743; F707 and F709 remain deferred, and Phase 2
+status is unchanged.

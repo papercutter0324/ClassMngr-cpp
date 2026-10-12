@@ -4600,10 +4600,20 @@ registration #213 (count 1) passed 1/1 in 0.03 seconds (0.04 total). The
 scoped diff check passed; no full suite ran. Only nonblocking `vswhere.exe`
 and LF/CRLF warnings occurred.
 
-F742 is selected in Batch 179 to reuse `Domain::calendarEventTypeFromName` in
-Sub Prep interval filtering after existing trimming, preserving exact type,
-case, and output behavior. Its existing focused test is in the Phase 2
-progress log. F707 and F709 remain deferred. Phase 2 is In Progress/Open with
-Gates 1 and 2 Partial; F739 and F740 remain accepted, F625's assessment is
-accepted, F626 is deferred, and separate current-source Phase 0 evidence
-remains Windows x64 2/24 and macOS universal 0/24.
+F742, reusing `Domain::calendarEventTypeFromName` in Sub Prep interval
+filtering after trimming, is accepted and committed as
+`e8487f180550e03f62c4efa5c098baaf0ea6f473`. It preserves the exact-case
+Vacation/Holiday filter and trimmed output; existing tests were reused
+unchanged. In the Windows x64 Debug Ninja tree under VS 2026 x64 Developer,
+`ClassMngr` and `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`
+built; the single CTest registration #307 passed 1/1 in 0.05 seconds (0.06
+total). The scoped diff check passed; no full suite ran. Only nonblocking
+`vswhere` and LF/CRLF warnings occurred.
+
+F743 is selected for shared required-field validation across Testing Class
+create and update via `testing_class_required_fields_validation.h`, preserving
+field and error order. Its matrix is in the Phase 2 progress log. F707 and
+F709 remain deferred. Phase 2 is In Progress/Open with Gates 1 and 2 Partial;
+F739, F740, and F741 remain accepted; F625's assessment is accepted, F626 is
+deferred, and separate current-source Phase 0 evidence remains Windows x64
+2/24 and macOS universal 0/24.
