@@ -53,12 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F737 accepted; F738 selected)
+### Current state - 2026-10-12 (F738 accepted; F739 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F738, the My Classes weekday-abbreviation migration.
+with F739, moving the Calendar repeat-until default date rule into the
+Qt-free Application recurrence contract.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -410,8 +411,20 @@ text equals the raw input, preserving translations and exact raw fallbacks.
 `ClassMngr` and `ClassMngrScheduleImportTests` built; exactly one matching
 CTest registration was confirmed and the focused CTest passed 1/1. The scoped
 diff check passed; no full suite ran.
-F738 is selected for My Classes `dayAbbreviation`; its acceptance matrix is
-recorded in the Phase 2 progress log. F707 remains deferred because its
+F738 is accepted and committed as
+`3d6ca7193d757ef9105b4cc225cbb9472c12295c`. My Classes weekday abbreviations
+use the shared parser only for exact canonical input while preserving the
+translated labels and trimmed fallback. The typed-reads UI test now covers all
+seven days, padded canonical/lowercase/unknown fallbacks, and empty-day `N/A`.
+`ClassMngr` was already current and `ClassMngrMyClassesPageTests` rebuilt; the
+single matching CTest passed 1/1 in 1.56 seconds. The first test attempt
+refreshed the page after a second repository save and observed deferred tab
+deletion; preparing all rows before initial construction resolved that test
+fixture issue. The scoped diff check passed; no full suite ran.
+
+F739 is selected to move Calendar Event's repeat-until default date rule into
+the existing Qt-free Application recurrence contract; its acceptance matrix
+is recorded in the Phase 2 progress log. F707 remains deferred because its
 comparator chain has no observed app callsite. F709 remains deferred because
 the raw-SQL fixture path converts malformed stored text to invalid `QTime`s
 before projection, leaving no public seam for malformed projection text.

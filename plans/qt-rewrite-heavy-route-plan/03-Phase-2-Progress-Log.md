@@ -27891,3 +27891,68 @@ existing translated labels and trimmed fallback.
 
 This matrix is recorded before implementation. Batch 179 is active with F738;
 F707 and F709 remain deferred.
+
+### F738 My Classes weekday abbreviations - accepted - 2026-10-12
+
+F738 is accepted at code/test commit
+`3d6ca7193d757ef9105b4cc225cbb9472c12295c`. `dayAbbreviation` in
+`src/features/my_info/ui/my_classes_page_content.cpp` now calls
+`ScheduleValueParser::parseWeekday`, translates only when the parsed canonical
+text equals the raw day, preserves the existing `MyClassesPage::tr` labels,
+and otherwise returns the trimmed input. The UI test
+`classInformationFieldsAndTeacherAssociationUseTypedReads` covers Mon-Sun,
+padded canonical/lowercase/unknown inputs, and an empty day with a valid time
+showing `N/A`; teacher, details, notes, and intensive assertions remain.
+
+`ClassMngr` was already up-to-date; `ClassMngrMyClassesPageTests` rebuilt its
+changed test source and executable in the existing Windows x64 Debug Ninja
+tree. Exactly one CTest registration (#53) was confirmed and the focused CTest
+passed 1/1 in 1.56 seconds. The scoped diff check passed. No full suite ran.
+The first test attempt saved more rows and called `refresh()` a second time;
+deferred `deleteLater()` cleanup left old and new tabs visible to the child
+lookup. Moving the rows into the initial fixture load resolved the failure.
+The `vswhere.exe` warning was nonblocking.
+
+**Decision: accept F738.** Batch 179 continues with F739; F707 and F709 remain
+deferred. F709 still lacks a focused query or summary injection seam for
+malformed projection strings.
+
+### Batch 179 continuation - F739 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the default end-date policy for repeat-until in the Qt-free Application
+recurrence contract, `src/next/application/calendar_event_repeat_occurrence_plan.h`.
+The UI currently owns the `finalMatchingWeekdayInYear(const QDate&)` policy in
+`src/features/calendar/ui/calendar_event_dialog.cpp`.
+
+**F739 is selected:** move the rule into the Application contract and retain a
+small Qt boundary adapter.
+
+1. Add the public helper
+   `ClassMngr::Next::Application::defaultCalendarEventRepeatUntilDate(std::string_view)`,
+   returning `std::optional<std::string>`. It accepts a canonical ISO start-date
+   string and returns the latest canonical ISO date in the same year with the
+   start date's weekday (December 31 minus zero through six days). Invalid or
+   noncanonical input returns no value. Reuse the existing detail date parsing,
+   ordinal, and formatting logic without Qt or a date singleton dependency.
+2. Replace the local UI policy with an adapter calling the Application helper.
+   Preserve the invalid-`QDate` fallback to `QDate::currentDate()` and leave
+   all existing repeat toggle and update conditions unchanged.
+3. Add app-less tests in `tests/next_application_calendar_event_tests.cpp`
+   covering these near-year-end weekday outputs: 2026-12-14 -> 2026-12-28
+   (Monday), 2026-12-15 -> 2026-12-29 (Tuesday), 2026-12-16 -> 2026-12-30
+   (Wednesday), 2026-12-17 -> 2026-12-31 (Thursday), 2026-12-18 -> 2026-12-25
+   (Friday), 2026-12-19 -> 2026-12-26 (Saturday), and 2026-12-20 -> 2026-12-27
+   (Sunday). Also cover a leap year (2024-02-29 -> 2024-12-26), a non-leap
+   year (2025-02-28 -> 2025-12-26), and invalid/noncanonical input errors.
+   Extend `tests/dialog_shell_tests.cpp` to
+   verify constructor defaults and start-date changes use the policy with
+   fixed dates, including Monday 2026-10-12 -> 2026-12-28 and Tuesday
+   2026-10-13 -> 2026-12-29; preserve existing default assertions.
+4. No CMake changes are expected because both test targets are already wired.
+   Build `ClassMngr`, `ClassMngrNextApplicationCalendarEventTests`, and
+   `ClassMngrDialogShellTests`; confirm exact CTest registration counts and
+   run only `ClassMngrNextApplicationCalendarEventTests` and
+   `ClassMngrDialogShellTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F739;
+F707 and F709 remain deferred.

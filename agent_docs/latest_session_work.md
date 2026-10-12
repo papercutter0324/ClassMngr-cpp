@@ -5,9 +5,10 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F738, the My Classes weekday-abbreviation migration. F709 remains deferred
-  after confirming raw SQL values become invalid `QTime`s before the public
-  page's projection-string helper.
+  F739, moving the repeat-until default date policy into the Qt-free Calendar
+  recurrence Application contract. F709 remains deferred after confirming
+  raw SQL values become invalid `QTime`s before the public page's
+  projection-string helper.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -235,9 +236,14 @@
   translations and raw fallback text. The scoped diff check passed; no full
   suite ran. F709 was rechecked: malformed SQL-stored times become invalid
   `QTime`s before reaching the page projection helper, so its original
-  missing-seam deferral remains. F738 is selected for My Classes
-  `dayAbbreviation`; its acceptance matrix is in the Phase 2 progress log.
-  F707 and F709 remain deferred.
+  missing-seam deferral remains. F738 is accepted and committed at
+  `3d6ca7193d757ef9105b4cc225cbb9472c12295c`. The test covers all seven
+  abbreviations, padded canonical/lowercase/unknown fallbacks, and empty-day
+  `N/A`; the exact focused CTest passed 1/1. Its first test attempt refreshed
+  after a second fixture save and hit deferred old-tab cleanup; moving every
+  schedule row into the initial fixture load fixed the seam, and the scoped
+  diff check passed. No full suite ran. F739 is selected; its acceptance
+  matrix is in the Phase 2 progress log. F707 and F709 remain deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

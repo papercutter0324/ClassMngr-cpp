@@ -4615,7 +4615,22 @@ The F709 fixture question was revisited before selecting the next slice. A raw
 SQL update reaches the repository as stored text, but `parseStoredDisplayTime`
 converts malformed values to invalid `QTime`s; projection then omits both
 times before the page helper can parse them. F709 remains deferred until a
-focused projection-string injection seam is available. F738 is selected in
-Batch 179 for My Classes `dayAbbreviation`; its acceptance matrix is recorded
-in the Phase 2 progress log. Phase 2 remains In Progress with Gates 1 and 2
-Partial.
+focused projection-string injection seam is available.
+
+F738 is accepted in Batch 179 and committed as
+`3d6ca7193d757ef9105b4cc225cbb9472c12295c`. My Classes `dayAbbreviation`
+uses the shared weekday parser only for exact canonical input, preserving
+translated labels and the trimmed fallback. The UI fixture verifies
+Monday-Sunday, padded canonical/lowercase/unknown fallbacks, and empty-day
+`N/A` while retaining the typed-read, teacher, notes, and intensive coverage.
+The exact `ClassMngrMyClassesPageTests` CTest passed 1/1 after its changed
+source was rebuilt; `ClassMngr` was already up to date. The first attempt
+refreshed after a second repository save and failed to find one tab because
+the old one is removed through `deleteLater`; preloading the rows before page
+construction fixed the fixture. Scoped diff check passed; no full suite ran.
+
+F739 is selected in Batch 179 to move Calendar Event's repeat-until default
+date rule into the existing Qt-free Application recurrence contract. The
+selection matrix is recorded before implementation in the Phase 2 progress
+log. F707 and F709 remain deferred; Phase 2 remains In Progress with Gates 1
+and 2 Partial.
