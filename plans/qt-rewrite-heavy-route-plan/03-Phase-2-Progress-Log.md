@@ -30425,3 +30425,65 @@ Run no full suite. Existing headers and tests are already in explicit
 manifests, so no CMake inventory change is expected. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F787 workspace UTF-8 blank-path parity - accepted - 2026-10-13
+
+F787 was accepted at commit
+`3e7c9ad093d3d78b3e38d45bc9f2603d424cacb5`. The bounded Visual Studio 18 x64
+Debug build in `build/windows-x64-debug` built `ClassMngr` and all five
+requested test targets. After sandbox ZERO_CHECK FileTracker
+`E_ACCESSDENIED`, the identical bounded build succeeded outside the sandbox.
+The five exact CTests each registered once and passed (5/5). After return-path
+regressions were added, the gateway target was rebuilt and its exact CTest
+passed again (1/1). Direct call counts are not observable through the concrete,
+nonvirtual `ApplicationServices`; an isolated temporary-directory test instead
+confirmed rejected input caused no observable database open, current-path, or
+filesystem effects. `git diff --check` passed; no full suite ran.
+
+### Batch 202 discovery - 2026-10-13
+
+The comparison considered a Class Analytics `MAX(row_index)` vector-allocation
+bound and Qt-whitespace parity for Sub Prep ClassSummary required text. The
+Class Analytics candidate has no specified acceptable row limit or error
+policy. F788 was selected as the focused reuse of the accepted
+`Application::isBlankUtf8Text` helper. F707/F709 remain deferred.
+
+### F788 Sub Prep ClassSummary required-text whitespace parity - selected and acceptance matrix - 2026-10-13
+
+**F788 is selected:** in
+`src/next/application/class_summary_projection.h`, make only
+`ClassSummaryProjectionDetail::isRequiredText` use the shared
+`Application::isBlankUtf8Text` helper. Required text comprises the teacher
+display name and class grade, level, display label, and meeting text. Keep
+`isBlank` and `isValidIdentifier` unchanged because their helper also validates
+opaque typed IDs; leave `isOptionalText` unchanged so optional facilities and
+notes retain their current whitespace behavior.
+
+Reject required text consisting only of U+00A0 NO-BREAK SPACE or U+3000
+IDEOGRAPHIC SPACE as the existing nonrecoverable `InvalidInput`. Preserve the
+exact per-category messages, validation ordering, byte-length bounds, ordinary
+nonblank Unicode text, and malformed-UTF-8 behavior. Optional whitespace and
+opaque identifier behavior must remain unchanged.
+
+Extend `tests/next_application_class_summary_tests.cpp` for teacher and class
+required text, asserting exact code, message, and recoverability; also retain
+Unicode nonblank preservation and optional-text behavior coverage. Extend
+`tests/next_application_sub_prep_schedule_summary_query_tests.cpp` so Unicode-
+whitespace-only required fields returned by the read port reach the existing
+exact projection error unchanged after one read, preserving failure precedence.
+
+Production target: `ClassMngr`. Test targets and exact CTest names are
+`ClassMngrNextApplicationClassSummaryTests` and
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`; each must register
+once. In the existing Visual Studio 18 x64 Debug tree
+`build/windows-x64-debug`, use only these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextApplicationClassSummaryTests ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^(ClassMngrNextApplicationClassSummaryTests|ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests)$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(ClassMngrNextApplicationClassSummaryTests|ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests)$"
+```
+
+Run no full suite. No CMake inventory change is expected. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
