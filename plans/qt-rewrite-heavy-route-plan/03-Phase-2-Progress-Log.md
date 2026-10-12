@@ -26732,4 +26732,57 @@ preflight before the transaction and do not narrow input.
    `ClassMngr` and `ClassMngrClassTransferTests`; run only the exact registered
    CTest `ClassMngrClassTransferTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F714.
+This matrix was recorded before implementation.
+
+### F714 Class Transfer schedule time parser migration - accepted - 2026-10-12
+
+F714 is accepted at code/test commit
+`51918be66e6f4545e9a1341dddf6f5a70fb69b89`. `ClassMngr` and
+`ClassMngrClassTransferTests` built in the existing Windows x64 Debug Ninja
+tree under the VS 2026 x64 Developer environment. The exact registered CTest
+`ClassMngrClassTransferTests` passed 1/1 in 4.56 seconds. Public
+`DataService::importClasses` tests retain outer padding and lowercase AM/PM
+and add repeated-space and one-digit-minute conflict parity. Malformed start
+`4:75 PM` and end `not a time` return invalid-schedule errors, produce zero
+SQLite changes, and preserve teacher, class, and destination schedule state.
+CTest printed a `vswhere.exe` recognition warning during Developer-environment
+initialization, then passed. No full suite ran.
+
+**Decision: accept F714.** Batch 179 continues with F715; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F715 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `timeToMinutes` in
+`src/data/repositories/class_info_repository.cpp`. The live path is
+`timeToMinutes` -> `toInterval` ->
+`ClassInfoRepository::getClassTimeConflicts` -> the public Application query
+and Platform port. The existing converter trims and splits on ASCII spaces
+with `SkipEmptyParts`, then checks the two-token/colon shape, integer hour
+and minute, hour range 1-12, minute range 0-59, and uppercased AM/PM. It
+accepts repeated spaces and one-digit minutes. `toInterval` returns false for
+malformed stored values, which callers skip.
+
+**F715 is selected:** migrate only `timeToMinutes` to the Domain parser after
+normalizing validated legacy input; preserve stored-value skipping and the
+public conflict-query behavior.
+
+1. Retain trimming, ASCII-space `SkipEmptyParts`, the two-token/colon shape,
+   integer conversion, hour/minute ranges, and AM/PM uppercasing. Normalize
+   the validated text for explicit `HourMinuteAmPmSpaced` parsing so repeated
+   internal spaces and one-digit minutes remain accepted.
+2. Keep `toInterval` returning false for malformed stored entries and callers
+   skipping them. Preserve conflict-query behavior and repository ordering.
+3. Extend `readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder` in
+   `tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`.
+   Verify stored schedule parity for `9:0 AM` and `10:00   AM`; add a
+   malformed stored row that would overlap a candidate if parsed, and assert
+   the query succeeds with only valid conflicts in the existing order.
+4. `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+   links Runtime, which already compiles the parser, so no direct CMake source
+   addition is needed. Build `ClassMngr` and that target; run only the exact
+   registered CTest
+   `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`.
+   Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F715.

@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F713 accepted; F714 selected)
+### Current state - 2026-10-12 (F714 accepted; F715 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F714, the Class Transfer repository time parser migration.
+with F715, the Class Info Repository conflict-time parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -165,15 +165,29 @@ Public click tests verify `9:00` and `09:00` save as 09:00 (540 minutes),
 while whitespace, seconds, AM/PM, malformed, and full-width-digit labels
 warn, perform no saves, and preserve preview state. CMake regeneration took
 about 220 seconds and emitted object-path length warnings; build and test
-passed. No full suite ran. F714 selects only `timeToMinutes` in
-`class_transfer_repository.cpp`. Normalize the existing trimmed/split
-12-hour input without losing repeated internal spaces or one-digit minute
-acceptance, then use the explicit `HourMinuteAmPmSpaced` Domain format. Keep
-range and period validation, schedule preflight before writes, and import
-failure behavior. Its focused public import test target needs the parser
-source added directly in CMake. F707 remains deferred because its comparator
-chain has no observed app callsite; F709 is deferred because its public
-fixture does not readily supply malformed raw time text.
+passed. No full suite ran. F714 is committed as
+`51918be66e6f4545e9a1341dddf6f5a70fb69b89`; `ClassMngr` and
+`ClassMngrClassTransferTests` built in the Windows x64 Debug Ninja tree under
+the VS 2026 x64 Developer environment, and the exact registered CTest passed
+1/1 in 4.56 seconds. Public `DataService::importClasses` tests preserve the
+outer-padded lowercase case and verify repeated-space and one-digit-minute
+conflict parity. Malformed start `4:75 PM` and end `not a time` return the
+expected invalid-schedule errors, make zero SQLite changes, and preserve
+teacher/class counts and destination schedules. CTest printed a `vswhere.exe`
+recognition warning during Developer-environment initialization, then passed.
+No full suite ran. F715 selects `timeToMinutes` in
+`class_info_repository.cpp`. Normalize the existing trimmed/split 12-hour
+input before using the explicit `HourMinuteAmPmSpaced` Domain format, keeping
+repeated spaces, one-digit minutes, integer/range checks, and case-insensitive
+AM/PM. Preserve `toInterval` rejection and the caller's behavior of skipping
+malformed stored entries. Extend the focused application-port conflict test
+with both accepted legacy spellings and a malformed overlapping stored row
+that remains skipped. Its test target already links `ClassMngrRuntime`, which
+contains the parser. Run only the exact registered CTest
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+after building `ClassMngr` and that focused target. F707 remains deferred
+because its comparator chain has no observed app callsite; F709 is deferred
+because its public fixture does not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

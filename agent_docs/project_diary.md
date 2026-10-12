@@ -4376,15 +4376,30 @@ produce a warning, no save, and unchanged preview state. CMake regeneration
 took about 220 seconds and emitted object-path length warnings; build/test
 passed. No full suite ran.
 
-F714 is selected in Batch 179 for `timeToMinutes` in
-`class_transfer_repository.cpp`. Use the explicit `HourMinuteAmPmSpaced`
-Domain parser after compatibility normalization for the existing trimmed and
-space-split format. Preserve repeated internal spaces, lowercase AM/PM,
-one-digit minutes, hour/minute range checks, and preflight rejection before
-the write transaction. Add the parser source to `ClassMngrClassTransferTests`,
-which compiles the repository directly. Public import tests cover repeated
-space/one-digit-minute valid values, malformed start/end failures, zero SQLite
-changes, and unchanged destination state. The acceptance matrix is recorded
+F714 is accepted and committed as
+`51918be66e6f4545e9a1341dddf6f5a70fb69b89`. `ClassMngr` and
+`ClassMngrClassTransferTests` built in the Windows x64 Debug Ninja tree under
+the VS 2026 x64 Developer environment; the exact registered CTest passed 1/1
+in 4.56 seconds. Public import-path tests preserve the outer-padded lowercase
+case, exercise repeated spaces and one-digit minutes through conflict parity,
+and verify malformed starts/ends return invalid-schedule errors without
+SQLite changes or state mutation. The test session printed a `vswhere.exe`
+recognition warning during Developer-environment initialization, then passed.
+No full suite ran.
+
+F715 is selected in Batch 179 for `timeToMinutes` in
+`class_info_repository.cpp`. Normalize legacy trimmed/split 12-hour input
+before the explicit `HourMinuteAmPmSpaced` Domain parser, preserving repeated
+spaces, one-digit minutes, integer/range checks, and case-insensitive AM/PM.
+Keep `toInterval` rejection and the repository's behavior of skipping
+malformed stored rows. Extend the public Application query/Platform port
+fixture with overlapping candidate rows and stored `9:0 AM` and `10:00   AM`
+values, plus a malformed overlapping stored row; require the query to succeed
+with only valid conflicts in repository order. The target already links the
+Domain parser through `ClassMngrRuntime`; no direct CMake source addition is
+needed. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
+then run that exact registered CTest only. The acceptance matrix is recorded
 in the Phase 2 progress log before implementation. F707 and F709 remain
-deferred for their documented missing app callsite and malformed-input fixture
+deferred for their documented missing app callsite and malformed-input seam
 constraints. Phase 2 remains In Progress with Gates 1 and 2 Partial.
