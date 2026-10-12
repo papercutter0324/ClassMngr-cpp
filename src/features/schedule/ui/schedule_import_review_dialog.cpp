@@ -129,8 +129,13 @@ int stateTimeMinutes(const QString& value)
 
 ImportState::ScheduleImportStateTime stateTime(const ClassTime& time)
 {
+    const auto parsedDay = ScheduleValueParser::parseWeekday(time.day);
+    const int weekdayIndex = parsedDay && parsedDay->text == time.day
+        ? static_cast<int>(ClassInfoConfig::Days.indexOf(parsedDay->text))
+        : -1;
+
     return {
-        static_cast<int>(ClassInfoConfig::Days.indexOf(time.day)),
+        weekdayIndex,
         stateTimeMinutes(time.startTime),
         stateTimeMinutes(time.endTime),
         utf8String(time.day),

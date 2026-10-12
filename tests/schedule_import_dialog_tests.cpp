@@ -4349,6 +4349,45 @@ void ScheduleImportDialogTests::reviewRejectsMalformedProjectedTime()
         );
     QVERIFY(import);
     QVERIFY(!import->isEnabled());
+    review.close();
+
+    const QStringList noncanonicalWeekdays{
+        QStringLiteral("monday"),
+        QStringLiteral(" Monday ")
+    };
+    for (const QString& day : noncanonicalWeekdays)
+    {
+        request.user.classes[0].times = {
+            {
+                day,
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("4:55 PM")
+            }
+        };
+
+        ScheduleImportReviewDialog weekdayReview(
+            &services,
+            request
+            );
+        QVERIFY(weekdayReview.prepare());
+        weekdayReview.show();
+
+        auto* weekdayStatus = weekdayReview.findChild<QLabel*>(
+            QStringLiteral("scheduleImportReviewStatus")
+            );
+        QVERIFY(weekdayStatus);
+        QTRY_VERIFY(
+            weekdayStatus->text().contains(
+                QStringLiteral("contains an invalid time")
+                )
+            );
+        auto* weekdayImport = weekdayReview.findChild<QPushButton*>(
+            QStringLiteral("scheduleImportAcceptButton")
+            );
+        QVERIFY(weekdayImport);
+        QVERIFY(!weekdayImport->isEnabled());
+        weekdayReview.close();
+    }
 }
 
 void ScheduleImportDialogTests
