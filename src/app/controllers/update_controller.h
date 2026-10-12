@@ -50,7 +50,7 @@ private:
     [[nodiscard]] ClassMngr::Next::Domain::Result<void> skipVersion(
         const QString& version
         );
-    void unskipVersion();
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void> unskipVersion();
     void showManualUpdateDialog();
     void showAutomaticUpdateDialog();
     UpdateDialog* ensureDialog(

@@ -35,7 +35,11 @@ public:
     void completeSkipVersion(
         const QString& version
         );
+    void completeUnskipVersion();
     void showSkippedVersionSaveFailure(
+        const QString& message
+        );
+    void showSkippedVersionClearFailure(
         const QString& message
         );
 

@@ -986,6 +986,57 @@ QSettings::Status SettingsManager::writeSkippedUpdateVersionPreference(
     return status;
 }
 
+QSettings::Status SettingsManager::clearSkippedUpdateVersionPreference(
+    const SkippedUpdateVersionPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousVersion =
+        m_settings->contains(Keys::SKIPPED_UPDATE_VERSION);
+    const QVariant previousVersion =
+        m_settings->value(Keys::SKIPPED_UPDATE_VERSION);
+
+    m_settings->remove(
+        Keys::SKIPPED_UPDATE_VERSION
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore the previous key before destroying this instance so its
+        // pending removal cannot be retried during teardown.
+        if (hadPreviousVersion)
+        {
+            m_settings->setValue(
+                Keys::SKIPPED_UPDATE_VERSION,
+                previousVersion
+                );
+        }
+        else
+        {
+            m_settings->remove(
+                Keys::SKIPPED_UPDATE_VERSION
+                );
+        }
+
+        // Reopen the store so reads see the restored preference and a later
+        // clear can retry with a clean QSettings status.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 QString SettingsManager::skippedUpdateVersion() const
 {
     return get(

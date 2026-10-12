@@ -37,7 +37,7 @@ public:
         const SkippedUpdateVersionPreferences& preferences
         ) const = 0;
 
-    virtual void clear() const = 0;
+    [[nodiscard]] virtual Domain::Result<void> clear() const = 0;
 };
 
 } // namespace ClassMngr::Next::Application

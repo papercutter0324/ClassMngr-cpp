@@ -39,6 +39,8 @@ private slots:
     void trimsOnReadAndWrite();
     void roundTripsThroughSettingsManager();
     void clearRemovesSetting();
+    void failedClearRestoresExactPreviousValueAndAllowsRetry();
+    void failedClearRestoresAbsentKeyAndPreservesUnrelatedSetting();
     void failedWriteRestoresExactPreviousValueAndAllowsRetry();
     void failedWriteRestoresAbsentKeyAndPreservesUnrelatedSetting();
 
@@ -133,10 +135,144 @@ clearRemovesSetting()
     QVERIFY(writeResult);
     QVERIFY(settings.get(key).isValid());
 
-    port.clear();
+    const auto clearResult = port.clear();
+    QVERIFY(clearResult);
 
     QVERIFY(!settings.get(key).isValid());
     QVERIFY(!port.read().skippedVersion.has_value());
+}
+
+void NextPlatformSettingsManagerSkippedUpdateVersionPortTests::
+failedClearRestoresExactPreviousValueAndAllowsRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = skippedUpdateVersionKey();
+    const QString unrelatedKey = QStringLiteral("updates/unrelatedValue");
+    const QVariant previousValue = QStringLiteral(" 1.2.3 ");
+    const QVariant unrelatedValue = QStringLiteral("leave-unchanged");
+    settings.set(key, previousValue);
+    settings.set(unrelatedKey, unrelatedValue);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerSkippedUpdateVersionPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedClear = faultablePort.clear();
+    QVERIFY(!failedClear);
+    QCOMPARE(failedClear.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedClear.error().recoverable);
+    QVERIFY(
+        failedClear.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(settings.get(key), previousValue);
+    QCOMPARE(settings.get(key).metaType().id(), previousValue.metaType().id());
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    QCOMPARE(
+        faultablePort.read().skippedVersion,
+        std::optional<std::string>("1.2.3")
+        );
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QCOMPARE(persistedSettings.value(key), previousValue);
+    QCOMPARE(
+        persistedSettings.value(key).metaType().id(),
+        previousValue.metaType().id()
+        );
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+
+    injectAccessError = false;
+    const auto retry = faultablePort.clear();
+    QVERIFY(retry);
+    QCOMPARE(synchronizationAttempts, 2);
+    QVERIFY(!settings.get(key).isValid());
+    QVERIFY(!faultablePort.read().skippedVersion.has_value());
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(key));
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+}
+
+void NextPlatformSettingsManagerSkippedUpdateVersionPortTests::
+failedClearRestoresAbsentKeyAndPreservesUnrelatedSetting()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = skippedUpdateVersionKey();
+    const QString unrelatedKey = QStringLiteral("updates/unrelatedValue");
+    const QVariant unrelatedValue = 29;
+    settings.remove(key);
+    settings.set(unrelatedKey, unrelatedValue);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const SettingsManagerSkippedUpdateVersionPort faultablePort(
+        [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            if (injectAccessError)
+            {
+                return QSettings::AccessError;
+            }
+
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto failedClear = faultablePort.clear();
+    QVERIFY(!failedClear);
+    QCOMPARE(failedClear.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedClear.error().recoverable);
+    QVERIFY(
+        failedClear.error().message.find("AccessError")
+        != std::string::npos
+        );
+    QCOMPARE(synchronizationAttempts, 1);
+    QVERIFY(!settings.get(key).isValid());
+    QVERIFY(!faultablePort.read().skippedVersion.has_value());
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+
+    QSettings persistedSettings(
+        m_settingsRoot.filePath(QStringLiteral("PaperCloud/ClassMngr.ini")),
+        QSettings::IniFormat
+        );
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(key));
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
+
+    injectAccessError = false;
+    const auto retry = faultablePort.clear();
+    QVERIFY(retry);
+    QCOMPARE(synchronizationAttempts, 2);
+    QVERIFY(!settings.get(key).isValid());
+    QVERIFY(!faultablePort.read().skippedVersion.has_value());
+    QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.contains(key));
+    QCOMPARE(persistedSettings.value(unrelatedKey), unrelatedValue);
 }
 
 void NextPlatformSettingsManagerSkippedUpdateVersionPortTests::

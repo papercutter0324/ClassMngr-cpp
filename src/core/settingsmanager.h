@@ -344,12 +344,17 @@ public:
         );
 
     // An empty callback uses QSettings::sync/status. The preference-specific
-    // writer reports failure and restores the previous key before returning.
+    // write and clear operations report failure and restore the previous key
+    // state before returning.
     using SkippedUpdateVersionPreferenceSync =
         std::function<QSettings::Status(QSettings&)>;
 
     [[nodiscard]] QSettings::Status writeSkippedUpdateVersionPreference(
         const QString& version,
+        const SkippedUpdateVersionPreferenceSync& synchronize = {}
+        );
+
+    [[nodiscard]] QSettings::Status clearSkippedUpdateVersionPreference(
         const SkippedUpdateVersionPreferenceSync& synchronize = {}
         );
 

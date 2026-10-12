@@ -68,12 +68,27 @@ void UpdateDialog::completeSkipVersion(
     reject();
 }
 
+void UpdateDialog::completeUnskipVersion()
+{
+    setSkippedVersion(QString());
+}
+
 void UpdateDialog::showSkippedVersionSaveFailure(
     const QString& message
     )
 {
     showOperationFailure(
         tr("The skipped update version could not be saved: %1")
+            .arg(message)
+        );
+}
+
+void UpdateDialog::showSkippedVersionClearFailure(
+    const QString& message
+    )
+{
+    showOperationFailure(
+        tr("The skipped update version could not be cleared: %1")
             .arg(message)
         );
 }
@@ -241,6 +256,12 @@ void UpdateDialog::handleSecondaryAction()
         return;
 
     case SecondaryAction::UnskipVersion:
+        if (m_skipVersionResultHandlingEnabled)
+        {
+            emit unskipVersionRequested();
+            return;
+        }
+
         m_skippedVersion.clear();
         emit unskipVersionRequested();
         if (m_hasResult)

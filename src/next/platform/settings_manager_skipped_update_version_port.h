@@ -77,13 +77,28 @@ public:
         return Domain::Result<void>::success();
     }
 
-    void clear() const override
+    [[nodiscard]] Domain::Result<void> clear() const override
     {
-        SettingsManager::instance().remove(
-            QString::fromUtf8(
-                SettingsManager::Keys::SKIPPED_UPDATE_VERSION
-                )
+        const QSettings::Status status =
+            SettingsManager::instance().clearSkippedUpdateVersionPreference(
+                m_synchronize
             );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to clear skipped update version preference: "
+                    "QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:

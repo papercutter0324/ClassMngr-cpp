@@ -151,11 +151,17 @@ bool UpdateController::reconcileSkippedVersion(
         decideSkippedUpdateVersion(input);
     if (decision.clearStoredVersion)
     {
-        m_skippedUpdateVersionPreferencesPort->clear();
-        if (m_dialog)
+        const auto cleared =
+            m_skippedUpdateVersionPreferencesPort->clear();
+        if (cleared)
         {
-            m_dialog->setSkippedVersion(QString());
+            if (m_dialog)
+            {
+                m_dialog->setSkippedVersion(QString());
+            }
         }
+        // Prompt eligibility follows the policy decision even when storage
+        // cleanup fails; the retained key can be cleared by a later check.
     }
 
     return decision.suppressAutomaticPrompt;
@@ -189,11 +195,18 @@ ClassMngr::Next::Domain::Result<void> UpdateController::skipVersion(
     return ClassMngr::Next::Domain::Result<void>::success();
 }
 
-void UpdateController::unskipVersion()
+ClassMngr::Next::Domain::Result<void> UpdateController::unskipVersion()
 {
-    m_skippedUpdateVersionPreferencesPort->clear();
+    const auto cleared =
+        m_skippedUpdateVersionPreferencesPort->clear();
+    if (!cleared)
+    {
+        return cleared;
+    }
+
     m_automaticPromptSuppressed =
         false;
+    return ClassMngr::Next::Domain::Result<void>::success();
 }
 
 void UpdateController::attachMainWindow(
@@ -397,7 +410,19 @@ UpdateDialog* UpdateController::ensureDialog(
         dialog,
         &UpdateDialog::unskipVersionRequested,
         this,
-        &UpdateController::unskipVersion
+        [this, dialog]()
+        {
+            const auto cleared = unskipVersion();
+            if (!cleared)
+            {
+                dialog->showSkippedVersionClearFailure(
+                    QString::fromStdString(cleared.error().message)
+                    );
+                return;
+            }
+
+            dialog->completeUnskipVersion();
+        }
         );
 
     connect(
