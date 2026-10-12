@@ -1,9 +1,11 @@
 #include "schedule_print_service.h"
 
 #include "core/fontmanager.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <algorithm>
+#include <array>
 
 #include <QMarginsF>
 #include <QObject>
@@ -15,7 +17,6 @@
 #include <QPdfWriter>
 #include <QRectF>
 #include <QTemporaryDir>
-#include <QTime>
 
 namespace SchedulePrintService
 {
@@ -1028,13 +1029,21 @@ void paintSchedule(
 
             if (palette.excel)
             {
-                const QTime time =
-                    QTime::fromString(
-                        row.timeLabel,
-                        QStringLiteral("HH:mm")
-                        );
+                constexpr std::array timeFormats{
+                    ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+                };
+                bool isEvenHour = false;
+                if (row.timeLabel == row.timeLabel.trimmed())
+                {
+                    const auto time =
+                        ScheduleValueParser::parseDisplayTime(
+                            row.timeLabel,
+                            timeFormats
+                            );
+                    isEvenHour = time && (time->hour() % 2 == 0);
+                }
                 timeBackground =
-                    time.isValid() && (time.hour() % 2 == 0)
+                    isEvenHour
                         ? QColor(QStringLiteral("#FFFF99"))
                         : QColor(QStringLiteral("#D9D9D9"));
             }

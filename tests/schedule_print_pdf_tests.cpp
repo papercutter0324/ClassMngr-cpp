@@ -345,6 +345,7 @@ private slots:
     void generatedPdfUsesA4Orientation();
     void contentStaysInsideHalfInchMargins();
     void themedEmptyCellsAndOffTableAreaStayWhite();
+    void excelTimeBackgroundRequiresAnExactValid24HourLabel();
     void rendersTestingCellAndRoom();
     void rendersTestingClassCardInformation();
 };
@@ -748,6 +749,70 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
                 )
             );
     }
+}
+
+void SchedulePrintPdfTests::excelTimeBackgroundRequiresAnExactValid24HourLabel()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SchedulePrintService::Request request =
+        requestFor(
+            SchedulePrintStyle::Excel,
+            QPageLayout::Landscape
+            );
+
+    ScheduleRowView paddedEvenHour =
+        request.model.rows.at(1);
+    paddedEvenHour.timeLabel =
+        QStringLiteral("10:00 ");
+    request.model.rows.append(paddedEvenHour);
+
+    ScheduleRowView malformedLabel =
+        request.model.rows.at(1);
+    malformedLabel.timeLabel =
+        QStringLiteral("not-a-time");
+    request.model.rows.append(malformedLabel);
+
+    const QString path =
+        savePdf(
+            temporaryDirectory,
+            request,
+            QStringLiteral("excel-exact-time-labels.pdf")
+            );
+    QVERIFY(!path.isEmpty());
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    const QImage image =
+        renderFirstPage(document);
+    QVERIFY(!image.isNull());
+
+    const QRectF targetRect =
+        scheduleTargetRect(
+            image,
+            request.model,
+            true
+            );
+    const auto timeCellColor =
+        [&image, &targetRect, &request](int rowIndex)
+        {
+            const QPoint point =
+                scaledSchedulePoint(
+                    targetRect,
+                    10.0,
+                    HeaderHeight
+                        + (rowIndex * RowHeight)
+                        + (RowHeight / 2.0),
+                    request.model
+                    );
+            return image.pixelColor(point);
+        };
+
+    QCOMPARE(timeCellColor(0), QColor(QStringLiteral("#D9D9D9")));
+    QCOMPARE(timeCellColor(1), QColor(QStringLiteral("#FFFF99")));
+    QCOMPARE(timeCellColor(2), QColor(QStringLiteral("#D9D9D9")));
+    QCOMPARE(timeCellColor(3), QColor(QStringLiteral("#D9D9D9")));
 }
 
 QTEST_MAIN(SchedulePrintPdfTests)
