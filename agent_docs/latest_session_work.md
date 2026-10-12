@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F715.
+  F716.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -147,18 +147,27 @@
   unchanged teacher/class counts and destination schedules. A `vswhere.exe`
   recognition warning printed during Developer-environment initialization;
   CTest passed. No full suite ran.
-- F715 selects `timeToMinutes` in `class_info_repository.cpp`. Normalize
-  legacy trimmed/split 12-hour values before the explicit
-  `HourMinuteAmPmSpaced` Domain parser so repeated spaces and one-digit
-  minutes remain accepted. Keep the existing integer/range/period checks and
-  preserve `toInterval` rejection with malformed stored rows skipped by the
-  repository. Extend the public Application query/Platform port test with
-  stored `9:0 AM` and `10:00   AM` values plus an overlapping malformed row
-  that remains skipped. The focused target already links Runtime with the
-  parser; no direct CMake source is needed. Build `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
-  then run only the exact registered CTest of that name. F707 and F709 remain
-  deferred. The preimplementation matrix is in the Phase 2 progress log.
+- F715 Class Info conflict-time parsing is accepted and committed as
+  `79ddbb39f8a7f80551c353429d1acc6efae2b8d3`. `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+  built in the Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the
+  exact registered CTest passed 1/1 in 0.24 seconds. The port test confirms
+  stored `9:0 AM` and `10:00   AM` parity and that an overlapping malformed
+  row is skipped while the two valid conflicts retain repository order. The
+  fixture was adjusted to use repository persistence after the validating
+  service rejected the malformed row; the final build and test passed. A
+  `vswhere.exe` recognition warning printed during Developer-environment
+  initialization. No full suite ran.
+- F716 selects `dayOrder` in `class_tab_navigation_model.cpp`. Reuse
+  `ScheduleValueParser::parseWeekday`, requiring canonical output to equal
+  the already-trimmed value to retain case-sensitive matching and padded
+  canonical acceptance. Lowercase and unknown weekdays stay unknown. Extend
+  the public `ClassTabNavigation::build` seam with padded canonical and
+  lowercase/unknown weekday-order cases. The focused target already directly
+  compiles the parser; no CMake source change is needed. Build `ClassMngr` and
+  `ClassMngrClassTabNavigationModelTests`, then run only the exact registered
+  CTest of that name. F707 and F709 remain deferred. The preimplementation
+  matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

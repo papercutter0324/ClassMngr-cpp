@@ -4387,19 +4387,30 @@ SQLite changes or state mutation. The test session printed a `vswhere.exe`
 recognition warning during Developer-environment initialization, then passed.
 No full suite ran.
 
-F715 is selected in Batch 179 for `timeToMinutes` in
-`class_info_repository.cpp`. Normalize legacy trimmed/split 12-hour input
-before the explicit `HourMinuteAmPmSpaced` Domain parser, preserving repeated
-spaces, one-digit minutes, integer/range checks, and case-insensitive AM/PM.
-Keep `toInterval` rejection and the repository's behavior of skipping
-malformed stored rows. Extend the public Application query/Platform port
-fixture with overlapping candidate rows and stored `9:0 AM` and `10:00   AM`
-values, plus a malformed overlapping stored row; require the query to succeed
-with only valid conflicts in repository order. The target already links the
-Domain parser through `ClassMngrRuntime`; no direct CMake source addition is
-needed. Build `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
-then run that exact registered CTest only. The acceptance matrix is recorded
-in the Phase 2 progress log before implementation. F707 and F709 remain
-deferred for their documented missing app callsite and malformed-input seam
-constraints. Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F715 is accepted and committed as
+`79ddbb39f8a7f80551c353429d1acc6efae2b8d3`. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+built in the Windows x64 Debug Ninja tree under the VS 2026 x64 Developer
+environment; the exact registered CTest passed 1/1 in 0.24 seconds. The test
+confirms stored `9:0 AM` and `10:00   AM` values parse into the two valid
+conflicts, while an overlapping malformed stored row is skipped and repository
+order is preserved. The fixture was changed from the validating service to
+repository persistence after the first CTest attempt rejected the malformed
+row during setup. The final build and test passed; CTest printed a
+`vswhere.exe` recognition warning during Developer-environment initialization.
+No full suite ran.
+
+F716 is selected in Batch 179 for `dayOrder` in
+`class_tab_navigation_model.cpp`. Reuse `ScheduleValueParser::parseWeekday`
+but require the returned canonical weekday text to match the already-trimmed
+input, preserving case-sensitive existing behavior. Padded canonical weekday
+values remain valid; lowercase and unknown weekday values retain their
+unknown ordering. Add cases through the public `ClassTabNavigation::build`
+seam in `class_tab_navigation_model_tests.cpp`, alongside existing sorting
+coverage. The focused target already directly compiles the parser, so no CMake
+source change is needed. Build `ClassMngr` and
+`ClassMngrClassTabNavigationModelTests`, then run that exact registered CTest
+only. The acceptance matrix is recorded in the Phase 2 progress log before
+implementation. F707 and F709 remain deferred for their documented missing
+app callsite and malformed-input seam constraints. Phase 2 remains In
+Progress with Gates 1 and 2 Partial.

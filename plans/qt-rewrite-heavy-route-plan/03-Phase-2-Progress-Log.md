@@ -26785,4 +26785,51 @@ public conflict-query behavior.
    `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`.
    Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F715.
+This matrix was recorded before implementation.
+
+### F715 Class Info conflict-time parser migration - accepted - 2026-10-12
+
+F715 is accepted at code/test commit
+`79ddbb39f8a7f80551c353429d1acc6efae2b8d3`. `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+built in the existing Windows x64 Debug Ninja tree under VS 2026 x64
+Developer. The exact registered CTest of the same name passed 1/1 in 0.24
+seconds. The test stores `9:0 AM`, `10:00   AM`, and malformed overlapping
+`9:35 A M` through `ClassInfoRepository`, since service validation rejects
+malformed data; it verifies exact stored strings and that the public
+Application query returns only the two valid conflicts in existing order.
+The first CTest attempt failed during fixture setup through the validating
+save service; after switching fixture persistence to the repository, final
+build and test passed. Developer-environment initialization printed a
+`vswhere.exe` recognition warning, then initialized. `git diff --check` passed;
+no full suite ran.
+
+**Decision: accept F715.** Batch 179 continues with F716; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F716 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayOrder` in
+`src/features/classes/models/class_tab_navigation_model.cpp`. The live path is
+`dayOrder` -> `compressedDays` -> `firstDayOrder`/`firstTimeOrder` ->
+`entryLessThan`.
+
+**F716 is selected:** reuse the Domain weekday parser while preserving the
+existing trimmed, case-sensitive weekday ordering behavior.
+
+1. Migrate only `dayOrder` to `ScheduleValueParser::parseWeekday`. Since the
+   Domain parser accepts case-insensitively, require its canonical text to
+   equal the trimmed original input; return unknown `-1` on parse failure or
+   mismatch. Preserve trimming and padded canonical acceptance.
+2. Preserve lowercase and unknown weekday ordering and existing label
+   behavior.
+3. Extend public `ClassTabNavigation::build` coverage in
+   `tests/class_tab_navigation_model_tests.cpp` around
+   `classTabsSortByLevelThenDay`, adding padded canonical and lowercase/unknown
+   weekday-order cases while retaining label assertions.
+4. `ClassMngrClassTabNavigationModelTests` already directly compiles
+   `schedule_value_parser.cpp`, so no CMake source change is needed. Build
+   `ClassMngr` and that target; run only the exact registered CTest
+   `ClassMngrClassTabNavigationModelTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F716.

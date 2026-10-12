@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F714 accepted; F715 selected)
+### Current state - 2026-10-12 (F715 accepted; F716 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F715, the Class Info Repository conflict-time parser migration.
+with F716, the ClassTabNavigationModel weekday-order parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -175,19 +175,30 @@ conflict parity. Malformed start `4:75 PM` and end `not a time` return the
 expected invalid-schedule errors, make zero SQLite changes, and preserve
 teacher/class counts and destination schedules. CTest printed a `vswhere.exe`
 recognition warning during Developer-environment initialization, then passed.
-No full suite ran. F715 selects `timeToMinutes` in
-`class_info_repository.cpp`. Normalize the existing trimmed/split 12-hour
-input before using the explicit `HourMinuteAmPmSpaced` Domain format, keeping
-repeated spaces, one-digit minutes, integer/range checks, and case-insensitive
-AM/PM. Preserve `toInterval` rejection and the caller's behavior of skipping
-malformed stored entries. Extend the focused application-port conflict test
-with both accepted legacy spellings and a malformed overlapping stored row
-that remains skipped. Its test target already links `ClassMngrRuntime`, which
-contains the parser. Run only the exact registered CTest
+No full suite ran. F715 is committed as
+`79ddbb39f8a7f80551c353429d1acc6efae2b8d3`; `ClassMngr` and
 `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
-after building `ClassMngr` and that focused target. F707 remains deferred
-because its comparator chain has no observed app callsite; F709 is deferred
-because its public fixture does not readily supply malformed raw time text.
+built in the Windows x64 Debug Ninja tree under the VS 2026 x64 Developer
+environment, and the exact registered CTest passed 1/1 in 0.24 seconds. The
+port fixture stores `9:0 AM`, `10:00   AM`, and a malformed Monday row through
+`ClassInfoRepository`; it verifies the exact values and that the public
+Application query returns only two valid conflicts in repository order. The
+first CTest attempt failed in fixture setup through the validating service;
+repository persistence fixed the fixture, and the final test passed. The
+Developer environment printed a `vswhere.exe` recognition warning. No full
+suite ran. F716 selects `dayOrder` in
+`class_tab_navigation_model.cpp`. Reuse `ScheduleValueParser::parseWeekday`
+but require its canonical text to equal the already-trimmed input, preserving
+the current case-sensitive behavior: padded canonical weekdays remain
+accepted, while lowercase and unknown spellings remain unknown. Add public
+`ClassTabNavigation::build` ordering cases for padded canonical and
+lowercase/unknown weekdays alongside the existing navigation-model tests.
+The target already directly compiles `schedule_value_parser.cpp`; no CMake
+change is needed. Build `ClassMngr` and
+`ClassMngrClassTabNavigationModelTests`, then run only the exact registered
+CTest of that name. F707 remains deferred because its comparator chain has
+no observed app callsite; F709 is deferred because its public fixture does
+not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
