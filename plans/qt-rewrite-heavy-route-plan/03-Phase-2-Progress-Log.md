@@ -28777,7 +28777,54 @@ policies.
    CTest registration for each corresponding target name, then run only those
    two exact CTests. Run no full suite.
 
-This matrix is recorded before implementation; F754 is selected but not
-implemented, and no F754 test results are available. F707/F709 remain
+This matrix was recorded before implementation. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F754 Birthday month-day Gregorian validation - accepted - 2026-10-13
+
+F754 is accepted at commit
+`006593ab40e4791bc9442056eea58961430e1e6c` (`Phase2 - Reuse Gregorian date
+validation for birthdays`). It replaces the manual leap-year-2000 month-day
+table with `Domain::GregorianDate::fromComponents(2000, month, day)` while
+preserving app-owned trimming, syntax, and blank-as-optional behavior.
+
+Under VS 18 x64 Developer, `ClassMngr` and the Native English and GS Team test
+targets built. Unique CTests #273 and #274 passed 2/2 in 0.07 seconds. The
+initial build without the Developer environment lacked MSVC standard-header
+configuration; the Developer-environment rerun passed. No full suite ran.
+
+**Decision: accept F754.** Batch 185 continues with F755; F707/F709 remain
 deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains
 Open.
+
+### Batch 185 continuation - F755 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F755 is selected:** share canonical positive-decimal ID validation across
+four Application queries.
+
+`ClassCoTeacherPageReadQuery`,
+`ClassCoTeacherTeacherChoicesReadQuery`, `ClassByIdReadQuery`, and
+`ClassesListReadQuery` have semantically equivalent validators: accept only
+nonempty positive decimal text that parses fully into `int` and round-trips
+through `std::to_string`. Add
+`src/next/application/positive_decimal_id_validation.h` with
+`isCanonicalPositiveDecimalId(std::string_view)` and register the helper in
+the explicit next-generation source inventory in `cmake/next.cmake`.
+
+Preserve each caller's error code, exact message, recoverability, validation
+order, and port-read timing, including `ClassesListReadQuery` duplicate-ID
+precedence and handling. Existing focused tests cover zero, negative,
+leading-zero, malformed/trailing, and overflow IDs; the co-teacher page also
+covers plus signs and leading whitespace.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationClassCoTeacherPageReadQueryTests`,
+`ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests`,
+`ClassMngrNextApplicationClassByIdReadQueryTests`, and
+`ClassMngrNextApplicationClassesListReadQueryTests`. Confirm exactly one
+CTest registration for each corresponding name, then run only those four
+exact CTests. Run no full suite.
+
+This matrix is recorded before implementation; F755 is selected but not
+implemented, and no F755 results are available. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

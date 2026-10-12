@@ -53,13 +53,13 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F753 accepted; F754 selected)
+### Current state - 2026-10-13 (F754 accepted; F755 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-183 are complete with F707 and F709 deferred. F740-F753 are
-accepted; F754 will reuse Gregorian domain validation for month/day birthday
-values. The separate CMake
+Batches 141-184 are complete with F707 and F709 deferred. F740-F754 are
+accepted; F755 will share canonical positive-decimal ID validation across
+class read queries. The separate CMake
 source-ownership optimization was also completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
@@ -4729,17 +4729,30 @@ Debug with VS 2026 x64 Developer, `ClassMngr` and
 `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests` built. Unique
 CTest #193 passed 1/1 in 0.03 seconds (0.04 seconds total). No full suite ran.
 
-F754 is selected in Batch 184 to replace the manual leap-year-2000 month-day
-table in `isValidMonthDayBirthday` with
-`Domain::GregorianDate::fromComponents(2000, month, day)`. Preserve the
-application-owned Unicode trimming, blank-as-optional behavior, exact
-two-ASCII-digit `MM-DD` syntax, and leap-year-2000 rule. Extend the Native
-English Qt-parity cases with valid/invalid boundaries for 30-day months; keep
-and run the existing GS Team blank/leap/invalid-day test. Build `ClassMngr`
-and `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests` plus
-`ClassMngrNextApplicationGsTeamDirectorySaveTests`; confirm exactly one CTest
-registration for each and run only those two exact CTests. No full suite.
-F707 and F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1
-and 2 Partial; F625's assessment is accepted, F626 is deferred, and separate
-current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
-0/24.
+F754 is accepted and committed as
+`006593ab40e4791bc9442056eea58961430e1e6c` (`Phase2 - Reuse Gregorian date
+validation for birthdays`). `isValidMonthDayBirthday` now delegates calendar
+validity to `Domain::GregorianDate::fromComponents(2000, month, day)` while
+preserving the application-owned Unicode trimming, blank behavior, exact
+two-ASCII-digit syntax, and leap-year-2000 semantics. Under VS 18 x64
+Developer, `ClassMngr` and the Native English and GS Team test targets built.
+Unique CTests #273 and #274 passed 2/2 (0.07 seconds total). An initial build
+without the Developer environment lacked MSVC standard-header configuration;
+the Developer-environment rerun passed. No full suite ran.
+
+F755 is selected in Batch 185 to share canonical positive-decimal integer ID
+validation across `ClassCoTeacherPageReadQuery`,
+`ClassCoTeacherTeacherChoicesReadQuery`, `ClassByIdReadQuery`, and
+`ClassesListReadQuery`. Add a small Application helper for nonempty canonical
+positive decimal values that parse fully into `int` and round-trip through
+`std::to_string`; register its header in `cmake/next.cmake`. Preserve each
+caller’s error code/message/recoverability, validation and port-read order,
+and `ClassesListReadQuery` duplicate-ID precedence. Run the existing focused
+tests, which cover zero, negative, leading-zero, malformed/trailing, and
+overflow IDs (plus co-teacher page plus/leading-whitespace cases). Build
+`ClassMngr` and the four corresponding query test targets; confirm exactly
+one registration for each and run only those four exact CTests. No full
+suite. F707 and F709 remain deferred. Phase 2 remains In Progress/Open with
+Gates 1 and 2 Partial; F625's assessment is accepted, F626 is deferred, and
+separate current-source Phase 0 evidence remains Windows x64 2/24 and macOS
+universal 0/24.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F753 is accepted at `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; F754 is selected in Batch 184 to reuse Gregorian date validation for birthday month-day parsing, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F754 is accepted at `006593ab40e4791bc9442056eea58961430e1e6c`; F755 is selected in Batch 185 to share canonical positive-decimal ID validation across four Application queries, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -100,9 +100,9 @@ Treat this plan as an operational summary, not a history:
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
-#### Active batch: Batch 184
+#### Active batch: Batch 185
 
-- F754 - Reuse Gregorian date validation for birthday month-day parsing and cover 30-day month boundaries.
+- F755 - Share canonical positive-decimal ID validation across four Application queries; preserve caller contracts and focused gates.
 
 ## Objective
 

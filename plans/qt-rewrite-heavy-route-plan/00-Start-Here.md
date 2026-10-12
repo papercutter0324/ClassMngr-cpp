@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-13
-- Current milestone: Phase 2 remains in progress: F753 was accepted at `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`, and F754 is selected in Batch 184 to reuse Gregorian date validation for birthday month-day parsing. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F754 was accepted at `006593ab40e4791bc9442056eea58961430e1e6c`, and F755 is selected in Batch 185 to share canonical positive-decimal ID validation across four Application queries. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

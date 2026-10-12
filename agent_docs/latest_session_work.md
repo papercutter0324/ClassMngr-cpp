@@ -22,10 +22,12 @@
   `1dee0b06543c053badfba56bef542417e7177efe`; its two targets built and
   unique CTest #229 passed 1/1. F753 is committed as
   `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; its targets built and unique
-  CTest #193 passed 1/1. F754 is selected in Batch 184 to reuse Gregorian
-  domain validation for month/day birthdays, preserving app-level text parsing
-  and trimming. Its pre-implementation matrix is in the Phase 2 progress log.
-  F707 and F709 remain deferred.
+  CTest #193 passed 1/1. F754 is committed as
+  `006593ab40e4791bc9442056eea58961430e1e6c`; the Native English and GS Team
+  test targets built and CTests #273/#274 passed 2/2. F755 is selected in
+  Batch 185 to share canonical positive-decimal ID validation across four
+  class read queries. Its pre-implementation matrix is in the Phase 2
+  progress log. F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.

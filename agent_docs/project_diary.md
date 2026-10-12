@@ -4805,8 +4805,9 @@ groups exact values. The focused test makes issue and duplicate-row ordering
 explicit. F753 is accepted at
 `ef92df3a0b881bccd0fbfb52b3f88e39ac291255`; its birthday schedule now shares
 the Qt-compatible whitespace predicate and filters U+0085-only names. F754
-reuses the Gregorian domain date rule for month/day birthday validity while
-leaving application text syntax and whitespace normalization in place. This
-is narrower than centralizing positive-decimal parsing across four queries
-and has direct date-policy coverage. F707/F709 remain deferred and the Phase
-2 exit gate remains open.
+is accepted at `006593ab40e4791bc9442056eea58961430e1e6c`; using
+`GregorianDate::fromComponents` removed a second Gregorian month-length table
+while preserving app-level `MM-DD` parsing and trimming. F755 reuses one
+canonical positive-decimal `int` rule across four class read queries, while
+leaving their distinct errors and read boundaries at the callers. F707/F709
+remain deferred and the Phase 2 exit gate remains open.
