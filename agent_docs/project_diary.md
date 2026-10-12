@@ -5020,3 +5020,20 @@ single/batch recoverable invalid-input behavior distinct from roster-names,
 and preserve each query's read boundaries and identity/order contracts.
 Batch190 selection remains pending for after F768. F707/F709 remain deferred;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+## Phase 2 F768 acceptance and F769 selection — 2026-10-13
+
+F768 is accepted at `ff60cd80a935f00ec660efd0aa132c6d88a87778`, completing
+Batch 189. The three Speaking Evaluation query targets built in the Visual
+Studio 18 x64 Debug tree; each exact CTest registered once and all three
+passed. The sandbox build hit FileTracker `E_ACCESSDENIED`; the same build
+succeeded outside the sandbox. No full suite ran.
+
+F769 is selected for Class and Teacher Delete ID validation. Reuse the shared
+canonical-ID helper, preserve entity-specific recoverable errors and zero-port
+rejection, and add trailing-text cases. The Batch190 shortlist also retains
+Testing Class helper consolidation, Class Analytics Dashboard ID validation,
+and a conditional Class Details range-policy assessment. Preserve the tested
+leading-zero forwarding behavior in `ClassDetailsSaveUseCase`. F707/F709
+remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.

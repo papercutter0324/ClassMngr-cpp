@@ -29455,31 +29455,65 @@ Build `ClassMngr` and
 and `tests/next_application_speaking_evaluation_roster_names_read_query_tests.cpp`,
 respectively. Confirm one registration for each exact CTest name, then run
 only those three exact CTests with `-C Debug`. Run no full suite. This matrix
-is recorded before implementation; F768 verification is pending. F707/F709
-remain deferred, Phase 2 Gates 1/2 remain Partial, and the formal exit gate
-remains Open.
+was recorded before implementation. F707/F709 remain deferred, Phase 2 Gates
+1/2 remain Partial, and the formal exit gate remains Open.
 
-### Batch 190 read-only discovery - for after F768; selection pending - 2026-10-13
+### F768 Speaking Evaluation read-query ID validation - accepted - 2026-10-13
 
-Two independent read-only audits converged on these ranked candidates for
-after F768; none is selected for implementation yet:
+F768 is accepted at commit
+`ff60cd80a935f00ec660efd0aa132c6d88a87778`, completing Batch 189. In the VS
+18 2026 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests`,
+`ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests`, and
+`ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests` built.
+Each exact CTest registered once and passed. The initial sandbox build hit
+FileTracker `E_ACCESSDENIED`; the same command succeeded outside the sandbox.
+Only the three named CTests ran; no full suite ran.
 
-1. **Testing Class helper consolidation:** `testing_class_create.h`,
-   `testing_class_details_update.h`, and `testing_class_delete.h`; focused
-   CTests `ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
-   `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`, and
-   `ClassMngrNextApplicationTestingClassDeleteUseCaseTests`.
-2. **Class and Teacher Delete helper consolidation:** `class_delete.h` and
-   `teacher_delete.h`; focused CTests
-   `ClassMngrNextApplicationClassDeleteUseCaseTests` and
-   `ClassMngrNextApplicationTeacherDeleteUseCaseTests`.
-3. **Class Analytics Dashboard ID guard:**
-   `class_analytics_dashboard_read_query.h` and
-   `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`.
-4. **Provisional Class Details policy decision:** validation-context and
-   schedule-conflict queries currently accept arbitrary-length digit IDs that
-   may exceed the shared helper's `int` range. Decide range semantics first;
-   preserve the tested leading-zero forwarding contract in
-   `ClassDetailsSaveUseCase` and avoid a blanket validator sweep.
+### Batch 190 discovery and F769 selection - remaining candidates provisional - 2026-10-13
 
-Batch 189 continues with F768. Batch 190 candidate selection remains pending.
+Two independent read-only audits converged on the candidate set. F769 is
+selected first; IDs/order after it remain provisional:
+
+- **F769 - Class and Teacher Delete helper consolidation:**
+  `src/next/application/class_delete.h` and `teacher_delete.h`; CTests
+  `ClassMngrNextApplicationClassDeleteUseCaseTests` and
+  `ClassMngrNextApplicationTeacherDeleteUseCaseTests`.
+- **F770 - Testing Class helper consolidation:** `testing_class_create.h`,
+  `testing_class_details_update.h`, and `testing_class_delete.h`; CTests
+  `ClassMngrNextApplicationTestingClassCreateUseCaseTests`,
+  `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests`, and
+  `ClassMngrNextApplicationTestingClassDeleteUseCaseTests`.
+- **F771 - Class Analytics Dashboard ID guard:**
+  `class_analytics_dashboard_read_query.h` and
+  `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`.
+- **F772 - Provisional Class Details range-contract assessment:**
+  validation-context and schedule-conflict queries accept arbitrary-length
+  digit IDs that may exceed the shared helper's `int` range. Decide range
+  semantics before implementation. Preserve the tested leading-zero
+  forwarding contract in `ClassDetailsSaveUseCase`; exclude it from a blanket
+  validator sweep.
+
+### F769 Class and Teacher Delete ID validation - selected and acceptance matrix - 2026-10-13
+
+**F769 is selected:** reuse `Application::isCanonicalPositiveDecimalId` in
+`src/next/application/class_delete.h` and
+`src/next/application/teacher_delete.h`. The helper is already listed in
+`cmake/next.cmake`; no inventory change is needed.
+
+For Class Delete, invalid IDs return recoverable `InvalidInput` with
+`Class ID must be a canonical positive integer.` For Teacher Delete, they
+return recoverable `InvalidInput` with
+`Teacher ID must be a canonical positive integer.` Both failures occur before
+the port call. Preserve canonical `42` success and one-call forwarding, and
+structured port-failure metadata unchanged.
+
+Existing tests cover zero, negative, leading-zero, entity-prefixed, and
+overflow IDs. Add trailing-text `17x` to each query's invalid cases to pin
+full input consumption. Build `ClassMngr` and
+`ClassMngrNextApplicationClassDeleteUseCaseTests` plus
+`ClassMngrNextApplicationTeacherDeleteUseCaseTests`. Confirm one registration
+for each exact CTest name, then run only those two CTests with `-C Debug`.
+Run no full suite. This matrix is recorded before implementation; F769
+verification is pending. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.

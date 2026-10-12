@@ -68,10 +68,14 @@
   `bc174c48bbf7152100320384f0b45ecff701d0ba`; its Schedule Import state
   snapshot target built and the exact CTest registered once and passed 1/1 in
   Visual Studio 18 x64 Debug. The sandbox build hit FileTracker access denial
-  and succeeded outside the sandbox on retry. F768 is selected as the final
-  Batch 189 Speaking Evaluation query-family slice. Batch190 discovery
-  identified four candidate groups for after F768; selection is pending. No
-  full suite ran.
+  and succeeded outside the sandbox on retry. F768 is accepted at
+  `ff60cd80a935f00ec660efd0aa132c6d88a87778`; the three Speaking Evaluation
+  query targets built, each exact CTest registered once, and all three passed
+  in Visual Studio 18 x64 Debug. The sandbox build hit FileTracker access
+  denial and succeeded outside the sandbox on retry. Batch 189 is complete.
+  F769 is selected in Batch 190 for Class and Teacher Delete ID validation.
+  F770 Testing Class, F771 Class Analytics Dashboard, and F772 the conditional
+  Class Details range-policy assessment remain provisional. No full suite ran.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

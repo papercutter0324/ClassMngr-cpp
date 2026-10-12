@@ -4874,26 +4874,24 @@ No full suite. F707/F709 remain deferred. Phase 2 remains In Progress/Open
 with Gates 1 and 2 Partial; separate current-source Phase 0 evidence remains
 Windows x64 2/24 and macOS universal 0/24.
 
-## Phase 2 current position — 2026-10-13 (F767 accepted; F768 selected)
+## Phase 2 current position — 2026-10-13 (F768 accepted; F769 selected)
 
-F767 is accepted at
-`bc174c48bbf7152100320384f0b45ecff701d0ba`. The Schedule Import state
-snapshot handler now uses the shared canonical-ID validator. Tests cover
-invalid and duplicate teacher/class IDs and invalid assignments with exact
-failure kind, source, message, and one-read assertions. Existing `-1`
-acceptance, source order, complete snapshot preservation, and structured
-port-failure forwarding remain covered. In the existing Visual Studio 18 x64
-Debug tree, `ClassMngr` and
-`ClassMngrNextApplicationScheduleImportStateSnapshotTests` built; the exact
-CTest registered once and passed 1/1. The sandbox build hit FileTracker
-`E_ACCESSDENIED`; the same build succeeded outside the sandbox. No full suite
-ran.
+F768 is accepted at
+`ff60cd80a935f00ec660efd0aa132c6d88a87778`, completing Batch 189. The
+single, batch, and roster-names Speaking Evaluation queries now share the
+canonical-ID helper while preserving their distinct invalid-input
+recoverability and query-specific read/identity/order contracts. In the
+existing Visual Studio 18 x64 Debug tree, `ClassMngr` and all three focused
+targets built; each exact CTest registered once and all three passed. The
+sandbox build hit FileTracker `E_ACCESSDENIED`; the same build succeeded
+outside the sandbox. No full suite ran.
 
-F768 is selected as the final Batch 189 slice: consolidate the shared
-canonical-ID predicate across the single, batch, and roster-name Speaking
-Evaluation queries while preserving their distinct recoverability, no-read,
-identity/order, and output contracts. Batch 190 discovery identified four
-candidate groups for after F768; selection is pending. F707/F709 remain
-deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
-separate current-source Phase 0 evidence remains Windows x64 2/24 and macOS
-universal 0/24.
+F769 is selected in Batch 190 for Class and Teacher Delete ID validation.
+Reuse the shared helper while preserving each entity's exact error, recoverable
+InvalidInput, and zero-port boundary; add trailing-text cases for full input
+consumption. F770 Testing Class use-case consolidation, F771 Class Analytics
+Dashboard ID validation, and F772 the conditional Class Details range-policy
+assessment remain provisional. Preserve the tested leading-zero forwarding
+behavior in `ClassDetailsSaveUseCase`. F707/F709 remain deferred. Phase 2
+remains In Progress/Open with Gates 1 and 2 Partial; separate current-source
+Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
