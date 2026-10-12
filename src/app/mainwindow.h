@@ -52,6 +52,7 @@ class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class ExcelImportTimeoutPreferencesPort;
 class FontSizePreferencesPort;
+class LanguagePreferencesPort;
 class SaveModePreferencesPort;
 }
 
@@ -87,6 +88,12 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> fontSizePreferenceErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::LanguagePreferencesPort
+        > languagePreferencesPort;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> languagePreferenceErrorHandler;
     std::shared_ptr<
         ClassMngr::Next::Application::AiCommentProviderPreferencesPort
         > aiCommentProviderPreferencesPort;

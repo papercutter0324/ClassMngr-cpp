@@ -136,7 +136,13 @@ void ActionRegistry::createActions(
         > aiCommentProviderPreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> aiCommentProviderPreferenceErrorHandler
+        )> aiCommentProviderPreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::LanguagePreferencesPort
+        > languagePreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> languagePreferenceErrorHandler
     )
 {
     createFileActions();
@@ -153,7 +159,9 @@ void ActionRegistry::createActions(
         std::move(aiCommentVoicePreferencesPort),
         aiCommentVoicePreferenceErrorHandler,
         std::move(aiCommentProviderPreferencesPort),
-        aiCommentProviderPreferenceErrorHandler
+        aiCommentProviderPreferenceErrorHandler,
+        std::move(languagePreferencesPort),
+        languagePreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -797,7 +805,13 @@ void ActionRegistry::createOptionActions(
         > aiCommentProviderPreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& aiCommentProviderPreferenceErrorHandler
+        )>& aiCommentProviderPreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::LanguagePreferencesPort
+        > languagePreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& languagePreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1003,19 +1017,19 @@ void ActionRegistry::createOptionActions(
     languageState =
         new OptionState<Language>(this);
 
-    auto systemDefaultLanguageAction =
+    QAction* systemDefaultLanguageAction =
         createCheckableAction(
             tr("System Default"),
             tr("Use the system language")
             );
 
-    auto englishAction =
+    QAction* englishAction =
         createCheckableAction(
             tr("English"),
             tr("Use English")
         );
 
-    auto koreanLanguageAction =
+    QAction* koreanLanguageAction =
         createCheckableAction(
             tr("Korean"),
             tr("Use Korean")
@@ -1023,66 +1037,172 @@ void ActionRegistry::createOptionActions(
 
     languageState->addOption(
         Language::SystemDefault,
-        systemDefaultLanguageAction
+        systemDefaultLanguageAction,
+        false
         );
     languageState->addOption(
         Language::English,
-        englishAction
+        englishAction,
+        false
         );
     languageState->addOption(
         Language::Korean,
-        koreanLanguageAction
+        koreanLanguageAction,
+        false
         );
 
-    languageState->onPersist = [](const Language language)
+    if (!languagePreferencesPort)
     {
-        ClassMngr::Next::Application::LanguagePreference preference;
-        switch (language)
+        languagePreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerLanguagePreferencesPort
+            >();
+    }
+
+    using PreferenceLanguage =
+        ClassMngr::Next::Application::LanguagePreference;
+    const auto writeLanguagePreference =
+        [languagePreferencesPort](const ::Language language)
+            -> ClassMngr::Next::Domain::Result<void>
         {
-        case Language::SystemDefault:
-            preference = ClassMngr::Next::Application::
-                LanguagePreference::SystemDefault;
-            break;
+            switch (language)
+            {
+            case ::Language::SystemDefault:
+                return languagePreferencesPort->write(
+                    PreferenceLanguage::SystemDefault
+                    );
 
-        case Language::English:
-            preference = ClassMngr::Next::Application::
-                LanguagePreference::English;
-            break;
+            case ::Language::English:
+                return languagePreferencesPort->write(
+                    PreferenceLanguage::English
+                    );
 
-        case Language::Korean:
-            preference = ClassMngr::Next::Application::
-                LanguagePreference::Korean;
-            break;
+            case ::Language::Korean:
+                return languagePreferencesPort->write(
+                    PreferenceLanguage::Korean
+                    );
 
-        default:
-            return;
-        }
-
-        ClassMngr::Next::Platform::
-            SettingsManagerLanguagePreferencesPort().write(
-                preference
-                );
-    };
+            default:
+                return ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message = "Language selection is invalid.",
+                    .recoverable = false
+                });
+            }
+        };
 
     const auto storedLanguage =
-        ClassMngr::Next::Platform::
-            SettingsManagerLanguagePreferencesPort()
-            .read();
+        languagePreferencesPort->read();
     ::Language legacyLanguage = ::Language::SystemDefault;
     switch (storedLanguage)
     {
-    case ClassMngr::Next::Application::LanguagePreference::English:
+    case PreferenceLanguage::English:
         legacyLanguage = ::Language::English;
         break;
-    case ClassMngr::Next::Application::LanguagePreference::Korean:
+    case PreferenceLanguage::Korean:
         legacyLanguage = ::Language::Korean;
         break;
-    case ClassMngr::Next::Application::LanguagePreference::SystemDefault:
+    case PreferenceLanguage::SystemDefault:
     default:
         break;
     }
     languageState->set(
         legacyLanguage
+        );
+
+    const auto skipLanguagePersistForActionCommit =
+        std::make_shared<bool>(false);
+    languageState->onPersist = [writeLanguagePreference,
+        languagePreferenceErrorHandler,
+        skipLanguagePersistForActionCommit](const ::Language language)
+    {
+        if (*skipLanguagePersistForActionCommit)
+        {
+            *skipLanguagePersistForActionCommit = false;
+            return;
+        }
+
+        // Programmatic state commits retain their prior callback behavior;
+        // QAction commits persist before changing this state.
+        const auto saved = writeLanguagePreference(language);
+        if (!saved && languagePreferenceErrorHandler)
+        {
+            languagePreferenceErrorHandler(saved.error());
+        }
+    };
+
+    const auto restoreLanguageAction = [this](
+        const ::Language previousLanguage
+        )
+    {
+        if (QAction* previousAction =
+                languageState->action(previousLanguage))
+        {
+            previousAction->setChecked(true);
+        }
+    };
+    const auto connectLanguageAction =
+        [this, writeLanguagePreference, languagePreferenceErrorHandler,
+            skipLanguagePersistForActionCommit, restoreLanguageAction](
+            QAction* action,
+            const ::Language language
+            )
+        {
+            connect(
+                action,
+                &QAction::triggered,
+                this,
+                [this, action, writeLanguagePreference,
+                    languagePreferenceErrorHandler,
+                    skipLanguagePersistForActionCommit,
+                    restoreLanguageAction, language]()
+                {
+                    if (!languageState)
+                    {
+                        return;
+                    }
+
+                    if (languageState->current() == language)
+                    {
+                        if (QAction* selectedAction =
+                                languageState->action(language))
+                        {
+                            selectedAction->setChecked(true);
+                        }
+                        return;
+                    }
+
+                    const ::Language previousLanguage =
+                        languageState->current();
+                    const auto saved = writeLanguagePreference(language);
+                    if (!saved)
+                    {
+                        restoreLanguageAction(previousLanguage);
+                        action->setChecked(false);
+                        if (languagePreferenceErrorHandler)
+                        {
+                            languagePreferenceErrorHandler(saved.error());
+                        }
+                        return;
+                    }
+
+                    *skipLanguagePersistForActionCommit = true;
+                    languageState->set(language);
+                }
+                );
+        };
+
+    connectLanguageAction(
+        systemDefaultLanguageAction,
+        ::Language::SystemDefault
+        );
+    connectLanguageAction(
+        englishAction,
+        ::Language::English
+        );
+    connectLanguageAction(
+        koreanLanguageAction,
+        ::Language::Korean
         );
 
     fontSizeState =

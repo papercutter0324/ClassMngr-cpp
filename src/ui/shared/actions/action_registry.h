@@ -17,6 +17,7 @@ class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class AutomaticUpdatePreferencesPort;
 class FontSizePreferencesPort;
+class LanguagePreferencesPort;
 class SaveModePreferencesPort;
 }
 
@@ -62,7 +63,13 @@ public:
             > aiCommentProviderPreferencesPort = {},
         std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )> aiCommentProviderPreferenceErrorHandler = {}
+            )> aiCommentProviderPreferenceErrorHandler = {},
+        std::shared_ptr<
+            ClassMngr::Next::Application::LanguagePreferencesPort
+            > languagePreferencesPort = {},
+        std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )> languagePreferenceErrorHandler = {}
         );
     void retranslate();
     void refreshThemedIcons();
@@ -193,7 +200,13 @@ private:
             > aiCommentProviderPreferencesPort,
         const std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )>& aiCommentProviderPreferenceErrorHandler
+            )>& aiCommentProviderPreferenceErrorHandler,
+        std::shared_ptr<
+            ClassMngr::Next::Application::LanguagePreferencesPort
+            > languagePreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& languagePreferenceErrorHandler
         );
     void createHelpActions();
     void createAdminActions();

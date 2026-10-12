@@ -14,7 +14,7 @@ public:
 
     [[nodiscard]] virtual LanguagePreference read() const = 0;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         LanguagePreference preference
         ) const = 0;
 

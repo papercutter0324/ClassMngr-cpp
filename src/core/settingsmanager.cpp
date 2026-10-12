@@ -391,6 +391,57 @@ QSettings::Status SettingsManager::writeAiCommentProviderPreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeLanguagePreference(
+    const int language,
+    const LanguagePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousLanguage =
+        m_settings->contains(Keys::LANGUAGE_PREFERENCE);
+    const QVariant previousLanguage =
+        m_settings->value(Keys::LANGUAGE_PREFERENCE);
+
+    m_settings->setValue(
+        Keys::LANGUAGE_PREFERENCE,
+        language
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Remove the pending candidate before destroying this instance so it
+        // cannot be retried during teardown.
+        if (hadPreviousLanguage)
+        {
+            m_settings->setValue(
+                Keys::LANGUAGE_PREFERENCE,
+                previousLanguage
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::LANGUAGE_PREFERENCE);
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see the restored value and retries can succeed.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================

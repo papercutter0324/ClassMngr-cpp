@@ -625,6 +625,22 @@ void MainWindow::createActions()
             };
     }
 
+    auto languagePreferenceErrorHandler =
+        m_startupOptions.languagePreferenceErrorHandler;
+    if (!languagePreferenceErrorHandler)
+    {
+        languagePreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Language preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
         std::move(saveModePreferenceErrorHandler),
@@ -635,7 +651,9 @@ void MainWindow::createActions()
         m_startupOptions.aiCommentVoicePreferencesPort,
         std::move(aiCommentVoicePreferenceErrorHandler),
         m_startupOptions.aiCommentProviderPreferencesPort,
-        std::move(aiCommentProviderPreferenceErrorHandler)
+        std::move(aiCommentProviderPreferenceErrorHandler),
+        m_startupOptions.languagePreferencesPort,
+        std::move(languagePreferenceErrorHandler)
         );
 }
 

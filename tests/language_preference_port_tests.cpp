@@ -2,14 +2,21 @@
 #include "core/fontmanager.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "next/domain/operation_result.h"
 #include "next/platform/language_preference_port.h"
+#include "next/platform/settings_manager_language_preferences_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
 #include <QFile>
+#include <QSettings>
 #include <QtTest>
+
+#include <memory>
+#include <string>
+#include <utility>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -42,6 +49,43 @@ void restoreSetting(
     settings.sync();
 }
 
+class ScopedLanguageTestSettingsRestore final
+{
+public:
+    ScopedLanguageTestSettingsRestore(
+        SettingsManager& settings,
+        QString languageKey,
+        QString unrelatedKey
+        )
+        : m_settings(settings),
+          m_languageKey(std::move(languageKey)),
+          m_unrelatedKey(std::move(unrelatedKey)),
+          m_savedLanguage(settings.get(m_languageKey)),
+          m_savedUnrelated(settings.get(m_unrelatedKey))
+    {
+    }
+
+    ~ScopedLanguageTestSettingsRestore()
+    {
+        restoreSetting(m_settings, m_languageKey, m_savedLanguage);
+        restoreSetting(m_settings, m_unrelatedKey, m_savedUnrelated);
+    }
+
+    ScopedLanguageTestSettingsRestore(
+        const ScopedLanguageTestSettingsRestore&
+        ) = delete;
+    ScopedLanguageTestSettingsRestore& operator=(
+        const ScopedLanguageTestSettingsRestore&
+        ) = delete;
+
+private:
+    SettingsManager& m_settings;
+    QString m_languageKey;
+    QString m_unrelatedKey;
+    QVariant m_savedLanguage;
+    QVariant m_savedUnrelated;
+};
+
 } // namespace
 
 class LanguagePreferencePortTests final : public QObject
@@ -55,6 +99,7 @@ private slots:
     void validActionUpdatesTypedStatePersistenceFontAndPresentation();
     void actionWritesCanonicalLanguageValuesAndKeepsOtherOptionWrites();
     void invalidOrFailedChangesPreserveTypedState();
+    void failedActionRollsBackAndProgrammaticFailureReportsBeforeRetry();
 };
 
 void LanguagePreferencePortTests::portMapsEveryTypedPreferenceToTheLegacyService()
@@ -235,6 +280,109 @@ void LanguagePreferencePortTests::invalidOrFailedChangesPreserveTypedState()
             QStringLiteral("en_US")
             ));
     }
+}
+
+void LanguagePreferencePortTests::
+failedActionRollsBackAndProgrammaticFailureReportsBeforeRetry()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString languageKey = languageSettingsKey();
+    const QString unrelatedKey = QStringLiteral("options/unrelatedValue");
+    ScopedLanguageTestSettingsRestore restoreSettings(
+        settings,
+        languageKey,
+        unrelatedKey
+        );
+    settings.set(languageKey, static_cast<int>(LanguagePreference::English));
+    settings.set(unrelatedKey, 53);
+    settings.sync();
+
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const auto preferences =
+        std::make_shared<SettingsManagerLanguagePreferencesPort>(
+            [&injectAccessError, &synchronizationAttempts](QSettings& settings)
+            {
+                ++synchronizationAttempts;
+                if (injectAccessError)
+                {
+                    return QSettings::AccessError;
+                }
+
+                settings.sync();
+                return settings.status();
+            }
+            );
+
+    int diagnosticCount = 0;
+    OperationError lastDiagnostic;
+    const auto errorHandler =
+        [&diagnosticCount, &lastDiagnostic](const OperationError& error)
+    {
+        ++diagnosticCount;
+        lastDiagnostic = error;
+    };
+
+    ActionRegistry actions;
+    actions.createActions(
+        {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+        preferences,
+        errorHandler
+        );
+
+    QVERIFY(actions.languageState);
+    QAction* const englishAction =
+        actions.languageState->action(Language::English);
+    QAction* const koreanAction =
+        actions.languageState->action(Language::Korean);
+    QVERIFY(englishAction);
+    QVERIFY(koreanAction);
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(englishAction->isChecked());
+    QVERIFY(!koreanAction->isChecked());
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(diagnosticCount, 0);
+
+    koreanAction->trigger();
+
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(lastDiagnostic.code, ErrorCode::Technical);
+    QVERIFY(lastDiagnostic.recoverable);
+    QVERIFY(
+        lastDiagnostic.message.find("AccessError") != std::string::npos
+        );
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(englishAction->isChecked());
+    QVERIFY(!koreanAction->isChecked());
+    QCOMPARE(settings.get(languageKey).toInt(), 1);
+    QCOMPARE(preferences->read(), LanguagePreference::English);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+
+    injectAccessError = false;
+    koreanAction->trigger();
+
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(actions.languageState->current(), Language::Korean);
+    QVERIFY(!englishAction->isChecked());
+    QVERIFY(koreanAction->isChecked());
+    QCOMPARE(settings.get(languageKey).toInt(), 5);
+    QCOMPARE(preferences->read(), LanguagePreference::Korean);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+
+    injectAccessError = true;
+    actions.languageState->set(Language::English);
+
+    QCOMPARE(synchronizationAttempts, 3);
+    QCOMPARE(diagnosticCount, 2);
+    QCOMPARE(lastDiagnostic.code, ErrorCode::Technical);
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(englishAction->isChecked());
+    QVERIFY(!koreanAction->isChecked());
+    QCOMPARE(settings.get(languageKey).toInt(), 5);
+    QCOMPARE(preferences->read(), LanguagePreference::Korean);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
 }
 
 QTEST_MAIN(LanguagePreferencePortTests)

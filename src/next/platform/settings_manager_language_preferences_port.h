@@ -2,10 +2,12 @@
 
 #include "core/settingsmanager.h"
 #include "next/application/language_preferences_port.h"
-#include "ui/shared/state/option_state_keys.h"
 
 #include <QString>
 #include <QVariant>
+
+#include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -17,7 +19,12 @@ class SettingsManagerLanguagePreferencesPort final
     : public Application::LanguagePreferencesPort
 {
 public:
-    SettingsManagerLanguagePreferencesPort() = default;
+    explicit SettingsManagerLanguagePreferencesPort(
+        SettingsManager::LanguagePreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::LanguagePreference read() const override
     {
@@ -59,7 +66,7 @@ public:
         }
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::LanguagePreference preference
         ) const override
     {
@@ -79,10 +86,34 @@ public:
             break;
 
         default:
-            return;
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Language preference must be SystemDefault, English, or Korean.",
+                .recoverable = false
+            });
         }
 
-        SettingsManager::instance().set(key(), storedLanguage);
+        const QSettings::Status status =
+            SettingsManager::instance().writeLanguagePreference(
+                storedLanguage,
+                m_synchronize
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save Language preference: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
     void clear() const override
@@ -91,10 +122,12 @@ public:
     }
 
 private:
+    SettingsManager::LanguagePreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(
-            OptionKeys::Language
+            SettingsManager::Keys::LANGUAGE_PREFERENCE
             );
     }
 

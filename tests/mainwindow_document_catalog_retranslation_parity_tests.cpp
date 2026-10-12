@@ -3,6 +3,7 @@
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
 #include "core/settingsmanager.h"
+#include "next/domain/operation_result.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/document_content_session.h"
@@ -19,11 +20,13 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
+#include <QFont>
 #include <QMessageLogContext>
 #include <QMessageBox>
 #include <QMenu>
 #include <QPdfDocument>
 #include <QSignalSpy>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QTreeWidget>
 #include <QUrl>
@@ -31,7 +34,9 @@
 #include <QtTest>
 
 #include <cstdio>
+#include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 
 namespace
@@ -283,8 +288,12 @@ void MainWindowDocumentCatalogRetranslationParityTests::initTestCase()
 
     SettingsManager::instance().clear();
     SettingsManager::instance().sync();
-    ClassMngr::Next::Platform::SettingsManagerLanguagePreferencesPort()
-        .write(ClassMngr::Next::Application::LanguagePreference::English);
+    QVERIFY(
+        ClassMngr::Next::Platform::
+            SettingsManagerLanguagePreferencesPort().write(
+                ClassMngr::Next::Application::LanguagePreference::English
+                )
+        );
     SettingsManager::instance().sync();
 
     qRegisterMetaType<NavigationData>();
@@ -297,8 +306,41 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QVERIFY(languageService.setLanguage(Language::English));
     QCOMPARE(languageService.loadedLocaleName(), QStringLiteral("en_US"));
 
+    bool injectAccessError = true;
+    int synchronizationAttempts = 0;
+    const auto languagePreferences =
+        std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerLanguagePreferencesPort
+            >(
+                [&injectAccessError, &synchronizationAttempts](
+                    QSettings& settings
+                    )
+                {
+                    ++synchronizationAttempts;
+                    if (injectAccessError)
+                    {
+                        return QSettings::AccessError;
+                    }
+
+                    settings.sync();
+                    return settings.status();
+                }
+                );
+    int diagnosticCount = 0;
+    ClassMngr::Next::Domain::OperationError lastDiagnostic;
+
     MainWindowStartupOptions startupOptions;
     startupOptions.loadMostRecentDatabase = false;
+    startupOptions.languagePreferencesPort = languagePreferences;
+    startupOptions.languagePreferenceErrorHandler =
+        [&diagnosticCount, &lastDiagnostic](
+            const ClassMngr::Next::Domain::OperationError& error
+            )
+        {
+            ++diagnosticCount;
+            lastDiagnostic = error;
+        };
     MainWindow window(
         [](const QString&) {},
         false,
@@ -308,6 +350,9 @@ void MainWindowDocumentCatalogRetranslationParityTests::
         );
     window.show();
     QApplication::processEvents();
+
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(diagnosticCount, 0);
 
     Sidebar* sidebar = window.findChild<Sidebar*>();
     QVERIFY(sidebar);
@@ -407,6 +452,48 @@ void MainWindowDocumentCatalogRetranslationParityTests::
 
     QSignalSpy routeEvents(sidebar, &Sidebar::itemSelected);
     QVERIFY(routeEvents.isValid());
+
+    const QFont englishFontBeforeFailure = QApplication::font();
+    const QString englishDocumentsTitleBeforeFailure = documents->text(0);
+    const QString englishGuidesTitleBeforeFailure = guides->text(0);
+    QCOMPARE(englishDocumentsTitleBeforeFailure, QStringLiteral("Documents"));
+    QCOMPARE(englishGuidesTitleBeforeFailure, QStringLiteral("Guides"));
+
+    koreanAction->trigger();
+    QApplication::processEvents();
+
+    QCOMPARE(synchronizationAttempts, 1);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(
+        lastDiagnostic.code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(lastDiagnostic.recoverable);
+    QVERIFY(
+        lastDiagnostic.message.find("AccessError") != std::string::npos
+        );
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(englishAction->isChecked());
+    QVERIFY(!koreanAction->isChecked());
+    QCOMPARE(languagePreferences->read(),
+        ClassMngr::Next::Application::LanguagePreference::English);
+    QCOMPARE(
+        SettingsManager::instance().get(
+            QStringLiteral("options/language")
+            ).toInt(),
+        1
+        );
+    QCOMPARE(languageService.currentLanguage(), Language::English);
+    QCOMPARE(languageService.loadedLocaleName(), QStringLiteral("en_US"));
+    QVERIFY(QApplication::font() == englishFontBeforeFailure);
+    QCOMPARE(documents->text(0), englishDocumentsTitleBeforeFailure);
+    QCOMPARE(guides->text(0), englishGuidesTitleBeforeFailure);
+    QCOMPARE(sidebar->selectedKeys(), selectedKeys);
+    QCOMPARE(sidebar->expandedItemKeyPaths(), expandedKeyPaths);
+    QCOMPARE(routeEvents.count(), 0);
+
+    injectAccessError = false;
+
     QVERIFY(pages->pdfViewerPage() == nullptr);
     QVERIFY(!pages->isPageInstantiated(PageType::PdfViewer));
     QVERIFY(
@@ -419,6 +506,8 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QApplication::processEvents();
     SettingsManager::instance().sync();
 
+    QCOMPARE(synchronizationAttempts, 2);
+    QCOMPARE(diagnosticCount, 1);
     QCOMPARE(actions.languageState->current(), Language::Korean);
     QVERIFY(koreanAction->isChecked());
     QVERIFY(!englishAction->isChecked());
@@ -445,6 +534,7 @@ void MainWindowDocumentCatalogRetranslationParityTests::
 
     QCOMPARE(languageService.currentLanguage(), Language::Korean);
     QCOMPARE(languageService.loadedLocaleName(), QStringLiteral("ko_KR"));
+    QVERIFY(QApplication::font() != englishFontBeforeFailure);
     QCOMPARE(documents->text(0), QStringLiteral("문서"));
     QCOMPARE(guides->text(0), QStringLiteral("안내서"));
     QCOMPARE(sidebar->selectedKeys(), selectedKeys);
@@ -468,6 +558,8 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QApplication::processEvents();
     SettingsManager::instance().sync();
 
+    QCOMPARE(synchronizationAttempts, 3);
+    QCOMPARE(diagnosticCount, 1);
     QCOMPARE(actions.languageState->current(), Language::English);
     QVERIFY(englishAction->isChecked());
     QVERIFY(!koreanAction->isChecked());
