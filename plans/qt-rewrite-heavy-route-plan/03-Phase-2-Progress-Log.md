@@ -25280,4 +25280,71 @@ still rejected by `UpdateController` before persistence.
    suppression, then retry succeeds. Build `ClassMngr` and these two existing
    targets; run exactly the two listed CTests. Add no CMake target.
 
-This matrix is recorded before implementation. Batch 160 is active with F685.
+This matrix was recorded before implementation. Batch 160 is complete.
+
+### F685 Skip Version checked persistence - accepted - 2026-10-12
+
+F685 is accepted at code/test commit
+`8360c8a0181858b4a79fa042f62a46bf771d7031`. `ClassMngr` and the two selected
+targets built in the Windows x64 Debug Ninja tree under Visual Studio 2026
+Developer Command Prompt v18.10.1 with MSVC 19.51.36257. The exact CTests
+passed 2/2: `ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests`
+and `ClassMngrUpdateControllerAutomaticStartupTests`. Coverage verifies exact
+previous-value/absent-key restoration, unrelated-value preservation, typed
+Technical errors, and automatic-dialog failure with one inline diagnostic,
+unchanged skipped value, and successful retry before close/suppression. No full
+suite ran.
+
+**Decision: accept F685.** Batch 160 is complete.
+
+### Batch 161 shortlist and selection - recorded before F686 implementation - 2026-10-12
+
+Select checked Skip Version clear as the next single-key persistence boundary.
+The same void port operation is used by the user's Unskip action and by stale
+or invalid skipped-version reconciliation. The user action currently clears
+the dialog display and resets automatic-prompt suppression without knowing
+whether storage succeeded. Stale cleanup also clears storage/display without
+checking synchronization. This follows F685's checked-write result and uses
+the existing cross-platform port, automatic-update controller, and dialog
+tests. Keep user intent and background cleanup as distinct cases in acceptance.
+
+**F686 is selected:** add checked removal for `updates/skippedVersion`,
+restore the exact previous QVariant or key absence on synchronization failure,
+preserve unrelated preferences, and allow retry without changing generic
+SettingsManager behavior. Change the skipped-version port `clear()` to return
+`[[nodiscard]] Domain::Result<void>` and map sync errors to recoverable
+`Technical` results.
+
+### F686 checked Skip Version clear acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked clear for only `updates/skippedVersion`. Check sync
+   status, restore the exact previous QVariant or absence on failure, preserve
+   unrelated settings, and allow retry. Keep generic SettingsManager behavior
+   and the F685 checked write unchanged.
+2. Return a typed result from the skipped-version port's `clear()`. Preserve
+   the existing exact key and read/write conversions. Successful clear removes
+   the key; sync failures return recoverable `Technical` errors.
+3. Make user Unskip persist before changing the dialog's displayed skipped
+   version/action or resetting automatic-prompt suppression. On failure retain
+   the stored/displayed value and Unskip action, keep the dialog open, present
+   exactly one inline diagnostic, and allow retry. Verify suppression remains
+   unchanged on failure and resets only after success. On success clear the
+   value and refresh the action.
+4. Make stale/invalid-version reconciliation consume the clear result. On
+   failure preserve the stored key and existing dialog display, retain the
+   policy decision that an obsolete skip does not suppress a newer eligible
+   update prompt, and retry cleanup on a later check. Verify the later
+   successful retry clears storage and dialog display. Preserve current
+   successful reconciliation behavior and exact-match suppression.
+5. Extend
+   `ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests` with
+   exact previous-value/absent-key rollback, unrelated-setting preservation,
+   typed error mapping, and retry. Extend
+   `ClassMngrUpdateControllerAutomaticStartupTests` with user Unskip failure,
+   dialog/suppression preservation and retry, plus stale-clear failure and
+   prompt eligibility. Retain
+   `ClassMngrUpdaterTests::dialogShowsSkipAndUnskipActions` for standalone
+   dialog behavior. Build `ClassMngr` and these three existing targets; run
+   exactly the three corresponding CTests. Add no CMake target.
+
+This matrix is recorded before implementation. Batch 161 is active with F686.

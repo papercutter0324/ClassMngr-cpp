@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F685)
+### Current state - 2026-10-12 (F686 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-159 are complete; Batch 160 is active with F685. F666 Class Day
+Batches 141-160 are complete; Batch 161 is active with F686. F666 Class Day
 Filter Reset Policy is committed as `faa5c3a7`; F667 Class Selection Reset
 Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
@@ -201,14 +201,24 @@ verify exact previous-value or absent-key restoration, unrelated-setting
 preservation, invalid-input mapping, action/programmatic rollback, one
 diagnostic, and retry. No full suite ran. Batch 159 is complete.
 
-F685 Skip Version checked persistence is selected in Batch 160. The skipped
-version port's void write cannot preserve the update prompt when QSettings
-fails. The selected slice makes the Skip Version action persist before closing
-the dialog or suppressing later prompts; on failure, the stored key and open
-dialog remain unchanged and one diagnostic is shown. The exact-key port and
-UpdateController integration acceptance matrix is recorded in the Phase 2
-progress log. Legacy clear behavior for unskip and stale-version cleanup is
-outside this slice.
+F685 Skip Version checked persistence is committed as
+`8360c8a0181858b4a79fa042f62a46bf771d7031`. `ClassMngr` and both selected
+targets built in the Windows x64 Debug Ninja tree under Visual Studio 2026
+Developer Command Prompt v18.10.1 with MSVC 19.51.36257; the exact port and
+automatic-update CTests passed 2/2. Failure coverage verifies exact previous
+value or absent-key restoration, unrelated-setting preservation, a visible
+diagnostic, an open automatic prompt, and successful retry before suppression.
+No full suite ran. Batch 160 is complete.
+
+F686 checked Skip Version clear is selected in Batch 161. The same key has two
+void clear callers: the dialog's user-initiated Unskip action and background
+stale-version reconciliation. The slice adds exact-key checked removal and a
+typed port result. User Unskip must clear the dialog and automatic suppression
+only after persistence; failure keeps the stored/displayed version and action,
+leaves suppression unchanged, presents one diagnostic, and allows retry.
+Failed stale cleanup preserves storage/display and must not suppress a newer
+eligible update prompt. The full acceptance matrix is recorded in the Phase 2
+progress log.
 
 ### Current state - 2026-10-09
 

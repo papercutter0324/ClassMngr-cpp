@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-159 are complete; Batch 160 is active.
+  141-160 are complete; Batch 161 is active with F686.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -51,9 +51,18 @@
   Developer Command Prompt v18.10.1; the exact port, MainWindow parity, and
   standalone OptionState regression CTests passed 3/3. Failure and retry
   coverage is accepted; no full suite ran.
-- Batch 160 selected F685, Skip Version checked persistence. The exact key,
-  checked port write, dialog failure/retry behavior, and two existing CTests
-  are specified in the Phase 2 progress log before implementation.
+- F685 Skip Version checked persistence is committed as
+  `8360c8a0181858b4a79fa042f62a46bf771d7031`. The product and two selected
+  targets built in the Windows x64 Debug Ninja tree under VS 2026 Developer
+  Command Prompt v18.10.1; the exact port and automatic-startup CTests passed
+  2/2. The automatic prompt remains open with one diagnostic on write failure
+  and completes after retry. No full suite ran; Batch 160 is complete.
+- Batch 161 selected F686 checked Skip Version clear. The port and both clear
+  callers must consume a typed checked-removal result. User Unskip preserves
+  dialog/suppression state on failure and permits retry; stale cleanup failure
+  preserves storage/display and still permits an eligible newer update prompt.
+  Its exact acceptance matrix is in the Phase 2 progress log before
+  implementation.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

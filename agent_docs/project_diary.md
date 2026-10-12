@@ -4054,3 +4054,26 @@ value and dialog open on failure with one diagnostic and a successful retry.
 Existing read, trimming, key, and successful behavior stay intact. The legacy
 clear path for unskip and stale-version cleanup is deferred. Batch 160 is
 active; the full matrix is in the Phase 2 progress log.
+
+## F685 Skip Version checked persistence - accepted - 2026-10-12
+
+The checked `updates/skippedVersion` write restores the exact prior QVariant or
+key absence when synchronization fails. UpdateController now saves before the
+automatic Skip Version dialog closes or changes suppression state. On failure
+the prompt stays open with its previous displayed value and one inline
+diagnostic; retry saves and completes the action. `ClassMngr` and the port and
+automatic-startup targets built in the Windows x64 Debug Ninja tree under VS
+2026 Developer Command Prompt v18.10.1; the exact two CTests passed 2/2. No
+full suite ran. Commit: `8360c8a0181858b4a79fa042f62a46bf771d7031`.
+
+## F686 checked Skip Version clear - selected - 2026-10-12
+
+Make the skipped-version clear operation checked and typed for both user
+Unskip and stale-version reconciliation. A user Unskip must update the dialog
+and reset prompt suppression only after the key is durably removed. A failed
+clear preserves the saved/displayed version and current action, keeps the
+dialog open, reports one inline diagnostic, and can be retried. Stale cleanup
+is a separate background case: a failed removal preserves the setting and
+display, does not suppress an eligible newer update prompt, and can retry on a
+later check. The full matrix is in the Phase 2 progress log; Batch 161 is
+active.
