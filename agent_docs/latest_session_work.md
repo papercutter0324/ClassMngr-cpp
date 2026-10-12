@@ -2,11 +2,12 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
-- Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F744, sharing ScheduleViewMode validity across Sub Prep projections and
-  queries.
+- Deployment: `phase2-cmake-20261012`; Heavy route; resumed 2026-10-12.
+- Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batch 179
+  accepted F744, then the user-requested CMake source-ownership optimization
+  was evaluated, verified, and committed. F745 is selected next, sharing
+  Sub Prep weekday validity across summary, print, and roster request and
+  returned-meeting paths. F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -251,7 +252,7 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740-F743 are accepted; F744 is selected. Its matrix is in
+  full suite ran. F740-F744 are accepted; the F745 matrix is in
   the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
@@ -289,15 +290,14 @@
   edits. Automatic CMake reconfigure took 226s;
   nonblocking warnings included `vswhere`, missing Vulkan with Qt zlib
   fallback, and long object paths. No full suite ran.
-- F744 is selected in Batch 179: share ScheduleViewMode validity across the
-  projection and Sub Prep summary, print, and roster-output query validators
-  with `isValidScheduleViewMode` beside the enum. Preserve guard positions,
-  error codes, recoverability, and messages. Extend each existing invalid-mode
-  test to retain `InvalidInput` and zero-call checks and assert
-  `recoverable=false` plus the exact message: summary/print, “The Sub Prep
-  schedule mode is invalid.”; roster, “The roster-output schedule mode is
-  invalid.” The target matrix is unchanged; the detailed matrix is in the
-  Phase 2 progress log.
+- F744 is accepted at `1d8a3c4b18749d2d77e2213660d528d759048534`; the three
+  focused CTests passed 3/3. The separate CMake optimization is committed at
+  `cbfac3c1682ef99ad3558adb7da4871a87fa0020`. Two ordinary configurations
+  passed in 40.942 and 30.165 seconds and preserved all 416 CTest names; the
+  earlier 226-second observation remains unattributed. F745 is selected to
+  share weekday validation across Sub Prep summary, print, and roster request
+  and returned-meeting paths; its matrix is recorded in the Phase 2 progress
+  log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

@@ -4724,3 +4724,27 @@ the target matrix unchanged. The weekday-range alternative was not selected
 because request and returned meeting paths differ in error handling and
 roster lacks a direct invalid returned-weekday assertion. F744's full matrix
 is in the Phase 2 progress log. F707 and F709 remain deferred.
+
+## Phase 2 continuation - 2026-10-12
+
+F744 was accepted and committed as
+`1d8a3c4b18749d2d77e2213660d528d759048534`. Shared ScheduleViewMode validity
+now serves the Sub Prep summary, print, and roster query validators without
+changing their public contracts. The application target and three focused
+test targets built; their unique CTest registrations passed 3/3 in 1.12
+seconds. No full suite ran.
+
+The user then requested an evaluation and optimization of project
+configuration and CMake files before resuming Phase 2. The source ownership
+validation contained a repeated inventory-by-owner comparison, so it now
+constructs a normalized path-to-owner index once. The change was committed as
+`cbfac3c1682ef99ad3558adb7da4871a87fa0020`. Two ordinary configurations
+passed in 40.942 and 30.165 seconds and preserved all 416 CTest names and the
+same sorted-name SHA-256. The prior 226-second observation was not attributed
+to this loop, and no build or tests ran for the optimization.
+
+F745 is now selected to share the valid weekday range across Sub Prep summary,
+print, and roster request/returned-meeting paths. The Phase 2 progress log
+records exact ordering, errors, test cases, and verification targets before
+implementation. F707 and F709 remain deferred, the formal Phase 2 exit gate
+remains Open, and the separate Phase 0 evidence gate remains incomplete.

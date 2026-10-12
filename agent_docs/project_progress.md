@@ -4623,13 +4623,31 @@ reused existing tests without test edits. Automatic CMake reconfigure took
 226 seconds; nonblocking warnings covered `vswhere`, missing Vulkan with Qt
 zlib fallback, and long object paths. No full suite ran.
 
-F744 is selected to share ScheduleViewMode validity across projection and
-Sub Prep summary, print, and roster-output query validation through
-`isValidScheduleViewMode` in `schedule_view_projection.h`, preserving each
-guard and exact failure contract. Extend each existing invalid-mode query test
-to retain its `InvalidInput` and zero-call checks while asserting the exact
-message and `recoverable=false`. The target matrix is unchanged; details are
-in the Phase 2 progress log. F707 and F709 remain deferred. Phase 2 is In
-Progress/Open with Gates 1 and 2 Partial; F739-F742 remain accepted, F625's
+F744 is accepted at code commit
+`1d8a3c4b18749d2d77e2213660d528d759048534` (`Phase2 - Share schedule mode
+validity across Sub Prep`). It added `isValidScheduleViewMode` beside the
+schedule projection type and reused it in Sub Prep summary, print, and roster
+queries while preserving caller-specific guards and errors. The
+`ClassMngr` target and all three query test targets built in the Windows x64
+Debug Ninja tree under VS 18.0 x64 Developer (MSVC 14.51.36231/compiler
+19.51.36257); exact CTest registrations #204, #205, and #237 (one each)
+passed 3/3 in 1.12 seconds. No full suite ran.
+
+The separately requested CMake optimization is committed as
+`cbfac3c1682ef99ad3558adb7da4871a87fa0020` (`Build - Index source ownership
+validation`). `cmake/source_ownership.cmake` now builds a normalized-path
+owner index instead of repeatedly comparing every inventory path against
+every owner record. Two ordinary configurations passed in the same Windows
+Ninja tree in 40.942 and 30.165 seconds; both retained the exact 416-name
+CTest inventory with SHA-256
+`fd05abf7731f5d337fef767793272447b11061d6f6a01790dfd9a25ebe713f3b`. The
+older 226-second configure observation was not causally attributed to this
+validation loop. No build or tests ran for this CMake change.
+
+F745 is selected to share Sub Prep weekday validation across summary, print,
+and roster requests and returned meetings. Its recorded matrix specifies the
+new application helper, direct includes, request and returned-value boundary
+cases, exact error contracts, and three focused CTests. F707 and F709 remain
+deferred. Phase 2 is In Progress/Open with Gates 1 and 2 Partial; F625's
 assessment is accepted, F626 is deferred, and separate current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24.

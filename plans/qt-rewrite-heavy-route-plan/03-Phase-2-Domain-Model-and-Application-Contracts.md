@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F743 is accepted at `893e400be3988e9bad7fbd5940e76799dc083d79` and F744, sharing ScheduleViewMode validation across Sub Prep projection and summary/print/roster queries, is selected in Batch 179 to add exact-message and nonrecoverable assertions to its three existing invalid-mode tests; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F744 is accepted, the CMake source-ownership index optimization is committed, and F745 is selected to share Sub Prep weekday validation across summary, print, and roster requests and returned meetings; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and the separate Phase 0 current-source gate remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F744 - Share ScheduleViewMode validity across Sub Prep projection and three query validators; add exact-message and `recoverable=false` assertions while retaining `InvalidInput` and zero-call checks (target matrix unchanged).
+- F745 - Share SubPrepWeekday validity across summary, print, and roster request and returned-meeting validation while preserving each caller's order and errors.
 
 ## Objective
 

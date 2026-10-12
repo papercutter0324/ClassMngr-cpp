@@ -28268,3 +28268,86 @@ Keep the same build targets, exactly one CTest registration per target, and
 the exact three CTests specified in the F744 matrix; run no full suite. This
 correction is recorded before implementation. Preserve the Phase 2 gate and
 F707/F709 deferred status.
+
+### F744 Sub Prep ScheduleViewMode validity - accepted - 2026-10-12
+
+F744 is accepted at commit
+`1d8a3c4b18749d2d77e2213660d528d759048534` (`Phase2 - Share schedule mode
+validity across Sub Prep`). The inline
+`isValidScheduleViewMode(ScheduleViewMode) noexcept` now sits beside the enum
+in `schedule_view_projection.h`; projection-cell and summary, print, and
+roster query validators use it. The three invalid-mode tests assert
+`InvalidInput`, `recoverable=false`, and zero port calls, with exact messages:
+summary and print use `The Sub Prep schedule mode is invalid.`; roster uses
+`The roster-output schedule mode is invalid.`
+
+Under VS 18.0 x64 Developer, Ninja Debug, Qt 6.12.0, and MSVC toolset
+14.51.36231/compiler 19.51.36257, `ClassMngr` and all three query test targets
+built. Exactly one CTest registration each was confirmed (IDs 204, 205, 237).
+The focused CTests passed 3/3 in 1.12 seconds; reported case durations were
+0.04, 0.32, and 0.72 seconds. No full suite ran. The only F744 build notice
+was a nonfatal `vswhere.exe` notice.
+
+### CMake source-ownership index optimization - committed - 2026-10-12
+
+Commit `cbfac3c1682ef99ad3558adb7da4871a87fa0020` (`Build - Index source
+ownership validation`) changes only `cmake/source_ownership.cmake`. It replaces
+the nested inventory-path/owner-record scan with a one-time SHA-256
+normalized-path owner index while retaining the path/owner pair-count
+invariant, owner order and deduplication, test filtering, inventory,
+missing/duplicate checks, and diagnostics.
+
+Two ordinary full configures in `build/windows-x64-debug-ninja` succeeded in
+40.942 and 30.165 seconds with Ninja, Debug, `BUILD_TESTING=ON`, and Qt 6.12.0.
+The generated CTest inventory remains 416 names with sorted-name SHA-256
+`fd05abf7731f5d337fef767793272447b11061d6f6a01790dfd9a25ebe713f3b`. This
+was configure-only verification: no build or tests ran. There were no CMake
+errors; two missing `Vulkan_INCLUDE_DIR` notices and four object-path length
+warnings were unchanged and nonfatal. The earlier observed 226-second
+automatic reconfigure remains unattributed; these results do not establish
+its cause.
+
+### Batch 179 continuation - F745 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+The weekday-sharing candidate was previously deferred because it crosses
+request and returned-meeting paths with distinct caller errors and lacked an
+invalid returned-weekday roster fixture. It is now selected with those cases
+specified explicitly.
+
+**F745 is selected:** share `SubPrepWeekday` validation across Sub Prep
+summary, print, and roster requests and returned meetings.
+
+1. Add `src/next/application/sub_prep_weekday.h`, move the enum there, and
+   add inline `isValidSubPrepWeekday(SubPrepWeekday) noexcept`, accepting
+   underlying values 1 through 7. List the header in `cmake/next.cmake`,
+   include it directly from the three query headers, and replace duplicated
+   range predicates.
+2. Preserve each request validation's current order, boundary, and result.
+   Test invalid values 0 and 8 in all three queries. Summary and print must
+   return nonrecoverable `InvalidInput` with exact message
+   `A selected Sub Prep weekday is invalid.` before reads. Roster must return
+   nonrecoverable `InvalidInput` with exact message
+   `A selected roster-output weekday is invalid.` before reads. Keep existing
+   class/day-count checks before weekday validation and duplicate/mode order.
+3. For invalid returned print weekdays 0 and 8, verify one read followed by
+   nonrecoverable `Validation` with exact message
+   `A Sub Prep print meeting has an invalid weekday.`, before selected-day
+   membership; preserve the distinct valid-but-unselected-day error. For
+   invalid returned roster weekdays 0 and 8, verify one read followed by
+   nonrecoverable `Validation` with exact message
+   `A roster-output meeting is outside the requested days.` Retain the
+   existing valid-but-unselected Friday case, which shares that error.
+4. Add these cases in
+   `tests/next_application_sub_prep_schedule_summary_query_tests.cpp`,
+   `tests/next_application_sub_prep_print_source_query_tests.cpp`, and
+   `tests/next_application_sub_prep_roster_output_source_query_tests.cpp`.
+   Build `ClassMngr` and the three existing query targets, confirm one exact
+   CTest registration each (IDs 204, 205, 237), and run only
+   `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+   `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`, and
+   `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F745;
+F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and the
+formal exit gate remains Open.
