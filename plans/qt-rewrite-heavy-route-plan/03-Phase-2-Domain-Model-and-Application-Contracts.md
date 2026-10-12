@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F712 is accepted and F713 is selected in Batch 179; F707 remains deferred pending an observed app callsite and F709 pending a public malformed-input seam; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F713 is accepted and F714 is selected in Batch 179; F707 remains deferred pending an observed app callsite and F709 pending a public malformed-input seam; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -101,7 +101,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F713 - Move `scheduleStartMinute` to an explicit Domain 24-hour parser allowlist while preserving raw-input restrictions and invalid-click behavior.
+- F714 - Move class-transfer schedule time conversion to the Domain spaced AM/PM parser with compatibility normalization and preflight-before-transaction behavior.
 
 ## Objective
 

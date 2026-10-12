@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F713.
+  F714.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -129,17 +129,25 @@
   canonical, alternate AM/PM, trimmed valid, and malformed times, including
   distinct summary and navigation fallbacks and unknown ordering. No full
   suite ran.
-- F713 selects `scheduleStartMinute` in `src/features/schedule/ui/schedule_widget.cpp`.
-  Migrate its strict unpadded/padded 24-hour parser to the explicit
-  `HourMinute24Hour` and `PaddedHourMinute24Hour` Domain formats; preserve
-  ASCII digits and reject surrounding whitespace, seconds, and AM/PM. Keep the
-  click warning and no-save behavior for invalid labels. Extend
-  `ClassMngrScheduleWidgetTests` through its public `setPreviewModel` and
-  `onCellClicked` seam. Add `schedule_value_parser.cpp` directly to this test
-  target because it does not link the runtime. Build `ClassMngr` and
-  `ClassMngrScheduleWidgetTests`, then run only its exact registered CTest of
-  the same name. F707 and F709 remain deferred. The preimplementation matrix
-  is in the Phase 2 progress log.
+- F713 Schedule Widget slot-time parsing is accepted and committed as
+  `141e537577229cf74ab755d884a34e616ffcc744`. `ClassMngr` and
+  `ClassMngrScheduleWidgetTests` built in the Windows x64 Debug Ninja tree
+  under the VS x64 Developer environment; the exact registered CTest passed
+  1/1. Click tests verify `9:00` and `09:00` normalize to 09:00 and that
+  whitespace, seconds, AM/PM, malformed, and full-width-digit inputs warn
+  without saves or preview-state changes. CMake regeneration emitted
+  object-path length warnings but the build and test passed. No full suite ran.
+- F714 selects the Class Transfer repository `timeToMinutes` parser. Normalize
+  legacy trimmed/split 12-hour values before calling the explicit
+  `HourMinuteAmPmSpaced` Domain format so repeated spaces and one-digit minutes
+  remain accepted. Preserve hour/minute and period validation and preflight
+  no-write behavior. Extend the public `DataService::importClasses` path with
+  repeated-space and one-digit-minute parity plus malformed start/end
+  rejection and storage preservation. Add `schedule_value_parser.cpp` to
+  `ClassMngrClassTransferTests`, which compiles the repository directly. Build
+  `ClassMngr` and that target; run exact registered CTest
+  `ClassMngrClassTransferTests`. F707 and F709 remain deferred. The
+  preimplementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

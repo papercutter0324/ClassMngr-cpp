@@ -26682,4 +26682,54 @@ parser while preserving its restricted syntax and invalid-click behavior.
    target; run only the exact registered CTest
    `ClassMngrScheduleWidgetTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F713.
+This matrix was recorded before implementation.
+
+### F713 Schedule Widget start-time parser migration - accepted - 2026-10-12
+
+F713 is accepted at code/test commit
+`141e537577229cf74ab755d884a34e616ffcc744`. `ClassMngr` and
+`ClassMngrScheduleWidgetTests` built, and the exact registered CTest
+`ClassMngrScheduleWidgetTests` passed 1/1. Public click-path cases accept
+`9:00` and `09:00`; whitespace, seconds, AM/PM, malformed, and full-width
+digits warn, perform zero saves, and leave the preview unchanged. CMake
+regeneration took about 220 seconds and emitted object-path length warnings;
+the build and test passed. No full suite ran.
+
+**Decision: accept F713.** Batch 179 continues with F714; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F714 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `timeToMinutes` in
+`src/data/repositories/class_transfer_repository.cpp`. The live path is
+`candidateForTime` -> `appendAndValidateTimes` -> `preflightSchedules` ->
+`DataService::importClasses`. Its current splitter trims, splits on ASCII
+spaces with `SkipEmptyParts`, parses integer hour/minute, accepts hours 1-12
+and minutes 0-59, and uppercases AM/PM. It accepts repeated internal spaces
+and one-digit minutes, which the Domain's spaced AM/PM parser does not accept
+verbatim.
+
+**F714 is selected:** reuse the Domain parser after compatibility
+normalization that preserves existing accepted spellings; keep schedule
+preflight before the transaction and do not narrow input.
+
+1. Replace only `timeToMinutes` with
+   `ScheduleValueParser::parseDisplayTime` using the explicit
+   `HourMinuteAmPmSpaced` format after normalizing legacy input as needed.
+   Preserve trimming, repeated ASCII spaces, one-digit minutes, integer
+   parsing, hour/minute ranges, and case-insensitive AM/PM behavior.
+2. Keep validation and preflight before transaction creation; malformed
+   schedules must not write to storage.
+3. Extend `ClassMngrClassTransferTests`:
+   `schedulePreflightParsesSundayOvernightAndEqualEndpoints` already covers
+   outer padding, lowercase AM/PM, and unchanged destination state. Add
+   positive conflict/parity cases for `11:00   pm` and `4:0 PM`. Add malformed
+   start `4:75 PM` and malformed end `not a time`, each paired with a valid
+   counterpart; assert invalid-schedule results, `sqliteTotalChanges == 0`,
+   and unchanged teacher/class/destination schedule counts and state.
+4. Add `src/domain/rules/schedule_value_parser.cpp` to the direct sources of
+   `ClassMngrClassTransferTests` in `cmake/tests/features.cmake`. Build
+   `ClassMngr` and `ClassMngrClassTransferTests`; run only the exact registered
+   CTest `ClassMngrClassTransferTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F714.

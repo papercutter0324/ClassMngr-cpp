@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F712 accepted; F713 selected)
+### Current state - 2026-10-12 (F713 accepted; F714 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F713, the Schedule Widget slot-time parsing migration.
+with F714, the Class Transfer repository time parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -157,15 +157,23 @@ the Windows x64 Debug Ninja tree under the VS x64 Developer environment, and
 the exact registered CTest passed 1/1. SQL-backed public-port cases cover
 canonical, alternate AM/PM, trimmed valid, and malformed values, preserving
 summary `N/A` and malformed navigation fallback/order. No full suite ran.
-F713 selects only `scheduleStartMinute` in `schedule_widget.cpp`: use the
-explicit `HourMinute24Hour` and `PaddedHourMinute24Hour` Domain formats with
-raw whitespace rejection and retain the existing ASCII-digit grammar. Keep
-valid times, no-save warning behavior, and typed state persistence unchanged.
-Its public click-and-save fixture supports focused parity coverage; the test
-target needs the Domain parser source added directly in CMake. F707 remains
-deferred because its comparator chain has no observed app callsite; F709 is
-deferred because its public fixture does not readily supply malformed raw
-time text.
+F713 is committed as
+`141e537577229cf74ab755d884a34e616ffcc744`; `ClassMngr` and
+`ClassMngrScheduleWidgetTests` built in the Windows x64 Debug Ninja tree under
+the VS x64 Developer environment, and the exact registered CTest passed 1/1.
+Public click tests verify `9:00` and `09:00` save as 09:00 (540 minutes),
+while whitespace, seconds, AM/PM, malformed, and full-width-digit labels
+warn, perform no saves, and preserve preview state. CMake regeneration took
+about 220 seconds and emitted object-path length warnings; build and test
+passed. No full suite ran. F714 selects only `timeToMinutes` in
+`class_transfer_repository.cpp`. Normalize the existing trimmed/split
+12-hour input without losing repeated internal spaces or one-digit minute
+acceptance, then use the explicit `HourMinuteAmPmSpaced` Domain format. Keep
+range and period validation, schedule preflight before writes, and import
+failure behavior. Its focused public import test target needs the parser
+source added directly in CMake. F707 remains deferred because its comparator
+chain has no observed app callsite; F709 is deferred because its public
+fixture does not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

@@ -4363,3 +4363,28 @@ The acceptance matrix is recorded in the Phase 2 progress log before
 implementation. F707 and F709 remain deferred for their documented missing
 app callsite and malformed-input fixture constraints. Phase 2 remains In
 Progress with Gates 1 and 2 Partial.
+
+## Phase 2 Schedule Widget slot-time parsing - 2026-10-12
+
+F713 is accepted and committed as
+`141e537577229cf74ab755d884a34e616ffcc744`. `ClassMngr` and
+`ClassMngrScheduleWidgetTests` built in the Windows x64 Debug Ninja tree under
+the VS x64 Developer environment; the exact registered CTest passed 1/1.
+Public click coverage verifies `9:00` and `09:00` save as 09:00 (540
+minutes). Whitespace, seconds, AM/PM, malformed, and full-width-digit values
+produce a warning, no save, and unchanged preview state. CMake regeneration
+took about 220 seconds and emitted object-path length warnings; build/test
+passed. No full suite ran.
+
+F714 is selected in Batch 179 for `timeToMinutes` in
+`class_transfer_repository.cpp`. Use the explicit `HourMinuteAmPmSpaced`
+Domain parser after compatibility normalization for the existing trimmed and
+space-split format. Preserve repeated internal spaces, lowercase AM/PM,
+one-digit minutes, hour/minute range checks, and preflight rejection before
+the write transaction. Add the parser source to `ClassMngrClassTransferTests`,
+which compiles the repository directly. Public import tests cover repeated
+space/one-digit-minute valid values, malformed start/end failures, zero SQLite
+changes, and unchanged destination state. The acceptance matrix is recorded
+in the Phase 2 progress log before implementation. F707 and F709 remain
+deferred for their documented missing app callsite and malformed-input fixture
+constraints. Phase 2 remains In Progress with Gates 1 and 2 Partial.
