@@ -24778,3 +24778,83 @@ public MainWindow constructor and startup behavior.
    CMake target.
 
 This matrix is recorded before implementation. Batch 153 is active with F678.
+
+### F678 AI Comment Voice failure feedback - accepted - 2026-10-12
+
+F678 is accepted at code/test commit
+`c3ab5a7a4308e0c52230f2047a240e1c97d31348`. `ClassMngr` and both selected
+test targets built in `build/windows-x64-debug-ninja` using Visual Studio 2026
+Build Tools Developer Command Prompt v18.10.1. The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests` and
+`ClassMngrMainWindowAiCommentVoiceActionParityTests`. The port tests verify
+DirectToStudent=0 and ThirdPerson=1, unknown values defaulting to
+DirectToStudent, invalid enum handling, Technical sync-error mapping,
+prior/absent-key restoration, unrelated-setting preservation, and retry. The
+MainWindow tests verify startup hydration makes no write, failure through the
+real QAction performs one sync attempt, rolls back the checked action and
+state, preserves storage and direct-student prompt wording, reports one
+diagnostic, and a successful retry updates subsequent parent/guardian prompt
+wording. No full suite ran.
+
+**Decision: accept F678.** Batch 153 is complete; Batch 154 is active with
+F679. Continue the one-commit-per-slice sequence.
+
+### Batch 154 shortlist and selection - recorded before F679 implementation - 2026-10-12
+
+The candidate scan compared AI Comment Provider, PDF Viewer Background, PDF
+page spacing, Sidebar Display, and PowerPoint Data Access Notice. AI Comment
+Provider is selected because the stored choice is read by report and batch
+dialogs to determine provider labels, prompt actions, and provider URLs. A
+failed void write can leave the menu choice and subsequently created dialogs
+disagreeing. Sidebar affects presentation; the PDF settings affect the live
+viewer; the PowerPoint notice is Apple-only. The provider route has existing
+port and MainWindow parity tests. No CMake target or platform-specific gate is
+needed.
+
+**F679 is selected:** add an opt-in checked SettingsManager write for the AI
+Comment Provider integer preference. It synchronizes QSettings, restores the
+previous key including absence on failure, preserves unrelated settings, and
+permits retry; generic `SettingsManager::set`/`sync` behavior remains
+unchanged. Change `AiCommentProviderPreferencesPort::write` to
+`[[nodiscard]] Domain::Result<void>` and preserve ChatGPT=0, Gemini=1, Claude=2,
+MicrosoftCopilot=3, CustomWebsite=4, and missing/unknown stored values
+defaulting to ChatGPT. Invalid enum inputs map to `InvalidInput`; storage
+errors map to diagnostic `Technical` results.
+
+### F679 AI Comment Provider failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked SettingsManager write for the provider integer. Check QSettings
+   sync, restore the previous key including absence on failure, preserve
+   unrelated settings, and permit a successful retry. Leave generic
+   SettingsManager `set`/`sync` behavior unchanged.
+2. Change `AiCommentProviderPreferencesPort::write` to
+   `[[nodiscard]] Domain::Result<void>`. Preserve ChatGPT=0, Gemini=1,
+   Claude=2, MicrosoftCopilot=3, CustomWebsite=4, and missing/unknown stored
+   values defaulting to ChatGPT. Map invalid enum values to `InvalidInput` and
+   sync errors to diagnostic `Technical` results.
+3. Inject the typed provider port and error handler through existing MainWindow
+   startup options without changing its public constructor. Make all provider
+   selection actions persistence-first. On failure, preserve the previous
+   provider key, selected action, and OptionState; for the Custom Website
+   route, also leave the saved URL unchanged and restore the previous action.
+   Report one diagnostic and avoid a duplicate write. On retry, update storage,
+   selection, and subsequent report/batch provider labels together. Preserve
+   startup hydration without writes and existing programmatic `OptionState`
+   persistence behavior. Keep the Custom Website URL dialog, HTTPS validation,
+   and successful URL selection flow intact; persist its provider choice before
+   changing the saved URL.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests`
+   with injected sync failure, previous/absent-key and unrelated-setting
+   preservation, invalid enum mapping, and retry. Extend
+   `ClassMngrMainWindowAiCommentProviderActionParityTests` to verify standard
+   provider action rollback, one sync attempt/diagnostic, provider labels
+   after failure and retry, and unchanged storage on failure. Extend the
+   existing
+   `ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests` to
+   verify provider-write failure restores the prior selection and URL and a
+   successful retry retains the URL-dialog behavior. Build `ClassMngr` and
+   these three existing targets; run exactly these three CTests. Add no CMake
+   target.
+
+This matrix is recorded before implementation. Batch 154 is active with F679.

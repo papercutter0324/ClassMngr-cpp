@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F678)
+### Current state - 2026-10-12 (F679)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-152 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-153 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -129,12 +129,24 @@ verifies typed error/invalid-value mapping, preservation of previous and
 absent settings, unchanged selected/live font state on failure, one diagnostic,
 and successful retry. No full suite ran. Batch 152 is complete.
 
-F678 AI Comment Voice typed persistence and action rollback is selected/current
-in Batch 153. Its acceptance matrix is recorded in the Phase 2 progress log.
-A failed write must restore the selected voice and preserve the stored voice
-and prompt audience, with one diagnostic warning. A successful retry must
-update the preference and the voice used in subsequent prompts. The existing
-port and MainWindow prompt-parity CTests are selected; no CMake target is
+F678 AI Comment Voice typed persistence and action rollback is committed as
+`c3ab5a7a4308e0c52230f2047a240e1c97d31348`. `ClassMngr` and both selected test
+targets built in the Windows x64 Debug Ninja tree using Visual Studio 2026
+Build Tools Developer Command Prompt v18.10.1. The exact port and MainWindow
+prompt-parity CTests passed 2/2. Coverage verifies voice mapping/defaults,
+invalid enum and sync-error results, previous/absent-key restoration,
+unrelated-setting preservation, no startup write, one diagnostic and sync
+attempt on action failure, unchanged stored/action state, prompt voice after
+failure, and successful retry. No full suite ran. Batch 153 is complete.
+
+F679 AI Comment Provider typed persistence and action rollback is
+selected/current in Batch 154. Its acceptance matrix is recorded in the Phase
+2 progress log. A failed provider save must preserve the selected/stored
+provider and subsequent report/batch provider labels, with one diagnostic; a
+successful retry must update the preference and subsequent labels together.
+The custom website route must keep its URL dialog and preserve both prior
+selection and URL on a failed provider write. The existing port, provider
+action, and custom-website action CTests are selected; no CMake target is
 needed.
 
 ### Current state - 2026-10-09

@@ -3920,11 +3920,21 @@ attached, so initialization does not issue an extra write; later programmatic
 sets retain their write behavior. Both selected CTests passed 2/2. F677 is
 committed as `fd1dd763503a60deb54ffa1b00c3221b20bca264`.
 
-## F678 AI Comment Voice persistence failure feedback - selected - 2026-10-12
+## F678 AI Comment Voice persistence failure feedback - accepted - 2026-10-12
 
-The AI Comment Voice action changes between direct-to-student and
-third-person-for-guardian wording, while report and batch dialogs read the
-stored voice when building prompts. A failed write can make the menu disagree
-with the prompt audience. F678 will make the choice persistence-first, retain
-the previous action and prompt voice on failure, report one diagnostic, and
-permit a successful retry.
+The AI Comment Voice action now persists before committing its selection.
+Failure preserves the old voice in storage and in report/batch prompts, with
+one diagnostic; retry updates selection and prompts together. Startup
+hydration performs no preference write. Both selected CTests passed 2/2.
+F678 is committed as `c3ab5a7a4308e0c52230f2047a240e1c97d31348`.
+
+## F679 AI Comment Provider persistence failure feedback - selected - 2026-10-12
+
+Provider choice is read by report and batch dialogs when they build provider
+labels, prompt actions, and URLs. A failed write can leave the selected menu
+provider inconsistent with subsequent dialogs. F679 will make provider
+selection persistence-first, preserve the previous provider on failure, report
+one diagnostic, and permit retry. The Custom Website choice has its own URL
+dialog and key; a failed provider commit must retain the prior selection and
+URL, while the existing URL-validation and successful selection flow remain
+intact.

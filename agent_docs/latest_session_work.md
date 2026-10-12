@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-152 are complete.
+  141-153 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -21,8 +21,10 @@
   `09b848e46c75f5247c4de3796c1db9f22f27d2ea`; its two focused CTests passed.
 - F677 Font Size typed persistence and action rollback is committed as
   `fd1dd763503a60deb54ffa1b00c3221b20bca264`; its two focused CTests passed.
-- F678 AI Comment Voice typed persistence and action rollback is
-  selected/current in Batch 153. Its acceptance matrix and exact CTests are in
+- F678 AI Comment Voice typed persistence and action rollback is committed as
+  `c3ab5a7a4308e0c52230f2047a240e1c97d31348`; its two focused CTests passed.
+- F679 AI Comment Provider typed persistence and action rollback is
+  selected/current in Batch 154. Its acceptance matrix and exact CTests are in
   the Phase 2 progress log; implementation begins after this selection record
   is committed.
 
@@ -5351,7 +5353,7 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
 
-## Resumed Phase 2 after F670; F672-F677 accepted and F678 selected - 2026-10-12
+## Resumed Phase 2 after F670; F672-F678 accepted and F679 selected - 2026-10-12
 
 F671 Custom Color Palette typed persistence and caller feedback is committed
 as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
@@ -5426,11 +5428,23 @@ successful retry. A duplicate startup write found during verification was
 fixed by attaching `onPersist` after preference hydration. No full suite ran.
 Batch 152 is complete.
 
-F678 AI Comment Voice persistence failure feedback is selected/current in
-Batch 153. The menu distinguishes direct-to-student from third-person
-parent/guardian wording, and subsequent report/batch dialogs read the stored
-voice when building prompts. A failed write can leave the menu and prompt
-audience disagreeing. The shortlist selected voice over AI Provider, PDF
-background, sidebar display, and the Apple-only PowerPoint notice. The matrix
-and exact port/MainWindow CTests are in the Phase 2 progress log.
-Implementation begins after this selection record is committed.
+F678 AI Comment Voice persistence failure feedback is committed as
+`c3ab5a7a4308e0c52230f2047a240e1c97d31348`. `ClassMngr` and both focused
+targets built in the Windows x64 Debug Ninja tree under the VS 2026 Build
+Tools developer command prompt; the exact port and MainWindow prompt-parity
+CTests passed 2/2. Failure coverage verifies prior/absent-key and unrelated
+setting preservation, invalid and storage-error mapping, no startup write,
+one sync attempt and diagnostic on action failure, unchanged action/storage,
+prompt voice after failure, and successful retry. No full suite ran. Batch 153
+is complete.
+
+F679 AI Comment Provider persistence failure feedback is selected/current in
+Batch 154. Provider selection affects the labels/actions in subsequently
+created report and batch dialogs. The shortlist compared provider with PDF
+viewer background/page spacing, Sidebar Display, and the Apple-only PowerPoint
+notice; provider was selected for its downstream dialog/provider URL effect
+and existing focused tests. Custom Website also stores a separate URL and
+uses a modal entry/validation flow, so failure must retain the old provider
+and URL while a successful retry preserves the existing URL selection flow.
+The acceptance matrix and three exact existing CTests are in the Phase 2
+progress log. Implementation begins after this selection record is committed.
