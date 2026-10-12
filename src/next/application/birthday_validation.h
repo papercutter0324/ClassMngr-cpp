@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/qt_compatible_text.h"
+#include "next/domain/gregorian_date.h"
 
 #include <string>
 #include <string_view>
@@ -45,10 +46,7 @@ namespace ClassMngr::Next::Application
     }
 
     // The former UI check parsed the month and day in leap year 2000.
-    constexpr int daysInMonth[]{
-        31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-    };
-    return day <= daysInMonth[month - 1];
+    return Domain::GregorianDate::fromComponents(2000, month, day).has_value();
 }
 
 } // namespace ClassMngr::Next::Application

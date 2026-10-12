@@ -79,10 +79,14 @@ acceptsBlankAndLeapDayBirthdayText()
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
 preservesQtBirthdayParsingBehavior()
 {
-    const std::array<std::u16string_view, 11> birthdays{
+    const std::array<std::u16string_view, 15> birthdays{
         u"01-01",
         u"02-29",
         u"02-30",
+        u"04-30",
+        u"04-31",
+        u"06-30",
+        u"06-31",
         u"13-01",
         u"2-9",
         u"02-9",
