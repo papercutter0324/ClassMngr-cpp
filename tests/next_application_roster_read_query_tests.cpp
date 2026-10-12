@@ -92,6 +92,7 @@ void NextApplicationRosterReadQueryTests::invalidClassIdsDoNotReachPort()
              "class-42",
              " 42",
              "42 ",
+             "42x",
              "01",
              "00042",
              "999999999999999999999"
@@ -103,6 +104,10 @@ void NextApplicationRosterReadQueryTests::invalidClassIdsDoNotReachPort()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QVERIFY(result.error().message ==
+                "Class ID must be a canonical positive integer.");
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
     }
 
     QCOMPARE(port.callCount, 0);

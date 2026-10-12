@@ -85,16 +85,33 @@ void emptyAndInvalidInputsAvoidThePort()
 
     const std::vector<Domain::ClassId> invalidIds{
         classId(1),
-        *Domain::ClassId::fromString("01")
+        *Domain::ClassId::fromString("01"),
+        *Domain::ClassId::fromString("42x")
     };
     const auto invalid = query.execute(invalidIds);
     assert(!invalid);
     assert(invalid.error().code == Domain::ErrorCode::InvalidInput);
+    assert(invalid.error().message ==
+           "Roster print class IDs must be canonical, positive, and unique.");
+    assert(!invalid.error().recoverable);
+    assert(port.callCount == 0);
+
+    const auto malformed = query.execute({
+        *Domain::ClassId::fromString("42x")
+    });
+    assert(!malformed);
+    assert(malformed.error().code == Domain::ErrorCode::InvalidInput);
+    assert(malformed.error().message ==
+           "Roster print class IDs must be canonical, positive, and unique.");
+    assert(!malformed.error().recoverable);
     assert(port.callCount == 0);
 
     const auto duplicate = query.execute({classId(1), classId(1)});
     assert(!duplicate);
     assert(duplicate.error().code == Domain::ErrorCode::InvalidInput);
+    assert(duplicate.error().message ==
+           "Roster print class IDs must be canonical, positive, and unique.");
+    assert(!duplicate.error().recoverable);
     assert(port.callCount == 0);
 }
 
@@ -138,11 +155,18 @@ void propagatesFailureAndRejectsWrongCountOrIdentity()
     const auto wrongCount = query.execute({classId(5)});
     assert(!wrongCount);
     assert(wrongCount.error().code == Domain::ErrorCode::Validation);
+    assert(wrongCount.error().message ==
+           "Roster print batch returned a different number of classes.");
+    assert(!wrongCount.error().recoverable);
+    assert(port.callCount == 2);
 
     port.response = {entry(6, u"E6")};
     const auto wrongId = query.execute({classId(5)});
     assert(!wrongId);
     assert(wrongId.error().code == Domain::ErrorCode::Validation);
+    assert(wrongId.error().message ==
+           "Roster print batch returned a different class identity or order.");
+    assert(!wrongId.error().recoverable);
     assert(port.callCount == 3);
 }
 

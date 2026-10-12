@@ -66,6 +66,10 @@ void rejectsNonCanonicalIdsBeforeCallingPort()
         const auto result = query.execute(*classId);
         assert(!result);
         assert(result.error().code == Domain::ErrorCode::InvalidInput);
+        assert(result.error().message ==
+               "Roster print class ID must be a canonical positive integer.");
+        assert(!result.error().recoverable);
+        assert(port.callCount == 0);
     }
     assert(port.callCount == 0);
 }
@@ -90,6 +94,9 @@ void propagatesSourceFailureAndRejectsMismatchedIdentity()
     const auto mismatched = query.execute(*classId);
     assert(!mismatched);
     assert(mismatched.error().code == Domain::ErrorCode::Validation);
+    assert(mismatched.error().message ==
+           "A roster print class information read returned a different class identifier.");
+    assert(!mismatched.error().recoverable);
     assert(port.callCount == 2);
 }
 
