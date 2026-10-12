@@ -61,8 +61,15 @@ int weekdayIndex(
     const QString& day
     )
 {
+    const QString trimmed = day.trimmed();
+    const auto parsed = ScheduleValueParser::parseWeekday(trimmed);
+    if (!parsed || parsed->text != trimmed)
+    {
+        return std::numeric_limits<int>::max();
+    }
+
     const int index =
-        ClassInfoConfig::Days.indexOf(day.trimmed());
+        ClassInfoConfig::Days.indexOf(parsed->text);
     return index >= 0
         ? index
         : std::numeric_limits<int>::max();

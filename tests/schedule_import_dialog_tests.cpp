@@ -2243,6 +2243,16 @@ void ScheduleImportDialogTests
             QStringLiteral("Tuesday"),
             QStringLiteral(" 4:15 PM "),
             QStringLiteral(" 5:15 PM ")
+        },
+        {
+            QStringLiteral(" Monday "),
+            QStringLiteral("4:03 PM"),
+            QStringLiteral("5:03 PM")
+        },
+        {
+            QStringLiteral("monday"),
+            QStringLiteral("4:02 PM"),
+            QStringLiteral("5:02 PM")
         }
     };
 
@@ -2250,8 +2260,8 @@ void ScheduleImportDialogTests
         ScheduleImportReviewPresentation::compactMeetingText(times),
         QStringLiteral(
             "Mon. not-a-time / Mon.  9:40  / Mon. 9:45 / Mon. 09:50 / "
-            "Mon. 4pm / Mon. 4:07pm / Mon. 4:15PM / Mon. 4:20pm / "
-            "Tues.  4:15 PM "
+            "Mon. 4pm / Monday 4:03pm / Mon. 4:07pm / Mon. 4:15PM / "
+            "Mon. 4:20pm / Tues.  4:15 PM  / monday 4:02pm"
             )
         );
 }
@@ -4220,6 +4230,7 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
     const auto candidate =
         [](const QString& teacher,
            const QString& level,
+           const QString& day,
            const QString& start,
            const QString& end)
         {
@@ -4230,7 +4241,7 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
             result.classGrade = QStringLiteral("E4");
             result.classLevel = level;
             result.times = {
-                {QStringLiteral("Monday"), start, end}
+                {day, start, end}
             };
             return result;
         };
@@ -4238,14 +4249,23 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
         candidate(
             QStringLiteral("김선생"),
             QStringLiteral("Hercules"),
+            QStringLiteral("Monday"),
             QStringLiteral("4:00 PM"),
             QStringLiteral("4:55 PM")
             ),
         candidate(
             QStringLiteral("이선생"),
             QStringLiteral("Athena"),
+            QStringLiteral("Monday"),
             QStringLiteral("4:30PM"),
             QStringLiteral("5:25PM")
+            ),
+        candidate(
+            QStringLiteral("박선생"),
+            QStringLiteral("LowercaseSentinel"),
+            QStringLiteral("monday"),
+            QStringLiteral("4:15 PM"),
+            QStringLiteral("5:10 PM")
             )
     };
 
@@ -4269,6 +4289,9 @@ void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()
     QVERIFY(warning->text().contains(QStringLiteral("overlaps")));
     QVERIFY(warning->text().contains(QStringLiteral("Monday")));
     QVERIFY(warning->text().contains(QStringLiteral("4:00pm")));
+    QVERIFY(
+        !warning->text().contains(QStringLiteral("LowercaseSentinel"))
+        );
     QVERIFY(
         !warning->text().contains(
             QStringLiteral("Multiple imported classes are assigned")
