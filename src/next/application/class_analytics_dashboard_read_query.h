@@ -1,14 +1,13 @@
 #pragma once
 
 #include "next/application/class_analytics_dashboard_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/speaking_evaluation_grade.h"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -102,34 +101,6 @@ using ClassAnalyticsDashboardResult = Domain::Result<ClassAnalyticsDashboard>;
 
 namespace ClassAnalyticsDashboardReadDetail
 {
-
-[[nodiscard]] inline bool isCanonicalPositiveClassId(
-    const std::string& value
-    ) noexcept
-{
-    if (value.empty() || value.front() < '1' || value.front() > '9')
-    {
-        return false;
-    }
-
-    std::uint64_t parsed = 0;
-    for (const char character : value)
-    {
-        if (character < '0' || character > '9')
-        {
-            return false;
-        }
-        const std::uint64_t digit =
-            static_cast<std::uint64_t>(character - '0');
-        if (parsed > (static_cast<std::uint64_t>(
-                          std::numeric_limits<int>::max()) - digit) / 10)
-        {
-            return false;
-        }
-        parsed = parsed * 10 + digit;
-    }
-    return parsed > 0;
-}
 
 [[nodiscard]] inline Domain::OperationError invalidClassId()
 {
@@ -500,7 +471,7 @@ public:
     {
         using namespace ClassAnalyticsDashboardReadDetail;
 
-        if (!isCanonicalPositiveClassId(query.classId.value()))
+        if (!isCanonicalPositiveDecimalId(query.classId.value()))
         {
             return ClassAnalyticsDashboardResult::failure(invalidClassId());
         }

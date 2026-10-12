@@ -136,6 +136,8 @@ public:
     ClassAnalyticsRosterNames roster;
     std::array<ClassAnalyticsEvaluationRows, 4> evaluations;
     mutable std::vector<std::u16string> calls;
+    mutable std::vector<std::string> rosterClassIds;
+    mutable std::vector<std::string> evaluationBatchClassIds;
     mutable int evaluationBatchReadCount = 0;
     bool failEvaluationBatch = false;
 
@@ -143,7 +145,7 @@ public:
         const Domain::ClassId& classId
         ) const override
     {
-        (void)classId;
+        rosterClassIds.push_back(classId.value());
         calls.push_back(u"roster");
         return Domain::Result<ClassAnalyticsRosterNames>::success(roster);
     }
@@ -153,7 +155,7 @@ public:
         const Domain::ClassId& classId
         ) const override
     {
-        (void)classId;
+        evaluationBatchClassIds.push_back(classId.value());
         ++evaluationBatchReadCount;
         calls.push_back(u"evaluation batch");
         if (failEvaluationBatch)
@@ -339,14 +341,39 @@ void readFailureReturnsNoPartialDashboard()
 
 void invalidClassIdDoesNotRead()
 {
+    const TestNameSemantics names;
+    const std::vector<std::string> invalidIds = {
+        "0", "007", "-1", "17x", "2147483648"
+    };
+    for (const std::string& rawId : invalidIds)
+    {
+        FakeReadPort port;
+        const auto result = ClassAnalyticsDashboardReadQuery::execute(
+            { .classId = *Domain::ClassId::fromString(rawId) }, port, names);
+        assert(!result);
+        assert(result.error().code == Domain::ErrorCode::InvalidInput);
+        assert(result.error().message
+            == "Class ID must be a canonical positive integer.");
+        assert(!result.error().recoverable);
+        assert(port.calls.empty());
+        assert(port.rosterClassIds.empty());
+        assert(port.evaluationBatchClassIds.empty());
+    }
+}
+
+void maximumClassIdForwardsUnchangedToBothReads()
+{
     FakeReadPort port;
     const TestNameSemantics names;
-    const auto invalidId = *Domain::ClassId::fromString("007");
     const auto result = ClassAnalyticsDashboardReadQuery::execute(
-        { .classId = invalidId }, port, names);
-    assert(!result);
-    assert(result.error().code == Domain::ErrorCode::InvalidInput);
-    assert(port.calls.empty());
+        { .classId = *Domain::ClassId::fromString("2147483647") }, port, names);
+    assert(result);
+    assert((port.calls == std::vector<std::u16string>{
+        u"roster", u"evaluation batch" }));
+    assert((port.rosterClassIds == std::vector<std::string>{ "2147483647" }));
+    assert((port.evaluationBatchClassIds
+        == std::vector<std::string>{ "2147483647" }));
+    assert(port.evaluationBatchReadCount == 1);
 }
 
 } // namespace
@@ -361,5 +388,6 @@ int main()
     selectedEvaluationStillReadsEveryYtdInputInOneBatch();
     readFailureReturnsNoPartialDashboard();
     invalidClassIdDoesNotRead();
+    maximumClassIdForwardsUnchangedToBothReads();
     return 0;
 }
