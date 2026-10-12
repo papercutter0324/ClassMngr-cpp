@@ -29883,3 +29883,47 @@ target, confirm the exact CTest registers once, then run only it with
 implementation; F778 verification is pending. Batch 191 discovery found only
 F778; no other slices were found. F707/F709 remain deferred, Phase 2 Gates
 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F778 Class Transfer Apply destination ID parsing - accepted - 2026-10-13
+
+F778 is accepted at commit
+`284789308c686e421c2a6c3f89811acf4371784f`. In the existing incremental
+Visual Studio 18 Windows x64 Debug tree `build/windows-x64-debug`, building
+`ClassMngr` and `ClassMngrNextApplicationClassTransferTests` hit sandbox
+MSBuild FileTracker `E_ACCESSDENIED`; an identical bounded retry outside the
+sandbox completed both builds. The exact CTest
+`ClassMngrNextApplicationClassTransferTests` registered once (#241) and passed
+1/1. No full suite ran.
+
+### F779 DocumentContentReference Domain ownership - selected and acceptance matrix - 2026-10-13
+
+**F779 is selected** after two independent architecture reviews and exact
+read-only surface mapping. Add
+`src/next/domain/document_content_reference.h` with passive
+`Domain::DocumentContentReference`, preserving exactly default and explicit
+`std::string` construction, `Text`, `empty()`, `value()`, `text()`, and
+equality. The value must contain no Qt dependency or validation logic. Remove
+the Application declaration and all Application-qualified or implicit API
+spelling; add no Application compatibility alias. Migrate every tracked
+code/test reference to the Domain type. Keep nonblank and 4096-character
+checks in the Application session/catalog layer and URI/resource resolution
+in Platform unchanged. Add the header to `CLASSMNGR_NEXT_DOMAIN_SOURCES` in
+`cmake/next.cmake` and its matching ownership registry in
+`cmake/source_ownership.cmake`.
+
+Add focused passive value-semantics coverage to
+`tests/next_domain_contract_tests.cpp`; migrate the existing session,
+catalog, resource, PageManager, and Sidebar tests to the Domain type. Reuse
+the existing incremental Visual Studio 18 Windows x64 Debug tree
+`build/windows-x64-debug`. Build `ClassMngr` plus the seven targets listed
+below; confirm each exact CTest name registers once, then run only these seven
+CTests with `-C Debug` and no full suite:
+`ClassMngrNextDomainContractTests`,
+`ClassMngrNextApplicationDocumentContentTests`,
+`ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+`ClassMngrNextPlatformDocumentContentResourcePortTests`,
+`ClassMngrPageManagerTests`, and `ClassMngrSidebarStructureTests`.
+
+Commit this matrix before any source/test edits. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

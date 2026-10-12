@@ -4936,3 +4936,18 @@ and uses it in Class Transfer Apply, preserving the current malformed-target
 precedence. Its acceptance matrix is recorded in the Phase 2 progress log.
 F707/F709 remain deferred; Gates 1/2 are Partial and the formal exit gate is
 Open.
+
+## Phase 2 current position — 2026-10-13 (F778 accepted; F779 selected)
+
+F778 is accepted at `284789308c686e421c2a6c3f89811acf4371784f`. The
+Class Transfer Apply target built in the existing Visual Studio 18 x64 Debug
+tree; its exact CTest registered once (#241) and passed 1/1 after the bounded
+build succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`.
+No full suite ran.
+
+F779 moves the passive document-content reference value into Domain, matching
+Phase 2 work package 2.1. The matrix covers every in-repository API use and
+existing session, catalog, platform, viewer, and UI test seam; the 4,096-byte
+and nonblank checks and platform URI/resource behavior stay in their current
+owners. F707/F709 remain deferred; Gates 1/2 are Partial and the formal exit
+gate remains Open.

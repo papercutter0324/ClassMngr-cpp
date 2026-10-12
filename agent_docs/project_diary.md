@@ -5161,3 +5161,18 @@ F778 consolidates Class Transfer Apply's canonical positive-int parser with
 the shared ID helper by extracting a shared parse function that also returns
 the parsed integer. Preserve the helper's accepted values and the apply
 validator's existing class-before-teacher malformed-target precedence.
+
+## Phase 2 F778 acceptance and F779 selection — 2026-10-13
+
+F778 is accepted at `284789308c686e421c2a6c3f89811acf4371784f`; the exact
+Class Transfer Apply CTest registered once (#241) and passed 1/1 after both
+bounded Debug targets built on the outside-sandbox retry following FileTracker
+`E_ACCESSDENIED`. No full suite ran.
+
+F779 resolves a Phase 2 work-package placement gap: document-content
+references are listed as Domain values but were declared in Application.
+Independent reviews found that the passive token/path/URI value is shared by
+catalog metadata and adapter-facing contracts while document bytes and viewer
+objects remain Platform/UI-owned. Use a dedicated Domain header and migrate
+all repository call sites, with no lasting Application alias. Keep existing
+Application length/nonblank checks and Platform resource resolution intact.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-13
-- Current milestone: Phase 2 remains in progress: F777 was accepted at `dc6d98d7da07e9d08b2f17166d7cb2c8ccbcc3e7`, and F778 is selected in Batch 191 to share canonical positive-decimal parsing with Class Transfer Apply while preserving parsed-int results. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F778 was accepted at `284789308c686e421c2a6c3f89811acf4371784f`, and F779 is selected in Batch 192 to move the passive `DocumentContentReference` value to Domain and migrate its consumers without an Application alias. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
