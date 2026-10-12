@@ -2,6 +2,7 @@
 
 #include "next/application/calendar_event_query_port.h"
 #include "next/domain/calendar_event_timing.h"
+#include "next/domain/gregorian_date.h"
 
 #include <chrono>
 #include <cctype>
@@ -76,68 +77,18 @@ namespace SubPrepCalendarEventIntervalsQueryDetail
     const CalendarEventDate& date
     ) noexcept
 {
-    const std::string& value = date.value();
-    if (value.size() != 10
-        || value[4] != '-'
-        || value[7] != '-')
+    const auto parsedDate = Domain::GregorianDate::fromIsoString(date.value());
+    if (!parsedDate)
     {
         return std::nullopt;
     }
 
-    const auto digit = [&value](const std::size_t index)
-    {
-        const char character = value[index];
-        return character >= '0' && character <= '9'
-            ? character - '0'
-            : -1;
+    const std::chrono::year_month_day calendarDate{
+        std::chrono::year{parsedDate->year()},
+        std::chrono::month{static_cast<unsigned>(parsedDate->month())},
+        std::chrono::day{static_cast<unsigned>(parsedDate->day())}
     };
-    int year = 0;
-    int month = 0;
-    int day = 0;
-    for (std::size_t index = 0; index < 4; ++index)
-    {
-        const int valueDigit = digit(index);
-        if (valueDigit < 0)
-        {
-            return std::nullopt;
-        }
-        year = year * 10 + valueDigit;
-    }
-    for (const std::size_t index : {5U, 6U})
-    {
-        const int valueDigit = digit(index);
-        if (valueDigit < 0)
-        {
-            return std::nullopt;
-        }
-        month = month * 10 + valueDigit;
-    }
-    for (const std::size_t index : {8U, 9U})
-    {
-        const int valueDigit = digit(index);
-        if (valueDigit < 0)
-        {
-            return std::nullopt;
-        }
-        day = day * 10 + valueDigit;
-    }
-
-    if (year < 1 || year > 9999)
-    {
-        return std::nullopt;
-    }
-
-    const std::chrono::year_month_day parsed{
-        std::chrono::year{year},
-        std::chrono::month{static_cast<unsigned>(month)},
-        std::chrono::day{static_cast<unsigned>(day)}
-    };
-    if (!parsed.ok())
-    {
-        return std::nullopt;
-    }
-
-    return std::chrono::sys_days{parsed};
+    return std::chrono::sys_days{calendarDate};
 }
 
 [[nodiscard]] inline std::string_view trim(

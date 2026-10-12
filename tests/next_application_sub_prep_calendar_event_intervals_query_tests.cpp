@@ -49,6 +49,7 @@ private slots:
     void filtersByTrimmedExactTypesAndKeepsFullInclusiveIntervals();
     void returnsEveryMatchingIntervalWithoutTheCalendarProjectionCeiling();
     void derivesCurrentAndFollowingCalendarYearWindow();
+    void derivesWindowAtMinimumCalendarYear();
     void clampsWindowAtMaximumCalendarYear();
     void rejectsInvalidReferenceBeforeReading();
     void returnsReadFailureWithoutPartialIntervals();
@@ -161,6 +162,19 @@ derivesCurrentAndFollowingCalendarYearWindow()
     QVERIFY(window.has_value());
     QCOMPARE(window->startDate.value(), std::string("2026-01-01"));
     QCOMPARE(window->endDate.value(), std::string("2027-12-31"));
+}
+
+void NextApplicationSubPrepCalendarEventIntervalsQueryTests::
+derivesWindowAtMinimumCalendarYear()
+{
+    const auto window =
+        SubPrepCalendarEventIntervalsQueryDetail::readRequestForReferenceDate(
+            CalendarEventDate("0001-01-01")
+            );
+
+    QVERIFY(window.has_value());
+    QCOMPARE(window->startDate.value(), std::string("0001-01-01"));
+    QCOMPARE(window->endDate.value(), std::string("0002-12-31"));
 }
 
 void NextApplicationSubPrepCalendarEventIntervalsQueryTests::
