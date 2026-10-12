@@ -1111,6 +1111,13 @@ titleBoundsUseUtf16UnitsAndRejectMalformedUtf8()
         std::string(253, 'a') + supplementary;
     const std::string ascii254AndSupplementary =
         std::string(254, 'a') + supplementary;
+    const std::string asciiWhitespaceOnly = " \t\r\n";
+    const std::string noBreakSpaceOnly = "\xC2\xA0";
+    const std::string ideographicSpaceOnly = "\xE3\x80\x80";
+    const std::string textWithNoBreakSpace =
+        std::string("Event") + noBreakSpaceOnly + "title";
+    const std::string textWithIdeographicSpace =
+        std::string("Event") + ideographicSpaceOnly + "title";
     const std::string malformedUtf8{
         static_cast<char>(0xF0),
         static_cast<char>(0x28),
@@ -1131,6 +1138,11 @@ titleBoundsUseUtf16UnitsAndRejectMalformedUtf8()
             && !acceptsTitle(hangul256)
             && acceptsTitle(ascii253AndSupplementary)
             && !acceptsTitle(ascii254AndSupplementary)
+            && !acceptsTitle(asciiWhitespaceOnly)
+            && !acceptsTitle(noBreakSpaceOnly)
+            && !acceptsTitle(ideographicSpaceOnly)
+            && acceptsTitle(textWithNoBreakSpace)
+            && acceptsTitle(textWithIdeographicSpace)
             && !acceptsTitle(malformedUtf8);
     };
 

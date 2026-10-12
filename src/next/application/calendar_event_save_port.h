@@ -168,7 +168,7 @@ namespace CalendarEventSaveRequestDetail
             );
     }
 
-    if (isBlank(request.title)
+    if (CalendarEventTitleValidation::isBlankUtf8Title(request.title)
         || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
             request.title,
             kCalendarEventSaveMaxTitleLength

@@ -289,7 +289,7 @@ template <typename TypedId>
             );
     }
 
-    if (isBlank(event.title)
+    if (CalendarEventTitleValidation::isBlankUtf8Title(event.title)
         || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
             event.title,
             kCalendarEventSummaryMaxTitleLength

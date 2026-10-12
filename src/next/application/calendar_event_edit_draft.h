@@ -180,7 +180,7 @@ validateCalendarEventEditDraft(
             );
     }
 
-    if (isBlank(draft.title)
+    if (CalendarEventTitleValidation::isBlankUtf8Title(draft.title)
         || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
             draft.title,
             kCalendarEventEditDraftMaxTitleLength
