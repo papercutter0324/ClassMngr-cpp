@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F674)
+### Current state - 2026-10-12 (F676)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-146 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-150 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -105,12 +105,20 @@ setting preservation, real Preferences QAction rollback, one diagnostic
 warning, and retry. The Visual Studio tree was blocked before compilation by
 FileTracker `E_ACCESSDENIED`; no full suite ran. Batch 149 is complete.
 
-F675 Save Mode typed persistence and action rollback is selected/current in
-Batch 150. Its acceptance matrix is recorded in the Phase 2 progress log. A
-failed save-mode write must leave the persisted value, checked action,
-OptionState, and effective autosave mode on the previous selection, with one
-diagnostic warning. The successful retry must update persistence and effective
-mode together.
+F675 Save Mode typed persistence and action rollback is committed as
+`72cc672f22ec23c19e6c0181b6c81bb451cd6148`. `ClassMngr` and both selected
+test targets built in the Windows x64 Ninja tree under the VS developer
+environment; the exact port and MainWindow action CTests passed 2/2. Failure
+coverage verifies checked-write rollback, QAction/OptionState/effective-mode
+preservation, one diagnostic callback, an active autosave timer preserved on
+failure, and a successful retry. No full suite ran. Batch 150 is complete.
+
+F676 Automatic Update preference failure feedback is selected/current in
+Batch 151. Its acceptance matrix is recorded in the Phase 2 progress log. A
+failed attempt to disable automatic checks must restore the checked QAction and
+preserve the stored setting, with one diagnostic warning; a successful retry
+must update the checkbox and persistence together. The exact existing port and
+MainWindow action CTests are selected; no CMake target is needed.
 
 ### Current state - 2026-10-09
 

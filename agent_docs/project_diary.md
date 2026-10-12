@@ -3888,11 +3888,23 @@ CTests passed 2/2; the Visual Studio tree was blocked before compilation by
 FileTracker, so verification used Ninja under the VS developer environment.
 F674 is committed as `60b0159f2c3590634a116e3deecc673c0b9ac83e`.
 
-## F675 Save Mode persistence failure - selected - 2026-10-12
+## F675 Save Mode persistence failure - accepted - 2026-10-12
 
-Save Mode is applied to both FileController and PageManager, which starts or
-stops autosave timers. Its current void persistence callback runs before the
-live-mode callback but cannot report a failed write. F675 will make the mode
-change transactional: a failed write keeps the saved and effective mode and
-checked action unchanged, reports one diagnostic warning, and permits a
-successful retry. Keep the generic SettingsManager write behavior unchanged.
+The Save Mode QAction now persists before committing its OptionState and live
+PageManager mode. A failure keeps the stored value, checked action, and
+effective mode unchanged, reports one diagnostic, and permits retry. Direct
+programmatic `OptionState::set()` callers retain the existing callback
+semantics. `ClassMngr` and both focused targets built, and the two selected
+CTests passed. The MainWindow test exercises an eligible autosave timer for
+failure preservation; its no-database page has no active timer after later
+Automatic restoration. F675 is committed as
+`72cc672f22ec23c19e6c0181b6c81bb451cd6148`.
+
+## F676 Automatic Update preference failure feedback - selected - 2026-10-12
+
+The Automatically Check for Updates QAction changes its check state before a
+void persistence callback. A failed attempt to disable checks can therefore
+look unchecked while startup still reads the saved enabled value and runs an
+automatic check. F676 will add checked typed persistence, restore the prior
+check on failure, report one diagnostic, and allow a successful retry. Keep
+the generic SettingsManager `set`/`sync` behavior unchanged.

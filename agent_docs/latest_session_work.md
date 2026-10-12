@@ -4,7 +4,7 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-149 are complete.
+  141-150 are complete.
 - F671 Custom Color Palette typed persistence and caller feedback is committed
   as `d34ace9387199dc59c856d4edfff24da700c10a2`; its two focused CTests passed.
 - F672 Theme preference typed persistence/action rollback is committed as
@@ -15,9 +15,12 @@
   `60b0159f2c3590634a116e3deecc673c0b9ac83e`; its two selected CTests passed.
   The Visual Studio build tree was blocked before compilation by FileTracker;
   the selected Ninja targets built under the VS developer environment.
-- F675 Save Mode typed persistence and action rollback is selected/current in
-  Batch 150; its matrix is recorded in the Phase 2 progress log. Begin
-  implementation after this selection record is committed.
+- F675 Save Mode typed persistence and action rollback is committed as
+  `72cc672f22ec23c19e6c0181b6c81bb451cd6148`; its two focused CTests passed.
+- F676 Automatic Update preference failure feedback is selected/current in
+  Batch 151. Its acceptance matrix and exact CTests are recorded in the Phase
+  2 progress log; implementation begins after this selection record is
+  committed.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
@@ -5344,7 +5347,7 @@ Add real MainWindow Delete Class QAction success coverage to MainWindowScheduleT
 
 The MainWindow Delete Class QAction selected and deleted the target through the real chooser and confirmation. Target class/ClassInfo/schedule rows are gone; sibling data is unchanged and the sibling is active in Classes Details. The Classes page/sidebar route and session/path remain stable; no warning or unsaved prompt appeared. Executor and independent Tester passed target build, exact CTest 1/1, target QtTest 12 passes (10 cases plus setup/cleanup), and selected case 3/3. No compiler warnings; Qt font/offscreen notices only. No full suite or production/CMake change. F443 is accepted and ready to commit. F444 successful Open File QAction replacement is next. Preserve latest_session_work.md and unrelated %SystemDrive%/ outside slice commits.
 
-## Resumed Phase 2 after F670; F672-F674 accepted and F675 selected - 2026-10-12
+## Resumed Phase 2 after F670; F672-F675 accepted and F676 selected - 2026-10-12
 
 F671 Custom Color Palette typed persistence and caller feedback is committed
 as d34ace9387199dc59c856d4edfff24da700c10a2. The product and both focused
@@ -5383,10 +5386,23 @@ environment. Exact CTests
 Visual Studio tree was blocked before compilation by FileTracker
 `E_ACCESSDENIED`; no full suite ran. Batch 149 is complete.
 
-F675 Save Mode typed persistence and action rollback is selected/current in
-Batch 150. Source review shows `OptionState` updates the selected value and
-checked action before its void persistence callback, then applies the live mode
-to FileController and PageManager; autosave uses that mode. Acceptance requires
-failure rollback before live mode application, one diagnostic warning, and a
-successful retry. The exact CTests and matrix are in the Phase 2 progress log.
-Implementation begins after the selection record is committed.
+F675 Save Mode typed persistence and action rollback is committed as
+`72cc672f22ec23c19e6c0181b6c81bb451cd6148`. `ClassMngr` and both selected test
+targets built in the Windows x64 Ninja tree under the VS developer
+environment. Exact CTests
+`ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests` and
+`ClassMngrMainWindowSaveModeActionParityTests` passed 2/2. The port tests cover
+invalid values, injected sync failures, prior and absent-key preservation,
+unrelated settings, and retry. The action test verifies one diagnostic
+callback, failure-time QAction/storage/effective-mode rollback, an eligible
+timer preserved on failure, Manual retry, and restored Automatic parity. Its
+no-database page does not reactivate the timer on Automatic restoration. No
+full suite ran. Batch 150 is complete.
+
+F676 Automatic Update preference failure feedback is selected/current in
+Batch 151. The action updates its checked state before a void settings write;
+startup later reads that stored bool to decide whether to check for updates. A
+failed disable write can leave the checkbox and next-startup behavior
+disagreeing. The matrix and exact port/MainWindow CTests are recorded in the
+Phase 2 progress log. Implementation begins after this selection record is
+committed.

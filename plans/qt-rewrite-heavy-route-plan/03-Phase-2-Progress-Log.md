@@ -24514,10 +24514,12 @@ F675. Continue the one-commit-per-slice sequence.
 The candidate scan compared Last Selected Campus, Automatic Update Checks,
 Save Mode, and other SettingsManager-backed preferences. Save Mode has the
 clearest immediate consequence: its action callback changes the selected mode,
-then applies it to both FileController and PageManager, where it starts or
-stops autosave timers. A failed settings write can leave the current session
-using one mode while the next launch restores another; specifically, an
-unsaved switch to Automatic can leave pages in Manual mode after restart.
+then runs an `onChanged` pipeline through FileController and PageManager, where
+it starts or stops autosave timers. `FileController::setSaveMode()` is
+currently a no-op; PageManager owns the active autosave effect. A failed
+settings write can leave the current session using one mode while the next
+launch restores another; specifically, an unsaved switch to Automatic can
+leave pages in Manual mode after restart.
 Upcoming Birthday Dismissal remains excluded because the stored date has no
 production reader or distinct failure consequence.
 
@@ -24542,9 +24544,10 @@ together. Keep other OptionState users' behavior unchanged.
    invalid values to `InvalidInput` and storage errors to diagnostic
    `Technical` results.
 3. Make the Save Mode action transaction persistence-first. Failure must leave
-   the stored value, OptionState current value, checked QAction, FileController
-   mode, PageManager mode, and effective autosave timer state on the previous
-   mode; invoke one diagnostic warning and do not apply the failed candidate.
+   the stored value, OptionState current value, checked QAction, PageManager
+   mode, and effective autosave timer state on the previous mode; skip the
+   entire `onChanged` pipeline (including the existing FileController no-op),
+   invoke one diagnostic warning, and do not apply the failed candidate.
    Successful retry updates stored and effective state together. Preserve
    startup selection and normal success parity.
 4. Extend
@@ -24556,3 +24559,75 @@ together. Keep other OptionState users' behavior unchanged.
    CTests. Add no CMake target.
 
 This matrix is recorded before implementation. Batch 150 is active with F675.
+
+### F675 Save Mode persistence feedback - accepted - 2026-10-12
+
+F675 is accepted at code/test commit
+`72cc672f22ec23c19e6c0181b6c81bb451cd6148`. The `ClassMngr` target and both
+selected test targets built in the Windows x64 Ninja tree under the VS
+developer environment. The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests` and
+`ClassMngrMainWindowSaveModeActionParityTests`. Port coverage verifies typed
+error mapping, invalid input, previous and absent-key restoration, and retry.
+The MainWindow test verifies failure leaves the QAction, stored value,
+OptionState, PageManager mode, and an eligible active autosave timer unchanged;
+one diagnostic callback runs and retry to Manual succeeds. The timer stops on
+the successful Manual change. The no-database test page has no active timer on
+Automatic restoration because PageManager recomputes save eligibility from its
+page model. The default warning binding is source-reviewed; the injected
+callback avoids a modal dialog in the test. No full suite ran.
+
+**Decision: accept F675.** Batch 150 is complete; Batch 151 is active with
+F676. Continue the one-commit-per-slice sequence.
+
+### Batch 151 shortlist and selection - recorded before F676 implementation - 2026-10-12
+
+The candidate scan compared Automatic Update Checks, Font Size, AI Comment
+Provider/Voice, PDF Viewer Background, and the macOS-only PowerPoint data-access
+notice. Automatic Update Checks is selected because its current checkbox
+callback writes through a `void` preference port, while startup later reads the
+stored value to decide whether to check for updates. A failed attempt to
+disable checks can leave the action unchecked even though the next launch will
+still check and may show an automatic update prompt. The two existing focused
+targets cover the SettingsManager adapter and real MainWindow QAction path.
+The other candidates remain provisional for later batches; no CMake target or
+platform-specific gate is needed for F676.
+
+**F676 is selected:** add an opt-in checked SettingsManager write for the
+automatic-update enabled bool that syncs QSettings, preserves the previous key
+(including absence) on failure, and permits retry. Keep generic `set`/`sync`
+behavior and the enabled-by-default/read coercion unchanged. Upgrade the
+application port to `[[nodiscard]] Domain::Result<void>` with diagnostic
+`Technical` failures. Make the checkable QAction change persistence-first; on
+failure restore its prior checked value without another write and show one
+`Unable to Save Preference` warning with the diagnostic. A successful retry
+updates the checked state and persisted value together. Preserve the manual
+Check for Updates action and existing startup preference behavior.
+
+### F676 Automatic Update preference failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add a checked automatic-update preference write that checks QSettings sync,
+   preserves the previous key (including absence) on failure, and allows a
+   successful retry. Preserve unrelated settings and leave generic
+   SettingsManager `set`/`sync` behavior unchanged.
+2. Change `AutomaticUpdatePreferencesPort::write` to return
+   `[[nodiscard]] Domain::Result<void>`. Preserve the default-enabled read and
+   legacy bool coercion; map sync errors to diagnostic `Technical` results.
+3. Make the Automatically Check for Updates QAction persistence-first. On
+   failure, restore the previous checked value without recursively writing,
+   preserve the stored value, and invoke one diagnostic warning handler. On
+   retry, persist the value and retain the matching checked state. Preserve
+   startup gating and the separate manual Check for Updates action. Use an
+   injectable port/error handler through existing startup options; do not
+   change the public MainWindow constructor.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests`
+   with injected sync failure, previous/absent-key preservation, unrelated
+   setting preservation, and retry. Extend
+   `ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests` to verify
+   the real checkbox action rolls back on failure, emits one diagnostic,
+   avoids a duplicate write, preserves storage, and succeeds on retry. Build
+   `ClassMngr` and both existing targets; run exactly those two CTests. Add no
+   CMake target.
+
+This matrix is recorded before implementation. Batch 151 is active with F676.
