@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/calendar_event_query_port.h"
+#include "next/domain/operation_result.h"
 
 namespace ClassMngr::Next::Application
 {
@@ -13,7 +14,7 @@ class UpcomingBirthdayDismissalPort
 public:
     virtual ~UpcomingBirthdayDismissalPort() = default;
 
-    virtual void write(
+    [[nodiscard]] virtual Domain::Result<void> write(
         const CalendarEventDate& date
         ) const = 0;
 };

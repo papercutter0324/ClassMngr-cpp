@@ -21,6 +21,7 @@
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/korean_teacher_birthday_directory_read_query.h"
 #include "next/application/native_english_teacher_birthday_directory_read_query.h"
+#include "next/application/upcoming_birthday_dismissal_port.h"
 #include "next/platform/application_services_gs_team_birthday_directory_read_port.h"
 #include "next/platform/application_services_class_teacher_assignments_read_port.h"
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
@@ -33,6 +34,7 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -56,6 +58,8 @@
 
 #include <functional>
 #include <optional>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -287,8 +291,38 @@ struct BirthdayDialogObservation
 {
     bool modalOpened = false;
     bool upcomingBirthdaysOpened = false;
+    bool dismissCheckboxFound = false;
+    bool dismissCheckboxChecked = false;
     QStringList entryNames;
     QStringList entryDetails;
+};
+
+class RecordingUpcomingBirthdayDismissalPort final
+    : public ClassMngr::Next::Application::UpcomingBirthdayDismissalPort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void> write(
+        const ClassMngr::Next::Application::CalendarEventDate& date
+        ) const override
+    {
+        ++writeCount;
+        writtenDates.push_back(date.value());
+        dialogWasClosedAtWrite = QApplication::activeModalWidget() == nullptr;
+        if (failWrites)
+        {
+            return ClassMngr::Next::Domain::Result<void>::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                .message = "simulated dismissal preference write failure",
+                .recoverable = true
+            });
+        }
+        return ClassMngr::Next::Domain::Result<void>::success();
+    }
+
+    mutable int writeCount = 0;
+    mutable std::vector<std::string> writtenDates;
+    mutable bool dialogWasClosedAtWrite = false;
+    bool failWrites = false;
 };
 
 QString displayLabel(
@@ -561,13 +595,14 @@ bool invokeDeleteTeacherSelecting(
 
 bool invokeUpcomingBirthdays(
     SidebarController& controller,
-    BirthdayDialogObservation& observation
+    BirthdayDialogObservation& observation,
+    const bool dismissForToday = false
     )
 {
     QTimer::singleShot(
         0,
         &controller,
-        [&observation]
+        [&observation, dismissForToday]
         {
             QDialog* dialog = qobject_cast<QDialog*>(
                 QApplication::activeModalWidget()
@@ -596,6 +631,17 @@ bool invokeUpcomingBirthdays(
                     == QStringLiteral("upcomingBirthdaysDialog");
             if (observation.upcomingBirthdaysOpened)
             {
+                auto* const dismissCheckBox = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("upcomingBirthdaysDismissForTodayCheck")
+                    );
+                observation.dismissCheckboxFound = dismissCheckBox != nullptr;
+                if (dismissCheckBox)
+                {
+                    dismissCheckBox->setChecked(dismissForToday);
+                    observation.dismissCheckboxChecked =
+                        dismissCheckBox->isChecked();
+                }
+
                 const auto labels = dialog->findChildren<QLabel*>();
                 for (QLabel* label : labels)
                 {
@@ -616,6 +662,17 @@ bool invokeUpcomingBirthdays(
                 }
             }
 
+            if (observation.upcomingBirthdaysOpened)
+            {
+                auto* const closeButton = dialog->findChild<QPushButton*>(
+                    QStringLiteral("upcomingBirthdaysCloseButton")
+                    );
+                if (closeButton)
+                {
+                    closeButton->click();
+                    return;
+                }
+            }
             dialog->reject();
         }
         );
@@ -780,6 +837,8 @@ private slots:
     void assignedTeacherFailureKeepsClassFieldsAndUsesNoTeacher();
     void classDeleteChooserRequiresAnActiveSession();
     void upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories();
+    void upcomingBirthdaysDismissalPersistsIsoTodayAndWarnsAfterClose();
+    void upcomingBirthdaysUncheckedCloseDoesNotWriteOrWarn();
     void upcomingBirthdaysActionWarnsOnKoreanDirectoryFailureFirst();
     void upcomingBirthdaysActionReturnsSilentlyWithoutAnActiveSession();
     void upcomingBirthdaysActionShowsWarningWhenGsDirectoryReadFails();
@@ -2375,6 +2434,88 @@ upcomingBirthdaysActionShowsEntriesFromAllStaffDirectories()
     QVERIFY(details.contains(QStringLiteral("GS Team")));
     QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysDismissalPersistsIsoTodayAndWarnsAfterClose()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    PageManager pages;
+    Sidebar sidebar;
+    RecordingUpcomingBirthdayDismissalPort dismissalPort;
+    dismissalPort.failWrites = true;
+    SidebarController controller(
+        &services,
+        &sidebar,
+        &pages,
+        nullptr,
+        &dismissalPort
+        );
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation, true));
+
+    QVERIFY(observation.modalOpened);
+    QVERIFY(observation.upcomingBirthdaysOpened);
+    QVERIFY(observation.dismissCheckboxFound);
+    QVERIFY(observation.dismissCheckboxChecked);
+    QCOMPARE(dismissalPort.writeCount, 1);
+    QCOMPARE(dismissalPort.writtenDates.size(), 1U);
+    QCOMPARE(
+        dismissalPort.writtenDates.front(),
+        QDate::currentDate().toString(Qt::ISODate).toStdString()
+        );
+    QVERIFY(dismissalPort.dialogWasClosedAtWrite);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    const PromptRequest& warning = prompts.messages.first();
+    QVERIFY(
+        (warning.message + QLatin1Char('\n') + warning.details).contains(
+            QStringLiteral("simulated dismissal preference write failure")
+            )
+        );
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void NavigationTeacherReadTests::
+upcomingBirthdaysUncheckedCloseDoesNotWriteOrWarn()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    PageManager pages;
+    Sidebar sidebar;
+    RecordingUpcomingBirthdayDismissalPort dismissalPort;
+    SidebarController controller(
+        &services,
+        &sidebar,
+        &pages,
+        nullptr,
+        &dismissalPort
+        );
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    BirthdayDialogObservation observation;
+    QVERIFY(invokeUpcomingBirthdays(controller, observation));
+
+    QVERIFY(observation.modalOpened);
+    QVERIFY(observation.upcomingBirthdaysOpened);
+    QVERIFY(observation.dismissCheckboxFound);
+    QVERIFY(!observation.dismissCheckboxChecked);
+    QCOMPARE(dismissalPort.writeCount, 0);
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
 }
 
 void NavigationTeacherReadTests::

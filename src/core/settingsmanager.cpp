@@ -1234,3 +1234,62 @@ QSettings::Status SettingsManager::writeLastDatabaseDirectoryPreference(
 
     return status;
 }
+
+QSettings::Status
+SettingsManager::writeUpcomingBirthdayDismissalDatePreference(
+    const QDate& date,
+    const UpcomingBirthdayDismissalPreferenceSync& synchronize
+    )
+{
+    if (!date.isValid())
+    {
+        return QSettings::NoError;
+    }
+
+    const bool hadPreviousDate =
+        m_settings->contains(Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE);
+    const QVariant previousDate =
+        m_settings->value(Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE);
+
+    m_settings->setValue(
+        Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE,
+        date
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore only the dismissal date before destroying this instance,
+        // so the failed candidate cannot be retried during teardown.
+        if (hadPreviousDate)
+        {
+            m_settings->setValue(
+                Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE,
+                previousDate
+                );
+        }
+        else
+        {
+            m_settings->remove(
+                Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE
+                );
+        }
+
+        // A failed QSettings instance retains its error status. Reopen it so
+        // reads see the restored state and later writes can retry.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}

@@ -7,6 +7,7 @@
 #include <QString>
 
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -17,32 +18,49 @@ class SettingsManagerUpcomingBirthdayDismissalPort final
     : public Application::UpcomingBirthdayDismissalPort
 {
 public:
-    SettingsManagerUpcomingBirthdayDismissalPort() = default;
+    explicit SettingsManagerUpcomingBirthdayDismissalPort(
+        SettingsManager::UpcomingBirthdayDismissalPreferenceSync
+            synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::CalendarEventDate& date
         ) const override
     {
         const QDate legacyDate = toLegacyDate(date.value());
         if (!legacyDate.isValid())
         {
-            return;
+            return Domain::Result<void>::success();
         }
 
-        SettingsManager::instance().set(
-            key(),
-            legacyDate
-            );
+        const QSettings::Status status =
+            SettingsManager::instance()
+                .writeUpcomingBirthdayDismissalDatePreference(
+                    legacyDate,
+                    m_synchronize
+                    );
+        if (status == QSettings::NoError)
+        {
+            return Domain::Result<void>::success();
+        }
+
+        const char* statusName = status == QSettings::AccessError
+            ? "AccessError (settings could not be written)"
+            : "FormatError (settings contain invalid data)";
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = std::string(
+                "The upcoming birthday dismissal date could not be saved: "
+                "QSettings "
+                ) + statusName + ".",
+            .recoverable = true
+        });
     }
 
 private:
-    [[nodiscard]] static QString key()
-    {
-        return QString::fromUtf8(
-            SettingsManager::Keys::UPCOMING_BIRTHDAYS_DISMISSED_DATE
-            );
-    }
-
     [[nodiscard]] static QDate toLegacyDate(
         const std::string& value
         )
@@ -61,6 +79,8 @@ private:
             ? parsed
             : QDate();
     }
+
+    SettingsManager::UpcomingBirthdayDismissalPreferenceSync m_synchronize;
 };
 
 } // namespace ClassMngr::Next::Platform

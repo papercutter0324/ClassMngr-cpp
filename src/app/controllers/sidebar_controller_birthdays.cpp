@@ -7,10 +7,10 @@
 #include "next/application/gs_team_birthday_directory_read_query.h"
 #include "next/application/korean_teacher_birthday_directory_read_query.h"
 #include "next/application/native_english_teacher_birthday_directory_read_query.h"
+#include "next/application/upcoming_birthday_dismissal_port.h"
 #include "next/platform/application_services_gs_team_birthday_directory_read_port.h"
 #include "next/platform/application_services_korean_teacher_birthday_directory_read_port.h"
 #include "next/platform/application_services_native_english_teacher_birthday_directory_read_port.h"
-#include "next/platform/settings_manager_upcoming_birthday_dismissal_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
@@ -19,7 +19,7 @@
 
 namespace
 {
-QString directoryReadErrorDetails(const std::string& message)
+QString errorDetailsText(const std::string& message)
 {
     return QString::fromUtf8(
         message.data(),
@@ -55,7 +55,7 @@ SidebarController::loadUpcomingBirthdaySchedule(
             m_sidebar,
             tr("Upcoming Birthdays"),
             tr("Birthdays could not be loaded."),
-            directoryReadErrorDetails(koreanTeacherDirectory.error().message)
+            errorDetailsText(koreanTeacherDirectory.error().message)
             );
         return std::nullopt;
     }
@@ -101,7 +101,7 @@ SidebarController::loadUpcomingBirthdaySchedule(
             m_sidebar,
             tr("Upcoming Birthdays"),
             tr("Birthdays could not be loaded."),
-            directoryReadErrorDetails(
+            errorDetailsText(
                 !nativeEnglishBirthdayDirectory
                     ? nativeEnglishBirthdayDirectory.error().message
                     : gsTeamBirthdayDirectory.error().message
@@ -161,8 +161,16 @@ void SidebarController::showUpcomingBirthdays()
         const ClassMngr::Next::Application::CalendarEventDate dismissalDate(
             today.toString(Qt::ISODate).toUtf8().toStdString()
             );
-        ClassMngr::Next::Platform::
-            SettingsManagerUpcomingBirthdayDismissalPort()
-            .write(dismissalDate);
+        const auto persisted =
+            m_upcomingBirthdayDismissalPort->write(dismissalDate);
+        if (!persisted)
+        {
+            DialogServices::showWarning(
+                m_sidebar,
+                tr("Upcoming Birthdays"),
+                tr("The dismissal preference could not be saved."),
+                errorDetailsText(persisted.error().message)
+                );
+        }
     }
 }

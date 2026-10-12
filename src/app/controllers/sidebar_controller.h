@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QString>
 
+#include <memory>
 #include <optional>
 
 class ApplicationServices;
@@ -17,6 +18,11 @@ class ActionRegistry;
 class Classroom;
 struct Teacher;
 
+namespace ClassMngr::Next::Application
+{
+class UpcomingBirthdayDismissalPort;
+}
+
 class SidebarController : public QObject
 {
     Q_OBJECT
@@ -26,8 +32,12 @@ public:
         ApplicationServices* services,
         Sidebar* sidebar,
         PageManager* pages,
-        QObject* parent = nullptr
+        QObject* parent = nullptr,
+        ClassMngr::Next::Application::UpcomingBirthdayDismissalPort*
+            upcomingBirthdayDismissalPort = nullptr
         );
+
+    ~SidebarController() override;
 
     void connectActions(
         ActionRegistry& actions
@@ -117,4 +127,11 @@ private:
     Sidebar* m_sidebar{nullptr};
     PageManager* m_pages{nullptr};
     ActionRegistry* m_actions{nullptr};
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::UpcomingBirthdayDismissalPort
+        > m_ownedUpcomingBirthdayDismissalPort;
+
+    ClassMngr::Next::Application::UpcomingBirthdayDismissalPort*
+        m_upcomingBirthdayDismissalPort{};
 };

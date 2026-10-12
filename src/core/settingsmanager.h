@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDate>
 #include <QSettings>
 #include <QString>
 #include <QStringList>
@@ -408,6 +409,17 @@ public:
         const QString& path,
         const LastDatabaseDirectoryPreferenceSync& synchronize = {}
         );
+
+    // An empty callback uses QSettings::sync/status. Invalid dates are
+    // ignored; failures restore the prior key state before returning.
+    using UpcomingBirthdayDismissalPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status
+        writeUpcomingBirthdayDismissalDatePreference(
+            const QDate& date,
+            const UpcomingBirthdayDismissalPreferenceSync& synchronize = {}
+            );
 
 private:
     // =====================================================
