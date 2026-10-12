@@ -3,6 +3,7 @@
 #include "data/database/database_session.h"
 #include "next/platform/application_services_workspace_port.h"
 
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QSqlDatabase>
@@ -39,6 +40,23 @@ void writeInvalidWorkspace(
     QVERIFY(!file.isOpen());
 }
 
+class CurrentDirectoryRestore final
+{
+public:
+    CurrentDirectoryRestore()
+        : m_directory(QDir::currentPath())
+    {
+    }
+
+    ~CurrentDirectoryRestore()
+    {
+        QDir::setCurrent(m_directory);
+    }
+
+private:
+    QString m_directory;
+};
+
 } // namespace
 
 class NextPlatformApplicationServicesWorkspacePortTests final : public QObject
@@ -48,6 +66,8 @@ class NextPlatformApplicationServicesWorkspacePortTests final : public QObject
 private slots:
     void initTestCase();
     void openAcceptsUtf8PathAndNormalizesHandle();
+    void unicodeWhitespaceAndMalformedPathsAreRejectedBeforeServiceEffects();
+    void openPreservesNormalUnicodePathBytes();
     void createOrOpenCreatesANewWorkspace();
     void existingInvalidFileIsNotSilentlyReplaced();
     void closeClosesTheOpenWorkspace();
@@ -81,6 +101,81 @@ void NextPlatformApplicationServicesWorkspacePortTests::openAcceptsUtf8PathAndNo
     QCOMPARE(result.value().workspaceId(), expected);
     QCOMPARE(result.value().location(), expected);
     QCOMPARE(port.currentDatabasePath(), expected);
+    QVERIFY(services.hasOpenDatabase());
+    QVERIFY(QFile::exists(QString::fromUtf8(expected.c_str())));
+
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+unicodeWhitespaceAndMalformedPathsAreRejectedBeforeServiceEffects()
+{
+    QTemporaryDir isolatedWorkingDirectory;
+    QVERIFY(isolatedWorkingDirectory.isValid());
+    CurrentDirectoryRestore restoreCurrentDirectory;
+    QVERIFY(QDir::setCurrent(isolatedWorkingDirectory.path()));
+
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
+
+    for (const std::string& whitespace : {noBreakSpace, ideographicSpace})
+    {
+        const auto result = port.openDatabase(whitespace);
+
+        QVERIFY(!result);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Opening the workspace path must not be empty or whitespace-only."
+                )
+            );
+        QVERIFY(!services.hasOpenDatabase());
+        QVERIFY(services.currentDatabasePath().isEmpty());
+        QVERIFY(QDir::current().entryList(
+            QDir::Files | QDir::NoDotAndDotDot
+            ).isEmpty());
+    }
+
+    const std::string malformedUtf8{
+        static_cast<char>(0xF0),
+        static_cast<char>(0x28),
+        static_cast<char>(0x8C),
+        static_cast<char>(0x28)
+    };
+    const auto malformedResult = port.openDatabase(malformedUtf8);
+
+    QVERIFY(!malformedResult);
+    QCOMPARE(
+        malformedResult.error().message,
+        std::string("Opening the workspace path is not valid UTF-8.")
+        );
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.currentDatabasePath().isEmpty());
+    QVERIFY(QDir::current().entryList(
+        QDir::Files | QDir::NoDotAndDotDot
+        ).isEmpty());
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+openPreservesNormalUnicodePathBytes()
+{
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const QString requested = m_directory.filePath(
+        QString::fromUtf8("unicode-\xED\x95\x9C\xEA\xB8\x80.tps")
+        );
+    const std::string requestedUtf8 = utf8(requested);
+    const std::string expected = normalizedPath(requested);
+
+    const auto result = port.openDatabase(requestedUtf8);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().workspaceId(), expected);
+    QCOMPARE(result.value().location(), expected);
+    QCOMPARE(port.currentDatabasePath(), expected);
+    QCOMPARE(utf8(services.currentDatabasePath()), expected);
     QVERIFY(services.hasOpenDatabase());
     QVERIFY(QFile::exists(QString::fromUtf8(expected.c_str())));
 

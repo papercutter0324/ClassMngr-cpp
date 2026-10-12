@@ -1,5 +1,6 @@
 #include "next/platform/legacy_workspace_gateway.h"
 
+#include <QDir>
 #include <QtTest/QtTest>
 
 #include <optional>
@@ -226,6 +227,7 @@ private slots:
     void createOrOpenSuccessWithBadObservationIsRejected();
     void blankCreateLocationIsRejectedBeforePortCall();
     void blankOpenLocationIsRejectedBeforePortCall();
+    void createPassesNonblankUnicodeLocationUnchangedToPort();
     void blankSessionFieldsAreRejectedBeforePortCall();
     void blankSaveAsDestinationIsRejectedBeforePortCall();
     void blankExportDestinationIsRejectedBeforePortCall();
@@ -449,40 +451,93 @@ void NextPlatformLegacyWorkspaceGatewayTests::createOrOpenSuccessWithBadObservat
 
 void NextPlatformLegacyWorkspaceGatewayTests::blankCreateLocationIsRejectedBeforePortCall()
 {
-    FakeLegacyWorkspacePort port;
-    LegacyWorkspaceGateway gateway(port);
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
+    for (const WorkspaceLocation& location : {
+        WorkspaceLocation{},
+        WorkspaceLocation(" \t\r\n"),
+        WorkspaceLocation(noBreakSpace),
+        WorkspaceLocation(ideographicSpace)
+    })
+    {
+        FakeLegacyWorkspacePort port;
+        LegacyWorkspaceGateway gateway(port);
 
-    const auto result = gateway.createWorkspace(
-        CreateWorkspaceRequest{WorkspaceLocation{}}
-        );
+        const auto result = gateway.createWorkspace(
+            CreateWorkspaceRequest{location}
+            );
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
-    QCOMPARE(
-        result.error().message,
-        std::string("Workspace location must not be empty or whitespace-only.")
-        );
-    QCOMPARE(port.createCalls, 0);
-    QCOMPARE(port.openCalls, 0);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Workspace location must not be empty or whitespace-only."
+                )
+            );
+        QCOMPARE(port.createCalls, 0);
+        QCOMPARE(port.openCalls, 0);
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
+    }
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::blankOpenLocationIsRejectedBeforePortCall()
 {
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
+    for (const std::string& whitespace : {
+        std::string(" \t\r\n"),
+        noBreakSpace,
+        ideographicSpace
+    })
+    {
+        FakeLegacyWorkspacePort port;
+        LegacyWorkspaceGateway gateway(port);
+
+        const auto result = gateway.openWorkspace(
+            OpenWorkspaceRequest{WorkspaceLocation(whitespace)}
+            );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Workspace location must not be empty or whitespace-only."
+                )
+            );
+        QCOMPARE(port.createCalls, 0);
+        QCOMPARE(port.openCalls, 0);
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
+    }
+}
+
+void NextPlatformLegacyWorkspaceGatewayTests::
+createPassesNonblankUnicodeLocationUnchangedToPort()
+{
+    const QString path = QDir::temp().filePath(
+        QString::fromUtf8("workspace-\xED\x95\x9C\xEA\xB8\x80.tps")
+        );
+    const std::string utf8Path = path.toUtf8().toStdString();
     FakeLegacyWorkspacePort port;
+    port.createResponse =
+        LegacyWorkspaceResult<LegacyWorkspaceHandle>::success(
+            legacyHandle("workspace-unicode", utf8Path.c_str())
+            );
     LegacyWorkspaceGateway gateway(port);
 
-    const auto result = gateway.openWorkspace(
-        OpenWorkspaceRequest{WorkspaceLocation(" \t\r\n")}
+    const auto result = gateway.createWorkspace(
+        CreateWorkspaceRequest{WorkspaceLocation(utf8Path)}
         );
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
-    QCOMPARE(
-        result.error().message,
-        std::string("Workspace location must not be empty or whitespace-only.")
-        );
-    QCOMPARE(port.createCalls, 0);
-    QCOMPARE(port.openCalls, 0);
+    QVERIFY(result);
+    QCOMPARE(port.createCalls, 1);
+    QCOMPARE(port.lastCreatePath, utf8Path);
+    QCOMPARE(port.hasOpenCalls, 1);
+    QCOMPARE(port.currentPathCalls, 1);
+    QCOMPARE(result.value().location().value(), utf8Path);
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::blankSessionFieldsAreRejectedBeforePortCall()
@@ -541,6 +596,26 @@ void NextPlatformLegacyWorkspaceGatewayTests::blankSessionFieldsAreRejectedBefor
         std::string("Workspace session must contain an id and location.")
         );
 
+    for (const std::string& whitespace : {
+        std::string("\xC2\xA0"),
+        std::string("\xE3\x80\x80")
+    })
+    {
+        const WorkspaceSession blankLocationSession = workspaceSession(
+            "workspace-current",
+            whitespace.c_str()
+            );
+        const auto blankLocationResult = gateway.saveWorkspace(
+            SaveWorkspaceRequest{blankLocationSession}
+            );
+        QVERIFY(!blankLocationResult);
+        QCOMPARE(blankLocationResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            blankLocationResult.error().message,
+            std::string("Workspace session must contain an id and location.")
+            );
+    }
+
     QCOMPARE(port.closeCalls, 0);
     QCOMPARE(port.saveCalls, 0);
     QCOMPARE(port.saveAsCalls, 0);
@@ -551,64 +626,74 @@ void NextPlatformLegacyWorkspaceGatewayTests::blankSessionFieldsAreRejectedBefor
 
 void NextPlatformLegacyWorkspaceGatewayTests::blankSaveAsDestinationIsRejectedBeforePortCall()
 {
-    FakeLegacyWorkspacePort port;
-    LegacyWorkspaceGateway gateway(port);
     const WorkspaceSession session = workspaceSession(
         "workspace-current",
         "C:/current.tps"
         );
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
 
-    const auto emptyResult = gateway.saveWorkspaceAs(
-        SaveWorkspaceAsRequest{session, WorkspaceLocation{}}
-        );
-    const auto whitespaceResult = gateway.saveWorkspaceAs(
-        SaveWorkspaceAsRequest{session, WorkspaceLocation(" \t\r\n")}
-        );
-
-    for (const auto* result : {&emptyResult, &whitespaceResult})
+    for (const std::string& whitespace : {
+        std::string{},
+        std::string(" \t\r\n"),
+        noBreakSpace,
+        ideographicSpace
+    })
     {
-        QVERIFY(!*result);
-        QCOMPARE(result->error().code, ErrorCode::InvalidInput);
+        FakeLegacyWorkspacePort port;
+        LegacyWorkspaceGateway gateway(port);
+        const auto result = gateway.saveWorkspaceAs(
+            SaveWorkspaceAsRequest{session, WorkspaceLocation(whitespace)}
+            );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
         QCOMPARE(
-            result->error().message,
+            result.error().message,
             std::string(
                 "Save-as destination must not be empty or whitespace-only."
                 )
             );
+        QCOMPARE(port.saveAsCalls, 0);
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
     }
-
-    QCOMPARE(port.saveAsCalls, 0);
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::blankExportDestinationIsRejectedBeforePortCall()
 {
-    FakeLegacyWorkspacePort port;
-    LegacyWorkspaceGateway gateway(port);
     const WorkspaceSession session = workspaceSession(
         "workspace-current",
         "C:/current.tps"
         );
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
 
-    const auto emptyResult = gateway.exportWorkspace(
-        ExportWorkspaceRequest{session, WorkspaceLocation{}}
-        );
-    const auto whitespaceResult = gateway.exportWorkspace(
-        ExportWorkspaceRequest{session, WorkspaceLocation(" \t\r\n")}
-        );
-
-    for (const auto* result : {&emptyResult, &whitespaceResult})
+    for (const std::string& whitespace : {
+        std::string{},
+        std::string(" \t\r\n"),
+        noBreakSpace,
+        ideographicSpace
+    })
     {
-        QVERIFY(!*result);
-        QCOMPARE(result->error().code, ErrorCode::InvalidInput);
+        FakeLegacyWorkspacePort port;
+        LegacyWorkspaceGateway gateway(port);
+        const auto result = gateway.exportWorkspace(
+            ExportWorkspaceRequest{session, WorkspaceLocation(whitespace)}
+            );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
         QCOMPARE(
-            result->error().message,
+            result.error().message,
             std::string(
                 "Export destination must not be empty or whitespace-only."
                 )
             );
+        QCOMPARE(port.exportCalls, 0);
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
     }
-
-    QCOMPARE(port.exportCalls, 0);
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::legacyErrorTextMapsToStructuredFailure()
@@ -679,23 +764,42 @@ void NextPlatformLegacyWorkspaceGatewayTests::invalidReturnedHandleIsRejected()
 
 void NextPlatformLegacyWorkspaceGatewayTests::invalidReturnedLocationIsRejected()
 {
-    FakeLegacyWorkspacePort port;
-    port.openResponse = LegacyWorkspaceResult<LegacyWorkspaceHandle>::success(
-        legacyHandle("workspace-invalid-location", " \t\r\n")
-        );
-    LegacyWorkspaceGateway gateway(port);
+    for (const std::string& whitespace : {
+        std::string(" \t\r\n"),
+        std::string("\xC2\xA0"),
+        std::string("\xE3\x80\x80")
+    })
+    {
+        FakeLegacyWorkspacePort port;
+        port.openResponse =
+            LegacyWorkspaceResult<LegacyWorkspaceHandle>::success(
+                legacyHandle(
+                    "workspace-invalid-location",
+                    whitespace.c_str()
+                    )
+                );
+        LegacyWorkspaceGateway gateway(port);
 
-    const auto result = gateway.openWorkspace(
-        OpenWorkspaceRequest{WorkspaceLocation("C:/invalid-location.tps")}
-        );
+        const auto result = gateway.openWorkspace(
+            OpenWorkspaceRequest{
+                WorkspaceLocation("C:/invalid-location.tps")
+            }
+            );
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
-    QVERIFY(
-        result.error().message
-        == "Legacy workspace returned an invalid handle or location."
-        );
-    QCOMPARE(port.hasOpenCalls, 0);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Legacy workspace returned an invalid handle or location."
+                )
+            );
+        QCOMPARE(port.openCalls, 1);
+        QCOMPARE(port.createCalls, 0);
+        QCOMPARE(port.lastOpenPath, std::string("C:/invalid-location.tps"));
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
+    }
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::returnedLocationMustMatchOpenObservation()
@@ -1004,29 +1108,48 @@ void NextPlatformLegacyWorkspaceGatewayTests::saveAsRejectsReturnedIdentityChang
 
 void NextPlatformLegacyWorkspaceGatewayTests::saveAsRejectsReturnedLocation()
 {
-    FakeLegacyWorkspacePort port;
-    port.open = true;
-    port.currentPath = "C:/current.tps";
-    port.saveAsResponse =
-        LegacyWorkspaceResult<LegacyWorkspaceHandle>::success(
-            legacyHandle("workspace-current", " \t")
+    for (const std::string& whitespace : {
+        std::string(" \t"),
+        std::string("\xC2\xA0"),
+        std::string("\xE3\x80\x80")
+    })
+    {
+        FakeLegacyWorkspacePort port;
+        port.open = true;
+        port.currentPath = "C:/current.tps";
+        port.saveAsResponse =
+            LegacyWorkspaceResult<LegacyWorkspaceHandle>::success(
+                legacyHandle("workspace-current", whitespace.c_str())
+                );
+        LegacyWorkspaceGateway gateway(port);
+
+        const auto result = gateway.saveWorkspaceAs(
+            SaveWorkspaceAsRequest{
+                workspaceSession("workspace-current", "C:/current.tps"),
+                WorkspaceLocation("C:/save-as.tps")
+            }
             );
-    LegacyWorkspaceGateway gateway(port);
 
-    const auto result = gateway.saveWorkspaceAs(
-        SaveWorkspaceAsRequest{
-            workspaceSession("workspace-current", "C:/current.tps"),
-            WorkspaceLocation("C:/save-as.tps")
-        }
-        );
-
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
-    QVERIFY(
-        result.error().message
-        == "Legacy workspace returned an invalid handle or location."
-        );
-    QCOMPARE(port.hasOpenCalls, 0);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Legacy workspace returned an invalid handle or location."
+                )
+            );
+        QCOMPARE(port.saveAsCalls, 1);
+        QVERIFY(
+            port.lastSaveAsHandle
+            == legacyHandle("workspace-current", "C:/current.tps")
+            );
+        QCOMPARE(
+            port.lastSaveAsDestination,
+            std::string("C:/save-as.tps")
+            );
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
+    }
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::exportMapsDestinationWithoutChangingOpenWorkspace()
@@ -1091,29 +1214,44 @@ void NextPlatformLegacyWorkspaceGatewayTests::exportSuccessWithBadObservationIsR
 
 void NextPlatformLegacyWorkspaceGatewayTests::exportRejectsInvalidReturnedLocation()
 {
-    FakeLegacyWorkspacePort port;
-    port.open = true;
-    port.currentPath = "C:/current.tps";
-    port.exportResponse =
-        LegacyWorkspaceResult<std::string>::success(" \t\r\n");
-    LegacyWorkspaceGateway gateway(port);
+    for (const std::string& whitespace : {
+        std::string(" \t\r\n"),
+        std::string("\xC2\xA0"),
+        std::string("\xE3\x80\x80")
+    })
+    {
+        FakeLegacyWorkspacePort port;
+        port.open = true;
+        port.currentPath = "C:/current.tps";
+        port.exportResponse =
+            LegacyWorkspaceResult<std::string>::success(whitespace);
+        LegacyWorkspaceGateway gateway(port);
 
-    const auto result = gateway.exportWorkspace(
-        ExportWorkspaceRequest{
-            workspaceSession("workspace-current", "C:/current.tps"),
-            WorkspaceLocation("C:/requested-export.tps")
-        }
-        );
+        const auto result = gateway.exportWorkspace(
+            ExportWorkspaceRequest{
+                workspaceSession("workspace-current", "C:/current.tps"),
+                WorkspaceLocation("C:/requested-export.tps")
+            }
+            );
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
-    QCOMPARE(
-        result.error().message,
-        std::string("Export returned an empty or whitespace-only location.")
-        );
-    QCOMPARE(port.exportCalls, 1);
-    QCOMPARE(port.hasOpenCalls, 0);
-    QCOMPARE(port.currentPathCalls, 0);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Export returned an empty or whitespace-only location.")
+            );
+        QCOMPARE(port.exportCalls, 1);
+        QVERIFY(
+            port.lastExportHandle
+            == legacyHandle("workspace-current", "C:/current.tps")
+            );
+        QCOMPARE(
+            port.lastExportDestination,
+            std::string("C:/requested-export.tps")
+            );
+        QCOMPARE(port.hasOpenCalls, 0);
+        QCOMPARE(port.currentPathCalls, 0);
+    }
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::exportFailurePreservesLegacyError()

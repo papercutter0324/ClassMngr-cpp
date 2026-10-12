@@ -1,9 +1,9 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
 #include "next/application/workspace_contracts.h"
 
 #include <cassert>
-#include <cctype>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -617,24 +617,7 @@ private:
         std::string_view value
         ) noexcept
     {
-        if (value.empty())
-        {
-            return true;
-        }
-
-        for (const char character : value)
-        {
-            if (
-                std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) == 0
-                )
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return Application::isBlankUtf8Text(value);
     }
 
     [[nodiscard]] static Domain::OperationError invalidInput(

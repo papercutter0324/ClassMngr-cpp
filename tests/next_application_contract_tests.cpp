@@ -113,6 +113,8 @@ private slots:
     void invalidOpenDoesNotInvokeGateway();
     void invalidCloseDoesNotInvokeGateway();
     void whitespaceOnlyCreateDoesNotInvokeGateway();
+    void unicodeWhitespacePathsAreRejectedBeforeGatewayCall();
+    void unicodeWorkspacePathPassesThroughUnchanged();
     void createSuccessReturnsCopyableSessionProjection();
     void openSuccessReturnsSessionProjection();
     void createFailurePreservesGatewayError();
@@ -143,6 +145,10 @@ void NextApplicationContractTests::invalidCreateDoesNotInvokeGateway()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Workspace location must not be empty or whitespace-only.")
+        );
     QCOMPARE(gateway.createCalls, 0);
 }
 
@@ -157,6 +163,10 @@ void NextApplicationContractTests::invalidOpenDoesNotInvokeGateway()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Workspace location must not be empty or whitespace-only.")
+        );
     QCOMPARE(gateway.openCalls, 0);
 }
 
@@ -175,6 +185,10 @@ void NextApplicationContractTests::invalidCloseDoesNotInvokeGateway()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Workspace session must contain an id and location.")
+        );
     QCOMPARE(gateway.closeCalls, 0);
 }
 
@@ -192,6 +206,112 @@ void NextApplicationContractTests::whitespaceOnlyCreateDoesNotInvokeGateway()
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
     QCOMPARE(gateway.createCalls, 0);
+}
+
+void NextApplicationContractTests::
+unicodeWhitespacePathsAreRejectedBeforeGatewayCall()
+{
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
+
+    for (const std::string& whitespace : {noBreakSpace, ideographicSpace})
+    {
+        FakeWorkspaceGateway gateway;
+        const WorkspaceUseCase useCase(gateway);
+        const WorkspaceLocation blankLocation(whitespace);
+
+        const auto createResult = useCase.createWorkspace(
+            CreateWorkspaceRequest{blankLocation}
+            );
+        QVERIFY(!createResult);
+        QCOMPARE(createResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            createResult.error().message,
+            std::string(
+                "Workspace location must not be empty or whitespace-only."
+                )
+            );
+        QVERIFY(!createResult.error().recoverable);
+
+        const auto openResult = useCase.openWorkspace(
+            OpenWorkspaceRequest{blankLocation}
+            );
+        QVERIFY(!openResult);
+        QCOMPARE(openResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            openResult.error().message,
+            std::string(
+                "Workspace location must not be empty or whitespace-only."
+                )
+            );
+
+        const auto invalidSession = useCase.saveWorkspace(
+            SaveWorkspaceRequest{
+                WorkspaceSession(
+                    *WorkspaceId::fromString("workspace-1"),
+                    blankLocation
+                    )
+            }
+            );
+        QVERIFY(!invalidSession);
+        QCOMPARE(invalidSession.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            invalidSession.error().message,
+            std::string("Workspace session must contain an id and location.")
+            );
+
+        const auto saveAsResult = useCase.saveWorkspaceAs(
+            SaveWorkspaceAsRequest{testSession(), blankLocation}
+            );
+        QVERIFY(!saveAsResult);
+        QCOMPARE(saveAsResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            saveAsResult.error().message,
+            std::string(
+                "Workspace session and save-as destination must be valid."
+                )
+            );
+
+        const auto exportResult = useCase.exportWorkspace(
+            ExportWorkspaceRequest{testSession(), blankLocation}
+            );
+        QVERIFY(!exportResult);
+        QCOMPARE(exportResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            exportResult.error().message,
+            std::string(
+                "Workspace session and export destination must be valid."
+                )
+            );
+
+        QCOMPARE(gateway.createCalls, 0);
+        QCOMPARE(gateway.openCalls, 0);
+        QCOMPARE(gateway.saveCalls, 0);
+        QCOMPARE(gateway.saveAsCalls, 0);
+        QCOMPARE(gateway.exportCalls, 0);
+    }
+}
+
+void NextApplicationContractTests::
+unicodeWorkspacePathPassesThroughUnchanged()
+{
+    const std::string path("C:/workspaces/\xED\x95\x9C\xEA\xB8\x80.tps");
+    const WorkspaceSession expectedSession(
+        *WorkspaceId::fromString("workspace-unicode"),
+        WorkspaceLocation(path)
+        );
+    FakeWorkspaceGateway gateway;
+    gateway.createResponse = Result<WorkspaceSession>::success(expectedSession);
+    const WorkspaceUseCase useCase(gateway);
+
+    const auto result = useCase.createWorkspace(
+        CreateWorkspaceRequest{WorkspaceLocation(path)}
+        );
+
+    QVERIFY(result);
+    QCOMPARE(gateway.createCalls, 1);
+    QCOMPARE(gateway.lastCreatedLocation.value(), path);
+    QVERIFY(result.value() == expectedSession);
 }
 
 void NextApplicationContractTests::createSuccessReturnsCopyableSessionProjection()
@@ -332,6 +452,10 @@ void NextApplicationContractTests::invalidSaveDoesNotInvokeGateway()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Workspace session must contain an id and location.")
+        );
     QCOMPARE(gateway.saveCalls, 0);
 }
 
@@ -390,6 +514,12 @@ void NextApplicationContractTests::invalidSaveAsSessionDoesNotInvokeGateway()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "Workspace session and save-as destination must be valid."
+            )
+        );
     QCOMPARE(gateway.saveAsCalls, 0);
 }
 
@@ -471,6 +601,12 @@ void NextApplicationContractTests::invalidExportDoesNotInvokeGateway()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string(
+            "Workspace session and export destination must be valid."
+            )
+        );
     QCOMPARE(gateway.exportCalls, 0);
 }
 

@@ -34,6 +34,7 @@ private slots:
     void dirtyAndSavedTransitionsAreDeterministic();
     void markSavedAsReplacesLocationAndCleans();
     void invalidMarkSavedAsPreservesState();
+    void unicodeWhitespaceLocationsAreRejectedWithoutChangingState();
     void closeResetsState();
     void invalidTransitionsReturnStructuredErrors();
     void dirtyReplacementAndCloseReturnConflict();
@@ -131,6 +132,46 @@ void NextApplicationStateTests::invalidMarkSavedAsPreservesState()
     QVERIFY(!result);
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
     QVERIFY(state.snapshot() == before);
+}
+
+void NextApplicationStateTests::
+unicodeWhitespaceLocationsAreRejectedWithoutChangingState()
+{
+    WorkspaceState state;
+    QVERIFY(state.open(testSession("workspace-1", "C:/workspaces/one.tps")));
+    QVERIFY(state.markDirty());
+    const WorkspaceStateSnapshot before = state.snapshot();
+
+    const std::string noBreakSpace("\xC2\xA0");
+    const std::string ideographicSpace("\xE3\x80\x80");
+    for (const std::string& whitespace : {noBreakSpace, ideographicSpace})
+    {
+        const auto saveAsResult = state.markSavedAs(
+            WorkspaceLocation(whitespace)
+            );
+        QVERIFY(!saveAsResult);
+        QCOMPARE(saveAsResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            saveAsResult.error().message,
+            std::string(
+                "Workspace location must not be empty or whitespace-only."
+                )
+            );
+        QVERIFY(!saveAsResult.error().recoverable);
+        QVERIFY(state.snapshot() == before);
+
+        const auto openResult = state.open(
+            testSession("workspace-invalid", whitespace.c_str())
+            );
+        QVERIFY(!openResult);
+        QCOMPARE(openResult.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            openResult.error().message,
+            std::string("Workspace session must contain an id and location.")
+            );
+        QVERIFY(!openResult.error().recoverable);
+        QVERIFY(state.snapshot() == before);
+    }
 }
 
 void NextApplicationStateTests::closeResetsState()

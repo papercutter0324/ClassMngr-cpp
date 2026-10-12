@@ -1,13 +1,13 @@
 #pragma once
 
 #include "core/application_services.h"
+#include "next/application/qt_compatible_text.h"
 #include "next/platform/legacy_workspace_gateway.h"
 
 #include <QByteArray>
 #include <QFileInfo>
 #include <QString>
 
-#include <cctype>
 #include <string>
 #include <string_view>
 
@@ -333,24 +333,7 @@ private:
         std::string_view value
         ) noexcept
     {
-        if (value.empty())
-        {
-            return true;
-        }
-
-        for (const char character : value)
-        {
-            if (
-                std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) == 0
-                )
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return Application::isBlankUtf8Text(value);
     }
 
     [[nodiscard]] static bool isBlank(

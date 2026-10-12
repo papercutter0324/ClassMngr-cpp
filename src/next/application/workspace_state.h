@@ -1,9 +1,8 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
 #include "next/application/workspace_contracts.h"
 
-#include <algorithm>
-#include <cctype>
 #include <optional>
 #include <utility>
 
@@ -197,17 +196,7 @@ private:
         const WorkspaceLocation& location
         ) noexcept
     {
-        return location.value().empty()
-            || std::all_of(
-                location.value().cbegin(),
-                location.value().cend(),
-                [](const char character)
-                {
-                    return std::isspace(
-                        static_cast<unsigned char>(character)
-                        ) != 0;
-                }
-                );
+        return isBlankUtf8Text(location.value());
     }
 
     [[nodiscard]] static Domain::OperationError invalidInput(
