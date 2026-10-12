@@ -4774,10 +4774,17 @@ uses the shared source-ID validator and retains size-limit-before-whitespace-
 scan behavior. The summary, print, and roster query tests passed 3/3; no full
 suite ran.
 
-F748 adds a focused test that two identical whitespace-only visible IDs fail
-ID validation before duplicate detection, preserving the exact error and
-zero-read boundary. Explorer found a separate local Gregorian-date parser in
-the Sub Prep calendar query, but reusing the Domain parser would need a
-conversion from its date value to the query's `sys_days` representation and
-broader boundary review. The direct F747 precedence gap is the smaller next
-slice. F707/F709 remain deferred and the Phase 2 exit gate remains open.
+F748 is accepted and committed as
+`f773cb0bea7867bc7e47912848317343a2d67e07`. Its focused test asserts that two
+identical whitespace-only visible IDs report the malformed-ID error before
+duplicate detection, nonrecoverably and with zero reads. CTest #204 passed;
+no full suite ran.
+
+F749 reuses `Domain::GregorianDate::fromIsoString` in the Sub Prep
+calendar-interval query while retaining `std::chrono::sys_days` for its
+comparisons. The query has a local duplicate ISO/Gregorian parser. Preserve
+invalid-reference and malformed-returned-row behavior, and cover the lower
+year boundary. Two other candidates exposed real query test gaps, but they
+would form test-only slices; production parser reuse better fits the plan's
+preference for cohesive implementation slices. F707/F709 remain deferred and
+the Phase 2 exit gate remains open.

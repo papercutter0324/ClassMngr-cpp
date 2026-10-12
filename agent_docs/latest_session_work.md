@@ -9,8 +9,10 @@
   `8cab6fa9e60a0a04f949fc9f28c484687507199c`; its print and roster query
   CTests passed 2/2. F747 is committed at
   `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`; its summary, print, and roster
-  query CTests passed 3/3. F748 is selected to lock the schedule-summary
-  malformed-ID-before-duplicate contract. F707 and F709 remain deferred.
+  query CTests passed 3/3. F748 is committed at
+  `f773cb0bea7867bc7e47912848317343a2d67e07`; its summary-query CTest passed
+  1/1. F749 is selected to reuse Domain Gregorian-date validation in the Sub
+  Prep calendar-interval query. F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -255,7 +257,7 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740-F747 are accepted; the F748 matrix is in
+  full suite ran. F740-F748 are accepted; the F749 matrix is in
   the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
@@ -303,8 +305,10 @@
   `8cab6fa9e60a0a04f949fc9f28c484687507199c`; its exact print and roster
   CTests passed 2/2. F747 is committed at
   `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`; its exact summary, print, and
-  roster CTests passed 3/3. F748 adds a summary-query precedence test; its
-  detailed matrix is recorded in the Phase 2 progress log.
+  roster CTests passed 3/3. F748 is committed at
+  `f773cb0bea7867bc7e47912848317343a2d67e07`; its exact summary-query CTest
+  passed 1/1. F749 reuses Gregorian-date validation in Sub Prep calendar
+  intervals; its detailed matrix is recorded in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

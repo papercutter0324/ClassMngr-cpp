@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F747 is accepted at `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`, and F748 is selected to test malformed visible-class ID validation before duplicate detection in the Sub Prep schedule summary query; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F748 is accepted at `f773cb0bea7867bc7e47912848317343a2d67e07`, and F749 is selected and in progress to reuse canonical Gregorian date validation in the Sub Prep calendar-event intervals query; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F748 - Add test-only coverage that malformed visible-class ID validation precedes duplicate detection in the Sub Prep schedule summary query.
+- F749 - Reuse `Domain::GregorianDate::fromIsoString` for Sub Prep calendar-event interval date validation while preserving `std::chrono::sys_days` comparisons and query behavior.
 
 ## Objective
 

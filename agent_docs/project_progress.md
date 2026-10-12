@@ -53,14 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F747 accepted; F748 selected)
+### Current state - 2026-10-13 (F748 accepted; F749 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-178 are complete with F707 and F709 deferred. F740-F747 are
-accepted; F748 will test the schedule-summary query's malformed-ID-before-
-duplicate precedence. The separate CMake source-ownership optimization was
-also completed during this continuation.
+Batches 141-178 are complete with F707 and F709 deferred. F740-F748 are
+accepted; F749 will reuse canonical Gregorian-date validation in the Sub Prep
+calendar-interval query. The separate CMake source-ownership optimization
+was also completed during this continuation.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -4672,13 +4672,24 @@ VS 18 x64 Developer, `ClassMngr` and the summary, print, and roster query test
 targets built. Unique CTest registrations #204, #205, and #237 passed 3/3 in
 1.09 seconds. No full suite ran.
 
-F748 is selected as a focused contract test in
-`tests/next_application_sub_prep_schedule_summary_query_tests.cpp`: two
-identical whitespace-only visible IDs must return nonrecoverable `InvalidInput`
-with the exact message `Visible class identifiers must be non-blank and
-bounded.` before duplicate detection and with zero reads. Build
-`ClassMngr` and the summary query test target; confirm registration #204 is
-unique and run only that exact CTest. No full suite. F707 and F709 remain
-deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
-F625's assessment is accepted, F626 is deferred, and separate current-source
-Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24.
+F748 is accepted and committed as
+`f773cb0bea7867bc7e47912848317343a2d67e07` (`Phase2 - Cover Sub Prep
+identifier validation precedence`). Its focused test proves two identical
+whitespace-only IDs return the malformed-ID error before duplicate detection,
+with nonrecoverable `InvalidInput` and zero reads. `ClassMngr` and the summary
+query target built; unique CTest #204 passed 1/1 in 0.04 seconds. No full
+suite ran.
+
+F749 is selected to replace the duplicate Sub Prep calendar-interval ISO date
+parser with `Domain::GregorianDate::fromIsoString`, converting valid
+components to `std::chrono::sys_days` for the existing range comparisons.
+Preserve canonical syntax, years 0001-9999, Gregorian/leap-day validity,
+invalid-reference rejection before reads, malformed interval-row skipping,
+inclusive overlap, and event filtering. Add coverage that reference
+`0001-01-01` yields `0001-01-01` through `0002-12-31`; retain maximum-year and
+invalid-date coverage. Build `ClassMngr` and the interval-query test target,
+confirm unique CTest #307, and run only that test. No full suite. F707 and
+F709 remain deferred. Phase 2 remains In Progress/Open with Gates 1 and 2
+Partial; F625's assessment is accepted, F626 is deferred, and separate
+current-source Phase 0 evidence remains Windows x64 2/24 and macOS universal
+0/24.

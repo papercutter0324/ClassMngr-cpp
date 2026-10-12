@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-13
-- Current milestone: Phase 2 remains in progress: F747 was accepted at `892d05dd5db4cf57dc9d7da1381b2afe6ce4d8f5`, and F748 is selected for test-only coverage that malformed visible-class ID validation precedes duplicate detection in the Sub Prep schedule summary query. F707 and F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F748 was accepted at `f773cb0bea7867bc7e47912848317343a2d67e07`, and F749 is selected and in progress to reuse canonical Gregorian date validation in the Sub Prep calendar-event intervals query. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -88,10 +88,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
   code. Prefer the smallest focused assertion in an existing test file; create
   a separate test file only when a new production/core contract cannot be
   covered coherently in an existing file. Avoid tests for unchanged behavior,
-  redundant cases, and test-only slices. F748 is a narrowly selected
-  test-only follow-up to F747, covering the uncovered malformed-ID-before-
-  duplicate precedence in the existing schedule-summary query; it makes no
-  production edits.
+  redundant cases, and test-only slices.
 
 ## Cross-cutting memory remediation
 

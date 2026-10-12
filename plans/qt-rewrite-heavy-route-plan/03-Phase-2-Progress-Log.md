@@ -28514,3 +28514,47 @@ A separate local Gregorian date parser remains deferred: reusing
 `std::chrono::sys_days` representation and a broader date-boundary review.
 Acceptance criteria were defined before the test change and are recorded here. F707/F709 remain deferred;
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F748 Sub Prep schedule-summary validation precedence - accepted - 2026-10-13
+
+F748 is accepted at commit
+`f773cb0bea7867bc7e47912848317343a2d67e07` (`Phase2 - Cover Sub Prep
+identifier validation precedence`). It adds a request with two identical
+whitespace-only visible class IDs and asserts nonrecoverable `InvalidInput`,
+the exact message `Visible class identifiers must be non-blank and bounded.`
+before duplicate detection, and zero reads.
+The selection and acceptance record is at `5917db036c0c60636239a5932b6405b82a043f43`.
+
+`ClassMngr` and
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests` built; the unique
+CTest #204 passed 1/1 in 0.04 seconds. No full suite ran. Batch 179 continues
+with F749; F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial, and
+the formal exit gate remains Open.
+
+### Batch 179 continuation - F749 selection and acceptance matrix - recorded before implementation - 2026-10-13
+
+**F749 is selected and in progress:** reuse canonical Gregorian date parsing
+in `src/next/application/sub_prep_calendar_event_intervals_query.h`.
+
+The local `SubPrepCalendarEventIntervalsQueryDetail::parseDate` duplicates
+`Domain::GregorianDate::fromIsoString`'s ISO syntax, ASCII-digit, 0001-9999
+range, and Gregorian-date validation. Reuse the domain parser, converting a
+valid date to `std::chrono::sys_days` for downstream comparisons.
+
+1. Preserve invalid reference-date rejection before reads; skip malformed
+   returned intervals; retain inclusive overlap, trimmed exact event type,
+   read-error behavior, and current/following-year window and clamping.
+2. Add the minimum boundary case: reference `0001-01-01` produces a window
+   from `0001-01-01` through `0002-12-31`. Retain the existing `9999` clamp
+   and invalid-reference test.
+3. In
+   `tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp`,
+   build `ClassMngr` and
+   `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`, confirm
+   CTest #307 is registered exactly once, then run only that test. Run no full
+   suite.
+
+The duplicate-ID and unused-teacher test-only candidates remain deferred under
+the Phase 2 test-scope policy. This matrix is recorded before implementation;
+F749 is not complete. F707/F709 remain deferred, Phase 2 Gates 1/2 remain
+Partial, and the formal exit gate remains Open.
