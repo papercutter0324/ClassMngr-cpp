@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F736 is accepted and F737, the Schedule Import weekday display-name migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F737 is accepted and F738, the My Classes weekday-abbreviation migration, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -92,16 +92,17 @@ Treat this plan as an operational summary, not a history:
   global runner unavailability; resume when a suitable runner is accessible.
 - F707 - Deferred from Batch 178: the `sidebarClassNodeLessThan`/`timeOrder`
   helper chain has no observed app callsite; revisit when a live use is found.
-- F709 - Deferred from Batch 178: the current public Calendar Page fixture
-  supplies valid `QTime` values and does not readily inject malformed raw
-  input; revisit if a focused public seam becomes available.
+- F709 - Deferred from Batch 178 and rechecked before F738: raw SQL values
+  become invalid `QTime`s in the repository before projection, so the current
+  public Calendar Page fixture cannot inject malformed projection text;
+  revisit if a focused query/summary injection seam becomes available.
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
 
 #### Active batch: Batch 179
 
-- F737 - Move Schedule Import weekday display-name recognition to the shared parser while preserving exact canonical text and raw fallback behavior.
+- F738 - Move My Classes weekday-abbreviation recognition to the shared parser while preserving exact canonical text and trimmed fallback behavior.
 
 ## Objective
 

@@ -5,7 +5,9 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F737, the Schedule Import weekday display-name migration.
+  F738, the My Classes weekday-abbreviation migration. F709 remains deferred
+  after confirming raw SQL values become invalid `QTime`s before the public
+  page's projection-string helper.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -227,9 +229,15 @@
   `13928d509ac62a95654df715a867a54abfbed128`; its data-driven formatter test
   covers Monday-Sunday and padded canonical, lowercase, padded unknown, and
   empty fallbacks. The exact `ClassMngrScheduleImportDialogTests` CTest passed
-  1/1. F737 selects the Schedule Import domain weekday display-name helper;
-  its matrix is in the Phase 2 progress log. No full suite ran. F707 and F709
-  remain deferred.
+  1/1. F737 is accepted at
+  `630e6caaae22bd0005f8a87309bef00fd716c785` for the Schedule Import domain
+  weekday display-name helper. Its exact-raw parser guard preserves all seven
+  translations and raw fallback text. The scoped diff check passed; no full
+  suite ran. F709 was rechecked: malformed SQL-stored times become invalid
+  `QTime`s before reaching the page projection helper, so its original
+  missing-seam deferral remains. F738 is selected for My Classes
+  `dayAbbreviation`; its acceptance matrix is in the Phase 2 progress log.
+  F707 and F709 remain deferred.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.

@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F736 accepted; F737 selected)
+### Current state - 2026-10-12 (F737 accepted; F738 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F737, the Schedule Import weekday display-name migration.
+with F738, the My Classes weekday-abbreviation migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -403,13 +403,18 @@ CTest registration (#126) was found and the exact test passed 1/1 in 2.29s.
 The VS x64 Developer retry passed after an initial shell lacked the MSVC
 `utility` header; its `vswhere.exe` warning was nonblocking. No full suite ran.
 
-F737 is selected for `scheduleImportWeekdayDisplayName` in the Schedule Import
-domain rules. Reuse the shared parser only when canonical parsed text equals
-the raw input, preserving translations and exact raw fallbacks. The full
-matrix is recorded in the Phase 2 progress log.
-F707 remains deferred because its comparator chain has no observed app
-callsite; F709 is deferred because its public fixture does not readily supply
-malformed raw time text.
+F737 is accepted and committed as
+`630e6caaae22bd0005f8a87309bef00fd716c785`. The Schedule Import domain
+weekday display-name helper uses the shared parser only when canonical parsed
+text equals the raw input, preserving translations and exact raw fallbacks.
+`ClassMngr` and `ClassMngrScheduleImportTests` built; exactly one matching
+CTest registration was confirmed and the focused CTest passed 1/1. The scoped
+diff check passed; no full suite ran.
+F738 is selected for My Classes `dayAbbreviation`; its acceptance matrix is
+recorded in the Phase 2 progress log. F707 remains deferred because its
+comparator chain has no observed app callsite. F709 remains deferred because
+the raw-SQL fixture path converts malformed stored text to invalid `QTime`s
+before projection, leaving no public seam for malformed projection text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

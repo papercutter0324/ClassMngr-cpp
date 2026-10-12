@@ -27830,3 +27830,64 @@ display names while preserving exact raw fallback text.
 
 This matrix is recorded before implementation. Batch 179 is active with F737;
 F707 and F709 remain deferred.
+
+### F737 Schedule Import weekday display-name parsing - accepted - 2026-10-12
+
+F737 is accepted at code/test commit
+`630e6caaae22bd0005f8a87309bef00fd716c785`. The public
+`scheduleImportWeekdayDisplayName` helper uses `ScheduleValueParser::parseWeekday`
+and translates only exact raw canonical weekday names, preserving all seven
+`QObject::tr` labels. Other inputs retain the exact raw fallback. The direct
+test covers all canonical names plus padded, lowercase, unknown, and empty
+fallbacks. Its first build found a test-slot/global-helper name collision;
+qualifying the call as `::scheduleImportWeekdayDisplayName(day)` fixed it.
+
+`ClassMngr` and `ClassMngrScheduleImportTests` built successfully. Exactly one
+matching CTest registration was confirmed and the focused CTest passed 1/1.
+The scoped diff check passed. No full suite ran.
+
+**Decision: accept F737.** Batch 179 continues with F738; F707 and F709 remain
+deferred.
+
+### F709 revisit - deferred - 2026-10-12
+
+The raw-time SQL-update route in
+`currentMonthUpcomingRowsMatchVisibleCalendarRange` was checked as a possible
+way to revisit Calendar Page `projectionTime`. It does not expose malformed
+summary text: `CalendarEventRepository::eventFromQuery` normalizes stored
+values through `parseStoredDisplayTime`; malformed values become invalid
+`QTime`s, and projection serializes valid times only. When both are invalid,
+the optionals are absent before the page's `projectionTime` helper. The
+current public fixture therefore cannot exercise malformed summary text.
+Keep F709 deferred until a focused query or summary injection seam is
+available.
+
+### Batch 179 continuation - F738 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayAbbreviation` in
+`src/features/my_info/ui/my_classes_page_content.cpp`, invoked by My Classes
+`formatSchedule`. The public UI test seam is
+`classInformationFieldsAndTeacherAssociationUseTypedReads` in
+`tests/my_classes_page_tests.cpp`; the focused target and CTest are
+`ClassMngrMyClassesPageTests`.
+
+**F738 is selected:** reuse the Domain weekday parser while preserving the
+existing translated labels and trimmed fallback.
+
+1. Migrate only `dayAbbreviation` to `ScheduleValueParser::parseWeekday` and
+   translate only when `parsed && parsed->text == day` for the raw input.
+   Preserve the existing `MyClassesPage::tr` labels and `day.trimmed()` for
+   padded, lowercase, and unknown input. Leave schedule grouping, ordering,
+   time formatting, and other behavior unchanged.
+2. Extend the existing public UI test for all seven canonical weekday labels,
+   padded canonical fallback (`" Monday "` -> `Monday`), lowercase fallback
+   (`"monday"` -> `monday`), padded unknown fallback
+   (`" Funday "` -> `Funday`), and the empty-day `N/A` fallback with valid
+   times. Retain existing schedule and time formatting coverage.
+3. The runtime already includes the parser, so no CMake change is expected.
+   Build `ClassMngr` and `ClassMngrMyClassesPageTests`, confirm exactly one
+   matching CTest registration, and run only that exact CTest. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F738;
+F707 and F709 remain deferred.

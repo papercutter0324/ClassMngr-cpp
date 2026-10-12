@@ -4603,6 +4603,19 @@ empty fallback labels. `ClassMngr` and `ClassMngrScheduleImportDialogTests`
 rebuilt; exactly one CTest registration was found and the exact test passed
 1/1 in 2.29s. No full suite ran.
 
-F737 is selected for `scheduleImportWeekdayDisplayName`; its preimplementation
-matrix is recorded in the Phase 2 progress log. Phase 2 remains In Progress
-with Gates 1 and 2 Partial.
+F737 is accepted and committed as
+`630e6caaae22bd0005f8a87309bef00fd716c785`. The Schedule Import domain
+weekday display-name helper uses the shared parser only when parsed canonical
+text equals the original input, retaining all seven translation outputs and
+exact raw fallback text. `ClassMngr` and `ClassMngrScheduleImportTests` built;
+the exact target had one CTest registration and passed 1/1. The scoped diff
+check passed; no full suite ran.
+
+The F709 fixture question was revisited before selecting the next slice. A raw
+SQL update reaches the repository as stored text, but `parseStoredDisplayTime`
+converts malformed values to invalid `QTime`s; projection then omits both
+times before the page helper can parse them. F709 remains deferred until a
+focused projection-string injection seam is available. F738 is selected in
+Batch 179 for My Classes `dayAbbreviation`; its acceptance matrix is recorded
+in the Phase 2 progress log. Phase 2 remains In Progress with Gates 1 and 2
+Partial.
