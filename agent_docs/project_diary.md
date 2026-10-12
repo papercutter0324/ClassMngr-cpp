@@ -3900,11 +3900,20 @@ failure preservation; its no-database page has no active timer after later
 Automatic restoration. F675 is committed as
 `72cc672f22ec23c19e6c0181b6c81bb451cd6148`.
 
-## F676 Automatic Update preference failure feedback - selected - 2026-10-12
+## F676 Automatic Update preference failure feedback - accepted - 2026-10-12
 
-The Automatically Check for Updates QAction changes its check state before a
-void persistence callback. A failed attempt to disable checks can therefore
-look unchecked while startup still reads the saved enabled value and runs an
-automatic check. F676 will add checked typed persistence, restore the prior
-check on failure, report one diagnostic, and allow a successful retry. Keep
-the generic SettingsManager `set`/`sync` behavior unchanged.
+The checked SettingsManager path and typed port now report sync failures and
+preserve the previous preference. The real MainWindow QAction restores its
+checked value on failure, reports one diagnostic through the injected handler,
+and permits retry. The enabled-by-default behavior and manual Check for Updates
+action remain unchanged. `ClassMngr` and both focused targets built; the exact
+two port and action CTests passed. F676 is committed as
+`09b848e46c75f5247c4de3796c1db9f22f27d2ea`.
+
+## F677 Font Size persistence failure feedback - selected - 2026-10-12
+
+Font Size writes through a void port before FontSizeController applies the
+choice to the application font. A failed write can leave the current UI using
+a size that will not survive restart. F677 will add checked typed persistence
+and keep the action, stored value, FontManager offset, and application font
+consistent on failure, with one diagnostic and a successful retry.

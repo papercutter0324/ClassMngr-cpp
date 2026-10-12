@@ -24631,3 +24631,76 @@ Check for Updates action and existing startup preference behavior.
    CMake target.
 
 This matrix is recorded before implementation. Batch 151 is active with F676.
+
+### F676 Automatic Update preference failure feedback - accepted - 2026-10-12
+
+F676 is accepted at code/test commit
+`09b848e46c75f5247c4de3796c1db9f22f27d2ea`. `ClassMngr` and both selected
+test targets built in the Windows x64 Debug Ninja tree under the VS developer
+environment. The exact CTests passed 2/2:
+`ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests` and
+`ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests`. The port
+tests verify Technical mapping for sync failure, prior-value and absent-key
+restoration, unrelated-setting preservation, and retry while retaining the
+enabled-default/coercion cases. The MainWindow test verifies failure through
+the real checkbox QAction, one injected diagnostic callback, storage/check
+rollback with no duplicate write, and successful retry. The default
+`Unable to Save Preference` warning title and diagnostic binding were
+source-reviewed. No full suite ran.
+
+**Decision: accept F676.** Batch 151 is complete; Batch 152 is active with
+F677. Continue the one-commit-per-slice sequence.
+
+### Batch 152 shortlist and selection - recorded before F677 implementation - 2026-10-12
+
+The candidate scan compared Font Size, PDF Viewer Background, AI Comment
+Provider/Voice, Sidebar Display, and PowerPoint Data Access Notice. Font Size
+is selected because its QAction immediately drives `FontSizeController` and
+changes the application-wide font; a failed save can leave the current UI at
+one size while the next launch restores another. Existing port and MainWindow
+action tests already verify value mapping, selected action, persisted offset,
+FontManager offset, and actual application font. PDF Background also affects
+the current viewer, while AI Provider/Voice can affect later dialogs/prompts;
+these remain candidates for later batches. Sidebar Display has narrower
+impact, and the PowerPoint notice path is Apple-only.
+
+**F677 is selected:** add an opt-in checked SettingsManager write for the
+font-size integer preference that synchronizes QSettings, preserves the
+previous key (including absence) on failure, and allows retry. Keep generic
+SettingsManager `set`/`sync` behavior unchanged. Change the Font Size
+preferences port to `[[nodiscard]] Domain::Result<void>`; preserve values
+Small=-2, Normal=0, Large=2, ExtraLarge=4 and the current unknown-value
+default-to-Normal read; map invalid enum inputs to `InvalidInput` and storage
+errors to diagnostic `Technical`. Make the Font Size action persistence-first.
+On failure, restore prior OptionState/check state and preserve the stored
+preference, `FontManager::sizeOffset()`, and application font, with one
+`Unable to Save Preference` diagnostic warning and no duplicate write. A
+successful retry updates selection, persistence, and live font together.
+Preserve the public MainWindow constructor and ordinary startup/success parity.
+
+### F677 Font Size failure acceptance matrix - recorded before implementation - 2026-10-12
+
+1. Add an opt-in checked write for the font-size stored integer. Check QSettings
+   sync, restore the previous key including absence on failure, and permit a
+   successful retry. Preserve unrelated settings, the `options/fontSize` key,
+   valid integer mapping, and generic SettingsManager `set`/`sync` behavior.
+2. Change `FontSizePreferencesPort::write` to return
+   `[[nodiscard]] Domain::Result<void>`. Preserve Small=-2, Normal=0, Large=2,
+   ExtraLarge=4 and unknown stored values defaulting to Normal. Map invalid
+   enum values to `InvalidInput` and sync errors to diagnostic `Technical`.
+3. Make the real Font Size QAction persistence-first. On failure, preserve the
+   stored value, OptionState current value, checked action, FontManager offset,
+   and QApplication font; invoke one diagnostic warning and avoid a recursive
+   or duplicate write. On retry, update selected action, persisted value,
+   FontManager offset, and QApplication font together. Preserve startup
+   selection and successful action parity.
+4. Extend
+   `ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests` with
+   injected sync failure, prior/absent-key and unrelated-setting preservation,
+   invalid enum mapping, and successful retry. Extend
+   `ClassMngrMainWindowFontSizeActionParityTests` to verify failure rollback,
+   one diagnostic callback, unchanged global font state, and successful retry.
+   Build `ClassMngr` and both existing targets; run exactly those two CTests.
+   Add no CMake target.
+
+This matrix is recorded before implementation. Batch 152 is active with F677.

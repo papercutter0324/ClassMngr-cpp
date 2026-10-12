@@ -53,11 +53,11 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F676)
+### Current state - 2026-10-12 (F677)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-150 are complete. F666 Class Day Filter Reset Policy is committed
+Batches 141-151 are complete. F666 Class Day Filter Reset Policy is committed
 as `faa5c3a7`; F667 Class Selection Reset Policy as `528e031b`; F668 Calendar
 Event Type Color as `4678f3c5`; F669 Schedule Display Preferences as
 `400decff`; F670 Sub Prep remembered-name save feedback as `8cc1a68f`; and
@@ -113,12 +113,21 @@ coverage verifies checked-write rollback, QAction/OptionState/effective-mode
 preservation, one diagnostic callback, an active autosave timer preserved on
 failure, and a successful retry. No full suite ran. Batch 150 is complete.
 
-F676 Automatic Update preference failure feedback is selected/current in
-Batch 151. Its acceptance matrix is recorded in the Phase 2 progress log. A
-failed attempt to disable automatic checks must restore the checked QAction and
-preserve the stored setting, with one diagnostic warning; a successful retry
-must update the checkbox and persistence together. The exact existing port and
-MainWindow action CTests are selected; no CMake target is needed.
+F676 Automatic Update preference failure feedback is committed as
+`09b848e46c75f5247c4de3796c1db9f22f27d2ea`. `ClassMngr` and both selected
+test targets built in the Windows x64 Debug Ninja tree under the VS developer
+environment; the exact port and MainWindow action CTests passed 2/2. Coverage
+verifies QSettings failure mapping, previous and absent-key restoration,
+unrelated-setting preservation, one warning callback, checkbox/storage
+rollback, and successful retry. No full suite ran. Batch 151 is complete.
+
+F677 Font Size typed persistence and action rollback is selected/current in
+Batch 152. Its acceptance matrix is recorded in the Phase 2 progress log. A
+failed write must preserve the stored preference, checked action, OptionState,
+FontManager offset, and application font, with one diagnostic warning. A
+successful retry must update persistence, selection, and the live application
+font together. The exact existing port and MainWindow action CTests are
+selected; no CMake target is needed.
 
 ### Current state - 2026-10-09
 
