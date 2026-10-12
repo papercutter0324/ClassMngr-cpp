@@ -210,6 +210,39 @@ struct GregorianDate final
 
 } // namespace CalendarEventRepeatOccurrencePlanDetail
 
+[[nodiscard]] inline std::optional<std::string>
+defaultCalendarEventRepeatUntilDate(
+    const std::string_view date
+    )
+{
+    using namespace CalendarEventRepeatOccurrencePlanDetail;
+
+    const std::optional<GregorianDate> parsedDate = parseDate(date);
+    if (!parsedDate)
+    {
+        return std::nullopt;
+    }
+
+    const GregorianDate finalDayOfYear{
+        parsedDate->year,
+        12,
+        31
+    };
+    const int requestedWeekday = toOrdinal(*parsedDate) % 7 + 1;
+    const int finalDayWeekday = toOrdinal(finalDayOfYear) % 7 + 1;
+    const int daysBack =
+        (finalDayWeekday - requestedWeekday + 7) % 7;
+    const std::optional<GregorianDate> defaultUntilDate = fromOrdinal(
+        toOrdinal(finalDayOfYear) - daysBack
+        );
+    if (!defaultUntilDate || defaultUntilDate->year != parsedDate->year)
+    {
+        return std::nullopt;
+    }
+
+    return formatDate(*defaultUntilDate);
+}
+
 [[nodiscard]] inline Domain::Result<CalendarEventSeriesCreateRequest>
 planCalendarEventRepeatOccurrences(
     const CalendarEventSaveRequest& seed,

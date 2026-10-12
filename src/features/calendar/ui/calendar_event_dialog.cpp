@@ -3,6 +3,7 @@
 #include "core/fontmanager.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
+#include "next/application/calendar_event_repeat_occurrence_plan.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/validation/form_validation_binder.h"
@@ -115,7 +116,7 @@ CalendarEvent legacyEventFromDraft(
     return event;
 }
 
-QDate finalMatchingWeekdayInYear(
+QDate defaultRepeatUntilDate(
     const QDate& date
     )
 {
@@ -124,17 +125,23 @@ QDate finalMatchingWeekdayInYear(
         return QDate::currentDate();
     }
 
-    const QDate finalDay(
-        date.year(),
-        12,
-        31
-        );
-    const int daysBack =
-        (finalDay.dayOfWeek() - date.dayOfWeek() + 7) % 7;
+    const std::string isoDate = date.toString(Qt::ISODate).toStdString();
+    const auto defaultUntilDate =
+        ClassMngr::Next::Application::defaultCalendarEventRepeatUntilDate(
+            isoDate
+            );
+    if (!defaultUntilDate)
+    {
+        return QDate::currentDate();
+    }
 
-    return finalDay.addDays(
-        -daysBack
+    const QDate convertedDate = QDate::fromString(
+        draftText(*defaultUntilDate),
+        Qt::ISODate
         );
+    return convertedDate.isValid()
+        ? convertedDate
+        : QDate::currentDate();
 }
 
 bool isRepeatSeriesEvent(
@@ -1056,7 +1063,7 @@ void CalendarEventDialog::buildUi()
                 )
             {
                 m_repeatUntilDateEdit->setDate(
-                    finalMatchingWeekdayInYear(date)
+                    defaultRepeatUntilDate(date)
                     );
             }
         }
@@ -1141,7 +1148,7 @@ void CalendarEventDialog::loadEvent()
         );
     m_repeatFrequencyCombo->setCurrentIndex(1);
     m_repeatUntilDateEdit->setDate(
-        finalMatchingWeekdayInYear(
+        defaultRepeatUntilDate(
             m_startDateEdit->date()
             )
         );

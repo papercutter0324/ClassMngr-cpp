@@ -437,6 +437,7 @@ private slots:
     void editDraftContractHasNoQtOrLegacySurface();
     void seriesCreateRequestBoundsAndOccurrencesRemainTyped();
     void seriesCreateRequestContractHasNoQtOrLegacySurface();
+    void defaultRepeatUntilDateUsesLastMatchingWeekdayOfYear();
     void repeatOccurrencePlanSupportsDailyWeeklyAndInclusiveUntil();
     void repeatOccurrencePlanClampsMonthlyDatesFromPreviousOccurrence();
     void repeatOccurrencePlanPreservesSeedFieldsAndDateDuration();
@@ -2103,6 +2104,53 @@ seriesCreateRequestContractHasNoQtOrLegacySurface()
     static_assert(!std::is_copy_constructible_v<Port>);
 
     QVERIFY(true);
+}
+
+void NextApplicationCalendarEventTests::
+defaultRepeatUntilDateUsesLastMatchingWeekdayOfYear()
+{
+    struct DateCase final
+    {
+        std::string_view startDate;
+        std::string_view expectedUntilDate;
+    };
+
+    constexpr DateCase validCases[] = {
+        {"2026-12-14", "2026-12-28"}, // Monday
+        {"2026-12-15", "2026-12-29"}, // Tuesday
+        {"2026-12-16", "2026-12-30"}, // Wednesday
+        {"2026-12-17", "2026-12-31"}, // Thursday
+        {"2026-12-18", "2026-12-25"}, // Friday
+        {"2026-12-19", "2026-12-26"}, // Saturday
+        {"2026-12-20", "2026-12-27"}, // Sunday
+        {"2024-02-29", "2024-12-26"}, // Leap year
+        {"2025-02-28", "2025-12-26"}, // Non-leap year
+        {"0001-01-01", "0001-12-31"}, // Lower supported year
+        {"9999-12-31", "9999-12-31"}  // Upper supported year
+    };
+
+    for (const DateCase& testCase : validCases)
+    {
+        const auto untilDate = defaultCalendarEventRepeatUntilDate(
+            testCase.startDate
+            );
+        QVERIFY(untilDate.has_value());
+        QCOMPARE(*untilDate, std::string(testCase.expectedUntilDate));
+    }
+
+    constexpr std::string_view invalidDates[] = {
+        "",
+        "2026-2-01",
+        "2026-02-30",
+        " 2026-12-14",
+        "2026-12-14 ",
+        "0000-12-31"
+    };
+
+    for (const std::string_view invalidDate : invalidDates)
+    {
+        QVERIFY(!defaultCalendarEventRepeatUntilDate(invalidDate).has_value());
+    }
 }
 
 void NextApplicationCalendarEventTests::

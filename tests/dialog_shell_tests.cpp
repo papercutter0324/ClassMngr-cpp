@@ -17,6 +17,7 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDialogButtonBox>
@@ -144,6 +145,7 @@ private slots:
     void calendarEventDialogMapsTypedEditDraft();
     void calendarEventDialogRejectsInvalidTypedDraftTimes();
     void calendarEventDialogAppliesTypedDefaults();
+    void calendarEventDialogRepeatUntilDefaultTracksStartDate();
     void calendarEventDialogShowsInlineValidation();
 
 private:
@@ -595,6 +597,49 @@ void DialogShellTests::calendarEventDialogAppliesTypedDefaults()
     QVERIFY(!draft.allDay);
     QCOMPARE(draft.eventType, std::string("Other"));
     QCOMPARE(draft.timeStatus, std::string("Timed"));
+}
+
+void DialogShellTests::calendarEventDialogRepeatUntilDefaultTracksStartDate()
+{
+    CalendarEventEditDraft draft;
+    draft.startDate = "2026-10-12";
+    draft.endDate = "2026-10-12";
+
+    CalendarEventDialog dialog(draft, false, true);
+    auto* startDate = dialog.findChild<QDateEdit*>(
+        QStringLiteral("calendarEventStartDateEdit")
+        );
+    auto* repeatUntilDate = dialog.findChild<QDateEdit*>(
+        QStringLiteral("calendarEventRepeatUntilDateEdit")
+        );
+    QVERIFY(startDate);
+    QVERIFY(repeatUntilDate);
+
+    QCOMPARE(startDate->date(), QDate(2026, 10, 12));
+    QCOMPARE(repeatUntilDate->date(), QDate(2026, 12, 28));
+
+    startDate->setDate(QDate(2026, 10, 13));
+
+    QCOMPARE(startDate->date(), QDate(2026, 10, 13));
+    QCOMPARE(repeatUntilDate->date(), QDate(2026, 12, 29));
+
+    QCheckBox* repeatCheck = nullptr;
+    for (QCheckBox* checkBox : dialog.findChildren<QCheckBox*>())
+    {
+        if (checkBox->text() == QStringLiteral("Repeating"))
+        {
+            repeatCheck = checkBox;
+            break;
+        }
+    }
+    QVERIFY(repeatCheck);
+
+    repeatUntilDate->setDate(QDate(2026, 11, 30));
+    repeatCheck->setChecked(true);
+    startDate->setDate(QDate(2026, 10, 14));
+
+    QCOMPARE(startDate->date(), QDate(2026, 10, 14));
+    QCOMPARE(repeatUntilDate->date(), QDate(2026, 11, 30));
 }
 
 void DialogShellTests::calendarEventDialogShowsInlineValidation()
