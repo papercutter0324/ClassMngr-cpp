@@ -175,13 +175,23 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
             QStringLiteral("Monday"),
             QStringLiteral("9:05 AM"),
             QStringLiteral("9:35 A M")
+            ),
+        legacyTime(
+            QStringLiteral(" Monday "),
+            QStringLiteral("9:05 AM"),
+            QStringLiteral("9:35 AM")
+            ),
+        legacyTime(
+            QStringLiteral("monday"),
+            QStringLiteral("9:05 AM"),
+            QStringLiteral("9:35 AM")
             )
     };
     const auto savedSourceInfo = repository->saveClassInfo(*sourceInfo);
     QVERIFY(savedSourceInfo);
     const auto persistedSourceInfo = repository->loadClassInfo(source);
     QVERIFY(persistedSourceInfo);
-    QCOMPARE(persistedSourceInfo->classTimes.size(), 3);
+    QCOMPARE(persistedSourceInfo->classTimes.size(), 5);
     QCOMPARE(
         persistedSourceInfo->classTimes.at(0).startTime,
         QStringLiteral("9:0 AM")
@@ -193,6 +203,14 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
     QCOMPARE(
         persistedSourceInfo->classTimes.at(2).endTime,
         QStringLiteral("9:35 A M")
+        );
+    QCOMPARE(
+        persistedSourceInfo->classTimes.at(3).day,
+        QStringLiteral(" Monday ")
+        );
+    QCOMPARE(
+        persistedSourceInfo->classTimes.at(4).day,
+        QStringLiteral("monday")
         );
     QVERIFY(saveClassTimes(
         services,
@@ -250,6 +268,16 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
             );
     }
     QCOMPARE(regular.value().size(), std::size_t(2));
+    QCOMPARE(regular.value().at(0).day, std::u16string(u"Monday"));
+    QCOMPARE(
+        regular.value().at(0).conflictingClassName,
+        std::u16string(u"Regular Conflict Source")
+        );
+    QCOMPARE(regular.value().at(1).day, std::u16string(u"Tuesday"));
+    QCOMPARE(
+        regular.value().at(1).conflictingClassName,
+        std::u16string(u"Regular Conflict Source")
+        );
 
     const auto regularWrongMode =
         Application::ClassDetailsScheduleConflictQuery::execute(
