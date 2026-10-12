@@ -29,6 +29,7 @@ set(_classmngr_next_feature_targets
 set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/course.h
     src/next/domain/calendar_event_timing.h
+    src/next/domain/gregorian_date.h
     src/next/domain/domain_types.h
     src/next/domain/korean_teacher_key.h
     src/next/domain/native_english_teacher_id.h

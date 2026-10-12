@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/gregorian_date.h"
+
 #include <cstddef>
 #include <initializer_list>
 #include <optional>
@@ -121,57 +123,7 @@ public:
         const std::string_view value
         ) noexcept
     {
-        if (value.size() != 10)
-        {
-            return false;
-        }
-
-        for (std::size_t index = 0; index < value.size(); ++index)
-        {
-            if (index == 4 || index == 7)
-            {
-                if (value.at(index) != '-')
-                {
-                    return false;
-                }
-
-                continue;
-            }
-
-            if (value.at(index) < '0' || value.at(index) > '9')
-            {
-                return false;
-            }
-        }
-
-        const int year =
-            (value.at(0) - '0') * 1000
-            + (value.at(1) - '0') * 100
-            + (value.at(2) - '0') * 10
-            + (value.at(3) - '0');
-        const int month =
-            (value.at(5) - '0') * 10
-            + (value.at(6) - '0');
-        const int day =
-            (value.at(8) - '0') * 10
-            + (value.at(9) - '0');
-        if (year <= 0 || month < 1 || month > 12 || day < 1)
-        {
-            return false;
-        }
-
-        constexpr int daysInMonth[] = {
-            31, 28, 31, 30, 31, 30,
-            31, 31, 30, 31, 30, 31
-        };
-        int maximumDay = daysInMonth[month - 1];
-        if (month == 2
-            && (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)))
-        {
-            maximumDay = 29;
-        }
-
-        return day <= maximumDay;
+        return GregorianDate::fromIsoString(value).has_value();
     }
 
     [[nodiscard]] std::optional<CalendarEventTimingIssue> validate() const

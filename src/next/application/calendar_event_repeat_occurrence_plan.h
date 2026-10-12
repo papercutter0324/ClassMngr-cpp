@@ -1,7 +1,7 @@
 #pragma once
 
 #include "next/application/calendar_event_series_create_port.h"
-#include "next/domain/calendar_event_timing.h"
+#include "next/domain/gregorian_date.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -23,128 +23,8 @@ enum class CalendarEventRepeatFrequency
 namespace CalendarEventRepeatOccurrencePlanDetail
 {
 
-struct GregorianDate final
-{
-    int year;
-    int month;
-    int day;
-};
-
-[[nodiscard]] inline bool isLeapYear(const int year) noexcept
-{
-    return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
-}
-
-[[nodiscard]] inline int daysInMonth(
-    const int year,
-    const int month
-    ) noexcept
-{
-    constexpr int DaysPerMonth[] = {
-        31, 28, 31, 30, 31, 30,
-        31, 31, 30, 31, 30, 31
-    };
-    if (month == 2 && isLeapYear(year))
-    {
-        return 29;
-    }
-    return DaysPerMonth[month - 1];
-}
-
-[[nodiscard]] inline std::optional<GregorianDate> parseDate(
-    const std::string_view value
-    ) noexcept
-{
-    if (!Domain::CalendarEventTiming::isCanonicalDate(value))
-    {
-        return std::nullopt;
-    }
-
-    const auto twoDigits = [&value](const std::size_t offset) {
-        return (value[offset] - '0') * 10 + value[offset + 1] - '0';
-    };
-    const int year =
-        (value[0] - '0') * 1'000
-        + (value[1] - '0') * 100
-        + (value[2] - '0') * 10
-        + value[3] - '0';
-    return GregorianDate{year, twoDigits(5), twoDigits(8)};
-}
-
-[[nodiscard]] inline int daysBeforeYear(const int year) noexcept
-{
-    const int precedingYear = year - 1;
-    return precedingYear * 365
-        + precedingYear / 4
-        - precedingYear / 100
-        + precedingYear / 400;
-}
-
-[[nodiscard]] inline int toOrdinal(const GregorianDate date) noexcept
-{
-    int result = daysBeforeYear(date.year);
-    for (int month = 1; month < date.month; ++month)
-    {
-        result += daysInMonth(date.year, month);
-    }
-    return result + date.day - 1;
-}
-
-[[nodiscard]] inline std::optional<GregorianDate> fromOrdinal(
-    const int ordinal
-    ) noexcept
-{
-    if (ordinal < 0 || ordinal >= daysBeforeYear(10'000))
-    {
-        return std::nullopt;
-    }
-
-    int firstYear = 1;
-    int afterLastYear = 10'000;
-    while (firstYear + 1 < afterLastYear)
-    {
-        const int middleYear = firstYear + (afterLastYear - firstYear) / 2;
-        if (daysBeforeYear(middleYear) <= ordinal)
-        {
-            firstYear = middleYear;
-        }
-        else
-        {
-            afterLastYear = middleYear;
-        }
-    }
-
-    int dayOfYear = ordinal - daysBeforeYear(firstYear);
-    for (int month = 1; month <= 12; ++month)
-    {
-        const int monthLength = daysInMonth(firstYear, month);
-        if (dayOfYear < monthLength)
-        {
-            return GregorianDate{firstYear, month, dayOfYear + 1};
-        }
-        dayOfYear -= monthLength;
-    }
-
-    return std::nullopt;
-}
-
-[[nodiscard]] inline std::string formatDate(
-    const GregorianDate date
-    )
-{
-    std::string result(10, '0');
-    result[0] = static_cast<char>('0' + date.year / 1'000);
-    result[1] = static_cast<char>('0' + date.year / 100 % 10);
-    result[2] = static_cast<char>('0' + date.year / 10 % 10);
-    result[3] = static_cast<char>('0' + date.year % 10);
-    result[4] = '-';
-    result[5] = static_cast<char>('0' + date.month / 10);
-    result[6] = static_cast<char>('0' + date.month % 10);
-    result[7] = '-';
-    result[8] = static_cast<char>('0' + date.day / 10);
-    result[9] = static_cast<char>('0' + date.day % 10);
-    return result;
-}
+using GregorianDate = Domain::GregorianDate;
+using DayNumber = GregorianDate::DayNumber;
 
 [[nodiscard]] inline bool isSupportedFrequency(
     const CalendarEventRepeatFrequency frequency
@@ -168,15 +48,15 @@ struct GregorianDate final
     switch (frequency)
     {
     case CalendarEventRepeatFrequency::Daily:
-        return fromOrdinal(toOrdinal(current) + 1);
+        return GregorianDate::fromDayNumber(current.dayNumber() + 1);
 
     case CalendarEventRepeatFrequency::Weekly:
-        return fromOrdinal(toOrdinal(current) + 7);
+        return GregorianDate::fromDayNumber(current.dayNumber() + 7);
 
     case CalendarEventRepeatFrequency::Monthly:
     {
-        int year = current.year;
-        int month = current.month + 1;
+        int year = current.year();
+        int month = current.month() + 1;
         if (month > 12)
         {
             month = 1;
@@ -186,11 +66,11 @@ struct GregorianDate final
         {
             return std::nullopt;
         }
-        return GregorianDate{
+        return GregorianDate::fromComponents(
             year,
             month,
-            std::min(current.day, daysInMonth(year, month))
-        };
+            std::min(current.day(), GregorianDate::daysInMonth(year, month))
+            );
     }
     }
 
@@ -217,30 +97,32 @@ defaultCalendarEventRepeatUntilDate(
 {
     using namespace CalendarEventRepeatOccurrencePlanDetail;
 
-    const std::optional<GregorianDate> parsedDate = parseDate(date);
+    const std::optional<GregorianDate> parsedDate =
+        GregorianDate::fromIsoString(date);
     if (!parsedDate)
     {
         return std::nullopt;
     }
 
-    const GregorianDate finalDayOfYear{
-        parsedDate->year,
-        12,
-        31
-    };
-    const int requestedWeekday = toOrdinal(*parsedDate) % 7 + 1;
-    const int finalDayWeekday = toOrdinal(finalDayOfYear) % 7 + 1;
-    const int daysBack =
-        (finalDayWeekday - requestedWeekday + 7) % 7;
-    const std::optional<GregorianDate> defaultUntilDate = fromOrdinal(
-        toOrdinal(finalDayOfYear) - daysBack
-        );
-    if (!defaultUntilDate || defaultUntilDate->year != parsedDate->year)
+    const std::optional<GregorianDate> finalDayOfYear =
+        GregorianDate::fromComponents(parsedDate->year(), 12, 31);
+    if (!finalDayOfYear)
     {
         return std::nullopt;
     }
 
-    return formatDate(*defaultUntilDate);
+    const int daysBack =
+        (finalDayOfYear->weekday() - parsedDate->weekday() + 7) % 7;
+    const std::optional<GregorianDate> defaultUntilDate =
+        GregorianDate::fromDayNumber(
+            finalDayOfYear->dayNumber() - daysBack
+            );
+    if (!defaultUntilDate || defaultUntilDate->year() != parsedDate->year())
+    {
+        return std::nullopt;
+    }
+
+    return defaultUntilDate->toIsoString();
 }
 
 [[nodiscard]] inline Domain::Result<CalendarEventSeriesCreateRequest>
@@ -264,9 +146,12 @@ planCalendarEventRepeatOccurrences(
         return invalid(seedValidation.error().message);
     }
 
-    const std::optional<GregorianDate> startDate = parseDate(seed.startDate);
-    const std::optional<GregorianDate> seedEndDate = parseDate(seed.endDate);
-    const std::optional<GregorianDate> finalStartDate = parseDate(untilDate);
+    const std::optional<GregorianDate> startDate =
+        GregorianDate::fromIsoString(seed.startDate);
+    const std::optional<GregorianDate> seedEndDate =
+        GregorianDate::fromIsoString(seed.endDate);
+    const std::optional<GregorianDate> finalStartDate =
+        GregorianDate::fromIsoString(untilDate);
     if (!startDate || !seedEndDate || !finalStartDate)
     {
         return invalid(
@@ -274,21 +159,21 @@ planCalendarEventRepeatOccurrences(
             );
     }
 
-    const int firstOrdinal = toOrdinal(*startDate);
-    const int lastOrdinal = toOrdinal(*finalStartDate);
-    if (lastOrdinal < firstOrdinal)
+    const DayNumber firstDayNumber = startDate->dayNumber();
+    const DayNumber lastDayNumber = finalStartDate->dayNumber();
+    if (lastDayNumber < firstDayNumber)
     {
         return invalid(
             "Calendar repeat until date must not precede the seed start date."
             );
     }
 
-    const int durationDays = toOrdinal(*seedEndDate) - firstOrdinal;
+    const DayNumber durationDays = seedEndDate->dayNumber() - firstDayNumber;
     CalendarEventSeriesCreateRequest request;
     request.repeatSeriesId = std::move(repeatSeriesId);
 
     GregorianDate occurrenceStart = *startDate;
-    while (toOrdinal(occurrenceStart) <= lastOrdinal)
+    while (occurrenceStart.dayNumber() <= lastDayNumber)
     {
         if (request.occurrences.size()
             >= kCalendarEventSeriesCreateMaxOccurrences)
@@ -298,9 +183,10 @@ planCalendarEventRepeatOccurrences(
                 );
         }
 
-        const std::optional<GregorianDate> occurrenceEnd = fromOrdinal(
-            toOrdinal(occurrenceStart) + durationDays
-            );
+        const std::optional<GregorianDate> occurrenceEnd =
+            GregorianDate::fromDayNumber(
+                occurrenceStart.dayNumber() + durationDays
+                );
         if (!occurrenceEnd)
         {
             return invalid(
@@ -310,13 +196,13 @@ planCalendarEventRepeatOccurrences(
 
         CalendarEventSaveRequest occurrence = seed;
         occurrence.id.reset();
-        occurrence.startDate = formatDate(occurrenceStart);
-        occurrence.endDate = formatDate(*occurrenceEnd);
+        occurrence.startDate = occurrenceStart.toIsoString();
+        occurrence.endDate = occurrenceEnd->toIsoString();
         request.occurrences.push_back(std::move(occurrence));
 
         const std::optional<GregorianDate> nextStart =
             nextOccurrenceDate(occurrenceStart, frequency);
-        if (!nextStart || toOrdinal(*nextStart) > lastOrdinal)
+        if (!nextStart || nextStart->dayNumber() > lastDayNumber)
         {
             break;
         }

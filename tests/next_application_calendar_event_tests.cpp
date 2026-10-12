@@ -20,6 +20,7 @@
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_edit_use_case.h"
 #include "next/application/calendar_event_series_edit_plan.h"
+#include "next/domain/gregorian_date.h"
 
 #include <QtTest/QtTest>
 
@@ -424,6 +425,9 @@ private slots:
     void timingErrorsKeepFeatureMessagesAndValidationPrecedence();
     void calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText();
     void timingAcceptsFullGregorianRangeAndCrossDayClocks();
+    void gregorianDateParsesAndFormatsOnlyCanonicalDates();
+    void gregorianDateUsesGregorianLeapAndMonthRules();
+    void gregorianDateConvertsOrdinalsAndWeekdaysAcrossRange();
     void saveRequestContractHasNoQtOrLegacySurface();
     void importSaveRequestBoundsOrderedCreateBatchAndNoOp();
     void importSaveRequestRejectsUpdatesAndInvalidEvents();
@@ -1678,6 +1682,186 @@ timingAcceptsFullGregorianRangeAndCrossDayClocks()
     series.endTime = "00:00";
     series.timeStatus = " \tTimed \n";
     QVERIFY(series.validate());
+}
+
+void NextApplicationCalendarEventTests::
+ gregorianDateParsesAndFormatsOnlyCanonicalDates()
+{
+    struct DateCase final
+    {
+        std::string_view text;
+        int year;
+        int month;
+        int day;
+    };
+
+    constexpr DateCase validDates[] = {
+        {"0001-01-01", 1, 1, 1},
+        {"2000-02-29", 2000, 2, 29},
+        {"9999-12-31", 9999, 12, 31}
+    };
+
+    for (const DateCase& testCase : validDates)
+    {
+        const auto date = GregorianDate::fromIsoString(testCase.text);
+        QVERIFY(date.has_value());
+        QCOMPARE(date->year(), testCase.year);
+        QCOMPARE(date->month(), testCase.month);
+        QCOMPARE(date->day(), testCase.day);
+        QCOMPARE(date->toIsoString(), std::string(testCase.text));
+
+        const auto fromComponents = GregorianDate::fromComponents(
+            testCase.year,
+            testCase.month,
+            testCase.day
+            );
+        QVERIFY(fromComponents.has_value());
+        QCOMPARE(fromComponents->toIsoString(), std::string(testCase.text));
+    }
+
+    constexpr std::string_view invalidDates[] = {
+        "",
+        "2024-2-09",
+        "2024-02-9",
+        "2024/02/29",
+        " 2024-02-29",
+        "2024-02-29 ",
+        "0000-01-01",
+        "10000-01-01",
+        "2023-02-29",
+        "1900-02-29",
+        "2024-13-01",
+        "2024-04-31"
+    };
+
+    for (const std::string_view invalidDate : invalidDates)
+    {
+        QVERIFY(!GregorianDate::fromIsoString(invalidDate).has_value());
+    }
+
+    constexpr DateCase invalidComponents[] = {
+        {"0000-01-01", 0, 1, 1},
+        {"10000-01-01", 10000, 1, 1},
+        {"2024-00-01", 2024, 0, 1},
+        {"2024-13-01", 2024, 13, 1},
+        {"2024-01-00", 2024, 1, 0},
+        {"2024-01-32", 2024, 1, 32},
+        {"2023-02-29", 2023, 2, 29}
+    };
+
+    for (const DateCase& testCase : invalidComponents)
+    {
+        QVERIFY(!GregorianDate::fromComponents(
+            testCase.year,
+            testCase.month,
+            testCase.day
+            ).has_value());
+    }
+}
+
+void NextApplicationCalendarEventTests::
+ gregorianDateUsesGregorianLeapAndMonthRules()
+{
+    QVERIFY(GregorianDate::isLeapYear(1600));
+    QVERIFY(!GregorianDate::isLeapYear(1900));
+    QVERIFY(GregorianDate::isLeapYear(2000));
+    QVERIFY(GregorianDate::isLeapYear(2024));
+    QVERIFY(!GregorianDate::isLeapYear(2023));
+
+    constexpr int expectedDaysIn2024[] = {
+        31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
+    constexpr int expectedDaysIn2023[] = {
+        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
+
+    for (int month = 1; month <= 12; ++month)
+    {
+        QCOMPARE(
+            GregorianDate::daysInMonth(2024, month),
+            expectedDaysIn2024[month - 1]
+            );
+        QCOMPARE(
+            GregorianDate::daysInMonth(2023, month),
+            expectedDaysIn2023[month - 1]
+            );
+    }
+
+    QCOMPARE(GregorianDate::daysInMonth(1900, 2), 28);
+    QCOMPARE(GregorianDate::daysInMonth(2000, 2), 29);
+    QCOMPARE(GregorianDate::daysInMonth(2024, 0), 0);
+    QCOMPARE(GregorianDate::daysInMonth(2024, 13), 0);
+    QCOMPARE(GregorianDate::daysInMonth(0, 2), 0);
+    QCOMPARE(GregorianDate::daysInMonth(10000, 2), 0);
+}
+
+void NextApplicationCalendarEventTests::
+ gregorianDateConvertsOrdinalsAndWeekdaysAcrossRange()
+{
+    using DayNumber = GregorianDate::DayNumber;
+
+    const auto firstDay = GregorianDate::fromIsoString("0001-01-01");
+    QVERIFY(firstDay.has_value());
+    QCOMPARE(firstDay->dayNumber(), DayNumber{0});
+    QCOMPARE(firstDay->weekday(), 1); // Monday
+
+    const auto millenniumDay = GregorianDate::fromIsoString("2000-01-01");
+    QVERIFY(millenniumDay.has_value());
+    QCOMPARE(millenniumDay->dayNumber(), DayNumber{730119});
+    QCOMPARE(millenniumDay->weekday(), 6); // Saturday
+
+    const auto leapDay = GregorianDate::fromIsoString("2000-02-29");
+    QVERIFY(leapDay.has_value());
+    QCOMPARE(leapDay->dayNumber(), DayNumber{730178});
+    QCOMPARE(leapDay->weekday(), 2); // Tuesday
+
+    const auto leapDayFromOrdinal = GregorianDate::fromDayNumber(
+        DayNumber{730178}
+        );
+    QVERIFY(leapDayFromOrdinal.has_value());
+    QCOMPARE(leapDayFromOrdinal->toIsoString(), std::string("2000-02-29"));
+
+    struct WeekdayCase final
+    {
+        std::string_view date;
+        int weekday;
+    };
+    constexpr WeekdayCase weekdays[] = {
+        {"2024-02-26", 1}, // Monday
+        {"2024-02-27", 2}, // Tuesday
+        {"2024-02-28", 3}, // Wednesday
+        {"2024-02-29", 4}, // Thursday
+        {"2024-03-01", 5}, // Friday
+        {"2024-03-02", 6}, // Saturday
+        {"2024-03-03", 7}  // Sunday
+    };
+    for (const WeekdayCase& testCase : weekdays)
+    {
+        const auto date = GregorianDate::fromIsoString(testCase.date);
+        QVERIFY(date.has_value());
+        QCOMPARE(date->weekday(), testCase.weekday);
+    }
+
+    const auto lastDay = GregorianDate::fromIsoString("9999-12-31");
+    QVERIFY(lastDay.has_value());
+    QCOMPARE(GregorianDate::maximumDayNumber(), DayNumber{3652058});
+    QCOMPARE(lastDay->dayNumber(), GregorianDate::maximumDayNumber());
+    QCOMPARE(lastDay->weekday(), 5); // Friday
+
+    const auto firstFromOrdinal = GregorianDate::fromDayNumber(DayNumber{0});
+    QVERIFY(firstFromOrdinal.has_value());
+    QCOMPARE(firstFromOrdinal->toIsoString(), std::string("0001-01-01"));
+
+    const auto lastFromOrdinal = GregorianDate::fromDayNumber(
+        GregorianDate::maximumDayNumber()
+        );
+    QVERIFY(lastFromOrdinal.has_value());
+    QCOMPARE(lastFromOrdinal->toIsoString(), std::string("9999-12-31"));
+
+    QVERIFY(!GregorianDate::fromDayNumber(DayNumber{-1}).has_value());
+    QVERIFY(!GregorianDate::fromDayNumber(
+        GregorianDate::maximumDayNumber() + DayNumber{1}
+        ).has_value());
 }
 
 void NextApplicationCalendarEventTests::
