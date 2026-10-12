@@ -4,7 +4,6 @@
 #include "next/platform/settings_manager_theme_preferences_port.h"
 
 #include <optional>
-#include <QScopedValueRollback>
 #include <utility>
 
 namespace
@@ -16,22 +15,6 @@ defaultThemePreferencesPort()
     return port;
 }
 
-Theme legacyThemeFor(
-    const ClassMngr::Next::Application::ThemePreference preference
-    )
-{
-    using ClassMngr::Next::Application::ThemePreference;
-    switch (preference)
-    {
-    case ThemePreference::Dark:
-        return Theme::Dark;
-    case ThemePreference::Light:
-        return Theme::Light;
-    case ThemePreference::SystemDefault:
-        return Theme::SystemDefault;
-    }
-    return Theme::SystemDefault;
-}
 }
 
 ThemeController::ThemeController(
@@ -70,39 +53,37 @@ void ThemeController::connectActions(
         return;
     }
 
+    actions.themeState->onBeforeCommit =
+        [this](const Theme theme)
+            -> ClassMngr::Next::Domain::Result<void>
+    {
+        const auto preference = themePreferenceFor(theme);
+        if (!preference.has_value())
+        {
+            return ClassMngr::Next::Domain::Result<void>::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                .message = "Theme must be SystemDefault, Light, or Dark.",
+                .recoverable = false
+            });
+        }
+
+        return changeTheme(*preference);
+    };
+
+    actions.themeState->onCommitFailed =
+        [this](const ClassMngr::Next::Domain::OperationError& error)
+    {
+        if (m_onSaveFailure)
+        {
+            m_onSaveFailure(error);
+        }
+    };
+
     const auto previousThemeHandler =
         actions.themeState->onChanged;
-
     actions.themeState->onChanged =
-        [this, &actions, previousThemeHandler](Theme theme)
+        [&actions, previousThemeHandler](const Theme theme)
     {
-        if (m_restoringThemeSelection)
-        {
-            return;
-        }
-
-        const auto preference = themePreferenceFor(theme);
-        if (preference.has_value())
-        {
-            const auto previousPreference =
-                m_preferencesState.snapshot().themePreference();
-            const auto result = changeTheme(*preference);
-            if (!result)
-            {
-                {
-                    const QScopedValueRollback restoring(
-                        m_restoringThemeSelection,
-                        true
-                        );
-                    actions.themeState->set(legacyThemeFor(previousPreference));
-                }
-                if (m_onSaveFailure)
-                {
-                    m_onSaveFailure(result.error());
-                }
-                return;
-            }
-        }
         if (previousThemeHandler)
         {
             previousThemeHandler(theme);

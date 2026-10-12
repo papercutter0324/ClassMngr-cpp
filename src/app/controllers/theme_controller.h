@@ -56,5 +56,4 @@ private:
     const ClassMngr::Next::Application::ThemePreferencesPort& m_preferencesPort;
     FailureHandler m_onSaveFailure;
     ClassMngr::Next::Application::UserPreferencesState m_preferencesState;
-    bool m_restoringThemeSelection = false;
 };

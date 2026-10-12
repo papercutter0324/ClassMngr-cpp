@@ -1021,10 +1021,10 @@ void ActionRegistry::createOptionActions(
     themeState->addOption(Theme::Dark, darkThemeAction);
     themeState->addOption(Theme::Light, lightThemeAction);
 
-    const auto storedTheme =
-        ClassMngr::Next::Platform::
-            SettingsManagerThemePreferencesPort()
-            .read();
+    const auto themePreferencesPort = std::make_shared<
+        ClassMngr::Next::Platform::SettingsManagerThemePreferencesPort
+        >();
+    const auto storedTheme = themePreferencesPort->read();
     ::Theme legacyTheme = ::Theme::SystemDefault;
     switch (storedTheme)
     {
@@ -1038,6 +1038,31 @@ void ActionRegistry::createOptionActions(
     default:
         break;
     }
+
+    // Programmatic OptionState changes, including initial hydration, retain
+    // the legacy typed persistence behavior. ThemeController's pre-commit
+    // gate takes ownership after these actions are connected.
+    themeState->onPersist = [themePreferencesPort](const ::Theme theme)
+    {
+        using PreferenceTheme =
+            ClassMngr::Next::Application::Theme;
+        PreferenceTheme preference = PreferenceTheme::SystemDefault;
+        switch (theme)
+        {
+        case ::Theme::Dark:
+            preference = PreferenceTheme::Dark;
+            break;
+        case ::Theme::Light:
+            preference = PreferenceTheme::Light;
+            break;
+        case ::Theme::SystemDefault:
+            preference = PreferenceTheme::SystemDefault;
+            break;
+        }
+
+        (void) themePreferencesPort->write(preference);
+    };
+
     themeState->set(
         legacyTheme
         );
