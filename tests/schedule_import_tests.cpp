@@ -73,6 +73,9 @@ private slots:
     void applyTeacherReadFailureRollsBackBeforeWrites();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
     void typedApplyPreservesExactTargetIdsThroughStateValidation();
+    void typedApplyAcceptsLegacyDisplayTimes_data();
+    void typedApplyAcceptsLegacyDisplayTimes();
+    void typedApplyRejectsMalformedTimeBeforeWrites();
     void typedApplyRejectsOverlappingSchedulesBeforeWrites();
     void typedWriteFailureRollsBackEveryChange();
     void typedIntensiveApplyMapsModeAndSlotState();
@@ -6705,6 +6708,130 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
             persistedScheduleImportSnapshot(database, true),
             beforeClassRejection
             );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::typedApplyAcceptsLegacyDisplayTimes_data()
+{
+    QTest::addColumn<QString>("startTime");
+    QTest::addColumn<QString>("endTime");
+
+    QTest::newRow("spaced-am-pm")
+        << QStringLiteral("4:00 PM")
+        << QStringLiteral("4:55 PM");
+    QTest::newRow("compact-am-pm")
+        << QStringLiteral("4:00PM")
+        << QStringLiteral("4:55PM");
+    QTest::newRow("24-hour-unpadded")
+        << QStringLiteral("9:00")
+        << QStringLiteral("9:55");
+    QTest::newRow("24-hour-padded")
+        << QStringLiteral("09:00")
+        << QStringLiteral("09:55");
+    QTest::newRow("trimmed-24-hour")
+        << QStringLiteral(" 9:00 ")
+        << QStringLiteral(" 9:55 ");
+}
+
+void ScheduleImportTests::typedApplyAcceptsLegacyDisplayTimes()
+{
+    QFETCH(QString, startTime);
+    QFETCH(QString, endTime);
+
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-display-time-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        request.candidates[0].times = {
+            {
+                u"Monday",
+                startTime.toStdU16String(),
+                endTime.toStdU16String()
+            },
+            {
+                u"Wednesday",
+                startTime.toStdU16String(),
+                endTime.toStdU16String()
+            }
+        };
+
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.applyTyped(request);
+        const QString failure = typedApplyFailureMessage(imported);
+        QVERIFY2(imported.has_value(), qPrintable(failure));
+        QCOMPARE(imported->teachersCreated, 1);
+        QCOMPARE(imported->classesCreated, 1);
+
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "SELECT start_time, end_time FROM class_times WHERE day = ?"));
+        query.addBindValue(QStringLiteral("Monday"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toString(), startTime);
+        QCOMPARE(query.value(1).toString(), endTime);
+        QVERIFY(!query.next());
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-malformed-time-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO app_settings (key, value) "
+            "VALUES ('schedule-import-snapshot', 'preserve-me')"));
+        execOrFail(query, QStringLiteral(
+            "CREATE TRIGGER reject_premature_typed_teacher_insert "
+            "BEFORE INSERT ON teachers BEGIN "
+            "SELECT RAISE(ABORT, 'teacher insert reached before time validation'); "
+            "END"));
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        request.candidates[0].times = {
+            {u"Monday", u"not-a-time", u"4:55 PM"},
+            {u"Wednesday", u"4:00 PM", u"4:55 PM"}
+        };
+
+        const QStringList before = persistedScheduleImportSnapshot(database);
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.applyTyped(request);
+        QVERIFY(!imported.has_value());
+        QVERIFY(imported.error().stateValidationError.has_value());
+        QCOMPARE(
+            imported.error().stateValidationError->code,
+            ClassMngr::Next::Application::
+                ScheduleImportStateValidationErrorCode::InvalidProjectedTime
+            );
+        QVERIFY(!imported.error().policyIssue.has_value());
+        QVERIFY(!imported.error().teacherTargetIssue.has_value());
+        QCOMPARE(persistedScheduleImportSnapshot(database), before);
 
         database.close();
     }

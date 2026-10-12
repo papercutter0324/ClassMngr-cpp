@@ -6,6 +6,7 @@
 #include "data/repositories/class_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "core/startup_profiler.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
 #include "features/schedule/services/schedule_import_plan_validator.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
@@ -25,6 +26,7 @@
 #include <QTime>
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <optional>
 #include <string>
@@ -448,18 +450,21 @@ int timeMinutes(
     const QString& value
     )
 {
-    for (const QString& format : {
-             QStringLiteral("h:mm AP"), QStringLiteral("h:mmAP"),
-             QStringLiteral("H:mm"), QStringLiteral("HH:mm")
-             })
-    {
-        const QTime time = QTime::fromString(value.trimmed(), format);
-        if (time.isValid())
-        {
-            return time.hour() * 60 + time.minute();
-        }
-    }
-    return -1;
+    constexpr std::array timeFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced,
+        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmCompact,
+        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour,
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+    };
+    const auto parsedTime =
+        ScheduleValueParser::parseDisplayTime(
+            value.trimmed(),
+            timeFormats
+            );
+
+    return parsedTime
+        ? parsedTime->hour() * 60 + parsedTime->minute()
+        : -1;
 }
 
 struct PersistedScheduleEntry final
