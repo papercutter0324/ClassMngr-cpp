@@ -4821,7 +4821,8 @@ returned-teacher case. Build `ClassMngr` and
 `ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests`,
 `ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests`, and
 `ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`; confirm
-exactly one CTest registration for each, then run only those three exact
-CTest names. No full suite. F707 and F709 remain deferred. Phase 2 remains In
-Progress/Open with Gates 1 and 2 Partial; separate current-source Phase 0
-evidence remains Windows x64 2/24 and macOS universal 0/24.
+exactly one CTest registration for each using those full names, then run only
+those three exact CTest registrations. No full suite. F707 and F709 remain
+deferred. Phase 2 remains In Progress/Open with Gates 1 and 2 Partial;
+separate current-source Phase 0 evidence remains Windows x64 2/24 and macOS
+universal 0/24.

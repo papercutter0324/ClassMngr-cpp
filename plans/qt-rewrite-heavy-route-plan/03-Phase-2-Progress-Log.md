@@ -28893,13 +28893,14 @@ assert the exact post-read `Validation` message, nonrecoverability, and one
 port call. Build `ClassMngr` and
 `ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests`,
 `ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests`, and
-`ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`. Confirm
-exactly one CTest registration for each of
-`NextApplicationMyClassesClassInformationBatchReadQuery`,
-`NextApplicationMyClassesStudentCountBatchReadQuery`, and
-`NextApplicationMyClassesTeacherProfileBatchReadQuery`; then run only those
-three exact CTests. Run no full suite.
+`ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`. The
+focused build succeeded. CTest discovery confirmed exactly one registration
+each for `ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests`,
+`ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests`, and
+`ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests`; run only
+these three exact CTests. Run no full suite.
 
-This matrix is recorded before implementation; F756 is selected but not
-implemented, and no F756 results are available. F707/F709 remain deferred,
-Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+This matrix was recorded before implementation. F756 implementation is in
+progress; the focused build and registration check succeeded, but no F756
+CTests have run. F707/F709 remain deferred, Phase 2 Gates 1/2 remain Partial,
+and the formal exit gate remains Open.
