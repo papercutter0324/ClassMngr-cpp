@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/schedule_time.h"
@@ -54,7 +55,7 @@ public:
         }
 
         if (request.teacherId
-            && !isCanonicalPositiveInteger(request.teacherId->value()))
+            && !isCanonicalPositiveDecimalId(request.teacherId->value()))
         {
             return Domain::Result<void>::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -83,27 +84,6 @@ private:
         return error == std::errc{}
             && end == value.data() + value.size()
             && parsed > 0;
-    }
-
-    [[nodiscard]] static bool isCanonicalPositiveInteger(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
     }
 };
 

@@ -214,17 +214,20 @@ forwardsRequestsWithAbsentSchedules()
 void NextApplicationClassDetailsSaveUseCaseTests::
 forwardsOptionalTeacherOverride()
 {
-    RecordingSavePort port;
-    Application::ClassDetailsSaveRequest value = request("42");
-    value.teacherId = Domain::TeacherId::fromString("8");
+    for (const std::string teacherId : {"8", "2147483647"})
+    {
+        RecordingSavePort port;
+        Application::ClassDetailsSaveRequest value = request("42");
+        value.teacherId = Domain::TeacherId::fromString(teacherId);
 
-    const auto result =
-        Application::ClassDetailsSaveUseCase::execute(value, port);
+        const auto result =
+            Application::ClassDetailsSaveUseCase::execute(value, port);
 
-    QVERIFY(result);
-    QCOMPARE(port.callCount, 1);
-    QVERIFY(port.lastRequest->teacherId.has_value());
-    QCOMPARE(port.lastRequest->teacherId->value(), std::string("8"));
+        QVERIFY(result);
+        QCOMPARE(port.callCount, 1);
+        QVERIFY(port.lastRequest->teacherId.has_value());
+        QCOMPARE(port.lastRequest->teacherId->value(), teacherId);
+    }
 }
 
 void NextApplicationClassDetailsSaveUseCaseTests::
@@ -241,6 +244,12 @@ invalidOptionalTeacherIdsDoNotReachPort()
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Teacher ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
     }
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
