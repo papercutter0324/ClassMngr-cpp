@@ -27220,4 +27220,47 @@ the policy's canonical weekday and invalid-input contract.
    `ClassMngrNextApplicationClassDetailsValidationPolicyTests`. Run no full
    suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F724.
+This matrix was recorded before implementation.
+
+### F724 Class Details weekday-policy parser migration - accepted - 2026-10-12
+
+F724 is accepted at code/test commit
+`93e1bb7459b147c9d27dfed9c28b9437d6e89ef5`. The Qt-free Application
+`weekdayIndex` delegates to `ScheduleKeyRules::parseWeekday` after its own
+trim, using the existing ASCII case-insensitive comparator. Zero-based enum
+order and `std::nullopt` for invalid weekdays are preserved; padded lowercase
+`monday` still canonicalizes to Monday. The padded invalid ` Funday ` test
+reports exactly one `InvalidWeekday` issue on `ScheduleDay`, Regular row 0,
+with both issue value and normalized row day `Funday`.
+
+`ClassMngr` and
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests` built successfully.
+The exact registered CTest of the same name passed 1/1 in 0.03 seconds. No
+full suite ran.
+
+**Decision: accept F724.** Batch 179 continues with F725; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F725 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select the strict 24-hour branch of `ClassDetailsValidationPolicy::parseTime`
+in `src/next/application/class_details_validation_policy.h`. The policy stays
+Qt-free and has a separate 12-hour AM/PM branch.
+
+**F725 is selected:** migrate only strict 24-hour parsing to the pure Domain
+time parser, preserving the policy's existing outputs and other time formats.
+
+1. After the existing trim, use `ScheduleKeyRules::parseTime` for the strict
+   24-hour branch. Convert its parsed hour and minute to the existing total
+   minutes and `displayTime` outputs. Keep the 12-hour AM/PM parser branch
+   unchanged and keep Qt out of the policy.
+2. Extend the pure policy tests with `00:00` -> `12:00 AM` and `23:59` ->
+   `11:59 PM`. Preserve existing normal 24-hour coverage and `25:00`
+   invalid-row coverage.
+3. No CMake wiring change is needed. Build `ClassMngr` and
+   `ClassMngrNextApplicationClassDetailsValidationPolicyTests`; run only the
+   exact registered CTest
+   `ClassMngrNextApplicationClassDetailsValidationPolicyTests`. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F725.

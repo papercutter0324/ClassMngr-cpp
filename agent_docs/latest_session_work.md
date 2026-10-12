@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F724.
+  F725.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -181,12 +181,16 @@
   `ad80828cc0acf2290aa4ba8627f6b060bf314060`. The setup wizard test verifies
   valid-time malformed weekday rejection, the exact warning, one blank class
   row, and no details or schedule rows; `ClassMngrInitialSetupWizardTests`
-  passed 1/1 (1.75 seconds). No full suite ran. F724 selects
-  `ClassDetailsValidationPolicy::weekdayIndex`, reusing
-  `ScheduleKeyRules::parseWeekday` after the policy's existing trim and with
-  its ASCII case-insensitive comparator so the Application policy remains
-  Qt-free. Add padded-invalid `Funday` coverage for the exact issue details;
-  existing `validInput()` protects padded lowercase canonicalization. Build
+  passed 1/1 (1.75 seconds). No full suite ran. F724 is accepted and committed
+  as `93e1bb7459b147c9d27dfed9c28b9437d6e89ef5`. The Qt-free weekday policy
+  reuses `ScheduleKeyRules::parseWeekday` with its existing trim and ASCII
+  comparator; padded invalid ` Funday ` reports the expected trimmed issue.
+  `ClassMngrNextApplicationClassDetailsValidationPolicyTests` passed 1/1
+  (0.03 seconds). No full suite ran. F725 selects the strict 24-hour branch
+  of `ClassDetailsValidationPolicy::parseTime`: reuse the Domain time parser
+  after trim, preserve display formatting and total-minute conversion, and
+  leave the separate 12-hour AM/PM branch unchanged. Add `00:00`/`23:59`
+  boundary cases; existing `16:00` and malformed `25:00` cases remain. Build
   `ClassMngr` and `ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
   then run only that exact CTest. F707 and F709 remain deferred; the
   preimplementation matrix is in the Phase 2 progress log.

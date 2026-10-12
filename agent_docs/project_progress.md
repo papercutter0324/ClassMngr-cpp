@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F723 accepted; F724 selected)
+### Current state - 2026-10-12 (F724 accepted; F725 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F724, the Class Details validation policy weekday parser migration.
+with F725, the Class Details validation policy time parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -269,15 +269,25 @@ confirms the existing side effect of one blank `classes` row with no
 `ClassMngrInitialSetupWizardTests` built; the exact registered CTest passed
 1/1 (1.75 seconds). No full suite ran.
 
-F724 selects `ClassDetailsValidationPolicy::weekdayIndex` in
-`src/next/application/class_details_validation_policy.h`. Reuse the generic
-`ScheduleKeyRules::parseWeekday` while keeping the policy Qt-free: trim with
-the existing `trim(value)`, pass `equalsCaseInsensitive`, and preserve the
-Monday-Sunday index and `nullopt` invalid result. Existing `validInput()`
-covers padded lowercase `monday` canonicalizing to `Monday`. Add a focused
-policy test for padded invalid ` Funday ` with valid times, asserting one
-`InvalidWeekday` issue on `ScheduleDay`, regular row 0, with issue value
-`Funday`. Build `ClassMngr` and
+F724 is accepted and committed as
+`93e1bb7459b147c9d27dfed9c28b9437d6e89ef5`. The Qt-free Application
+`ClassDetailsValidationPolicy::weekdayIndex` now reuses
+`ScheduleKeyRules::parseWeekday` after its existing trim and with its ASCII
+case-insensitive comparator, preserving Monday-Sunday order and the invalid
+`nullopt` result. Existing padded lowercase canonical input still maps to
+Monday; a new padded invalid ` Funday ` case yields exactly one trimmed
+`InvalidWeekday` issue on `ScheduleDay`, Regular row 0. `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests` built; the exact
+registered CTest passed 1/1 (0.03 seconds). No full suite ran.
+
+F725 selects the strict 24-hour branch of
+`ClassDetailsValidationPolicy::parseTime` in
+`src/next/application/class_details_validation_policy.h`. Reuse the pure
+Domain `ScheduleKeyRules::parseTime` after existing trimming, then preserve
+the total-minute conversion and `displayTime()` output. Keep the 12-hour
+AM/PM parser branch unchanged and avoid Qt dependencies. Add policy boundary
+coverage for `00:00` -> `12:00 AM` and `23:59` -> `11:59 PM`; existing
+`16:00`/`16:55` and malformed `25:00` coverage remain. Build `ClassMngr` and
 `ClassMngrNextApplicationClassDetailsValidationPolicyTests`; run only that
 exact registered CTest. No CMake change is needed. F707 remains deferred
 because its comparator chain has no observed app callsite; F709 is deferred

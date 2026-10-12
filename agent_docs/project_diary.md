@@ -4487,11 +4487,17 @@ behavior: malformed weekdays keep the wizard on ClassTimesPage, show the
 exact warning, leave one blank class row, and save no details or schedules.
 The focused wizard CTest passed 1/1; no full suite ran.
 
-F724 selects `ClassDetailsValidationPolicy::weekdayIndex`. Keep this
-Application policy Qt-free by reusing `ScheduleKeyRules::parseWeekday` with
-its existing case-insensitive comparator after its own whitespace trim.
-Existing tests already cover padded lowercase canonical input; add padded
-invalid ` Funday ` coverage for the invalid-weekday issue and normalized
-reported value. F707 and F709 remain deferred for their documented callsite
-and fixture constraints. Phase 2 remains In Progress with Gates 1 and 2
-Partial.
+F724 is accepted and committed as `93e1bb7459b147c9d27dfed9c28b9437d6e89ef5`.
+The Application policy remains Qt-free by calling the generic Domain weekday
+parser after its existing trim and with its existing ASCII case-insensitive
+comparator. The padded lowercase valid and padded invalid cases preserve
+canonicalization and trimmed error details. Its focused CTest passed 1/1; no
+full suite ran.
+
+F725 selects the strict 24-hour branch of
+`ClassDetailsValidationPolicy::parseTime`. Reuse the pure Domain time parser
+after trimming, while preserving conversion to minutes and the existing
+12-hour display format. Keep the separate 12-hour AM/PM branch unchanged.
+Boundary coverage at `00:00` and `23:59` will protect the conversion. F707 and
+F709 remain deferred for their documented callsite and fixture constraints.
+Phase 2 remains In Progress with Gates 1 and 2 Partial.
