@@ -81,6 +81,7 @@ private slots:
     void typedApplyRejectsOverlappingSchedulesBeforeWrites();
     void typedWriteFailureRollsBackEveryChange();
     void typedIntensiveApplyMapsModeAndSlotState();
+    void typedIntensiveApplyRejectsNoncanonicalSlotDaysWithRollback();
     void typedAndLegacyApplyShareNormalAndIntensiveResults();
     void typedApplyRejectsInvalidEnumsBeforeWrites();
     void typedApplyRejectsMalformedResolutionShapesBeforeWrites();
@@ -6972,24 +6973,53 @@ void ScheduleImportTests::typedApplyRejectsMalformedTimeBeforeWrites()
         auto request = typedCreateRequest({
             typedCandidate(u"\uAE40", u"E5", u"Zeus")
         });
+        ScheduleImportRepository repository(database);
         request.candidates[0].times = {
             {u"Monday", u"not-a-time", u"4:55 PM"},
             {u"Wednesday", u"4:00 PM", u"4:55 PM"}
         };
 
-        const QStringList before = persistedScheduleImportSnapshot(database);
-        ScheduleImportRepository repository(database);
-        const auto imported = repository.applyTyped(request);
-        QVERIFY(!imported.has_value());
-        QVERIFY(imported.error().stateValidationError.has_value());
+        const QStringList malformedTimeBefore =
+            persistedScheduleImportSnapshot(database);
+        const auto malformedTimeImport = repository.applyTyped(request);
+        QVERIFY(!malformedTimeImport.has_value());
+        QVERIFY(malformedTimeImport.error().stateValidationError.has_value());
         QCOMPARE(
-            imported.error().stateValidationError->code,
+            malformedTimeImport.error().stateValidationError->code,
             ClassMngr::Next::Application::
                 ScheduleImportStateValidationErrorCode::InvalidProjectedTime
             );
-        QVERIFY(!imported.error().policyIssue.has_value());
-        QVERIFY(!imported.error().teacherTargetIssue.has_value());
-        QCOMPARE(persistedScheduleImportSnapshot(database), before);
+        QVERIFY(!malformedTimeImport.error().policyIssue.has_value());
+        QVERIFY(!malformedTimeImport.error().teacherTargetIssue.has_value());
+        QCOMPARE(
+            persistedScheduleImportSnapshot(database),
+            malformedTimeBefore
+            );
+
+        const std::vector<std::u16string> noncanonicalDays{
+            u"monday",
+            u" Monday "
+        };
+        for (const std::u16string& day : noncanonicalDays)
+        {
+            request.candidates[0].times = {
+                {day, u"4:00 PM", u"4:55 PM"},
+                {u"Wednesday", u"4:00 PM", u"4:55 PM"}
+            };
+
+            const QStringList before = persistedScheduleImportSnapshot(database);
+            const auto imported = repository.applyTyped(request);
+            QVERIFY(!imported.has_value());
+            QVERIFY(imported.error().policyIssue.has_value());
+            QCOMPARE(
+                imported.error().policyIssue->code,
+                ClassMngr::Next::Application::
+                    ScheduleImportPlanEligibilityIssueCode::InvalidMeetingWeekday
+                );
+            QVERIFY(!imported.error().stateValidationError.has_value());
+            QVERIFY(!imported.error().teacherTargetIssue.has_value());
+            QCOMPARE(persistedScheduleImportSnapshot(database), before);
+        }
 
         database.close();
     }
@@ -7191,6 +7221,70 @@ void ScheduleImportTests::typedIntensiveApplyMapsModeAndSlotState()
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toString(), QStringLiteral("Alice"));
         QVERIFY(!query.next());
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::typedIntensiveApplyRejectsNoncanonicalSlotDaysWithRollback()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-intensive-slot-rollback-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO intensive_slot_states (day, start_time, state) "
+            "VALUES ('Tuesday', '15:00', 'essay')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO app_settings (key, value) "
+            "VALUES ('schedule-import-snapshot', 'preserve-me')"));
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E4", u"Hercules")
+        });
+        request.intensiveSchedule = true;
+        request.intensiveMode =
+            ClassMngr::Next::Application::ScheduleImportPlanIntensiveMode::ReplaceWithNew;
+
+        ScheduleImportRepository repository(database);
+        const std::vector<std::u16string> invalidDays{
+            u" Monday ",
+            u"monday"
+        };
+        for (const std::u16string& invalidDay : invalidDays)
+        {
+            request.intensiveSlotStates = {
+                {u"Tuesday", u"16:00", u"lunch"},
+                {invalidDay, u"17:00", u"essay"}
+            };
+
+            const QStringList before = persistedScheduleImportSnapshot(database, true);
+            const auto imported = repository.applyTyped(request);
+            QVERIFY(!imported.has_value());
+            QCOMPARE(
+                typedApplyFailureMessage(imported),
+                QStringLiteral(
+                    "The import contains an invalid intensive slot state."
+                    )
+                );
+            QCOMPARE(persistedScheduleImportSnapshot(database, true), before);
+
+            execOrFail(query, QStringLiteral(
+                "SELECT day, start_time, state FROM intensive_slot_states"));
+            QVERIFY(query.next());
+            QCOMPARE(query.value(0).toString(), QStringLiteral("Tuesday"));
+            QCOMPARE(query.value(1).toString(), QStringLiteral("15:00"));
+            QCOMPARE(query.value(2).toString(), QStringLiteral("essay"));
+            QVERIFY(!query.next());
+        }
 
         database.close();
     }
