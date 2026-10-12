@@ -103,10 +103,13 @@
   accepted at `a9fc10566d3c419a1f456670be3a70748d157d5c8`; its Teacher Profile
   Edit target built, the exact CTest registered once (#267), and passed 1/1
   after the identical bounded retry outside the sandbox following FileTracker
-  `E_ACCESSDENIED`. F777 reuses the shared canonical-positive-decimal helper
-  for only the optional Teacher ID in Class Details Save, preserving the
-  class ID's `00042` forwarding behavior. Its production-plus-test matrix is
-  recorded in the Phase 2 progress log.
+  `E_ACCESSDENIED`. F777 is accepted at
+  `dc6d98d7da07e9d08b2f17166d7cb2c8ccbcc3e7`; its generated target-named CTest
+  registered once (#213) and passed 1/1 after both bounded build targets
+  succeeded on the outside-sandbox retry. No full suite ran. F778 extracts a
+  shared canonical-positive-decimal parser returning `int` for Class Transfer
+  Apply, while preserving existing malformed-target order. Its production-
+  plus-test matrix is recorded in the Phase 2 progress log.
   F707 and F709 remain deferred.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string

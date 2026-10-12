@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F776 is accepted at `a9fc10566d3c419a1f456670be3a70748d157d5c8`; F777 is selected in active Batch 191 for Class Details Save optional Teacher ID validation while preserving its distinct ClassId policy, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F777 is accepted at `dc6d98d7da07e9d08b2f17166d7cb2c8ccbcc3e7`; F778 is selected in Batch 191 to share canonical positive-decimal parsing with Class Transfer Apply while preserving parsed-int results, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -102,8 +102,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 191
 
-- F777 - Class Details Save optional Teacher ID validation - Reuse the shared validator for teacherId while retaining the separate classId forwarding contract.
-- F778 - Class Transfer Apply destination ID - Consolidate canonical positive-int parsing while preserving parsed-ID behavior.
+- F778 - Class Transfer Apply destination ID - Share canonical positive-decimal parsing while preserving parsed-int results and validation precedence.
+
+No other slices were found.
 
 ## Objective
 

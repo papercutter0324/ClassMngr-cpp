@@ -29839,12 +29839,47 @@ zero calls. Retain all other behavior.
 
 Build `ClassMngr` and
 `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`; confirm the exact
-CTest `NextApplicationClassDetailsSaveUseCase` registers once, then run only
-that CTest with `-C Debug`. Run no full suite. This matrix was recorded before
-implementation; F777 verification is pending. F707/F709 remain deferred,
-Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+CTest `ClassMngrNextApplicationClassDetailsSaveUseCaseTests` registers once,
+then run only that CTest with `-C Debug`. Run no full suite. This matrix was
+recorded before implementation. F707/F709 remain deferred, Phase 2 Gates 1/2
+remain Partial, and the formal exit gate remains Open.
 
-The next Batch 191 candidate is **F778 - Class Transfer Apply destination
-ID parsing**, to consolidate canonical positive-int parsing while preserving
-its parsed-int result behavior; its acceptance matrix will be recorded when
-selected.
+### F777 Class Details Save optional Teacher ID validation - accepted - 2026-10-13
+
+F777 is accepted at commit
+`dc6d98d7da07e9d08b2f17166d7cb2c8ccbcc3e7`. In the existing incremental VS
+18 x64 Debug tree, `ClassMngr` and
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests` built. The exact CTest
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests` registered once (#213)
+and passed 1/1. Sandbox FileTracker `E_ACCESSDENIED` required an identical
+bounded retry outside the sandbox. The shorter CTest name
+`NextApplicationClassDetailsSaveUseCase` matched zero; no full suite ran.
+
+### F778 Class Transfer Apply destination ID parsing - selected and acceptance matrix - 2026-10-13
+
+**F778 is selected:** add
+`parseCanonicalPositiveDecimalId(std::string_view) -> std::optional<int>` in
+`src/next/application/positive_decimal_id_validation.h`, implementing the
+existing helper's exact canonical positive-decimal and `int`-range contract.
+Make `isCanonicalPositiveDecimalId` delegate to whether parsing has a value.
+Replace the duplicate parser in
+`src/next/application/class_transfer_apply_request.h` while preserving its
+`optional<int>` output, malformed-target validation precedence (class choices
+before teacher choices), and decision rules. No CMake or source-ownership
+change is expected.
+
+Extend `tests/next_application_class_transfer_tests.cpp` to assert parse
+results for canonical `1`, `42`, and `INT_MAX`, and rejection of empty, zero,
+leading-zero, signed, nondigit/trailing-text, overflow, and very long digit
+inputs. Assert both ClassId and TeacherId apply-destination helpers preserve
+valid parsed integers and return no value for malformed or overflow IDs.
+Retain existing malformed-target issue and ordering tests.
+
+The test is already registered in `cmake/tests/next.cmake` as
+`NextApplicationClassTransfer`; its generated target and exact CTest name are
+`ClassMngrNextApplicationClassTransferTests`. Build `ClassMngr` and that
+target, confirm the exact CTest registers once, then run only it with
+`-C Debug`. Run no full suite. This matrix was recorded before
+implementation; F778 verification is pending. Batch 191 discovery found only
+F778; no other slices were found. F707/F709 remain deferred, Phase 2 Gates
+1/2 remain Partial, and the formal exit gate remains Open.

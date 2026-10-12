@@ -5149,3 +5149,15 @@ F777 reuses an existing shared validator only for Class Details Save's
 optional Teacher ID, whose local parser has the same canonical positive-int
 rules. Keep the class ID validator separate because its established contract
 accepts and forwards `00042`.
+
+## Phase 2 F777 acceptance and F778 selection — 2026-10-13
+
+F777 is accepted at `dc6d98d7da07e9d08b2f17166d7cb2c8ccbcc3e7`; the exact
+target-named CTest registered once and passed 1/1 after the bounded Debug
+build succeeded outside the sandbox following FileTracker `E_ACCESSDENIED`.
+No full suite ran.
+
+F778 consolidates Class Transfer Apply's canonical positive-int parser with
+the shared ID helper by extracting a shared parse function that also returns
+the parsed integer. Preserve the helper's accepted values and the apply
+validator's existing class-before-teacher malformed-target precedence.

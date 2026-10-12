@@ -4922,3 +4922,17 @@ in Class Details Save while retaining its separate permissive Class ID policy
 and the `00042` forwarding contract. The acceptance matrix is in the Phase 2
 progress log. F707/F709 remain deferred; Gates 1/2 are Partial and the formal
 Phase 2 exit gate remains Open.
+
+## Phase 2 current position — 2026-10-13 (F777 accepted; F778 selected)
+
+F777 is accepted at `dc6d98d7da07e9d08b2f17166d7cb2c8ccbcc3e7`. The
+Class Details Save target built in the existing Visual Studio 18 x64 Debug
+tree; its exact target-named CTest registered once (#213) and passed 1/1 after
+the bounded build succeeded outside the sandbox following FileTracker
+`E_ACCESSDENIED`. No full suite ran.
+
+F778 extracts shared canonical positive-decimal parsing with an `int` result
+and uses it in Class Transfer Apply, preserving the current malformed-target
+precedence. Its acceptance matrix is recorded in the Phase 2 progress log.
+F707/F709 remain deferred; Gates 1/2 are Partial and the formal exit gate is
+Open.
