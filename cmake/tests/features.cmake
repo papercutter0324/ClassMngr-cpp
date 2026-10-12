@@ -431,6 +431,7 @@ qt_add_executable(ClassMngrClassTransferTests
         src/features/schedule/ui/schedule_cell_presentation.h
         src/features/schedule/ui/schedule_table_renderer.cpp
         src/features/schedule/ui/schedule_table_renderer.h
+        src/domain/rules/schedule_value_parser.cpp
         src/features/schedule/ui/schedule_widget.cpp
         src/features/schedule/ui/schedule_widget.h
         src/features/schedule/ui/testing_assignment_dialog.cpp

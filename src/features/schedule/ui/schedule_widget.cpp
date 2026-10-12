@@ -11,6 +11,7 @@
 #include "core/startup_profiler.h"
 #include "core/theme_service.h"
 #include "data/database/database_session.h"
+#include "domain/rules/schedule_value_parser.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
@@ -32,6 +33,7 @@
 #include "ui/shared/styles/roles.h"
 
 #include <algorithm>
+#include <array>
 #include <optional>
 #include <string>
 #include <utility>
@@ -95,6 +97,11 @@ using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
     const QString& value
     )
 {
+    if (value != value.trimmed())
+    {
+        return std::nullopt;
+    }
+
     const qsizetype separator = value.indexOf(QLatin1Char(':'));
     if (separator < 1
         || separator > 2
@@ -116,13 +123,22 @@ using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
         }
     }
 
-    bool validHour = false;
-    bool validMinute = false;
-    const int hour = value.left(separator).toInt(&validHour);
-    const int minute = value.mid(separator + 1).toInt(&validMinute);
-    if (!validHour
-        || !validMinute
-        || hour < 0
+    constexpr std::array allowedFormats{
+        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour,
+        ScheduleValueParser::DisplayTimeFormat::PaddedHourMinute24Hour
+    };
+    const auto parsed = ScheduleValueParser::parseDisplayTime(
+        value,
+        allowedFormats
+        );
+    if (!parsed)
+    {
+        return std::nullopt;
+    }
+
+    const int hour = parsed->hour();
+    const int minute = parsed->minute();
+    if (hour < 0
         || hour >= 24
         || minute < 0
         || minute >= 60)

@@ -656,6 +656,8 @@ private slots:
     void failedSlotToggleWarnsWithoutReloading();
     void unavailableSlotToggleSkipsWriteAndReloads();
     void regularSlotToggleUsesSharedPersistenceHandler();
+    void previewCellClickAcceptsOnlyStrict24HourTimeLabels_data();
+    void previewCellClickAcceptsOnlyStrict24HourTimeLabels();
     void clearDatabaseStateRemovesLoadedDataAndSettings();
     void schedulePageScrollsWithoutResizingSchedule();
     void standaloneSchedulePageDeactivationRetainsRenderedResources();
@@ -3034,6 +3036,120 @@ void ScheduleWidgetTests::regularSlotToggleUsesSharedPersistenceHandler()
         ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
         buildCountBeforeClick
         );
+}
+
+void ScheduleWidgetTests::
+previewCellClickAcceptsOnlyStrict24HourTimeLabels_data()
+{
+    QTest::addColumn<QString>("timeLabel");
+    QTest::addColumn<bool>("valid");
+
+    QTest::addRow("unpadded 24-hour")
+        << QStringLiteral("9:00") << true;
+    QTest::addRow("padded 24-hour")
+        << QStringLiteral("09:00") << true;
+    QTest::addRow("leading whitespace")
+        << QStringLiteral(" 9:00") << false;
+    QTest::addRow("trailing whitespace")
+        << QStringLiteral("9:00 ") << false;
+    QTest::addRow("seconds")
+        << QStringLiteral("9:00:00") << false;
+    QTest::addRow("AM/PM")
+        << QStringLiteral("9:00 AM") << false;
+    QTest::addRow("malformed")
+        << QStringLiteral("not-a-time") << false;
+    QTest::addRow("non-ASCII digit")
+        << QString::fromUtf8("\xEF\xBC\x99:00") << false;
+}
+
+void ScheduleWidgetTests::
+previewCellClickAcceptsOnlyStrict24HourTimeLabels()
+{
+    QFETCH(QString, timeLabel);
+    QFETCH(bool, valid);
+
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+
+    ScheduleViewModel preview;
+    preview.days = {QStringLiteral("Monday")};
+    ScheduleRowView row;
+    row.timeLabel = timeLabel;
+    ScheduleCellView cell;
+    cell.day = QStringLiteral("Monday");
+    cell.timeLabel = timeLabel;
+    cell.defaultSlotState = scheduleEmptySlotState();
+    cell.slotState = scheduleEmptySlotState();
+    cell.slotTogglingEnabled = true;
+    row.cells.append(cell);
+    preview.rows.append(row);
+    widget.setPreviewModel(preview);
+
+    const ScheduleViewModel* const previewBefore =
+        &widget.scheduleModel();
+    const int classInfoReadsBefore =
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(
+        QMetaObject::invokeMethod(
+            &widget,
+            "onCellClicked",
+            Qt::DirectConnection,
+            Q_ARG(int, 0),
+            Q_ARG(int, 1)
+            )
+        );
+
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
+        classInfoReadsBefore
+        );
+    if (valid)
+    {
+        QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 1);
+        QCOMPARE(
+            ScheduleWidgetTestStubs::lastSavedSlotDay,
+            QStringLiteral("Monday")
+            );
+        // Both accepted spellings map to the same 540-minute start offset.
+        QCOMPARE(
+            ScheduleWidgetTestStubs::lastSavedSlotStartTime,
+            QStringLiteral("09:00")
+            );
+        QVERIFY(prompts.messages.isEmpty());
+        return;
+    }
+
+    QCOMPARE(ScheduleWidgetTestStubs::savedSlotStates, 0);
+    QVERIFY(ScheduleWidgetTestStubs::lastSavedSlotStartTime.isEmpty());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Update Schedule")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().severity,
+        PromptSeverity::Warning
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("The selected schedule slot is invalid.")
+        );
+
+    QCOMPARE(&widget.scheduleModel(), previewBefore);
+    QCOMPARE(widget.scheduleModel().days, preview.days);
+    QCOMPARE(widget.scheduleModel().rows.size(), 1);
+    QCOMPARE(widget.scheduleModel().rows.first().timeLabel, timeLabel);
+    QCOMPARE(widget.scheduleModel().rows.first().cells.size(), 1);
+    const ScheduleCellView& retainedCell =
+        widget.scheduleModel().rows.first().cells.first();
+    QCOMPARE(retainedCell.day, QStringLiteral("Monday"));
+    QCOMPARE(retainedCell.timeLabel, timeLabel);
+    QCOMPARE(retainedCell.defaultSlotState, scheduleEmptySlotState());
+    QCOMPARE(retainedCell.slotState, scheduleEmptySlotState());
+    QVERIFY(retainedCell.slotTogglingEnabled);
 }
 
 void ScheduleWidgetTests
