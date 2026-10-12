@@ -110,6 +110,8 @@ private slots:
     void mismatchedProfileRequiresConfirmation();
     void compactFlowAndReviewPresentation();
     void compactMeetingTextParsesAndOrdersDisplayFormats();
+    void compactMeetingTextUsesCanonicalWeekdayLabels_data();
+    void compactMeetingTextUsesCanonicalWeekdayLabels();
     void classDifferencesNormalizeSpacedTimesAndEscapeRawFallbacks();
     void reviewWarningsUseDedicatedTab();
     void intensiveModeChoiceReflectsExistingSchedule();
@@ -2263,6 +2265,56 @@ void ScheduleImportDialogTests
             "Mon. 4pm / Monday 4:03pm / Mon. 4:07pm / Mon. 4:15PM / "
             "Mon. 4:20pm / Tues.  4:15 PM  / monday 4:02pm"
             )
+        );
+}
+
+void ScheduleImportDialogTests
+    ::compactMeetingTextUsesCanonicalWeekdayLabels_data()
+{
+    QTest::addColumn<QString>("day");
+    QTest::addColumn<QString>("expectedText");
+
+    QTest::newRow("Monday")
+        << QStringLiteral("Monday") << QStringLiteral("Mon. 4pm");
+    QTest::newRow("Tuesday")
+        << QStringLiteral("Tuesday") << QStringLiteral("Tues. 4pm");
+    QTest::newRow("Wednesday")
+        << QStringLiteral("Wednesday") << QStringLiteral("Wed. 4pm");
+    QTest::newRow("Thursday")
+        << QStringLiteral("Thursday") << QStringLiteral("Thurs. 4pm");
+    QTest::newRow("Friday")
+        << QStringLiteral("Friday") << QStringLiteral("Fri. 4pm");
+    QTest::newRow("Saturday")
+        << QStringLiteral("Saturday") << QStringLiteral("Sat. 4pm");
+    QTest::newRow("Sunday")
+        << QStringLiteral("Sunday") << QStringLiteral("Sun. 4pm");
+    QTest::newRow("padded-canonical")
+        << QStringLiteral(" Monday ") << QStringLiteral("Monday 4pm");
+    QTest::newRow("lowercase")
+        << QStringLiteral("monday") << QStringLiteral("monday 4pm");
+    QTest::newRow("padded-unknown")
+        << QStringLiteral(" Funday ") << QStringLiteral("Funday 4pm");
+    QTest::newRow("empty")
+        << QString() << QStringLiteral(" 4pm");
+}
+
+void ScheduleImportDialogTests
+    ::compactMeetingTextUsesCanonicalWeekdayLabels()
+{
+    QFETCH(QString, day);
+    QFETCH(QString, expectedText);
+
+    const QList<ClassTime> times{
+        {
+            day,
+            QStringLiteral("4:00 PM"),
+            QStringLiteral("4:55 PM")
+        }
+    };
+
+    QCOMPARE(
+        ScheduleImportReviewPresentation::compactMeetingText(times),
+        expectedText
         );
 }
 

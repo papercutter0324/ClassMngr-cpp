@@ -79,34 +79,30 @@ QString weekdayLabel(
     const QString& day
     )
 {
-    if (day == QStringLiteral("Monday"))
+    const auto parsed = ScheduleValueParser::parseWeekday(day);
+    if (!parsed || parsed->text != day)
     {
+        return day.trimmed();
+    }
+
+    switch (parsed->value)
+    {
+    case ScheduleValueParser::Weekday::Monday:
         return QObject::tr("Mon.");
-    }
-    if (day == QStringLiteral("Tuesday"))
-    {
+    case ScheduleValueParser::Weekday::Tuesday:
         return QObject::tr("Tues.");
-    }
-    if (day == QStringLiteral("Wednesday"))
-    {
+    case ScheduleValueParser::Weekday::Wednesday:
         return QObject::tr("Wed.");
-    }
-    if (day == QStringLiteral("Thursday"))
-    {
+    case ScheduleValueParser::Weekday::Thursday:
         return QObject::tr("Thurs.");
-    }
-    if (day == QStringLiteral("Friday"))
-    {
+    case ScheduleValueParser::Weekday::Friday:
         return QObject::tr("Fri.");
-    }
-    if (day == QStringLiteral("Saturday"))
-    {
+    case ScheduleValueParser::Weekday::Saturday:
         return QObject::tr("Sat.");
-    }
-    if (day == QStringLiteral("Sunday"))
-    {
+    case ScheduleValueParser::Weekday::Sunday:
         return QObject::tr("Sun.");
     }
+
     return day.trimmed();
 }
 
