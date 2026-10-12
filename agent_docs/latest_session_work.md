@@ -4,7 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 is active with F703. F625's assessment is
+  141-177 are complete; Batch 178 has F703 complete and is active with F704.
+  F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
   504316a9c24c076e9d6aa474a5b713e9abd52e66. The Windows x64 Debug Ninja build
@@ -72,16 +73,20 @@
   `ClassMngrSpeakingEvalBatchReportServiceTests` passed 1/1. It covers all six
   formats, trimmed input, malformed fallback, zero-minute omission, and
   filesystem path sanitization. No full suite ran.
-- F703 is selected in Batch 178 for the Schedule Import review helpers
-  `compactTimeDisplay` and `reconciliationTimeDisplay`. Reuse the Domain
-  parser with only `HourMinuteAmPmSpaced` and preserve strict raw-input
-  behavior with a no-trim guard; retain the compact helper's raw fallback and
-  the reconciliation helper's HTML-escaped fallback. Extend the public
-  `compactMeetingText` case and test `classDifferences` output for successful,
-  padded, unsupported, and HTML-sensitive malformed values. CMake already
-  wires the parser into `ClassMngrScheduleImportDialogTests`; build `ClassMngr`
-  and that target, then run only its exact CTest. The pre-implementation
-  matrix is in the Phase 2 progress log.
+- F703 Schedule Import review display-time parser reuse is accepted and
+  committed as `aedb61b51fd3c7de938bee8dfb2124fd9c0c5f1c`. `ClassMngr` and
+  `ClassMngrScheduleImportDialogTests` built in the existing Windows x64
+  Debug Ninja tree; exact CTest passed 1/1. Tests preserve compact `:00`
+  omission, successful minute display, raw padded/unsupported fallback, and
+  reconciliation HTML escaping. No full suite ran.
+- F704 is selected for `typedScheduleTimes` in the Initial Setup Wizard. Use
+  only `HourMinuteAmPmSpaced` and a raw-whitespace guard; preserve exact
+  weekday handling and invalid schedule rejection. Existing public wizard
+  tests can inject padded/malformed combo items, then verify the failed-save
+  page/warning and absence of detail/time writes. The target already links the
+  Domain parser through `ClassMngrRuntime`. Build `ClassMngr` and
+  `ClassMngrInitialSetupWizardClassCreateSaveParityTests`; run only its exact
+  CTest. The pre-implementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

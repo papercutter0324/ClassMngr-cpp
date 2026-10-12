@@ -4244,3 +4244,17 @@ reconciliation HTML-escapes it. The Domain parser trims, so require exact
 raw/trimmed equality before parsing and keep the single `h:mm AP` allowlist.
 F703 is selected in Batch 178; its matrix is recorded before implementation
 in the Phase 2 progress log.
+
+F703 is accepted and committed as
+`aedb61b51fd3c7de938bee8dfb2124fd9c0c5f1c`. The Windows x64 Debug Ninja
+build passed for the product and Schedule Import dialog test target; its exact
+CTest passed 1/1. Direct compact and public `classDifferences` cases cover
+spaced conversion, raw padded/unsupported fallback, and HTML escaping.
+
+F704 is selected from the existing Batch 178 shortlist for Initial Setup
+Wizard `typedScheduleTimes`. Keep the exact weekday lookup out of scope; use
+the single spaced AM/PM format and reject padded raw values before parsing.
+Test through the public wizard save path by adding padded/malformed items to
+the existing row combos, then assert the warning, retained times page, and no
+detail/time writes. Its acceptance matrix is recorded before implementation
+in the Phase 2 progress log.

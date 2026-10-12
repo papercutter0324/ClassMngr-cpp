@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F703 selected)
+### Current state - 2026-10-12 (F704 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-177 are complete; Batch 178 is active with F703, the Schedule
-Import review display-time parser migration. F689-F693 are complete;
+Batches 141-177 are complete; Batch 178 has F703 complete and is active with
+F704, the Initial Setup Wizard schedule-time parser migration. F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
 its five requested Ninja targets built and its four focused CTests passed
@@ -110,10 +110,15 @@ Visual Studio tree hit FileTracker `E_ACCESSDENIED`, then `ClassMngr` and
 `ClassMngrSpeakingEvalBatchReportServiceTests` built in the existing Windows
 x64 Debug Ninja tree and its exact CTest passed 1/1 with fresh objects and
 executables. The six format cases, whitespace, malformed fallback, path
-sanitization, and zero-minute output are covered. No full suite ran. F703
-selects the paired Schedule Import review display-time helpers; its strict raw
-input and distinct fallback matrix is recorded before implementation in the
-Phase 2 progress log. The current-source Phase 0
+sanitization, and zero-minute output are covered. No full suite ran. F703 is
+committed as `aedb61b51fd3c7de938bee8dfb2124fd9c0c5f1c`; `ClassMngr` and
+`ClassMngrScheduleImportDialogTests` built in the existing Windows x64 Debug
+Ninja tree, and the exact CTest passed 1/1. Coverage preserves compact/raw
+and reconciliation/HTML-escaped fallback behavior; no full suite ran. F704
+selects the Initial Setup Wizard `typedScheduleTimes` parser with one spaced
+AM/PM format and a raw-whitespace guard; preserve weekday lookup and invalid
+schedule rejection. Its matrix is recorded before implementation in the Phase
+2 progress log. The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
 and F626 deferred. F666 Class Day

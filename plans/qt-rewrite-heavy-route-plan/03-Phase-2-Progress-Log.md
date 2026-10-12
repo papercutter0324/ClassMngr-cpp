@@ -26278,3 +26278,53 @@ distinct success formatting and fallback.
    `ClassMngrScheduleImportDialogTests`. Run no full suite.
 
 This matrix is recorded before implementation. Batch 178 is active with F703.
+
+### F703 Schedule Import display-helper time parser migration - accepted - 2026-10-12
+
+F703 is accepted at implementation/test commit
+`aedb61b51fd3c7de938bee8dfb2124fd9c0c5f1c` (`Phase2 - Reuse Domain
+display-time parser in Schedule Import review display helpers (F703)`).
+`ClassMngr` and `ClassMngrScheduleImportDialogTests` built successfully in the
+existing `build/windows-x64-debug-ninja` tree; the exact CTest passed 1/1.
+Coverage verifies compact `:00` omission, minute-bearing success, raw fallback
+for padded/unsupported compact and 24-hour formats, reconciliation minute
+retention, and HTML escaping. The tester corrected an initial fixture
+constructor issue before the passing run. VS Developer Command Prompt reported
+unavailable `vswhere.exe`. No full suite ran.
+
+**Decision: accept F703.** Batch 178 continues with F704.
+
+### F704 Initial Setup Wizard schedule-time parser migration acceptance matrix - recorded before implementation - 2026-10-12
+
+F704 is selected as the next candidate in Batch 178's ordered shortlist:
+Initial Setup Wizard `typedScheduleTimes` in
+`src/features/setup/ui/initial_setup_wizard.cpp`. Its public wizard fixture
+can inject and inspect raw time values through `ClassTimeRow`, making the
+existing failure and save behavior directly testable.
+
+1. Migrate only `typedScheduleTimes` parsing of raw start/end values to
+   `ScheduleValueParser::parseDisplayTime` with the singleton allowlist
+   `HourMinuteAmPmSpaced`. Reject padded inputs before parsing with
+   `value == value.trimmed()` because the parser trims. Do not change exact
+   weekday mapping or broaden input to compact AM/PM, 24-hour, or seconds
+   formats. Preserve Qt's case-insensitive AP behavior without adding
+   one-digit-hour restrictions.
+2. Preserve `nullopt` for invalid weekday, time, or `ScheduleTime`; require
+   `end > start`; preserve row order, separate regular/intensive outputs, and
+   all existing failure and save behavior.
+3. In `tests/initial_setup_wizard_class_create_save_parity_tests.cpp`, use
+   `WizardFixture` at ClassTimesPage, find its `ClassTimeRow`, and inject a
+   padded end or malformed start with `QComboBox::addItem` and
+   `setCurrentIndex` on the existing combo. Verify `startTime()`/`endTime()`
+   retain the raw values before advancing. On conversion failure, assert the
+   wizard remains on
+   ClassTimesPage, the created blank class ID remains, class-detail and
+   schedule-time tables receive no saves, and the existing warning appears.
+   Canonical success for `9:00 AM`/`9:55 AM` is already covered.
+4. `ClassMngrInitialSetupWizardClassCreateSaveParityTests` links the runtime
+   parser; no direct parser CMake wiring is needed. Build `ClassMngr` and this
+   target in the existing `build/windows-x64-debug-ninja` tree; run only the
+   exact CTest `ClassMngrInitialSetupWizardClassCreateSaveParityTests`. Run
+   no full suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F704.
