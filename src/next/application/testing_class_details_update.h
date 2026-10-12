@@ -1,13 +1,12 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/testing_class_required_fields_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <charconv>
 #include <optional>
 #include <string>
-#include <system_error>
 #include <utility>
 
 namespace ClassMngr::Next::Application
@@ -27,7 +26,7 @@ struct TestingClassDetailsUpdateRequest final
 
     [[nodiscard]] Domain::Result<void> validate() const
     {
-        if (!isCanonicalPositiveInteger(classId.value()))
+        if (!isCanonicalPositiveDecimalId(classId.value()))
         {
             return invalidInput(
                 "Testing class ID must be a canonical positive integer."
@@ -36,7 +35,7 @@ struct TestingClassDetailsUpdateRequest final
 
         if (
             teacherId
-            && !isCanonicalPositiveInteger(teacherId->value())
+            && !isCanonicalPositiveDecimalId(teacherId->value())
             )
         {
             return invalidInput(
@@ -59,27 +58,6 @@ struct TestingClassDetailsUpdateRequest final
     }
 
 private:
-    [[nodiscard]] static bool isCanonicalPositiveInteger(
-        const std::string& value
-        )
-    {
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return false;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        return error == std::errc{}
-            && end == value.data() + value.size()
-            && parsed > 0
-            && std::to_string(parsed) == value;
-    }
-
     [[nodiscard]] static Domain::Result<void> invalidInput(
         std::string message
         )

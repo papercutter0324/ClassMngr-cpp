@@ -109,7 +109,9 @@ void NextApplicationTestingClassCreateUseCaseTests::
 rejectsMalformedTeacherIdsBeforePort()
 {
     RecordingTestingClassCreatePort port;
-    for (const std::string value : {"0", "-1", "017", "teacher-17", "2147483648"})
+    for (const std::string value : {
+             "0", "-1", "017", "teacher-17", "17x", "2147483648"
+         })
     {
         auto invalidRequest = request();
         invalidRequest.teacherId = teacherId(value);

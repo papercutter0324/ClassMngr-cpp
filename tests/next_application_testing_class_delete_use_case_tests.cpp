@@ -60,6 +60,7 @@ rejectsInvalidClassIdsBeforePort()
              "-1",
              "017",
              "class-17",
+             "17x",
              "2147483648"
          })
     {
@@ -74,6 +75,12 @@ rejectsInvalidClassIdsBeforePort()
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Testing class ID must be a canonical positive integer."
+                )
+            );
         QVERIFY(result.error().recoverable);
     }
 
