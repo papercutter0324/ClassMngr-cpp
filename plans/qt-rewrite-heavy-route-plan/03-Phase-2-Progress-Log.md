@@ -27994,20 +27994,33 @@ header, `src/next/domain/gregorian_date.h`.
 conversion, and formatting while preserving both Application planners' public
 behavior.
 
-1. Add the shared Domain helper using wide (`int64_t`) zero-based day numbers,
-   with `0001-01-01 == 0`. Support exact canonical ISO parse/format for dates
-   from `0001-01-01` through `9999-12-31`, Gregorian leap-year and month-length
-   rules, and optional ordinal conversions that reject values outside that
-   date range. Add the new header to `cmake/next.cmake`'s Domain source
-   inventory.
-2. Migrate both Application planners to the shared helper and remove their
-   duplicate leap-year, ordinal, and date-format conversion implementations.
-   Preserve all public outputs, ordering, validation and error mappings,
-   recurrence behavior, monthly clipping, maximum occurrence count, and range
-   boundaries. Preserve F739 helper behavior.
-3. Extend `tests/next_application_calendar_event_tests.cpp` with pure
-   round-trip and Domain boundary tests. Keep the existing repeat-occurrence
-   planner and series-edit cases unchanged and passing.
+1. Add `src/next/domain/gregorian_date.h` with the validated, Qt-free type
+   `ClassMngr::Next::Domain::GregorianDate`. Its `DayNumber` is `std::int64_t`
+   with zero-based `0001-01-01 == 0`. Expose static factories
+   `std::optional<GregorianDate> fromIsoString(std::string_view)`,
+   `std::optional<GregorianDate> fromComponents(int year, int month, int day)`,
+   and `std::optional<GregorianDate> fromDayNumber(DayNumber)`;
+   `DayNumber maximumDayNumber()`, `bool isLeapYear(int year)`, and
+   `int daysInMonth(int year, int month)`; and accessors `int year()`,
+   `int month()`, `int day()`, `DayNumber dayNumber()`, Monday=1
+   `int weekday()`, and `std::string toIsoString()`. Keep construction private
+   so every instance is valid. Parse and format only exact canonical ISO
+   dates from `0001-01-01` through `9999-12-31`; `fromDayNumber` rejects
+   values outside that range.
+   Use Gregorian leap-year/month rules. Add the header under Domain in
+   `cmake/next.cmake`.
+2. Make `CalendarEventTiming::isCanonicalDate` delegate to
+   `GregorianDate::fromIsoString`, removing its duplicate canonical Gregorian
+   validity rule. Migrate both Application planners to this type and remove
+   their duplicate leap-year, ordinal, and date-format conversion
+   implementations. Preserve all public outputs, ordering, validation and
+   error mappings, recurrence behavior, monthly clipping, maximum occurrence
+   count, and range boundaries. Preserve F739 helper behavior.
+3. Extend `tests/next_application_calendar_event_tests.cpp` with direct
+   Qt-free coverage for exact parse/format, leap-date validity, weekday and
+   ordinal conversion, lower/upper day-number edges, out-of-range ordinals,
+   and invalid inputs. Keep the existing repeat-occurrence planner and
+   series-edit cases unchanged and passing.
 4. Build `ClassMngr` and `ClassMngrNextApplicationCalendarEventTests`, confirm
    exactly one matching CTest registration, and run only the exact CTest
    `ClassMngrNextApplicationCalendarEventTests`. Run no full suite.
