@@ -4,8 +4,8 @@
 
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
-  141-177 are complete; Batch 178 has F703-F706 complete and is active with
-  F708.
+  141-177 are complete; Batch 178 has F703-F708 complete and is active with
+  F710.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -100,16 +100,24 @@
   Ninja tree under VS 2026 x64 Developer; exact CTest passed 1/1. Coverage
   checks canonical, padded and malformed values, plus one-digit compatibility
   through `getCalendarEvent`. No full suite ran.
-- F708 is selected for `legacyEventFromDraft` in the Calendar Event dialog.
-  Reuse only the strict `PaddedHourMinute24Hour` format with a raw-whitespace
-  guard; preserve invalid-value behavior and 09:00/10:00 load defaults,
-  repeat-series handling, and timed/all-day/unconfirmed draft output. Use the
-  public dialog draft seam and `ClassMngrDialogShellTests`; the parser is
-  already linked through runtime. Build `ClassMngr` and that target; run only
-  its exact CTest. F707 is deferred because its helper chain has no caller;
-  F709 is deferred because malformed raw projection times are not readily
-  injectable through its existing public fixture. The preimplementation
-  matrix is in the Phase 2 progress log.
+- F708 Calendar Event dialog draft-time parsing is committed as
+  `8c58fd0f07867ba2608a1f10a8ba3012422b35cf`. `ClassMngr` and
+  `ClassMngrDialogShellTests` built in the Windows
+  x64 Debug Ninja tree under VS 2026 x64 Developer; exact CTest passed 1/1.
+  Tests reject padded and malformed start/end values, verify the 09:00/10:00
+  fallback and preserve timed, all-day, and unconfirmed draft behavior. No
+  full suite ran.
+- F710 is selected for the Excel-only `row.timeLabel` parse in
+  `paintSchedule` (`schedule_print_service.cpp`). Use singleton
+  `PaddedHourMinute24Hour` with a raw-whitespace guard; keep valid even-hour
+  cells yellow, odd/invalid cells gray, non-Excel palette behavior unchanged,
+  and range-label formatting separate. Extend
+  `ClassMngrSchedulePrintPdfTests` through its existing service test seam;
+  the parser is already linked through runtime. Build `ClassMngr` and that
+  target, then run only its exact CTest. F707 remains deferred because its
+  comparator chain has no caller; F709 remains deferred because malformed
+  raw text is not readily injectable through its existing fixture. The
+  preimplementation matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.

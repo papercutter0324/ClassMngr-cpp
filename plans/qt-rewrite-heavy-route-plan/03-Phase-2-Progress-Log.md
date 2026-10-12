@@ -26482,4 +26482,59 @@ with a raw-equals-trimmed guard.
    `ClassMngrDialogShellTests`; run only that exact CTest target. Run no full
    suite.
 
-This matrix is recorded before implementation. Batch 178 is active with F708.
+This matrix was recorded before implementation. F708 was active in Batch 178.
+
+### F708 Calendar Event dialog legacy draft time parser migration - accepted - 2026-10-12
+
+F708 is accepted at code/test commit
+`8c58fd0f07867ba2608a1f10a8ba3012422b35cf` (`Phase2 - Reuse Domain
+display-time parser in Calendar Event dialog drafts (F708)`). `ClassMngr` and
+`ClassMngrDialogShellTests` built in the existing Windows x64 Debug Ninja tree
+under the VS 2026 x64 Developer Command Prompt; the exact CTest passed 1/1.
+The initial plain-shell attempt stopped before compilation because MSVC
+headers were unavailable (`C1083: limits`); retrying in the Developer Command
+Prompt passed, with an unavailable `vswhere.exe` warning. No full suite ran.
+
+**Decision: accept F708.** Batch 178 continues with F710; F707 and F709 are
+deferred.
+
+### Batch 178 remaining shortlist after F708 acceptance
+
+F707's `sidebarClassNodeLessThan`/`timeOrder` helper chain has no observed app
+callsite, so defer it until a live use is found. F709's current public
+Calendar Page fixture supplies valid `QTime` values and does not readily
+inject malformed raw input, so defer it until a focused public seam is
+available. Select F710 because `paintSchedule` has an existing public PDF
+fixture that directly exercises Excel time-based colors and can inject raw
+time labels.
+
+1. **Selected: Schedule-print Excel time parser** - migrate only the Excel
+   `row.timeLabel` parse while preserving color behavior.
+2. Next Calendar Event application-port conversion family.
+3. Next Sub Prep schedule-summary parsing and formatting pair.
+
+### F710 Schedule-print Excel time parser migration selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+F710 is selected from Batch 178: migrate only Excel-mode `row.timeLabel`
+parsing in `paintSchedule` in
+`src/features/schedule/services/schedule_print_service.cpp`, currently parsed
+with `QTime::fromString(..., "HH:mm")`.
+
+**F710 is selected:** use `ScheduleValueParser::parseDisplayTime` with the
+singleton `PaddedHourMinute24Hour` allowlist and reject values with
+surrounding whitespace via `raw == raw.trimmed()` because the shared parser
+trims.
+
+1. Change only the Excel time parse. Preserve the Excel color rule: valid even
+   hours use yellow `#FFFF99`; invalid times and odd hours use gray `#D9D9D9`.
+   Keep non-Excel palette behavior and range-label formatting separate.
+2. Extend the existing public `themedEmptyCellsAndOffTableAreaStayWhite`
+   coverage in `tests/schedule_print_pdf_tests.cpp`, which already verifies
+   Excel 09:00 gray and 10:00 yellow. Inject padded-even (`10:00 `) and/or
+   malformed `row.timeLabel` and assert gray.
+3. `ClassMngrSchedulePrintPdfTests` already links the parser through the
+   runtime; make no CMake change. Build `ClassMngr` and
+   `ClassMngrSchedulePrintPdfTests`; run only the exact CTest
+   `ClassMngrSchedulePrintPdfTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 178 is active with F710.

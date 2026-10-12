@@ -4275,14 +4275,19 @@ tree; exact CTest passed 1/1. Canonical times round-trip, padded/malformed
 values leave only the affected `QTime` invalid, and one-digit input preserves
 Qt `HH:mm` behavior through `getCalendarEvent`. No full suite ran.
 
-F708 is selected from the remaining Batch 178 candidates because
-`legacyEventFromDraft` has a direct public dialog draft seam. Migrate only
-start/end parsing to `PaddedHourMinute24Hour` with a raw-whitespace guard.
-Preserve invalid `QTime` fallback, 09:00/10:00 load defaults, repeat-series
-handling, timed `HH:mm` output, and all-day/unconfirmed clearing. Cover
-canonical, padded and malformed draft values in `ClassMngrDialogShellTests`;
-the target already links the Domain parser through runtime. F707 is deferred
-until its unreferenced comparator chain has a live caller; F709 is deferred
-because its existing fixture does not readily inject malformed raw time
-text. The F708 acceptance matrix is recorded before implementation in the
-Phase 2 progress log.
+F708 is accepted and committed as
+`8c58fd0f07867ba2608a1f10a8ba3012422b35cf`. `ClassMngr` and
+`ClassMngrDialogShellTests` built in the Windows x64 Debug Ninja tree under
+VS 2026 x64 Developer; exact CTest passed 1/1. Padded and malformed start/end
+draft cases confirm invalid-time defaults and canonical `eventData()` output;
+existing all-day/unconfirmed behavior remains covered. No full suite ran.
+
+F710 is selected from Batch 178 for the Excel-only `row.timeLabel` parser in
+`paintSchedule`. Migrate only to the `PaddedHourMinute24Hour` Domain format
+with a raw-whitespace guard. Preserve the even-hour yellow, odd/invalid gray
+background rule, non-Excel palette behavior, and separate range-label
+formatting. Extend the focused `ClassMngrSchedulePrintPdfTests` through its
+existing service test seam; runtime already links the parser. F707 is deferred
+because its helper chain has no observed app caller; F709 is deferred because
+its fixture does not readily allow malformed raw times. The F710 matrix is
+recorded before implementation in the Phase 2 progress log.

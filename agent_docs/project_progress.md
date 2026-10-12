@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F708 selected)
+### Current state - 2026-10-12 (F710 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
-Batches 141-177 are complete; Batch 178 has F703-F706 complete and is active
-with F708, the Calendar Event dialog draft-time parser migration.
+Batches 141-177 are complete; Batch 178 has F703-F708 complete and is active
+with F710, the Schedule Print Excel time-label parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -132,13 +132,18 @@ one-digit hour; no full suite ran. F706 is committed as
 `ClassMngrCalendarEventRepositoryTests` built in the existing Windows x64
 Debug Ninja tree, and its exact CTest passed 1/1. Canonical, padded, malformed
 and one-digit hour cases cover `getCalendarEvent`; no full suite ran. F708 is
-selected for the Calendar Event dialog draft parser with its direct public
-draft seam; migrate only the strict `HH:mm` time pair, retaining raw
-whitespace rejection and the 09:00/10:00 invalid-value defaults. F707 is
-deferred because its comparator chain has no observed app callsite. F709 is
-deferred because its public fixture does not readily supply malformed raw
-time text. The F708 matrix is recorded in the Phase 2 progress log. The
-current-source Phase 0
+committed as `8c58fd0f07867ba2608a1f10a8ba3012422b35cf`; `ClassMngr` and
+`ClassMngrDialogShellTests` built in
+the Windows x64 Debug Ninja tree under the VS 2026 x64 Developer Command
+Prompt, and the exact CTest passed 1/1. Padded and malformed start/end drafts
+verify fallback, preserve the valid counterpart, and serialize canonical
+widget values; no full suite ran. F710 selects only the Excel style
+`row.timeLabel` parse in `paintSchedule`: use the explicit `HH:mm` Domain
+format with raw-whitespace rejection, preserving even/odd/invalid cell colors
+and other print styles. Its matrix is recorded in the Phase 2 progress log.
+F707 is deferred because its comparator chain has no observed app callsite;
+F709 is deferred because its public fixture does not readily supply malformed
+raw time text. The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted
 and F626 deferred. F666 Class Day
