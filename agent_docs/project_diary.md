@@ -4585,7 +4585,15 @@ remain weekend days. Coverage includes all weekdays plus padded/lowercase
 weekend, unknown, and empty labels through default-slot state and toggling.
 The exact focused CTest passed 1/1 after both targets built; no full suite ran.
 
-F735 is selected for `SubPrepClassInformation::dayAbbreviation`. Preserve the
-exact raw canonical guard, existing translation context, and trimmed fallback;
-the full preimplementation matrix is recorded in the Phase 2 progress log.
-Phase 2 remains In Progress with Gates 1 and 2 Partial.
+F735 is accepted in Batch 179 and committed as
+`07037b80ae8d35a2e05968af1171c793b030300f`. The Sub Prep class-information
+weekday abbreviation helper now uses the shared parser with exact raw
+canonical-text equality, preserving its seven labels, translation context,
+and trimmed fallback. New direct formatter assertions cover Saturday,
+Sunday, padded unknown, and empty weekday (` 4pm`); existing Monday-Friday
+and padded/lowercase coverage remains. The exact focused CTest passed 1/1
+after both targets rebuilt; no full suite ran.
+
+F736 is selected for `ScheduleImportReviewPresentation::weekdayLabel`; its
+preimplementation matrix is recorded in the Phase 2 progress log. Phase 2
+remains In Progress with Gates 1 and 2 Partial.

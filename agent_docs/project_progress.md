@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F734 accepted; F735 selected)
+### Current state - 2026-10-12 (F735 accepted; F736 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F735, the Sub Prep class-information weekday abbreviation migration.
+with F736, the Schedule Import Review weekday-label migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -379,10 +379,23 @@ toggling behavior. `ClassMngr` and `ClassMngrSchedulePrintModelTests` built;
 the sole matching CTest passed 1/1 and scoped diff-check passed. No full suite
 ran.
 
-F735 is selected for `SubPrepClassInformation::dayAbbreviation`. The helper
-will reuse the shared parser only when canonical parsed text equals the raw
-day, preserving the existing translation context and trimmed fallback for
-noncanonical input. The matrix is recorded in the Phase 2 progress log.
+F735 is accepted and committed as
+`07037b80ae8d35a2e05968af1171c793b030300f`. Sub Prep class-information
+weekday abbreviations now use the shared parser only when canonical parsed
+text equals the raw day, preserving all seven labels, the existing
+translation context, and trimmed fallback. Added formatter coverage for
+Saturday/Sunday, padded unknown, and empty weekday (` 4pm`); existing
+Monday-Friday and padded/lowercase cases remain. `ClassMngr` and
+`ClassMngrSubPrepClassInformationModelTests` rebuilt the changed objects and
+test executable; exactly one CTest registration was found and the focused
+CTest passed 1/1. The first build attempt lacked the MSVC developer
+environment; the x64 Developer retry passed with a nonblocking `vswhere.exe`
+warning. No full suite ran.
+
+F736 is selected for `ScheduleImportReviewPresentation::weekdayLabel`. The
+shared-parser exact-raw guard will preserve canonical translated labels and
+the existing trimmed fallback; the matrix is recorded in the Phase 2
+progress log.
 F707 remains deferred because its comparator chain has no observed app
 callsite; F709 is deferred because its public fixture does not readily supply
 malformed raw time text.

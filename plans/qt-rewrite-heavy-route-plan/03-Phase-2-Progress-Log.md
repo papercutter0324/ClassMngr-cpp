@@ -27724,3 +27724,59 @@ abbreviation selection while preserving the helper's trimmed fallback.
 
 This matrix is recorded before implementation. Batch 179 is active with F735;
 F707 and F709 remain deferred.
+
+### F735 SubPrep class-information weekday abbreviations - accepted - 2026-10-12
+
+F735 is accepted at code/test commit
+`07037b80ae8d35a2e05968af1171c793b030300f`. `dayAbbreviation` now uses
+`ScheduleValueParser::parseWeekday` and translates only when the parsed
+canonical text exactly equals the raw input. It preserves all seven existing
+weekday labels and the `SubPrepClassInformation` translation context; other
+inputs continue to return `day.trimmed()`. The focused formatter coverage adds
+Saturday and Sunday, a padded unknown day, and an empty day with a valid
+4:00 PM time expecting ` 4pm`. Existing Monday-Friday, padded, and lowercase
+coverage remains.
+
+`ClassMngr` and `ClassMngrSubPrepClassInformationModelTests` were rebuilt in
+the existing Windows x64 Debug Ninja tree after an initial build outside the
+Visual Studio environment could not find MSVC's `utility` header. The x64
+Visual Studio Developer retry passed; its `vswhere` warning was nonblocking.
+Exactly one CTest registration was confirmed and the focused test passed 1/1.
+The scoped diff check passed. No full suite ran.
+
+**Decision: accept F735.** Batch 179 continues with F736; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F736 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `weekdayLabel()` in
+`src/features/schedule/ui/schedule_import_review_presentation.cpp`, exercised
+through `ScheduleImportReviewPresentation::compactMeetingText` and the
+existing `compactMeetingTextParsesAndOrdersDisplayFormats` test in
+`tests/schedule_import_dialog_tests.cpp`. The current formatter maps exact
+weekday names to `Mon.`, `Tues.`, `Wed.`, `Thurs.`, `Fri.`, `Sat.`, and
+`Sun.` using the existing `QObject::tr` behavior; other labels use
+`day.trimmed()`.
+
+**F736 is selected:** reuse the Domain weekday parser to select canonical
+labels while preserving existing translation and trimmed-fallback behavior.
+
+1. Migrate only `weekdayLabel()` to
+   `ScheduleValueParser::parseWeekday` and translate only when
+   `parsed->text == day` for the raw input. Preserve the seven labels and
+   existing `QObject::tr` behavior/context, return `day.trimmed()` for padded,
+   lowercase, unknown, or empty inputs, and leave ordering and time formatting
+   unchanged.
+2. Extend or augment the direct `compactMeetingText` coverage in
+   `tests/schedule_import_dialog_tests.cpp` for all seven canonical labels and
+   padded, lowercase, padded-unknown, and empty fallbacks. Ensure exact raw
+   day inputs reach the formatter. For the empty label with a valid 4:00 PM
+   time, assert the existing separator-preserving output with its leading
+   space.
+3. `ClassMngrScheduleImportDialogTests` already includes the source and
+   parser, so no CMake wiring change is needed. Build `ClassMngr` and that
+   target; confirm exactly one same-named CTest registration and run only the
+   exact CTest `ClassMngrScheduleImportDialogTests`. Run no full suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F736;
+F707 and F709 remain deferred.
