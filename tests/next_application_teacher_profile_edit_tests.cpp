@@ -126,8 +126,11 @@ public:
 
 void invalidInputsDoNotWrite()
 {
+    std::vector<std::string> calls;
     FakePolicy policy;
     FakePort port;
+    policy.calls = &calls;
+    port.calls = &calls;
     const std::vector<TeacherProfileValidationIssue> expectedIssues{
         validationIssue(
             "teacher.name.unusual",
@@ -159,14 +162,44 @@ void invalidInputsDoNotWrite()
                     == TeacherProfileValidationSeverity::Error,
         "validation issue code, field, and severity should remain intact");
 
-    result = TeacherProfileEditUseCase::execute(
-        TeacherProfileEditRequest::fromIntId(0, fields()), policy, port);
-    require(!result && result.error().kind
-                == TeacherProfileEditFailureKind::InvalidTeacherId,
-        "nonpositive ID should be rejected");
-    require(policy.inputs.size() == 1 && port.updates.empty()
-                && port.reloads.empty(),
-        "invalid ID must be rejected before policy and persistence");
+    require(calls == std::vector<std::string>{"validate"},
+        "validation rejection should call the policy without persistence");
+
+    const auto requireInvalidId = [&](TeacherProfileEditRequest request)
+    {
+        const auto callsBefore = calls;
+        const auto policyInputsBefore = policy.inputs.size();
+        const auto updatesBefore = port.updates.size();
+        const auto reloadsBefore = port.reloads.size();
+        const auto invalidResult = TeacherProfileEditUseCase::execute(
+            request, policy, port);
+        require(!invalidResult && invalidResult.error().kind
+                    == TeacherProfileEditFailureKind::InvalidTeacherId,
+            "invalid teacher ID should be rejected");
+        require(invalidResult.error().cause.code == Domain::ErrorCode::InvalidInput
+                    && invalidResult.error().cause.message
+                        == "Teacher ID must be positive."
+                    && invalidResult.error().cause.recoverable,
+            "invalid teacher ID should preserve its exact recoverable cause");
+        require(!invalidResult.error().writeSucceeded,
+            "invalid teacher ID must not report a completed write");
+        require(calls == callsBefore
+                    && policy.inputs.size() == policyInputsBefore,
+            "invalid teacher ID must not call the validation policy");
+        require(port.updates.size() == updatesBefore
+                    && port.reloads.size() == reloadsBefore,
+            "invalid teacher ID must not update or reload persistence");
+    };
+
+    requireInvalidId(TeacherProfileEditRequest::fromIntId(0, fields()));
+
+    for (const auto* value : {"0", "08", "not-an-id"})
+    {
+        auto typedId = Domain::TeacherId::fromString(value);
+        require(typedId.has_value(),
+            "test malformed teacher ID should construct a present typed ID");
+        requireInvalidId({.id = std::move(typedId), .fields = fields()});
+    }
 }
 
 void validSavePreservesFieldsOrderAndCanonicalReturn()

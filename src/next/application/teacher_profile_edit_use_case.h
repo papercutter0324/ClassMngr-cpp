@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/teacher_profile.h"
 
@@ -167,7 +168,8 @@ public:
         const TeacherProfileEditPersistencePort& persistence
         )
     {
-        if (!request.id)
+        if (!request.id
+            || !isCanonicalPositiveDecimalId(request.id->value()))
         {
             return std::unexpected(TeacherProfileEditFailure{
                 .kind = TeacherProfileEditFailureKind::InvalidTeacherId,
