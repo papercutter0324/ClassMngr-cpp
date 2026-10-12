@@ -28196,3 +28196,57 @@ because it spans three query scopes with distinct error text. Candidate A has
 direct existing coverage. This matrix is recorded before implementation.
 Batch 179 is active with F743; F707 and F709 remain deferred, and Phase 2
 status is unchanged.
+
+### F743 Testing Class required-field validation - accepted - 2026-10-12
+
+F743 is accepted at commit
+`893e400be3988e9bad7fbd5940e76799dc083d79` (`Phase2 - Share required field
+validation across testing classes`). The Create and Details Update workflows
+now share the ordered required-field validation while retaining their separate
+ID and assignment checks and call order; no tests were edited.
+
+Under Visual Studio 18.0 x64 Developer with Ninja/Debug in
+`build/windows-x64-debug-ninja`, using Hostx64/x64 MSVC toolset 14.51.36231
+and compiler 19.51.36257, `ClassMngr`,
+`ClassMngrNextApplicationTestingClassCreateUseCaseTests`, and
+`ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests` built
+successfully. One CTest registration each (#374 and #375) was confirmed; the
+anchored focused CTests passed 2/2 in 0.10 seconds. CMake reconfiguration
+took 226 seconds. The `vswhere.exe`, missing Vulkan/Qt zlib fallback, and
+long-object-path warnings were nonblocking. No full suite ran.
+
+**Decision: accept F743.** Batch 179 continues with F744; preserve the Phase 2
+gate and F707/F709 deferred status.
+
+### Batch 179 continuation - F744 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Centralize `ScheduleViewMode` validity in the Application namespace, adjacent
+to the enum in `src/next/application/schedule_view_projection.h`.
+
+**F744 is selected:** use one shared validity rule at projection-cell and
+Sub Prep summary, print, and roster request boundaries.
+
+1. Add the public inline helper
+   `isValidScheduleViewMode(ScheduleViewMode) noexcept` in
+   `schedule_view_projection.h`. Use it for projection-cell validation and
+   request validation in the Sub Prep summary, print, and roster queries.
+   Remove their local mode predicates. Keep each check at its current position
+   before the read port; preserve `InvalidInput`, recoverability, and exact
+   messages: summary and print use "The Sub Prep schedule mode is invalid.";
+   roster uses "The roster-output schedule mode is invalid." Add a direct
+   include of `schedule_view_projection.h` to the roster query if needed for
+   the explicit dependency.
+2. Existing tests directly reject invalid enum casts before the port in all
+   three query suites; no test edits are expected.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests`,
+   `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`, and
+   `ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests`. Confirm
+   exactly one CTest registration for each and run only those exact CTests.
+   Run no full suite.
+
+The weekday-range candidate was not selected because it has broader request
+and returned-meeting paths, differing error handling, and no roster fixture
+for an invalid returned weekday. This matrix is recorded before
+implementation. Batch 179 continues with F744; preserve the Phase 2 gate and
+F707/F709 deferred status.

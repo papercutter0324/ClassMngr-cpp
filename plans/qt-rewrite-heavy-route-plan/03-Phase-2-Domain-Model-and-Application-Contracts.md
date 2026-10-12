@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-12
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F742 is accepted at `e8487f180550e03f62c4efa5c098baaf0ea6f473` and F743, sharing required-field validation across Testing Class create/update via `testing_class_required_fields_validation.h`, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
+- Current note: F743 is accepted at `893e400be3988e9bad7fbd5940e76799dc083d79` and F744, sharing ScheduleViewMode validation across Sub Prep projection and summary/print/roster queries, is selected in Batch 179; F707 and F709 remain deferred, Phase 2 Gates 1/2 remain Partial and the formal exit gate Open, F625's assessment is accepted, F626 remains deferred, and separate Phase 0 current-source evidence remains open at Windows x64 2/24 and macOS universal 0/24.
 
 ### Slice discovery batches
 
@@ -102,7 +102,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch 179
 
-- F743 - Share Testing Class required-field validation across create/update while preserving field and error order.
+- F744 - Share ScheduleViewMode validity across Sub Prep projection and three query validators while preserving guard positions, exact messages, and recoverability.
 
 ## Objective
 

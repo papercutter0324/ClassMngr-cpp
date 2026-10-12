@@ -4610,10 +4610,24 @@ built; the single CTest registration #307 passed 1/1 in 0.05 seconds (0.06
 total). The scoped diff check passed; no full suite ran. Only nonblocking
 `vswhere` and LF/CRLF warnings occurred.
 
-F743 is selected for shared required-field validation across Testing Class
-create and update via `testing_class_required_fields_validation.h`, preserving
-field and error order. Its matrix is in the Phase 2 progress log. F707 and
-F709 remain deferred. Phase 2 is In Progress/Open with Gates 1 and 2 Partial;
-F739, F740, and F741 remain accepted; F625's assessment is accepted, F626 is
+F743 is accepted at code commit
+`893e400be3988e9bad7fbd5940e76799dc083d79` (`Phase2 - Share required field
+validation across testing classes`). Under VS 18.0 x64 Developer, Ninja/Debug
+in `build/windows-x64-debug-ninja` with Hostx64/x64 MSVC toolset 14.51.36231
+and compiler 19.51.36257, `ClassMngr`,
+`ClassMngrNextApplicationTestingClassCreateUseCaseTests`, and
+`ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests` built with
+exit code 0. Exact CTest registrations #374 and #375
+(count 1 each) passed via the exact CTest regex, 2/2 in 0.10 seconds. F743
+reused existing tests without test edits. Automatic CMake reconfigure took
+226 seconds; nonblocking warnings covered `vswhere`, missing Vulkan with Qt
+zlib fallback, and long object paths. No full suite ran.
+
+F744 is selected to share ScheduleViewMode validity across projection and
+Sub Prep summary, print, and roster-output query validation through
+`isValidScheduleViewMode` in `schedule_view_projection.h`, preserving each
+guard and exact failure contract. Its matrix is in the Phase 2 progress log.
+F707 and F709 remain deferred. Phase 2 is In Progress/Open with Gates 1 and 2
+Partial; F739-F742 remain accepted, F625's assessment is accepted, F626 is
 deferred, and separate current-source Phase 0 evidence remains Windows x64
 2/24 and macOS universal 0/24.

@@ -4697,3 +4697,25 @@ F743 is selected to share required-field validation across Testing Class
 create/update via `testing_class_required_fields_validation.h`, preserving
 field and error order. Its matrix is recorded in the Phase 2 progress log.
 F707 and F709 remain deferred.
+
+## F743 Testing Class required-field validation - accepted - 2026-10-12
+
+F743 is accepted at code commit
+`893e400be3988e9bad7fbd5940e76799dc083d79`, `Phase2 - Share required field
+validation across testing classes`. It shares required-field validation
+between Testing Class create and details-update workflows without test edits,
+preserving field and error order. Under VS 18.0 x64 Developer, Ninja/Debug in
+`build/windows-x64-debug-ninja` with Hostx64/x64 MSVC toolset 14.51.36231 and
+compiler 19.51.36257, `ClassMngr`,
+`ClassMngrNextApplicationTestingClassCreateUseCaseTests`, and
+`ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests` built with
+exit code 0. Exact CTest registrations #374 and #375
+(count 1 each) passed via the exact regex, 2/2 in 0.10 seconds. Automatic
+CMake reconfigure took 226 seconds; nonblocking warnings included `vswhere`,
+missing Vulkan with Qt zlib fallback, and long object paths. No full suite ran.
+
+F744 is selected to share ScheduleViewMode validity across projection and the
+Sub Prep summary, print, and roster-output queries with
+`isValidScheduleViewMode` adjacent to the enum. Preserve guard positions,
+recoverability/codes, and the exact summary/print and roster messages. Its
+full matrix is in the Phase 2 progress log. F707 and F709 remain deferred.

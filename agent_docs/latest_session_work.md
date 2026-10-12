@@ -5,7 +5,8 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F743, sharing required-field validation across Testing Class create/update.
+  F744, sharing ScheduleViewMode validity across Sub Prep projections and
+  queries.
   F709 remains deferred after confirming raw SQL
   values become invalid `QTime`s before the public page's projection-string
   helper. F625's assessment is accepted and F626 remains deferred.
@@ -250,8 +251,8 @@
   CTests passed 2/2 in 0.57s. Coverage includes weekday/date boundaries,
   invalid inputs, dialog defaults and start-date changes, and preservation of
   a chosen end date under enabled recurrence. Scoped diff check passed; no
-  full suite ran. F740, F741, and F742 are accepted; F743 is selected. Its
-  matrix is in the Phase 2 progress log. F707 and F709 remain deferred.
+  full suite ran. F740-F743 are accepted; F744 is selected. Its matrix is in
+  the Phase 2 progress log. F707 and F709 remain deferred.
 - F740 Gregorian date conversion is accepted and committed as
   `9d61d6aef53ce0893e3ffc069338f1ba1a11e3df`. `ClassMngr` and
   `ClassMngrNextApplicationCalendarEventTests` built in
@@ -276,10 +277,24 @@
   the single CTest registration #307 passed 1/1 in 0.05s (0.06s total). No
   full suite ran; scoped diff check passed. Only nonblocking `vswhere` and
   LF/CRLF warnings occurred.
-- F743 is selected in Batch 179: share required-field validation across
-  Testing Class create/update via
-  `testing_class_required_fields_validation.h`, preserving field and error
-  order. Its matrix is recorded in the Phase 2 progress log.
+- F743 Testing Class required-field validation is accepted at code commit
+  `893e400be3988e9bad7fbd5940e76799dc083d79`
+  (`Phase2 - Share required field validation across testing classes`). Under
+  VS 18.0 x64 Developer, Ninja/Debug in `build/windows-x64-debug-ninja` with
+  Hostx64/x64 MSVC toolset 14.51.36231 and compiler 19.51.36257, `ClassMngr`,
+  `ClassMngrNextApplicationTestingClassCreateUseCaseTests`, and
+  `ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests` built with
+  exit code 0. Exact CTest registrations #374 and #375 (count 1 each) passed
+  via the exact regex, 2/2 in 0.10s. F743 reused existing tests with no test
+  edits. Automatic CMake reconfigure took 226s;
+  nonblocking warnings included `vswhere`, missing Vulkan with Qt zlib
+  fallback, and long object paths. No full suite ran.
+- F744 is selected in Batch 179: share ScheduleViewMode validity across the
+  projection and Sub Prep summary, print, and roster-output query validators
+  with `isValidScheduleViewMode` beside the enum. Preserve guard positions,
+  recoverability/codes, and exact validation messages. Existing direct tests
+  cover invalid enum values before all three ports, so no test edits are
+  expected; the detailed matrix is in the Phase 2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, stdout, and txt paths.
