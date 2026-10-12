@@ -100,6 +100,7 @@ rejectsNonCanonicalOrOutOfRangeIdsBeforePortCall()
         classId("01"),
         classId("+1"),
         classId(" 1"),
+        classId("42x"),
         classId("2147483648")
     };
     const ClassNotesPageReadQuery query(port);
@@ -109,6 +110,9 @@ rejectsNonCanonicalOrOutOfRangeIdsBeforePortCall()
         const auto result = query.execute(id);
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QVERIFY(result.error().message
+            == "Class ID must be a canonical positive integer.");
+        QVERIFY(!result.error().recoverable);
     }
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
@@ -196,6 +200,9 @@ rejectsMismatchedResponseIdentity()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(result.error().message
+        == "A class notes page read returned a different class identifier.");
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 1);
 }
 
