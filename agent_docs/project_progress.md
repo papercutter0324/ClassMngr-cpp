@@ -53,12 +53,12 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-12 (F719 accepted; F720 selected)
+### Current state - 2026-10-12 (F720 accepted; F721 selected)
 
 Phase 2 remains In Progress/Open under deployment
 `phase2_f417_resume_20261009`, Heavy route; Gates 1 and 2 remain Partial.
 Batches 141-178 are complete with F707 and F709 deferred; Batch 179 is active
-with F720, the schedule import review weekday parser migration.
+with F721, the schedule import repository weekday parser migration.
 F689-F693 are complete;
 their acceptance details and commit hashes are recorded in the Phase 2
 progress log. F694 is committed as b1654499e391656b0e7abb5625a1e1af293bc5bb;
@@ -225,23 +225,32 @@ schedule state; canonical Sunday/Monday cases remain accepted. `ClassMngr`
 and `ClassMngrClassTransferTests` built in the Windows x64 Debug Ninja tree
 under VS 2026 x64 Developer; the exact registered CTest passed 1/1 (4.50
 seconds). A `vswhere.exe` recognition warning printed; no full suite ran. F720
-selects `weekdayIndex` in
-`src/features/schedule/ui/schedule_import_review_presentation.cpp`. Reuse
-`ScheduleValueParser::parseWeekday` and require canonical text to equal the
-trimmed input, preserving the max-int unknown fallback and case-sensitive
-ordering: padded canonical days remain valid and lowercase `monday` remains
-unknown. Preserve exact-spelling `weekdayLabel` abbreviations and trimmed
-fallback labels. Extend public tests in
-`tests/schedule_import_dialog_tests.cpp` around
-`compactMeetingTextParsesAndOrdersDisplayFormats` and
-`reviewWarnsForOverlappingProjectedTimes`; verify padded/lowercase ordering
-and labels, and that lowercase weekdays remain excluded from overlap
-projection. Keep parsing in this Qt presentation adapter. The focused target
-already directly compiles the presentation and parser; no CMake change is
-needed. Build `ClassMngr` and `ClassMngrScheduleImportDialogTests`, then run
-only the exact registered CTest of that name. F707 remains deferred because
-its comparator chain has no observed app callsite; F709 is deferred because
-its public fixture does not readily supply malformed raw time text.
+F720 is committed as `3f9e6b7d`. It migrates
+`ScheduleImportReviewPresentation::weekdayIndex` through
+`ScheduleValueParser::parseWeekday` with canonical-text equality after trim,
+preserving case-sensitive ordering and the max-int unknown fallback. The
+public presentation tests verify padded Monday ordering and fallback labels,
+lowercase monday sorting last with its raw label, and lowercase exclusion
+from overlap warnings. `weekdayLabel` and filtering remain unchanged.
+`ClassMngr` and `ClassMngrScheduleImportDialogTests` built in the Windows x64
+Debug Ninja tree under VS 2026 x64 Developer; the exact registered CTest
+passed 1/1 (2.22 seconds). A `vswhere.exe` recognition warning printed; no
+full suite ran. F721 selects `dayIndex` in
+`src/data/repositories/schedule_import_repository.cpp`. Reuse
+`ScheduleValueParser::parseWeekday` with canonical text equal to the raw,
+untrimmed input, preserving the exact case-sensitive grammar and `-1`
+invalid fallback. The helper also validates intensive slot-state days, so
+cover both typed candidate schedules and intensive slot states: extend
+`typedApplyRejectsMalformedTimeBeforeWrites` with otherwise-valid padded and
+lowercase weekday rows, expecting `InvalidProjectedTime` and an unchanged
+persisted snapshot; add padded/lowercase rejection coverage alongside
+`typedIntensiveApplyMapsModeAndSlotState`, verifying transaction rollback and
+the snapshot including intensive slot states. Preserve canonical weekday
+success. `ClassMngrScheduleImportTests` already directly compiles the parser
+and repository; no CMake change is needed. Build `ClassMngr` and that target,
+then run only the exact registered CTest of that name. F707 remains deferred
+because its comparator chain has no observed app callsite; F709 is deferred
+because its public fixture does not readily supply malformed raw time text.
 The current-source Phase 0
 evidence remains Windows x64 2/24 and macOS universal 0/24; it is separate
 from the historical Phase 0 closure described above. F625 remains accepted

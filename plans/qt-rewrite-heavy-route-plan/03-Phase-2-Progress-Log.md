@@ -27035,4 +27035,53 @@ outside the Next Application contract.
    Build `ClassMngr` and that target; run only the exact registered CTest
    `ClassMngrScheduleImportDialogTests`. Run no full suite.
 
-This matrix is recorded before implementation. Batch 179 is active with F720.
+This matrix was recorded before implementation.
+
+### F720 Schedule Import Review weekday-index parser migration - accepted - 2026-10-12
+
+F720 is accepted at source/test commit `3f9e6b7d`. The change is limited to
+`src/features/schedule/ui/schedule_import_review_presentation.cpp` and
+`tests/schedule_import_dialog_tests.cpp`. `weekdayIndex` parses trimmed text
+with canonical-text equality, retaining the max-int unknown fallback;
+`weekdayLabel` and filtering remain unchanged. Tests verify padded Monday's
+canonical ordering and fallback label `Monday`, lowercase `monday` as unknown
+and last with label `monday`, and exclusion of the lowercase overlap
+candidate.
+
+`ClassMngr` and `ClassMngrScheduleImportDialogTests` built successfully. The
+exact registered CTest `ClassMngrScheduleImportDialogTests` passed 1/1 in 2.22
+seconds; `git diff --check` passed. Developer-environment initialization
+printed a `vswhere.exe` warning. No full suite ran.
+
+**Decision: accept F720.** Batch 179 continues with F721; F707 and F709 remain
+deferred.
+
+### Batch 179 continuation - F721 selection and acceptance matrix - recorded before implementation - 2026-10-12
+
+Select `dayIndex` in
+`src/data/repositories/schedule_import_repository.cpp`. Its raw, untrimmed,
+case-sensitive lookup returns `-1` for invalid weekdays. Four live call sites
+use it: `resolvedScheduleEntries` (502), `stateTime` (527),
+`writeScheduleEntries` (816), and `writeIntensiveSlotStates` (872).
+
+**F721 is selected:** reuse the Domain weekday parser while preserving raw
+spelling validation and transaction rollback behavior.
+
+1. Migrate only `dayIndex` to `ScheduleValueParser::parseWeekday`, requiring
+   `parsed->text == day` to keep padded and lowercase values invalid. Preserve
+   canonical weekdays and the existing `-1` fallback.
+2. Extend the typed schedule-apply test
+   `typedApplyRejectsMalformedTimeBeforeWrites` with valid-time candidates
+   using padded and lowercase weekdays. Expect `InvalidProjectedTime` and
+   verify the persisted snapshot is unchanged.
+3. Add padded and lowercase weekday rejection coverage for intensive slot
+   state, alongside `typedIntensiveApplyMapsModeAndSlotState` or in a focused
+   test. Verify transaction rollback leaves the persisted snapshot,
+   including `intensive_slot_states`, unchanged. Preserve existing canonical
+   weekday success cases.
+4. `ClassMngrScheduleImportTests` already directly compiles the repository and
+   parser, so no CMake change is needed. Build `ClassMngr` and that target; run
+   only the exact registered CTest `ClassMngrScheduleImportTests`. Run no full
+   suite.
+
+This matrix is recorded before implementation. Batch 179 is active with F721.

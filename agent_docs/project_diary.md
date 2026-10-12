@@ -4449,21 +4449,33 @@ Debug Ninja tree under VS 2026 x64 Developer; the exact registered CTest
 passed 1/1 in 4.50 seconds. A `vswhere.exe` warning printed during Developer
 initialization. No full suite ran.
 
-F720 is selected for `weekdayIndex` in
-`src/features/schedule/ui/schedule_import_review_presentation.cpp`. Existing
-behavior trims input, performs a case-sensitive weekday lookup, and returns
-`std::numeric_limits<int>::max()` for unknown values. Reuse
-`ScheduleValueParser::parseWeekday` but require canonical text to equal the
-trimmed input: padded canonical days remain valid, lowercase `monday` stays
-unknown. Preserve exact-spelling `weekdayLabel` abbreviations and trimmed
-fallback labels. Extend the public
-`compactMeetingTextParsesAndOrdersDisplayFormats` and
-`reviewWarnsForOverlappingProjectedTimes` tests to cover padded/lowercase
-ordering and labels, and keep lowercase weekdays excluded from overlap
-projection. Keep parsing in the Qt presentation adapter. The focused target
-already directly compiles the parser and presentation source, so no CMake
-change is needed. Build `ClassMngr` and
-`ClassMngrScheduleImportDialogTests`, then run that exact registered CTest
-only. F707 and F709 remain deferred for their documented missing app callsite
-and malformed-input seam constraints. Phase 2 remains In Progress with Gates
-1 and 2 Partial.
+F720 is accepted in Batch 179 and committed as `3f9e6b7d`. It updates only
+`ScheduleImportReviewPresentation::weekdayIndex` to reuse
+`ScheduleValueParser::parseWeekday` while requiring canonical text to equal
+the trimmed input. This keeps case-sensitive ordering and the
+`std::numeric_limits<int>::max()` fallback. The public compact-text test
+verifies padded Monday orders canonically with fallback label `Monday`, while
+lowercase `monday` remains unknown and keeps label `monday`; overlap coverage
+confirms lowercase candidates stay excluded. `weekdayLabel` and filtering
+remain unchanged. `ClassMngr` and `ClassMngrScheduleImportDialogTests` built in
+the Windows x64 Debug Ninja tree under VS 2026 x64 Developer; the exact
+registered CTest passed 1/1 in 2.22 seconds. A `vswhere.exe` warning printed
+during Developer initialization. No full suite ran.
+
+F721 is selected for `dayIndex` in
+`src/data/repositories/schedule_import_repository.cpp`. The current helper
+uses raw, untrimmed, case-sensitive `QStringList::indexOf` and returns `-1`
+for invalid days. Reuse `ScheduleValueParser::parseWeekday` but require
+canonical text to equal the raw day string so padded and lowercase spellings
+remain invalid. This helper serves candidate schedules and intensive slot
+states. Extend `typedApplyRejectsMalformedTimeBeforeWrites` with valid-time
+padded/lowercase candidate days and verify `InvalidProjectedTime` plus an
+unchanged persisted snapshot. Add padded/lowercase rejection to the public
+intensive apply coverage alongside `typedIntensiveApplyMapsModeAndSlotState`,
+ensuring rollback preserves the persisted snapshot including
+`intensive_slot_states`. Retain canonical weekday success. The focused
+`ClassMngrScheduleImportTests` target already compiles the parser and
+repository; no CMake change is needed. Build `ClassMngr` and that target, then
+run the exact registered CTest only. F707 and F709 remain deferred for their
+documented missing app callsite and malformed-input seam constraints. Phase 2
+remains In Progress with Gates 1 and 2 Partial.

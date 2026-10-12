@@ -5,7 +5,7 @@
 - Deployment: `phase2_f417_resume_20261009`; Heavy route; resumed 2026-10-12.
 - Phase 2 remains In Progress/Open; Gates 1 and 2 remain Partial. Batches
   141-178 are complete with F707 and F709 deferred; Batch 179 is active with
-  F720.
+  F721.
   F625's assessment is
   accepted and F626 remains deferred.
 - F693 roster display-time grammar migration is accepted and committed as
@@ -158,22 +158,23 @@
   service rejected the malformed row; the final build and test passed. A
   `vswhere.exe` recognition warning printed during Developer-environment
   initialization. No full suite ran.
-- F716-F718 are accepted in commits `6fb6120a`, `2c2c2a2a`, and `7e8929c7`.
-  F719 is accepted and committed as `0b10a848`. `ClassMngr` and
-  `ClassMngrClassTransferTests` built; the exact registered CTest passed 1/1
-  (4.50 seconds). Public import preflight rejects valid-time lowercase/padded
-  weekday schedules with zero SQLite changes and unchanged class, teacher,
-  and schedule state. No full suite ran; Developer initialization printed a
-  `vswhere.exe` recognition warning. F720 selects
-  `ScheduleImportReviewPresentation::weekdayIndex`. Preserve trim and
-  case-sensitive matching with `parseWeekday` plus canonical-text equality,
-  retaining the max-int unknown fallback and exact-spelling labels. Test
-  padded/lowercase ordering, labels, and overlap projection through existing
-  public tests. Keep the Qt parser in this presentation adapter. The focused
-  target already compiles the adapter and parser; no CMake change is needed.
-  Build `ClassMngr` and `ClassMngrScheduleImportDialogTests`, then run only the
-  exact registered CTest. F707 and F709 remain deferred. The preimplementation
-  matrix is in the Phase 2 progress log.
+- F716-F719 are accepted in commits `6fb6120a`, `2c2c2a2a`, `7e8929c7`, and
+  `0b10a848`. F720 is accepted and committed as `3f9e6b7d`. `ClassMngr` and
+  `ClassMngrScheduleImportDialogTests` built; the exact registered CTest
+  passed 1/1 (2.22 seconds). Public presentation coverage verifies padded and
+  lowercase weekday order/labels and exclusion of lowercase overlap
+  candidates. No full suite ran; Developer initialization printed a
+  `vswhere.exe` recognition warning. F721 selects
+  `ScheduleImportRepository::dayIndex`. Preserve exact raw, untrimmed,
+  case-sensitive weekday matching with `parseWeekday` plus canonical-text
+  equality and `-1` fallback. Cover typed candidate schedule rejection and
+  intensive slot-state rejection for padded/lowercase values, with unchanged
+  persisted snapshots including transaction rollback; retain canonical
+  weekday success. The focused target already compiles repository and parser;
+  no CMake change is needed. Build `ClassMngr` and
+  `ClassMngrScheduleImportTests`, then run only that exact registered CTest.
+  F707 and F709 remain deferred. The preimplementation matrix is in the Phase
+  2 progress log.
 - Phase 0 evidence remains Windows x64 2/24 and macOS universal 0/24; these
   slices add no route evidence. Preserve the existing unrelated untracked
   %SystemDrive%/, Windows Performance Analyzer/, and txt paths.
