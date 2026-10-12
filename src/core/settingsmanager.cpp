@@ -442,6 +442,59 @@ QSettings::Status SettingsManager::writeLanguagePreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeDocumentViewerBackgroundPreference(
+    const int background,
+    const DocumentViewerBackgroundPreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousBackground =
+        m_settings->contains(Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE);
+    const QVariant previousBackground =
+        m_settings->value(Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE);
+
+    m_settings->setValue(
+        Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE,
+        background
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore the attempted value before destroying this instance so it
+        // cannot be retried during teardown.
+        if (hadPreviousBackground)
+        {
+            m_settings->setValue(
+                Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE,
+                previousBackground
+                );
+        }
+        else
+        {
+            m_settings->remove(
+                Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE
+                );
+        }
+
+        // A failed QSettings instance keeps its error status. Reopen the
+        // store so reads see the restored preference and retries can work.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 // =========================================================
 // Window Geometry
 // =========================================================

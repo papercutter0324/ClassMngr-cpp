@@ -148,7 +148,13 @@ void ActionRegistry::createActions(
         > sidebarDisplayPreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> sidebarDisplayPreferencesErrorHandler
+        )> sidebarDisplayPreferencesErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::DocumentViewerBackgroundPreferencesPort
+        > documentViewerBackgroundPreferencesPort,
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> documentViewerBackgroundPreferenceErrorHandler
     )
 {
     createFileActions();
@@ -169,7 +175,9 @@ void ActionRegistry::createActions(
         std::move(languagePreferencesPort),
         languagePreferenceErrorHandler,
         std::move(sidebarDisplayPreferencesPort),
-        sidebarDisplayPreferencesErrorHandler
+        sidebarDisplayPreferencesErrorHandler,
+        std::move(documentViewerBackgroundPreferencesPort),
+        documentViewerBackgroundPreferenceErrorHandler
         );
     createHelpActions();
     createAdminActions();
@@ -825,7 +833,13 @@ void ActionRegistry::createOptionActions(
         > sidebarDisplayPreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& sidebarDisplayPreferencesErrorHandler
+        )>& sidebarDisplayPreferencesErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::DocumentViewerBackgroundPreferencesPort
+        > documentViewerBackgroundPreferencesPort,
+    const std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )>& documentViewerBackgroundPreferenceErrorHandler
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1539,46 +1553,69 @@ void ActionRegistry::createOptionActions(
         blackDocumentViewerBackgroundAction
         );
 
-    documentViewerBackgroundState->onPersist =
-        [](const ::DocumentViewerBackground background)
+    if (!documentViewerBackgroundPreferencesPort)
     {
-        ClassMngr::Next::Application::DocumentViewerBackground preference;
-        switch (background)
-        {
-        case ::DocumentViewerBackground::Default:
-            preference = ClassMngr::Next::Application::
-                DocumentViewerBackground::Default;
-            break;
-
-        case ::DocumentViewerBackground::White:
-            preference = ClassMngr::Next::Application::
-                DocumentViewerBackground::White;
-            break;
-
-        case ::DocumentViewerBackground::Black:
-            preference = ClassMngr::Next::Application::
-                DocumentViewerBackground::Black;
-            break;
-
-        default:
-            return;
-        }
-
-        ClassMngr::Next::Platform::
-            SettingsManagerDocumentViewerBackgroundPreferencesPort().write(
-                preference
-                );
-    };
+        documentViewerBackgroundPreferencesPort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerDocumentViewerBackgroundPreferencesPort
+            >();
+    }
 
     const auto storedDocumentViewerBackground =
-        ClassMngr::Next::Platform::
-            SettingsManagerDocumentViewerBackgroundPreferencesPort()
-            .read();
+        documentViewerBackgroundPreferencesPort->read();
+    ::DocumentViewerBackground legacyDocumentViewerBackground =
+        ::DocumentViewerBackground::Default;
+    switch (storedDocumentViewerBackground)
+    {
+    case ClassMngr::Next::Application::DocumentViewerBackground::White:
+        legacyDocumentViewerBackground = ::DocumentViewerBackground::White;
+        break;
+    case ClassMngr::Next::Application::DocumentViewerBackground::Black:
+        legacyDocumentViewerBackground = ::DocumentViewerBackground::Black;
+        break;
+    case ClassMngr::Next::Application::DocumentViewerBackground::Default:
+    default:
+        break;
+    }
     documentViewerBackgroundState->set(
-        static_cast<::DocumentViewerBackground>(
-            storedDocumentViewerBackground
-            )
+        legacyDocumentViewerBackground
         );
+
+    using PreferenceDocumentViewerBackground =
+        ClassMngr::Next::Application::DocumentViewerBackground;
+    documentViewerBackgroundState->onBeforeCommit =
+        [documentViewerBackgroundPreferencesPort](
+            const ::DocumentViewerBackground background
+            ) -> ClassMngr::Next::Domain::Result<void>
+        {
+            switch (background)
+            {
+            case ::DocumentViewerBackground::Default:
+                return documentViewerBackgroundPreferencesPort->write(
+                    PreferenceDocumentViewerBackground::Default
+                    );
+
+            case ::DocumentViewerBackground::White:
+                return documentViewerBackgroundPreferencesPort->write(
+                    PreferenceDocumentViewerBackground::White
+                    );
+
+            case ::DocumentViewerBackground::Black:
+                return documentViewerBackgroundPreferencesPort->write(
+                    PreferenceDocumentViewerBackground::Black
+                    );
+
+            default:
+                return ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message =
+                        "Document Viewer Background selection is invalid.",
+                    .recoverable = false
+                });
+            }
+        };
+    documentViewerBackgroundState->onCommitFailed =
+        documentViewerBackgroundPreferenceErrorHandler;
 
     aiCommentProviderState =
         new OptionState<AiCommentProvider>(this);

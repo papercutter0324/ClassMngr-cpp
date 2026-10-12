@@ -657,6 +657,22 @@ void MainWindow::createActions()
             };
     }
 
+    auto documentViewerBackgroundPreferenceErrorHandler =
+        m_startupOptions.documentViewerBackgroundPreferenceErrorHandler;
+    if (!documentViewerBackgroundPreferenceErrorHandler)
+    {
+        documentViewerBackgroundPreferenceErrorHandler =
+            [this](const ClassMngr::Next::Domain::OperationError& error)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Unable to Save Preference"),
+                    tr("The Document Viewer Background preference could not be saved."),
+                    QString::fromStdString(error.message)
+                    );
+            };
+    }
+
     m_actions.createActions(
         m_startupOptions.saveModePreferencesPort,
         std::move(saveModePreferenceErrorHandler),
@@ -671,7 +687,9 @@ void MainWindow::createActions()
         m_startupOptions.languagePreferencesPort,
         std::move(languagePreferenceErrorHandler),
         m_startupOptions.sidebarDisplayPreferencesPort,
-        std::move(sidebarDisplayPreferencesErrorHandler)
+        std::move(sidebarDisplayPreferencesErrorHandler),
+        m_startupOptions.documentViewerBackgroundPreferencesPort,
+        std::move(documentViewerBackgroundPreferenceErrorHandler)
         );
 }
 

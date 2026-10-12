@@ -50,6 +50,7 @@ namespace ClassMngr::Next::Application
 class AutomaticUpdatePreferencesPort;
 class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
+class DocumentViewerBackgroundPreferencesPort;
 class ExcelImportTimeoutPreferencesPort;
 class FontSizePreferencesPort;
 class LanguagePreferencesPort;
@@ -101,6 +102,12 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> sidebarDisplayPreferencesErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::DocumentViewerBackgroundPreferencesPort
+        > documentViewerBackgroundPreferencesPort;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> documentViewerBackgroundPreferenceErrorHandler;
     std::shared_ptr<
         ClassMngr::Next::Application::AiCommentProviderPreferencesPort
         > aiCommentProviderPreferencesPort;

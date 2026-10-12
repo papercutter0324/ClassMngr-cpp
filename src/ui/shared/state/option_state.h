@@ -5,6 +5,8 @@
 #include <QActionGroup>
 #include <QHash>
 
+#include "next/domain/operation_result.h"
+
 #include <functional>
 
 template <typename T>
@@ -20,6 +22,10 @@ public:
 
     std::function<void(T)> onChanged;
     std::function<void(T)> onPersist;
+    std::function<ClassMngr::Next::Domain::Result<void>(T)> onBeforeCommit;
+    std::function<void(
+        const ClassMngr::Next::Domain::OperationError&
+        )> onCommitFailed;
 
     QAction* addOption(
         T value,
@@ -66,12 +72,45 @@ public:
             return;
         }
 
+        const bool hasPreCommitGate = static_cast<bool>(onBeforeCommit);
+        if (hasPreCommitGate)
+        {
+            const auto result = onBeforeCommit(value);
+            if (!result)
+            {
+                // QAction may already have checked the candidate before its
+                // triggered signal reaches this state. Restore the old visual
+                // selection synchronously while current state is still old.
+                if (m_hasValue)
+                {
+                    if (QAction* previousAction =
+                            m_actions.value(m_currentValue, nullptr))
+                    {
+                        previousAction->setChecked(true);
+                    }
+                }
+
+                if (QAction* attemptedAction = m_actions.value(value, nullptr))
+                {
+                    attemptedAction->setChecked(false);
+                }
+
+                if (onCommitFailed)
+                {
+                    onCommitFailed(result.error());
+                }
+                return;
+            }
+        }
+
         m_currentValue = value;
         m_hasValue = true;
 
         m_actions[value]->setChecked(true);
 
-        if (onPersist)
+        // A pre-commit gate owns persistence for this option. Keep the legacy
+        // post-commit callback unchanged for all ungated OptionState users.
+        if (!hasPreCommitGate && onPersist)
         {
             onPersist(value);
         }

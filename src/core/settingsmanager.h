@@ -67,6 +67,9 @@ public:
         static constexpr auto FONT_SIZE_PREFERENCE =
             "options/fontSize";
 
+        static constexpr auto DOCUMENT_VIEWER_BACKGROUND_PREFERENCE =
+            "options/documentViewerBackground";
+
         static constexpr auto LANGUAGE_PREFERENCE =
             "options/language";
 
@@ -214,6 +217,16 @@ public:
     [[nodiscard]] QSettings::Status writeLanguagePreference(
         int language,
         const LanguagePreferenceSync& synchronize = {}
+        );
+
+    // An empty callback uses QSettings::sync/status. The preference-specific
+    // writer reports failure and restores the previous key before returning.
+    using DocumentViewerBackgroundPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status writeDocumentViewerBackgroundPreference(
+        int background,
+        const DocumentViewerBackgroundPreferenceSync& synchronize = {}
         );
 
     // =====================================================

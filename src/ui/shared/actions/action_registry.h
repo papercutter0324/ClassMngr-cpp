@@ -16,6 +16,7 @@ namespace ClassMngr::Next::Application
 class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class AutomaticUpdatePreferencesPort;
+class DocumentViewerBackgroundPreferencesPort;
 class FontSizePreferencesPort;
 class LanguagePreferencesPort;
 class SaveModePreferencesPort;
@@ -76,7 +77,14 @@ public:
             > sidebarDisplayPreferencesPort = {},
         std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )> sidebarDisplayPreferencesErrorHandler = {}
+            )> sidebarDisplayPreferencesErrorHandler = {},
+        std::shared_ptr<
+            ClassMngr::Next::Application::
+                DocumentViewerBackgroundPreferencesPort
+            > documentViewerBackgroundPreferencesPort = {},
+        std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )> documentViewerBackgroundPreferenceErrorHandler = {}
         );
     void retranslate();
     void refreshThemedIcons();
@@ -219,7 +227,14 @@ private:
             > sidebarDisplayPreferencesPort,
         const std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )>& sidebarDisplayPreferencesErrorHandler
+            )>& sidebarDisplayPreferencesErrorHandler,
+        std::shared_ptr<
+            ClassMngr::Next::Application::
+                DocumentViewerBackgroundPreferencesPort
+            > documentViewerBackgroundPreferencesPort,
+        const std::function<void(
+            const ClassMngr::Next::Domain::OperationError&
+            )>& documentViewerBackgroundPreferenceErrorHandler
         );
     void createHelpActions();
     void createAdminActions();

@@ -2,10 +2,12 @@
 
 #include "core/settingsmanager.h"
 #include "next/application/document_viewer_background_preferences.h"
-#include "ui/shared/state/option_state_keys.h"
 
 #include <QString>
 #include <QVariant>
+
+#include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -17,7 +19,12 @@ class SettingsManagerDocumentViewerBackgroundPreferencesPort final
     : public Application::DocumentViewerBackgroundPreferencesPort
 {
 public:
-    SettingsManagerDocumentViewerBackgroundPreferencesPort() = default;
+    explicit SettingsManagerDocumentViewerBackgroundPreferencesPort(
+        SettingsManager::DocumentViewerBackgroundPreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] Application::DocumentViewerBackground read()
         const override
@@ -52,7 +59,7 @@ public:
         }
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> write(
         const Application::DocumentViewerBackground background
         ) const override
     {
@@ -72,20 +79,45 @@ public:
             break;
 
         default:
-            return;
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Document Viewer Background must be Default, White, or Black.",
+                .recoverable = false
+            });
         }
 
-        SettingsManager::instance().set(
-            key(),
-            storedBackground
-            );
+        const QSettings::Status status =
+            SettingsManager::instance().
+                writeDocumentViewerBackgroundPreference(
+                    storedBackground,
+                    m_synchronize
+                    );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save Document Viewer Background preference: "
+                    "QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
 private:
+    SettingsManager::DocumentViewerBackgroundPreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(
-            OptionKeys::DocumentViewerBackground
+            SettingsManager::Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE
             );
     }
 };
