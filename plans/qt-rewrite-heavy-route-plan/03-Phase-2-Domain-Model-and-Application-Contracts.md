@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F804 was accepted in Batch 218 at `62ebad2711a6b399b619c7263a66f7792f890b3e`; Batch 219 selects F805 to preserve wide teacher IDs through selected-class subtitle single and batch reads; the Sub Prep roster-output wide teacher-ID design, persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F805 was accepted in Batch 219 at `d1b49b6b80689eea8a80a7e6be9a090f6a07f1f3`; Batch 220 selects F806 to preserve wide teacher IDs in the Class Details Page read path; the Sub Prep roster-output wide teacher-ID design, persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,12 +114,13 @@ Treat this plan as an operational summary, not a history:
   independent audit found int-bounded primary-key reads in the repository and
   by-ID adapter, plus range projection that rejects narrowed IDs. The fix
   spans the shared model and repository CRUD surface.
-- Sub Prep roster-output wide teacher ID - deferred because the output model
-  uses legacy int identity and needs a separate bounded design from F804.
+- Sub Prep roster-output wide teacher ID - deferred because the
+  `SubPrepPackageService` identity map and parser remain int-based; this needs
+  a separate bounded design outside F806.
 
-#### Active batch: Batch 219
+#### Active batch: Batch 220
 
-- F805 - Selected-class subtitle wide teacher IDs - Preserve canonical signed-64 teacher identity through both single and batch subtitle reads, their adapter lookups, and only the supporting TeacherRepository APIs required.
+- F806 - Class Details Page wide teacher ID - Preserve the canonical signed-64 teacher ID in this read record and repository path, reusing F805's qint64 single teacher-display lookup.
 
 ## Objective
 

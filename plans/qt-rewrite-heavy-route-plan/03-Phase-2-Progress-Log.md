@@ -31662,3 +31662,72 @@ bounded design; keep the persisted CalendarEvent ID-width issue separate.
 The earlier CMake optimization remains complete. F707/F709 and the dense
 Speaking Evaluation row-limit policy remain deferred;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F805 Selected-class subtitle wide teacher IDs - accepted - 2026-10-13
+
+F805 is accepted at implementation and test commit
+`d1b49b6b80689eea8a80a7e6be9a090f6a07f1f3`. Its focused build passed on the
+outside-sandbox retry for `ClassMngr` and both selected-subtitle test targets.
+The exact single and batch CTest registrations,
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`
+and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`,
+both passed (2/2). No full suite ran.
+
+### Batch 219 completion - 2026-10-13
+
+F805 completed the selected work in Batch 219. Its single and batch subtitle
+teacher-identity path and focused verification are recorded above. The wider
+Sub Prep roster-output teacher-ID issue remains deferred because the
+`SubPrepPackageService` identity map and parser remain int-based and need a
+separate bounded design. The persisted CalendarEvent ID-width issue remains
+deferred; its fix spans the shared model and repository CRUD surface. F707/F709
+and the dense Speaking Evaluation row-limit policy remain deferred; Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 220 discovery - 2026-10-13
+
+F806 addresses the Class Details Page read path: `ClassDetailsPageReadRecord`
+stores `teacherId` as `int`, and
+`ClassInfoRepository::loadClassDetailsPageRecord` narrows the persisted teacher
+ID. Keep this candidate limited to that record and checked repository
+conversion, reusing F805's qint64 single teacher-display lookup. Do not change
+class IDs, save contracts, `ClassPageDetailsReadRecord`, unrelated projections,
+or page behavior.
+
+### F806 Class Details Page wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F806 is selected:** widen only `ClassDetailsPageReadRecord::teacherId` in
+`src/data/repositories/class_info_repository.h` and checked-convert the
+teacher ID in `ClassInfoRepository::loadClassDetailsPageRecord` in
+`src/data/repositories/class_info_repository.cpp`. Reuse F805's qint64 single
+teacher-display lookup. Keep class IDs, save contracts,
+`ClassPageDetailsReadRecord`, unrelated projections, and page behavior
+unchanged.
+
+Extend the existing DB-backed test
+`tests/next_platform_application_services_class_details_page_read_port_tests.cpp`.
+Seed an FK-valid teacher with explicit SQLite INTEGER ID `2147483648`, assign
+it to the class, invoke the existing read query, and assert its preferred
+display name resolves while class fields and student count remain available.
+The CMake test is declared as
+`NextPlatformApplicationServicesClassDetailsPageReadPort`; its generated
+target and CTest name are
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`.
+Build `ClassMngr` and that target, inspect the exact CTest registration, and
+run only that test. No CMake or test-inventory change is expected; the earlier
+CMake optimization remains complete.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F806 tests
+have run and no full suite is requested. The Sub Prep roster-output teacher-ID
+issue and persisted CalendarEvent ID-width issue remain deferred. F707/F709
+and the dense Speaking Evaluation row-limit policy remain deferred; Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
