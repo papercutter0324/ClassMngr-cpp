@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -18,11 +19,11 @@ struct NativeEnglishTeacherImportFields final
     std::u16string email;
 };
 
-// Native English teachers use their own integer database identity; it is not
-// a Domain::TeacherId because this table is separate from Korean teachers.
+// Native English teachers use their own 64-bit database identity; it is not a
+// Domain::TeacherId because this table is separate from Korean teachers.
 struct NativeEnglishTeacherImportProfile final
 {
-    int id = -1;
+    std::int64_t id = -1;
     std::u16string name;
     std::u16string position;
     std::u16string phoneNumber;

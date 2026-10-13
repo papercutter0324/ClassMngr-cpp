@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -22,7 +23,7 @@ struct GsTeamImportFields final
 // database identity is retained by the merge and stays outside the import.
 struct GsTeamImportProfile final
 {
-    int id = -1;
+    std::int64_t id = -1;
     std::u16string name;
     std::u16string koreanName;
     std::u16string position;

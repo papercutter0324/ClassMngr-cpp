@@ -136,7 +136,7 @@ public:
         while (query.next())
         {
             NativeEnglishTeacherImportProfile profile{
-                .id = query.value(0).toInt(),
+                .id = query.value(0).toLongLong(),
                 .name = query.value(1).toString().toStdU16String(),
                 .position = query.value(2).toString().toStdU16String(),
                 .phoneNumber = query.value(3).toString().toStdU16String(),
@@ -173,7 +173,7 @@ public:
         while (query.next())
         {
             GsTeamImportProfile profile{
-                .id = query.value(0).toInt(),
+                .id = query.value(0).toLongLong(),
                 .name = query.value(1).toString().toStdU16String(),
                 .koreanName = query.value(2).toString().toStdU16String(),
                 .position = query.value(3).toString().toStdU16String(),
@@ -334,7 +334,7 @@ public:
         query.addBindValue(QString::fromStdU16String(profile.birthday));
         query.addBindValue(QString::fromStdU16String(profile.nationality));
         query.addBindValue(QString::fromStdU16String(profile.email));
-        query.addBindValue(profile.id);
+        query.addBindValue(static_cast<qlonglong>(profile.id));
         if (!query.exec())
         {
             return queryFailureResult(
@@ -385,7 +385,7 @@ public:
         query.addBindValue(QString::fromStdU16String(profile.position));
         query.addBindValue(QString::fromStdU16String(profile.phoneNumber));
         query.addBindValue(QString::fromStdU16String(profile.birthday));
-        query.addBindValue(profile.id);
+        query.addBindValue(static_cast<qlonglong>(profile.id));
         if (!query.exec())
         {
             return queryFailureResult(
