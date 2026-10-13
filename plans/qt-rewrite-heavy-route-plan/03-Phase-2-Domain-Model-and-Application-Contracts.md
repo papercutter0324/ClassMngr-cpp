@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F839 completed Batch 253 at `ca20596655dd00f4b28c399543baaee5cb593c8d`; F840 is selected for Batch 254 pending reproduction of fractional REAL `roster_data.row_index` contributing a Sub Prep student count; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F840 completed Batch 254 at `eb38a89ba53ccda5ce05ba2fe27f8a34556f4a42`; F841 is selected for Batch 255 pending reproduction of fractional REAL `roster_data.row_index` marking a roster-availability row occupied; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 254
+#### Active batch: Batch 255
 
-- F840 - Fractional REAL roster row index in Sub Prep student counts - Reproduce REAL `row_index=0.25` contributing a student through the typed Sub Prep print-source port; if reproduced, preserve default-zero fallback, valid sibling counts, empty-roster, and sparse INTEGER behavior.
+- F841 - Fractional REAL roster row index in roster availability - Reproduce REAL `row_index=0.25` being narrowed to row 0 through the typed availability port; if reproduced, return Technical for in-range non-INTEGER storage while preserving row limits, column validation, and out-of-range behavior.
 
 ## Objective
 

@@ -33557,3 +33557,52 @@ If it does not reproduce, stop and report before production changes.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
+
+### F840 fractional REAL roster row index in Sub Prep student counts - accepted - 2026-10-14
+
+F840 is accepted at source/test commit
+`eb38a89ba53ccda5ce05ba2fe27f8a34556f4a42`. Baseline SQLite REAL
+`row_index=0.25` was counted as one student through the typed Sub Prep
+print-source port. The fix adds row-storage-type validation to
+`loadSubPrepStudentCountRecords()` and falls back through `loadRoster()`.
+The malformed class count remains 0, a valid sparse INTEGER sibling count
+remains 2, and an empty sibling remains 0. Independent verification passed
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` 1/1 with
+`-C Debug` after an approved FileTracker retry; the scoped diff check passed.
+No full suite ran.
+
+### Batch 254 completion - 2026-10-14
+
+F840 completed Batch 254 by rejecting fractional REAL row indexes in Sub Prep
+student-count batch reads. Batch 255 selects F841 to investigate fractional
+REAL row indexes in roster-availability reads. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 255 discovery and selection - 2026-10-14
+
+`RosterRepository::forEachRosterDataCellForClasses()` validates stored column
+indexes but not stored row indexes, then passes `row_index.toInt()` to the
+availability consumer. A fractional REAL row within the row limit may
+therefore narrow to row 0 and mark an otherwise empty row occupied. F841
+checks this through the typed roster-availability port.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in roster availability (F841) | Selected | The availability reader checks column storage type but narrows row indexes without validating storage type. |
+
+F841 is selected, not implemented or accepted. First seed an empty INTEGER
+row 0 at English column 0 and a nonempty REAL `row_index=0.25` cell at the
+same class and column; verify SQLite storage types and call the typed roster
+availability port. Reproduce whether `firstEmptyRow` becomes 1 instead of 0
+before production edits. If it does, return a Technical failure for an
+in-range non-INTEGER row index.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm REAL `row_index=0.25` is stored as REAL and causes the typed port to report the row occupied (`firstEmptyRow == 1`) despite the blank INTEGER row 0. |
+| Error contract | On reproduction, reject in-range non-INTEGER row storage with a Technical read failure. |
+| Compatibility | Preserve valid INTEGER rows, configured row-limit filtering, column-storage validation, and out-of-range row behavior. |
+| Focused verification | Update `tests/next_platform_application_services_roster_read_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`.
