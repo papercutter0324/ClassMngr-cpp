@@ -79,6 +79,7 @@ private slots:
     void unavailableSettingsDefaultToAll();
     void loadsCurrentOrPreviousTermValue();
     void savesBothValuesUsingTheExactLegacyKey();
+    void invalidEnumSaveReturnsInvalidInputAndPreservesSettings();
     void closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
     void repositoryReadFailureDefaultsAndRemainsSilent();
@@ -216,6 +217,40 @@ savesBothValuesUsingTheExactLegacyKey()
         );
     QVERIFY(unrelated);
     QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
+}
+
+void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::
+invalidEnumSaveReturnsInvalidInputAndPreservesSettings()
+{
+    const auto invalidPolicy = static_cast<EvaluationDefaultPolicy>(99);
+    ApplicationServices unavailableServices;
+    ApplicationServicesEvaluationDefaultPolicyPort unavailablePort(
+        unavailableServices
+        );
+    const auto unavailableSave = unavailablePort.save(invalidPolicy);
+    QVERIFY(!unavailableSave);
+    QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!unavailableSave.error().recoverable);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        policyKey(),
+        QStringLiteral("current_or_previous_term")
+        ));
+
+    ApplicationServicesEvaluationDefaultPolicyPort port(services);
+    const auto saved = port.save(invalidPolicy);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!saved.error().recoverable);
+
+    const auto stored = repository->loadSetting(policyKey());
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("current_or_previous_term"));
+    QCOMPARE(port.load(), EvaluationDefaultPolicy::CurrentOrPreviousTerm);
 }
 
 void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::

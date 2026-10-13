@@ -80,6 +80,18 @@ public:
         const Application::EvaluationDefaultPolicy policy
         ) const override
     {
+        if (policy != Application::EvaluationDefaultPolicy::All
+            && policy
+                != Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm)
+        {
+            return Application::
+                EvaluationDefaultPolicyPreferencesSaveResult::failure({
+                    .code = Domain::ErrorCode::InvalidInput,
+                    .message = "Evaluation default policy is invalid.",
+                    .recoverable = false
+                });
+        }
+
         if (!m_session || !m_session->isOpen())
         {
             return failure(
