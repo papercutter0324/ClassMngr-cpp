@@ -32548,3 +32548,50 @@ deferred items remain distinct. Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
 
 No other slices were found.
+
+### F819 CalendarEvent persisted event-ID width - accepted - 2026-10-13
+
+F819 is accepted at source/test commit
+`d1996056b9fc170a639d3e6a42a32fb103451cec`. The focused Windows x64 Debug
+build of nine CalendarEvent repository/cache/page/application/platform/import/
+shared-policy targets passed after the sandbox attempt stopped at `ZERO_CHECK`
+with MSBuild FileTracker `E_ACCESSDENIED`; the identical retry outside the
+sandbox passed with no compiler warnings. All nine selected CTests passed.
+Coverage preserves IDs `2147483648`, `9007199254740993`, and signed-64 maximum
+through persisted read/create/update/delete, generated single and batch saves,
+typed save/import/series results and occurrence plans, rollback, cache/model/
+QML page create/edit/delete activation, and canonical typed-ID validation.
+SQLite storage remains `INTEGER`, low ID `1` remains intact, and review found
+no production `int` narrowing on CalendarEvent IDs. Validation and batch
+rollback are preserved; no CMake registration change was needed.
+`git diff --check` passed. No full suite ran.
+
+### Batch 233 completion - 2026-10-13
+
+F819 completed Batch 233 by preserving wide CalendarEvent IDs through the
+repository, typed adapters, import/series, and calendar cache/UI paths. Batch
+234 selects F820 for Schedule Import teacher-ID review/apply. The project-
+configuration and CMake optimization remains complete; Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 234 discovery and selection - 2026-10-13
+
+Schedule Import already carries `Domain::TeacherId` in its application
+snapshot/apply request, but `ScheduleImportTeacherReadRecord` and class-info
+snapshot IDs remain `int` with `.toInt()` reads; review controls project IDs
+through `int`, and repository apply narrows them again. F820 closes this one
+cohesive review/apply workflow while keeping class IDs int and avoiding a
+repeat of F767's accepted snapshot canonical-ID validation.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Schedule Import typed teacher-ID review/apply path (F820) | Selected | The typed application boundary is already in place, while snapshot, review selection, and persistence still narrow teacher IDs. |
+| Class Import teacher-ID width | Deferred | Its int-bound domain, contract, UI, and write path make it a broader alternative. |
+
+F820 is selected, not implemented or accepted. Seed/link teacher ID
+`2147483648`; prove the typed snapshot and review offer and select that exact
+decimal ID, including Reuse or Update Room, then apply and verify the intended
+teacher/class-info association and SQLite `INTEGER` storage. Preserve existing
+validation, conflict, and failure behavior. Keep class IDs int and do not
+repeat F767's accepted canonical-ID validation. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

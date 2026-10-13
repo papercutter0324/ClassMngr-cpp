@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F818 completed Batch 232 at `a256dabfb62025c6a6b58be26f62ba72ec69ae4c`; F819 is selected for Batch 233 to preserve CalendarEvent IDs across repository CRUD, typed adapters, import/series, and calendar UI/cache paths; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F819 completed Batch 233 at `d1996056b9fc170a639d3e6a42a32fb103451cec`; F820 is selected for Batch 234 to preserve wide teacher IDs through Schedule Import snapshot, review selection, and persistence apply; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,13 +114,10 @@ Treat this plan as an operational summary, not a history:
   paths retain int-based UI identity contracts.
 - Class Import teacher-ID width - deferred; its current flow starts with
   int-keyed IDs and crosses UI/write boundaries.
-- Schedule Import teacher-ID width/narrowing across snapshot/review/apply/write -
-  deferred; F767's snapshot canonical-ID validation remains
-  accepted as distinct work.
 
-#### Active batch: Batch 233
+#### Active batch: Batch 234
 
-- F819 - CalendarEvent persisted event-ID width - Preserve IDs above `INT_MAX` across the shared model, repository CRUD, typed by-ID/save, import/series, and calendar UI/cache activation paths, including single and batch generated-ID results.
+- F820 - Schedule Import typed teacher-ID review/apply path - Preserve wide teacher IDs across snapshot, review selection, and persistence apply; retain int class IDs and accepted F767 snapshot canonical-ID validation.
 
 ## Objective
 
