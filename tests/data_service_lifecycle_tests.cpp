@@ -243,6 +243,7 @@ private slots:
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
+    void speakingEvaluationRepositoryPreservesWideIds();
     void legacyRepositoryWriteFailuresRollBack();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
@@ -1207,6 +1208,172 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
         ));
 }
 
+void DataServiceLifecycleTests::speakingEvaluationRepositoryPreservesWideIds()
+{
+    constexpr qint64 wideEvaluationId = 2147483648LL;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("wide-speaking-evaluation-ids.db"))
+        ));
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Wide Evaluation Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluations (id, class_id, evaluation_name) "
+        "VALUES (?, ?, ?)"
+        )));
+    query.addBindValue(wideEvaluationId);
+    query.addBindValue(classId);
+    query.addBindValue(QStringLiteral("Seeded Wide Evaluation"));
+    QVERIFY(query.exec());
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "INSERT INTO speaking_eval_data "
+        "(evaluation_id, row_index, col_0, col_1) VALUES (?, ?, ?, ?)"
+        )));
+    query.addBindValue(wideEvaluationId);
+    query.addBindValue(0);
+    query.addBindValue(QStringLiteral("Original Student"));
+    query.addBindValue(QStringLiteral("Original Comment"));
+    QVERIFY(query.exec());
+    query.finish();
+    QVERIFY(query.prepare(QStringLiteral(
+        "INSERT INTO speaking_eval_data "
+        "(evaluation_id, row_index, col_0) VALUES (?, ?, ?)"
+        )));
+    query.addBindValue(wideEvaluationId);
+    query.addBindValue(1);
+    query.addBindValue(QStringLiteral("Second Student"));
+    QVERIFY(query.exec());
+
+    const Result<SpeakingEvalRows> seededRows = service.loadSpeakingEval(
+        classId,
+        QStringLiteral("Seeded Wide Evaluation")
+        );
+    QVERIFY(seededRows);
+    QCOMPARE(seededRows->size(), 2);
+    QCOMPARE((*seededRows)[0][0], QStringLiteral("Original Student"));
+    QCOMPARE((*seededRows)[0][1], QStringLiteral("Original Comment"));
+    QCOMPARE((*seededRows)[1][0], QStringLiteral("Second Student"));
+
+    SpeakingEvalRows changedRows = SpeakingEval::emptyRows();
+    changedRows[0][0] = QStringLiteral("Updated Student");
+    QVERIFY(service.saveSpeakingEval(
+        classId,
+        QStringLiteral("Seeded Wide Evaluation"),
+        changedRows,
+        {{0, 0}}
+        ));
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT id, typeof(id) AS id_type "
+        "FROM speaking_evaluations WHERE class_id=? AND evaluation_name=?"
+        )));
+    query.addBindValue(classId);
+    query.addBindValue(QStringLiteral("Seeded Wide Evaluation"));
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), wideEvaluationId);
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QVERIFY(!query.next());
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=?"
+        )));
+    query.addBindValue(wideEvaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), SpeakingEval::RowCount);
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=0"
+        )));
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+
+    const Result<SpeakingEvalRows> updatedRows = service.loadSpeakingEval(
+        classId,
+        QStringLiteral("Seeded Wide Evaluation")
+        );
+    QVERIFY(updatedRows);
+    QCOMPARE(updatedRows->size(), SpeakingEval::RowCount);
+    QCOMPARE((*updatedRows)[0][0], QStringLiteral("Updated Student"));
+    QCOMPARE((*updatedRows)[0][1], QStringLiteral("Original Comment"));
+    QCOMPARE((*updatedRows)[1][0], QStringLiteral("Second Student"));
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "DELETE FROM speaking_eval_data WHERE evaluation_id=?"
+        )));
+    query.addBindValue(wideEvaluationId);
+    QVERIFY(query.exec());
+    QCOMPARE(query.numRowsAffected(), SpeakingEval::RowCount);
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "DELETE FROM speaking_evaluations WHERE id=?"
+        )));
+    query.addBindValue(wideEvaluationId);
+    QVERIFY(query.exec());
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq=2147483648 "
+        "WHERE name='speaking_evaluations'"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    SpeakingEvalRows newRows = SpeakingEval::emptyRows();
+    newRows[0][0] = QStringLiteral("New Wide Student");
+    newRows[0][1] = QStringLiteral("New Wide Comment");
+    QVERIFY(service.saveSpeakingEval(
+        classId,
+        QStringLiteral("New Wide Evaluation"),
+        newRows
+        ));
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT id, typeof(id) AS id_type FROM speaking_evaluations "
+        "WHERE class_id=? AND evaluation_name=?"
+        )));
+    query.addBindValue(classId);
+    query.addBindValue(QStringLiteral("New Wide Evaluation"));
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), wideEvaluationId + 1);
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QVERIFY(!query.next());
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT evaluation_id, row_index, col_0, col_1 "
+        "FROM speaking_eval_data WHERE evaluation_id=? AND row_index=0"
+        )));
+    query.addBindValue(wideEvaluationId + 1);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value("evaluation_id").toLongLong(), wideEvaluationId + 1);
+    QCOMPARE(query.value("row_index").toInt(), 0);
+    QCOMPARE(query.value("col_0").toString(), QStringLiteral("New Wide Student"));
+    QCOMPARE(query.value("col_1").toString(), QStringLiteral("New Wide Comment"));
+
+    const Result<SpeakingEvalRows> reloadedNewRows = service.loadSpeakingEval(
+        classId,
+        QStringLiteral("New Wide Evaluation")
+        );
+    QVERIFY(reloadedNewRows);
+    QCOMPARE(reloadedNewRows->size(), SpeakingEval::RowCount);
+    QCOMPARE((*reloadedNewRows)[0][0], QStringLiteral("New Wide Student"));
+    QCOMPARE((*reloadedNewRows)[0][1], QStringLiteral("New Wide Comment"));
+}
+
 void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
 {
     QTemporaryDir directory;
@@ -1860,7 +2027,7 @@ calendarServiceDoesNotFallBackFromClosedSession()
         QStringLiteral("f114-legacy-calendar-mutation-series");
     legacyMutationEvent.startTime = QTime(11, 0);
     legacyMutationEvent.endTime = QTime(12, 0);
-    const Result<QList<int>> legacySavedEvents =
+    const Result<QList<qint64>> legacySavedEvents =
         legacyOnly.saveEvents({legacyMutationEvent});
     QVERIFY(legacySavedEvents);
     QCOMPARE(legacySavedEvents->size(), 1);

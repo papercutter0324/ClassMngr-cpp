@@ -64,7 +64,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
             : Status(std::unexpected(result.error().userMessage()));
     };
 
-    int evaluationId = -1;
+    qint64 evaluationId = -1;
 
     query.prepare(R"(
         SELECT id
@@ -84,7 +84,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     if (query.next())
     {
         evaluationId =
-            query.value("id").toInt();
+            query.value("id").toLongLong();
     }
     else
     {
@@ -106,7 +106,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         }
 
         evaluationId =
-            query.lastInsertId().toInt();
+            query.lastInsertId().toLongLong();
 
         if (evaluationId <= 0)
         {
@@ -297,8 +297,8 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
         return rows;
     }
 
-    const int evaluationId =
-        query.value("id").toInt();
+    const qint64 evaluationId =
+        query.value("id").toLongLong();
 
     query.prepare(R"(
         SELECT *
