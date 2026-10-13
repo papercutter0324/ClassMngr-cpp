@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F859 is accepted at `6ce691d2`; the next slice is pending selection, Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: F860 is selected; Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,11 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Next slice pending selection.
+| ID | Candidate | Next action |
+| --- | --- | --- |
+| F860 | Custom Website paired preference persistence | Add a checked provider-and-URL writer and commit the Custom Website action state only after success. |
+
+No other slices were found.
 
 #### Deferred candidates
 

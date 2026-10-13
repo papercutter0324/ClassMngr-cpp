@@ -34657,3 +34657,48 @@ actionable. F579 and F598 WPR captures remain blocked without an elevated
 Administrator token; other triggers and evidence requirements are unchanged.
 The next slice is pending selection. Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
+
+### Batch 274 discovery and selection - 2026-10-14
+
+The selected F860 boundary is the Custom Website provider-plus-URL preference
+write. `AiCommentCustomWebsitePort::write` is currently void and uses generic
+unchecked settings storage. The standard Custom Website action first performs
+F679's checked, durable provider write, then writes the URL unchecked, and
+commits `OptionState`. F679 explicitly accepted provider-before-URL
+persistence; Batch 160 deferred this URL gap because a correct paired write
+revisits that order. `SettingsManager::writeSidebarDisplayPreferences` is an
+existing two-key precedent: it captures each key's presence and raw
+`QVariant`, stages both values, performs one checked sync, restores the
+captured keys on failure, and reopens settings. Two independent read-only
+investigations agreed the paired operation is feasible and bounded.
+
+The shortlist also considered invalid `CalendarEventTimeStatus` values in
+`src/next/domain/calendar_event_timing.h`. No production constructor path was
+found and immediate impact is low, so it remains a near miss rather than an
+active candidate.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Custom Website paired preference persistence (F860) | Selected | The action can persist the provider while the unchecked URL write fails without detection, leaving the durable pair inconsistent. |
+| Invalid `CalendarEventTimeStatus` values | Near miss | No production constructor path was found; immediate impact is low. |
+
+F860 is selected, not implemented. Add a bounded paired writer that stages
+the `CustomWebsite` provider value before the submitted UTF-8 URL, performs one
+checked sync, and returns a typed result. On sync failure, restore both keys'
+captured presence and raw values and reopen settings. The Custom Website
+action must commit its selected provider state only after this operation
+succeeds; on failure it restores the previous selection/state and reports one
+diagnostic. A successful retry stores both preferences and commits the
+selection. Cancellation and invalid-URL handling remain write-free. This
+replaces F679's separate provider-first durable sync for this action only;
+normal provider menu writes retain F679 behavior.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Paired persistence | Exercise success with both staged values visible to the single sync callback. Inject sync failure and verify a typed failure plus restoration of each key's prior raw value or absence; preserve already-persisted unrelated keys. |
+| Action behavior | With a valid submitted URL, failure preserves provider/URL storage and selected action/state, emits one diagnostic, and permits a successful retry that commits both values. Cancellation and invalid URLs perform no writes. |
+| Compatibility and limits | Standard provider actions keep F679's checked-write behavior. Treat this as checked-sync with compensating restore; do not claim crash-safe or strict atomicity, preservation of unrelated unsaved writes, or concurrent same-key guarantees. |
+| Focused verification | Build `ClassMngr` and use the existing `ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests`, `ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests`, `ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests`, and `ClassMngrMainWindowAiCommentProviderActionParityTests`; run only these four CTests. Add no target and no full-suite run. |
+
+The 13 unresolved Deferred candidates remain unchanged. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
