@@ -84,6 +84,16 @@ public:
         const Application::ScheduleDisplayMode mode
         ) const override
     {
+        if (!isValidMode(mode))
+        {
+            return Application::
+                ScheduleDisplayModePreferencesSaveResult::failure({
+                    .code = Domain::ErrorCode::InvalidInput,
+                    .message = "Schedule display mode is invalid.",
+                    .recoverable = false
+                });
+        }
+
         DatabaseSession* const session = m_services.databaseSession();
         if (!session || !session->isOpen())
         {
@@ -124,6 +134,22 @@ private:
     [[nodiscard]] static QString legacyKey()
     {
         return QStringLiteral("schedule_show_intensive");
+    }
+
+    [[nodiscard]] static bool isValidMode(
+        const Application::ScheduleDisplayMode mode
+        )
+    {
+        switch (mode)
+        {
+        case Application::ScheduleDisplayMode::Regular:
+        case Application::ScheduleDisplayMode::Intensive:
+        case Application::ScheduleDisplayMode::Testing:
+            return true;
+
+        default:
+            return false;
+        }
     }
 
     [[nodiscard]] static QString storedModeValue(

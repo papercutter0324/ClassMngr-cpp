@@ -57,6 +57,7 @@ private slots:
     void invalidModernModeFallsBackWithoutOverwriting();
     void missingModeDefaultsAndMigratesRegular();
     void savesTypedModesAsCanonicalStrings();
+    void invalidTypedModeIsRejectedWithoutOverwritingStoredValue();
     void unavailableServicesReturnTechnicalFailure();
     void closedSessionReturnsTechnicalFailureAndPreservesSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
@@ -235,6 +236,36 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
         QVERIFY(canonical);
         QCOMPARE(canonical->toString(), expectedValue);
     }
+}
+
+void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
+    ::invalidTypedModeIsRejectedWithoutOverwritingStoredValue()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(CanonicalKey),
+        QStringLiteral("intensive")
+        ));
+
+    ApplicationServicesScheduleDisplayModePreferencesPort port(services);
+    const auto saved = port.save(static_cast<ScheduleDisplayMode>(17));
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!saved.error().recoverable);
+
+    const auto canonical = repository->loadSetting(
+        QString::fromUtf8(CanonicalKey)
+        );
+    QVERIFY(canonical);
+    QCOMPARE(canonical->toString(), QStringLiteral("intensive"));
+    QCOMPARE(port.load(), ScheduleDisplayMode::Intensive);
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
