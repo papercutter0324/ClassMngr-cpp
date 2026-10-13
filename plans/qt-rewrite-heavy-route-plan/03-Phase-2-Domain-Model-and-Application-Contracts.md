@@ -50,10 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-13
+- Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F819 completed Batch 233 at `d1996056b9fc170a639d3e6a42a32fb103451cec`; F820 is selected for Batch 234 to preserve wide teacher IDs through Schedule Import snapshot, review selection, and persistence apply; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F837 completed Batch 251 at `6c566246c0656b64830f5c0cdbb37c525bb1fee0`; F838 is selected for Batch 252 to preserve wide teacher identity through scoped Initial Setup choice-query and class-details validation, wizard state, typed save, and qint64 persistence; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -99,9 +99,6 @@ Treat this plan as an operational summary, not a history:
 - F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
   because the current execution identity is not an Administrator; resume when
   a Windows process with an elevated administrator token is available.
-- Batch 197 raw-int ID contract cleanup in co-teacher assignment and the
-  Native English/GS Team import profiles - deferred as lower-confidence
-  architecture work without a demonstrated behavior defect.
 - Batch 197 teacher reassignment parity - deferred until the stricter Next
   notes/schedule validation policy is resolved against current tests.
 - Class Analytics arbitrary roster-allocation cap and sparse representation
@@ -110,14 +107,12 @@ Treat this plan as an operational summary, not a history:
   not introduce arbitrary 4,096- or 25-row limits.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
-- Initial Setup and Teacher Create/Delete teacher-ID width - deferred; these
-  paths retain int-based UI identity contracts.
-- Class Import teacher-ID width - deferred; its current flow starts with
-  int-keyed IDs and crosses UI/write boundaries.
+- Sidebar Teacher Create/Delete teacher-ID width - deferred because the
+  legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 234
+#### Active batch: Batch 252
 
-- F820 - Schedule Import typed teacher-ID review/apply path - Preserve wide teacher IDs across snapshot, review selection, and persistence apply; retain int class IDs and accepted F767 snapshot canonical-ID validation.
+- F838 - Initial Setup wide teacher identity - Preserve the selected TeacherId through scoped choice-query validation/read, wizard state, typed class-details validation/save, and qint64 class_info persistence; keep class IDs int-based.
 
 ## Objective
 

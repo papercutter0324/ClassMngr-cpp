@@ -33368,3 +33368,79 @@ and exact CTest
 No CMake/API change or full suite. The project-configuration and CMake
 optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
 exit gate remains Open.
+
+### F837 fractional REAL roster index in Speaking Evaluation roster-name reads - accepted - 2026-10-14
+
+F837 is accepted at source/test commit
+`6c566246c0656b64830f5c0cdbb37c525bb1fee0`. The baseline typed-port call
+succeeded with five materialized rows, including an extra blank row, when
+SQLite stored `col_index=0.25` as REAL. The fix returns Technical for an
+in-range non-INTEGER column index. Regression coverage checks REAL storage,
+typed failure, and preservation of a valid unrelated INTEGER sparse row.
+The independent focused build and exact CTest for
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`
+passed 1/1 in `build/windows-x64-debug`; an approved retry was needed after
+the sandbox denied MSBuild FileTracker access. The scoped diff check passed.
+No full suite ran.
+
+### Batch 251 completion - 2026-10-14
+
+F837 completed Batch 251 by rejecting fractional REAL roster positions in
+Speaking Evaluation roster-name reads. Batch 252 selects F838 for wide teacher
+identity across Initial Setup choice, wizard selection, typed class-details
+save, and class-info persistence. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Deferred-candidate audit and Batch 252 selection - 2026-10-14
+
+Two independent reviews audited the Phase 2 plan's Deferred candidates list
+against accepted work and current seams. The audit found these disposition
+changes:
+
+| Plan candidate | Audit disposition | Evidence or remaining condition |
+| --- | --- | --- |
+| Batch 197 raw-int ID cleanup in co-teacher assignment and Native English/GS Team import profiles | Resolved; remove from deferred list | F816 carries shared Co-Teacher identity end to end; F823 preserves persisted Native English and GS Team profile IDs. |
+| Class Import teacher-ID width | Resolved; remove from deferred list | F821 preserves wide IDs through Class Import choice and apply. |
+| Initial Setup and Teacher Create/Delete teacher-ID width | Split | Initial Setup is selected as F838; the sidebar Teacher Create/Delete path remains deferred because legacy Teacher/sidebar selection APIs are int-based. |
+| Batch 197 teacher reassignment parity | Retain | The stricter Next notes/schedule validation policy remains unresolved against current tests. |
+| F285 | Retain | The blank-draft creation contract remains unresolved. |
+| F579 | Retain | The user has not requested resuming matched-symbol work. |
+| F598 | Retain | A fresh matched WPR heap capture needs an elevated Windows process. |
+| F614 | Retain | Memory ownership evidence needs a larger fixture or owner-specific measurement. |
+| F618 | Retain | Serialization changes need a matched packaged Release export measurement. |
+| F626 | Retain | Retention changes need owner-specific packaged Release evidence and a safe state/re-entry contract. |
+| F629 | Retain | A suitable packaged macOS universal Phase 0 runner is not available in this session. |
+| F707 | Retain | The helper chain still has no observed live app callsite. |
+| F709 | Retain | A focused query/summary injection seam is still unavailable. |
+| Class Analytics arbitrary roster-allocation cap and sparse representation | Retain | F794 covers representability; large int-representable rows retain existing vector allocation/catch behavior. |
+| Dense Speaking Evaluation row-limit change | Retain | Product policy remains unresolved. |
+
+Batch 252 selects F838, not implemented or accepted. The bounded path is the
+Initial Setup teacher-choice query/read, wizard state, typed class-details
+use case/save adapter, and an Initial Setup-specific repository save that
+binds the qint64 teacher ID in the same transaction. Use qint64 canonical-ID
+validation only at the Initial Setup choice query and class-details save use
+case; do not widen the general int-bounded validation helper or unrelated
+flows. Keep general `ClassInfo` and class IDs int-based. Do not widen the
+sidebar Teacher Create/Delete selection path.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Before edits, seed teacher ID `2147483648` with SQLite INTEGER storage; reproduce the read query and class-details save use case rejecting it as outside the int-bounded canonical-ID range, and observe any downstream narrowing. |
+| Choice query, read, and wizard state | The Initial Setup query validates canonical positive qint64 IDs; the read port exposes exact `TeacherId`; the wizard selects and retains that exact ID above `INT_MAX`. |
+| Typed save and persistence | The class-details save use case accepts the canonical qint64 teacher ID; save through the typed path and verify `typeof(class_info.teacher_id)='integer'` and exact value `2147483648`. |
+| Compatibility | Ordinary teacher IDs, malformed/noncanonical-ID validation and error behavior, and schedule behavior remain intact; class IDs and general `ClassInfo` remain int-based. |
+| Focused verification | Cover Initial Setup teacher-choice query/read, class-details save use case/port, and wizard class-create/save parity; build and run only their target-named CTest registrations. No full suite. |
+
+Existing seams are
+`tests/next_application_initial_setup_teacher_choices_read_query_tests.cpp`,
+`tests/next_platform_application_services_initial_setup_teacher_choices_read_port_tests.cpp`,
+`tests/next_application_class_details_save_use_case_tests.cpp`,
+`tests/next_platform_application_services_class_details_save_port_tests.cpp`,
+and `tests/initial_setup_wizard_class_create_save_parity_tests.cpp`. The
+corresponding target/CTest names are
+`ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests`.
