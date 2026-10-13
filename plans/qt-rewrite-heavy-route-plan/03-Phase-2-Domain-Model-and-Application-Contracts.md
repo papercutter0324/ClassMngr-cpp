@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F843 completed Batch 257 at `f6be0bdded15e5173db5332637e54d939e8f75a5`; F844 is selected for Batch 258 pending reproduction of fractional REAL `roster_data.row_index` affecting the typed Sub Prep schedule-summary student count; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F844 completed Batch 258 at `310e2ba72fd3332cb099d42a0a32ac2017f1ee28`; F845 is selected for Batch 259 pending reproduction of fractional REAL `roster_data.row_index` creating a phantom first row in Sub Prep roster-output projection; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 258
+#### Active batch: Batch 259
 
-- F844 - Fractional REAL roster row index in Sub Prep schedule-summary student counts - Reproduce REAL `row_index=0.25` affecting the typed summary count; if reproduced, reject malformed row storage while preserving the aggregate zero-count fallback.
+- F845 - Fractional REAL roster row index in Sub Prep roster-output projection - Reproduce REAL `row_index=0.25` creating a phantom output row; if reproduced, return Technical before narrowing, using a diagnostic that avoids `invalid`, and preserve projection and output limits.
 
 ## Objective
 

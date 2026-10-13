@@ -33760,3 +33760,54 @@ the count is not affected, stop and report before production edits.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
+
+### F844 fractional REAL roster row index in Sub Prep schedule-summary student counts - accepted - 2026-10-14
+
+F844 is accepted at source/test commit
+`310e2ba72fd3332cb099d42a0a32ac2017f1ee28`. Baseline empty INTEGER row 0
+plus a nonempty REAL `row_index=0.25` English cell caused the typed Sub Prep
+schedule summary to count one student. The fix checks row storage in
+`ClassInfoRepository::loadSubPrepClassSummaries()` and preserves the existing
+aggregate zero-count fallback by clearing the count map on malformed input.
+Independent verification passed
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` 1/1
+with `-C Debug` after an approved FileTracker retry; the scoped diff check
+passed. No full suite ran.
+
+### Batch 258 completion - 2026-10-14
+
+F844 completed Batch 258 by rejecting fractional REAL row indexes in Sub Prep
+schedule-summary student counts. Batch 259 selects F845 to check fractional
+REAL row indexes in Sub Prep roster-output projection. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 259 discovery and selection - 2026-10-14
+
+`RosterRepository::loadRosterForOutput()` narrows both `MAX(row_index)` and
+each selected cell's row index without checking SQLite storage type. A
+fractional REAL row index may therefore size and populate a phantom first row
+in the typed Sub Prep roster-output port.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in Sub Prep roster-output projection (F845) | Selected | The bounded projection narrows its maximum and selected row indexes without validating storage type. |
+
+F845 is selected, not implemented or accepted. First create normal roster
+headers with no stored values, then insert one English cell at REAL
+`row_index=0.25` and INTEGER `col_index=0`; assert SQLite storage types and
+call the typed Sub Prep roster-output port. Reproduce whether it returns a
+phantom first row before production edits. If reproduced, reject non-INTEGER
+row storage before narrowing and require `ErrorCode::Technical`. Keep the
+repository diagnostic free of the word `invalid`: the adapter's
+`repositoryFailure()` maps messages containing that word to `InvalidInput`.
+If no phantom row appears, stop and report before production edits.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm REAL `row_index=0.25` and INTEGER `col_index=0` storage; determine whether the typed port returns a phantom first row. |
+| Error contract | On reproduction, reject non-INTEGER row storage before narrowing and surface `ErrorCode::Technical`; use a diagnostic that does not contain `invalid`. |
+| Compatibility | Preserve empty output, sparse INTEGER rows, requested-column projection, and row, cell, and text limits. |
+| Focused verification | Update `tests/next_platform_application_services_sub_prep_roster_output_source_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`.
