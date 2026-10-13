@@ -33504,3 +33504,56 @@ stop and report before production changes.
 
 The exact CTest registration is
 `ClassMngrNextPlatformClassTransferExportSourceTests`.
+
+### F839 fractional REAL roster row index in Class Transfer export - accepted - 2026-10-14
+
+F839 is accepted at source/test commit
+`ca20596655dd00f4b28c399543baaee5cb593c8d`. Baseline SQLite INTEGER
+`row_index=0` and REAL `row_index=0.25` at the same column caused typed Class
+Transfer export to narrow the fractional value and overwrite the valid row.
+The fix checks INTEGER storage in both `loadFullRostersImpl()` and
+`loadRoster()`; the existing fallback exposes the established roster-stage
+error, and `ClassTransferRepository` is unchanged. Regression coverage checks
+the REAL row's stage error and preserves a sparse INTEGER row at index 3; the
+target retains malformed-TEXT and out-of-range cases. Independent verification
+passed `ClassMngrNextPlatformClassTransferExportSourceTests` 1/1 with
+`-C Debug`; an approved retry followed FileTracker `E_ACCESSDENIED`. The
+scoped diff check passed. No full suite ran.
+
+### Batch 253 completion - 2026-10-14
+
+F839 completed Batch 253 by rejecting fractional REAL roster row indexes in
+Class Transfer export. Batch 254 selects F840 to check fractional REAL row
+indexes in Sub Prep student-count batch reads. Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
+
+### Batch 254 discovery and selection - 2026-10-14
+
+`RosterRepository::loadSubPrepStudentCountRecords()` converts selected
+`row_index` values with `toLongLong()` without checking SQLite storage type.
+The typed Sub Prep print-source path returns its batch count directly when the
+row converts; its per-class fallback uses `loadRoster()`, which now rejects
+non-INTEGER row storage after F839. F840 tests whether a nonempty REAL
+`row_index=0.25` English cell is counted by the batch path before fallback.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in Sub Prep student-count batches (F840) | Selected | The batch reader narrows row indexes without storage-type validation, while the established individual fallback now rejects fractional row storage. |
+
+F840 is selected, not implemented or accepted. First seed a blank INTEGER
+English cell at row 0 and a nonempty REAL `row_index=0.25` English cell at the
+same class and column; verify `typeof(row_index)` and reproduce the typed
+Sub Prep print-source result before edits. If the fractional-only cell creates
+a nonzero student count, make the batch reader fall back on non-INTEGER row
+storage so the established per-class behavior defaults that class to zero.
+If it does not reproduce, stop and report before production changes.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | The typed port counts a nonempty REAL `row_index=0.25` English cell despite the valid blank INTEGER row 0; confirm SQLite storage types. |
+| Malformed-cell behavior | On reproduction, the fractional-only class contributes zero through the existing individual fallback/default-zero behavior. |
+| Compatibility | Preserve valid sibling-class counts, empty-roster zero, sparse INTEGER rows, and existing per-class failure fallback. |
+| Focused verification | Update `tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
