@@ -33038,3 +33038,51 @@ only `ClassMngrNextPlatformApplicationServicesClassCreatePortTests`. No CMake
 change or full suite. The project-configuration and CMake optimization remains
 complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+### F830 Class creation generated-ID representability - accepted - 2026-10-13
+
+F830 is accepted at source/test commit
+`8a50063ff2a6c6a4c69c176461b8721fc7365962`. Independent fresh Ninja Debug
+verification in `%TEMP%\codex_f830_class_create_tester_20261013` built
+`ClassMngrNextPlatformApplicationServicesClassCreatePortTests`; exact CTest
+passed 1/1. Scoped `git diff --check` passed. The regression seeds class ID 1
+and the sequence at `4294967296`, then verifies creation returns a typed
+Technical failure rather than aliasing ID 1, while the new row remains at
+`4294967297` and the seeded row is unchanged. Configure-only object-path
+warnings occurred at target path length 222/250; there were no compiler
+warnings. No full suite ran.
+
+### Batch 244 completion - 2026-10-13
+
+F830 completed Batch 244 by rejecting unrepresentable generated class IDs
+without reporting a wrong-ID success. Batch 245 selects F831 for Native English
+Teacher directory-read ID representability. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### Batch 245 discovery and selection - 2026-10-13
+
+`NativeEnglishTeacherRepository::getAll()` narrows persisted IDs with
+`.toInt()`, and the directory model/read-port ID is int-backed. A valid Native
+English teacher ID `2147483648` can therefore project as zero and later be
+treated as a new record. F823 preserved this profile ID through its import
+path but explicitly excluded directory repositories; F831 covers this
+separate read boundary.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Native English Teacher directory-read ID representability (F831) | Selected | The directory read narrows a valid persisted ID before the typed result is exposed. |
+
+F831 is selected, not implemented or accepted. In
+`tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp`,
+seed a Native English row with ID `2147483648`, verify
+`typeof(id)='integer'`, and require the port to return a Technical failure
+instead of a successful zero-ID projection; also verify the stored identity
+and row remain unchanged. Preserve ordinary ordering and fields, unavailable
+session behavior, and repository failure contracts. Change only
+`src/data/repositories/native_english_teacher_repository.cpp` and the focused
+test file. Run only
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests`;
+no model, API, CMake change, or full suite. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
