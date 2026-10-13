@@ -90,6 +90,7 @@ private slots:
     void validUnsupportedValuesDefaultWithoutRewrite();
     void unavailableSettingsReturnTechnicalFailure();
     void loadsPageLeaveValue();
+    void invalidEnumFailsAndPreservesStoredPageLeave();
     void roundTripsBothValuesUsingTheExactLegacyKey();
     void closedSessionReturnsTechnicalFailureAndPreservesSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
@@ -194,6 +195,47 @@ loadsPageLeaveValue()
         );
 
     ApplicationServicesClassDayFilterResetPolicyPort port(services);
+    QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnPageLeave);
+}
+
+void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
+invalidEnumFailsAndPreservesStoredPageLeave()
+{
+    ApplicationServices unavailableServices;
+    ApplicationServicesClassDayFilterResetPolicyPort unavailablePort(
+        unavailableServices
+        );
+    QVERIFY(!unavailableServices.databaseSession()->isOpen());
+    const auto invalidWithoutSession = unavailablePort.save(
+        static_cast<ClassDayFilterResetPolicy>(17)
+        );
+    QVERIFY(!invalidWithoutSession);
+    QCOMPARE(
+        invalidWithoutSession.error().code,
+        Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!invalidWithoutSession.error().recoverable);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        policyKey(),
+        QStringLiteral("on_page_leave")
+        ));
+
+    ApplicationServicesClassDayFilterResetPolicyPort port(services);
+    const auto saved = port.save(
+        static_cast<ClassDayFilterResetPolicy>(17)
+        );
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!saved.error().recoverable);
+
+    const auto stored = repository->loadSetting(policyKey());
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("on_page_leave"));
     QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnPageLeave);
 }
 

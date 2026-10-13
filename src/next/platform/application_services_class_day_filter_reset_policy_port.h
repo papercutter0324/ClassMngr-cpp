@@ -81,6 +81,16 @@ public:
         const Application::ClassDayFilterResetPolicy policy
         ) const override
     {
+        if (policy != Application::ClassDayFilterResetPolicy::OnApplicationClose
+            && policy != Application::ClassDayFilterResetPolicy::OnPageLeave)
+        {
+            return Application::ClassDayFilterResetPolicySaveResult::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "Class day-filter reset policy is invalid.",
+                .recoverable = false
+            });
+        }
+
         if (!m_session || !m_session->isOpen())
         {
             return failure(
