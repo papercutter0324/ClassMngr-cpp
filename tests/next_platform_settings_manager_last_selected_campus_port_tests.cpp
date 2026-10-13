@@ -51,6 +51,9 @@ private slots:
     void blankAndInvalidValuesReadAsNoSelectionWithoutRewriting();
     void validReadPreservesExactStoredIdText();
     void optionalRoundTripSupportsSetAndClear();
+    void blankPresentIdIsRejectedBeforeSettingsAccess();
+    void oversizedPresentIdIsRejectedBeforeSettingsAccess();
+    void maximumLengthPresentIdWritesExactText();
     void failedWriteRestoresExactPreviousValueAndAllowsRetry();
     void failedWriteRestoresAbsentKeyAndPreservesOtherCampusSettings();
 
@@ -177,6 +180,84 @@ optionalRoundTripSupportsSetAndClear()
     QVERIFY(!port.read().has_value());
     QCOMPARE(settings.get(campusKey()).toString(), QString());
     QCOMPARE(settings.get(integerCampusKey()).toInt(), 27);
+}
+
+void NextPlatformSettingsManagerLastSelectedCampusPortTests::
+blankPresentIdIsRejectedBeforeSettingsAccess()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = campusKey();
+    const QVariant previousValue = QStringLiteral("preserved-campus");
+    settings.set(key, previousValue);
+    settings.sync();
+
+    int synchronizationAttempts = 0;
+    const SettingsManagerLastSelectedCampusPort port(
+        [&synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto blankId = Domain::CampusId::fromString(" \t\r\n");
+    QVERIFY(blankId.has_value());
+    const auto blankResult = port.write(blankId);
+    QVERIFY(!blankResult);
+    QCOMPARE(blankResult.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!blankResult.error().recoverable);
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(settings.get(key), previousValue);
+}
+
+void NextPlatformSettingsManagerLastSelectedCampusPortTests::
+oversizedPresentIdIsRejectedBeforeSettingsAccess()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = campusKey();
+    const QVariant previousValue = QStringLiteral("preserved-campus");
+    settings.set(key, previousValue);
+    settings.sync();
+
+    int synchronizationAttempts = 0;
+    const SettingsManagerLastSelectedCampusPort port(
+        [&synchronizationAttempts](QSettings& settings)
+        {
+            ++synchronizationAttempts;
+            settings.sync();
+            return settings.status();
+        }
+        );
+
+    const auto oversizedId = Domain::CampusId::fromString(
+        std::string(257, 'x')
+        );
+    QVERIFY(oversizedId.has_value());
+    const auto oversizedResult = port.write(oversizedId);
+    QVERIFY(!oversizedResult);
+    QCOMPARE(oversizedResult.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!oversizedResult.error().recoverable);
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(settings.get(key), previousValue);
+}
+
+void NextPlatformSettingsManagerLastSelectedCampusPortTests::
+maximumLengthPresentIdWritesExactText()
+{
+    const std::string expectedValue(256, 'x');
+    const auto campusId = Domain::CampusId::fromString(expectedValue);
+    QVERIFY(campusId.has_value());
+
+    SettingsManager& settings = SettingsManager::instance();
+    const SettingsManagerLastSelectedCampusPort port;
+    const auto writeResult = port.write(campusId);
+
+    QVERIFY(writeResult);
+    QCOMPARE(
+        settings.get(campusKey()),
+        QVariant(QString::fromStdString(expectedValue))
+        );
 }
 
 void NextPlatformSettingsManagerLastSelectedCampusPortTests::

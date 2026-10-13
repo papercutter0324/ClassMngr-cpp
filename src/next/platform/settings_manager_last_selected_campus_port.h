@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/settingsmanager.h"
+#include "next/application/last_selected_campus_id_policy.h"
 #include "next/application/last_selected_campus_port.h"
 
 #include <QString>
@@ -51,6 +52,17 @@ public:
         const std::optional<Domain::CampusId>& campusId
         ) const override
     {
+        if (campusId.has_value()
+            && !Application::isValidLastSelectedCampusId(*campusId))
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Last selected campus identifier must be non-blank and bounded.",
+                .recoverable = false
+            });
+        }
+
         const QSettings::Status status =
             SettingsManager::instance().writeLastCampusJsonIdPreference(
                 campusId.has_value()

@@ -1,13 +1,11 @@
 #pragma once
 
 #include "next/application/excel_import_timeout_preferences.h"
+#include "next/application/last_selected_campus_id_policy.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <algorithm>
-#include <cctype>
 #include <optional>
-#include <string_view>
 #include <utility>
 
 namespace ClassMngr::Next::Application
@@ -18,8 +16,6 @@ inline constexpr int kMinExcelImportTimeoutSeconds =
     kMinimumExcelImportTimeoutSeconds;
 inline constexpr int kMaxExcelImportTimeoutSeconds =
     kMaximumExcelImportTimeoutSeconds;
-
-inline constexpr std::size_t kMaximumLastSelectedCampusIdLength = 256;
 
 enum class ThemePreference
 {
@@ -73,31 +69,6 @@ namespace UserPreferencesStateDetail
     ) noexcept
 {
     return Application::isSupportedExcelImportTimeoutSeconds(seconds);
-}
-
-[[nodiscard]] inline bool isBlank(
-    const std::string_view value
-    ) noexcept
-{
-    return value.empty()
-        || std::all_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
-}
-
-[[nodiscard]] inline bool isValidCampusId(
-    const Domain::CampusId& campusId
-    ) noexcept
-{
-    return campusId.value().size() <= kMaximumLastSelectedCampusIdLength
-        && !isBlank(campusId.value());
 }
 
 [[nodiscard]] inline Domain::OperationError invalidInput(
@@ -347,7 +318,7 @@ public:
         )
     {
         if (campusId.has_value()
-            && !UserPreferencesStateDetail::isValidCampusId(*campusId))
+            && !isValidLastSelectedCampusId(*campusId))
         {
             return Domain::Result<void>::failure(
                 UserPreferencesStateDetail::invalidInput(

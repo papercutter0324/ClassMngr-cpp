@@ -208,6 +208,22 @@ void NextApplicationUserPreferencesTests::invalidCampusPreservesSnapshotAndRetur
     const auto campusId = Domain::CampusId::fromString("campus-seoul");
     QVERIFY(campusId.has_value());
     QVERIFY(state.setLastSelectedCampusId(*campusId));
+
+    const std::string maximumLengthValue(
+        kMaximumLastSelectedCampusIdLength,
+        'x'
+        );
+    const auto maximumLengthId = Domain::CampusId::fromString(
+        maximumLengthValue
+        );
+    QVERIFY(maximumLengthId.has_value());
+    QVERIFY(state.setLastSelectedCampusId(*maximumLengthId));
+    const auto maximumLengthSelection =
+        state.snapshot().lastSelectedCampusId();
+    QVERIFY(maximumLengthSelection.has_value());
+    QVERIFY(maximumLengthSelection->value() == maximumLengthValue);
+
+    QVERIFY(state.setLastSelectedCampusId(*campusId));
     const UserPreferencesSnapshot before = state.snapshot();
 
     const auto blankId = Domain::CampusId::fromString(" \t\r\n");
