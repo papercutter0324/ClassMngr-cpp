@@ -3888,6 +3888,7 @@ ClassInfoRepository::loadSubPrepClassSummaries(
         SELECT
             positions.class_id,
             cells.row_index,
+            typeof(cells.row_index) AS row_index_storage_type,
             cells.value
         FROM name_positions positions
         INNER JOIN roster_data cells
@@ -3940,6 +3941,14 @@ ClassInfoRepository::loadSubPrepClassSummaries(
 
         while (rosterQuery.next())
         {
+            if (rosterQuery.value(
+                    QStringLiteral("row_index_storage_type")
+                    ).toString() != QStringLiteral("integer"))
+            {
+                countsValid = false;
+                break;
+            }
+
             bool classIdOk = false;
             const int classId = rosterQuery.value(
                 QStringLiteral("class_id")

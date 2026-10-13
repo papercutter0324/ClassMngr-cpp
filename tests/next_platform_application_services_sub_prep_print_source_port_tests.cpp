@@ -264,6 +264,7 @@ class NextPlatformApplicationServicesSubPrepPrintSourcePortTests final
 private slots:
     void initTestCase();
     void projectsVisibleScheduleSummariesAndAggregatesRosterCounts();
+    void scheduleSummaryDoesNotAliasFractionalRosterRows();
     void wideAssignedTeacherIdRemainsInScheduleSummaries();
     void selectsModeAndOmitsUnusableOrOutOfScopeClasses();
     void rosterAggregateFailureKeepsLegacyZeroCountFallback();
@@ -437,6 +438,106 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     services.closeDatabase();
     QVERIFY(ownedCopy == result.value());
     QCOMPARE(ownedCopy.classes()[1].meetingText, std::string("MonWed 9am"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+scheduleSummaryDoesNotAliasFractionalRosterRows()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Frac summary"),
+        QStringLiteral("Frac summary"),
+        QStringLiteral("fractional-summary-row")
+        );
+    QVERIFY(teacher > 0);
+
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Fractional summary row index"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QString(),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:45 AM")}
+        }
+        );
+    QVERIFY(selectedClass > 0);
+
+    Roster roster;
+    roster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    roster.rows = {{QString(), QString()}};
+    RosterRepository* const rosterRepository = services.databaseSession()
+        ? services.databaseSession()->rosterRepository()
+        : nullptr;
+    QVERIFY(rosterRepository);
+    QVERIFY(rosterRepository->saveRoster(selectedClass, roster));
+
+    DataService* const dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    const QSqlDatabase database = dataService->databaseSession()->database();
+    QSqlQuery insertCell(database);
+    QVERIFY(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    insertCell.addBindValue(selectedClass);
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(QString());
+    QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+    insertCell.finish();
+    QVERIFY(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    insertCell.addBindValue(selectedClass);
+    insertCell.addBindValue(QVariant::fromValue(0.25));
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(QStringLiteral("Fractional summary student"));
+    QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+    insertCell.finish();
+
+    QSqlQuery storedCells(database);
+    QVERIFY(storedCells.prepare(QStringLiteral(
+        "SELECT row_index, typeof(row_index) AS storage_type, value "
+        "FROM roster_data WHERE class_id=? AND col_index=0 ORDER BY row_index"
+        )));
+    storedCells.addBindValue(selectedClass);
+    QVERIFY2(storedCells.exec(), qPrintable(storedCells.lastError().text()));
+    QVERIFY(storedCells.next());
+    QCOMPARE(storedCells.value("row_index").toLongLong(), qlonglong(0));
+    QCOMPARE(storedCells.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(storedCells.value("value").toString().isEmpty());
+    QVERIFY(storedCells.next());
+    QCOMPARE(storedCells.value("row_index").toDouble(), 0.25);
+    QCOMPARE(storedCells.value("storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(
+        storedCells.value("value").toString(),
+        QStringLiteral("Fractional summary student")
+        );
+    QVERIFY(!storedCells.next());
+    storedCells.finish();
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(selectedClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    QCOMPARE(result.value().classes.front().id, classId(selectedClass));
+    QCOMPARE(result.value().classes.front().studentCount, std::size_t(0));
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
