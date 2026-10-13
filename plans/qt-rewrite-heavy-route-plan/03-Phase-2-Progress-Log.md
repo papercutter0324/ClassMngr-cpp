@@ -31169,8 +31169,12 @@ class-information read record and its batch/fallback paths.
 teacher IDs, and use checked `toLongLong()` conversion in both
 `loadMyClassesClassInformationRecords` and
 `loadMyClassesClassInformationRecord` in
-`src/data/repositories/class_info_repository.cpp`. Preserve valid positive
-wide values through
+`src/data/repositories/class_info_repository.cpp`. Also extend
+`src/next/application/positive_decimal_id_validation.h` and
+`src/next/application/my_classes_class_information_batch_read_query.h` so a
+returned teacher ID is validated as a canonical positive signed-64 decimal
+ID. Keep input class IDs on the existing positive-int validation contract.
+Preserve valid positive wide values through
 `ApplicationServicesMyClassesClassInformationBatchReadPort` as decimal
 `Domain::TeacherId` values. Keep SQL NULL and existing nonpositive values
 unassigned. If a non-null value cannot convert to signed 64-bit, keep the
@@ -31183,7 +31187,8 @@ Insert a parent teacher at `INT_MAX + 1` as SQLite `INTEGER`, then update
 `class_info.teacher_id` to that key. Assert the public class-information
 result contains teacher ID `2147483648`; verify sibling class data succeeds,
 a NULL assignment remains absent, and the valid wide value stays in the batch
-without a new fallback. A malformed nonnumeric text fixture is not required
+without a new fallback. Preserve class-ID input validation under its existing
+positive-int contract. A malformed nonnumeric text fixture is not required
 because the valid-schema foreign-key/type constraints reject that assignment;
 keep checked conversion as defensive handling. The target and exact CTest
 name are
@@ -31201,10 +31206,13 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 
 The focused target build passed after the identical outside-sandbox retry for
 the ZERO_CHECK/MSBuild FileTracker error. The first focused CTest attempt
-failed at fixture setup: `UPDATE class_info SET teacher_id=2147483648` returned
-`FOREIGN KEY constraint failed` before storage or result assertions because
-the parent teacher row was absent. This is a fixture failure and provides no
-production-defect evidence. Retry with the parent teacher inserted before
-updating `class_info`; run no full suite. F707/F709 and the dense Speaking
-Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
-and the formal exit gate remains Open.
+failed at fixture setup because `UPDATE class_info SET teacher_id=2147483648`
+had no parent teacher row; the corrected fixture inserts the parent before
+updating `class_info`. The corrected-fixture CTest then reached the application
+boundary and failed: the repository returned the wide `qint64`, but the
+application query rejected the teacher ID through the int-bounded
+positive-decimal validator. F799 remains selected and is not accepted until
+returned teacher IDs use canonical positive signed-64 validation while
+class-ID inputs retain their positive-int contract. Run no full suite.
+F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
