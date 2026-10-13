@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/database/database_session.h"
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
@@ -16,6 +17,7 @@ class ClassTransferExportSourceTests : public QObject
     Q_OBJECT
 private slots:
     void successfulSourceHasEveryRequiredStageAndSanitizedProjection();
+    void wideEvaluationIdsKeepTheirOwnExportRows();
     void stagedErrorRollsBackAndKeepsDownstreamNotAttempted();
     void beginAndUnavailableErrorsStayAtSourceBoundary();
 };
@@ -42,6 +44,86 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
     auto database = services.databaseSession()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
+}
+void ClassTransferExportSourceTests::wideEvaluationIdsKeepTheirOwnExportRows()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Wide Evaluation IDs')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    struct EvaluationFixture
+    {
+        qlonglong id;
+        QString name;
+        QString marker;
+    };
+    const EvaluationFixture fixtures[] = {
+        {2147483648LL, QStringLiteral("Wide evaluation A"), QStringLiteral("Marker A")},
+        {2147483649LL, QStringLiteral("Wide evaluation B"), QStringLiteral("Marker B")}
+    };
+    for (const auto& fixture : fixtures)
+    {
+        QSqlQuery insertEvaluation(database);
+        insertEvaluation.prepare(QStringLiteral(
+            "INSERT INTO speaking_evaluations (id, class_id, evaluation_name) VALUES (?, ?, ?)"));
+        insertEvaluation.addBindValue(QVariant::fromValue<qlonglong>(fixture.id));
+        insertEvaluation.addBindValue(classId);
+        insertEvaluation.addBindValue(fixture.name);
+        QVERIFY2(insertEvaluation.exec(), qPrintable(insertEvaluation.lastError().text()));
+
+        QSqlQuery insertRow(database);
+        insertRow.prepare(QStringLiteral(
+            "INSERT INTO speaking_eval_data (evaluation_id, row_index, col_0) VALUES (?, 0, ?)"));
+        insertRow.addBindValue(QVariant::fromValue<qlonglong>(fixture.id));
+        insertRow.addBindValue(fixture.marker);
+        QVERIFY2(insertRow.exec(), qPrintable(insertRow.lastError().text()));
+    }
+
+    QSqlQuery storedIds(database);
+    QVERIFY(storedIds.exec(QStringLiteral(
+        "SELECT typeof(id), id FROM speaking_evaluations "
+        "WHERE id IN (2147483648, 2147483649) ORDER BY id")));
+    for (const auto& fixture : fixtures)
+    {
+        QVERIFY(storedIds.next());
+        QCOMPARE(storedIds.value(0).toString(), QStringLiteral("integer"));
+        QCOMPARE(storedIds.value(1).toLongLong(), fixture.id);
+    }
+    QVERIFY(!storedIds.next());
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    auto package = ClassTransferExportQuery(port).execute({{id(classId)}});
+    QVERIFY(package);
+    QCOMPARE(package.value().classes.size(), std::size_t(1));
+    const auto& evaluations = package.value().classes.front().evaluations;
+    QCOMPARE(evaluations.size(), std::size_t(2));
+
+    bool foundA = false;
+    bool foundB = false;
+    for (const auto& evaluation : evaluations)
+    {
+        QVERIFY(!evaluation.rows.empty());
+        QVERIFY(!evaluation.rows.front().empty());
+        if (evaluation.name == u"Wide evaluation A")
+        {
+            foundA = true;
+            QCOMPARE(evaluation.rows.front().front(), std::u16string(u"Marker A"));
+        }
+        else if (evaluation.name == u"Wide evaluation B")
+        {
+            foundB = true;
+            QCOMPARE(evaluation.rows.front().front(), std::u16string(u"Marker B"));
+        }
+        else
+        {
+            QFAIL("Unexpected exported evaluation name");
+        }
+    }
+    QVERIFY(foundA);
+    QVERIFY(foundB);
 }
 void ClassTransferExportSourceTests::stagedErrorRollsBackAndKeepsDownstreamNotAttempted()
 {

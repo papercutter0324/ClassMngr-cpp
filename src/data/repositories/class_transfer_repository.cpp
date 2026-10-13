@@ -111,7 +111,7 @@ QList<ClassTransferEvaluation> loadEvaluations(
     )
 {
     QList<ClassTransferEvaluation> evaluations;
-    QHash<int, int> evaluationIndexById;
+    QHash<qint64, int> evaluationIndexById;
     QSqlQuery evaluationQuery(database);
 
     evaluationQuery.prepare(R"(
@@ -131,7 +131,18 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     while (evaluationQuery.next())
     {
-        const int evaluationId = evaluationQuery.value("id").toInt();
+        bool evaluationIdOk = false;
+        const qint64 evaluationId = evaluationQuery.value("id").toLongLong(
+            &evaluationIdOk
+            );
+        if (!evaluationIdOk)
+        {
+            *errorMessage = QObject::tr(
+                "Unable to read speaking evaluations: invalid evaluation identifier for class %1."
+                ).arg(classId);
+            return {};
+        }
+
         ClassTransferEvaluation evaluation;
         evaluation.name = evaluationQuery.value("evaluation_name").toString();
         evaluation.rows = SpeakingEval::emptyRows();
@@ -168,8 +179,20 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
     while (rowQuery.next())
     {
+        bool evaluationIdOk = false;
+        const qint64 evaluationId = rowQuery.value(
+            "evaluation_id"
+            ).toLongLong(&evaluationIdOk);
+        if (!evaluationIdOk)
+        {
+            *errorMessage = QObject::tr(
+                "Unable to read speaking evaluation rows: invalid evaluation identifier for class %1."
+                ).arg(classId);
+            return {};
+        }
+
         const auto evaluationIndex = evaluationIndexById.constFind(
-            rowQuery.value("evaluation_id").toInt());
+            evaluationId);
         const int rowIndex = rowQuery.value("row_index").toInt();
 
         if (evaluationIndex == evaluationIndexById.cend()
