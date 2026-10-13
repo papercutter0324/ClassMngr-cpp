@@ -31578,3 +31578,87 @@ deferred, with the latter spanning the shared model and repository CRUD
 surface. F707/F709 and the dense Speaking Evaluation row-limit policy remain
 deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+### F804 Sub Prep schedule summary wide teacher IDs - accepted - 2026-10-13
+
+F804 is accepted at implementation and test commit
+`62ebad2711a6b399b619c7263a66f7792f890b3e`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+succeeded outside the sandbox after the known ZERO_CHECK/MSBuild FileTracker
+`E_ACCESSDENIED` retry. The exact CTest with the same name registered once and
+passed 1/1. `git diff --check` passed. No full suite ran.
+
+### Batch 218 completion - 2026-10-13
+
+F804 completed the selected work in Batch 218. Its Sub Prep schedule-summary
+teacher identity path and focused verification are recorded above. A distinct
+Sub Prep roster-output wide teacher-ID design remains deferred because that
+output path reaches a legacy int identity model. The persisted CalendarEvent
+ID-width issue also remains deferred; its fix spans the shared model and
+repository CRUD surface. F707/F709 and the dense Speaking Evaluation
+row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 219 discovery - 2026-10-13
+
+F805 continues signed-64 teacher identity through the selected-class subtitle
+single and batch read paths. Their `ClassSubtitleReadRecord` and
+`ClassSubtitleBatchReadRecord` teacher IDs are narrowed by the repository
+loaders; the platform adapters then use int-based teacher lookups and indexes.
+The supporting TeacherRepository APIs must read wide teacher IDs while
+preserving legacy int APIs for unrelated callers. Without that path, a valid
+assigned teacher ID `2147483648` can return a successful subtitle with no
+teacher details. Keep class IDs and unrelated `ClassInfoRepository`
+projections unchanged. Defer the separate Sub Prep roster-output wide
+teacher-ID design because its output model remains int-bounded, and keep the
+persisted CalendarEvent ID-width issue separate.
+
+### F805 Selected-class subtitle wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F805 is selected:** widen teacher identity in the selected-subtitle
+repository records `ClassSubtitleReadRecord` and
+`ClassSubtitleBatchReadRecord` and their loaders, using checked
+`toLongLong()` conversion in `ClassInfoRepository::loadClassSubtitleRecord`
+and `ClassInfoRepository::loadClassSubtitleRecords` in
+`src/data/repositories/class_info_repository.h` / `.cpp`. Update both the
+single and batch platform adapters in
+`src/next/platform/application_services_selected_class_subtitle_read_port.h`
+and
+`src/next/platform/application_services_selected_class_subtitle_batch_read_port.h`
+to use checked canonical-positive signed-64 teacher IDs for lookup and
+preserve the identity through teacher indexing. Add or reuse only the
+supporting qint64 TeacherRepository read APIs needed by these paths; carefully
+reuse or rename the qint64 display-name API added for F802 while preserving
+legacy int APIs for unrelated callers. Keep class IDs and unrelated
+ClassInfo projections unchanged.
+
+Extend both existing DB-backed tests:
+`tests/next_platform_application_services_selected_class_subtitle_read_port_tests.cpp`
+and
+`tests/next_platform_application_services_selected_class_subtitle_batch_read_port_tests.cpp`.
+Seed an FK-valid teacher row with explicit SQLite INTEGER ID `2147483648`,
+assign it to the class, and assert the single and batch subtitle results
+preserve the teacher ID and its details instead of returning no teacher.
+Build `ClassMngr` and both focused targets:
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`
+and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`.
+Inspect the exact CTest registrations and run only those two tests. No CMake or
+test-inventory change is expected.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^(ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests|ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests)$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests|ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests)$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F805 tests
+have run and no full suite is requested. Defer the Sub Prep roster-output
+wide teacher-ID design until its legacy int output model has a separate
+bounded design; keep the persisted CalendarEvent ID-width issue separate.
+The earlier CMake optimization remains complete. F707/F709 and the dense
+Speaking Evaluation row-limit policy remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
