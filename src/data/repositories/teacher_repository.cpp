@@ -10,6 +10,8 @@
 #include <QSet>
 #include <QStringList>
 
+#include <limits>
+
 namespace
 {
 QString normalizedTeacherChoice(
@@ -428,21 +430,64 @@ TeacherRepository::loadTeacherDisplayNameRecords(
     const QList<int>& teacherIds
     )
 {
+    QList<qint64> wideTeacherIds;
+    wideTeacherIds.reserve(teacherIds.size());
+    for (const int teacherId : teacherIds)
+    {
+        wideTeacherIds.append(teacherId);
+    }
+
+    const auto loaded = loadMyClassesTeacherDisplayNameRecords(
+        wideTeacherIds
+        );
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    QList<TeacherDisplayNameBatchReadRecord> records;
+    records.reserve(loaded->size());
+    for (const MyClassesTeacherDisplayNameBatchReadRecord& record : *loaded)
+    {
+        if (record.teacherId < std::numeric_limits<int>::min()
+            || record.teacherId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher display names failed: the database returned a teacher identifier outside the supported range."
+                ));
+        }
+
+        records.append({
+            static_cast<int>(record.teacherId),
+            record.teacherKr,
+            record.teacherEn,
+            record.preferredRomanization,
+            record.preferredName
+        });
+    }
+    return records;
+}
+
+Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
+TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
+    const QList<qint64>& teacherIds
+    )
+{
     ++m_teacherDisplayNameBatchReadMetrics.callCount;
     if (teacherIds.isEmpty())
     {
-        return QList<TeacherDisplayNameBatchReadRecord>{};
+        return QList<MyClassesTeacherDisplayNameBatchReadRecord>{};
     }
 
     m_teacherDisplayNameBatchReadMetrics.requestedTeacherCount +=
         teacherIds.size();
 
-    QSet<int> seenTeacherIds;
+    QSet<qint64> seenTeacherIds;
     QStringList requestedValues;
     requestedValues.reserve(teacherIds.size());
     for (qsizetype index = 0; index < teacherIds.size(); ++index)
     {
-        const int teacherId = teacherIds[index];
+        const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
             return std::unexpected(QObject::tr(
@@ -460,7 +505,9 @@ TeacherRepository::loadTeacherDisplayNameRecords(
     ++m_teacherDisplayNameBatchReadMetrics.statementCount;
     const QString queryText = QStringLiteral(R"(
         WITH requested(teacher_id, ordinal) AS (VALUES %1)
-        SELECT requested.teacher_id,
+        SELECT requested.teacher_id AS requested_teacher_id,
+               requested.ordinal AS requested_ordinal,
+               teachers.id AS teacher_id,
                teachers.teacher_kr,
                teachers.teacher_en,
                teachers.preferred_romanization,
@@ -479,11 +526,48 @@ TeacherRepository::loadTeacherDisplayNameRecords(
         return std::unexpected(executed.error().userMessage());
     }
 
-    QList<TeacherDisplayNameBatchReadRecord> records;
+    QList<MyClassesTeacherDisplayNameBatchReadRecord> records;
+    records.reserve(teacherIds.size());
+    qsizetype lastOrdinal = -1;
     while (query.next())
     {
+        bool requestedTeacherIdOk = false;
+        const qint64 requestedTeacherId = query.value(
+            "requested_teacher_id"
+            ).toLongLong(&requestedTeacherIdOk);
+        bool requestedOrdinalOk = false;
+        const qint64 requestedOrdinal = query.value(
+            "requested_ordinal"
+            ).toLongLong(&requestedOrdinalOk);
+        bool returnedTeacherIdOk = false;
+        const qint64 returnedTeacherId = query.value("teacher_id").toLongLong(
+            &returnedTeacherIdOk
+            );
+        if (!requestedTeacherIdOk
+            || !requestedOrdinalOk
+            || !returnedTeacherIdOk
+            || requestedOrdinal < 0
+            || requestedOrdinal >= teacherIds.size())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher display names failed: the database returned an invalid teacher identifier."
+                ));
+        }
+
+        const qsizetype ordinal = static_cast<qsizetype>(requestedOrdinal);
+        const qint64 expectedTeacherId = teacherIds[ordinal];
+        if (ordinal <= lastOrdinal
+            || requestedTeacherId != expectedTeacherId
+            || returnedTeacherId != expectedTeacherId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher display names failed: the database returned records in a different identifier order."
+                ));
+        }
+        lastOrdinal = ordinal;
+
         records.append({
-            query.value("teacher_id").toInt(),
+            returnedTeacherId,
             query.value("teacher_kr").toString(),
             query.value("teacher_en").toString(),
             query.value("preferred_romanization").toString(),

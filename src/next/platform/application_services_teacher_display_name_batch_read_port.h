@@ -4,15 +4,13 @@
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/teacher_display_name_batch_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 
 #include <QByteArray>
 #include <QString>
 
-#include <charconv>
 #include <exception>
-#include <optional>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -40,13 +38,16 @@ public:
             return Application::TeacherDisplayNameBatchReadResult::success({});
         }
 
-        QList<int> legacyTeacherIds;
+        QList<qint64> legacyTeacherIds;
         legacyTeacherIds.reserve(
             static_cast<qsizetype>(teacherIds.size())
             );
         for (const Domain::TeacherId& teacherId : teacherIds)
         {
-            const std::optional<int> legacyId = legacyTeacherId(teacherId);
+            const auto legacyId =
+                Application::parseCanonicalPositiveDecimalId64(
+                    teacherId.value()
+                    );
             if (!legacyId)
             {
                 return failure(
@@ -79,12 +80,12 @@ public:
                 );
         }
 
-        Result<QList<TeacherDisplayNameBatchReadRecord>> loaded = [&]()
-            -> Result<QList<TeacherDisplayNameBatchReadRecord>>
+        Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>> loaded = [&]()
+            -> Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
         {
             try
             {
-                return repository->loadTeacherDisplayNameRecords(
+                return repository->loadMyClassesTeacherDisplayNameRecords(
                     legacyTeacherIds
                     );
             }
@@ -116,7 +117,7 @@ public:
         std::vector<Application::TeacherDisplayNameBatchReadSnapshot>
             snapshots;
         snapshots.reserve(static_cast<std::size_t>(loaded->size()));
-        for (const TeacherDisplayNameBatchReadRecord& record : *loaded)
+        for (const MyClassesTeacherDisplayNameBatchReadRecord& record : *loaded)
         {
             if (record.teacherId <= 0)
             {
@@ -146,32 +147,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyTeacherId(
-        const Domain::TeacherId& id
-        )
-    {
-        const std::string& value = id.value();
-        if (value.empty() || value.front() < '1' || value.front() > '9')
-        {
-            return std::nullopt;
-        }
-
-        int parsed = 0;
-        const auto [end, error] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        if (error != std::errc{}
-            || end != value.data() + value.size()
-            || parsed <= 0
-            || std::to_string(parsed) != value)
-        {
-            return std::nullopt;
-        }
-        return parsed;
-    }
-
     [[nodiscard]] static std::string utf8(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();

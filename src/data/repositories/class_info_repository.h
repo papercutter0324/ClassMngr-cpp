@@ -128,7 +128,7 @@ struct MyClassesClassInformationReadRecord final
 struct MyClassesClassSummaryReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString classGrade;
     QString classLevel;
     QList<ClassTime> regularTimes;

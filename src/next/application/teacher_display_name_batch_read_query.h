@@ -31,7 +31,7 @@ public:
         for (std::size_t index = 0; index < teacherIds.size(); ++index)
         {
             const std::string& value = teacherIds[index].value();
-            if (!isCanonicalPositiveDecimalId(value))
+            if (!isCanonicalPositiveDecimalId64(value))
             {
                 return invalidInput(
                     "Teacher IDs must be canonical positive integers."
@@ -64,7 +64,7 @@ public:
              loaded.value())
         {
             const std::string& value = snapshot.teacherId.value();
-            if (!isCanonicalPositiveDecimalId(value))
+            if (!isCanonicalPositiveDecimalId64(value))
             {
                 return validationFailure(
                     "A teacher display name batch returned a noncanonical teacher identifier."

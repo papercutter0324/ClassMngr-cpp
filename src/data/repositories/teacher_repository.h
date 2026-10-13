@@ -76,6 +76,15 @@ struct TeacherDisplayNameBatchReadRecord final
     QString preferredName;
 };
 
+struct MyClassesTeacherDisplayNameBatchReadRecord final
+{
+    qint64 teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+};
+
 struct TeacherDisplayNameBatchReadMetrics final
 {
     int callCount = 0;
@@ -208,6 +217,10 @@ public:
         loadTeacherDisplayNameFields(int teacherId);
     [[nodiscard]] Result<QList<TeacherDisplayNameBatchReadRecord>>
         loadTeacherDisplayNameRecords(const QList<int>& teacherIds);
+    [[nodiscard]] Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
+        loadMyClassesTeacherDisplayNameRecords(
+            const QList<qint64>& teacherIds
+            );
     [[nodiscard]] const TeacherDisplayNameBatchReadMetrics&
         teacherDisplayNameBatchReadMetrics() const noexcept;
     [[nodiscard]] Result<QList<TeacherProfileBatchReadRecord>>

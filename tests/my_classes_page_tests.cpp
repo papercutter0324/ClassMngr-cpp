@@ -332,6 +332,7 @@ private slots:
     void closedSessionRefreshIsQuietAndKeepsRenderedContent();
     void failedClassListReadClearsRenderedContentAndShowsWarning();
     void assignedTeacherProfileProjectsAllConsumedUtf16Fields();
+    void duplicateClassLabelsShowWideAssignedTeacherName();
     void fullDetailsAreScopedToSelectedClassAndReloadedOnSwitchAndReentry();
     void classInformationFieldsAndTeacherAssociationUseTypedReads();
     void selectedDetailFailureKeepsSummaryAndTeacherProfile();
@@ -528,6 +529,157 @@ assignedTeacherProfileProjectsAllConsumedUtf16Fields()
         );
     QCOMPARE(repeatedTeacherNotes.size(), 1);
     QVERIFY(repeatedTeacherNotes.constFirst()->isReadOnly());
+}
+
+void MyClassesPageTests::duplicateClassLabelsShowWideAssignedTeacherName()
+{
+    MyClassesPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int firstClassId = 0;
+    int secondClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("First duplicate label class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &firstClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Second duplicate label class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 &secondClassId,
+                 &error
+                 ), qPrintable(error));
+
+    Teacher teacher;
+    teacher.teacherKr = QStringLiteral("Wide ID Korean Teacher");
+    teacher.teacherEn = QStringLiteral("Wide ID English Teacher");
+    teacher.preferredRomanization = QStringLiteral("Wide ID Romanization");
+    teacher.preferredName = QStringLiteral("Wide ID Preferred Name");
+    teacher.roomNumber = QStringLiteral("Wide ID Room");
+    teacher.birthday = QStringLiteral("03-14");
+    teacher.phoneNumber = QStringLiteral("010-1234-5678");
+    teacher.wifiName = QStringLiteral("Wide ID WiFi");
+    teacher.wifiPassword = QStringLiteral("Wide ID WiFi Password");
+    teacher.internetType = QStringLiteral("Both");
+    teacher.zoomId = QStringLiteral("Wide ID Zoom");
+    teacher.zoomPassword = QStringLiteral("Wide ID Zoom Password");
+    teacher.projectionType = QStringLiteral("Zoom");
+    teacher.notes = QStringLiteral("Wide ID Teacher Notes");
+    const qint64 wideTeacherId = 2147483648LL;
+
+    QSqlQuery insertTeacher(fixture.services.databaseSession()->database());
+    QVERIFY2(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id,
+            teacher_kr,
+            teacher_en,
+            preferred_romanization,
+            preferred_name,
+            room_number,
+            birthday,
+            phone_number,
+            wifi_name,
+            wifi_password,
+            internet_type,
+            zoom_id,
+            zoom_password,
+            projection_type,
+            notes
+        ) VALUES (
+            2147483648, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+    )")), qPrintable(insertTeacher.lastError().text()));
+    insertTeacher.addBindValue(teacher.teacherKr);
+    insertTeacher.addBindValue(teacher.teacherEn);
+    insertTeacher.addBindValue(teacher.preferredRomanization);
+    insertTeacher.addBindValue(teacher.preferredName);
+    insertTeacher.addBindValue(teacher.roomNumber);
+    insertTeacher.addBindValue(teacher.birthday);
+    insertTeacher.addBindValue(teacher.phoneNumber);
+    insertTeacher.addBindValue(teacher.wifiName);
+    insertTeacher.addBindValue(teacher.wifiPassword);
+    insertTeacher.addBindValue(teacher.internetType);
+    insertTeacher.addBindValue(teacher.zoomId);
+    insertTeacher.addBindValue(teacher.zoomPassword);
+    insertTeacher.addBindValue(teacher.projectionType);
+    insertTeacher.addBindValue(teacher.notes);
+    QVERIFY2(insertTeacher.exec(),
+             qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery verifyTeacherId(fixture.services.databaseSession()->database());
+    QVERIFY2(verifyTeacherId.exec(QStringLiteral(
+                 "SELECT typeof(id), id FROM teachers WHERE id=2147483648"
+                 )),
+             qPrintable(verifyTeacherId.lastError().text()));
+    QVERIFY(verifyTeacherId.next());
+    QCOMPARE(verifyTeacherId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyTeacherId.value(1).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyTeacherId.next());
+
+    QSqlQuery assignTeacher(fixture.services.databaseSession()->database());
+    QVERIFY2(assignTeacher.prepare(QStringLiteral(
+                 "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+                 )),
+             qPrintable(assignTeacher.lastError().text()));
+    for (const int classId : {firstClassId, secondClassId})
+    {
+        assignTeacher.bindValue(0, wideTeacherId);
+        assignTeacher.bindValue(1, classId);
+        QVERIFY2(assignTeacher.exec(),
+                 qPrintable(assignTeacher.lastError().text()));
+        QCOMPARE(assignTeacher.numRowsAffected(), 1);
+    }
+
+    QSqlQuery verifyAssignments(fixture.services.databaseSession()->database());
+    QVERIFY2(verifyAssignments.prepare(QStringLiteral(
+                 "SELECT class_id, typeof(teacher_id), teacher_id "
+                 "FROM class_info WHERE class_id IN (?, ?) ORDER BY class_id"
+                 )),
+             qPrintable(verifyAssignments.lastError().text()));
+    verifyAssignments.addBindValue(firstClassId);
+    verifyAssignments.addBindValue(secondClassId);
+    QVERIFY2(verifyAssignments.exec(),
+             qPrintable(verifyAssignments.lastError().text()));
+    for (const int classId : {firstClassId, secondClassId})
+    {
+        QVERIFY(verifyAssignments.next());
+        QCOMPARE(verifyAssignments.value(0).toInt(), classId);
+        QCOMPARE(verifyAssignments.value(1).toString(),
+                 QStringLiteral("integer"));
+        QCOMPARE(verifyAssignments.value(2).toLongLong(), wideTeacherId);
+    }
+    QVERIFY(!verifyAssignments.next());
+
+    MyClassesPage page(&fixture.services);
+    page.resize(900, 700);
+    page.show();
+    page.refresh();
+    QApplication::processEvents();
+
+    NavigationTabWidget* const tabs = classTabsFor(page);
+    QVERIFY(tabs);
+    QCOMPARE(tabs->count(), 2);
+    const int firstTabIndex = tabIndexForClass(*tabs, firstClassId);
+    const int secondTabIndex = tabIndexForClass(*tabs, secondClassId);
+    QVERIFY(firstTabIndex >= 0);
+    QVERIFY(secondTabIndex >= 0);
+
+    const QString expandedBaseLabel =
+        classTabLabel(QStringLiteral("E4"), QStringLiteral("Theseus"))
+        + QLatin1Char(' ') + QChar(0x2022)
+        + QLatin1Char(' ') + teacher.teacherEn;
+    QCOMPARE(
+        tabs->tabText(firstTabIndex),
+        expandedBaseLabel + QStringLiteral(" #%1").arg(firstClassId)
+        );
+    QCOMPARE(
+        tabs->tabText(secondTabIndex),
+        expandedBaseLabel + QStringLiteral(" #%1").arg(secondClassId)
+        );
 }
 
 void MyClassesPageTests::
