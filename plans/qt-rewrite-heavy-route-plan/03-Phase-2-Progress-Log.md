@@ -32900,3 +32900,46 @@ evaluation row-index coverage. Run only exact CTest #24
 `ClassMngrDataServiceLifecycleTests`; no full suite. The project-configuration
 and CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and
 the formal exit gate remains Open.
+
+### F827 malformed Speaking Evaluation persisted row-index validation - accepted - 2026-10-13
+
+F827 is accepted at source/test commit
+`64b0098747bc0d352a05b10b5816b87fe109e209`. Independent verification rebuilt
+both changed translation units in the separate `%TEMP%\f8` Ninja Debug tree;
+exact CTest #24, `ClassMngrDataServiceLifecycleTests`, passed 1/1 in 1.26
+seconds. Scoped `git diff --check` returned 0 with a line-ending warning. The
+regression confirms SQLite stores malformed `row_index` as TEXT, save fails,
+row 0 remains unchanged, and the deleted row 1 is not recreated. No full suite
+ran.
+
+### Batch 241 completion - 2026-10-13
+
+F827 completed Batch 241 by rejecting malformed persisted Speaking Evaluation
+row indexes during save. Batch 242 selects F828 for malformed persisted roster
+column-position validation. The project-configuration and CMake optimization
+remains complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### Batch 242 discovery and selection - 2026-10-13
+
+`RosterRepository::loadRoster()` orders column names by persisted `position`
+without validating the value, while roster cells are placed using separate
+`col_index`. SQLite can store malformed TEXT in the INTEGER-affinity position
+column, allowing a successful snapshot with names reordered relative to their
+cell values. F828 is limited to validating persisted column positions and
+returning the repository error already mapped by the roster read port to
+Technical.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Malformed roster column `position` validation (F828) | Selected | An unchecked malformed position can reorder column names without moving their separately indexed cell values. |
+
+F828 is selected, not implemented or accepted. In the focused roster
+read-port tests, create two columns with distinct cell values, corrupt one
+stored `position` to TEXT, verify `typeof(position)='text'`, and require the
+read to fail instead of returning mismatched names and values. Preserve normal
+ordering, cell placement, widths, and existing malformed-`col_index` behavior.
+Run only `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`; no CMake
+change or full suite. The project-configuration and CMake optimization remains
+complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
