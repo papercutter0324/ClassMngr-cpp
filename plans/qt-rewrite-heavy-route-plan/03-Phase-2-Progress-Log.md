@@ -34302,3 +34302,61 @@ the result.
 
 The exact registered CTest is
 `ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
+
+### F854 invalid ClassDayFilterResetPolicy enum on save - accepted - 2026-10-14
+
+F854 is accepted at source/test commit
+`7d793092f2b9ea89fd7a1f6cf7569f0292f45c01` (`Phase2 - F854: Reject invalid
+class day-filter reset policy saves`). The baseline reproduced enum value 17
+overwriting stored `on_page_leave` with `on_application_close`. Save now
+validates `OnApplicationClose` and `OnPageLeave` before session access and
+returns nonrecoverable `InvalidInput` otherwise. Regression coverage confirms
+an unavailable session still returns `InvalidInput`, and an open-database save
+preserves raw and loaded `on_page_leave`. Existing tests retain both valid
+round trips, invalid/missing stored-value fallback, unavailable/closed session,
+and repository-failure behavior.
+
+Independent Tester acceptance: exact registered CTest
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`
+passed 1/1 in standard top-level `build/windows-x64-debug`, Visual Studio
+Debug. The first build hit FileTracker `E_ACCESSDENIED`; the authorized
+same-target retry succeeded. No full suite ran.
+
+### Batch 268 completion - 2026-10-14
+
+F854 completed Batch 268 by rejecting invalid ClassDayFilterResetPolicy saves.
+The post-slice audit found none of the 13 deferred candidates actionable or
+any blocker changed; the list remains unchanged. Batch 269 selects F855 to
+check invalid `ClassVisibilityScope` values at the typed save boundary. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 269 discovery and selection - 2026-10-14
+
+`ClassVisibilityScope` has named values `ActiveSchedule` and `AllClasses`.
+Source inspection shows the adapter maps `AllClasses` specially and defaults
+other values to `active_schedule`, then persists. An invalid cast such as 17
+may overwrite stored `all_classes`; runtime behavior has not been reproduced.
+The normal UI callback derives only the two valid values from radio buttons.
+F855 is not in the deferred list.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid `ClassVisibilityScope` enum on save (F855) | Selected | The adapter may turn an invalid typed value into a successful `active_schedule` write. |
+
+F855 is selected, not reproduced or implemented. First seed `all_classes`,
+save an unrecognized value through the typed port, and inspect the result and
+stored value. If reproduced, reject before persistence as nonrecoverable
+`InvalidInput` and verify the previous value remains. Preserve both valid
+round trips and existing fallback, session, and repository failure behavior.
+If the baseline does not reproduce, stop before production edits and report
+the result.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | In `tests/next_platform_application_services_class_visibility_preferences_port_tests.cpp`, seed `all_classes`, save an unrecognized enum through the typed port, and inspect the result and stored value. |
+| Error contract | On reproduction, reject before persistence as nonrecoverable `InvalidInput`; preserve the prior `all_classes`. |
+| Compatibility | Preserve valid round trips and existing fallback, session, and repository failure behavior. |
+| Focused verification | Build and run only `ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`. No full suite. |
+
+The exact registered CTest is
+`ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`.

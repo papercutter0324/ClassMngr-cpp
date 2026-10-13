@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F853 is accepted at `06326be4`; F854 is selected pending baseline reproduction; Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F854 is accepted at `7d793092`; F855 is selected pending baseline reproduction; Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 268: F854 - Invalid `ClassDayFilterResetPolicy` enum on save; reproduce an unrecognized value through the typed save port and verify stored `on_page_leave` is preserved.
+- Batch 269: F855 - Invalid `ClassVisibilityScope` enum on save; reproduce an unrecognized value through the typed save port and verify stored `all_classes` is preserved.
 
 #### Deferred candidates
 
