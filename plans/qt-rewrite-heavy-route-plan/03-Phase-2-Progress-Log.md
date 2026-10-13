@@ -33190,3 +33190,43 @@ only `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`. No
 CMake, schema, or API change and no full suite. The project-configuration and
 CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
+
+### F833 fractional REAL roster column-index validation - accepted - 2026-10-13
+
+F833 is accepted at source/test commit
+`5cfc7fe327878c128630cec84a01063e7fee6c00`. Independent fresh Ninja Debug
+verification successfully built
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`; exact CTest
+passed 1/1 and scoped `git diff --check` passed. REAL `col_index` reproductions
+confirmed the full-roster snapshot overwrote column 0 and the availability
+read falsely marked column 0 occupied. No full suite ran.
+
+### Batch 247 completion - 2026-10-13
+
+F833 completed Batch 247 by rejecting fractional REAL roster column indexes
+in full-roster and availability reads. Batch 248 selects F834 for the
+template-print roster reader that uses the shared full-roster loader. The
+project-configuration and CMake optimization remains complete; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 248 discovery and selection - 2026-10-13
+
+`RosterRepository::loadFullRostersImpl()` selects in-range rows and converts
+persisted `col_index` in `src/data/repositories/roster_repository.cpp`; the
+template-print read path delegates to this shared loader. F834 covers the
+template-print consumer separately from F833's full-roster snapshot and
+availability pair.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL roster `col_index` validation in template-print reads (F834) | Selected | The shared loader narrows stored positions for template-print roster data. |
+
+F834 is selected, not implemented or accepted. Seed a REAL
+`roster_data.col_index=0.25`, verify `typeof(col_index)='real'`, and require the
+template-print read to return a Technical failure instead of aliasing column
+0; verify persisted rows remain unchanged. Preserve ordinary and sparse
+behavior. Use focused CTest
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`.
+No CMake, schema, or API change and no full suite. The project-configuration
+and CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and
+the formal exit gate remains Open.
