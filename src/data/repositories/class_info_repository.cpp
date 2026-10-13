@@ -3426,7 +3426,18 @@ ClassInfoRepository::loadSubPrepClassSummaries(
         {
             SubPrepClassSummaryRecord record;
             record.classId = classId;
-            record.teacherId = query.value(QStringLiteral("teacher_id")).toInt();
+            bool teacherIdOk = false;
+            record.teacherId = query.value(
+                QStringLiteral("teacher_id")
+                ).toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(
+                    QObject::tr(
+                        "Unable to load scoped Sub Prep class summaries for %1: a teacher identifier cannot be represented as a signed 64-bit value."
+                        ).arg(identity)
+                    );
+            }
             record.classGrade = query.value(QStringLiteral("class_grade"))
                                     .toString();
             record.classLevel = query.value(QStringLiteral("class_level"))

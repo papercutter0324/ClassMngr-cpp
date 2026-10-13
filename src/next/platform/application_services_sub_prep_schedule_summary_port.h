@@ -356,7 +356,7 @@ public:
             Application::ClassSummaryProjectionInput input;
             input.classes.reserve(recordsByClassId.size());
             input.teachers.reserve(recordsByClassId.size());
-            std::unordered_map<int, std::size_t> teacherIndexes;
+            std::unordered_map<qint64, std::size_t> teacherIndexes;
             teacherIndexes.reserve(recordsByClassId.size());
 
             for (std::size_t requestIndex = 0;
@@ -544,7 +544,7 @@ private:
     }
 
     [[nodiscard]] static Domain::TeacherId teacherId(
-        const int legacyTeacherId
+        const qint64 legacyTeacherId
         )
     {
         return *Domain::TeacherId::fromString(
