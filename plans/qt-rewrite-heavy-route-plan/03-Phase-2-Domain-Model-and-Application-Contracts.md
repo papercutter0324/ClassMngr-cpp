@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F814 was accepted in Batch 228 at `26253658668204b7cae47f12a4e03bc0369ff05f`; Batch 229 selects F815 for checked Class Transfer speaking-evaluation `row_index` conversion, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F815 was accepted in Batch 229 at `4c9abd12fa6e9855f5e2e10773b18b543f79a563`; Batch 230 selects F816 for end-to-end qint64 Co-Teacher identity, including UI selection and assignment write, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,6 @@ Treat this plan as an operational summary, not a history:
   independent audit found int-bounded primary-key reads in the repository and
   by-ID adapter, plus range projection that rejects narrowed IDs. The fix
   spans the shared model and repository CRUD surface.
-- ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
-  Co-Teacher read/write identity flow can be covered.
 - Initial Setup and Teacher Create/Delete teacher-ID width - deferred; these
   paths retain int-based UI identity contracts.
 - Class Import teacher-ID width - deferred; its current flow starts with
@@ -124,9 +122,9 @@ Treat this plan as an operational summary, not a history:
   deferred; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
 
-#### Active batch: Batch 229
+#### Active batch: Batch 230
 
-- F815 - Class Transfer speaking-evaluation `row_index` validation - Check conversion and skip malformed or out-of-range persisted rows without aliasing row 0; preserve valid indices 0..24.
+- F816 - Shared Co-Teacher teacher identity - Carry qint64 through teacher choices, UI selection, assignment write, and readback while preserving class IDs and general primary-teacher contracts as int.
 
 ## Objective
 

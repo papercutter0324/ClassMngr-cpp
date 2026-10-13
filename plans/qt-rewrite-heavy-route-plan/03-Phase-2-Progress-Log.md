@@ -32362,3 +32362,39 @@ valid indices 0..24 are preserved. Register or reuse a focused CTest filter
 for the new case, build `ClassMngr` and `ClassMngrClassTransferTests`, then run
 only that filtered CTest. No full suite is requested; Phase 2 Gates 1/2 remain
 Partial and the formal exit gate remains Open.
+
+### F815 Class Transfer speaking-evaluation `row_index` validation - accepted - 2026-10-13
+
+F815 is accepted at source commit
+`4c9abd12fa6e9855f5e2e10773b18b543f79a563`. The focused Debug build of
+`ClassMngr` and `ClassMngrClassTransferTests` succeeded after the identical
+retry for sandbox FileTracker `ZERO_CHECK` `E_ACCESSDENIED`. CTest
+`ClassMngrClassTransferRowIndexRegressionTests` passed 1/1. The new case
+checks valid endpoint rows 0 and 24 plus malformed and overflowing integer
+coordinates being skipped without overwriting row 0. Existing sparse-row
+coverage was not run in this verification. Regeneration reported the optional
+`WrapVulkanHeaders`/`Vulkan_INCLUDE_DIR` dependency unavailable.
+`git diff --check` passed; no full suite ran.
+
+### Batch 229 completion - 2026-10-13
+
+F815 completed Batch 229 by checking persisted Class Transfer speaking-
+evaluation coordinates before indexing. Batch 230 selects F816 for the shared
+Co-Teacher teacher-identity flow. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 230 discovery and selection - 2026-10-13
+
+F816 covers shared Co-Teacher teacher identity end to end: carry teacher ID
+`2147483648` as qint64 from teacher choices through Co-Teacher UI selection,
+assignment write, and readback. Preserve class IDs and general primary-teacher
+contracts as int, unassigned `-1`/SQL NULL behavior, and existing
+validation/conflict behavior. UI selection and write are part of this slice;
+a repository-only change does not satisfy the boundary. For details reads,
+either widen the shared class-details record through its other
+validation-context consumer too, or introduce a Co-Teacher-specific read
+record. Verify the chosen read boundary and the full choice/UI/write/readback
+path with focused tests. Keep Schedule Import width separate from accepted
+F767 snapshot canonical-ID validation; Class Import's int-keyed flow and
+persisted CalendarEvent event-ID width remain deferred. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
