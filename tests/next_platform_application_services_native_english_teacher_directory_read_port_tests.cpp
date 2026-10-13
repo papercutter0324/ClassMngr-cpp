@@ -97,6 +97,7 @@ class NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests
 private slots:
     void readsAllFieldsInRepositoryOrderFromTheActiveSession();
     void distinguishesUnavailableSessionFromRepositoryFailureWithoutFallback();
+    void rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow();
 };
 
 void NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests::
@@ -165,6 +166,66 @@ distinguishesUnavailableSessionFromRepositoryFailureWithoutFallback()
     unavailable = port.readNativeEnglishTeacherDirectory();
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests::
+rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery insert(services.databaseSession()->database());
+    QVERIFY2(insert.exec(QStringLiteral(R"(
+        INSERT INTO native_english_teachers
+            (id, name, position, phone_number, birthday, nationality, email)
+        VALUES
+            (2147483648, 'Overflow', 'NET', '010-9999-0004', '03-04',
+             'Canada', 'overflow@example.test')
+    )")), qPrintable(insert.lastError().text()));
+
+    const QString storedRowSql = QStringLiteral(R"(
+        SELECT typeof(id), id, name, position, phone_number,
+               birthday, nationality, email
+        FROM native_english_teachers
+        WHERE id=2147483648
+    )");
+    QSqlQuery before(services.databaseSession()->database());
+    QVERIFY2(before.exec(storedRowSql), qPrintable(before.lastError().text()));
+    QVERIFY(before.next());
+    QCOMPARE(before.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(before.value(1).toLongLong(), qlonglong(2147483648LL));
+    QCOMPARE(before.value(2).toString(), QStringLiteral("Overflow"));
+    QCOMPARE(before.value(3).toString(), QStringLiteral("NET"));
+    QCOMPARE(before.value(4).toString(), QStringLiteral("010-9999-0004"));
+    QCOMPARE(before.value(5).toString(), QStringLiteral("03-04"));
+    QCOMPARE(before.value(6).toString(), QStringLiteral("Canada"));
+    QCOMPARE(before.value(7).toString(), QStringLiteral("overflow@example.test"));
+    const QVariantList storedRowBefore{
+        before.value(0), before.value(1), before.value(2), before.value(3),
+        before.value(4), before.value(5), before.value(6), before.value(7)
+    };
+    QVERIFY(!before.next());
+
+    Platform::ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
+        &services);
+    const auto result = port.readNativeEnglishTeacherDirectory();
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
+
+    QSqlQuery after(services.databaseSession()->database());
+    QVERIFY2(after.exec(storedRowSql), qPrintable(after.lastError().text()));
+    QVERIFY(after.next());
+    const QVariantList storedRowAfter{
+        after.value(0), after.value(1), after.value(2), after.value(3),
+        after.value(4), after.value(5), after.value(6), after.value(7)
+    };
+    QVERIFY(!after.next());
+    QCOMPARE(storedRowAfter, storedRowBefore);
 }
 
 QTEST_MAIN(

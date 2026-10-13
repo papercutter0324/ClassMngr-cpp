@@ -9,6 +9,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
+#include <limits>
+
 namespace
 {
 QString normalizedName(const QString& value)
@@ -66,8 +68,24 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
 
     while (query.next())
     {
+        bool idIsInteger = false;
+        const qlonglong persistedId = query.value(0).toLongLong(&idIsInteger);
+        if (!idIsInteger || persistedId <= 0
+            || persistedId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                idIsInteger
+                    ? QObject::tr(
+                        "Native English Teacher id %1 is outside the supported positive 32-bit range."
+                        ).arg(persistedId)
+                    : QObject::tr(
+                        "A Native English Teacher id is not a valid 64-bit integer."
+                        )
+                );
+        }
+
         NativeEnglishTeacher teacher;
-        teacher.id = query.value(0).toInt();
+        teacher.id = static_cast<int>(persistedId);
         teacher.name = query.value(1).toString();
         teacher.position = query.value(2).toString();
         teacher.phoneNumber = query.value(3).toString();
