@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/application/schedule_import_apply_request.h"
 #include "next/application/schedule_import_apply_review_decisions.h"
 
@@ -80,6 +81,22 @@ validateScheduleImportApplyRequest(
                 std::nullopt,
                 ScheduleImportApplyTeacherTargetIssue{
                     ScheduleImportApplyTeacherTargetIssueCode::ExistingTeacherMissingTarget,
+                    teacher.teacherKey,
+                    teacher.targetTeacherId
+                }
+            };
+        }
+        if (needsTarget
+            && teacher.targetTeacherId
+            && !isCanonicalPositiveDecimalId64(
+                teacher.targetTeacherId->value()
+                ))
+        {
+            return ScheduleImportApplyFailure{
+                u"Choose a valid existing Korean teacher for this resolution.",
+                std::nullopt,
+                ScheduleImportApplyTeacherTargetIssue{
+                    ScheduleImportApplyTeacherTargetIssueCode::InvalidExistingTeacherTarget,
                     teacher.teacherKey,
                     teacher.targetTeacherId
                 }

@@ -239,6 +239,10 @@ QString applyValidationFailureMessage(
             return QObject::tr(
                 "Choose an existing Korean teacher for this resolution."
                 );
+        case ScheduleImportApplyTeacherTargetIssueCode::InvalidExistingTeacherTarget:
+            return QObject::tr(
+                "Choose a valid existing Korean teacher for this resolution."
+                );
         case ScheduleImportApplyTeacherTargetIssueCode::NonExistingTeacherHasTarget:
             return QObject::tr(
                 "This Korean teacher resolution cannot use an existing teacher."

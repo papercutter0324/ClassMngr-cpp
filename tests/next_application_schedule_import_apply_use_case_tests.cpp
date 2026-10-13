@@ -1,6 +1,9 @@
 #include "next/application/schedule_import_apply_use_case.h"
 
+#include <cstdint>
+#include <limits>
 #include <stdexcept>
+#include <string>
 
 using namespace ClassMngr::Next::Application;
 
@@ -84,6 +87,117 @@ int main()
         ++expectedTargetCalls;
         require(acceptedTarget && targetPort.calls == expectedTargetCalls);
     }
+    for (const auto action : {
+             ScheduleImportReviewTeacherAction::Reuse,
+             ScheduleImportReviewTeacherAction::UpdateRoom})
+    {
+        for (const auto& invalidId : {
+                 std::string("not-a-number"),
+                 std::string("9223372036854775808")})
+        {
+            auto invalidTeacherId = validRequest();
+            invalidTeacherId.teachers[0].action = action;
+            invalidTeacherId.teachers[0].targetTeacherId =
+                ClassMngr::Next::Domain::TeacherId::fromString(invalidId);
+            const auto rejectedId = ScheduleImportApplyUseCase::execute(
+                invalidTeacherId,
+                targetPort
+                );
+            require(!rejectedId
+                && rejectedId.error().teacherTargetIssue.has_value());
+            require(rejectedId.error().teacherTargetIssue->code
+                == ScheduleImportApplyTeacherTargetIssueCode::InvalidExistingTeacherTarget);
+            require(rejectedId.error().teacherTargetIssue->targetTeacherId
+                == invalidTeacherId.teachers[0].targetTeacherId);
+            require(!rejectedId.error().policyIssue.has_value());
+            require(rejectedId.error().message
+                == u"Choose a valid existing Korean teacher for this resolution.");
+            require(targetPort.calls == expectedTargetCalls);
+        }
+    }
+    const auto maxTeacherId = ClassMngr::Next::Domain::TeacherId::fromString(
+        std::to_string(std::numeric_limits<std::int64_t>::max())
+        );
+    require(maxTeacherId.has_value());
+    for (const auto action : {
+             ScheduleImportReviewTeacherAction::Reuse,
+             ScheduleImportReviewTeacherAction::UpdateRoom})
+    {
+        auto boundaryTeacherId = validRequest();
+        boundaryTeacherId.teachers[0].action = action;
+        boundaryTeacherId.teachers[0].targetTeacherId = maxTeacherId;
+        const auto acceptedBoundary = ScheduleImportApplyUseCase::execute(
+            boundaryTeacherId,
+            targetPort
+            );
+        ++expectedTargetCalls;
+        require(acceptedBoundary && targetPort.calls == expectedTargetCalls);
+    }
+    for (const auto& invalidId : {
+             std::string("not-a-number"),
+             std::string("2147483648")})
+    {
+        auto invalidClassId = validRequest();
+        invalidClassId.classes[0].action =
+            ScheduleImportReviewClassAction::UpdateExisting;
+        invalidClassId.classes[0].targetClassId =
+            ClassMngr::Next::Domain::ClassId::fromString(invalidId);
+        const auto rejectedId = ScheduleImportApplyUseCase::execute(
+            invalidClassId,
+            targetPort
+            );
+        require(!rejectedId && rejectedId.error().policyIssue.has_value());
+        require(rejectedId.error().policyIssue->code
+            == ScheduleImportPlanEligibilityIssueCode::InvalidReviewDecision);
+        require(rejectedId.error().policyIssue->reviewDecisionIssue.has_value());
+        require(rejectedId.error().policyIssue->reviewDecisionIssue->code
+            == ScheduleImportReviewDecisionIssueCode::InvalidExistingClassTarget);
+        require(rejectedId.error().policyIssue->reviewDecisionIssue->targetClassId
+            == invalidClassId.classes[0].targetClassId);
+        require(targetPort.calls == expectedTargetCalls);
+    }
+    auto invalidSkippedClassId = validRequest();
+    invalidSkippedClassId.classes[0].action =
+        ScheduleImportReviewClassAction::Skip;
+    invalidSkippedClassId.classes[0].targetClassId =
+        ClassMngr::Next::Domain::ClassId::fromString("not-a-number");
+    const auto rejectedSkippedClassId = ScheduleImportApplyUseCase::execute(
+        invalidSkippedClassId,
+        targetPort
+        );
+    require(!rejectedSkippedClassId
+        && rejectedSkippedClassId.error().policyIssue.has_value());
+    require(rejectedSkippedClassId.error().policyIssue->reviewDecisionIssue
+        ->code == ScheduleImportReviewDecisionIssueCode::InvalidExistingClassTarget);
+    require(targetPort.calls == expectedTargetCalls);
+
+    auto invalidCreateTarget = validRequest();
+    invalidCreateTarget.classes[0].targetClassId =
+        ClassMngr::Next::Domain::ClassId::fromString("not-a-number");
+    const auto rejectedCreateTarget = ScheduleImportApplyUseCase::execute(
+        invalidCreateTarget,
+        targetPort
+        );
+    require(!rejectedCreateTarget
+        && rejectedCreateTarget.error().policyIssue.has_value());
+    require(rejectedCreateTarget.error().policyIssue->reviewDecisionIssue
+        ->code == ScheduleImportReviewDecisionIssueCode::CreateNewClassHasTarget);
+    require(targetPort.calls == expectedTargetCalls);
+
+    auto boundaryClassId = validRequest();
+    boundaryClassId.classes[0].action =
+        ScheduleImportReviewClassAction::UpdateExisting;
+    boundaryClassId.classes[0].targetClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(std::numeric_limits<int>::max())
+            );
+    const auto acceptedBoundaryClassId = ScheduleImportApplyUseCase::execute(
+        boundaryClassId,
+        targetPort
+        );
+    ++expectedTargetCalls;
+    require(acceptedBoundaryClassId
+        && targetPort.calls == expectedTargetCalls);
     for (const auto action : {
              ScheduleImportReviewTeacherAction::Create,
              ScheduleImportReviewTeacherAction::Skip})

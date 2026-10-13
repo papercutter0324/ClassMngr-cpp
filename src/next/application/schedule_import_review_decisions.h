@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 
 #include <algorithm>
@@ -78,6 +79,7 @@ enum class ScheduleImportReviewDecisionIssueCode
     DuplicateClassResolution,
     MissingClassResolution,
     UpdateClassMissingTarget,
+    InvalidExistingClassTarget,
     CreateNewClassHasTarget,
     DuplicateUpdatedClassTarget,
     DuplicateSkippedClassTarget,
@@ -293,6 +295,15 @@ validateScheduleImportReviewDecisions(
             }
             else
             {
+                if (!isCanonicalPositiveDecimalId(
+                        resolution.targetClassId->value()
+                        ))
+                {
+                    Issue issue{IssueCode::InvalidExistingClassTarget};
+                    issue.candidateIndex = resolution.candidateIndex;
+                    issue.targetClassId = resolution.targetClassId;
+                    result.issues.push_back(std::move(issue));
+                }
                 claimClassTarget(
                     *resolution.targetClassId,
                     resolution.candidateIndex,
@@ -313,6 +324,15 @@ validateScheduleImportReviewDecisions(
         else if (resolution.action == ClassAction::Skip
                  && resolution.targetClassId)
         {
+            if (!isCanonicalPositiveDecimalId(
+                    resolution.targetClassId->value()
+                    ))
+            {
+                Issue issue{IssueCode::InvalidExistingClassTarget};
+                issue.candidateIndex = resolution.candidateIndex;
+                issue.targetClassId = resolution.targetClassId;
+                result.issues.push_back(std::move(issue));
+            }
             claimClassTarget(
                 *resolution.targetClassId,
                 resolution.candidateIndex,

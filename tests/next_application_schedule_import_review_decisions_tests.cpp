@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -218,12 +219,61 @@ int main()
                 );
             ++cases;
         }
+        for (const auto& invalidId : {
+                 std::string("not-a-number"),
+                 std::string("2147483648")})
+        {
+            auto request = validRequest();
+            request.classes[0].targetClassId =
+                ClassId::fromString(invalidId);
+            const auto result =
+                validateScheduleImportReviewDecisions(request);
+            require(!result.accepted(), "invalid existing class ID accepted");
+            const auto issue = std::find_if(
+                result.issues.begin(),
+                result.issues.end(),
+                [](const auto& value)
+                {
+                    return value.code
+                        == IssueCode::InvalidExistingClassTarget;
+                }
+                );
+            require(
+                issue != result.issues.end()
+                    && issue->candidateIndex == 0
+                    && issue->targetClassId == ClassId::fromString(invalidId),
+                "invalid existing class ID omitted its typed target detail"
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.classes[1].targetClassId =
+                ClassId::fromString("not-a-number");
+            expectRejected(
+                "skip with invalid optional existing class ID",
+                request,
+                IssueCode::InvalidExistingClassTarget
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.classes[0].targetClassId = ClassId::fromString(
+                std::to_string(std::numeric_limits<int>::max())
+                );
+            require(
+                validateScheduleImportReviewDecisions(request).accepted(),
+                "maximum canonical positive class ID was rejected"
+                );
+            ++cases;
+        }
         {
             auto request = validRequest();
             request.classes[0] = {
                 0,
                 ClassAction::CreateNew,
-                classId(21)
+                ClassId::fromString("not-a-number")
             };
             expectRejected(
                 "create with existing target",

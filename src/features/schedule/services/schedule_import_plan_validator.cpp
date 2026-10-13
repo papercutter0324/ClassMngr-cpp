@@ -207,6 +207,10 @@ QString decisionFailure(
         return QObject::tr(
             "Each updated class must have a unique existing target."
             );
+    case Code::InvalidExistingClassTarget:
+        return QObject::tr(
+            "Choose a valid existing class target."
+            );
     case Code::CreateNewClassHasTarget:
         return QObject::tr(
             "A newly created class cannot have an existing target."

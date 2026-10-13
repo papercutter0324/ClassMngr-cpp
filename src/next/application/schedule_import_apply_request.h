@@ -94,6 +94,7 @@ struct ScheduleImportApplySummary final
 enum class ScheduleImportApplyTeacherTargetIssueCode
 {
     ExistingTeacherMissingTarget,
+    InvalidExistingTeacherTarget,
     NonExistingTeacherHasTarget
 };
 
