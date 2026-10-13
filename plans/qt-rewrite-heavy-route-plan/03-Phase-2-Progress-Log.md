@@ -34546,3 +34546,27 @@ trigger is satisfied, but its matched-symbol WPR capture remains blocked
 without an elevated Administrator token; the other deferred blockers remain
 as documented. Phase 2 Gates 1/2 remain Partial and the formal exit gate
 remains Open.
+
+### F858 TeacherImportPlan legacy adapter relocation - accepted - 2026-10-14
+
+F858 is accepted at source commit
+`6d720a8ef89c890a097f266c3a577c6416f9217c`. The Qt/legacy
+`TeacherImportPlan` mapper moved from Next Application to the Data Legacy
+repository adapter; both callers were updated and CMake now assigns the header
+to Data ownership. A mapping-body comparison confirmed identical behavior.
+Source ownership validation passed for 1,467 handwritten files, and
+`git diff --check` passed. The focused Windows x64 Debug build passed for
+`ClassMngr` and both affected test targets; the requested CTests
+`ClassMngrTeacherImportTests` and
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests` passed
+2/2 in standard `build/windows-x64-debug`. No full suite ran. An initial
+`MSB8064` warning referenced the removed mapper path through a stale AUTOGEN
+dependency; it disappeared after refreshing the generated dependency state,
+so no source or CMake change was needed.
+
+The post-slice audit reviewed all 13 deferred candidates and found no newly
+actionable item or changed blocker. F579's review trigger remains satisfied,
+but its matched-symbol WPR capture is blocked without an elevated Administrator
+token; F598 has the same elevated-token blocker. Other deferred blockers remain
+unchanged. The next slice is pending selection. Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
