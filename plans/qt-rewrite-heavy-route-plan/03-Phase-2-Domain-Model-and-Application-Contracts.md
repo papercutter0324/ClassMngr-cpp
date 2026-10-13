@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F807 was accepted in Batch 221 at `51214e5fc1a9746c68633b480b42f10d85e86fe4`; Batch 222 selects F808 for the read-only Sub Prep class-details teacher ID; separate Schedule Import teacher-ID width/narrowing work, the shared `ClassPageDetailsReadRecord`/Co-Teacher identity flow, persisted CalendarEvent ID-width work, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 canonical-ID validation remains accepted).
+- Current note: F808 was accepted in Batch 222 at `c0cc9c44ea0fad0bbb061d52bd2e96be9ba1ee3b`; Batch 223 selects F809 for the read-only Sub Prep print-source full teacher-profile read; Schedule Import teacher-ID width/narrowing, the shared Testing Class details/read-write model, the `ClassPageDetailsReadRecord`/Co-Teacher identity flow, and CalendarEvent teacher-ID width remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 snapshot canonical-ID validation remains accepted).
 
 ### Slice discovery batches
 
@@ -116,12 +116,14 @@ Treat this plan as an operational summary, not a history:
   spans the shared model and repository CRUD surface.
 - ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
   Co-Teacher read/write identity flow can be covered.
-- Schedule Import teacher-ID width/narrowing - deferred outside F808; F767's
-  canonical-ID validation remains accepted.
+- Schedule Import teacher-ID width/narrowing across review/apply/write -
+  deferred outside F809; F767's snapshot canonical-ID validation remains
+  accepted as distinct work.
+- Shared Testing Class details/read-write model - deferred outside F809.
 
-#### Active batch: Batch 222
+#### Active batch: Batch 223
 
-- F808 - Sub Prep class-details wide teacher ID - Preserve signed-64 teacher identity in the isolated read record and adapter, retaining empty-teacher fallback and leaving class IDs and write/CRUD contracts unchanged.
+- F809 - Sub Prep print-source wide teacher IDs - Preserve qint64 teacher identity through dedicated print-source class/schedule and full-profile reads, leaving shared models and write paths unchanged.
 
 ## Objective
 

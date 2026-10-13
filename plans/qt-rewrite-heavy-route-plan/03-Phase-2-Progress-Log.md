@@ -31889,10 +31889,78 @@ ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformA
 ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
 ```
 
-This is a pre-implementation matrix; no F808 tests have run and no full suite
-is requested. Keep separate Schedule Import teacher-ID width/narrowing work,
-the shared `ClassPageDetailsReadRecord`/Co-Teacher read/write identity flow,
-and persisted CalendarEvent ID-width work deferred. The earlier CMake
-optimization remains complete. F707/F709 and the dense Speaking Evaluation
-row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+At selection, no F808 tests had run; its subsequent acceptance is recorded
+below. No full suite was requested. Keep separate Schedule Import teacher-ID
+width/narrowing work, the shared `ClassPageDetailsReadRecord`/Co-Teacher
+read/write identity flow, and persisted CalendarEvent ID-width work deferred.
+The earlier CMake optimization remains complete. F707/F709 and the dense
+Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### F808 Sub Prep selected class-details wide teacher ID - accepted - 2026-10-13
+
+F808 is accepted at implementation and test commit
+`c0cc9c44ea0fad0bbb061d52bd2e96be9ba1ee3b`. The focused Debug build passed on
+the identical outside-sandbox retry, and the existing combined Sub Prep
+print-source/class-details CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed
+1/1. No full suite ran.
+
+### Batch 222 completion - 2026-10-13
+
+F808 completed the selected read-only Sub Prep class-details teacher-identity
+work in Batch 222; its focused verification is recorded above. F809 continues
+the separate print-source full-profile read path. Schedule Import teacher-ID
+width/narrowing across review/apply/write remains deferred; F767 snapshot
+canonical-ID validation remains accepted as distinct work. The shared Testing
+Class details/read-write model, the `ClassPageDetailsReadRecord`/Co-Teacher
+read/write identity flow, and CalendarEvent teacher-ID width remain deferred.
+F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 223 discovery - 2026-10-13
+
+F809 is limited to the read-only Sub Prep print-source full teacher-profile
+path. The current print source receives teacher IDs through int-based
+`ClassInfo`, int collections, and the int-based full-profile batch API. Add
+dedicated print-source class/schedule and full-profile read records/APIs so
+qint64 teacher identity can pass through the adapter without changing legacy
+`ClassInfo`/`Teacher`, CRUD/write paths, class IDs, or unrelated read flows.
+Preserve checked database conversions, assigned nonpositive sentinels,
+class/day/mode scope, output order, missing/stale fallback, full profile fields,
+and existing batching/no-N+1 metrics.
+
+### F809 Sub Prep print-source wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F809 is selected:** add print-source-specific class/schedule and full
+teacher-profile batch read records/APIs, preserving qint64 teacher IDs from
+database conversion through `src/next/platform/application_services_sub_prep_print_source_port.h` deduplication/index maps and typed `Domain::TeacherId` conversion. Keep legacy `ClassInfo` and `Teacher` models, CRUD/write paths, class IDs, and unrelated reads unchanged. Check database conversion failures without rejecting assigned nonpositive sentinel IDs.
+
+Preserve print schedule class/day/mode scope, returned ordering, and missing or
+stale teacher fallback. Preserve the fields exposed by `SubPrepPrintTeacher`:
+English/Korean names, preferred name/romanization, room, Wi-Fi, internet, Zoom,
+projection, and notes. Keep no-assignment behavior and existing query metrics.
+The current batch API falls back to individual profile reads when batch prepare
+or execute fails; retain that fallback with qint64-safe teacher identity and
+preserve its fallback metrics as well as the successful batch metrics.
+
+Extend
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`
+with an FK-valid teacher/class assignment using ID `2147483648`. Assert exact
+SQLite INTEGER storage, typed output teacher identity, and all fields exposed by
+`SubPrepPrintTeacher` while retaining current no-N+1/batching metrics,
+no-assignment behavior, and the prepare/execute failure fallback with its
+metrics. The existing CMake registration is
+`NextPlatformApplicationServicesSubPrepPrintSourcePort`; build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, inspect
+the exact registration, and run only CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No
+CMake or test-inventory change is expected; no full suite is requested.
+
+F767 snapshot canonical-ID validation remains accepted and is separate from
+deferred Schedule Import teacher-ID width/narrowing across review/apply/write.
+Defer the shared Testing Class details/read-write model, the shared
+`ClassPageDetailsReadRecord`/Co-Teacher flow, and CalendarEvent teacher-ID
+width. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open. At selection, no F809 tests have run.
