@@ -91,6 +91,7 @@ private slots:
     void unavailableSettingsReturnTechnicalFailure();
     void loadsPageLeaveValue();
     void roundTripsBothValuesUsingTheExactLegacyKey();
+    void invalidEnumIsRejectedWithoutChangingStoredValue();
     void closedSessionReturnsTechnicalFailureAndPreservesSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
     void repositoryReadFailureDefaultsAndRemainsSilent();
@@ -236,6 +237,34 @@ roundTripsBothValuesUsingTheExactLegacyKey()
         );
     QVERIFY(unrelated);
     QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
+}
+
+void NextPlatformApplicationServicesClassSelectionResetPolicyPortTests::
+invalidEnumIsRejectedWithoutChangingStoredValue()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        policyKey(),
+        QStringLiteral("on_page_leave")
+        ));
+    const auto original = repository->loadSetting(policyKey());
+    QVERIFY(original);
+    QCOMPARE(original->toString(), QStringLiteral("on_page_leave"));
+
+    ApplicationServicesClassSelectionResetPolicyPort port(services);
+    const auto saved = port.save(
+        static_cast<ClassSelectionResetPolicy>(17)
+        );
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!saved.error().recoverable);
+
+    const auto stored = repository->loadSetting(policyKey());
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("on_page_leave"));
 }
 
 void NextPlatformApplicationServicesClassSelectionResetPolicyPortTests::

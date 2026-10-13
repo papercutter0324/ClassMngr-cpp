@@ -81,6 +81,16 @@ public:
         const Application::ClassSelectionResetPolicy policy
         ) const override
     {
+        if (policy != Application::ClassSelectionResetPolicy::OnApplicationClose
+            && policy != Application::ClassSelectionResetPolicy::OnPageLeave)
+        {
+            return Application::ClassSelectionResetPolicySaveResult::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "Class selection reset policy is invalid.",
+                .recoverable = false
+            });
+        }
+
         if (!m_session || !m_session->isOpen())
         {
             return failure(
