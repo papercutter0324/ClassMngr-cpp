@@ -33064,22 +33064,23 @@ exit gate remains Open.
 
 `NativeEnglishTeacherRepository::getAll()` narrows persisted IDs with
 `.toInt()`, and the directory model/read-port ID is int-backed. A valid Native
-English teacher ID `2147483648` can therefore project as zero and later be
-treated as a new record. F823 preserved this profile ID through its import
-path but explicitly excluded directory repositories; F831 covers this
-separate read boundary.
+English teacher ID `2147483648` cannot fit that model; the configured
+MSVC/Qt 6.12 pre-fix reproduction exposed it as `INT_MIN`. Existing save logic
+treats nonpositive IDs as new records. F823 preserved this profile ID through
+its import path but explicitly excluded directory repositories; F831 covers
+this separate read boundary.
 
 | Candidate | Decision | Reason |
 | --- | --- | --- |
-| Native English Teacher directory-read ID representability (F831) | Selected | The directory read narrows a valid persisted ID before the typed result is exposed. |
+| Native English Teacher directory-read ID representability (F831) | Selected | The directory read narrows a valid persisted identity to a nonpositive value that existing save logic treats as new. |
 
 F831 is selected, not implemented or accepted. In
 `tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp`,
 seed a Native English row with ID `2147483648`, verify
 `typeof(id)='integer'`, and require the port to return a Technical failure
-instead of a successful zero-ID projection; also verify the stored identity
-and row remain unchanged. Preserve ordinary ordering and fields, unavailable
-session behavior, and repository failure contracts. Change only
+instead of exposing a wrongly narrowed, nonpositive ID; also verify the stored
+identity and row remain unchanged. Preserve ordinary ordering and fields,
+unavailable session behavior, and repository failure contracts. Change only
 `src/data/repositories/native_english_teacher_repository.cpp` and the focused
 test file. Run only
 `ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests`;
