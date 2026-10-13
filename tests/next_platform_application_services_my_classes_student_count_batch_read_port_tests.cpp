@@ -12,6 +12,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -72,6 +73,7 @@ class NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests
 
 private slots:
     void readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace();
+    void countsDistinctRowsAboveIntMax();
     void fallsBackPerClassWhenBatchCellReadFails();
     void emptyInputAvoidsRepositoryWork();
     void unavailableSessionReturnsPerClassFailures();
@@ -203,6 +205,109 @@ readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace()
     QCOMPARE(after.columnStatementCount, before.columnStatementCount + 1);
     QCOMPARE(after.dataStatementCount, before.dataStatementCount + 1);
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
+}
+
+void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
+countsDistinctRowsAboveIntMax()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Wide row index class")
+        );
+    QVERIFY(classIdValue > 0);
+    QVERIFY(saveRoster(
+        services,
+        classIdValue,
+        roster(
+            {QStringLiteral("English"), QStringLiteral("Korean")},
+            {}
+            )
+        ));
+
+    const qlonglong firstRowIndex =
+        static_cast<qlonglong>(std::numeric_limits<int>::max()) + 1;
+    const qlonglong secondRowIndex = firstRowIndex + 1;
+    QSqlQuery insertCell(services.databaseSession()->database());
+    QVERIFY2(
+        insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, ?, ?)"
+            )),
+        qPrintable(insertCell.lastError().text())
+        );
+    const auto insert = [
+        &insertCell,
+        classIdValue
+        ](const qlonglong rowIndex, const int columnIndex, const QString& value)
+    {
+        insertCell.bindValue(0, classIdValue);
+        insertCell.bindValue(1, rowIndex);
+        insertCell.bindValue(2, columnIndex);
+        insertCell.bindValue(3, value);
+        return insertCell.exec();
+    };
+    QVERIFY2(
+        insert(firstRowIndex, 0, QStringLiteral("Alice")),
+        qPrintable(insertCell.lastError().text())
+        );
+    QVERIFY2(
+        insert(firstRowIndex, 1, QStringLiteral("\uD559\uC0DD")),
+        qPrintable(insertCell.lastError().text())
+        );
+    QVERIFY2(
+        insert(secondRowIndex, 0, QStringLiteral(" \u2003 ")),
+        qPrintable(insertCell.lastError().text())
+        );
+    QVERIFY2(
+        insert(secondRowIndex, 1, QStringLiteral("\uD559")),
+        qPrintable(insertCell.lastError().text())
+        );
+
+    QSqlQuery storedIndexes(services.databaseSession()->database());
+    QVERIFY2(
+        storedIndexes.prepare(QStringLiteral(
+            "SELECT row_index, typeof(row_index) "
+            "FROM roster_data WHERE class_id=? "
+            "ORDER BY row_index"
+            )),
+        qPrintable(storedIndexes.lastError().text())
+        );
+    storedIndexes.addBindValue(classIdValue);
+    QVERIFY2(
+        storedIndexes.exec(),
+        qPrintable(storedIndexes.lastError().text())
+        );
+    QVERIFY(storedIndexes.next());
+    QCOMPARE(storedIndexes.value(0).toLongLong(), firstRowIndex);
+    QCOMPARE(storedIndexes.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(storedIndexes.next());
+    QCOMPARE(storedIndexes.value(0).toLongLong(), firstRowIndex);
+    QCOMPARE(storedIndexes.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(storedIndexes.next());
+    QCOMPARE(storedIndexes.value(0).toLongLong(), secondRowIndex);
+    QCOMPARE(storedIndexes.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(storedIndexes.next());
+    QCOMPARE(storedIndexes.value(0).toLongLong(), secondRowIndex);
+    QCOMPARE(storedIndexes.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(!storedIndexes.next());
+
+    Platform::ApplicationServicesMyClassesStudentCountBatchReadPort port(
+        services
+        );
+    const auto loaded = port.readMyClassesStudentCounts({
+        classId(classIdValue)
+    });
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(1));
+    QVERIFY(loaded.value().front().classId == classId(classIdValue));
+    QVERIFY(loaded.value().front().studentCount);
+    QCOMPARE(loaded.value().front().studentCount.value(), 2);
 }
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::

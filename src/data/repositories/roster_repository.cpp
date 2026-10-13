@@ -969,7 +969,7 @@ RosterRepository::loadMyClassesStudentCountRecords(
 
     std::vector<int> counts(static_cast<std::size_t>(classIds.size()), 0);
     int currentRequestOrder = -1;
-    int currentRowIndex = -1;
+    qlonglong currentRowIndex = -1;
     bool currentRowHasStudent = false;
     const auto finishCurrentRow = [&]()
     {
@@ -985,11 +985,14 @@ RosterRepository::loadMyClassesStudentCountRecords(
     {
         const int classId = query.value("class_id").toInt();
         const int requestOrder = query.value("request_order").toInt();
-        const int rowIndex = query.value("row_index").toInt();
+        bool rowIndexValid = false;
+        const qlonglong rowIndex =
+            query.value("row_index").toLongLong(&rowIndexValid);
         if (requestOrder < 0
             || requestOrder >= classIds.size()
             || classIds.at(requestOrder) != classId
             || !requestIndexByClassId.contains(classId)
+            || !rowIndexValid
             || rowIndex < 0)
         {
             query.finish();
@@ -1440,7 +1443,7 @@ Result<int> RosterRepository::loadMyClassesStudentCountRecord(
     }
 
     int count = 0;
-    int currentRowIndex = -1;
+    qlonglong currentRowIndex = -1;
     bool currentRowHasStudent = false;
     const auto finishCurrentRow = [&]()
     {
@@ -1451,7 +1454,17 @@ Result<int> RosterRepository::loadMyClassesStudentCountRecord(
     };
     while (query.next())
     {
-        const int rowIndex = query.value("row_index").toInt();
+        bool rowIndexValid = false;
+        const qlonglong rowIndex =
+            query.value("row_index").toLongLong(&rowIndexValid);
+        if (!rowIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Reading My Classes student-count cells failed for class id %1: invalid row index."
+                    ).arg(classId)
+                );
+        }
         if (rowIndex < 0)
         {
             continue;
