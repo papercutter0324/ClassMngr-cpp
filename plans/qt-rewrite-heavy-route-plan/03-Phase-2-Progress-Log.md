@@ -34771,3 +34771,82 @@ overloads, and every field and order.
 | Consumer migration | All production in-repo consumers compile using the explicit portable type. |
 | Compatibility | Codec JSON/save parity and export-query behavior pass with fields and ordering unchanged. |
 | Focused verification | Build `ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`, `ClassMngrNextPlatformClassTransferExportSourceTests`, `ClassMngrClassTransferExportCodecParityTests`, and `ClassMngrClassTransferApplyPackageAdapterTests` in standard `build/windows-x64-debug`. Run exactly CTests `ClassMngrNextApplicationClassTransferExportQueryTests`, `ClassMngrNextPlatformClassTransferExportSourceTests`, `ClassMngrClassTransferExportCodecParityTests`, and `ClassMngrClassTransferApplyPackageAdapterTests`; no full suite or new target. |
+
+### F861 Remove the redundant Class Transfer export-package alias - accepted - 2026-10-14
+
+F861 is accepted at source/test commit
+`2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`; its selection plan was recorded at
+`5fc2368104db5961583f8c7b312634a577916f19`. The redundant
+`ClassTransferExportPackage` alias was removed. Export-query and codec APIs and
+definitions now use `ClassTransferPortablePackage` explicitly; the redundant
+type-identity assertion was removed, and the apply-package adapter tests remain.
+
+Independent verification in standard `build/windows-x64-debug` built
+`ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`,
+`ClassMngrClassTransferExportCodecParityTests`, and
+`ClassMngrClassTransferApplyPackageAdapterTests`. The four registered Debug
+CTests passed 4/4 with `-C Debug`. An initial invocation without `-C Debug`
+marked the selected tests Not Run; the corrected invocation passed. A stale
+generated MSBuild dependency warning seen in the Executor's build did not recur
+in independent verification. No full suite ran.
+
+### Batch 275 completion and deferred-candidate audit - 2026-10-14
+
+F861 completed Batch 275. Two independent audits reviewed all 13 Deferred
+candidates and found none newly actionable; all 13 entries and their existing
+wording remain unchanged. F579 and F598 still require an elevated Windows
+Administrator token for their WPR captures. F629 remains limited by this
+Windows session, with no global runner-availability claim. Other policy,
+measurement, caller, and injection triggers remain unresolved as documented.
+The F709 review confirmed that `CalendarEventQueryPortFactory` and malformed-
+time cache tests predated F709's re-deferral and do not inject into
+CalendarPage's own summary formatter, so F709 remains Deferred. Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 276 discovery and selection - 2026-10-14
+
+The selected issue is the admin-mode campus read-failure mismatch in
+`CampusDashboardPage::loadSelectedCampus()`. After Alpha is loaded, selecting
+Beta and receiving either a read error or successful `nullopt` leaves the
+selector on Beta while `m_currentCampus` and its fields still represent Alpha.
+Admin mode permits edits, and `saveCurrentCampus()` saves the retained record,
+so the user can save Alpha while Beta appears selected. Existing failure tests
+are non-admin and expect the attempted selection to remain; that behavior must
+be preserved.
+
+The shortlist also reviewed these near misses: Class Analytics currently uses
+the same empty state for query failure and no data, but F299 explicitly
+accepted that empty state for either outcome, so changing it needs a policy
+decision; `CalendarEventTiming` repeat-series IDs remain strings despite typed-ID
+objectives, with no production behavior defect observed; Sub Prep's forward-only
+SQL iteration lacks a post-loop error check, but no deterministic mid-iteration
+error fixture or seam was found; other adapter-scan concerns had callers,
+tested policy, or no visible consequence.
+
+| Candidate | Decision | Evidence |
+| --- | --- | --- |
+| Admin campus selection after failed read (F862) | Selected | In admin mode, the attempted selector can name Beta while the retained model and save target remain Alpha. |
+| Class Analytics query-failure empty state | Near miss | F299 accepted the same empty state for no data and read failure; change requires a policy decision. |
+| `CalendarEventTiming` repeat-series ID type | Near miss | IDs remain strings, but no production behavior defect was observed. |
+| Sub Prep forward-only SQL iteration error check | Near miss | No deterministic mid-iteration error fixture or seam was identified. |
+| Other adapter-scan concerns | Near miss | Reviewed concerns had callers, tested policy, or no visible consequence. |
+
+No other slices were found.
+
+F862 is selected, not implemented. In admin mode, after Alpha is loaded,
+selecting Beta and injecting either a read error or successful missing
+`nullopt` must restore the selector to Alpha by `m_currentCampus.id` with combo
+signals blocked. Keep Alpha's model and fields, and leave the last-selected
+preference unchanged. Show inline admin status that the requested campus could
+not be loaded. The failed Beta selection must not commit Beta or write Beta to
+the preference; subsequent editing and saving must target only visibly selected
+and loaded Alpha. A successful retry for Beta must load Beta and follow the
+existing success preference behavior.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Admin read failure and missing campus | With Alpha loaded, inject both a read error and successful `nullopt` for Beta; restore the selector by `m_currentCampus.id` with combo signals blocked, retain Alpha's model/fields, and show inline admin failure status. |
+| Selection and save consistency | Neither failed Beta attempt commits Beta or changes the last-selected preference; editing and saving afterward affect only the visibly selected/loaded Alpha. |
+| Recovery and compatibility | A successful Beta retry loads Beta and follows existing preference behavior; preserve save-failure rollback, normal successful switching, and existing non-admin failure assertions that leave the attempted selector visible. |
+| Focused verification | Use existing `tests/campus_dashboard_page_tests.cpp` and `ClassMngrCampusDashboardPageTests`; build `ClassMngr` and that test target, then run only the registered `ClassMngrCampusDashboardPageTests` CTest. Add no CMake target and run no full suite. |
