@@ -764,7 +764,7 @@ TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
 
 Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
 TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
-    const QList<int>& teacherIds
+    const QList<qint64>& teacherIds
     )
 {
     if (teacherIds.isEmpty())
@@ -776,12 +776,12 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
     m_subPrepRosterOutputTeacherProfileBatchReadMetrics.requestedTeacherCount +=
         teacherIds.size();
 
-    QSet<int> seenTeacherIds;
+    QSet<qint64> seenTeacherIds;
     QStringList requestedValues;
     requestedValues.reserve(teacherIds.size());
     for (qsizetype index = 0; index < teacherIds.size(); ++index)
     {
-        const int teacherId = teacherIds[index];
+        const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
             return std::unexpected(QObject::tr(
@@ -814,7 +814,7 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
         return std::unexpected(query.lastError().text());
     }
 
-    for (const int teacherId : teacherIds)
+    for (const qint64 teacherId : teacherIds)
     {
         query.addBindValue(teacherId);
     }
@@ -843,9 +843,13 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
                 ));
         }
 
-        const int requestedTeacherId = teacherIds[rowIndex];
-        if (query.value("requested_teacher_id").toInt()
-                != requestedTeacherId
+        const qint64 requestedTeacherId = teacherIds[rowIndex];
+        bool returnedRequestedTeacherIdOk = false;
+        const qint64 returnedRequestedTeacherId = query.value(
+            "requested_teacher_id"
+            ).toLongLong(&returnedRequestedTeacherIdOk);
+        if (!returnedRequestedTeacherIdOk
+            || returnedRequestedTeacherId != requestedTeacherId
             || query.value("requested_ordinal").toInt() != rowIndex)
         {
             return std::unexpected(QObject::tr(
@@ -866,8 +870,13 @@ TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
             continue;
         }
 
-        const int returnedTeacherId = query.value("id").toInt();
-        if (returnedTeacherId != requestedTeacherId)
+        bool returnedTeacherIdOk = false;
+        const qint64 returnedTeacherId = query.value("id").toLongLong(
+            &returnedTeacherIdOk
+            );
+        if (!returnedTeacherIdOk
+            || returnedTeacherId <= 0
+            || returnedTeacherId != requestedTeacherId)
         {
             return std::unexpected(QObject::tr(
                 "Loading Sub Prep roster-output teacher failed for %1: "

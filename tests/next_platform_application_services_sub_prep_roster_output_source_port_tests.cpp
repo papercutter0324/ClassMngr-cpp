@@ -184,6 +184,7 @@ class NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests final
 private slots:
     void initTestCase();
     void readsSelectedClassesModeAndRequestedRosterColumns();
+    void preservesWideTeacherIdFromSqliteThroughRosterOutputSourcePort();
     void batchesDistinctAssignedTeachersInFirstSeenOrder();
     void includesUnassignedTeacherAndUsesSelectedMode();
     void emptyScopeAndNoncanonicalIdsAvoidDatabaseReads();
@@ -447,6 +448,183 @@ readsSelectedClassesModeAndRequestedRosterColumns()
         genericProfileMetricsAfter.callCount - genericProfileMetricsBefore.callCount,
         0
         );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+preservesWideTeacherIdFromSqliteThroughRosterOutputSourcePort()
+{
+    constexpr qlonglong wideTeacherId = 2147483648LL;
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Wide teacher ID class"),
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+    QVERIFY(classIdValue < 1000);
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlDatabase database = session->database();
+
+    QSqlQuery insertTeacher(database);
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers ("
+        "id, teacher_kr, teacher_en, preferred_name, "
+        "preferred_romanization, room_number, wifi_name, wifi_password, "
+        "zoom_id, zoom_password) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )));
+    insertTeacher.bindValue(
+        0,
+        QVariant::fromValue<qlonglong>(wideTeacherId)
+        );
+    const QString koreanTeacherName = QString::fromUtf8(
+        "\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 "
+        "\xED\x95\x9C\xEA\xB5\xAD\xEC\x96\xB4"
+        );
+    insertTeacher.bindValue(1, koreanTeacherName);
+    insertTeacher.bindValue(2, QStringLiteral("Wide Teacher English"));
+    insertTeacher.bindValue(3, QStringLiteral("Wide Preferred Name"));
+    insertTeacher.bindValue(4, QStringLiteral("Wide Preferred Romanization"));
+    insertTeacher.bindValue(5, QStringLiteral("Wide Teacher Room"));
+    insertTeacher.bindValue(6, QStringLiteral("Wide Teacher Network"));
+    insertTeacher.bindValue(7, QStringLiteral("Wide Teacher WiFi Password"));
+    insertTeacher.bindValue(8, QStringLiteral("wide-teacher-zoom-id"));
+    insertTeacher.bindValue(9, QStringLiteral("wide-teacher-zoom-password"));
+    QVERIFY2(
+        insertTeacher.exec(),
+        qPrintable(insertTeacher.lastError().text())
+        );
+
+    QSqlQuery assignTeacher(database);
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
+        )));
+    assignTeacher.bindValue(
+        0,
+        QVariant::fromValue<qlonglong>(wideTeacherId)
+        );
+    assignTeacher.bindValue(1, classIdValue);
+    QVERIFY2(
+        assignTeacher.exec(),
+        qPrintable(assignTeacher.lastError().text())
+        );
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery persistedTeacher(database);
+    QVERIFY(persistedTeacher.prepare(QStringLiteral(
+        "SELECT typeof(id), id FROM teachers WHERE id = ?"
+        )));
+    persistedTeacher.bindValue(
+        0,
+        QVariant::fromValue<qlonglong>(wideTeacherId)
+        );
+    QVERIFY2(
+        persistedTeacher.exec(),
+        qPrintable(persistedTeacher.lastError().text())
+        );
+    QVERIFY(persistedTeacher.next());
+    QCOMPARE(persistedTeacher.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(persistedTeacher.value(1).toLongLong(), wideTeacherId);
+
+    QSqlQuery persistedAssignment(database);
+    QVERIFY(persistedAssignment.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id FROM class_info "
+        "WHERE class_id = ?"
+        )));
+    persistedAssignment.bindValue(0, classIdValue);
+    QVERIFY2(
+        persistedAssignment.exec(),
+        qPrintable(persistedAssignment.lastError().text())
+        );
+    QVERIFY(persistedAssignment.next());
+    QCOMPARE(
+        persistedAssignment.value(0).toString(),
+        QStringLiteral("integer")
+        );
+    QCOMPARE(persistedAssignment.value(1).toLongLong(), wideTeacherId);
+
+    QSqlQuery validTeacherAssignment(database);
+    QVERIFY(validTeacherAssignment.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM teachers AS teacher "
+        "JOIN class_info AS info ON info.teacher_id = teacher.id "
+        "WHERE info.class_id = ? AND teacher.id = ?"
+        )));
+    validTeacherAssignment.bindValue(0, classIdValue);
+    validTeacherAssignment.bindValue(
+        1,
+        QVariant::fromValue<qlonglong>(wideTeacherId)
+        );
+    QVERIFY2(
+        validTeacherAssignment.exec(),
+        qPrintable(validTeacherAssignment.lastError().text())
+        );
+    QVERIFY(validTeacherAssignment.next());
+    QCOMPARE(validTeacherAssignment.value(0).toInt(), 1);
+
+    QVERIFY(services.rosterService()->saveRoster(
+        classIdValue,
+        rosterWithColumns()
+        ));
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const SubPrepRosterOutputSourceQuery query(port);
+    const auto result = query.execute(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().teachers().size(), std::size_t(1));
+    const auto expectedTeacherId = *TeacherId::fromString("2147483648");
+    QCOMPARE(
+        result.value().teachers().front(),
+        (SubPrepRosterOutputTeacher{
+            expectedTeacherId,
+            "Wide Teacher English",
+            utf8(koreanTeacherName),
+            "Wide Preferred Name",
+            "Wide Preferred Romanization"
+        })
+        );
+
+    QCOMPARE(result.value().classes().size(), std::size_t(1));
+    const auto& outputClass = result.value().classes().front();
+    QCOMPARE(outputClass.id, classId(classIdValue));
+    QVERIFY(outputClass.teacherId.has_value());
+    QCOMPARE(*outputClass.teacherId, expectedTeacherId);
+    QCOMPARE(outputClass.classroomName, std::string("Wide teacher ID class"));
+    QCOMPARE(outputClass.grade, std::string("E4"));
+    QCOMPARE(outputClass.level, std::string("Hercules"));
+    QCOMPARE(
+        outputClass.classTeacherEnglishName,
+        std::string("Wide Teacher English")
+        );
+    QCOMPARE(outputClass.classTeacherKoreanName, utf8(koreanTeacherName));
+    QCOMPARE(outputClass.room, std::string("Wide Teacher Room"));
+    QCOMPARE(outputClass.wifiName, std::string("Wide Teacher Network"));
+    QCOMPARE(
+        outputClass.wifiPassword,
+        std::string("Wide Teacher WiFi Password")
+        );
+    QCOMPARE(outputClass.zoomId, std::string("wide-teacher-zoom-id"));
+    QCOMPARE(
+        outputClass.zoomPassword,
+        std::string("wide-teacher-zoom-password")
+        );
+    QCOMPARE(outputClass.meetings.size(), std::size_t(1));
+    QCOMPARE(outputClass.meetings.front().weekday, SubPrepWeekday::Monday);
+    QCOMPARE(outputClass.meetings.front().startTime, std::string("9:00 AM"));
+    QCOMPARE(outputClass.meetings.front().endTime, std::string("10:00 AM"));
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::

@@ -358,9 +358,9 @@ public:
                 }
             }
 
-            QList<int> requestedTeacherIds;
+            QList<qint64> requestedTeacherIds;
             requestedTeacherIds.reserve(loadedClassInfos.size());
-            QHash<int, qsizetype> teacherProfileIndexById;
+            QHash<qint64, qsizetype> teacherProfileIndexById;
             teacherProfileIndexById.reserve(loadedClassInfos.size());
             for (qsizetype index = 0; index < loadedClassInfos.size(); ++index)
             {
@@ -441,7 +441,7 @@ public:
 
             Application::SubPrepRosterOutputSourceInput source;
             source.classes.reserve(request.selectedClassIds.size());
-            std::unordered_set<int> copiedTeacherIds;
+            std::unordered_set<qint64> copiedTeacherIds;
             copiedTeacherIds.reserve(request.selectedClassIds.size());
             std::size_t totalRows = 0;
             std::size_t totalCells = 0;
@@ -846,7 +846,7 @@ private:
         return parsed;
     }
 
-    [[nodiscard]] static Domain::TeacherId teacherId(const int id)
+    [[nodiscard]] static Domain::TeacherId teacherId(const qint64 id)
     {
         return *Domain::TeacherId::fromString(std::to_string(id));
     }

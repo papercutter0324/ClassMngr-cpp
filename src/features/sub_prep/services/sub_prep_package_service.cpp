@@ -198,6 +198,29 @@ std::optional<int> legacyId(
     return parsed;
 }
 
+std::optional<qint64> teacherId(
+    const std::string& value
+    )
+{
+    if (value.empty())
+    {
+        return std::nullopt;
+    }
+
+    qint64 parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    if (error != std::errc{} || end != value.data() + value.size()
+        || parsed <= 0 || std::to_string(parsed) != value)
+    {
+        return std::nullopt;
+    }
+    return parsed;
+}
+
 std::optional<QString> decodedText(
     const std::string& value,
     TextProjectionCounts* counts = nullptr
@@ -325,18 +348,18 @@ QList<PackageClass> loadPackageClasses(
     int mappedClassCount = 0;
     int mappedRowCount = 0;
     int mappedCellCount = 0;
-    QHash<int, Teacher> teachersById;
+    QHash<qint64, Teacher> teachersById;
     teachersById.reserve(static_cast<qsizetype>(source.teachers().size()));
     for (const auto& sourceTeacher : source.teachers())
     {
-        const auto teacherId = legacyId(sourceTeacher.id.value());
+        const auto parsedTeacherId = teacherId(sourceTeacher.id.value());
         const auto englishName = decodeSourceText(sourceTeacher.englishName);
         const auto koreanName = decodeSourceText(sourceTeacher.koreanName);
         const auto preferredName = decodeSourceText(sourceTeacher.preferredName);
         const auto preferredRomanization = decodeSourceText(
             sourceTeacher.preferredRomanization
             );
-        if (!teacherId || !englishName || !koreanName || !preferredName
+        if (!parsedTeacherId || !englishName || !koreanName || !preferredName
             || !preferredRomanization)
         {
             if (errorMessage)
@@ -349,12 +372,11 @@ QList<PackageClass> loadPackageClasses(
         }
 
         Teacher teacher;
-        teacher.id = *teacherId;
         teacher.teacherEn = *englishName;
         teacher.teacherKr = *koreanName;
         teacher.preferredName = *preferredName;
         teacher.preferredRomanization = *preferredRomanization;
-        teachersById.insert(*teacherId, std::move(teacher));
+        teachersById.insert(*parsedTeacherId, std::move(teacher));
     }
 
     for (const auto& sourceClass : source.classes())
@@ -409,8 +431,10 @@ QList<PackageClass> loadPackageClasses(
 
         if (sourceClass.teacherId.has_value())
         {
-            const auto teacherId = legacyId(sourceClass.teacherId->value());
-            if (!teacherId || !teachersById.contains(*teacherId))
+            const auto parsedTeacherId =
+                teacherId(sourceClass.teacherId->value());
+            if (!parsedTeacherId
+                || !teachersById.contains(*parsedTeacherId))
             {
                 if (errorMessage)
                 {
@@ -420,7 +444,7 @@ QList<PackageClass> loadPackageClasses(
                 }
                 return {};
             }
-            packageClass.teacher = teachersById.value(*teacherId);
+            packageClass.teacher = teachersById.value(*parsedTeacherId);
         }
         else
         {

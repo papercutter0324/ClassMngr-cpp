@@ -173,7 +173,7 @@ struct RosterPrintClassInfoBatchReadMetrics final
 struct SubPrepRosterOutputClassInfoReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString classGrade;
     QString classLevel;
     QString teacherEnglishName;
@@ -195,7 +195,7 @@ struct SubPrepRosterOutputClassInfoBatchReadMetrics final
 struct SubPrepRosterOutputScheduleReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QList<ClassTime> meetings;
 };
 

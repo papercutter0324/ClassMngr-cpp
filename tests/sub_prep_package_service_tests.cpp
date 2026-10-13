@@ -64,6 +64,7 @@ public:
         lastRequest = {};
         failReads = false;
         injectInvalidUtf8 = false;
+        typedSource.reset();
     }
 
     [[nodiscard]] Result loadSource(const Request& request) override;
@@ -72,12 +73,16 @@ public:
     Request lastRequest;
     bool failReads = false;
     bool injectInvalidUtf8 = false;
+    std::optional<
+        ClassMngr::Next::Application::SubPrepRosterOutputSourceInput
+        > typedSource;
 };
 
 FakeRosterOutputSourceReadPort g_rosterOutputSourceReadPort;
 
 void resetData()
 {
+    g_rosterOutputSourceReadPort.reset();
     g_classes.clear();
     g_classInfo.clear();
     g_rosters.clear();
@@ -360,6 +365,11 @@ FakeRosterOutputSourceReadPort::loadSource(const Request& request)
             .message = "Synthetic roster-output read failure.",
             .recoverable = false
         });
+    }
+
+    if (typedSource.has_value())
+    {
+        return Result::success(*typedSource);
     }
 
     ClassMngr::Next::Application::SubPrepRosterOutputSourceInput input;
@@ -843,6 +853,7 @@ class SubPrepPackageServiceTests : public QObject
 private slots:
     void init();
     void byDayPackageCreatesExpectedTreeAndReplacesTransactionally();
+    void acceptsWideTeacherIdAndUsesPreferredDisplayName();
     void dailyPackageUsesDailyRosterTemplate();
     void perClassPackagePlacesRosterInsideClassFolder();
     void intensiveScheduleControlsSelectedDayFiltering();
@@ -934,6 +945,86 @@ void SubPrepPackageServiceTests
     QVERIFY(!QFileInfo::exists(sentinel.fileName()));
     QVERIFY(QFileInfo::exists(
         QDir(replaced.outputDirectory).filePath(QStringLiteral("Sub Prep.pdf"))
+        ));
+}
+
+void SubPrepPackageServiceTests::
+acceptsWideTeacherIdAndUsesPreferredDisplayName()
+{
+    const auto wideTeacherId =
+        *ClassMngr::Next::Domain::TeacherId::fromString("2147483648");
+    ClassMngr::Next::Application::SubPrepRosterOutputSourceInput typedSource;
+    typedSource.teachers.push_back({
+        wideTeacherId,
+        "Wide Teacher English",
+        "Wide Teacher Korean",
+        "Preferred Wide Teacher",
+        "Wide Teacher Romanization"
+    });
+
+    ClassMngr::Next::Application::SubPrepRosterOutputClass sourceClass{
+        typedClassId(42)
+    };
+    sourceClass.teacherId = wideTeacherId;
+    sourceClass.classroomName = "Wide ID class";
+    sourceClass.grade = "E4";
+    sourceClass.level = "Hercules";
+    sourceClass.classTeacherEnglishName = "Wide Teacher English";
+    sourceClass.classTeacherKoreanName = "Wide Teacher Korean";
+    sourceClass.room = "Wide Teacher Room";
+    sourceClass.wifiName = "Wide Teacher Network";
+    sourceClass.wifiPassword = "Wide Teacher WiFi Password";
+    sourceClass.zoomId = "wide-teacher-zoom-id";
+    sourceClass.zoomPassword = "wide-teacher-zoom-password";
+    sourceClass.meetings.push_back({
+        ClassMngr::Next::Application::SubPrepWeekday::Tuesday,
+        "4:00 PM",
+        "4:50 PM"
+    });
+    sourceClass.rosterColumns = {"English", "Korean"};
+    sourceClass.rosterRows = {{"Alex", "Alex Korean"}};
+    typedSource.classes.push_back(std::move(sourceClass));
+    g_rosterOutputSourceReadPort.typedSource = std::move(typedSource);
+
+    QTemporaryDir targetRoot;
+    QVERIFY(targetRoot.isValid());
+    const SubPrepPackageService::Result result =
+        SubPrepPackageService::generate(
+            packageRequest(targetRoot.path(), QStringLiteral("Wide teacher"))
+            );
+
+    QVERIFY2(
+        result.status == SubPrepPackageService::Status::Completed,
+        qPrintable(result.message)
+        );
+    QVERIFY(result.folderCreated);
+    QCOMPARE(g_rosterOutputSourceReadPort.loadCount, 1);
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedClassIds.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(
+        g_rosterOutputSourceReadPort.lastRequest.selectedClassIds.front(),
+        typedClassId(42)
+        );
+
+    const QStringList classFolders =
+        QDir(result.outputDirectory).entryList(
+            QDir::Dirs | QDir::NoDotAndDotDot
+            );
+    QCOMPARE(classFolders.size(), 1);
+    QVERIFY2(
+        classFolders.front().contains(QStringLiteral("Preferred Wide Teacher")),
+        qPrintable(classFolders.front())
+        );
+    QVERIFY(classFolders.front().contains(QStringLiteral("E4 Hercules")));
+    QVERIFY(classFolders.front().contains(QStringLiteral("Tues (4.00)")));
+    QVERIFY(!classFolders.front().contains(QStringLiteral("Wide Teacher English")));
+    QVERIFY(!classFolders.front().contains(QStringLiteral("Wide Teacher Romanization")));
+    QVERIFY(QFileInfo::exists(
+        QDir(result.outputDirectory).filePath(
+            QStringLiteral("Rosters - By Day.pdf")
+            )
         ));
 }
 

@@ -2817,7 +2817,18 @@ ClassInfoRepository::loadSubPrepRosterOutputClassInfoRecords(
         const QVariant teacherId = query.value(
             QStringLiteral("teacher_id")
             );
-        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (!teacherId.isNull())
+        {
+            bool teacherIdOk = false;
+            const qint64 parsedTeacherId = teacherId.toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading Sub Prep roster output class information failed: the database returned an invalid teacher identifier."
+                    ));
+            }
+            record.teacherId = parsedTeacherId;
+        }
         record.classGrade = query.value(
             QStringLiteral("class_grade")
             ).toString();
@@ -4093,7 +4104,19 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
             const QVariant teacherId = query.value(
                 QStringLiteral("teacher_id")
                 );
-            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            if (!teacherId.isNull())
+            {
+                bool teacherIdOk = false;
+                const qint64 parsedTeacherId =
+                    teacherId.toLongLong(&teacherIdOk);
+                if (!teacherIdOk)
+                {
+                    return std::unexpected(QObject::tr(
+                        "Loading scoped Sub Prep roster-output schedule failed: the database returned an invalid teacher identifier."
+                        ));
+                }
+                record.teacherId = parsedTeacherId;
+            }
             indexesByClassId.insert(classId, records.size());
             records.append(std::move(record));
             index = indexesByClassId.constFind(classId);

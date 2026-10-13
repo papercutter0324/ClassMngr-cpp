@@ -108,7 +108,7 @@ struct TeacherProfileBatchReadMetrics final
 
 struct SubPrepRosterOutputTeacherProfileReadFields final
 {
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString teacherKr;
     QString teacherEn;
     QString preferredRomanization;
@@ -117,7 +117,7 @@ struct SubPrepRosterOutputTeacherProfileReadFields final
 
 struct SubPrepRosterOutputTeacherProfileBatchReadRecord final
 {
-    int requestedTeacherId = -1;
+    qint64 requestedTeacherId = -1;
     Result<SubPrepRosterOutputTeacherProfileReadFields> profile;
 };
 
@@ -231,7 +231,7 @@ public:
         teacherProfileBatchReadMetrics() const noexcept;
     [[nodiscard]] Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
         loadSubPrepRosterOutputTeacherProfileRecords(
-            const QList<int>& teacherIds
+            const QList<qint64>& teacherIds
             );
     [[nodiscard]] const SubPrepRosterOutputTeacherProfileBatchReadMetrics&
         subPrepRosterOutputTeacherProfileBatchReadMetrics() const noexcept;
