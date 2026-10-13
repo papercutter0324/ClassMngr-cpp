@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F805 was accepted in Batch 219 at `d1b49b6b80689eea8a80a7e6be9a090f6a07f1f3`; Batch 220 selects F806 to preserve wide teacher IDs in the Class Details Page read path; the Sub Prep roster-output wide teacher-ID design, persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F806 was accepted in Batch 220 at `cc384fc3d1aeed92060daabba25c3ac6ce182415`; Batch 221 selects F807 for wide teacher IDs through the read-only Sub Prep roster-output pipeline; `ClassPageDetailsReadRecord`, persisted CalendarEvent ID-width work, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,13 +114,12 @@ Treat this plan as an operational summary, not a history:
   independent audit found int-bounded primary-key reads in the repository and
   by-ID adapter, plus range projection that rejects narrowed IDs. The fix
   spans the shared model and repository CRUD surface.
-- Sub Prep roster-output wide teacher ID - deferred because the
-  `SubPrepPackageService` identity map and parser remain int-based; this needs
-  a separate bounded design outside F806.
+- ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
+  Co-Teacher read/write identity flow can be covered.
 
-#### Active batch: Batch 220
+#### Active batch: Batch 221
 
-- F806 - Class Details Page wide teacher ID - Preserve the canonical signed-64 teacher ID in this read record and repository path, reusing F805's qint64 single teacher-display lookup.
+- F807 - Sub Prep roster-output wide teacher IDs - Preserve signed-64 teacher IDs through the read-only repository, source-port, and package-mapping pipeline while keeping class IDs int and global Teacher/CRUD contracts unchanged.
 
 ## Objective
 

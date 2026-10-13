@@ -31726,8 +31726,96 @@ ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformA
 ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests$"
 ```
 
-This is a pre-implementation matrix, not acceptance evidence; no F806 tests
-have run and no full suite is requested. The Sub Prep roster-output teacher-ID
-issue and persisted CalendarEvent ID-width issue remain deferred. F707/F709
-and the dense Speaking Evaluation row-limit policy remain deferred; Phase 2
-Gates 1/2 remain Partial and the formal exit gate remains Open.
+At selection, no F806 tests had yet run; its subsequent acceptance is recorded
+below. No full suite was requested. The Sub Prep roster-output teacher-ID issue
+and persisted CalendarEvent ID-width issue remained deferred at that point.
+F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F806 Class Details Page wide teacher IDs - accepted - 2026-10-13
+
+F806 is accepted at implementation and test commit
+`cc384fc3d1aeed92060daabba25c3ac6ce182415`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` passed
+on the identical outside-sandbox retry, and the exact CTest
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`
+passed 1/1. No full suite ran.
+
+### Batch 220 completion - 2026-10-13
+
+F806 completed the selected work in Batch 220. Its Class Details Page teacher
+identity path and focused verification are recorded above. The adjacent
+`ClassPageDetailsReadRecord` teacher-ID path is deferred until its shared
+Co-Teacher read/write identity flow can be covered. The persisted CalendarEvent
+ID-width issue remains deferred because its fix spans the shared model and
+repository CRUD surface. F707/F709 and the dense Speaking Evaluation row-limit
+policy remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit
+gate remains Open.
+
+### Batch 221 discovery - 2026-10-13
+
+F807 continues signed-64 teacher identity through the read-only Sub Prep
+roster-output pipeline. Widen `SubPrepRosterOutputClassInfoReadRecord` and
+`SubPrepRosterOutputScheduleReadRecord` plus checked conversions in
+`src/data/repositories/class_info_repository.h` / `.cpp`; widen
+`SubPrepRosterOutputTeacherProfileReadFields`,
+`SubPrepRosterOutputTeacherProfileBatchReadRecord`, requested IDs, API, and
+checked conversions in `src/data/repositories/teacher_repository.h` / `.cpp`.
+Use qint64 in the source-port deduplication, indexing, and request maps in
+`src/next/platform/application_services_sub_prep_roster_output_source_port.h`
+while class IDs remain int. In
+`src/features/sub_prep/services/sub_prep_package_service.cpp`, use a
+qint64-specific teacher-ID parser and local qint64-keyed map; retain int
+class-ID parsing and avoid narrowing into legacy `Teacher.id`, which the
+formatter does not need because it consumes display-name fields. Keep global
+Teacher/CRUD contracts unchanged. Preserve row ordering, fallback behavior,
+and query metrics. Defer
+`ClassPageDetailsReadRecord` until its shared Co-Teacher read/write identity
+flow can be covered; keep CalendarEvent ID-width work deferred.
+
+### F807 Sub Prep roster-output wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F807 is selected:** widen `SubPrepRosterOutputClassInfoReadRecord` and
+`SubPrepRosterOutputScheduleReadRecord`, with checked signed-64 conversions in
+`src/data/repositories/class_info_repository.h` / `.cpp`. Widen
+`SubPrepRosterOutputTeacherProfileReadFields`,
+`SubPrepRosterOutputTeacherProfileBatchReadRecord`, requested IDs, API, and
+checked conversions in `src/data/repositories/teacher_repository.h` / `.cpp`.
+Update the source-port teacher-ID deduplication, indexing, and request maps in
+`src/next/platform/application_services_sub_prep_roster_output_source_port.h`
+to qint64, leaving class IDs int. Update
+`src/features/sub_prep/services/sub_prep_package_service.cpp` to parse typed
+teacher IDs with a qint64-specific helper and index teachers in a local
+qint64-keyed map. Preserve int class-ID parsing and do not narrow the teacher
+ID into legacy `Teacher.id`; the package formatter consumes teacher
+display-name fields only. Do not widen global Teacher or CRUD contracts.
+Preserve row ordering, fallback behavior, and query metrics.
+
+Extend the existing tests:
+`tests/next_platform_application_services_sub_prep_roster_output_source_port_tests.cpp`
+must seed an FK-valid teacher with explicit ID `2147483648` and verify storage
+and reads report SQLite INTEGER; `tests/sub_prep_package_service_tests.cpp`
+must include a wide typed teacher-ID fixture and verify package mapping and
+display output succeed. Both CMake registrations already exist. Build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
+and `ClassMngrSubPrepPackageServiceTests`; inspect the exact CTest registrations
+and run only
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+and `ClassMngrSubPrepPackageServiceTests`. No CMake or test-inventory change is
+expected.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests ClassMngrSubPrepPackageServiceTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^(ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests|ClassMngrSubPrepPackageServiceTests)$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests|ClassMngrSubPrepPackageServiceTests)$"
+```
+
+This is a pre-implementation matrix; no F807 tests have run and no full suite
+is requested. Defer `ClassPageDetailsReadRecord` until its shared Co-Teacher
+read/write identity flow can be covered, and keep persisted CalendarEvent
+ID-width work deferred. The earlier CMake optimization remains complete.
+F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
