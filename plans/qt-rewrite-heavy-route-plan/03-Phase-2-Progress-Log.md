@@ -32102,3 +32102,68 @@ No CMake registration change is expected; no full suite is requested.
 F767 remains distinct accepted snapshot canonical-ID validation, and
 CalendarEvent event-ID-width work remains deferred. Phase 2 Gates 1/2 remain
 Partial and the formal exit gate remains Open.
+
+### F811 Class Notes teacher-display wide teacher ID - accepted - 2026-10-13
+
+F811 is accepted at source/test commit
+`46d824813028256cc46f1b293a00d026757fbe87`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests` passed
+after the identical outside-sandbox retry due to `ZERO_CHECK`/FileTracker
+`E_ACCESSDENIED`. The exact CTest
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests` passed
+1/1. No full suite ran.
+
+### Batch 225 completion - 2026-10-13
+
+F811 completed Batch 225 by preserving wide teacher identity through the
+read-only Class Notes teacher-display path. Batch 226 selects the Teacher
+Profile typed read. Schedule Import teacher-ID width/narrowing remains separate
+from accepted F767 snapshot canonical-ID validation; shared Testing Class
+editor/update identity, the `ClassPageDetailsReadRecord`/Co-Teacher read/write
+flow, and persisted CalendarEvent event-ID width remain deferred. The earlier
+project-configuration and CMake optimization remains complete. F707/F709 and
+the dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 226 discovery and selection - 2026-10-13
+
+The next bounded teacher-ID issue is the typed Teacher Profile read. The port
+accepts `Domain::TeacherId`, but its adapter narrows the identity to `int`
+before calling `lookupTeacherById(int)`. F812 isolates this read by adding a
+profile-specific qint64 read record/API and using it only from
+`ApplicationServicesTeacherProfileReadPort`. Keep the legacy `Teacher` model,
+generic lookup API, profile editing and writes, and Class Import UI's current
+int IDs unchanged.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Teacher Profile typed read wide ID (F812) | Selected | The typed port currently narrows before lookup; a dedicated read projection isolates qint64 without changing legacy or write contracts. |
+| Initial Setup / Testing Teacher Choice | Deferred | Downstream UI controls and selection contracts narrow teacher IDs to int. |
+| `ClassPageDetailsReadRecord` / Co-Teacher read/write identity | Deferred | Broader shared identity flow should be covered together. |
+| Schedule Import teacher-ID width across snapshot/review/apply/write | Deferred | Broader workflow; keep separate from accepted F767 snapshot canonical-ID validation. |
+| Class Import teacher-ID keys | Deferred | The import flow currently begins with int-keyed teacher IDs. |
+
+### F812 Teacher Profile typed read wide teacher ID - selected and acceptance matrix - 2026-10-13
+
+**F812 is selected:** add a dedicated Teacher Profile read record/API carrying
+qint64 teacher identity, and switch only
+`ApplicationServicesTeacherProfileReadPort` to it. Keep the legacy `Teacher`
+model, generic `lookupTeacherById(int)` API, profile editing and writes, and
+Class Import UI int IDs unchanged.
+
+Add a database-backed regression that inserts teacher ID `2147483648`
+directly, checks exact SQLite INTEGER storage, reads it through the typed port,
+and asserts the returned typed ID and all 14 Teacher Profile fields. Preserve
+canonical positive ID, missing-profile, and repository-failure behavior. The
+existing CMake registration is
+`NextPlatformApplicationServicesTeacherProfileReadPort`; build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests`, inspect
+the registration, and run only CTest matching
+`^ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests$`. No
+CMake change is expected, and no full suite is requested.
+
+F767 snapshot canonical-ID validation remains distinct and accepted; Schedule
+Import width/narrowing and the other candidates above remain deferred. The
+earlier project-configuration and CMake optimization remains complete. Phase
+2 Gates 1/2 remain Partial and the formal exit gate remains Open.
