@@ -293,6 +293,22 @@ Status ClassInfoRepository::saveClassInfo(
     const ClassInfo& info
     )
 {
+    return saveClassInfoWithTeacherId(info, info.teacherId);
+}
+
+Status ClassInfoRepository::saveClassDetails(
+    const ClassInfo& info,
+    const qint64 teacherId
+    )
+{
+    return saveClassInfoWithTeacherId(info, teacherId);
+}
+
+Status ClassInfoRepository::saveClassInfoWithTeacherId(
+    const ClassInfo& info,
+    const qint64 teacherId
+    )
+{
     if (info.classId <= 0)
     {
         return std::unexpected(
@@ -354,8 +370,8 @@ Status ClassInfoRepository::saveClassInfo(
 
     query.addBindValue(info.classId);
     query.addBindValue(
-        info.teacherId > 0
-            ? QVariant(info.teacherId)
+        teacherId > 0
+            ? QVariant(teacherId)
             : QVariant()
         );
     query.addBindValue(info.classGrade);
@@ -594,7 +610,8 @@ Status assignExportTeacherId(
 template<class Record>
 Result<Record> loadClassInfoRecord(
     QSqlDatabase& database,
-    int classId
+    int classId,
+    qint64* exactTeacherId = nullptr
     )
 {
     if (classId <= 0)
@@ -653,6 +670,27 @@ Result<Record> loadClassInfoRecord(
         const QVariant teacherId = query.value("teacher_id");
         if (const Status assigned = assignExportTeacherId(info, teacherId); !assigned)
             return std::unexpected(assigned.error());
+        if (exactTeacherId)
+        {
+            bool valid = false;
+            *exactTeacherId = teacherId.isNull()
+                ? -1 : teacherId.toLongLong(&valid);
+            if (!teacherId.isNull() && !valid)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading class information failed: invalid assigned teacher identifier."));
+            }
+            // Only validation uses the int surrogate; persistence binds the
+            // separate exact teacher ID.
+            if (*exactTeacherId > std::numeric_limits<int>::max())
+            {
+                info.teacherId = -1;
+            }
+            else if (*exactTeacherId < std::numeric_limits<int>::min())
+            {
+                info.teacherId = -2; // Preserve invalid negative-ID validation.
+            }
+        }
         info.teacherKr =    query.value("teacher_kr").toString();
         info.teacherEn =    query.value("teacher_en").toString();
         info.teacherPreferredName =
@@ -767,6 +805,21 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(int classId)
 {
     ++m_scheduleClassInfoReadMetrics.singleClassInfoReadCount;
     return loadClassInfoRecord<ClassInfo>(m_database, classId);
+}
+
+Result<ClassDetailsSaveReadRecord> ClassInfoRepository::loadClassDetailsSaveInfo(
+    const int classId
+    )
+{
+    ClassDetailsSaveReadRecord record;
+    const auto loaded = loadClassInfoRecord<ClassInfo>(
+        m_database, classId, &record.teacherId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+    record.info = *loaded;
+    return record;
 }
 
 Result<ClassTransferExportClassInfoReadRecord>

@@ -47,9 +47,27 @@ class NextApplicationInitialSetupTeacherChoicesReadQueryTests final
 
 private slots:
     void preservesOrderedTypedIdsAndAllUtf16NameFields();
+    void preservesWideCanonicalTeacherIds();
     void preservesEmptySuccessAndStructuredFailure();
     void rejectsInvalidOrDuplicateTeacherIds();
 };
+
+void NextApplicationInitialSetupTeacherChoicesReadQueryTests::
+preservesWideCanonicalTeacherIds()
+{
+    RecordingInitialSetupTeacherChoicesReadPort port;
+    InitialSetupTeacherChoicesSnapshot expected;
+    for (const std::string id : {"2147483648", "9223372036854775807"})
+    {
+        expected.teachers.push_back({.teacherId = teacherId(id)});
+    }
+    port.result = InitialSetupTeacherChoicesResult::success(expected);
+    const InitialSetupTeacherChoicesReadQuery query(port);
+    const auto result = query.execute();
+    QVERIFY(result);
+    QVERIFY(result.value() == expected);
+    QCOMPARE(port.callCount, 1);
+}
 
 void NextApplicationInitialSetupTeacherChoicesReadQueryTests::
 preservesOrderedTypedIdsAndAllUtf16NameFields()
@@ -134,7 +152,10 @@ rejectsInvalidOrDuplicateTeacherIds()
         {"0"},
         {"01"},
         {"-1"},
-        {"2147483648"},
+        {"9223372036854775808"},
+        {"02147483648"},
+        {"+8"},
+        {" 8"},
         {"17x"},
         {"01", "01"}
     };
@@ -168,31 +189,34 @@ rejectsInvalidOrDuplicateTeacherIds()
         QCOMPARE(port.callCount, 1);
     }
 
-    RecordingInitialSetupTeacherChoicesReadPort port;
-    InitialSetupTeacherChoicesSnapshot snapshot;
-    for (const std::string id : {"17", "17"})
+    for (const std::string repeatedId : {"17", "2147483648"})
     {
-        snapshot.teachers.push_back({
-            .teacherId = teacherId(id),
-            .teacherKr = u"Teacher",
-            .teacherEn = u"Teacher",
-            .preferredRomanization = u"Teacher",
-            .preferredName = u"Teacher"
-        });
+        RecordingInitialSetupTeacherChoicesReadPort port;
+        InitialSetupTeacherChoicesSnapshot snapshot;
+        for (int duplicate = 0; duplicate < 2; ++duplicate)
+        {
+            snapshot.teachers.push_back({
+                .teacherId = teacherId(repeatedId),
+                .teacherKr = u"Teacher",
+                .teacherEn = u"Teacher",
+                .preferredRomanization = u"Teacher",
+                .preferredName = u"Teacher"
+            });
+        }
+        port.result = InitialSetupTeacherChoicesResult::success(
+            std::move(snapshot)
+            );
+        const InitialSetupTeacherChoicesReadQuery query(port);
+
+        const auto result = query.execute();
+
+        QVERIFY(!result);
+        QVERIFY(result.error().message ==
+            "Initial setup teacher choices contain a duplicate teacher identifier.");
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, 1);
     }
-    port.result = InitialSetupTeacherChoicesResult::success(
-        std::move(snapshot)
-        );
-    const InitialSetupTeacherChoicesReadQuery query(port);
-
-    const auto result = query.execute();
-
-    QVERIFY(!result);
-    QVERIFY(result.error().message ==
-        "Initial setup teacher choices contain a duplicate teacher identifier.");
-    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
-    QVERIFY(!result.error().recoverable);
-    QCOMPARE(port.callCount, 1);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationInitialSetupTeacherChoicesReadQueryTests)

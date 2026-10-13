@@ -36,7 +36,7 @@ public:
         for (const InitialSetupTeacherChoice& teacher :
              source.value().teachers)
         {
-            if (!isCanonicalPositiveDecimalId(teacher.teacherId.value()))
+            if (!isCanonicalPositiveDecimalId64(teacher.teacherId.value()))
             {
                 return failure(
                     Domain::ErrorCode::Validation,

@@ -226,7 +226,8 @@ forwardsRequestsWithAbsentSchedules()
 void NextApplicationClassDetailsSaveUseCaseTests::
 forwardsOptionalTeacherOverride()
 {
-    for (const std::string teacherId : {"8", "2147483647"})
+    for (const std::string teacherId : {
+             "8", "2147483647", "2147483648", "9223372036854775807"})
     {
         RecordingSavePort port;
         Application::ClassDetailsSaveRequest value = request("42");
@@ -246,7 +247,8 @@ void NextApplicationClassDetailsSaveUseCaseTests::
 invalidOptionalTeacherIdsDoNotReachPort()
 {
     RecordingSavePort port;
-    for (const std::string teacherId : {"0", "08", "-2", "2147483648"})
+    for (const std::string teacherId : {
+             "0", "08", "-2", "9223372036854775808", "02147483648", "+8", " 8", "8x"})
     {
         Application::ClassDetailsSaveRequest value = request("42");
         value.teacherId = Domain::TeacherId::fromString(teacherId);

@@ -35,10 +35,8 @@
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <optional>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -129,23 +127,6 @@ typedScheduleTimes(const QList<ClassTime>& values)
 InitialSetupWizard* setupWizard(const QWizardPage* page)
 {
     return qobject_cast<InitialSetupWizard*>(page->window());
-}
-
-bool teacherIdAsInt(
-    const ClassMngr::Next::Domain::TeacherId& teacherId,
-    int& value
-    )
-{
-    const std::string& storedValue = teacherId.value();
-    const auto [end, error] = std::from_chars(
-        storedValue.data(),
-        storedValue.data() + storedValue.size(),
-        value
-        );
-    return error == std::errc{}
-        && end == storedValue.data() + storedValue.size()
-        && value > 0
-        && std::to_string(value) == storedValue;
 }
 
 QString initialSetupTeacherChoicesErrorMessage(const std::string& message)
@@ -1128,12 +1109,6 @@ public:
         }
         for (const auto& choice : choices)
         {
-            int teacherId = 0;
-            if (!teacherIdAsInt(choice.teacherId, teacherId))
-            {
-                continue;
-            }
-
             Teacher teacher;
             teacher.teacherKr = QString::fromStdU16String(choice.teacherKr);
             teacher.teacherEn = QString::fromStdU16String(choice.teacherEn);
@@ -1143,7 +1118,8 @@ public:
             teacher.preferredName = QString::fromStdU16String(
                 choice.preferredName
                 );
-            m_teacher->addItem(teacher.preferredDisplayName(), teacherId);
+            m_teacher->addItem(teacher.preferredDisplayName(),
+                QString::fromStdString(choice.teacherId.value()));
         }
         if (choices.size() == 1)
         {
@@ -1154,7 +1130,10 @@ public:
     bool validatePage() override
     {
         QStringList missingFields;
-        if (m_teacher->currentData().toInt() <= 0)
+        const std::string selectedTeacherId =
+            m_teacher->currentData().toString().toStdString();
+        if (!ClassMngr::Next::Application::isCanonicalPositiveDecimalId64(
+                selectedTeacherId))
         {
             missingFields.append(tr("Korean Teacher"));
         }
@@ -1183,7 +1162,12 @@ public:
         }
 
         ClassInfo info = setup->classDraft();
-        info.teacherId = m_teacher->currentData().toInt();
+        const auto teacherId = ClassMngr::Next::Domain::TeacherId::fromString(
+            selectedTeacherId);
+        const auto legacyTeacherId =
+            ClassMngr::Next::Application::parseCanonicalPositiveDecimalId(
+                selectedTeacherId);
+        info.teacherId = legacyTeacherId.value_or(-1);
         info.classColor = m_color;
         info.fontColor = ColorUtils::getContrastingFontColor(QColor(m_color));
         info.classGrade = m_grade->currentText();
@@ -1191,6 +1175,7 @@ public:
         info.readingBook = m_readingBook->currentText();
         info.essayBook = m_essayBook->currentText();
         setup->setClassDraft(info);
+        setup->setClassDraftTeacherId(*teacherId);
         return true;
     }
 
@@ -1323,11 +1308,7 @@ public:
             ClassMngr::Next::Domain::ClassId::fromString(
                 std::to_string(classId)
                 );
-        const auto teacherId = info.teacherId > 0
-            ? ClassMngr::Next::Domain::TeacherId::fromString(
-                std::to_string(info.teacherId)
-                )
-            : std::optional<ClassMngr::Next::Domain::TeacherId>{};
+        const auto teacherId = setup->classDraftTeacherId();
         if (!regularTimes || !intensiveTimes || !typedClassId
             || (info.teacherId > 0 && !teacherId))
         {
@@ -1365,6 +1346,10 @@ public:
         }
 
         setup->setClassDraft(info);
+        if (teacherId)
+        {
+            setup->setClassDraftTeacherId(*teacherId);
+        }
         return true;
     }
 
@@ -1638,11 +1623,27 @@ bool InitialSetupWizard::wantsScheduleImport() const
 void InitialSetupWizard::setClassDraft(const ClassInfo& info)
 {
     m_classDraft = info;
+    m_classDraftTeacherId = info.teacherId > 0
+        ? ClassMngr::Next::Domain::TeacherId::fromString(std::to_string(info.teacherId))
+        : std::optional<ClassMngr::Next::Domain::TeacherId>{};
 }
 
 ClassInfo InitialSetupWizard::classDraft() const
 {
     return m_classDraft;
+}
+
+void InitialSetupWizard::setClassDraftTeacherId(
+    const ClassMngr::Next::Domain::TeacherId& teacherId
+    )
+{
+    m_classDraftTeacherId = teacherId;
+}
+
+std::optional<ClassMngr::Next::Domain::TeacherId>
+InitialSetupWizard::classDraftTeacherId() const
+{
+    return m_classDraftTeacherId;
 }
 
 void InitialSetupWizard::setCreatedClassId(int classId)

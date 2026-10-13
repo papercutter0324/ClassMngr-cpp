@@ -54,7 +54,7 @@ public:
         }
 
         if (request.teacherId
-            && !isCanonicalPositiveDecimalId(request.teacherId->value()))
+            && !isCanonicalPositiveDecimalId64(request.teacherId->value()))
         {
             return Domain::Result<void>::failure({
                 .code = Domain::ErrorCode::InvalidInput,

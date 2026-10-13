@@ -16,6 +16,7 @@
 
 #include <charconv>
 #include <exception>
+#include <limits>
 #include <optional>
 #include <string>
 #include <system_error>
@@ -88,14 +89,15 @@ public:
 
         try
         {
-            const Result<ClassInfo> loaded =
-                repository->loadClassInfo(*classId);
+            const Result<ClassDetailsSaveReadRecord> loaded =
+                repository->loadClassDetailsSaveInfo(*classId);
             if (!loaded)
             {
                 return repositoryFailure(session, loaded.error());
             }
 
-            ClassInfo info = *loaded;
+            qint64 savedTeacherId = loaded->teacherId;
+            ClassInfo info = loaded->info;
             info.classGrade = legacyText(request.classGrade);
             info.classLevel = legacyText(request.classLevel);
             info.readingBook = legacyText(request.readingBook);
@@ -104,8 +106,8 @@ public:
             info.fontColor = legacyText(request.fontColor);
             if (request.teacherId)
             {
-                const std::optional<int> teacherId =
-                    legacyClassId(request.teacherId->value());
+                const auto teacherId = Application::parseCanonicalPositiveDecimalId64(
+                    request.teacherId->value());
                 if (!teacherId)
                 {
                     return failure(
@@ -113,7 +115,10 @@ public:
                         "Teacher ID must be a canonical positive integer."
                         );
                 }
-                info.teacherId = *teacherId;
+                savedTeacherId = *teacherId;
+                // The exact identity is kept outside legacy validation.
+                info.teacherId = savedTeacherId <= std::numeric_limits<int>::max()
+                    ? static_cast<int>(savedTeacherId) : -1;
             }
             if (request.regularTimes)
             {
@@ -160,7 +165,7 @@ public:
                 return repositoryFailure(session, intensiveConflicts.error());
             }
 
-            const Status saved = repository->saveClassInfo(normalized);
+            const Status saved = repository->saveClassDetails(normalized, savedTeacherId);
             if (!saved)
             {
                 return repositoryFailure(session, saved.error());

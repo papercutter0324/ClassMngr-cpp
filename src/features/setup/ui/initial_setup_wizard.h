@@ -1,8 +1,10 @@
 #pragma once
 
 #include "domain/models/class_info.h"
+#include "next/domain/domain_types.h"
 
 #include <QWizard>
+#include <optional>
 
 class ApplicationServices;
 class ClassService;
@@ -41,6 +43,11 @@ public:
 
     void setClassDraft(const ClassInfo& info);
     [[nodiscard]] ClassInfo classDraft() const;
+    void setClassDraftTeacherId(
+        const ClassMngr::Next::Domain::TeacherId& teacherId
+        );
+    [[nodiscard]] std::optional<ClassMngr::Next::Domain::TeacherId>
+        classDraftTeacherId() const;
 
     void setCreatedClassId(int classId);
     [[nodiscard]] int createdClassId() const;
@@ -58,5 +65,6 @@ private:
     QPushButton* m_koreanKeyboardButton = nullptr;
     OnScreenKeyboard* m_onScreenKeyboard = nullptr;
     ClassInfo m_classDraft;
+    std::optional<ClassMngr::Next::Domain::TeacherId> m_classDraftTeacherId;
     int m_createdClassId = -1;
 };

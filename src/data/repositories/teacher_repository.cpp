@@ -1835,7 +1835,7 @@ TeacherRepository::loadInitialSetupTeacherChoiceRecords()
     while (query.next())
     {
         teachers.append({
-            query.value(QStringLiteral("id")).toInt(),
+            query.value(QStringLiteral("id")).toLongLong(),
             query.value(QStringLiteral("teacher_kr")).toString(),
             query.value(QStringLiteral("teacher_en")).toString(),
             query.value(QStringLiteral("preferred_romanization")).toString(),

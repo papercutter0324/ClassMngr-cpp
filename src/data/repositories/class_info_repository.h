@@ -17,6 +17,12 @@
 #include <optional>
 #include <vector>
 
+struct ClassDetailsSaveReadRecord final
+{
+    ClassInfo info;
+    qint64 teacherId = -1;
+};
+
 // Full export metadata, kept separate from the integer-based edit model.
 struct ClassTransferExportClassInfoReadRecord final
 {
@@ -387,6 +393,15 @@ public:
     [[nodiscard]] Status saveClassInfo(
         const ClassInfo& info
         );
+    // The typed class-details path retains exact teacher identity separately
+    // from the legacy int field, including an existing assignment.
+    [[nodiscard]] Status saveClassDetails(
+        const ClassInfo& info,
+        qint64 teacherId
+        );
+    [[nodiscard]] Result<ClassDetailsSaveReadRecord> loadClassDetailsSaveInfo(
+        int classId
+        );
 
     [[nodiscard]] Status saveClassNotes(
         int classId,
@@ -523,6 +538,10 @@ public:
         );
 
 private:
+    [[nodiscard]] Status saveClassInfoWithTeacherId(
+        const ClassInfo& info,
+        qint64 teacherId
+        );
     [[nodiscard]] Result<MyClassesClassSummaryReadRecord>
         loadMyClassesClassSummaryRecord(int classId);
     [[nodiscard]] Result<MyClassesClassInformationReadRecord>

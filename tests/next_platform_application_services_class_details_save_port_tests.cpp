@@ -13,6 +13,7 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <limits>
 #include <vector>
 
 using namespace ClassMngr::Next;
@@ -89,6 +90,8 @@ class NextPlatformApplicationServicesClassDetailsSavePortTests final
 private slots:
     void savesEditedFieldsAndPreservesHiddenClassInfo();
     void teacherOverrideIsAppliedToSavedClassInfo();
+    void savesWideTeacherIdAtomicallyWithClassDetails();
+    void rejectsMalformedTeacherOverrideAtTheAdapterBoundary();
     void absentSchedulesPreservePersistedSchedulesIndependently();
     void unavailableSessionReturnsStructuredFailure();
     void classInfoReadFailureReturnsTechnicalFailure();
@@ -96,6 +99,131 @@ private slots:
     void invalidPreservedDataFailsMergedClassInfoValidation();
     void scheduleConflictRetainsClassInfoValidationBehavior();
 };
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+savesWideTeacherIdAtomicallyWithClassDetails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlQuery sql(services.databaseSession()->database());
+    QVERIFY(sql.exec(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en) "
+        "VALUES (2147483648, 'Wide Teacher', 'Wide Teacher')")));
+    QVERIFY(sql.exec(QStringLiteral("SELECT id, typeof(id) FROM teachers")));
+    QVERIFY(sql.next());
+    QCOMPARE(sql.value(0).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+    const auto classId = services.classService()->create(QStringLiteral("Wide Teacher Class"));
+    QVERIFY(classId);
+    auto original = services.classService()->classInfo(*classId);
+    QVERIFY(original);
+    original->notes = QStringLiteral("Keep wide teacher notes");
+    original->timeFillerActivities = QStringLiteral("Keep activities");
+    QVERIFY(services.classService()->saveClassInfo(*original));
+
+    auto request = requestForClass(*classId);
+    request.teacherId = Domain::TeacherId::fromString("2147483648");
+    request.regularTimes = std::vector<Domain::ScheduleTime>{scheduleTime(0, 540, 590)};
+    request.intensiveTimes = std::vector<Domain::ScheduleTime>{scheduleTime(4, 600, 650)};
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto direct = port.saveClassDetails(request);
+    QVERIFY(direct);
+    const auto result = Application::ClassDetailsSaveUseCase::execute(request, port);
+    QVERIFY(result);
+    sql.prepare(QStringLiteral("SELECT teacher_id, typeof(teacher_id), notes, time_filler_activities FROM class_info WHERE class_id=?"));
+    sql.addBindValue(*classId);
+    QVERIFY(sql.exec());
+    QVERIFY(sql.next());
+    QCOMPARE(sql.value(0).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+    QCOMPARE(sql.value(2).toString(), original->notes);
+    QCOMPARE(sql.value(3).toString(), original->timeFillerActivities);
+    const auto saved = services.classService()->classInfo(*classId);
+    QVERIFY(saved);
+    QCOMPARE(saved->classTimes.size(), 1);
+    QCOMPARE(saved->intensiveTimes.size(), 1);
+
+    // A later edit without a teacher override preserves the wide assignment.
+    request.teacherId.reset();
+    request.classColor = u"#778899";
+    request.regularTimes.reset();
+    request.intensiveTimes.reset();
+    const auto preserved = Application::ClassDetailsSaveUseCase::execute(request, port);
+    QVERIFY2(preserved, preserved ? "" : preserved.error().message.c_str());
+    sql.prepare(QStringLiteral("SELECT teacher_id, typeof(teacher_id), class_color FROM class_info WHERE class_id=?"));
+    sql.addBindValue(*classId);
+    QVERIFY(sql.exec());
+    QVERIFY(sql.next());
+    QCOMPARE(sql.value(0).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+    QCOMPARE(sql.value(2).toString(), QStringLiteral("#778899"));
+    sql.finish();
+
+    // A schedule failure must roll back identity, details and both schedules.
+    QVERIFY(sql.exec(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en) "
+        "VALUES (9223372036854775807, 'Max Teacher', 'Max Teacher')")));
+    QVERIFY(sql.exec(QStringLiteral(
+        "CREATE TRIGGER reject_wide_teacher_schedule BEFORE INSERT ON class_intensive_times "
+        "BEGIN SELECT RAISE(ABORT, 'F838 schedule failure'); END")));
+    request.teacherId = Domain::TeacherId::fromString("9223372036854775807");
+    request.classColor = u"#AABBCC";
+    request.regularTimes = std::vector<Domain::ScheduleTime>{scheduleTime(1, 660, 710)};
+    request.intensiveTimes = std::vector<Domain::ScheduleTime>{scheduleTime(5, 720, 770)};
+    const auto failed = Application::ClassDetailsSaveUseCase::execute(request, port);
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    sql.prepare(QStringLiteral("SELECT teacher_id, typeof(teacher_id), class_color, notes FROM class_info WHERE class_id=?"));
+    sql.addBindValue(*classId);
+    QVERIFY(sql.exec());
+    QVERIFY(sql.next());
+    QCOMPARE(sql.value(0).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+    QCOMPARE(sql.value(2).toString(), QStringLiteral("#778899"));
+    QCOMPARE(sql.value(3).toString(), original->notes);
+    sql.finish();
+    const auto afterFailure = services.classService()->classInfo(*classId);
+    QVERIFY(afterFailure);
+    QCOMPARE(afterFailure->classTimes.size(), 1);
+    QVERIFY(sameTime(afterFailure->classTimes.front(), QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"), QStringLiteral("9:50 AM")));
+    QCOMPARE(afterFailure->intensiveTimes.size(), 1);
+    QVERIFY(sameTime(afterFailure->intensiveTimes.front(), QStringLiteral("Friday"),
+        QStringLiteral("10:00 AM"), QStringLiteral("10:50 AM")));
+
+    QVERIFY(sql.exec(QStringLiteral("DROP TRIGGER reject_wide_teacher_schedule")));
+    QVERIFY(Application::ClassDetailsSaveUseCase::execute(request, port));
+    sql.prepare(QStringLiteral("SELECT teacher_id, typeof(teacher_id) FROM class_info WHERE class_id=?"));
+    sql.addBindValue(*classId);
+    QVERIFY(sql.exec());
+    QVERIFY(sql.next());
+    QCOMPARE(sql.value(0).toLongLong(), std::numeric_limits<qint64>::max());
+    QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+rejectsMalformedTeacherOverrideAtTheAdapterBoundary()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto classId = services.classService()->create(QStringLiteral("Invalid Teacher Class"));
+    QVERIFY(classId);
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    auto request = requestForClass(*classId);
+    for (const std::string id : {
+             "0", "08", "-2", "+8", " 8", "8x", "9223372036854775808"})
+    {
+        request.teacherId = Domain::TeacherId::fromString(id);
+        const auto result = port.saveClassDetails(request);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message, std::string("Teacher ID must be a canonical positive integer."));
+    }
+}
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::
 savesEditedFieldsAndPreservesHiddenClassInfo()

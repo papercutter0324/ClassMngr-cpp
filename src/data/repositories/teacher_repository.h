@@ -17,7 +17,7 @@ struct TeacherDisplayNameReadRecord final
 
 struct InitialSetupTeacherChoiceReadRecord final
 {
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString teacherKr;
     QString teacherEn;
     QString preferredRomanization;

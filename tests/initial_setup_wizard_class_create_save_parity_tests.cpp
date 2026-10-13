@@ -10,9 +10,12 @@
 #include <QApplication>
 #include <QAbstractButton>
 #include <QComboBox>
+#include <QColorDialog>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSqlQuery>
+#include <QPushButton>
+#include <QTimer>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -203,7 +206,95 @@ private slots:
     void paddedScheduleTimeLeavesBlankClassAndDoesNotSaveDetails();
     void malformedScheduleTimeLeavesBlankClassAndDoesNotSaveDetails();
     void successfulSaveAdvancesWithDetailsAndTeacher();
+    void wideTeacherSelectionReachesTypedSave_data();
+    void wideTeacherSelectionReachesTypedSave();
 };
+
+void InitialSetupWizardClassCreateSaveParityTests::
+wideTeacherSelectionReachesTypedSave_data()
+{
+    QTest::addColumn<QString>("teacherId");
+    QTest::newRow("past-int-max") << QStringLiteral("2147483648");
+    QTest::newRow("positive-int-truncation") << QStringLiteral("4294967297");
+}
+
+void InitialSetupWizardClassCreateSaveParityTests::
+wideTeacherSelectionReachesTypedSave()
+{
+    QFETCH(QString, teacherId);
+    WizardFixture fixture;
+    QVERIFY(fixture.open());
+    QSqlQuery sql(fixture.services.databaseSession()->database());
+    sql.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en) VALUES (?, 'Wide Teacher', 'Wide Teacher')"));
+    sql.addBindValue(teacherId.toLongLong());
+    QVERIFY(sql.exec());
+    sql.prepare(QStringLiteral("SELECT id, typeof(id) FROM teachers WHERE id=?"));
+    sql.addBindValue(teacherId.toLongLong());
+    QVERIFY(sql.exec());
+    QVERIFY(sql.next());
+    QCOMPARE(sql.value(0).toLongLong(), teacherId.toLongLong());
+    QCOMPARE(sql.value(1).toString(), QStringLiteral("integer"));
+    sql.finish();
+
+    fixture.wizard->setStartId(InitialSetupWizard::ClassDetailsPage);
+    fixture.wizard->restart();
+    QApplication::processEvents();
+    QCOMPARE(fixture.wizard->currentId(), InitialSetupWizard::ClassDetailsPage);
+    auto* teachers = fixture.wizard->findChild<QComboBox*>(QStringLiteral("setupClassTeacher"));
+    QVERIFY(teachers);
+    QCOMPARE(teachers->count(), 3); // Prompt, ordinary teacher, wide teacher.
+    const int index = teachers->findData(teacherId);
+    QVERIFY(index > 0);
+    teachers->setCurrentIndex(index);
+    QCOMPARE(teachers->currentText(), QStringLiteral("Wide Teacher"));
+    QCOMPARE(teachers->currentData().toString(), teacherId);
+    auto* grade = fixture.wizard->findChild<QComboBox*>(QStringLiteral("setupClassGrade"));
+    auto* level = fixture.wizard->findChild<QComboBox*>(QStringLiteral("setupClassLevel"));
+    auto* color = fixture.wizard->findChild<QPushButton*>(QStringLiteral("setupClassColorButton"));
+    QVERIFY(grade);
+    QVERIFY(level);
+    QVERIFY(color);
+    grade->setCurrentText(QStringLiteral("E4"));
+    level->setCurrentText(QStringLiteral("Theseus"));
+    bool colorAccepted = false;
+    QTimer::singleShot(0, [&colorAccepted]
+    {
+        auto* dialog = qobject_cast<QColorDialog*>(QApplication::activeModalWidget());
+        if (dialog)
+        {
+            dialog->setCurrentColor(QColor(QStringLiteral("#123456")));
+            colorAccepted = true;
+            dialog->accept();
+        }
+    });
+    color->click();
+    QVERIFY(colorAccepted);
+    QVERIFY(fixture.advance());
+    QCOMPARE(fixture.wizard->currentId(), InitialSetupWizard::ClassTimesPage);
+    const auto selectedId = fixture.wizard->classDraftTeacherId();
+    QVERIFY(selectedId);
+    QCOMPARE(selectedId->value(), teacherId.toStdString());
+    QCOMPARE(fixture.wizard->classDraft().teacherId, -1);
+
+    auto* schedules = fixture.wizard->findChild<ClassScheduleSection*>(
+        QStringLiteral("setupClassSchedules"));
+    QVERIFY(schedules);
+    QVERIFY(!schedules->regularRows().isEmpty());
+    auto* row = schedules->regularRows().constFirst();
+    row->setDay(QStringLiteral("Monday"));
+    row->setStartTime(QStringLiteral("9:00 AM"));
+    row->setEndTime(QStringLiteral("9:55 AM"));
+    QVERIFY(fixture.advance());
+    QCOMPARE(fixture.wizard->currentId(), InitialSetupWizard::CompletionPage);
+    QVERIFY(fixture.prompts.messages.isEmpty());
+    const int classId = fixture.wizard->createdClassId();
+    QVERIFY(classId > 0);
+    QCOMPARE(fixture.wizard->classDraftTeacherId()->value(), teacherId.toStdString());
+    QCOMPARE(fixture.text(QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"), classId), teacherId);
+    QCOMPARE(fixture.text(QStringLiteral("SELECT typeof(teacher_id) FROM class_info WHERE class_id=?"), classId), QStringLiteral("integer"));
+    QCOMPARE(fixture.value(QStringLiteral("SELECT COUNT(*) FROM class_times WHERE class_id=?"), classId), 1);
+}
 
 void InitialSetupWizardClassCreateSaveParityTests::
 createFailureLeavesIdUnsetAndCanRetry()

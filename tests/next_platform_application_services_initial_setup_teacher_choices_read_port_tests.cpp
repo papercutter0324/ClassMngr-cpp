@@ -63,7 +63,37 @@ private slots:
     void preservesSuccessfulEmptyRepositoryResult();
     void reportsUnavailableSessionAsRecoverableNotFound();
     void reportsTeacherRepositoryReadFailure();
+    void preservesWideSqliteIntegerTeacherId();
 };
+
+void NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests::
+preservesWideSqliteIntegerTeacherId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlQuery seed(services.databaseSession()->database());
+    QVERIFY(seed.exec(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en) "
+        "VALUES (2147483648, 'Wide Teacher', 'Wide Teacher')")));
+    QVERIFY(seed.exec(QStringLiteral("SELECT id, typeof(id) FROM teachers")));
+    QVERIFY(seed.next());
+    QCOMPARE(seed.value(0).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(seed.value(1).toString(), QStringLiteral("integer"));
+
+    const auto records = services.databaseSession()->teacherRepository()
+        ->loadInitialSetupTeacherChoiceRecords();
+    QVERIFY(records);
+    QCOMPARE(records->size(), 1);
+    QCOMPARE(records->front().teacherId, qint64(2147483648LL));
+    Platform::ApplicationServicesInitialSetupTeacherChoicesReadPort port(&services);
+    const Application::InitialSetupTeacherChoicesReadQuery query(port);
+    const auto result = query.execute();
+    QVERIFY(result);
+    QCOMPARE(result.value().teachers.size(), std::size_t(1));
+    QCOMPARE(result.value().teachers.front().teacherId.value(), std::string("2147483648"));
+}
 
 void NextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests::
 mapsAllTeacherFieldsInRepositoryOrderFromTheActiveSession()
