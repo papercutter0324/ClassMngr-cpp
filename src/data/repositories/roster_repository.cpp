@@ -725,6 +725,7 @@ RosterRepository::loadFullRostersImpl(
                requested.request_order AS request_order,
                roster_data.row_index AS row_index,
                roster_data.col_index AS col_index,
+               typeof(roster_data.col_index) AS col_index_storage_type,
                roster_data.value AS value
         FROM requested
         INNER JOIN roster_data
@@ -756,6 +757,17 @@ RosterRepository::loadFullRostersImpl(
     {
         const int classId = cellsQuery.value("requested_class_id").toInt();
         const int requestOrder = cellsQuery.value("request_order").toInt();
+        if (
+            cellsQuery.value("col_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for class id %1: invalid column index."
+                    ).arg(classId)
+                );
+        }
         const int columnIndex = cellsQuery.value("col_index").toInt();
         if (requestOrder < 0
             || requestOrder >= classIds.size()

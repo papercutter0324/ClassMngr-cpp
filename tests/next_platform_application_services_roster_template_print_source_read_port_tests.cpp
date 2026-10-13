@@ -73,6 +73,7 @@ private slots:
     void loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder();
     void emptyInputAndAllEmptyRostersSkipUnneededStatements();
     void repositoryBatchFailureIsTechnical();
+    void fractionalColumnIndexIsRejectedByTemplatePrintRead();
 };
 
 void NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests::
@@ -291,6 +292,58 @@ repositoryBatchFailureIsTechnical()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests::
+fractionalColumnIndexIsRejectedByTemplatePrintRead()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classIdValue = createClass(services, QStringLiteral("Fractional index"));
+    QVERIFY(classIdValue > 0);
+
+    Roster roster;
+    roster.columns = {QStringLiteral("English")};
+    roster.rows = {{QStringLiteral("Integer column zero")}};
+    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+        classIdValue,
+        roster
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (%1, 0, 0.25, 'Fractional column zero')"
+            ).arg(classIdValue)
+        ));
+
+    Platform::ApplicationServicesRosterTemplatePrintSourceReadPort port(
+        &services
+        );
+    const Application::RosterTemplatePrintSourceReadQuery query(port);
+    const auto result = query.execute({classId(classIdValue)});
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+
+    QSqlQuery storedCells(services.databaseSession()->database());
+    QVERIFY(storedCells.prepare(QStringLiteral(
+        "SELECT col_index, typeof(col_index) AS storage_type, value "
+        "FROM roster_data WHERE class_id=? AND row_index=0 "
+        "ORDER BY col_index"
+        )));
+    storedCells.addBindValue(classIdValue);
+    QVERIFY(storedCells.exec());
+    QVERIFY(storedCells.next());
+    QCOMPARE(storedCells.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedCells.value("col_index").toLongLong(), qlonglong(0));
+    QCOMPARE(storedCells.value("value").toString(), QStringLiteral("Integer column zero"));
+    QVERIFY(storedCells.next());
+    QCOMPARE(storedCells.value("storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(storedCells.value("col_index").toDouble(), 0.25);
+    QCOMPARE(storedCells.value("value").toString(), QStringLiteral("Fractional column zero"));
+    QVERIFY(!storedCells.next());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests)
