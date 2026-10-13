@@ -32934,12 +32934,62 @@ Technical.
 | --- | --- | --- |
 | Malformed roster column `position` validation (F828) | Selected | An unchecked malformed position can reorder column names without moving their separately indexed cell values. |
 
-F828 is selected, not implemented or accepted. In the focused roster
-read-port tests, create two columns with distinct cell values, corrupt one
-stored `position` to TEXT, verify `typeof(position)='text'`, and require the
-read to fail instead of returning mismatched names and values. Preserve normal
-ordering, cell placement, widths, and existing malformed-`col_index` behavior.
-Run only `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`; no CMake
-change or full suite. The project-configuration and CMake optimization remains
+F828 is selected, not implemented or accepted. Reject a position unless its
+SQLite storage type is INTEGER, conversion succeeds, and the value is
+nonnegative. In the focused roster read-port tests, create two columns with
+distinct cell values, corrupt one stored `position` to TEXT, verify
+`typeof(position)='text'`, and require a read failure rather than mismatched
+names and values. Also verify a sparse INTEGER position above `INT_MAX` loads
+with correct column order and cell alignment; positions need not be contiguous.
+Preserve normal ordering, cell placement, widths, and existing malformed
+`col_index` behavior. Run only
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`; no CMake change
+or full suite. The project-configuration and CMake optimization remains
 complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+### F828 malformed roster column-position validation - accepted - 2026-10-13
+
+F828 is accepted at source/test commit
+`2f6954bf98342d7d9486e017695dba911646f5`. Independent verification rebuilt the
+focused target in separate Ninja Debug tree
+`%TEMP%\codex_f828_roster_tester_20261013` in 8.50 seconds. Exact CTest
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests` passed 1/1 in
+0.51 seconds. Scoped `git diff --check` passed and confirmed only the two
+assigned files changed. Tests verify malformed TEXT positions produce a
+structured Technical failure and sparse INTEGER position `2147483648` loads
+with correct order and cell alignment. The accepted contract rejects
+non-INTEGER storage types, failed conversions, and negative positions, while
+allowing any nonnegative SQLite INTEGER ordering key; positions need not be
+contiguous. No CMake change or full suite ran.
+
+### Batch 242 completion - 2026-10-13
+
+F828 completed Batch 242 by validating persisted roster column positions while
+preserving sparse nonnegative INTEGER ordering. Batch 243 selects F829 for
+malformed roster-column positions in the separate Class Analytics roster-name
+reader. The project-configuration and CMake optimization remains complete;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 243 discovery and selection - 2026-10-13
+
+`ApplicationServicesClassAnalyticsDashboardReadPort::readRosterNames()` ranks
+roster names using persisted `position`, then matches name cells by separate
+`roster_data.col_index`. Nonnumeric TEXT can reorder the English/Korean name
+index and return mismatched or empty names, which can hide rows during
+dashboard filtering. This is distinct from F828's `RosterRepository` snapshot
+reader.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Malformed roster position in Class Analytics name reader (F829) | Selected | Unchecked ranking can misalign English/Korean headers with cells and affect dashboard filtering. |
+
+F829 is selected, not implemented or accepted. Seed English and Korean
+columns with distinct values, corrupt one `position` to nonnumeric TEXT, verify
+`typeof(position)='text'`, and require the read port to return a typed
+Technical failure instead of a mismatched projection. Preserve valid sparse
+ordering, first exact header selection, and existing row-range behavior. Run
+only `ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`;
+no CMake, schema, or API change and no full suite are requested. The
+project-configuration and CMake optimization remains complete; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
