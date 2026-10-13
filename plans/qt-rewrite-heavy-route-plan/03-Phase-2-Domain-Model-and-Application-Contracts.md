@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F815 was accepted in Batch 229 at `4c9abd12fa6e9855f5e2e10773b18b543f79a563`; Batch 230 selects F816 for end-to-end qint64 Co-Teacher identity, including UI selection and assignment write, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F816 was accepted in Batch 230 at `0bb27abfa72bde776aedbb736996144440568006`; Batch 231 selects F817 to carry the Teacher Create write result through the typed port without narrowing, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -122,9 +122,9 @@ Treat this plan as an operational summary, not a history:
   deferred; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
 
-#### Active batch: Batch 230
+#### Active batch: Batch 231
 
-- F816 - Shared Co-Teacher teacher identity - Carry qint64 through teacher choices, UI selection, assignment write, and readback while preserving class IDs and general primary-teacher contracts as int.
+- F817 - Teacher Create typed write-result path - Preserve the generated teacher ID through the repository result and typed create port without narrowing; keep the already-typed application contract and broader Initial Setup/Teacher Create/Delete ID-width work deferred.
 
 ## Objective
 

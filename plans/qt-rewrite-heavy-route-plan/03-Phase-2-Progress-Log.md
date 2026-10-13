@@ -32398,3 +32398,43 @@ path with focused tests. Keep Schedule Import width separate from accepted
 F767 snapshot canonical-ID validation; Class Import's int-keyed flow and
 persisted CalendarEvent event-ID width remain deferred. Phase 2 Gates 1/2
 remain Partial and the formal exit gate remains Open.
+
+### F816 Co-Teacher wide teacher identity - accepted - 2026-10-13
+
+F816 is accepted at source commit
+`0bb27abfa72bde776aedbb736996144440568006`. The nine-target focused Windows
+x64 Debug build passed after the first attempt encountered the known sandbox
+`ZERO_CHECK` FileTracker `E_ACCESSDENIED`; the identical retry through the
+established verification route passed. All eight focused CTests passed, no
+compiler warnings appeared, and `git diff --check` passed. The page regression
+carries teacher ID `2147483648` through choice load, UI surrogate-key
+selection, assignment save, exact SQLite INTEGER persistence, and port/query
+readback with the same ID and display name. Assignment persistence/port tests
+preserve unassignment as SQL NULL. Class IDs and shared `ClassInfo` ID fields
+remain int; wide identity is scoped to Co-Teacher. No full suite ran.
+
+### Batch 230 completion - 2026-10-13
+
+F816 completed Batch 230 by preserving wide Co-Teacher identity through
+choices, UI selection, assignment persistence, and readback. Batch 231 selects
+F817 for the typed Teacher Create write-result path. The broader Initial Setup
+and Teacher Create/Delete ID-width work remains separately deferred. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 231 discovery and selection - 2026-10-13
+
+F817 covers the Teacher Create write-result path. `TeacherRepository::createTeacher`
+currently returns `Result<int>` and narrows `lastInsertId`; the typed create
+port maps that result to `Domain::TeacherId`, while the application contract
+is already typed. Preserve a generated teacher ID above `INT_MAX` through the
+repository result and typed port without changing the application contract.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Teacher Create typed write-result path (F817) | Selected | The repository narrows the generated ID before the already-typed application contract receives it; the fix is bounded to the repository result and typed create port. |
+| Initial Setup and Teacher Create/Delete teacher-ID width | Deferred | This is the separate broader UI identity-width item and remains unchanged by F817. |
+
+F817 is selected, not implemented or accepted. Verify that a generated ID
+above `INT_MAX` reaches the typed create port unchanged. The broader Initial
+Setup and Teacher Create/Delete ID-width work remains deferred. Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
