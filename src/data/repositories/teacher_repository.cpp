@@ -756,14 +756,12 @@ TeacherRepository::loadTeacherProfileRecords(
     return entries;
 }
 
-const TeacherProfileBatchReadMetrics&
-TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
+namespace
 {
-    return m_teacherProfileBatchReadMetrics;
-}
-
-TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
-    const qint64 teacherId
+TeacherProfileLookupResult lookupTeacherProfileRecord(
+    QSqlDatabase& database,
+    const qint64 teacherId,
+    const QString& action
     )
 {
     if (teacherId <= 0)
@@ -776,7 +774,7 @@ TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
         };
     }
 
-    QSqlQuery query(m_database);
+    QSqlQuery query(database);
     query.setForwardOnly(true);
     query.prepare(R"(
         SELECT id,
@@ -799,7 +797,6 @@ TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
     )");
     query.addBindValue(teacherId);
 
-    const QString action = QObject::tr("Loading teacher profile");
     const QString identity = teacherIdentity(teacherId);
     const auto executed = SqlQueryUtils::executePrepared(
         query,
@@ -837,10 +834,20 @@ TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
         };
     }
 
+    bool identifierValid = false;
+    const qint64 returnedTeacherId = query.value(QStringLiteral("id"))
+        .toLongLong(&identifierValid);
+    if (!identifierValid || returnedTeacherId != teacherId)
+        return {
+            .code = TeacherProfileLookupCode::Failure,
+            .diagnostic = QObject::tr(
+                "Loading teacher profiles failed: a database record returned a different teacher identifier.")
+        };
+
     return {
         .code = TeacherProfileLookupCode::Found,
         .profile = {
-            .teacherId = query.value(QStringLiteral("id")).toLongLong(),
+            .teacherId = returnedTeacherId,
             .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
             .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
             .preferredRomanization = query.value(
@@ -867,6 +874,209 @@ TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
             .notes = query.value(QStringLiteral("notes")).toString()
         }
     };
+}
+
+}
+
+Result<QList<ClassTransferExportTeacherProfileBatchReadRecord>>
+TeacherRepository::loadClassTransferExportTeacherProfileRecords(
+    const QList<qint64>& teacherIds
+    )
+{
+    if (teacherIds.isEmpty())
+    {
+        return QList<ClassTransferExportTeacherProfileBatchReadRecord>{};
+    }
+
+    ++m_teacherProfileBatchReadMetrics.callCount;
+    m_teacherProfileBatchReadMetrics.requestedTeacherCount +=
+        teacherIds.size();
+
+    QSet<qint64> seenTeacherIds;
+    QStringList requestedValues;
+    requestedValues.reserve(teacherIds.size());
+    for (qsizetype index = 0; index < teacherIds.size(); ++index)
+    {
+        const qint64 teacherId = teacherIds[index];
+        if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: teacher identifiers must be positive and unique."
+                ));
+        }
+
+        seenTeacherIds.insert(teacherId);
+        requestedValues.append(QStringLiteral("(?, %1)").arg(index));
+    }
+
+    const auto loadIndividually = [this, &teacherIds]()
+    {
+        QList<ClassTransferExportTeacherProfileBatchReadRecord> entries;
+        entries.reserve(teacherIds.size());
+        for (const qint64 teacherId : teacherIds)
+        {
+            ++m_teacherProfileBatchReadMetrics.fallbackSingleReadCount;
+            auto lookup = lookupTeacherProfileRecord(
+                m_database, teacherId, QObject::tr("Loading teacher"));
+            if (lookup.code == TeacherProfileLookupCode::Found
+                && lookup.profile.teacherId == teacherId)
+                entries.append({teacherId, std::move(lookup.profile)});
+            else
+                entries.append({teacherId, std::unexpected(lookup.diagnostic.isEmpty()
+                    ? QObject::tr("Loading teacher profiles failed: a database record returned a different teacher identifier.")
+                    : lookup.diagnostic)});
+        }
+        return entries;
+    };
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(teacher_id, ordinal) AS (VALUES %1)
+        SELECT requested.teacher_id AS requested_teacher_id,
+               requested.ordinal AS requested_ordinal,
+               teachers.id,
+               teachers.teacher_kr,
+               teachers.teacher_en,
+               teachers.preferred_romanization,
+               teachers.preferred_name,
+               teachers.room_number,
+               teachers.birthday,
+               teachers.phone_number,
+               teachers.wifi_name,
+               teachers.wifi_password,
+               teachers.internet_type,
+               teachers.zoom_id,
+               teachers.zoom_password,
+               teachers.projection_type,
+               teachers.notes
+        FROM requested
+        LEFT JOIN teachers ON teachers.id = requested.teacher_id
+        ORDER BY requested.ordinal
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    if (!query.prepare(queryText))
+    {
+        ++m_teacherProfileBatchReadMetrics.statementCount;
+        return loadIndividually();
+    }
+
+    for (const qint64 teacherId : teacherIds)
+    {
+        query.addBindValue(teacherId);
+    }
+
+    ++m_teacherProfileBatchReadMetrics.statementCount;
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading teacher profiles"),
+        QStringLiteral("assigned teachers")
+        );
+    if (!executed)
+    {
+        return loadIndividually();
+    }
+
+    QList<ClassTransferExportTeacherProfileBatchReadRecord> entries;
+    entries.reserve(teacherIds.size());
+    qsizetype rowIndex = 0;
+    while (query.next())
+    {
+        if (rowIndex >= teacherIds.size())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: the database returned an unexpected number of records."
+                ));
+        }
+
+        const qint64 requestedTeacherId = teacherIds[rowIndex];
+        bool requestedIdValid = false;
+        const qint64 returnedRequestedId = query.value("requested_teacher_id")
+            .toLongLong(&requestedIdValid);
+        bool ordinalValid = false;
+        const int returnedOrdinal = query.value("requested_ordinal").toInt(&ordinalValid);
+        if (!requestedIdValid || returnedRequestedId != requestedTeacherId
+            || !ordinalValid || returnedOrdinal != rowIndex)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: the database returned records in a different identifier order."
+                ));
+        }
+
+        if (query.value("id").isNull())
+        {
+            entries.append({
+                requestedTeacherId,
+                std::unexpected(QObject::tr(
+                    "Loading teacher failed for %1: no matching record exists."
+                    ).arg(teacherIdentity(requestedTeacherId)))
+            });
+            ++rowIndex;
+            continue;
+        }
+
+        bool teacherIdValid = false;
+        const qint64 returnedTeacherId = query.value("id").toLongLong(&teacherIdValid);
+        if (!teacherIdValid || returnedTeacherId != requestedTeacherId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading teacher profiles failed: a database record returned a different teacher identifier."
+                ));
+        }
+
+        TeacherProfileReadRecord profile{
+            .teacherId = returnedTeacherId,
+            .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
+            .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
+            .preferredRomanization = query.value(
+                QStringLiteral("preferred_romanization")
+                ).toString(),
+            .preferredName = query.value(
+                QStringLiteral("preferred_name")
+                ).toString(),
+            .roomNumber = query.value(QStringLiteral("room_number")).toString(),
+            .birthday = query.value(QStringLiteral("birthday")).toString(),
+            .phoneNumber = query.value(QStringLiteral("phone_number")).toString(),
+            .wifiName = query.value(QStringLiteral("wifi_name")).toString(),
+            .wifiPassword = query.value(QStringLiteral("wifi_password"))
+                                .toString(),
+            .internetType = normalizedInternetType(
+                query.value(QStringLiteral("internet_type")).toString()
+                ),
+            .zoomId = query.value(QStringLiteral("zoom_id")).toString(),
+            .zoomPassword = query.value(QStringLiteral("zoom_password"))
+                                .toString(),
+            .projectionType = normalizedProjectionType(
+                query.value(QStringLiteral("projection_type")).toString()
+                ),
+            .notes = query.value(QStringLiteral("notes")).toString()
+        };
+        entries.append({requestedTeacherId, std::move(profile)});
+        ++rowIndex;
+    }
+
+    if (query.lastError().isValid())
+        return std::unexpected(query.lastError().text());
+    if (rowIndex != teacherIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading teacher profiles failed: the database returned an incomplete record list."
+            ));
+    }
+
+    return entries;
+}
+
+const TeacherProfileBatchReadMetrics&
+TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
+{
+    return m_teacherProfileBatchReadMetrics;
+}
+
+TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
+    const qint64 teacherId)
+{
+    return lookupTeacherProfileRecord(
+        m_database, teacherId, QObject::tr("Loading teacher profile"));
 }
 
 Result<QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>

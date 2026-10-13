@@ -1,10 +1,14 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "data/database/database_session.h"
+#include "features/classes/services/class_transfer_json_codec.h"
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QtTest/QtTest>
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -17,6 +21,7 @@ class ClassTransferExportSourceTests : public QObject
     Q_OBJECT
 private slots:
     void successfulSourceHasEveryRequiredStageAndSanitizedProjection();
+    void wideTeacherIdentityKeepsFullProfileAndSharedPortableReference();
     void wideEvaluationIdsKeepTheirOwnExportRows();
     void stagedErrorRollsBackAndKeepsDownstreamNotAttempted();
     void beginAndUnavailableErrorsStayAtSourceBoundary();
@@ -44,6 +49,164 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
     auto database = services.databaseSession()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
+}
+void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndSharedPortableReference()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    constexpr qint64 teacherId = 2147483648LL;
+    const auto typedTeacherId = *Domain::TeacherId::fromString("2147483648");
+    const ClassExportTeacherProfile expected{
+        .teacherKr = u"\uAE40\uBBFC\uC218",
+        .teacherEn = u"Wide Teacher",
+        .preferredRomanization = u"Kim Min Su",
+        .preferredName = u"Min Su",
+        .roomNumber = u"501",
+        .birthday = u"02-29",
+        .phoneNumber = u"010-1234-5678",
+        .wifiName = u"Teacher WiFi",
+        .wifiPassword = u"wifi-secret",
+        .internetType = u"Both",
+        .zoomId = u"teacher.zoom",
+        .zoomPassword = u"zoom-secret",
+        .projectionType = u"Any",
+        .notes = u"Full profile\nSecond line"
+    };
+    QSqlQuery insertTeacher(database);
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en, preferred_romanization, preferred_name, room_number, "
+        "birthday, phone_number, wifi_name, wifi_password, internet_type, zoom_id, zoom_password, projection_type, notes) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")));
+    insertTeacher.addBindValue(QVariant::fromValue(teacherId));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.teacherKr));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.teacherEn));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.preferredRomanization));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.preferredName));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.roomNumber));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.birthday));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.phoneNumber));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.wifiName));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.wifiPassword));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.internetType));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.zoomId));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.zoomPassword));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.projectionType));
+    insertTeacher.addBindValue(QString::fromStdU16String(expected.notes));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+    QList<int> classes;
+    for (const auto& name : {QStringLiteral("First wide class"), QStringLiteral("Second wide class")})
+    {
+        QSqlQuery insertClass(database);
+        insertClass.prepare(QStringLiteral("INSERT INTO classes(name) VALUES (?)"));
+        insertClass.addBindValue(name);
+        QVERIFY2(insertClass.exec(), qPrintable(insertClass.lastError().text()));
+        const int classId = insertClass.lastInsertId().toInt();
+        classes.append(classId);
+        QSqlQuery insertInfo(database);
+        insertInfo.prepare(QStringLiteral(
+            "INSERT INTO class_info(class_id,teacher_id,class_grade,class_level,notes) VALUES (?,?,'E4','Perseus',?)"));
+        insertInfo.addBindValue(classId);
+        insertInfo.addBindValue(QVariant::fromValue(teacherId));
+        insertInfo.addBindValue(name + QStringLiteral(" notes"));
+        QVERIFY2(insertInfo.exec(), qPrintable(insertInfo.lastError().text()));
+    }
+    QSqlQuery stored(database);
+    QVERIFY(stored.exec(QStringLiteral(
+        "SELECT typeof(teachers.id), teachers.id, typeof(class_info.teacher_id), class_info.teacher_id "
+        "FROM teachers JOIN class_info ON class_info.teacher_id=teachers.id "
+        "WHERE teachers.id=2147483648 ORDER BY class_info.class_id")));
+    for (int index = 0; index < classes.size(); ++index)
+    {
+        QVERIFY(stored.next());
+        QCOMPARE(stored.value(0).toString(), QStringLiteral("integer"));
+        QCOMPARE(stored.value(1).toLongLong(), teacherId);
+        QCOMPARE(stored.value(2).toString(), QStringLiteral("integer"));
+        QCOMPARE(stored.value(3).toLongLong(), teacherId);
+    }
+    QVERIFY(!stored.next());
+    // Reverse selection order to verify source and generated class key order.
+    const ClassTransferExportRequest request{{id(classes[1]), id(classes[0])}};
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    auto source = port.readSource(request); QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(2));
+    QCOMPARE(source.value().teachers.size(), std::size_t(1));
+    QVERIFY(source.value().teachers[0].id == typedTeacherId);
+    QCOMPARE(source.value().teachers[0].profile.state(), ClassExportStageState::Value);
+    const auto verifyProfile = [&expected](const ClassExportTeacherProfile& actual)
+    {
+        QCOMPARE(actual.teacherKr, expected.teacherKr);
+        QCOMPARE(actual.teacherEn, expected.teacherEn);
+        QCOMPARE(actual.preferredRomanization, expected.preferredRomanization);
+        QCOMPARE(actual.preferredName, expected.preferredName);
+        QCOMPARE(actual.roomNumber, expected.roomNumber);
+        QCOMPARE(actual.birthday, expected.birthday);
+        QCOMPARE(actual.phoneNumber, expected.phoneNumber);
+        QCOMPARE(actual.wifiName, expected.wifiName);
+        QCOMPARE(actual.wifiPassword, expected.wifiPassword);
+        QCOMPARE(actual.internetType, expected.internetType);
+        QCOMPARE(actual.zoomId, expected.zoomId);
+        QCOMPARE(actual.zoomPassword, expected.zoomPassword);
+        QCOMPARE(actual.projectionType, expected.projectionType);
+        QCOMPARE(actual.notes, expected.notes);
+    };
+    verifyProfile(source.value().teachers[0].profile.value());
+    for (std::size_t index = 0; index < source.value().classes.size(); ++index)
+    {
+        const auto& item = source.value().classes[index];
+        QVERIFY(item.id == request.classIds[index]);
+        QCOMPARE(item.selectedIndex, index);
+        QCOMPARE(item.info.state(), ClassExportStageState::Value);
+        QCOMPARE(item.info.value().sourceClassId, classes[1 - static_cast<int>(index)]);
+        QCOMPARE(item.info.value().sourceTeacherId, std::int64_t(teacherId));
+        QCOMPARE(item.teacher.state(), ClassExportStageState::Value);
+        QVERIFY(item.teacher.value());
+        QVERIFY(*item.teacher.value() == typedTeacherId);
+        QCOMPARE(item.roster.state(), ClassExportStageState::Value);
+        QCOMPARE(item.evaluations.state(), ClassExportStageState::Value);
+    }
+    auto package = ClassTransferExportQuery(port).execute(request); QVERIFY(package);
+    QCOMPARE(package.value().teachers.size(), std::size_t(1));
+    QCOMPARE(package.value().classes.size(), std::size_t(2));
+    QCOMPARE(package.value().teachers[0].key, std::u16string(u"teacher-1"));
+    verifyProfile(package.value().teachers[0].teacher);
+    QCOMPARE(package.value().classes[0].key, std::u16string(u"class-1"));
+    QCOMPARE(package.value().classes[1].key, std::u16string(u"class-2"));
+    QCOMPARE(package.value().classes[0].name, std::u16string(u"Second wide class"));
+    QCOMPARE(package.value().classes[1].name, std::u16string(u"First wide class"));
+    for (const auto& item : package.value().classes)
+        QCOMPARE(item.teacherKey, package.value().teachers[0].key);
+    const auto json = ClassTransferJsonCodec::toJson(package.value());
+    const auto teachersJson = json.value(QStringLiteral("teachers")).toArray();
+    const auto classesJson = json.value(QStringLiteral("classes")).toArray();
+    QCOMPARE(teachersJson.size(), 1);
+    QCOMPARE(teachersJson[0].toObject().size(), 15); // Portable key and all 14 profile fields.
+    QVERIFY(!teachersJson[0].toObject().contains(QStringLiteral("id")));
+    for (const auto& item : classesJson)
+    {
+        const auto object = item.toObject();
+        QCOMPARE(object.value(QStringLiteral("teacher_ref")).toString(), QStringLiteral("teacher-1"));
+        QVERIFY(!object.value(QStringLiteral("info")).toObject().contains(QStringLiteral("teacher_id")));
+    }
+    const auto bytes = QJsonDocument(json).toJson(QJsonDocument::Compact);
+    QVERIFY(!bytes.contains("2147483648"));
+    QVERIFY(!bytes.contains("-2147483648"));
+    auto legacy = services.databaseSession()->classTransferRepository()->buildPackage({classes[1], classes[0]});
+    QVERIFY(legacy);
+    QCOMPARE(legacy->teachers.size(), 1);
+    QCOMPARE(legacy->teachers[0].teacher.id, -1);
+    for (const auto& item : legacy->classes)
+    {
+        QCOMPARE(item.teacherKey, QStringLiteral("teacher-1"));
+        QCOMPARE(item.info.classId, -1);
+        QCOMPARE(item.info.teacherId, -1);
+    }
+    auto legacyJson = ClassTransferJsonCodec::toJson(*legacy);
+    legacyJson.remove(QStringLiteral("exported_at_utc"));
+    auto typedJson = json;
+    typedJson.remove(QStringLiteral("exported_at_utc"));
+    QCOMPARE(legacyJson, typedJson);
+    QVERIFY(database.transaction()); QVERIFY(database.rollback());
 }
 void ClassTransferExportSourceTests::wideEvaluationIdsKeepTheirOwnExportRows()
 {

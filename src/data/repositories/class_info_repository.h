@@ -17,6 +17,40 @@
 #include <optional>
 #include <vector>
 
+// Full export metadata, kept separate from the integer-based edit model.
+struct ClassTransferExportClassInfoReadRecord final
+{
+    int classId{-1};
+
+    qint64 teacherId{-1};
+
+    QString teacherKr;
+    QString teacherEn;
+    QString teacherPreferredName;
+    QString roomNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString internetType;
+    QString zoomId;
+    QString zoomPassword;
+    QString projectionType;
+
+    QString classGrade;
+    QString classLevel;
+
+    QString readingBook;
+    QString essayBook;
+
+    QString classColor{"#FFFFFF"};
+    QString fontColor{"#000000"};
+
+    QList<ClassTime> classTimes;
+    QList<ClassTime> intensiveTimes;
+
+    QString notes;
+    QString timeFillerActivities;
+};
+
 struct ClassNavigationReadRecord final
 {
     int classId = -1;
@@ -370,6 +404,10 @@ public:
         loadScheduleEditorClassInfoRecord(int classId);
     [[nodiscard]] Result<SelectedClassGradeReadRecord>
         loadSelectedClassGradeRecord(int classId);
+    [[nodiscard]] Result<ClassTransferExportClassInfoReadRecord>
+        loadClassTransferExportClassInfoRecord(int classId);
+    [[nodiscard]] Result<QList<ClassTransferExportClassInfoReadRecord>>
+        loadClassTransferExportClassInfoRecords(const QList<int>& classIds);
     [[nodiscard]] Result<QList<ClassInfo>> loadClassInfoRecords(
         const QList<int>& classIds
         );

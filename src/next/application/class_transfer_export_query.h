@@ -30,7 +30,8 @@ struct ClassExportInfo
 };
 struct ClassExportSourceInfo : ClassExportInfo
 {
-    int sourceClassId = -1, sourceTeacherId = -1;
+    int sourceClassId = -1;
+    std::int64_t sourceTeacherId = -1;
     ClassExportText teacherKr, teacherEn, teacherPreferredName, roomNumber;
     ClassExportText wifiName, wifiPassword, internetType, zoomId, zoomPassword, projectionType;
 };

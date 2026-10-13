@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <array>
+#include <limits>
 #include <map>
 #include <optional>
 #include <string>
@@ -1255,7 +1256,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     ClassTransferExportSource source;
     source.exportedAtUtc = QDateTime::currentDateTimeUtc();
     QSet<int> seenClasses;
-    QSet<int> seenTeachers;
+    QSet<qint64> seenTeachers;
     source.classes.reserve(classIds.size());
 
     // Resolve selections in order and stop at the first known selection or
@@ -1296,7 +1297,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     }
 
     auto classInfoRecords =
-        classInfoRepository.loadClassInfoRecords(exportClassIds);
+        classInfoRepository.loadClassTransferExportClassInfoRecords(exportClassIds);
     bool classInfoBatchMatchesRequest =
         classInfoRecords.has_value()
         && classInfoRecords->size() == source.classes.size();
@@ -1325,8 +1326,8 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     {
         for (ClassTransferExportSourceClass& pending : source.classes)
         {
-            Result<ClassInfo> info =
-                classInfoRepository.loadClassInfo(pending.classId);
+            Result<ClassTransferExportClassInfoReadRecord> info =
+                classInfoRepository.loadClassTransferExportClassInfoRecord(pending.classId);
             if (info)
             {
                 pending.info = std::move(*info);
@@ -1408,8 +1409,8 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
 
     if (!source.teacherIds.isEmpty())
     {
-        const Result<QList<TeacherProfileBatchReadRecord>> teacherProfiles =
-            teacherRepository.loadTeacherProfileRecords(source.teacherIds);
+        const Result<QList<ClassTransferExportTeacherProfileBatchReadRecord>> teacherProfiles =
+            teacherRepository.loadClassTransferExportTeacherProfileRecords(source.teacherIds);
         if (!teacherProfiles)
         {
             // A batch-level failure occupies the first assigned-teacher
@@ -1425,8 +1426,8 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
         {
             for (qsizetype index = 0; index < source.teacherIds.size(); ++index)
             {
-                const int teacherId = source.teacherIds[index];
-                const TeacherProfileBatchReadRecord& record =
+                const qint64 teacherId = source.teacherIds[index];
+                const ClassTransferExportTeacherProfileBatchReadRecord& record =
                     teacherProfiles->at(index);
                 if (record.teacherId != teacherId)
                 {
@@ -1441,7 +1442,7 @@ Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
                     continue;
                 }
 
-                if (record.profile->id != teacherId)
+                if (record.profile->teacherId != teacherId)
                 {
                     source.teacherBatchError = QObject::tr(
                         "Loading teacher profiles failed: a database record returned a different teacher identifier.");
@@ -1519,13 +1520,33 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<i
         return std::unexpected(selectionOrReadError);
     }
 
-    QHash<int, QString> teacherKeys;
-    for (const int teacherId : teacherIds)
+    QHash<qint64, QString> teacherKeys;
+    for (const qint64 teacherId : teacherIds)
     {
         const QString key =
             QStringLiteral("teacher-%1").arg(package.teachers.size() + 1);
         teacherKeys.insert(teacherId, key);
-        package.teachers.append({key, teachersById.value(teacherId)});
+        const auto& profile = teachersById[teacherId];
+        Teacher teacher;
+        // Portable legacy payloads do not serialize local identity. Preserve
+        // representable IDs for legacy callers without truncating wide IDs.
+        teacher.id = teacherId <= std::numeric_limits<int>::max()
+            ? static_cast<int>(teacherId) : -1;
+        teacher.teacherKr = profile.teacherKr;
+        teacher.teacherEn = profile.teacherEn;
+        teacher.preferredRomanization = profile.preferredRomanization;
+        teacher.preferredName = profile.preferredName;
+        teacher.roomNumber = profile.roomNumber;
+        teacher.birthday = profile.birthday;
+        teacher.phoneNumber = profile.phoneNumber;
+        teacher.wifiName = profile.wifiName;
+        teacher.wifiPassword = profile.wifiPassword;
+        teacher.internetType = profile.internetType;
+        teacher.zoomId = profile.zoomId;
+        teacher.zoomPassword = profile.zoomPassword;
+        teacher.projectionType = profile.projectionType;
+        teacher.notes = profile.notes;
+        package.teachers.append({key, std::move(teacher)});
     }
 
     for (ClassTransferExportSourceClass& pending : pendingClasses)
@@ -1534,7 +1555,18 @@ Result<ClassTransferPackage> ClassTransferRepository::buildPackage(const QList<i
         transferClass.key = QStringLiteral("class-%1")
             .arg(pending.selectedIndex + 1);
         transferClass.name = pending.name;
-        transferClass.info = std::move(pending.info);
+        // Project the portable class fields; local IDs remain unassigned.
+        transferClass.info.classGrade = std::move(pending.info.classGrade);
+        transferClass.info.classLevel = std::move(pending.info.classLevel);
+        transferClass.info.readingBook = std::move(pending.info.readingBook);
+        transferClass.info.essayBook = std::move(pending.info.essayBook);
+        transferClass.info.classColor = std::move(pending.info.classColor);
+        transferClass.info.fontColor = std::move(pending.info.fontColor);
+        transferClass.info.classTimes = std::move(pending.info.classTimes);
+        transferClass.info.intensiveTimes = std::move(pending.info.intensiveTimes);
+        transferClass.info.notes = std::move(pending.info.notes);
+        transferClass.info.timeFillerActivities = std::move(pending.info.timeFillerActivities);
+        transferClass.info.teacherPreferredName = std::move(pending.info.teacherPreferredName);
         transferClass.roster = std::move(pending.roster);
         transferClass.evaluations = std::move(pending.evaluations);
 

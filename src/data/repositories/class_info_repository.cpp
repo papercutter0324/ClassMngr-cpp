@@ -567,11 +567,36 @@ Status ClassInfoRepository::saveClassCoTeacherAssignment(
     return {};
 }
 
-Result<ClassInfo> ClassInfoRepository::loadClassInfo(
+namespace
+{
+Status assignExportTeacherId(ClassInfo& info, const QVariant& value)
+{
+    info.teacherId = value.isNull() ? -1 : value.toInt();
+    return {};
+}
+
+Status assignExportTeacherId(
+    ClassTransferExportClassInfoReadRecord& info, const QVariant& value)
+{
+    if (value.isNull())
+    {
+        info.teacherId = -1;
+        return {};
+    }
+    bool valid = false;
+    info.teacherId = value.toLongLong(&valid);
+    if (!valid)
+        return std::unexpected(QObject::tr(
+            "Loading class information failed: invalid assigned teacher identifier."));
+    return {};
+}
+
+template<class Record>
+Result<Record> loadClassInfoRecord(
+    QSqlDatabase& database,
     int classId
     )
 {
-    ++m_scheduleClassInfoReadMetrics.singleClassInfoReadCount;
     if (classId <= 0)
     {
         return std::unexpected(
@@ -580,12 +605,12 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
             );
     }
 
-    ClassInfo info;
+    Record info;
     info.classId =    classId;
     info.classColor = "#FFFFFF";
     info.fontColor =  "#000000";
 
-    QSqlQuery query(m_database);
+    QSqlQuery query(database);
 
     query.prepare(R"(
         SELECT
@@ -626,7 +651,8 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     if (query.next())
     {
         const QVariant teacherId = query.value("teacher_id");
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (const Status assigned = assignExportTeacherId(info, teacherId); !assigned)
+            return std::unexpected(assigned.error());
         info.teacherKr =    query.value("teacher_kr").toString();
         info.teacherEn =    query.value("teacher_en").toString();
         info.teacherPreferredName =
@@ -733,6 +759,21 @@ Result<ClassInfo> ClassInfoRepository::loadClassInfo(
     }
 
     return info;
+}
+
+}
+
+Result<ClassInfo> ClassInfoRepository::loadClassInfo(int classId)
+{
+    ++m_scheduleClassInfoReadMetrics.singleClassInfoReadCount;
+    return loadClassInfoRecord<ClassInfo>(m_database, classId);
+}
+
+Result<ClassTransferExportClassInfoReadRecord>
+ClassInfoRepository::loadClassTransferExportClassInfoRecord(int classId)
+{
+    return loadClassInfoRecord<ClassTransferExportClassInfoReadRecord>(
+        m_database, classId);
 }
 
 Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
@@ -1294,13 +1335,17 @@ ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
     return record;
 }
 
-Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
+namespace
+{
+template<class Record>
+Result<QList<Record>> loadClassInfoRecords(
+    QSqlDatabase& database,
     const QList<int>& classIds
     )
 {
     if (classIds.isEmpty())
     {
-        return QList<ClassInfo>{};
+        return QList<Record>{};
     }
 
     QSet<int> seenClassIds;
@@ -1322,11 +1367,11 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
             .arg(index));
     }
 
-    QList<ClassInfo> records;
+    QList<Record> records;
     records.reserve(classIds.size());
     for (const int classId : classIds)
     {
-        ClassInfo info;
+        Record info;
         info.classId = classId;
         records.append(std::move(info));
     }
@@ -1335,7 +1380,7 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
         "WITH requested(class_id, ordinal) AS (VALUES %1)"
         ).arg(requestedValues.join(QStringLiteral(", ")));
 
-    QSqlQuery metadataQuery(m_database);
+    QSqlQuery metadataQuery(database);
     metadataQuery.setForwardOnly(true);
     const auto loadedMetadata = SqlQueryUtils::execute(
         metadataQuery,
@@ -1401,11 +1446,12 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
             continue;
         }
 
-        ClassInfo& info = records[requestOrder];
+        Record& info = records[requestOrder];
         const QVariant teacherId = metadataQuery.value(
             QStringLiteral("teacher_id")
             );
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (const Status assigned = assignExportTeacherId(info, teacherId); !assigned)
+            return std::unexpected(assigned.error());
         info.teacherKr = metadataQuery.value(
             QStringLiteral("teacher_kr")
             ).toString();
@@ -1483,13 +1529,13 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
             ));
     }
 
-    const auto loadTimes = [this, &classIds, &records, &requestedTable](
+    const auto loadTimes = [&database, &classIds, &records, &requestedTable](
         const QString& table,
         const QString& action,
         const bool intensive
         ) -> Status
     {
-        QSqlQuery scheduleQuery(m_database);
+        QSqlQuery scheduleQuery(database);
         scheduleQuery.setForwardOnly(true);
         const QString queryText = requestedTable + QStringLiteral(R"(
             SELECT requested.class_id AS requested_class_id,
@@ -1574,6 +1620,22 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
     }
 
     return records;
+}
+
+}
+
+Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfoRecords(
+    const QList<int>& classIds)
+{
+    return ::loadClassInfoRecords<ClassInfo>(m_database, classIds);
+}
+
+Result<QList<ClassTransferExportClassInfoReadRecord>>
+ClassInfoRepository::loadClassTransferExportClassInfoRecords(
+    const QList<int>& classIds)
+{
+    return ::loadClassInfoRecords<ClassTransferExportClassInfoReadRecord>(
+        m_database, classIds);
 }
 
 Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(

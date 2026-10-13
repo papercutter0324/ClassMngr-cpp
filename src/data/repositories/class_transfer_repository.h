@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/result.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "domain/models/class_transfer.h"
 #include "next/application/class_transfer_apply_request.h"
 
@@ -15,13 +17,13 @@ struct ClassTransferExportSourceClass
     int classId = -1;
     int selectedIndex = -1;
     QString name;
-    ClassInfo info;
+    ClassTransferExportClassInfoReadRecord info;
     QString infoError;
     Roster roster;
     QString rosterError;
     QList<ClassTransferEvaluation> evaluations;
     QString evaluationError;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     bool evaluationAttempted = false;
 };
 
@@ -29,9 +31,9 @@ struct ClassTransferExportSource
 {
     QDateTime exportedAtUtc;
     QList<ClassTransferExportSourceClass> classes;
-    QList<int> teacherIds;
-    QHash<int, Teacher> teachersById;
-    QHash<int, QString> teacherErrorsById;
+    QList<qint64> teacherIds;
+    QHash<qint64, TeacherProfileReadRecord> teachersById;
+    QHash<qint64, QString> teacherErrorsById;
     QString teacherBatchError;
     QString selectionOrReadError;
 };

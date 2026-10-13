@@ -37,14 +37,14 @@ public:
             output.deferredSelectionOrLookupError = error(read->selectionOrReadError);
         if (!read->teacherBatchError.isEmpty())
             output.teacherBatchError = error(read->teacherBatchError);
-        for (const int id : read->teacherIds)
+        for (const qint64 id : read->teacherIds)
         {
             ClassExportSourceTeacher teacher{*Domain::TeacherId::fromString(std::to_string(id)), {}};
             if (read->teacherErrorsById.contains(id))
                 teacher.profile = ClassExportStage<ClassExportTeacherProfile>::error(error(read->teacherErrorsById.value(id)));
             else if (read->teachersById.contains(id))
             {
-                const Teacher& source = read->teachersById[id];
+                const TeacherProfileReadRecord& source = read->teachersById[id];
                 ClassExportTeacherProfile value;
                 value.teacherKr = source.teacherKr.toStdU16String();
                 value.teacherEn = source.teacherEn.toStdU16String();

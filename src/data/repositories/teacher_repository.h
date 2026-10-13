@@ -125,6 +125,12 @@ struct TeacherProfileReadRecord final
     QString notes;
 };
 
+struct ClassTransferExportTeacherProfileBatchReadRecord final
+{
+    qint64 teacherId = -1;
+    Result<TeacherProfileReadRecord> profile;
+};
+
 enum class TeacherProfileLookupCode
 {
     Found,
@@ -291,6 +297,8 @@ public:
         teacherDisplayNameBatchReadMetrics() const noexcept;
     [[nodiscard]] Result<QList<TeacherProfileBatchReadRecord>>
         loadTeacherProfileRecords(const QList<int>& teacherIds);
+    [[nodiscard]] Result<QList<ClassTransferExportTeacherProfileBatchReadRecord>>
+        loadClassTransferExportTeacherProfileRecords(const QList<qint64>& teacherIds);
     [[nodiscard]] const TeacherProfileBatchReadMetrics&
         teacherProfileBatchReadMetrics() const noexcept;
     [[nodiscard]] TeacherProfileLookupResult lookupTeacherProfileById(
