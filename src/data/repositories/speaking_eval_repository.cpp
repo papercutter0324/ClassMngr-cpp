@@ -140,7 +140,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     }
 
     query.prepare(R"(
-        SELECT *
+        SELECT *, typeof(row_index) AS row_index_storage_type
         FROM speaking_eval_data
         WHERE evaluation_id=?
     )");
@@ -169,8 +169,27 @@ Status SpeakingEvalRepository::saveSpeakingEval(
                 );
         }
 
+        const QVariant rowIndexValue = query.value("row_index");
+        if (
+            query.value("row_index_storage_type").toString()
+                == QStringLiteral("text")
+            )
+        {
+            bool rowIndexValid = false;
+            rowIndexValue.toLongLong(&rowIndexValid);
+            if (!rowIndexValid)
+            {
+                return std::unexpected(
+                    QObject::tr(
+                        "Loading speaking evaluation rows failed for %1: "
+                        "invalid row index."
+                        ).arg(identity)
+                    );
+            }
+        }
+
         existingRows.insert(
-            query.value("row_index").toInt(),
+            rowIndexValue.toInt(),
             values
             );
     }

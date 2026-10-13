@@ -244,6 +244,7 @@ private slots:
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
     void speakingEvaluationRepositoryPreservesWideIds();
+    void speakingEvaluationSaveRejectsMalformedStoredRowIndex();
     void legacyRepositoryWriteFailuresRollBack();
     void existingTeacherSchemaGainsPersonalDetailColumns();
     void existingTestingSchemaGainsClassAssignmentColumn();
@@ -1372,6 +1373,108 @@ void DataServiceLifecycleTests::speakingEvaluationRepositoryPreservesWideIds()
     QCOMPARE(reloadedNewRows->size(), SpeakingEval::RowCount);
     QCOMPARE((*reloadedNewRows)[0][0], QStringLiteral("New Wide Student"));
     QCOMPARE((*reloadedNewRows)[0][1], QStringLiteral("New Wide Comment"));
+}
+
+void DataServiceLifecycleTests::speakingEvaluationSaveRejectsMalformedStoredRowIndex()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("malformed-speaking-row-index.db"))
+        ));
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Malformed Row Index Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+    const QString evaluationName = QStringLiteral("Malformed Row Index Evaluation");
+
+    SpeakingEvalRows originalRows = SpeakingEval::emptyRows();
+    originalRows[0][0] = QStringLiteral("Original Row Zero");
+    QVERIFY(service.saveSpeakingEval(
+        classId,
+        evaluationName,
+        originalRows,
+        {{0, 0}}
+        ));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT id FROM speaking_evaluations "
+        "WHERE class_id=? AND evaluation_name=?"
+        )));
+    query.addBindValue(classId);
+    query.addBindValue(evaluationName);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    const qint64 evaluationId = query.value("id").toLongLong();
+    QVERIFY(evaluationId > 0);
+    QVERIFY(!query.next());
+
+    const QString malformedRowIndex = QStringLiteral("not-a-row-index");
+    QVERIFY(query.prepare(QStringLiteral(
+        "INSERT INTO speaking_eval_data "
+        "(evaluation_id, row_index, col_0) VALUES (?, ?, ?)"
+        )));
+    query.addBindValue(evaluationId);
+    query.addBindValue(malformedRowIndex);
+    query.addBindValue(QStringLiteral("Malformed Row Zero Alias"));
+    QVERIFY(query.exec());
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT typeof(row_index) AS storage_type "
+        "FROM speaking_eval_data WHERE evaluation_id=? AND row_index=?"
+        )));
+    query.addBindValue(evaluationId);
+    query.addBindValue(malformedRowIndex);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value("storage_type").toString(), QStringLiteral("text"));
+    QVERIFY(!query.next());
+
+    // A later valid-row insert happens before the repository reads and rejects
+    // the malformed persisted index. Its absence after failure proves the
+    // transaction rolled that insert back.
+    QVERIFY(query.prepare(QStringLiteral(
+        "DELETE FROM speaking_eval_data "
+        "WHERE evaluation_id=? AND row_index=1"
+        )));
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    SpeakingEvalRows changedRows = SpeakingEval::emptyRows();
+    changedRows[0][0] = QStringLiteral("Changed Row Zero");
+    const Status failedSave = service.saveSpeakingEval(
+        classId,
+        evaluationName,
+        changedRows,
+        {{0, 0}}
+        );
+    QVERIFY(!failedSave);
+    QVERIFY(failedSave.error().contains(QStringLiteral("invalid row index")));
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT col_0 FROM speaking_eval_data "
+        "WHERE evaluation_id=? AND row_index=0"
+        )));
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value("col_0").toString(), QStringLiteral("Original Row Zero"));
+    QVERIFY(!query.next());
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM speaking_eval_data "
+        "WHERE evaluation_id=? AND row_index=1"
+        )));
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
 }
 
 void DataServiceLifecycleTests::legacyRepositoryWriteFailuresRollBack()
