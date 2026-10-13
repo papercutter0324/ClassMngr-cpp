@@ -29,7 +29,7 @@ public:
         seenTeacherIds.reserve(teacherIds.size());
         for (const Domain::TeacherId& teacherId : teacherIds)
         {
-            if (!isCanonicalPositiveDecimalId(teacherId.value()))
+            if (!isCanonicalPositiveDecimalId64(teacherId.value()))
             {
                 return MyClassesTeacherProfileBatchReadResult::failure({
                     .code = Domain::ErrorCode::InvalidInput,

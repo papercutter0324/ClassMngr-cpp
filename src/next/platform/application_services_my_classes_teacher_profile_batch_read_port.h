@@ -4,15 +4,13 @@
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/application/my_classes_teacher_profile_batch_read_port.h"
+#include "next/application/positive_decimal_id_validation.h"
 
 #include <QByteArray>
 #include <QString>
 
-#include <charconv>
 #include <exception>
-#include <optional>
 #include <string>
-#include <system_error>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -63,14 +61,17 @@ public:
                 );
         }
 
-        QList<int> legacyTeacherIds;
+        QList<qint64> legacyTeacherIds;
         legacyTeacherIds.reserve(
             static_cast<qsizetype>(teacherIds.size())
             );
-        std::unordered_set<int> seenTeacherIds;
+        std::unordered_set<qint64> seenTeacherIds;
         for (const Domain::TeacherId& teacherId : teacherIds)
         {
-            const std::optional<int> legacyId = legacyTeacherId(teacherId);
+            const auto legacyId =
+                Application::parseCanonicalPositiveDecimalId64(
+                    teacherId.value()
+                    );
             if (!legacyId || !seenTeacherIds.insert(*legacyId).second)
             {
                 return Application::MyClassesTeacherProfileBatchReadResult::failure(
@@ -216,27 +217,6 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyTeacherId(
-        const Domain::TeacherId& id
-        )
-    {
-        const std::string& value = id.value();
-        int parsed = 0;
-        const auto [end, conversionError] = std::from_chars(
-            value.data(),
-            value.data() + value.size(),
-            parsed
-            );
-        if (conversionError != std::errc{}
-            || end != value.data() + value.size()
-            || parsed <= 0
-            || std::to_string(parsed) != value)
-        {
-            return std::nullopt;
-        }
-        return parsed;
-    }
-
     [[nodiscard]] static Application::MyClassesTeacherProfileFields
     profileFieldsFromReadFields(
         const MyClassesTeacherProfileReadFields& fields

@@ -97,7 +97,7 @@ Teacher teacherFromQuery(
     return teacher;
 }
 
-QString teacherIdentity(int teacherId)
+QString teacherIdentity(qint64 teacherId)
 {
     return QObject::tr("teacher id %1").arg(teacherId);
 }
@@ -799,7 +799,7 @@ TeacherRepository::subPrepRosterOutputTeacherProfileBatchReadMetrics() const noe
 
 Result<QList<MyClassesTeacherProfileBatchReadRecord>>
 TeacherRepository::loadMyClassesTeacherProfileRecords(
-    const QList<int>& teacherIds
+    const QList<qint64>& teacherIds
     )
 {
     if (teacherIds.isEmpty())
@@ -811,12 +811,12 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
     m_myClassesTeacherProfileBatchReadMetrics.requestedTeacherCount +=
         teacherIds.size();
 
-    QSet<int> seenTeacherIds;
+    QSet<qint64> seenTeacherIds;
     QStringList requestedValues;
     requestedValues.reserve(teacherIds.size());
     for (qsizetype index = 0; index < teacherIds.size(); ++index)
     {
-        const int teacherId = teacherIds[index];
+        const qint64 teacherId = teacherIds[index];
         if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
         {
             return std::unexpected(QObject::tr(
@@ -856,7 +856,7 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         return std::unexpected(query.lastError().text());
     }
 
-    for (const int teacherId : teacherIds)
+    for (const qint64 teacherId : teacherIds)
     {
         query.addBindValue(teacherId);
     }
@@ -884,9 +884,13 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
                 ));
         }
 
-        const int requestedTeacherId = teacherIds[rowIndex];
-        if (query.value("requested_teacher_id").toInt()
-                != requestedTeacherId
+        const qint64 requestedTeacherId = teacherIds[rowIndex];
+        bool returnedRequestedTeacherIdValid = false;
+        const qint64 returnedRequestedTeacherId = query.value(
+            "requested_teacher_id"
+            ).toLongLong(&returnedRequestedTeacherIdValid);
+        if (!returnedRequestedTeacherIdValid
+            || returnedRequestedTeacherId != requestedTeacherId
             || query.value("requested_ordinal").toInt() != rowIndex)
         {
             return std::unexpected(QObject::tr(
@@ -906,8 +910,12 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
             continue;
         }
 
-        const int returnedTeacherId = query.value("id").toInt();
-        if (returnedTeacherId != requestedTeacherId)
+        bool returnedTeacherIdValid = false;
+        const qint64 returnedTeacherId = query.value("id").toLongLong(
+            &returnedTeacherIdValid
+            );
+        if (!returnedTeacherIdValid
+            || returnedTeacherId != requestedTeacherId)
         {
             entries.append({
                 requestedTeacherId,

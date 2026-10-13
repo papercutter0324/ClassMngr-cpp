@@ -5,6 +5,7 @@
 
 #include <QList>
 #include <QSqlDatabase>
+#include <QtGlobal>
 
 struct TeacherDisplayNameReadRecord final
 {
@@ -120,7 +121,7 @@ struct SubPrepRosterOutputTeacherProfileBatchReadMetrics final
 
 struct MyClassesTeacherProfileReadFields final
 {
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString teacherKr;
     QString teacherEn;
     QString preferredRomanization;
@@ -137,7 +138,7 @@ struct MyClassesTeacherProfileReadFields final
 
 struct MyClassesTeacherProfileBatchReadRecord final
 {
-    int requestedTeacherId = -1;
+    qint64 requestedTeacherId = -1;
     Result<MyClassesTeacherProfileReadFields> profile;
 };
 
@@ -220,7 +221,7 @@ public:
     [[nodiscard]] const SubPrepRosterOutputTeacherProfileBatchReadMetrics&
         subPrepRosterOutputTeacherProfileBatchReadMetrics() const noexcept;
     [[nodiscard]] Result<QList<MyClassesTeacherProfileBatchReadRecord>>
-        loadMyClassesTeacherProfileRecords(const QList<int>& teacherIds);
+        loadMyClassesTeacherProfileRecords(const QList<qint64>& teacherIds);
     [[nodiscard]] const MyClassesTeacherProfileBatchReadMetrics&
         myClassesTeacherProfileBatchReadMetrics() const noexcept;
 

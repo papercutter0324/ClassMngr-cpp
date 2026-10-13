@@ -68,6 +68,7 @@ class NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests
 
 private slots:
     void readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure();
+    void readsWideTeacherIdFromIntegerPrimaryKey();
     void batchSqlFailurePreservesIndependentPerTeacherFailures();
     void emptyInputAvoidsRepositoryWork();
     void reportsUnavailableServicesPerTeacher();
@@ -139,6 +140,95 @@ readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure()
         repository->teacherProfileBatchReadMetrics();
     QCOMPARE(broadAfter.callCount, broadBefore.callCount);
     QCOMPARE(broadAfter.statementCount, broadBefore.statementCount);
+}
+
+void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
+readsWideTeacherIdFromIntegerPrimaryKey()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const Teacher expected = teacherFixture();
+    const qint64 wideIdValue = 2147483648LL;
+
+    QSqlQuery insertTeacher(services.databaseSession()->database());
+    QVERIFY2(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id,
+            teacher_kr,
+            teacher_en,
+            preferred_romanization,
+            preferred_name,
+            room_number,
+            birthday,
+            phone_number,
+            wifi_name,
+            wifi_password,
+            internet_type,
+            zoom_id,
+            zoom_password,
+            projection_type,
+            notes
+        ) VALUES (
+            2147483648, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+    )")), qPrintable(insertTeacher.lastError().text()));
+    insertTeacher.addBindValue(expected.teacherKr);
+    insertTeacher.addBindValue(expected.teacherEn);
+    insertTeacher.addBindValue(expected.preferredRomanization);
+    insertTeacher.addBindValue(expected.preferredName);
+    insertTeacher.addBindValue(expected.roomNumber);
+    insertTeacher.addBindValue(expected.birthday);
+    insertTeacher.addBindValue(expected.phoneNumber);
+    insertTeacher.addBindValue(expected.wifiName);
+    insertTeacher.addBindValue(expected.wifiPassword);
+    insertTeacher.addBindValue(expected.internetType);
+    insertTeacher.addBindValue(expected.zoomId);
+    insertTeacher.addBindValue(expected.zoomPassword);
+    insertTeacher.addBindValue(expected.projectionType);
+    insertTeacher.addBindValue(expected.notes);
+    QVERIFY2(insertTeacher.exec(),
+             qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery verifyStoredId(services.databaseSession()->database());
+    QVERIFY2(verifyStoredId.exec(QStringLiteral(
+                 "SELECT typeof(id), id FROM teachers WHERE id=2147483648"
+                 )),
+             qPrintable(verifyStoredId.lastError().text()));
+    QVERIFY(verifyStoredId.next());
+    QCOMPARE(verifyStoredId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(1).toLongLong(), wideIdValue);
+    QVERIFY(!verifyStoredId.next());
+
+    const auto wideTeacherId = Domain::TeacherId::fromString("2147483648");
+    QVERIFY(wideTeacherId);
+    Platform::ApplicationServicesMyClassesTeacherProfileBatchReadPort port(
+        services
+        );
+    const Application::MyClassesTeacherProfileBatchReadQuery query(port);
+    const auto loaded = query.execute({*wideTeacherId});
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(1));
+    QVERIFY(loaded.value()[0].teacherId == *wideTeacherId);
+    QVERIFY(loaded.value()[0].profile);
+    const Application::MyClassesTeacherProfileFields& fields =
+        loaded.value()[0].profile.value();
+    QVERIFY(fields.teacherKr == expected.teacherKr.toStdU16String());
+    QVERIFY(fields.teacherEn == expected.teacherEn.toStdU16String());
+    QVERIFY(fields.preferredRomanization
+        == expected.preferredRomanization.toStdU16String());
+    QVERIFY(fields.preferredName == expected.preferredName.toStdU16String());
+    QVERIFY(fields.roomNumber == expected.roomNumber.toStdU16String());
+    QVERIFY(fields.wifiName == expected.wifiName.toStdU16String());
+    QVERIFY(fields.wifiPassword == expected.wifiPassword.toStdU16String());
+    QVERIFY(fields.internetType == expected.internetType.toStdU16String());
+    QVERIFY(fields.zoomId == expected.zoomId.toStdU16String());
+    QVERIFY(fields.zoomPassword == expected.zoomPassword.toStdU16String());
+    QVERIFY(fields.projectionType == expected.projectionType.toStdU16String());
+    QVERIFY(fields.notes == expected.notes.toStdU16String());
 }
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
