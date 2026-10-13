@@ -32580,8 +32580,9 @@ Schedule Import already carries `Domain::TeacherId` in its application
 snapshot/apply request, but `ScheduleImportTeacherReadRecord` and class-info
 snapshot IDs remain `int` with `.toInt()` reads; review controls project IDs
 through `int`, and repository apply narrows them again. F820 closes this one
-cohesive review/apply workflow while keeping class IDs int and avoiding a
-repeat of F767's accepted snapshot canonical-ID validation.
+cohesive review/apply workflow while retaining canonical decimal semantics and
+widening only Schedule Import teacher IDs and assignments to signed 64-bit.
+Class IDs remain int, and other F767 consumers stay unchanged.
 
 | Candidate | Decision | Reason |
 |---|---|---|
@@ -32592,6 +32593,40 @@ F820 is selected, not implemented or accepted. Seed/link teacher ID
 `2147483648`; prove the typed snapshot and review offer and select that exact
 decimal ID, including Reuse or Update Room, then apply and verify the intended
 teacher/class-info association and SQLite `INTEGER` storage. Preserve existing
-validation, conflict, and failure behavior. Keep class IDs int and do not
-repeat F767's accepted canonical-ID validation. Phase 2 Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+validation, conflict, and failure behavior. Keep class IDs int and other F767
+consumers unchanged. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### F820 Schedule Import teacher-ID review/apply - accepted - 2026-10-13
+
+F820 is accepted at source commit
+`8b39762697140cafe134fc474aabe278160a578d` (`Phase2 F820: preserve Schedule
+Import teacher IDs`). Independent verification passed a fresh MSVC x64 Debug
+Ninja build of five targets and exactly five focused CTests: #33
+ScheduleImport, #128 ScheduleImportDialog, #254 ApplicationStateSnapshot,
+#409 PlatformStateSnapshotPort, and #410 PlatformApplyPort. `git diff --check`
+passed. The signed-64 canonical predicate applies only to Schedule Import
+teacher IDs and assignments; class IDs and other F767 consumers remain
+unchanged. Legacy preview is untouched. No full suite ran.
+
+### Batch 235 discovery and selection - 2026-10-13
+
+Two independent reviews selected F821 Class Import teacher-ID width. The
+existing parity path uses int in `ClassImportTeacherPreview`,
+`TeacherImportResolution`, dialog maps/conversions, repository apply and
+generated insert IDs; the typed apply request also caps the destination ID at
+`optional<int>`. The focused candidate is the existing
+`ClassMngrClassImportTeacherChoiceRegressionTests` target, CTest
+`ClassImportTeacherChoiceParity`, and
+`tests/class_import_teacher_choice_parity_tests.cpp`.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Class Import teacher-ID width (F821) | Selected | The preview, choice, and apply path narrows teacher IDs despite a bounded existing parity target. |
+
+F821 is selected, not implemented or accepted. Seed existing teacher
+`2147483648`; preserve that exact ID through class-import review choice and
+apply, then verify the class-info teacher association is stored as SQLite
+`INTEGER`. Preserve class IDs as int and retain existing unmatched-create,
+Keep/Replace, and ambiguous-choice behavior. Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
