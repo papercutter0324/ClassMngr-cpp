@@ -34119,3 +34119,26 @@ edits and report the result. No deferred candidate became actionable.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`.
+
+### F850 invalid CalendarFirstDayOfWeek enum on save - accepted - 2026-10-14
+
+F850 is accepted at source/test commit
+`420927cfcdc6680a70b904e8a38a09e815556d37` (`Phase2 - Reject invalid
+calendar weekday saves`). The save port accepts the seven valid enum values
+and rejects invalid values before repository access as nonrecoverable
+`InvalidInput`. Regression coverage confirms rejection preserves the stored
+Tuesday and a subsequent load returns Tuesday.
+
+Independent Tester acceptance: focused top-level Debug CTest
+`ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`
+passed 1/1 with no retry. Coverage retains valid round trips, invalid stored
+value fallback without rewrite, missing-setting behavior, and write-failure
+behavior. No full suite ran.
+
+### Batch 264 completion - 2026-10-14
+
+F850 completed Batch 264 by rejecting invalid CalendarFirstDayOfWeek saves.
+The bounded deferred audit found no actionable candidate and no changed
+blockers. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open. Next-slice selection is pending independent candidate evidence; no next
+slice is selected.

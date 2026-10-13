@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F849 is accepted at `74118c7b`; F850 is selected for Batch 264 pending baseline reproduction, no deferred candidate was unblocked, and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F850 is accepted at `420927cf`; no deferred candidate was unblocked; next-slice selection awaits the investigator's candidate evidence; Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -109,10 +109,6 @@ Treat this plan as an operational summary, not a history:
   policy remains unresolved; do not add a new limit before that decision.
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
-
-#### Active batch: Batch 264
-
-- F850 - Invalid CalendarFirstDayOfWeek enum on save - Baseline-test whether saving cast value 7 overwrites the stored day before production edits.
 
 ## Objective
 
