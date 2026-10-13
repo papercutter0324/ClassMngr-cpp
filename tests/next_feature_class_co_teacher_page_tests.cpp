@@ -6,6 +6,7 @@
 #include "next/application/class_co_teacher_assignment_use_case.h"
 #include "next/application/class_co_teacher_page_read_query.h"
 #include "next/application/class_co_teacher_teacher_choices_read_query.h"
+#include "next/platform/application_services_class_co_teacher_page_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
@@ -14,6 +15,7 @@
 #include <QComboBox>
 #include <QLineEdit>
 #include <QSqlQuery>
+#include <QSqlError>
 #include <QSignalSpy>
 #include <QStringList>
 #include <QTemporaryDir>
@@ -46,6 +48,35 @@ int createTeacher(ApplicationServices& services)
     teacher.preferredName = teacher.teacherEn;
     const auto saved = services.teacherService()->save(teacher);
     return saved ? *saved : -1;
+}
+
+qint64 insertWideTeacher(ApplicationServices& services)
+{
+    constexpr qint64 teacherId = 2147483648LL;
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en, preferred_name, "
+        "room_number, internet_type, wifi_name, wifi_password, "
+        "projection_type, zoom_id, zoom_password) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        ));
+    query.addBindValue(teacherId);
+    query.addBindValue(QStringLiteral("Wide Korean"));
+    query.addBindValue(QStringLiteral("Wide English"));
+    query.addBindValue(QStringLiteral("Wide Display"));
+    query.addBindValue(QStringLiteral("Room Wide"));
+    query.addBindValue(QStringLiteral("LAN"));
+    query.addBindValue(QStringLiteral("Wide Network"));
+    query.addBindValue(QStringLiteral("Wide Password"));
+    query.addBindValue(QStringLiteral("HDMI"));
+    query.addBindValue(QStringLiteral("Wide Zoom"));
+    query.addBindValue(QStringLiteral("Wide Zoom Password"));
+    if (!query.exec())
+    {
+        qFatal("Wide teacher must be seeded: %s",
+            qPrintable(query.lastError().text()));
+    }
+    return teacherId;
 }
 
 int createClass(ApplicationServices& services)
@@ -250,6 +281,7 @@ private slots:
     void readFailuresKeepDefaultSelectionAndIndependentTitleSources();
     void nonpositivePersistedTeacherIdRetainsClassTitleAndClearsSelection();
     void teacherChoicesFailureWarnsAndClearsDatabaseState();
+    void wideTeacherIdentitySurvivesSelectionSaveAndReadback();
 
 private:
     RecordingPromptService m_promptService;
@@ -721,6 +753,70 @@ teacherChoicesFailureWarnsAndClearsDatabaseState()
              QStringLiteral("Teachers could not be loaded."));
     QCOMPARE(m_promptService.requests.front().details,
              QStringLiteral("teacher catalogue unavailable"));
+}
+
+void NextFeatureClassCoTeacherPageTests::
+wideTeacherIdentitySurvivesSelectionSaveAndReadback()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createClass(services);
+    const int regularTeacherId = createTeacher(services);
+    constexpr qint64 wideTeacherId = 2147483648LL;
+    QCOMPARE(insertWideTeacher(services), wideTeacherId);
+    QVERIFY(classId > 0);
+    QVERIFY(regularTeacherId > 0);
+
+    ClassCoTeacherPage page(&services);
+    page.loadClass(Classroom(QStringLiteral("Co-Teacher Page Test"), classId));
+    auto* section = page.findChild<TeacherInfoSection*>();
+    QVERIFY(section);
+    QComboBox* selector = section->teacherSelector();
+    QVERIFY(selector);
+    const int wideIndex = selector->findText(QStringLiteral("Wide Korean"));
+    QVERIFY(wideIndex > 0);
+    const int wideUiId = selector->itemData(wideIndex).toInt();
+    QVERIFY(wideUiId > 0);
+    QVERIFY(wideUiId != regularTeacherId);
+
+    selector->setCurrentIndex(wideIndex);
+    QCOMPARE(section->teacherId(), wideUiId);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(section->teacherId(), wideUiId);
+    QCOMPARE(selector->currentText(), QStringLiteral("Wide Korean"));
+
+    QSqlQuery persisted(services.databaseSession()->database());
+    persisted.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id "
+        "FROM class_info WHERE class_id=?"
+        ));
+    persisted.addBindValue(classId);
+    QVERIFY2(persisted.exec(), qPrintable(persisted.lastError().text()));
+    QVERIFY(persisted.next());
+    QCOMPARE(persisted.value(0).toString(), QStringLiteral("integer"));
+    bool persistedIdValid = false;
+    QCOMPARE(persisted.value(1).toLongLong(&persistedIdValid), wideTeacherId);
+    QVERIFY(persistedIdValid);
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort readPort(&services);
+    const Application::ClassCoTeacherPageReadQuery readQuery(readPort);
+    const auto snapshot = readQuery.execute(typedClassId(classId));
+    QVERIFY(snapshot);
+    QVERIFY(snapshot.value().classFields);
+    QVERIFY(snapshot.value().classFields.value().selectedTeacherId.has_value());
+    QCOMPARE(
+        snapshot.value().classFields.value().selectedTeacherId->value(),
+        std::string("2147483648")
+        );
+    QVERIFY(snapshot.value().teacherDisplayName);
+    QCOMPARE(
+        QString::fromStdU16String(snapshot.value().teacherDisplayName.value()),
+        QStringLiteral("Wide Display")
+        );
 }
 
 QTEST_MAIN(NextFeatureClassCoTeacherPageTests)

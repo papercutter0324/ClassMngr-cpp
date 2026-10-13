@@ -96,6 +96,17 @@ struct ClassPageDetailsReadRecord final
     QString timeFillerActivities;
 };
 
+struct ClassCoTeacherPageDetailsReadRecord final
+{
+    int classId = -1;
+    qint64 teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QList<ClassPageDetailsRegularTime> regularTimes;
+    QString notes;
+    QString timeFillerActivities;
+};
+
 struct ClassNotesPageReadRecord final
 {
     int classId = -1;
@@ -384,7 +395,7 @@ public:
         );
     [[nodiscard]] Status saveClassCoTeacherAssignment(
         int classId,
-        std::optional<int> teacherId
+        std::optional<qint64> teacherId
         );
 
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
@@ -395,6 +406,8 @@ public:
     [[nodiscard]] Result<ClassPageDetailsReadRecord> loadClassPageDetails(
         int classId
         );
+    [[nodiscard]] Result<ClassCoTeacherPageDetailsReadRecord>
+        loadClassCoTeacherPageDetails(int classId);
     [[nodiscard]] Result<ClassNotesPageReadRecord> loadClassNotesPageRecord(
         int classId
         );

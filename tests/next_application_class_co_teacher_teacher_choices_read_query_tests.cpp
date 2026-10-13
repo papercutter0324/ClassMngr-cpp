@@ -45,6 +45,7 @@ class NextApplicationClassCoTeacherTeacherChoicesReadQueryTests final
 
 private slots:
     void callsPortOnceAndPreservesTypedTeacherFields();
+    void acceptsWideTeacherIdentity();
     void propagatesPortFailure();
     void rejectsInvalidTeacherIdentities();
 };
@@ -79,6 +80,38 @@ callsPortOnceAndPreservesTypedTeacherFields()
 }
 
 void NextApplicationClassCoTeacherTeacherChoicesReadQueryTests::
+acceptsWideTeacherIdentity()
+{
+    RecordingTeacherChoicesPort port;
+    Application::ClassCoTeacherTeacherChoicesSnapshot snapshot;
+    snapshot.teachers.push_back({
+        .teacherId = teacherId("2147483648"),
+        .teacherKr = u"Wide Teacher",
+        .teacherEn = u"Wide Teacher",
+        .roomNumber = {},
+        .internetType = {},
+        .wifiName = {},
+        .wifiPassword = {},
+        .projectionType = {},
+        .zoomId = {},
+        .zoomPassword = {}
+    });
+    port.result = Application::ClassCoTeacherTeacherChoicesResult::success(
+        std::move(snapshot)
+        );
+    const Application::ClassCoTeacherTeacherChoicesReadQuery query(port);
+
+    const auto result = query.execute();
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QCOMPARE(
+        result.value().teachers.front().teacherId.value(),
+        std::string("2147483648")
+        );
+}
+
+void NextApplicationClassCoTeacherTeacherChoicesReadQueryTests::
 propagatesPortFailure()
 {
     RecordingTeacherChoicesPort port;
@@ -106,7 +139,7 @@ rejectsInvalidTeacherIdentities()
         "0",
         "-1",
         "01",
-        "2147483648",
+        "9223372036854775808",
         "teacher",
         "42x"
     };

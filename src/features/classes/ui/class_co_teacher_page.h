@@ -5,6 +5,9 @@
 #include "domain/models/classroom.h"
 #include "next/application/class_co_teacher_page_read_snapshot.h"
 
+#include <QHash>
+#include <QtGlobal>
+
 #include <optional>
 
 class ApplicationServices;
@@ -63,7 +66,9 @@ private:
     void buildUi();
     void readSelectedClassSnapshot();
     void selectCachedTeacher();
-    int selectedTeacherIdFromSnapshot() const;
+    [[nodiscard]] qint64 selectedTeacherIdFromSnapshot() const;
+    [[nodiscard]] int selectedUiTeacherIdFromSnapshot() const;
+    [[nodiscard]] qint64 selectedTeacherIdFromUi() const;
     void updateTitle();
     void markDirty();
     void clearDirty();
@@ -83,6 +88,8 @@ private:
     std::optional<
         ClassMngr::Next::Application::ClassCoTeacherPageReadSnapshot
         > m_readSnapshot;
+    QHash<int, qint64> m_stableTeacherIdsByUiId;
+    QHash<qint64, int> m_uiIdsByStableTeacherId;
     Classroom m_classroom;
     bool m_embedded{false};
 

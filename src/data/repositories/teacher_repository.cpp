@@ -1891,8 +1891,18 @@ TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
 
     while (query.next())
     {
+        bool teacherIdOk = false;
+        qint64 teacherId = query.value(QStringLiteral("id"))
+            .toLongLong(&teacherIdOk);
+        if (!teacherIdOk || teacherId <= 0)
+        {
+            // Preserve invalid IDs for the application adapter to classify
+            // as a nonrecoverable validation failure.
+            teacherId = 0;
+        }
+
         teachers.append({
-            query.value(QStringLiteral("id")).toInt(),
+            teacherId,
             query.value(QStringLiteral("teacher_kr")).toString(),
             query.value(QStringLiteral("teacher_en")).toString(),
             query.value(QStringLiteral("room_number")).toString(),

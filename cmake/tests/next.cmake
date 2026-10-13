@@ -2786,6 +2786,19 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+add_test(
+    NAME NextFeatureClassCoTeacherWideTeacherIdentity
+    COMMAND ClassMngrNextFeatureClassCoTeacherPageTests
+        wideTeacherIdentitySurvivesSelectionSaveAndReadback
+)
+set_tests_properties(
+    NextFeatureClassCoTeacherWideTeacherIdentity
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+)
+
 classmngr_add_qt_test(
     NAME NextFeatureClassNotesPage
     SOURCES

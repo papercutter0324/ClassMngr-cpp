@@ -4,6 +4,7 @@
 #include "next/domain/operation_result.h"
 
 #include <optional>
+#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -33,7 +34,7 @@ public:
     // sentinel here so it does not cross the application port.
     [[nodiscard]] static Domain::Result<void> execute(
         const int classId,
-        const int teacherId,
+        const std::int64_t teacherId,
         const ClassCoTeacherAssignmentPort& port
         )
     {

@@ -61,12 +61,12 @@ public:
                 ));
         }
 
-        Result<ClassPageDetailsReadRecord> loadedInfo =
-            [&]() -> Result<ClassPageDetailsReadRecord>
+        Result<ClassCoTeacherPageDetailsReadRecord> loadedInfo =
+            [&]() -> Result<ClassCoTeacherPageDetailsReadRecord>
         {
             try
             {
-                return classInfoRepository->loadClassPageDetails(
+                return classInfoRepository->loadClassCoTeacherPageDetails(
                     *legacyClassId
                     );
             }
@@ -227,7 +227,7 @@ private:
     }
 
     [[nodiscard]] static Application::ClassCoTeacherPageFields projectClassFields(
-        const ClassPageDetailsReadRecord& info,
+        const ClassCoTeacherPageDetailsReadRecord& info,
         std::optional<Domain::TeacherId> selectedTeacherId
         )
     {
@@ -267,7 +267,7 @@ private:
     [[nodiscard]] static Domain::Result<std::u16string>
     loadTeacherDisplayName(
         TeacherRepository* repository,
-        const int teacherId
+        const qint64 teacherId
         )
     {
         if (!repository)

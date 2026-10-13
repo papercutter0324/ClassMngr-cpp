@@ -22,12 +22,16 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QFont>
+#include <QHash>
 #include <QLabel>
 #include <QPushButton>
+#include <QSet>
+#include <QVector>
 #include <QVBoxLayout>
 #include <QtAssert>
 
 #include <charconv>
+#include <limits>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -35,12 +39,12 @@
 namespace
 {
 
-int legacyTeacherIdValue(
+std::optional<qint64> stableTeacherIdValue(
     const ClassMngr::Next::Domain::TeacherId& teacherId
     )
 {
     const std::string& value = teacherId.value();
-    int parsed = 0;
+    qint64 parsed = 0;
     const auto [end, error] = std::from_chars(
         value.data(),
         value.data() + value.size(),
@@ -51,17 +55,18 @@ int legacyTeacherIdValue(
         || parsed <= 0
         || std::to_string(parsed) != value)
     {
-        return -1;
+        return std::nullopt;
     }
     return parsed;
 }
 
 Teacher uiTeacher(
-    const ClassMngr::Next::Application::ClassCoTeacherTeacherChoice& source
+    const ClassMngr::Next::Application::ClassCoTeacherTeacherChoice& source,
+    const int uiTeacherId
     )
 {
     Teacher teacher;
-    teacher.id = legacyTeacherIdValue(source.teacherId);
+    teacher.id = uiTeacherId;
     teacher.teacherKr = QString::fromStdU16String(source.teacherKr);
     teacher.teacherEn = QString::fromStdU16String(source.teacherEn);
     teacher.roomNumber = QString::fromStdU16String(source.roomNumber);
@@ -235,13 +240,82 @@ void ClassCoTeacherPage::loadClass(
         return;
     }
 
+    QVector<qint64> stableTeacherIds;
+    stableTeacherIds.reserve(static_cast<qsizetype>(
+        teacherChoices.value().teachers.size()
+        ));
+    QSet<int> reservedUiIds;
+    for (const auto& teacher : teacherChoices.value().teachers)
+    {
+        const std::optional<qint64> teacherId =
+            stableTeacherIdValue(teacher.teacherId);
+        if (!teacherId)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Load Co-Teacher"),
+                tr("Teachers could not be loaded."),
+                tr("A teacher has an invalid identifier.")
+                );
+            m_autosave->setLoading(false);
+            clearDatabaseState();
+            return;
+        }
+        stableTeacherIds.append(*teacherId);
+        if (*teacherId <= std::numeric_limits<int>::max())
+        {
+            reservedUiIds.insert(static_cast<int>(*teacherId));
+        }
+    }
+
+    m_stableTeacherIdsByUiId.clear();
+    m_uiIdsByStableTeacherId.clear();
     QList<Teacher> teachers;
     teachers.reserve(static_cast<qsizetype>(
         teacherChoices.value().teachers.size()
         ));
-    for (const auto& teacher : teacherChoices.value().teachers)
+    qint64 nextUiId = 1;
+    for (std::size_t index = 0;
+         index < teacherChoices.value().teachers.size();
+         ++index)
     {
-        teachers.append(uiTeacher(teacher));
+        const qint64 stableTeacherId = stableTeacherIds[static_cast<qsizetype>(
+            index
+            )];
+        int uiTeacherId = -1;
+        if (stableTeacherId <= std::numeric_limits<int>::max())
+        {
+            uiTeacherId = static_cast<int>(stableTeacherId);
+        }
+        else
+        {
+            while (nextUiId <= std::numeric_limits<int>::max()
+                && reservedUiIds.contains(static_cast<int>(nextUiId)))
+            {
+                ++nextUiId;
+            }
+            if (nextUiId > std::numeric_limits<int>::max())
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Load Co-Teacher"),
+                    tr("Teachers could not be loaded."),
+                    tr("Teacher selections could not be mapped safely.")
+                    );
+                m_autosave->setLoading(false);
+                clearDatabaseState();
+                return;
+            }
+            uiTeacherId = static_cast<int>(nextUiId++);
+            reservedUiIds.insert(uiTeacherId);
+        }
+
+        m_stableTeacherIdsByUiId.insert(uiTeacherId, stableTeacherId);
+        m_uiIdsByStableTeacherId.insert(stableTeacherId, uiTeacherId);
+        teachers.append(uiTeacher(
+            teacherChoices.value().teachers[index],
+            uiTeacherId
+            ));
     }
     m_teacherSection->setTeachers(teachers);
     readSelectedClassSnapshot();
@@ -257,6 +331,8 @@ void ClassCoTeacherPage::clearDatabaseState()
     m_autosave->setLoading(true);
     m_classroom = {};
     m_readSnapshot.reset();
+    m_stableTeacherIdsByUiId.clear();
+    m_uiIdsByStableTeacherId.clear();
     m_teacherSection->setTeachers({});
     m_teacherSection->selectTeacher(-1);
     updateTitle();
@@ -338,7 +414,7 @@ void ClassCoTeacherPage::updateTitle()
         if (classFields)
         {
             info.classId = m_classroom.id;
-            info.teacherId = selectedTeacherIdFromSnapshot();
+            info.teacherId = selectedTeacherIdFromSnapshot() > 0 ? 1 : -1;
             info.classGrade = QString::fromStdU16String(
                 classFields.value().classGrade
                 );
@@ -416,7 +492,7 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     const ClassMngr::Next::Domain::Result<void> saved =
         ClassMngr::Next::Application::ClassCoTeacherAssignmentUseCase::execute(
             m_classroom.id,
-            m_teacherSection->teacherId(),
+            selectedTeacherIdFromUi(),
             assignmentPort
             );
     if (!saved)
@@ -480,10 +556,10 @@ void ClassCoTeacherPage::readSelectedClassSnapshot()
 
 void ClassCoTeacherPage::selectCachedTeacher()
 {
-    m_teacherSection->selectTeacher(selectedTeacherIdFromSnapshot());
+    m_teacherSection->selectTeacher(selectedUiTeacherIdFromSnapshot());
 }
 
-int ClassCoTeacherPage::selectedTeacherIdFromSnapshot() const
+qint64 ClassCoTeacherPage::selectedTeacherIdFromSnapshot() const
 {
     if (!m_readSnapshot || !m_readSnapshot->classFields)
     {
@@ -497,5 +573,23 @@ int ClassCoTeacherPage::selectedTeacherIdFromSnapshot() const
         return -1;
     }
 
-    return legacyTeacherIdValue(*teacherId);
+    return stableTeacherIdValue(*teacherId).value_or(-1);
+}
+
+int ClassCoTeacherPage::selectedUiTeacherIdFromSnapshot() const
+{
+    const qint64 stableTeacherId = selectedTeacherIdFromSnapshot();
+    return stableTeacherId > 0
+        ? m_uiIdsByStableTeacherId.value(stableTeacherId, -1)
+        : -1;
+}
+
+qint64 ClassCoTeacherPage::selectedTeacherIdFromUi() const
+{
+    const int uiTeacherId = m_teacherSection->teacherId();
+    if (uiTeacherId <= 0)
+    {
+        return -1;
+    }
+    return m_stableTeacherIdsByUiId.value(uiTeacherId, 0);
 }

@@ -31,7 +31,7 @@ public:
         auto snapshot = std::move(source.value());
         for (const ClassCoTeacherTeacherChoice& teacher : snapshot.teachers)
         {
-            if (!isCanonicalPositiveDecimalId(teacher.teacherId.value()))
+            if (!isCanonicalPositiveDecimalId64(teacher.teacherId.value()))
             {
                 return ClassCoTeacherTeacherChoicesResult::failure({
                     .code = Domain::ErrorCode::Validation,

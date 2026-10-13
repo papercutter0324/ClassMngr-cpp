@@ -61,9 +61,9 @@ public:
         const std::optional<int> classId = legacyPositiveId(
             request.classId.value()
             );
-        const std::optional<int> teacherId = request.teacherId
-            ? legacyPositiveId(request.teacherId->value())
-            : std::optional<int>{-1};
+        const std::optional<qint64> teacherId = request.teacherId
+            ? legacyPositiveTeacherId(request.teacherId->value())
+            : std::optional<qint64>{-1};
         if (!classId || !teacherId)
         {
             return failure(
@@ -102,7 +102,11 @@ public:
 
             ClassInfo info;
             info.classId = loaded->classId;
-            info.teacherId = *teacherId;
+            // ClassInfo retains its general int-based teacher contract. The
+            // selected Co-Teacher ID is validated above and written at full
+            // width below, while the validation model uses the equivalent
+            // assigned/unassigned state.
+            info.teacherId = *teacherId > 0 ? 1 : -1;
             info.classGrade = loaded->classGrade;
             info.classLevel = loaded->classLevel;
             info.readingBook = loaded->readingBook;
@@ -149,8 +153,8 @@ public:
 
             const Status saved = repository->saveClassCoTeacherAssignment(
                 normalized.classId,
-                normalized.teacherId > 0
-                    ? std::optional<int>{normalized.teacherId}
+                *teacherId > 0
+                    ? std::optional<qint64>{*teacherId}
                     : std::nullopt
                 );
             if (!saved)
@@ -182,6 +186,26 @@ private:
         )
     {
         int parsed = 0;
+        const auto [end, error] = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            parsed
+            );
+        if (error != std::errc{}
+            || end != value.data() + value.size()
+            || parsed <= 0)
+        {
+            return std::nullopt;
+        }
+
+        return parsed;
+    }
+
+    [[nodiscard]] static std::optional<qint64> legacyPositiveTeacherId(
+        const std::string& value
+        )
+    {
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),

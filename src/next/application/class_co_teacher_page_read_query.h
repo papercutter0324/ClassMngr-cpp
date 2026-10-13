@@ -47,6 +47,19 @@ public:
             });
         }
 
+        if (snapshot.classFields
+            && snapshot.classFields.value().selectedTeacherId
+            && !isCanonicalPositiveDecimalId64(
+                snapshot.classFields.value().selectedTeacherId->value()
+                ))
+        {
+            return ClassCoTeacherPageReadResult::failure({
+                .code = Domain::ErrorCode::Validation,
+                .message = "A co-teacher page read returned an invalid teacher identifier.",
+                .recoverable = false
+            });
+        }
+
         return ClassCoTeacherPageReadResult::success(std::move(snapshot));
     }
 

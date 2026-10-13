@@ -1,6 +1,7 @@
 #include "next/application/class_co_teacher_assignment_use_case.h"
 
 #include <iostream>
+#include <cstdint>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -84,6 +85,24 @@ void positiveTeacherIdUsesTypedRequest()
         "request should carry a typed teacher ID");
 }
 
+void widePositiveTeacherIdUsesTypedRequest()
+{
+    FakePort port;
+    constexpr std::int64_t wideTeacherId = 2147483648LL;
+    const auto result = ClassCoTeacherAssignmentUseCase::execute(
+        8,
+        wideTeacherId,
+        port
+        );
+
+    require(result.hasValue(), "wide valid assignment should succeed");
+    require(port.callCount == 1 && port.requests.size() == 1,
+        "wide valid assignment should reach persistence once");
+    require(port.requests.front().teacherId.has_value()
+                && port.requests.front().teacherId->value() == "2147483648",
+        "request should preserve the full teacher identity");
+}
+
 void unassignedSentinelBecomesMissingTeacherId()
 {
     FakePort port;
@@ -118,6 +137,7 @@ int main()
     {
         invalidIdsDoNotReachPersistence();
         positiveTeacherIdUsesTypedRequest();
+        widePositiveTeacherIdUsesTypedRequest();
         unassignedSentinelBecomesMissingTeacherId();
         persistenceFailureIsPreserved();
     }
