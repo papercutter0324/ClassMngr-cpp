@@ -32238,3 +32238,62 @@ optimization remains complete. Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
 
 No other candidate is selected from this discovery; the listed alternatives remain deferred.
+
+### F813 Class Transfer export wide teacher identity - accepted - 2026-10-13
+
+F813 is accepted at source/test commit
+`83b6d81f8221db0db9db4bc54155aa9b083c2c7c`. The focused Debug build
+succeeded for `ClassMngr` and
+`ClassMngrNextPlatformClassTransferExportSourceTests`. The initial bare CTest
+invocation omitted the multi-config build configuration; exact CTest
+`ClassMngrNextPlatformClassTransferExportSourceTests` passed 1/1 when rerun
+with `-C Debug`. No full suite ran.
+
+### Batch 227 completion - 2026-10-13
+
+F813 completed Batch 227 by preserving wide teacher identity through the
+Class Transfer export source and query. Batch 228 selects F814 for the
+Testing Classes teacher identity path. Schedule Import remains separate from
+accepted F767 snapshot canonical-ID validation; Class Import, shared
+`ClassPageDetailsReadRecord`/Co-Teacher identity, and persisted CalendarEvent
+event-ID width remain deferred. The project-configuration and CMake
+optimization remains complete. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 228 discovery and selection - 2026-10-13
+
+F814 covers the Testing Classes teacher identity end to end: preserve the
+qint64 ID from Testing Teacher choice reads through the page combo/editor
+value, `TestingClass` model and repository read/write, typed details update
+and create adapters, and database persistence/readback. Preserve class IDs,
+other fields, None/unassigned behavior, positive/canonical validation, and
+existing small-ID semantics. Verify teacher `2147483648` through choices,
+page selection, edit/update, and new-class creation. Require regressions for
+both update and create to assert exact SQLite INTEGER storage and readback,
+with no narrowing in the application, platform, repository, or UI layers.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Testing Classes teacher identity end to end (F814) | Selected | The choice and details read slices still terminate at int-based page/model/update/create boundaries; one vertical slice can cover persistence through UI and typed adapters. |
+| Class Transfer evaluation `row_index` conversion | Deferred | F803 left persisted-coordinate conversion separate; preserve valid 0..24 behavior while addressing validation independently. |
+| Shared Co-Teacher read/write identity | Deferred | The shared identity flow spans coordinated read and write contracts. |
+| Schedule Import teacher-ID width | Deferred | This end-to-end import flow remains separate from accepted F767 snapshot canonical-ID validation. |
+| Persisted CalendarEvent event-ID width | Deferred | Event identity spans the shared model and repository CRUD surface. |
+| Initial Setup and Teacher Create/Delete teacher IDs | Deferred | These paths currently use int-based UI contracts. |
+
+Build `ClassMngr` and targets
+`ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests`, and
+`ClassMngrTestingClassesPageTests`. Run only the focused CTests
+`ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests`,
+`ClassMngrTestingClassesPageTeacherChoiceTests`, and
+`ClassMngrTestingClassesPageF145UpdateTests`; add or update a CTest
+registration if needed so the new UI regression is runnable by the focused
+gate. No full suite is requested. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.

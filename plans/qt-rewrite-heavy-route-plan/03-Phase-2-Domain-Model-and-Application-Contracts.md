@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F812 was accepted in Batch 226 at `dd8bbbae9246f5b20925eabb2809395c0d430db4`; Batch 227 selects F813 for the Class Transfer export source teacher-identity read path, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F813 was accepted in Batch 227 at `83b6d81f8221db0db9db4bc54155aa9b083c2c7c`; Batch 228 selects F814 for end-to-end Testing Classes teacher identity, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -116,15 +116,20 @@ Treat this plan as an operational summary, not a history:
   spans the shared model and repository CRUD surface.
 - ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
   Co-Teacher read/write identity flow can be covered.
+- Class Transfer evaluation `row_index` conversion - deferred outside F803;
+  preserve valid 0..24 behavior and handle persisted-coordinate validation
+  separately.
+- Initial Setup and Teacher Create/Delete teacher-ID width - deferred; these
+  paths retain int-based UI identity contracts.
+- Class Import teacher-ID width - deferred; its current flow starts with
+  int-keyed IDs and crosses UI/write boundaries.
 - Schedule Import teacher-ID width/narrowing across snapshot/review/apply/write -
-  deferred outside F813; F767's snapshot canonical-ID validation remains
+  deferred; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
-- Shared Testing Class editor/update identity and read/write contracts -
-  deferred outside F813; F810 isolates the details read and F811 the Class Notes read.
 
-#### Active batch: Batch 227
+#### Active batch: Batch 228
 
-- F813 - Class Transfer export source teacher identity - Preserve qint64 assigned teacher IDs through an export-specific class-info/profile query and typed export source, while keeping class IDs and the portable `teacher_ref` key format unchanged.
+- F814 - Testing Classes teacher identity end to end - Preserve qint64 teacher IDs from Testing Teacher choices through page selection, details edit/update, new-class creation, and database persistence/readback.
 
 ## Objective
 
