@@ -125,12 +125,57 @@ private slots:
 void ClassTransferExportCodecParityTests::completeExportPreservesSchemaOrderAndEveryPayload()
 {
     Fixture fixture; QVERIFY(fixture.open());
+    QSqlQuery evaluationQuery(fixture.database());
+    evaluationQuery.prepare(QStringLiteral(
+        "SELECT id FROM speaking_evaluations "
+        "WHERE class_id=? AND evaluation_name=?"));
+    evaluationQuery.addBindValue(fixture.ids.first());
+    evaluationQuery.addBindValue(QStringLiteral("Zulu"));
+    QVERIFY2(evaluationQuery.exec(),
+             qPrintable(evaluationQuery.lastError().text()));
+    QVERIFY(evaluationQuery.next());
+    const int evaluationId = evaluationQuery.value(0).toInt();
+    evaluationQuery.finish();
+    QVERIFY(evaluationId > 0);
+
+    QSqlQuery insertFractionalRow(fixture.database());
+    insertFractionalRow.prepare(QStringLiteral(
+        "INSERT INTO speaking_eval_data "
+        "(evaluation_id, row_index, col_1) VALUES (?, ?, ?)"));
+    insertFractionalRow.addBindValue(evaluationId);
+    insertFractionalRow.addBindValue(QVariant(0.25));
+    insertFractionalRow.addBindValue(
+        QStringLiteral("Fractional row must not replace row zero"));
+    QVERIFY2(insertFractionalRow.exec(),
+             qPrintable(insertFractionalRow.lastError().text()));
+
+    QSqlQuery storedIndexes(fixture.database());
+    storedIndexes.prepare(QStringLiteral(
+        "SELECT typeof(row_index), row_index "
+        "FROM speaking_eval_data WHERE evaluation_id=? AND col_1 IN (?, ?) "
+        "ORDER BY row_index"));
+    storedIndexes.addBindValue(evaluationId);
+    storedIndexes.addBindValue(QStringLiteral("First evaluation student"));
+    storedIndexes.addBindValue(
+        QStringLiteral("Fractional row must not replace row zero"));
+    QVERIFY2(storedIndexes.exec(),
+             qPrintable(storedIndexes.lastError().text()));
+    QVERIFY(storedIndexes.next());
+    QCOMPARE(storedIndexes.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedIndexes.value(1).toLongLong(), qint64(0));
+    QVERIFY(storedIndexes.next());
+    QCOMPARE(storedIndexes.value(0).toString(), QStringLiteral("real"));
+    QCOMPARE(storedIndexes.value(1).toDouble(), 0.25);
+    QVERIFY(!storedIndexes.next());
+
     const QList<int> order{fixture.ids[1], fixture.ids[0], fixture.ids[2], fixture.ids[3]};
     const QString path = fixture.directory.filePath(QStringLiteral("export.json"));
     auto actual = exportJson(fixture.services, order, path);
     QVERIFY2(actual, actual ? "" : qPrintable(actual.error()));
     auto legacy = fixture.services.dataService()->databaseSession()->classTransferRepository()->buildPackage(order);
     QVERIFY(legacy); QCOMPARE(normalized(*actual), normalized(ClassTransferJsonCodec::toJson(*legacy)));
+    QCOMPARE(legacy->classes[1].evaluations[0].rows[0][1],
+             QStringLiteral("First evaluation student"));
     QFile file(path); QVERIFY(file.open(QIODevice::ReadOnly));
     QCOMPARE(normalized(QJsonDocument::fromJson(file.readAll()).object()), normalized(*actual));
     QCOMPARE(actual->keys(), (QStringList{QStringLiteral("classes"), QStringLiteral("exported_at_utc"), QStringLiteral("format"), QStringLiteral("teachers"), QStringLiteral("version")}));

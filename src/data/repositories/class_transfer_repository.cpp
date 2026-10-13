@@ -159,6 +159,7 @@ QList<ClassTransferEvaluation> loadEvaluations(
     QSqlQuery rowQuery(database);
     rowQuery.prepare(R"(
         SELECT evaluation_id, row_index,
+            typeof(row_index) AS row_index_storage_type,
             col_0, col_1, col_2, col_3, col_4, col_5,
             col_6, col_7, col_8, col_9, col_10
         FROM speaking_eval_data
@@ -194,6 +195,12 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
         const auto evaluationIndex = evaluationIndexById.constFind(
             evaluationId);
+        if (rowQuery.value("row_index_storage_type").toString()
+            != QStringLiteral("integer"))
+        {
+            continue;
+        }
+
         bool rowIndexOk = false;
         const int rowIndex = rowQuery.value("row_index").toInt(&rowIndexOk);
 
@@ -207,7 +214,7 @@ QList<ClassTransferEvaluation> loadEvaluations(
         for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
         {
             evaluation.rows[rowIndex][column] =
-                rowQuery.value(column + 2).toString();
+                rowQuery.value(column + 3).toString();
         }
     }
 
