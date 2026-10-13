@@ -30832,3 +30832,84 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 This is a pre-implementation matrix, not acceptance evidence; no F794
 verification has run. Run no full suite. F707/F709 remain deferred, Phase 2
 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F794 Class Analytics roster index range - accepted - 2026-10-13
+
+F794 was accepted at code commit
+`a00e20942d085ba5541bc12f57dc3656e37433bb`, following matrix commit
+`ccbbd6bf`. Only
+`src/next/platform/application_services_class_analytics_dashboard_read_port.h`
+and
+`tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`
+changed. The port rejects invalid conversions and maximum indexes `>= INT_MAX`
+before resize with the exact Technical message
+`Roster data contains a row index outside the Class Analytics range.` Tests
+cover `INT_MAX`, `INT_MAX + 1`, a fractional index below a valid maximum,
+exact error/recoverability, and sparse 0/2/4 values. The bounded Visual Studio
+18 x64 Debug build succeeded after the known ZERO_CHECK/FileTracker
+`E_ACCESSDENIED` identical retry; the exact CTest registered once and passed
+1/1. No full suite ran. Large int-representable allocations remain deferred;
+no arbitrary cap was added.
+
+### Batch 208 completion - 2026-10-13
+
+F794 completed the only selected slice in Batch 208. Its range validation and
+focused verification are recorded above. Class Analytics allocation caps and
+sparse representation changes remain deferred. F707/F709 remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 209 discovery - 2026-10-13
+
+F795 is selected for the My Classes student-count repository paths. The
+batched path groups English/Korean cells by `row_index` but uses an `int`
+identity and unchecked `QVariant::toInt()`; the per-class fallback does the
+same. The migrated schema permits any nonnegative SQLite `INTEGER` index, so
+valid values above `INT_MAX` can collapse into the same failed/default
+conversion and undercount distinct students. This is a persisted-data edge,
+not a normal UI-writer defect. The count contract reads nonblank name cells
+without constructing roster rows, so a 64-bit identity fix needs no dense
+materialization or arbitrary row cap. F707/F709 remain deferred. The broad
+dense Speaking Evaluation row-limit change remains deferred while its policy
+is unresolved.
+
+### F795 My Classes student-count wide row identity - selected and acceptance matrix - 2026-10-13
+
+**F795 is selected:** in
+`src/data/repositories/roster_repository.cpp`, use checked signed 64-bit
+(`qlonglong`) row identities/group keys in both
+`loadMyClassesStudentCountRecords` and `loadMyClassesStudentCountRecord` so
+distinct nonnegative SQLite integer indexes through the signed 64-bit range
+remain distinct, including values above `INT_MAX`.
+
+Preserve exact-English/exact-Korean column selection, Qt trimming and blank
+semantics, one count per row when either name is nonblank, batch request
+order, per-class fallback and error behavior, metrics/call count, and the
+no-roster-materialization contract. Add no arbitrary row limit and make no
+CMake inventory change. This is a persisted-data edge because the migrated
+schema permits all nonnegative SQLite integer indexes while ordinary writers
+use `int` indexes.
+
+Extend only
+`tests/next_platform_application_services_my_classes_student_count_batch_read_port_tests.cpp`.
+Seed rows directly at `INT_MAX + 1` and `INT_MAX + 2` with distinct nonblank
+student identities and assert that the batch read counts both; include
+multiple relevant name cells for one index if needed to prove one row is
+counted once. Cover the per-class count path directly if the repository method
+is callable from this test; otherwise preserve its existing fallback
+regression. The target and exact CTest name are
+`ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`;
+it must register once.
+
+Use only these bounded Visual Studio 18 x64 Debug commands in the existing
+`build/windows-x64-debug` tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F795
+verification has run. Run no full suite. F707/F709 and the dense Speaking
+Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.

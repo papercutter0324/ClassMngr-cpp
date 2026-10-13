@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F793 is accepted at `eef3be3d0684c51ab4a43be6101a1ccb751ace46`; F794 is selected in Batch 208 to reject Class Analytics roster indices outside the downstream `int` range while preserving valid sparse slots; F707/F709 remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F794 was accepted at `a00e20942d085ba5541bc12f57dc3656e37433bb`, completing Batch 208; F795 is selected in Batch 209 to preserve distinct signed 64-bit row identities in student-count reads; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -108,10 +108,12 @@ Treat this plan as an operational summary, not a history:
   change - deferred: F794 covers integer representability only; large
   int-representable rows retain existing vector allocation/catch behavior. Do
   not introduce arbitrary 4,096- or 25-row limits.
+- Dense Speaking Evaluation row-limit change - deferred while its product
+  policy remains unresolved; do not add a new limit before that decision.
 
-#### Active batch: Batch 208
+#### Active batch: Batch 209
 
-- F794 - Class Analytics roster index range - Reject invalid, negative, or unrepresentable persisted row indices before vector resizing while preserving valid sparse roster shape and values.
+- F795 - My Classes student-count wide row identity - Keep distinct nonnegative SQLite row indexes distinct through signed 64-bit range in batched and per-class count paths, without materializing rosters or adding a row limit.
 
 ## Objective
 
