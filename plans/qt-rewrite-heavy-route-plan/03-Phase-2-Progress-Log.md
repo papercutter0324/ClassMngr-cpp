@@ -30761,3 +30761,74 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 Run no full suite and make no CMake inventory change. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F793 Calendar range projection ownership - accepted - 2026-10-13
+
+F793 was accepted at commit
+`eef3be3d0684c51ab4a43be6101a1ccb751ace46`. Only
+`src/next/platform/application_services_calendar_event_port.h` changed; no
+test file changed. The bounded Visual Studio 18 x64 Debug build in
+`build/windows-x64-debug` built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. After the
+known ZERO_CHECK/FileTracker `E_ACCESSDENIED`, the identical bounded retry
+passed. The exact CTest passed 1/1; no full suite ran.
+
+### Batch 207 completion - 2026-10-13
+
+F793 completed the only selected slice in Batch 207. Its projection ownership
+change and focused verification are recorded above. F707/F709 remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 208 discovery - 2026-10-13
+
+F794 is selected to validate Class Analytics roster row-index conversions
+before vector sizing. The migrated schema
+(`src/data/database/database_schema_manager.cpp:530-537`) permits any
+nonnegative `row_index`; the read port uses unchecked conversions for
+`MAX(row_index) + 1` (about line 171) and each `row_index` (about line 189).
+The downstream UI casts `rosterStudentCount` to `int` at
+`src/features/classes/ui/class_analytics_page.cpp:67`. This is a persisted-data
+integrity/representability edge, not a common UI-reachable bug. The slice
+rejects values outside the downstream integer range but leaves arbitrary
+allocation caps and sparse representation changes deferred. F707/F709 remain
+deferred.
+
+### F794 Class Analytics roster index range - selected and acceptance matrix - 2026-10-13
+
+**F794 is selected:** in
+`src/next/platform/application_services_class_analytics_dashboard_read_port.h`,
+check both the maximum row-index conversion and each `row_index` conversion
+before use. Reject invalid or negative conversions and any stored maximum row
+index `>= INT_MAX` before vector resizing, because `maximumRow + 1` cannot fit
+the downstream `int` roster count. Return structured
+`Domain::ErrorCode::Technical` with the exact message
+`Roster data contains a row index outside the Class Analytics range.`
+
+Preserve successful valid sparse roster sizing and blank slots, exact selected
+headers, and name values. Do not add an arbitrary allocation cap or change to
+a sparse representation. Large but int-representable rows retain the existing
+vector allocation/catch behavior; that allocation risk is deferred. This is a
+persisted-data integrity/representability edge because the migrated schema
+allows every nonnegative index, although ordinary UI writes are unlikely to
+produce these values.
+
+Extend only
+`tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`.
+Add 64-bit row-index boundary cases proving `INT_MAX` and larger values are
+rejected before vector resize; preserve existing sparse 0/2/4 coverage. The
+existing target/CTest is
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`;
+no CMake inventory change is needed.
+
+Use only these bounded Visual Studio 18 x64 Debug commands in the existing
+`build/windows-x64-debug` tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F794
+verification has run. Run no full suite. F707/F709 remain deferred, Phase 2
+Gates 1/2 remain Partial, and the formal exit gate remains Open.
