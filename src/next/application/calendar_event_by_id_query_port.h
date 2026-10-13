@@ -1,10 +1,10 @@
 #pragma once
 
 #include "next/application/calendar_event_projection.h"
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <cctype>
 #include <cstddef>
 #include <string>
 
@@ -34,20 +34,7 @@ namespace CalendarEventByIdQueryRequestDetail
 
 [[nodiscard]] inline bool isBlank(const std::string& value) noexcept
 {
-    if (value.empty())
-    {
-        return true;
-    }
-
-    for (const unsigned char character : value)
-    {
-        if (std::isspace(character) == 0)
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return isBlankUtf8Text(value);
 }
 
 [[nodiscard]] inline Domain::Result<void> invalidRequest()

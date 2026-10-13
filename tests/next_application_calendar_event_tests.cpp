@@ -823,6 +823,8 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
     const std::vector<CalendarEventByIdQueryRequest> invalidRequests = {
         {""},
         {" \t\r\n"},
+        {"\xC2\xA0"},
+        {"\xE3\x80\x80"},
         {std::string(kCalendarEventByIdQueryMaxIdentifierLength + 1, 'x')}
     };
 
@@ -840,6 +842,9 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
         QVERIFY(!result.error().recoverable);
     }
 
+    QCOMPARE(port.loadCalls, 0);
+    QVERIFY(!port.receivedEventId.has_value());
+
     const CalendarEventByIdQueryRequest exactLimitRequest{
         std::string(kCalendarEventByIdQueryMaxIdentifierLength, 'x')
     };
@@ -853,6 +858,19 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
         port.receivedEventId->value(),
         exactLimitRequest.eventId
         );
+
+    // Malformed UTF-8 remains nonblank here; identifier byte validity belongs
+    // to the typed identifier contract, which accepts opaque nonempty bytes.
+    const CalendarEventByIdQueryRequest malformedUtf8Request{
+        std::string("\xFF", 1)
+    };
+    const CalendarEventByIdQueryResult malformedUtf8Result =
+        CalendarEventByIdQueryUseCase::execute(port, malformedUtf8Request);
+
+    QVERIFY(malformedUtf8Result);
+    QCOMPARE(port.loadCalls, 2);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(port.receivedEventId->value(), malformedUtf8Request.eventId);
 }
 
 void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterministic()
