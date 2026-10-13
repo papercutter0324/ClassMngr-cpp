@@ -124,6 +124,7 @@ private slots:
     void outOfScopeRowsFailAllOrNothing();
     void selectedDetailsFailAllOrNothing();
     void malformedProjectionDataFailsAllOrNothing();
+    void unicodeWhitespaceOnlyRequiredTextErrorIsPropagatedUnchanged();
     void boundedNavigationMetadataIsEnforced();
 };
 
@@ -567,6 +568,48 @@ malformedProjectionDataFailsAllOrNothing()
 
     verifyError(result, ErrorCode::InvalidInput);
     QCOMPARE(readPort.calls, 1);
+}
+
+void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::
+unicodeWhitespaceOnlyRequiredTextErrorIsPropagatedUnchanged()
+{
+    auto blankTeacherName = validInput();
+    blankTeacherName.teachers.front().displayName = "\xC2\xA0";
+
+    auto blankClassText = validInput();
+    blankClassText.classes.front().grade = "\xE3\x80\x80";
+
+    const std::pair<ClassSummaryProjectionInput, std::string> cases[] = {
+        {
+            std::move(blankTeacherName),
+            "Teacher display name must be required and bounded; facilities and notes must be bounded."
+        },
+        {
+            std::move(blankClassText),
+            "Class grade, level, display label, and meeting text must be non-blank and bounded."
+        }
+    };
+
+    for (const auto& testCase : cases)
+    {
+        const auto projectionResult = ClassSummaryProjection::create(
+            testCase.first
+            );
+        QVERIFY(!projectionResult);
+
+        FakeReadPort readPort;
+        readPort.result = SubPrepScheduleSummaryReadResult::success(
+            testCase.first
+            );
+        const SubPrepScheduleSummaryQuery query(readPort);
+        const auto result = query.execute(validRequest());
+
+        verifyError(result, ErrorCode::InvalidInput);
+        QCOMPARE(result.error().message, testCase.second);
+        QVERIFY(result.error() == projectionResult.error());
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(readPort.calls, 1);
+    }
 }
 
 void ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests::

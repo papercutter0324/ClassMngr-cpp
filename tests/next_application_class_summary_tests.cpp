@@ -116,6 +116,8 @@ private slots:
     void selectedDetailsRequireExistingClassAndMatchingTeacher();
     void duplicateIdentifiersAreRejected();
     void blankAndOversizedFieldsAreRejected();
+    void unicodeWhitespaceOnlyRequiredTextIsRejected();
+    void unicodeRequiredTextOptionalWhitespaceAndOpaqueIdentifiersArePreserved();
     void collectionAndStudentCountBoundsAreRejected();
     void projectionsAreCopyableEqualAndIndependentlyReleasable();
     void contractSurfaceHasTypedValuesAndNoPointerLookups();
@@ -384,6 +386,95 @@ void NextApplicationClassSummaryTests::blankAndOversizedFieldsAreRejected()
         );
     verifyInvalid(
         ClassSummaryProjection::create(std::move(oversizedDetails))
+        );
+}
+
+void NextApplicationClassSummaryTests::unicodeWhitespaceOnlyRequiredTextIsRejected()
+{
+    const std::string unicodeWhitespaceOnlyValues[] = {
+        "\xC2\xA0",
+        "\xE3\x80\x80"
+    };
+
+    for (const auto& whitespaceOnly : unicodeWhitespaceOnlyValues)
+    {
+        auto blankTeacherName = validInput();
+        blankTeacherName.teachers.front().displayName = whitespaceOnly;
+        const auto blankTeacherNameResult = ClassSummaryProjection::create(
+            std::move(blankTeacherName)
+            );
+        verifyInvalid(blankTeacherNameResult);
+        QCOMPARE(
+            blankTeacherNameResult.error().message,
+            std::string(
+                "Teacher display name must be required and bounded; facilities and notes must be bounded."
+                )
+            );
+        QVERIFY(!blankTeacherNameResult.error().recoverable);
+
+        auto blankClassText = validInput();
+        blankClassText.classes.front().grade = whitespaceOnly;
+        const auto blankClassTextResult = ClassSummaryProjection::create(
+            std::move(blankClassText)
+            );
+        verifyInvalid(blankClassTextResult);
+        QCOMPARE(
+            blankClassTextResult.error().message,
+            std::string(
+                "Class grade, level, display label, and meeting text must be non-blank and bounded."
+                )
+            );
+        QVERIFY(!blankClassTextResult.error().recoverable);
+    }
+}
+
+void NextApplicationClassSummaryTests::
+unicodeRequiredTextOptionalWhitespaceAndOpaqueIdentifiersArePreserved()
+{
+    const std::string unicodeTeacherId = "\xC2\xA0";
+    const std::string unicodeClassId = "\xE3\x80\x80";
+    const std::string unicodeTeacherName = "Caf\xC3\xA9";
+    const std::string unicodeClassText = "\xE6\x95\xB0\xE5\xAD\xA6";
+    const std::string optionalFacilities = "\xC2\xA0";
+    const std::string optionalNotes = " \t ";
+
+    auto input = validInput();
+    input.teachers.front().id = teacherId(unicodeTeacherId);
+    input.teachers.front().displayName = unicodeTeacherName;
+    input.teachers.front().facilities = optionalFacilities;
+    input.teachers.front().notes = optionalNotes;
+    input.classes.front().id = classId(unicodeClassId);
+    input.classes.front().teacherId = teacherId(unicodeTeacherId);
+    input.classes.front().grade = unicodeClassText;
+    input.selectedDetails->classId = classId(unicodeClassId);
+    input.selectedDetails->teacherId = teacherId(unicodeTeacherId);
+
+    const auto result = ClassSummaryProjection::create(std::move(input));
+
+    QVERIFY(result);
+    const auto projectedTeacher = result.value().findTeacher(
+        teacherId(unicodeTeacherId)
+        );
+    QVERIFY(projectedTeacher.has_value());
+    QCOMPARE(projectedTeacher->id.value(), unicodeTeacherId);
+    QCOMPARE(projectedTeacher->displayName, unicodeTeacherName);
+    QCOMPARE(projectedTeacher->facilities, optionalFacilities);
+    QCOMPARE(projectedTeacher->notes, optionalNotes);
+
+    const auto projectedClass = result.value().findClass(classId(unicodeClassId));
+    QVERIFY(projectedClass.has_value());
+    QCOMPARE(projectedClass->id.value(), unicodeClassId);
+    QCOMPARE(projectedClass->grade, unicodeClassText);
+
+    auto malformedUtf8 = validInput();
+    malformedUtf8.teachers.front().displayName = std::string("\xC3", 1);
+    const auto malformedUtf8Result = ClassSummaryProjection::create(
+        std::move(malformedUtf8)
+        );
+    QVERIFY(malformedUtf8Result);
+    QCOMPARE(
+        malformedUtf8Result.value().teacherIndex().summaries().front().displayName,
+        std::string("\xC3", 1)
         );
 }
 

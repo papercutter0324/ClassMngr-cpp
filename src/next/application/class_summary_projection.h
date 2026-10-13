@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -181,7 +182,7 @@ namespace ClassSummaryProjectionDetail
     const std::size_t maxLength
     ) noexcept
 {
-    return !isBlank(value) && value.size() <= maxLength;
+    return !isBlankUtf8Text(value) && value.size() <= maxLength;
 }
 
 [[nodiscard]] inline bool isOptionalText(
