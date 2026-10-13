@@ -329,16 +329,26 @@ Result<Roster> RosterRepository::loadRoster(
         }
         const int row = static_cast<int>(rowIndex);
 
-        const int column =
-            query.value("col_index").toInt();
+        bool columnIndexValid = false;
+        const qlonglong columnIndex =
+            query.value("col_index").toLongLong(&columnIndexValid);
+        if (!columnIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: invalid column index."
+                    ).arg(identity)
+                );
+        }
 
         if (
-            column < 0
-            || column >= roster.columns.size()
+            columnIndex < 0
+            || columnIndex >= roster.columns.size()
             )
         {
             continue;
         }
+        const int column = static_cast<int>(columnIndex);
 
         while (roster.rows.size() <= row)
         {
@@ -1459,10 +1469,29 @@ Status RosterRepository::forEachRosterDataCellForClasses(
 
     while (query.next())
     {
+        bool columnIndexValid = false;
+        const qlonglong columnIndex =
+            query.value("col_index").toLongLong(&columnIndexValid);
+        if (!columnIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster availability failed: invalid column index."
+                    )
+                );
+        }
+        if (
+            columnIndex < std::numeric_limits<int>::min()
+            || columnIndex > std::numeric_limits<int>::max()
+            )
+        {
+            continue;
+        }
+
         consumer(
             query.value("class_id").toInt(),
             query.value("row_index").toInt(),
-            query.value("col_index").toInt(),
+            static_cast<int>(columnIndex),
             query.value("value").toString()
             );
     }

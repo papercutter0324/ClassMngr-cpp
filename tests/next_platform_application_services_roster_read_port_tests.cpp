@@ -173,6 +173,26 @@ bool seedSparseRoster(
     return true;
 }
 
+bool seedMalformedColumnIndexCell(
+    QSqlDatabase database,
+    const int classId,
+    const QString& value
+    )
+{
+    QSqlQuery insertCell(database);
+    if (!insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, 0, ?, ?)"
+            )))
+    {
+        return false;
+    }
+    insertCell.bindValue(0, classId);
+    insertCell.bindValue(1, QStringLiteral("not-a-column"));
+    insertCell.bindValue(2, value);
+    return insertCell.exec();
+}
+
 Domain::ClassId typedClassId(const int classId)
 {
     return *Domain::ClassId::fromString(std::to_string(classId));
@@ -187,8 +207,10 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
 private slots:
     void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void rejectsMalformedColumnIndexWithoutOverwritingColumnZero();
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
+    void rejectsMalformedAvailabilityColumnIndex();
     void missingRosterIsSuccessfulEmptySnapshot();
     void repositoryErrorIsStructured();
     void closedSessionFailsWithoutDataServiceFallback();
@@ -267,6 +289,60 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
     QVERIFY(result.value().rows[23][4].empty());
     QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
     QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsMalformedColumnIndexWithoutOverwritingColumnZero()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Malformed Column Index Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {{0, 0, QStringLiteral("Valid column-zero value")}}
+        ));
+    const QString malformedValue = QStringLiteral("Malformed column text");
+    QVERIFY(seedMalformedColumnIndexCell(
+        database,
+        *createdClass,
+        malformedValue
+        ));
+
+    QSqlQuery storedType(database);
+    QVERIFY2(storedType.prepare(QStringLiteral(
+        "SELECT typeof(col_index) AS storage_type FROM roster_data "
+        "WHERE class_id=? AND value=?"
+        )), qPrintable(storedType.lastError().text()));
+    storedType.bindValue(0, *createdClass);
+    storedType.bindValue(1, malformedValue);
+    QVERIFY2(storedType.exec(), qPrintable(storedType.lastError().text()));
+    QVERIFY(storedType.next());
+    QCOMPARE(storedType.value("storage_type").toString(), QStringLiteral("text"));
+    QVERIFY(!storedType.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::
@@ -484,6 +560,61 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
     const auto failed = port.readRosterAvailability(typedIds, baseColumnNames());
     QVERIFY(!failed);
     QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsMalformedAvailabilityColumnIndex()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Malformed Availability Column Index Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {}
+        ));
+    const QString malformedValue = QStringLiteral("Occupies no valid column");
+    QVERIFY(seedMalformedColumnIndexCell(
+        database,
+        *createdClass,
+        malformedValue
+        ));
+
+    QSqlQuery storedType(database);
+    QVERIFY2(storedType.prepare(QStringLiteral(
+        "SELECT typeof(col_index) AS storage_type FROM roster_data "
+        "WHERE class_id=? AND value=?"
+        )), qPrintable(storedType.lastError().text()));
+    storedType.bindValue(0, *createdClass);
+    storedType.bindValue(1, malformedValue);
+    QVERIFY2(storedType.exec(), qPrintable(storedType.lastError().text()));
+    QVERIFY(storedType.next());
+    QCOMPARE(storedType.value("storage_type").toString(), QStringLiteral("text"));
+    QVERIFY(!storedType.next());
+
+    Platform::ApplicationServicesRosterAvailabilityBatchReadPort port(services);
+    const Application::RosterAvailabilityBatchReadQuery availabilityQuery(port);
+    const auto result = availabilityQuery.execute(
+        {typedClassId(*createdClass)},
+        baseColumnNames()
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::
