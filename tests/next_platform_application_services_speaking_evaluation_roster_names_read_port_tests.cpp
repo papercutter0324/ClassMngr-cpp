@@ -121,6 +121,7 @@ private slots:
     void missingSessionReturnsNotFound();
     void readsFirstCaseInsensitiveHeadersAndLegacySparseRows();
     void rejectsRowIndexOutsideLegacyRange();
+    void rejectsFractionalColumnIndex();
     void preservesMissingHeadersAndRowsMaterializedByUnrelatedCells();
     void skipsCellReadWhenNoColumnsExist();
     void emptyRosterWithNameColumnsIsSuccessful();
@@ -266,6 +267,86 @@ rejectsRowIndexOutsideLegacyRange()
 
     Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
         services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(*createdClass),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+rejectsFractionalColumnIndex()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Fractional Column Index")
+        );
+    QVERIFY(createdClass);
+
+    QString error;
+    QVERIFY2(
+        seedRoster(
+            services.databaseSession()->database(),
+            *createdClass,
+            {
+                QStringLiteral("English"),
+                QStringLiteral("Korean"),
+                QStringLiteral("Notes")
+            },
+            {{2, 2, QStringLiteral("Unrelated INTEGER cell")}},
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        services);
+    const auto integerOnlyResult = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(*createdClass),
+            port
+            );
+    QVERIFY(integerOnlyResult);
+    QCOMPARE(integerOnlyResult.value().rows.size(), std::size_t(3));
+    QVERIFY(integerOnlyResult.value().rows[2].englishName.empty());
+    QVERIFY(integerOnlyResult.value().rows[2].koreanName.empty());
+
+    QSqlQuery insertFractionalCell(services.databaseSession()->database());
+    QVERIFY2(
+        insertFractionalCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, ?, ?)"
+            )),
+        qPrintable(insertFractionalCell.lastError().text())
+        );
+    insertFractionalCell.addBindValue(*createdClass);
+    insertFractionalCell.addBindValue(4);
+    insertFractionalCell.addBindValue(QVariant{0.25});
+    insertFractionalCell.addBindValue(QStringLiteral("Fractional cell"));
+    QVERIFY2(
+        insertFractionalCell.exec(),
+        qPrintable(insertFractionalCell.lastError().text())
+        );
+
+    QSqlQuery storedCell(services.databaseSession()->database());
+    storedCell.prepare(QStringLiteral(
+        "SELECT typeof(col_index), col_index FROM roster_data "
+        "WHERE class_id=? AND row_index=4"
+        ));
+    storedCell.addBindValue(*createdClass);
+    QVERIFY2(storedCell.exec(), qPrintable(storedCell.lastError().text()));
+    QVERIFY(storedCell.next());
+    QCOMPARE(storedCell.value(0).toString(), QStringLiteral("real"));
+    QCOMPARE(storedCell.value(1).toDouble(), 0.25);
+    QVERIFY(!storedCell.next());
+
     const auto result = Application::
         SpeakingEvaluationRosterNamesReadQuery::execute(
             request(*createdClass),

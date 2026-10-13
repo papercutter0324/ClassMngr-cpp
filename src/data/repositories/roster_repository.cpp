@@ -481,15 +481,20 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
     QSqlQuery rowsQuery(m_database);
     rowsQuery.prepare(R"(
         WITH valid_rows AS (
-            SELECT DISTINCT row_index
+            SELECT
+                row_index,
+                MAX(CASE WHEN typeof(col_index) <> 'integer' THEN 1 ELSE 0 END)
+                    AS has_non_integer_column_index
             FROM roster_data
             WHERE class_id=?
               AND row_index >= 0
               AND col_index >= 0
               AND col_index < ?
+            GROUP BY row_index
         )
         SELECT
             valid_rows.row_index,
+            valid_rows.has_non_integer_column_index,
             english.value AS english_name,
             korean.value AS korean_name
         FROM valid_rows
@@ -522,6 +527,15 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
 
     while (rowsQuery.next())
     {
+        if (rowsQuery.value(1).toInt() != 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading Speaking Evaluation roster names failed for %1: a column index is not stored as an integer."
+                    ).arg(identity)
+                );
+        }
+
         bool rowIndexValid = false;
         const qlonglong sourceRowIndex =
             rowsQuery.value(0).toLongLong(&rowIndexValid);
@@ -555,9 +569,9 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
         }
 
         record.rows[rowIndex].englishName =
-            rowsQuery.value(1).toString();
-        record.rows[rowIndex].koreanName =
             rowsQuery.value(2).toString();
+        record.rows[rowIndex].koreanName =
+            rowsQuery.value(3).toString();
     }
     if (rowsQuery.lastError().isValid())
     {
