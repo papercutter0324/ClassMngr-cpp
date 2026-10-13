@@ -209,7 +209,7 @@ rejectsOnceValidChoiceAfterDestinationChanges()
         ->previewImport(validPackage());
     QVERIFY(preview);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{localClass});
-    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<int>{*localTeacher});
+    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<qint64>{*localTeacher});
 
     auto command = createCommand();
     command.choices.classes.front().action =
@@ -340,7 +340,7 @@ replacesClassAndTeacherThroughRepository()
         ->previewImport(validPackage());
     QVERIFY(preview);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{localClass});
-    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<int>{*localTeacher});
+    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<qint64>{*localTeacher});
 
     auto command = createCommand();
     command.choices.classes.front().action =

@@ -55,7 +55,7 @@ struct ClassNavigationReadRecord final
 {
     int classId = -1;
     bool hasClassInfo = false;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString grade;
     QString level;
     QString teacherEnglishName;

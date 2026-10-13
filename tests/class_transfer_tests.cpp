@@ -3357,7 +3357,7 @@ void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults
     const auto preview = service.previewClassImport(*package);
     QVERIFY2(preview.has_value(), preview ? "" : qPrintable(preview.error()));
     QCOMPARE(preview->teachers.size(), 1);
-    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<int>{});
+    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<qint64>{});
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
     QCOMPARE(preview->classes.first().matchingClassIds, QList<int>{});
@@ -5346,7 +5346,7 @@ void ClassTransferTests::typedApplyRevalidatesStaleTeacherAndMakesNoWrites()
     QVERIFY(targetTeacher > 0);
     const auto preview = service.previewClassImport(*package);
     QVERIFY(preview);
-    QCOMPARE(preview->teachers[0].matchingTeacherIds, QList<int>{targetTeacher});
+    QCOMPARE(preview->teachers[0].matchingTeacherIds, QList<qint64>{targetTeacher});
     auto legacy = createAllPlan(*package);
     legacy.teachers[0] = {package->teachers[0].key, TeacherImportAction::ReplaceExisting, targetTeacher};
     const auto choices = ClassMngr::Next::Platform::classTransferApplyRequest(legacy);

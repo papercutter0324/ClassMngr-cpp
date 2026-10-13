@@ -14,6 +14,9 @@
 #include <QLabel>
 #include <QMap>
 #include <QPushButton>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
@@ -71,6 +74,41 @@ QStringList profileFields(const Teacher& teacher)
 TeacherRepository* teachers(ApplicationServices& services)
 {
     return services.dataService()->databaseSession()->teacherRepository();
+}
+
+bool seedTeacher(ApplicationServices& services, qint64 id, const Teacher& teacher,
+    QString* error)
+{
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_romanization, preferred_name,
+            room_number, birthday, phone_number, wifi_name, wifi_password,
+            internet_type, zoom_id, zoom_password, projection_type, notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )");
+    query.addBindValue(id);
+    query.addBindValue(teacher.teacherKr);
+    query.addBindValue(teacher.teacherEn);
+    query.addBindValue(teacher.preferredRomanization);
+    query.addBindValue(teacher.preferredName);
+    query.addBindValue(teacher.roomNumber);
+    query.addBindValue(teacher.birthday);
+    query.addBindValue(teacher.phoneNumber);
+    query.addBindValue(teacher.wifiName);
+    query.addBindValue(teacher.wifiPassword);
+    query.addBindValue(teacher.internetType);
+    query.addBindValue(teacher.zoomId);
+    query.addBindValue(teacher.zoomPassword);
+    query.addBindValue(teacher.projectionType);
+    query.addBindValue(teacher.notes);
+    if (!query.exec())
+    {
+        *error = query.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 Result<ClassTransferPackage> buildPackage(QTemporaryDir& directory, const Teacher& teacher)
@@ -163,6 +201,9 @@ private slots:
     void unmatchedTeacherCreatesAndAssignsOneTeacher();
     void singleMatchKeepsOrReplacesWithoutDuplicateTeacher_data();
     void singleMatchKeepsOrReplacesWithoutDuplicateTeacher();
+    void wideTeacherIdIsPreservedThroughKeepLocalImport();
+    void wideAssignedTeacherIdRecognizesClassReplacement();
+    void wideGeneratedTeacherIdIsPreservedDuringCreate();
     void ambiguousMatchesDisplayInPreviewOrderAndApplySelectedTeacher();
 };
 
@@ -237,7 +278,7 @@ void ClassImportTeacherChoiceParityTests::singleMatchKeepsOrReplacesWithoutDupli
     QVERIFY(localId);
     const auto preview = services.classService()->previewImport(*package);
     QVERIFY(preview);
-    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<int>({*localId}));
+    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<qint64>({*localId}));
     auto dialog = reviewDialog<ClassImportDialog>(services, *package, *preview);
     auto* choice = dialog->findChild<QComboBox*>(QStringLiteral("teacherImportChoice_%1").arg(package->teachers.first().key));
     auto* button = dialog->findChild<QPushButton*>(QStringLiteral("importClassesButton"));
@@ -288,6 +329,193 @@ void ClassImportTeacherChoiceParityTests::singleMatchKeepsOrReplacesWithoutDupli
         {QStringLiteral("profile"), QJsonArray::fromStringList(profileFields(*stored))}});
 }
 
+void ClassImportTeacherChoiceParityTests::wideTeacherIdIsPreservedThroughKeepLocalImport()
+{
+    constexpr qint64 WideTeacherId = 2147483648LL;
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const auto package = buildPackage(directory, incomingTeacher());
+    QVERIFY(package);
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("destination.tps"))));
+
+    const Teacher local = localTeacher();
+    QString seedError;
+    QVERIFY2(seedTeacher(services, WideTeacherId, local, &seedError),
+        qPrintable(seedError));
+
+    const auto preview = services.classService()->previewImport(*package);
+    QVERIFY(preview);
+    QCOMPARE(preview->teachers.size(), 1);
+    QCOMPARE(preview->teachers.first().matchingTeacherIds,
+        QList<qint64>({WideTeacherId}));
+
+    auto dialog = reviewDialog<ClassImportDialog>(services, *package, *preview);
+    auto* choice = dialog->findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_%1").arg(package->teachers.first().key));
+    auto* button = dialog->findChild<QPushButton*>(QStringLiteral("importClassesButton"));
+    QVERIFY(choice && button);
+    QCOMPARE(choice->count(), 2);
+    QCOMPARE(choice->itemText(0), QStringLiteral("Keep local: Local Teacher"));
+    QCOMPARE(choice->itemData(0, Qt::UserRole + 1).toLongLong(), WideTeacherId);
+    QCOMPARE(choice->itemData(1, Qt::UserRole + 1).toLongLong(), WideTeacherId);
+    QVERIFY(button->isEnabled());
+
+    const auto plan = dialog->importPlan();
+    QCOMPARE(plan.teachers.size(), 1);
+    QCOMPARE(plan.teachers.first().action, TeacherImportAction::KeepExisting);
+    QCOMPARE(plan.teachers.first().targetTeacherId, WideTeacherId);
+    const auto imported = services.classService()->importClasses(*package, plan);
+    QVERIFY(imported);
+    QCOMPARE(imported->createdClassIds.size(), 1);
+
+    QSqlQuery persistedTeacherId(services.databaseSession()->database());
+    persistedTeacherId.prepare(R"(
+        SELECT teacher_id, typeof(teacher_id)
+        FROM class_info
+        WHERE class_id=?
+    )");
+    persistedTeacherId.addBindValue(imported->createdClassIds.first());
+    QVERIFY2(persistedTeacherId.exec(), qPrintable(persistedTeacherId.lastError().text()));
+    QVERIFY(persistedTeacherId.next());
+    QCOMPARE(persistedTeacherId.value(0).toLongLong(), WideTeacherId);
+    QCOMPARE(persistedTeacherId.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(!persistedTeacherId.next());
+}
+
+void ClassImportTeacherChoiceParityTests::wideAssignedTeacherIdRecognizesClassReplacement()
+{
+    constexpr qint64 WideTeacherId = 2147483648LL;
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const auto package = buildPackage(directory, incomingTeacher());
+    QVERIFY(package);
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("destination.tps"))));
+
+    const Teacher local = localTeacher();
+    QString seedError;
+    QVERIFY2(seedTeacher(services, WideTeacherId, local, &seedError),
+        qPrintable(seedError));
+    const auto destinationClassId = services.classService()->create(
+        QStringLiteral("Existing Theseus Class"));
+    QVERIFY(destinationClassId);
+    auto destinationInfo = services.classService()->classInfo(*destinationClassId);
+    QVERIFY(destinationInfo);
+    destinationInfo->classGrade = QStringLiteral("E4");
+    destinationInfo->classLevel = QStringLiteral("Theseus");
+    destinationInfo->teacherId = -1;
+    QVERIFY(services.classService()->saveClassInfo(*destinationInfo));
+
+    QSqlQuery assignTeacher(services.databaseSession()->database());
+    assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"));
+    assignTeacher.addBindValue(WideTeacherId);
+    assignTeacher.addBindValue(*destinationClassId);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    const auto preview = services.classService()->previewImport(*package);
+    QVERIFY(preview);
+    QCOMPARE(preview->classes.size(), 1);
+    QCOMPARE(preview->classes.first().matchingClassIds,
+        QList<int>({*destinationClassId}));
+    QCOMPARE(preview->teachers.size(), 1);
+    QCOMPARE(preview->teachers.first().matchingTeacherIds,
+        QList<qint64>({WideTeacherId}));
+
+    auto dialog = reviewDialog<ClassImportDialog>(services, *package, *preview);
+    auto* classChoice = dialog->findChild<QComboBox*>(
+        QStringLiteral("classImportChoice_0"));
+    auto* teacherChoice = dialog->findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_%1").arg(package->teachers.first().key));
+    auto* button = dialog->findChild<QPushButton*>(QStringLiteral("importClassesButton"));
+    QVERIFY(classChoice && teacherChoice && button);
+    QCOMPARE(classChoice->count(), 3);
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole).toInt(),
+        static_cast<int>(ClassImportAction::Replace));
+    QCOMPARE(classChoice->itemData(1, Qt::UserRole + 1).toInt(),
+        *destinationClassId);
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole).toInt(),
+        static_cast<int>(TeacherImportAction::KeepExisting));
+    QCOMPARE(teacherChoice->itemData(0, Qt::UserRole + 1).toLongLong(),
+        WideTeacherId);
+
+    classChoice->setCurrentIndex(1);
+    QVERIFY(button->isEnabled());
+    const auto plan = dialog->importPlan();
+    QCOMPARE(plan.classes.first().action, ClassImportAction::Replace);
+    QCOMPARE(plan.classes.first().targetClassId, *destinationClassId);
+    QCOMPARE(plan.teachers.first().action, TeacherImportAction::KeepExisting);
+    QCOMPARE(plan.teachers.first().targetTeacherId, WideTeacherId);
+    const auto imported = services.classService()->importClasses(*package, plan);
+    QVERIFY(imported);
+    QVERIFY(imported->createdClassIds.isEmpty());
+    QCOMPARE(imported->replacedClassIds, QList<int>({*destinationClassId}));
+
+    QSqlQuery persistedTeacherId(services.databaseSession()->database());
+    persistedTeacherId.prepare(R"(
+        SELECT teacher_id, typeof(teacher_id)
+        FROM class_info
+        WHERE class_id=?
+    )");
+    persistedTeacherId.addBindValue(*destinationClassId);
+    QVERIFY2(persistedTeacherId.exec(), qPrintable(persistedTeacherId.lastError().text()));
+    QVERIFY(persistedTeacherId.next());
+    QCOMPARE(persistedTeacherId.value(0).toLongLong(), WideTeacherId);
+    QCOMPARE(persistedTeacherId.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(!persistedTeacherId.next());
+}
+
+void ClassImportTeacherChoiceParityTests::wideGeneratedTeacherIdIsPreservedDuringCreate()
+{
+    constexpr qint64 ExistingTeacherId = 2147483648LL;
+    constexpr qint64 GeneratedTeacherId = ExistingTeacherId + 1;
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const auto package = buildPackage(directory, incomingTeacher());
+    QVERIFY(package);
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("destination.tps"))));
+
+    Teacher unrelated = localTeacher();
+    unrelated.teacherKr = QStringLiteral("Unrelated teacher");
+    unrelated.teacherEn = QStringLiteral("Unrelated teacher");
+    QString seedError;
+    QVERIFY2(seedTeacher(services, ExistingTeacherId, unrelated, &seedError),
+        qPrintable(seedError));
+
+    const auto preview = services.classService()->previewImport(*package);
+    QVERIFY(preview);
+    QCOMPARE(preview->teachers.size(), 1);
+    QVERIFY(preview->teachers.first().matchingTeacherIds.isEmpty());
+    auto dialog = reviewDialog<ClassImportDialog>(services, *package, *preview);
+    auto* choice = dialog->findChild<QComboBox*>(
+        QStringLiteral("teacherImportChoice_%1").arg(package->teachers.first().key));
+    QVERIFY(choice);
+    QCOMPARE(choice->count(), 1);
+    QCOMPARE(choice->itemText(0), QStringLiteral("Create new teacher"));
+    const auto plan = dialog->importPlan();
+    QCOMPARE(plan.teachers.first().action, TeacherImportAction::Create);
+    QCOMPARE(plan.teachers.first().targetTeacherId, qint64(-1));
+
+    const auto imported = services.classService()->importClasses(*package, plan);
+    QVERIFY(imported);
+    QCOMPARE(imported->createdClassIds.size(), 1);
+    QSqlQuery persistedTeacherId(services.databaseSession()->database());
+    persistedTeacherId.prepare(R"(
+        SELECT teacher_id, typeof(teacher_id)
+        FROM class_info
+        WHERE class_id=?
+    )");
+    persistedTeacherId.addBindValue(imported->createdClassIds.first());
+    QVERIFY2(persistedTeacherId.exec(), qPrintable(persistedTeacherId.lastError().text()));
+    QVERIFY(persistedTeacherId.next());
+    QCOMPARE(persistedTeacherId.value(0).toLongLong(), GeneratedTeacherId);
+    QCOMPARE(persistedTeacherId.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(!persistedTeacherId.next());
+}
+
 void ClassImportTeacherChoiceParityTests::ambiguousMatchesDisplayInPreviewOrderAndApplySelectedTeacher()
 {
     QTemporaryDir directory;
@@ -313,7 +541,7 @@ void ClassImportTeacherChoiceParityTests::ambiguousMatchesDisplayInPreviewOrderA
     const auto preview = services.classService()->previewImport(*package);
     QVERIFY(preview);
     QCOMPARE(preview->teachers.size(), 1);
-    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<int>({*romanizedId, *preferredId}));
+    QCOMPARE(preview->teachers.first().matchingTeacherIds, QList<qint64>({*romanizedId, *preferredId}));
     auto dialog = reviewDialog<ClassImportDialog>(services, *package, *preview);
     auto* choice = dialog->findChild<QComboBox*>(QStringLiteral("teacherImportChoice_%1").arg(package->teachers.first().key));
     auto* button = dialog->findChild<QPushButton*>(QStringLiteral("importClassesButton"));

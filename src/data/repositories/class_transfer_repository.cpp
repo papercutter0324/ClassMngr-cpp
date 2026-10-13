@@ -51,7 +51,7 @@ QString normalized(const QString& value)
 }
 
 template <typename TypedId>
-TypedId applicationId(const int legacyId)
+TypedId applicationId(const qint64 legacyId)
 {
     return *TypedId::fromString(std::to_string(legacyId));
 }
@@ -485,11 +485,50 @@ Result<ClassImportPreview> buildPreview(
     ClassRepository classRepository(database);
     ClassInfoRepository classInfoRepository(database);
 
-    const Result<QList<Teacher>> destinationTeachers =
-        teacherRepository.getAllTeachers();
-    if (!destinationTeachers)
+    struct DestinationTeacherMatchRecord
     {
-        return std::unexpected(destinationTeachers.error());
+        qint64 id = -1;
+        QString teacherEn;
+        QString teacherKr;
+    };
+
+    QList<DestinationTeacherMatchRecord> destinationTeachers;
+    QSqlQuery destinationTeacherQuery(database);
+    const auto destinationTeachersLoaded = SqlQueryUtils::execute(
+        destinationTeacherQuery,
+        QStringLiteral(R"(
+            SELECT id, teacher_en, teacher_kr
+            FROM teachers
+            ORDER BY teacher_en
+        )"),
+        QObject::tr("Loading teachers for class import")
+        );
+    if (!destinationTeachersLoaded)
+    {
+        return std::unexpected(
+            destinationTeachersLoaded.error().userMessage());
+    }
+    while (destinationTeacherQuery.next())
+    {
+        bool teacherIdValid = false;
+        const qint64 teacherId = destinationTeacherQuery
+            .value(QStringLiteral("id")).toLongLong(&teacherIdValid);
+        if (!teacherIdValid || teacherId <= 0)
+        {
+            return std::unexpected(QObject::tr(
+                "A teacher identifier could not be read for class import."));
+        }
+        destinationTeachers.append({
+            teacherId,
+            destinationTeacherQuery.value(QStringLiteral("teacher_en"))
+                .toString(),
+            destinationTeacherQuery.value(QStringLiteral("teacher_kr"))
+                .toString()
+        });
+    }
+    if (destinationTeacherQuery.lastError().isValid())
+    {
+        return std::unexpected(destinationTeacherQuery.lastError().text());
     }
 
     const Result<QList<Classroom>> destinationClasses =
@@ -516,12 +555,13 @@ Result<ClassImportPreview> buildPreview(
         });
     }
 
-    std::map<ClassMngr::Next::Domain::TeacherId, int> legacyTeacherIds;
-    QHash<int, ClassTransferMatchingTeacherNames> destinationTeacherNamesById;
+    std::map<ClassMngr::Next::Domain::TeacherId, qint64> legacyTeacherIds;
+    QHash<qint64, ClassTransferMatchingTeacherNames>
+        destinationTeacherNamesById;
     matchingRequest.destinationTeachers.reserve(
-        static_cast<std::size_t>(destinationTeachers->size())
+        static_cast<std::size_t>(destinationTeachers.size())
         );
-    for (const Teacher& destination : *destinationTeachers)
+    for (const DestinationTeacherMatchRecord& destination : destinationTeachers)
     {
         const auto typedId = applicationId<
             ClassMngr::Next::Domain::TeacherId>(destination.id);
@@ -637,17 +677,19 @@ Result<ClassImportPreview> buildPreview(
                         }
                         else
                         {
-                            const Result<Teacher> teacher =
-                                teacherRepository.getTeacher(
+                            const TeacherProfileLookupResult teacher =
+                                teacherRepository.lookupTeacherProfileById(
                                     destinationInfo.teacherId);
-                            if (!teacher)
+                            if (teacher.code != TeacherProfileLookupCode::Found)
                             {
-                                return std::unexpected(teacher.error());
+                                return std::unexpected(teacher.diagnostic);
                             }
 
                             names = {
-                                normalized(teacher->teacherEn).toStdString(),
-                                normalized(teacher->teacherKr).toStdString()
+                                normalized(teacher.profile.teacherEn)
+                                    .toStdString(),
+                                normalized(teacher.profile.teacherKr)
+                                    .toStdString()
                             };
                         }
                     }
@@ -901,7 +943,7 @@ Status queryFailure(
         );
 }
 
-Result<int> insertTeacher(
+Result<qint64> insertTeacher(
     QSqlDatabase& database,
     const Teacher& teacher
     )
@@ -937,9 +979,10 @@ Result<int> insertTeacher(
             query, QObject::tr("Creating an imported teacher")).error());
     }
 
-    const int id = query.lastInsertId().toInt();
+    bool idValid = false;
+    const qint64 id = query.lastInsertId().toLongLong(&idValid);
 
-    if (id <= 0)
+    if (!idValid || id <= 0)
     {
         return std::unexpected(
             QObject::tr("The imported teacher did not receive a Teacher Profile ID.")
@@ -951,7 +994,7 @@ Result<int> insertTeacher(
 
 Status updateTeacher(
     QSqlDatabase& database,
-    int teacherId,
+    qint64 teacherId,
     const Teacher& teacher
     )
 {
@@ -1042,7 +1085,7 @@ Status clearClassData(
 Status writeClassData(
     QSqlDatabase& database,
     int classId,
-    int teacherId,
+    qint64 teacherId,
     const ClassTransferClass& transferClass
     )
 {
@@ -1661,7 +1704,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
             );
     }
 
-    QHash<QString, int> teacherIds;
+    QHash<QString, qint64> teacherIds;
 
     for (const ClassTransferTeacher& transferTeacher : package.teachers)
     {
@@ -1769,7 +1812,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
             summary.replacedClassIds.append(classId);
         }
 
-        const int teacherId = transferClass.teacherKey.isEmpty()
+        const qint64 teacherId = transferClass.teacherKey.isEmpty()
             ? -1
             : teacherIds.value(transferClass.teacherKey, -1);
         const Status written = writeClassData(

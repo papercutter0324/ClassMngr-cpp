@@ -15,7 +15,7 @@ namespace ClassMngr::Next::Platform
 namespace ClassTransferApplyLegacyDetail
 {
 template <typename TypedId>
-[[nodiscard]] inline Result<TypedId> typedReviewId(int legacyId, const QString& description)
+[[nodiscard]] inline Result<TypedId> typedReviewId(qint64 legacyId, const QString& description)
 {
     if (legacyId <= 0)
         return std::unexpected(QObject::tr("The %1 contains an invalid destination ID.").arg(description));
@@ -83,7 +83,7 @@ template <typename TypedId>
             candidate.matchingTeacherIds.reserve(
                 static_cast<std::size_t>(previewEntry->matchingTeacherIds.size())
             );
-            for (const int teacherId : previewEntry->matchingTeacherIds)
+            for (const qint64 teacherId : previewEntry->matchingTeacherIds)
             {
                 const Result<TeacherId> typedId = ClassTransferApplyLegacyDetail::typedReviewId<TeacherId>(
                     teacherId, QObject::tr("teacher import preview"));
@@ -154,7 +154,9 @@ template <typename TypedId>
             ? TeacherImportAction::Create : choice.action == ClassTransferReviewTeacherAction::KeepExisting
                 ? TeacherImportAction::KeepExisting : TeacherImportAction::ReplaceExisting;
         plan.teachers.append({QString::fromStdString(choice.teacherKey), action,
-            choice.targetTeacherId ? *classTransferApplyDestinationId(*choice.targetTeacherId) : -1});
+            choice.targetTeacherId
+                ? *classTransferApplyTeacherDestinationId(*choice.targetTeacherId)
+                : -1});
     }
     return plan;
 }

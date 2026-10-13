@@ -30,6 +30,13 @@ template <typename TypedId>
     return parseCanonicalPositiveDecimalId(id.value());
 }
 
+template <typename TypedId>
+[[nodiscard]] inline std::optional<std::int64_t>
+classTransferApplyTeacherDestinationId(const TypedId& id)
+{
+    return parseCanonicalPositiveDecimalId64(id.value());
+}
+
 [[nodiscard]] inline ClassTransferReviewDecisionRequest classTransferApplyReviewRequest(
     const ClassTransferApplyRequest& choices, const ClassTransferApplyCandidates& candidates)
 {
@@ -58,7 +65,8 @@ template <typename TypedId>
     }
     for (const auto& choice : choices.teachers)
     {
-        if (choice.targetTeacherId && !classTransferApplyDestinationId(*choice.targetTeacherId)
+        if (choice.targetTeacherId
+            && !classTransferApplyTeacherDestinationId(*choice.targetTeacherId)
             && (choice.action == TeacherAction::Create || choice.action == TeacherAction::KeepExisting
                 || choice.action == TeacherAction::ReplaceExisting))
         {

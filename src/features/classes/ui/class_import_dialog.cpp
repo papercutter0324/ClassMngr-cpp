@@ -140,7 +140,7 @@ QString destinationClassDisplayName(
 
 QString destinationTeacherDisplayName(
     ApplicationServices* applicationServices,
-    int teacherId
+    qint64 teacherId
     )
 {
     Teacher teacher;
@@ -185,7 +185,7 @@ QString destinationTeacherDisplayName(
 
 QString destinationTeacherDisplayName(
     const ClassMngr::Next::Application::TeacherDisplayNameFields* fields,
-    const int teacherId
+    const qint64 teacherId
     )
 {
     Teacher teacher;
@@ -209,7 +209,7 @@ QString destinationTeacherDisplayName(
         : display;
 }
 
-using DestinationTeacherDisplayNames = std::unordered_map<int, QString>;
+using DestinationTeacherDisplayNames = std::unordered_map<qint64, QString>;
 
 DestinationTeacherDisplayNames destinationTeacherDisplayNames(
     ApplicationServices* applicationServices,
@@ -218,7 +218,7 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
     )
 {
     std::vector<ClassMngr::Next::Domain::TeacherId> teacherIds;
-    std::unordered_set<int> seenTeacherIds;
+    std::unordered_set<qint64> seenTeacherIds;
     for (const ClassImportTeacherPreview& teacherPreview : preview.teachers)
     {
         if (!packageTeacher(package, teacherPreview.teacherKey))
@@ -226,7 +226,7 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
             continue;
         }
 
-        for (const int teacherId : teacherPreview.matchingTeacherIds)
+        for (const qint64 teacherId : teacherPreview.matchingTeacherIds)
         {
             if (teacherId > 0 && seenTeacherIds.insert(teacherId).second)
             {
@@ -272,7 +272,7 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
             );
         for (const auto& record : *batchRecords)
         {
-            const int teacherId = std::stoi(record.teacherId.value());
+            const qint64 teacherId = std::stoll(record.teacherId.value());
             displayNames.emplace(
                 teacherId,
                 destinationTeacherDisplayName(&record.fields, teacherId)
@@ -286,7 +286,7 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
     displayNames.reserve(static_cast<std::size_t>(teacherIds.size()));
     for (const auto& teacherId : teacherIds)
     {
-        const int legacyTeacherId = std::stoi(teacherId.value());
+        const qint64 legacyTeacherId = std::stoll(teacherId.value());
         try
         {
             displayNames.emplace(
@@ -313,7 +313,7 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
 
 QString destinationTeacherDisplayName(
     const DestinationTeacherDisplayNames& displayNames,
-    const int teacherId
+    const qint64 teacherId
     )
 {
     const auto displayName = displayNames.find(teacherId);
@@ -334,7 +334,7 @@ void addChoice(
     QComboBox* combo,
     const QString& label,
     int action,
-    int targetId = -1
+    qint64 targetId = -1
     )
 {
     combo->addItem(label);
@@ -579,7 +579,7 @@ ClassImportDialog::ClassImportDialog(
         }
         else if (teacherPreview.matchingTeacherIds.size() == 1)
         {
-            const int teacherId = teacherPreview.matchingTeacherIds.first();
+            const qint64 teacherId = teacherPreview.matchingTeacherIds.first();
             const QString localName = destinationTeacherDisplayName(
                 destinationTeacherNames,
                 teacherId
@@ -606,7 +606,7 @@ ClassImportDialog::ClassImportDialog(
                 static_cast<int>(TeacherImportAction::Create)
                 );
 
-            for (int teacherId : teacherPreview.matchingTeacherIds)
+            for (const qint64 teacherId : teacherPreview.matchingTeacherIds)
             {
                 const QString localName = destinationTeacherDisplayName(
                     destinationTeacherNames,
@@ -684,7 +684,7 @@ ClassImportPlan ClassImportDialog::importPlan() const
             row.teacherKey,
             static_cast<TeacherImportAction>(
                 row.choice->itemData(choiceIndex, ActionRole).toInt()),
-            row.choice->itemData(choiceIndex, TargetRole).toInt()
+            row.choice->itemData(choiceIndex, TargetRole).toLongLong()
         });
     }
 

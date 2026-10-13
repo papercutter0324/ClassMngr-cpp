@@ -3195,7 +3195,19 @@ ClassInfoRepository::loadClassesNavigationRecords(
         if (record.hasClassInfo)
         {
             const QVariant teacherId = metadataQuery.value("teacher_id");
-            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            if (!teacherId.isNull())
+            {
+                bool teacherIdValid = false;
+                const qint64 parsedTeacherId =
+                    teacherId.toLongLong(&teacherIdValid);
+                if (!teacherIdValid)
+                {
+                    return std::unexpected(QObject::tr(
+                        "Loading classes navigation failed: a teacher identifier is invalid."
+                        ));
+                }
+                record.teacherId = parsedTeacherId;
+            }
             record.grade = metadataQuery.value("class_grade").toString();
             record.level = metadataQuery.value("class_level").toString();
             record.teacherEnglishName =

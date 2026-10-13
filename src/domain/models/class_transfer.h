@@ -44,7 +44,7 @@ struct ClassTransferPackage
 struct ClassImportTeacherPreview
 {
     QString teacherKey;
-    QList<int> matchingTeacherIds;
+    QList<qint64> matchingTeacherIds;
 };
 
 struct ClassImportClassPreview
@@ -84,7 +84,7 @@ struct TeacherImportResolution
 {
     QString teacherKey;
     TeacherImportAction action = TeacherImportAction::Create;
-    int targetTeacherId = -1;
+    qint64 targetTeacherId = -1;
 };
 
 struct ClassImportPlan
