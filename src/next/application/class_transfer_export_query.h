@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/class_transfer_package.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -16,52 +17,13 @@
 
 namespace ClassMngr::Next::Application
 {
-// Full, unbounded export data. UTF-16 preserves every stored QString code unit;
-// this contract is deliberately separate from the bounded import projection.
-using ClassExportText = std::u16string;
-using ClassExportRows = std::vector<std::vector<ClassExportText>>;
 struct ClassTransferExportRequest { std::vector<Domain::ClassId> classIds; };
-struct ClassExportTime { ClassExportText day, startTime, endTime; };
-struct ClassExportInfo
-{
-    ClassExportText classGrade, classLevel, readingBook, essayBook, classColor, fontColor;
-    ClassExportText notes, timeFillerActivities;
-    std::vector<ClassExportTime> classTimes, intensiveTimes;
-};
 struct ClassExportSourceInfo : ClassExportInfo
 {
     int sourceClassId = -1;
     std::int64_t sourceTeacherId = -1;
     ClassExportText teacherKr, teacherEn, teacherPreferredName, roomNumber;
     ClassExportText wifiName, wifiPassword, internetType, zoomId, zoomPassword, projectionType;
-};
-struct ClassExportRoster
-{
-    std::vector<ClassExportText> columns;
-    std::vector<int> columnWidths;
-    ClassExportRows rows;
-};
-struct ClassExportEvaluation { ClassExportText name; ClassExportRows rows; };
-struct ClassExportTeacherProfile
-{
-    ClassExportText teacherKr, teacherEn, preferredRomanization, preferredName;
-    ClassExportText roomNumber, birthday, phoneNumber, wifiName, wifiPassword, internetType;
-    ClassExportText zoomId, zoomPassword, projectionType, notes;
-};
-struct ClassExportTeacher { ClassExportText key; ClassExportTeacherProfile teacher; };
-struct ClassExportClass
-{
-    ClassExportText key, name, teacherKey;
-    ClassExportInfo info;
-    ClassExportRoster roster;
-    std::vector<ClassExportEvaluation> evaluations;
-};
-struct ClassTransferExportPackage
-{
-    int version = 1;
-    std::string exportedAtUtc;
-    std::vector<ClassExportTeacher> teachers;
-    std::vector<ClassExportClass> classes;
 };
 
 enum class ClassExportStageState { NotAttempted, Value, Error };

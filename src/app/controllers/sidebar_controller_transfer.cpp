@@ -6,6 +6,7 @@
 using namespace SidebarControllerPrivate;
 
 #include "core/utils/file_name_utils.h"
+#include "data/repositories/class_transfer_legacy_package_adapter.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
 #include "features/classes/ui/class_export_dialog.h"
@@ -217,7 +218,8 @@ void SidebarController::importClasses()
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
     ClassMngr::Next::Application::ClassTransferApplyCommand command{
-        .package = std::move(*package),
+        .package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+            std::move(*package)),
         .choices = std::move(choices)
     };
     ClassMngr::Next::Platform::ApplicationServicesClassTransferApplyPort port(

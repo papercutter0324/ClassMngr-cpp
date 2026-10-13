@@ -1506,7 +1506,7 @@ void ClassTransferTests::previewMatchesCourseAndTeacherIgnoringSchedule()
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.size(), 1);
     QCOMPARE(preview->teachers.first().matchingTeacherIds,
-             QList<int>({destinationTeacher}));
+             QList<qint64>({destinationTeacher}));
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().matchingClassIds,
              QList<int>({destinationClass}));
@@ -2537,7 +2537,7 @@ void ClassTransferTests::previewPreservesQtNameAndCourseNormalization()
     QVERIFY(preview.has_value());
     QCOMPARE(
         preview->teachers.first().matchingTeacherIds,
-        QList<int>({matchingTeacher})
+        QList<qint64>({matchingTeacher})
         );
     QCOMPARE(
         preview->classes.first().matchingClassIds,
@@ -2937,7 +2937,7 @@ void ClassTransferTests::
     QVERIFY(preview.has_value());
     QCOMPARE(
         preview->teachers.first().matchingTeacherIds,
-        QList<int>({destinationTeacher})
+        QList<qint64>({destinationTeacher})
         );
     QCOMPARE(
         preview->classes.first().matchingClassIds,
@@ -3241,7 +3241,7 @@ void ClassTransferTests::
     QCOMPARE(preview->teachers.first().teacherKey,
              QStringLiteral("teacher-1"));
     QCOMPARE(preview->teachers.first().matchingTeacherIds,
-             QList<int>({destinationTeacher}));
+             QList<qint64>({destinationTeacher}));
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
     QCOMPARE(preview->classes.first().matchingClassIds,
@@ -3482,7 +3482,7 @@ void ClassTransferTests::successFixtureReplacesMatchingTeacherThroughReview()
     QCOMPARE(preview->teachers.size(), 1);
     QCOMPARE(
         preview->teachers.first().matchingTeacherIds,
-        QList<int>({destinationTeacher})
+        QList<qint64>({destinationTeacher})
         );
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
@@ -3617,7 +3617,7 @@ void ClassTransferTests::successFixtureReplacesMatchingDestinationAndChildren()
     QCOMPARE(preview->teachers.size(), 1);
     QCOMPARE(
         preview->teachers.first().matchingTeacherIds,
-        QList<int>({destinationTeacher})
+        QList<qint64>({destinationTeacher})
         );
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
@@ -3834,7 +3834,7 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
     QCOMPARE(preview->teachers.first().teacherKey,
              QStringLiteral("teacher-success-1"));
     QCOMPARE(preview->teachers.first().matchingTeacherIds,
-             QList<int>({destinationTeacher}));
+             QList<qint64>({destinationTeacher}));
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().packageClassIndex, 0);
     QCOMPARE(preview->classes.first().matchingClassIds,
@@ -4590,7 +4590,7 @@ void ClassTransferTests::importDialogRequiresAmbiguousTeacherResolution()
     QVERIFY(preview.has_value());
     QCOMPARE(preview->teachers.first().matchingTeacherIds.size(), 2);
     QCOMPARE(preview->teachers.first().matchingTeacherIds,
-             QList<int>({1, 2}));
+             QList<qint64>({1, 2}));
 
     QString applicationServicesError;
     const auto applicationServices =
@@ -4679,7 +4679,7 @@ importDialogRequestsOnlyUniquePositiveTeacherIds()
     ClassImportPreview preview;
     preview.teachers.append({
         QStringLiteral("incoming"),
-        QList<int>{0, -17, firstId, firstId, secondId, secondId}
+        QList<qint64>{0, -17, firstId, firstId, secondId, secondId}
     });
 
     const TeacherDisplayNameBatchReadMetrics before =
@@ -4795,19 +4795,19 @@ importDialogBatchesDistinctMatchedTeacherDisplayNameReads()
     ClassImportPreview preview;
     preview.teachers.append({
         QStringLiteral("incoming-one"),
-        QList<int>{preferredId, preferredId, englishId}
+        QList<qint64>{preferredId, preferredId, englishId}
     });
     preview.teachers.append({
         QStringLiteral("missing-package-teacher"),
-        QList<int>{romanizedId}
+        QList<qint64>{romanizedId}
     });
     preview.teachers.append({
         QStringLiteral("incoming-two"),
-        QList<int>{englishId, romanizedId, koreanId, 999999, preferredId}
+        QList<qint64>{englishId, romanizedId, koreanId, 999999, preferredId}
     });
     preview.teachers.append({
         QStringLiteral("incoming-empty"),
-        QList<int>{}
+        QList<qint64>{}
     });
 
     const TeacherDisplayNameBatchReadMetrics before =
@@ -4886,11 +4886,11 @@ importDialogBatchesDistinctMatchedTeacherDisplayNameReads()
     ClassImportPreview noReadPreview;
     noReadPreview.teachers.append({
         QStringLiteral("incoming-one"),
-        QList<int>{}
+        QList<qint64>{}
     });
     noReadPreview.teachers.append({
         QStringLiteral("missing-package-teacher"),
-        QList<int>{preferredId}
+        QList<qint64>{preferredId}
     });
     ClassImportDialog noReadDialog(
         applicationServices.get(), package, noReadPreview);
@@ -4951,7 +4951,7 @@ importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()
     ClassImportPreview preview;
     preview.teachers.append({
         QStringLiteral("incoming"),
-        QList<int>{romanizedId, englishId}
+        QList<qint64>{romanizedId, englishId}
     });
 
     ClassImportDialog dialog(applicationServices.get(), package, preview);
@@ -5103,7 +5103,7 @@ void ClassTransferTests::importDialogUsesNewTeacherLabelWhenTeacherProfileCannot
     auto preview = service.previewClassImport(*package);
     QVERIFY2(preview, preview ? "" : qPrintable(preview.error()));
     QCOMPARE(preview->teachers.first().matchingTeacherIds,
-             QList<int>({destinationTeacher}));
+             QList<qint64>({destinationTeacher}));
     preview->classes.clear();
 
     QString applicationServicesError;

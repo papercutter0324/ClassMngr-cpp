@@ -72,7 +72,8 @@ Application::ClassTransferApplyCommand createCommand(
         Application::ClassTransferReviewTeacherAction::Create,
         std::nullopt
     });
-    return {.package = std::move(package), .choices = std::move(choices)};
+    return {.package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+        std::move(package)), .choices = std::move(choices)};
 }
 
 int count(QSqlDatabase database, const QString& table)
@@ -290,8 +291,8 @@ createsWithNormalizedPayloadAndTypedSummary()
     QCOMPARE(stored->roomNumber, QStringLiteral("405"));
     QCOMPARE(stored->phoneNumber, QStringLiteral("010-1234-5678"));
 
-    QVERIFY2(createCommand().package.teachers.first().teacher.teacherEn
-        != stored->teacherEn,
+    QVERIFY2(createCommand().package.teachers.front().teacher.teacherEn
+        != stored->teacherEn.toStdU16String(),
         "fixture should require normalization");
 }
 

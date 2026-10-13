@@ -1440,6 +1440,12 @@ classmngr_add_qt_test(
 )
 
 classmngr_add_qt_test(
+    NAME ClassTransferApplyPackageAdapter
+    SOURCES tests/class_transfer_apply_package_adapter_tests.cpp
+    LIBRARIES Qt6::Test
+)
+
+classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassTransferApplyPort
     SOURCES tests/next_platform_application_services_class_transfer_apply_port_tests.cpp
     LIBRARIES Qt6::Test Qt6::Widgets

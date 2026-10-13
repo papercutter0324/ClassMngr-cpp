@@ -3,6 +3,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_transfer_repository.h"
+#include "data/repositories/class_transfer_legacy_package_adapter.h"
 #include "domain/validation/class_transfer_package_validator.h"
 #include "next/application/class_transfer_apply.h"
 
@@ -63,7 +64,8 @@ public:
 
             const auto normalized =
                 ClassTransferPackageValidator::normalizedAndValidated(
-                    std::move(command.package)
+                    ClassMngr::Data::Legacy::toLegacyClassTransferPackage(
+                        std::move(command.package))
                     );
             if (!normalized)
             {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/models/class_transfer.h"
+#include "next/application/class_transfer_package.h"
 #include "next/application/class_transfer_apply_request.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
@@ -12,7 +12,7 @@ namespace ClassMngr::Next::Application
 
 struct ClassTransferApplyCommand final
 {
-    ::ClassTransferPackage package;
+    ClassTransferPortablePackage package;
     ClassTransferApplyRequest choices;
 };
 

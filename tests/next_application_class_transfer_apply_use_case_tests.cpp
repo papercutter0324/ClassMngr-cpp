@@ -28,11 +28,11 @@ public:
 
 Application::ClassTransferApplyCommand command()
 {
-    ::ClassTransferPackage package;
-    ClassTransferClass transferClass;
-    transferClass.key = QStringLiteral("class-1");
-    transferClass.name = QStringLiteral("Incoming Class");
-    package.classes.append(transferClass);
+    Application::ClassTransferPortablePackage package;
+    Application::ClassExportClass transferClass;
+    transferClass.key = std::u16string(u"class-1");
+    transferClass.name = u"Incoming Class";
+    package.classes.push_back(std::move(transferClass));
 
     Application::ClassTransferApplyRequest choices;
     choices.classes.push_back({
@@ -71,9 +71,9 @@ forwardsPackageChoicesAndSummary()
 
     QVERIFY(result);
     QCOMPARE(port.calls, 1);
-    QCOMPARE(port.received.package.classes.size(), 1);
-    QCOMPARE(port.received.package.classes.first().key,
-        QStringLiteral("class-1"));
+    QCOMPARE(port.received.package.classes.size(), std::size_t(1));
+    QCOMPARE(port.received.package.classes.front().key,
+        std::u16string(u"class-1"));
     QCOMPARE(port.received.choices.classes.size(), std::size_t(1));
     QCOMPARE(port.received.choices.classes.front().packageClassIndex, 0);
     QCOMPARE(port.received.choices.classes.front().action,

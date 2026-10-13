@@ -85,6 +85,7 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/repositories/class_repository.h"
     "src/data/repositories/class_transfer_repository.cpp"
     "src/data/repositories/class_transfer_repository.h"
+    "src/data/repositories/class_transfer_legacy_package_adapter.h"
     "src/data/repositories/gs_team_repository.cpp"
     "src/data/repositories/gs_team_repository.h"
     "src/data/repositories/intensive_slot_state_repository.cpp"
