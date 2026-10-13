@@ -1101,6 +1101,7 @@ RosterRepository::loadMyClassesStudentCountRecords(
         SELECT requested.class_id AS class_id,
                requested.request_order AS request_order,
                roster_data.row_index AS row_index,
+               typeof(roster_data.row_index) AS row_index_storage_type,
                roster_data.value AS value
         FROM requested
         JOIN roster_data
@@ -1152,6 +1153,12 @@ RosterRepository::loadMyClassesStudentCountRecords(
     {
         const int classId = query.value("class_id").toInt();
         const int requestOrder = query.value("request_order").toInt();
+        if (query.value("row_index_storage_type").toString()
+            != QStringLiteral("integer"))
+        {
+            query.finish();
+            return readIndividually();
+        }
         bool rowIndexValid = false;
         const qlonglong rowIndex =
             query.value("row_index").toLongLong(&rowIndexValid);
@@ -1658,7 +1665,9 @@ Result<int> RosterRepository::loadMyClassesStudentCountRecord(
     QSqlQuery query(m_database);
     query.setForwardOnly(true);
     if (!query.prepare(R"(
-        SELECT row_index, value
+        SELECT row_index,
+               typeof(row_index) AS row_index_storage_type,
+               value
         FROM roster_data
         WHERE class_id=?
             AND row_index >= 0
@@ -1704,6 +1713,15 @@ Result<int> RosterRepository::loadMyClassesStudentCountRecord(
     };
     while (query.next())
     {
+        if (query.value("row_index_storage_type").toString()
+            != QStringLiteral("integer"))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Reading My Classes student-count cells failed for class id %1: invalid row index."
+                    ).arg(classId)
+                );
+        }
         bool rowIndexValid = false;
         const qlonglong rowIndex =
             query.value("row_index").toLongLong(&rowIndexValid);

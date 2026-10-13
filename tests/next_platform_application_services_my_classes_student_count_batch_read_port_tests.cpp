@@ -53,6 +53,25 @@ bool saveRoster(
     return repository && repository->saveRoster(classIdValue, roster).has_value();
 }
 
+bool seedFractionalRowIndexCell(
+    QSqlDatabase database,
+    const int classIdValue,
+    const QString& value
+    )
+{
+    QSqlQuery insertCell(database);
+    if (!insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, 0.25, 0, ?)"
+            )))
+    {
+        return false;
+    }
+    insertCell.bindValue(0, classIdValue);
+    insertCell.bindValue(1, value);
+    return insertCell.exec();
+}
+
 Roster roster(
     const QStringList& columns,
     const QList<QStringList>& rows
@@ -73,6 +92,7 @@ class NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests
 
 private slots:
     void readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace();
+    void rejectsFractionalRowIndexInBatchAndFallbackStudentCounts();
     void countsDistinctRowsAboveIntMax();
     void fallsBackPerClassWhenBatchCellReadFails();
     void emptyInputAvoidsRepositoryWork();
@@ -205,6 +225,125 @@ readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace()
     QCOMPARE(after.columnStatementCount, before.columnStatementCount + 1);
     QCOMPARE(after.dataStatementCount, before.dataStatementCount + 1);
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
+}
+
+void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
+rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int fractionalId = createClass(
+        services,
+        QStringLiteral("Fractional student-count row")
+        );
+    const int siblingId = createClass(
+        services,
+        QStringLiteral("Valid sibling student-count rows")
+        );
+    QVERIFY(fractionalId > 0);
+    QVERIFY(siblingId > 0);
+
+    const QStringList columns{
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    QVERIFY(saveRoster(
+        services,
+        fractionalId,
+        roster(columns, {{QString(), QString()}})
+        ));
+    QVERIFY(saveRoster(
+        services,
+        siblingId,
+        roster(
+            columns,
+            {
+                {QStringLiteral("Sibling one"), QString()},
+                {QString(), QStringLiteral("\uD559\uC0DD")}
+            }
+            )
+        ));
+
+    QSqlQuery insertEmptyRow(services.databaseSession()->database());
+    QVERIFY2(insertEmptyRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, 0, 0, '')"
+        )), qPrintable(insertEmptyRow.lastError().text()));
+    insertEmptyRow.bindValue(0, fractionalId);
+    QVERIFY2(insertEmptyRow.exec(), qPrintable(insertEmptyRow.lastError().text()));
+
+    const QString fractionalValue = QStringLiteral("Fractional student");
+    QVERIFY(seedFractionalRowIndexCell(
+        services.databaseSession()->database(),
+        fractionalId,
+        fractionalValue
+        ));
+
+    QSqlQuery storedRow(services.databaseSession()->database());
+    QVERIFY2(storedRow.prepare(QStringLiteral(
+        "SELECT row_index, typeof(row_index) AS storage_type, "
+        "col_index, typeof(col_index) AS column_storage_type, value "
+        "FROM roster_data WHERE class_id=? AND value=?"
+        )), qPrintable(storedRow.lastError().text()));
+    storedRow.bindValue(0, fractionalId);
+    storedRow.bindValue(1, fractionalValue);
+    QVERIFY2(storedRow.exec(), qPrintable(storedRow.lastError().text()));
+    QVERIFY(storedRow.next());
+    QCOMPARE(storedRow.value("row_index").toDouble(), 0.25);
+    QCOMPARE(storedRow.value("storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(storedRow.value("col_index").toInt(), 0);
+    QCOMPARE(storedRow.value("column_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRow.value("value").toString(), fractionalValue);
+    QVERIFY(!storedRow.next());
+
+    QSqlQuery storedEmptyRow(services.databaseSession()->database());
+    QVERIFY2(storedEmptyRow.prepare(QStringLiteral(
+        "SELECT typeof(row_index) AS storage_type, value "
+        "FROM roster_data WHERE class_id=? AND row_index=0 AND col_index=0"
+        )), qPrintable(storedEmptyRow.lastError().text()));
+    storedEmptyRow.bindValue(0, fractionalId);
+    QVERIFY2(storedEmptyRow.exec(), qPrintable(storedEmptyRow.lastError().text()));
+    QVERIFY(storedEmptyRow.next());
+    QCOMPARE(storedEmptyRow.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(storedEmptyRow.value("value").toString().isEmpty());
+    QVERIFY(!storedEmptyRow.next());
+
+    RosterRepository* const repository = services.databaseSession()
+        ->rosterRepository();
+    QVERIFY(repository);
+    const auto before = repository->myClassesStudentCountBatchReadMetrics();
+
+    Platform::ApplicationServicesMyClassesStudentCountBatchReadPort port(
+        services
+        );
+    const auto loaded = port.readMyClassesStudentCounts({
+        classId(fractionalId),
+        classId(siblingId)
+    });
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(2));
+    QVERIFY(loaded.value()[0].classId == classId(fractionalId));
+    QVERIFY(!loaded.value()[0].studentCount);
+    QCOMPARE(
+        loaded.value()[0].studentCount.error().code,
+        Domain::ErrorCode::Technical
+        );
+    QVERIFY(loaded.value()[0].studentCount.error().message.find("row index")
+        != std::string::npos);
+    QVERIFY(loaded.value()[1].classId == classId(siblingId));
+    QVERIFY(loaded.value()[1].studentCount);
+    QCOMPARE(loaded.value()[1].studentCount.value(), 2);
+
+    const auto after = repository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 2);
+    QCOMPARE(after.columnStatementCount, before.columnStatementCount + 3);
+    QCOMPARE(after.dataStatementCount, before.dataStatementCount + 3);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount + 2);
 }
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
