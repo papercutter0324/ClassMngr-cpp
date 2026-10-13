@@ -30551,3 +30551,56 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 Run no full suite. No CMake inventory change is expected. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F789 Document Catalog Qt whitespace parity - accepted - 2026-10-13
+
+F789 was accepted at commit
+`715e28e28c81e4e5a8ec6471f17cc1c93db36066`. The bounded Visual Studio 18 x64
+Debug build in `build/windows-x64-debug` built `ClassMngr` and
+`ClassMngrNextApplicationDocumentCatalogTests`. The sandbox build hit the
+known ZERO_CHECK FileTracker `E_ACCESSDENIED`; the identical bounded retry
+outside the sandbox passed. The exact CTest registered once and passed (1/1).
+`git diff --check` passed; no full suite ran.
+
+### Batch 204 discovery - 2026-10-13
+
+The Calendar Event By-ID request candidate was prioritized over Campus
+Directory projection: the request is a live use-case boundary that can reject
+Unicode-whitespace-only IDs before crossing its port, while the Campus
+candidate has no production or platform references outside its projection
+and tests. F790 is selected to align that request's blank predicate with the
+shared Qt-compatible whitespace helper. F707/F709 remain deferred.
+
+### F790 Calendar Event By-ID request Unicode-whitespace parity - selected and acceptance matrix - 2026-10-13
+
+**F790 is selected:** in
+`src/next/application/calendar_event_by_id_query_port.h`, replace only its
+byte-wise blank predicate with `Application::isBlankUtf8Text`. Valid UTF-8
+event IDs containing only U+00A0 NO-BREAK SPACE or U+3000 IDEOGRAPHIC SPACE
+must be rejected before the port call, with the existing exact `InvalidInput`
+code, message, and nonrecoverable result. Preserve empty and ASCII-whitespace
+behavior, validation ordering, the maximum byte-length limit, typed-ID
+conversion, and malformed UTF-8 as nonblank under the shared helper. Do not
+trim or mutate bytes. Ordinary nonblank values such as `0042` and
+`missing-event` remain accepted at the request boundary.
+
+Extend the existing
+`calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort`
+assertions in `tests/next_application_calendar_event_tests.cpp` for both
+Unicode whitespace code points and zero port calls. Preserve its exact-length
+accepted-boundary assertion.
+
+Production target: `ClassMngr`. The focused test target and exact CTest name
+are `ClassMngrNextApplicationCalendarEventTests`; it must register once. In
+the existing Visual Studio 18 x64 Debug tree `build/windows-x64-debug`, use
+only these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextApplicationCalendarEventTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextApplicationCalendarEventTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextApplicationCalendarEventTests$"
+```
+
+Run no full suite. No CMake inventory change is expected. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
