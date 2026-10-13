@@ -3432,32 +3432,23 @@ ClassInfoRepository::loadSubPrepClassSummaries(
         )
         SELECT
             positions.class_id,
-            COUNT(DISTINCT cells.row_index) AS student_count
+            cells.row_index,
+            cells.value
         FROM name_positions positions
-        LEFT JOIN roster_data cells
+        INNER JOIN roster_data cells
         ON cells.class_id = positions.class_id
         AND (
             (
                 positions.english_position IS NOT NULL
                 AND cells.col_index = positions.english_position
-                AND LENGTH(TRIM(
-                    COALESCE(cells.value, ''),
-                    char(9) || char(10) || char(11) || char(12)
-                        || char(13) || ' '
-                    )) > 0
             )
             OR
             (
                 positions.korean_position IS NOT NULL
                 AND cells.col_index = positions.korean_position
-                AND LENGTH(TRIM(
-                    COALESCE(cells.value, ''),
-                    char(9) || char(10) || char(11) || char(12)
-                        || char(13) || ' '
-                    )) > 0
             )
         )
-        GROUP BY positions.class_id
+        ORDER BY positions.class_id, cells.row_index
     )").arg(summaryClassIdValues.join(QStringLiteral(", ")));
 
     QHash<int, qint64> studentCounts;
@@ -3471,23 +3462,74 @@ ClassInfoRepository::loadSubPrepClassSummaries(
         );
     if (rosterQueryResult)
     {
+        int currentClassId = -1;
+        qint64 currentRowIndex = -1;
+        bool hasCurrentRow = false;
+        bool currentRowHasStudent = false;
+        bool countsValid = true;
+        const auto finishCurrentRow = [&]()
+        {
+            if (!hasCurrentRow || !currentRowHasStudent)
+            {
+                return;
+            }
+
+            qint64& count = studentCounts[currentClassId];
+            if (count == std::numeric_limits<qint64>::max())
+            {
+                countsValid = false;
+                return;
+            }
+            ++count;
+        };
+
         while (rosterQuery.next())
         {
-            bool countOk = false;
-            const qint64 count = rosterQuery.value(
-                QStringLiteral("student_count")
-                ).toLongLong(&countOk);
-            if (!countOk || count < 0)
+            bool classIdOk = false;
+            const int classId = rosterQuery.value(
+                QStringLiteral("class_id")
+                ).toInt(&classIdOk);
+            bool rowIndexOk = false;
+            const qint64 rowIndex = rosterQuery.value(
+                QStringLiteral("row_index")
+                ).toLongLong(&rowIndexOk);
+            if (!classIdOk || !rowIndexOk)
             {
-                studentCounts.clear();
+                countsValid = false;
                 break;
             }
-            studentCounts.insert(
-                rosterQuery.value(QStringLiteral("class_id")).toInt(),
-                count
-                );
+
+            if (!hasCurrentRow
+                || classId != currentClassId
+                || rowIndex != currentRowIndex)
+            {
+                finishCurrentRow();
+                if (!countsValid)
+                {
+                    break;
+                }
+                currentClassId = classId;
+                currentRowIndex = rowIndex;
+                currentRowHasStudent = false;
+                hasCurrentRow = true;
+            }
+
+            const QString name = rosterQuery.value(
+                QStringLiteral("value")
+                ).toString();
+            if (!name.trimmed().isEmpty())
+            {
+                currentRowHasStudent = true;
+            }
         }
-        if (rosterQuery.lastError().type() != QSqlError::NoError)
+
+        if (countsValid
+            && rosterQuery.lastError().type() == QSqlError::NoError)
+        {
+            finishCurrentRow();
+        }
+        if (!countsValid
+            || rosterQuery.lastError().type() != QSqlError::NoError)
         {
             studentCounts.clear();
         }

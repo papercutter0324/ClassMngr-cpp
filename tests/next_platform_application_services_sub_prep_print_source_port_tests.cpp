@@ -367,10 +367,15 @@ projectsVisibleScheduleSummariesAndAggregatesRosterCounts()
     QVERIFY(firstClass > 0);
     QVERIFY(outsideSelectedDays > 0);
 
-    QVERIFY(services.rosterService()->saveRoster(
-        firstClass,
-        rosterWithTwoStudents()
-        ));
+    Roster firstClassRoster = rosterWithTwoStudents();
+    const QString nonBreakingSpace = QString::fromUtf8("\xC2\xA0");
+    firstClassRoster.rows.push_back({
+        nonBreakingSpace, {}, {}, {}, {}, {}
+    });
+    firstClassRoster.rows.push_back({
+        {}, nonBreakingSpace, {}, {}, {}, {}
+    });
+    QVERIFY(services.rosterService()->saveRoster(firstClass, firstClassRoster));
     Roster oneStudent;
     oneStudent.columns = Roster::BaseColumns;
     oneStudent.rows = {
