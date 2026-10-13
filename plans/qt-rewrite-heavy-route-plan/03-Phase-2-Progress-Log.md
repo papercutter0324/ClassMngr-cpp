@@ -31040,3 +31040,77 @@ This is a pre-implementation matrix, not acceptance evidence. Run no full
 suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
 deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+### F797 Full-roster row-index representability - accepted - 2026-10-13
+
+F797 was accepted at source-and-test commit
+`521e89f8c5d923c13805b3aa0ce70c6b394c034b`. The commit changed
+`src/data/repositories/roster_repository.cpp` and
+`tests/next_platform_application_services_roster_read_port_tests.cpp` to
+reject roster row indexes outside the legacy dense API range. The acceptance
+handoff did not include focused build or CTest results; no full-suite pass is
+claimed here.
+
+### Batch 211 completion - 2026-10-13
+
+F797 completed the only selected slice in Batch 211. Its range rejection and
+source/test commit are recorded above. F707/F709 and the dense Speaking
+Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
+
+### Batch 212 discovery - 2026-10-13
+
+F798 is selected for the Sub Prep batched print student-count repository
+path. It streams cells in request/row/column order but narrows SQLite row
+indexes to `int`, groups on that narrow identity, and computes row extent and
+cell metrics with unchecked `int` arithmetic. The schema permits every
+nonnegative signed SQLite `INTEGER`; after F797, a wide valid count can also
+fall into dense per-class fallback and return zero. Keep valid wide counts on
+the streaming path and saturate only the legacy profiler dimensions.
+
+### F798 Sub Prep batched print student-count wide row identity and metric overflow - selected and acceptance matrix - 2026-10-13
+
+**F798 is selected:** in
+`src/data/repositories/roster_repository.cpp`, use checked
+`toLongLong(&rowIndexValid)` conversion and signed 64-bit row identity/grouping
+in `loadSubPrepStudentCountRecords`. Preserve the existing Qt blank-name
+semantics and row-distinct contract: a row counts once when either the exact
+English or Korean cell is nonblank. Valid row indexes through the signed
+SQLite integer range must remain on the batched streaming path, without
+narrowing, per-class dense fallback, an arbitrary row limit, or roster
+materialization. Keep `studentCount`'s existing type and behavior and preserve
+the current per-class fallback for actual SQL failures.
+
+Keep the legacy `int` `rowCount` and `cellCount` fields for profiler events.
+Compute row extent without overflowing `rowIndex + 1`, saturating extents
+above `INT_MAX` to `INT_MAX`. Compute `rowCount * columnCount` with checked or
+saturating arithmetic; when the true cell count exceeds `INT_MAX`, report
+`INT_MAX` to the profiler. Ordinary dimensions and existing exact metrics
+must remain unchanged.
+
+Extend only
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`,
+adding direct SQLite sparse rows at or above `INT_MAX` (including the signed
+64-bit maximum) to
+`batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics()`. Assert
+distinct wide rows count separately, English and Korean values on one row
+count only once, no per-class fallback occurs for valid wide indexes, and
+overflowing row/cell telemetry saturates safely. Preserve the test's normal
+exact metrics and the existing SQL-error fallback regression. The target and
+exact CTest name are
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; it
+must register once. No CMake inventory change is expected.
+
+Use only these bounded Visual Studio 18 x64 Debug commands in the existing
+`build/windows-x64-debug` tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+```
+
+This is a pre-implementation matrix; no F798 tests have run. Run no full
+suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
