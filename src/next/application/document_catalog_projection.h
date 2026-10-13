@@ -1,12 +1,12 @@
 #pragma once
 
 #include "next/application/document_content_session.h"
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/document_content_reference.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -103,17 +103,7 @@ namespace DocumentCatalogProjectionDetail
     const std::string& value
     ) noexcept
 {
-    return value.empty()
-        || std::all_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
+    return isBlankUtf8Text(value);
 }
 
 [[nodiscard]] inline bool isValidIdentifier(

@@ -64,6 +64,16 @@ void verifyInvalid(
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
 }
 
+void verifyInvalidWithMessage(
+    const Domain::Result<DocumentCatalogProjection>& result,
+    const std::string& expectedMessage
+    )
+{
+    verifyInvalid(result);
+    QCOMPARE(result.error().message, expectedMessage);
+    QVERIFY(!result.error().recoverable);
+}
+
 }
 
 class NextApplicationDocumentCatalogTests final : public QObject
@@ -75,6 +85,8 @@ private slots:
     void completeMetadataIsPreserved();
     void typedFolderAndDocumentCategoriesRemainDistinct();
     void boundedValidationAndDuplicateIdsAreRejected();
+    void unicodeWhitespaceIsRejectedAcrossBlankValidatedFields();
+    void nonBlankUnicodeAndMalformedUtf8ArePreserved();
     void documentCollectionOverflowIsRejected();
     void negativeOrdersAreRejected();
     void optionalExportReferencePreservesAbsenceAndPresence();
@@ -297,6 +309,212 @@ void NextApplicationDocumentCatalogTests::boundedValidationAndDuplicateIdsAreRej
             });
         }
         verifyInvalid(DocumentCatalogProjection::create(std::move(input)));
+    }
+}
+
+void NextApplicationDocumentCatalogTests::unicodeWhitespaceIsRejectedAcrossBlankValidatedFields()
+{
+    enum class Field
+    {
+        FolderId,
+        FolderPath,
+        FolderParentPath,
+        FolderKey,
+        FolderDisplayName,
+        DocumentId,
+        DocumentFolderId,
+        DocumentPath,
+        DocumentKey,
+        DocumentDisplayName,
+        DocumentContentReference,
+        DocumentExportReference
+    };
+
+    struct InvalidFieldCase final
+    {
+        Field field;
+        const char* expectedMessage;
+    };
+
+    const InvalidFieldCase cases[] = {
+        {
+            Field::FolderId,
+            "Document folder identifier must be non-blank and bounded."
+        },
+        {
+            Field::FolderPath,
+            "Document folder path, parent path, key, and display name must be bounded; parent path may be empty for a root folder."
+        },
+        {
+            Field::FolderParentPath,
+            "Document folder path, parent path, key, and display name must be bounded; parent path may be empty for a root folder."
+        },
+        {
+            Field::FolderKey,
+            "Document folder path, parent path, key, and display name must be bounded; parent path may be empty for a root folder."
+        },
+        {
+            Field::FolderDisplayName,
+            "Document folder path, parent path, key, and display name must be bounded; parent path may be empty for a root folder."
+        },
+        {
+            Field::DocumentId,
+            "Document identifier must be non-blank and bounded."
+        },
+        {
+            Field::DocumentFolderId,
+            "Document folder identifier must be non-blank and bounded."
+        },
+        {
+            Field::DocumentPath,
+            "Document path, key, and display name must be bounded and non-blank."
+        },
+        {
+            Field::DocumentKey,
+            "Document path, key, and display name must be bounded and non-blank."
+        },
+        {
+            Field::DocumentDisplayName,
+            "Document path, key, and display name must be bounded and non-blank."
+        },
+        {
+            Field::DocumentContentReference,
+            "Document content reference must be non-blank and bounded."
+        },
+        {
+            Field::DocumentExportReference,
+            "Document export reference must be non-blank and bounded."
+        }
+    };
+
+    const std::string unicodeWhitespaceValues[] = {
+        std::string("\xC2\xA0", 2),
+        std::string("\xE3\x80\x80", 3)
+    };
+
+    for (const auto& whitespace : unicodeWhitespaceValues)
+    {
+        for (const auto& testCase : cases)
+        {
+            auto input = validInput();
+            switch (testCase.field)
+            {
+                case Field::FolderId:
+                    input.folders.front().id = folderId(whitespace);
+                    break;
+                case Field::FolderPath:
+                    input.folders.front().path = whitespace;
+                    break;
+                case Field::FolderParentPath:
+                    input.folders.front().parentPath = whitespace;
+                    break;
+                case Field::FolderKey:
+                    input.folders.front().key = whitespace;
+                    break;
+                case Field::FolderDisplayName:
+                    input.folders.front().displayName = whitespace;
+                    break;
+                case Field::DocumentId:
+                    input.documents.front().id = documentId(whitespace);
+                    break;
+                case Field::DocumentFolderId:
+                    input.documents.front().folderId = folderId(whitespace);
+                    break;
+                case Field::DocumentPath:
+                    input.documents.front().path = whitespace;
+                    break;
+                case Field::DocumentKey:
+                    input.documents.front().key = whitespace;
+                    break;
+                case Field::DocumentDisplayName:
+                    input.documents.front().displayName = whitespace;
+                    break;
+                case Field::DocumentContentReference:
+                    input.documents.front().contentReference =
+                        DocumentContentReference(whitespace);
+                    break;
+                case Field::DocumentExportReference:
+                    input.documents.front().exportable = true;
+                    input.documents.front().exportReference =
+                        DocumentContentReference(whitespace);
+                    break;
+            }
+
+            verifyInvalidWithMessage(
+                DocumentCatalogProjection::create(std::move(input)),
+                testCase.expectedMessage
+                );
+        }
+    }
+
+    // The first failing document field remains observable when later fields
+    // are invalid too, preserving the established validation order.
+    auto input = validInput();
+    input.documents.front().id = documentId(unicodeWhitespaceValues[0]);
+    input.documents.front().path = unicodeWhitespaceValues[1];
+    input.documents.front().contentReference = DocumentContentReference(
+        unicodeWhitespaceValues[1]
+        );
+    verifyInvalidWithMessage(
+        DocumentCatalogProjection::create(std::move(input)),
+        "Document identifier must be non-blank and bounded."
+        );
+}
+
+void NextApplicationDocumentCatalogTests::nonBlankUnicodeAndMalformedUtf8ArePreserved()
+{
+    const std::string embeddedValues[] = {
+        std::string("\xC2\xA0", 2),
+        std::string("\xE3\x80\x80", 3),
+        std::string(" "),
+        std::string("\xFF", 1)
+    };
+
+    for (const auto& embeddedValue : embeddedValues)
+    {
+        auto input = validInput();
+        const std::string folderIdValue = "folder-" + embeddedValue;
+        const std::string documentIdValue = "document-" + embeddedValue;
+        const std::string folderPath = "目录" + embeddedValue + "资料";
+        const std::string folderParentPath = "parent" + embeddedValue;
+        const std::string folderKey = "course" + embeddedValue + "key";
+        const std::string folderDisplayName = "课程" + embeddedValue + "资料";
+        const std::string documentPath = "目录/" + embeddedValue + "lesson.pdf";
+        const std::string documentKey = "lesson" + embeddedValue + "plan";
+        const std::string documentDisplayName = "课程" + embeddedValue + "Lesson";
+        const std::string contentReference =
+            "resource://documents/" + embeddedValue + "lesson.pdf";
+
+        input.folders.front().id = folderId(folderIdValue);
+        input.folders.front().path = folderPath;
+        input.folders.front().parentPath = folderParentPath;
+        input.folders.front().key = folderKey;
+        input.folders.front().displayName = folderDisplayName;
+        input.documents.front().id = documentId(documentIdValue);
+        input.documents.front().folderId = input.folders.front().id;
+        input.documents.front().path = documentPath;
+        input.documents.front().key = documentKey;
+        input.documents.front().displayName = documentDisplayName;
+        input.documents.front().contentReference =
+            DocumentContentReference(contentReference);
+
+        const auto result = DocumentCatalogProjection::create(std::move(input));
+        QVERIFY(result);
+        const auto& folder = result.value().folders().front();
+        QCOMPARE(folder.id.value(), folderIdValue);
+        QCOMPARE(folder.path, folderPath);
+        QCOMPARE(folder.parentPath, folderParentPath);
+        QCOMPARE(folder.key, folderKey);
+        QCOMPARE(folder.displayName, folderDisplayName);
+
+        const auto& document = result.value().documents().front();
+        QCOMPARE(document.id.value(), documentIdValue);
+        QCOMPARE(document.folderId.value(), folderIdValue);
+        QCOMPARE(document.path, documentPath);
+        QCOMPARE(document.key, documentKey);
+        QCOMPARE(document.displayName, documentDisplayName);
+        QCOMPARE(document.contentReference.value(), contentReference);
+        QVERIFY(!document.exportReference.has_value());
     }
 }
 
