@@ -30977,3 +30977,66 @@ This is a pre-implementation matrix, not acceptance evidence. Run no full
 suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
 deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+### F796 Sub Prep schedule-summary roster-count Unicode whitespace parity - accepted - 2026-10-13
+
+F796 was accepted at code-and-test commit
+`9be9eb8b3c7fcb699c3c04a01df6a07e7a554f65`. The focused CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed
+1/1 after the known identical outside-sandbox ZERO_CHECK/FileTracker retry.
+U+00A0-only English and Korean roster rows did not increase summary counts;
+ordinary one- and two-student counts remained. Existing
+`rosterAggregateFailureKeepsLegacyZeroCountFallback()` covers the soft-failure
+path. No full suite ran.
+
+### Batch 210 completion - 2026-10-13
+
+F796 completed the only selected slice in Batch 210. Its Unicode whitespace
+parity and focused verification are recorded above. F707/F709 and the dense
+Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 211 discovery - 2026-10-13
+
+F797 is selected for full-roster row-index representability. The migrated
+schema permits every nonnegative SQLite `INTEGER` row index, while
+`RosterRepository::loadRoster` converts persisted indexes with `toInt()` and
+skips a negative result. Since the legacy dense `Roster` API indexes rows with
+`int`, an index above `INT_MAX` cannot be represented faithfully; reject it
+before conversion, skipping, or dense expansion.
+
+### F797 Full-roster row-index representability - selected and acceptance matrix - 2026-10-13
+
+**F797 is selected:** in
+`src/data/repositories/roster_repository.cpp`, make
+`RosterRepository::loadRoster` reject a persisted `row_index` above `INT_MAX`
+before conversion can truncate or skip it and before any dense row expansion.
+Propagate the failure through
+`ApplicationServicesRosterReadPort` as `Domain::ErrorCode::Technical`, with a
+clear message that the stored row index is outside the representable roster
+range. Preserve valid representable sparse rows and the existing full-snapshot
+behavior. Do not add a UI row limit or materialize a roster for the invalid
+value.
+
+Extend only
+`tests/next_platform_application_services_roster_read_port_tests.cpp`.
+Seed `INT_MAX + 1` directly as a SQLite `INTEGER` and assert that the read
+returns the explicit Technical failure and range/representability message;
+preserve existing valid sparse-row and full-snapshot coverage. The target and
+exact CTest name are
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`; it must
+register once. No CMake inventory change is expected.
+
+Use only these bounded Visual Studio 18 x64 Debug commands in the existing
+`build/windows-x64-debug` tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesRosterReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesRosterReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesRosterReadPortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence. Run no full
+suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.

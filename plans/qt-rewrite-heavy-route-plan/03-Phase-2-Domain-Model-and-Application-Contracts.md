@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F795 was accepted at `26b1a98a120de56017449dcc4308dd2f4b1e1055`, completing Batch 209; F796 is selected in Batch 210 for Sub Prep schedule-summary roster-count Unicode whitespace parity; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F796 was accepted at `9be9eb8b3c7fcb699c3c04a01df6a07e7a554f65`, completing Batch 210; F797 is selected in Batch 211 to reject full-roster row indexes that exceed the legacy dense API's `int` range; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -111,9 +111,9 @@ Treat this plan as an operational summary, not a history:
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
 
-#### Active batch: Batch 210
+#### Active batch: Batch 211
 
-- F796 - Sub Prep schedule-summary roster-count Unicode whitespace parity - Match QString whitespace semantics when deciding whether English/Korean roster names count, including Unicode-space-only cells.
+- F797 - Full-roster row-index representability - Return a Technical failure for persisted roster indexes above `INT_MAX` before conversion or dense row expansion; preserve valid sparse snapshots.
 
 ## Objective
 
