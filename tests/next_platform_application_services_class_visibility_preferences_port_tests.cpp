@@ -90,6 +90,7 @@ private slots:
     void unavailableSettingsDefaultToActiveScheduleAndReportSaveFailure();
     void loadsAllClassesValue();
     void roundTripsBothValuesUsingTheExactLegacyKey();
+    void invalidScopeReturnsInvalidInputWithoutChangingSettings();
     void closedSessionDefaultsAndReportsSaveFailureWithoutChangingSettings();
     void failedSaveReturnsTechnicalFailureAndPreservesSettings();
     void repositoryReadFailureDefaultsAndRemainsSilent();
@@ -233,6 +234,43 @@ roundTripsBothValuesUsingTheExactLegacyKey()
         );
     QVERIFY(unrelated);
     QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
+}
+
+void NextPlatformApplicationServicesClassVisibilityPreferencesPortTests::
+invalidScopeReturnsInvalidInputWithoutChangingSettings()
+{
+    const auto invalidScope = static_cast<ClassVisibilityScope>(17);
+
+    ApplicationServices unavailableServices;
+    ApplicationServicesClassVisibilityPreferencesPort unavailablePort(
+        unavailableServices
+        );
+    const auto unavailableSave = unavailablePort.save(invalidScope);
+    QVERIFY(!unavailableSave);
+    QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!unavailableSave.error().message.empty());
+    QVERIFY(!unavailableSave.error().recoverable);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        preferenceKey(),
+        QStringLiteral("all_classes")
+        ));
+
+    ApplicationServicesClassVisibilityPreferencesPort port(services);
+    const auto saved = port.save(invalidScope);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!saved.error().message.empty());
+    QVERIFY(!saved.error().recoverable);
+
+    const auto stored = repository->loadSetting(preferenceKey());
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), QStringLiteral("all_classes"));
+    QCOMPARE(port.load(), ClassVisibilityScope::AllClasses);
 }
 
 void NextPlatformApplicationServicesClassVisibilityPreferencesPortTests::

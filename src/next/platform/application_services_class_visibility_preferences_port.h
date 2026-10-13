@@ -80,6 +80,15 @@ public:
         const Application::ClassVisibilityScope scope
         ) const override
     {
+        if (scope != Application::ClassVisibilityScope::ActiveSchedule
+            && scope != Application::ClassVisibilityScope::AllClasses)
+        {
+            return failure(
+                "Class visibility preference scope is invalid.",
+                Domain::ErrorCode::InvalidInput
+                );
+        }
+
         if (!m_session || !m_session->isOpen())
         {
             return failure(
@@ -114,10 +123,13 @@ public:
 
 private:
     [[nodiscard]] static Application::ClassVisibilityPreferencesSaveResult
-    failure(std::string message)
+    failure(
+        std::string message,
+        const Domain::ErrorCode code = Domain::ErrorCode::Technical
+        )
     {
         return Application::ClassVisibilityPreferencesSaveResult::failure({
-            .code = Domain::ErrorCode::Technical,
+            .code = code,
             .message = std::move(message),
             .recoverable = false
         });
