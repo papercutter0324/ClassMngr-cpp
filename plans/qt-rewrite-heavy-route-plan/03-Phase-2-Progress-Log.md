@@ -31289,3 +31289,71 @@ This is a pre-implementation matrix, not acceptance evidence; no F800 tests
 have run and no full suite is requested. F707/F709 and the dense Speaking
 Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+### F800 Speaking Evaluation roster-name row-index representability - accepted - 2026-10-13
+
+F800 is accepted at implementation and test commit
+`d35794b88a4f6c551b7d33a8a2fc45a4534521ad`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`
+passed outside the sandbox after the known ZERO_CHECK/MSBuild FileTracker
+`E_ACCESSDENIED` retry. CTest inventory found one registration, and the exact
+focused CTest passed 1/1. The regression stored SQLite INTEGER `2147483648`
+and verified a structured Technical failure; existing negative-index and
+sparse-row behavior remained covered in the focused target. No full suite ran.
+
+### Batch 214 completion - 2026-10-13
+
+F800 completed the selected work in Batch 214. Its representability boundary
+and focused verification are recorded above. F707/F709 and the dense Speaking
+Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
+
+### Batch 215 discovery - 2026-10-13
+
+F801 follows the My Classes class-information teacher ID from F799 to its
+downstream teacher-profile batch read. `my_classes_page_content.cpp` passes
+the class-information `fields.teacherId` values to
+`MyClassesTeacherProfileBatchReadQuery`, but the profile query validates IDs
+through the int-bounded canonical decimal helper, the platform adapter
+converts to `int`, and the profile-specific repository records and request
+list use `int`. This prevents the valid signed-64 ID `2147483648` from
+reaching its matching teacher profile. Keep this slice limited to the My
+Classes profile query, adapter, and repository batch path; do not broaden
+other `TeacherId` consumers or alter class-ID contracts.
+
+### F801 My Classes teacher-profile batch wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F801 is selected:** update the My Classes profile query in
+`src/next/application/my_classes_teacher_profile_batch_read_query.h`, the
+platform adapter in
+`src/next/platform/application_services_my_classes_teacher_profile_batch_read_port.h`,
+and the profile-specific read records/API/implementation in
+`src/data/repositories/teacher_repository.h` and
+`src/data/repositories/teacher_repository.cpp` to preserve canonical
+positive signed-64 teacher IDs end to end. Keep the scope to this profile
+batch path; do not change class-ID input contracts or unrelated teacher-ID
+consumers. Preserve typed IDs, requested order, and existing missing-teacher
+and sibling-result semantics.
+
+Extend
+`tests/next_platform_application_services_my_classes_teacher_profile_batch_read_port_tests.cpp`
+with a valid teacher SQL row whose ID is `2147483648`, then execute the
+profile query through the platform port. Assert the returned profile fields
+and typed `Domain::TeacherId` preserve the wide ID and order, while existing
+missing/sibling behavior remains unchanged. Keep the registered target and
+CTest `ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`;
+no CMake inventory change is expected.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F801 tests
+have run and no full suite is requested. F707/F709 and the dense Speaking
+Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.

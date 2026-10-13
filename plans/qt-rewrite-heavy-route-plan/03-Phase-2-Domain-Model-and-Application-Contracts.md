@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F799 was accepted in Batch 213 at `d86263c4f115a2fd483355847d70cc4eedd60d6d`; Batch 214 selects F800 to reject Speaking Evaluation roster-name row indexes above `INT_MAX` before dense expansion; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F800 was accepted in Batch 214 at `d35794b88a4f6c551b7d33a8a2fc45a4534521ad`; Batch 215 selects F801 to preserve signed-64 teacher IDs through the My Classes teacher-profile batch read; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -111,9 +111,9 @@ Treat this plan as an operational summary, not a history:
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
 
-#### Active batch: Batch 214
+#### Active batch: Batch 215
 
-- F800 - Speaking Evaluation roster-name row-index representability - Reject unrepresentable or above-`INT_MAX` returned SQLite row indexes before dense list expansion, preserving existing negative-row and column filters.
+- F801 - My Classes teacher-profile batch wide teacher IDs - Preserve canonical positive signed-64 teacher IDs through query validation, the platform adapter, and the profile-specific repository batch read.
 
 ## Objective
 
