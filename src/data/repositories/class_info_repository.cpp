@@ -3211,14 +3211,15 @@ ClassInfoRepository::loadSubPrepClassDetails(
         query.value(QStringLiteral("resolved_teacher_id"));
     bool assignedTeacherIdOk = false;
     bool resolvedTeacherIdOk = false;
-    const int assignedTeacherIdValue = assignedTeacherId.toInt(
+    const qint64 assignedTeacherIdValue = assignedTeacherId.toLongLong(
         &assignedTeacherIdOk
         );
-    const int resolvedTeacherIdValue = resolvedTeacherId.toInt(
+    const qint64 resolvedTeacherIdValue = resolvedTeacherId.toLongLong(
         &resolvedTeacherIdOk
         );
     if (assignedTeacherIdOk && resolvedTeacherIdOk
         && assignedTeacherIdValue > 0
+        && resolvedTeacherIdValue > 0
         && assignedTeacherIdValue == resolvedTeacherIdValue)
     {
         record.teacherId = assignedTeacherIdValue;

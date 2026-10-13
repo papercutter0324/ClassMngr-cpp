@@ -7,7 +7,7 @@
 struct SubPrepClassDetailsRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString classNotes;
     QString teacherKr;
     QString teacherEn;

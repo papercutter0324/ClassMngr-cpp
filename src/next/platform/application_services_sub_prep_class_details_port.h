@@ -240,7 +240,7 @@ private:
     }
 
     [[nodiscard]] static Domain::TeacherId teacherId(
-        const int legacyTeacherId
+        const qint64 legacyTeacherId
         )
     {
         return *Domain::TeacherId::fromString(

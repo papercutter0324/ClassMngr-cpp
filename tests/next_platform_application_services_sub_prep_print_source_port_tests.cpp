@@ -274,6 +274,7 @@ private slots:
     void summaryAggregateMeetingOverflowSurfacesValidation();
     void allEmptyTeacherNamesKeepAdapterFallbacks();
     void selectedClassDetailsReadUsesOnlyScopedSessionData();
+    void selectedClassDetailsPreservesWideTeacherId();
     void selectedClassDetailsUnavailableSessionsDoNotFallback();
     void selectedClassDetailsSqlRepositoryFailureIsTechnical();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
@@ -1109,6 +1110,121 @@ selectedClassDetailsReadUsesOnlyScopedSessionData()
     services.closeDatabase();
     QVERIFY(ownedCopy == details);
     QCOMPARE(ownedCopy.teacherFacilities.room, std::string("Room details"));
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+selectedClassDetailsPreservesWideTeacherId()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    constexpr qlonglong wideTeacherId = 2'147'483'648LL;
+    const auto expectedTeacherId = TeacherId::fromString("2147483648");
+    QVERIFY(expectedTeacherId.has_value());
+
+    DataService* const dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    const QSqlDatabase database = dataService->databaseSession()->database();
+
+    QSqlQuery insertTeacher(database);
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_romanization,
+            preferred_name, room_number, birthday, phone_number,
+            wifi_name, wifi_password, internet_type, zoom_id,
+            zoom_password, projection_type, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher Korean"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher English"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher Romanization"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Preferred Name"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Room 214"));
+    insertTeacher.addBindValue(QStringLiteral("2000-01-01"));
+    insertTeacher.addBindValue(QStringLiteral("555-214-7483"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher Network"));
+    insertTeacher.addBindValue(QStringLiteral("wide-wifi-password"));
+    insertTeacher.addBindValue(QStringLiteral("LAN"));
+    insertTeacher.addBindValue(QStringLiteral("wide-zoom-id"));
+    insertTeacher.addBindValue(QStringLiteral("wide-zoom-password"));
+    insertTeacher.addBindValue(QStringLiteral("Zoom"));
+    insertTeacher.addBindValue(QStringLiteral("Wide teacher notes"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Wide teacher selected details")
+        );
+    QVERIFY(createdClass.has_value());
+    const int selectedClass = *createdClass;
+    QVERIFY(selectedClass > 0);
+    QVERIFY(selectedClass <= std::numeric_limits<int>::max());
+
+    QSqlQuery insertAssignment(database);
+    QVERIFY(insertAssignment.prepare(QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id, teacher_id, class_grade, class_level,
+            class_color, font_color, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    )")));
+    insertAssignment.addBindValue(selectedClass);
+    insertAssignment.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertAssignment.addBindValue(QStringLiteral("E4"));
+    insertAssignment.addBindValue(QStringLiteral("Wide details"));
+    insertAssignment.addBindValue(QStringLiteral("#112233"));
+    insertAssignment.addBindValue(QStringLiteral("#AABBCC"));
+    insertAssignment.addBindValue(QStringLiteral("Wide teacher class notes"));
+    QVERIFY2(
+        insertAssignment.exec(),
+        qPrintable(insertAssignment.lastError().text())
+        );
+
+    QSqlQuery verifyStoredId(database);
+    QVERIFY(verifyStoredId.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredId.addBindValue(selectedClass);
+    QVERIFY2(verifyStoredId.exec(), qPrintable(verifyStoredId.lastError().text()));
+    QVERIFY(verifyStoredId.next());
+    QCOMPARE(verifyStoredId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(1).toLongLong(), wideTeacherId);
+    QCOMPARE(verifyStoredId.value(2).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(3).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyStoredId.next());
+
+    ApplicationServicesSubPrepClassDetailsPort port(services);
+    const auto result = port.loadDetails(classId(selectedClass));
+    QVERIFY(result);
+
+    const auto& details = result.value();
+    QVERIFY(details.classId == classId(selectedClass));
+    QVERIFY(details.teacherId.has_value());
+    QVERIFY(*details.teacherId == *expectedTeacherId);
+    QCOMPARE(details.teacherId->value(), std::string("2147483648"));
+    QCOMPARE(details.classNotes, std::string("Wide teacher class notes"));
+    QCOMPARE(details.teacherDisplayName, std::string("Wide Preferred Name"));
+    QCOMPARE(details.teacherFacilities.room, std::string("Wide Room 214"));
+    QCOMPARE(
+        details.teacherFacilities.wifiName,
+        std::string("Wide Teacher Network")
+        );
+    QCOMPARE(
+        details.teacherFacilities.wifiPassword,
+        std::string("wide-wifi-password")
+        );
+    QCOMPARE(details.teacherFacilities.internetType, std::string("LAN"));
+    QCOMPARE(details.teacherFacilities.zoomId, std::string("wide-zoom-id"));
+    QCOMPARE(
+        details.teacherFacilities.zoomPassword,
+        std::string("wide-zoom-password")
+        );
+    QCOMPARE(details.teacherFacilities.projectionType, std::string("Zoom"));
+    QCOMPARE(details.teacherNotes, std::string("Wide teacher notes"));
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
