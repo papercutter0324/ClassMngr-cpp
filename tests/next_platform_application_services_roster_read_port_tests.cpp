@@ -193,6 +193,27 @@ bool seedMalformedColumnIndexCell(
     return insertCell.exec();
 }
 
+bool seedFractionalColumnIndexCell(
+    QSqlDatabase database,
+    const int classId,
+    const int rowIndex,
+    const QString& value
+    )
+{
+    QSqlQuery insertCell(database);
+    if (!insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, 0.25, ?)"
+            )))
+    {
+        return false;
+    }
+    insertCell.bindValue(0, classId);
+    insertCell.bindValue(1, rowIndex);
+    insertCell.bindValue(2, value);
+    return insertCell.exec();
+}
+
 Domain::ClassId typedClassId(const int classId)
 {
     return *Domain::ClassId::fromString(std::to_string(classId));
@@ -210,6 +231,8 @@ private slots:
     void rejectsMalformedColumnPosition();
     void acceptsSparsePositionBeyondIntRange();
     void rejectsMalformedColumnIndexWithoutOverwritingColumnZero();
+    void rejectsFractionalColumnIndexBeforeOverwritingColumnZero();
+    void rejectsFractionalAvailabilityColumnIndex();
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
     void rejectsMalformedAvailabilityColumnIndex();
@@ -478,6 +501,117 @@ rejectsMalformedColumnIndexWithoutOverwritingColumnZero()
     const auto result = Application::RosterReadUseCase::execute(
         query(*createdClass),
         port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsFractionalColumnIndexBeforeOverwritingColumnZero()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Fractional Column Index Projection Rejection Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {{0, 0, QStringLiteral("Integer column zero")}}
+        ));
+    const QString fractionalValue = QStringLiteral("Fractional column value");
+    QVERIFY(seedFractionalColumnIndexCell(
+        database,
+        *createdClass,
+        0,
+        fractionalValue
+        ));
+
+    QSqlQuery storedType(database);
+    QVERIFY2(storedType.prepare(QStringLiteral(
+        "SELECT typeof(col_index) AS storage_type FROM roster_data "
+        "WHERE class_id=? AND value=?"
+        )), qPrintable(storedType.lastError().text()));
+    storedType.bindValue(0, *createdClass);
+    storedType.bindValue(1, fractionalValue);
+    QVERIFY2(storedType.exec(), qPrintable(storedType.lastError().text()));
+    QVERIFY(storedType.next());
+    QCOMPARE(storedType.value("storage_type").toString(), QStringLiteral("real"));
+    QVERIFY(!storedType.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsFractionalAvailabilityColumnIndex()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Fractional Column Index Availability Rejection Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {{0, 0, QString()}}
+        ));
+    const QString fractionalValue = QStringLiteral("Occupies no valid column");
+    QVERIFY(seedFractionalColumnIndexCell(
+        database,
+        *createdClass,
+        0,
+        fractionalValue
+        ));
+
+    QSqlQuery storedType(database);
+    QVERIFY2(storedType.prepare(QStringLiteral(
+        "SELECT typeof(col_index) AS storage_type FROM roster_data "
+        "WHERE class_id=? AND value=?"
+        )), qPrintable(storedType.lastError().text()));
+    storedType.bindValue(0, *createdClass);
+    storedType.bindValue(1, fractionalValue);
+    QVERIFY2(storedType.exec(), qPrintable(storedType.lastError().text()));
+    QVERIFY(storedType.next());
+    QCOMPARE(storedType.value("storage_type").toString(), QStringLiteral("real"));
+    QVERIFY(!storedType.next());
+
+    Platform::ApplicationServicesRosterAvailabilityBatchReadPort port(services);
+    const Application::RosterAvailabilityBatchReadQuery availabilityQuery(port);
+    const auto result = availabilityQuery.execute(
+        {typedClassId(*createdClass)},
+        baseColumnNames()
         );
 
     QVERIFY(!result);

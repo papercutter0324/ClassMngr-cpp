@@ -299,6 +299,7 @@ Result<Roster> RosterRepository::loadRoster(
         SELECT
             row_index,
             col_index,
+            typeof(col_index) AS col_index_storage_type,
             value
         FROM roster_data
         WHERE class_id=?
@@ -347,6 +348,18 @@ Result<Roster> RosterRepository::loadRoster(
                 );
         }
         const int row = static_cast<int>(rowIndex);
+
+        if (
+            query.value("col_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: invalid column index."
+                    ).arg(identity)
+                );
+        }
 
         bool columnIndexValid = false;
         const qlonglong columnIndex =
@@ -1453,6 +1466,7 @@ Status RosterRepository::forEachRosterDataCellForClasses(
             requested.class_id AS class_id,
             roster_data.row_index AS row_index,
             roster_data.col_index AS col_index,
+            typeof(roster_data.col_index) AS col_index_storage_type,
             roster_data.value AS value
         FROM requested
         JOIN roster_data
@@ -1488,6 +1502,18 @@ Status RosterRepository::forEachRosterDataCellForClasses(
 
     while (query.next())
     {
+        if (
+            query.value("col_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster availability failed: invalid column index."
+                    )
+                );
+        }
+
         bool columnIndexValid = false;
         const qlonglong columnIndex =
             query.value("col_index").toLongLong(&columnIndexValid);
