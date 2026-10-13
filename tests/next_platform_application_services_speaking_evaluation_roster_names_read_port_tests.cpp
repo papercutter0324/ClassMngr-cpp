@@ -120,6 +120,7 @@ class NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests 
 private slots:
     void missingSessionReturnsNotFound();
     void readsFirstCaseInsensitiveHeadersAndLegacySparseRows();
+    void rejectsFractionalRowIndexBeforeOverwritingRosterName();
     void rejectsRowIndexOutsideLegacyRange();
     void rejectsFractionalColumnIndex();
     void preservesMissingHeadersAndRowsMaterializedByUnrelatedCells();
@@ -225,6 +226,97 @@ readsFirstCaseInsensitiveHeadersAndLegacySparseRows()
     QVERIFY(result.value().rows[1].koreanName.empty());
     QVERIFY(result.value().rows[2].englishName.empty());
     QVERIFY(result.value().rows[2].koreanName.empty());
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+rejectsFractionalRowIndexBeforeOverwritingRosterName()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Fractional Row Index")
+        );
+    QVERIFY(createdClass);
+
+    const QString integerName = QStringLiteral("Valid integer row name");
+    const QString fractionalName = QStringLiteral("Fractional row overwrite");
+    QString error;
+    QVERIFY2(
+        seedRoster(
+            services.databaseSession()->database(),
+            *createdClass,
+            {QStringLiteral("English"), QStringLiteral("Korean")},
+            {{0, 0, integerName}},
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    QSqlQuery insertFractionalCell(services.databaseSession()->database());
+    QVERIFY2(
+        insertFractionalCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, 0, ?)"
+            )),
+        qPrintable(insertFractionalCell.lastError().text())
+        );
+    insertFractionalCell.addBindValue(*createdClass);
+    insertFractionalCell.addBindValue(QVariant{0.25});
+    insertFractionalCell.addBindValue(fractionalName);
+    QVERIFY2(
+        insertFractionalCell.exec(),
+        qPrintable(insertFractionalCell.lastError().text())
+        );
+
+    QSqlQuery storedRows(services.databaseSession()->database());
+    QVERIFY2(
+        storedRows.prepare(QStringLiteral(
+            "SELECT row_index, typeof(row_index) AS row_storage_type, "
+            "col_index, typeof(col_index) AS column_storage_type, value "
+            "FROM roster_data WHERE class_id=? AND col_index=0 "
+            "ORDER BY row_index"
+            )),
+        qPrintable(storedRows.lastError().text())
+        );
+    storedRows.addBindValue(*createdClass);
+    QVERIFY2(storedRows.exec(), qPrintable(storedRows.lastError().text()));
+    QVERIFY(storedRows.next());
+    bool integerRowValid = false;
+    QCOMPARE(
+        storedRows.value("row_index").toLongLong(&integerRowValid),
+        qlonglong(0)
+        );
+    QVERIFY(integerRowValid);
+    QCOMPARE(storedRows.value("row_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRows.value("column_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRows.value("value").toString(), integerName);
+    QVERIFY(storedRows.next());
+    QCOMPARE(storedRows.value("row_index").toDouble(), 0.25);
+    QCOMPARE(storedRows.value("row_storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(storedRows.value("col_index").toInt(), 0);
+    QCOMPARE(storedRows.value("column_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRows.value("value").toString(), fractionalName);
+    QVERIFY(!storedRows.next());
+
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(*createdClass),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY2(
+        QString::fromStdString(result.error().message).contains(
+            QStringLiteral("row index"),
+            Qt::CaseInsensitive
+            ),
+        qPrintable(QString::fromStdString(result.error().message))
+        );
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
