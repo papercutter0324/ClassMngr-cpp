@@ -34242,3 +34242,63 @@ the exact CTest is
 `NextPlatformApplicationServicesEvaluationDefaultPolicyPort`. No full suite
 is planned. If the baseline does not reproduce, stop before production edits
 and report the result.
+
+### F853 invalid EvaluationDefaultPolicy enum on save - accepted - 2026-10-14
+
+F853 is accepted at source/test commit
+`06326be473d0850597412ef7a8688ec4a6c80320` (`Phase2 - F853: Reject invalid
+evaluation default policy saves`). The executor reproduced enum value 99
+overwriting stored `current_or_previous_term` with `all`. The save port now
+rejects values other than `All` and `CurrentOrPreviousTerm` as nonrecoverable
+`InvalidInput` before session access. Regression checks confirm unavailable-
+session error precedence and that stored and loaded `CurrentOrPreviousTerm`
+remain unchanged. Existing tests cover both valid mappings, fallback/missing
+behavior, and read/save failures.
+
+Independent Tester acceptance: exact registered CTest
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`
+passed 1/1 in standard top-level `build/windows-x64-debug`, Visual Studio 18
+2026 Debug. The shorter CMake declaration name matched zero tests; Tester ran
+the registered name above. The initial build failed at ZERO_CHECK with
+`UnauthorizedAccessException`; the authorized narrow retry passed. No full
+suite ran.
+
+### Batch 267 completion - 2026-10-14
+
+F853 completed Batch 267 by rejecting invalid EvaluationDefaultPolicy saves.
+The post-slice audit found no blocker changes among the 13 deferred candidates;
+none became actionable and the list remains unchanged. Batch 268 selects F854
+to check invalid `ClassDayFilterResetPolicy` values at the typed save boundary.
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 268 discovery and selection - 2026-10-14
+
+`ClassDayFilterResetPolicy` has named values `OnApplicationClose` and
+`OnPageLeave`. Source inspection suggests its typed save adapter maps every
+unrecognized enum value to `on_application_close` and persists it, potentially
+overwriting stored `on_page_leave`. This is a source-based hypothesis; runtime
+reproduction is pending. The normal preferences callback supplies only valid
+enum values. F854 is distinct from F849 ClassSelectionResetPolicy and is not
+in the deferred list.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid `ClassDayFilterResetPolicy` enum on save (F854) | Selected | The adapter may turn an invalid typed value into a successful `on_application_close` write. |
+
+F854 is selected, not reproduced or implemented. First seed `on_page_leave`,
+save an unrecognized value through the typed port, and inspect the result and
+stored value. If reproduced, reject before persistence as nonrecoverable
+`InvalidInput` and verify the previous value remains. Preserve both valid
+save mappings and existing fallback/missing, read, and save failure behavior.
+If the baseline does not reproduce, stop before production edits and report
+the result.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | In `tests/next_platform_application_services_class_day_filter_reset_policy_port_tests.cpp`, seed `on_page_leave`, save an unrecognized enum through the typed port, and inspect the result and stored value. |
+| Error contract | On reproduction, reject before persistence as nonrecoverable `InvalidInput`; preserve the prior `on_page_leave`. |
+| Compatibility | Preserve both valid mappings and existing fallback/missing, read, and save failure behavior. |
+| Focused verification | Build and run only `ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`. No full suite. |
+
+The exact registered CTest is
+`ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests`.
