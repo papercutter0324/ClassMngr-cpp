@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F801 was accepted in Batch 215 at `a6502ec8d4cf8f4e2fa04aaaace3757198b0a626`; Batch 216 selects F802 to preserve signed-64 teacher IDs through My Classes summaries, display-name reads, and tab labels; the separate persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F802 was accepted in Batch 216 at `c3d257b32fea38a15ec9b2b9162551a38c45adb3`; Batch 217 selects F803 for signed-64 evaluation-ID grouping in Class Transfer export; selected-class subtitle wide teacher IDs, the separate persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,10 +114,12 @@ Treat this plan as an operational summary, not a history:
   independent audit found int-bounded primary-key reads in the repository and
   by-ID adapter, plus range projection that rejects narrowed IDs. The fix
   spans the shared model and repository CRUD surface.
+- Selected-class subtitle wide teacher ID - deferred as a separate consumer
+  of teacher display-name IDs; keep it outside F802 and F803.
 
-#### Active batch: Batch 216
+#### Active batch: Batch 217
 
-- F802 - My Classes summary-to-tab teacher display with wide IDs - Preserve canonical positive signed-64 teacher IDs through class summaries and the teacher display-name batch so duplicate class labels include teacher names and retain class-ID disambiguation.
+- F803 - Class Transfer export evaluation-ID grouping collision - Use checked signed-64 evaluation IDs for grouping and lookup so distinct persisted IDs above `INT_MAX` cannot collide or misattribute export rows.
 
 ## Objective
 

@@ -31418,20 +31418,90 @@ assert it flows through class-summary and teacher-display-name reads so tab
 labels include the teacher name and preserve existing class-ID
 disambiguation. Keep existing normal-ID behavior and ordering/missing-row
 expectations. The test target is `ClassMngrMyClassesPageTests`; its focused
-CTest name is `MyClassesPage`. The CMake optimization is already complete in
-its earlier commit; make no CMake or test-inventory change.
+CTest name is `ClassMngrMyClassesPageTests`. The earlier planned filter
+`MyClassesPage` returned zero results; the actual generated CTest name must be
+used. The CMake optimization is already complete in its earlier commit; make
+no CMake or test-inventory change.
 
 Use only these bounded Visual Studio x64 Debug commands in the existing tree:
 
 ```text
 cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrMyClassesPageTests
-ctest --test-dir build/windows-x64-debug -C Debug -N -R "^MyClassesPage$"
-ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^MyClassesPage$"
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrMyClassesPageTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrMyClassesPageTests$"
 ```
 
-Confirm the exact `MyClassesPage` CTest is registered, then run only that test
-after the focused build. This is a pre-implementation matrix, not acceptance
-evidence; no F802 tests have run and no full suite is requested. The separate
-persisted CalendarEvent ID-width issue remains deferred outside F802. F707/F709
-and the dense Speaking Evaluation row-limit policy remain deferred; Phase 2
-Gates 1/2 remain Partial and the formal exit gate remains Open.
+Confirm the exact `ClassMngrMyClassesPageTests` CTest is registered, then run
+only that test after the focused build. This is a pre-implementation matrix,
+not acceptance evidence; no F802 tests have run and no full suite is
+requested. The separate persisted CalendarEvent ID-width issue remains
+deferred outside F802. F707/F709 and the dense Speaking Evaluation row-limit
+policy remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit
+gate remains Open.
+
+### F802 My Classes summary-to-tab wide teacher IDs - accepted - 2026-10-13
+
+F802 is accepted at implementation and test commit
+`c3d257b32fea38a15ec9b2b9162551a38c45adb3`. The focused Debug build of
+`ClassMngr` and `ClassMngrMyClassesPageTests` passed outside the sandbox after
+the known ZERO_CHECK/MSBuild FileTracker `E_ACCESSDENIED` retry. The planned
+CTest filter `MyClassesPage` returned zero results and did not run tests.
+Tester then used the generated exact CTest name
+`ClassMngrMyClassesPageTests`; `ctest -N -R ^ClassMngrMyClassesPageTests$`
+found one registration and that focused CTest passed 1/1. `git diff --check`
+passed. No full suite ran.
+
+### Batch 216 completion - 2026-10-13
+
+F802 completed the selected work in Batch 216. Its My Classes summary,
+teacher-display-name, and tab-label path is recorded above. The selected-class
+subtitle wide teacher-ID issue remains a separate deferred candidate. The
+persisted CalendarEvent ID-width issue also remains deferred outside F802;
+its fix spans the shared model and repository CRUD surface. F707/F709 and the
+dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 217 discovery - 2026-10-13
+
+F803 addresses a Class Transfer export identity collision in
+`ClassTransferRepository::loadEvaluations` in
+`src/data/repositories/class_transfer_repository.cpp`. The current grouping
+map is `QHash<int, int>` and both `speaking_evaluations.id` and
+`speaking_eval_data.evaluation_id` are read with `toInt()`. Distinct valid
+SQLite signed-64 IDs such as `2147483648` and `2147483649` can narrow to the
+same int and misattribute rows. Keep this separate from the deferred
+selected-class subtitle wide teacher-ID issue and the persisted CalendarEvent
+ID-width work. The earlier CMake optimization remains complete.
+
+### F803 Class Transfer export evaluation-ID grouping collision - selected and acceptance matrix - 2026-10-13
+
+**F803 is selected:** in
+`src/data/repositories/class_transfer_repository.cpp::loadEvaluations`, use a
+checked signed-64 conversion for both evaluation ID reads and widen only the
+evaluation identity grouping map so distinct persisted IDs remain distinct.
+Leave row-index conversion/handling and the existing 25-row limit, roster,
+teacher, class identity, import, and other behavior unchanged. No CMake
+registration change is expected.
+
+Extend
+`tests/next_platform_class_transfer_export_source_tests.cpp` with two wide
+evaluation IDs assigned to one class and distinct row-zero markers. Assert
+the exported source keeps each evaluation name paired with its own marker.
+Build `ClassMngr` and
+`ClassMngrNextPlatformClassTransferExportSourceTests`, inspect its exact CTest
+registration, and run only `ClassMngrNextPlatformClassTransferExportSourceTests`.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformClassTransferExportSourceTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformClassTransferExportSourceTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformClassTransferExportSourceTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F803 tests
+have run and no full suite is requested. The selected-class subtitle wide
+teacher-ID candidate and the persisted CalendarEvent ID-width issue remain
+deferred; the latter's fix spans the shared model and repository CRUD surface.
+F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
