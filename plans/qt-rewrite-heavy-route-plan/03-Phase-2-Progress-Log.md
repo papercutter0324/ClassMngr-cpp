@@ -32717,3 +32717,45 @@ behavior. Keep UI, directory repositories, and unrelated profile paths out of
 scope. Run the focused target only; no full suite. The project-configuration
 and CMake optimization remains complete;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F823 Native English and GS Team persisted profile-ID updates - accepted - 2026-10-13
+
+F823 is accepted at source/test commit
+`c6fb666b6f29dbe76c77829d3599a122bbcda50f`. Independent fresh Ninja Debug
+verification passed `ClassMngrTeacherImportTests`; exact CTest registration #34
+ran once and passed 1/1. Separate Native English and GS Team regressions update
+teacher ID `2147483648` in place, verify its exact SQLite `INTEGER` identity,
+changed fields, 0 created / 1 updated / 0 unchanged summary, and no duplicate.
+Existing Korean, Native English manual-field, and GS Team sparse, no-op, and
+ambiguity behavior remains covered. `git diff --check` passed. No UI, directory
+repository, or CMake changes were needed; no full suite ran.
+
+### Batch 237 completion - 2026-10-13
+
+F823 completed Batch 237 by preserving wide persisted IDs through Native
+English and GS Team Teacher Import updates. Batch 238 selects F824 for malformed
+persisted roster column-index validation. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### Batch 238 discovery and selection - 2026-10-13
+
+`RosterRepository::loadRoster()` and
+`forEachRosterDataCellForClasses()` convert persisted `col_index` with unchecked
+`.toInt()`. Malformed SQLite TEXT therefore becomes column 0: full-roster reads
+can overwrite a valid first-column cell, while the availability adapter and
+accumulator can treat malformed data as column 0 being occupied. The focused
+target and CTest registration are
+`NextPlatformApplicationServicesRosterReadPort`, with tests in
+`tests/next_platform_application_services_roster_read_port_tests.cpp`.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Malformed persisted roster `col_index` validation (F824) | Selected | Both full-roster and availability consumers can alias malformed text to column 0. |
+
+F824 is selected, not implemented or accepted. In both full-roster and
+availability reads, malformed text `col_index` must produce a repository or
+typed read failure instead of aliasing column 0. Preserve existing valid-cell,
+numeric out-of-range, row-index, and availability behavior. The project-
+configuration and CMake optimization remains complete; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
