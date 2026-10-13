@@ -403,6 +403,7 @@ private slots:
     void missingTestingClassDetailsShowsWarning();
     void testingClassDetailsReadFailureShowsWarningWithoutFallback();
     void existingTestingClassUpdateRetainsSelectionAndRefreshesList();
+    void wideTeacherSelectionSurvivesRefreshUpdateAndCreate();
     void testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning();
     void newTestingClassCreationDoesNotUseDetailsUpdatePort();
     void newTestingClassCreateForwardsPendingSlotAndSelectsCreatedClass();
@@ -1616,6 +1617,155 @@ existingTestingClassUpdateRetainsSelectionAndRefreshesList()
     const auto saved = repository->loadTestingClass(*targetId);
     QVERIFY(saved);
     QCOMPARE(saved->name, QStringLiteral("Zulu Updated Target"));
+}
+
+void TestingClassesPageTests::
+wideTeacherSelectionSurvivesRefreshUpdateAndCreate()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository = session->testingClassRepository();
+    QVERIFY(repository);
+    constexpr qint64 wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_en, teacher_kr) "
+        "VALUES (?, 'Wide Teacher', 'Wide Korean Teacher')"
+        )));
+    insertTeacher.addBindValue(wideTeacherId);
+    QVERIFY(insertTeacher.exec());
+
+    TestingClass existing = testingClass(QStringLiteral("Existing Wide Class"));
+    existing.teacherId = wideTeacherId;
+    existing.grade = QStringLiteral("M1");
+    existing.level = QStringLiteral("Major");
+    const auto existingId = repository->createTestingClass(existing);
+    QVERIFY(existingId);
+
+    const auto typedWideId = ClassMngr::Next::Domain::TeacherId::fromString(
+        "2147483648"
+        );
+    QVERIFY(typedWideId.has_value());
+    FixedTestingTeacherChoicesReadPort teacherChoices;
+    teacherChoices.result = ClassMngr::Next::Application::
+        TestingTeacherChoicesReadResult::success({
+            .choices = {{
+                .teacherId = *typedWideId,
+                .name = u"Wide Korean Teacher",
+                .room = u"Room Wide"
+            }}
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TestingClassesPage page(&services, nullptr, nullptr, nullptr, &teacherChoices);
+    page.openTestingClass(*existingId);
+    page.refresh();
+
+    auto* teacherCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassTeacherCombo")
+        );
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* gradeCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassGradeCombo")
+        );
+    auto* levelCombo = page.findChild<QComboBox*>(
+        QStringLiteral("testingClassLevelCombo")
+        );
+    auto* roomEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
+    auto* addButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesAddButton")
+        );
+    auto* list = page.findChild<QListWidget*>(QStringLiteral("testingClassesList"));
+    QVERIFY(teacherCombo);
+    QVERIFY(nameEdit);
+    QVERIFY(gradeCombo);
+    QVERIFY(levelCombo);
+    QVERIFY(roomEdit);
+    QVERIFY(addButton);
+    QVERIFY(list);
+    QCOMPARE(teacherCombo->count(), 2);
+    QCOMPARE(teacherCombo->currentData().toLongLong(), wideTeacherId);
+    QCOMPARE(teacherCombo->currentText(), QStringLiteral("Wide Korean Teacher"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    nameEdit->setText(QStringLiteral("Updated Wide Class"));
+    QVERIFY(page.hasUnsavedChanges());
+    // Refresh repopulates choices before returning for this unsaved draft.
+    // The saved detail cannot hide a narrowed choice restoration here.
+    page.refresh();
+    QCOMPARE(teacherCombo->currentData().toLongLong(), wideTeacherId);
+    QCOMPARE(nameEdit->text(), QStringLiteral("Updated Wide Class"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    auto stored = repository->loadTestingClass(*existingId);
+    QVERIFY(stored);
+    QCOMPARE(stored->teacherId, wideTeacherId);
+    QCOMPARE(stored->name, QStringLiteral("Updated Wide Class"));
+
+    const auto storedAsInteger = [session, wideTeacherId](const int classId) {
+        QSqlQuery query(session->database());
+        query.prepare(QStringLiteral(
+            "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id=?"
+            ));
+        query.addBindValue(classId);
+        return query.exec() && query.next()
+            && query.value(0).toString() == QStringLiteral("integer")
+            && query.value(1).toLongLong() == wideTeacherId;
+    };
+    QVERIFY(storedAsInteger(*existingId));
+    page.refresh();
+    QCOMPARE(teacherCombo->currentData().toLongLong(), wideTeacherId);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    addButton->click();
+    QCOMPARE(teacherCombo->currentData().toLongLong(), qint64(-1));
+    const int wideIndex = teacherCombo->findData(wideTeacherId);
+    QVERIFY(wideIndex > 0);
+    teacherCombo->setCurrentIndex(wideIndex);
+    nameEdit->setText(QStringLiteral("Created Wide Class"));
+    gradeCombo->setCurrentText(QStringLiteral("M2"));
+    levelCombo->setCurrentText(QStringLiteral("Ursa"));
+    roomEdit->setText(QStringLiteral("Room Wide"));
+    QVERIFY(page.saveChanges());
+    QVERIFY(list->currentItem());
+    const int createdId = list->currentItem()->data(Qt::UserRole).toInt();
+    QVERIFY(createdId > 0);
+    QVERIFY(createdId != *existingId);
+    stored = repository->loadTestingClass(createdId);
+    QVERIFY(stored);
+    QCOMPARE(stored->teacherId, wideTeacherId);
+    QCOMPARE(stored->name, QStringLiteral("Created Wide Class"));
+    QVERIFY(storedAsInteger(createdId));
+    page.refresh();
+    QCOMPARE(teacherCombo->currentData().toLongLong(), wideTeacherId);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    teacherCombo->setCurrentIndex(0);
+    QCOMPARE(teacherCombo->currentData().toLongLong(), qint64(-1));
+    // Selecting None clears the teacher-supplied room. An unassigned class
+    // still needs an explicitly entered room to satisfy required fields.
+    QVERIFY(roomEdit->text().isEmpty());
+    roomEdit->setText(QStringLiteral("Unassigned Room"));
+    QVERIFY(page.saveChanges());
+    stored = repository->loadTestingClass(createdId);
+    QVERIFY(stored);
+    QCOMPARE(stored->teacherId, qint64(-1));
+    QCOMPARE(stored->room, QStringLiteral("Unassigned Room"));
+    QSqlQuery unassigned(session->database());
+    unassigned.prepare(QStringLiteral("SELECT teacher_id FROM class_info WHERE class_id=?"));
+    unassigned.addBindValue(createdId);
+    QVERIFY(unassigned.exec());
+    QVERIFY(unassigned.next());
+    QVERIFY(unassigned.value(0).isNull());
+    QVERIFY(prompts.messages.isEmpty());
 }
 
 void TestingClassesPageTests::

@@ -86,6 +86,7 @@ private slots:
     void rejectsMalformedTeacherIdsBeforePort();
     void rejectsMissingRequiredFieldsInRepositoryOrderBeforePort();
     void forwardsEveryFieldAndPreservesSuccess();
+    void forwardsWideTeacherIdWithoutChangingItsValue();
     void forwardsAbsentTeacherId();
     void preservesStructuredPortFailure();
 };
@@ -129,7 +130,7 @@ rejectsMalformedTeacherIdsBeforePort()
 {
     RecordingTestingClassDetailsUpdatePort port;
     for (const std::string value : {
-             "0", "-1", "017", "+17", "teacher-17", "17x", "2147483648"
+             "0", "-1", "017", "+17", "teacher-17", "17x", "9223372036854775808"
          })
     {
         const auto result =
@@ -267,6 +268,24 @@ forwardsEveryFieldAndPreservesSuccess()
     QCOMPARE(port.lastRequest->classColor, expected.classColor);
     QCOMPARE(port.lastRequest->fontColor, expected.fontColor);
     QCOMPARE(port.lastRequest->notes, expected.notes);
+}
+
+void NextApplicationTestingClassDetailsUpdateUseCaseTests::
+forwardsWideTeacherIdWithoutChangingItsValue()
+{
+    RecordingTestingClassDetailsUpdatePort port;
+    const auto expected = request("42", "2147483648");
+
+    const auto result = Application::TestingClassDetailsUpdateUseCase::execute(
+        expected, port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QVERIFY(port.lastRequest.has_value());
+    QCOMPARE(port.lastRequest->classId, classId("42"));
+    QVERIFY(port.lastRequest->teacherId.has_value());
+    QCOMPARE(*port.lastRequest->teacherId, teacherId("2147483648"));
 }
 
 void NextApplicationTestingClassDetailsUpdateUseCaseTests::

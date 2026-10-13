@@ -35,7 +35,21 @@
 #include <QTime>
 #include <QTimer>
 
+#include <limits>
 #include <utility>
+
+namespace
+{
+int legacyTeacherId(const qint64 teacherId)
+{
+    if (teacherId < std::numeric_limits<int>::min()
+        || teacherId > std::numeric_limits<int>::max())
+    {
+        return -1;
+    }
+    return static_cast<int>(teacherId);
+}
+}
 
 namespace ScheduleWidgetTestStubs
 {
@@ -829,10 +843,11 @@ TestingBlockRepository::loadTestingAssignmentDisplayRecords()
             row.level = testingClass->level;
             row.classColor = testingClass->classColor;
             row.fontColor = testingClass->fontColor;
-            if (testingClass->teacherId > 0)
+            const int teacherId = legacyTeacherId(testingClass->teacherId);
+            if (teacherId > 0)
             {
                 const Teacher teacher = DataService().getTeacher(
-                    testingClass->teacherId
+                    teacherId
                     ).value_or(Teacher{});
                 row.teacherKoreanName = teacher.teacherKr;
                 row.teacherEnglishName = teacher.teacherEn;
@@ -1165,10 +1180,11 @@ ClassInfoRepository::loadClassesNavigationRecords(
         {
             record.grade = testingClass.grade;
             record.level = testingClass.level;
-            if (testingClass.teacherId > 0)
+            const int teacherId = legacyTeacherId(testingClass.teacherId);
+            if (teacherId > 0)
             {
                 const Teacher teacher = DataService().getTeacher(
-                    testingClass.teacherId
+                    teacherId
                     ).value_or(Teacher{});
                 record.teacherEnglishName = teacher.teacherEn;
                 record.teacherKoreanName = teacher.teacherKr;
@@ -1955,12 +1971,12 @@ Result<ClassInfo> DataService::loadClassInfo(
     {
         const TestingClass testingClass =
             ScheduleWidgetTestStubs::testingClasses.value(classId);
-        info.teacherId = testingClass.teacherId;
+        info.teacherId = legacyTeacherId(testingClass.teacherId);
         info.classGrade = testingClass.grade;
         info.classLevel = testingClass.level;
-        if (testingClass.teacherId > 0)
+        if (info.teacherId > 0)
         {
-            const Teacher teacher = getTeacher(testingClass.teacherId)
+            const Teacher teacher = getTeacher(info.teacherId)
                 .value_or(Teacher{});
             info.teacherKr = teacher.teacherKr;
             info.teacherEn = teacher.teacherEn;

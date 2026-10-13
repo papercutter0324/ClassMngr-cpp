@@ -26,7 +26,7 @@ struct InitialSetupTeacherChoiceReadRecord final
 
 struct TestingTeacherChoiceReadRecord final
 {
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString teacherKr;
     QString room;
 };

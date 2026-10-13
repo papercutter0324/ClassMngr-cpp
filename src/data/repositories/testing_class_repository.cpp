@@ -63,7 +63,7 @@ Status validateTestingClass(
     return {};
 }
 
-TestingClass readTestingClass(
+Result<TestingClass> readTestingClass(
     const QSqlQuery& query
     )
 {
@@ -78,10 +78,18 @@ TestingClass readTestingClass(
         query.value(QStringLiteral("class_level")).toString();
     testingClass.room =
         query.value(QStringLiteral("room")).toString();
-    testingClass.teacherId =
-        query.value(QStringLiteral("teacher_id")).isNull()
-            ? -1
-            : query.value(QStringLiteral("teacher_id")).toInt();
+    const QVariant storedTeacherId = query.value(QStringLiteral("teacher_id"));
+    if (!storedTeacherId.isNull())
+    {
+        bool teacherIdOk = false;
+        testingClass.teacherId = storedTeacherId.toLongLong(&teacherIdOk);
+        if (!teacherIdOk)
+        {
+            return std::unexpected(
+                QObject::tr("The testing class has an invalid teacher identifier.")
+                );
+        }
+    }
     testingClass.classColor =
         query.value(QStringLiteral("class_color")).toString();
     testingClass.fontColor =
@@ -528,7 +536,12 @@ TestingClassRepository::loadTestingClasses()
 
     while (query.next())
     {
-        testingClasses.append(readTestingClass(query));
+        const auto testingClass = readTestingClass(query);
+        if (!testingClass)
+        {
+            return std::unexpected(testingClass.error());
+        }
+        testingClasses.append(*testingClass);
     }
 
     return testingClasses;

@@ -985,8 +985,8 @@ void TestingClassesPage::buildUi()
 
 void TestingClassesPage::populateTeachers()
 {
-    const int selectedId =
-        m_teacherCombo->currentData().toInt();
+    const qint64 selectedId =
+        m_teacherCombo->currentData().toLongLong();
     const QSignalBlocker blocker(m_teacherCombo);
     m_teacherCombo->clear();
     m_teacherCombo->addItem(
@@ -1047,8 +1047,8 @@ void TestingClassesPage::populateTeachers()
 
         const std::string& teacherIdValue = choice.teacherId.value();
         bool teacherIdOk = false;
-        const int teacherId = QString::fromStdString(teacherIdValue)
-                                  .toInt(&teacherIdOk);
+        const qint64 teacherId = QString::fromStdString(teacherIdValue)
+                                     .toLongLong(&teacherIdOk);
         if (
             !teacherIdOk
             || teacherId <= 0
@@ -1276,13 +1276,13 @@ void TestingClassesPage::loadClass(
         return;
     }
 
-    int teacherId = -1;
+    qint64 teacherId = -1;
     if (loaded.value().teacherId)
     {
         const std::string& value = loaded.value().teacherId->value();
         bool validTeacherId = false;
-        const int parsedTeacherId =
-            QString::fromStdString(value).toInt(&validTeacherId);
+        const qint64 parsedTeacherId =
+            QString::fromStdString(value).toLongLong(&validTeacherId);
         if (
             !validTeacherId
             || parsedTeacherId <= 0
@@ -1369,7 +1369,7 @@ TestingClass TestingClassesPage::editorValue() const
     testingClass.grade = m_gradeCombo->currentText().trimmed();
     testingClass.level = m_levelCombo->currentText().trimmed();
     testingClass.room = m_roomEdit->text().trimmed();
-    testingClass.teacherId = m_teacherCombo->currentData().toInt();
+    testingClass.teacherId = m_teacherCombo->currentData().toLongLong();
     testingClass.classColor = m_savedClass.classColor;
     testingClass.fontColor = m_savedClass.fontColor;
     testingClass.notes = m_notesEdit->toPlainText();

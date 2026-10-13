@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QStringList>
+#include <QtGlobal>
 
 struct TestingClass
 {
@@ -10,7 +11,7 @@ struct TestingClass
     QString grade;
     QString level;
     QString room;
-    int teacherId{-1};
+    qint64 teacherId{-1};
     QString classColor{"#FFFFFF"};
     QString fontColor{"#000000"};
     QString notes;

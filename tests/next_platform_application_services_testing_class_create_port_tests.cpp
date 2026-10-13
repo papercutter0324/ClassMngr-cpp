@@ -31,7 +31,7 @@ QString databasePath(QTemporaryDir& directory)
         );
 }
 
-Domain::TeacherId teacherId(const int value)
+Domain::TeacherId teacherId(const qint64 value)
 {
     const auto parsed = Domain::TeacherId::fromString(std::to_string(value));
     if (!parsed)
@@ -42,7 +42,7 @@ Domain::TeacherId teacherId(const int value)
 }
 
 Application::TestingClassCreateRequest request(
-    const std::optional<int> teacher = std::optional<int>(17),
+    const std::optional<qint64> teacher = std::optional<qint64>(17),
     std::optional<std::u16string> day = std::u16string(u"monday"),
     std::optional<std::u16string> startTime = std::u16string(u"16:00")
     )
@@ -128,6 +128,7 @@ class NextPlatformApplicationServicesTestingClassCreatePortTests final
 
 private slots:
     void persistsEveryFieldAndReturnsTypedId();
+    void createsWithWideTeacherIdentityAsSqliteInteger();
     void persistsPendingAssignmentAndNormalizesWeekday();
     void createsWithoutAssignment();
     void reportsUnavailableSessionsWithoutFallback();
@@ -175,6 +176,57 @@ persistsEveryFieldAndReturnsTypedId()
     QCOMPARE(stored->fontColor, QStringLiteral("#FEDCBA"));
     QCOMPARE(stored->notes, QStringLiteral("Persist every creation field"));
     QCOMPARE(assignmentCount(session->database(), numericClassId), 0);
+}
+
+void NextPlatformApplicationServicesTestingClassCreatePortTests::
+createsWithWideTeacherIdentityAsSqliteInteger()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    constexpr qint64 wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_en, teacher_kr, room_number) "
+        "VALUES (?, 'Wide Teacher', 'Wide Korean Teacher', 'Room Wide')"
+        )));
+    insertTeacher.addBindValue(wideTeacherId);
+    QVERIFY(insertTeacher.exec());
+
+    const auto wideRequest = request(wideTeacherId, std::nullopt, std::nullopt);
+    const auto validation = wideRequest.validate(
+        Platform::ApplicationServicesScheduleTestingAssignmentSavePort::
+            qtCaseInsensitiveWeekdayEquals
+        );
+    QVERIFY2(validation, validation ? "" : validation.error().message.c_str());
+    Platform::ApplicationServicesTestingClassCreatePort port(services);
+    const auto created = port.createTestingClass(wideRequest);
+    QVERIFY2(created, created ? "" : created.error().message.c_str());
+    const int createdId = std::stoi(created.value().value());
+    const auto stored = session->testingClassRepository()->loadTestingClass(createdId);
+    QVERIFY(stored);
+    QCOMPARE(stored->teacherId, wideTeacherId);
+    const auto listed = session->testingClassRepository()->loadTestingClasses();
+    QVERIFY(listed);
+    QCOMPARE(listed->size(), 1);
+    QCOMPARE(listed->first().teacherId, wideTeacherId);
+    const auto details = session->testingClassRepository()
+        ->loadTestingClassDetailsReadRecord(createdId);
+    QVERIFY(details);
+    QCOMPARE(details->teacherId, wideTeacherId);
+
+    QSqlQuery storedIdentity(session->database());
+    storedIdentity.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id=?"
+        ));
+    storedIdentity.addBindValue(createdId);
+    QVERIFY(storedIdentity.exec());
+    QVERIFY(storedIdentity.next());
+    QCOMPARE(storedIdentity.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedIdentity.value(1).toLongLong(), wideTeacherId);
 }
 
 void NextPlatformApplicationServicesTestingClassCreatePortTests::
@@ -276,10 +328,14 @@ rejectsInvalidRequestsWithoutPersistence()
     const auto parsedTeacher = Domain::TeacherId::fromString("017");
     QVERIFY(parsedTeacher.has_value());
     badTeacher.teacherId = *parsedTeacher;
+    auto overflowingTeacher = request(std::nullopt, std::nullopt, std::nullopt);
+    const auto overflowingTeacherId = Domain::TeacherId::fromString("9223372036854775808");
+    QVERIFY(overflowingTeacherId.has_value());
+    overflowingTeacher.teacherId = *overflowingTeacherId;
     auto halfAssignment = request();
     halfAssignment.assignmentStartTime.reset();
 
-    for (const auto& invalidRequest : {badTeacher, halfAssignment})
+    for (const auto& invalidRequest : {badTeacher, overflowingTeacher, halfAssignment})
     {
         const auto result = port.createTestingClass(invalidRequest);
         QVERIFY(!result);

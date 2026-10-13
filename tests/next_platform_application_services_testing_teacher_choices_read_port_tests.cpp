@@ -40,7 +40,7 @@ Teacher teacher(
     return value;
 }
 
-Domain::TeacherId teacherId(const int value)
+Domain::TeacherId teacherId(const qint64 value)
 {
     const auto parsed = Domain::TeacherId::fromString(std::to_string(value));
     if (!parsed)
@@ -59,6 +59,7 @@ class NextPlatformApplicationServicesTestingTeacherChoicesReadPortTests
 
 private slots:
     void readsProjectedChoiceFieldsInRepositoryOrderFromTheActiveSession();
+    void preservesWideTeacherIdentityInChoiceProjection();
     void preservesSuccessfulEmptyRepositoryResults();
     void treatsUnavailableSessionsAsNotFound();
     void forwardsTeacherRepositoryFailuresWithoutFallback();
@@ -122,6 +123,42 @@ readsProjectedChoiceFieldsInRepositoryOrderFromTheActiveSession()
         result.value().choices[1].room,
         std::u16string(u"  Room 12  ")
         );
+}
+
+void NextPlatformApplicationServicesTestingTeacherChoicesReadPortTests::
+preservesWideTeacherIdentityInChoiceProjection()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    constexpr qint64 wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_en, teacher_kr, room_number) "
+        "VALUES (?, 'Wide Teacher', 'Wide Korean Teacher', 'Room Wide')"
+        )));
+    insertTeacher.addBindValue(wideTeacherId);
+    QVERIFY(insertTeacher.exec());
+
+    const auto records = session->teacherRepository()
+        ->loadTestingTeacherChoiceRecords();
+    QVERIFY(records);
+    QCOMPARE(records->size(), 1);
+    QCOMPARE(records->first().teacherId, wideTeacherId);
+
+    Platform::ApplicationServicesTestingTeacherChoicesReadPort port(services);
+    const auto result = Application::TestingTeacherChoicesReadQueryHandler::execute(
+        {}, port
+        );
+    QVERIFY(result);
+    QCOMPARE(result.value().choices.size(), std::size_t(1));
+    QCOMPARE(result.value().choices.front().teacherId, teacherId(wideTeacherId));
+    QCOMPARE(result.value().choices.front().name,
+             std::u16string(u"Wide Korean Teacher"));
+    QCOMPARE(result.value().choices.front().room, std::u16string(u"Room Wide"));
 }
 
 void NextPlatformApplicationServicesTestingTeacherChoicesReadPortTests::

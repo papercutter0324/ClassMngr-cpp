@@ -39,7 +39,7 @@ Domain::ClassId classId(const int value)
     return *parsed;
 }
 
-Domain::TeacherId teacherId(const int value)
+Domain::TeacherId teacherId(const qint64 value)
 {
     const auto parsed = Domain::TeacherId::fromString(std::to_string(value));
     if (!parsed)
@@ -65,7 +65,7 @@ TestingClass storedClass(const QString& name)
 
 Application::TestingClassDetailsUpdateRequest requestForClass(
     const int id,
-    const std::optional<int>& teacher = std::optional<int>(17)
+    const std::optional<qint64>& teacher = std::optional<qint64>(17)
     )
 {
     return {
@@ -113,6 +113,7 @@ class NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests final
 
 private slots:
     void updatesEveryFieldThroughTheActiveSessionRepository();
+    void updatesWideTeacherIdentityAsSqliteIntegerAndCanUnassign();
     void reportsUnavailableSessionsAsNotFound();
     void rejectsAnOrdinaryClassWithoutLegacyFallback();
     void forwardsRepositoryFailuresAsTechnicalErrors();
@@ -183,6 +184,62 @@ updatesEveryFieldThroughTheActiveSessionRepository()
     QVERIFY(saved);
     QCOMPARE(saved->name, QStringLiteral("Unassigned Testing Lab"));
     QCOMPARE(saved->teacherId, -1);
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::
+updatesWideTeacherIdentityAsSqliteIntegerAndCanUnassign()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    constexpr qint64 wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_en, teacher_kr, room_number) "
+        "VALUES (?, 'Wide Teacher', 'Wide Korean Teacher', 'Room Wide')"
+        )));
+    insertTeacher.addBindValue(wideTeacherId);
+    QVERIFY(insertTeacher.exec());
+
+    const auto created = session->testingClassRepository()->createTestingClass(
+        storedClass(QStringLiteral("Existing Class"))
+        );
+    QVERIFY(created);
+    const auto wideRequest = requestForClass(*created, wideTeacherId);
+    const auto validation = wideRequest.validate();
+    QVERIFY2(validation, validation ? "" : validation.error().message.c_str());
+    const auto updated = update(services, wideRequest);
+    QVERIFY2(updated, updated ? "" : updated.error().message.c_str());
+    const auto stored = session->testingClassRepository()->loadTestingClass(*created);
+    QVERIFY(stored);
+    QCOMPARE(stored->teacherId, wideTeacherId);
+    const auto details = session->testingClassRepository()
+        ->loadTestingClassDetailsReadRecord(*created);
+    QVERIFY(details);
+    QCOMPARE(details->teacherId, wideTeacherId);
+
+    QSqlQuery storedIdentity(session->database());
+    storedIdentity.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id=?"
+        ));
+    storedIdentity.addBindValue(*created);
+    QVERIFY(storedIdentity.exec());
+    QVERIFY(storedIdentity.next());
+    QCOMPARE(storedIdentity.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedIdentity.value(1).toLongLong(), wideTeacherId);
+    storedIdentity.finish();
+
+    QVERIFY(update(services, requestForClass(*created, std::nullopt)));
+    const auto unassigned = session->testingClassRepository()->loadTestingClass(*created);
+    QVERIFY(unassigned);
+    QCOMPARE(unassigned->teacherId, qint64(-1));
+    QVERIFY(storedIdentity.exec());
+    QVERIFY(storedIdentity.next());
+    QCOMPARE(storedIdentity.value(0).toString(), QStringLiteral("null"));
+    QVERIFY(storedIdentity.value(1).isNull());
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::
@@ -330,6 +387,13 @@ rejectsNoncanonicalIdentifiers()
     const auto teacherResult = port.updateTestingClassDetails(invalidTeacherId);
     QVERIFY(!teacherResult);
     QCOMPARE(teacherResult.error().code, Domain::ErrorCode::InvalidInput);
+
+    const auto overflowingTeacherId = Domain::TeacherId::fromString("9223372036854775808");
+    QVERIFY(overflowingTeacherId.has_value());
+    invalidTeacherId.teacherId = *overflowingTeacherId;
+    const auto overflowResult = port.updateTestingClassDetails(invalidTeacherId);
+    QVERIFY(!overflowResult);
+    QCOMPARE(overflowResult.error().code, Domain::ErrorCode::InvalidInput);
 }
 
 QTEST_GUILESS_MAIN(

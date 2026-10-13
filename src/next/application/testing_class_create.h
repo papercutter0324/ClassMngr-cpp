@@ -33,7 +33,7 @@ struct TestingClassCreateRequest final
     {
         if (
             teacherId
-            && !isCanonicalPositiveDecimalId(teacherId->value())
+            && !isCanonicalPositiveDecimalId64(teacherId->value())
             )
         {
             return invalidInput(

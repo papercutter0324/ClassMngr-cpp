@@ -1839,8 +1839,18 @@ TeacherRepository::loadTestingTeacherChoiceRecords()
 
     while (query.next())
     {
+        bool teacherIdOk = false;
+        const qint64 teacherId = query.value(QStringLiteral("id"))
+            .toLongLong(&teacherIdOk);
+        if (!teacherIdOk)
+        {
+            return std::unexpected(
+                QObject::tr("A teacher has an invalid identifier.")
+                );
+        }
+
         teachers.append({
-            query.value(QStringLiteral("id")).toInt(),
+            teacherId,
             query.value(QStringLiteral("teacher_kr")).toString(),
             query.value(QStringLiteral("room_number")).toString()
         });

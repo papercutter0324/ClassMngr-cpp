@@ -62,12 +62,12 @@ public:
                 );
         }
 
-        const std::optional<int> classId = legacyPositiveInteger(
+        const std::optional<int> classId = positiveInteger<int>(
             request.classId.value()
             );
-        const std::optional<int> teacherId = request.teacherId
-            ? legacyPositiveInteger(request.teacherId->value())
-            : std::optional<int>{};
+        const std::optional<qint64> teacherId = request.teacherId
+            ? positiveInteger<qint64>(request.teacherId->value())
+            : std::optional<qint64>{};
         if (!classId || (request.teacherId && !teacherId))
         {
             return failure(
@@ -138,7 +138,8 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyPositiveInteger(
+    template<typename Integer>
+    [[nodiscard]] static std::optional<Integer> positiveInteger(
         const std::string& value
         )
     {
@@ -147,7 +148,7 @@ private:
             return std::nullopt;
         }
 
-        int parsed = 0;
+        Integer parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),

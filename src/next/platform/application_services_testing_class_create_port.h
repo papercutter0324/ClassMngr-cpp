@@ -66,9 +66,9 @@ public:
                 );
         }
 
-        const std::optional<int> teacherId = request.teacherId
-            ? legacyPositiveInteger(request.teacherId->value())
-            : std::optional<int>{};
+        const std::optional<qint64> teacherId = request.teacherId
+            ? positiveTeacherId(request.teacherId->value())
+            : std::optional<qint64>{};
         if (request.teacherId && !teacherId)
         {
             return failure(
@@ -171,7 +171,7 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyPositiveInteger(
+    [[nodiscard]] static std::optional<qint64> positiveTeacherId(
         const std::string& value
         )
     {
@@ -180,7 +180,7 @@ private:
             return std::nullopt;
         }
 
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),

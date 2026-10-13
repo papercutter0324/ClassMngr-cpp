@@ -299,6 +299,14 @@ rejectsMalformedStoredTeacherIdentifiers()
              qPrintable(storeMalformedTeacherId.lastError().text()));
     QCOMPARE(storeMalformedTeacherId.numRowsAffected(), 1);
 
+    const auto stored = repository->loadTestingClass(*createdClass);
+    QVERIFY(!stored);
+    QVERIFY(stored.error().contains(QStringLiteral("teacher identifier"),
+                                   Qt::CaseInsensitive));
+    const auto listed = repository->loadTestingClasses();
+    QVERIFY(!listed);
+    QCOMPARE(listed.error(), stored.error());
+
     const auto result = readDetails(services, *createdClass);
 
     QVERIFY(!result);
