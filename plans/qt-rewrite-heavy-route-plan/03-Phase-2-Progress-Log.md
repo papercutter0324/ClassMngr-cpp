@@ -30709,3 +30709,55 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 Run no full suite and make no CMake inventory change. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F792 Class Analytics evaluation ownership - accepted - 2026-10-13
+
+F792 was accepted at commit
+`f60c374261031df63090902bedc4d598d873f778`. The header-only change moves each
+loaded evaluation vector into its aligned `EvaluationView::rawRows`; no test
+files changed. The bounded Visual Studio 18 x64 Debug build in
+`build/windows-x64-debug` built `ClassMngr` and
+`ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`. After the
+known sandbox ZERO_CHECK FileTracker `E_ACCESSDENIED`, the identical bounded
+retry outside the sandbox passed. The exact CTest registered once and passed
+(1/1); `git diff --check` passed. No full suite ran.
+
+### Batch 207 discovery - 2026-10-13
+
+F793 is selected for the narrow Calendar range projection ownership move:
+`projection()` checks the successful `projectEvent` result and then copies its
+owned summary strings into the reserved `input.events` vector, after which
+the local result is not used. Moving that value avoids one owning-string copy
+per event; this benefit is inferred, not measured. Schedule-import validation
+was not selected because it consumes only the first conflict while the UI
+needs the complete conflict list. Existing Calendar adapter tests directly
+cover projected fields/order and the 4,096-row cap taking precedence over
+projection of an invalid final row. F707/F709 remain deferred.
+
+### F793 Calendar range projection ownership - selected and acceptance matrix - 2026-10-13
+
+**F793 is selected:** in
+`src/next/platform/application_services_calendar_event_port.h`, make only the
+local result of `projectEvent` mutable and move its value into the already
+reserved `input.events` vector after checking the result. Preserve projected
+field values and event order; database-session/repository/error precedence;
+the 4,096-event capacity check and its precedence over projection of an
+invalid final row; and all existing error and exception behavior. The existing
+focused regression tests already cover fields/order and the cap/error order,
+so no test-file edit is needed. The expected reduction in per-event owning
+string copies is an inference, not a measured performance result.
+
+Production target: `ClassMngr`. The focused test target and exact CTest name
+are `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; it must
+register once. In the existing Visual Studio 18 x64 Debug tree
+`build/windows-x64-debug`, use only these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesCalendarEventPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesCalendarEventPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesCalendarEventPortTests$"
+```
+
+Run no full suite and make no CMake inventory change. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

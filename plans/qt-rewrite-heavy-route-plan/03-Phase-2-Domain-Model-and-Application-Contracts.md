@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F791 is accepted at `db4ce9a68d2e7b75e60863e99d952dce010c0b44`; F792 is selected in Batch 206 to remove the duplicate retained Class Analytics evaluation batch through per-row moves, preserving outputs and query behavior; F707/F709 remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F792 is accepted at `f60c374261031df63090902bedc4d598d873f778`; F793 is selected in Batch 207 to move each successful Calendar range-event projection into the reserved output vector while preserving order and error/cap precedence; F707/F709 remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -109,9 +109,9 @@ Treat this plan as an operational summary, not a history:
   error limit policy is accepted. Revisit only with an explicit allocation
   contract; do not introduce arbitrary 4,096- or 25-row limits.
 
-#### Active batch: Batch 206
+#### Active batch: Batch 207
 
-- F792 - Class Analytics evaluation ownership - Move each loaded evaluation vector into its aligned output row to remove a duplicate retained batch payload without changing results.
+- F793 - Calendar range projection ownership - Move each successful projected event into the reserved output vector without changing event order or error/cap precedence.
 
 ## Objective
 
