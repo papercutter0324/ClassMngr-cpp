@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F817 completed Batch 231 at `0007abd723ad1e76140cb4246578c66f95d6a029`; F818 is selected for Batch 232 to validate batched Class Transfer roster row indices before indexing, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F818 completed Batch 232 at `a256dabfb62025c6a6b58be26f62ba72ec69ae4c`; F819 is selected for Batch 233 to preserve CalendarEvent IDs across repository CRUD, typed adapters, import/series, and calendar UI/cache paths; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,10 +110,6 @@ Treat this plan as an operational summary, not a history:
   not introduce arbitrary 4,096- or 25-row limits.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
-- CalendarEvent persisted event-ID-width fix - deferred outside F802: an
-  independent audit found int-bounded primary-key reads in the repository and
-  by-ID adapter, plus range projection that rejects narrowed IDs. The fix
-  spans the shared model and repository CRUD surface.
 - Initial Setup and Teacher Create/Delete teacher-ID width - deferred; these
   paths retain int-based UI identity contracts.
 - Class Import teacher-ID width - deferred; its current flow starts with
@@ -122,9 +118,9 @@ Treat this plan as an operational summary, not a history:
   deferred; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
 
-#### Active batch: Batch 232
+#### Active batch: Batch 233
 
-- F818 - Batched roster read row-index validation - Check persisted indices before sizing or indexing the Class Transfer export roster and follow the established read-failure policy; distinct from F815 speaking-evaluation rows and F797 single-roster reads, with no arbitrary row-count cap.
+- F819 - CalendarEvent persisted event-ID width - Preserve IDs above `INT_MAX` across the shared model, repository CRUD, typed by-ID/save, import/series, and calendar UI/cache activation paths, including single and batch generated-ID results.
 
 ## Objective
 

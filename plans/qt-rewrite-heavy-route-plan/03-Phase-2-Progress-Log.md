@@ -32498,3 +32498,53 @@ established roster-read failure policy instead of aliasing the corrupt row to
 row 0. Do not introduce an arbitrary row-count cap. The project-configuration
 and CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and
 the formal exit gate remains Open.
+
+### F818 batched Class Transfer roster row-index validation - accepted - 2026-10-13
+
+F818 is accepted at source/test commit
+`a256dabfb62025c6a6b58be26f62ba72ec69ae4c`. The focused Debug build of
+`ClassMngr` and `ClassMngrNextPlatformClassTransferExportSourceTests` passed
+after sandbox `ZERO_CHECK` FileTracker `E_ACCESSDENIED`; the identical retry
+through the established verification route passed. Registered CTest
+`ClassMngrNextPlatformClassTransferExportSourceTests` passed 1/1 and covers
+both new cases plus existing export-source cases. Regressions seed valid row
+0 alongside malformed SQLite TEXT `not-a-row-index` or SQLite INTEGER
+`2147483648` and assert precise typed roster-stage read errors. Existing
+projection checks passed. No compiler warnings appeared on the successful
+build. `git diff --check` passed with only an LF-to-CRLF notice. No full suite
+ran.
+
+### Batch 232 completion - 2026-10-13
+
+F818 completed Batch 232 by validating persisted row indices in the batched
+Class Transfer export roster read. F815 speaking-evaluation coordinates and
+F797 single-roster reads remain distinct. Batch 233 selects F819 for persisted
+CalendarEvent event-ID width. The project-configuration and CMake optimization
+remains complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### Batch 233 discovery and selection - 2026-10-13
+
+Two independent discovery reports found no smaller mature open plan item.
+CalendarEvent event-ID width had been deferred outside F802 because event
+identity spans the shared `CalendarEvent` model, repository read/insert/save/
+batch-save/delete contracts, typed Platform adapters, import/series paths, and
+calendar UI/cache activation. A repository-only or single-port change would
+leave parts unable to address the same wide-ID row, so F819 is selected as a
+coherent full event-identity path rather than a partial sub-slice.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| CalendarEvent persisted event-ID width (F819) | Selected | A complete event-identity path is needed for repositories, typed adapters, import/series consumers, and calendar activation to address the same wide-ID row. |
+
+F819 is selected, not implemented or accepted. Keep the change confined to
+CalendarEvent IDs; do not widen unrelated entity IDs. Focused acceptance must
+seed/create event ID `2147483648` and preserve it exactly through repository
+read/create/update/delete, typed by-ID/save paths, and calendar cache/UI
+activation. Cover single and batch generated-ID results plus existing
+validation and write-failure behavior, and include import/series consumers
+that move event IDs where needed. The broader teacher-ID work and other
+deferred items remain distinct. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+No other slices were found.
