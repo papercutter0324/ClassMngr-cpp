@@ -93,6 +93,7 @@ private slots:
     void readErrorsUseLocaleFallback();
     void roundTripsAllDaysUsingExactKey();
     void unavailableSettingsUseLocaleFallbackAndReportSaveFailure();
+    void invalidEnumSaveIsRejectedAndPreservesStoredValue();
     void saveFailurePreservesStoredValueAndReportsDiagnostic();
 
 private:
@@ -161,6 +162,11 @@ invalidSettingUsesLocaleFallback()
         servicesPointer
         );
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    const auto nonNumericStored = repository->loadSetting(
+        QString::fromUtf8(FirstDayOfWeekKey)
+        );
+    QVERIFY(nonNumericStored);
+    QCOMPARE(nonNumericStored->toString(), QStringLiteral("not-a-day"));
 
     QVERIFY(
         repository->saveSetting(
@@ -169,6 +175,11 @@ invalidSettingUsesLocaleFallback()
             )
         );
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    const auto highStored = repository->loadSetting(
+        QString::fromUtf8(FirstDayOfWeekKey)
+        );
+    QVERIFY(highStored);
+    QCOMPARE(highStored->toInt(), 7);
 
     QVERIFY(
         repository->saveSetting(
@@ -177,6 +188,11 @@ invalidSettingUsesLocaleFallback()
             )
         );
     QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    const auto lowStored = repository->loadSetting(
+        QString::fromUtf8(FirstDayOfWeekKey)
+        );
+    QVERIFY(lowStored);
+    QCOMPARE(lowStored->toInt(), -1);
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
@@ -321,6 +337,42 @@ unavailableSettingsUseLocaleFallbackAndReportSaveFailure()
         unchanged->toInt(),
         static_cast<int>(CalendarFirstDayOfWeek::Sunday)
         );
+}
+
+void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
+invalidEnumSaveIsRejectedAndPreservesStoredValue()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+    QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(FirstDayOfWeekKey),
+        static_cast<int>(CalendarFirstDayOfWeek::Tuesday)
+        ));
+
+    ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
+    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Tuesday);
+
+    const auto rejected = port.save(static_cast<CalendarFirstDayOfWeek>(7));
+
+    QVERIFY(!rejected);
+    QCOMPARE(rejected.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!rejected.error().recoverable);
+    const auto stored = repository->loadSetting(
+        QString::fromUtf8(FirstDayOfWeekKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(
+        stored->toInt(),
+        static_cast<int>(CalendarFirstDayOfWeek::Tuesday)
+        );
+    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Tuesday);
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::

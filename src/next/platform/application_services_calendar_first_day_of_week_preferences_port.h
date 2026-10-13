@@ -88,6 +88,27 @@ public:
         const Application::CalendarFirstDayOfWeek firstDayOfWeek
         ) const override
     {
+        switch (firstDayOfWeek)
+        {
+        case Application::CalendarFirstDayOfWeek::Sunday:
+        case Application::CalendarFirstDayOfWeek::Monday:
+        case Application::CalendarFirstDayOfWeek::Tuesday:
+        case Application::CalendarFirstDayOfWeek::Wednesday:
+        case Application::CalendarFirstDayOfWeek::Thursday:
+        case Application::CalendarFirstDayOfWeek::Friday:
+        case Application::CalendarFirstDayOfWeek::Saturday:
+            break;
+
+        default:
+            return Application::
+                CalendarFirstDayOfWeekPreferencesPort::SaveResult::failure({
+                    .code = Domain::ErrorCode::InvalidInput,
+                    .message =
+                        "Calendar first-day preference must be a valid day of the week.",
+                    .recoverable = false
+                });
+        }
+
         if (!m_session || !m_session->isOpen())
         {
             return failure(
