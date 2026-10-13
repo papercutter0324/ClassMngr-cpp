@@ -32630,3 +32630,44 @@ apply, then verify the class-info teacher association is stored as SQLite
 `INTEGER`. Preserve class IDs as int and retain existing unmatched-create,
 Keep/Replace, and ambiguous-choice behavior. Phase 2 Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+### F821 Class Import teacher-ID width - accepted - 2026-10-13
+
+F821 is accepted at source commit
+`a69301cd0def46aa0e76c882a1b66eef94d25279` (`Phase2 F821: preserve Class
+Import teacher IDs`). Independent Ninja Debug verification passed target
+`ClassMngrClassImportTeacherChoiceParityTests`; exact CTest registration #29
+`ClassMngrClassImportTeacherChoiceParityTests` ran once and passed 1/1.
+Coverage preserves teacher ID `2147483648` through
+Keep Local to a new class and matching/replacement in an existing destination
+class assigned to that teacher, and verifies generated insert ID `2147483649`
+and SQLite `INTEGER` persistence. Existing Keep/Replace and ambiguous-choice
+tests passed; class IDs remain int. `git diff --check` passed. No full suite
+ran.
+
+### Batch 235 completion - 2026-10-13
+
+F821 completed Batch 235 by preserving wide teacher IDs through Class Import
+choice and apply. Batch 236 selects F822 for Korean Teacher Import persisted
+teacher-ID width. The project-configuration and CMake optimization remains
+complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
+
+### Batch 236 discovery and selection - 2026-10-13
+
+The independent Batch 236 candidate scan selected F822 for Korean Teacher
+Import persisted teacher-ID width. `KoreanTeacherImportProfile` already carries
+typed `Domain::TeacherId`, but the persistence adapter reads stored teacher
+IDs with `.toInt()` and narrows update bindings with another `.toInt()`. The
+existing target is `ClassMngrTeacherImportTests` in
+`tests/teacher_import_tests.cpp`.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Korean Teacher Import persisted teacher-ID width (F822) | Selected | The typed profile reaches an adapter that narrows IDs on persisted read and update. |
+
+F822 is selected, not implemented or accepted. Update an existing Korean
+teacher with ID `2147483648`; verify the exact row ID is preserved, profile
+fields update, and no duplicate row is created. Keep Native English and GS
+Team profile flows out of scope. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
