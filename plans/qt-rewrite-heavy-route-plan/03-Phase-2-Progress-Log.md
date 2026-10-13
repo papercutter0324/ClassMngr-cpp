@@ -32852,3 +32852,51 @@ Use focused CTest registration
 change or full suite is requested. The project-configuration and CMake
 optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
 exit gate remains Open.
+
+### F826 Class Transfer import generated evaluation-ID width - accepted - 2026-10-13
+
+F826 is accepted at source/test commit
+`186349e56fcc1cf2ce4cdf893991afebea4cc1cd`. Independent verification used the
+separate `%TEMP%\f8` Ninja Debug tree, built the changed source and test, and
+ran exact CTest #245,
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`: 1/1
+passed in 0.35 seconds. `git diff --check` passed. The import regression seeds
+the evaluation sequence above `INT_MAX`, then verifies successful import, the
+exact generated evaluation ID, child linkage, and marker readback. No full
+suite ran.
+
+### Batch 240 completion - 2026-10-13
+
+F826 completed Batch 240 by preserving generated evaluation-ID width in Class
+Transfer import. Batch 241 selects F827 for malformed persisted Speaking
+Evaluation `row_index` validation during save. The project-configuration and
+CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 241 discovery and selection - 2026-10-13
+
+`SpeakingEvalRepository::saveSpeakingEval()` reads persisted
+`speaking_eval_data.row_index` with unchecked `.toInt()` into its existing-row
+comparison map. Although the schema declares `INTEGER NOT NULL CHECK(row_index
+>= 0)`, SQLite permits nonnumeric TEXT; a Qt 6.12/QSQLITE reproducer confirmed
+that `corrupt` persists as TEXT and `.toInt()` yields 0 with `ok=false`. F827
+will validate conversion before using persisted indexes and return a typed
+failure for malformed text, preventing it from aliasing row 0.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Malformed Speaking Evaluation persisted `row_index` on save (F827) | Selected | Unchecked conversion can treat malformed TEXT as row 0 while comparing existing rows. |
+
+F827 is selected, not implemented or accepted. In
+`tests/data_service_lifecycle_tests.cpp`, create a normal evaluation with an
+existing row 0 value, then seed an extra malformed TEXT `row_index` row whose
+value matches the requested row 0 value. Assert SQLite reports the seeded
+index storage type as TEXT, `saveSpeakingEval()` fails, and the actual row 0
+value remains unchanged; make the assertion independent of SELECT ordering.
+Preserve valid rows, numeric out-of-range behavior, existing transaction
+rollback, and ordinary saves. Keep load/batch paths, APIs, and CMake unchanged.
+This is distinct from F800 roster-name row-index and F815 Class Transfer
+evaluation row-index coverage. Run only exact CTest #24
+`ClassMngrDataServiceLifecycleTests`; no full suite. The project-configuration
+and CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and
+the formal exit gate remains Open.
