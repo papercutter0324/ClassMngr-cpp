@@ -30,6 +30,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QMessageBox>
+#include <QVariant>
 #include <QtTest>
 
 #include <algorithm>
@@ -348,6 +349,7 @@ class ClassTransferTests : public QObject
 private slots:
     void jsonRoundTripPreservesCompletePackage();
     void exportPreservesSelectedClassAndSparseEvaluationRowOrder();
+    void exportSkipsMalformedEvaluationRowIndexes();
     void exportSkipsRowQueryWhenNoEvaluationsExist();
     void exportFailsWhenEvaluationRowsCannotBeRead();
     void exportBatchesDistinctTeacherProfilesInFirstSeenOrder();
@@ -709,6 +711,105 @@ void ClassTransferTests::
             QVERIFY(cell.isEmpty());
         }
     }
+}
+
+void ClassTransferTests::exportSkipsMalformedEvaluationRowIndexes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("source.db"))).has_value());
+
+    const int teacherId = createdTeacherId(service, completeTeacher());
+    const int classId = addCompleteClass(
+        service,
+        teacherId,
+        QStringLiteral("Malformed Evaluation Row Index Export"),
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        QStringLiteral("Monday"),
+        QStringLiteral("Student"),
+        QStringLiteral("Evaluation")
+        );
+    QVERIFY(classId > 0);
+
+    const QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery evaluationIdQuery(database);
+    evaluationIdQuery.prepare(R"(
+        SELECT id
+        FROM speaking_evaluations
+        WHERE class_id=? AND evaluation_name=?
+    )");
+    evaluationIdQuery.addBindValue(classId);
+    evaluationIdQuery.addBindValue(QStringLiteral("Evaluation"));
+    QVERIFY2(evaluationIdQuery.exec(),
+             qPrintable(evaluationIdQuery.lastError().text()));
+    QVERIFY(evaluationIdQuery.next());
+    const qint64 evaluationId = evaluationIdQuery.value(0).toLongLong();
+    evaluationIdQuery.finish();
+    QVERIFY(evaluationId > 0);
+
+    QSqlQuery clearRows(database);
+    clearRows.prepare(
+        QStringLiteral("DELETE FROM speaking_eval_data WHERE evaluation_id=?"));
+    clearRows.addBindValue(evaluationId);
+    QVERIFY2(clearRows.exec(), qPrintable(clearRows.lastError().text()));
+
+    auto insertRow = [&](const QVariant& rowIndex, const QString& value)
+    {
+        QSqlQuery query(database);
+        query.prepare(R"(
+            INSERT INTO speaking_eval_data (evaluation_id, row_index, col_1)
+            VALUES (?, ?, ?)
+        )");
+        query.addBindValue(evaluationId);
+        query.addBindValue(rowIndex);
+        query.addBindValue(value);
+        return query.exec();
+    };
+    QVERIFY(insertRow(QVariant(0), QStringLiteral("Valid row zero")));
+    QVERIFY(insertRow(QVariant(24), QStringLiteral("Valid row twenty-four")));
+
+    QSqlQuery ignoreCheckConstraints(database);
+    QVERIFY(ignoreCheckConstraints.exec(
+        QStringLiteral("PRAGMA ignore_check_constraints=ON")));
+    QVERIFY(insertRow(
+        QVariant::fromValue<qlonglong>(2147483648LL),
+        QStringLiteral("Overflow must not replace row zero")));
+    QSqlQuery storedOverflowIndex(database);
+    storedOverflowIndex.prepare(R"(
+        SELECT typeof(row_index), row_index
+        FROM speaking_eval_data
+        WHERE evaluation_id=? AND col_1=?
+    )");
+    storedOverflowIndex.addBindValue(evaluationId);
+    storedOverflowIndex.addBindValue(
+        QStringLiteral("Overflow must not replace row zero"));
+    QVERIFY2(storedOverflowIndex.exec(),
+             qPrintable(storedOverflowIndex.lastError().text()));
+    QVERIFY(storedOverflowIndex.next());
+    QCOMPARE(storedOverflowIndex.value(0).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(storedOverflowIndex.value(1).toLongLong(), 2147483648LL);
+    storedOverflowIndex.finish();
+    QVERIFY(insertRow(
+        QVariant(QStringLiteral("malformed")),
+        QStringLiteral("Malformed must not replace row zero")));
+    QVERIFY(ignoreCheckConstraints.exec(
+        QStringLiteral("PRAGMA ignore_check_constraints=OFF")));
+
+    const auto package = service.buildClassTransferPackage({classId});
+    QVERIFY2(package.has_value(),
+             package ? "" : qPrintable(package.error()));
+    QCOMPARE(package->classes.size(), 1);
+    QCOMPARE(package->classes.first().evaluations.size(), 1);
+
+    const SpeakingEvalRows& rows =
+        package->classes.first().evaluations.first().rows;
+    QCOMPARE(rows.size(), SpeakingEval::RowCount);
+    QCOMPARE(rows[0][1], QStringLiteral("Valid row zero"));
+    QCOMPARE(rows[24][1], QStringLiteral("Valid row twenty-four"));
 }
 
 void ClassTransferTests::exportSkipsRowQueryWhenNoEvaluationsExist()

@@ -67,6 +67,15 @@ qt_add_executable(ClassMngrClassTransferTests
     )
 
     add_test(
+        NAME ClassMngrClassTransferRowIndexRegressionTests
+        COMMAND ClassMngrClassTransferTests
+            exportSkipsMalformedEvaluationRowIndexes
+    )
+    set_tests_properties(ClassMngrClassTransferRowIndexRegressionTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    add_test(
         NAME ClassMngrClassImportTeacherChoiceRegressionTests
         COMMAND ClassMngrClassTransferTests
             importsCompleteClassesAndDeduplicatesTeacher

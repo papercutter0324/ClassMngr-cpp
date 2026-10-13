@@ -194,9 +194,10 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
         const auto evaluationIndex = evaluationIndexById.constFind(
             evaluationId);
-        const int rowIndex = rowQuery.value("row_index").toInt();
+        bool rowIndexOk = false;
+        const int rowIndex = rowQuery.value("row_index").toInt(&rowIndexOk);
 
-        if (evaluationIndex == evaluationIndexById.cend()
+        if (!rowIndexOk || evaluationIndex == evaluationIndexById.cend()
             || rowIndex < 0 || rowIndex >= SpeakingEval::RowCount)
         {
             continue;
