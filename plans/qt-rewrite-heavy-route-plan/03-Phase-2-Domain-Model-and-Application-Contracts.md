@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F808 was accepted in Batch 222 at `c0cc9c44ea0fad0bbb061d52bd2e96be9ba1ee3b`; Batch 223 selects F809 for the read-only Sub Prep print-source full teacher-profile read; Schedule Import teacher-ID width/narrowing, the shared Testing Class details/read-write model, the `ClassPageDetailsReadRecord`/Co-Teacher identity flow, and CalendarEvent teacher-ID width remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 snapshot canonical-ID validation remains accepted).
+- Current note: F808 was accepted in Batch 222 at `c0cc9c44ea0fad0bbb061d52bd2e96be9ba1ee3b`; Batch 223 selects F809 for the read-only Sub Prep print-source full teacher-profile read; Schedule Import teacher-ID width/narrowing, the shared Testing Class details/read-write model, the `ClassPageDetailsReadRecord`/Co-Teacher identity flow, and the persisted CalendarEvent event-ID-width issue remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 snapshot canonical-ID validation remains accepted).
 
 ### Slice discovery batches
 
@@ -110,7 +110,7 @@ Treat this plan as an operational summary, not a history:
   not introduce arbitrary 4,096- or 25-row limits.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
-- CalendarEvent persisted ID-width fix - deferred outside F802: an
+- CalendarEvent persisted event-ID-width fix - deferred outside F802: an
   independent audit found int-bounded primary-key reads in the repository and
   by-ID adapter, plus range projection that rejects narrowed IDs. The fix
   spans the shared model and repository CRUD surface.
