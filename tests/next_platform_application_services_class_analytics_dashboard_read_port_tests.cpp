@@ -47,6 +47,7 @@ class NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests final
 private slots:
     void readsOnlyRosterNamesAndExactEvaluationScoreProjection();
     void sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders();
+    void rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount();
     void rejectsInvalidRosterColumnPositionStorage();
     void rejectsRosterRowsOutsideClassAnalyticsIntegerRange();
     void missingEvaluationIsSuccessfulEmptyInput();
@@ -281,6 +282,92 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
             == std::vector<std::u16string>(4));
     QVERIFY(absentHeaders.value().koreanNames
             == std::vector<std::u16string>(4));
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+rejectsFractionalRosterColumnWithoutInflatingAnalyticsRowCount()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-fractional-column.db"))));
+    const auto classId = services.classService()->create(
+        QStringLiteral("Fractional analytics column"));
+    QVERIFY(classId);
+
+    QSqlQuery insertColumn(services.databaseSession()->database());
+    insertColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, ?, ?, 100)
+    )");
+    const auto addColumn = [&](const QString& name, const int position) {
+        insertColumn.bindValue(0, *classId);
+        insertColumn.bindValue(1, name);
+        insertColumn.bindValue(2, position);
+        return insertColumn.exec();
+    };
+    QVERIFY(addColumn(QStringLiteral("English"), 0));
+    QVERIFY(addColumn(QStringLiteral("Korean"), 1));
+    QVERIFY(addColumn(QStringLiteral("Notes"), 2));
+
+    QSqlQuery insertCell(services.databaseSession()->database());
+    insertCell.prepare(R"(
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        VALUES (?, ?, ?, ?)
+    )");
+    const auto addCell = [&](const QVariant& row, const QVariant& column,
+                             const QString& value) {
+        insertCell.bindValue(0, *classId);
+        insertCell.bindValue(1, row);
+        insertCell.bindValue(2, column);
+        insertCell.bindValue(3, value);
+        return insertCell.exec();
+    };
+    QVERIFY(addCell(QVariant::fromValue<qlonglong>(0),
+                    QVariant::fromValue<qlonglong>(0),
+                    QStringLiteral("First student")));
+    QVERIFY(addCell(QVariant::fromValue<qlonglong>(3),
+                    QVariant::fromValue<qlonglong>(2),
+                    QStringLiteral("Sparse unrelated cell")));
+    QVERIFY(addCell(QVariant::fromValue<qlonglong>(7),
+                    QVariant::fromValue(0.25),
+                    QStringLiteral("Fractional column cell")));
+
+    QSqlQuery fractionalStorage(services.databaseSession()->database());
+    fractionalStorage.prepare(R"(
+        SELECT typeof(col_index)
+        FROM roster_data
+        WHERE class_id=? AND row_index=7 AND value='Fractional column cell'
+    )");
+    fractionalStorage.addBindValue(*classId);
+    QVERIFY(fractionalStorage.exec());
+    QVERIFY(fractionalStorage.next());
+    QCOMPARE(fractionalStorage.value(0).toString(), QStringLiteral("real"));
+
+    const auto typedClassId = Domain::ClassId::fromString(
+        std::to_string(*classId));
+    QVERIFY(typedClassId);
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+    const auto roster = port.readRosterNames(*typedClassId);
+    QVERIFY(!roster);
+    QCOMPARE(roster.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(roster.error().recoverable);
+    QVERIFY(roster.error().message
+            == "Roster data contains a non-integer column index.");
+
+    QSqlQuery fractionalStorageAfterRead(
+        services.databaseSession()->database());
+    fractionalStorageAfterRead.prepare(R"(
+        SELECT typeof(col_index)
+        FROM roster_data
+        WHERE class_id=? AND row_index=7 AND value='Fractional column cell'
+    )");
+    fractionalStorageAfterRead.addBindValue(*classId);
+    QVERIFY(fractionalStorageAfterRead.exec());
+    QVERIFY(fractionalStorageAfterRead.next());
+    QCOMPARE(fractionalStorageAfterRead.value(0).toString(),
+             QStringLiteral("real"));
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::

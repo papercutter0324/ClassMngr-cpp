@@ -136,7 +136,13 @@ public:
                                      OR data.row_index<0
                                      OR typeof(data.row_index)!='integer')
                                THEN 1
-                           END) AS invalid_name_row_indexes
+                           END) AS invalid_name_row_indexes,
+                           COUNT(CASE
+                               WHEN typeof(data.col_index)!='integer'
+                                AND data.col_index>=0
+                                AND data.col_index<metadata.column_count
+                               THEN 1
+                           END) AS invalid_name_column_indexes
                     FROM roster_data data
                     JOIN requested
                       ON requested.class_id=data.class_id
@@ -148,6 +154,7 @@ public:
                        metadata.korean_column,
                        sizing.maximum_row,
                        sizing.invalid_name_row_indexes,
+                       sizing.invalid_name_column_indexes,
                        names.row_index,
                        names.col_index,
                        names.value
@@ -184,6 +191,18 @@ public:
                 return technicalFailure<
                     Application::ClassAnalyticsRosterNames>(
                         "Roster data contains a row index outside the Class Analytics range.");
+            }
+
+            bool invalidNameColumnIndexesIsValid = false;
+            const qlonglong invalidNameColumnIndexes = rosterQuery.value(
+                "invalid_name_column_indexes").toLongLong(
+                    &invalidNameColumnIndexesIsValid);
+            if (!invalidNameColumnIndexesIsValid
+                || invalidNameColumnIndexes != 0)
+            {
+                return technicalFailure<
+                    Application::ClassAnalyticsRosterNames>(
+                        "Roster data contains a non-integer column index.");
             }
 
             const QVariant englishColumnValue =
