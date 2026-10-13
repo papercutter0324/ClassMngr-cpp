@@ -1225,7 +1225,7 @@ Status writeClassData(
             return queryFailure(query, QObject::tr("Creating an imported speaking evaluation"));
         }
 
-        const int evaluationId = query.lastInsertId().toInt();
+        const qint64 evaluationId = query.lastInsertId().toLongLong();
 
         for (int row = 0; row < SpeakingEval::RowCount; ++row)
         {

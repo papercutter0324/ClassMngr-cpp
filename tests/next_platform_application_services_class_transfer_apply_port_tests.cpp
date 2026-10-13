@@ -128,6 +128,7 @@ private slots:
     void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
     void replacesClassAndTeacherThroughRepository();
+    void importsSpeakingEvaluationWithWideGeneratedId();
     void lateWriteFailureRollsBackTransferRows();
 };
 
@@ -364,6 +365,99 @@ replacesClassAndTeacherThroughRepository()
         ->getTeacher(*localTeacher);
     QVERIFY(replaced);
     QCOMPARE(replaced->roomNumber, QStringLiteral("405"));
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+importsSpeakingEvaluationWithWideGeneratedId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery seedClass(database);
+    QVERIFY(seedClass.exec(QStringLiteral(
+        "INSERT INTO classes (name) VALUES ('Evaluation Sequence Seed')")));
+    const qint64 seedClassId = seedClass.lastInsertId().toLongLong();
+    QVERIFY(seedClassId > 0);
+    QSqlQuery seedEvaluation(database);
+    seedEvaluation.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluations (class_id, evaluation_name) "
+        "VALUES (?, 'Sequence Seed')"));
+    seedEvaluation.addBindValue(seedClassId);
+    QVERIFY(seedEvaluation.exec());
+
+    QSqlQuery removeSeedClass(database);
+    removeSeedClass.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id = ?"));
+    removeSeedClass.addBindValue(seedClassId);
+    QVERIFY(removeSeedClass.exec());
+
+    constexpr qint64 sequenceBeforeImport = 2147483648LL;
+    QSqlQuery setEvaluationSequence(database);
+    setEvaluationSequence.prepare(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq = ? "
+        "WHERE name = 'speaking_evaluations'"));
+    setEvaluationSequence.addBindValue(sequenceBeforeImport);
+    QVERIFY(setEvaluationSequence.exec());
+    QCOMPARE(setEvaluationSequence.numRowsAffected(), 1);
+
+    auto package = validPackage();
+    ClassTransferEvaluation evaluation;
+    evaluation.name = QStringLiteral("Wide ID Evaluation");
+    evaluation.rows = SpeakingEval::emptyRows();
+    evaluation.rows[0][1] = QStringLiteral("Wide ID student");
+    evaluation.rows[3][9] = QStringLiteral("Wide ID marker survives");
+    package.classes.first().evaluations.append(std::move(evaluation));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand(std::move(package)));
+
+    QVERIFY2(result, result ? "" : result.error().message.c_str());
+    QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));
+    const auto importedClassId = Application::classTransferApplyDestinationId(
+        result.value().createdClassIds.front());
+    QVERIFY(importedClassId.has_value());
+
+    QSqlQuery storedEvaluation(database);
+    storedEvaluation.prepare(QStringLiteral(
+        "SELECT id, typeof(id) FROM speaking_evaluations "
+        "WHERE class_id = ? AND evaluation_name = ?"));
+    storedEvaluation.addBindValue(*importedClassId);
+    storedEvaluation.addBindValue(QStringLiteral("Wide ID Evaluation"));
+    QVERIFY(storedEvaluation.exec());
+    QVERIFY(storedEvaluation.next());
+    constexpr qint64 expectedEvaluationId = sequenceBeforeImport + 1;
+    QCOMPARE(storedEvaluation.value(0).toLongLong(), expectedEvaluationId);
+    QCOMPARE(storedEvaluation.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(!storedEvaluation.next());
+
+    QSqlQuery storedRows(database);
+    storedRows.prepare(QStringLiteral(
+        "SELECT COUNT(*), MIN(evaluation_id), MAX(evaluation_id), "
+        "MIN(typeof(evaluation_id)), MAX(typeof(evaluation_id)) "
+        "FROM speaking_eval_data WHERE evaluation_id = ?"));
+    storedRows.addBindValue(expectedEvaluationId);
+    QVERIFY(storedRows.exec());
+    QVERIFY(storedRows.next());
+    QCOMPARE(storedRows.value(0).toInt(), SpeakingEval::RowCount);
+    QCOMPARE(storedRows.value(1).toLongLong(), expectedEvaluationId);
+    QCOMPARE(storedRows.value(2).toLongLong(), expectedEvaluationId);
+    QCOMPARE(storedRows.value(3).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRows.value(4).toString(), QStringLiteral("integer"));
+
+    const auto readback = services.databaseSession()->classTransferRepository()
+        ->readExportSource({*importedClassId});
+    QVERIFY(readback);
+    QCOMPARE(readback->classes.size(), 1);
+    QCOMPARE(readback->classes.first().evaluations.size(), 1);
+    const ClassTransferEvaluation& loadedEvaluation =
+        readback->classes.first().evaluations.first();
+    QCOMPARE(loadedEvaluation.name, QStringLiteral("Wide ID Evaluation"));
+    QCOMPARE(loadedEvaluation.rows[0][1], QStringLiteral("Wide ID student"));
+    QCOMPARE(loadedEvaluation.rows[3][9],
+        QStringLiteral("Wide ID marker survives"));
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
