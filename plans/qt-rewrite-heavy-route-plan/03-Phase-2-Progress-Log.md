@@ -34850,3 +34850,82 @@ existing success preference behavior.
 | Selection and save consistency | Neither failed Beta attempt commits Beta or changes the last-selected preference; editing and saving afterward affect only the visibly selected/loaded Alpha. |
 | Recovery and compatibility | A successful Beta retry loads Beta and follows existing preference behavior; preserve save-failure rollback, normal successful switching, and existing non-admin failure assertions that leave the attempted selector visible. |
 | Focused verification | Use existing `tests/campus_dashboard_page_tests.cpp` and `ClassMngrCampusDashboardPageTests`; build `ClassMngr` and that test target, then run only the registered `ClassMngrCampusDashboardPageTests` CTest. Add no CMake target and run no full suite. |
+
+### F862 Admin campus selection after failed read - accepted - 2026-10-14
+
+F862 is accepted at source/test commit
+`36747caa9034064a3808133d657b8e16ab1004fa`; the selection and F861 acceptance
+plan was recorded at `bdc6e73e58c1093d2c9fb7ba7f870c49be8008c6`. In admin mode,
+a campus detail-read error or successful missing result now restores the
+selector to the last loaded campus ID with signals blocked, retains the loaded
+model and fields and selected-campus preference, and shows admin status. The
+standard/non-admin failure behavior and save-failure rollback remain. Tests
+cover both admin failure results, Alpha selector/fields/preference retention,
+Alpha-only save after rollback, and a successful Beta retry.
+
+Independent Windows x64 Debug verification built `ClassMngr` and
+`ClassMngrCampusDashboardPageTests`; the exact focused CTest passed 1/1. The
+verifier needed elevated build-tree access after FileTracker access denial; no
+production warning appeared in successful verification. No full suite ran.
+
+### Batch 276 completion and deferred-candidate audit - 2026-10-14
+
+F862 completed Batch 276. Its post-slice audit reviewed all 13 current Deferred
+entries and found none newly actionable; all 13 entries remain unchanged.
+F857's accepted nonblank/256-byte policy concerns preference writes, which
+F862's failed-read paths skip and do not alter. F709 remains Deferred because
+the cache query seam predates its deferral and cannot reach CalendarPage summary
+formatting. F579 and F598 still require an elevated Administrator token for
+WPR captures; F629 remains limited to this session. Other recorded evidence,
+policy, caller, and injection triggers remain unresolved. Phase 2 Gates 1/2
+remain Partial, and the formal exit gate remains Open.
+
+### Batch 277 discovery and selection - 2026-10-14
+
+F863 targets corrupt persisted `class_id` values in Schedule Testing.
+`TestingBlockRepository::loadTestingAssignments()`
+(`src/data/repositories/testing_block_repository.cpp:210`) and
+`loadTestingAssignmentDisplayRecords()` (`:257`) map SQL NULL to the existing
+plain sentinel but convert non-NULL values with unchecked `toInt()`.
+`existingClassId()` (`:60`) also maps NULL to the no-assignment sentinel and
+unchecked-converts other values; `saveTestingBlock()` uses it at `:389`, so
+malformed text can look unassigned and permit replacement. The write contract
+stores NULL for plain blocks and requires positive signed-int IDs for assigned
+blocks (`saveTestingBlock()` at `:371`, `assignTestingClass()` at `:449`, plus
+the Next request). The Next platform read port attaches metadata only for
+positive IDs; its typed query propagates repository failure, and
+`ScheduleWidget::reloadTestingBlocks()` already retains the current assignment
+map on read failure. SQLite INTEGER affinity is non-strict and the fixture
+helper accepts `QVariant`; this corruption path has not yet been runtime
+reproduced.
+
+The shortlist's near misses are: Class Analytics failure using the empty state,
+explicitly preserved by F299 pending a policy decision; hiding Analytics or
+Evaluations while active, with historical F663 semantics ambiguity; Sub Prep
+forward-only iteration failure, with no deterministic mid-iteration seam; and
+general directory partial-read handling, with the same injection gap. Only
+F863 is actionable.
+
+No other slices were found.
+
+F863 is selected, not implemented. First use the existing fixture to reproduce
+that NULL remains the valid plain representation while malformed non-NULL
+storage is currently misdecoded. At minimum cover nonnumeric TEXT; also cover
+fractional REAL, zero, negative, and above-INT_MAX values when the fixture
+supports them. A fixture that needs foreign keys disabled for malformed-row
+seeding must restore them immediately. Preserve the NULL sentinels and valid
+positive INTEGER IDs, but reject malformed non-NULL IDs as failures in both
+repository load methods. `existingClassId()` must propagate failure for a
+corrupt non-NULL slot so `saveTestingBlock()` cannot overwrite it; prove the
+stored row is unchanged. The Next platform read port must expose a typed
+Technical error, the Application query must propagate it, and the existing
+ScheduleWidget error path must retain its current assignment map. Preserve
+valid ID mapping, query ordering, normal plain-block saves, and request-side
+validation; do not redesign the schema or widen unrelated ID types.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Reproduction and repository decoding | Existing fixture proves NULL remains plain and malformed non-NULL storage is misdecoded before the fix; afterward both load methods preserve NULL and valid positive INTEGER IDs and reject malformed IDs. Cover nonnumeric TEXT and, when supported, fractional REAL, zero, negative, and above-INT_MAX values. |
+| Corrupt occupied slot | `existingClassId()` failure prevents `saveTestingBlock()` from treating corrupt data as an empty slot; verify the stored row is unchanged. |
+| Error propagation and UI state | The platform read port returns typed Technical failure, the Application query propagates it, and `ScheduleWidget` retains its current assignment map. |
+| Compatibility and focused verification | Preserve valid positive-ID class mapping, query ordering, normal plain-block saves, and request-side validation. Sequentially build `ClassMngr`, `ClassMngrTestingBlockRepositoryTests`, `ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`, `ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`, and `ClassMngrScheduleWidgetTests` in standard `build/windows-x64-debug`; run exactly these four CTests: `ClassMngrTestingBlockRepositoryTests`, `ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`, `ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`, and `ClassMngrScheduleWidgetTests`. Use existing targets only; no full suite or new target. |
