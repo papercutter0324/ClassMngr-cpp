@@ -15,6 +15,19 @@ struct TestingClassChoiceRecord final
     QString room;
 };
 
+struct TestingClassDetailsReadRecord final
+{
+    int classId = -1;
+    QString name;
+    QString grade;
+    QString level;
+    QString room;
+    qint64 teacherId = -1;
+    QString classColor;
+    QString fontColor;
+    QString notes;
+};
+
 struct TestingClassChoicesReadMetrics final
 {
     int callCount = 0;
@@ -41,6 +54,9 @@ public:
     [[nodiscard]] Result<TestingClass> loadTestingClass(
         int classId
         );
+
+    [[nodiscard]] Result<TestingClassDetailsReadRecord>
+        loadTestingClassDetailsReadRecord(int classId);
 
     [[nodiscard]] Result<QList<TestingClass>> loadTestingClasses();
 

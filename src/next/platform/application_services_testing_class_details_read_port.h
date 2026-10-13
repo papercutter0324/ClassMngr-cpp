@@ -70,8 +70,10 @@ public:
 
         try
         {
-            const Result<TestingClass> loaded =
-                repository->loadTestingClass(*legacyClassId);
+            const Result<TestingClassDetailsReadRecord> loaded =
+                repository->loadTestingClassDetailsReadRecord(
+                    *legacyClassId
+                    );
             if (!loaded)
             {
                 return failure(

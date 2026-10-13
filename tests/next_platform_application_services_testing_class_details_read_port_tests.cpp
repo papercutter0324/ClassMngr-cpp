@@ -11,6 +11,7 @@
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
+#include <QVariant>
 
 #include <string>
 
@@ -38,7 +39,7 @@ Domain::ClassId classId(const int value)
     return *parsed;
 }
 
-Domain::TeacherId teacherId(const int value)
+Domain::TeacherId teacherId(const qint64 value)
 {
     const auto parsed = Domain::TeacherId::fromString(std::to_string(value));
     if (!parsed)
@@ -93,6 +94,7 @@ private slots:
     void mapsEveryFieldFromTheActiveSessionRepository();
     void mapsAnAbsentTeacherAsAnEmptyOptional();
     void mapsStoredZeroTeacherIdAsUnassigned();
+    void rejectsMalformedStoredTeacherIdentifiers();
     void reportsUnavailableSessionsAsNotFound();
     void reportsMissingTestingClassesAsWarningsWithoutFallback();
     void forwardsRepositoryFailuresAsNonNotFoundErrors();
@@ -114,14 +116,16 @@ mapsEveryFieldFromTheActiveSessionRepository()
         session->testingClassRepository();
     QVERIFY(repository);
 
-    Teacher teacher;
-    teacher.teacherKr = QStringLiteral("\uAE40\uC120\uC0DD\uB2D8");
-    teacher.teacherEn = QStringLiteral("Test Teacher");
-    teacher.roomNumber = QStringLiteral("Teacher Room");
-    const auto createdTeacher = session->teacherRepository()->createTeacher(
-        teacher
-        );
-    QVERIFY(createdTeacher);
+    constexpr qint64 wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (id, teacher_kr, teacher_en)
+        VALUES (?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertTeacher.addBindValue(QStringLiteral("\uAE40\uC120\uC0DD\uB2D8"));
+    insertTeacher.addBindValue(QStringLiteral("Test Teacher"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
 
     TestingClass value = testingClass(
         QStringLiteral("Writing Lab \uC2E4\uD5D8")
@@ -129,10 +133,41 @@ mapsEveryFieldFromTheActiveSessionRepository()
     value.grade = QStringLiteral("E5");
     value.level = QStringLiteral("Song's");
     value.room = QStringLiteral("Library \uC2E4\uD5D8\uC2E4");
-    value.teacherId = *createdTeacher;
     value.notes = QStringLiteral("Keep exact notes \uC0C1\uC138 \uC8FC\uC758");
     const auto createdClass = repository->createTestingClass(value);
     QVERIFY(createdClass);
+
+    QSqlQuery assignTeacher(session->database());
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?")));
+    assignTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    assignTeacher.addBindValue(*createdClass);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredTeacherId(session->database());
+    QVERIFY(verifyStoredTeacherId.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredTeacherId.addBindValue(*createdClass);
+    QVERIFY2(verifyStoredTeacherId.exec(),
+             qPrintable(verifyStoredTeacherId.lastError().text()));
+    QVERIFY(verifyStoredTeacherId.next());
+    QCOMPARE(
+        verifyStoredTeacherId.value(0).toString(),
+        QStringLiteral("integer")
+        );
+    QCOMPARE(verifyStoredTeacherId.value(1).toLongLong(), wideTeacherId);
+    QCOMPARE(
+        verifyStoredTeacherId.value(2).toString(),
+        QStringLiteral("integer")
+        );
+    QCOMPARE(verifyStoredTeacherId.value(3).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyStoredTeacherId.next());
 
     const auto result = readDetails(services, *createdClass);
 
@@ -143,7 +178,7 @@ mapsEveryFieldFromTheActiveSessionRepository()
         .grade = u"E5",
         .level = u"Song's",
         .room = u"Library \uC2E4\uD5D8\uC2E4",
-        .teacherId = teacherId(*createdTeacher),
+        .teacherId = teacherId(wideTeacherId),
         .classColor = u"#123456",
         .fontColor = u"#FEDCBA",
         .notes = u"Keep exact notes \uC0C1\uC138 \uC8FC\uC758"
@@ -158,7 +193,7 @@ mapsEveryFieldFromTheActiveSessionRepository()
         std::u16string(u"Library \uC2E4\uD5D8\uC2E4")
         );
     QVERIFY(result.value().teacherId.has_value());
-    QCOMPARE(result.value().teacherId.value(), teacherId(*createdTeacher));
+    QCOMPARE(result.value().teacherId.value(), teacherId(wideTeacherId));
     QCOMPARE(result.value().classColor, std::u16string(u"#123456"));
     QCOMPARE(result.value().fontColor, std::u16string(u"#FEDCBA"));
     QCOMPARE(
@@ -231,6 +266,45 @@ mapsStoredZeroTeacherIdAsUnassigned()
 
     QVERIFY(result);
     QVERIFY(!result.value().teacherId.has_value());
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::
+rejectsMalformedStoredTeacherIdentifiers()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClassRepository* const repository =
+        services.databaseSession()->testingClassRepository();
+    QVERIFY(repository);
+    const auto createdClass = repository->createTestingClass(
+        testingClass(QStringLiteral("Malformed Teacher ID Class"))
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery storeMalformedTeacherId(
+        services.databaseSession()->database()
+        );
+    QVERIFY2(storeMalformedTeacherId.exec(QStringLiteral(
+                 "PRAGMA foreign_keys=OFF"
+                 )),
+             qPrintable(storeMalformedTeacherId.lastError().text()));
+    storeMalformedTeacherId.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"));
+    storeMalformedTeacherId.addBindValue(QStringLiteral("not-a-number"));
+    storeMalformedTeacherId.addBindValue(*createdClass);
+    QVERIFY2(storeMalformedTeacherId.exec(),
+             qPrintable(storeMalformedTeacherId.lastError().text()));
+    QCOMPARE(storeMalformedTeacherId.numRowsAffected(), 1);
+
+    const auto result = readDetails(services, *createdClass);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("teacher identifier"), Qt::CaseInsensitive));
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::

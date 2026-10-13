@@ -101,6 +101,51 @@ TestingClass readTestingClass(
     return testingClass;
 }
 
+Result<TestingClassDetailsReadRecord> readTestingClassDetails(
+    const QSqlQuery& query
+    )
+{
+    const QVariant storedTeacherId =
+        query.value(QStringLiteral("teacher_id"));
+    qint64 teacherId = -1;
+    if (!storedTeacherId.isNull())
+    {
+        bool teacherIdOk = false;
+        teacherId = storedTeacherId.toLongLong(&teacherIdOk);
+        if (!teacherIdOk)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "The testing class has an invalid teacher identifier."
+                    )
+                );
+        }
+    }
+
+    TestingClassDetailsReadRecord record{
+        .classId = query.value(QStringLiteral("class_id")).toInt(),
+        .name = query.value(QStringLiteral("name")).toString(),
+        .grade = query.value(QStringLiteral("class_grade")).toString(),
+        .level = query.value(QStringLiteral("class_level")).toString(),
+        .room = query.value(QStringLiteral("room")).toString(),
+        .teacherId = teacherId,
+        .classColor = query.value(QStringLiteral("class_color")).toString(),
+        .fontColor = query.value(QStringLiteral("font_color")).toString(),
+        .notes = query.value(QStringLiteral("notes")).toString()
+    };
+
+    if (record.classColor.trimmed().isEmpty())
+    {
+        record.classColor = QStringLiteral("#FFFFFF");
+    }
+    if (record.fontColor.trimmed().isEmpty())
+    {
+        record.fontColor = QStringLiteral("#000000");
+    }
+
+    return record;
+}
+
 QString testingClassSelect(
     const QString& suffix = {}
     )
@@ -425,6 +470,42 @@ Result<TestingClass> TestingClassRepository::loadTestingClass(
     }
 
     return readTestingClass(query);
+}
+
+Result<TestingClassDetailsReadRecord>
+TestingClassRepository::loadTestingClassDetailsReadRecord(
+    int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("A valid testing class is required.")
+            );
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare(
+        testingClassSelect(
+            QStringLiteral(" WHERE tc.class_id=?")
+            )
+        );
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return std::unexpected(
+            queryFailure(query, QObject::tr("Loading the testing class"))
+            );
+    }
+
+    if (!query.next())
+    {
+        return std::unexpected(
+            QObject::tr("The testing class was not found.")
+            );
+    }
+
+    return readTestingClassDetails(query);
 }
 
 Result<QList<TestingClass>>
