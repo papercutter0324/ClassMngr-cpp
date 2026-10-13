@@ -34570,3 +34570,46 @@ but its matched-symbol WPR capture is blocked without an elevated Administrator
 token; F598 has the same elevated-token blocker. Other deferred blockers remain
 unchanged. The next slice is pending selection. Phase 2 Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+### Batch 273 discovery and selection - 2026-10-14
+
+F859 addresses `ClassTransferApplyCommand` in
+`src/next/application/class_transfer_apply.h`, which carries the legacy
+`ClassTransferPackage` from `domain/models/class_transfer.h` and brings
+Qt-backed `QString`, `QList`, and `QDateTime` types into Next Application.
+The existing `ClassTransferExportPackage` in
+`src/next/application/class_transfer_export_query.h` already represents the
+full portable package with UTF-16 text, ordered teachers/classes, profiles,
+class information and times, roster columns/widths/rows, evaluations, version,
+and UTC export timestamp. The selected boundary is to adapt the loaded package
+at the outer UI edge and reconstruct the legacy package at the Platform/Data
+edge immediately before the unchanged validator and repository. This is an
+architecture finding; full apply round-trip equivalence remains to be verified.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Replace the legacy Class Transfer apply package in Next Application (F859) | Selected | `ClassTransferApplyCommand` currently carries a Qt-backed legacy package even though a full Qt-free package model already exists. |
+
+F859 is selected, not implemented. Reuse or refactor
+`ClassTransferExportPackage` as the full portable apply package; adapt the
+codec-loaded legacy package at the outer boundary and reconstruct it at the
+Platform/Data boundary before the existing validator and repository. Keep the
+codec, dialog, repository behavior, apply choices, and use-case/port behavior
+unchanged. Do not confuse the full package with the staged/partial export
+source contracts.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Application boundary | `ClassTransferApplyCommand` uses a full Qt-free package contract; Next Application has no legacy `ClassTransferPackage` or Qt include for apply. |
+| Round-trip fidelity | Adapter tests cover teacher profiles; class information and times; roster columns, widths, and rows; evaluations; exact UTF-16 text including supplementary characters; ordering; version; and timestamp. |
+| Apply parity | Use-case/port and sidebar apply behavior remain unchanged, including class and teacher choice behavior. |
+| Focused verification | Build and run `ClassMngrClassTransferTests`, `ClassMngrClassImportTeacherChoiceRegressionTests`, `ClassMngrClassImportTeacherChoiceParityTests`, `ClassMngrSidebarClassTransferApplyParityTests`, `ClassMngrNextApplicationClassTransferTests`, `ClassMngrNextApplicationClassTransferApplyUseCaseTests`, `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and `ClassMngrClassTransferExportCodecParityTests` in standard `build/windows-x64-debug`; no full suite. |
+
+The key risk is lossy adaptation across the legacy and portable models:
+preserve every field, UTF-16 code unit, sequence order, package version, and
+timestamp representation so validation, repository results, and codec parity
+remain stable. The deferred-candidate audit found no change: all 13 entries
+remain blocked with their recorded triggers and evidence requirements. F579's
+review trigger is satisfied but WPR remains blocked without an elevated
+Administrator token; F598 has the same token blocker. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F858 is accepted at `6d720a8e`; the next slice is pending selection, Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: Batch 273 selects F859 to move the Class Transfer apply package across Next Application as a Qt-free full package contract; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Next slice pending selection.
+- F859 - Replace the legacy Qt-backed apply package with a full portable contract; adapt at the UI and Platform/Data boundaries and preserve apply parity.
 
 #### Deferred candidates
 
