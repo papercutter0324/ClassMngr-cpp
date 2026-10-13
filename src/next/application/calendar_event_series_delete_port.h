@@ -1,9 +1,9 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/operation_result.h"
 
-#include <cctype>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -38,20 +38,7 @@ namespace CalendarEventSeriesDeleteRequestDetail
     const std::string_view value
     ) noexcept
 {
-    if (value.empty())
-    {
-        return true;
-    }
-
-    for (const unsigned char character : value)
-    {
-        if (std::isspace(character) == 0)
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return isBlankUtf8Text(value);
 }
 
 } // namespace CalendarEventSeriesDeleteRequestDetail

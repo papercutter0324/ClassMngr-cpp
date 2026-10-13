@@ -2885,8 +2885,12 @@ seriesDeleteRequestValidationIsCanonicalAndQtFree()
     const std::string diagnostic =
         "Calendar repeat-series delete request must contain a non-blank "
         "bounded series identifier and a valid ISO start date.";
+    const std::string noBreakSpace = "\xC2\xA0";
+    const std::string ideographicSpace = "\xE3\x80\x80";
     const std::vector<CalendarEventSeriesDeleteRequest> invalidRequests{
         {" \t", "2026-12-08"},
+        {noBreakSpace, "2026-12-08"},
+        {ideographicSpace, "2026-12-08"},
         {
             std::string(
                 kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength + 1,
@@ -2905,6 +2909,12 @@ seriesDeleteRequestValidationIsCanonicalAndQtFree()
         QCOMPARE(validation.error().message, diagnostic);
         QVERIFY(!validation.error().recoverable);
     }
+
+    const CalendarEventSeriesDeleteRequest malformedUtf8IdRequest{
+        std::string("\xC3", 1),
+        "2026-12-08"
+    };
+    QVERIFY(malformedUtf8IdRequest.validate());
 }
 
 void NextApplicationCalendarEventTests::
@@ -2966,9 +2976,13 @@ repeatSeriesDeleteUseCaseRejectsInvalidRequestWithoutCallingPort()
     const std::string diagnostic =
         "Calendar repeat-series delete request must contain a non-blank "
         "bounded series identifier and a valid ISO start date.";
+    const std::string noBreakSpace = "\xC2\xA0";
+    const std::string ideographicSpace = "\xE3\x80\x80";
     const std::vector<CalendarEventSeriesDeleteRequest> invalidRequests{
         {"", "2026-12-08"},
         {" \t", "2026-12-08"},
+        {noBreakSpace, "2026-12-08"},
+        {ideographicSpace, "2026-12-08"},
         {
             std::string(
                 kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength + 1,
