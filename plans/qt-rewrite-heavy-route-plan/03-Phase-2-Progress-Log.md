@@ -31047,9 +31047,16 @@ F797 was accepted at source-and-test commit
 `521e89f8c5d923c13805b3aa0ce70c6b394c034b`. The commit changed
 `src/data/repositories/roster_repository.cpp` and
 `tests/next_platform_application_services_roster_read_port_tests.cpp` to
-reject roster row indexes outside the legacy dense API range. The acceptance
-handoff did not include focused build or CTest results; no full-suite pass is
-claimed here.
+reject roster row indexes outside the legacy dense API range. The regression
+stores `2147483648` as SQLite `INTEGER` and asserts that
+`RosterReadUseCase` returns Technical with the row-index/range/value
+diagnostic. The exact target build command was
+`cmake --build build/windows-x64-debug-ninja --target ClassMngrNextPlatformApplicationServicesRosterReadPortTests`;
+its first attempt lacked MSVC standard-library include paths (`type_traits`
+and `limits`), then the identical command passed after initializing
+`VsDevCmd.bat -arch=x64 -host_arch=x64`. The exact CTest
+`ctest --test-dir build/windows-x64-debug-ninja --output-on-failure -R '^ClassMngrNextPlatformApplicationServicesRosterReadPortTests$'`
+passed 1/1 (CTest #316). `git diff --check` passed; no full suite ran.
 
 ### Batch 211 completion - 2026-10-13
 
