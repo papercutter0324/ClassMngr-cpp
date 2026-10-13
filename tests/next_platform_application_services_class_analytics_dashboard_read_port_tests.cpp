@@ -10,6 +10,7 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <limits>
 #include <string>
 
 using namespace ClassMngr::Next;
@@ -46,6 +47,7 @@ class NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests final
 private slots:
     void readsOnlyRosterNamesAndExactEvaluationScoreProjection();
     void sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders();
+    void rejectsRosterRowsOutsideClassAnalyticsIntegerRange();
     void missingEvaluationIsSuccessfulEmptyInput();
     void activeSessionQueryFailureIsStructured();
 };
@@ -278,6 +280,94 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
             == std::vector<std::u16string>(4));
     QVERIFY(absentHeaders.value().koreanNames
             == std::vector<std::u16string>(4));
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+rejectsRosterRowsOutsideClassAnalyticsIntegerRange()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-row-range.db"))));
+
+    const auto intMaxClassId = services.classService()->create(
+        QStringLiteral("INT_MAX roster row"));
+    const auto aboveIntMaxClassId = services.classService()->create(
+        QStringLiteral("Above INT_MAX roster row"));
+    const auto fractionalClassId = services.classService()->create(
+        QStringLiteral("Fractional roster row"));
+    QVERIFY(intMaxClassId);
+    QVERIFY(aboveIntMaxClassId);
+    QVERIFY(fractionalClassId);
+
+    QSqlQuery insertColumn(services.databaseSession()->database());
+    insertColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, 'English', 0, 100)
+    )");
+    const auto addEnglishColumn = [&](const int ownerId) {
+        insertColumn.bindValue(0, ownerId);
+        return insertColumn.exec();
+    };
+    QVERIFY(addEnglishColumn(*intMaxClassId));
+    QVERIFY(addEnglishColumn(*aboveIntMaxClassId));
+    QVERIFY(addEnglishColumn(*fractionalClassId));
+
+    QSqlQuery insertName(services.databaseSession()->database());
+    insertName.prepare(R"(
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        VALUES (?, ?, 0, ?)
+    )");
+    const auto addName = [&](const int ownerId, const QVariant& rowIndex,
+                             const QString& name) {
+        insertName.bindValue(0, ownerId);
+        insertName.bindValue(1, rowIndex);
+        insertName.bindValue(2, name);
+        return insertName.exec();
+    };
+    const qlonglong intMax = std::numeric_limits<int>::max();
+    QVERIFY(addName(*intMaxClassId, QVariant::fromValue<qlonglong>(intMax),
+                    QStringLiteral("INT_MAX student")));
+    QVERIFY(addName(*aboveIntMaxClassId,
+                    QVariant::fromValue<qlonglong>(intMax + 1),
+                    QStringLiteral("Above INT_MAX student")));
+    QVERIFY(addName(*fractionalClassId, QVariant::fromValue(1.5),
+                    QStringLiteral("Fractional student")));
+    QVERIFY(addName(*fractionalClassId, QVariant::fromValue<qlonglong>(2),
+                    QStringLiteral("Valid maximum student")));
+
+    const auto intMaxTypedClassId = Domain::ClassId::fromString(
+        std::to_string(*intMaxClassId));
+    const auto aboveIntMaxTypedClassId = Domain::ClassId::fromString(
+        std::to_string(*aboveIntMaxClassId));
+    const auto fractionalTypedClassId = Domain::ClassId::fromString(
+        std::to_string(*fractionalClassId));
+    QVERIFY(intMaxTypedClassId);
+    QVERIFY(aboveIntMaxTypedClassId);
+    QVERIFY(fractionalTypedClassId);
+
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+    const std::string expectedMessage =
+        "Roster data contains a row index outside the Class Analytics range.";
+
+    const auto intMaxResult = port.readRosterNames(*intMaxTypedClassId);
+    QVERIFY(!intMaxResult);
+    QCOMPARE(intMaxResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(intMaxResult.error().recoverable);
+    QVERIFY(intMaxResult.error().message == expectedMessage);
+
+    const auto aboveIntMaxResult = port.readRosterNames(*aboveIntMaxTypedClassId);
+    QVERIFY(!aboveIntMaxResult);
+    QCOMPARE(aboveIntMaxResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(aboveIntMaxResult.error().recoverable);
+    QVERIFY(aboveIntMaxResult.error().message == expectedMessage);
+
+    const auto fractionalResult = port.readRosterNames(*fractionalTypedClassId);
+    QVERIFY(!fractionalResult);
+    QCOMPARE(fractionalResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(fractionalResult.error().recoverable);
+    QVERIFY(fractionalResult.error().message == expectedMessage);
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::

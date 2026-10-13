@@ -13,6 +13,7 @@
 #include <array>
 #include <charconv>
 #include <exception>
+#include <limits>
 #include <optional>
 #include <string>
 #include <system_error>
@@ -115,18 +116,26 @@ public:
                     FROM ranked_columns
                 ),
                 sizing AS (
-                    SELECT MAX(data.row_index) AS maximum_row
+                    SELECT MAX(data.row_index) AS maximum_row,
+                           COUNT(CASE
+                               WHEN (data.col_index=metadata.english_column
+                                     OR data.col_index=metadata.korean_column)
+                                AND (data.row_index IS NULL
+                                     OR data.row_index<0
+                                     OR typeof(data.row_index)!='integer')
+                               THEN 1
+                           END) AS invalid_name_row_indexes
                     FROM roster_data data
                     JOIN requested
                       ON requested.class_id=data.class_id
                     CROSS JOIN metadata
-                    WHERE data.row_index>=0
-                      AND data.col_index>=0
+                    WHERE data.col_index>=0
                       AND data.col_index<metadata.column_count
                 )
                 SELECT metadata.english_column,
                        metadata.korean_column,
                        sizing.maximum_row,
+                       sizing.invalid_name_row_indexes,
                        names.row_index,
                        names.col_index,
                        names.value
@@ -134,7 +143,6 @@ public:
                 CROSS JOIN sizing
                 LEFT JOIN roster_data names
                   ON names.class_id=(SELECT class_id FROM requested)
-                 AND names.row_index>=0
                  AND names.row_index<=sizing.maximum_row
                  AND (names.col_index=metadata.english_column
                       OR names.col_index=metadata.korean_column)
@@ -155,6 +163,17 @@ public:
                     "Roster names could not be read.");
             }
 
+            bool invalidNameRowIndexesIsValid = false;
+            const qlonglong invalidNameRowIndexes = rosterQuery.value(
+                "invalid_name_row_indexes").toLongLong(
+                    &invalidNameRowIndexesIsValid);
+            if (!invalidNameRowIndexesIsValid || invalidNameRowIndexes != 0)
+            {
+                return technicalFailure<
+                    Application::ClassAnalyticsRosterNames>(
+                        "Roster data contains a row index outside the Class Analytics range.");
+            }
+
             const QVariant englishColumnValue =
                 rosterQuery.value("english_column");
             const QVariant koreanColumnValue =
@@ -168,10 +187,47 @@ public:
             roster.hasEnglishColumn = englishColumn >= 0;
             roster.hasKoreanColumn = koreanColumn >= 0;
 
+            const auto checkedRowIndex = [](const QVariant& value)
+                -> std::optional<qlonglong>
+            {
+                bool rowIndexIsValid = false;
+                const qlonglong rowIndex = value.toLongLong(
+                    &rowIndexIsValid);
+                if (!rowIndexIsValid) return std::nullopt;
+
+                // QVariant can truncate floating point values when converting
+                // them to integers. Require the numeric value to be integral.
+                bool numericValueIsValid = false;
+                const double numericValue = value.toDouble(
+                    &numericValueIsValid);
+                if (!numericValueIsValid
+                    || numericValue != static_cast<double>(rowIndex))
+                {
+                    return std::nullopt;
+                }
+                return rowIndex;
+            };
+
             const QVariant maximumRow = rosterQuery.value("maximum_row");
-            roster.rowCount = maximumRow.isNull()
-                ? 0
-                : static_cast<std::size_t>(maximumRow.toInt() + 1);
+            if (!maximumRow.isNull())
+            {
+                const std::optional<qlonglong> maximumRowIndex =
+                    checkedRowIndex(maximumRow);
+                if (!maximumRowIndex
+                    || *maximumRowIndex < 0
+                    || *maximumRowIndex
+                        >= std::numeric_limits<int>::max()
+                    || static_cast<unsigned long long>(*maximumRowIndex)
+                        >= static_cast<unsigned long long>(
+                            std::numeric_limits<std::size_t>::max()))
+                {
+                    return technicalFailure<
+                        Application::ClassAnalyticsRosterNames>(
+                            "Roster data contains a row index outside the Class Analytics range.");
+                }
+                roster.rowCount = static_cast<std::size_t>(*maximumRowIndex)
+                    + 1;
+            }
             roster.englishNames.resize(roster.rowCount);
             roster.koreanNames.resize(roster.rowCount);
             if (roster.rowCount == 0
@@ -184,25 +240,35 @@ public:
 
             do
             {
-                if (!rosterQuery.value("row_index").isNull())
+                const QVariant rowIndexValue =
+                    rosterQuery.value("row_index");
+                if (!rowIndexValue.isNull())
                 {
-                    const int row = rosterQuery.value("row_index").toInt();
-                    const int column = rosterQuery.value("col_index").toInt();
-                    if (row >= 0
-                        && static_cast<std::size_t>(row) < roster.rowCount)
+                    const std::optional<qlonglong> rowIndex =
+                        checkedRowIndex(rowIndexValue);
+                    if (!rowIndex
+                        || *rowIndex < 0
+                        || static_cast<unsigned long long>(*rowIndex)
+                            >= static_cast<unsigned long long>(
+                                roster.rowCount))
                     {
-                        const std::u16string value = rosterQuery.value("value")
-                            .toString().toStdU16String();
-                        if (column == englishColumn)
-                        {
-                            roster.englishNames[
-                                static_cast<std::size_t>(row)] = value;
-                        }
-                        if (column == koreanColumn)
-                        {
-                            roster.koreanNames[
-                                static_cast<std::size_t>(row)] = value;
-                        }
+                        return technicalFailure<
+                            Application::ClassAnalyticsRosterNames>(
+                                "Roster data contains a row index outside the Class Analytics range.");
+                    }
+
+                    const int column = rosterQuery.value("col_index").toInt();
+                    const std::size_t row =
+                        static_cast<std::size_t>(*rowIndex);
+                    const std::u16string value = rosterQuery.value("value")
+                        .toString().toStdU16String();
+                    if (column == englishColumn)
+                    {
+                        roster.englishNames[row] = value;
+                    }
+                    if (column == koreanColumn)
+                    {
+                        roster.koreanNames[row] = value;
                     }
                 }
             }
