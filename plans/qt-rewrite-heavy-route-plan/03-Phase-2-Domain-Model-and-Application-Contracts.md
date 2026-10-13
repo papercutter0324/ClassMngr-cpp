@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F802 was accepted in Batch 216 at `c3d257b32fea38a15ec9b2b9162551a38c45adb3`; Batch 217 selects F803 for signed-64 evaluation-ID grouping in Class Transfer export; selected-class subtitle wide teacher IDs, the separate persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F803 was accepted in Batch 217 at `20599262b40093e3b9ffe64879fd87ef265561ab`; Batch 218 selects F804 to preserve wide teacher IDs in Sub Prep schedule summaries; selected-class subtitle wide teacher IDs, the separate persisted CalendarEvent ID-width issue, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -117,9 +117,9 @@ Treat this plan as an operational summary, not a history:
 - Selected-class subtitle wide teacher ID - deferred as a separate consumer
   of teacher display-name IDs; keep it outside F802 and F803.
 
-#### Active batch: Batch 217
+#### Active batch: Batch 218
 
-- F803 - Class Transfer export evaluation-ID grouping collision - Use checked signed-64 evaluation IDs for grouping and lookup so distinct persisted IDs above `INT_MAX` cannot collide or misattribute export rows.
+- F804 - Sub Prep schedule summary wide teacher IDs - Preserve valid signed-64 teacher identity through the scoped summary record, repository read, adapter indexing, and Domain ID serialization.
 
 ## Objective
 

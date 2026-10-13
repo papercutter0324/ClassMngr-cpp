@@ -31505,3 +31505,76 @@ teacher-ID candidate and the persisted CalendarEvent ID-width issue remain
 deferred; the latter's fix spans the shared model and repository CRUD surface.
 F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F803 Class Transfer export evaluation-ID grouping collision - accepted - 2026-10-13
+
+F803 is accepted at implementation and test commit
+`20599262b40093e3b9ffe64879fd87ef265561ab`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformClassTransferExportSourceTests` succeeded outside the
+sandbox after the known FileTracker `E_ACCESSDENIED` retry. The exact CTest
+`ClassMngrNextPlatformClassTransferExportSourceTests` registered once, and
+the focused CTest passed 1/1.
+`git diff --check` passed. No full suite ran.
+
+### Batch 217 completion - 2026-10-13
+
+F803 completed the selected work in Batch 217. Its evaluation-ID grouping
+boundary and focused verification are recorded above. The selected-class
+subtitle wide teacher-ID issue remains a separate deferred candidate, as does
+the persisted CalendarEvent ID-width issue; the latter's fix spans the shared
+model and repository CRUD surface. F707/F709 and the dense Speaking Evaluation
+row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 218 discovery - 2026-10-13
+
+F804 addresses wide teacher identity in the Sub Prep schedule-summary path.
+`SubPrepClassSummaryRecord::teacherId` is `int`, and
+`ClassInfoRepository::loadSubPrepClassSummaries` narrows the joined teacher ID
+with `toInt()`. The schedule-summary adapter rejects nonpositive teacher IDs,
+then indexes teacher summaries and serializes Domain IDs from the narrowed
+value. A valid teacher ID above `INT_MAX` can therefore fail the summary read
+and cause the page to warn and skip refresh. Keep F804 within this record,
+repository read, and adapter path; preserve class IDs, unrelated ClassInfo
+projections, and F799-F803 behavior.
+
+### F804 Sub Prep schedule summary wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F804 is selected:** widen `SubPrepClassSummaryRecord::teacherId` in
+`src/domain/models/sub_prep_class_summary_record.h`, and use checked signed-64
+conversion for the joined teacher ID in
+`ClassInfoRepository::loadSubPrepClassSummaries` in
+`src/data/repositories/class_info_repository.cpp`. Update the bounded Sub
+Prep schedule-summary adapter in
+`src/next/platform/application_services_sub_prep_schedule_summary_port.h`
+to preserve teacher IDs through validation, teacher identity indexing, and
+Domain `TeacherId` serialization. Keep class IDs and all other
+`ClassInfoRepository` projections unchanged; preserve F799-F803 behavior.
+
+Extend
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`:
+seed a teacher row with explicit SQLite INTEGER ID `2147483648`, assign it by
+SQL to a scheduled class, and assert the Sub Prep summary succeeds with the
+wide teacher identity and expected details. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, inspect
+the exact CTest registration, and run only
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No
+CMake or test-inventory change is expected; the earlier CMake optimization
+remains complete.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F804 tests
+have run and no full suite is requested. The selected-class subtitle wide
+teacher-ID candidate and the persisted CalendarEvent ID-width issue remain
+deferred, with the latter spanning the shared model and repository CRUD
+surface. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
