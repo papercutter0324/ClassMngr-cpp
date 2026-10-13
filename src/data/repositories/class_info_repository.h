@@ -59,7 +59,7 @@ struct ClassPageDetailsReadRecord final
 struct ClassDetailsPageReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString classGrade;
     QString classLevel;
     QString readingBook;

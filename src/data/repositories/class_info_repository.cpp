@@ -1092,7 +1092,23 @@ ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
     if (metadataQuery.next())
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
-        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (teacherId.isNull())
+        {
+            record.teacherId = -1;
+        }
+        else
+        {
+            bool teacherIdOk = false;
+            const qint64 parsedTeacherId =
+                teacherId.toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading class information failed: teacher id for class id %1 is not representable as a 64-bit integer."
+                    ).arg(classId));
+            }
+            record.teacherId = parsedTeacherId;
+        }
         record.classGrade = metadataQuery.value("class_grade").toString();
         record.classLevel = metadataQuery.value("class_level").toString();
         record.readingBook = metadataQuery.value("reading_book").toString();

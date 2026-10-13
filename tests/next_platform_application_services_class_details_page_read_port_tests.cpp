@@ -9,6 +9,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QtTest/QtTest>
+#include <QVariant>
 
 #include <string>
 
@@ -40,6 +41,7 @@ class NextPlatformApplicationServicesClassDetailsPageReadPortTests final
 
 private slots:
     void readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession();
+    void wideTeacherIdResolvesDisplayNameAndPreservesOtherReads();
     void missingMetadataRetainsDefaultsAndReadsSchedules();
     void unavailableSessionReturnsIndependentSourceFailures();
     void classReadFailureDoesNotDiscardRosterCount();
@@ -209,6 +211,102 @@ readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession()
     QVERIFY(fallback.value().teacherDisplayName.value().empty());
     QVERIFY(fallback.value().studentCount);
     QCOMPARE(fallback.value().studentCount.value(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+wideTeacherIdResolvesDisplayNameAndPreservesOtherReads()
+{
+    constexpr qlonglong wideTeacherId = 2147483648LL;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Wide Teacher ID")
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery insertClassFields(services.databaseSession()->database());
+    QVERIFY(insertClassFields.prepare(QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id, class_grade, class_level, reading_book, essay_book
+        ) VALUES (?, ?, ?, ?, ?)
+    )")));
+    insertClassFields.addBindValue(*createdClass);
+    insertClassFields.addBindValue(QStringLiteral("Wide-ID Grade"));
+    insertClassFields.addBindValue(QStringLiteral("Wide-ID Level"));
+    insertClassFields.addBindValue(QStringLiteral("Wide-ID Reading Book"));
+    insertClassFields.addBindValue(QStringLiteral("Wide-ID Essay Book"));
+    QVERIFY2(insertClassFields.exec(),
+             qPrintable(insertClassFields.lastError().text()));
+    QCOMPARE(insertClassFields.numRowsAffected(), 1);
+
+    QSqlQuery insertTeacher(services.databaseSession()->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_en, preferred_romanization, preferred_name
+        ) VALUES (?, ?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertTeacher.addBindValue(QStringLiteral("Fallback English Name"));
+    insertTeacher.addBindValue(QStringLiteral("Fallback Romanization"));
+    insertTeacher.addBindValue(QStringLiteral("Wide-ID Preferred Name"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery assignTeacher(services.databaseSession()->database());
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        )));
+    assignTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    assignTeacher.addBindValue(*createdClass);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredIds(services.databaseSession()->database());
+    QVERIFY(verifyStoredIds.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredIds.addBindValue(*createdClass);
+    QVERIFY2(verifyStoredIds.exec(),
+             qPrintable(verifyStoredIds.lastError().text()));
+    QVERIFY(verifyStoredIds.next());
+    QCOMPARE(verifyStoredIds.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredIds.value(1).toLongLong(), wideTeacherId);
+    QCOMPARE(verifyStoredIds.value(2).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredIds.value(3).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyStoredIds.next());
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    QStringList student(Roster::BaseColumns.size(), QString());
+    student[0] = QStringLiteral("Student One");
+    student[1] = QStringLiteral("학생 하나");
+    roster.rows.append(student);
+    QVERIFY(services.rosterService()->saveRoster(*createdClass, roster));
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const Application::ClassDetailsPageQuery query(port);
+    const auto loaded = query.execute(classId(*createdClass));
+
+    QVERIFY(loaded);
+    const auto& snapshot = loaded.value();
+    QVERIFY(snapshot.classFields);
+    QVERIFY(snapshot.teacherDisplayName);
+    QVERIFY(snapshot.studentCount);
+    const auto& fields = snapshot.classFields.value();
+    QCOMPARE(fields.classGrade, std::string("Wide-ID Grade"));
+    QCOMPARE(fields.classLevel, std::string("Wide-ID Level"));
+    QCOMPARE(fields.readingBook, std::string("Wide-ID Reading Book"));
+    QCOMPARE(fields.essayBook, std::string("Wide-ID Essay Book"));
+    QCOMPARE(snapshot.teacherDisplayName.value(),
+             std::string("Wide-ID Preferred Name"));
+    QCOMPARE(snapshot.studentCount.value(), 1);
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
