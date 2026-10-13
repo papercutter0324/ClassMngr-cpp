@@ -31813,9 +31813,86 @@ ctest --test-dir build/windows-x64-debug -C Debug -N -R "^(ClassMngrNextPlatform
 ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests|ClassMngrSubPrepPackageServiceTests)$"
 ```
 
-This is a pre-implementation matrix; no F807 tests have run and no full suite
-is requested. Defer `ClassPageDetailsReadRecord` until its shared Co-Teacher
-read/write identity flow can be covered, and keep persisted CalendarEvent
-ID-width work deferred. The earlier CMake optimization remains complete.
-F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
-Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+At selection, no F807 tests had yet run; its subsequent acceptance is recorded
+below. No full suite was requested. Defer `ClassPageDetailsReadRecord` until
+its shared Co-Teacher read/write identity flow can be covered, and keep
+persisted CalendarEvent ID-width work deferred. The earlier CMake optimization
+remains complete. F707/F709 and the dense Speaking Evaluation row-limit policy
+remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### F807 Sub Prep roster-output wide teacher IDs - accepted - 2026-10-13
+
+F807 is accepted at implementation and test commit
+`51214e5fc1a9746c68633b480b42f10d85e86fe4`. The bounded Debug build passed on
+the identical outside-sandbox retry, and the two exact CTests
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+and `ClassMngrSubPrepPackageServiceTests` passed (2/2). No full suite ran.
+
+### Batch 221 completion - 2026-10-13
+
+F807 completed the selected read-only Sub Prep roster-output teacher-identity
+work in Batch 221. Its focused verification is recorded above. Separate
+Schedule Import teacher-ID width/narrowing work remains deferred; F767's
+canonical-ID validation remains accepted. The shared
+`ClassPageDetailsReadRecord`/Co-Teacher read/write identity flow remains
+deferred until its shared behavior can be covered, as does persisted
+CalendarEvent ID-width work. F707/F709 and the dense Speaking Evaluation
+row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 222 discovery - 2026-10-13
+
+F808 is limited to the read-only selected Sub Prep class-details path.
+`SubPrepClassDetailsRecord::teacherId` is int, and
+`ClassInfoRepository::loadSubPrepClassDetails` narrows both the assigned and
+resolved teacher IDs. Widen this record and checked-convert both values to
+qint64; preserve the empty-teacher fallback for missing, stale, or invalid
+assignments, and expose teacher fields only when positive assigned and
+resolved IDs match. The adapter should convert the qint64 directly to
+`Domain::TeacherId`. Class IDs, ClassService's class-ID API, Sub Prep writes,
+global Teacher/CRUD contracts, and other Sub Prep reads stay unchanged.
+
+### F808 Sub Prep selected class-details wide teacher ID - selected and acceptance matrix - 2026-10-13
+
+**F808 is selected:** widen only `SubPrepClassDetailsRecord::teacherId` in
+`src/domain/models/sub_prep_class_details_record.h` and use checked qint64
+conversion for both the assigned and resolved teacher IDs in
+`ClassInfoRepository::loadSubPrepClassDetails` in
+`src/data/repositories/class_info_repository.cpp`. Preserve the current empty-
+teacher fallback for missing, stale, or invalid assignment data; return teacher
+fields only when both IDs are positive and match. In
+`ApplicationServicesSubPrepClassDetailsPort`, convert the qint64 identity
+directly to `Domain::TeacherId`. Keep class IDs int, ClassService's class-ID
+API, Sub Prep write/CRUD/global `Teacher` contracts, and other Sub Prep reads
+unchanged.
+
+Extend the existing regression in
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`,
+near `selectedClassDetailsReadUsesOnlyScopedSessionData`, with a separate
+wide-ID case. Seed an FK-valid teacher and class assignment with ID
+`2147483648` bound as `qlonglong`; assert SQLite stores exact INTEGER values,
+and verify the typed output teacher ID, preferred display name, and selected
+teacher detail fields. Keep the existing no-schedule-table read-path coverage.
+The CMake registration is
+`NextPlatformApplicationServicesSubPrepPrintSourcePort`; its generated target
+and exact CTest name are
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. Build
+`ClassMngr` and that target, inspect the exact registration, and run only that
+CTest. No CMake or test-inventory change is expected.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+```
+
+This is a pre-implementation matrix; no F808 tests have run and no full suite
+is requested. Keep separate Schedule Import teacher-ID width/narrowing work,
+the shared `ClassPageDetailsReadRecord`/Co-Teacher read/write identity flow,
+and persisted CalendarEvent ID-width work deferred. The earlier CMake
+optimization remains complete. F707/F709 and the dense Speaking Evaluation
+row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
