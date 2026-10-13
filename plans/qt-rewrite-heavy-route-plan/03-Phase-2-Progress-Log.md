@@ -32804,3 +32804,51 @@ Retain ordinary-ID and rollback coverage. Keep class IDs int, row indices,
 public API, batch loading, transaction/rollback semantics, and unrelated paths
 unchanged. The project-configuration and CMake optimization remains complete;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F825 Speaking Evaluation persisted evaluation-ID width - accepted - 2026-10-13
+
+F825 is accepted at source/test commit
+`191163bf69a2782c2b7b97b37a139b5f184b7b0b`. Independent fresh Ninja Debug
+verification configured at `%TEMP%\f8` with MSVC x64 and Qt 6.12, built
+`ClassMngrDataServiceLifecycleTests` in 318 steps, and ran exact CTest
+registration #24 once: 1/1 passed. `git diff --check` passed. Coverage keeps
+existing evaluation ID `2147483648` through load and in-place save without a
+duplicate, and verifies a newly generated ID `2147483649`, its child linkage,
+and reload. The test fixture's stale `Result<QList<int>>` was corrected to
+`Result<QList<qint64>>`, matching the existing `CalendarService::saveEvents()`
+signature; no production API or assertion changed. No full suite ran.
+
+### Batch 239 completion - 2026-10-13
+
+F825 completed Batch 239 by preserving signed-64 evaluation IDs in
+`SpeakingEvalRepository` save/load. Batch 240 selects F826 for the generated
+Speaking Evaluation ID in Class Transfer import. The project-configuration and
+CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 240 discovery and selection - 2026-10-13
+
+`ClassTransferRepository::writeClassData()` narrows the generated evaluation
+ID from `query.lastInsertId()` with `.toInt()` at
+`src/data/repositories/class_transfer_repository.cpp:1228` before binding it
+to imported child rows. Once the `speaking_evaluations` sequence exceeds
+`INT_MAX`, import can bind a different child ID and fail its foreign key.
+F826 is limited to preserving the width of that generated evaluation ID.
+F803 covered export-side evaluation-ID grouping and explicitly left import
+behavior unchanged; this is a distinct import-side boundary.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Class Transfer import generated evaluation-ID width (F826) | Selected | The import writer narrows a generated SQLite identity before linking its child rows. |
+
+F826 is selected, not implemented or accepted. In
+`tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`,
+seed the `speaking_evaluations` sequence above `INT_MAX`, import a class with a
+named evaluation and marker row, and assert successful import, the exact
+generated evaluation ID, child-row linkage, and marker readback. Preserve class
+IDs and all other import/export paths, including existing rollback behavior.
+Use focused CTest registration
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`; no CMake
+change or full suite is requested. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
