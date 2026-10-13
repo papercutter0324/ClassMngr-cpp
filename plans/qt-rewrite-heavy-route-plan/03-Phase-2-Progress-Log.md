@@ -33709,3 +33709,54 @@ reproduce, stop and report before production edits.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`.
+
+### F843 fractional REAL roster row index in Speaking Evaluation roster-name reads - accepted - 2026-10-14
+
+F843 is accepted at source/test commit
+`f6be0bdded15e5173db5332637e54d939e8f75a5`. Baseline INTEGER row 0 and a
+nonempty REAL `row_index=0.25` English cell in the same column caused the typed
+Speaking Evaluation roster-name port to overwrite the valid name. The fix
+checks `typeof(row_index)` in `loadSpeakingEvaluationRosterNames()` and
+returns Technical before narrowing; F837's fractional-column rejection is
+preserved. Independent verification passed
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`
+1/1 with `-C Debug` after an approved FileTracker retry; the scoped diff check
+passed. No full suite ran.
+
+### Batch 257 completion - 2026-10-14
+
+F843 completed Batch 257 by rejecting fractional REAL row indexes in Speaking
+Evaluation roster-name reads. Batch 258 selects F844 to check fractional REAL
+row indexes in Sub Prep schedule-summary student counts. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 258 discovery and selection - 2026-10-14
+
+`ClassInfoRepository::loadSubPrepClassSummaries()` aggregates roster counts
+after converting `row_index` with `toLongLong()` without checking SQLite
+storage type. The typed `ApplicationServicesSubPrepScheduleSummaryPort`
+consumes these summary records. A nonempty English cell at REAL
+`row_index=0.25` may therefore be counted as a student in a scheduled class.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in Sub Prep schedule-summary student counts (F844) | Selected | The aggregate roster-count reader narrows row indexes without storage-type validation. |
+
+F844 is selected, not implemented or accepted. First seed a scheduled class
+with a blank INTEGER `row_index=0` English cell and a nonempty REAL
+`row_index=0.25` English cell; assert SQLite storage types and observe the
+typed schedule-summary count before production edits. If the REAL value is
+counted, reject malformed row storage while preserving the existing
+aggregate zero-count fallback, which clears the aggregate count map on an
+invalid read. Do not redefine sibling-retention behavior in this slice. If
+the count is not affected, stop and report before production edits.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm INTEGER row 0 and REAL row 0.25 storage; determine whether the typed summary counts the REAL English cell. |
+| Malformed-row handling | On reproduction, reject non-INTEGER row storage and preserve the existing aggregate zero-count fallback. |
+| Compatibility | Preserve current schedule-summary behavior and sibling semantics; do not introduce per-class retention changes. |
+| Focused verification | Update `tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`.
