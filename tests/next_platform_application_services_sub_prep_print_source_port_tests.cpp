@@ -282,6 +282,7 @@ private slots:
     void printSourcePreservesWideTeacherIdAndCompleteProfile();
     void batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads();
     void batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics();
+    void subPrepCountDoesNotAliasFractionalRosterColumns();
     void batchesRosterCountsWideRowIndicesAndSaturatesMetrics();
     void rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling();
     void omittedPrintClassesDoNotReadRosters();
@@ -2082,6 +2083,173 @@ batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics()
             "classId=%1; columns=5; rows=28; cells=140; returnedStudents=2"
             ).arg(populatedClass)
         );
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+subPrepCountDoesNotAliasFractionalRosterColumns()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Fractional roster"),
+        QStringLiteral("Fractional roster"),
+        QStringLiteral("fractional-roster")
+        );
+    QVERIFY(teacher > 0);
+
+    const int fractionalClass = createClass(
+        services,
+        QStringLiteral("Fractional only name"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QString(),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:45 AM")}
+        }
+        );
+    const int ordinaryClass = createClass(
+        services,
+        QStringLiteral("Ordinary names"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QString(),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    const int emptyRosterClass = createClass(
+        services,
+        QStringLiteral("Empty roster"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Odysseus"),
+        QString(),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("10:00 AM"), QStringLiteral("10:45 AM")}
+        }
+        );
+    QVERIFY(fractionalClass > 0);
+    QVERIFY(ordinaryClass > 0);
+    QVERIFY(emptyRosterClass > 0);
+
+    RosterRepository* const rosterRepository = services.databaseSession()
+        ? services.databaseSession()->rosterRepository()
+        : nullptr;
+    QVERIFY(rosterRepository);
+    Roster fractionalRoster;
+    fractionalRoster.columns = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    fractionalRoster.rows = {{QString(), QString()}};
+    QVERIFY(rosterRepository->saveRoster(fractionalClass, fractionalRoster));
+    QVERIFY(rosterRepository->saveRoster(
+        ordinaryClass,
+        rosterWithTwoStudents()
+        ));
+    QVERIFY(rosterRepository->saveRoster(emptyRosterClass, Roster{}));
+
+    DataService* const dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    QSqlDatabase database = dataService->databaseSession()->database();
+    QSqlQuery insertCell(database);
+    QVERIFY(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    insertCell.addBindValue(fractionalClass);
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(QString());
+    QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+    insertCell.finish();
+    QVERIFY(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    insertCell.addBindValue(fractionalClass);
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(QVariant::fromValue(0.25));
+    insertCell.addBindValue(QStringLiteral("Fractional false student"));
+    QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+    insertCell.finish();
+
+    QSqlQuery storedCells(database);
+    QVERIFY(storedCells.prepare(QStringLiteral(
+        "SELECT col_index, typeof(col_index) AS storage_type, value "
+        "FROM roster_data WHERE class_id=? ORDER BY col_index"
+        )));
+    storedCells.addBindValue(fractionalClass);
+    QVERIFY2(storedCells.exec(), qPrintable(storedCells.lastError().text()));
+    QVERIFY(storedCells.next());
+    QCOMPARE(storedCells.value("col_index").toInt(), 0);
+    QCOMPARE(storedCells.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(storedCells.value("value").toString().isEmpty());
+    QVERIFY(storedCells.next());
+    QCOMPARE(storedCells.value("col_index").toDouble(), 0.25);
+    QCOMPARE(storedCells.value("storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(
+        storedCells.value("value").toString(),
+        QStringLiteral("Fractional false student")
+        );
+    QVERIFY(!storedCells.next());
+    storedCells.finish();
+
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {
+            classId(fractionalClass),
+            classId(ordinaryClass),
+            classId(emptyRosterClass)
+        },
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(3));
+    std::optional<std::size_t> fractionalStudentCount;
+    std::optional<std::size_t> ordinaryStudentCount;
+    std::optional<std::size_t> emptyRosterStudentCount;
+    for (const auto& classRecord : result.value().classes)
+    {
+        if (classRecord.id == classId(fractionalClass))
+        {
+            fractionalStudentCount = classRecord.studentCount;
+        }
+        else if (classRecord.id == classId(ordinaryClass))
+        {
+            ordinaryStudentCount = classRecord.studentCount;
+        }
+        else if (classRecord.id == classId(emptyRosterClass))
+        {
+            emptyRosterStudentCount = classRecord.studentCount;
+        }
+    }
+    QVERIFY(fractionalStudentCount.has_value());
+    QVERIFY(ordinaryStudentCount.has_value());
+    QVERIFY(emptyRosterStudentCount.has_value());
+    QCOMPARE(*fractionalStudentCount, std::size_t(0));
+    QCOMPARE(*ordinaryStudentCount, std::size_t(2));
+    QCOMPARE(*emptyRosterStudentCount, std::size_t(0));
+
+    const auto& metrics =
+        rosterRepository->subPrepStudentCountBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.requestedClassCount, 3);
+    QCOMPARE(metrics.columnStatementCount, 1);
+    QCOMPARE(metrics.dataStatementCount, 1);
+    QCOMPARE(metrics.fallbackClassReadCount, 3);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
