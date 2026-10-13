@@ -32671,3 +32671,49 @@ teacher with ID `2147483648`; verify the exact row ID is preserved, profile
 fields update, and no duplicate row is created. Keep Native English and GS
 Team profile flows out of scope. Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
+
+### F822 Korean Teacher Import persisted teacher-ID width - accepted - 2026-10-13
+
+F822 is accepted at source commit
+`263764fa12c9013c20d8356c14edb7caa382f42a`. Independent fresh Ninja Debug
+verification passed target `ClassMngrTeacherImportTests`; exact CTest
+registration #34 passed 1/1. The regression updates existing Korean teacher
+ID `2147483648` in place, verifies the exact SQLite ID and profile fields,
+asserts 0 created / 1 updated / 0 unchanged, and confirms no duplicate row.
+`git diff --check` passed. No CMake change or full suite ran.
+
+### Batch 236 completion - 2026-10-13
+
+F822 completed Batch 236 by preserving wide IDs through Korean Teacher Import.
+Batch 237 selects F823 for persisted teacher-ID updates in Native English and
+GS Team Teacher Import profiles. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### Batch 237 discovery and selection - 2026-10-13
+
+Candidate review found demonstrated wide-ID update failures in the Native
+English and GS Team Teacher Import profiles. Their persisted profile IDs are
+`int`, and the adapter narrows IDs on snapshot read and update binding with
+`.toInt()`. Name matching still reaches update, but narrowing ID
+`2147483648` to zero can make `UPDATE ... WHERE id=0` affect no row while the
+import reports success. This behavior evidence meets the condition that was
+missing when Batch 197 deferred the lower-confidence cleanup candidate, so
+that deferral is lifted. F823 is one cohesive SQL-adapter slice with separate
+profile-specific regressions in target and CTest
+`ClassMngrTeacherImportTests` (registration #34),
+`tests/teacher_import_tests.cpp`.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Native English and GS Team persisted profile-ID updates (F823) | Selected | Both adapters narrow persisted IDs and can report an update when the wide-ID row was not changed. |
+
+F823 is selected, not implemented or accepted. For each profile separately,
+seed a row with ID `2147483648`, import matching changed fields, and assert the
+exact row ID remains SQLite `INTEGER`, the fields change, the summary reports
+0 created / 1 updated / 0 unchanged, and no duplicate appears. Retain Native
+English manual-field preservation and GS Team sparse, no-op, and ambiguity
+behavior. Keep UI, directory repositories, and unrelated profile paths out of
+scope. Run the focused target only; no full suite. The project-configuration
+and CMake optimization remains complete;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
