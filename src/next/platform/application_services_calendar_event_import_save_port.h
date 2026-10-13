@@ -118,7 +118,7 @@ public:
 
             // Keep one save call: CalendarEventRepository owns the batch
             // transaction and preserves input order, including empty batches.
-            const ::Result<QList<int>> saved =
+            const ::Result<QList<qint64>> saved =
                 repository->saveCalendarEvents(normalizedEvents);
             if (!saved)
             {
@@ -150,7 +150,7 @@ public:
 
             std::vector<Domain::CalendarEventId> eventIds;
             eventIds.reserve(static_cast<std::size_t>(saved->size()));
-            for (const int eventId : *saved)
+            for (const qint64 eventId : *saved)
             {
                 if (eventId <= 0)
                 {

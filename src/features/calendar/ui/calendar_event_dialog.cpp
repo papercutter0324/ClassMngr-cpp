@@ -81,7 +81,7 @@ CalendarEvent legacyEventFromDraft(
     if (draft.id)
     {
         bool validId = false;
-        const int id = draftText(draft.id->value()).toInt(&validId);
+        const qint64 id = draftText(draft.id->value()).toLongLong(&validId);
         if (validId)
         {
             event.id = id;

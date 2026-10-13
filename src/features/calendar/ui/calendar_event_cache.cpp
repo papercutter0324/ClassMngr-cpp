@@ -27,12 +27,12 @@ QString projectionText(
         );
 }
 
-std::optional<int> legacyIdFromProjection(
+std::optional<qint64> legacyIdFromProjection(
     const CalendarEventSummary& summary
     )
 {
     bool validId = false;
-    const int id = projectionText(summary.id.value()).toInt(&validId);
+    const qint64 id = projectionText(summary.id.value()).toLongLong(&validId);
     if (!validId || id <= 0)
     {
         return std::nullopt;
@@ -473,7 +473,7 @@ CalendarEventProjection CalendarEventCache::eventProjectionForDate(
 
     std::vector<CalendarEventSummary> summaries;
     summaries.reserve(static_cast<std::size_t>(eventIds->size()));
-    for (const int eventId : *eventIds)
+    for (const qint64 eventId : *eventIds)
     {
         const auto event = m_eventsById.constFind(eventId);
         if (event != m_eventsById.cend())
@@ -499,7 +499,7 @@ CalendarEventProjection CalendarEventCache::eventProjectionInRange(
         return {};
     }
 
-    QSet<int> eventIds;
+    QSet<qint64> eventIds;
     for (
         QDate date = startDate;
         date <= endDate;
@@ -513,7 +513,7 @@ CalendarEventProjection CalendarEventCache::eventProjectionInRange(
             continue;
         }
 
-        for (const int eventId : *dateEventIds)
+        for (const qint64 eventId : *dateEventIds)
         {
             eventIds.insert(eventId);
         }
@@ -521,7 +521,7 @@ CalendarEventProjection CalendarEventCache::eventProjectionInRange(
 
     std::vector<CalendarEventSummary> summaries;
     summaries.reserve(static_cast<std::size_t>(eventIds.size()));
-    for (const int eventId : eventIds)
+    for (const qint64 eventId : eventIds)
     {
         const auto event = m_eventsById.constFind(eventId);
         if (event != m_eventsById.cend())
@@ -560,7 +560,7 @@ QList<CalendarEvent> CalendarEventCache::eventsInRange(
         return events;
     }
 
-    QSet<int> eventIds;
+    QSet<qint64> eventIds;
     for (
         QDate date = startDate;
         date <= endDate;
@@ -574,7 +574,7 @@ QList<CalendarEvent> CalendarEventCache::eventsInRange(
             continue;
         }
 
-        for (const int eventId : *dateEventIds)
+        for (const qint64 eventId : *dateEventIds)
         {
             eventIds.insert(eventId);
         }
@@ -582,7 +582,7 @@ QList<CalendarEvent> CalendarEventCache::eventsInRange(
 
     std::vector<CalendarEventSummary> summaries;
     summaries.reserve(static_cast<std::size_t>(eventIds.size()));
-    for (const int eventId : eventIds)
+    for (const qint64 eventId : eventIds)
     {
         const auto event = m_eventsById.constFind(eventId);
         if (event != m_eventsById.cend())
@@ -982,7 +982,7 @@ void CalendarEventCache::insertEvents(
                 date = date.addDays(1)
                 )
             {
-                QList<int>& eventIds =
+                QList<qint64>& eventIds =
                     m_eventIdsByDate[date];
                 if (!eventIds.contains(*eventId))
                 {
@@ -993,7 +993,7 @@ void CalendarEventCache::insertEvents(
                 std::sort(
                     eventIds.begin(),
                     eventIds.end(),
-                    [this](int leftId, int rightId)
+                    [this](qint64 leftId, qint64 rightId)
                     {
                         const auto leftEvent =
                             m_eventsById.constFind(leftId);
@@ -1139,7 +1139,7 @@ void CalendarEventCache::pruneToRetainedRanges()
     }
     m_loadedRanges = normalizedRanges(retainedLoadedRanges);
 
-    QSet<int> referencedEventIds;
+    QSet<qint64> referencedEventIds;
     for (
         auto iterator = m_eventIdsByDate.begin();
         iterator != m_eventIdsByDate.end();
@@ -1152,7 +1152,7 @@ void CalendarEventCache::pruneToRetainedRanges()
             continue;
         }
 
-        for (const int eventId : iterator.value())
+        for (const qint64 eventId : iterator.value())
         {
             referencedEventIds.insert(eventId);
         }
@@ -1174,7 +1174,7 @@ void CalendarEventCache::pruneToRetainedRanges()
 }
 
 void CalendarEventCache::removeEventMemberships(
-    int eventId
+    qint64 eventId
     )
 {
     for (

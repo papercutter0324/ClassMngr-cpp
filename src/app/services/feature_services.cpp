@@ -1053,7 +1053,7 @@ Result<QList<CalendarEvent>> CalendarService::upcomingEvents(
         : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
-Result<CalendarEvent> CalendarService::event(int eventId) const
+Result<CalendarEvent> CalendarService::event(qint64 eventId) const
 {
     if (session())
     {
@@ -1088,7 +1088,7 @@ Result<QList<CalendarEvent>> CalendarService::repeatSeriesFromDate(
         : Result<QList<CalendarEvent>>(std::unexpected(unavailableError()));
 }
 
-Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
+Result<qint64> CalendarService::saveEvent(const CalendarEvent& event) const
 {
     const CalendarEvent normalized = CalendarEventValidator::normalized(event);
     const ValidationResult validation = CalendarEventValidator::validate(normalized);
@@ -1106,10 +1106,10 @@ Result<int> CalendarService::saveEvent(const CalendarEvent& event) const
     }
     return dataService()
         ? dataService()->saveCalendarEvent(normalized)
-        : Result<int>(std::unexpected(unavailableError()));
+        : Result<qint64>(std::unexpected(unavailableError()));
 }
 
-Result<QList<int>> CalendarService::saveEvents(
+Result<QList<qint64>> CalendarService::saveEvents(
     const QList<CalendarEvent>& events
     ) const
 {
@@ -1140,10 +1140,10 @@ Result<QList<int>> CalendarService::saveEvents(
     }
     return dataService()
         ? dataService()->saveCalendarEvents(normalizedEvents)
-        : Result<QList<int>>(std::unexpected(unavailableError()));
+        : Result<QList<qint64>>(std::unexpected(unavailableError()));
 }
 
-Status CalendarService::deleteEvent(int eventId) const
+Status CalendarService::deleteEvent(qint64 eventId) const
 {
     if (session())
     {

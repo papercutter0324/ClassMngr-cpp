@@ -128,7 +128,7 @@ public:
 
             // Keep this as the sole persistence call so the repository's
             // transaction covers the complete series and preserves order.
-            const ::Result<QList<int>> saved =
+            const ::Result<QList<qint64>> saved =
                 repository->saveCalendarEvents(normalizedEvents);
             if (!saved)
             {
@@ -161,7 +161,7 @@ public:
 
             std::vector<Domain::CalendarEventId> eventIds;
             eventIds.reserve(static_cast<std::size_t>(saved->size()));
-            for (const int eventId : *saved)
+            for (const qint64 eventId : *saved)
             {
                 if (eventId <= 0)
                 {
@@ -275,12 +275,12 @@ private:
             : QTime();
     }
 
-    [[nodiscard]] static std::optional<int> legacyEventId(
+    [[nodiscard]] static std::optional<qint64> legacyEventId(
         const Domain::CalendarEventId& eventId
         )
     {
         const std::string& value = eventId.value();
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),
@@ -288,7 +288,8 @@ private:
             );
         if (error != std::errc{}
             || end != value.data() + value.size()
-            || parsed <= 0)
+            || parsed <= 0
+            || std::to_string(parsed) != value)
         {
             return std::nullopt;
         }

@@ -271,12 +271,12 @@ private:
             : QTime();
     }
 
-    [[nodiscard]] static std::optional<int> legacyEventId(
+    [[nodiscard]] static std::optional<qint64> legacyEventId(
         const Domain::CalendarEventId& eventId
         )
     {
         const std::string& value = eventId.value();
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),
@@ -284,7 +284,8 @@ private:
             );
         if (error != std::errc{}
             || end != value.data() + value.size()
-            || parsed <= 0)
+            || parsed <= 0
+            || std::to_string(parsed) != value)
         {
             return std::nullopt;
         }

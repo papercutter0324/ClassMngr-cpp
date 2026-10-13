@@ -32,7 +32,7 @@ enum class CalendarEventSaveOutcomeCode
 struct CalendarEventSaveOutcome final
 {
     CalendarEventSaveOutcomeCode code = CalendarEventSaveOutcomeCode::Failure;
-    int eventId = 0;
+    qint64 eventId = 0;
     QString diagnostic;
 };
 
@@ -84,10 +84,10 @@ public:
         );
 
     [[nodiscard]] Result<CalendarEvent> getCalendarEvent(
-        int eventId
+        qint64 eventId
         );
     [[nodiscard]] CalendarEventByIdLookupResult lookupCalendarEventById(
-        int eventId
+        qint64 eventId
         );
 
     [[nodiscard]] Result<QList<CalendarEvent>> loadCalendarEventsForRepeatSeriesFromDate(
@@ -95,19 +95,19 @@ public:
         const QDate& startDate
         );
 
-    [[nodiscard]] Result<int> saveCalendarEvent(
+    [[nodiscard]] Result<qint64> saveCalendarEvent(
         const CalendarEvent& event
         );
     [[nodiscard]] CalendarEventSaveOutcome saveCalendarEventWithOutcome(
         const CalendarEvent& event
         );
 
-    [[nodiscard]] Result<QList<int>> saveCalendarEvents(
+    [[nodiscard]] Result<QList<qint64>> saveCalendarEvents(
         const QList<CalendarEvent>& events
         );
 
     [[nodiscard]] Status deleteCalendarEvent(
-        int eventId
+        qint64 eventId
         );
 
     [[nodiscard]] Status deleteCalendarEventsForRepeatSeriesFromDate(

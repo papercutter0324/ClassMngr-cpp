@@ -112,7 +112,7 @@ int saveEvent(
     return saved ? *saved : -1;
 }
 
-CalendarEventId calendarEventId(const int id)
+CalendarEventId calendarEventId(const qint64 id)
 {
     return *CalendarEventId::fromString(std::to_string(id));
 }
@@ -281,6 +281,10 @@ class NextPlatformApplicationServicesCalendarEventPortTests final
 
 private slots:
     void initTestCase();
+    void widePersistedIdentity_data();
+    void widePersistedIdentity();
+    void generatedWideIdentities_data();
+    void generatedWideIdentities();
     void reportsCalendarEventPortAvailability();
     void projectsOverlappingRangeAsOwnedTypedMetadata();
     void readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation();
@@ -343,6 +347,202 @@ private slots:
 private:
     QTemporaryDir m_directory;
 };
+
+void NextPlatformApplicationServicesCalendarEventPortTests::widePersistedIdentity_data()
+{
+    QTest::addColumn<qint64>("wideId");
+    QTest::newRow("above-int-max") << qint64(2147483648LL);
+    QTest::newRow("above-javascript-exact-range") << qint64(9007199254740993LL);
+    QTest::newRow("signed-64-max") << qint64(9223372036854775807LL);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::widePersistedIdentity()
+{
+    QFETCH(qint64, wideId);
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    auto* repository = services.databaseSession()->calendarEventRepository();
+    auto lowEvent = validSaveRequest();
+    ApplicationServicesCalendarEventSavePort savePort(services);
+    const auto low = savePort.saveEvent(lowEvent);
+    QVERIFY(low);
+    QCOMPARE(low.value().value(), std::string("1"));
+    auto wideEvent = lowEvent;
+    wideEvent.title = "Wide event";
+    const auto created = savePort.saveEvent(wideEvent);
+    QVERIFY(created);
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare("UPDATE calendar_events SET id=? WHERE id=2");
+    query.addBindValue(wideId);
+    QVERIFY(query.exec());
+
+    const auto loaded = repository->getCalendarEvent(wideId);
+    QVERIFY(loaded);
+    QCOMPARE(loaded->id, wideId);
+    QCOMPARE(loaded->title, QStringLiteral("Wide event"));
+    QCOMPARE(services.dataService()->getCalendarEvent(wideId)->id, wideId);
+    QCOMPARE(services.calendarService()->event(wideId)->id, wideId);
+    ApplicationServicesCalendarEventPort readPort(services);
+    const auto typed = readPort.loadEventById(calendarEventId(wideId));
+    QVERIFY(typed);
+    QCOMPARE(typed.value().id.value(), std::to_string(wideId));
+    QCOMPARE(typed.value().title, std::string("Wide event"));
+
+    CalendarEvent legacyUpdate = *loaded;
+    legacyUpdate.title = QStringLiteral("Legacy updated wide event");
+    const auto legacySaved = repository->saveCalendarEvent(legacyUpdate);
+    QVERIFY(legacySaved);
+    QCOMPARE(*legacySaved, wideId);
+    QCOMPARE(repository->getCalendarEvent(1)->title, QString::fromStdString(lowEvent.title));
+    QCOMPARE(repository->getCalendarEvent(wideId)->title, legacyUpdate.title);
+
+    wideEvent.id = calendarEventId(wideId);
+    wideEvent.title = "Updated wide event";
+    const auto updated = savePort.saveEvent(wideEvent);
+    QVERIFY(updated);
+    QCOMPARE(updated.value().value(), std::to_string(wideId));
+    QCOMPARE(repository->getCalendarEvent(wideId)->title, QStringLiteral("Updated wide event"));
+    QCOMPARE(repository->getCalendarEvent(1)->title, QString::fromStdString(lowEvent.title));
+
+    // A failed wide update must retain both identities and contents.
+    QVERIFY(query.exec("CREATE TRIGGER reject_wide_update BEFORE UPDATE ON calendar_events "
+                       "BEGIN SELECT RAISE(ABORT, 'wide update failure'); END"));
+    wideEvent.title = "Rejected wide update";
+    const auto rejected = savePort.saveEvent(wideEvent);
+    verifyFailure(rejected, ErrorCode::Technical);
+    QCOMPARE(repository->getCalendarEvent(wideId)->title, QStringLiteral("Updated wide event"));
+    QVERIFY(query.exec("DROP TRIGGER reject_wide_update"));
+
+    ApplicationServicesCalendarEventDeletePort deletePort(services);
+    QVERIFY(deletePort.deleteEvent(calendarEventId(wideId)));
+    QVERIFY(!repository->getCalendarEvent(wideId));
+    QCOMPARE(repository->getCalendarEvent(1)->title, QString::fromStdString(lowEvent.title));
+    // Exercise the repository's direct delete boundary with the same wide key.
+    query.prepare("INSERT INTO calendar_events "
+                  "(id,title,event_type,time_status,repeat_series_id,all_day,"
+                  "start_date,start_time,end_date,end_time) "
+                  "SELECT ?,title,event_type,time_status,repeat_series_id,all_day,"
+                  "start_date,start_time,end_date,end_time FROM calendar_events WHERE id=1");
+    query.addBindValue(wideId);
+    QVERIFY(query.exec());
+    QVERIFY(repository->deleteCalendarEvent(wideId));
+    QVERIFY(!repository->getCalendarEvent(wideId));
+    QCOMPARE(repository->getCalendarEvent(1)->title, QString::fromStdString(lowEvent.title));
+    // The first unrepresentable signed-64 identity is rejected, never wrapped.
+    const auto outOfRange = *CalendarEventId::fromString("9223372036854775808");
+    verifyFailure(readPort.loadEventById(outOfRange), ErrorCode::InvalidInput);
+    verifyFailure(deletePort.deleteEvent(outOfRange), ErrorCode::InvalidInput);
+    wideEvent.id = outOfRange;
+    verifyFailure(savePort.saveEvent(wideEvent), ErrorCode::InvalidInput);
+    const auto nonCanonicalId = *CalendarEventId::fromString("0001");
+    verifyFailure(
+        readPort.loadEventById(nonCanonicalId),
+        ErrorCode::InvalidInput
+        );
+    verifyFailure(
+        deletePort.deleteEvent(nonCanonicalId),
+        ErrorCode::InvalidInput
+        );
+    wideEvent.id = nonCanonicalId;
+    verifyFailure(savePort.saveEvent(wideEvent), ErrorCode::InvalidInput);
+    QVERIFY(repository->getCalendarEvent(1));
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::generatedWideIdentities_data()
+{
+    QTest::addColumn<qint64>("sequence");
+    QTest::newRow("cross-int-max") << qint64(2147483647LL);
+    QTest::newRow("cross-javascript-exact-range") << qint64(9007199254740992LL);
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::generatedWideIdentities()
+{
+    QFETCH(qint64, sequence);
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    auto* repository = services.databaseSession()->calendarEventRepository();
+    CalendarEvent event = makeEvent(QStringLiteral("Low"), QDate(2026,12,10), QDate(2026,12,10));
+    event.allDay = true;
+    const auto low = repository->saveCalendarEvent(event);
+    QVERIFY(low);
+    QCOMPARE(*low, qint64(1));
+    QSqlQuery query(services.databaseSession()->database());
+    query.prepare("UPDATE sqlite_sequence SET seq=? WHERE name='calendar_events'");
+    query.addBindValue(sequence);
+    QVERIFY(query.exec());
+    const auto single = repository->saveCalendarEvent(event);
+    QVERIFY(single);
+    QCOMPARE(*single, sequence + 1);
+    const auto batch = repository->saveCalendarEvents({event, event});
+    QVERIFY(batch);
+    QCOMPARE(*batch, QList<qint64>({sequence + 2, sequence + 3}));
+    ApplicationServicesCalendarEventSavePort savePort(services);
+    const auto typedSingle = savePort.saveEvent(validSaveRequest());
+    QVERIFY(typedSingle);
+    QCOMPARE(typedSingle.value().value(), std::to_string(sequence + 4));
+    ApplicationServicesCalendarEventImportSavePort importPort(services);
+    const auto imported = importPort.saveImportedEvents(validImportSaveRequest());
+    QVERIFY(imported);
+    QCOMPARE(imported.value().size(), std::size_t(2));
+    QCOMPARE(imported.value().at(0).value(), std::to_string(sequence + 5));
+    QCOMPARE(imported.value().at(1).value(), std::to_string(sequence + 6));
+    ApplicationServicesCalendarEventSeriesCreatePort seriesPort(services);
+    auto request = seriesCreateRequest("series-edit", {
+        {QDate(2026,12,8), QDate(2026,12,8)},
+        {QDate(2026,12,9), QDate(2026,12,9)}
+    }, QStringLiteral("Wide series"), QStringLiteral("Meeting"), QStringLiteral("Timed"));
+    const auto series = seriesPort.createRepeatSeries(request);
+    QVERIFY(series);
+    QCOMPARE(series.value().size(), std::size_t(2));
+    QCOMPARE(series.value().at(0).value(), std::to_string(sequence + 7));
+    QCOMPARE(series.value().at(1).value(), std::to_string(sequence + 8));
+    const auto editRequest = validSeriesEditRequest();
+    const auto plan = planCalendarEventSeriesEditSuffix(editRequest, {
+        {.eventId = sequence + 7, .startDate = "2026-12-08"},
+        {.eventId = sequence + 8, .startDate = "2026-12-09"}
+    });
+    QVERIFY(plan);
+    QCOMPARE(plan.value().at(0).eventId, sequence + 7);
+    QCOMPARE(plan.value().at(1).eventId, sequence + 8);
+    ApplicationServicesCalendarEventSeriesEditPort editPort(services);
+    QVERIFY(editPort.editRepeatSeriesFromDate(editRequest));
+    for (qint64 offset = 7; offset <= 8; ++offset)
+    {
+        const auto occurrence = repository->getCalendarEvent(sequence + offset);
+        QVERIFY(occurrence);
+        QCOMPARE(occurrence->id, sequence + offset);
+        QCOMPARE(occurrence->title, QString::fromStdString(editRequest.title));
+        QCOMPARE(occurrence->startDate, QDate(2026,12,10).addDays(offset - 7));
+    }
+    QVERIFY(query.exec("SELECT id, typeof(id) FROM calendar_events WHERE id > 1 ORDER BY id"));
+    qint64 expected = sequence + 1;
+    while (query.next())
+    {
+        QCOMPARE(query.value(0).toLongLong(), expected++);
+        QCOMPARE(query.value(1).toString(), QStringLiteral("integer"));
+    }
+    QCOMPARE(expected, sequence + 9);
+    query.finish();
+
+    // Later insert failures roll back the earlier wide batch insert and sequence.
+    QVERIFY(query.exec("CREATE TRIGGER reject_insert BEFORE INSERT ON calendar_events "
+                       "WHEN NEW.title='Rejected' BEGIN SELECT RAISE(ABORT, 'failure'); END"));
+    CalendarEvent rejected = event;
+    rejected.title = QStringLiteral("Rejected");
+    QVERIFY(!repository->saveCalendarEvent(rejected));
+    QVERIFY(!repository->saveCalendarEvents({event, rejected}));
+    auto rejectedRequest = validSaveRequest();
+    rejectedRequest.title = "Rejected";
+    verifyFailure(savePort.saveEvent(rejectedRequest), ErrorCode::Technical);
+    auto importRequest = validImportSaveRequest();
+    importRequest.events.back().title = "Rejected";
+    verifyFailure(importPort.saveImportedEvents(importRequest), ErrorCode::Technical);
+    QVERIFY(query.exec("DROP TRIGGER reject_insert"));
+    const auto afterFailure = repository->saveCalendarEvent(event);
+    QVERIFY(afterFailure);
+    QCOMPARE(*afterFailure, sequence + 9);
+    QCOMPARE(repository->getCalendarEvent(1)->title, QStringLiteral("Low"));
+}
 
 void NextPlatformApplicationServicesCalendarEventPortTests::initTestCase()
 {

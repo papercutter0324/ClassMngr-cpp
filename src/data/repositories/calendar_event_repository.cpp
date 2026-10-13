@@ -37,7 +37,7 @@ CalendarEvent eventFromQuery(
     CalendarEvent event;
 
     event.id =
-        query.value("id").toInt();
+        query.value("id").toLongLong();
     event.title =
         query.value("title").toString();
     event.eventType =
@@ -445,7 +445,7 @@ Result<QDate> CalendarEventRepository::findNextCalendarEventStartDate(
 }
 
 Result<CalendarEvent> CalendarEventRepository::getCalendarEvent(
-    int eventId
+    qint64 eventId
     )
 {
     const CalendarEventByIdLookupResult lookup =
@@ -460,7 +460,7 @@ Result<CalendarEvent> CalendarEventRepository::getCalendarEvent(
 
 CalendarEventByIdLookupResult
 CalendarEventRepository::lookupCalendarEventById(
-    int eventId
+    qint64 eventId
     )
 {
     if (eventId <= 0)
@@ -601,7 +601,7 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForRepea
     return events;
 }
 
-Result<int> CalendarEventRepository::saveCalendarEvent(
+Result<qint64> CalendarEventRepository::saveCalendarEvent(
     const CalendarEvent& event
     )
 {
@@ -770,7 +770,7 @@ CalendarEventRepository::saveCalendarEventOutcomeWithoutTransaction(
         };
     }
 
-    const int eventId = query.lastInsertId().toInt();
+    const qint64 eventId = query.lastInsertId().toLongLong();
     if (eventId <= 0)
     {
         return {
@@ -790,13 +790,13 @@ CalendarEventRepository::saveCalendarEventOutcomeWithoutTransaction(
     };
 }
 
-Result<QList<int>> CalendarEventRepository::saveCalendarEvents(
+Result<QList<qint64>> CalendarEventRepository::saveCalendarEvents(
     const QList<CalendarEvent>& events
     )
 {
     if (events.isEmpty())
     {
-        return QList<int>{};
+        return QList<qint64>{};
     }
 
     DatabaseTransaction transaction(m_database);
@@ -808,11 +808,11 @@ Result<QList<int>> CalendarEventRepository::saveCalendarEvents(
             );
     }
 
-    QList<int> eventIds;
+    QList<qint64> eventIds;
     eventIds.reserve(events.size());
     for (const CalendarEvent& event : events)
     {
-        const Result<int> saved = saveCalendarEvent(event);
+        const Result<qint64> saved = saveCalendarEvent(event);
         if (!saved)
         {
             return std::unexpected(saved.error());
@@ -832,7 +832,7 @@ Result<QList<int>> CalendarEventRepository::saveCalendarEvents(
 }
 
 Status CalendarEventRepository::deleteCalendarEvent(
-    int eventId
+    qint64 eventId
     )
 {
     if (eventId <= 0)

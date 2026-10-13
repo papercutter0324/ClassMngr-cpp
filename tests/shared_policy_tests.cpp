@@ -1351,7 +1351,7 @@ void SharedPolicyTests::featureServicesRejectInvalidCalendarMutations()
     invalid.endDate = invalid.startDate;
     invalid.endTime = QTime(10, 0);
 
-    const Result<QList<int>> rejected = calendar.saveEvents({invalid});
+    const Result<QList<qint64>> rejected = calendar.saveEvents({invalid});
     QVERIFY(!rejected);
     QVERIFY(rejected.error().contains(
         QStringLiteral("events[0].startTime: calendar.time.invalid")
@@ -1371,7 +1371,7 @@ void SharedPolicyTests::featureServicesRejectInvalidCalendarMutations()
     imported.startDate = QDate(2026, 10, 3);
     imported.endDate = imported.startDate;
 
-    const Result<QList<int>> saved = calendar.saveEvents({imported});
+    const Result<QList<qint64>> saved = calendar.saveEvents({imported});
     QVERIFY(saved);
     const Result<CalendarEvent> loaded = calendar.event(saved->first());
     QVERIFY(loaded);

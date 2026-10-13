@@ -115,7 +115,7 @@ QVariantList CalendarEventModel::eventsForDate(
         }
 
         bool validId = false;
-        const int id = projectionText(event.id.value()).toInt(&validId);
+        const qint64 id = projectionText(event.id.value()).toLongLong(&validId);
         const QDate startDate = QDate::fromString(
             projectionText(event.startDate),
             Qt::ISODate
@@ -168,9 +168,10 @@ QVariantList CalendarEventModel::eventsForDate(
 
         QVariantMap value;
 
+        // QML numbers cannot represent every SQLite integer identity.
         value.insert(
             QStringLiteral("id"),
-            id
+            QString::number(id)
             );
         value.insert(
             QStringLiteral("title"),

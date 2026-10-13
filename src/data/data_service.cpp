@@ -785,7 +785,7 @@ Result<QList<CalendarEvent>> DataService::loadUpcomingCalendarEvents(
 }
 
 Result<CalendarEvent> DataService::getCalendarEvent(
-    int eventId
+    qint64 eventId
     )
 {
     if (!m_session->calendarEventRepository())
@@ -818,7 +818,7 @@ Result<QList<CalendarEvent>> DataService::loadCalendarEventsForRepeatSeriesFromD
         );
 }
 
-Result<int> DataService::saveCalendarEvent(
+Result<qint64> DataService::saveCalendarEvent(
     const CalendarEvent& event
     )
 {
@@ -834,7 +834,7 @@ Result<int> DataService::saveCalendarEvent(
         );
 }
 
-Result<QList<int>> DataService::saveCalendarEvents(
+Result<QList<qint64>> DataService::saveCalendarEvents(
     const QList<CalendarEvent>& events
     )
 {
@@ -849,7 +849,7 @@ Result<QList<int>> DataService::saveCalendarEvents(
 }
 
 Status DataService::deleteCalendarEvent(
-    int eventId
+    qint64 eventId
     )
 {
     if (!m_session->calendarEventRepository())

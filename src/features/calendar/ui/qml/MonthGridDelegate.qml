@@ -81,7 +81,7 @@ Item {
     }
 
     signal dayActivated(int year, int month, int day)
-    signal eventActivated(int eventId)
+    signal eventActivated(string eventId)
 
     implicitWidth: contentLayout.implicitWidth
     implicitHeight: contentLayout.implicitHeight

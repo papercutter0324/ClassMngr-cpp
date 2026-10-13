@@ -235,7 +235,7 @@ public:
                     );
             }
 
-            const ::Result<QList<int>> saved =
+            const ::Result<QList<qint64>> saved =
                 repository->saveCalendarEvents(updatedEvents);
             if (!saved)
             {

@@ -119,7 +119,7 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyEventId(
+    [[nodiscard]] static std::optional<qint64> legacyEventId(
         const Domain::CalendarEventId& eventId
         )
     {
@@ -129,7 +129,7 @@ private:
             return std::nullopt;
         }
 
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),
@@ -140,8 +140,8 @@ private:
             return std::nullopt;
         }
 
-        return parsed > 0
-            ? std::optional<int>(parsed)
+        return parsed > 0 && std::to_string(parsed) == value
+            ? std::optional<qint64>(parsed)
             : std::nullopt;
     }
 

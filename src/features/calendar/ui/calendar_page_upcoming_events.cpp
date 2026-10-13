@@ -85,12 +85,12 @@ QTime projectionTime(
         : QTime();
 }
 
-int legacyId(
+qint64 legacyId(
     const CalendarEventSummary& event
     )
 {
     bool validId = false;
-    const int id = projectionText(event.id.value()).toInt(&validId);
+    const qint64 id = projectionText(event.id.value()).toLongLong(&validId);
     return validId && id > 0
         ? id
         : -1;
@@ -282,14 +282,14 @@ bool CalendarPage::eventFilter(
         && watched
         )
     {
-        const int eventId =
+        const qint64 eventId =
             watched
                 ->property("calendarEventId")
-                .toInt();
+                .toLongLong();
 
         if (eventId > 0)
         {
-            handleCalendarEventActivated(eventId);
+            handleCalendarEventActivated(QString::number(eventId));
             return true;
         }
     }

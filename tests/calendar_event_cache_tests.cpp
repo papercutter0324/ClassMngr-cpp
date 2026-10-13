@@ -62,7 +62,7 @@ void saveEvent(
     event.endTime = QTime(10, 0);
 
     CalendarEventRepository repository(database);
-    const Result<int> saved = repository.saveCalendarEvent(event);
+    const Result<qint64> saved = repository.saveCalendarEvent(event);
     QVERIFY(saved);
     QVERIFY(*saved > 0);
 }
@@ -392,6 +392,8 @@ class CalendarEventCacheTests : public QObject
     Q_OBJECT
 
 private slots:
+    void wideIdsSurviveCacheAndModel_data();
+    void wideIdsSurviveCacheAndModel();
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
     void injectedInvalidTimesAreFilteredByCacheAndModel();
@@ -412,6 +414,59 @@ private slots:
     void multiDayEventsUseOneCanonicalRecordAndRangeDeduplicates();
     void retainedRangesEvictEventsAndRejectEvictedWorkerResults();
 };
+
+void CalendarEventCacheTests::wideIdsSurviveCacheAndModel_data()
+{
+    QTest::addColumn<qint64>("wideId");
+    QTest::newRow("above-int-max") << qint64(2147483648LL);
+    QTest::newRow("above-javascript-exact-range") << qint64(9007199254740993LL);
+    QTest::newRow("signed-64-max") << qint64(9223372036854775807LL);
+}
+
+void CalendarEventCacheTests::wideIdsSurviveCacheAndModel()
+{
+    QFETCH(qint64, wideId);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath("wide-cache.db");
+    const QString connection = QUuid::createUuid().toString();
+    {
+        auto database = QSqlDatabase::addDatabase("QSQLITE", connection);
+        database.setDatabaseName(path);
+        QVERIFY(database.open());
+        createCalendarEventsTable(database);
+        QSqlQuery query(database);
+        query.prepare("INSERT INTO calendar_events "
+                      "(id,title,start_date,end_date,start_time,end_time) "
+                      "VALUES (?,'Wide cache event','2026-07-10','2026-07-11','09:00','10:00')");
+        query.addBindValue(wideId);
+        QVERIFY(query.exec());
+        QVERIFY(query.exec("INSERT INTO calendar_events "
+                           "(id,title,start_date,end_date,start_time,end_time) "
+                           "VALUES (1,'Low cache event','2026-07-10','2026-07-10','09:00','10:00')"));
+    }
+    QSqlDatabase::removeDatabase(connection);
+    CalendarEventCache cache;
+    CalendarEventModel model(&cache);
+    cache.setDatabasePath(path);
+    cache.requestRange(QDate(2026,7,1), QDate(2026,7,31));
+    QTRY_VERIFY_WITH_TIMEOUT(cache.isRangeLoaded(QDate(2026,7,1), QDate(2026,7,31)), 5000);
+    QCOMPARE(cache.eventCount(), 2);
+    QCOMPARE(cache.eventsInRange(QDate(2026,7,10), QDate(2026,7,11)).size(), 2);
+    const auto day = cache.eventsForDate(QDate(2026,7,11));
+    QCOMPARE(day.size(), 1);
+    QCOMPARE(day.front().id, wideId);
+    const auto projection = cache.eventProjectionForDate(QDate(2026,7,11));
+    QCOMPARE(projection.events().front().id.value(), std::to_string(wideId));
+    const auto values = model.eventsForDate(2026,7,11);
+    QCOMPARE(values.size(), 1);
+    const auto id = values.front().toMap().value("id");
+    QCOMPARE(id.metaType(), QMetaType::fromType<QString>());
+    QCOMPARE(id.toString(), QString::number(wideId));
+    cache.setRetainedRanges({{QDate(2026,7,11), QDate(2026,7,11)}});
+    QCOMPARE(cache.eventCount(), 1);
+    QCOMPARE(cache.eventsForDate(QDate(2026,7,11)).front().id, wideId);
+}
 
 void CalendarEventCacheTests::rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess()
 {

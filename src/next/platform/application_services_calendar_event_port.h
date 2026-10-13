@@ -71,7 +71,7 @@ public:
         ) override
     {
         const std::string& value = eventId.value();
-        int legacyEventId = 0;
+        qint64 legacyEventId = 0;
         const auto parsed = std::from_chars(
             value.data(),
             value.data() + value.size(),
@@ -79,11 +79,12 @@ public:
             );
         if (parsed.ec != std::errc{}
             || parsed.ptr != value.data() + value.size()
-            || legacyEventId <= 0)
+            || legacyEventId <= 0
+            || std::to_string(legacyEventId) != value)
         {
             return failureSummary(
                 Domain::ErrorCode::InvalidInput,
-                "Calendar event identifier must be positive."
+                "Calendar event identifier must be a positive canonical decimal integer."
                 );
         }
 
@@ -92,7 +93,7 @@ public:
 
     [[nodiscard]] Domain::Result<Application::CalendarEventSummary>
     projectionById(
-        const int eventId
+        const qint64 eventId
         ) const
     {
         if (eventId <= 0)

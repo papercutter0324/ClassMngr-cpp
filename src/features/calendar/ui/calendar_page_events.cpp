@@ -176,16 +176,16 @@ void CalendarPage::handleCalendarDayActivated(
         );
 }
 void CalendarPage::handleCalendarEventActivated(
-    int eventId
+    QString eventId
     )
 {
-    if (!m_services || eventId <= 0)
+    if (!m_services || eventId.isEmpty())
     {
         return;
     }
 
     const ClassMngr::Next::Application::CalendarEventByIdQueryRequest request{
-        std::to_string(eventId)
+        eventId.toStdString()
     };
     ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort port(
         *m_services
@@ -378,9 +378,9 @@ void CalendarPage::buildCalendarContent()
             );
         connect(
             root,
-            SIGNAL(eventActivated(int)),
+            SIGNAL(eventActivated(QString)),
             this,
-            SLOT(handleCalendarEventActivated(int))
+            SLOT(handleCalendarEventActivated(QString))
             );
         connect(
             root,

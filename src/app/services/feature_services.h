@@ -213,16 +213,16 @@ public:
             const QDate& endDate
             ) const;
     [[nodiscard]] Result<QList<CalendarEvent>> upcomingEvents(const QDate& fromDate, int limit) const;
-    [[nodiscard]] Result<CalendarEvent> event(int eventId) const;
+    [[nodiscard]] Result<CalendarEvent> event(qint64 eventId) const;
     [[nodiscard]] Result<QList<CalendarEvent>> repeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate
         ) const;
-    [[nodiscard]] Result<int> saveEvent(const CalendarEvent& event) const;
-    [[nodiscard]] Result<QList<int>> saveEvents(
+    [[nodiscard]] Result<qint64> saveEvent(const CalendarEvent& event) const;
+    [[nodiscard]] Result<QList<qint64>> saveEvents(
         const QList<CalendarEvent>& events
         ) const;
-    [[nodiscard]] Status deleteEvent(int eventId) const;
+    [[nodiscard]] Status deleteEvent(qint64 eventId) const;
     [[nodiscard]] Status deleteRepeatSeriesFromDate(
         const QString& repeatSeriesId,
         const QDate& startDate

@@ -145,7 +145,7 @@ PersistedEventRows persistedEventRows(ApplicationServices& services)
     while (query.next())
     {
         QJsonArray row;
-        row.append(query.value(0).toInt());
+        row.append(query.value(0).toLongLong());
         row.append(query.value(1).toString());
         row.append(query.value(2).toString());
         row.append(query.value(3).toString());
@@ -171,7 +171,7 @@ PersistedEventRows persistedEventRows(ApplicationServices& services)
 }
 
 QString expectedEventRow(
-    const int id,
+    const qint64 id,
     const QString& title,
     const QString& eventType,
     const QString& startDate,
@@ -279,7 +279,7 @@ QStringList eventProjectionRows(const QVariantList& events)
     return rows;
 }
 
-int eventIdForTitle(ApplicationServices& services, const QString& title)
+qint64 eventIdForTitle(ApplicationServices& services, const QString& title)
 {
     QSqlQuery query(services.databaseSession()->database());
     query.prepare(QStringLiteral(
@@ -290,7 +290,7 @@ int eventIdForTitle(ApplicationServices& services, const QString& title)
     {
         return -1;
     }
-    return query.value(0).toInt();
+    return query.value(0).toLongLong();
 }
 
 QQuickItem* calendarRoot(CalendarPage& page)
@@ -924,6 +924,7 @@ class CalendarPageEventMutationParityTests final : public QObject
 private slots:
     void workspaceCalendarResourcesReleaseAndRestore_data();
     void workspaceCalendarResourcesReleaseAndRestore();
+    void ordinaryCreateEditAndDeleteUseCalendarPageSignals_data();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
     void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
     void monthGridCellsMatchCalendarEventModelDateProjection();
@@ -1076,9 +1077,19 @@ void CalendarPageEventMutationParityTests::workspaceCalendarResourcesReleaseAndR
     }
 }
 
+void CalendarPageEventMutationParityTests::ordinaryCreateEditAndDeleteUseCalendarPageSignals_data()
+{
+    QTest::addColumn<qint64>("sequence");
+    QTest::newRow("small-id") << qint64(1);
+    QTest::newRow("above-int-max") << qint64(2147483647LL);
+    QTest::newRow("above-javascript-exact-range") << qint64(9007199254740992LL);
+    QTest::newRow("signed-64-max") << qint64(9223372036854775806LL);
+}
+
 void CalendarPageEventMutationParityTests::
 ordinaryCreateEditAndDeleteUseCalendarPageSignals()
 {
+    QFETCH(qint64, sequence);
     CalendarWorkspace workspace;
     QString setupError;
     QVERIFY2(
@@ -1086,6 +1097,10 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
         qPrintable(setupError)
         );
 
+    QSqlQuery sequenceQuery(workspace.services.databaseSession()->database());
+    sequenceQuery.prepare("UPDATE sqlite_sequence SET seq=? WHERE name='calendar_events'");
+    sequenceQuery.addBindValue(sequence);
+    QVERIFY(sequenceQuery.exec());
     CalendarPage page(&workspace.services);
     QQuickItem* const root = calendarRoot(page);
     QVERIFY(root);
@@ -1093,7 +1108,7 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
         root->metaObject()->indexOfSignal("dayActivated(int,int,int)") >= 0
         );
     QVERIFY(
-        root->metaObject()->indexOfSignal("eventActivated(int)") >= 0
+        root->metaObject()->indexOfSignal("eventActivated(QString)") >= 0
         );
 
     QString interactionError;
@@ -1128,11 +1143,11 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
 
     const PersistedEventRows afterCreate = persistedEventRows(workspace.services);
     QVERIFY2(afterCreate.succeeded, qPrintable(afterCreate.error));
-    const int createdEventId = eventIdForTitle(
+    const qint64 createdEventId = eventIdForTitle(
         workspace.services,
         createdValues.title
         );
-    QVERIFY(createdEventId > 0);
+    QCOMPARE(createdEventId, sequence + 1);
     QCOMPARE(
         afterCreate.rows,
         QStringList({
@@ -1175,7 +1190,7 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
                     calendarRootObject,
                     "eventActivated",
                     Qt::DirectConnection,
-                    Q_ARG(int, createdEventId)
+                    Q_ARG(QString, QString::number(createdEventId))
                     );
             },
             updatedValues,
@@ -1221,7 +1236,7 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
                     calendarRootObject,
                     "eventActivated",
                     Qt::DirectConnection,
-                    Q_ARG(int, createdEventId)
+                    Q_ARG(QString, QString::number(createdEventId))
                     );
             },
             updatedValues,
@@ -1311,7 +1326,7 @@ repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
         [&workspace, &setupError, &seriesId](
             const QString& title,
             const QDate& date
-            )
+            ) -> qint64
         {
             CalendarEvent event;
             event.title = title;
@@ -1412,7 +1427,7 @@ repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
     QQuickItem* const root = calendarRoot(page);
     QVERIFY(root);
     QVERIFY(
-        root->metaObject()->indexOfSignal("eventActivated(int)") >= 0
+        root->metaObject()->indexOfSignal("eventActivated(QString)") >= 0
         );
     QVERIFY(
         root->metaObject()->indexOfSignal(
@@ -1463,7 +1478,7 @@ repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection()
                     calendarRootObject,
                     "eventActivated",
                     Qt::DirectConnection,
-                    Q_ARG(int, selectedId)
+                    Q_ARG(QString, QString::number(selectedId))
                     );
             },
             editedValues,

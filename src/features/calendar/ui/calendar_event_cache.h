@@ -185,7 +185,7 @@ private:
         ) const;
     void pruneToRetainedRanges();
     void removeEventMemberships(
-        int eventId
+        qint64 eventId
         );
     void emitLoadingChangedIfNeeded(
         bool previouslyLoading
@@ -196,10 +196,10 @@ private:
         const ClassMngr::Next::Application::CalendarEventQueryPortFactory
         > m_queryFactory;
     QHash<
-        int,
+        qint64,
         ClassMngr::Next::Application::CalendarEventSummary
         > m_eventsById;
-    QHash<QDate, QList<int>> m_eventIdsByDate;
+    QHash<QDate, QList<qint64>> m_eventIdsByDate;
     quint64 m_dateIndexEntryCount = 0;
     QList<DateRange> m_loadedRanges;
     QList<RangeFailure> m_rangeFailures;

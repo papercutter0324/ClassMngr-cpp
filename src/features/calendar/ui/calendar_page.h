@@ -92,7 +92,7 @@ private slots:
         int day
         );
     void handleCalendarEventActivated(
-        int eventId
+        QString eventId
         );
     void handleCalendarDisplayedMonthChanged(
         int year,

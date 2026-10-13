@@ -23,7 +23,7 @@ struct CalendarEventDateInterval
 
 struct CalendarEvent
 {
-    int id = -1;
+    qint64 id = -1;
     QString title;
     QString eventType = QStringLiteral("Other");
     QString timeStatus = QStringLiteral("Timed");
