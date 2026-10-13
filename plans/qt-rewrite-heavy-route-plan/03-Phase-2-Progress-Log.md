@@ -30913,3 +30913,67 @@ This is a pre-implementation matrix, not acceptance evidence; no F795
 verification has run. Run no full suite. F707/F709 and the dense Speaking
 Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+### F795 My Classes student-count wide row identity - accepted - 2026-10-13
+
+F795 was accepted at code commit
+`26b1a98a120de56017449dcc4308dd2f4b1e1055`. It changed
+`src/data/repositories/roster_repository.cpp` and
+`tests/next_platform_application_services_my_classes_student_count_batch_read_port_tests.cpp`,
+preserving signed 64-bit SQLite row identity in both batched and individual
+My Classes count paths. The focused build passed after the known
+ZERO_CHECK/MSBuild FileTracker sandbox retry; the exact CTest
+`ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`
+passed 1/1. `git diff --check` passed; no full suite ran.
+
+### Batch 209 completion - 2026-10-13
+
+F795 completed the only selected slice in Batch 209. Its signed 64-bit row
+identity change and focused verification are recorded above. F707/F709 and
+the dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 210 discovery - 2026-10-13
+
+F796 is selected for Sub Prep schedule-summary roster counts. The summary
+query uses SQLite `TRIM` with only ASCII whitespace while the legacy roster
+count uses `QString::trimmed().isEmpty()`, so Unicode-space-only name cells
+can count inconsistently. Preserve the legacy QString whitespace contract;
+F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred.
+
+### F796 Sub Prep schedule-summary roster-count Unicode whitespace parity - selected and acceptance matrix - 2026-10-13
+
+**F796 is selected:** in
+`src/data/repositories/class_info_repository.cpp`, make roster-name emptiness
+in `loadSubPrepScheduleSummaries` match the legacy `QString::trimmed().isEmpty()`
+semantics used by roster counts. Unicode-space-only English or Korean name
+cells, including U+00A0 NO-BREAK SPACE and another Qt-recognized Unicode space,
+must count as blank. Use a parity approach that covers QString's whitespace
+set; do not define parity as NBSP-only unless the chosen mechanism demonstrably
+covers that full set. Preserve ordinary populated-name counts, mixed names
+with ordinary surrounding whitespace, and zero roster counts when the roster
+SQL fails without failing otherwise-valid summary reads. Do not add a broad
+rewrite, row limit, or performance claim.
+
+Extend only
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`,
+adding Unicode-space-only English/Korean cases to the existing
+`projectsVisibleScheduleSummariesAndAggregatesRosterCounts()` coverage while
+preserving its ordinary-count and SQL-failure fallback assertions. The target
+and exact CTest name are
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; it
+must register once. No CMake inventory change is expected.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing
+`build/windows-x64-debug` tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence. Run no full
+suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.

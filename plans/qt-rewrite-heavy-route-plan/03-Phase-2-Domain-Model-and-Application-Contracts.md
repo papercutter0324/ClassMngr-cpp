@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F794 was accepted at `a00e20942d085ba5541bc12f57dc3656e37433bb`, completing Batch 208; F795 is selected in Batch 209 to preserve distinct signed 64-bit row identities in student-count reads; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F795 was accepted at `26b1a98a120de56017449dcc4308dd2f4b1e1055`, completing Batch 209; F796 is selected in Batch 210 for Sub Prep schedule-summary roster-count Unicode whitespace parity; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -111,9 +111,9 @@ Treat this plan as an operational summary, not a history:
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
 
-#### Active batch: Batch 209
+#### Active batch: Batch 210
 
-- F795 - My Classes student-count wide row identity - Keep distinct nonnegative SQLite row indexes distinct through signed 64-bit range in batched and per-class count paths, without materializing rosters or adding a row limit.
+- F796 - Sub Prep schedule-summary roster-count Unicode whitespace parity - Match QString whitespace semantics when deciding whether English/Korean roster names count, including Unicode-space-only cells.
 
 ## Objective
 
