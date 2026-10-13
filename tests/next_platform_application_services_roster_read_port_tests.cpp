@@ -214,6 +214,25 @@ bool seedFractionalColumnIndexCell(
     return insertCell.exec();
 }
 
+bool seedFractionalRowIndexCell(
+    QSqlDatabase database,
+    const int classId,
+    const QString& value
+    )
+{
+    QSqlQuery insertCell(database);
+    if (!insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, 0.25, 0, ?)"
+            )))
+    {
+        return false;
+    }
+    insertCell.bindValue(0, classId);
+    insertCell.bindValue(1, value);
+    return insertCell.exec();
+}
+
 Domain::ClassId typedClassId(const int classId)
 {
     return *Domain::ClassId::fromString(std::to_string(classId));
@@ -233,6 +252,7 @@ private slots:
     void rejectsMalformedColumnIndexWithoutOverwritingColumnZero();
     void rejectsFractionalColumnIndexBeforeOverwritingColumnZero();
     void rejectsFractionalAvailabilityColumnIndex();
+    void rejectsFractionalAvailabilityRowIndex();
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
     void rejectsMalformedAvailabilityColumnIndex();
@@ -619,6 +639,76 @@ rejectsFractionalAvailabilityColumnIndex()
     const QString diagnostic = QString::fromStdString(result.error().message);
     QVERIFY2(
         diagnostic.contains(QStringLiteral("column index"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsFractionalAvailabilityRowIndex()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Fractional Row Index Availability Rejection Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {{0, 0, QString()}}
+        ));
+    const QString fractionalValue = QStringLiteral("Fractional student cell");
+    QVERIFY(seedFractionalRowIndexCell(
+        database,
+        *createdClass,
+        fractionalValue
+        ));
+
+    QSqlQuery storedType(database);
+    QVERIFY2(storedType.prepare(QStringLiteral(
+        "SELECT row_index, typeof(row_index) AS row_storage_type, "
+        "col_index, typeof(col_index) AS column_storage_type, value "
+        "FROM roster_data WHERE class_id=? ORDER BY row_index"
+        )), qPrintable(storedType.lastError().text()));
+    storedType.bindValue(0, *createdClass);
+    QVERIFY2(storedType.exec(), qPrintable(storedType.lastError().text()));
+    QVERIFY(storedType.next());
+    bool emptyRowIndexValid = false;
+    QCOMPARE(
+        storedType.value("row_index").toLongLong(&emptyRowIndexValid),
+        qlonglong(0)
+        );
+    QVERIFY(emptyRowIndexValid);
+    QCOMPARE(storedType.value("row_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedType.value("col_index").toInt(), 0);
+    QCOMPARE(storedType.value("column_storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(storedType.value("value").toString().isEmpty());
+    QVERIFY(storedType.next());
+    QCOMPARE(storedType.value("row_index").toDouble(), 0.25);
+    QCOMPARE(storedType.value("row_storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(storedType.value("col_index").toInt(), 0);
+    QCOMPARE(storedType.value("column_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedType.value("value").toString(), fractionalValue);
+    QVERIFY(!storedType.next());
+
+    Platform::ApplicationServicesRosterAvailabilityBatchReadPort port(services);
+    const Application::RosterAvailabilityBatchReadQuery availabilityQuery(port);
+    const auto result = availabilityQuery.execute(
+        {typedClassId(*createdClass)},
+        baseColumnNames()
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("row index"), Qt::CaseInsensitive),
         qPrintable(diagnostic)
         );
 }

@@ -1530,6 +1530,7 @@ Status RosterRepository::forEachRosterDataCellForClasses(
         SELECT
             requested.class_id AS class_id,
             roster_data.row_index AS row_index,
+            typeof(roster_data.row_index) AS row_index_storage_type,
             roster_data.col_index AS col_index,
             typeof(roster_data.col_index) AS col_index_storage_type,
             roster_data.value AS value
@@ -1567,6 +1568,18 @@ Status RosterRepository::forEachRosterDataCellForClasses(
 
     while (query.next())
     {
+        if (
+            query.value("row_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster availability failed: invalid row index."
+                    )
+                );
+        }
+
         if (
             query.value("col_index_storage_type").toString()
                 != QStringLiteral("integer")
