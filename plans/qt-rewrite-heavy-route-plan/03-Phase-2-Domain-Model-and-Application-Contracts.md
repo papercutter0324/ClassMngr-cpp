@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F857 is accepted at `d2dbccb5`; bounded F858 discovery is underway, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F857 is accepted at `d2dbccb5`; F858 is selected to relocate the legacy TeacherImportPlan mapper to a Data adapter, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F858 bounded candidate discovery is underway; no candidate is selected yet.
+- F858 - Relocate TeacherImportPlan legacy-to-typed mapping to a Data adapter; preserve mapping behavior and verify both existing callers.
 
 #### Deferred candidates
 

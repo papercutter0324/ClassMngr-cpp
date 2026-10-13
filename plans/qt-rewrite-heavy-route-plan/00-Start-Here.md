@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F857 is accepted at `d2dbccb5`; Batch 271 is complete and bounded F858 discovery is underway. The post-F857 audit found no newly actionable deferred candidate; F579's review trigger is satisfied, but its fresh WPR capture remains blocked by the unavailable elevated Administrator token. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F857 is accepted at `d2dbccb5`; Batch 271 is complete and F858 is selected for implementation. The deferred-candidate audit found no newly actionable item; F579's review trigger is satisfied, but its fresh WPR capture remains blocked by the unavailable elevated Administrator token. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

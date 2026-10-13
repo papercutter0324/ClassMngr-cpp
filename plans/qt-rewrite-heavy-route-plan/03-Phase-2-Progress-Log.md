@@ -34509,3 +34509,40 @@ remain unchanged. F858 bounded discovery is underway; its first scan found no
 strong candidate and identified a near miss without a normal caller; two
 complementary scans remain in progress. Phase 2
 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 272 discovery and selection - 2026-10-14
+
+Initial F858 scans of Phase 2 domain/use-case plan gaps found no strong
+candidate. A targeted architecture scan selected the legacy teacher-import
+mapping boundary. `src/next/application/teacher_import_plan_mapper.h`
+translates Qt/legacy `TeacherImportPlan` data into a typed
+`TeacherImportUseCaseRequest`, despite the Application target declaring only
+Domain and Persistence dependencies; the mapper includes `QString`, a legacy
+model, and `TeacherImportNameUtils`. Independent investigation confirmed two
+real callers: `src/data/repositories/teacher_import_repository.cpp` and
+`src/next/platform/application_services_teacher_import_apply_port.h`, with
+focused existing test coverage. This is a source-based architecture finding;
+behavioral equivalence remains to be verified.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Relocate legacy TeacherImportPlan mapping to a Data adapter (F858) | Selected | Qt and legacy conversion currently sit in Application instead of the outer Data/platform boundary. |
+
+F858 is selected, not implemented. Move the mapper to a clearly named adapter
+beside the Data repository, remove it from the Next Application source
+manifest, register it to Data ownership, and update both existing consumers.
+Preserve all mapping and normalization, review decisions, request fields, and
+caller behavior. Do not delete compatibility APIs or redesign import behavior.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Layer ownership | Mapper is absent from `src/next/application` and the Next Application source set; the new adapter is registered to Data ownership. |
+| Caller integration | Both existing consumers use the legacy adapter. |
+| Behavior | Typed use-case request values remain equivalent, including normalization, review decisions, and fields. |
+| Focused verification | Build and pass exact registered CTests `ClassMngrTeacherImportTests` and `ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests` in standard top-level `build/windows-x64-debug`; no full suite, and add tests only if needed for changed production behavior. |
+
+The deferred-candidate re-audit found no item newly unblocked. F579's review
+trigger is satisfied, but its matched-symbol WPR capture remains blocked
+without an elevated Administrator token; the other deferred blockers remain
+as documented. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
