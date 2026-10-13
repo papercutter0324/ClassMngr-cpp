@@ -32041,3 +32041,64 @@ F810 covers only the details read. Defer the shared
 CalendarEvent event-ID-width work. F707/F709 and the dense Speaking Evaluation
 row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open. At selection, no F810 tests have run.
+
+### F810 Testing Class details wide teacher ID - accepted - 2026-10-13
+
+F810 is accepted at source/test commit
+`e9a9c69531a7138f603ace3fcf192204e729e837`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`
+passed after an identical outside-sandbox retry following
+`ZERO_CHECK`/FileTracker `E_ACCESSDENIED`. The exact CTest
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`
+passed 1/1. No full suite ran.
+
+### Batch 224 completion - 2026-10-13
+
+F810 completed Batch 224 by preserving wide teacher identity through the
+read-only Testing Class details path. Shared Testing Class editor/update
+identity remains separate. The earlier project-configuration and CMake
+optimization remains complete. F767 snapshot canonical-ID validation remains
+accepted and distinct from deferred Schedule Import teacher-ID width/narrowing
+across snapshot, review, apply, and write. The shared
+`ClassPageDetailsReadRecord`/Co-Teacher read/write flow and persisted
+CalendarEvent event-ID-width work remain deferred. F707/F709 and the dense
+Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 225 discovery and selection - 2026-10-13
+
+The adjacent-slice review selected the isolated Class Notes teacher-display
+read for F811. It can carry qint64 through a Notes-specific class-details
+projection into the existing `TeacherRepository::loadTeacherDisplayNameFields`
+qint64 overload without widening shared records or write paths.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Class Notes teacher-display read (F811) | Selected | Bounded read-only path with an existing qint64 teacher-display API; class IDs and shared contracts can remain unchanged. |
+| Schedule Import teacher-ID width across snapshot/review/apply/write | Deferred | Broader end-to-end workflow; keep separate from accepted F767 snapshot canonical-ID validation. |
+| `ClassPageDetailsReadRecord` and Co-Teacher identity | Deferred | Shared read/write identity flow should be handled together. |
+| Testing Class editor/update identity | Deferred | Separate from F810's accepted details-only read and F811's Notes read. |
+| Persisted CalendarEvent event-ID width | Deferred | Event identity, not teacher identity; remediation spans shared model and repository CRUD. |
+
+### F811 Class Notes teacher-display wide teacher ID - selected and acceptance matrix - 2026-10-13
+
+**F811 is selected:** add a Class-Notes-specific class-details read contract/API
+that carries qint64 teacher identity through the adapter into the existing
+qint64 `TeacherRepository::loadTeacherDisplayNameFields` overload. Keep class
+IDs int, and leave shared `ClassPageDetailsReadRecord`, Co-Teacher read/write,
+Class Details validation, and legacy models unchanged.
+
+Extend
+`tests/next_platform_application_services_class_notes_page_read_port_tests.cpp`
+with a database-backed teacher ID `2147483648`; verify the exact stored ID and
+the returned preferred/display name. Preserve existing unassigned, missing,
+and error behavior. The existing CMake registration is
+`NextPlatformApplicationServicesClassNotesPageReadPort`; build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests`, then
+run only CTest matching
+`^ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests$`.
+No CMake registration change is expected; no full suite is requested.
+F767 remains distinct accepted snapshot canonical-ID validation, and
+CalendarEvent event-ID-width work remains deferred. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

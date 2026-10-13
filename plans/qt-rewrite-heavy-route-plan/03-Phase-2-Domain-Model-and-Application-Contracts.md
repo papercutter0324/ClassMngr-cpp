@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F809 was accepted in Batch 223 at `74c35f25ca4e11d282df1ba180a4f3602820cdc6`; Batch 224 selects F810 for the read-only Testing Class details teacher ID; Schedule Import teacher-ID width/narrowing, shared Testing Class editor/update identity, the `ClassPageDetailsReadRecord`/Co-Teacher identity flow, and the persisted CalendarEvent event-ID-width issue remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 snapshot canonical-ID validation remains accepted).
+- Current note: F810 was accepted in Batch 224 at `e9a9c69531a7138f603ace3fcf192204e729e837`; Batch 225 selects F811 for the isolated Class Notes teacher-display read, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -117,14 +117,14 @@ Treat this plan as an operational summary, not a history:
 - ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
   Co-Teacher read/write identity flow can be covered.
 - Schedule Import teacher-ID width/narrowing across snapshot/review/apply/write -
-  deferred outside F810; F767's snapshot canonical-ID validation remains
+  deferred outside F811; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
 - Shared Testing Class editor/update identity and read/write contracts -
-  deferred outside F810; F810 isolates only the details read.
+  deferred outside F811; F810 isolates the details read.
 
-#### Active batch: Batch 224
+#### Active batch: Batch 225
 
-- F810 - Testing Class details wide teacher ID - Preserve qint64 in a details-specific repository read and typed adapter result, leaving shared editor and write contracts unchanged.
+- F811 - Class Notes teacher display wide teacher ID - Preserve qint64 through a Notes-specific class-details read contract and adapter into the existing teacher-display repository API.
 
 ## Objective
 
