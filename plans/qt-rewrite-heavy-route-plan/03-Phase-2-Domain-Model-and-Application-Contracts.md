@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F800 was accepted in Batch 214 at `d35794b88a4f6c551b7d33a8a2fc45a4534521ad`; Batch 215 selects F801 to preserve signed-64 teacher IDs through the My Classes teacher-profile batch read; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F801 was accepted in Batch 215 at `a6502ec8d4cf8f4e2fa04aaaace3757198b0a626`; Batch 216 selects F802 to preserve signed-64 teacher IDs through My Classes summaries, display-name reads, and tab labels; the separate CalendarEvent shared-model/API candidate, F707/F709, and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,10 +110,13 @@ Treat this plan as an operational summary, not a history:
   not introduce arbitrary 4,096- or 25-row limits.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
+- CalendarEvent shared-model/API migration - deferred: the typed
+  `CalendarEventSeriesId` API candidate has plan support but no demonstrated
+  behavior defect; keep it separate from the My Classes teacher-ID path.
 
-#### Active batch: Batch 215
+#### Active batch: Batch 216
 
-- F801 - My Classes teacher-profile batch wide teacher IDs - Preserve canonical positive signed-64 teacher IDs through query validation, the platform adapter, and the profile-specific repository batch read.
+- F802 - My Classes summary-to-tab teacher display with wide IDs - Preserve canonical positive signed-64 teacher IDs through class summaries and the teacher display-name batch so duplicate class labels include teacher names and retain class-ID disambiguation.
 
 ## Objective
 

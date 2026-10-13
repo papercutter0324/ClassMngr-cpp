@@ -31357,3 +31357,77 @@ This is a pre-implementation matrix, not acceptance evidence; no F801 tests
 have run and no full suite is requested. F707/F709 and the dense Speaking
 Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+### F801 My Classes teacher-profile batch wide teacher IDs - accepted - 2026-10-13
+
+F801 is accepted at implementation and test commit
+`a6502ec8d4cf8f4e2fa04aaaace3757198b0a626`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`
+passed outside the sandbox after the sandbox attempt hit the known
+ZERO_CHECK/MSBuild FileTracker `E_ACCESSDENIED` error. CTest inventory found
+exactly one registration (#324), and the focused CTest passed 1/1. No full
+suite ran.
+
+### Batch 215 completion - 2026-10-13
+
+F801 completed the selected work in Batch 215. Its signed-64 teacher-profile
+read path and focused verification are recorded above. F707/F709 and the
+dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 216 discovery - 2026-10-13
+
+F802 continues the user-facing teacher identity path after F799 and F801:
+My Classes class summaries feed the teacher display-name batch read, which
+supplies tab labels. Preserve signed-64 teacher IDs through both batch reads
+so the wide teacher ID `2147483648` can resolve and appear in labels for
+duplicate class names while the existing class-ID disambiguation remains.
+Keep the separate CalendarEvent shared-model/API candidate deferred; its
+typed `CalendarEventSeriesId` migration has prior plan support but no
+demonstrated behavior defect. Do not expand F802 into the selected-class
+profile path.
+
+### F802 My Classes summary-to-tab wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F802 is selected:** preserve canonical positive signed-64 teacher IDs along
+the My Classes class-summary to teacher-display-name batch to tab-label path.
+The scoped repository work is in `MyClassesClassSummaryReadRecord` and its
+batch read in `src/data/repositories/class_info_repository.h` and
+`src/data/repositories/class_info_repository.cpp`, followed by the existing
+summary query/adapter in
+`src/next/application/my_classes_class_summary_batch_read_query.h` and
+`src/next/platform/application_services_my_classes_class_summary_batch_read_port.h`.
+Preserve the wide ID through `TeacherDisplayNameBatchReadQuery`, its platform
+adapter, and the teacher display-name batch repository records/API in
+`src/next/application/teacher_display_name_batch_read_query.h`,
+`src/next/platform/application_services_teacher_display_name_batch_read_port.h`,
+and `src/data/repositories/teacher_repository.h` / `.cpp`. Keep class IDs,
+unrelated projections/contracts, and the selected-class profile path
+unchanged. Preserve ordering, missing-row semantics, and behavior for normal
+teacher IDs.
+
+Extend the existing end-to-end test
+`tests/my_classes_page_tests.cpp`. Seed a teacher row with explicit SQLite
+INTEGER ID `2147483648`, assign it to duplicate-label My Classes classes, and
+assert it flows through class-summary and teacher-display-name reads so tab
+labels include the teacher name and preserve existing class-ID
+disambiguation. Keep existing normal-ID behavior and ordering/missing-row
+expectations. The test target is `ClassMngrMyClassesPageTests`; its focused
+CTest name is `MyClassesPage`. The CMake optimization is already complete in
+its earlier commit; make no CMake or test-inventory change.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrMyClassesPageTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^MyClassesPage$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^MyClassesPage$"
+```
+
+Confirm the exact `MyClassesPage` CTest is registered, then run only that test
+after the focused build. This is a pre-implementation matrix, not acceptance
+evidence; no F802 tests have run and no full suite is requested. The separate
+CalendarEvent shared-model/API candidate remains deferred. F707/F709 and the
+dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
