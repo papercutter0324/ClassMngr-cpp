@@ -33087,3 +33087,53 @@ test file. Run only
 no model, API, CMake change, or full suite. The project-configuration and CMake
 optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
 exit gate remains Open.
+
+### F831 Native English Teacher directory-read ID representability - accepted - 2026-10-13
+
+F831 is accepted at source/test commit
+`dc64e02fd2a41a9d834e31adaee0b2ed889ed6a5`. Independent fresh Ninja Debug
+verification in `%TEMP%\f831n` built and ran
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests`;
+exact CTest registration #340 passed 1/1. The regression verifies persisted
+SQLite ID `2147483648` remains INTEGER with all fields and stored identity
+preserved while the port returns Technical. Scoped `git diff --check` passed;
+no compiler warnings occurred. The configure object-path warning belonged to
+the separate Native English Birthday Directory Read Port target; the focused
+test path length was 235/250. No full suite ran.
+
+### Batch 245 completion - 2026-10-13
+
+F831 completed Batch 245 by rejecting an unrepresentable Native English
+directory-read ID instead of exposing a wrongly narrowed value. Batch 246
+selects F832 for GS Team directory-read ID representability. The
+project-configuration and CMake optimization remains complete; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 246 discovery and selection - 2026-10-13
+
+`gs_team.id` is `INTEGER PRIMARY KEY AUTOINCREMENT`. `GsTeamRepository::getAll()`
+converts IDs with `.toInt()` into an int-backed model, and the directory adapter
+returns that int-backed ID; write behavior treats nonpositive IDs as new. F831
+reproduced `2147483648` becoming `INT_MIN`, and F830 reproduced
+`4294967297` aliasing ID 1 through QSQLITE `.toInt()`, but F832 must first
+confirm the exact GS Team read-port behavior. F823's import update and F831's
+Native English directory read are separate paths.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| GS Team directory-read ID representability (F832) | Selected | The repository narrows persisted identity before returning the int-backed directory model. |
+
+F832 is selected, not implemented or accepted. First reproduce through the
+current port: seed ID 1 and a second GS Team row with ID `4294967297`, confirm
+both `typeof(id)` values are `integer`, and observe whether the wide row aliases
+ID 1. Only if the defect reproduces, fix the read and require a typed Technical
+failure instead of a successful wrong/duplicate ID; verify both exact persisted
+rows and fields remain unchanged. If the alias does not reproduce, stop before
+production edits for main to revise the candidate. Preserve ordinary ordering
+and fields, unavailable-session behavior, and repository failure contracts.
+Change only `src/data/repositories/gs_team_repository.cpp` and
+`tests/next_platform_application_services_gs_team_directory_read_port_tests.cpp`;
+run only `ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests`.
+Do not widen the model/API; no CMake change or full suite. The
+project-configuration and CMake optimization remains complete; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
