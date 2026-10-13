@@ -14,6 +14,7 @@
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
+#include <QVariant>
 
 #include <string>
 #include <utility>
@@ -67,6 +68,69 @@ bool executeSql(ApplicationServices& services, const QString& statement)
     }
     QSqlQuery query(dataService->databaseSession()->database());
     return query.exec(statement);
+}
+
+bool insertRosterOutputColumns(
+    ApplicationServices& services,
+    const int classIdValue,
+    const QStringList& columns
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session)
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    for (qsizetype index = 0; index < columns.size(); ++index)
+    {
+        if (!query.prepare(QStringLiteral(
+                "INSERT INTO roster_columns (class_id, name, position, width) "
+                "VALUES (?, ?, ?, 0)"
+                )))
+        {
+            return false;
+        }
+        query.addBindValue(classIdValue);
+        query.addBindValue(columns.at(index));
+        query.addBindValue(index);
+        if (!query.exec())
+        {
+            return false;
+        }
+        query.finish();
+    }
+    return true;
+}
+
+bool insertRosterOutputCell(
+    ApplicationServices& services,
+    const int classIdValue,
+    const int rowIndex,
+    const int columnIndex,
+    const QString& value
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session)
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    if (!query.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, ?, ?)"
+            )))
+    {
+        return false;
+    }
+    query.addBindValue(classIdValue);
+    query.addBindValue(rowIndex);
+    query.addBindValue(columnIndex);
+    query.addBindValue(value);
+    return query.exec();
 }
 
 int createTeacher(
@@ -184,6 +248,9 @@ class NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests final
 private slots:
     void initTestCase();
     void readsSelectedClassesModeAndRequestedRosterColumns();
+    void rejectsFractionalRosterRowIndexAsTechnical();
+    void returnsEmptyRosterOutputWhenHeadersHaveNoStoredCells();
+    void projectsSparseIntegerRosterRowsWithBlankGaps();
     void preservesWideTeacherIdFromSqliteThroughRosterOutputSourcePort();
     void batchesDistinctAssignedTeachersInFirstSeenOrder();
     void includesUnassignedTeacherAndUsesSelectedMode();
@@ -447,6 +514,251 @@ readsSelectedClassesModeAndRequestedRosterColumns()
     QCOMPARE(
         genericProfileMetricsAfter.callCount - genericProfileMetricsBefore.callCount,
         0
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsFractionalRosterRowIndexAsTechnical()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Fractional roster row"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    const QSqlDatabase database = session->database();
+    QSqlQuery insertColumn(database);
+    for (qsizetype index = 0; index < Roster::BaseColumns.size(); ++index)
+    {
+        QVERIFY(insertColumn.prepare(QStringLiteral(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES (?, ?, ?, 0)"
+            )));
+        insertColumn.addBindValue(classIdValue);
+        insertColumn.addBindValue(Roster::BaseColumns.at(index));
+        insertColumn.addBindValue(index);
+        QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+        insertColumn.finish();
+    }
+
+    QSqlQuery emptyRoster(database);
+    QVERIFY(emptyRoster.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM roster_data WHERE class_id=?"
+        )));
+    emptyRoster.addBindValue(classIdValue);
+    QVERIFY2(emptyRoster.exec(), qPrintable(emptyRoster.lastError().text()));
+    QVERIFY(emptyRoster.next());
+    QCOMPARE(emptyRoster.value(0).toInt(), 0);
+    emptyRoster.finish();
+
+    QSqlQuery insertCell(database);
+    QVERIFY(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    insertCell.addBindValue(classIdValue);
+    insertCell.addBindValue(QVariant::fromValue(0.25));
+    insertCell.addBindValue(0);
+    insertCell.addBindValue(QStringLiteral("Fractional phantom student"));
+    QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+    insertCell.finish();
+
+    QSqlQuery storedCell(database);
+    QVERIFY(storedCell.prepare(QStringLiteral(
+        "SELECT row_index, typeof(row_index) AS row_storage_type, "
+        "col_index, typeof(col_index) AS col_storage_type, value "
+        "FROM roster_data WHERE class_id=?"
+        )));
+    storedCell.addBindValue(classIdValue);
+    QVERIFY2(storedCell.exec(), qPrintable(storedCell.lastError().text()));
+    QVERIFY(storedCell.next());
+    QCOMPARE(storedCell.value("row_index").toDouble(), 0.25);
+    QCOMPARE(storedCell.value("row_storage_type").toString(), QStringLiteral("real"));
+    QCOMPARE(storedCell.value("col_index").toInt(), 0);
+    QCOMPARE(storedCell.value("col_storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(
+        storedCell.value("value").toString(),
+        QStringLiteral("Fractional phantom student")
+        );
+    QVERIFY(!storedCell.next());
+    storedCell.finish();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QVERIFY(
+        result.error().message.find("row_index has non-INTEGER SQLite storage")
+        != std::string::npos
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+returnsEmptyRosterOutputWhenHeadersHaveNoStoredCells()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Empty roster output"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+
+    QStringList columns = Roster::BaseColumns;
+    columns.append(QStringLiteral("Notes"));
+    columns.append(QStringLiteral("Unused"));
+    QVERIFY(insertRosterOutputColumns(services, classIdValue, columns));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery emptyRoster(session->database());
+    QVERIFY(emptyRoster.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM roster_data WHERE class_id=?"
+        )));
+    emptyRoster.addBindValue(classIdValue);
+    QVERIFY2(emptyRoster.exec(), qPrintable(emptyRoster.lastError().text()));
+    QVERIFY(emptyRoster.next());
+    QCOMPARE(emptyRoster.value(0).toInt(), 0);
+    emptyRoster.finish();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    const auto& outputClass = result.value().classes.front();
+    QCOMPARE(
+        outputClass.rosterColumns,
+        (std::vector<std::string>{"English", "Korean", "Notes"})
+        );
+    QVERIFY(outputClass.rosterRows.empty());
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+projectsSparseIntegerRosterRowsWithBlankGaps()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Sparse roster output"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+
+    QStringList columns = Roster::BaseColumns;
+    columns.append(QStringLiteral("Notes"));
+    columns.append(QStringLiteral("Unused"));
+    QVERIFY(insertRosterOutputColumns(services, classIdValue, columns));
+    QVERIFY(insertRosterOutputCell(
+        services,
+        classIdValue,
+        2,
+        0,
+        QStringLiteral("Sparse English")
+        ));
+    QVERIFY(insertRosterOutputCell(
+        services,
+        classIdValue,
+        2,
+        1,
+        QStringLiteral("Sparse Korean")
+        ));
+    QVERIFY(insertRosterOutputCell(
+        services,
+        classIdValue,
+        2,
+        2,
+        QStringLiteral("Unrequested base value")
+        ));
+    QVERIFY(insertRosterOutputCell(
+        services,
+        classIdValue,
+        2,
+        6,
+        QStringLiteral("Sparse note")
+        ));
+    QVERIFY(insertRosterOutputCell(
+        services,
+        classIdValue,
+        2,
+        7,
+        QStringLiteral("Unrequested extra value")
+        ));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery storedRow(session->database());
+    QVERIFY(storedRow.prepare(QStringLiteral(
+        "SELECT DISTINCT row_index, typeof(row_index) AS storage_type "
+        "FROM roster_data WHERE class_id=? ORDER BY row_index"
+        )));
+    storedRow.addBindValue(classIdValue);
+    QVERIFY2(storedRow.exec(), qPrintable(storedRow.lastError().text()));
+    QVERIFY(storedRow.next());
+    QCOMPARE(storedRow.value("row_index").toInt(), 2);
+    QCOMPARE(storedRow.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(!storedRow.next());
+    storedRow.finish();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    const auto& outputClass = result.value().classes.front();
+    QCOMPARE(
+        outputClass.rosterColumns,
+        (std::vector<std::string>{"English", "Korean", "Notes"})
+        );
+    QCOMPARE(outputClass.rosterRows.size(), std::size_t(3));
+    const std::vector<std::string> blankProjectedRow{"", "", ""};
+    QCOMPARE(outputClass.rosterRows[0], blankProjectedRow);
+    QCOMPARE(outputClass.rosterRows[1], blankProjectedRow);
+    QCOMPARE(
+        outputClass.rosterRows[2],
+        (std::vector<std::string>{
+            "Sparse English",
+            "Sparse Korean",
+            "Sparse note"
+        })
         );
 }
 

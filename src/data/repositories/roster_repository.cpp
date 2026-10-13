@@ -1952,7 +1952,9 @@ Result<Roster> RosterRepository::loadRosterForOutput(
     maximumRowQuery.setForwardOnly(true);
     maximumRowQuery.prepare(
         QStringLiteral(
-            "SELECT MAX(row_index) FROM roster_data "
+            "SELECT MAX(row_index) AS maximum_row_index, "
+            "MAX(CASE WHEN typeof(row_index) <> 'integer' THEN 1 ELSE 0 END) "
+            "AS has_non_integer_row_index FROM roster_data "
             "WHERE class_id=? AND row_index>=0 AND col_index IN (%1)"
             ).arg(indexPlaceholders)
         );
@@ -1978,10 +1980,25 @@ Result<Roster> RosterRepository::loadRosterForOutput(
             );
     }
 
-    const QVariant maximumRowValue = maximumRowQuery.value(0);
+    const QVariant maximumRowValue = maximumRowQuery.value(
+        QStringLiteral("maximum_row_index")
+        );
     std::size_t rowCount = 0;
     if (!maximumRowValue.isNull())
     {
+        bool storageFlagValid = false;
+        const int hasNonIntegerRowIndex = maximumRowQuery.value(
+            QStringLiteral("has_non_integer_row_index")
+            ).toInt(&storageFlagValid);
+        if (!storageFlagValid || hasNonIntegerRowIndex != 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Roster row_index has non-INTEGER SQLite storage."
+                    )
+                );
+        }
+
         bool rowIndexValid = false;
         const qlonglong maximumRowIndex =
             maximumRowValue.toLongLong(&rowIndexValid);
