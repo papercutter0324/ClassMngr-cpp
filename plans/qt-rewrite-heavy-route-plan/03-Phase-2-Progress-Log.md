@@ -32438,3 +32438,63 @@ F817 is selected, not implemented or accepted. Verify that a generated ID
 above `INT_MAX` reaches the typed create port unchanged. The broader Initial
 Setup and Teacher Create/Delete ID-width work remains deferred. Phase 2 Gates
 1/2 remain Partial and the formal exit gate remains Open.
+
+### F817 Teacher Create wide write result - accepted - 2026-10-13
+
+F817 is accepted at source/test commit
+`0007abd723ad1e76140cb4246578c66f95d6a029`. An independent focused Debug
+build covering the application use-case, Teacher Create port, and Initial
+Setup parity targets passed after the sandbox hit the known Visual Studio
+FileTracker `ZERO_CHECK` `E_ACCESSDENIED`; the identical established retry
+passed. All three selected CTest entries passed:
+`ClassMngrInitialSetupWizardTeacherCreateParityTests`,
+`ClassMngrNextApplicationTeacherCreateUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests`.
+
+The port regression proves generated ID `2147483648` reaches the typed result,
+persists as SQLite `INTEGER`, and retains normalized profile fields. It also
+proves legacy `createTeacher -> Result<int>` returns an explicit overflow
+error without wrapping. That legacy overflow call still inserts before
+returning the error, matching the existing insert-then-conversion-failure
+behavior; the regression asserts this. Existing invalid-input,
+unavailable-session, and forced-write-failure checks passed. There is no
+standalone teacher-repository CTest; the direct legacy repository call is
+exercised inside the port test suite. `git diff --check` passed with only
+line-ending notices. No full suite ran.
+
+### Batch 231 completion - 2026-10-13
+
+F817 completed Batch 231 by preserving a generated wide teacher ID through
+the typed Teacher Create write result. Batch 232 selects F818 for persisted
+`row_index` validation in the batched Class Transfer export roster read. The
+broader Initial Setup and Teacher Create/Delete UI identity-width work remains
+deferred. The project-configuration and CMake optimization remains complete;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 232 discovery and selection - 2026-10-13
+
+F818 targets `RosterRepository::loadFullRostersImpl`, the batched roster read
+used by Class Transfer export. SQL filters `row_index >= 0`, but SQLite's
+dynamic typing permits malformed text values through that predicate; unchecked
+`toInt()` conversion before indexing or growing the roster can turn malformed
+data into row 0 and overwrite valid row-0 data. The separate single-roster
+`loadRoster` path already rejects malformed, negative, and out-of-int-range
+indices. F815 is a related precedent for the malformed-index-to-row-zero
+invariant in speaking-evaluation coordinates, but it changed a different
+repository/table and did not cover this batched roster-data path. F797 covers
+the separate single-roster path.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Batched Class Transfer roster `row_index` validation (F818) | Selected | Checked conversion in the full-roster loader prevents malformed persisted coordinates from aliasing row 0 and can preserve the existing typed export-source failure policy. |
+| Persisted CalendarEvent event-ID width | Deferred | Credible alternative, but it spans shared-model and repository CRUD contracts more broadly than this bounded batched-read fix. |
+
+F818 is selected, not implemented or accepted. In
+`tests/next_platform_class_transfer_export_source_tests.cpp` and its existing
+CTest target, seed valid row 0 plus a malformed persisted `row_index`; if one
+focused test can safely cover it, also include an unrepresentable positive
+value. Assert that the typed Class Transfer export source follows the
+established roster-read failure policy instead of aliasing the corrupt row to
+row 0. Do not introduce an arbitrary row-count cap. The project-configuration
+and CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and
+the formal exit gate remains Open.
