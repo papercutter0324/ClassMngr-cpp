@@ -33606,3 +33606,54 @@ in-range non-INTEGER row index.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`.
+
+### F841 fractional REAL roster row index in roster availability - accepted - 2026-10-14
+
+F841 is accepted at source/test commit
+`2cad77c81ee303a28e5320f73496aae5dfc623ed`. Baseline empty INTEGER row 0 and
+nonempty REAL `row_index=0.25` at column 0 caused the typed availability port
+to treat row 0 as occupied (`firstEmptyRow == 1`). The fix checks
+`typeof(row_index)` in `forEachRosterDataCellForClasses()` and returns
+Technical before narrowing. Valid INTEGER rows, row-limit filtering, column
+validation, and out-of-range behavior remain covered. Independent verification
+passed `ClassMngrNextPlatformApplicationServicesRosterReadPortTests` 1/1 with
+`-C Debug` after an approved FileTracker retry; the scoped diff check passed.
+No full suite ran.
+
+### Batch 255 completion - 2026-10-14
+
+F841 completed Batch 255 by rejecting fractional REAL row indexes in roster
+availability reads. Batch 256 selects F842 to investigate fractional REAL
+row indexes in My Classes student counts. Phase 2 Gates 1/2 remain Partial and
+the formal exit gate remains Open.
+
+### Batch 256 discovery and selection - 2026-10-14
+
+Both `RosterRepository::loadMyClassesStudentCountRecords()` and
+`loadMyClassesStudentCountRecord()` convert `row_index` with `toLongLong()`
+without checking SQLite storage type. A REAL `row_index=0.25` English cell may
+therefore be counted as row 0 by the typed My Classes student-count port. This
+candidate concerns fractional row indexes; Batch 250/F836 addressed fractional
+column-index sizing in Class Analytics.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in My Classes student counts (F842) | Selected | The batch and per-class readers both narrow row indexes without validating storage type. |
+
+F842 is selected, not implemented or accepted. First seed a blank INTEGER
+`row_index=0` English cell and a nonempty REAL `row_index=0.25` English cell
+at the same class and column; verify their SQLite storage types and observe
+the typed My Classes port count. If the REAL-only value contributes a student,
+require both batch and per-class reads to reject malformed row storage while
+preserving the existing per-class Technical failure behavior. If it does not
+reproduce, stop and report before production edits.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm REAL `row_index=0.25` storage and whether the typed My Classes port returns count 1 despite the blank INTEGER row 0. |
+| Batch and fallback handling | On reproduction, reject non-INTEGER row storage in both `loadMyClassesStudentCountRecords()` and `loadMyClassesStudentCountRecord()` so a malformed class reports its established per-class Technical result. |
+| Compatibility | Preserve valid sibling counts, trimming/whitespace and English/Korean header rules, and sparse INTEGER indexes above `INT_MAX`. |
+| Focused verification | Update `tests/next_platform_application_services_my_classes_student_count_batch_read_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`.
