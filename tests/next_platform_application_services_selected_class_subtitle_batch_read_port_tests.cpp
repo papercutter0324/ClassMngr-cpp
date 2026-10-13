@@ -9,6 +9,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -134,6 +135,7 @@ class NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests
 
 private slots:
     void readsSubtitleProjectionWithFixedStatementCounts();
+    void readsDisplayNamesForWideAssignedTeacherId();
     void missingAssignmentsAndReadFailuresRemainIndependent();
     void missingSessionAndInvalidIdsReturnStructuredErrors();
 };
@@ -269,6 +271,88 @@ readsSubtitleProjectionWithFixedStatementCounts()
     QVERIFY(missingMetadata.value().front().classFields.value().classLevel.empty());
     QVERIFY(missingMetadata.value().front().assignedTeacher);
     QVERIFY(!missingMetadata.value().front().assignedTeacher.value().has_value());
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests::
+readsDisplayNamesForWideAssignedTeacherId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+
+    constexpr qlonglong wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(session->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_romanization, preferred_name
+        ) VALUES (?, ?, ?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher Korean"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher English"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Romanized Name"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Preferred Name"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Wide Teacher Subtitle Batch")
+        );
+    QVERIFY(createdClass);
+    QString seedError;
+    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+        *createdClass,
+        -1,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        {{QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:55 AM")}}
+        ), &seedError), qPrintable(seedError));
+
+    QSqlQuery assignTeacher(session->database());
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?")));
+    assignTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    assignTeacher.addBindValue(*createdClass);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredId(session->database());
+    QVERIFY(verifyStoredId.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredId.addBindValue(*createdClass);
+    QVERIFY2(verifyStoredId.exec(), qPrintable(verifyStoredId.lastError().text()));
+    QVERIFY(verifyStoredId.next());
+    QCOMPARE(verifyStoredId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(1).toLongLong(), wideTeacherId);
+    QCOMPARE(verifyStoredId.value(2).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(3).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyStoredId.next());
+
+    Platform::ApplicationServicesSelectedClassSubtitleBatchReadPort port(
+        &services
+        );
+    const Application::SelectedClassSubtitleBatchReadQuery query(port);
+    const auto result = query.execute(ids({*createdClass}));
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(1));
+    const auto& snapshot = result.value().front();
+    QVERIFY(snapshot.classId == classId(*createdClass));
+    QVERIFY(snapshot.classFields);
+    QCOMPARE(snapshot.classFields.value().classGrade, std::u16string(u"E4"));
+    QVERIFY(snapshot.assignedTeacher);
+    QVERIFY(snapshot.assignedTeacher.value().has_value());
+    const auto& fields = snapshot.assignedTeacher.value().value();
+    QCOMPARE(fields.teacherKr, std::u16string(u"Wide Teacher Korean"));
+    QCOMPARE(fields.teacherEn, std::u16string(u"Wide Teacher English"));
+    QCOMPARE(fields.preferredRomanization, std::u16string(u"Wide Romanized Name"));
+    QCOMPARE(fields.preferredName, std::u16string(u"Wide Preferred Name"));
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests::

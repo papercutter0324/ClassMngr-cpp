@@ -6,8 +6,11 @@
 #include "next/application/selected_class_subtitle_read_query.h"
 #include "next/platform/application_services_selected_class_subtitle_read_port.h"
 
+#include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -74,6 +77,7 @@ class NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests final
 
 private slots:
     void readsOnlySubtitleProjectionFromActiveSessionRepositories();
+    void readsDisplayNamesForWideAssignedTeacherId();
     void missingSessionAndInvalidIdsDoNotFallBackToServices();
     void classAndTeacherFailuresRemainIndependent();
 };
@@ -147,6 +151,78 @@ readsOnlySubtitleProjectionFromActiveSessionRepositories()
     QVERIFY(noTeacher.value().classFields);
     QVERIFY(noTeacher.value().assignedTeacher);
     QVERIFY(!noTeacher.value().assignedTeacher.value().has_value());
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
+readsDisplayNamesForWideAssignedTeacherId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const QSqlDatabase database = services.databaseSession()->database();
+
+    constexpr qlonglong wideTeacherId = 2'147'483'648LL;
+    QSqlQuery insertTeacher(database);
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_romanization, preferred_name
+        ) VALUES (?, ?, ?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher Korean"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher English"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Romanized Name"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Preferred Name"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Wide Teacher Subtitle")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(*createdClass, -1)
+        ));
+
+    QSqlQuery assignTeacher(database);
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?")));
+    assignTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    assignTeacher.addBindValue(*createdClass);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredId(database);
+    QVERIFY(verifyStoredId.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredId.addBindValue(*createdClass);
+    QVERIFY2(verifyStoredId.exec(), qPrintable(verifyStoredId.lastError().text()));
+    QVERIFY(verifyStoredId.next());
+    QCOMPARE(verifyStoredId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(1).toLongLong(), wideTeacherId);
+    QCOMPARE(verifyStoredId.value(2).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredId.value(3).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyStoredId.next());
+
+    Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
+    const Application::SelectedClassSubtitleReadQuery query(port);
+    const auto result = query.execute(classId(*createdClass));
+    QVERIFY(result);
+    QVERIFY(result.value().classId == classId(*createdClass));
+    QVERIFY(result.value().classFields);
+    QVERIFY(result.value().assignedTeacher);
+    QVERIFY(result.value().assignedTeacher.value().has_value());
+
+    const auto& fields = result.value().assignedTeacher.value().value();
+    QCOMPARE(fields.teacherKr, std::u16string(u"Wide Teacher Korean"));
+    QCOMPARE(fields.teacherEn, std::u16string(u"Wide Teacher English"));
+    QCOMPARE(fields.preferredRomanization, std::u16string(u"Wide Romanized Name"));
+    QCOMPARE(fields.preferredName, std::u16string(u"Wide Preferred Name"));
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::

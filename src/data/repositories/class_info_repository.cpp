@@ -1505,7 +1505,17 @@ Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
     if (query.next())
     {
         const QVariant teacherId = query.value("teacher_id");
-        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (!teacherId.isNull())
+        {
+            bool teacherIdOk = false;
+            record.teacherId = teacherId.toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading class subtitle failed: the database returned an invalid teacher identifier."
+                    ));
+            }
+        }
         record.grade = query.value("class_grade").toString();
         record.level = query.value("class_level").toString();
     }
@@ -1610,7 +1620,17 @@ ClassInfoRepository::loadClassSubtitleRecords(
         if (!metadataQuery.value("class_info_class_id").isNull())
         {
             const QVariant teacherId = metadataQuery.value("teacher_id");
-            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+            if (!teacherId.isNull())
+            {
+                bool teacherIdOk = false;
+                record.teacherId = teacherId.toLongLong(&teacherIdOk);
+                if (!teacherIdOk)
+                {
+                    return std::unexpected(QObject::tr(
+                        "Loading class subtitles failed: the database returned an invalid teacher identifier."
+                        ));
+                }
+            }
             record.grade = metadataQuery.value("class_grade").toString();
             record.level = metadataQuery.value("class_level").toString();
         }

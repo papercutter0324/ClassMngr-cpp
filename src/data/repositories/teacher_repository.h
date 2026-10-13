@@ -215,6 +215,8 @@ public:
         );
     [[nodiscard]] Result<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(int teacherId);
+    [[nodiscard]] Result<TeacherDisplayNameReadRecord>
+        loadTeacherDisplayNameFields(qint64 teacherId);
     [[nodiscard]] Result<QList<TeacherDisplayNameBatchReadRecord>>
         loadTeacherDisplayNameRecords(const QList<int>& teacherIds);
     [[nodiscard]] Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>

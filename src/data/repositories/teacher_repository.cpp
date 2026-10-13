@@ -382,6 +382,14 @@ TeacherRepository::loadTeacherDisplayNameFields(
     int teacherId
     )
 {
+    return loadTeacherDisplayNameFields(static_cast<qint64>(teacherId));
+}
+
+Result<TeacherDisplayNameReadRecord>
+TeacherRepository::loadTeacherDisplayNameFields(
+    qint64 teacherId
+    )
+{
     if (teacherId <= 0)
     {
         return std::unexpected(
@@ -392,7 +400,11 @@ TeacherRepository::loadTeacherDisplayNameFields(
 
     QSqlQuery query(m_database);
     query.prepare(R"(
-        SELECT teacher_kr, teacher_en, preferred_romanization, preferred_name
+        SELECT id AS teacher_id,
+               teacher_kr,
+               teacher_en,
+               preferred_romanization,
+               preferred_name
         FROM teachers
         WHERE id=?
     )");
@@ -413,6 +425,19 @@ TeacherRepository::loadTeacherDisplayNameFields(
         return std::unexpected(
             QObject::tr(
                 "Loading teacher display name failed for %1: no matching record exists."
+                ).arg(teacherIdentity(teacherId))
+            );
+    }
+
+    bool returnedTeacherIdOk = false;
+    const qint64 returnedTeacherId = query.value("teacher_id").toLongLong(
+        &returnedTeacherIdOk
+        );
+    if (!returnedTeacherIdOk || returnedTeacherId != teacherId)
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Loading teacher display name failed for %1: the database returned an invalid teacher identifier."
                 ).arg(teacherIdentity(teacherId))
             );
     }

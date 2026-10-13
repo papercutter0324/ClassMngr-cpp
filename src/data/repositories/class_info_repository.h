@@ -33,7 +33,7 @@ struct ClassNavigationReadRecord final
 struct ClassSubtitleReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString grade;
     QString level;
     QList<ClassTime> regularTimes;
@@ -107,7 +107,7 @@ struct SelectedClassGradeReadRecord final
 struct ClassSubtitleBatchReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString grade;
     QString level;
     QList<ClassTime> regularTimes;

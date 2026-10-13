@@ -141,8 +141,8 @@ public:
 
         std::vector<Application::SelectedClassSubtitleReadSnapshot> snapshots;
         snapshots.reserve(classIds.size());
-        std::vector<int> assignedTeacherIds;
-        std::unordered_set<int> seenTeacherIds;
+        std::vector<qint64> assignedTeacherIds;
+        std::unordered_set<qint64> seenTeacherIds;
         for (std::size_t index = 0; index < classIds.size(); ++index)
         {
             const ClassSubtitleBatchReadRecord& loadedClass =
@@ -214,21 +214,21 @@ public:
                 );
         }
 
-        QList<int> legacyTeacherIds;
+        QList<qint64> legacyTeacherIds;
         legacyTeacherIds.reserve(
             static_cast<qsizetype>(assignedTeacherIds.size())
             );
-        for (const int teacherId : assignedTeacherIds)
+        for (const qint64 teacherId : assignedTeacherIds)
         {
             legacyTeacherIds.append(teacherId);
         }
 
-        Result<QList<TeacherDisplayNameBatchReadRecord>> loadedTeachers = [&]()
-            -> Result<QList<TeacherDisplayNameBatchReadRecord>>
+        Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>> loadedTeachers = [&]()
+            -> Result<QList<MyClassesTeacherDisplayNameBatchReadRecord>>
         {
             try
             {
-                return teacherRepository->loadTeacherDisplayNameRecords(
+                return teacherRepository->loadMyClassesTeacherDisplayNameRecords(
                     legacyTeacherIds
                     );
             }
@@ -258,12 +258,12 @@ public:
                 );
         }
 
-        std::unordered_map<int, Application::SelectedClassSubtitleTeacherFields>
+        std::unordered_map<qint64, Application::SelectedClassSubtitleTeacherFields>
             teacherFieldsById;
         teacherFieldsById.reserve(
             static_cast<std::size_t>(loadedTeachers->size())
             );
-        for (const TeacherDisplayNameBatchReadRecord& loadedTeacher :
+        for (const MyClassesTeacherDisplayNameBatchReadRecord& loadedTeacher :
              *loadedTeachers)
         {
             if (loadedTeacher.teacherId <= 0
@@ -296,7 +296,7 @@ public:
 
         for (std::size_t index = 0; index < loadedClasses->size(); ++index)
         {
-            const int teacherId = loadedClasses->at(
+            const qint64 teacherId = loadedClasses->at(
                 static_cast<qsizetype>(index)).teacherId;
             if (teacherId <= 0)
             {
