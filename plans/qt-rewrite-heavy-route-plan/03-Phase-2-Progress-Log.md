@@ -33444,3 +33444,63 @@ corresponding target/CTest names are
 `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
 `ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, and
 `ClassMngrInitialSetupWizardClassCreateSaveParityTests`.
+
+### F838 Initial Setup wide teacher identity - accepted - 2026-10-14
+
+F838 is accepted at source/test commit
+`c60cfd481f8da3dc4eb71d2833652a8028086421`. Before the fix, SQLite INTEGER
+teacher ID `2147483648` narrowed to `-2147483648` at the choice read and was
+rejected by the Initial Setup choice query and class-details save use case.
+The fix carries the qint64 identity separately through wizard state and the
+typed class-details save path, then binds it in the same persistence
+transaction; the exact ID remains SQLite INTEGER. The independent Tester
+passed all five target-named CTests with `-C Debug`; an approved retry was
+needed after the sandbox denied MSBuild FileTracker access. The scoped diff
+check passed. No full suite ran.
+
+The five passing target/CTest registrations were
+`ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, and
+`ClassMngrInitialSetupWizardClassCreateSaveParityTests`.
+
+### Batch 252 completion - 2026-10-14
+
+F838 completed Batch 252 by preserving wide teacher identity through Initial
+Setup choice, wizard state, typed class-details validation/save, and qint64
+class-info persistence. Batch 253 selects F839 to investigate fractional REAL
+roster row-index aliasing through the shared full-roster loader in Class
+Transfer export. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### Batch 253 discovery and selection - 2026-10-14
+
+`RosterRepository::loadFullRostersImpl()` filters on `row_index >= 0`, then
+converts the selected value with `toLongLong()` without checking SQLite storage
+type. This may allow REAL `row_index=0.25` to narrow to row 0 and overwrite a
+valid INTEGER row 0 during Class Transfer export; the pre-fix behavior still
+needs reproduction. Existing Class Transfer source tests establish roster
+stage errors for malformed TEXT and out-of-range INTEGER row indexes.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in Class Transfer export (F839) | Selected | The shared full-roster loader narrows an in-range stored row index without validating its storage type; confirm whether REAL `0.25` aliases INTEGER row 0. |
+
+F839 is selected, not implemented or accepted. First seed a valid INTEGER
+`row_index=0` cell and a fractional REAL `row_index=0.25` cell at the same
+class and column; confirm `typeof(row_index)` for both and reproduce whether
+the read overwrites row 0. If reproduced, reject non-INTEGER row storage
+before narrowing and require the existing roster-stage Technical error:
+`Loading roster data failed for class id %1: invalid row index.` If not,
+stop and report before production changes.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Prove fractional REAL `row_index=0.25` is stored as REAL alongside INTEGER row 0 and determine whether conversion overwrites or aliases the valid value. |
+| Error contract | On reproduction, return the established Technical roster-stage error for malformed row storage without changing Class Transfer stage ordering or error propagation. |
+| Compatibility | Preserve valid sparse INTEGER rows, malformed TEXT row-index error, out-of-range INTEGER row-index error, and existing Class Transfer staged-error/rollback behavior. |
+| Focused verification | Update `tests/next_platform_class_transfer_export_source_tests.cpp`; build and run only `ClassMngrNextPlatformClassTransferExportSourceTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformClassTransferExportSourceTests`.

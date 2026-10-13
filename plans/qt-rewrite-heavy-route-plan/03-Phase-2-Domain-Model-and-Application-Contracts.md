@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F837 completed Batch 251 at `6c566246c0656b64830f5c0cdbb37c525bb1fee0`; F838 is selected for Batch 252 to preserve wide teacher identity through scoped Initial Setup choice-query and class-details validation, wizard state, typed save, and qint64 persistence; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F838 completed Batch 252 at `c60cfd481f8da3dc4eb71d2833652a8028086421`; F839 is selected for Batch 253 pending reproduction of fractional REAL `roster_data.row_index` aliasing in Class Transfer export; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 252
+#### Active batch: Batch 253
 
-- F838 - Initial Setup wide teacher identity - Preserve the selected TeacherId through scoped choice-query validation/read, wizard state, typed class-details validation/save, and qint64 class_info persistence; keep class IDs int-based.
+- F839 - Fractional REAL roster row index in Class Transfer export - Reproduce REAL `row_index=0.25` alongside INTEGER row 0 through the shared full-roster loader; if reproduced, preserve the established Technical roster-stage error and existing malformed/out-of-range behavior.
 
 ## Objective
 
