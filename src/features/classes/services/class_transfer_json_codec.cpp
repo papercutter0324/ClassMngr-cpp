@@ -760,7 +760,7 @@ QJsonObject ClassTransferJsonCodec::toJson(
     };
 }
 
-QJsonObject ClassTransferJsonCodec::toJson(const ClassTransferExportPackage& package)
+QJsonObject ClassTransferJsonCodec::toJson(const ClassTransferPortablePackage& package)
 {
     QJsonArray teachers, classes;
     for (const auto& teacher : package.teachers) teachers.append(teacherToJson(teacher));
@@ -962,7 +962,7 @@ Status ClassTransferJsonCodec::saveFile(
 
 Status ClassTransferJsonCodec::saveFile(
     const QString& filePath,
-    const ClassTransferExportPackage& package
+    const ClassTransferPortablePackage& package
     )
 {
     if (filePath.trimmed().isEmpty())

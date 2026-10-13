@@ -46,6 +46,4 @@ struct ClassTransferPortablePackage
     std::vector<ClassExportClass> classes;
 };
 
-using ClassTransferExportPackage = ClassTransferPortablePackage;
-
 } // namespace ClassMngr::Next::Application

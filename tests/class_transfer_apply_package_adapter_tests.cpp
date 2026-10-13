@@ -12,8 +12,6 @@ namespace Application = ClassMngr::Next::Application;
 namespace Legacy = ClassMngr::Data::Legacy;
 static_assert(std::is_same_v<decltype(Application::ClassTransferApplyCommand::package),
     Application::ClassTransferPortablePackage>);
-static_assert(std::is_same_v<Application::ClassTransferExportPackage,
-    Application::ClassTransferPortablePackage>);
 
 namespace
 {

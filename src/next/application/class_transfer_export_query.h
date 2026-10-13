@@ -68,7 +68,7 @@ struct ClassTransferExportSource
     std::optional<Domain::OperationError> deferredSelectionOrLookupError;
 };
 using ClassTransferExportSourceResult = Domain::Result<ClassTransferExportSource>;
-using ClassTransferExportResult = Domain::Result<ClassTransferExportPackage>;
+using ClassTransferExportResult = Domain::Result<ClassTransferPortablePackage>;
 class ClassTransferExportSourceReadPort
 {
 public:
@@ -136,7 +136,7 @@ public:
 
         // Successful source snapshots contain every attempted value. Projection
         // performs no additional validation or reads after the transaction.
-        ClassTransferExportPackage result;
+        ClassTransferPortablePackage result;
         result.exportedAtUtc = ClassTransferExportDetail::utcTimestamp(source.exportedAtUtcMilliseconds);
         std::map<Domain::TeacherId, ClassExportText> teacherKeys;
         for (const auto& item : source.classes)

@@ -15,12 +15,12 @@ public:
         );
 
     [[nodiscard]] static QJsonObject toJson(
-        const ClassMngr::Next::Application::ClassTransferExportPackage& package
+        const ClassMngr::Next::Application::ClassTransferPortablePackage& package
         );
 
     [[nodiscard]] static Status saveFile(
         const QString& filePath,
-        const ClassMngr::Next::Application::ClassTransferExportPackage& package
+        const ClassMngr::Next::Application::ClassTransferPortablePackage& package
         );
 
     [[nodiscard]] static Result<ClassTransferPackage> fromJson(
