@@ -493,7 +493,7 @@ public:
         std::array<EvaluationView, kClassAnalyticsEvaluationNames.size()>
             evaluations;
 
-        const auto loadedEvaluations =
+        auto loadedEvaluations =
             readPort.readEvaluationBatch(query.classId);
         if (!loadedEvaluations)
         {
@@ -508,7 +508,7 @@ public:
             const auto evaluation = static_cast<ClassAnalyticsEvaluation>(index);
             EvaluationView& view = evaluations[index];
             view.evaluation = evaluation;
-            view.rawRows = loadedEvaluations.value()[index];
+            view.rawRows = std::move(loadedEvaluations.value()[index]);
             view.filteredRows = filterByRoster(
                 view.rawRows, roster.value(), names);
             view.filteredSnapshot = compute(
