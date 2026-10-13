@@ -33990,3 +33990,73 @@ reproduce, stop before production edits and report the result.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.
+
+### F848 fractional REAL Speaking Evaluation read row index - accepted - 2026-10-14
+
+F848 is accepted at source/test commit
+`5848b21f9eae062b00688522fddb472e4435b1c6` (`Phase2 - F848: Reject
+fractional evaluation read row indexes`). Baseline reproduction through both
+public single and batch Speaking Evaluation read ports used INTEGER rows 0,
+1, and 24 plus a distinct REAL `row_index=0.25`. Both reads returned 26 rows;
+the REAL row appeared between 0 and 1 and shifted later student positions.
+The fix rejects non-INTEGER, non-null row indexes before append in both reads
+and returns Technical through both ports. The batch outer-join null index
+remains skipped. No row count or row-index bound was added.
+
+Independent Tester acceptance: the exact CTest
+`ctest --test-dir build/windows-x64-debug -C Debug -R
+'^ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests$'
+--output-on-failure` passed 1/1 in the standard `build/windows-x64-debug`
+VS Debug tree. The standard build required an elevated retry after FileTracker
+`UnauthorizedAccessException`/`MSB4018`; an earlier nested Ninja build and
+manual executable copy were not accepted. Tester confirmed the executable
+came from the standard tree and independently ran CTest without retry.
+Existing tests cover valid rows 0 and 24, row 1 position, empty and missing
+outcomes. No explicit sparse or out-of-range INTEGER-index regression was
+found; source inspection confirms no new index range or row-count cap.
+`git diff --check` passed with line-ending warnings. No full suite ran.
+
+### Batch 262 completion - 2026-10-14
+
+F848 completed Batch 262 by rejecting fractional REAL row indexes in typed
+single and batch Speaking Evaluation reads. The deferred audit found that
+none of the 13 candidates changed blockers; dense Speaking Evaluation
+row-limit policy remains unresolved. Batch 263 selects F849, invalid Class
+Selection Reset Policy enum passed to typed save. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 263 discovery and selection - 2026-10-14
+
+Only `OnApplicationClose` and `OnPageLeave` are named
+`ClassSelectionResetPolicy` values. Its scoped enum has a fixed underlying
+type, so a caller can pass the well-defined value
+`static_cast<ClassSelectionResetPolicy>(17)` to the public typed save port.
+The adapter currently maps every value except `OnPageLeave` to
+`on_application_close` and returns success, silently replacing a previously
+stored `on_page_leave` choice. Production callers currently use named values;
+no invalid value has been sent through a production UI path. Baseline runtime
+reproduction is pending.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid Class Selection Reset Policy enum passed to typed save (F849) | Selected | The adapter maps an unrecognized typed value to valid storage and can overwrite a saved preference. |
+| Calendar FirstDayOfWeek save with cast value 7 | Not selected | The port persists the cast value and load falls back to locale, but current UI normalizes before the port, making this lower priority. |
+
+F849 is selected, not reproduced or implemented. First seed stored
+`on_page_leave`, pass enum value 17 through the typed save port, and determine
+whether the adapter replaces the stored value. If reproduced, reject before
+write as nonrecoverable `Domain::ErrorCode::InvalidInput` and verify the prior
+`on_page_leave` remains. Preserve valid round trips, stored-value trim/case
+normalization, missing/invalid stored-value defaulting and materialization,
+and repository-write failures. If the baseline does not reproduce, stop
+before production edits and report the result.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | In `tests/next_platform_application_services_class_selection_reset_policy_port_tests.cpp`, seed `on_page_leave`, pass enum value 17 through the typed save port, and inspect the stored value. |
+| Error contract | On reproduction, reject before write as nonrecoverable `Domain::ErrorCode::InvalidInput`; verify the previous stored value remains. |
+| Compatibility | Preserve valid round trips, stored-value trim/case normalization, missing/invalid stored-value defaulting and materialization, and repository-write failures. |
+| Focused verification | Build and run only `ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
