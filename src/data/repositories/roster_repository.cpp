@@ -241,7 +241,9 @@ Result<Roster> RosterRepository::loadRoster(
     query.prepare(R"(
         SELECT
             name,
-            width
+            width,
+            position,
+            typeof(position) AS position_storage_type
         FROM roster_columns
         WHERE class_id=?
         ORDER BY position, id
@@ -262,6 +264,23 @@ Result<Roster> RosterRepository::loadRoster(
 
     while (query.next())
     {
+        bool positionValid = false;
+        const qlonglong position =
+            query.value("position").toLongLong(&positionValid);
+        if (
+            !positionValid
+            || query.value("position_storage_type").toString()
+                != QStringLiteral("integer")
+            || position < 0
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster columns failed for %1: invalid position."
+                    ).arg(identity)
+                );
+        }
+
         roster.columns.append(
             query.value("name").toString()
             );

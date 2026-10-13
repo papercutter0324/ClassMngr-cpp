@@ -207,6 +207,8 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
 private slots:
     void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void rejectsMalformedColumnPosition();
+    void acceptsSparsePositionBeyondIntRange();
     void rejectsMalformedColumnIndexWithoutOverwritingColumnZero();
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
@@ -289,6 +291,148 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
     QVERIFY(result.value().rows[23][4].empty());
     QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
     QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsMalformedColumnPosition()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Malformed Column Position Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("First"), QStringLiteral("Second")},
+        {
+            {0, 0, QStringLiteral("First column value")},
+            {0, 1, QStringLiteral("Second column value")}
+        }
+        ));
+
+    QSqlQuery updatePosition(database);
+    QVERIFY2(updatePosition.prepare(QStringLiteral(
+        "UPDATE roster_columns SET position=? WHERE class_id=? AND name=?"
+        )), qPrintable(updatePosition.lastError().text()));
+    updatePosition.bindValue(0, QStringLiteral("not-a-position"));
+    updatePosition.bindValue(1, *createdClass);
+    updatePosition.bindValue(2, QStringLiteral("First"));
+    QVERIFY2(updatePosition.exec(), qPrintable(updatePosition.lastError().text()));
+    QCOMPARE(updatePosition.numRowsAffected(), 1);
+
+    QSqlQuery storedType(database);
+    QVERIFY2(storedType.prepare(QStringLiteral(
+        "SELECT typeof(position) AS storage_type FROM roster_columns "
+        "WHERE class_id=? AND name=?"
+        )), qPrintable(storedType.lastError().text()));
+    storedType.bindValue(0, *createdClass);
+    storedType.bindValue(1, QStringLiteral("First"));
+    QVERIFY2(storedType.exec(), qPrintable(storedType.lastError().text()));
+    QVERIFY(storedType.next());
+    QCOMPARE(storedType.value("storage_type").toString(), QStringLiteral("text"));
+    QVERIFY(!storedType.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("position"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+acceptsSparsePositionBeyondIntRange()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Sparse Large Column Position Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("First"), QStringLiteral("Second")},
+        {
+            {0, 0, QStringLiteral("First column value")},
+            {0, 1, QStringLiteral("Second column value")}
+        }
+        ));
+
+    const qlonglong secondPosition =
+        static_cast<qlonglong>(std::numeric_limits<int>::max()) + 1;
+    QSqlQuery updatePosition(database);
+    QVERIFY2(updatePosition.prepare(QStringLiteral(
+        "UPDATE roster_columns SET position=? WHERE class_id=? AND name=?"
+        )), qPrintable(updatePosition.lastError().text()));
+    updatePosition.bindValue(
+        0, QVariant::fromValue<qlonglong>(secondPosition));
+    updatePosition.bindValue(1, *createdClass);
+    updatePosition.bindValue(2, QStringLiteral("Second"));
+    QVERIFY2(updatePosition.exec(), qPrintable(updatePosition.lastError().text()));
+    QCOMPARE(updatePosition.numRowsAffected(), 1);
+
+    QSqlQuery storedPosition(database);
+    QVERIFY2(storedPosition.prepare(QStringLiteral(
+        "SELECT typeof(position) AS storage_type, position "
+        "FROM roster_columns WHERE class_id=? AND name=?"
+        )), qPrintable(storedPosition.lastError().text()));
+    storedPosition.bindValue(0, *createdClass);
+    storedPosition.bindValue(1, QStringLiteral("Second"));
+    QVERIFY2(storedPosition.exec(), qPrintable(storedPosition.lastError().text()));
+    QVERIFY(storedPosition.next());
+    QCOMPARE(
+        storedPosition.value("storage_type").toString(),
+        QStringLiteral("integer")
+        );
+    bool storedPositionValid = false;
+    QCOMPARE(
+        storedPosition.value("position").toLongLong(&storedPositionValid),
+        secondPosition
+        );
+    QVERIFY(storedPositionValid);
+    QVERIFY(!storedPosition.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY2(
+        result,
+        qPrintable(result ? QString() : QString::fromStdString(result.error().message))
+        );
+    QCOMPARE(
+        result.value().columns,
+        (std::vector<std::u16string>{u"First", u"Second"})
+        );
+    QCOMPARE(result.value().rows.size(), std::size_t(1));
+    QCOMPARE(
+        result.value().rows[0],
+        (std::vector<std::u16string>{
+            u"First column value", u"Second column value"
+        })
+        );
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::
