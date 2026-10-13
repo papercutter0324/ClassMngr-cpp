@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F811 was accepted in Batch 225 at `46d824813028256cc46f1b293a00d026757fbe87`; Batch 226 selects F812 for the typed Teacher Profile read wide-ID boundary, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F812 was accepted in Batch 226 at `dd8bbbae9246f5b20925eabb2809395c0d430db4`; Batch 227 selects F813 for the Class Transfer export source teacher-identity read path, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -117,14 +117,14 @@ Treat this plan as an operational summary, not a history:
 - ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
   Co-Teacher read/write identity flow can be covered.
 - Schedule Import teacher-ID width/narrowing across snapshot/review/apply/write -
-  deferred outside F812; F767's snapshot canonical-ID validation remains
+  deferred outside F813; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
 - Shared Testing Class editor/update identity and read/write contracts -
-  deferred outside F812; F810 isolates the details read and F811 the Class Notes read.
+  deferred outside F813; F810 isolates the details read and F811 the Class Notes read.
 
-#### Active batch: Batch 226
+#### Active batch: Batch 227
 
-- F812 - Teacher Profile typed read wide teacher ID - Preserve `Domain::TeacherId` through a profile-specific qint64 read record/API used only by `ApplicationServicesTeacherProfileReadPort`.
+- F813 - Class Transfer export source teacher identity - Preserve qint64 assigned teacher IDs through an export-specific class-info/profile query and typed export source, while keeping class IDs and the portable `teacher_ref` key format unchanged.
 
 ## Objective
 

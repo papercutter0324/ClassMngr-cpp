@@ -32167,3 +32167,74 @@ F767 snapshot canonical-ID validation remains distinct and accepted; Schedule
 Import width/narrowing and the other candidates above remain deferred. The
 earlier project-configuration and CMake optimization remains complete. Phase
 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F812 Teacher Profile typed read wide teacher ID - accepted - 2026-10-13
+
+F812 is accepted at source/test commit
+`dd8bbbae9246f5b20925eabb2809395c0d430db4`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests` passed
+after the identical outside-sandbox retry following
+`ZERO_CHECK`/FileTracker `E_ACCESSDENIED`. The exact CTest
+`ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests` passed
+1/1. No full suite ran.
+
+### Batch 226 completion - 2026-10-13
+
+F812 completed Batch 226 by preserving wide teacher identity through the
+typed Teacher Profile read. Batch 227 selects F813 for the Class Transfer
+export source teacher-identity query. Schedule Import teacher-ID
+width/narrowing remains separate from accepted F767 snapshot canonical-ID
+validation; Class Import's int-keyed flow, shared Testing Class editor/update
+identity, the `ClassPageDetailsReadRecord`/Co-Teacher read/write flow, and
+persisted CalendarEvent event-ID width remain deferred. The earlier
+project-configuration and CMake optimization remains complete. F707/F709 and
+the dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 227 discovery and selection - 2026-10-13
+
+The next bounded path is the Class Transfer export source teacher identity
+through its application query. F813 widens only the export-specific class-info
+read record/API's assigned teacher ID and the export source's teacher identity;
+class IDs remain int. A qint64 batch profile read retains all 14 profile
+fields, and qint64 IDs must flow through source deduplication/maps into typed
+`Domain::TeacherId`. Preserve ordering, staged error precedence, error and
+rollback behavior, and legacy `buildPackage` behavior. Keep the shared
+`ClassInfo`/`Teacher` models, Class Import UI/write paths, and portable JSON
+`teacher_ref` key format unchanged.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Class Transfer export source teacher identity (F813) | Selected | The typed source identity feeds the export query and portable teacher-key generation, avoiding an int conversion on this read path. |
+| Teacher Create and Delete callers | Deferred | These callers begin and end at int-based UI boundaries. |
+| Initial Setup / Testing Teacher Choice | Deferred | Their downstream selection contracts and UI controls remain int-based. |
+| Class Import and Schedule Import teacher-ID width | Deferred | These paths cross int-keyed, UI, or write-flow contracts and need broader end-to-end scope; Schedule Import remains separate from accepted F767 snapshot canonical-ID validation. |
+| Shared `ClassPageDetailsReadRecord` / Co-Teacher identity | Deferred | This shared read/write flow should be handled together. |
+| Persisted CalendarEvent event-ID width | Deferred | This is event identity and spans shared-model and repository CRUD contracts. |
+
+**F813 is selected:** add a Class-Transfer-export-specific class-info read
+record/API with qint64 assigned teacher ID, and a qint64 batch profile read
+that exposes all 14 profile fields. Carry qint64 through
+`ClassTransferExportSource` teacher IDs/maps and its adapter into typed
+`Domain::TeacherId`; change only `ClassExportSourceInfo.sourceTeacherId` to
+qint64 while `sourceClassId` stays int. Preserve ordering and deduplication,
+staged error precedence, error/rollback behavior, and legacy
+`buildPackage` behavior. Leave shared `ClassInfo`/`Teacher` models, Class
+Import UI/write paths, and the portable JSON `teacher_ref` key format
+unchanged.
+
+Extend the database regression with teacher ID `2147483648` assigned to two
+classes. Verify exact SQLite INTEGER storage, exact typed IDs and profile
+fields, then run the export query and assert both classes share one portable
+teacher key/profile and no truncated numeric teacher ID appears in the
+package. Use the existing `NextPlatformClassTransferExportSource` registration
+and exact CTest
+`ClassMngrNextPlatformClassTransferExportSourceTests`; build `ClassMngr` and
+that focused target, then run only that CTest. No CMake change is expected and
+no full suite is requested. F767 remains distinct accepted snapshot
+canonical-ID validation; the earlier project-configuration and CMake
+optimization remains complete. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+No other candidate is selected from this discovery; the listed alternatives remain deferred.
