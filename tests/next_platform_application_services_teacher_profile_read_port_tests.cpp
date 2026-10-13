@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -46,7 +47,7 @@ Teacher teacherFixture()
     return teacher;
 }
 
-Domain::TeacherId teacherId(const int value)
+Domain::TeacherId teacherId(const qint64 value)
 {
     return *Domain::TeacherId::fromString(std::to_string(value));
 }
@@ -75,6 +76,8 @@ class NextPlatformApplicationServicesTeacherProfileReadPortTests final
 
 private slots:
     void readsCompleteTeacherProfileFromActiveSession();
+    void readsCompleteTeacherProfileForWideDatabaseId();
+    void rejectsNonCanonicalTeacherIds();
     void reportsUnavailableMissingAndRepositoryFailureWithoutFallback();
 };
 
@@ -115,6 +118,130 @@ readsCompleteTeacherProfileFromActiveSession()
 }
 
 void NextPlatformApplicationServicesTeacherProfileReadPortTests::
+readsCompleteTeacherProfileForWideDatabaseId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    constexpr qint64 wideTeacherId = 2147483648LL;
+    const Teacher expected = teacherFixture();
+    QSqlQuery insert(services.databaseSession()->database());
+    QVERIFY2(insert.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id,
+            teacher_kr,
+            teacher_en,
+            preferred_romanization,
+            preferred_name,
+            room_number,
+            birthday,
+            phone_number,
+            wifi_name,
+            wifi_password,
+            internet_type,
+            zoom_id,
+            zoom_password,
+            projection_type,
+            notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )")), qPrintable(insert.lastError().text()));
+    insert.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insert.addBindValue(expected.teacherKr);
+    insert.addBindValue(expected.teacherEn);
+    insert.addBindValue(expected.preferredRomanization);
+    insert.addBindValue(expected.preferredName);
+    insert.addBindValue(expected.roomNumber);
+    insert.addBindValue(expected.birthday);
+    insert.addBindValue(expected.phoneNumber);
+    insert.addBindValue(expected.wifiName);
+    insert.addBindValue(expected.wifiPassword);
+    insert.addBindValue(expected.internetType);
+    insert.addBindValue(expected.zoomId);
+    insert.addBindValue(expected.zoomPassword);
+    insert.addBindValue(expected.projectionType);
+    insert.addBindValue(expected.notes);
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    QSqlQuery storedId(services.databaseSession()->database());
+    QVERIFY(storedId.prepare(QStringLiteral(
+        "SELECT typeof(id), id FROM teachers WHERE id=?")));
+    storedId.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    QVERIFY2(storedId.exec(), qPrintable(storedId.lastError().text()));
+    QVERIFY(storedId.next());
+    QCOMPARE(storedId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedId.value(1).toLongLong(), wideTeacherId);
+
+    Platform::ApplicationServicesTeacherProfileReadPort port(&services);
+    const Domain::TeacherId requestedId = teacherId(wideTeacherId);
+    const Application::TeacherProfileReadResult result =
+        port.readTeacherProfile(requestedId);
+
+    QVERIFY(result);
+    QVERIFY(result.value().teacherId == requestedId);
+    const Domain::TeacherProfileFields& fields = result.value().fields;
+    QVERIFY(fields.teacherKr == expected.teacherKr.toStdU16String());
+    QVERIFY(fields.teacherEn == expected.teacherEn.toStdU16String());
+    QVERIFY(fields.preferredRomanization
+        == expected.preferredRomanization.toStdU16String());
+    QVERIFY(fields.preferredName == expected.preferredName.toStdU16String());
+    QVERIFY(fields.roomNumber == expected.roomNumber.toStdU16String());
+    QVERIFY(fields.birthday == expected.birthday.toStdU16String());
+    QVERIFY(fields.phoneNumber == expected.phoneNumber.toStdU16String());
+    QVERIFY(fields.wifiName == expected.wifiName.toStdU16String());
+    QVERIFY(fields.wifiPassword == expected.wifiPassword.toStdU16String());
+    QVERIFY(fields.internetType == expected.internetType.toStdU16String());
+    QVERIFY(fields.zoomId == expected.zoomId.toStdU16String());
+    QVERIFY(fields.zoomPassword == expected.zoomPassword.toStdU16String());
+    QVERIFY(fields.projectionType == expected.projectionType.toStdU16String());
+    QVERIFY(fields.notes == expected.notes.toStdU16String());
+}
+
+void NextPlatformApplicationServicesTeacherProfileReadPortTests::
+rejectsNonCanonicalTeacherIds()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesTeacherProfileReadPort port(&services);
+
+    for (const std::string& value : {
+             std::string("0"),
+             std::string("-1"),
+             std::string("+7"),
+             std::string("07"),
+             std::string("2147483648x"),
+             std::string("9223372036854775808")
+         })
+    {
+        const auto invalidId = Domain::TeacherId::fromString(value);
+        QVERIFY(invalidId);
+        const auto result = port.readTeacherProfile(*invalidId);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Teacher ID must be a canonical positive integer.")
+            );
+        QVERIFY(result.error().recoverable);
+    }
+
+    const auto maximumId = Domain::TeacherId::fromString(
+        "9223372036854775807"
+        );
+    QVERIFY(maximumId);
+    const auto maximumResult = port.readTeacherProfile(*maximumId);
+    QVERIFY(!maximumResult);
+    QCOMPARE(maximumResult.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        maximumResult.error().message,
+        std::string(
+            "No active Teacher Profile database session is available."
+            )
+        );
+}
+
+void NextPlatformApplicationServicesTeacherProfileReadPortTests::
 reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
 {
     ApplicationServices services;
@@ -136,6 +263,9 @@ reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
     const int missingId = id + 1000;
     TeacherRepository* const repository =
         services.databaseSession()->teacherRepository();
+    const TeacherProfileLookupResult typedProfileMissing =
+        repository->lookupTeacherProfileById(missingId);
+    QCOMPARE(typedProfileMissing.code, TeacherProfileLookupCode::Missing);
     const TeacherByIdLookupResult typedMissing =
         repository->lookupTeacherById(missingId);
     QCOMPARE(typedMissing.code, TeacherByIdLookupCode::Missing);
@@ -151,21 +281,24 @@ reportsUnavailableMissingAndRepositoryFailureWithoutFallback()
     const auto missing = port.readTeacherProfile(teacherId(missingId));
     QVERIFY(!missing);
     QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
-    QCOMPARE(missing.error().message, utf8(typedMissing.diagnostic));
+    QCOMPARE(missing.error().message, utf8(typedProfileMissing.diagnostic));
     QVERIFY(missing.error().recoverable);
 
     QSqlQuery query(services.databaseSession()->database());
     QVERIFY2(query.exec(QStringLiteral("DROP TABLE teachers")),
         qPrintable(query.lastError().text()));
-    const TeacherByIdLookupResult typedFailure =
-        repository->lookupTeacherById(id);
-    QCOMPARE(typedFailure.code, TeacherByIdLookupCode::Failure);
-    QVERIFY(!typedFailure.diagnostic.isEmpty());
+    const TeacherProfileLookupResult typedProfileFailure =
+        repository->lookupTeacherProfileById(id);
+    QCOMPARE(typedProfileFailure.code, TeacherProfileLookupCode::Failure);
+    QVERIFY(!typedProfileFailure.diagnostic.isEmpty());
 
     const auto repositoryFailure = port.readTeacherProfile(teacherId(id));
     QVERIFY(!repositoryFailure);
     QCOMPARE(repositoryFailure.error().code, Domain::ErrorCode::Technical);
-    QCOMPARE(repositoryFailure.error().message, utf8(typedFailure.diagnostic));
+    QCOMPARE(
+        repositoryFailure.error().message,
+        utf8(typedProfileFailure.diagnostic)
+        );
     QVERIFY(!repositoryFailure.error().recoverable);
 
     services.closeDatabase();

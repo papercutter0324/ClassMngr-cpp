@@ -34,8 +34,8 @@ public:
         const Domain::TeacherId& id
         ) const override
     {
-        const std::optional<int> legacyId = legacyTeacherId(id);
-        if (!legacyId)
+        const std::optional<qint64> parsedTeacherId = teacherId(id);
+        if (!parsedTeacherId)
         {
             return Application::TeacherProfileReadResult::failure({
                 .code = Domain::ErrorCode::InvalidInput,
@@ -61,23 +61,23 @@ public:
 
         try
         {
-            const TeacherByIdLookupResult loaded =
-                repository->lookupTeacherById(*legacyId);
+            const TeacherProfileLookupResult loaded =
+                repository->lookupTeacherProfileById(*parsedTeacherId);
             switch (loaded.code)
             {
-            case TeacherByIdLookupCode::Missing:
+            case TeacherProfileLookupCode::Missing:
                 return Application::TeacherProfileReadResult::failure({
                     .code = Domain::ErrorCode::NotFound,
                     .message = utf8(loaded.diagnostic),
                     .recoverable = true
                 });
-            case TeacherByIdLookupCode::Failure:
+            case TeacherProfileLookupCode::Failure:
                 return Application::TeacherProfileReadResult::failure(
                     repositoryError(loaded.diagnostic));
-            case TeacherByIdLookupCode::Found:
+            case TeacherProfileLookupCode::Found:
                 break;
             }
-            if (loaded.teacher.id != *legacyId)
+            if (loaded.profile.teacherId != *parsedTeacherId)
             {
                 return Application::TeacherProfileReadResult::failure({
                     .code = Domain::ErrorCode::Validation,
@@ -88,7 +88,7 @@ public:
 
             return Application::TeacherProfileReadResult::success({
                 .teacherId = id,
-                .fields = profileFieldsFromTeacher(loaded.teacher)
+                .fields = profileFieldsFromRecord(loaded.profile)
             });
         }
         catch (const std::exception&)
@@ -104,12 +104,12 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyTeacherId(
+    [[nodiscard]] static std::optional<qint64> teacherId(
         const Domain::TeacherId& id
         )
     {
         const std::string& value = id.value();
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),
@@ -127,26 +127,26 @@ private:
         return parsed;
     }
 
-    [[nodiscard]] static Domain::TeacherProfileFields profileFieldsFromTeacher(
-        const Teacher& teacher
+    [[nodiscard]] static Domain::TeacherProfileFields profileFieldsFromRecord(
+        const TeacherProfileReadRecord& profile
         )
     {
         return {
-            .teacherKr = teacher.teacherKr.toStdU16String(),
-            .teacherEn = teacher.teacherEn.toStdU16String(),
+            .teacherKr = profile.teacherKr.toStdU16String(),
+            .teacherEn = profile.teacherEn.toStdU16String(),
             .preferredRomanization =
-                teacher.preferredRomanization.toStdU16String(),
-            .preferredName = teacher.preferredName.toStdU16String(),
-            .roomNumber = teacher.roomNumber.toStdU16String(),
-            .birthday = teacher.birthday.toStdU16String(),
-            .phoneNumber = teacher.phoneNumber.toStdU16String(),
-            .wifiName = teacher.wifiName.toStdU16String(),
-            .wifiPassword = teacher.wifiPassword.toStdU16String(),
-            .internetType = teacher.internetType.toStdU16String(),
-            .zoomId = teacher.zoomId.toStdU16String(),
-            .zoomPassword = teacher.zoomPassword.toStdU16String(),
-            .projectionType = teacher.projectionType.toStdU16String(),
-            .notes = teacher.notes.toStdU16String()
+                profile.preferredRomanization.toStdU16String(),
+            .preferredName = profile.preferredName.toStdU16String(),
+            .roomNumber = profile.roomNumber.toStdU16String(),
+            .birthday = profile.birthday.toStdU16String(),
+            .phoneNumber = profile.phoneNumber.toStdU16String(),
+            .wifiName = profile.wifiName.toStdU16String(),
+            .wifiPassword = profile.wifiPassword.toStdU16String(),
+            .internetType = profile.internetType.toStdU16String(),
+            .zoomId = profile.zoomId.toStdU16String(),
+            .zoomPassword = profile.zoomPassword.toStdU16String(),
+            .projectionType = profile.projectionType.toStdU16String(),
+            .notes = profile.notes.toStdU16String()
         };
     }
 

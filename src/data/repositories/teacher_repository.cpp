@@ -762,6 +762,113 @@ TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
     return m_teacherProfileBatchReadMetrics;
 }
 
+TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
+    const qint64 teacherId
+    )
+{
+    if (teacherId <= 0)
+    {
+        return {
+            .code = TeacherProfileLookupCode::Failure,
+            .diagnostic = QObject::tr(
+                "Loading teacher profile failed: invalid teacher id %1."
+                ).arg(teacherId)
+        };
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(R"(
+        SELECT id,
+               teacher_kr,
+               teacher_en,
+               preferred_romanization,
+               preferred_name,
+               room_number,
+               birthday,
+               phone_number,
+               wifi_name,
+               wifi_password,
+               internet_type,
+               zoom_id,
+               zoom_password,
+               projection_type,
+               notes
+        FROM teachers
+        WHERE id=?
+    )");
+    query.addBindValue(teacherId);
+
+    const QString action = QObject::tr("Loading teacher profile");
+    const QString identity = teacherIdentity(teacherId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        action,
+        identity
+        );
+    if (!executed)
+    {
+        return {
+            .code = TeacherProfileLookupCode::Failure,
+            .diagnostic = executed.error().userMessage()
+        };
+    }
+
+    if (!query.next())
+    {
+        if (query.lastError().isValid())
+        {
+            return {
+                .code = TeacherProfileLookupCode::Failure,
+                .diagnostic = SqlQueryUtils::errorFor(
+                    query,
+                    action,
+                    {},
+                    identity
+                    ).userMessage()
+            };
+        }
+
+        return {
+            .code = TeacherProfileLookupCode::Missing,
+            .diagnostic = QObject::tr(
+                "Loading teacher failed for %1: no matching record exists."
+                ).arg(identity)
+        };
+    }
+
+    return {
+        .code = TeacherProfileLookupCode::Found,
+        .profile = {
+            .teacherId = query.value(QStringLiteral("id")).toLongLong(),
+            .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
+            .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
+            .preferredRomanization = query.value(
+                QStringLiteral("preferred_romanization")
+                ).toString(),
+            .preferredName = query.value(
+                QStringLiteral("preferred_name")
+                ).toString(),
+            .roomNumber = query.value(QStringLiteral("room_number")).toString(),
+            .birthday = query.value(QStringLiteral("birthday")).toString(),
+            .phoneNumber = query.value(QStringLiteral("phone_number")).toString(),
+            .wifiName = query.value(QStringLiteral("wifi_name")).toString(),
+            .wifiPassword = query.value(QStringLiteral("wifi_password"))
+                                .toString(),
+            .internetType = normalizedInternetType(
+                query.value(QStringLiteral("internet_type")).toString()
+                ),
+            .zoomId = query.value(QStringLiteral("zoom_id")).toString(),
+            .zoomPassword = query.value(QStringLiteral("zoom_password"))
+                                .toString(),
+            .projectionType = normalizedProjectionType(
+                query.value(QStringLiteral("projection_type")).toString()
+                ),
+            .notes = query.value(QStringLiteral("notes")).toString()
+        }
+    };
+}
+
 Result<QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
 TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
     const QList<qint64>& teacherIds

@@ -106,6 +106,39 @@ struct TeacherProfileBatchReadMetrics final
     int fallbackSingleReadCount = 0;
 };
 
+struct TeacherProfileReadRecord final
+{
+    qint64 teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+    QString roomNumber;
+    QString birthday;
+    QString phoneNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString internetType;
+    QString zoomId;
+    QString zoomPassword;
+    QString projectionType;
+    QString notes;
+};
+
+enum class TeacherProfileLookupCode
+{
+    Found,
+    Missing,
+    Failure
+};
+
+struct TeacherProfileLookupResult final
+{
+    TeacherProfileLookupCode code = TeacherProfileLookupCode::Failure;
+    TeacherProfileReadRecord profile;
+    QString diagnostic;
+};
+
 struct SubPrepPrintSourceTeacherProfileReadFields final
 {
     qint64 teacherId = -1;
@@ -260,6 +293,9 @@ public:
         loadTeacherProfileRecords(const QList<int>& teacherIds);
     [[nodiscard]] const TeacherProfileBatchReadMetrics&
         teacherProfileBatchReadMetrics() const noexcept;
+    [[nodiscard]] TeacherProfileLookupResult lookupTeacherProfileById(
+        qint64 teacherId
+        );
     [[nodiscard]] Result<
         QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
         loadSubPrepPrintSourceTeacherProfileRecords(
