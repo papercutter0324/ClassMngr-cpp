@@ -14,6 +14,7 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
@@ -50,6 +51,7 @@ class NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests
 
 private slots:
     void readsCompactFieldsInOneOrderedBatchAndKeepsMissingRowDefault();
+    void readsWideTeacherIdsAndKeepsSiblingsInBatch();
     void keepsPerClassRepositoryFailuresAlongsideSuccessfulSiblings();
     void batchSqlFailureReturnsIndependentEntriesForEveryClass();
     void emptyInputAvoidsRepositoryWork();
@@ -203,6 +205,151 @@ readsCompactFieldsInOneOrderedBatchAndKeepsMissingRowDefault()
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
     QCOMPARE(repository->scheduleClassInfoReadMetrics()
         .singleClassInfoReadCount, singleReadsBefore);
+}
+
+void NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests::
+readsWideTeacherIdsAndKeepsSiblingsInBatch()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int wideId = createClass(services, QStringLiteral("Wide teacher ID class"));
+    const int healthyId = createClass(services, QStringLiteral("Healthy sibling class"));
+    const int unassignedId = createClass(services, QStringLiteral("Unassigned sibling class"));
+    QVERIFY(wideId > 0);
+    QVERIFY(healthyId > 0);
+    QVERIFY(unassignedId > 0);
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Ordinary sibling teacher");
+    const auto createdTeacher = services.databaseSession()
+        ->teacherRepository()->createTeacher(teacher);
+    QVERIFY(createdTeacher);
+
+    auto* const repository = services.databaseSession()->classInfoRepository();
+    QVERIFY(repository);
+    for (const auto [classIdValue, grade] : {
+             std::pair{wideId, QStringLiteral("Wide")},
+             std::pair{healthyId, QStringLiteral("Healthy")},
+             std::pair{unassignedId, QStringLiteral("Unassigned")}
+         })
+    {
+        ClassInfo info;
+        info.classId = classIdValue;
+        info.classGrade = grade;
+        info.classLevel = QStringLiteral("Batch regression");
+        QVERIFY(repository->saveClassInfo(info));
+    }
+
+    QSqlQuery insertWideTeacher(services.databaseSession()->database());
+    QVERIFY2(insertWideTeacher.exec(QStringLiteral(
+                 "INSERT INTO teachers (id) VALUES (2147483648)"
+                 )),
+             qPrintable(insertWideTeacher.lastError().text()));
+
+    QSqlQuery storeWideTeacherId(services.databaseSession()->database());
+    QVERIFY2(storeWideTeacherId.exec(QStringLiteral(
+                 "UPDATE class_info SET teacher_id=2147483648 WHERE class_id=%1"
+                 ).arg(wideId)),
+             qPrintable(storeWideTeacherId.lastError().text()));
+    QCOMPARE(storeWideTeacherId.numRowsAffected(), 1);
+
+    QSqlQuery storeHealthyTeacherId(services.databaseSession()->database());
+    storeHealthyTeacherId.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"));
+    storeHealthyTeacherId.addBindValue(*createdTeacher);
+    storeHealthyTeacherId.addBindValue(healthyId);
+    QVERIFY2(storeHealthyTeacherId.exec(),
+             qPrintable(storeHealthyTeacherId.lastError().text()));
+    QCOMPARE(storeHealthyTeacherId.numRowsAffected(), 1);
+
+    QSqlQuery storeUnassignedTeacherId(services.databaseSession()->database());
+    QVERIFY2(storeUnassignedTeacherId.exec(QStringLiteral(
+                 "UPDATE class_info SET teacher_id=NULL WHERE class_id=%1"
+                 ).arg(unassignedId)),
+             qPrintable(storeUnassignedTeacherId.lastError().text()));
+    QCOMPARE(storeUnassignedTeacherId.numRowsAffected(), 1);
+
+    QSqlQuery verifyWideTeacher(services.databaseSession()->database());
+    QVERIFY2(verifyWideTeacher.exec(QStringLiteral(
+                 "SELECT typeof(id), id FROM teachers WHERE id=2147483648"
+                 )),
+             qPrintable(verifyWideTeacher.lastError().text()));
+    QVERIFY(verifyWideTeacher.next());
+    QCOMPARE(verifyWideTeacher.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyWideTeacher.value(1).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(verifyWideTeacher.value(1).toString(), QStringLiteral("2147483648"));
+    QVERIFY(!verifyWideTeacher.next());
+
+    QSqlQuery verifyStoredTeacherId(services.databaseSession()->database());
+    verifyStoredTeacherId.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id=?"));
+    verifyStoredTeacherId.addBindValue(wideId);
+    QVERIFY2(verifyStoredTeacherId.exec(),
+             qPrintable(verifyStoredTeacherId.lastError().text()));
+    QVERIFY(verifyStoredTeacherId.next());
+    QCOMPARE(verifyStoredTeacherId.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredTeacherId.value(1).toLongLong(), qint64(2147483648LL));
+    QCOMPARE(verifyStoredTeacherId.value(1).toString(), QStringLiteral("2147483648"));
+    QVERIFY(!verifyStoredTeacherId.next());
+
+    QSqlQuery verifyUnassignedId(services.databaseSession()->database());
+    verifyUnassignedId.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id) FROM class_info WHERE class_id=?"));
+    verifyUnassignedId.addBindValue(unassignedId);
+    QVERIFY2(verifyUnassignedId.exec(),
+             qPrintable(verifyUnassignedId.lastError().text()));
+    QVERIFY(verifyUnassignedId.next());
+    QCOMPARE(verifyUnassignedId.value(0).toString(), QStringLiteral("null"));
+    QVERIFY(!verifyUnassignedId.next());
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    const auto before = repository->myClassesClassInformationBatchReadMetrics();
+    const int singleReadsBefore = repository->scheduleClassInfoReadMetrics()
+        .singleClassInfoReadCount;
+
+    Platform::ApplicationServicesMyClassesClassInformationBatchReadPort port(
+        services
+        );
+    const Application::MyClassesClassInformationBatchReadQuery query(port);
+    const auto loaded = query.execute({
+        classId(wideId),
+        classId(unassignedId),
+        classId(healthyId)
+    });
+
+    const auto after = repository->myClassesClassInformationBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 3);
+    QCOMPARE(after.metadataStatementCount, before.metadataStatementCount + 1);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
+    QCOMPARE(repository->scheduleClassInfoReadMetrics()
+        .singleClassInfoReadCount, singleReadsBefore);
+
+    if (!loaded)
+    {
+        QFAIL(qPrintable(QString::fromStdString(loaded.error().message)));
+    }
+    QCOMPARE(loaded.value().size(), std::size_t(3));
+    QVERIFY(loaded.value()[0].classId == classId(wideId));
+    QVERIFY(loaded.value()[0].information);
+    QVERIFY(loaded.value()[0].information.value().classGrade == u"Wide");
+    QVERIFY(loaded.value()[0].information.value().teacherId
+        == Domain::TeacherId::fromString("2147483648"));
+
+    QVERIFY(loaded.value()[1].classId == classId(unassignedId));
+    QVERIFY(loaded.value()[1].information);
+    QVERIFY(loaded.value()[1].information.value().classGrade == u"Unassigned");
+    QVERIFY(loaded.value()[1].information.value().teacherId == std::nullopt);
+
+    QVERIFY(loaded.value()[2].classId == classId(healthyId));
+    QVERIFY(loaded.value()[2].information);
+    QVERIFY(loaded.value()[2].information.value().classGrade == u"Healthy");
+    QVERIFY(loaded.value()[2].information.value().teacherId
+        == Domain::TeacherId::fromString(std::to_string(*createdTeacher)));
 }
 
 void NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests::

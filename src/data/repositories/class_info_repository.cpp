@@ -1782,15 +1782,35 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         if (!metadataQuery.value("class_info_class_id").isNull())
         {
             const QVariant teacherId = metadataQuery.value("teacher_id");
-            record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
-            record.classGrade = metadataQuery.value("class_grade").toString();
-            record.classLevel = metadataQuery.value("class_level").toString();
-            record.notes = metadataQuery.value("notes").toString();
-            record.timeFillerActivities = metadataQuery.value(
-                "time_filler_activities"
-                ).toString();
+            bool teacherIdOk = true;
+            if (!teacherId.isNull())
+            {
+                record.teacherId = teacherId.toLongLong(&teacherIdOk);
+            }
+
+            if (!teacherIdOk)
+            {
+                entries[*entryIndex].information = std::unexpected(
+                    QObject::tr(
+                        "Loading My Classes class information failed: teacher id for class id %1 cannot be represented as a signed 64-bit value."
+                        ).arg(classId)
+                    );
+            }
+            else
+            {
+                record.classGrade = metadataQuery.value("class_grade").toString();
+                record.classLevel = metadataQuery.value("class_level").toString();
+                record.notes = metadataQuery.value("notes").toString();
+                record.timeFillerActivities = metadataQuery.value(
+                    "time_filler_activities"
+                    ).toString();
+                entries[*entryIndex].information = std::move(record);
+            }
         }
-        entries[*entryIndex].information = std::move(record);
+        else
+        {
+            entries[*entryIndex].information = std::move(record);
+        }
         ++loadedMetadataCount;
     }
 
@@ -1833,6 +1853,10 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         {
             invalidReturnedClassId = true;
             break;
+        }
+        if (!entries[*entryIndex].information)
+        {
+            continue;
         }
 
         ClassTime time;
@@ -1878,6 +1902,10 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         {
             invalidReturnedClassId = true;
             break;
+        }
+        if (!entries[*entryIndex].information)
+        {
+            continue;
         }
 
         ClassTime time;
@@ -2233,7 +2261,21 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
     if (metadataQuery.next())
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
-        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (!teacherId.isNull())
+        {
+            bool teacherIdOk = false;
+            const qint64 convertedTeacherId =
+                teacherId.toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(
+                    QObject::tr(
+                        "Loading My Classes class information failed: teacher id for class id %1 cannot be represented as a signed 64-bit value."
+                        ).arg(classId)
+                    );
+            }
+            record.teacherId = convertedTeacherId;
+        }
         record.classGrade = metadataQuery.value("class_grade").toString();
         record.classLevel = metadataQuery.value("class_level").toString();
         record.notes = metadataQuery.value("notes").toString();

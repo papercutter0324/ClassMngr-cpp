@@ -82,7 +82,7 @@ public:
 
             if (entry.information
                 && entry.information.value().teacherId
-                && !isCanonicalPositiveDecimalId(
+                && !isCanonicalPositiveDecimalId64(
                     entry.information.value().teacherId->value()
                     ))
             {
