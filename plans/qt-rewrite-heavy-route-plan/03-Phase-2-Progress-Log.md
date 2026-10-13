@@ -30119,11 +30119,14 @@ and the formal exit gate remains Open.
 F783 was selected to fix the verified calendar title-parity defect: legacy
 validation counts UTF-16 units while Next request paths count UTF-8 bytes, and
 summary projection currently permits a different byte cap. The typed
-`CalendarEventSeriesId` API migration was deferred because it has plan support
-but no behavior defect; moving school-stage into Domain was deferred because
-concept and fallback ownership are unclear; Class Transfer export copy
-reduction was deferred because its impact is unmeasured. No other slices were
-found.
+The typed `CalendarEventSeriesId` API migration was a separate planning
+candidate. A later independent audit found a persisted CalendarEvent ID-width
+issue: repository primary-key reads narrow with `toInt()`, the by-ID adapter
+parses to `int`, and range projection rejects narrowed IDs. Its fix spans the
+shared model and repository CRUD surface and remains deferred outside F802.
+Moving school-stage into Domain was deferred because concept and fallback
+ownership are unclear; Class Transfer export copy reduction was deferred
+because its impact is unmeasured. No other slices were found.
 
 ### F783 Calendar title length parity - selected and acceptance matrix - 2026-10-13
 
@@ -31383,10 +31386,11 @@ My Classes class summaries feed the teacher display-name batch read, which
 supplies tab labels. Preserve signed-64 teacher IDs through both batch reads
 so the wide teacher ID `2147483648` can resolve and appear in labels for
 duplicate class names while the existing class-ID disambiguation remains.
-Keep the separate CalendarEvent shared-model/API candidate deferred; its
-typed `CalendarEventSeriesId` migration has prior plan support but no
-demonstrated behavior defect. Do not expand F802 into the selected-class
-profile path.
+Keep the separate persisted CalendarEvent ID-width issue deferred: repository
+primary-key reads and the by-ID adapter narrow IDs to `int`, while range
+projection rejects narrowed IDs. Its fix spans the shared model and
+repository CRUD surface and is outside F802. Do not expand F802 into the
+selected-class profile path.
 
 ### F802 My Classes summary-to-tab wide teacher IDs - selected and acceptance matrix - 2026-10-13
 
@@ -31428,6 +31432,6 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^MyCla
 Confirm the exact `MyClassesPage` CTest is registered, then run only that test
 after the focused build. This is a pre-implementation matrix, not acceptance
 evidence; no F802 tests have run and no full suite is requested. The separate
-CalendarEvent shared-model/API candidate remains deferred. F707/F709 and the
-dense Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2
-remain Partial and the formal exit gate remains Open.
+persisted CalendarEvent ID-width issue remains deferred outside F802. F707/F709
+and the dense Speaking Evaluation row-limit policy remain deferred; Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
