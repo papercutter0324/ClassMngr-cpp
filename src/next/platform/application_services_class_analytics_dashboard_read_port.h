@@ -63,7 +63,9 @@ public:
             Application::ClassAnalyticsRosterNames roster;
             QSqlQuery columnCountQuery(database);
             columnCountQuery.prepare(R"(
-                SELECT COUNT(*)
+                SELECT COUNT(*) AS column_count,
+                       COUNT(CASE WHEN typeof(position)!='integer'
+                                  THEN 1 END) AS invalid_position_count
                 FROM roster_columns
                 WHERE class_id=?
             )");
@@ -81,7 +83,17 @@ public:
                 return technicalFailure<Application::ClassAnalyticsRosterNames>(
                     "Roster column count could not be read.");
             }
-            if (columnCountQuery.value(0).toInt() <= 0)
+            bool invalidPositionCountIsValid = false;
+            const qlonglong invalidPositionCount = columnCountQuery.value(
+                "invalid_position_count").toLongLong(
+                    &invalidPositionCountIsValid);
+            if (!invalidPositionCountIsValid || invalidPositionCount != 0)
+            {
+                return technicalFailure<
+                    Application::ClassAnalyticsRosterNames>(
+                        "Roster columns contain an invalid position representation.");
+            }
+            if (columnCountQuery.value("column_count").toInt() <= 0)
             {
                 return Domain::Result<
                     Application::ClassAnalyticsRosterNames>::success(

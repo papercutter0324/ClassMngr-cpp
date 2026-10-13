@@ -47,6 +47,7 @@ class NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests final
 private slots:
     void readsOnlyRosterNamesAndExactEvaluationScoreProjection();
     void sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders();
+    void rejectsInvalidRosterColumnPositionStorage();
     void rejectsRosterRowsOutsideClassAnalyticsIntegerRange();
     void missingEvaluationIsSuccessfulEmptyInput();
     void activeSessionQueryFailureIsStructured();
@@ -280,6 +281,79 @@ sparseRosterSizingUsesUnrelatedCellsAndFirstExactHeaders()
             == std::vector<std::u16string>(4));
     QVERIFY(absentHeaders.value().koreanNames
             == std::vector<std::u16string>(4));
+}
+
+void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
+rejectsInvalidRosterColumnPositionStorage()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        directory.filePath(QStringLiteral("class-analytics-position.db"))));
+    const auto classId = services.classService()->create(
+        QStringLiteral("Malformed analytics position"));
+    QVERIFY(classId);
+
+    QSqlQuery insertColumn(services.databaseSession()->database());
+    insertColumn.prepare(R"(
+        INSERT INTO roster_columns (class_id, name, position, width)
+        VALUES (?, ?, ?, 100)
+    )");
+    const auto addColumn = [&](const QString& name, const int position) {
+        insertColumn.bindValue(0, *classId);
+        insertColumn.bindValue(1, name);
+        insertColumn.bindValue(2, position);
+        return insertColumn.exec();
+    };
+    QVERIFY(addColumn(QStringLiteral("English"), 0));
+    QVERIFY(addColumn(QStringLiteral("Korean"), 1));
+    QVERIFY(addColumn(QStringLiteral("Notes"), 2));
+
+    QSqlQuery insertCell(services.databaseSession()->database());
+    insertCell.prepare(R"(
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        VALUES (?, 0, ?, ?)
+    )");
+    const auto addCell = [&](const int column, const QString& value) {
+        insertCell.bindValue(0, *classId);
+        insertCell.bindValue(1, column);
+        insertCell.bindValue(2, value);
+        return insertCell.exec();
+    };
+    QVERIFY(addCell(0, QStringLiteral("Distinct English name")));
+    QVERIFY(addCell(1, QStringLiteral("Distinct Korean name")));
+
+    QSqlQuery makePositionMalformed(services.databaseSession()->database());
+    makePositionMalformed.prepare(R"(
+        UPDATE roster_columns
+        SET position=?
+        WHERE class_id=? AND name='English'
+    )");
+    makePositionMalformed.addBindValue(QStringLiteral("not-a-number"));
+    makePositionMalformed.addBindValue(*classId);
+    QVERIFY(makePositionMalformed.exec());
+
+    QSqlQuery positionType(services.databaseSession()->database());
+    positionType.prepare(R"(
+        SELECT typeof(position)
+        FROM roster_columns
+        WHERE class_id=? AND name='English'
+    )");
+    positionType.addBindValue(*classId);
+    QVERIFY(positionType.exec());
+    QVERIFY(positionType.next());
+    QCOMPARE(positionType.value(0).toString(), QStringLiteral("text"));
+
+    const auto typedClassId = Domain::ClassId::fromString(
+        std::to_string(*classId));
+    QVERIFY(typedClassId);
+    Platform::ApplicationServicesClassAnalyticsDashboardReadPort port(services);
+    const auto result = port.readRosterNames(*typedClassId);
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
 }
 
 void NextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests::
