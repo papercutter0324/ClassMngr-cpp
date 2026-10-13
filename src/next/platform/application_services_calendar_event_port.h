@@ -275,7 +275,7 @@ public:
             for (qsizetype index = 0; index < events.size(); ++index)
             {
                 const CalendarEvent& source = events.at(index);
-                const auto event = projectEvent(
+                auto event = projectEvent(
                     source,
                     static_cast<std::int32_t>(index)
                     );
@@ -287,7 +287,7 @@ public:
                         );
                 }
 
-                input.events.push_back(event.value());
+                input.events.push_back(std::move(event.value()));
             }
 
             return Application::CalendarEventProjection::create(
