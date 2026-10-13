@@ -34360,3 +34360,56 @@ the result.
 
 The exact registered CTest is
 `ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`.
+
+### F855 invalid ClassVisibilityScope enum on save - accepted - 2026-10-14
+
+F855 is accepted at source/test commit
+`786756989b031779b493457afc108f8510ce0949` (`Phase2 - F855: Reject invalid
+class visibility scope saves`). Baseline enum value 17 overwrote stored
+`all_classes` with `active_schedule`. Save now accepts only `ActiveSchedule`
+and `AllClasses` and rejects other values as nonrecoverable `InvalidInput`
+before session access. Regression coverage verifies unavailable services and
+an open database preserve the stored and subsequently loaded `AllClasses`.
+
+Independent Tester acceptance: exact CTest
+`ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests`
+passed 1/1 in standard top-level `build/windows-x64-debug`, Visual Studio
+Debug. The first attempt and `TrackFileAccess=false` retry hit FileTracker
+errors; the authorized run outside the restricted sandbox succeeded. No full
+suite ran.
+
+### Batch 269 completion - 2026-10-14
+
+F855 completed Batch 269. The post-slice audit found none of the 13 deferred
+entries actionable and no blocker changed; the list remains unchanged. Batch
+270 selects F856 to investigate invalid `FileDialogPurpose` writes. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 270 discovery and selection - 2026-10-14
+
+`FileDialogPurpose` has eight named values. Source inspection suggests an
+unrecognized value falls through to the `general` key in
+`QSettingsFileDialogDirectoryPreferencesAdapter`; `writeDirectory` may write
+that key and return success. This is a source-derived hypothesis, not a
+reproduction. Normal callers use named values. F689's acceptance matrix
+preserves the eight valid purpose keys and conversions but does not specify
+invalid-cast behavior. F856 is not in the deferred list.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid `FileDialogPurpose` on write (F856) | Selected | An unrecognized purpose may cause `writeDirectory` to write the `general` key successfully. |
+
+F856 is selected, not reproduced or implemented. In the existing adapter
+test, pass an unrecognized purpose to `writeDirectory` and inspect its result
+and the resulting `general` key/value. If reproduced, address the invalid
+write path while preserving all eight valid purpose mappings and existing
+read fallback semantics. The exact CTest is
+`ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`;
+no full suite is planned. The test file is
+`tests/next_platform_qsettings_file_dialog_directory_preferences_adapter_tests.cpp`.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Pass an unrecognized `FileDialogPurpose` through `writeDirectory`; inspect the result and `general` key/value. |
+| Compatibility | Preserve the eight valid purpose keys/conversions and existing read fallback semantics; F689 did not specify invalid-cast behavior. |
+| Focused verification | Build and run only `ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`. No full suite. |
