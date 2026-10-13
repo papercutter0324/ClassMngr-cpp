@@ -25,6 +25,19 @@
 
 namespace
 {
+void setCustomWebsiteUrlWithoutProviderChange(
+    const std::string& url
+    )
+{
+    SettingsManager::instance().set(
+        QStringLiteral("options/aiCommentCustomWebsiteUrl"),
+        QString::fromUtf8(
+            url.data(),
+            static_cast<qsizetype>(url.size())
+            )
+        );
+}
+
 class CustomWebsiteSettingsRestorer final
 {
 public:
@@ -46,10 +59,7 @@ public:
             state->set(m_originalProvider);
         }
 
-        ClassMngr::Next::Platform::
-            SettingsManagerAiCommentCustomWebsitePort().write(
-                m_originalUrl
-                );
+        setCustomWebsiteUrlWithoutProviderChange(m_originalUrl);
         SettingsManager::instance().sync();
     }
 
@@ -103,7 +113,7 @@ private slots:
     void customWebsiteActionCapturesAndPersistsEnteredUrl();
     void customWebsiteActionCancellationKeepsPreviousSettings();
     void customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning();
-    void failedProviderWriteKeepsUrlAndAllowsRetry();
+    void failedCustomWebsiteSaveKeepsProviderAndUrlAndAllowsRetry();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -144,7 +154,7 @@ customWebsiteActionCapturesAndPersistsEnteredUrl()
     const SettingsManagerAiCommentProviderPreferencesPort providerPreferences;
     const SettingsManagerAiCommentCustomWebsitePort customWebsitePort;
     QVERIFY(providerPreferences.write(PersistedProvider::ChatGPT));
-    customWebsitePort.write(originalUrl);
+    setCustomWebsiteUrlWithoutProviderChange(originalUrl);
     SettingsManager::instance().sync();
 
     MainWindowStartupOptions startupOptions;
@@ -303,11 +313,21 @@ customWebsiteActionCancellationKeepsPreviousSettings()
     const SettingsManagerAiCommentProviderPreferencesPort providerPreferences;
     const SettingsManagerAiCommentCustomWebsitePort customWebsitePort;
     QVERIFY(providerPreferences.write(PersistedProvider::ChatGPT));
-    customWebsitePort.write(originalUrl);
+    setCustomWebsiteUrlWithoutProviderChange(originalUrl);
     SettingsManager::instance().sync();
 
     MainWindowStartupOptions startupOptions;
     startupOptions.loadMostRecentDatabase = false;
+    int customWebsiteSaveCallbackCount = 0;
+    startupOptions.aiCommentCustomWebsitePort =
+        std::make_shared<SettingsManagerAiCommentCustomWebsitePort>(
+            [&customWebsiteSaveCallbackCount](QSettings& settings)
+            {
+                ++customWebsiteSaveCallbackCount;
+                settings.sync();
+                return settings.status();
+            }
+            );
 
     MainWindow window(
         [](const QString&) {},
@@ -376,6 +396,7 @@ customWebsiteActionCancellationKeepsPreviousSettings()
     QCOMPARE(state->current(), ::AiCommentProvider::ChatGPT);
     QVERIFY(chatGptAction->isChecked());
     QVERIFY(!customWebsiteAction->isChecked());
+    QCOMPARE(customWebsiteSaveCallbackCount, 0);
     SettingsManager::instance().sync();
     QCOMPARE(
         providerPreferences.read(),
@@ -404,11 +425,21 @@ customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning()
     const SettingsManagerAiCommentProviderPreferencesPort providerPreferences;
     const SettingsManagerAiCommentCustomWebsitePort customWebsitePort;
     QVERIFY(providerPreferences.write(PersistedProvider::ChatGPT));
-    customWebsitePort.write(originalUrl);
+    setCustomWebsiteUrlWithoutProviderChange(originalUrl);
     SettingsManager::instance().sync();
 
     MainWindowStartupOptions startupOptions;
     startupOptions.loadMostRecentDatabase = false;
+    int customWebsiteSaveCallbackCount = 0;
+    startupOptions.aiCommentCustomWebsitePort =
+        std::make_shared<SettingsManagerAiCommentCustomWebsitePort>(
+            [&customWebsiteSaveCallbackCount](QSettings& settings)
+            {
+                ++customWebsiteSaveCallbackCount;
+                settings.sync();
+                return settings.status();
+            }
+            );
 
     MainWindow window(
         [](const QString&) {},
@@ -521,6 +552,7 @@ customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning()
         warningText,
         QStringLiteral("Enter a valid HTTPS website URL.")
         );
+    QCOMPARE(customWebsiteSaveCallbackCount, 0);
 
     QCOMPARE(state->current(), ::AiCommentProvider::ChatGPT);
     QVERIFY(chatGptAction->isChecked());
@@ -531,7 +563,7 @@ customWebsiteActionInvalidUrlKeepsPreviousSettingsAndReportsWarning()
 }
 
 void MainWindowCustomWebsiteAiCommentProviderActionParityTests::
-failedProviderWriteKeepsUrlAndAllowsRetry()
+failedCustomWebsiteSaveKeepsProviderAndUrlAndAllowsRetry()
 {
     using PersistedProvider =
         ClassMngr::Next::Application::AiCommentProvider;
@@ -552,19 +584,33 @@ failedProviderWriteKeepsUrlAndAllowsRetry()
     const SettingsManagerAiCommentProviderPreferencesPort initialPreferences;
     const SettingsManagerAiCommentCustomWebsitePort customWebsitePort;
     QVERIFY(initialPreferences.write(PersistedProvider::ChatGPT));
-    customWebsitePort.write(originalUrl);
+    setCustomWebsiteUrlWithoutProviderChange(originalUrl);
     SettingsManager::instance().sync();
 
     bool injectAccessError = true;
     int synchronizationAttempts = 0;
-    std::vector<std::string> urlsAtProviderWrite;
-    const auto providerPreferences =
-        std::make_shared<SettingsManagerAiCommentProviderPreferencesPort>(
+    std::vector<int> providersAtPairedSave;
+    std::vector<std::string> urlsAtPairedSave;
+    const auto customWebsiteSavePort =
+        std::make_shared<SettingsManagerAiCommentCustomWebsitePort>(
             [&injectAccessError, &synchronizationAttempts,
-             &urlsAtProviderWrite, &customWebsitePort](QSettings& settings)
+             &providersAtPairedSave, &urlsAtPairedSave](QSettings& settings)
             {
                 ++synchronizationAttempts;
-                urlsAtProviderWrite.push_back(customWebsitePort.read());
+                providersAtPairedSave.push_back(
+                    settings.value(
+                        SettingsManager::Keys::
+                            AI_COMMENT_PROVIDER_PREFERENCE
+                        ).toInt()
+                    );
+                const QByteArray urlBytes = settings.value(
+                    SettingsManager::Keys::
+                        AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE
+                    ).toString().toUtf8();
+                urlsAtPairedSave.emplace_back(
+                    urlBytes.constData(),
+                    static_cast<std::size_t>(urlBytes.size())
+                    );
                 if (injectAccessError)
                 {
                     return QSettings::AccessError;
@@ -574,12 +620,15 @@ failedProviderWriteKeepsUrlAndAllowsRetry()
                 return settings.status();
             }
             );
+    const auto providerPreferences =
+        std::make_shared<SettingsManagerAiCommentProviderPreferencesPort>();
 
     int diagnosticCount = 0;
     OperationError lastDiagnostic;
     MainWindowStartupOptions startupOptions;
     startupOptions.loadMostRecentDatabase = false;
     startupOptions.aiCommentProviderPreferencesPort = providerPreferences;
+    startupOptions.aiCommentCustomWebsitePort = customWebsiteSavePort;
     startupOptions.aiCommentProviderPreferenceErrorHandler =
         [&diagnosticCount, &lastDiagnostic](const OperationError& error)
         {
@@ -668,8 +717,16 @@ failedProviderWriteKeepsUrlAndAllowsRetry()
     QVERIFY(!customWebsiteAction->isChecked());
     QCOMPARE(providerPreferences->read(), PersistedProvider::ChatGPT);
     QCOMPARE(customWebsitePort.read(), originalUrl);
-    QCOMPARE(urlsAtProviderWrite.size(), std::size_t(1));
-    QCOMPARE(urlsAtProviderWrite.front(), originalUrl);
+    QCOMPARE(providersAtPairedSave.size(), std::size_t(1));
+    QCOMPARE(
+        providersAtPairedSave.front(),
+        SettingsManager::AI_COMMENT_CUSTOM_WEBSITE_PROVIDER_VALUE
+        );
+    QCOMPARE(urlsAtPairedSave.size(), std::size_t(1));
+    QCOMPARE(
+        urlsAtPairedSave.front(),
+        enteredUrl.toUtf8().toStdString()
+        );
 
     injectAccessError = false;
     const auto retryDialog = enterUrlThroughDialog();
@@ -681,8 +738,16 @@ failedProviderWriteKeepsUrlAndAllowsRetry()
     QVERIFY(customWebsiteAction->isChecked());
     QVERIFY(!chatGptAction->isChecked());
     QCOMPARE(providerPreferences->read(), PersistedProvider::CustomWebsite);
-    QCOMPARE(urlsAtProviderWrite.size(), std::size_t(2));
-    QCOMPARE(urlsAtProviderWrite.back(), originalUrl);
+    QCOMPARE(providersAtPairedSave.size(), std::size_t(2));
+    QCOMPARE(
+        providersAtPairedSave.back(),
+        SettingsManager::AI_COMMENT_CUSTOM_WEBSITE_PROVIDER_VALUE
+        );
+    QCOMPARE(urlsAtPairedSave.size(), std::size_t(2));
+    QCOMPARE(
+        urlsAtPairedSave.back(),
+        enteredUrl.toUtf8().toStdString()
+        );
     const std::string savedUrl = customWebsitePort.read();
     QCOMPARE(
         QString::fromUtf8(

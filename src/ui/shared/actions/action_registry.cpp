@@ -160,7 +160,10 @@ void ActionRegistry::createActions(
         > documentPageSpacingPreferencesPort,
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )> documentPageSpacingPreferenceErrorHandler
+        )> documentPageSpacingPreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentCustomWebsitePort
+        > aiCommentCustomWebsitePort
     )
 {
     createFileActions();
@@ -185,7 +188,8 @@ void ActionRegistry::createActions(
         std::move(documentViewerBackgroundPreferencesPort),
         documentViewerBackgroundPreferenceErrorHandler,
         std::move(documentPageSpacingPreferencesPort),
-        documentPageSpacingPreferenceErrorHandler
+        documentPageSpacingPreferenceErrorHandler,
+        std::move(aiCommentCustomWebsitePort)
         );
     createHelpActions();
     createAdminActions();
@@ -853,7 +857,10 @@ void ActionRegistry::createOptionActions(
         > documentPageSpacingPreferencesPort,
     const std::function<void(
         const ClassMngr::Next::Domain::OperationError&
-        )>& documentPageSpacingPreferenceErrorHandler
+        )>& documentPageSpacingPreferenceErrorHandler,
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentCustomWebsitePort
+        > aiCommentCustomWebsitePort
     )
 {
     using ClassMngr::Next::Application::SaveModePreferencesPort;
@@ -1835,11 +1842,15 @@ void ActionRegistry::createOptionActions(
     aiCommentProviderState->set(
         legacyAiCommentProvider
         );
-    const ClassMngr::Next::Platform::
-        SettingsManagerAiCommentCustomWebsitePort
-        customWebsitePort;
+    if (!aiCommentCustomWebsitePort)
+    {
+        aiCommentCustomWebsitePort = std::make_shared<
+            ClassMngr::Next::Platform::
+                SettingsManagerAiCommentCustomWebsitePort
+            >();
+    }
     const std::string storedCustomAiWebsiteValue =
-        customWebsitePort.read();
+        aiCommentCustomWebsitePort->read();
     const QString storedCustomAiWebsite =
         QString::fromUtf8(
             storedCustomAiWebsiteValue.data(),
@@ -1967,19 +1978,16 @@ void ActionRegistry::createOptionActions(
         customAiWebsiteAction,
         &QAction::triggered,
         this,
-        [this, customAiWebsiteAction,
+        [this,
             aiCommentProviderPreferenceErrorHandler,
-            writeAiCommentProviderPreference,
+            aiCommentCustomWebsitePort,
             skipAiCommentProviderPersistForActionCommit,
             restoreProviderAction]()
         {
             const ::AiCommentProvider previousProvider =
                 aiCommentProviderState->current();
-            const ClassMngr::Next::Platform::
-                SettingsManagerAiCommentCustomWebsitePort
-                customWebsitePort;
             const std::string existingUrlValue =
-                customWebsitePort.read();
+                aiCommentCustomWebsitePort->read();
             const QString existingUrl =
                 QString::fromUtf8(
                     existingUrlValue.data(),
@@ -2013,30 +2021,21 @@ void ActionRegistry::createOptionActions(
                 return;
             }
 
-            if (previousProvider != ::AiCommentProvider::CustomWebsite)
-            {
-                const auto saved = writeAiCommentProviderPreference(
-                    ::AiCommentProvider::CustomWebsite
-                    );
-                if (!saved)
-                {
-                    restoreProviderAction(previousProvider);
-                    customAiWebsiteAction->setChecked(false);
-                    if (aiCommentProviderPreferenceErrorHandler)
-                    {
-                        aiCommentProviderPreferenceErrorHandler(
-                            saved.error()
-                            );
-                    }
-                    return;
-                }
-            }
-
-            // Keep the established URL adapter behavior, but only after the
-            // provider preference has committed successfully.
-            customWebsitePort.write(
+            const auto saved = aiCommentCustomWebsitePort->save(
                 enteredUrl.toUtf8().toStdString()
                 );
+            if (!saved)
+            {
+                restoreProviderAction(previousProvider);
+                if (aiCommentProviderPreferenceErrorHandler)
+                {
+                    aiCommentProviderPreferenceErrorHandler(
+                        saved.error()
+                        );
+                }
+                return;
+            }
+
             if (previousProvider != ::AiCommentProvider::CustomWebsite)
             {
                 *skipAiCommentProviderPersistForActionCommit = true;

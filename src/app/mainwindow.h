@@ -48,6 +48,7 @@ class LanguageService;
 namespace ClassMngr::Next::Application
 {
 class AutomaticUpdatePreferencesPort;
+class AiCommentCustomWebsitePort;
 class AiCommentProviderPreferencesPort;
 class AiCommentVoicePreferencesPort;
 class DocumentPageSpacingPreferencesPort;
@@ -121,6 +122,9 @@ struct MainWindowStartupOptions
     std::function<void(
         const ClassMngr::Next::Domain::OperationError&
         )> aiCommentProviderPreferenceErrorHandler;
+    std::shared_ptr<
+        ClassMngr::Next::Application::AiCommentCustomWebsitePort
+        > aiCommentCustomWebsitePort;
     std::shared_ptr<
         ClassMngr::Next::Application::AiCommentVoicePreferencesPort
         > aiCommentVoicePreferencesPort;

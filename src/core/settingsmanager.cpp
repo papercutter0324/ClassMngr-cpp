@@ -391,6 +391,82 @@ QSettings::Status SettingsManager::writeAiCommentProviderPreference(
     return status;
 }
 
+QSettings::Status SettingsManager::writeAiCommentCustomWebsitePreferences(
+    const QString& websiteUrl,
+    const AiCommentCustomWebsitePreferenceSync& synchronize
+    )
+{
+    const bool hadPreviousProvider =
+        m_settings->contains(Keys::AI_COMMENT_PROVIDER_PREFERENCE);
+    const QVariant previousProvider =
+        m_settings->value(Keys::AI_COMMENT_PROVIDER_PREFERENCE);
+    const bool hadPreviousWebsiteUrl =
+        m_settings->contains(
+            Keys::AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE
+            );
+    const QVariant previousWebsiteUrl =
+        m_settings->value(
+            Keys::AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE
+            );
+
+    m_settings->setValue(
+        Keys::AI_COMMENT_PROVIDER_PREFERENCE,
+        AI_COMMENT_CUSTOM_WEBSITE_PROVIDER_VALUE
+        );
+    m_settings->setValue(
+        Keys::AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE,
+        websiteUrl
+        );
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*m_settings);
+    }
+    else
+    {
+        m_settings->sync();
+        status = m_settings->status();
+    }
+
+    if (status != QSettings::NoError)
+    {
+        // Restore both captured states before destroying this instance so
+        // its failed candidates cannot be retried during teardown.
+        if (hadPreviousProvider)
+        {
+            m_settings->setValue(
+                Keys::AI_COMMENT_PROVIDER_PREFERENCE,
+                previousProvider
+                );
+        }
+        else
+        {
+            m_settings->remove(Keys::AI_COMMENT_PROVIDER_PREFERENCE);
+        }
+
+        if (hadPreviousWebsiteUrl)
+        {
+            m_settings->setValue(
+                Keys::AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE,
+                previousWebsiteUrl
+                );
+        }
+        else
+        {
+            m_settings->remove(
+                Keys::AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE
+                );
+        }
+
+        // Reopen after a reported error because QSettings retains its status.
+        m_settings.reset();
+        m_settings = createSettings();
+    }
+
+    return status;
+}
+
 QSettings::Status SettingsManager::writeLanguagePreference(
     const int language,
     const LanguagePreferenceSync& synchronize

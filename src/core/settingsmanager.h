@@ -47,6 +47,8 @@ public:
     static constexpr auto APP =
         "ClassMngr";
 
+    static constexpr int AI_COMMENT_CUSTOM_WEBSITE_PROVIDER_VALUE = 4;
+
     // =====================================================
     // Keys
     // =====================================================
@@ -82,6 +84,9 @@ public:
 
         static constexpr auto AI_COMMENT_PROVIDER_PREFERENCE =
             "options/aiCommentProvider";
+
+        static constexpr auto AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE =
+            "options/aiCommentCustomWebsiteUrl";
 
         static constexpr auto WINDOW_GEOMETRY =
             "ui/windowGeometry";
@@ -212,6 +217,18 @@ public:
         int provider,
         const AiCommentProviderPreferenceSync& synchronize = {}
         );
+
+    // The custom website choice and URL share one checked synchronization.
+    // On failure this restores both captured key states and reopens settings
+    // so the caller can report the error and retry.
+    using AiCommentCustomWebsitePreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] QSettings::Status
+        writeAiCommentCustomWebsitePreferences(
+            const QString& websiteUrl,
+            const AiCommentCustomWebsitePreferenceSync& synchronize = {}
+            );
 
     // An empty callback uses QSettings::sync/status. The preference-specific
     // writer reports failure and restores the previous key before returning.

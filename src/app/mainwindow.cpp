@@ -715,7 +715,8 @@ void MainWindow::createActions()
         m_startupOptions.documentViewerBackgroundPreferencesPort,
         std::move(documentViewerBackgroundPreferenceErrorHandler),
         m_startupOptions.documentPageSpacingPreferencesPort,
-        std::move(documentPageSpacingPreferenceErrorHandler)
+        std::move(documentPageSpacingPreferenceErrorHandler),
+        m_startupOptions.aiCommentCustomWebsitePort
         );
 }
 

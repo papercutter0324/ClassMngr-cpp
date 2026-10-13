@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -20,7 +21,12 @@ class SettingsManagerAiCommentCustomWebsitePort final
     : public Application::AiCommentCustomWebsitePort
 {
 public:
-    SettingsManagerAiCommentCustomWebsitePort() = default;
+    explicit SettingsManagerAiCommentCustomWebsitePort(
+        SettingsManager::AiCommentCustomWebsitePreferenceSync synchronize = {}
+        )
+        : m_synchronize(std::move(synchronize))
+    {
+    }
 
     [[nodiscard]] std::string read() const override
     {
@@ -30,14 +36,32 @@ public:
         return toUtf8(storedWebsiteUrl);
     }
 
-    void write(
+    [[nodiscard]] Domain::Result<void> save(
         const std::string& websiteUrl
         ) const override
     {
-        SettingsManager::instance().set(
-            key(),
-            fromUtf8(websiteUrl)
-            );
+        const QSettings::Status status =
+            SettingsManager::instance()
+                .writeAiCommentCustomWebsitePreferences(
+                    fromUtf8(websiteUrl),
+                    m_synchronize
+                    );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be written)"
+                : "FormatError (settings contain invalid data)";
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to save AI Comment Custom Website "
+                    "preferences: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
+        return Domain::Result<void>::success();
     }
 
     void clear() const override
@@ -46,6 +70,8 @@ public:
     }
 
 private:
+    SettingsManager::AiCommentCustomWebsitePreferenceSync m_synchronize;
+
     [[nodiscard]] static QString key()
     {
         return QString::fromUtf8(

@@ -14,6 +14,7 @@ class QMenu;
 namespace ClassMngr::Next::Application
 {
 class AiCommentProviderPreferencesPort;
+class AiCommentCustomWebsitePort;
 class AiCommentVoicePreferencesPort;
 class AutomaticUpdatePreferencesPort;
 class DocumentPageSpacingPreferencesPort;
@@ -91,7 +92,10 @@ public:
             > documentPageSpacingPreferencesPort = {},
         std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )> documentPageSpacingPreferenceErrorHandler = {}
+            )> documentPageSpacingPreferenceErrorHandler = {},
+        std::shared_ptr<
+            ClassMngr::Next::Application::AiCommentCustomWebsitePort
+            > aiCommentCustomWebsitePort = {}
         );
     void retranslate();
     void refreshThemedIcons();
@@ -247,7 +251,10 @@ private:
             > documentPageSpacingPreferencesPort,
         const std::function<void(
             const ClassMngr::Next::Domain::OperationError&
-            )>& documentPageSpacingPreferenceErrorHandler
+            )>& documentPageSpacingPreferenceErrorHandler,
+        std::shared_ptr<
+            ClassMngr::Next::Application::AiCommentCustomWebsitePort
+            > aiCommentCustomWebsitePort
         );
     void createHelpActions();
     void createAdminActions();
