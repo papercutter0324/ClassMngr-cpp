@@ -34060,3 +34060,62 @@ before production edits and report the result.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`.
+
+### F849 invalid Class Selection Reset Policy enum on save - accepted - 2026-10-14
+
+F849 is accepted at source/test commit `74118c7b` (`Phase2 - F849: Reject
+invalid reset-policy enum saves`). The baseline temporary-DB fixture seeded
+`classes_navigation_class_selection_reset_policy=on_page_leave`; saving
+`static_cast<ClassSelectionResetPolicy>(17)` returned success and replaced it
+with `on_application_close`. The fix validates before repository access and
+returns nonrecoverable `Domain::ErrorCode::InvalidInput`; regression coverage
+confirms the stored `on_page_leave` remains unchanged. Existing valid
+round-trips, trimmed/case-insensitive load, missing-setting default and
+materialization, unknown stored values, and read/write failures remain
+covered.
+
+Independent Tester acceptance: standard `build/windows-x64-debug` Debug CTest
+`ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests`
+passed 1/1 with no retry. The target build needed an elevated retry after a
+FileTracker access denial in the same standard build tree. Scoped diff check
+passed with line-ending notices. No full suite ran.
+
+### Batch 263 completion - 2026-10-14
+
+F849 completed Batch 263 by rejecting invalid Class Selection Reset Policy
+values before persistence. The deferred audit found no blocker changes; Batch
+264 selects F850 to check invalid `CalendarFirstDayOfWeek` save values. Phase
+2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 264 discovery and selection - 2026-10-14
+
+The named `CalendarFirstDayOfWeek` values represent 0 through 6. The typed
+save port currently persists an arbitrary cast enum as an integer, while
+load falls back to locale when a stored value is outside that range. The
+current UI normalizes before calling the port, so this is a public typed
+boundary candidate rather than a demonstrated UI path. Baseline reproduction
+is pending.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid `CalendarFirstDayOfWeek` enum on save (F850) | Selected | The public typed port accepts a cast value outside 0..6 and persists it. |
+
+F850 is selected, not reproduced or implemented. In the existing temporary
+database fixture, set locale `en_GB`, seed a valid stored day such as 2, save
+`static_cast<CalendarFirstDayOfWeek>(7)`, and assert the result and stored
+value before loading. If reproduction confirms the invalid value is persisted,
+reject before persistence as nonrecoverable `Domain::ErrorCode::InvalidInput`
+and verify the prior stored day remains unchanged. Preserve all seven valid
+round trips, missing/invalid stored-value fallback, and repository write
+failure behavior. If the baseline does not reproduce, stop before production
+edits and report the result. No deferred candidate became actionable.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | In `tests/next_platform_application_services_calendar_first_day_of_week_preferences_port_tests.cpp`, set `en_GB`, seed a valid stored day, save enum value 7, and inspect the result, stored value, and subsequent load. |
+| Error contract | On reproduction, reject before persistence as nonrecoverable `Domain::ErrorCode::InvalidInput`; preserve the prior stored day. |
+| Compatibility | Preserve seven valid round trips, missing/invalid stored fallback, and repository write-failure behavior. |
+| Focused verification | Build and run only `ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests`.

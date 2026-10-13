@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F848 is accepted at `5848b21f9eae062b00688522fddb472e4435b1c6`; F849 is selected for Batch 263 pending baseline reproduction, no deferred candidate was unblocked, and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F849 is accepted at `74118c7b`; F850 is selected for Batch 264 pending baseline reproduction, no deferred candidate was unblocked, and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 263
+#### Active batch: Batch 264
 
-- F849 - Invalid Class Selection Reset Policy enum passed to typed save - Baseline-test whether enum value 17 replaces stored `on_page_leave` before production edits.
+- F850 - Invalid CalendarFirstDayOfWeek enum on save - Baseline-test whether saving cast value 7 overwrites the stored day before production edits.
 
 ## Objective
 
