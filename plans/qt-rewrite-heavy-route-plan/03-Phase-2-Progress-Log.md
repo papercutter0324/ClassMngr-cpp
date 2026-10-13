@@ -33230,3 +33230,48 @@ behavior. Use focused CTest
 No CMake, schema, or API change and no full suite. The project-configuration
 and CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and
 the formal exit gate remains Open.
+
+### F834 fractional REAL roster index in template-print reads - accepted - 2026-10-13
+
+F834 is accepted at source/test commit
+`e7d5a89af2d447fe390d9c7ca7537e80d60917b8`. The fresh Ninja Debug build of
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`
+succeeded; exact focused CTest passed 1/1 and scoped `git diff --check` passed.
+Pre-fix typed-port reproduction confirmed REAL `col_index=0.25` overwrote the
+integer column-0 cell. The regression requires Technical failure and verifies
+both persisted rows and their SQLite storage types remain unchanged. No full
+suite ran.
+
+### Batch 248 completion - 2026-10-13
+
+F834 completed Batch 248 by rejecting fractional REAL roster indexes in
+template-print reads. Batch 249 selects F835 for Sub Prep student counts from
+fractional REAL roster positions. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### Batch 249 discovery and selection - 2026-10-13
+
+`RosterRepository::loadSubPrepStudentCountRecords()` admits REAL
+`roster_data.col_index` values in its range query, then narrows them with
+`.toInt()`, so REAL `0.25` can alias integer English column 0. F835 is a
+separate Sub Prep consumer of the shared roster data.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL roster index in Sub Prep student counts (F835) | Selected | The Sub Prep batch path narrows an admitted REAL index to English column 0. |
+
+F835 is selected, not implemented or accepted. First reproduce through the
+current Sub Prep count path: seed a blank integer English column-0 cell and a
+nonempty REAL `col_index=0.25` cell; verify `typeof(col_index)='real'` and the
+pre-fix user-visible count effect before edits. If reproduced, ensure the
+fractional-only cell does not create a counted student. Preserve ordinary and
+valid sibling-class counts and the established per-class default-zero
+fallback; do not assume the outer port returns Technical. If the effect does
+not reproduce, stop and report. Use
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`
+and exact CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No
+CMake/API change or full suite. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
