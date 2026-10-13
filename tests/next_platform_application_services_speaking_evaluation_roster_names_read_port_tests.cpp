@@ -45,7 +45,7 @@ Application::SpeakingEvaluationRosterNamesReadRequest request(
 
 struct RawCell final
 {
-    int row;
+    qint64 row;
     int column;
     QVariant value;
 };
@@ -120,6 +120,7 @@ class NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests 
 private slots:
     void missingSessionReturnsNotFound();
     void readsFirstCaseInsensitiveHeadersAndLegacySparseRows();
+    void rejectsRowIndexOutsideLegacyRange();
     void preservesMissingHeadersAndRowsMaterializedByUnrelatedCells();
     void skipsCellReadWhenNoColumnsExist();
     void emptyRosterWithNameColumnsIsSuccessful();
@@ -223,6 +224,57 @@ readsFirstCaseInsensitiveHeadersAndLegacySparseRows()
     QVERIFY(result.value().rows[1].koreanName.empty());
     QVERIFY(result.value().rows[2].englishName.empty());
     QVERIFY(result.value().rows[2].koreanName.empty());
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+rejectsRowIndexOutsideLegacyRange()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Wide Row Index")
+        );
+    QVERIFY(createdClass);
+
+    const qint64 wideRowIndex = 2147483648LL;
+    QString error;
+    QVERIFY2(
+        seedRoster(
+            services.databaseSession()->database(),
+            *createdClass,
+            {QStringLiteral("English"), QStringLiteral("Korean")},
+            {{wideRowIndex, 0, QStringLiteral("Out-of-range row")}},
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    QSqlQuery storedRow(services.databaseSession()->database());
+    storedRow.prepare(QStringLiteral(
+        "SELECT typeof(row_index), row_index FROM roster_data "
+        "WHERE class_id=? AND row_index=? AND col_index=0"
+        ));
+    storedRow.addBindValue(*createdClass);
+    storedRow.addBindValue(wideRowIndex);
+    QVERIFY2(storedRow.exec(), qPrintable(storedRow.lastError().text()));
+    QVERIFY(storedRow.next());
+    QCOMPARE(storedRow.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRow.value(1).toLongLong(), wideRowIndex);
+    QVERIFY(!storedRow.next());
+
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(*createdClass),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::

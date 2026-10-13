@@ -480,11 +480,30 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
 
     while (rowsQuery.next())
     {
-        const int rowIndex = rowsQuery.value(0).toInt();
-        if (rowIndex < 0)
+        bool rowIndexValid = false;
+        const qlonglong sourceRowIndex =
+            rowsQuery.value(0).toLongLong(&rowIndexValid);
+        if (!rowIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading Speaking Evaluation roster names failed for %1: invalid row index."
+                    ).arg(identity)
+                );
+        }
+        if (sourceRowIndex < 0)
         {
             continue;
         }
+        if (sourceRowIndex > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading Speaking Evaluation roster names failed for %1: row index %2 exceeds the supported range."
+                    ).arg(identity).arg(sourceRowIndex)
+                );
+        }
+        const int rowIndex = static_cast<int>(sourceRowIndex);
 
         while (record.rows.size() <= rowIndex)
         {
