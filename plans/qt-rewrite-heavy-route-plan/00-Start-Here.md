@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F860 is accepted at `c4092ab3`. The post-slice audit found all 13 deferred candidates unchanged and not actionable; F579 and F598 WPR captures remain blocked without an elevated Administrator token. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F860 is accepted at `c4092ab3` and F861 is selected for Batch 275. All 13 deferred candidates remain unchanged; F579 and F598 WPR captures remain blocked without an elevated Administrator token. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F860 is accepted; the next slice is pending selection, Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: F861 is selected for Batch 275; Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,11 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Next slice pending selection.
+Batch 275 (one candidate):
+
+- F861 - Remove the redundant `ClassTransferExportPackage` alias and use `ClassTransferPortablePackage` explicitly in export-query and JSON codec APIs/definitions while preserving behavior.
+
+No other slices were found.
 
 #### Deferred candidates
 

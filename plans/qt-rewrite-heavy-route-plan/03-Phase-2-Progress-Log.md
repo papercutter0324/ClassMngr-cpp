@@ -34741,3 +34741,33 @@ their WPR captures. F629 runner absence remains session-limited; the other
 policy, measurement, caller, and injection triggers remain unresolved as
 documented. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open. The next slice is pending selection.
+
+### Batch 275 discovery and selection - 2026-10-14
+
+The post-F860 audit found F859's `ClassTransferExportPackage` alias still used
+in export-query result/local types, legacy JSON codec overloads/definitions,
+and one test identity assertion. The normal export path uses the query and
+codec; Next Application and Domain have no Qt or direct legacy-layer includes.
+The CMake Application-to-Persistence interface edge is unused scaffolding
+without direct source evidence, and CalendarEventCache legacy-return wrappers
+have only test callers, so both are lower-priority near misses. All 13
+deferred candidates remain unchanged.
+
+| Candidate | Decision | Evidence |
+| --- | --- | --- |
+| Remove `ClassTransferExportPackage` alias (F861) | Selected | The alias remains in production export-query/codec paths and one test; ordinary export uses those paths. |
+| CMake Application-to-Persistence interface edge | Near miss | Unused scaffolding with no direct source evidence. |
+| CalendarEventCache legacy-return wrappers | Near miss | Test-only callers; lower priority. |
+
+F861 is selected, not implemented. Remove the alias and use
+`ClassTransferPortablePackage` explicitly in export-query and JSON codec APIs
+and definitions; remove the alias identity assertion and retain the apply
+adapter test. Preserve JSON encoding, file save, query behavior, legacy-package
+overloads, and every field and order.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Removal | No `ClassTransferExportPackage` reference or declaration remains in `src/` or `tests/`. |
+| Consumer migration | All production in-repo consumers compile using the explicit portable type. |
+| Compatibility | Codec JSON/save parity and export-query behavior pass with fields and ordering unchanged. |
+| Focused verification | Build `ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`, `ClassMngrNextPlatformClassTransferExportSourceTests`, `ClassMngrClassTransferExportCodecParityTests`, and `ClassMngrClassTransferApplyPackageAdapterTests` in standard `build/windows-x64-debug`. Run exactly CTests `ClassMngrNextApplicationClassTransferExportQueryTests`, `ClassMngrNextPlatformClassTransferExportSourceTests`, `ClassMngrClassTransferExportCodecParityTests`, and `ClassMngrClassTransferApplyPackageAdapterTests`; no full suite or new target. |
