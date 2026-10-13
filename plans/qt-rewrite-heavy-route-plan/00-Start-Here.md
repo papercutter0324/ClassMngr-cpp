@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F858 is accepted at `6d720a8e`, and Batch 273 selects F859 to make the Class Transfer apply package contract Qt-free. The deferred-candidate audit found no changed blocker. F579's review trigger is satisfied, but its fresh WPR capture remains blocked by the unavailable elevated Administrator token. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F859 is accepted at `6ce691d2`; the next slice is pending selection. All 13 deferred candidates remain unchanged and not actionable; F579 and F598 WPR captures remain blocked without an elevated Administrator token. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

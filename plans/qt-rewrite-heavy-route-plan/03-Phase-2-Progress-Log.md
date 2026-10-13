@@ -34613,3 +34613,47 @@ remain blocked with their recorded triggers and evidence requirements. F579's
 review trigger is satisfied but WPR remains blocked without an elevated
 Administrator token; F598 has the same token blocker. Phase 2 Gates 1/2 remain
 Partial and the formal exit gate remains Open.
+
+### F859 Portable Class Transfer apply package - accepted - 2026-10-14
+
+F859 is accepted at source commit
+`6ce691d2f209c0826d614aa77b45a26481e9f0b4`. The full Qt-free
+`ClassTransferPortablePackage` was extracted, preserving
+`ClassTransferExportPackage` as an alias. The UI adapts the codec-loaded legacy
+package into the portable model; the Data legacy adapter reconstructs the
+legacy package at the Platform boundary before the unchanged validator and
+repository. Adapter coverage verified every codec-importable field and order,
+exact UTF-16 text (including supplementary text), version, and UTC timestamp
+both at the intermediate representation and through round-trip conversion.
+The application command no longer includes the legacy package or Qt types.
+Seventeen QList fixture type corrections align the tests with the qint64 API;
+assertions and values are unchanged.
+
+Source ownership validation passed for 1,470 handwritten files.
+`git diff --check` passed. The Windows x64 Debug build of `ClassMngr` and the
+affected targets passed in standard `build/windows-x64-debug`; after refreshing
+the generated AUTOGEN dependencies, the final build was warning-free. The
+focused planned CTest scope reported 7/9 passed. Passing registrations were
+`ClassMngrClassTransferExportCodecParityTests`,
+`ClassMngrClassImportTeacherChoiceRegressionTests`,
+`ClassMngrClassImportTeacherChoiceParityTests`,
+`ClassMngrSidebarClassTransferApplyParityTests`,
+`ClassMngrNextApplicationClassTransferApplyUseCaseTests`,
+`ClassMngrClassTransferApplyPackageAdapterTests`, and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`.
+`ClassMngrNextApplicationClassTransferTests` failed at
+`applyValidationRejectsMalformedTargetsBeforeDecisionIssues`: it expects
+`2147483648` to be malformed for a teacher target, while the unchanged teacher
+ID parser accepts canonical int64 values. `ClassMngrClassTransferTests` failed
+at `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`: after
+`preferred_name` is removed, both the unchanged batch and individual reads
+require that column. The independent verifier confirmed neither failure
+exercises the changed package contract. No pre-change baseline was run, so
+these are recorded as unrelated failures, not established baseline failures.
+No full suite ran.
+
+The post-slice audit found all 13 deferred candidates unchanged and not
+actionable. F579 and F598 WPR captures remain blocked without an elevated
+Administrator token; other triggers and evidence requirements are unchanged.
+The next slice is pending selection. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
