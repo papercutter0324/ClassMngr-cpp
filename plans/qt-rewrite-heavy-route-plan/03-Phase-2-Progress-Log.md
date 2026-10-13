@@ -30604,3 +30604,58 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 Run no full suite. No CMake inventory change is expected. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F790 Calendar Event By-ID request Unicode-whitespace parity - accepted - 2026-10-13
+
+F790 was accepted at commit
+`d089f34c71c9373c25f07142659ee1302c564f74`. The bounded Visual Studio 18 x64
+Debug build in `build/windows-x64-debug` built `ClassMngr` and
+`ClassMngrNextApplicationCalendarEventTests`; the sandbox build encountered
+the known ZERO_CHECK FileTracker `E_ACCESSDENIED`, and the identical bounded
+retry outside the sandbox passed. The exact CTest registered once and passed
+(1/1). `git diff --check` passed; no full suite ran.
+
+### Batch 205 discovery - 2026-10-13
+
+Calendar repeat-series deletion is selected for the next narrow Application
+boundary parity slice: the Qt UI already filters whitespace-only series IDs
+before its delete flow, so this closes a Qt-free request-boundary gap rather
+than fixing a demonstrated current UI bug. Class Analytics sparse roster
+vectors remain deferred because the current read-port regression preserves
+`rowCount`-aligned blank slots and no allocation/error limit policy is
+accepted; do not borrow arbitrary 4,096- or 25-row limits. F707/F709 remain
+deferred.
+
+### F791 Calendar repeat-series delete request Unicode-whitespace parity - selected and acceptance matrix - 2026-10-13
+
+**F791 is selected:** in
+`src/next/application/calendar_event_series_delete_port.h`, change only
+`CalendarEventSeriesDeleteRequestDetail::isBlank` to use the shared
+`Application::isBlankUtf8Text` helper. Reject IDs containing only U+00A0
+NO-BREAK SPACE or U+3000 IDEOGRAPHIC SPACE before
+`CalendarEventSeriesDeleteUseCase` calls its port, preserving the exact
+existing nonrecoverable `InvalidInput` code and diagnostic. Preserve empty and
+ASCII-whitespace behavior, maximum byte-length and canonical-date validation
+order, valid nonblank values with surrounding spaces byte-for-byte, malformed
+UTF-8 as nonblank, and no trimming.
+
+Extend only `tests/next_application_calendar_event_tests.cpp`: add coverage to
+`seriesDeleteRequestValidationIsCanonicalAndQtFree` and
+`repeatSeriesDeleteUseCaseRejectsInvalidRequestWithoutCallingPort` for both
+Unicode whitespace IDs, exact code/message/recoverability, and zero port calls.
+Retain exact maximum-ID acceptance and forwarding coverage.
+
+Production target: `ClassMngr`. The focused test target and exact CTest name
+are `ClassMngrNextApplicationCalendarEventTests`; it must register once. In
+the existing Visual Studio 18 x64 Debug tree `build/windows-x64-debug`, use
+only these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextApplicationCalendarEventTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextApplicationCalendarEventTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextApplicationCalendarEventTests$"
+```
+
+Run no full suite. No CMake inventory change is expected. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

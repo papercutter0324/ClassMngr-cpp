@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F784 is accepted at `64511319ee00918b7b85ff23a81b734e8c075660`; F785 is selected in Batch 198 to bound application-owned Calendar range-read and projection storage while preserving overflow and conversion-error precedence, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F790 is accepted at `d089f34c71c9373c25f07142659ee1302c564f74`; F791 is selected in Batch 205 for Calendar repeat-series delete request Unicode-whitespace parity, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -104,10 +104,14 @@ Treat this plan as an operational summary, not a history:
   architecture work without a demonstrated behavior defect.
 - Batch 197 teacher reassignment parity - deferred until the stricter Next
   notes/schedule validation policy is resolved against current tests.
+- Class Analytics sparse roster-vector bound - deferred because the current
+  read-port regression preserves `rowCount`-aligned blank slots and no row or
+  error limit policy is accepted. Revisit only with an explicit allocation
+  contract; do not introduce arbitrary 4,096- or 25-row limits.
 
-#### Active batch: Batch 198
+#### Active batch: Batch 205
 
-- F785 - Calendar bounded range reads - Add an early-stoppable ordered repository visitor and use it at both Calendar read boundaries to bound application-owned storage while preserving validation and overflow semantics.
+- F791 - Calendar repeat-series delete request whitespace parity - Reuse the shared Qt-compatible blank predicate at the Application request boundary and reject Unicode-whitespace-only IDs before the port call.
 
 ## Objective
 
