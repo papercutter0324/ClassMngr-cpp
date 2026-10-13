@@ -33657,3 +33657,55 @@ reproduce, stop and report before production edits.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`.
+
+### F842 fractional REAL roster row index in My Classes student counts - accepted - 2026-10-14
+
+F842 is accepted at source/test commit
+`c517e7f2ece4c5cf34de7972bdc0ee9e2ac0f8f9`. Baseline empty INTEGER
+`row_index=0` plus a nonempty REAL `row_index=0.25` English cell was counted
+as one student through the typed My Classes port. The fix rejects non-INTEGER
+row storage in both `loadMyClassesStudentCountRecords()` and
+`loadMyClassesStudentCountRecord()`. The malformed class retains its
+per-class Technical error behavior, and a valid sibling count remains 2.
+Independent verification passed
+`ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`
+1/1 with `-C Debug` after an approved FileTracker retry; the scoped diff check
+passed. No full suite ran.
+
+### Batch 256 completion - 2026-10-14
+
+F842 completed Batch 256 by rejecting fractional REAL row indexes in My
+Classes batch and per-class student-count reads. Batch 257 selects F843 to
+check fractional REAL row indexes in Speaking Evaluation roster-name reads.
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 257 discovery and selection - 2026-10-14
+
+`RosterRepository::loadSpeakingEvaluationRosterNames()` groups and joins
+`row_index` without checking its SQLite storage type, then narrows it with
+`toLongLong()` before assigning the row. A nonempty REAL `row_index=0.25`
+English cell may therefore overwrite the name at valid INTEGER row 0. This is
+separate from F837, which rejects a fractional REAL `col_index` in this read.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `roster_data.row_index` in Speaking Evaluation roster-name reads (F843) | Selected | The reader validates column storage but narrows grouped row indexes without checking storage type. |
+
+F843 is selected, not implemented or accepted. First seed an INTEGER row 0 and
+a nonempty REAL `row_index=0.25` English cell at the same class and column;
+assert both SQLite storage types and call the typed Speaking Evaluation
+roster-name port. Reproduce whether the REAL cell overwrites row 0 before
+production edits. The current `RawCell::row` test helper is `qint64`; bind a
+fractional `QVariant` directly if needed. If overwrite is reproduced, require
+a Technical read failure for non-INTEGER row storage. If it does not
+reproduce, stop and report before production edits.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm INTEGER row 0 and REAL row 0.25 storage; determine whether the typed port lets the REAL English value overwrite row 0. |
+| Error contract | On reproduction, reject non-INTEGER row storage with a Technical read failure. |
+| Compatibility | Preserve sparse INTEGER rows, header behavior, and F837's fractional-column rejection. |
+| Focused verification | Update `tests/next_platform_application_services_speaking_evaluation_roster_names_read_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`.

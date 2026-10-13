@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F841 completed Batch 255 at `2cad77c81ee303a28e5320f73496aae5dfc623ed`; F842 is selected for Batch 256 pending reproduction of fractional REAL `roster_data.row_index` contributing a My Classes student count; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F842 completed Batch 256 at `c517e7f2ece4c5cf34de7972bdc0ee9e2ac0f8f9`; F843 is selected for Batch 257 pending reproduction of fractional REAL `roster_data.row_index` overwriting row 0 in Speaking Evaluation roster-name reads; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 256
+#### Active batch: Batch 257
 
-- F842 - Fractional REAL roster row index in My Classes counts - Reproduce REAL `row_index=0.25` being counted through the typed My Classes port; if reproduced, reject malformed rows in batch and per-class reads while preserving count, whitespace, header, and sparse-INTEGER behavior.
+- F843 - Fractional REAL roster row index in Speaking Evaluation roster-name reads - Reproduce REAL `row_index=0.25` overwriting INTEGER row 0 through the typed port; if reproduced, return Technical for non-INTEGER row storage while preserving sparse rows, header behavior, and F837's fractional-column rejection.
 
 ## Objective
 
