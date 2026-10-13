@@ -106,6 +106,37 @@ struct TeacherProfileBatchReadMetrics final
     int fallbackSingleReadCount = 0;
 };
 
+struct SubPrepPrintSourceTeacherProfileReadFields final
+{
+    qint64 teacherId = -1;
+    QString teacherKr;
+    QString teacherEn;
+    QString preferredRomanization;
+    QString preferredName;
+    QString roomNumber;
+    QString wifiName;
+    QString wifiPassword;
+    QString internetType;
+    QString zoomId;
+    QString zoomPassword;
+    QString projectionType;
+    QString notes;
+};
+
+struct SubPrepPrintSourceTeacherProfileBatchReadRecord final
+{
+    qint64 requestedTeacherId = -1;
+    Result<SubPrepPrintSourceTeacherProfileReadFields> profile;
+};
+
+struct SubPrepPrintSourceTeacherProfileBatchReadMetrics final
+{
+    int callCount = 0;
+    int requestedTeacherCount = 0;
+    int statementCount = 0;
+    int fallbackSingleReadCount = 0;
+};
+
 struct SubPrepRosterOutputTeacherProfileReadFields final
 {
     qint64 teacherId = -1;
@@ -229,6 +260,13 @@ public:
         loadTeacherProfileRecords(const QList<int>& teacherIds);
     [[nodiscard]] const TeacherProfileBatchReadMetrics&
         teacherProfileBatchReadMetrics() const noexcept;
+    [[nodiscard]] Result<
+        QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
+        loadSubPrepPrintSourceTeacherProfileRecords(
+            const QList<qint64>& teacherIds
+            );
+    [[nodiscard]] const SubPrepPrintSourceTeacherProfileBatchReadMetrics&
+        subPrepPrintSourceTeacherProfileBatchReadMetrics() const noexcept;
     [[nodiscard]] Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
         loadSubPrepRosterOutputTeacherProfileRecords(
             const QList<qint64>& teacherIds
@@ -259,10 +297,15 @@ public:
         );
 
 private:
+    [[nodiscard]] Result<SubPrepPrintSourceTeacherProfileReadFields>
+        loadSubPrepPrintSourceTeacherProfileRecord(qint64 teacherId);
+
     QSqlDatabase& m_database;
     ScheduleImportTeacherReadMetrics m_scheduleImportTeacherReadMetrics;
     TeacherDisplayNameBatchReadMetrics m_teacherDisplayNameBatchReadMetrics;
     TeacherProfileBatchReadMetrics m_teacherProfileBatchReadMetrics;
+    SubPrepPrintSourceTeacherProfileBatchReadMetrics
+        m_subPrepPrintSourceTeacherProfileBatchReadMetrics;
     SubPrepRosterOutputTeacherProfileBatchReadMetrics
         m_subPrepRosterOutputTeacherProfileBatchReadMetrics;
     MyClassesTeacherProfileBatchReadMetrics

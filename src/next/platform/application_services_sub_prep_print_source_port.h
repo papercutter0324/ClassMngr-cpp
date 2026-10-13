@@ -140,8 +140,10 @@ public:
                     );
             }
 
-            const ::Result<QList<ClassInfo>> loadedInfos =
-                classRepository->loadClassInfosForScheduleScope(
+            const ::Result<
+                QList<SubPrepPrintSourceClassInfoReadRecord>
+                > loadedInfos =
+                classRepository->loadSubPrepPrintSourceClassInfosForScheduleScope(
                     legacyClassIdList,
                     selectedDayLabels,
                     legacyMode,
@@ -167,12 +169,16 @@ public:
                     );
             }
 
-            std::unordered_map<int, const ClassInfo*> infosByLegacyId;
+            std::unordered_map<
+                int,
+                const SubPrepPrintSourceClassInfoReadRecord*
+                > infosByLegacyId;
             infosByLegacyId.reserve(
                 static_cast<std::size_t>(loadedInfos->size())
                 );
             std::size_t scopedMeetingCount = 0;
-            for (const ClassInfo& info : loadedInfos.value())
+            for (const SubPrepPrintSourceClassInfoReadRecord& info :
+                 loadedInfos.value())
             {
                 if (info.classId <= 0
                     || !infosByLegacyId.emplace(info.classId, &info).second)
@@ -227,16 +233,16 @@ public:
             // The cache is lookup-only: insertion order in source.teachers is
             // the stable first-reference order from the requested classes.
             std::unordered_map<
-                int,
+                qint64,
                 std::optional<Application::SubPrepPrintTeacher>
                 > teachersByLegacyId;
             teachersByLegacyId.reserve(request.selectedClassIds.size());
 
-            QList<int> teacherReadIds;
+            QList<qint64> teacherReadIds;
             teacherReadIds.reserve(
                 static_cast<qsizetype>(request.selectedClassIds.size())
                 );
-            std::unordered_set<int> teacherIdsSeen;
+            std::unordered_set<qint64> teacherIdsSeen;
             teacherIdsSeen.reserve(request.selectedClassIds.size());
             for (const int legacyClassId : legacyClassIds)
             {
@@ -246,7 +252,7 @@ public:
                     continue;
                 }
 
-                const int assignedTeacherId = infoEntry->second->teacherId;
+                const qint64 assignedTeacherId = infoEntry->second->teacherId;
                 if (assignedTeacherId > 0
                     && teacherIdsSeen.insert(assignedTeacherId).second)
                 {
@@ -255,24 +261,26 @@ public:
             }
 
             using TeacherProfileBatchResult = ::Result<
-                QList<TeacherProfileBatchReadRecord>
+                QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>
                 >;
             std::optional<TeacherProfileBatchResult> loadedTeacherProfiles;
             std::unordered_map<
-                int,
-                const TeacherProfileBatchReadRecord*
+                qint64,
+                const SubPrepPrintSourceTeacherProfileBatchReadRecord*
                 > teacherProfilesByLegacyId;
             teacherProfilesByLegacyId.reserve(teacherReadIds.size());
             if (!teacherReadIds.isEmpty())
             {
                 loadedTeacherProfiles.emplace(
-                    teacherRepository->loadTeacherProfileRecords(
+                    teacherRepository->loadSubPrepPrintSourceTeacherProfileRecords(
                         teacherReadIds
                         )
                     );
                 if (loadedTeacherProfiles->has_value())
                 {
-                    const QList<TeacherProfileBatchReadRecord>& records =
+                    const QList<
+                        SubPrepPrintSourceTeacherProfileBatchReadRecord
+                        >& records =
                         loadedTeacherProfiles->value();
                     if (records.size() != teacherReadIds.size())
                     {
@@ -286,11 +294,11 @@ public:
                          index < records.size();
                          ++index)
                     {
-                        const TeacherProfileBatchReadRecord& record =
+                        const SubPrepPrintSourceTeacherProfileBatchReadRecord& record =
                             records[index];
-                        if (record.teacherId != teacherReadIds[index]
+                        if (record.requestedTeacherId != teacherReadIds[index]
                             || !teacherProfilesByLegacyId.emplace(
-                                record.teacherId,
+                                record.requestedTeacherId,
                                 &record
                                 ).second)
                         {
@@ -325,7 +333,8 @@ public:
                     continue;
                 }
 
-                const ClassInfo& info = *infoEntry->second;
+                const SubPrepPrintSourceClassInfoReadRecord& info =
+                    *infoEntry->second;
                 if (info.classId != legacyClassId)
                 {
                     return failure(
@@ -382,7 +391,7 @@ public:
                     });
                 }
 
-                const int assignedTeacherId = info.teacherId;
+                const qint64 assignedTeacherId = info.teacherId;
                 if (assignedTeacherId <= 0)
                 {
                     continue;
@@ -419,7 +428,9 @@ public:
                             );
                     }
 
-                    const ::Result<Teacher>& loadedTeacher =
+                    const ::Result<
+                        SubPrepPrintSourceTeacherProfileReadFields
+                        >& loadedTeacher =
                         profileEntry->second->profile;
                     if (!loadedTeacher)
                     {
@@ -446,8 +457,9 @@ public:
                             );
                     }
 
-                    const Teacher& legacyTeacher = loadedTeacher.value();
-                    if (legacyTeacher.id != assignedTeacherId)
+                    const SubPrepPrintSourceTeacherProfileReadFields& teacherFields =
+                        loadedTeacher.value();
+                    if (teacherFields.teacherId != assignedTeacherId)
                     {
                         return failure(
                             Domain::ErrorCode::Validation,
@@ -457,20 +469,20 @@ public:
 
                     Application::SubPrepPrintTeacher copiedTeacher{
                         .id = teacherId(assignedTeacherId),
-                        .englishName = utf8(legacyTeacher.teacherEn),
-                        .koreanName = utf8(legacyTeacher.teacherKr),
-                        .preferredName = utf8(legacyTeacher.preferredName),
+                        .englishName = utf8(teacherFields.teacherEn),
+                        .koreanName = utf8(teacherFields.teacherKr),
+                        .preferredName = utf8(teacherFields.preferredName),
                         .preferredRomanization = utf8(
-                            legacyTeacher.preferredRomanization
+                            teacherFields.preferredRomanization
                             ),
-                        .room = utf8(legacyTeacher.roomNumber),
-                        .wifiName = utf8(legacyTeacher.wifiName),
-                        .wifiPassword = utf8(legacyTeacher.wifiPassword),
-                        .internetType = utf8(legacyTeacher.internetType),
-                        .zoomId = utf8(legacyTeacher.zoomId),
-                        .zoomPassword = utf8(legacyTeacher.zoomPassword),
-                        .projectionType = utf8(legacyTeacher.projectionType),
-                        .teacherNotes = utf8(legacyTeacher.notes)
+                        .room = utf8(teacherFields.roomNumber),
+                        .wifiName = utf8(teacherFields.wifiName),
+                        .wifiPassword = utf8(teacherFields.wifiPassword),
+                        .internetType = utf8(teacherFields.internetType),
+                        .zoomId = utf8(teacherFields.zoomId),
+                        .zoomPassword = utf8(teacherFields.zoomPassword),
+                        .projectionType = utf8(teacherFields.projectionType),
+                        .teacherNotes = utf8(teacherFields.notes)
                     };
                     newlyLoadedTeacher = std::move(copiedTeacher);
                 }
@@ -654,7 +666,7 @@ private:
     }
 
     [[nodiscard]] static Domain::TeacherId teacherId(
-        const int legacyTeacherId
+        const qint64 legacyTeacherId
         )
     {
         return *Domain::TeacherId::fromString(

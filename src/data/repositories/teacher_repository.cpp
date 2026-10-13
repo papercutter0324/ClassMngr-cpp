@@ -762,6 +762,308 @@ TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
     return m_teacherProfileBatchReadMetrics;
 }
 
+Result<QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
+TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecords(
+    const QList<qint64>& teacherIds
+    )
+{
+    if (teacherIds.isEmpty())
+    {
+        return QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>{};
+    }
+
+    ++m_subPrepPrintSourceTeacherProfileBatchReadMetrics.callCount;
+    m_subPrepPrintSourceTeacherProfileBatchReadMetrics.requestedTeacherCount +=
+        teacherIds.size();
+
+    QSet<qint64> seenTeacherIds;
+    QStringList requestedValues;
+    requestedValues.reserve(teacherIds.size());
+    for (qsizetype index = 0; index < teacherIds.size(); ++index)
+    {
+        const qint64 teacherId = teacherIds[index];
+        if (teacherId <= 0 || seenTeacherIds.contains(teacherId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep print source teacher profiles failed: teacher identifiers must be positive and unique."
+                ));
+        }
+
+        seenTeacherIds.insert(teacherId);
+        requestedValues.append(QStringLiteral("(?, %1)").arg(index));
+    }
+
+    const auto loadIndividually = [this, &teacherIds]()
+    {
+        QList<SubPrepPrintSourceTeacherProfileBatchReadRecord> entries;
+        entries.reserve(teacherIds.size());
+        for (const qint64 teacherId : teacherIds)
+        {
+            ++m_subPrepPrintSourceTeacherProfileBatchReadMetrics
+                  .fallbackSingleReadCount;
+            entries.append({
+                teacherId,
+                loadSubPrepPrintSourceTeacherProfileRecord(teacherId)
+            });
+        }
+        return entries;
+    };
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(teacher_id, ordinal) AS (VALUES %1)
+        SELECT requested.teacher_id AS requested_teacher_id,
+               requested.ordinal AS requested_ordinal,
+               teachers.id AS teacher_id,
+               teachers.teacher_kr,
+               teachers.teacher_en,
+               teachers.preferred_romanization,
+               teachers.preferred_name,
+               teachers.room_number,
+               teachers.wifi_name,
+               teachers.wifi_password,
+               teachers.internet_type,
+               teachers.zoom_id,
+               teachers.zoom_password,
+               teachers.projection_type,
+               teachers.notes
+        FROM requested
+        LEFT JOIN teachers ON teachers.id = requested.teacher_id
+        ORDER BY requested.ordinal
+    )").arg(requestedValues.join(QStringLiteral(", ")));
+    if (!query.prepare(queryText))
+    {
+        ++m_subPrepPrintSourceTeacherProfileBatchReadMetrics.statementCount;
+        return loadIndividually();
+    }
+
+    for (const qint64 teacherId : teacherIds)
+    {
+        query.addBindValue(teacherId);
+    }
+
+    ++m_subPrepPrintSourceTeacherProfileBatchReadMetrics.statementCount;
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading Sub Prep print source teacher profiles"),
+        QStringLiteral("assigned teachers")
+        );
+    if (!executed)
+    {
+        return loadIndividually();
+    }
+
+    QList<SubPrepPrintSourceTeacherProfileBatchReadRecord> entries;
+    entries.reserve(teacherIds.size());
+    qsizetype rowIndex = 0;
+    while (query.next())
+    {
+        if (rowIndex >= teacherIds.size())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep print source teacher profiles failed: the database returned an unexpected number of records."
+                ));
+        }
+
+        const qint64 requestedTeacherId = teacherIds[rowIndex];
+        bool returnedRequestedTeacherIdValid = false;
+        const qint64 returnedRequestedTeacherId = query.value(
+            QStringLiteral("requested_teacher_id")
+            ).toLongLong(&returnedRequestedTeacherIdValid);
+        bool returnedOrdinalValid = false;
+        const int returnedOrdinal = query.value(
+            QStringLiteral("requested_ordinal")
+            ).toInt(&returnedOrdinalValid);
+        if (!returnedRequestedTeacherIdValid
+            || returnedRequestedTeacherId != requestedTeacherId
+            || !returnedOrdinalValid
+            || returnedOrdinal != rowIndex)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep print source teacher profiles failed: the database returned records in a different identifier order."
+                ));
+        }
+
+        if (query.value(QStringLiteral("teacher_id")).isNull())
+        {
+            entries.append({
+                requestedTeacherId,
+                std::unexpected(QObject::tr(
+                    "Loading teacher failed for %1: no matching record exists."
+                    ).arg(teacherIdentity(requestedTeacherId)))
+            });
+            ++rowIndex;
+            continue;
+        }
+
+        bool returnedTeacherIdValid = false;
+        const qint64 returnedTeacherId = query.value(
+            QStringLiteral("teacher_id")
+            ).toLongLong(&returnedTeacherIdValid);
+        if (!returnedTeacherIdValid
+            || returnedTeacherId != requestedTeacherId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Sub Prep print source teacher profiles failed: the database returned a different teacher identifier."
+                ));
+        }
+
+        entries.append({
+            requestedTeacherId,
+            SubPrepPrintSourceTeacherProfileReadFields{
+                .teacherId = returnedTeacherId,
+                .teacherKr = query.value(QStringLiteral("teacher_kr"))
+                                 .toString(),
+                .teacherEn = query.value(QStringLiteral("teacher_en"))
+                                 .toString(),
+                .preferredRomanization = query.value(
+                    QStringLiteral("preferred_romanization")
+                    ).toString(),
+                .preferredName = query.value(QStringLiteral("preferred_name"))
+                                     .toString(),
+                .roomNumber = query.value(QStringLiteral("room_number"))
+                                  .toString(),
+                .wifiName = query.value(QStringLiteral("wifi_name"))
+                                .toString(),
+                .wifiPassword = query.value(QStringLiteral("wifi_password"))
+                                    .toString(),
+                .internetType = normalizedInternetType(
+                    query.value(QStringLiteral("internet_type")).toString()
+                    ),
+                .zoomId = query.value(QStringLiteral("zoom_id")).toString(),
+                .zoomPassword = query.value(
+                    QStringLiteral("zoom_password")
+                    ).toString(),
+                .projectionType = normalizedProjectionType(
+                    query.value(QStringLiteral("projection_type")).toString()
+                    ),
+                .notes = query.value(QStringLiteral("notes")).toString()
+            }
+        });
+        ++rowIndex;
+    }
+
+    if (rowIndex != teacherIds.size())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading Sub Prep print source teacher profiles failed: the database returned an incomplete record list."
+            ));
+    }
+
+    return entries;
+}
+
+const SubPrepPrintSourceTeacherProfileBatchReadMetrics&
+TeacherRepository::subPrepPrintSourceTeacherProfileBatchReadMetrics() const noexcept
+{
+    return m_subPrepPrintSourceTeacherProfileBatchReadMetrics;
+}
+
+Result<SubPrepPrintSourceTeacherProfileReadFields>
+TeacherRepository::loadSubPrepPrintSourceTeacherProfileRecord(
+    const qint64 teacherId
+    )
+{
+    if (teacherId <= 0)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading teacher failed: invalid %1."
+            ).arg(teacherIdentity(teacherId)));
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    if (!query.prepare(QStringLiteral(R"(
+        SELECT id AS teacher_id,
+               teacher_kr,
+               teacher_en,
+               preferred_romanization,
+               preferred_name,
+               room_number,
+               wifi_name,
+               wifi_password,
+               internet_type,
+               zoom_id,
+               zoom_password,
+               projection_type,
+               notes
+        FROM teachers
+        WHERE id = ?
+    )")))
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading Sub Prep print source teacher profile"),
+            {},
+            teacherIdentity(teacherId)
+            ).userMessage());
+    }
+
+    query.addBindValue(teacherId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading Sub Prep print source teacher profile"),
+        teacherIdentity(teacherId)
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    if (!query.next())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading teacher failed for %1: no matching record exists."
+            ).arg(teacherIdentity(teacherId)));
+    }
+
+    bool returnedTeacherIdValid = false;
+    const qint64 returnedTeacherId = query.value(
+        QStringLiteral("teacher_id")
+        ).toLongLong(&returnedTeacherIdValid);
+    if (!returnedTeacherIdValid || returnedTeacherId != teacherId)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading Sub Prep print source teacher profile failed for %1: the database returned a different teacher identifier."
+            ).arg(teacherIdentity(teacherId)));
+    }
+
+    SubPrepPrintSourceTeacherProfileReadFields profile{
+        .teacherId = returnedTeacherId,
+        .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
+        .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
+        .preferredRomanization = query.value(
+            QStringLiteral("preferred_romanization")
+            ).toString(),
+        .preferredName = query.value(QStringLiteral("preferred_name"))
+                             .toString(),
+        .roomNumber = query.value(QStringLiteral("room_number")).toString(),
+        .wifiName = query.value(QStringLiteral("wifi_name")).toString(),
+        .wifiPassword = query.value(QStringLiteral("wifi_password"))
+                            .toString(),
+        .internetType = normalizedInternetType(
+            query.value(QStringLiteral("internet_type")).toString()
+            ),
+        .zoomId = query.value(QStringLiteral("zoom_id")).toString(),
+        .zoomPassword = query.value(QStringLiteral("zoom_password"))
+                            .toString(),
+        .projectionType = normalizedProjectionType(
+            query.value(QStringLiteral("projection_type")).toString()
+            ),
+        .notes = query.value(QStringLiteral("notes")).toString()
+    };
+
+    if (query.next())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading Sub Prep print source teacher profile failed for %1: the database returned duplicate records."
+            ).arg(teacherIdentity(teacherId)));
+    }
+
+    return profile;
+}
+
 Result<QList<SubPrepRosterOutputTeacherProfileBatchReadRecord>>
 TeacherRepository::loadSubPrepRosterOutputTeacherProfileRecords(
     const QList<qint64>& teacherIds

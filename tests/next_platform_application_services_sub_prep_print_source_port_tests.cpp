@@ -279,6 +279,7 @@ private slots:
     void selectedClassDetailsSqlRepositoryFailureIsTechnical();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
+    void printSourcePreservesWideTeacherIdAndCompleteProfile();
     void batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads();
     void batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics();
     void batchesRosterCountsWideRowIndicesAndSaturatesMetrics();
@@ -1680,7 +1681,7 @@ batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads()
     QVERIFY(unassignedResult.value().classes.empty());
     QVERIFY(unassignedResult.value().teachers.empty());
     const auto& emptyMetrics =
-        teacherRepository->teacherProfileBatchReadMetrics();
+        teacherRepository->subPrepPrintSourceTeacherProfileBatchReadMetrics();
     QCOMPARE(emptyMetrics.callCount, 0);
     QCOMPARE(emptyMetrics.requestedTeacherCount, 0);
     QCOMPARE(emptyMetrics.statementCount, 0);
@@ -1711,9 +1712,161 @@ batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads()
     QCOMPARE(source.teachers[1].id, teacherId(firstTeacher));
 
     const auto& metrics =
-        teacherRepository->teacherProfileBatchReadMetrics();
+        teacherRepository->subPrepPrintSourceTeacherProfileBatchReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.requestedTeacherCount, 2);
+    QCOMPARE(metrics.statementCount, 1);
+    QCOMPARE(metrics.fallbackSingleReadCount, 0);
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+printSourcePreservesWideTeacherIdAndCompleteProfile()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int temporaryTeacher = createTeacher(
+        services,
+        QStringLiteral("Temp print"),
+        QStringLiteral("Temp print"),
+        QStringLiteral("temporary-print")
+        );
+    QVERIFY(temporaryTeacher > 0);
+
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Wide teacher print source"),
+        temporaryTeacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Wide print class notes"),
+        QStringLiteral("#112233"),
+        QStringLiteral("#AABBCC"),
+        {
+            {
+                QStringLiteral("Monday"),
+                QStringLiteral("9:00 AM"),
+                QStringLiteral("9:45 AM")
+            }
+        }
+        );
+    QVERIFY(selectedClass > 0);
+    QVERIFY(selectedClass <= std::numeric_limits<int>::max());
+
+    constexpr qlonglong wideTeacherIdValue = 2'147'483'648LL;
+    const auto expectedTeacherId = TeacherId::fromString("2147483648");
+    QVERIFY(expectedTeacherId.has_value());
+
+    DataService* const dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    const QSqlDatabase database = dataService->databaseSession()->database();
+
+    QSqlQuery insertTeacher(database);
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_romanization,
+            preferred_name, room_number, birthday, phone_number,
+            wifi_name, wifi_password, internet_type, zoom_id,
+            zoom_password, projection_type, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(
+        QVariant::fromValue<qlonglong>(wideTeacherIdValue)
+        );
+    insertTeacher.addBindValue(QStringLiteral("Wide Print Teacher Korean"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Print Teacher English"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Print Romanization"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Print Preferred Name"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Print Room 214"));
+    insertTeacher.addBindValue(QStringLiteral("2000-01-01"));
+    insertTeacher.addBindValue(QStringLiteral("555-214-7483"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Print Network"));
+    insertTeacher.addBindValue(QStringLiteral("wide-print-wifi-password"));
+    insertTeacher.addBindValue(QStringLiteral("LAN"));
+    insertTeacher.addBindValue(QStringLiteral("wide-print-zoom-id"));
+    insertTeacher.addBindValue(QStringLiteral("wide-print-zoom-password"));
+    insertTeacher.addBindValue(QStringLiteral("Zoom"));
+    insertTeacher.addBindValue(QStringLiteral("Wide print teacher notes"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery assignTeacher(database);
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?"
+        )));
+    assignTeacher.addBindValue(
+        QVariant::fromValue<qlonglong>(wideTeacherIdValue)
+        );
+    assignTeacher.addBindValue(selectedClass);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredIds(database);
+    QVERIFY(verifyStoredIds.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredIds.addBindValue(selectedClass);
+    QVERIFY2(
+        verifyStoredIds.exec(),
+        qPrintable(verifyStoredIds.lastError().text())
+        );
+    QVERIFY(verifyStoredIds.next());
+    QCOMPARE(verifyStoredIds.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredIds.value(1).toLongLong(), wideTeacherIdValue);
+    QCOMPARE(verifyStoredIds.value(2).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredIds.value(3).toLongLong(), wideTeacherIdValue);
+    QVERIFY(!verifyStoredIds.next());
+
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(selectedClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    QVERIFY(result);
+    const SubPrepPrintSourceInput& source = result.value();
+    QCOMPARE(source.classes.size(), std::size_t(1));
+    QCOMPARE(source.classes[0].id, classId(selectedClass));
+    QVERIFY(source.classes[0].teacherId.has_value());
+    QVERIFY(*source.classes[0].teacherId == *expectedTeacherId);
+    QCOMPARE(source.classes[0].teacherId->value(), std::string("2147483648"));
+    QCOMPARE(source.classes[0].grade, std::string("E4"));
+    QCOMPARE(source.classes[0].level, std::string("Perseus"));
+    QCOMPARE(source.classes[0].classNotes, std::string("Wide print class notes"));
+    QCOMPARE(source.teachers.size(), std::size_t(1));
+
+    const SubPrepPrintTeacher& teacher = source.teachers[0];
+    QVERIFY(teacher.id == *expectedTeacherId);
+    QCOMPARE(teacher.id.value(), std::string("2147483648"));
+    QCOMPARE(teacher.englishName, std::string("Wide Print Teacher English"));
+    QCOMPARE(teacher.koreanName, std::string("Wide Print Teacher Korean"));
+    QCOMPARE(teacher.preferredName, std::string("Wide Print Preferred Name"));
+    QCOMPARE(
+        teacher.preferredRomanization,
+        std::string("Wide Print Romanization")
+        );
+    QCOMPARE(teacher.room, std::string("Wide Print Room 214"));
+    QCOMPARE(teacher.wifiName, std::string("Wide Print Network"));
+    QCOMPARE(teacher.wifiPassword, std::string("wide-print-wifi-password"));
+    QCOMPARE(teacher.internetType, std::string("LAN"));
+    QCOMPARE(teacher.zoomId, std::string("wide-print-zoom-id"));
+    QCOMPARE(teacher.zoomPassword, std::string("wide-print-zoom-password"));
+    QCOMPARE(teacher.projectionType, std::string("Zoom"));
+    QCOMPARE(teacher.teacherNotes, std::string("Wide print teacher notes"));
+
+    TeacherRepository* const teacherRepository = services.databaseSession()
+        ? services.databaseSession()->teacherRepository()
+        : nullptr;
+    QVERIFY(teacherRepository);
+    const auto& metrics =
+        teacherRepository->subPrepPrintSourceTeacherProfileBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.requestedTeacherCount, 1);
     QCOMPARE(metrics.statementCount, 1);
     QCOMPARE(metrics.fallbackSingleReadCount, 0);
 }

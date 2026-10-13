@@ -3931,6 +3931,256 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForScheduleScope(
     return infos;
 }
 
+Result<QList<SubPrepPrintSourceClassInfoReadRecord>>
+ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
+    const QList<int>& classIds,
+    const QStringList& selectedDays,
+    const ScheduleType type,
+    const int maxMeetingsPerClass,
+    const int maxTotalMeetings
+    )
+{
+    if (classIds.isEmpty() || selectedDays.isEmpty())
+    {
+        return QList<SubPrepPrintSourceClassInfoReadRecord>{};
+    }
+
+    if (type != ScheduleType::Regular && type != ScheduleType::Intensive)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading scoped Sub Prep print source information failed: invalid schedule type."
+            ));
+    }
+
+    if (maxMeetingsPerClass < 0
+        || maxMeetingsPerClass == std::numeric_limits<int>::max()
+        || maxTotalMeetings < 0
+        || maxTotalMeetings == std::numeric_limits<int>::max())
+    {
+        return std::unexpected(QObject::tr(
+            "Loading scoped Sub Prep print source information failed: invalid meeting limit."
+            ));
+    }
+
+    QSet<int> seenClassIds;
+    QStringList classIdValues;
+    QStringList requestedIds;
+    classIdValues.reserve(classIds.size());
+    requestedIds.reserve(classIds.size());
+    for (const int classId : classIds)
+    {
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading scoped Sub Prep print source information failed: class identifiers must be positive and unique."
+                ));
+        }
+
+        seenClassIds.insert(classId);
+        const QString value = QString::number(classId);
+        classIdValues.append(value);
+        requestedIds.append(value);
+    }
+
+    static const QStringList validDays{
+        QStringLiteral("Monday"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Wednesday"),
+        QStringLiteral("Thursday"),
+        QStringLiteral("Friday"),
+        QStringLiteral("Saturday"),
+        QStringLiteral("Sunday")
+    };
+    QSet<QString> seenDays;
+    for (const QString& day : selectedDays)
+    {
+        if (!validDays.contains(day) || seenDays.contains(day))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading scoped Sub Prep print source information failed: selected weekdays must be valid and unique."
+                ));
+        }
+
+        seenDays.insert(day);
+    }
+
+    QStringList dayPlaceholders;
+    dayPlaceholders.fill(QStringLiteral("?"), selectedDays.size());
+    const QString timesTable = type == ScheduleType::Regular
+        ? QStringLiteral("class_times")
+        : QStringLiteral("class_intensive_times");
+    const QString queryText = QStringLiteral(R"(
+        WITH scoped_times AS (
+            SELECT times.class_id, times.id, times.day,
+                   times.start_time, times.end_time
+            FROM %1 times
+            INNER JOIN class_info assigned_info
+            ON assigned_info.class_id = times.class_id
+            WHERE times.class_id IN (%2)
+              AND times.day IN (%3)
+              AND assigned_info.teacher_id > 0
+              AND EXISTS (
+                  SELECT 1
+                  FROM teachers assigned_teacher
+                  WHERE assigned_teacher.id = assigned_info.teacher_id
+              )
+        ),
+        ranked_times AS (
+            SELECT class_id, id, day, start_time, end_time,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY class_id ORDER BY id
+                   ) AS class_schedule_order,
+                   ROW_NUMBER() OVER (
+                       ORDER BY class_id, id
+                   ) AS total_schedule_order
+            FROM scoped_times
+        )
+        SELECT ci.class_id AS info_class_id,
+               ci.teacher_id,
+               ci.class_grade,
+               ci.class_level,
+               ci.class_color,
+               ci.font_color,
+               ci.notes,
+               ranked_times.class_id AS schedule_class_id,
+               ranked_times.day,
+               ranked_times.start_time,
+               ranked_times.end_time,
+               ranked_times.class_schedule_order,
+               ranked_times.total_schedule_order
+        FROM ranked_times
+        INNER JOIN class_info ci ON ci.class_id = ranked_times.class_id
+        WHERE ranked_times.class_schedule_order <= ?
+          AND ranked_times.total_schedule_order <= ?
+        ORDER BY ranked_times.class_id, ranked_times.id
+    )").arg(
+        timesTable,
+        classIdValues.join(QStringLiteral(", ")),
+        dayPlaceholders.join(QStringLiteral(", "))
+        );
+
+    const QString identity = QObject::tr("class ids %1, selected days %2")
+        .arg(requestedIds.join(QStringLiteral(", ")))
+        .arg(selectedDays.join(QStringLiteral(", ")));
+
+    QList<SubPrepPrintSourceClassInfoReadRecord> records;
+    QHash<int, qsizetype> indexesByClassId;
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(queryText);
+    for (const QString& day : selectedDays)
+    {
+        query.addBindValue(day);
+    }
+    query.addBindValue(maxMeetingsPerClass + 1);
+    query.addBindValue(maxTotalMeetings + 1);
+
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading scoped Sub Prep print source information"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        bool scheduleClassIdValid = false;
+        const qint64 scheduleClassId = query.value(
+            QStringLiteral("schedule_class_id")
+            ).toLongLong(&scheduleClassIdValid);
+        const QVariant infoClassIdValue = query.value(
+            QStringLiteral("info_class_id")
+            );
+        bool infoClassIdValid = false;
+        const qint64 infoClassId = infoClassIdValue.toLongLong(
+            &infoClassIdValid
+            );
+        if (!scheduleClassIdValid
+            || !infoClassIdValid
+            || scheduleClassId <= 0
+            || scheduleClassId > std::numeric_limits<int>::max()
+            || infoClassId != scheduleClassId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading scoped Sub Prep print source information failed: the database returned an invalid class identifier."
+                ));
+        }
+
+        const int classId = static_cast<int>(scheduleClassId);
+        bool teacherIdValid = false;
+        const qint64 teacherId = query.value(
+            QStringLiteral("teacher_id")
+            ).toLongLong(&teacherIdValid);
+        if (!teacherIdValid || teacherId <= 0)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading scoped Sub Prep print source information failed for class id %1: the database returned an invalid teacher identifier."
+                ).arg(classId));
+        }
+
+        auto index = indexesByClassId.constFind(classId);
+        if (index == indexesByClassId.cend())
+        {
+            SubPrepPrintSourceClassInfoReadRecord record;
+            record.classId = classId;
+            record.teacherId = teacherId;
+            record.classGrade = query.value(
+                QStringLiteral("class_grade")
+                ).toString();
+            record.classLevel = query.value(
+                QStringLiteral("class_level")
+                ).toString();
+
+            const QString classColor = query.value(
+                QStringLiteral("class_color")
+                ).toString();
+            if (!classColor.isEmpty())
+            {
+                record.classColor = classColor;
+            }
+
+            const QString fontColor = query.value(
+                QStringLiteral("font_color")
+                ).toString();
+            if (!fontColor.isEmpty())
+            {
+                record.fontColor = fontColor;
+            }
+            record.notes = query.value(QStringLiteral("notes")).toString();
+
+            indexesByClassId.insert(classId, records.size());
+            records.append(std::move(record));
+            index = indexesByClassId.constFind(classId);
+        }
+        else if (records[*index].teacherId != teacherId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading scoped Sub Prep print source information failed for class id %1: the database returned inconsistent teacher identifiers."
+                ).arg(classId));
+        }
+
+        ClassTime time{
+            query.value(QStringLiteral("day")).toString(),
+            query.value(QStringLiteral("start_time")).toString(),
+            query.value(QStringLiteral("end_time")).toString()
+        };
+        SubPrepPrintSourceClassInfoReadRecord& record = records[*index];
+        if (type == ScheduleType::Regular)
+        {
+            record.classTimes.append(std::move(time));
+        }
+        else
+        {
+            record.intensiveTimes.append(std::move(time));
+        }
+    }
+
+    return records;
+}
+
 Result<QList<SubPrepRosterOutputScheduleReadRecord>>
 ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
     const QList<int>& classIds,

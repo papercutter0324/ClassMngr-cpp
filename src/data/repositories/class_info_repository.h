@@ -199,6 +199,19 @@ struct SubPrepRosterOutputScheduleReadRecord final
     QList<ClassTime> meetings;
 };
 
+struct SubPrepPrintSourceClassInfoReadRecord final
+{
+    int classId = -1;
+    qint64 teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QString classColor{"#FFFFFF"};
+    QString fontColor{"#000000"};
+    QString notes;
+    QList<ClassTime> classTimes;
+    QList<ClassTime> intensiveTimes;
+};
+
 struct SubPrepRosterOutputScheduleBatchReadMetrics final
 {
     int callCount = 0;
@@ -404,6 +417,14 @@ public:
         int maxTotalMeetings,
         bool includeUnassignedTeachers = false
         );
+    [[nodiscard]] Result<QList<SubPrepPrintSourceClassInfoReadRecord>>
+        loadSubPrepPrintSourceClassInfosForScheduleScope(
+            const QList<int>& classIds,
+            const QStringList& selectedDays,
+            ScheduleType type,
+            int maxMeetingsPerClass,
+            int maxTotalMeetings
+            );
 
     [[nodiscard]] Result<QList<ClassTeacherAssignment>>
         loadClassTeacherAssignments();
