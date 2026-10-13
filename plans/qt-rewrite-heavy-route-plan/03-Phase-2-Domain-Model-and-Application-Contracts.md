@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F856 is accepted at `c47c4230`; F857 is selected for invalid LastSelectedCampusPort write baseline reproduction, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F857 is accepted at `d2dbccb5`; bounded F858 discovery is underway, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,15 +70,16 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 271: F857 - LastSelectedCampusPort campus ID write validation; reproduce blank and over-256-byte IDs through `write` and inspect the result and stored preference.
+- F858 bounded candidate discovery is underway; no candidate is selected yet.
 
 #### Deferred candidates
 
 - F285 - Deferred before implementation: addTeacher() creates a blank
   teacher, but required-name validation rejects it before the profile read.
   Revisit after the blank-draft creation contract is clarified.
-- F579 - Deferred at the user's direction: take a fresh matched-symbol heap
-  capture; revisit after the user asks to resume symbol work.
+- F579 - The user-directed review trigger is satisfied, but a fresh matched-symbol
+  heap capture remains blocked because this process lacks an elevated Administrator
+  token; resume when an elevated token is available.
 - F614 - Deferred after F612: the measured source/package payload is 22,662
   UTF-8 bytes and the typed source releases before rendering; current evidence
   does not justify a material ownership refactor. Revisit with larger-fixture

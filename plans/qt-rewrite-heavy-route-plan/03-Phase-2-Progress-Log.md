@@ -34477,3 +34477,35 @@ suite.
 | Error contract | On reproduction, reject invalid present IDs before SettingsManager access as nonrecoverable `InvalidInput`; preserve the previous preference. |
 | Compatibility | Preserve read-side behavior, exact valid ID text, `nullopt`-to-empty-string storage, and recoverable `Technical` persistence errors. |
 | Focused verification | Build and run only `ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests`. No full suite. |
+
+### F857 LastSelectedCampusPort campus ID write validation - accepted - 2026-10-14
+
+F857 is accepted at source/test commit
+`d2dbccb5eb3e8209a48b63477548df458df5c65c`. Baseline testing reproduced that
+blank and 257-byte campus IDs were accepted by the write boundary. A shared
+Qt-free `last_selected_campus_id_policy.h` now provides the same nonblank and
+256-byte limit predicate used by `UserPreferencesState` and
+`SettingsManagerLastSelectedCampusPort::write`. Invalid present-ID writes
+return nonrecoverable `InvalidInput` before persistence and preserve the stored
+key. Reads are unchanged; `nullopt` storage, exact valid ID text, and
+recoverable `Technical` persistence failures remain unchanged. Tests reject
+blank and 257-byte IDs and accept/store an exact 256-byte ID in both the port
+and state. The shared header is registered in `cmake/next.cmake`.
+
+Independent Tester acceptance: exact registered CTests
+`ClassMngrNextApplicationUserPreferencesTests` and
+`ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests` passed 2/2
+in standard top-level `build/windows-x64-debug`, Visual Studio Debug. No full
+suite ran.
+
+### Batch 271 completion and subsequent-slice discovery - 2026-10-14
+
+F857 completed Batch 271. The post-slice review covered all 13 deferred plan
+entries. No technical blocker changed or newly actionable candidate was found.
+F579's user-directed review trigger is satisfied, but its fresh matched-symbol
+WPR capture remains blocked because this process lacks an elevated Administrator
+token; F598 has the same elevated-token blocker. The other deferred blockers
+remain unchanged. F858 bounded discovery is underway; its first scan found no
+strong candidate and identified a near miss without a normal caller; two
+complementary scans remain in progress. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
