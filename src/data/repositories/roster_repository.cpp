@@ -1156,12 +1156,17 @@ RosterRepository::loadSubPrepStudentCountRecords(
         const int koreanColumn = record.columns.indexOf(
             QStringLiteral("Korean")
             );
+        const qsizetype rawColumnCount = record.columns.size();
+        const int columnCount =
+            rawColumnCount > std::numeric_limits<int>::max()
+                ? std::numeric_limits<int>::max()
+                : static_cast<int>(rawColumnCount);
         englishColumns[static_cast<std::size_t>(index)] = englishColumn;
         koreanColumns[static_cast<std::size_t>(index)] = koreanColumn;
         entries.append({
             .classId = record.classId,
             .studentCount = 0,
-            .columnCount = static_cast<int>(record.columns.size()),
+            .columnCount = columnCount,
             .rowCount = 0,
             .cellCount = 0
         });
@@ -1227,7 +1232,7 @@ RosterRepository::loadSubPrepStudentCountRecords(
         0
         );
     int currentRequestOrder = -1;
-    int currentRowIndex = -1;
+    qlonglong currentRowIndex = -1;
     bool currentRowHasStudent = false;
     const auto finishCurrentRow = [&]()
     {
@@ -1243,23 +1248,28 @@ RosterRepository::loadSubPrepStudentCountRecords(
     {
         const int classId = query.value("class_id").toInt();
         const int requestOrder = query.value("request_order").toInt();
-        const int rowIndex = query.value("row_index").toInt();
+        bool rowIndexValid = false;
+        const qlonglong rowIndex =
+            query.value("row_index").toLongLong(&rowIndexValid);
         const int columnIndex = query.value("col_index").toInt();
         if (requestOrder < 0
             || requestOrder >= classIds.size()
             || classIds.at(requestOrder) != classId
             || !requestIndexByClassId.contains(classId)
             || entries.at(requestOrder).classId != classId
+            || !rowIndexValid
             || rowIndex < 0)
         {
             query.finish();
             return readIndividually();
         }
 
-        rowCounts[static_cast<std::size_t>(requestOrder)] = std::max(
-            rowCounts[static_cast<std::size_t>(requestOrder)],
-            rowIndex + 1
-            );
+        const int rowExtent =
+            rowIndex >= std::numeric_limits<int>::max()
+                ? std::numeric_limits<int>::max()
+                : static_cast<int>(rowIndex) + 1;
+        int& rowCount = rowCounts[static_cast<std::size_t>(requestOrder)];
+        rowCount = std::max(rowCount, rowExtent);
 
         if (requestOrder != currentRequestOrder
             || rowIndex != currentRowIndex)
@@ -1293,8 +1303,22 @@ RosterRepository::loadSubPrepStudentCountRecords(
         const std::size_t offset = static_cast<std::size_t>(index);
         entries[index].studentCount = studentCounts[offset];
         entries[index].rowCount = rowCounts[offset];
-        entries[index].cellCount =
-            entries[index].rowCount * entries[index].columnCount;
+        const int rowCount = entries[index].rowCount;
+        const int columnCount = entries[index].columnCount;
+        if (rowCount == 0 || columnCount == 0)
+        {
+            entries[index].cellCount = 0;
+        }
+        else if (
+            rowCount > std::numeric_limits<int>::max() / columnCount
+            )
+        {
+            entries[index].cellCount = std::numeric_limits<int>::max();
+        }
+        else
+        {
+            entries[index].cellCount = rowCount * columnCount;
+        }
     }
     return entries;
 }

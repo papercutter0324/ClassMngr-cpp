@@ -20,6 +20,7 @@
 #include <QtTest/QtTest>
 
 #include <cstddef>
+#include <limits>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -277,6 +278,7 @@ private slots:
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
     void batchesTeacherProfilesInFirstReferenceOrderWithoutUnassignedReads();
     void batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics();
+    void batchesRosterCountsWideRowIndicesAndSaturatesMetrics();
     void rosterBatchFailureFallsBackPerClassAndKeepsSuccessfulSibling();
     void omittedPrintClassesDoNotReadRosters();
     void selectsIntensiveTimesAndOmitsClassesOutsideSelectedDays();
@@ -1696,6 +1698,134 @@ batchesRosterCountsAfterPrintScopeAndPreservesLegacyMetrics()
         QStringLiteral(
             "classId=%1; columns=5; rows=28; cells=140; returnedStudents=2"
             ).arg(populatedClass)
+        );
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+batchesRosterCountsWideRowIndicesAndSaturatesMetrics()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("Wide roster"),
+        QStringLiteral("Wide roster"),
+        QStringLiteral("wide-roster")
+        );
+    QVERIFY(teacher > 0);
+    const int populatedClass = createClass(
+        services,
+        QStringLiteral("Wide row identities"),
+        teacher,
+        QStringLiteral("E5"),
+        QStringLiteral("Apollo"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        }
+        );
+    QVERIFY(populatedClass > 0);
+
+    RosterRepository* const rosterRepository = services.databaseSession()
+        ? services.databaseSession()->rosterRepository()
+        : nullptr;
+    QVERIFY(rosterRepository);
+    Roster roster;
+    roster.columns = {QStringLiteral("English"), QStringLiteral("Korean")};
+    QVERIFY(rosterRepository->saveRoster(populatedClass, roster));
+
+    const qlonglong intMax = std::numeric_limits<int>::max();
+    const std::vector<qlonglong> rowIndices{
+        intMax,
+        intMax + 1,
+        intMax + 2,
+        std::numeric_limits<qlonglong>::max()
+    };
+    const std::vector<QStringList> names{
+        {QStringLiteral("At INT_MAX"), QString::fromUtf8("\xED\x95\x9C\xEA\xB8\x80")},
+        {QStringLiteral("Above INT_MAX"), QString()},
+        {QString(), QString::fromUtf8("\xED\x95\x99\xEC\x83\x9D")},
+        {QStringLiteral("At qlonglong max"), QString()}
+    };
+    DataService* const dataService = services.dataService();
+    QVERIFY(dataService);
+    QVERIFY(dataService->databaseSession());
+    QSqlDatabase database = dataService->databaseSession()->database();
+    QSqlQuery insertCell(database);
+    QVERIFY(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    for (std::size_t row = 0; row < rowIndices.size(); ++row)
+    {
+        for (int column = 0; column < 2; ++column)
+        {
+            insertCell.bindValue(0, populatedClass);
+            insertCell.bindValue(1, QVariant::fromValue(rowIndices[row]));
+            insertCell.bindValue(2, column);
+            insertCell.bindValue(
+                3,
+                names[row].at(column)
+                );
+            QVERIFY(insertCell.exec());
+        }
+    }
+    insertCell.finish();
+
+    QSqlQuery storedRows(database);
+    QVERIFY(storedRows.exec(QStringLiteral(
+        "SELECT DISTINCT row_index, typeof(row_index) AS storage_type "
+        "FROM roster_data WHERE class_id=%1 ORDER BY row_index"
+        ).arg(populatedClass)));
+    for (const qlonglong expectedIndex : rowIndices)
+    {
+        QVERIFY(storedRows.next());
+        bool rowIndexValid = false;
+        QCOMPARE(storedRows.value("row_index").toLongLong(&rowIndexValid), expectedIndex);
+        QVERIFY(rowIndexValid);
+        QCOMPARE(storedRows.value("storage_type").toString(), QStringLiteral("integer"));
+    }
+    QVERIFY(!storedRows.next());
+    storedRows.finish();
+
+    StartupProfiler profiler;
+    StartupProfiler::activate(&profiler);
+    StartupProfiler::setSubPrepDiagnosticsActive(true);
+
+    ApplicationServicesSubPrepPrintSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(populatedClass)},
+        {SubPrepWeekday::Monday},
+        ScheduleViewMode::Regular
+        ));
+
+    const QList<StartupProfilingEvent> events = profiler.events();
+    StartupProfiler::setSubPrepDiagnosticsActive(false);
+    StartupProfiler::activate(nullptr);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    QCOMPARE(result.value().classes[0].id, classId(populatedClass));
+    QCOMPARE(result.value().classes[0].studentCount, std::size_t(4));
+
+    const auto& metrics =
+        rosterRepository->subPrepStudentCountBatchReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.requestedClassCount, 1);
+    QCOMPARE(metrics.columnStatementCount, 1);
+    QCOMPARE(metrics.dataStatementCount, 1);
+    QCOMPARE(metrics.fallbackClassReadCount, 0);
+
+    QCOMPARE(events.size(), 1);
+    QCOMPARE(events[0].name, QStringLiteral("sub-prep-roster-query"));
+    QCOMPARE(
+        events[0].detail,
+        QStringLiteral(
+            "classId=%1; columns=2; rows=%2; cells=%2; returnedStudents=4"
+            ).arg(populatedClass)
+             .arg(std::numeric_limits<int>::max())
         );
 }
 
