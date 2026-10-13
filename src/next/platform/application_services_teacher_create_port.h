@@ -214,8 +214,9 @@ public:
                     available.error());
             }
 
-            const Result<int> created = available.value()->createTeacher(
-                toLegacyTeacher(request.fields));
+            const Result<qint64> created =
+                available.value()->createTeacherWithWideId(
+                    toLegacyTeacher(request.fields));
             if (!created)
             {
                 return failure(

@@ -128,6 +128,28 @@ Result<int> TeacherRepository::createTeacher(
     const Teacher& teacher
     )
 {
+    const Result<qint64> created = createTeacherWithWideId(teacher);
+    if (!created)
+    {
+        return std::unexpected(created.error());
+    }
+    if (*created > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating teacher failed: generated record id %1 exceeds "
+                "the supported range for this caller."
+                ).arg(QString::number(*created))
+            );
+    }
+
+    return static_cast<int>(*created);
+}
+
+Result<qint64> TeacherRepository::createTeacherWithWideId(
+    const Teacher& teacher
+    )
+{
     QSqlQuery query(m_database);
 
     query.prepare(R"(
@@ -183,8 +205,9 @@ Result<int> TeacherRepository::createTeacher(
         return std::unexpected(executed.error().userMessage());
     }
 
-    const int teacherId = query.lastInsertId().toInt();
-    if (teacherId <= 0)
+    bool idOk = false;
+    const qint64 teacherId = query.lastInsertId().toLongLong(&idOk);
+    if (!idOk || teacherId <= 0)
     {
         return std::unexpected(
             QObject::tr(

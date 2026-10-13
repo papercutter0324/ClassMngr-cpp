@@ -265,6 +265,9 @@ public:
     [[nodiscard]] Result<int> createTeacher(
         const Teacher& teacher
         );
+    [[nodiscard]] Result<qint64> createTeacherWithWideId(
+        const Teacher& teacher
+        );
 
     [[nodiscard]] Result<int> saveTeacher(
         const Teacher& teacher

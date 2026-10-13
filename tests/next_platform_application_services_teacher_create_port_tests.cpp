@@ -76,6 +76,8 @@ class NextPlatformApplicationServicesTeacherCreatePortTests final : public QObje
 
 private slots:
     void createsNormalizedTeacherAndMapsId();
+    void createsTeacherWithWideIdAndPreservesProfile();
+    void legacyCreateRejectsUnrepresentableIdWithoutWrapping();
     void invalidTeacherIsRejectedBeforeInsert();
     void unavailableAndClosedSessionsReturnStructuredFailures();
     void repositoryFailureDoesNotCreateTeacher();
@@ -122,6 +124,111 @@ createsNormalizedTeacherAndMapsId()
     QCOMPARE(saved->zoomPassword, QStringLiteral("zoom-secret"));
     QCOMPARE(saved->projectionType, QStringLiteral("HDMI"));
     QCOMPARE(saved->notes, QStringLiteral("Initial setup"));
+}
+
+void NextPlatformApplicationServicesTeacherCreatePortTests::
+createsTeacherWithWideIdAndPreservesProfile()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO teachers (teacher_en) VALUES ('sequence seed')")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "UPDATE sqlite_sequence SET seq = 2147483647 "
+            "WHERE name = 'teachers'")
+        ));
+
+    Platform::ApplicationServicesTeacherCreatePort port(services);
+    Platform::TeacherValidatorTeacherCreateValidationPolicy validation;
+    const auto created = Application::TeacherCreateUseCase::execute(
+        validRequest(), validation, port);
+
+    if (!created)
+    {
+        QFAIL(qPrintable(QString::fromStdString(created.error().message)));
+    }
+    const auto expectedId = Domain::TeacherId::fromString("2147483648");
+    QVERIFY(expectedId.has_value());
+    QVERIFY(created.value() == *expectedId);
+    QCOMPARE(
+        QString::fromStdString(created.value().value()),
+        QStringLiteral("2147483648")
+        );
+    QCOMPARE(teacherCount(services), 2);
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral(R"(
+        SELECT
+            typeof(id), id, teacher_kr, teacher_en,
+            preferred_romanization, preferred_name, room_number, birthday,
+            phone_number, wifi_name, wifi_password, internet_type, zoom_id,
+            zoom_password, projection_type, notes
+        FROM teachers
+        WHERE id = 2147483648
+    )")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value(1).toLongLong(), qint64{2147483648});
+    QCOMPARE(query.value(2).toString(), QString::fromUtf16(u"\uAE40\uC120\uC0DD"));
+    QCOMPARE(query.value(3).toString(), QStringLiteral("Alex Smith"));
+    QCOMPARE(query.value(4).toString(), QStringLiteral("Alex Smith"));
+    QCOMPARE(query.value(5).toString(), QStringLiteral("Alex Smith"));
+    QCOMPARE(query.value(6).toString(), QStringLiteral("Room 9"));
+    QCOMPARE(query.value(7).toString(), QStringLiteral("02-29"));
+    QCOMPARE(query.value(8).toString(), QStringLiteral("010-1234-5678"));
+    QCOMPARE(query.value(9).toString(), QStringLiteral("Campus WiFi"));
+    QCOMPARE(query.value(10).toString(), QStringLiteral("secret"));
+    QCOMPARE(query.value(11).toString(), QStringLiteral("WiFi"));
+    QCOMPARE(query.value(12).toString(), QStringLiteral("alex.zoom"));
+    QCOMPARE(query.value(13).toString(), QStringLiteral("zoom-secret"));
+    QCOMPARE(query.value(14).toString(), QStringLiteral("HDMI"));
+    QCOMPARE(query.value(15).toString(), QStringLiteral("Initial setup"));
+}
+
+void NextPlatformApplicationServicesTeacherCreatePortTests::
+legacyCreateRejectsUnrepresentableIdWithoutWrapping()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "INSERT INTO teachers (teacher_en) VALUES ('sequence seed')")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "UPDATE sqlite_sequence SET seq = 2147483647 "
+            "WHERE name = 'teachers'")
+        ));
+
+    Teacher legacyTeacher;
+    legacyTeacher.teacherEn = QStringLiteral("Legacy Teacher");
+    const auto created = services.databaseSession()->teacherRepository()
+        ->createTeacher(legacyTeacher);
+
+    QVERIFY(!created);
+    QVERIFY(created.error().contains(QStringLiteral("2147483648")));
+    QCOMPARE(teacherCount(services), 2);
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral(R"(
+        SELECT typeof(id), id
+        FROM teachers
+        WHERE id = 2147483648
+    )")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value(1).toLongLong(), qint64{2147483648});
 }
 
 void NextPlatformApplicationServicesTeacherCreatePortTests::
