@@ -33137,3 +33137,56 @@ run only `ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests`.
 Do not widen the model/API; no CMake change or full suite. The
 project-configuration and CMake optimization remains complete; Phase 2 Gates
 1/2 remain Partial and the formal exit gate remains Open.
+
+### F832 GS Team directory-read ID representability - accepted - 2026-10-13
+
+F832 is accepted at source/test commit
+`754ca612abf6edf7733557f330cf7952678eae8e`. Independent fresh Ninja Debug
+verification in `%TEMP%\f832n` built
+`ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests`; exact
+CTest #345 passed 1/1. Scoped `git diff --check` passed and no compiler
+warnings occurred. The CMake object-path warning applied to the separate
+Native English Birthday Directory Read Port target; the focused object path
+was 206/250. Reproduction confirmed IDs 1 and `4294967297` were both stored as
+SQLite INTEGER but the pre-fix port exposed both as 1. The regression requires
+a nonrecoverable Technical failure and verifies both persisted rows and fields
+remain unchanged. No full suite ran.
+
+### Batch 246 completion - 2026-10-13
+
+F832 completed Batch 246 by rejecting aliased GS Team directory-read IDs.
+Batch 247 selects F833 for fractional REAL `roster_data.col_index` validation
+in full-roster and availability reads. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### Batch 247 discovery and selection - 2026-10-13
+
+The non-STRICT SQLite schema gives `roster_data.col_index` INTEGER affinity
+with `NOT NULL`, nonnegative, and primary-key constraints, but schema preflight
+does not require integral storage. Qt 6.12/QSQLITE confirms `0.25` is stored as
+REAL and converts to integer 0, while `1.5` converts to 2. F824 rejected
+malformed TEXT in the same `RosterRepository::loadRoster()` and availability
+consumers, but did not cover convertible REAL values. F833 is limited to that
+same full-roster/availability pair; print, Sub Prep, and Analytics paths remain
+separate.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL roster `col_index` validation in full-roster and availability reads (F833) | Selected | INTEGER affinity and nonnegative checks permit REAL values that convert to a different integral column. |
+
+F833 is selected, not implemented or accepted. First reproduce current
+behavior in both full-roster snapshot and availability paths: seed a valid
+integer column-0 cell and a distinct REAL `col_index=0.25` cell in the same
+row, assert `typeof(col_index)='real'`, and verify whether conversion causes a
+column-0 overwrite or incorrect occupancy. If reproduced, reject non-INTEGER
+storage before narrowing and require typed Technical read failures in both
+paths; if not, stop and report. Preserve integer positions, numeric
+out-of-range behavior, row-index handling, F824 malformed-TEXT behavior, and
+ordinary ordering, fields, and availability behavior. Change only
+`src/data/repositories/roster_repository.cpp` and
+`tests/next_platform_application_services_roster_read_port_tests.cpp`; run
+only `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`. No
+CMake, schema, or API change and no full suite. The project-configuration and
+CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
