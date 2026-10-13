@@ -34191,3 +34191,54 @@ remains stored. The exact CTest is
 `ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests`.
 No full suite is planned. If the baseline does not reproduce, stop before
 production edits and report the result.
+
+### F852 invalid ScheduleDisplayMode enum on save - accepted - 2026-10-14
+
+F852 is accepted at source/test commit
+`19ecc8195320ee3d930c3e39da93546e38f0be25` (`Phase2 - F852: Reject invalid
+schedule display mode saves`). The executor reproduced invalid value 17
+overwriting stored `intensive` with `regular`. The save guard now validates
+Regular, Intensive, or Testing before database-session access and returns
+nonrecoverable `Domain::ErrorCode::InvalidInput` for invalid values. Regression
+coverage confirms rejection preserves raw `intensive` and load returns
+Intensive. Existing coverage retains all valid round trips and stored-value,
+missing-setting, read, and write failure behavior.
+
+Independent Tester acceptance: exact focused CTest
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests`
+passed 1/1 in standard top-level `build/windows-x64-debug`, Visual Studio 18
+2026 Debug. The initial unprivileged build hit MSBuild FileTracker Access
+Denied; the authorized narrow retry succeeded. No full suite ran.
+
+### Batch 266 completion - 2026-10-14
+
+F852 completed Batch 266 by rejecting invalid ScheduleDisplayMode saves. The
+post-slice audit of all 13 deferred candidates found no changed blockers and
+none actionable; the list remains unchanged. Batch 267 selects F853 to check
+invalid `EvaluationDefaultPolicy` values at the typed save boundary. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 267 discovery and selection - 2026-10-14
+
+`EvaluationDefaultPolicy` has public values `All` and `CurrentOrPreviousTerm`.
+The adapter explicitly maps `CurrentOrPreviousTerm` and defaults other enum
+values to `all`, which may overwrite a stored
+`current_or_previous_term` on an invalid save. This is a source-derived
+hypothesis; runtime reproduction is pending. The normal menu callback chooses
+only valid values, so the candidate concerns the public typed boundary.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid `EvaluationDefaultPolicy` enum on save (F853) | Selected | The adapter's fallback may turn an invalid typed value into a successful `all` write. |
+
+F853 is selected, not reproduced or implemented. In the existing port test,
+seed `current_or_previous_term`, pass an unrecognized enum value through the
+typed save port, and inspect the result and stored value. If reproduced,
+reject before writing as `InvalidInput` and verify the prior value remains.
+Preserve valid policy behavior and fallback for corrupted stored values. The
+test file is
+`tests/next_platform_application_services_evaluation_default_policy_port_tests.cpp`;
+the exact CTest is
+`NextPlatformApplicationServicesEvaluationDefaultPolicyPort`. No full suite
+is planned. If the baseline does not reproduce, stop before production edits
+and report the result.

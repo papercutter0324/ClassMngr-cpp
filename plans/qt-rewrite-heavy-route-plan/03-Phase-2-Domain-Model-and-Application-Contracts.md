@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F851 is accepted at `53dc807`; F852 is selected pending baseline reproduction; Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F852 is accepted at `19ecc819`; F853 is selected pending baseline reproduction; Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 266: F852 - Invalid `ScheduleDisplayMode` enum on save; reproduce value 17 through the typed save port and verify the stored `intensive` value is preserved.
+- Batch 267: F853 - Invalid `EvaluationDefaultPolicy` enum on save; reproduce an unrecognized value through the typed save port and verify the stored `current_or_previous_term` value is preserved.
 
 #### Deferred candidates
 
