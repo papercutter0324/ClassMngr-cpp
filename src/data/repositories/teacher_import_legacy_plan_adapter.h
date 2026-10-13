@@ -9,8 +9,13 @@
 #include <string>
 #include <utility>
 
-namespace ClassMngr::Next::Application
+namespace ClassMngr::Data::Legacy
 {
+using ClassMngr::Next::Application::TeacherImportGroupDecision;
+using ClassMngr::Next::Application::TeacherImportGroupMode;
+using ClassMngr::Next::Application::TeacherImportReviewGroup;
+using ClassMngr::Next::Application::TeacherImportUseCaseRequest;
+
 namespace Detail
 {
 
@@ -177,4 +182,4 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
     return request;
 }
 
-} // namespace ClassMngr::Next::Application
+} // namespace ClassMngr::Data::Legacy

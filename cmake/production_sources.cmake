@@ -101,6 +101,7 @@ set(CLASSMNGR_DATA_SOURCES
     "src/data/repositories/speaking_eval_repository.h"
     "src/data/repositories/teacher_import_repository.cpp"
     "src/data/repositories/teacher_import_repository.h"
+    "src/data/repositories/teacher_import_legacy_plan_adapter.h"
     "src/data/repositories/teacher_import_sql_persistence_adapter.cpp"
     "src/data/repositories/teacher_import_sql_persistence_adapter.h"
     "src/data/repositories/teacher_repository.cpp"

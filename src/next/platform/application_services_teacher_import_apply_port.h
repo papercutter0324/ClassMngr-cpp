@@ -3,10 +3,10 @@
 #include "core/application_services.h"
 #include "core/result.h"
 #include "data/database/database_session.h"
+#include "data/repositories/teacher_import_legacy_plan_adapter.h"
 #include "data/repositories/teacher_import_repository.h"
-#include "domain/validation/teacher_import_plan_preparation.h"
-#include "next/application/teacher_import_plan_mapper.h"
 #include "data/repositories/teacher_import_sql_persistence_adapter.h"
+#include "domain/validation/teacher_import_plan_preparation.h"
 
 #include <QSqlDatabase>
 
@@ -45,7 +45,8 @@ public:
         QSqlDatabase database = session->database();
         const auto persistence = makeTeacherImportSqlPersistenceAdapter(database);
         const Application::TeacherImportUseCaseRequest request =
-            Application::teacherImportPlanToUseCaseRequest(*normalizedPlan);
+            ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(
+                *normalizedPlan);
         const auto imported =
             Application::TeacherImportUseCase::execute(request, *persistence);
         if (!imported)

@@ -1,7 +1,7 @@
 #include "teacher_import_repository.h"
 
 #include "next/application/teacher_import_use_case.h"
-#include "next/application/teacher_import_plan_mapper.h"
+#include "teacher_import_legacy_plan_adapter.h"
 #include "teacher_import_sql_persistence_adapter.h"
 
 #include <QObject>
@@ -117,7 +117,7 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     )
 {
     const TeacherImportUseCaseRequest request =
-        ClassMngr::Next::Application::teacherImportPlanToUseCaseRequest(plan);
+        ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(plan);
     const auto persistence = makeTeacherImportSqlPersistenceAdapter(m_database);
     const auto applied = TeacherImportUseCase::execute(request, *persistence);
     if (!applied)
