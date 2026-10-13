@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-13
-- Current milestone: Phase 2 remains in progress: F787 was accepted at `3e7c9ad093d3d78b3e38d45bc9f2603d424cacb5`, and F788 is selected in Batch 202 to align Sub Prep ClassSummary required-text blankness with Qt whitespace semantics. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F788 was accepted at `c8bc0acd34e616b4295773a0f7eaee92f0f42196`, and F789 is selected in Batch 203 to align Qt-free Document Catalog projection blankness with Qt whitespace semantics; the existing Qt adapter already rejects these values. F707/F709 remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate Open. F625's assessment is accepted and F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

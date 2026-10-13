@@ -30487,3 +30487,67 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(Clas
 Run no full suite. No CMake inventory change is expected. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F788 Sub Prep ClassSummary required-text whitespace parity - accepted - 2026-10-13
+
+F788 was accepted at commit
+`c8bc0acd34e616b4295773a0f7eaee92f0f42196`. The bounded Visual Studio 18 x64
+Debug build in `build/windows-x64-debug` built `ClassMngr` and both focused
+targets after sandbox ZERO_CHECK FileTracker `E_ACCESSDENIED` was followed by
+the identical command succeeding outside the sandbox.
+`ClassMngrNextApplicationClassSummaryTests` and
+`ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests` each registered
+once and passed (2/2). `git diff --check` passed; no full suite ran.
+
+### Batch 203 discovery - 2026-10-13
+
+Source review and independent comparison found that
+`DocumentCatalogProjectionDetail::isBlank` uses byte-wise ASCII whitespace
+across typed identifiers, paths, keys, display names, and content references,
+while the Qt port's `boundedUtf8` applies `QString::trimmed().isEmpty()` to
+these mapped values. The Qt-free Application projection therefore has a
+contract gap; the existing Qt adapter already rejects these inputs, so a
+current UI-visible behavior change is unlikely. The Class Analytics
+`MAX(row_index)` vector-growth candidate remains deferred because no row-limit
+or error policy is specified; borrowing a 4,096- or 25-row limit would invent a
+contract. F789 was selected for the narrow projection parity fix. F707/F709
+remain deferred.
+
+### F789 Document Catalog Qt whitespace parity - selected and acceptance matrix - 2026-10-13
+
+**F789 is selected:** in
+`src/next/application/document_catalog_projection.h`, replace only the
+byte-wise shared `DocumentCatalogProjectionDetail::isBlank` implementation
+with the accepted `Application::isBlankUtf8Text` helper. Empty strings and
+fully valid UTF-8 strings made only of Qt whitespace code points, including
+U+00A0 NO-BREAK SPACE and U+3000 IDEOGRAPHIC SPACE, are blank. Keep empty
+`parentPath` as the root exception; reject nonempty whitespace-only parent
+paths. Preserve nonblank IDs and path segments byte-for-byte without trimming,
+byte bounds, malformed-UTF-8-as-nonblank behavior, validation order, existing
+`InvalidInput` messages and recoverability, uniqueness, and optional
+export-reference behavior. Leave the Qt adapter unchanged. This is Application
+contract hardening; the current Qt port already rejects these inputs.
+
+Extend only `tests/next_application_document_catalog_tests.cpp`. Cover U+00A0
+and U+3000 across the shared blank wrappers for folder/document IDs,
+folder/document paths, nonempty parent path, keys, display names, and content
+reference. Assert existing exact validation category, message, code, and
+nonrecoverability for representative cases without changing precedence.
+Preserve the empty-string `parentPath` root exception; ordinary nonblank Unicode
+and space-containing values byte-for-byte; malformed-UTF-8 treatment; and
+optional export-reference semantics.
+
+Production target: `ClassMngr`. The test target and exact CTest name are
+`ClassMngrNextApplicationDocumentCatalogTests`; it must register once. In the
+existing Visual Studio 18 x64 Debug tree `build/windows-x64-debug`, use only
+these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextApplicationDocumentCatalogTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextApplicationDocumentCatalogTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextApplicationDocumentCatalogTests$"
+```
+
+Run no full suite. No CMake inventory change is expected. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
