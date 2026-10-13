@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F797 was accepted at `521e89f8c5d923c13805b3aa0ce70c6b394c034b`, completing Batch 211; F798 is selected in Batch 212 to preserve wide Sub Prep roster-count row identities and saturate legacy profiler dimensions safely; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F798 was accepted at `d819955225899842cc011a0f6fc9ae2214be5b69`, completing Batch 212; F799 is selected in Batch 213 to preserve positive signed 64-bit teacher IDs in the My Classes class-information read model; F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -111,9 +111,9 @@ Treat this plan as an operational summary, not a history:
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
 
-#### Active batch: Batch 212
+#### Active batch: Batch 213
 
-- F798 - Sub Prep batched print student-count wide row identity and metric overflow - Preserve signed 64-bit row identities and counts; saturate legacy `int` profiler dimensions safely without triggering dense per-class fallback.
+- F799 - My Classes class-information wide teacher IDs - Preserve valid positive signed 64-bit teacher IDs in batched and individual fallback reads; retain NULL and nonpositive semantics.
 
 ## Objective
 

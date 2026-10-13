@@ -31121,3 +31121,79 @@ This is a pre-implementation matrix; no F798 tests have run. Run no full
 suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
 deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open.
+
+### F798 Sub Prep batched print student-count wide row identity and metric overflow - accepted - 2026-10-13
+
+F798 was accepted at source-and-test commit
+`d819955225899842cc011a0f6fc9ae2214be5b69`. It changed
+`src/data/repositories/roster_repository.cpp` and
+`tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`.
+The regression seeded SQLite INTEGER row indexes 2147483647, 2147483648,
+2147483649, and 9223372036854775807; the read returned four students and
+counted English and Korean on one row once. It made one batch call, one
+column statement, one data statement, and zero fallback reads. Profiler rows
+and cells both saturated at 2147483647. The exact target build command
+`cmake --build build/windows-x64-debug --config Debug --target ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`
+first hit the known ZERO_CHECK/MSBuild FileTracker `E_ACCESSDENIED`; the
+identical outside-sandbox retry passed. The exact CTest command
+`ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests$"`
+passed 1/1. `git diff --check` passed; no full suite ran.
+
+### Batch 212 completion - 2026-10-13
+
+F798 completed the only selected slice in Batch 212. Its signed 64-bit count
+identity, safe profiler saturation, and focused verification are recorded
+above. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
+
+### Batch 213 discovery - 2026-10-13
+
+F799 is selected for the My Classes class-information read model. The
+nullable `class_info.teacher_id` SQLite INTEGER has no int-range constraint,
+but `MyClassesClassInformationReadRecord::teacherId` is `int` and both the
+batched and individual repository reads use `toInt()`. The platform port only
+emits positive teacher IDs, so a valid wide ID can be lost as unassigned.
+`Domain::TeacherId` stores decimal text and accepts the signed 64-bit value at
+the application boundary. Keep this change scoped to the class-information
+read record and its batch/fallback paths.
+
+### F799 My Classes class-information wide teacher IDs - selected and acceptance matrix - 2026-10-13
+
+**F799 is selected:** update
+`MyClassesClassInformationReadRecord` in
+`src/data/repositories/class_info_repository.h` to preserve signed 64-bit
+teacher IDs, and use checked `toLongLong()` conversion in both
+`loadMyClassesClassInformationRecords` and
+`loadMyClassesClassInformationRecord` in
+`src/data/repositories/class_info_repository.cpp`. Preserve valid positive
+wide values through
+`ApplicationServicesMyClassesClassInformationBatchReadPort` as decimal
+`Domain::TeacherId` values. Keep SQL NULL and existing nonpositive values
+unassigned. If a non-null value cannot convert to signed 64-bit, keep the
+failure local to that class. Do not change other class-information
+projections or add generic conversion cleanup.
+
+Extend only
+`tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp`.
+Seed `teacher_id = INT_MAX + 1` directly as SQLite `INTEGER` and assert the
+public class-information result contains teacher ID `2147483648`; verify the
+sibling class data succeeds, a NULL assignment remains absent, and the valid
+wide value stays in the batch without a new fallback. The target and exact
+CTest name are
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`;
+it must register once. No CMake inventory change is expected.
+
+Use only these bounded Visual Studio 18 x64 Debug commands in the existing
+`build/windows-x64-debug` tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests$"
+```
+
+This is a pre-implementation matrix; no F799 tests have run. Run no full
+suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
