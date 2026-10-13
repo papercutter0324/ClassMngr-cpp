@@ -56,6 +56,7 @@ class NextPlatformApplicationServicesClassCreatePortTests final : public QObject
 
 private slots:
     void createsBlankClassFromOpenSession();
+    void rejectsClassIdBeyondIntRangeWithoutRemovingInsertedClass();
     void unavailableAndClosedSessionsReturnStructuredFailures();
     void repositoryFailureDoesNotCreateAClass();
 };
@@ -81,6 +82,53 @@ createsBlankClassFromOpenSession()
         ->getClassById(classId);
     QVERIFY(classroom);
     QVERIFY(classroom->name.isEmpty());
+}
+
+void NextPlatformApplicationServicesClassCreatePortTests::
+rejectsClassIdBeyondIntRangeWithoutRemovingInsertedClass()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("INSERT INTO classes (name) VALUES ('seed')")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "UPDATE sqlite_sequence SET seq = 4294967296 "
+            "WHERE name = 'classes'")
+        ));
+
+    Platform::ApplicationServicesClassCreatePort port(services);
+    const auto created = Application::ClassCreateUseCase::execute({}, port);
+
+    QVERIFY(!created);
+    QCOMPARE(created.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(created.error().message)
+        .contains(QStringLiteral("4294967297")));
+    QCOMPARE(classCount(services), 2);
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral(R"(
+        SELECT typeof(id), id
+        FROM classes
+        WHERE id = 4294967297
+    )")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value(1).toLongLong(), qint64{4294967297LL});
+
+    QVERIFY(query.exec(QStringLiteral(R"(
+        SELECT typeof(id), id
+        FROM classes
+        WHERE id = 1
+    )")));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value(1).toLongLong(), qint64{1});
 }
 
 void NextPlatformApplicationServicesClassCreatePortTests::

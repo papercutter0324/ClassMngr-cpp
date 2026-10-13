@@ -10,6 +10,7 @@
 #include <QSet>
 #include <QStringList>
 
+#include <limits>
 #include <utility>
 
 namespace
@@ -65,8 +66,9 @@ Result<int> ClassRepository::createClass(
         return std::unexpected(executed.error().userMessage());
     }
 
-    const int classId = query.lastInsertId().toInt();
-    if (classId <= 0)
+    bool idOk = false;
+    const qint64 generatedClassId = query.lastInsertId().toLongLong(&idOk);
+    if (!idOk || generatedClassId <= 0)
     {
         return std::unexpected(
             QObject::tr(
@@ -76,7 +78,17 @@ Result<int> ClassRepository::createClass(
             );
     }
 
-    return classId;
+    if (generatedClassId > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating class for %1 failed: generated record id %2 is "
+                "outside the supported integer range."
+                ).arg(identity, QString::number(generatedClassId))
+            );
+    }
+
+    return static_cast<int>(generatedClassId);
 }
 
 Result<QList<Classroom>> ClassRepository::getClasses()
