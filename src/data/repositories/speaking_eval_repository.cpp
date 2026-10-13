@@ -170,10 +170,9 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         }
 
         const QVariant rowIndexValue = query.value("row_index");
-        if (
-            query.value("row_index_storage_type").toString()
-                == QStringLiteral("text")
-            )
+        const QString rowIndexStorageType =
+            query.value("row_index_storage_type").toString();
+        if (rowIndexStorageType == QStringLiteral("text"))
         {
             bool rowIndexValid = false;
             rowIndexValue.toLongLong(&rowIndexValid);
@@ -186,6 +185,15 @@ Status SpeakingEvalRepository::saveSpeakingEval(
                         ).arg(identity)
                     );
             }
+        }
+        if (rowIndexStorageType != QStringLiteral("integer"))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading speaking evaluation rows failed for %1: "
+                    "invalid row index."
+                    ).arg(identity)
+                );
         }
 
         existingRows.insert(

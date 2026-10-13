@@ -112,6 +112,7 @@ private slots:
     void appValidationMatchesLegacySpeakingEvaluationRules();
     void questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision();
     void repositoryWriteFailureMapsTechnicalAndRollsBack();
+    void rejectsRealRowIndexBeforeNarrowingAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
     void closedSessionFailsWithoutDataServiceFallback();
 };
@@ -523,6 +524,141 @@ repositoryWriteFailureMapsTechnicalAndRollsBack()
         );
     QVERIFY(afterFailure);
     QCOMPARE(*afterFailure, *beforeFailure);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+rejectsRealRowIndexBeforeNarrowingAndRollsBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation REAL Row Index Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+    auto saveRequest = request(*createdClass);
+    saveRequest.evaluationName = u"REAL Row Index Evaluation";
+    const auto initialSave = Application::SpeakingEvaluationSaveUseCase::execute(
+        saveRequest,
+        port
+        );
+    QVERIFY(initialSave);
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+
+    QSqlQuery query(session->database());
+    query.prepare(R"(
+        SELECT id
+        FROM speaking_evaluations
+        WHERE class_id=? AND evaluation_name=?
+    )");
+    query.addBindValue(*createdClass);
+    query.addBindValue(QStringLiteral("REAL Row Index Evaluation"));
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    const qint64 evaluationId = query.value(0).toLongLong();
+    QVERIFY(evaluationId > 0);
+
+    const QString requestedValue = QStringLiteral("REAL row alias value");
+    query.prepare(R"(
+        INSERT INTO speaking_eval_data (
+            evaluation_id,
+            row_index,
+            col_10
+        )
+        VALUES (?, 0.25, ?)
+    )");
+    query.addBindValue(evaluationId);
+    query.addBindValue(requestedValue);
+    QVERIFY(query.exec());
+
+    query.prepare(R"(
+        SELECT typeof(row_index), col_10
+        FROM speaking_eval_data
+        WHERE evaluation_id=? AND row_index=0
+    )");
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QVERIFY(query.value(1).toString().isEmpty());
+
+    query.prepare(R"(
+        SELECT typeof(row_index), col_10
+        FROM speaking_eval_data
+        WHERE evaluation_id=? AND row_index=0.25
+    )");
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("real"));
+    QCOMPARE(query.value(1).toString(), requestedValue);
+
+    query.prepare(R"(
+        DELETE FROM speaking_eval_data
+        WHERE evaluation_id=? AND row_index=24
+    )");
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    saveRequest.evaluation.rows[0][10] = requestedValue.toStdU16String();
+    saveRequest.evaluation.changedCells = {{0, 10}};
+    const auto rejectedSave = Application::SpeakingEvaluationSaveUseCase::execute(
+        saveRequest,
+        port
+        );
+
+    QVERIFY2(
+        !rejectedSave,
+        qPrintable(rejectedSave
+            ? QStringLiteral("The save unexpectedly accepted a REAL row index.")
+            : QString::fromStdString(rejectedSave.error().message))
+        );
+    QCOMPARE(rejectedSave.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!rejectedSave.error().recoverable);
+    QVERIFY(!rejectedSave.error().message.empty());
+    QVERIFY(QString::fromStdString(rejectedSave.error().message).contains(
+        QStringLiteral("invalid row index")
+        ));
+
+    query.prepare(R"(
+        SELECT typeof(row_index), col_10
+        FROM speaking_eval_data
+        WHERE evaluation_id=? AND row_index=0
+    )");
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QVERIFY(query.value(1).toString().isEmpty());
+
+    query.prepare(R"(
+        SELECT typeof(row_index), col_10
+        FROM speaking_eval_data
+        WHERE evaluation_id=? AND row_index=0.25
+    )");
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("real"));
+    QCOMPARE(query.value(1).toString(), requestedValue);
+
+    query.prepare(R"(
+        SELECT COUNT(*)
+        FROM speaking_eval_data
+        WHERE evaluation_id=? AND row_index=24
+    )");
+    query.addBindValue(evaluationId);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
