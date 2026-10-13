@@ -31150,13 +31150,16 @@ Open.
 ### Batch 213 discovery - 2026-10-13
 
 F799 is selected for the My Classes class-information read model. The
-nullable `class_info.teacher_id` SQLite INTEGER has no int-range constraint,
-but `MyClassesClassInformationReadRecord::teacherId` is `int` and both the
-batched and individual repository reads use `toInt()`. The platform port only
-emits positive teacher IDs, so a valid wide ID can be lost as unassigned.
-`Domain::TeacherId` stores decimal text and accepts the signed 64-bit value at
-the application boundary. Keep this change scoped to the class-information
-read record and its batch/fallback paths.
+current `class_info.teacher_id` is a nullable SQLite INTEGER foreign key to
+`teachers.id` with `ON DELETE SET NULL`; `teachers.id` is an INTEGER PRIMARY
+KEY AUTOINCREMENT and can hold signed 64-bit keys. A valid wide ID fixture
+must insert its parent teacher row before updating `class_info`. Despite that
+schema range, `MyClassesClassInformationReadRecord::teacherId` is `int` and
+both the batched and individual repository reads use `toInt()`. The platform
+port only emits positive teacher IDs, so a valid wide ID can be lost as
+unassigned. `Domain::TeacherId` stores decimal text and accepts the signed
+64-bit value at the application boundary. Keep this change scoped to the
+class-information read record and its batch/fallback paths.
 
 ### F799 My Classes class-information wide teacher IDs - selected and acceptance matrix - 2026-10-13
 
@@ -31176,11 +31179,14 @@ projections or add generic conversion cleanup.
 
 Extend only
 `tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp`.
-Seed `teacher_id = INT_MAX + 1` directly as SQLite `INTEGER` and assert the
-public class-information result contains teacher ID `2147483648`; verify the
-sibling class data succeeds, a NULL assignment remains absent, and the valid
-wide value stays in the batch without a new fallback. The target and exact
-CTest name are
+Insert a parent teacher at `INT_MAX + 1` as SQLite `INTEGER`, then update
+`class_info.teacher_id` to that key. Assert the public class-information
+result contains teacher ID `2147483648`; verify sibling class data succeeds,
+a NULL assignment remains absent, and the valid wide value stays in the batch
+without a new fallback. A malformed nonnumeric text fixture is not required
+because the valid-schema foreign-key/type constraints reject that assignment;
+keep checked conversion as defensive handling. The target and exact CTest
+name are
 `ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`;
 it must register once. No CMake inventory change is expected.
 
@@ -31193,7 +31199,12 @@ ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformA
 ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests$"
 ```
 
-This is a pre-implementation matrix; no F799 tests have run. Run no full
-suite. F707/F709 and the dense Speaking Evaluation row-limit policy remain
-deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
-Open.
+The focused target build passed after the identical outside-sandbox retry for
+the ZERO_CHECK/MSBuild FileTracker error. The first focused CTest attempt
+failed at fixture setup: `UPDATE class_info SET teacher_id=2147483648` returned
+`FOREIGN KEY constraint failed` before storage or result assertions because
+the parent teacher row was absent. This is a fixture failure and provides no
+production-defect evidence. Retry with the parent teacher inserted before
+updating `class_info`; run no full suite. F707/F709 and the dense Speaking
+Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
