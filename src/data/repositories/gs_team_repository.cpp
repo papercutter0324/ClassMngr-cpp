@@ -8,6 +8,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 
+#include <limits>
+
 namespace
 {
 QString normalizedName(const QString& value)
@@ -64,8 +66,20 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
 
     while (query.next())
     {
+        bool idConversionSucceeded = false;
+        const qlonglong rawId = query.value(0).toLongLong(
+            &idConversionSucceeded);
+        if (!idConversionSucceeded
+            || rawId <= 0
+            || rawId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading GS Team directory failed: member id %1 is outside "
+                "the supported range.").arg(query.value(0).toString()));
+        }
+
         GsTeamMember member;
-        member.id = query.value(0).toInt();
+        member.id = static_cast<int>(rawId);
         member.name = query.value(1).toString();
         member.koreanName = query.value(2).toString();
         member.position = query.value(3).toString();

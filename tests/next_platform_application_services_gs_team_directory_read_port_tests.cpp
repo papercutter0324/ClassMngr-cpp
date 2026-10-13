@@ -89,6 +89,71 @@ bool seedDirectory(ApplicationServices& services)
     return static_cast<bool>(saved);
 }
 
+QString persistedWideIdRowsMismatch(ApplicationServices& services)
+{
+    QSqlQuery query(services.databaseSession()->database());
+    if (!query.exec(QStringLiteral(R"(
+        SELECT id, typeof(id) AS id_type, name, korean_name, position,
+               phone_number, birthday
+        FROM gs_team
+        ORDER BY id
+    )")))
+    {
+        return query.lastError().text();
+    }
+
+    const auto matches = [&query](
+        qlonglong id,
+        const QString& name,
+        const QString& koreanName,
+        const QString& position,
+        const QString& phone,
+        const QString& birthday
+        )
+    {
+        return query.value(QStringLiteral("id")).toLongLong() == id
+            && query.value(QStringLiteral("id_type")).toString()
+                == QStringLiteral("integer")
+            && query.value(QStringLiteral("name")).toString() == name
+            && query.value(QStringLiteral("korean_name")).toString()
+                == koreanName
+            && query.value(QStringLiteral("position")).toString() == position
+            && query.value(QStringLiteral("phone_number")).toString() == phone
+            && query.value(QStringLiteral("birthday")).toString() == birthday;
+    };
+
+    if (!query.next() || !matches(
+            1,
+            QStringLiteral("Seed Member"),
+            QStringLiteral("Seed Korean"),
+            QStringLiteral("Branch Manager"),
+            QStringLiteral("010-2000-1001"),
+            QStringLiteral("01-02")))
+    {
+        return QStringLiteral("The ID 1 row or its fields changed.");
+    }
+    if (!query.next() || !matches(
+            4294967297LL,
+            QStringLiteral("Wide Member"),
+            QStringLiteral("Wide Korean"),
+            QStringLiteral("C1"),
+            QStringLiteral("010-2000-1002"),
+            QStringLiteral("02-03")))
+    {
+        return QStringLiteral("The ID 4294967297 row or its fields changed.");
+    }
+    if (query.next())
+    {
+        return QStringLiteral("The database returned an unexpected extra row.");
+    }
+    if (query.lastError().isValid())
+    {
+        return query.lastError().text();
+    }
+
+    return {};
+}
+
 }
 
 class NextPlatformApplicationServicesGsTeamDirectoryReadPortTests final
@@ -99,6 +164,7 @@ class NextPlatformApplicationServicesGsTeamDirectoryReadPortTests final
 private slots:
     void readsMappedRowsInRepositoryOrderFromActiveSession();
     void reportsUnavailableSessionSeparatelyFromRepositoryFailure();
+    void rejectsWidePersistedIdsWithoutChangingStoredRows();
 };
 
 void NextPlatformApplicationServicesGsTeamDirectoryReadPortTests::
@@ -173,6 +239,47 @@ reportsUnavailableSessionSeparatelyFromRepositoryFailure()
     unavailable = port.readGsTeamDirectory();
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesGsTeamDirectoryReadPortTests::
+rejectsWidePersistedIdsWithoutChangingStoredRows()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery insert(services.databaseSession()->database());
+    QVERIFY2(insert.exec(QStringLiteral(R"(
+        INSERT INTO gs_team
+            (id, name, korean_name, position, phone_number, birthday)
+        VALUES
+            (1, 'Seed Member', 'Seed Korean', 'Branch Manager',
+             '010-2000-1001', '01-02')
+    )")), qPrintable(insert.lastError().text()));
+    QVERIFY2(insert.exec(QStringLiteral(R"(
+        INSERT INTO gs_team
+            (id, name, korean_name, position, phone_number, birthday)
+        VALUES
+            (4294967297, 'Wide Member', 'Wide Korean', 'C1',
+             '010-2000-1002', '02-03')
+    )")), qPrintable(insert.lastError().text()));
+
+    const QString beforeReadMismatch = persistedWideIdRowsMismatch(services);
+    QVERIFY2(beforeReadMismatch.isEmpty(), qPrintable(beforeReadMismatch));
+
+    Platform::ApplicationServicesGsTeamDirectoryReadPort port(&services);
+    const Application::GsTeamDirectoryReadResult result =
+        port.readGsTeamDirectory();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+    QVERIFY(!result.error().recoverable);
+
+    const QString afterReadMismatch = persistedWideIdRowsMismatch(services);
+    QVERIFY2(afterReadMismatch.isEmpty(), qPrintable(afterReadMismatch));
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesGsTeamDirectoryReadPortTests)
