@@ -34702,3 +34702,42 @@ normal provider menu writes retain F679 behavior.
 
 The 13 unresolved Deferred candidates remain unchanged. Phase 2 Gates 1/2
 remain Partial and the formal exit gate remains Open.
+
+### F860 Custom Website paired preference persistence - accepted - 2026-10-14
+
+F860 is accepted at source/test commit
+`c4092ab3900d932aa20a24de397d4ae8bfaab7f6`. SettingsManager snapshots each
+key's presence and raw `QVariant`, stages provider then URL, and performs one
+checked sync; failure restores both captures and reopens settings. The
+Custom Website action commits `OptionState` only on success, reports one
+diagnostic on typed recoverable failure, and succeeds on retry. Cancellation
+and invalid URLs remain write-free. This replaces F679's separate
+provider-before-URL durable sync for this action only; standard provider
+actions retain F679 behavior. The check is compensating restore, not strict or
+crash-safe atomicity, and does not guarantee preservation of unrelated
+unsaved writes or concurrent same-key writes.
+
+The incremental Windows x64 Debug build passed for `ClassMngr`,
+`ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests`,
+`ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests`,
+`ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests`,
+and `ClassMngrMainWindowAiCommentProviderActionParityTests` in standard
+`build/windows-x64-debug`. Those four registered Debug CTests passed 4/4, one
+registration each. Adapter coverage includes candidate values at one sync
+callback, exact prior raw variants and absent keys, typed recoverable failure,
+retry, and unrelated persisted-key preservation. Action coverage includes
+failure preserving provider, URL, action, and state; one diagnostic; retry; and
+write-free cancellation and invalid-URL paths. Standard provider action tests
+passed. An independent verifier build was warning-free after the approved
+`TrackFileAccess=false`/`TrackFileAccessBySearch=false` retry.
+`git diff --check` passed. No full suite ran.
+
+### Batch 274 completion and deferred-candidate audit - 2026-10-14
+
+F860 completed Batch 274. Two independent read-only audits reviewed all 13
+deferred candidates and agreed none became actionable; the list remains
+unchanged. F579 and F598 still require an elevated Administrator token for
+their WPR captures. F629 runner absence remains session-limited; the other
+policy, measurement, caller, and injection triggers remain unresolved as
+documented. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open. The next slice is pending selection.
