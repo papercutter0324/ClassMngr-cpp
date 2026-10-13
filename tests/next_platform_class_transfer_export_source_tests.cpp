@@ -22,6 +22,8 @@ class ClassTransferExportSourceTests : public QObject
 private slots:
     void successfulSourceHasEveryRequiredStageAndSanitizedProjection();
     void malformedRosterRowIndexReturnsEstablishedReadError();
+    void fractionalRosterRowIndexReturnsEstablishedReadError();
+    void sparseIntegerRosterRowRemainsValid();
     void outOfRangeRosterRowIndexReturnsEstablishedReadError();
     void wideTeacherIdentityKeepsFullProfileAndSharedPortableReference();
     void wideEvaluationIdsKeepTheirOwnExportRows();
@@ -96,6 +98,98 @@ void ClassTransferExportSourceTests::malformedRosterRowIndexReturnsEstablishedRe
     QCOMPARE(roster.error().message,
         QStringLiteral("Loading roster data failed for class id %1: invalid row index.")
             .arg(classId).toStdString());
+}
+void ClassTransferExportSourceTests::fractionalRosterRowIndexReturnsEstablishedReadError()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Fractional roster row index')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns(class_id,name,position,width) VALUES(?, 'Student', 0, 120)")));
+    insertColumn.addBindValue(classId);
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery insertValidRow(database);
+    QVERIFY(insertValidRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, 0, 0, 'Valid row zero')")));
+    insertValidRow.addBindValue(classId);
+    QVERIFY2(insertValidRow.exec(), qPrintable(insertValidRow.lastError().text()));
+
+    QSqlQuery insertFractionalRow(database);
+    QVERIFY(insertFractionalRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, ?, 0, 'Fractional value')")));
+    insertFractionalRow.addBindValue(classId);
+    insertFractionalRow.addBindValue(0.25);
+    QVERIFY2(insertFractionalRow.exec(), qPrintable(insertFractionalRow.lastError().text()));
+
+    QSqlQuery storedRows(database);
+    QVERIFY(storedRows.exec(QStringLiteral(
+        "SELECT typeof(row_index), row_index, value FROM roster_data "
+        "WHERE class_id=%1 ORDER BY row_index").arg(classId)));
+    QVERIFY(storedRows.next());
+    QCOMPARE(storedRows.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRows.value(1).toLongLong(), qlonglong(0));
+    QCOMPARE(storedRows.value(2).toString(), QStringLiteral("Valid row zero"));
+    QVERIFY(storedRows.next());
+    QCOMPARE(storedRows.value(0).toString(), QStringLiteral("real"));
+    QCOMPARE(storedRows.value(1).toDouble(), 0.25);
+    QCOMPARE(storedRows.value(2).toString(), QStringLiteral("Fractional value"));
+    QVERIFY(!storedRows.next());
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    auto source = port.readSource({{id(classId)}}); QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& roster = source.value().classes.front().roster;
+    QCOMPARE(roster.state(), ClassExportStageState::Error);
+    QCOMPARE(roster.error().message,
+        QStringLiteral("Loading roster data failed for class id %1: invalid row index.")
+            .arg(classId).toStdString());
+}
+void ClassTransferExportSourceTests::sparseIntegerRosterRowRemainsValid()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Sparse integer roster row')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns(class_id,name,position,width) VALUES(?, 'Student', 0, 120)")));
+    insertColumn.addBindValue(classId);
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery insertSparseRow(database);
+    QVERIFY(insertSparseRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, 3, 0, 'Sparse row three')")));
+    insertSparseRow.addBindValue(classId);
+    QVERIFY2(insertSparseRow.exec(), qPrintable(insertSparseRow.lastError().text()));
+
+    QSqlQuery storedRow(database);
+    QVERIFY(storedRow.exec(QStringLiteral(
+        "SELECT typeof(row_index), row_index FROM roster_data WHERE class_id=%1")
+            .arg(classId)));
+    QVERIFY(storedRow.next());
+    QCOMPARE(storedRow.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRow.value(1).toInt(), 3);
+    QVERIFY(!storedRow.next());
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    auto source = port.readSource({{id(classId)}}); QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& roster = source.value().classes.front().roster;
+    QCOMPARE(roster.state(), ClassExportStageState::Value);
+    QCOMPARE(roster.value().rows.size(), 4);
+    QCOMPARE(roster.value().rows[0][0], std::u16string());
+    QCOMPARE(roster.value().rows[1][0], std::u16string());
+    QCOMPARE(roster.value().rows[2][0], std::u16string());
+    QCOMPARE(roster.value().rows[3][0], std::u16string(u"Sparse row three"));
 }
 void ClassTransferExportSourceTests::outOfRangeRosterRowIndexReturnsEstablishedReadError()
 {

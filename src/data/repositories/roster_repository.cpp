@@ -298,6 +298,7 @@ Result<Roster> RosterRepository::loadRoster(
     query.prepare(R"(
         SELECT
             row_index,
+            typeof(row_index) AS row_index_storage_type,
             col_index,
             typeof(col_index) AS col_index_storage_type,
             value
@@ -320,6 +321,18 @@ Result<Roster> RosterRepository::loadRoster(
 
     while (query.next())
     {
+        if (
+            query.value("row_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: invalid row index."
+                    ).arg(identity)
+                );
+        }
+
         bool rowIndexValid = false;
         const qlonglong rowIndex =
             query.value("row_index").toLongLong(&rowIndexValid);
@@ -738,6 +751,7 @@ RosterRepository::loadFullRostersImpl(
         SELECT requested.class_id AS requested_class_id,
                requested.request_order AS request_order,
                roster_data.row_index AS row_index,
+               typeof(roster_data.row_index) AS row_index_storage_type,
                roster_data.col_index AS col_index,
                typeof(roster_data.col_index) AS col_index_storage_type,
                roster_data.value AS value
@@ -794,11 +808,22 @@ RosterRepository::loadFullRostersImpl(
             break;
         }
 
-        bool rowIndexValid = false;
-        const qlonglong sourceRowIndex =
-            cellsQuery.value("row_index").toLongLong(&rowIndexValid);
         const QString rosterIdentity =
             QObject::tr("class id %1").arg(classId);
+        bool rowIndexValid = false;
+        if (
+            cellsQuery.value("row_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: invalid row index."
+                    ).arg(rosterIdentity)
+                );
+        }
+        const qlonglong sourceRowIndex =
+            cellsQuery.value("row_index").toLongLong(&rowIndexValid);
         if (!rowIndexValid)
         {
             return std::unexpected(
