@@ -33275,3 +33275,50 @@ and exact CTest
 CMake/API change or full suite. The project-configuration and CMake
 optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
 exit gate remains Open.
+
+### F835 fractional REAL roster index in Sub Prep student counts - accepted - 2026-10-14
+
+F835 is accepted at source/test commit
+`df5ddc0ee0dc52ed04769787a41e83bfb6ef73dc`. Independent fresh Ninja Debug
+verification built
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; exact
+CTest passed 1/1 and scoped `git diff --check` passed. Pre-fix reproduction
+showed that a blank INTEGER English column 0 plus a nonempty REAL
+`col_index=0.25` produced count 1. After the fix, the malformed class defaults
+to 0, a valid sibling class remains 2, and an empty roster remains 0; the
+existing per-class fallback behavior is retained.
+
+### Batch 249 completion - 2026-10-14
+
+F835 completed Batch 249 by preventing fractional REAL roster indexes from
+creating Sub Prep student counts. Batch 250 selects F836 for fractional REAL
+roster-index validation in Class Analytics roster sizing. The
+project-configuration and CMake optimization remains complete; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 250 discovery and selection - 2026-10-14
+
+`ApplicationServicesClassAnalyticsDashboardReadPort::readRosterNames()` uses a
+sizing CTE that computes `MAX(row_index)` across in-range roster cells, while
+its exact-name joins ignore fractional `col_index` values. A REAL `0.25` cell
+at a new highest row can therefore inflate `rowCount` and the assessed-student
+denominator with blank rows. F836 covers this direct sizing effect in one
+read-port query.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL roster index in Class Analytics sizing (F836) | Selected | An admitted fractional cell can raise the maximum row and inflate the assessed-student denominator. |
+| MyClasses undercount from fractional positions | Unselected | Its exact-match query does not select fractional cells; detecting them requires broader validation, while Analytics has a direct sizing consequence in one query. |
+
+F836 is selected, not implemented or accepted. First reproduce through the
+current Class Analytics read port: seed a REAL `roster_data.col_index=0.25`,
+verify `typeof(col_index)='real'`, and confirm it inflates the pre-fix
+`rowCount`. If reproduced, require a Technical failure for the malformed
+fractional index and preserve existing valid sparse sizing from unrelated
+INTEGER cells; if not, stop and report. Use
+`tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`
+and exact CTest
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`.
+No CMake/API change or full suite. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
