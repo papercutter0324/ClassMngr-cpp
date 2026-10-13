@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F844 completed Batch 258 at `310e2ba72fd3332cb099d42a0a32ac2017f1ee28`; F845 is selected for Batch 259 pending reproduction of fractional REAL `roster_data.row_index` creating a phantom first row in Sub Prep roster-output projection; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F845 completed Batch 259 at `6ea01490b49e6211677fb6b6bb5cd1bdb9e09f87`; F846 is selected for Batch 260 pending reproduction of fractional REAL `speaking_eval_data.row_index` overwriting row 0 in Class Transfer export; Gates 1/2 remain Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 259
+#### Active batch: Batch 260
 
-- F845 - Fractional REAL roster row index in Sub Prep roster-output projection - Reproduce REAL `row_index=0.25` creating a phantom output row; if reproduced, return Technical before narrowing, using a diagnostic that avoids `invalid`, and preserve projection and output limits.
+- F846 - Fractional REAL speaking-evaluation row index in Class Transfer export - Reproduce REAL `row_index=0.25` overwriting INTEGER row 0; if reproduced, skip non-INTEGER rows before narrowing consistent with F815 and preserve 0..24 and existing malformed/out-of-range handling.
 
 ## Objective
 

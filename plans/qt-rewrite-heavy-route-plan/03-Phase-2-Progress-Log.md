@@ -33811,3 +33811,56 @@ If no phantom row appears, stop and report before production edits.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`.
+
+### F845 fractional REAL roster row index in Sub Prep roster-output projection - accepted - 2026-10-14
+
+F845 is accepted at source/test commit
+`6ea01490b49e6211677fb6b6bb5cd1bdb9e09f87`. Baseline a lone REAL
+`row_index=0.25` cell with INTEGER `col_index=0` and normal headers produced
+a phantom first row in the typed roster-output port. The fix rejects
+non-INTEGER row storage in `loadRosterForOutput()` before narrowing. The port
+returns `ErrorCode::Technical` with a diagnostic that avoids `invalid`,
+`limit`, and `exceed`. Independent verification passed
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+1/1 with `-C Debug` after an approved FileTracker retry; the scoped diff check
+passed. Tests also verify successful empty-roster and sparse INTEGER row 2
+outputs, and requested English/Korean/Notes projection excludes unrequested
+values. No full suite ran.
+
+### Batch 259 completion - 2026-10-14
+
+F845 completed Batch 259 by rejecting fractional REAL row indexes in Sub Prep
+roster-output projection. Batch 260 selects F846 to check fractional REAL
+speaking-evaluation row indexes in Class Transfer export. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+### Batch 260 discovery and selection - 2026-10-14
+
+`ClassTransferRepository` converts persisted `speaking_eval_data.row_index`
+with `toInt()` before applying its 0..24 range check. F815 established the
+policy of skipping malformed, overflowing, and out-of-range evaluation rows;
+the unchecked conversion may narrow REAL `0.25` to row 0 before that check;
+baseline reproduction is pending.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `speaking_eval_data.row_index` in Class Transfer export (F846) | Selected | The repository narrows the dynamic SQLite value before its existing coordinate-range handling. |
+
+F846 is selected, not implemented or accepted. In the Class Transfer export
+regression fixture, seed INTEGER row 0 and REAL row `0.25` for the same
+evaluation and column with different values; assert both SQLite storage
+types, build the export package, and check whether REAL overwrites row 0. If
+reproduced, skip non-INTEGER row storage consistent with F815. Preserve valid
+rows 0..24 and malformed/overflowing/out-of-range behavior. Do not change the
+dense evaluation row-limit policy, which remains deferred. If no overwrite
+occurs, stop and report before production edits.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | In `tests/class_transfer_tests.cpp`, confirm INTEGER 0 and REAL 0.25 storage at one evaluation/column and determine whether export lets the REAL value overwrite row 0. |
+| Malformed-row behavior | On reproduction, skip non-INTEGER row storage before narrowing, consistent with F815. |
+| Compatibility | Preserve rows 0..24 and existing malformed, overflowing, and out-of-range skip behavior; leave dense row-limit policy unchanged. |
+| Focused verification | Update `tests/class_transfer_tests.cpp`; build and run only `ClassMngrClassTransferRowIndexRegressionTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrClassTransferRowIndexRegressionTests`.
