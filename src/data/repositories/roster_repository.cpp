@@ -1338,6 +1338,7 @@ RosterRepository::loadSubPrepStudentCountRecords(
         SELECT requested.class_id AS class_id,
                requested.request_order AS request_order,
                roster_data.row_index AS row_index,
+               typeof(roster_data.row_index) AS row_index_storage_type,
                roster_data.col_index AS col_index,
                typeof(roster_data.col_index) AS col_index_storage_type,
                roster_data.value AS value
@@ -1390,6 +1391,12 @@ RosterRepository::loadSubPrepStudentCountRecords(
     {
         const int classId = query.value("class_id").toInt();
         const int requestOrder = query.value("request_order").toInt();
+        if (query.value("row_index_storage_type").toString()
+            != QStringLiteral("integer"))
+        {
+            query.finish();
+            return readIndividually();
+        }
         bool rowIndexValid = false;
         const qlonglong rowIndex =
             query.value("row_index").toLongLong(&rowIndexValid);
