@@ -33925,3 +33925,68 @@ stop before production edits and report the result.
 
 The exact CTest registration is
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
+
+### F847 fractional REAL Speaking Evaluation save row index - accepted - 2026-10-14
+
+F847 is accepted at source/test commit
+`4c5d5983a7dbbf4a3e36cc3c43ca4367181520b4` (`Phase2 - F847: Reject
+fractional evaluation save row indexes`). Baseline reproduction through
+`ApplicationServicesSpeakingEvaluationSavePort` stored INTEGER row 0 and
+REAL row 0.25 with distinct cell values as those SQLite types. Save succeeded,
+but the REAL row aliased comparison key 0, leaving the actual INTEGER row 0
+unchanged. The fix rejects non-INTEGER stored row indexes before narrowing,
+retains the malformed-TEXT parse check, and returns a nonrecoverable Technical
+error through the typed save port. Regression coverage verifies row 0 and the
+REAL row remain unchanged after failure, and that missing row 24, recreated
+inside the transaction, is rolled back and absent. Existing
+`savesCompleteMatrixAndAppliesExactChangedCellDelta` still covers valid rows 0
+and 24. Wide-integer behavior and the deferred dense row-limit policy are
+unchanged.
+
+Independent Tester acceptance: standard `build/windows-x64-debug` Debug CTest
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+passed 1/1 with no retry. Scoped diff check found no whitespace errors; only
+line-ending warnings. F827 malformed-TEXT behavior was confirmed by source
+inspection, not rerun. No full suite ran.
+
+### Batch 261 completion - 2026-10-14
+
+F847 completed Batch 261 by rejecting fractional REAL Speaking Evaluation
+save row indexes. Batch 262 selects F848 to investigate positional corruption
+from fractional REAL row indexes in typed single and batch Speaking Evaluation
+reads. No deferred candidate became actionable; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 262 discovery and selection - 2026-10-14
+
+The repository readers order stored Speaking Evaluation rows by `row_index`
+and append every row without checking SQLite storage type. Source inspection
+therefore suggests a REAL `row_index=0.25` between integer rows 0 and 1 could
+add an entry and shift later positional rows, likely yielding 26 entries for
+the normal 25-row matrix. This is source inference only; no runtime
+reproduction has occurred.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `speaking_eval_data.row_index` in typed single/batch Speaking Evaluation reads (F848) | Selected | Both repository readers append ordered rows without validating their SQLite storage type, risking positional shifts. |
+| Schedule Import candidate-time validation at the use-case boundary | Not selected | Repository validation rejects `InvalidProjectedTime` before persistence and the normal review UI disables import for invalid projected times; sharing Qt-backed parsing could affect accepted legacy formats. |
+| Calendar Import negative skipped count | Not selected | The normal parser path may not produce negative counts, making this a lower-priority contract edge case. |
+
+F848 is selected, not reproduced or implemented. First insert a REAL
+`row_index=0.25` beside normal INTEGER rows, assert the SQLite storage types,
+then reproduce output corruption independently through both public typed
+read ports before production edits. If reproduced, return a Technical error
+for non-INTEGER row storage in both readers instead of skipping the row,
+which would silently shift names. Preserve current sparse and out-of-range
+INTEGER behavior; do not add a dense row limit. If corruption does not
+reproduce, stop before production edits and report the result.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm REAL row 0.25 and normal INTEGER row storage with `typeof`; observe the single and batch public read-port outputs and establish whether the REAL row adds an entry or shifts positional values. |
+| Error contract | On reproduction, both readers reject non-INTEGER row storage with a Technical error rather than skip it. |
+| Compatibility | Preserve sparse and out-of-range INTEGER behavior; do not add a dense row limit. |
+| Focused verification | Update `tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`.

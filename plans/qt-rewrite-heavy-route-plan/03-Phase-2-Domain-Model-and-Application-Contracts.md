@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F846 is accepted at `5bc040324b578b8f039d70bf01fe764057823517`; F847 is selected for Batch 261 pending baseline reproduction, no deferred candidate was unblocked, and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F847 is accepted at `4c5d5983a7dbbf4a3e36cc3c43ca4367181520b4`; F848 is selected for Batch 262 pending baseline reproduction, no deferred candidate was unblocked, and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 261
+#### Active batch: Batch 262
 
-- F847 - Fractional REAL speaking-evaluation row index in ordinary Speaking Evaluation save - Reproduce possible REAL-to-INTEGER row aliasing in the public save port before production edits.
+- F848 - Fractional REAL speaking-evaluation row index in typed single/batch reads - Reproduce positional row corruption through both public read ports with REAL row_index=0.25 before production edits.
 
 ## Objective
 
