@@ -4862,7 +4862,21 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         ScheduleImportStateSnapshotClassInfoReadRecord info;
         info.classId = query.value(QStringLiteral("class_id")).toInt();
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        if (teacherId.isNull())
+        {
+            info.teacherId = -1;
+        }
+        else
+        {
+            bool teacherIdOk = false;
+            info.teacherId = teacherId.toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(
+                    QObject::tr("A class teacher ID could not be read.")
+                    );
+            }
+        }
         info.classGrade = query.value(QStringLiteral("class_grade")).toString();
         info.classLevel = query.value(QStringLiteral("class_level")).toString();
 

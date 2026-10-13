@@ -70,7 +70,7 @@ bool insertTeacher(
 bool insertClassInfo(
     QSqlDatabase database,
     const int classIdValue,
-    const std::optional<int> teacherIdValue,
+    const std::optional<qint64> teacherIdValue,
     const QString& grade,
     const QString& level,
     const QString& color
@@ -138,6 +138,7 @@ class NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests
 
 private slots:
     void mapsActiveSessionRecordsInRepositoryOrder();
+    void preservesWideTeacherIdsAndLowIdAssociations();
     void reportsUnavailableAndClosedSessions();
     void reportsEachRepositoryReadFailureWithoutLegacyFallback();
 };
@@ -479,6 +480,127 @@ mapsActiveSessionRecordsInRepositoryOrder()
             - genericClassInfoMetricsBefore.intensiveScheduleStatementCount,
         0
         );
+}
+
+void NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests::
+preservesWideTeacherIdsAndLowIdAssociations()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        databasePath(directory, QStringLiteral("wide-teacher"))
+        ));
+    const int lowClass = services.classService()->create(
+        QStringLiteral("Low teacher class")
+        ).value_or(-1);
+    const int wideClass = services.classService()->create(
+        QStringLiteral("Wide teacher class")
+        ).value_or(-1);
+    QVERIFY(lowClass > 0);
+    QVERIFY(wideClass > 0);
+
+    constexpr qint64 wideTeacherIdValue = 2147483648LL;
+    const QSqlDatabase database = services.databaseSession()->database();
+    int lowTeacherId = -1;
+    QVERIFY(insertTeacher(
+        database,
+        QStringLiteral("Same teacher"),
+        QStringLiteral("Low teacher"),
+        QStringLiteral("Low room"),
+        &lowTeacherId
+        ));
+    QCOMPARE(lowTeacherId, 1);
+
+    QSqlQuery wideTeacherInsert(database);
+    wideTeacherInsert.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en, room_number) "
+        "VALUES (?, ?, ?, ?)"
+        ));
+    wideTeacherInsert.addBindValue(wideTeacherIdValue);
+    wideTeacherInsert.addBindValue(QStringLiteral("Same teacher"));
+    wideTeacherInsert.addBindValue(QStringLiteral("Wide teacher"));
+    wideTeacherInsert.addBindValue(QStringLiteral("Wide room"));
+    QVERIFY2(
+        wideTeacherInsert.exec(),
+        qPrintable(wideTeacherInsert.lastError().text())
+        );
+
+    QVERIFY(insertClassInfo(
+        database,
+        lowClass,
+        lowTeacherId,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("#123456")
+        ));
+    QVERIFY(insertClassInfo(
+        database,
+        wideClass,
+        wideTeacherIdValue,
+        QStringLiteral("E5"),
+        QStringLiteral("Athena"),
+        QStringLiteral("#654321")
+        ));
+
+    const auto teacherReadRecords = services.databaseSession()
+        ->teacherRepository()->loadScheduleImportTeacherRecords();
+    QVERIFY(teacherReadRecords.has_value());
+    QCOMPARE(teacherReadRecords->size(), 2);
+    QCOMPARE(teacherReadRecords->at(0).teacherId, lowTeacherId);
+    QCOMPARE(teacherReadRecords->at(1).teacherId, wideTeacherIdValue);
+
+    Platform::ApplicationServicesScheduleImportStateSnapshotPort port(services);
+    const auto result = Application::ScheduleImportStateSnapshotQueryHandler::
+        execute({}, port);
+    const auto* snapshot =
+        std::get_if<Application::ScheduleImportStateSnapshot>(&result);
+    QVERIFY2(snapshot, failure(result)
+        ? qPrintable(QString::fromStdString(failure(result)->message))
+        : "Expected a complete state snapshot.");
+
+    const auto lowTeacher = std::find_if(
+        snapshot->teachers.begin(),
+        snapshot->teachers.end(),
+        [lowTeacherId](const auto& teacher)
+        {
+            return teacher.id.value() == std::to_string(lowTeacherId);
+        }
+        );
+    const auto wideTeacher = std::find_if(
+        snapshot->teachers.begin(),
+        snapshot->teachers.end(),
+        [](const auto& teacher)
+        {
+            return teacher.id.value() == "2147483648";
+        }
+        );
+    QVERIFY(lowTeacher != snapshot->teachers.end());
+    QVERIFY(wideTeacher != snapshot->teachers.end());
+    QCOMPARE(lowTeacher->id.value(), std::string("1"));
+    QCOMPARE(wideTeacher->id.value(), std::string("2147483648"));
+
+    const auto lowAssignment = std::find_if(
+        snapshot->classes.begin(),
+        snapshot->classes.end(),
+        [lowClass](const auto& classroom)
+        {
+            return classroom.id.value() == std::to_string(lowClass);
+        }
+        );
+    const auto wideAssignment = std::find_if(
+        snapshot->classes.begin(),
+        snapshot->classes.end(),
+        [wideClass](const auto& classroom)
+        {
+            return classroom.id.value() == std::to_string(wideClass);
+        }
+        );
+    QVERIFY(lowAssignment != snapshot->classes.end());
+    QVERIFY(wideAssignment != snapshot->classes.end());
+    QCOMPARE(lowAssignment->teacherId.value(), std::string("1"));
+    QCOMPARE(wideAssignment->teacherId.value(), std::string("2147483648"));
 }
 
 void NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests::

@@ -78,7 +78,7 @@ void reset();
 void setIncludeAdditionalClass(bool include);
 void setMatchImportedClasses(bool match);
 void setPossibleImportedClasses(bool match);
-void setMatchingImportedTeacherIds(QList<int> teacherIds);
+void setMatchingImportedTeacherIds(QList<qint64> teacherIds);
 void setExistingIntensiveHours(bool exists);
 void setDistinctIntensiveDays(bool distinct);
 void setIncludeAlternativeMatchingClass(bool include);
@@ -128,6 +128,7 @@ private slots:
     void reviewPrepareClosedSessionUsesSnapshotWarning();
     void reviewRefreshUsesFreshTypedStateSnapshot();
     void reviewSnapshotFailureStaysInvalidWithoutLegacyFallback();
+    void wideTeacherIdSurvivesReviewResolutionAndTypedApplyProjection();
     void ambiguousTargetedClassSkipIsRejected();
     void uniqueExactTargetedClassSkipIsAllowed();
     void targetlessClassSkipIsAllowed();
@@ -3982,6 +3983,133 @@ reviewSnapshotFailureStaysInvalidWithoutLegacyFallback()
         QStringLiteral("injected schedule read failure")
         ));
     QCOMPARE(prompts.messages.size(), 0);
+}
+
+void ScheduleImportDialogTests::
+wideTeacherIdSurvivesReviewResolutionAndTypedApplyProjection()
+{
+    constexpr qint64 wideTeacherIdValue = 2147483648LL;
+    const ImportDomain::TeacherId lowTeacherId =
+        *ImportDomain::TeacherId::fromString("7");
+    const ImportDomain::TeacherId wideTeacherId =
+        *ImportDomain::TeacherId::fromString("2147483648");
+
+    ImportState::ScheduleImportStateSnapshot snapshot;
+    snapshot.teachers = {
+        {
+            lowTeacherId,
+            u"Same teacher",
+            u"Low room"
+        },
+        {
+            wideTeacherId,
+            u"Same teacher",
+            u"Wide room"
+        }
+    };
+    snapshot.classes = {
+        {
+            *ImportDomain::ClassId::fromString("42"),
+            lowTeacherId,
+            u"Low teacher class",
+            u"E4",
+            u"Hercules",
+            u"#FFFFFF",
+            {},
+            {},
+            u"Low room"
+        },
+        {
+            *ImportDomain::ClassId::fromString("43"),
+            wideTeacherId,
+            u"Wide teacher class",
+            u"E5",
+            u"Athena",
+            u"#FFFFFF",
+            {},
+            {},
+            u"Wide room"
+        }
+    };
+
+    ScheduleImportPreview preview;
+    preview.kind = ScheduleImportKind::Normal;
+    preview.user.name = QStringLiteral("Alice");
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("same-teacher");
+    candidate.teacherKr = QStringLiteral("Same teacher");
+    candidate.rooms = {QStringLiteral("Imported room")};
+    candidate.classGrade = QStringLiteral("E5");
+    candidate.classLevel = QStringLiteral("Athena");
+    preview.user.classes = {candidate};
+    ScheduleImportTeacherPreview teacherPreview;
+    teacherPreview.teacherKey = candidate.teacherKey;
+    teacherPreview.teacherKr = candidate.teacherKr;
+    teacherPreview.importedRooms = candidate.rooms;
+    teacherPreview.matchingTeacherIds = {7, wideTeacherIdValue};
+    preview.teachers = {teacherPreview};
+
+    QObject context;
+    QWidget teacherContent;
+    QWidget classContent;
+    QVBoxLayout teacherLayout(&teacherContent);
+    QVBoxLayout classLayout(&classContent);
+    ScheduleImportResolutionControls::BuildRequest buildRequest;
+    buildRequest.context = &context;
+    buildRequest.teacherContent = &teacherContent;
+    buildRequest.classContent = &classContent;
+    buildRequest.teacherLayout = &teacherLayout;
+    buildRequest.classLayout = &classLayout;
+    buildRequest.stateSnapshot = &snapshot;
+    buildRequest.preview = &preview;
+    buildRequest.kind = ScheduleImportKind::Normal;
+
+    auto controls = ScheduleImportResolutionControls::build(buildRequest);
+    if (!controls.has_value())
+    {
+        QFAIL(qPrintable(controls.error()));
+    }
+    QCOMPARE(controls->teacherControls.size(), 1);
+    QComboBox* action = controls->teacherControls.first().action;
+    QVERIFY(action);
+
+    int updateWideTeacherIndex = -1;
+    for (int index = 0; index < action->count(); ++index)
+    {
+        if (
+            action->itemData(index, Qt::UserRole).toInt()
+                == static_cast<int>(ScheduleImportTeacherAction::UpdateRoom)
+            && action->itemData(index, Qt::UserRole + 1).toLongLong()
+                == wideTeacherIdValue
+            )
+        {
+            updateWideTeacherIndex = index;
+            break;
+        }
+    }
+    QVERIFY(updateWideTeacherIndex >= 0);
+    action->setCurrentIndex(updateWideTeacherIndex);
+    ScheduleImportResolutionControls::captureRealizedDecisions(&*controls);
+    QCOMPARE(
+        controls->teacherControls.first().targetTeacherId,
+        wideTeacherIdValue
+        );
+
+    ScheduleImportReviewContext reviewContext;
+    reviewContext.kind = ScheduleImportKind::Normal;
+    reviewContext.selectedUserName = preview.user.name;
+    reviewContext.candidates = preview.user.classes;
+    const auto request = ScheduleImportReviewModel::buildApplyRequest(
+        reviewContext,
+        ScheduleImportResolutionControls::teacherResolutions(*controls),
+        {}
+        );
+    QCOMPARE(request.teachers.size(), std::size_t(1));
+    QVERIFY(request.teachers.front().targetTeacherId.has_value());
+    QCOMPARE(
+        request.teachers.front().targetTeacherId->value(),
+        std::string("2147483648")
+        );
 }
 
 void ScheduleImportDialogTests::ambiguousTargetedClassSkipIsRejected()

@@ -18,7 +18,7 @@ void addResolutionItem(
     QComboBox* combo,
     const QString& text,
     int action,
-    int target = -1
+    qint64 target = -1
     );
 void configureCompactActionCombo(QComboBox* combo);
 QFrame* createReconciliationCard(
@@ -35,6 +35,6 @@ void clearLayout(QLayout* layout);
 int findActionIndex(
     QComboBox* combo,
     int action,
-    int target = -2
+    qint64 target = -2
     );
 }

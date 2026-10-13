@@ -220,6 +220,21 @@ int snapshotLegacyId(const Id& id)
         : -1;
 }
 
+template <typename Id>
+qint64 snapshotTeacherId(const Id& id)
+{
+    qint64 value = -1;
+    const std::string& text = id.value();
+    const auto [end, error] = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        value
+        );
+    return error == std::errc{} && end == text.data() + text.size()
+        ? value
+        : -1;
+}
+
 std::vector<ImportMatching::ScheduleImportMatchingTime> matchingTimes(
     const QList<ClassTime>& times
     )
@@ -383,7 +398,7 @@ ScheduleImportPreview scheduleImportPreview(
         for (const ImportDomain::TeacherId& teacherId :
              teacher.matchingTeacherIds)
         {
-            projected.matchingTeacherIds.append(snapshotLegacyId(teacherId));
+            projected.matchingTeacherIds.append(snapshotTeacherId(teacherId));
         }
         projected.affectedClassCount =
             static_cast<int>(teacher.affectedClassCount);
@@ -439,7 +454,7 @@ ScheduleImportPreview scheduleImportPreview(
     return result;
 }
 
-ImportDomain::TeacherId stateTeacherId(const int legacyId)
+ImportDomain::TeacherId stateTeacherId(const qint64 legacyId)
 {
     return ImportDomain::TeacherId::fromString(
         std::to_string(legacyId)
@@ -1399,7 +1414,7 @@ void ScheduleImportReviewDialog::updateReviewState()
         && m_updateIntensiveRadio->isChecked();
     QSet<QString> skippedTeachers;
     QHash<QString, int> teacherActions;
-    QHash<QString, int> teacherTargets;
+    QHash<QString, qint64> teacherTargets;
     QHash<QString, QString> teacherRooms;
     for (const TeacherControl& control : m_resolutionModel.teacherControls)
     {
@@ -1438,7 +1453,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             &snapshotOutcome
             );
     bool stateSnapshotsAvailable = false;
-    QHash<int, const ImportState::ScheduleImportStateReadTeacherSnapshot*>
+    QHash<qint64, const ImportState::ScheduleImportStateReadTeacherSnapshot*>
         teachersById;
     QHash<int, const ImportState::ScheduleImportStateReadClassSnapshot*>
         classSnapshotsById;
@@ -1454,7 +1469,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             );
         for (const auto& teacher : stateSnapshot->teachers)
         {
-            teachersById.insert(snapshotLegacyId(teacher.id), &teacher);
+            teachersById.insert(snapshotTeacherId(teacher.id), &teacher);
         }
         classSnapshotsById.reserve(
             static_cast<qsizetype>(stateSnapshot->classes.size())
@@ -1492,7 +1507,7 @@ void ScheduleImportReviewDialog::updateReviewState()
     {
         return classroom
             ? teachersById.value(
-                  snapshotLegacyId(classroom->teacherId),
+                  snapshotTeacherId(classroom->teacherId),
                   nullptr
                   )
             : nullptr;
@@ -1680,7 +1695,7 @@ void ScheduleImportReviewDialog::updateReviewState()
             const auto action = stateTeacherAction(
                 control.actionValue
                 );
-            const int legacyTarget = control.targetTeacherId;
+            const qint64 legacyTarget = control.targetTeacherId;
             std::optional<ImportDomain::TeacherId> targetTeacherId;
             if (
                 action == ImportState::ScheduleImportStateTeacherAction::Reuse

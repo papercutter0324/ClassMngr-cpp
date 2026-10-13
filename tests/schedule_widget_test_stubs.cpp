@@ -109,7 +109,7 @@ bool includeAdditionalClass = false;
 bool includeMiddleSchoolClasses = false;
 bool matchImportedClasses = false;
 bool possibleImportedClasses = false;
-QList<int> matchingImportedTeacherIds;
+QList<qint64> matchingImportedTeacherIds;
 bool existingIntensiveHours = false;
 bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
@@ -427,7 +427,7 @@ void setPossibleImportedClasses(
     possibleImportedClasses = match;
 }
 
-void setMatchingImportedTeacherIds(QList<int> teacherIds)
+void setMatchingImportedTeacherIds(QList<qint64> teacherIds)
 {
     matchingImportedTeacherIds = std::move(teacherIds);
 }

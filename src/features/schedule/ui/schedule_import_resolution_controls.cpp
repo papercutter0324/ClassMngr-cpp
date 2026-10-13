@@ -53,6 +53,21 @@ int snapshotLegacyId(const Id& id)
         : -1;
 }
 
+template <typename Id>
+qint64 snapshotTeacherId(const Id& id)
+{
+    qint64 value = -1;
+    const std::string& text = id.value();
+    const auto [end, error] = std::from_chars(
+        text.data(),
+        text.data() + text.size(),
+        value
+        );
+    return error == std::errc{} && end == text.data() + text.size()
+        ? value
+        : -1;
+}
+
 QString snapshotText(const std::u16string& value)
 {
     return QString::fromStdU16String(value);
@@ -81,7 +96,9 @@ ClassInfo classInfoForEligibility(
 {
     ClassInfo info;
     info.classId = snapshotLegacyId(classroom.id);
-    info.teacherId = snapshotLegacyId(classroom.teacherId);
+    // Eligibility depends on grade, level, and schedule rows only. The
+    // legacy ClassInfo field cannot represent the typed teacher ID.
+    info.teacherId = -1;
     info.classGrade = snapshotText(classroom.grade);
     info.classLevel = snapshotText(classroom.level);
     info.classColor = snapshotText(classroom.classColor);
@@ -215,7 +232,7 @@ Result<BuildResult> build(
             );
     }
 
-    QHash<int, const ImportState::ScheduleImportStateReadTeacherSnapshot*>
+    QHash<qint64, const ImportState::ScheduleImportStateReadTeacherSnapshot*>
         teachersById;
     QHash<int, const ImportState::ScheduleImportStateReadClassSnapshot*>
         classesById;
@@ -224,7 +241,7 @@ Result<BuildResult> build(
         );
     for (const auto& teacher : request.stateSnapshot->teachers)
     {
-        teachersById.insert(snapshotLegacyId(teacher.id), &teacher);
+        teachersById.insert(snapshotTeacherId(teacher.id), &teacher);
     }
     classesById.reserve(
         static_cast<qsizetype>(request.stateSnapshot->classes.size())
@@ -234,7 +251,7 @@ Result<BuildResult> build(
         classesById.insert(snapshotLegacyId(classroom.id), &classroom);
     }
 
-    const auto teacherSnapshot = [&teachersById](const int id)
+    const auto teacherSnapshot = [&teachersById](const qint64 id)
         -> const ImportState::ScheduleImportStateReadTeacherSnapshot*
     {
         return teachersById.value(id, nullptr);
@@ -272,7 +289,8 @@ Result<BuildResult> build(
             }
             else if (preview.matchingTeacherIds.size() == 1)
             {
-                const int teacherId = preview.matchingTeacherIds.first();
+                const qint64 teacherId =
+                    preview.matchingTeacherIds.first();
                 const auto* existing = teacherSnapshot(teacherId);
                 const bool exactRoom = existing
                     && preview.importedRooms.size() == 1
@@ -364,7 +382,7 @@ Result<BuildResult> build(
     // incomplete snapshot must not leave a partly populated review page.
     for (const auto& classroom : request.stateSnapshot->classes)
     {
-        const int teacherId = snapshotLegacyId(classroom.teacherId);
+        const qint64 teacherId = snapshotTeacherId(classroom.teacherId);
         if (teacherId > 0 && !teacherSnapshot(teacherId))
         {
             return std::unexpected(
@@ -375,7 +393,7 @@ Result<BuildResult> build(
     for (const ScheduleImportTeacherPreview& preview :
          request.preview->teachers)
     {
-        for (const int teacherId : preview.matchingTeacherIds)
+        for (const qint64 teacherId : preview.matchingTeacherIds)
         {
             if (!teacherSnapshot(teacherId))
             {
@@ -458,7 +476,7 @@ Result<BuildResult> build(
 
         if (preview.matchingTeacherIds.size() == 1)
         {
-            const int teacherId =
+            const qint64 teacherId =
                 preview.matchingTeacherIds.first();
             const auto* existing = teacherSnapshot(teacherId);
             const bool exactRoom =
@@ -513,7 +531,7 @@ Result<BuildResult> build(
                     -1
                     );
             }
-            for (int teacherId : preview.matchingTeacherIds)
+            for (const qint64 teacherId : preview.matchingTeacherIds)
             {
                 const auto* existing = teacherSnapshot(teacherId);
                 addResolutionItem(
@@ -609,7 +627,8 @@ Result<BuildResult> build(
         else
         {
             control.actionValue = control.action->currentData(ActionRole).toInt();
-            control.targetTeacherId = control.action->currentData(TargetRole).toInt();
+            control.targetTeacherId =
+                control.action->currentData(TargetRole).toLongLong();
         }
         control.card = teacherCard;
         connectStateChanged(control.action, request);
@@ -713,7 +732,7 @@ Result<BuildResult> build(
                     .arg(
                         classLabel(
                             *classSnapshot(classId),
-                            teacherSnapshot(snapshotLegacyId(
+                            teacherSnapshot(snapshotTeacherId(
                                 classSnapshot(classId)->teacherId
                                 )),
                             request.kind
@@ -758,7 +777,7 @@ Result<BuildResult> build(
                     .arg(
                         classLabel(
                             *classroom,
-                            teacherSnapshot(snapshotLegacyId(
+                            teacherSnapshot(snapshotTeacherId(
                                 classroom->teacherId
                                 )),
                             request.kind
@@ -988,7 +1007,8 @@ void captureRealizedDecisions(
         if (control.action)
         {
             control.actionValue = control.action->currentData(ActionRole).toInt();
-            control.targetTeacherId = control.action->currentData(TargetRole).toInt();
+            control.targetTeacherId =
+                control.action->currentData(TargetRole).toLongLong();
         }
         if (control.room)
         {

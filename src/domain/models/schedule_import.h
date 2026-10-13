@@ -75,7 +75,7 @@ struct ScheduleImportTeacherPreview
     QString teacherKey;
     QString teacherKr;
     QStringList importedRooms;
-    QList<int> matchingTeacherIds;
+    QList<qint64> matchingTeacherIds;
     int affectedClassCount = 0;
 };
 
@@ -120,7 +120,7 @@ struct ScheduleImportTeacherResolution
     QString teacherKey;
     ScheduleImportTeacherAction action =
         ScheduleImportTeacherAction::Create;
-    int targetTeacherId = -1;
+    qint64 targetTeacherId = -1;
     QString selectedRoom;
 };
 

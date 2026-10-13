@@ -14,7 +14,7 @@ void addResolutionItem(
     QComboBox* combo,
     const QString& text,
     int action,
-    int target
+    qint64 target
     )
 {
     combo->addItem(text);
@@ -84,7 +84,7 @@ void clearLayout(QLayout* layout)
     }
 }
 
-int findActionIndex(QComboBox* combo, int action, int target)
+int findActionIndex(QComboBox* combo, int action, qint64 target)
 {
     for (int index = 0; index < combo->count(); ++index)
     {
@@ -94,7 +94,7 @@ int findActionIndex(QComboBox* combo, int action, int target)
         }
         if (
             target == -2
-            || combo->itemData(index, TargetRole).toInt() == target
+            || combo->itemData(index, TargetRole).toLongLong() == target
             )
         {
             return index;

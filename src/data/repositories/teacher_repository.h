@@ -33,7 +33,7 @@ struct TestingTeacherChoiceReadRecord final
 
 struct ScheduleImportTeacherReadRecord final
 {
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString teacherKr;
     QString roomNumber;
 };

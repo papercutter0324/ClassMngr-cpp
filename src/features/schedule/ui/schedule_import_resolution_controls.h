@@ -29,7 +29,7 @@ struct TeacherControl
     int rowIndex = -1;
     QString teacherKey;
     int actionValue = -1;
-    int targetTeacherId = -1;
+    qint64 targetTeacherId = -1;
     QString selectedRoom;
     QWidget* card = nullptr;
     QComboBox* action = nullptr;

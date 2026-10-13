@@ -12,7 +12,7 @@ namespace
 using namespace ClassMngr::Next;
 
 template <typename Id>
-std::optional<Id> targetId(const int value)
+std::optional<Id> targetId(const qint64 value)
 {
     return value > 0 ? Id::fromString(std::to_string(value)) : std::nullopt;
 }

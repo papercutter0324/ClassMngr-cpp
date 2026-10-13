@@ -97,7 +97,7 @@ public:
         std::set<std::string> teacherIds;
         for (const auto& teacher : snapshot->teachers)
         {
-            if (!isCanonicalPositiveDecimalId(teacher.id.value())
+            if (!isCanonicalPositiveDecimalId64(teacher.id.value())
                 || !teacherIds.insert(teacher.id.value()).second)
             {
                 return invalidSnapshot(
@@ -117,7 +117,9 @@ public:
                     );
             }
             if (classroom.teacherId.value() != "-1"
-                && !isCanonicalPositiveDecimalId(classroom.teacherId.value()))
+                && !isCanonicalPositiveDecimalId64(
+                    classroom.teacherId.value()
+                    ))
             {
                 return invalidSnapshot(
                     "The schedule import state source returned an invalid teacher assignment."

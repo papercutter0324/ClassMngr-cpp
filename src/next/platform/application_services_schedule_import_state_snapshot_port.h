@@ -158,12 +158,12 @@ public:
             snapshot.teachers.reserve(
                 static_cast<std::size_t>(loadedTeachers->size())
                 );
-            QHash<int, const ScheduleImportTeacherReadRecord*> teacherById;
+            QHash<qint64, const ScheduleImportTeacherReadRecord*> teacherById;
             teacherById.reserve(loadedTeachers->size());
             for (const ScheduleImportTeacherReadRecord& teacher : *loadedTeachers)
             {
                 const std::optional<Domain::TeacherId> id =
-                    canonicalId<Domain::TeacherId>(teacher.teacherId);
+                    canonicalTeacherId(teacher.teacherId);
                 if (!id || teacherById.contains(teacher.teacherId))
                 {
                     return invalidSnapshot(
@@ -242,6 +242,17 @@ private:
             return std::nullopt;
         }
         return Id::fromString(std::to_string(value));
+    }
+
+    [[nodiscard]] static std::optional<Domain::TeacherId> canonicalTeacherId(
+        const qint64 value
+        )
+    {
+        if (value <= 0)
+        {
+            return std::nullopt;
+        }
+        return Domain::TeacherId::fromString(std::to_string(value));
     }
 
     [[nodiscard]] static std::vector<

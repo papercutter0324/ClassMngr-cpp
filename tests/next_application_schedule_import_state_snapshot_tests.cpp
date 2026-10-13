@@ -48,6 +48,7 @@ class NextApplicationScheduleImportStateSnapshotTests final : public QObject
 
 private slots:
     void returnsCompleteSnapshotInSourceOrder();
+    void acceptsWideTeacherIdentifiersAndAssignments();
     void preservesStructuredUnavailableAndReadFailures();
     void rejectsInvalidOrDuplicateIdentifiers_data();
     void rejectsInvalidOrDuplicateIdentifiers();
@@ -103,6 +104,37 @@ returnsCompleteSnapshotInSourceOrder()
 }
 
 void NextApplicationScheduleImportStateSnapshotTests::
+acceptsWideTeacherIdentifiersAndAssignments()
+{
+    RecordingScheduleImportStateSnapshotReadPort port;
+    ScheduleImportStateSnapshot expected;
+    expected.teachers = {
+        {teacherId("2147483648"), u"Wide teacher", u"Room 8"}
+    };
+    expected.classes = {
+        {
+            classId("42"), teacherId("2147483648"), u"Wide assignment",
+            u"E4", u"Hercules", u"#FFFFFF", {}, {}
+        }
+    };
+    port.result = expected;
+
+    const auto result =
+        ScheduleImportStateSnapshotQueryHandler::execute({}, port);
+
+    QCOMPARE(port.readCount, 1);
+    const auto* snapshot =
+        std::get_if<ScheduleImportStateSnapshot>(&result);
+    QVERIFY(snapshot);
+    QVERIFY(*snapshot == expected);
+    QCOMPARE(snapshot->teachers.front().id.value(),
+             std::string("2147483648"));
+    QCOMPARE(snapshot->classes.front().id.value(), std::string("42"));
+    QCOMPARE(snapshot->classes.front().teacherId.value(),
+             std::string("2147483648"));
+}
+
+void NextApplicationScheduleImportStateSnapshotTests::
 preservesStructuredUnavailableAndReadFailures()
 {
     RecordingScheduleImportStateSnapshotReadPort port;
@@ -154,14 +186,20 @@ rejectsInvalidOrDuplicateIdentifiers_data()
         << 0 << invalidTeacherMessage;
     QTest::newRow("duplicate_valid_teacher_id")
         << 1 << invalidTeacherMessage;
+    QTest::newRow("teacher_id_above_signed_64_range")
+        << 7 << invalidTeacherMessage;
     QTest::newRow("existing_noncanonical_teacher_id_case")
         << 2 << invalidTeacherMessage;
     QTest::newRow("invalid_class_id")
         << 3 << invalidClassMessage;
+    QTest::newRow("class_id_above_int_range")
+        << 6 << invalidClassMessage;
     QTest::newRow("existing_duplicate_class_id_case")
         << 4 << invalidClassMessage;
     QTest::newRow("invalid_teacher_assignment")
         << 5 << invalidAssignmentMessage;
+    QTest::newRow("teacher_assignment_above_signed_64_range")
+        << 8 << invalidAssignmentMessage;
 }
 
 void NextApplicationScheduleImportStateSnapshotTests::
@@ -215,6 +253,28 @@ rejectsInvalidOrDuplicateIdentifiers()
             {
                 classId("42"), teacherId("42x"), u"Invalid assignment",
                 u"E4", u"Hercules", u"#FFFFFF", {}, {}
+            }
+        };
+        break;
+    case 6:
+        snapshot.classes = {
+            {
+                classId("2147483648"), teacherId("7"), u"Wide class ID",
+                u"E4", u"Hercules", u"#FFFFFF", {}, {}
+            }
+        };
+        break;
+    case 7:
+        snapshot.teachers = {
+            {teacherId("9223372036854775808"), u"Overflow", u"Room"}
+        };
+        break;
+    case 8:
+        snapshot.classes = {
+            {
+                classId("42"), teacherId("9223372036854775808"),
+                u"Overflow assignment", u"E4", u"Hercules",
+                u"#FFFFFF", {}, {}
             }
         };
         break;

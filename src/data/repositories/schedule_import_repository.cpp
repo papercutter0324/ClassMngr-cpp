@@ -61,14 +61,14 @@ int legacyApplyId(const std::optional<Id>& value)
 }
 
 template <typename Id>
-int legacyApplyIntegerId(const std::optional<Id>& value)
+qint64 legacyApplyIntegerId(const std::optional<Id>& value)
 {
     if (!value)
     {
         return -1;
     }
 
-    int parsed = -1;
+    qint64 parsed = -1;
     const std::string& text = value->value();
     const auto [end, error] = std::from_chars(
         text.data(),
@@ -114,7 +114,7 @@ ScheduleImportReviewClassAction applyClassAction(
     return ScheduleImportReviewClassAction::Invalid;
 }
 
-Domain::TeacherId teacherDomainId(const int legacyId);
+Domain::TeacherId teacherDomainId(const qint64 legacyId);
 Domain::ClassId classDomainId(const int legacyId);
 
 ScheduleImportApplyRequest applyRequestFromLegacyPlan(
@@ -273,7 +273,7 @@ std::u16string matchingKey(const QString& value)
     return value.simplified().toCaseFolded().toStdU16String();
 }
 
-Domain::TeacherId teacherDomainId(const int legacyId)
+Domain::TeacherId teacherDomainId(const qint64 legacyId)
 {
     return Domain::TeacherId::fromString(std::to_string(legacyId)).value();
 }
@@ -556,7 +556,8 @@ ScheduleImportStateValidationRequest stateValidationRequest(
     const ScheduleImportApplyRequest& applyRequest,
     const QList<ScheduleImportTeacherReadRecord>& existingTeachers,
     const QList<Classroom>& existingClasses,
-    const QHash<int, ClassInfo>& existingInfo
+    const QHash<int, ScheduleImportStateSnapshotClassInfoReadRecord>&
+        existingInfo
     )
 {
     ScheduleImportStateValidationRequest request;
@@ -703,7 +704,8 @@ ScheduleImportStateValidationRequest stateValidationRequest(
         );
     for (const Classroom& classroom : existingClasses)
     {
-        const ClassInfo info = existingInfo.value(classroom.id);
+        const ScheduleImportStateSnapshotClassInfoReadRecord info =
+            existingInfo.value(classroom.id);
         const QString label = QStringLiteral("%1 %2")
             .arg(info.classGrade, info.classLevel)
             .simplified();
@@ -714,7 +716,7 @@ ScheduleImportStateValidationRequest stateValidationRequest(
                 utf8String(normalizedIdentity(info.classGrade)),
                 utf8String(normalizedIdentity(info.classLevel)),
                 utf8String(label),
-                stateTimes(info.classTimes),
+                stateTimes(info.regularTimes),
                 stateTimes(info.intensiveTimes)
             }
             );
@@ -782,13 +784,13 @@ QString normalizedHexColor(
 }
 
 QList<ClassTime> selectedTimes(
-    const ClassInfo& info,
+    const ScheduleImportStateSnapshotClassInfoReadRecord& info,
     ScheduleImportKind kind
     )
 {
     return kind == ScheduleImportKind::Intensive
         ? info.intensiveTimes
-        : info.classTimes;
+        : info.regularTimes;
 }
 
 Status writeScheduleEntries(
@@ -1157,21 +1159,24 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
         return std::unexpected(existingClasses.error());
     }
 
-    const Result<QList<ClassInfo>> existingClassInfos =
-        classInfoRepository.loadScheduleClassInfos();
+    const Result<QList<ScheduleImportStateSnapshotClassInfoReadRecord>>
+        existingClassInfos =
+            classInfoRepository.loadScheduleImportStateSnapshotClassInfos();
     if (!existingClassInfos)
     {
         return std::unexpected(existingClassInfos.error());
     }
 
-    QHash<int, ClassInfo> existingInfoById;
+    QHash<int, ScheduleImportStateSnapshotClassInfoReadRecord>
+        existingInfoById;
     existingInfoById.reserve(existingClassInfos->size());
-    for (const ClassInfo& info : *existingClassInfos)
+    for (const ScheduleImportStateSnapshotClassInfoReadRecord& info :
+         *existingClassInfos)
     {
         existingInfoById.insert(info.classId, info);
     }
 
-    QHash<int, ClassInfo> existingInfo;
+    QHash<int, ScheduleImportStateSnapshotClassInfoReadRecord> existingInfo;
     existingInfo.reserve(existingClasses->size());
     // Join batch rows by ID while keeping the class repository's order.
     for (const Classroom& classroom : *existingClasses)
@@ -1230,7 +1235,7 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             &resolution;
     }
 
-    QHash<QString, int> resolvedTeacherIds;
+    QHash<QString, qint64> resolvedTeacherIds;
     QSqlQuery query(m_database);
 
     for (
@@ -1291,9 +1296,10 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                     );
             }
 
-            const int teacherId =
-                query.lastInsertId().toInt();
-            if (teacherId <= 0)
+            bool teacherIdOk = false;
+            const qint64 teacherId = query.lastInsertId()
+                .toLongLong(&teacherIdOk);
+            if (!teacherIdOk || teacherId <= 0)
             {
                 return std::unexpected(
                     QObject::tr(
@@ -1365,7 +1371,7 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             continue;
         }
 
-        const int teacherId =
+        const qint64 teacherId =
             resolvedTeacherIds.value(
                 QString::fromStdU16String(candidate.teacherKey),
                 -1

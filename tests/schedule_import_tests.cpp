@@ -77,6 +77,7 @@ private slots:
     void applyTeacherReadFailureRollsBackBeforeWrites();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
     void typedApplyPreservesExactTargetIdsThroughStateValidation();
+    void typedApplyPreservesWideTeacherIdAndLowTeacherAssociation();
     void typedApplyAcceptsLegacyDisplayTimes_data();
     void typedApplyAcceptsLegacyDisplayTimes();
     void typedApplyRejectsMalformedTimeBeforeWrites();
@@ -2200,7 +2201,7 @@ void ScheduleImportTests::ranksTeacherAndClassMatches()
         QCOMPARE(preview->teachers.size(), 1);
         QCOMPARE(
             preview->teachers.first().matchingTeacherIds,
-            QList<int>({
+            QList<qint64>({
                 matchingTeacherId,
                 wrongRoomTeacherId
             })
@@ -2408,7 +2409,7 @@ previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase()
             );
         QCOMPARE(
             preview->teachers.first().matchingTeacherIds,
-            QList<int>{17}
+            QList<qint64>{17}
             );
         QCOMPARE(preview->teachers.first().affectedClassCount, 0);
         QCOMPARE(preview->classes.size(), 1);
@@ -2756,7 +2757,7 @@ previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase()
         QCOMPARE(preview->teachers.first().teacherKr, teacherName);
         QCOMPARE(
             preview->teachers.first().matchingTeacherIds,
-            QList<int>{teacherId}
+            QList<qint64>{teacherId}
             );
         QCOMPARE(preview->teachers.first().affectedClassCount, 2);
         QCOMPARE(preview->classes.size(), 1);
@@ -3208,7 +3209,7 @@ previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase()
         QCOMPARE(preview->kind, ScheduleImportKind::Normal);
         QCOMPARE(preview->user.classes.size(), user.classes.size());
         QCOMPARE(preview->teachers.size(), 3);
-        const QList<QList<int>> expectedTeacherMatches{
+        const QList<QList<qint64>> expectedTeacherMatches{
             {}, {choiTeacherId}, {kimTeacherId}
         };
         const QList<int> expectedAffectedClassCounts{0, 1, 2};
@@ -4527,7 +4528,7 @@ previewsAndAppliesSyntheticIntensiveWorkbookAgainstSeededDatabase()
         QCOMPARE(preview->teachers.size(), 1);
         QCOMPARE(
             preview->teachers.first().matchingTeacherIds,
-            QList<int>({teacherId})
+            QList<qint64>({teacherId})
             );
         QCOMPARE(preview->classes.size(), 1);
         QCOMPARE(
@@ -6992,6 +6993,126 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
             persistedScheduleImportSnapshot(database, true),
             beforeClassRejection
             );
+
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void ScheduleImportTests::
+typedApplyPreservesWideTeacherIdAndLowTeacherAssociation()
+{
+    constexpr qint64 wideTeacherId = 2147483648LL;
+    constexpr int lowTeacherId = 7;
+    constexpr int targetClassId = 42;
+    constexpr int lowTeacherClassId = 43;
+    const QString connectionName =
+        QStringLiteral("schedule-import-typed-wide-teacher-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery query(database);
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, teacher_en, room_number) "
+            "VALUES (?, ?, ?, ?)"
+            ));
+        query.addBindValue(lowTeacherId);
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        query.addBindValue(QStringLiteral("Low teacher"));
+        query.addBindValue(QStringLiteral("Low room"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+        query.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, teacher_en, room_number) "
+            "VALUES (?, ?, ?, ?)"
+            ));
+        query.addBindValue(wideTeacherId);
+        query.addBindValue(QString::fromUtf16(u"\uAE40"));
+        query.addBindValue(QStringLiteral("Wide teacher"));
+        query.addBindValue(QStringLiteral("Wide room"));
+        QVERIFY2(query.exec(), qPrintable(query.lastError().text()));
+
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES "
+            "(42, 'Target class'), (43, 'Low teacher class')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_info "
+            "(class_id, teacher_id, class_grade, class_level) VALUES "
+            "(42, 7, 'E5', 'Zeus'), (43, 7, 'E4', 'Athena')"));
+        execOrFail(query, QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) VALUES "
+            "(42, 'Friday', '2:00 PM', '2:55 PM'), "
+            "(43, 'Thursday', '3:00 PM', '3:55 PM')"));
+
+        const auto typedWideTeacherId =
+            ClassMngr::Next::Domain::TeacherId::fromString("2147483648");
+        const auto typedTargetClassId =
+            ClassMngr::Next::Domain::ClassId::fromString("42");
+        QVERIFY(typedWideTeacherId.has_value());
+        QVERIFY(typedTargetClassId.has_value());
+
+        auto request = typedCreateRequest({
+            typedCandidate(u"\uAE40", u"E5", u"Zeus")
+        });
+        request.teachers[0].action =
+            ClassMngr::Next::Application::
+                ScheduleImportReviewTeacherAction::UpdateRoom;
+        request.teachers[0].targetTeacherId = *typedWideTeacherId;
+        request.teachers[0].selectedRoom = u"413";
+        request.classes[0].action =
+            ClassMngr::Next::Application::
+                ScheduleImportReviewClassAction::UpdateExisting;
+        request.classes[0].targetClassId = *typedTargetClassId;
+
+        ScheduleImportRepository repository(database);
+        const auto imported = repository.applyTyped(request);
+        const QString importError = typedApplyFailureMessage(imported);
+        QVERIFY2(imported.has_value(), qPrintable(importError));
+        QCOMPARE(imported->teachersUpdated, 1);
+        QCOMPARE(imported->classesUpdated, 1);
+
+        QSqlQuery targetAssociation(database);
+        targetAssociation.prepare(QStringLiteral(
+            "SELECT teacher_id, typeof(teacher_id) FROM class_info "
+            "WHERE class_id=?"
+            ));
+        targetAssociation.addBindValue(targetClassId);
+        QVERIFY2(
+            targetAssociation.exec(),
+            qPrintable(targetAssociation.lastError().text())
+            );
+        QVERIFY(targetAssociation.next());
+        QCOMPARE(targetAssociation.value(0).toLongLong(), wideTeacherId);
+        QCOMPARE(targetAssociation.value(1).toString(), QStringLiteral("integer"));
+
+        QSqlQuery untouchedAssociation(database);
+        untouchedAssociation.prepare(QStringLiteral(
+            "SELECT teacher_id, typeof(teacher_id) FROM class_info "
+            "WHERE class_id=?"
+            ));
+        untouchedAssociation.addBindValue(lowTeacherClassId);
+        QVERIFY2(
+            untouchedAssociation.exec(),
+            qPrintable(untouchedAssociation.lastError().text())
+            );
+        QVERIFY(untouchedAssociation.next());
+        QCOMPARE(untouchedAssociation.value(0).toLongLong(), qint64(lowTeacherId));
+        QCOMPARE(untouchedAssociation.value(1).toString(), QStringLiteral("integer"));
+
+        QSqlQuery wideTeacher(database);
+        wideTeacher.prepare(QStringLiteral(
+            "SELECT room_number, typeof(id) FROM teachers WHERE id=?"
+            ));
+        wideTeacher.addBindValue(wideTeacherId);
+        QVERIFY2(wideTeacher.exec(), qPrintable(wideTeacher.lastError().text()));
+        QVERIFY(wideTeacher.next());
+        QCOMPARE(wideTeacher.value(0).toString(), QStringLiteral("413"));
+        QCOMPARE(wideTeacher.value(1).toString(), QStringLiteral("integer"));
 
         database.close();
     }
