@@ -585,6 +585,27 @@ void CampusDashboardPage::loadSelectedCampus()
 
     if (!result || !result.value().has_value())
     {
+        if (m_adminMode)
+        {
+            int previousIndex =
+                m_campusCombo->findData(m_currentCampus.id);
+            if (previousIndex < 0)
+            {
+                previousIndex = m_currentCampusComboIndex;
+            }
+
+            if (
+                previousIndex >= 0
+                && previousIndex < m_campusCombo->count()
+                )
+            {
+                const QSignalBlocker blocker(m_campusCombo);
+                m_campusCombo->setCurrentIndex(previousIndex);
+                updateCampusSelectorWidth();
+            }
+
+            setStatus(tr("The requested campus could not be loaded."));
+        }
         return;
     }
 

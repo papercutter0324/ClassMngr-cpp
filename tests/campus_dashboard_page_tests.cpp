@@ -326,6 +326,8 @@ private slots:
     void failedSavePreventsNewCampusDraft();
     void missingSelectedCampusDetailLeavesVisibleAndStoredStateUntouched();
     void failedSelectedCampusDetailLeavesVisibleAndStoredStateUntouched();
+    void adminSelectedCampusDetailFailureRestoresLoadedCampus_data();
+    void adminSelectedCampusDetailFailureRestoresLoadedCampus();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1092,6 +1094,159 @@ failedSelectedCampusDetailLeavesVisibleAndStoredStateUntouched()
     const auto storedCampus = SettingsManagerLastSelectedCampusPort().read();
     QVERIFY(storedCampus.has_value());
     QCOMPARE(storedCampus->value(), std::string("alpha"));
+}
+
+void CampusDashboardPageTests::
+adminSelectedCampusDetailFailureRestoresLoadedCampus_data()
+{
+    QTest::addColumn<bool>("missingDetail");
+
+    QTest::newRow("read-error") << false;
+    QTest::newRow("missing-detail") << true;
+}
+
+void CampusDashboardPageTests::
+adminSelectedCampusDetailFailureRestoresLoadedCampus()
+{
+    QFETCH(bool, missingDetail);
+
+    QTemporaryDir campusDirectory;
+    QVERIFY(campusDirectory.isValid());
+    saveCampus(
+        campusDirectory.path(),
+        QStringLiteral("alpha"),
+        QStringLiteral("Alpha"),
+        QStringLiteral("Alpha Hall")
+        );
+    saveCampus(
+        campusDirectory.path(),
+        QStringLiteral("beta"),
+        QStringLiteral("Beta"),
+        QStringLiteral("Beta Hall")
+        );
+
+    RecordingCampusReadPort readPort(campusDirectory.path());
+    if (missingDetail)
+    {
+        readPort.absentCampusId = QStringLiteral("beta");
+    }
+    else
+    {
+        readPort.failedCampusId = QStringLiteral("beta");
+    }
+    RecordingCampusSavePort savePort(campusDirectory.path());
+    RecordingLastSelectedCampusPort lastSelectedCampusPort;
+    CampusDashboardPage page(
+        true,
+        CampusDashboardPageDependencies{
+            .campusDirectory = campusDirectory.path(),
+            .selectedCampusReadPort = &readPort,
+            .campusSavePort = &savePort,
+            .lastSelectedCampusPort = &lastSelectedCampusPort
+        }
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.refresh();
+
+    auto* selector = page.findChild<QComboBox*>();
+    auto* campusName = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    auto* buildingName = page.findChild<QLineEdit*>(
+        QStringLiteral("campusBuildingNameEdit")
+        );
+    QVERIFY(selector);
+    QVERIFY(campusName);
+    QVERIFY(buildingName);
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(campusName->text(), QStringLiteral("Alpha"));
+    QCOMPARE(buildingName->text(), QStringLiteral("Alpha Hall"));
+    QCOMPARE(lastSelectedCampusPort.writeAttempts.size(), std::size_t(1));
+    QVERIFY(lastSelectedCampusPort.storedCampusId.has_value());
+    QCOMPARE(
+        lastSelectedCampusPort.storedCampusId->value(),
+        std::string("alpha")
+        );
+
+    selector->setCurrentIndex(selector->findData(QStringLiteral("beta")));
+    QCoreApplication::processEvents();
+
+    const QString failureMessage =
+        QStringLiteral("The requested campus could not be loaded.");
+    QLabel* const statusLabel = labelWithText(page, failureMessage);
+    QVERIFY(statusLabel);
+    QVERIFY(!statusLabel->isHidden());
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(campusName->text(), QStringLiteral("Alpha"));
+    QCOMPARE(buildingName->text(), QStringLiteral("Alpha Hall"));
+    QCOMPARE(readPort.readIds.size(), std::size_t(2));
+    QCOMPARE(readPort.readIds.at(1), std::string("beta"));
+    QCOMPARE(lastSelectedCampusPort.writeAttempts.size(), std::size_t(1));
+    QVERIFY(lastSelectedCampusPort.storedCampusId.has_value());
+    QCOMPARE(
+        lastSelectedCampusPort.storedCampusId->value(),
+        std::string("alpha")
+        );
+    for (const auto& writeAttempt : lastSelectedCampusPort.writeAttempts)
+    {
+        QVERIFY(writeAttempt.has_value());
+        QVERIFY(writeAttempt->value() != "beta");
+    }
+
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        QStringLiteral("Alpha Revised"),
+        QStringLiteral("ALPHA2")
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(campusName->text(), QStringLiteral("Alpha Revised"));
+    QCOMPARE(savePort.savedSnapshots.size(), std::size_t(1));
+    QCOMPARE(savePort.savedSnapshots.front().id.value(), std::string("alpha"));
+    QCOMPARE(
+        savePort.savedSnapshots.front().campusName,
+        std::string("Alpha Revised")
+        );
+    QCOMPARE(lastSelectedCampusPort.writeAttempts.size(), std::size_t(1));
+    QVERIFY(lastSelectedCampusPort.storedCampusId.has_value());
+    QCOMPARE(
+        lastSelectedCampusPort.storedCampusId->value(),
+        std::string("alpha")
+        );
+
+    const auto savedAlpha = CampusJsonRepository(campusDirectory.path())
+        .loadCampus(QStringLiteral("alpha"));
+    const auto untouchedBeta = CampusJsonRepository(campusDirectory.path())
+        .loadCampus(QStringLiteral("beta"));
+    QVERIFY(savedAlpha.has_value());
+    QVERIFY(untouchedBeta.has_value());
+    QCOMPARE(savedAlpha->campusName, QStringLiteral("Alpha Revised"));
+    QCOMPARE(untouchedBeta->campusName, QStringLiteral("Beta"));
+
+    readPort.absentCampusId.clear();
+    readPort.failedCampusId.clear();
+    selector->setCurrentIndex(selector->findData(QStringLiteral("beta")));
+    QCoreApplication::processEvents();
+
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("beta"));
+    QCOMPARE(campusName->text(), QStringLiteral("Beta"));
+    QCOMPARE(buildingName->text(), QStringLiteral("Beta Hall"));
+    QCOMPARE(readPort.readIds.size(), std::size_t(3));
+    QCOMPARE(readPort.readIds.at(2), std::string("beta"));
+    QCOMPARE(lastSelectedCampusPort.writeAttempts.size(), std::size_t(2));
+    QVERIFY(lastSelectedCampusPort.storedCampusId.has_value());
+    QCOMPARE(
+        lastSelectedCampusPort.storedCampusId->value(),
+        std::string("beta")
+        );
+    QVERIFY(lastSelectedCampusPort.writeAttempts.back().has_value());
+    QCOMPARE(
+        lastSelectedCampusPort.writeAttempts.back()->value(),
+        std::string("beta")
+        );
+    QVERIFY(statusLabel->text().isEmpty());
 }
 
 QTEST_MAIN(CampusDashboardPageTests)
