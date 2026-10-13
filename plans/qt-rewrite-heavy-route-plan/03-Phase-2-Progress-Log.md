@@ -32297,3 +32297,68 @@ registration if needed so the new UI regression is runnable by the focused
 gate. No full suite is requested. The project-configuration and CMake
 optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
 formal exit gate remains Open.
+
+### F814 Testing Classes wide teacher identity - accepted - 2026-10-13
+
+F814 is accepted at source/test commit
+`26253658668204b7cae47f12a4e03bc0369ff05f`. The focused Windows x64 Debug
+build covered `ClassMngr`, the four Testing Classes application-service test
+targets (teacher choices, details read, details update, and create), both
+create/update use-case test targets, and `ClassMngrTestingClassesPageTests`.
+The build succeeded after the identical outside-sandbox retry following
+`ZERO_CHECK`/FileTracker `E_ACCESSDENIED`.
+Existing warnings included duplicate-symbol/link-option diagnostics
+`LNK4006`, `LNK4075`, and `LNK4088` on the page test target, plus a Qt font
+directory warning.
+
+Nine focused tests passed across two runs: the four application-service tests,
+`ClassMngrTestingClassesPageTeacherChoiceTests`,
+`ClassMngrTestingClassesPageF145UpdateTests`,
+`ClassMngrTestingClassesPageWideTeacherIdentityTests`, and the two create and
+update use-case tests. In the first run, eight passed and the wide-identity
+page test exposed a fixture omission: selecting None clears the required
+room, so the fixture needed to enter it again before saving. After that
+fixture-only correction, the page target rebuilt and the exact
+`ClassMngrTestingClassesPageWideTeacherIdentityTests` CTest passed 1/1. The
+eight other focused tests had already passed; no production change followed
+those results. No full suite ran.
+
+### Batch 228 completion - 2026-10-13
+
+F814 completed Batch 228 by preserving wide Testing Classes teacher identity
+through choices, page selection, details update, creation, and persistence.
+Batch 229 selects F815 for checked conversion of persisted Class Transfer
+speaking-evaluation `row_index` values. The project-configuration and CMake
+optimization remains complete. Schedule Import width remains distinct from
+accepted F767 snapshot canonical-ID validation; Class Import, shared
+`ClassPageDetailsReadRecord`/Co-Teacher identity, and persisted CalendarEvent
+event-ID width remain deferred. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 229 discovery and selection - 2026-10-13
+
+The next bounded issue is unchecked conversion of persisted speaking-
+evaluation `row_index` in `ClassTransferRepository`. The current `toInt()`
+conversion is followed by a 0..24 range check; malformed or overflowing data
+can therefore become row 0 before validation. F815 will use checked conversion
+and skip malformed or out-of-range rows, preserving valid 0..24 behavior and
+the existing skip policy for out-of-range coordinates.
+
+| Candidate | Decision | Reason |
+|---|---|---|
+| Class Transfer speaking-evaluation `row_index` validation (F815) | Selected | A checked conversion prevents malformed persisted coordinates from aliasing row 0; the repair is isolated to this read path and its regression. |
+| Shared Co-Teacher read/write identity | Deferred | The shared identity flow spans coordinated read and write contracts. |
+| Schedule Import teacher-ID width | Deferred | This end-to-end import flow remains separate from accepted F767 snapshot canonical-ID validation. |
+| Persisted CalendarEvent event-ID width | Deferred | Event identity spans the shared model and repository CRUD surface. |
+| Initial Setup and Teacher Create/Delete teacher IDs | Deferred | These paths currently use int-based UI contracts. |
+
+**F815 is selected:** check conversion of each persisted speaking-evaluation
+`row_index` before applying the existing 0..24 bound. Skip malformed,
+overflowing, and out-of-range rows without allowing them to write row 0; leave
+valid indices and their exported behavior unchanged. Add a repository
+regression in `tests/class_transfer_tests.cpp` proving malformed values do not
+alias a seeded valid row 0, that out-of-range values remain skipped, and that
+valid indices 0..24 are preserved. Register or reuse a focused CTest filter
+for the new case, build `ClassMngr` and `ClassMngrClassTransferTests`, then run
+only that filtered CTest. No full suite is requested; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
