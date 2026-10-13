@@ -12,6 +12,7 @@
 #include <QSet>
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 RosterRepository::RosterRepository(
@@ -299,15 +300,40 @@ Result<Roster> RosterRepository::loadRoster(
 
     while (query.next())
     {
-        const int row =
-            query.value("row_index").toInt();
+        bool rowIndexValid = false;
+        const qlonglong rowIndex =
+            query.value("row_index").toLongLong(&rowIndexValid);
+        if (!rowIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: invalid row index."
+                    ).arg(identity)
+                );
+        }
+        if (rowIndex < 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: row index %2 is negative."
+                    ).arg(identity).arg(rowIndex)
+                );
+        }
+        if (rowIndex > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: row index %2 exceeds the supported range."
+                    ).arg(identity).arg(rowIndex)
+                );
+        }
+        const int row = static_cast<int>(rowIndex);
 
         const int column =
             query.value("col_index").toInt();
 
         if (
-            row < 0
-            || column < 0
+            column < 0
             || column >= roster.columns.size()
             )
         {

@@ -15,6 +15,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -186,6 +187,7 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
 private slots:
     void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
     void missingRosterIsSuccessfulEmptySnapshot();
     void repositoryErrorIsStructured();
@@ -265,6 +267,79 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
     QVERIFY(result.value().rows[23][4].empty());
     QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
     QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsRowIndexBeyondIntRangeWithoutDenseExpansion()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Out of Range Roster Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {}
+        ));
+
+    const qlonglong outOfRangeRowIndex =
+        static_cast<qlonglong>(std::numeric_limits<int>::max()) + 1;
+    QSqlQuery insertCell(database);
+    QVERIFY2(insertCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )), qPrintable(insertCell.lastError().text()));
+    insertCell.bindValue(0, *createdClass);
+    insertCell.bindValue(1, QVariant::fromValue<qlonglong>(outOfRangeRowIndex));
+    insertCell.bindValue(2, 0);
+    insertCell.bindValue(3, QStringLiteral("out of range"));
+    QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+
+    QSqlQuery storedCell(database);
+    QVERIFY2(storedCell.prepare(QStringLiteral(
+        "SELECT typeof(row_index) AS storage_type, row_index "
+        "FROM roster_data WHERE class_id=?"
+        )), qPrintable(storedCell.lastError().text()));
+    storedCell.bindValue(0, *createdClass);
+    QVERIFY2(storedCell.exec(), qPrintable(storedCell.lastError().text()));
+    QVERIFY(storedCell.next());
+    QCOMPARE(storedCell.value("storage_type").toString(), QStringLiteral("integer"));
+    bool storedRowIndexValid = false;
+    const qlonglong storedRowIndex =
+        storedCell.value("row_index").toLongLong(&storedRowIndexValid);
+    QVERIFY(storedRowIndexValid);
+    QCOMPARE(storedRowIndex, outOfRangeRowIndex);
+    QVERIFY(!storedCell.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("row index"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("range"), Qt::CaseInsensitive),
+        qPrintable(diagnostic)
+        );
+    QVERIFY2(
+        diagnostic.contains(QString::number(outOfRangeRowIndex)),
+        qPrintable(diagnostic)
+        );
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::
