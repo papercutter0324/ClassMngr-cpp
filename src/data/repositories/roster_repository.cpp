@@ -714,19 +714,48 @@ RosterRepository::loadFullRostersImpl(
     {
         const int classId = cellsQuery.value("requested_class_id").toInt();
         const int requestOrder = cellsQuery.value("request_order").toInt();
-        const int rowIndex = cellsQuery.value("row_index").toInt();
         const int columnIndex = cellsQuery.value("col_index").toInt();
         if (requestOrder < 0
             || requestOrder >= classIds.size()
             || classIds.at(requestOrder) != classId
             || !requestIndexByClassId.contains(classId)
-            || rowIndex < 0
             || columnIndex < 0
             || columnIndex >= records[requestOrder].roster.columns.size())
         {
             invalidCellIdentity = true;
             break;
         }
+
+        bool rowIndexValid = false;
+        const qlonglong sourceRowIndex =
+            cellsQuery.value("row_index").toLongLong(&rowIndexValid);
+        const QString rosterIdentity =
+            QObject::tr("class id %1").arg(classId);
+        if (!rowIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: invalid row index."
+                    ).arg(rosterIdentity)
+                );
+        }
+        if (sourceRowIndex < 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: row index %2 is negative."
+                    ).arg(rosterIdentity).arg(sourceRowIndex)
+                );
+        }
+        if (sourceRowIndex > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster data failed for %1: row index %2 exceeds the supported range."
+                    ).arg(rosterIdentity).arg(sourceRowIndex)
+                );
+        }
+        const int rowIndex = static_cast<int>(sourceRowIndex);
 
         Roster& roster = records[requestOrder].roster;
         while (roster.rows.size() <= rowIndex)

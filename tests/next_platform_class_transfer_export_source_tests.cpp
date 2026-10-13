@@ -21,6 +21,8 @@ class ClassTransferExportSourceTests : public QObject
     Q_OBJECT
 private slots:
     void successfulSourceHasEveryRequiredStageAndSanitizedProjection();
+    void malformedRosterRowIndexReturnsEstablishedReadError();
+    void outOfRangeRosterRowIndexReturnsEstablishedReadError();
     void wideTeacherIdentityKeepsFullProfileAndSharedPortableReference();
     void wideEvaluationIdsKeepTheirOwnExportRows();
     void stagedErrorRollsBackAndKeepsDownstreamNotAttempted();
@@ -49,6 +51,96 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
     auto database = services.databaseSession()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
+}
+void ClassTransferExportSourceTests::malformedRosterRowIndexReturnsEstablishedReadError()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Malformed roster row index')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns(class_id,name,position,width) VALUES(?, 'Student', 0, 120)")));
+    insertColumn.addBindValue(classId);
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery insertValidRow(database);
+    QVERIFY(insertValidRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, 0, 0, 'Valid row zero')")));
+    insertValidRow.addBindValue(classId);
+    QVERIFY2(insertValidRow.exec(), qPrintable(insertValidRow.lastError().text()));
+
+    QSqlQuery insertMalformedRow(database);
+    QVERIFY(insertMalformedRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, ?, 0, 'Malformed value')")));
+    insertMalformedRow.addBindValue(classId);
+    insertMalformedRow.addBindValue(QStringLiteral("not-a-row-index"));
+    QVERIFY2(insertMalformedRow.exec(), qPrintable(insertMalformedRow.lastError().text()));
+
+    QSqlQuery storedRowIndex(database);
+    QVERIFY(storedRowIndex.exec(QStringLiteral(
+        "SELECT typeof(row_index), row_index FROM roster_data "
+        "WHERE class_id=%1 AND value='Malformed value'").arg(classId)));
+    QVERIFY(storedRowIndex.next());
+    QCOMPARE(storedRowIndex.value(0).toString(), QStringLiteral("text"));
+    QCOMPARE(storedRowIndex.value(1).toString(), QStringLiteral("not-a-row-index"));
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    auto source = port.readSource({{id(classId)}}); QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& roster = source.value().classes.front().roster;
+    QCOMPARE(roster.state(), ClassExportStageState::Error);
+    QCOMPARE(roster.error().message,
+        QStringLiteral("Loading roster data failed for class id %1: invalid row index.")
+            .arg(classId).toStdString());
+}
+void ClassTransferExportSourceTests::outOfRangeRosterRowIndexReturnsEstablishedReadError()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral("INSERT INTO classes(name) VALUES('Out of range roster row index')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns(class_id,name,position,width) VALUES(?, 'Student', 0, 120)")));
+    insertColumn.addBindValue(classId);
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery insertValidRow(database);
+    QVERIFY(insertValidRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, 0, 0, 'Valid row zero')")));
+    insertValidRow.addBindValue(classId);
+    QVERIFY2(insertValidRow.exec(), qPrintable(insertValidRow.lastError().text()));
+
+    QSqlQuery insertOutOfRangeRow(database);
+    QVERIFY(insertOutOfRangeRow.prepare(QStringLiteral(
+        "INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(?, ?, 0, 'Out of range value')")));
+    insertOutOfRangeRow.addBindValue(classId);
+    insertOutOfRangeRow.addBindValue(QVariant::fromValue<qlonglong>(2147483648LL));
+    QVERIFY2(insertOutOfRangeRow.exec(), qPrintable(insertOutOfRangeRow.lastError().text()));
+
+    QSqlQuery storedRowIndex(database);
+    QVERIFY(storedRowIndex.exec(QStringLiteral(
+        "SELECT typeof(row_index), row_index FROM roster_data "
+        "WHERE class_id=%1 AND value='Out of range value'").arg(classId)));
+    QVERIFY(storedRowIndex.next());
+    QCOMPARE(storedRowIndex.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRowIndex.value(1).toLongLong(), qlonglong(2147483648LL));
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    auto source = port.readSource({{id(classId)}}); QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& roster = source.value().classes.front().roster;
+    QCOMPARE(roster.state(), ClassExportStageState::Error);
+    QCOMPARE(roster.error().message,
+        QStringLiteral("Loading roster data failed for class id %1: row index 2147483648 exceeds the supported range.")
+            .arg(classId).toStdString());
 }
 void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndSharedPortableReference()
 {
