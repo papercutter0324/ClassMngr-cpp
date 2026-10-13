@@ -45,6 +45,12 @@ struct ClassPageDetailsRegularTime final
     QString startTime;
 };
 
+struct ClassNotesPageRegularTime final
+{
+    QString day;
+    QString startTime;
+};
+
 struct ClassPageDetailsReadRecord final
 {
     int classId = -1;
@@ -52,6 +58,17 @@ struct ClassPageDetailsReadRecord final
     QString classGrade;
     QString classLevel;
     QList<ClassPageDetailsRegularTime> regularTimes;
+    QString notes;
+    QString timeFillerActivities;
+};
+
+struct ClassNotesPageReadRecord final
+{
+    int classId = -1;
+    qint64 teacherId = -1;
+    QString classGrade;
+    QString classLevel;
+    QList<ClassNotesPageRegularTime> regularTimes;
     QString notes;
     QString timeFillerActivities;
 };
@@ -262,6 +279,13 @@ struct ClassPageDetailsReadMetrics final
     int regularScheduleStatementCount = 0;
 };
 
+struct ClassNotesPageReadMetrics final
+{
+    int callCount = 0;
+    int metadataStatementCount = 0;
+    int regularScheduleStatementCount = 0;
+};
+
 struct ClassDetailsPageReadMetrics final
 {
     int callCount = 0;
@@ -337,6 +361,9 @@ public:
     [[nodiscard]] Result<ClassPageDetailsReadRecord> loadClassPageDetails(
         int classId
         );
+    [[nodiscard]] Result<ClassNotesPageReadRecord> loadClassNotesPageRecord(
+        int classId
+        );
     [[nodiscard]] Result<ClassDetailsPageReadRecord>
         loadClassDetailsPageRecord(int classId);
     [[nodiscard]] Result<ScheduleEditorClassInfoReadRecord>
@@ -378,6 +405,8 @@ public:
         scheduleClassInfoReadMetrics() const noexcept;
     [[nodiscard]] const ClassPageDetailsReadMetrics&
         classPageDetailsReadMetrics() const noexcept;
+    [[nodiscard]] const ClassNotesPageReadMetrics&
+        classNotesPageReadMetrics() const noexcept;
     [[nodiscard]] const ClassDetailsPageReadMetrics&
         classDetailsPageReadMetrics() const noexcept;
     [[nodiscard]] const ScheduleEditorClassInfoReadMetrics&
@@ -454,6 +483,7 @@ private:
     ScheduleImportStateSnapshotClassInfoReadMetrics
         m_scheduleImportStateSnapshotClassInfoReadMetrics;
     ClassPageDetailsReadMetrics m_classPageDetailsReadMetrics;
+    ClassNotesPageReadMetrics m_classNotesPageReadMetrics;
     ClassDetailsPageReadMetrics m_classDetailsPageReadMetrics;
     ScheduleEditorClassInfoReadMetrics m_scheduleEditorClassInfoReadMetrics;
     SelectedClassGradeReadMetrics m_selectedClassGradeReadMetrics;

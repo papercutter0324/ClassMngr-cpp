@@ -1054,6 +1054,98 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
     return record;
 }
 
+Result<ClassNotesPageReadRecord>
+ClassInfoRepository::loadClassNotesPageRecord(const int classId)
+{
+    ++m_classNotesPageReadMetrics.callCount;
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            QObject::tr("Loading class information failed: invalid class id %1.")
+                .arg(classId)
+            );
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    ClassNotesPageReadRecord record;
+    record.classId = classId;
+
+    QSqlQuery metadataQuery(m_database);
+    metadataQuery.prepare(R"(
+        SELECT teacher_id, class_grade, class_level, notes,
+               time_filler_activities
+        FROM class_info
+        WHERE class_id = ?
+    )");
+    metadataQuery.addBindValue(classId);
+    ++m_classNotesPageReadMetrics.metadataStatementCount;
+    const auto loadedMetadata = SqlQueryUtils::executePrepared(
+        metadataQuery,
+        QObject::tr("Loading class information"),
+        identity
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    if (metadataQuery.next())
+    {
+        const QVariant teacherId = metadataQuery.value("teacher_id");
+        if (teacherId.isNull())
+        {
+            record.teacherId = -1;
+        }
+        else
+        {
+            bool teacherIdOk = false;
+            const qint64 parsedTeacherId = teacherId.toLongLong(&teacherIdOk);
+            if (!teacherIdOk)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading class information failed: teacher id for class id %1 is not representable as a 64-bit integer."
+                    ).arg(classId));
+            }
+            record.teacherId = parsedTeacherId;
+        }
+        record.classGrade = metadataQuery.value("class_grade").toString();
+        record.classLevel = metadataQuery.value("class_level").toString();
+        record.notes = metadataQuery.value("notes").toString();
+        record.timeFillerActivities = metadataQuery.value(
+            "time_filler_activities"
+            ).toString();
+    }
+
+    QSqlQuery regularScheduleQuery(m_database);
+    regularScheduleQuery.prepare(R"(
+        SELECT day, start_time
+        FROM class_times
+        WHERE class_id = ?
+        ORDER BY id
+    )");
+    regularScheduleQuery.addBindValue(classId);
+    ++m_classNotesPageReadMetrics.regularScheduleStatementCount;
+    const auto loadedRegularSchedule = SqlQueryUtils::executePrepared(
+        regularScheduleQuery,
+        QObject::tr("Loading regular class times"),
+        identity
+        );
+    if (!loadedRegularSchedule)
+    {
+        return std::unexpected(loadedRegularSchedule.error().userMessage());
+    }
+
+    while (regularScheduleQuery.next())
+    {
+        record.regularTimes.append({
+            regularScheduleQuery.value("day").toString(),
+            regularScheduleQuery.value("start_time").toString()
+        });
+    }
+
+    return record;
+}
+
 Result<ClassDetailsPageReadRecord>
 ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
 {
@@ -3079,6 +3171,12 @@ const ClassPageDetailsReadMetrics&
 ClassInfoRepository::classPageDetailsReadMetrics() const noexcept
 {
     return m_classPageDetailsReadMetrics;
+}
+
+const ClassNotesPageReadMetrics&
+ClassInfoRepository::classNotesPageReadMetrics() const noexcept
+{
+    return m_classNotesPageReadMetrics;
 }
 
 const ClassDetailsPageReadMetrics&

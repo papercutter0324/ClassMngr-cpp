@@ -8,6 +8,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -84,6 +85,7 @@ class NextPlatformApplicationServicesClassNotesPageReadPortTests final
 
 private slots:
     void readsProjectedFieldsAndPreferredTeacherNameFromActiveSession();
+    void wideTeacherIdResolvesPreferredDisplayName();
     void unavailableSessionDoesNotUseDataServiceFallback();
     void skipsNonpositiveTeacherId();
     void missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults();
@@ -136,10 +138,78 @@ readsProjectedFieldsAndPreferredTeacherNameFromActiveSession()
     QVERIFY(result.value().teacherDisplayName.value() == u"Preferred Display");
 
     const auto& metrics = services.databaseSession()->classInfoRepository()
-                              ->classPageDetailsReadMetrics();
+                              ->classNotesPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
     QCOMPARE(metrics.regularScheduleStatementCount, 1);
+}
+
+void NextPlatformApplicationServicesClassNotesPageReadPortTests::
+wideTeacherIdResolvesPreferredDisplayName()
+{
+    constexpr qint64 wideTeacherId = 2147483648LL;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(services, QStringLiteral("Wide notes teacher"));
+    QVERIFY(id > 0);
+
+    ClassInfo info = makeClassInfo(id);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(info));
+
+    QSqlQuery insertTeacher(services.databaseSession()->database());
+    QVERIFY(insertTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_romanization, preferred_name
+        ) VALUES (?, ?, ?, ?, ?)
+    )")));
+    insertTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    insertTeacher.addBindValue(QStringLiteral("Korean fallback"));
+    insertTeacher.addBindValue(QStringLiteral("English fallback"));
+    insertTeacher.addBindValue(QStringLiteral("Romanization fallback"));
+    insertTeacher.addBindValue(QStringLiteral("  Wide Preferred Name  "));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery assignTeacher(services.databaseSession()->database());
+    QVERIFY(assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        )));
+    assignTeacher.addBindValue(QVariant::fromValue<qlonglong>(wideTeacherId));
+    assignTeacher.addBindValue(id);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredIds(services.databaseSession()->database());
+    QVERIFY(verifyStoredIds.prepare(QStringLiteral(R"(
+        SELECT typeof(teachers.id), teachers.id,
+               typeof(class_info.teacher_id), class_info.teacher_id
+        FROM teachers
+        INNER JOIN class_info ON class_info.teacher_id = teachers.id
+        WHERE class_info.class_id = ?
+    )")));
+    verifyStoredIds.addBindValue(id);
+    QVERIFY2(verifyStoredIds.exec(),
+             qPrintable(verifyStoredIds.lastError().text()));
+    QVERIFY(verifyStoredIds.next());
+    QCOMPARE(verifyStoredIds.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredIds.value(1).toLongLong(), wideTeacherId);
+    QCOMPARE(verifyStoredIds.value(2).toString(), QStringLiteral("integer"));
+    QCOMPARE(verifyStoredIds.value(3).toLongLong(), wideTeacherId);
+    QVERIFY(!verifyStoredIds.next());
+
+    Platform::ApplicationServicesClassNotesPageReadPort port(&services);
+    const auto result = port.readClassNotesPage(classId(id));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classFields);
+    QVERIFY(result.value().teacherDisplayName);
+    QVERIFY(result.value().classFields.value().notes
+        == u"  exact notes \U0001F642  ");
+    QVERIFY(result.value().classFields.value().timeFillerActivities
+        == u"  exact activities  ");
+    QVERIFY(result.value().teacherDisplayName.value() == u"Wide Preferred Name");
 }
 
 void NextPlatformApplicationServicesClassNotesPageReadPortTests::
@@ -361,7 +431,7 @@ metadataQueryFailureKeepsPageErrorMapping()
              std::string("The class teacher display name is unavailable."));
 
     const auto& metrics = services.databaseSession()->classInfoRepository()
-                              ->classPageDetailsReadMetrics();
+                              ->classNotesPageReadMetrics();
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
     QCOMPARE(metrics.regularScheduleStatementCount, 0);

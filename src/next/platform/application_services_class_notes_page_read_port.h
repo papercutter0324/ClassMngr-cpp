@@ -66,12 +66,12 @@ public:
                 );
         }
 
-        Result<ClassPageDetailsReadRecord> loadedInfo =
-            [&]() -> Result<ClassPageDetailsReadRecord>
+        Result<ClassNotesPageReadRecord> loadedInfo =
+            [&]() -> Result<ClassNotesPageReadRecord>
         {
             try
             {
-                return classInfoRepository->loadClassPageDetails(
+                return classInfoRepository->loadClassNotesPageRecord(
                     *legacyClassId
                     );
             }
@@ -124,7 +124,7 @@ public:
         fields.regularSchedule.reserve(
             static_cast<std::size_t>(loadedInfo->regularTimes.size())
             );
-        for (const ClassPageDetailsRegularTime& time : loadedInfo->regularTimes)
+        for (const ClassNotesPageRegularTime& time : loadedInfo->regularTimes)
         {
             fields.regularSchedule.push_back({
                 .day = time.day.toStdU16String(),
@@ -256,7 +256,7 @@ private:
     [[nodiscard]] static Domain::Result<std::u16string>
     loadTeacherDisplayName(
         TeacherRepository* repository,
-        const int teacherId
+        const qint64 teacherId
         )
     {
         if (!repository)
