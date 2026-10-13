@@ -30659,3 +30659,53 @@ ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^Class
 Run no full suite. No CMake inventory change is expected. This is a
 pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
 Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.
+
+### F791 Calendar repeat-series delete request Unicode-whitespace parity - accepted - 2026-10-13
+
+F791 was accepted at commit
+`db4ce9a68d2e7b75e60863e99d952dce010c0b44`. The bounded Visual Studio 18 x64
+Debug build in `build/windows-x64-debug` built `ClassMngr` and
+`ClassMngrNextApplicationCalendarEventTests`. The sandbox build encountered the
+known ZERO_CHECK FileTracker `E_ACCESSDENIED`; the identical bounded retry
+outside the sandbox passed. The exact CTest registered once and passed (1/1).
+`git diff --check` passed; no full suite ran.
+
+### Batch 206 discovery - 2026-10-13
+
+Class Analytics currently retains the full result of
+`readEvaluationBatch(...)` while copying each row into `view.rawRows`, leaving a
+duplicate evaluation-row payload alive for the rest of the query. F792 is
+selected to move each vector into its corresponding row, preserving the
+row-aligned representation and all query outputs. The upcoming-birthday
+snapshot-to-legacy-model round trip was not selected because removing it would
+also change the scope of name-priority and trimming semantics. Keep the
+arbitrary Class Analytics row-limit proposal deferred; no allocation/error
+policy has been accepted. F707/F709 remain deferred.
+
+### F792 Class Analytics evaluation ownership - selected and acceptance matrix - 2026-10-13
+
+**F792 is selected:** in
+`src/next/application/class_analytics_dashboard_read_query.h`, make the local
+`loadedEvaluations` mutable and move each per-evaluation vector into
+`view.rawRows` in the existing assignment loop. This removes the duplicate
+retained evaluation-row payload while preserving batch order, row order,
+values, filtering, current and historical results, class shape, YTD results,
+error propagation, port-call count, and read ordering. Keep the current
+row-aligned vectors and downstream representation. No test-file edit is needed
+for this ownership-only change; the existing focused query regression target
+verifies outputs.
+
+Production target: `ClassMngr`. The focused test target and exact CTest name
+are `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`; it must
+register once. In the existing Visual Studio 18 x64 Debug tree
+`build/windows-x64-debug`, use only these bounded commands:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests$"
+```
+
+Run no full suite and make no CMake inventory change. This is a
+pre-implementation matrix, not acceptance evidence. F707/F709 remain deferred,
+Phase 2 Gates 1/2 remain Partial, and the formal exit gate remains Open.

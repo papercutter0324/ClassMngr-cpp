@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F790 is accepted at `d089f34c71c9373c25f07142659ee1302c564f74`; F791 is selected in Batch 205 for Calendar repeat-series delete request Unicode-whitespace parity, with F707/F709 deferred, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F791 is accepted at `db4ce9a68d2e7b75e60863e99d952dce010c0b44`; F792 is selected in Batch 206 to remove the duplicate retained Class Analytics evaluation batch through per-row moves, preserving outputs and query behavior; F707/F709 remain deferred, Gates 1/2 Partial, and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -109,9 +109,9 @@ Treat this plan as an operational summary, not a history:
   error limit policy is accepted. Revisit only with an explicit allocation
   contract; do not introduce arbitrary 4,096- or 25-row limits.
 
-#### Active batch: Batch 205
+#### Active batch: Batch 206
 
-- F791 - Calendar repeat-series delete request whitespace parity - Reuse the shared Qt-compatible blank predicate at the Application request boundary and reject Unicode-whitespace-only IDs before the port call.
+- F792 - Class Analytics evaluation ownership - Move each loaded evaluation vector into its aligned output row to remove a duplicate retained batch payload without changing results.
 
 ## Objective
 
