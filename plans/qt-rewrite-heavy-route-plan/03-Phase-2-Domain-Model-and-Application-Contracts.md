@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-13
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F808 was accepted in Batch 222 at `c0cc9c44ea0fad0bbb061d52bd2e96be9ba1ee3b`; Batch 223 selects F809 for the read-only Sub Prep print-source full teacher-profile read; Schedule Import teacher-ID width/narrowing, the shared Testing Class details/read-write model, the `ClassPageDetailsReadRecord`/Co-Teacher identity flow, and the persisted CalendarEvent event-ID-width issue remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 snapshot canonical-ID validation remains accepted).
+- Current note: F809 was accepted in Batch 223 at `74c35f25ca4e11d282df1ba180a4f3602820cdc6`; Batch 224 selects F810 for the read-only Testing Class details teacher ID; Schedule Import teacher-ID width/narrowing, shared Testing Class editor/update identity, the `ClassPageDetailsReadRecord`/Co-Teacher identity flow, and the persisted CalendarEvent event-ID-width issue remain deferred, Gates 1/2 Partial, and the formal exit gate Open (F767 snapshot canonical-ID validation remains accepted).
 
 ### Slice discovery batches
 
@@ -116,14 +116,15 @@ Treat this plan as an operational summary, not a history:
   spans the shared model and repository CRUD surface.
 - ClassPageDetailsReadRecord wide teacher ID - deferred until its shared
   Co-Teacher read/write identity flow can be covered.
-- Schedule Import teacher-ID width/narrowing across review/apply/write -
-  deferred outside F809; F767's snapshot canonical-ID validation remains
+- Schedule Import teacher-ID width/narrowing across snapshot/review/apply/write -
+  deferred outside F810; F767's snapshot canonical-ID validation remains
   accepted as distinct work.
-- Shared Testing Class details/read-write model - deferred outside F809.
+- Shared Testing Class editor/update identity and read/write contracts -
+  deferred outside F810; F810 isolates only the details read.
 
-#### Active batch: Batch 223
+#### Active batch: Batch 224
 
-- F809 - Sub Prep print-source wide teacher IDs - Preserve qint64 teacher identity through dedicated print-source class/schedule and full-profile reads, leaving shared models and write paths unchanged.
+- F810 - Testing Class details wide teacher ID - Preserve qint64 in a details-specific repository read and typed adapter result, leaving shared editor and write contracts unchanged.
 
 ## Objective
 

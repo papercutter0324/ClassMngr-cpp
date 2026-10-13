@@ -31931,11 +31931,11 @@ Preserve checked database conversions, class/day/mode scope, output order, the
 existing filtering that omits classes with `teacher_id <= 0` or no matching
 teacher, and existing batching/no-N+1 metrics.
 
-### F809 Sub Prep print-source wide teacher IDs - selected and acceptance matrix - 2026-10-13
+### F809 Sub Prep print-source wide teacher IDs - selection matrix - 2026-10-13
 
-**F809 is selected:** add print-source-specific class/schedule and full
-teacher-profile batch read records/APIs, preserving qint64 teacher IDs from
-database conversion through deduplication/index maps in
+**At selection, F809 was scoped to:** add print-source-specific class/schedule
+and full teacher-profile batch read records/APIs, preserving qint64 teacher IDs
+from database conversion through deduplication/index maps in
 `src/next/platform/application_services_sub_prep_print_source_port.h` and typed
 `Domain::TeacherId` conversion. Keep legacy `ClassInfo` and `Teacher` models,
 CRUD/write paths, class IDs, and unrelated reads unchanged. Preserve checked
@@ -31946,34 +31946,98 @@ output.
 
 Preserve print schedule class/day/mode scope and returned ordering. Preserve
 per-entry handling when a teacher profile is absent after the class-scope read.
-Preserve the fields exposed by `SubPrepPrintTeacher`:
-English/Korean names, preferred name/romanization, room, Wi-Fi, internet, Zoom,
-projection, and notes. Keep the existing omitted-class behavior for
-unassigned/nonpositive and stale/missing-teacher assignments, and retain
-no-profile-read metrics when no eligible classes are returned.
-The current batch API falls back to individual profile reads when batch prepare
-or execute fails; retain that fallback with qint64-safe teacher identity and
-preserve its fallback metrics as well as the successful batch metrics.
+Preserve the fields exposed by `SubPrepPrintTeacher`: English/Korean names,
+preferred name/romanization, room, Wi-Fi, internet, Zoom, projection, and notes.
+Retain the existing omitted-class behavior for unassigned/nonpositive and
+stale/missing-teacher assignments, and no-profile-read metrics when no eligible
+classes are returned. The current batch API falls back to individual profile
+reads when batch prepare or execute fails; retain that fallback with qint64-safe
+teacher identity and preserve fallback and successful-batch metrics.
 
 Extend
 `tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp`
 with an FK-valid teacher/class assignment using ID `2147483648`. Assert exact
 SQLite INTEGER storage, typed output teacher identity, and all fields exposed by
-`SubPrepPrintTeacher` while retaining current no-N+1/batching metrics, omitted
-class behavior for unassigned/nonpositive and stale/missing-teacher assignments,
-per-entry handling when a profile disappears after class-scope loading, and the
-prepare/execute failure fallback with its metrics. The existing CMake
-registration is
-`NextPlatformApplicationServicesSubPrepPrintSourcePort`; build `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, inspect
-the exact registration, and run only CTest
-`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. No
-CMake or test-inventory change is expected; no full suite is requested.
+`SubPrepPrintTeacher`; retain current no-N+1/batching metrics, omitted-class
+behavior, per-entry handling if a profile disappears after scope loading, and
+assert that the normal one-statement batch has
+`fallbackSingleReadCount==0`. The
+implementation retains the qint64-safe individual-read fallback and counter
+after batch prepare/execute failure; this slice does not add failure injection.
+Use the existing
+`NextPlatformApplicationServicesSubPrepPrintSourcePort` registration, build
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, and run
+only that exact CTest. No CMake or test-inventory change is expected.
 
-F767 snapshot canonical-ID validation remains accepted and is separate from
-deferred Schedule Import teacher-ID width/narrowing across review/apply/write.
-Defer the shared Testing Class details/read-write model, the shared
-`ClassPageDetailsReadRecord`/Co-Teacher flow, and the persisted CalendarEvent
-event-ID-width issue. F707/F709 and the dense Speaking Evaluation row-limit
-policy remain deferred; Phase 2 Gates 1/2 remain Partial and the formal exit
-gate remains Open. At selection, no F809 tests have run.
+At selection, no F809 tests had run; its acceptance is recorded below. No full
+suite was requested.
+
+### F809 Sub Prep print-source wide teacher IDs - accepted - 2026-10-13
+
+F809 is accepted at source/test commit
+`74c35f25ca4e11d282df1ba180a4f3602820cdc6`. The focused Debug build of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` succeeded
+after retrying the identical command outside the sandbox because of
+`ZERO_CHECK`/FileTracker `E_ACCESSDENIED`. The exact CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed
+1/1. No full suite ran.
+
+### Batch 223 completion - 2026-10-13
+
+F809 completed the selected read-only Sub Prep print-source teacher-identity
+work in Batch 223; its focused verification is recorded above. Schedule Import
+teacher-ID width/narrowing across snapshot, review, apply, and write remains
+deferred separately from accepted F767 snapshot canonical-ID validation. Shared
+Testing Class editor/update identity and read/write contracts remain deferred
+while F810 isolates the details read; the shared
+`ClassPageDetailsReadRecord`/Co-Teacher flow and persisted CalendarEvent
+event-ID-width issue remain deferred. The earlier CMake optimization remains
+complete. F707/F709 and the dense Speaking Evaluation row-limit policy remain
+deferred; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
+
+### Batch 224 discovery - 2026-10-13
+
+F810 isolates the read-only Testing Class details path. The generic
+`TestingClassRepository::readTestingClass` / `loadTestingClass` path narrows
+persisted `teacher_id` with `toInt()` into shared `TestingClass.teacherId`, and
+`ApplicationServicesTestingClassDetailsReadPort` then constructs the typed
+`Domain::TeacherId` from that int. Add a details-specific repository read
+record/API carrying qint64 teacher identity and feed only this adapter. Keep
+the shared model and editor/update read/write behavior unchanged. Preserve
+null/nonpositive IDs as an unassigned empty optional and reject a failed
+database conversion.
+
+### F810 Testing Class details wide teacher ID - selected and acceptance matrix - 2026-10-13
+
+**F810 is selected:** add a Testing-Class-details-specific repository read
+record/API whose teacher ID is qint64, then pass it through
+`ApplicationServicesTestingClassDetailsReadPort` to typed
+`Domain::TeacherId`. Reject a failed database conversion; null and any
+nonpositive teacher ID remain unassigned and produce the existing empty
+optional. Leave shared `TestingClass`, editor/update read-write contracts,
+repository write APIs, UI integer controls, class IDs, and unrelated reads
+unchanged.
+
+Extend the existing DB-backed port test
+`tests/next_platform_application_services_testing_class_details_read_port_tests.cpp`
+with an FK-valid teacher/class assignment using ID `2147483648`. Assert exact
+SQLite INTEGER storage and typed output identity, preserve all currently mapped
+fields, and retain existing absent, SQL NULL, zero-ID, missing-session, and
+error cases. The existing CMake registration is
+`NextPlatformApplicationServicesTestingClassDetailsReadPort`; build `ClassMngr`
+and `ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+inspect the registration, and run only CTest
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`.
+No CMake or test-inventory change is expected; no full suite is requested.
+
+F767 snapshot canonical-ID validation remains accepted and distinct from
+deferred Schedule Import teacher-ID width/narrowing across snapshot, review,
+apply, and write. Shared Testing Class editor/update identity remains deferred;
+F810 covers only the details read. Defer the shared
+`ClassPageDetailsReadRecord`/Co-Teacher read/write identity flow and persisted
+CalendarEvent event-ID-width work. F707/F709 and the dense Speaking Evaluation
+row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open. At selection, no F810 tests have run.
