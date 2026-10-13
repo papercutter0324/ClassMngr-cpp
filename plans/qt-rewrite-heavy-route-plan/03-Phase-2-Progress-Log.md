@@ -33322,3 +33322,49 @@ and exact CTest
 No CMake/API change or full suite. The project-configuration and CMake
 optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
 exit gate remains Open.
+
+### F836 fractional REAL roster index in Class Analytics sizing - accepted - 2026-10-14
+
+F836 is accepted at source/test commit
+`c40b4f19bc8b1c5c18980fb0bb6506d26e203cfd`. A fresh Ninja Debug build of
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`
+succeeded; exact focused CTest passed 1/1 and scoped `git diff --check` passed.
+Pre-fix reproduction confirmed SQLite REAL `col_index=0.25` at row 7 returned a
+successful `rowCount == 8` with blank projected names. The fix reports
+recoverable Technical, while existing sparse INTEGER sizing remains covered.
+
+### Batch 250 completion - 2026-10-14
+
+F836 completed Batch 250 by rejecting fractional REAL roster indexes in Class
+Analytics sizing. Batch 251 selects F837 for fractional REAL roster indexes in
+Speaking Evaluation roster-name reads. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### Batch 251 discovery and selection - 2026-10-14
+
+`RosterRepository::loadSpeakingEvaluationRosterNames()` accepts every
+in-range `col_index` in its `valid_rows` CTE, but subsequent joins match only
+integer English/Korean positions. A REAL `col_index=0.25` at a new highest row
+can therefore produce a successful result with an extra blank row/name pair.
+This is separate from F800 row-index validation.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL roster index in Speaking Evaluation roster-name reads (F837) | Selected | The in-range filter admits a fractional position that integer header joins cannot match. |
+| Fractional position in `loadRosterForOutput` | Unselected | Exact requested-index membership omits the fractional value; detecting it requires broader validation. |
+| MyClasses undercount from fractional positions | Unselected | Its equality reader also omits the fractional value and needs broader validation to detect it. |
+
+F837 is selected, not implemented or accepted. First reproduce through the
+typed Speaking Evaluation roster-name port: seed a REAL `col_index=0.25`,
+verify `typeof(col_index)='real'`, and observe the pre-fix output before
+editing production code. If reproduced, require Technical failure for the
+fractional storage while preserving valid unrelated INTEGER row materialization
+covered by `preservesMissingHeadersAndRowsMaterializedByUnrelatedCells`; if not,
+stop and report. Use
+`tests/next_platform_application_services_speaking_evaluation_roster_names_read_port_tests.cpp`
+and exact CTest
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`.
+No CMake/API change or full suite. The project-configuration and CMake
+optimization remains complete; Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
