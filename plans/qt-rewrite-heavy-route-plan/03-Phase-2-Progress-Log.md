@@ -34142,3 +34142,52 @@ The bounded deferred audit found no actionable candidate and no changed
 blockers. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
 Open. Next-slice selection is pending independent candidate evidence; no next
 slice is selected.
+
+### F851 Schedule Import target ID validation - accepted - 2026-10-14
+
+F851 is accepted at source/test commit
+`53dc80779677ebfccd3a57b79bbf291098086d11` (`Phase2 - F851: Validate
+Schedule Import target IDs`). Before the typed write port, Schedule Import now
+validates class targets as canonical positive `int` IDs and Reuse/UpdateRoom
+teacher targets as canonical positive `qint64` IDs. Invalid targets return
+structured typed failures without calling the port; valid maximum `int` and
+`qint64` values pass. Missing or unexpected teacher target handling and
+malformed CreateNew target precedence remain unchanged. The executor
+reproduced the prior gap with the fake port.
+
+Independent Tester acceptance: `ClassMngrFeatures`, `ClassMngrData`, and the
+targets backing both focused CTests built in standard
+`build/windows-x64-debug` with Visual Studio 18 2026, Debug. Exact CTests
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests` and
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests` passed 2/2. An
+initial unprivileged build failed at ZERO_CHECK with Access denied; the
+authorized narrow retry passed. No full suite ran.
+
+### Batch 265 completion - 2026-10-14
+
+F851 completed Batch 265. The post-slice audit of all 13 deferred candidates
+found no changed blockers and none actionable; the list remains unchanged.
+Batch 266 selects F852 to check invalid `ScheduleDisplayMode` values at the
+typed save boundary. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### Batch 266 discovery and selection - 2026-10-14
+
+Source inspection suggests an invalid `ScheduleDisplayMode` such as cast value
+17 falls through to `regular` in the save adapter and could overwrite a
+stored `intensive` value. This is a source-derived hypothesis; runtime
+reproduction is pending. The normal UI setter validates before saving, so the
+candidate concerns the public typed boundary.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid `ScheduleDisplayMode` enum on save (F852) | Selected | The adapter's fallback may turn an invalid typed value into a successful `regular` write. |
+
+F852 is selected, not reproduced or implemented. First seed `intensive`, pass
+`static_cast<ScheduleDisplayMode>(17)` through
+`ScheduleDisplayModePreferencesPort::save`, and inspect the typed result and
+stored value. If reproduced, reject before write and verify `intensive`
+remains stored. The exact CTest is
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests`.
+No full suite is planned. If the baseline does not reproduce, stop before
+production edits and report the result.

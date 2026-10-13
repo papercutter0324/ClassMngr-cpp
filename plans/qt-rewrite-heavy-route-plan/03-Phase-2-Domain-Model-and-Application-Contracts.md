@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F850 is accepted at `420927cf`; no deferred candidate was unblocked; next-slice selection awaits the investigator's candidate evidence; Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F851 is accepted at `53dc807`; F852 is selected pending baseline reproduction; Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -67,6 +67,10 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and remove its candidate from this plan in the same edit. Replace the active batch in place; do not append snapshots or carry-forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
+
+#### Active batch
+
+- Batch 266: F852 - Invalid `ScheduleDisplayMode` enum on save; reproduce value 17 through the typed save port and verify the stored `intensive` value is preserved.
 
 #### Deferred candidates
 
