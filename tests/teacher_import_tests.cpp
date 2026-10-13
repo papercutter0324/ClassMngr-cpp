@@ -44,6 +44,7 @@ private slots:
     void reviewContractAcceptsAllSelectedAndNone();
     void reviewContractRejectsInvalidDecisions();
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
+    void updatesKoreanTeacherWithWideId();
     void rejectsAmbiguousKoreanTeacherMatchWithoutWrites();
     void preservesRawNativeAndGsAmbiguityLabels();
     void rollsBackAllTeacherWritesWhenLatestDateSaveFails();
@@ -1022,6 +1023,76 @@ void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()
         QCOMPARE(query.value(0).toString(), QStringLiteral("홍길동"));
         QCOMPARE(query.value(1).toString(), QStringLiteral("413"));
         QVERIFY(!query.next());
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TeacherImportTests::updatesKoreanTeacherWithWideId()
+{
+    constexpr qint64 wideTeacherId = 2'147'483'648LL;
+    const QString storedName = QString::fromUtf8(
+        "\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99 A");
+    const QString importedName = QString::fromUtf8(
+        "\xED\x99\x8D\xEA\xB8\xB8\xEB\x8F\x99");
+    const QString connectionName =
+        QStringLiteral("teacher-import-korean-wide-id-test-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(DatabaseSchemaManager::ensureSchema(database).has_value());
+
+        QSqlQuery seed(database);
+        seed.prepare(QStringLiteral(
+            "INSERT INTO teachers "
+            "(id, teacher_kr, room_number, birthday, phone_number) "
+            "VALUES (?, ?, ?, ?, ?)"));
+        seed.addBindValue(wideTeacherId);
+        seed.addBindValue(storedName);
+        seed.addBindValue(QStringLiteral("Old room"));
+        seed.addBindValue(QStringLiteral("01-01"));
+        seed.addBindValue(QStringLiteral("010-1111-1111"));
+        QVERIFY2(seed.exec(), qPrintable(seed.lastError().text()));
+
+        Teacher importedTeacher;
+        importedTeacher.teacherKr = importedName;
+        importedTeacher.roomNumber = QStringLiteral("New room");
+        importedTeacher.birthday = QStringLiteral("02-29");
+        importedTeacher.phoneNumber = QStringLiteral("010-2222-3333");
+
+        TeacherImportPlan plan;
+        plan.templateId = QStringLiteral("sectioned-contact-list-v1");
+        plan.sourceDate = QDate(2026, 7, 9);
+        plan.koreanTeachers.append(importedTeacher);
+
+        TeacherImportRepository repository(database);
+        const auto imported = repository.importTeachers(plan);
+        QVERIFY2(imported.has_value(),
+                 imported.has_value() ? "" : qPrintable(imported.error()));
+        QCOMPARE(imported->koreanTeachers.created, 0);
+        QCOMPARE(imported->koreanTeachers.updated, 1);
+        QCOMPARE(imported->koreanTeachers.unchanged, 0);
+
+        QSqlQuery persisted(database);
+        QVERIFY(persisted.exec(QStringLiteral(
+            "SELECT id, teacher_kr, room_number, birthday, phone_number "
+            "FROM teachers")));
+        QVERIFY(persisted.next());
+        bool persistedIdOk = false;
+        const qint64 persistedId = persisted.value(0).toLongLong(
+            &persistedIdOk);
+        QVERIFY(persistedIdOk);
+        QCOMPARE(persistedId, wideTeacherId);
+        QCOMPARE(persisted.value(1).toString(), importedName);
+        QCOMPARE(persisted.value(2).toString(), QStringLiteral("New room"));
+        QCOMPARE(persisted.value(3).toString(), QStringLiteral("02-29"));
+        QCOMPARE(persisted.value(4).toString(),
+                 QStringLiteral("010-2222-3333"));
+        QVERIFY(!persisted.next());
+
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);

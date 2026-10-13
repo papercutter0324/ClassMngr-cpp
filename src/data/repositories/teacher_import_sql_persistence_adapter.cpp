@@ -94,7 +94,7 @@ public:
         }
         while (query.next())
         {
-            const int id = query.value(0).toInt();
+            const qint64 id = query.value(0).toLongLong();
             const std::u16string teacherKr = query.value(1).toString().toStdU16String();
             const auto typedId = ClassMngr::Next::Domain::TeacherId::fromString(
                 std::to_string(id));
@@ -280,7 +280,8 @@ public:
         query.addBindValue(QString::fromStdU16String(profile.roomNumber));
         query.addBindValue(QString::fromStdU16String(profile.birthday));
         query.addBindValue(QString::fromStdU16String(profile.phoneNumber));
-        query.addBindValue(QString::fromStdString(profile.teacherId.value()).toInt());
+        query.addBindValue(
+            QString::fromStdString(profile.teacherId.value()).toLongLong());
         if (!query.exec())
         {
             return queryFailureResult(
