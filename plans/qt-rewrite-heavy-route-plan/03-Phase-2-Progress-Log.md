@@ -32993,3 +32993,48 @@ only `ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTes
 no CMake, schema, or API change and no full suite are requested. The
 project-configuration and CMake optimization remains complete; Phase 2 Gates
 1/2 remain Partial and the formal exit gate remains Open.
+
+### F829 malformed Class Analytics roster-name position - accepted - 2026-10-13
+
+F829 is accepted at source/test commit
+`58de64b7b0a122cb2db8189d134d177eec126627`. Independent fresh Ninja Debug
+verification built `ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`;
+the exact CTest passed 1/1. Scoped `git diff --check` passed. The regression
+confirms a nonnumeric TEXT roster position produces a structured Technical
+failure instead of a mismatched projection. No full suite ran.
+
+### Batch 243 completion - 2026-10-13
+
+F829 completed Batch 243 by rejecting malformed roster positions in the Class
+Analytics name reader. Batch 244 selects F830 for representability of
+`ClassRepository::createClass()` generated IDs. The project-configuration and
+CMake optimization remains complete; Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+### Batch 244 discovery and selection - 2026-10-13
+
+`ClassRepository::createClass()` narrows SQLite `lastInsertId()` with
+`.toInt()` after insertion while its result API is `Result<int>`. A generated
+ID `4294967297` can convert to existing class ID 1, allowing a successful
+result to alias the wrong class. F830 is bounded to representability and
+preventing a wrong-ID success; it does not widen the API.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Class creation generated-ID representability (F830) | Selected | Narrowing a generated SQLite ID can alias a different existing class. |
+
+F830 is selected, not implemented or accepted. In
+`tests/next_platform_application_services_class_create_port_tests.cpp`, seed
+class ID 1, set the `classes` sequence to `4294967296`, then invoke
+`ClassCreateUseCase` through the existing class-create port. Require a typed
+Technical failure rather than a successful wrong-ID alias; verify the new row
+remains at ID `4294967297` and seed ID 1 is unchanged. Do not require rollback:
+F817's legacy Teacher Create overflow regression intentionally preserves the
+inserted row while returning an overflow error. Preserve ordinary creation and
+insertion-failure behavior. Change only
+`src/data/repositories/class_repository.cpp` and
+`tests/next_platform_application_services_class_create_port_tests.cpp`; run
+only `ClassMngrNextPlatformApplicationServicesClassCreatePortTests`. No CMake
+change or full suite. The project-configuration and CMake optimization remains
+complete; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
