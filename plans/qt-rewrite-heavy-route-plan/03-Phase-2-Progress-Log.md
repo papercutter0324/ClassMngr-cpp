@@ -32759,3 +32759,48 @@ typed read failure instead of aliasing column 0. Preserve existing valid-cell,
 numeric out-of-range, row-index, and availability behavior. The project-
 configuration and CMake optimization remains complete; Phase 2 Gates 1/2 remain
 Partial and the formal exit gate remains Open.
+
+### F824 malformed persisted roster column-index validation - accepted - 2026-10-13
+
+F824 is accepted at source commit
+`631abd3c5f29879878668bcadbad135c313487bd`. The executor's MSVC x64 Debug
+focused test passed 1/1. Independent verification configured and built a fresh
+Ninja Debug tree; exact CTest registration #318,
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests`, passed 1/1 in
+0.41 seconds. `git diff --check` passed. The change is limited to malformed
+persisted `col_index` validation in full-roster and availability reads; numeric
+out-of-range columns, row-index handling, and existing availability behavior
+remain intact. No full suite ran.
+
+### Batch 238 completion - 2026-10-13
+
+F824 completed Batch 238 by rejecting malformed persisted roster column
+indices in full-roster and availability reads. Batch 239 selects F825 for
+signed-64 persisted evaluation-ID handling in `SpeakingEvalRepository`. The
+project-configuration and CMake optimization remains complete; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 239 discovery and selection - 2026-10-13
+
+F825 is bounded to internal persisted evaluation-ID handling in
+`SpeakingEvalRepository`: widen the existing-ID read in `saveSpeakingEval()`,
+the generated ID from `lastInsertId()`, and the persisted-ID read in
+`loadSpeakingEval()` to signed 64-bit. Preserve `classId` as int, row indices,
+public API, batch loader, transaction/rollback behavior, and unrelated paths.
+The focused source and CTest target is
+`tests/data_service_lifecycle_tests.cpp` / `ClassMngrDataServiceLifecycleTests`;
+confirm its exact registration before verification.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Speaking Evaluation persisted evaluation-ID width (F825) | Selected | The single-record save/load path has three persisted-ID conversion points that must retain the same wide SQLite identity. |
+
+F825 is selected, not implemented or accepted. Seed evaluation ID
+`2147483648` with child rows, verify `loadSpeakingEval()` data, then save an
+update and assert it updates that record without creating a duplicate.
+Independently force the next AUTOINCREMENT ID above `INT_MAX`, save a new
+evaluation, and verify the exact generated SQLite ID, child rows, and reload.
+Retain ordinary-ID and rollback coverage. Keep class IDs int, row indices,
+public API, batch loading, transaction/rollback semantics, and unrelated paths
+unchanged. The project-configuration and CMake optimization remains complete;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
