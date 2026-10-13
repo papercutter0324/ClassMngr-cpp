@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F845 completed Batch 259 at `6ea01490b49e6211677fb6b6bb5cd1bdb9e09f87`; F846 is selected for Batch 260 pending reproduction of fractional REAL `speaking_eval_data.row_index` overwriting row 0 in Class Transfer export; Gates 1/2 remain Partial and the formal exit gate Open.
+- Current note: F846 is accepted at `5bc040324b578b8f039d70bf01fe764057823517`; F847 is selected for Batch 261 pending baseline reproduction, no deferred candidate was unblocked, and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -110,9 +110,9 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Teacher Create/Delete teacher-ID width - deferred because the
   legacy Teacher/sidebar selection APIs remain int-based.
 
-#### Active batch: Batch 260
+#### Active batch: Batch 261
 
-- F846 - Fractional REAL speaking-evaluation row index in Class Transfer export - Reproduce REAL `row_index=0.25` overwriting INTEGER row 0; if reproduced, skip non-INTEGER rows before narrowing consistent with F815 and preserve 0..24 and existing malformed/out-of-range handling.
+- F847 - Fractional REAL speaking-evaluation row index in ordinary Speaking Evaluation save - Reproduce possible REAL-to-INTEGER row aliasing in the public save port before production edits.
 
 ## Objective
 

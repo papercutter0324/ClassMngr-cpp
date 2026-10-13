@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F845 completed Batch 259 at `6ea01490b49e6211677fb6b6bb5cd1bdb9e09f87`; F846 is selected for Batch 260 pending reproduction of fractional REAL `speaking_eval_data.row_index` aliasing in Class Transfer export. The deferred-candidate audit resolved Batch 197 raw-int cleanup through F816/F823 and Class Import teacher-ID width through F821; sidebar Teacher Create/Delete remains deferred under int-based APIs. The project-configuration and CMake optimization remains complete; Gates 1/2 remain Partial and the formal exit gate Open. F626 remains deferred pending owner-specific retention evidence. The separate current-source Phase 0 gate remains open with Windows x64 evidence at 2/24 and macOS universal evidence at 0/24; F629 awaits a suitable runner, and F579 symbols/F598 elevated WPR remain deferred. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F846 is accepted at `5bc040324b578b8f039d70bf01fe764057823517`; F847 is selected for Batch 261 pending baseline reproduction. No deferred candidate was unblocked; Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

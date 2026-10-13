@@ -33864,3 +33864,64 @@ occurs, stop and report before production edits.
 
 The exact CTest registration is
 `ClassMngrClassTransferRowIndexRegressionTests`.
+
+### F846 fractional REAL speaking-evaluation row index in Class Transfer export - accepted - 2026-10-14
+
+F846 is accepted at source/test commit
+`5bc040324b578b8f039d70bf01fe764057823517` (`Phase2 - F846: Skip fractional
+evaluation row indexes`). The baseline fixture stored INTEGER row 0 and REAL
+`row_index=0.25` in the same evaluation and column with distinct values;
+`ClassTransferRepository::buildPackage()` let the REAL value overwrite row 0.
+The fix checks SQLite `typeof(row_index)` before narrowing and skips
+non-INTEGER rows, matching F815's export malformed-row policy. Valid rows 0
+and 24 and malformed/out-of-range handling were source-reviewed.
+
+Independent tester acceptance: `ClassMngrClassTransferExportCodecParityTests`
+built and passed 1/1 in standard `build/windows-x64-debug`, Debug
+configuration, using
+`ctest --test-dir build/windows-x64-debug -C Debug -R '^ClassMngrClassTransferExportCodecParityTests$' --output-on-failure`.
+An elevated retry was required after pre-compilation MSBuild FileTracker
+`E_ACCESSDENIED`. Scoped `git diff --check` passed. The separately listed
+`ClassMngrClassTransferRowIndexRegressionTests` was not run because its
+pre-existing F821-era fixture has `QList<int>` versus `QList<qint64>`
+mismatches; the export-parity target directly invokes `buildPackage()` and
+shared `readExportSource()`. No full suite ran.
+
+### Batch 260 completion - 2026-10-14
+
+F846 completed Batch 260 by skipping fractional REAL evaluation row indexes
+in Class Transfer export. Batch 261 selects F847 to check possible fractional
+REAL row-index aliasing during ordinary Speaking Evaluation save. The
+deferred-candidate audit found no newly actionable candidate; Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 261 discovery and selection - 2026-10-14
+
+`SpeakingEvalRepository::saveSpeakingEval()` selects `typeof(row_index)` but
+currently rejects only malformed TEXT. Its existing map keys use `toInt()`,
+so a REAL row index may alias INTEGER row 0 and affect old-value comparison
+depending on query row order. This is plausible but has not been reproduced.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Fractional REAL `speaking_eval_data.row_index` in ordinary Speaking Evaluation save (F847) | Selected | Save-path row keys narrow with `toInt()` after only TEXT storage is rejected. |
+
+F847 is selected, not implemented or reproduced. First use the public
+`ApplicationServicesSpeakingEvaluationSavePort` to seed INTEGER row 0 and
+REAL `row_index=0.25` for the same saved evaluation and column, then determine
+whether the REAL row aliases row 0 and changes the old-value comparison. If
+reproduced, reject non-INTEGER storage as a nonrecoverable Technical failure,
+preserving F827's malformed-TEXT failure and rollback, valid rows 0 and 24,
+and current out-of-range INTEGER behavior. Do not redefine the deferred dense
+Speaking Evaluation row-limit policy. If the baseline does not reproduce,
+stop before production edits and report the result.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Confirm INTEGER row 0 and REAL row 0.25 storage; determine whether the public save port's old-value comparison is affected. |
+| Error contract | On reproduction, reject non-INTEGER row storage as a nonrecoverable Technical failure. |
+| Compatibility | Preserve F827 malformed-TEXT failure and rollback, valid rows 0 and 24, current out-of-range INTEGER behavior, and the deferred dense row-limit policy. |
+| Focused verification | Update `tests/next_platform_application_services_speaking_evaluation_save_port_tests.cpp`; build and run only `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`. No full suite. |
+
+The exact CTest registration is
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
