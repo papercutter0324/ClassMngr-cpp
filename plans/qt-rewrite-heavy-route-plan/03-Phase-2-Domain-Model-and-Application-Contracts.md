@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F855 is accepted at `78675698`; F856 is selected for invalid `FileDialogPurpose` write baseline reproduction, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F856 is accepted at `c47c4230`; F857 is selected for invalid LastSelectedCampusPort write baseline reproduction, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 270: F856 - Invalid `FileDialogPurpose` on write; reproduce an unrecognized value through `writeDirectory` and inspect the result and `general` key.
+- Batch 271: F857 - LastSelectedCampusPort campus ID write validation; reproduce blank and over-256-byte IDs through `write` and inspect the result and stored preference.
 
 #### Deferred candidates
 

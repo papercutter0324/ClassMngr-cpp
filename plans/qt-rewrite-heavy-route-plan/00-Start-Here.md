@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F855 is accepted at `78675698`; Batch 269 is complete and Batch 270 selects F856 pending baseline reproduction. The post-F855 audit left all 13 deferred candidates unchanged. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F856 is accepted at `c47c4230`; Batch 270 is complete and Batch 271 selects F857 for invalid LastSelectedCampusPort write validation, pending baseline reproduction. The post-F856 audit left all 13 deferred candidates unchanged. Gates 1/2 remain Partial and the formal exit gate Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

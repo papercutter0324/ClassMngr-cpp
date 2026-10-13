@@ -34413,3 +34413,67 @@ no full suite is planned. The test file is
 | Baseline reproduction | Pass an unrecognized `FileDialogPurpose` through `writeDirectory`; inspect the result and `general` key/value. |
 | Compatibility | Preserve the eight valid purpose keys/conversions and existing read fallback semantics; F689 did not specify invalid-cast behavior. |
 | Focused verification | Build and run only `ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`. No full suite. |
+
+### F856 invalid FileDialogPurpose write - accepted - 2026-10-14
+
+F856 is accepted at source/test commit
+`c47c4230fbbbd9ce37bbbdaf7b3e22c8ceb37bb0`. The baseline reproduced an
+unrecognized `FileDialogPurpose` write affecting the `general` setting.
+`writeDirectory` now rejects invalid purposes as nonrecoverable `InvalidInput`
+before key/session access. The regression verifies the key set and seeded
+values remain unchanged, preserves the existing invalid-purpose read fallback
+to `general`, and retains all eight valid purpose mappings. Production target
+`ClassMngr` built.
+
+Independent Tester acceptance: exact registered CTest
+`ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests`
+passed 1/1 in standard top-level `build/windows-x64-debug` (Visual Studio
+Debug). No full suite ran.
+
+### Batch 270 completion - 2026-10-14
+
+F856 completed Batch 270. The post-slice audit reviewed all 13 deferred
+candidates and found no blocker changes or newly actionable item; the list
+remains unchanged. Batch 271 selects F857 to check invalid campus IDs at the
+last-selected-campus persistence write boundary. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 271 discovery and selection - 2026-10-14
+
+`UserPreferencesState` already rejects a last-selected `CampusId` that is
+blank or longer than 256 UTF-8 bytes; its `std::string` length check counts
+bytes. `CampusDashboardSelectedCampusReadQuery` applies the same nonblank and
+256-byte bound. However, `CampusId::fromString` only rejects an empty string,
+and `SettingsManagerLastSelectedCampusPort::write` forwards any typed ID to
+SettingsManager. The persistence adapter can therefore bypass the existing
+application preference validation. This is a source-based hypothesis; the
+runtime baseline remains unverified. The scope is invalid present-ID writes;
+read-side acceptance of stored values, including oversized legacy values,
+remains unchanged. F687's exact valid ID text, `nullopt`-to-empty-string
+mapping, and recoverable `Technical` persistence failure contract remain
+required.
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Invalid LastSelectedCampusPort ID writes (F857) | Selected | The platform write boundary does not enforce the existing blank/256-byte application preference policy. |
+
+F857 is selected, not reproduced or implemented. In the existing adapter
+test, call `write` with a whitespace-only CampusId and an ID exceeding 256
+UTF-8 bytes; inspect each result and whether the stored preference changes.
+If either invalid write is accepted, reject it before SettingsManager access
+as nonrecoverable `InvalidInput`. Preserve read-side behavior, exact valid ID
+text, `nullopt`-to-empty-string storage, and recoverable `Technical` errors
+for persistence failures. The source paths are
+`src/next/platform/settings_manager_last_selected_campus_port.h` and
+`src/next/application/user_preferences_state.h`; the test file is
+`tests/next_platform_settings_manager_last_selected_campus_port_tests.cpp`.
+Run only the exact registered CTest
+`ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests`; no full
+suite.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | In `tests/next_platform_settings_manager_last_selected_campus_port_tests.cpp`, pass whitespace-only and over-256-byte IDs to `write`; inspect each result and stored preference. |
+| Error contract | On reproduction, reject invalid present IDs before SettingsManager access as nonrecoverable `InvalidInput`; preserve the previous preference. |
+| Compatibility | Preserve read-side behavior, exact valid ID text, `nullopt`-to-empty-string storage, and recoverable `Technical` persistence errors. |
+| Focused verification | Build and run only `ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests`. No full suite. |
