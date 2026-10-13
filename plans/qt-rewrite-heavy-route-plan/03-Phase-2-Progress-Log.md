@@ -31216,3 +31216,76 @@ returned teacher IDs use canonical positive signed-64 validation while
 class-ID inputs retain their positive-int contract. Run no full suite.
 F707/F709 and the dense Speaking Evaluation row-limit policy remain deferred;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F799 My Classes class-information wide teacher IDs - accepted - 2026-10-13
+
+F799 is accepted at implementation and test commit
+`d86263c4f115a2fd483355847d70cc4eedd60d6d`. The class-information read
+record and batch/fallback repository paths preserve signed 64-bit teacher
+IDs, and the application query accepts canonical positive signed-64 decimal
+teacher IDs while retaining positive-int class-ID input validation. SQL NULL
+and nonpositive teacher assignments remain unassigned. The change is limited
+to `src/data/repositories/class_info_repository.cpp`,
+`src/data/repositories/class_info_repository.h`,
+`src/next/application/my_classes_class_information_batch_read_query.h`,
+`src/next/application/positive_decimal_id_validation.h`, and
+`tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp`.
+
+The focused Debug build of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`
+passed outside the sandbox after the known ZERO_CHECK/MSBuild FileTracker
+`E_ACCESSDENIED` retry. The exact focused CTest passed 1/1. No full suite ran.
+
+### Batch 213 completion - 2026-10-13
+
+F799 completed the selected work in Batch 213. Its wide-ID application
+boundary and focused verification are recorded above. F707/F709 and the dense
+Speaking Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.
+
+### Batch 214 discovery - 2026-10-13
+
+F800 addresses a separate Speaking Evaluation roster-name read path from
+F797's full-roster `loadRoster` path. The `roster_data.row_index` schema
+allows nonnegative SQLite INTEGER values without an `INT_MAX` ceiling, while
+`RosterRepository::loadSpeakingEvaluationRosterNames` converts row indexes to
+`int` and uses them to expand/index `record.rows`. A valid persisted index
+above `INT_MAX` therefore cannot be represented by this dense list API.
+
+### F800 Speaking Evaluation roster-name row-index representability - selected and acceptance matrix - 2026-10-13
+
+**F800 is selected:** scope the change to
+`RosterRepository::loadSpeakingEvaluationRosterNames` in
+`src/data/repositories/roster_repository.cpp`. Use checked signed-64
+conversion for each returned row index and reject conversion failures or
+values above `INT_MAX` before any list expansion. Surface the existing
+Technical failure through
+`ApplicationServicesSpeakingEvaluationRosterNamesReadPort` in
+`src/next/platform/application_services_speaking_evaluation_roster_names_read_port.h`
+with a clear row-index range/representability diagnostic. Keep the existing
+SQL filters for negative row indexes and out-of-range columns unchanged, and
+preserve sparse-row and missing-name behavior for representable indexes. Do
+not impose a smaller arbitrary cap or alter F797's full-roster path.
+
+Extend
+`tests/next_platform_application_services_speaking_evaluation_roster_names_read_port_tests.cpp`
+with a direct SQLite `INT_MAX + 1` row index in an in-range name column and
+assert a structured Technical failure before dense growth. Preserve
+`readsFirstCaseInsensitiveHeadersAndLegacySparseRows`, which expects negative
+row indexes to be filtered out, along with the existing out-of-range column
+filter behavior. Keep the existing focused target and CTest
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`;
+CMake already registers it, so no inventory change is expected.
+
+Use only these bounded Visual Studio x64 Debug commands in the existing tree:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests
+ctest --test-dir build/windows-x64-debug -C Debug -N -R "^ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests$"
+ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests$"
+```
+
+This is a pre-implementation matrix, not acceptance evidence; no F800 tests
+have run and no full suite is requested. F707/F709 and the dense Speaking
+Evaluation row-limit policy remain deferred; Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.
