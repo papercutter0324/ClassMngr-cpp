@@ -47,6 +47,15 @@ public:
         const std::string_view utf8Directory
         ) const override
     {
+        if (!isKnownPurpose(purpose))
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "File dialog directory preference purpose is invalid.",
+                .recoverable = false
+            });
+        }
+
         const QString key = settingsKey(purpose);
         const QString directory = QString::fromUtf8(
             utf8Directory.data(),
@@ -65,6 +74,26 @@ public:
     }
 
 private:
+    [[nodiscard]] static bool isKnownPurpose(
+        const Application::FileDialogPurpose purpose
+        ) noexcept
+    {
+        switch (purpose)
+        {
+        case Application::FileDialogPurpose::General:
+        case Application::FileDialogPurpose::TeacherProfile:
+        case Application::FileDialogPurpose::ImportWorkbook:
+        case Application::FileDialogPurpose::ExportReport:
+        case Application::FileDialogPurpose::SignatureImage:
+        case Application::FileDialogPurpose::GeneratedPdf:
+        case Application::FileDialogPurpose::ClassTransfer:
+        case Application::FileDialogPurpose::SubPrepPackage:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     [[nodiscard]] static Domain::Result<void> writeChecked(
         QSettings& settings,
         const QString& key,

@@ -142,6 +142,7 @@ class NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests final
 
 private slots:
     void mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8();
+    void invalidPurposeWriteIsRejectedWithoutChangingSettings();
     void missingAndEmptyValuesReadAsAbsent();
     void failedWriteRestoresExactPriorValueAndLeavesOtherKeysUntouched();
     void failedWriteRestoresAnAbsentPurposeKey();
@@ -237,6 +238,59 @@ mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8()
     QStringList actualKeys = settings.allKeys();
     actualKeys.sort();
     QCOMPARE(actualKeys, expectedKeys);
+}
+
+void NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests::
+invalidPurposeWriteIsRejectedWithoutChangingSettings()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    QSettings settings(
+        temporaryDirectory.filePath(QStringLiteral("settings.ini")),
+        QSettings::IniFormat
+        );
+    const QString generalKey = QStringLiteral(
+        "file-dialog/directories/general"
+        );
+    const QString otherKey = QStringLiteral(
+        "file-dialog/directories/import-workbook"
+        );
+    settings.setValue(generalKey, QStringLiteral("D:/old general"));
+    settings.setValue(otherKey, QStringLiteral("D:/keep import"));
+    settings.sync();
+    QCOMPARE(settings.status(), QSettings::NoError);
+    const QVariant previousGeneralValue = settings.value(generalKey);
+    const QVariant previousOtherValue = settings.value(otherKey);
+    QStringList expectedKeys = settings.allKeys();
+    expectedKeys.sort();
+
+    const QSettingsFileDialogDirectoryPreferencesAdapter adapter(&settings);
+    const QByteArray newDirectory = QStringLiteral("D:/new invalid").toUtf8();
+    const auto result = adapter.writeDirectory(
+        static_cast<FileDialogPurpose>(17),
+        std::string_view(
+            newDirectory.constData(),
+            static_cast<std::size_t>(newDirectory.size())
+            )
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(
+        result.error().code,
+        ClassMngr::Next::Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
+    QCOMPARE(settings.value(generalKey), previousGeneralValue);
+    QCOMPARE(settings.value(otherKey), previousOtherValue);
+    QStringList actualKeys = settings.allKeys();
+    actualKeys.sort();
+    QCOMPARE(actualKeys, expectedKeys);
+    QCOMPARE(
+        adapter.readDirectory(static_cast<FileDialogPurpose>(17)),
+        std::string("D:/old general")
+        );
+    QCOMPARE(settings.status(), QSettings::NoError);
 }
 
 void NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests::
