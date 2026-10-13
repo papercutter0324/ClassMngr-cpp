@@ -328,7 +328,7 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
         query.value("id").toLongLong();
 
     query.prepare(R"(
-        SELECT *
+        SELECT *, typeof(row_index) AS row_index_storage_type
         FROM speaking_eval_data
         WHERE evaluation_id=?
         ORDER BY row_index
@@ -348,6 +348,20 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
 
     while (query.next())
     {
+        if (
+            !query.value("row_index").isNull()
+            && query.value("row_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading speaking evaluation rows failed for %1: "
+                    "invalid row index storage type."
+                    ).arg(identity)
+                );
+        }
+
         QStringList row;
 
         for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
@@ -426,6 +440,8 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
             requested.evaluation_name,
             speaking_evaluations.id,
             speaking_eval_data.row_index,
+            typeof(speaking_eval_data.row_index)
+                AS row_index_storage_type,
             speaking_eval_data.col_0,
             speaking_eval_data.col_1,
             speaking_eval_data.col_2,
@@ -491,11 +507,21 @@ SpeakingEvalRepository::loadSpeakingEvalBatch(
             continue;
         }
 
+        if (query.value(4).toString() != QStringLiteral("integer"))
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading speaking evaluations failed for %1: "
+                    "invalid row index storage type."
+                    ).arg(identity)
+                );
+        }
+
         QStringList row;
         row.reserve(SpeakingEval::ColumnCount);
         for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
         {
-            row.append(query.value(4 + column).toString());
+            row.append(query.value(5 + column).toString());
         }
         evaluations[ordinal].rows.append(std::move(row));
     }

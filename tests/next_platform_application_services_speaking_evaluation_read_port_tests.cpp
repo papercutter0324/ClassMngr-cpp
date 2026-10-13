@@ -94,6 +94,7 @@ class NextPlatformApplicationServicesSpeakingEvaluationReadPortTests final
 private slots:
     void readsExactNameAndPreservesOrderedUnicodeMatrix();
     void readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes();
+    void rejectsFractionalRowIndexesInTypedReads();
     void emptyBatchDoesNotRequireAnActiveSession();
     void rejectsNoncanonicalClassIdsBeforeSessionAccess();
     void mapsRepositoryErrorsToTechnicalFailures();
@@ -136,6 +137,7 @@ readsExactNameAndPreservesOrderedUnicodeMatrix()
     QCOMPARE(result.value().rows[0].size(), std::size_t(11));
     QCOMPARE(result.value().rows[0][1], std::u16string(u"Student A"));
     QCOMPARE(result.value().rows[0][2], std::u16string(u"\uAE40\uBBFC\uC9C0"));
+    QCOMPARE(result.value().rows[1][1], std::u16string(u"Student B"));
     QCOMPARE(result.value().rows[7][1], std::u16string(u"Student H"));
     QCOMPARE(result.value().rows[7][9], std::u16string(u"Review \U0001F4DA"));
     QCOMPARE(result.value().rows[24][1], std::u16string(u"Student Y"));
@@ -215,6 +217,7 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
     QCOMPARE(winterRows[0].size(), std::size_t(11));
     QVERIFY(winterRows[0][0].empty());
     QCOMPARE(winterRows[0][1], std::u16string(u"Student A"));
+    QCOMPARE(winterRows[1][1], std::u16string(u"Student B"));
     for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
     {
         QCOMPARE(
@@ -262,6 +265,93 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
         isolatedFallback.value()[1].value()[0].englishName,
         std::u16string(u"Student A")
         );
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
+rejectsFractionalRowIndexesInTypedReads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Fractional Row Read Test")
+        );
+    QVERIFY(createdClass);
+
+    SpeakingEvalRepository* const repository =
+        services.databaseSession()->speakingEvalRepository();
+    QVERIFY(repository->saveSpeakingEval(
+        *createdClass,
+        QStringLiteral("Winter"),
+        makeRows()
+        ));
+
+    QSqlQuery insertFractionalRow(services.databaseSession()->database());
+    insertFractionalRow.prepare(QStringLiteral(R"(
+        INSERT INTO speaking_eval_data (
+            evaluation_id,
+            row_index,
+            col_1
+        )
+        SELECT id, 0.25, 'Fractional student'
+        FROM speaking_evaluations
+        WHERE class_id=? AND evaluation_name=?
+    )"));
+    insertFractionalRow.addBindValue(*createdClass);
+    insertFractionalRow.addBindValue(QStringLiteral("Winter"));
+    QVERIFY(insertFractionalRow.exec());
+    QCOMPARE(insertFractionalRow.numRowsAffected(), 1);
+
+    QSqlQuery storedTypes(services.databaseSession()->database());
+    storedTypes.prepare(QStringLiteral(R"(
+        SELECT row_index, typeof(row_index) AS storage_type
+        FROM speaking_eval_data
+        WHERE evaluation_id=(
+            SELECT id FROM speaking_evaluations
+            WHERE class_id=? AND evaluation_name=?
+        ) AND row_index IN (0, 0.25, 1, 24)
+        ORDER BY row_index
+    )"));
+    storedTypes.addBindValue(*createdClass);
+    storedTypes.addBindValue(QStringLiteral("Winter"));
+    QVERIFY(storedTypes.exec());
+    QVERIFY(storedTypes.next());
+    QCOMPARE(storedTypes.value("row_index").toInt(), 0);
+    QCOMPARE(storedTypes.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(storedTypes.next());
+    QCOMPARE(storedTypes.value("row_index").toDouble(), 0.25);
+    QCOMPARE(storedTypes.value("storage_type").toString(), QStringLiteral("real"));
+    QVERIFY(storedTypes.next());
+    QCOMPARE(storedTypes.value("row_index").toInt(), 1);
+    QCOMPARE(storedTypes.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(storedTypes.next());
+    QCOMPARE(storedTypes.value("row_index").toInt(), 24);
+    QCOMPARE(storedTypes.value("storage_type").toString(), QStringLiteral("integer"));
+    QVERIFY(!storedTypes.next());
+
+    Platform::ApplicationServicesSpeakingEvaluationReadPort singlePort(services);
+    const auto single = Application::SpeakingEvaluationQuery::execute(
+        query(*createdClass, u"Winter"),
+        singlePort
+        );
+    QVERIFY(!single);
+    QCOMPARE(single.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(single.error().message).contains(
+        QStringLiteral("invalid row index storage type")
+        ));
+
+    Platform::ApplicationServicesSpeakingEvaluationBatchReadPort batchPort(services);
+    const auto batch = Application::SpeakingEvaluationReadBatchQueryHandler::execute(
+        batchQuery(*createdClass, {u"Winter"}),
+        batchPort
+        );
+    QVERIFY(!batch);
+    QCOMPARE(batch.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(batch.error().message).contains(
+        QStringLiteral("invalid row index storage type")
+        ));
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
