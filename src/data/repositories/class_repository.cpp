@@ -425,47 +425,25 @@ Status ClassRepository::deleteClass(
         }
     }
 
-    query.prepare(QStringLiteral(
-        "SELECT id FROM speaking_evaluations WHERE class_id=?"
-        ));
+    query.prepare(QStringLiteral(R"(
+        DELETE FROM speaking_eval_data
+        WHERE evaluation_id IN (
+            SELECT id
+            FROM speaking_evaluations
+            WHERE class_id=?
+        )
+    )"));
     query.addBindValue(classId);
-    const Status evaluationsLoaded = statusFromExecution(
+    const Status evaluationDataDeleted = statusFromExecution(
         SqlQueryUtils::executePrepared(
             query,
-            QObject::tr("Loading class speaking evaluations for deletion"),
+            QObject::tr("Deleting class speaking evaluation data"),
             identity
             )
         );
-    if (!evaluationsLoaded)
+    if (!evaluationDataDeleted)
     {
-        return evaluationsLoaded;
-    }
-
-    QList<int> evaluationIds;
-    while (query.next())
-    {
-        evaluationIds.append(query.value(QStringLiteral("id")).toInt());
-    }
-
-    for (int evaluationId : evaluationIds)
-    {
-        query.prepare(QStringLiteral(
-            "DELETE FROM speaking_eval_data WHERE evaluation_id=?"
-            ));
-        query.addBindValue(evaluationId);
-        const Status evaluationDataDeleted = statusFromExecution(
-            SqlQueryUtils::executePrepared(
-                query,
-                QObject::tr("Deleting speaking evaluation data"),
-                QObject::tr("evaluation id %1 for %2")
-                    .arg(evaluationId)
-                    .arg(identity)
-                )
-            );
-        if (!evaluationDataDeleted)
-        {
-            return evaluationDataDeleted;
-        }
+        return evaluationDataDeleted;
     }
 
     for (const auto& [sql, action] : {

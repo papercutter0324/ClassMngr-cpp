@@ -8,6 +8,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -62,6 +63,22 @@ bool execute(
     return query.exec();
 }
 
+QString scalarText(
+    QSqlDatabase database,
+    const QString& sql,
+    const QVariant& binding
+    )
+{
+    QSqlQuery query(database);
+    query.prepare(sql);
+    query.addBindValue(binding);
+    if (!query.exec() || !query.next())
+    {
+        return {};
+    }
+    return query.value(0).toString();
+}
+
 int scalar(
     QSqlDatabase database,
     const QString& sql,
@@ -89,7 +106,12 @@ int tableCount(QSqlDatabase database, const QString& table)
     return query.value(0).toInt();
 }
 
-bool insertCascadeRows(QSqlDatabase database, const int classId)
+bool insertCascadeRows(
+    QSqlDatabase database,
+    const int classId,
+    const qint64 evaluationId = 0,
+    const QString& evaluationContent = QStringLiteral("Excellent")
+    )
 {
     const QString intensiveDay = classId % 2 == 0
         ? QStringLiteral("Wednesday")
@@ -137,23 +159,40 @@ bool insertCascadeRows(QSqlDatabase database, const int classId)
     }
 
     QSqlQuery evaluation(database);
-    evaluation.prepare(QStringLiteral(
-        "INSERT INTO speaking_evaluations (class_id, evaluation_name) "
-        "VALUES (?, 'Speaking')"
-        ));
-    evaluation.addBindValue(classId);
+    if (evaluationId > 0)
+    {
+        evaluation.prepare(QStringLiteral(
+            "INSERT INTO speaking_evaluations "
+            "(id, class_id, evaluation_name) VALUES (?, ?, 'Speaking')"
+            ));
+        evaluation.addBindValue(evaluationId);
+        evaluation.addBindValue(classId);
+    }
+    else
+    {
+        evaluation.prepare(QStringLiteral(
+            "INSERT INTO speaking_evaluations (class_id, evaluation_name) "
+            "VALUES (?, 'Speaking')"
+            ));
+        evaluation.addBindValue(classId);
+    }
     if (!evaluation.exec())
     {
         return false;
     }
 
-    QSqlQuery evaluationData(database);
-    evaluationData.prepare(QStringLiteral(
+    QSqlQuery childData(database);
+    childData.prepare(QStringLiteral(
         "INSERT INTO speaking_eval_data (evaluation_id, row_index, col_0) "
-        "VALUES (?, 0, 'Excellent')"
+        "VALUES (?, 0, ?)"
         ));
-    evaluationData.addBindValue(evaluation.lastInsertId());
-    return evaluationData.exec();
+    childData.addBindValue(
+        evaluationId > 0
+            ? QVariant::fromValue<qint64>(evaluationId)
+            : evaluation.lastInsertId()
+        );
+    childData.addBindValue(evaluationContent);
+    return childData.exec();
 }
 
 int countForClass(
@@ -224,8 +263,20 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
     const auto sibling = repository->createClass(QStringLiteral("Keep Sibling"));
     QVERIFY(target);
     QVERIFY(sibling);
-    QVERIFY(insertCascadeRows(session->database(), *target));
-    QVERIFY(insertCascadeRows(session->database(), *sibling));
+    constexpr qint64 siblingEvaluationId = 1;
+    constexpr qint64 targetEvaluationId = 4294967297LL;
+    QVERIFY(insertCascadeRows(
+        session->database(),
+        *target,
+        targetEvaluationId,
+        QStringLiteral("Target evaluation content")
+        ));
+    QVERIFY(insertCascadeRows(
+        session->database(),
+        *sibling,
+        siblingEvaluationId,
+        QStringLiteral("Sibling evaluation content")
+        ));
     QCOMPARE(tableCount(session->database(), QStringLiteral("speaking_eval_data")), 2);
 
     Platform::ApplicationServicesClassDeletePort port(services);
@@ -240,6 +291,53 @@ deletesThroughActiveSessionRepositoryAndPreservesSibling()
     QCOMPARE(speakingDataCount(session->database(), *target), 0);
     QCOMPARE(speakingDataCount(session->database(), *sibling), 1);
     QCOMPARE(tableCount(session->database(), QStringLiteral("speaking_eval_data")), 1);
+    const QVariant targetEvaluationKey =
+        QVariant::fromValue<qint64>(targetEvaluationId);
+    const QVariant siblingEvaluationKey =
+        QVariant::fromValue<qint64>(siblingEvaluationId);
+    QCOMPARE(
+        scalar(
+            session->database(),
+            QStringLiteral("SELECT COUNT(*) FROM speaking_evaluations WHERE id=?"),
+            targetEvaluationKey
+            ),
+        0
+        );
+    QCOMPARE(
+        scalar(
+            session->database(),
+            QStringLiteral("SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=?"),
+            targetEvaluationKey
+            ),
+        0
+        );
+    QCOMPARE(
+        scalar(
+            session->database(),
+            QStringLiteral("SELECT COUNT(*) FROM speaking_evaluations WHERE id=?"),
+            siblingEvaluationKey
+            ),
+        1
+        );
+    QCOMPARE(
+        scalar(
+            session->database(),
+            QStringLiteral("SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=?"),
+            siblingEvaluationKey
+            ),
+        1
+        );
+    QCOMPARE(
+        scalarText(
+            session->database(),
+            QStringLiteral(
+                "SELECT col_0 FROM speaking_eval_data "
+                "WHERE evaluation_id=? AND row_index=0"
+                ),
+            siblingEvaluationKey
+            ),
+        QStringLiteral("Sibling evaluation content")
+        );
 
     const auto survivingSibling = repository->getClassById(*sibling);
     QVERIFY(survivingSibling);
