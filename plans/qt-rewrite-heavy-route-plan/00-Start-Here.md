@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F870 is accepted at `63058294`; its post-slice audit found no newly actionable Deferred trigger, Batch 285 is complete, and Batch 286 selects F871 to validate and atomically reject unrepresentable generated campus IDs. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F871 is accepted at `1ef9dd75`; its post-slice audit found no newly actionable Deferred trigger, Batch 286 is complete, and Batch 287 selects F872 for legacy campus-list identity validation. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

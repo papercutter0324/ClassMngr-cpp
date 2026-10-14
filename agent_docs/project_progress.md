@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F870 accepted; F871 selected)
+### Current state - 2026-10-14 (F871 accepted; F872 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -110,10 +110,23 @@ validates the generated class ID before recording it or writing class data.
 The baseline reproduced a wide ID attaching details to an existing class
 whose `class_info` row was absent; independent Debug verification passed the
 exact CTest 1/1. The post-F870 audit found no newly actionable Deferred
-trigger. Batch 285 is complete. Batch 286 selects F871 to validate and
-atomically reject unrepresentable generated campus IDs. F579/F598 still
-require an elevated Administrator token; Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+trigger. Batch 285 is complete. F871 is accepted at
+`1ef9dd7553a5afd7b0b7b0de9baa5097a74a30ee`: `CampusRecordRepository::saveCampus()`
+now validates generated IDs as qint64 and atomically rejects IDs outside the
+positive `int` range. The pre-fix SQLite baseline reproduced ID `4294967297`
+being stored while `DataService::saveCampus()` returned the aliased ID `1`.
+The regression preserves the sentinel row, rejects and rolls back the
+out-of-range insert, and verifies ordinary ID 2 and `INT_MAX` creation/reload.
+Independent Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` succeeded; the exact CTest passed 1/1.
+Both builds initially encountered MSBuild FileTracker access denial before
+compilation; elevated retries succeeded with no final build warnings. No full
+suite ran. The post-F871 audit found no newly actionable trigger among the 13
+Deferred entries. Batch 286 is complete. Batch 287 selects F872 to validate
+persisted Campus IDs in the legacy `getAllCampuses()` result before narrowing;
+its required alias baseline and acceptance matrix are in the Phase 2 progress
+log. F579/F598 still require an elevated Administrator token; Gates 1/2 remain
+Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

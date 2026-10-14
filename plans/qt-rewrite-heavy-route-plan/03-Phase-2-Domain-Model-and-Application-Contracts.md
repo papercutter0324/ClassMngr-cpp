@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F870 is accepted at `63058294`; Batch 285 is complete after no Deferred trigger became actionable, and Batch 286 selects F871; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F871 is accepted at `1ef9dd75`; Batch 286 is complete after no Deferred trigger became actionable, and Batch 287 selects F872; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,9 +70,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Batch 286 (one candidate):
+Batch 287 (one candidate):
 
-- F871 - Validate and atomically reject unrepresentable generated campus IDs.
+- F872 - Validate legacy campus-list persisted IDs before returning records.
 
 #### Deferred candidates
 

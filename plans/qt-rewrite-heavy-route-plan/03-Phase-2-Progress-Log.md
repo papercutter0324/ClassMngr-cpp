@@ -35431,3 +35431,50 @@ repository, so keep the slice bounded to this generated-ID defect.
 | Scope and focused verification | Change only `src/data/repositories/campus_record_repository.cpp` and `tests/data_service_lifecycle_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrDataServiceLifecycleTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full-suite run. |
 
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F871 Generated campus ID atomicity - accepted; Batch 286 completion and Batch 287 discovery - 2026-10-14
+
+F871 is accepted at source/test commit
+`1ef9dd7553a5afd7b0b7b0de9baa5097a74a30ee`. The pre-fix SQLite baseline
+proved `DataService::saveCampus()` returned ID `1` while SQLite persisted the
+new campus as INTEGER ID `4294967297`; the baseline lifecycle CTest passed
+1/1. The repository now validates the generated ID as `qint64` and
+transactionally rolls back IDs above `INT_MAX`.
+
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` succeeded; exactly that Debug CTest passed
+1/1. FileTracker access-denied retries before compilation required elevated
+access; the successful independent builds had no warnings. The baseline build
+had a nonblocking `MSB8064` AUTOGEN timestamp warning for unrelated
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
+
+F871 completed Batch 286. The post-F871 audit reviewed all 13 Deferred
+entries; none became newly actionable, and all 13 remain unchanged. Batch 287
+selects F872, a legacy DataService read-side identity contract. An independent
+scan found no current non-test UI caller for `DataService::getAllCampuses()`;
+selection is recommended as a public compatibility-contract fix under the
+F871 legacy DataService precedent. This caller limitation is part of the
+selection rationale and keeps the slice compatibility-facing.
+
+`CampusRecordRepository::campusFromQuery()` currently narrows persisted IDs
+with `toInt()`. `DataService::getAllCampuses()` exposes
+`Result<QList<CampusRecord>>`, whose IDs are `int`-backed. F872 is selected,
+not implemented. Before any production change, use a fresh DataService SQLite
+database, seed campus IDs `1` and `4294967297` as INTEGER values, and call
+`getAllCampuses()`. Confirm current behavior returns success with both rows
+aliased to ID `1`, retaining their respective names. If this does not
+reproduce, stop and revise the plan. Then validate each persisted ID as
+`qint64` for conversion, positivity, and `<= INT_MAX` before returning the
+whole list; an invalid ID must produce typed failure with no partial results,
+and database rows must remain unchanged. Preserve ordinary IDs through
+`INT_MAX`, empty-list behavior, and current SQL failure behavior. Do not change
+the schema or API.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Mandatory baseline | On a fresh DataService SQLite database, seed INTEGER campus IDs `1` and `4294967297` with distinct names and call `getAllCampuses()`. Confirm success returns two rows both with ID `1` and their respective names. Stop and revise if not reproduced. |
+| Range failure and no partial results | Validate persisted IDs as `qint64` for conversion, positivity, and `<= INT_MAX` before returning the list. The wide ID yields typed failure and no partial/aliased result; both stored rows remain unchanged. |
+| Compatibility | Preserve ordinary IDs through `INT_MAX`, empty lists, current SQL failure behavior, and the existing API/schema. |
+| Scope and focused verification | Change only `src/data/repositories/campus_record_repository.cpp` and `tests/data_service_lifecycle_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrDataServiceLifecycleTests` in the standard Debug build tree; run exactly that Debug CTest. No full-suite run. |
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

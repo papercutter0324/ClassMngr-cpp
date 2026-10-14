@@ -98,12 +98,27 @@
   succeeded; the exact Debug CTest passed 1/1. FileTracker access errors
   required approved retries; the final build had no warnings. No full suite
   ran.
-- The post-F870 audit reviewed all 13 Deferred entries and found none newly
-  actionable; all 13 remain unchanged. Batch 285 is complete. Batch 286 selects
-  F871: validate and atomically reject an out-of-range generated campus ID in
-  `CampusRecordRepository::saveCampus()`. The existing DataService lifecycle
-  target provides a real SQLite seam; its exact wide-ID alias must be
-  reproduced before implementation.
+- F871 source/test commit: `1ef9dd7553a5afd7b0b7b0de9baa5097a74a30ee`;
+  `CampusRecordRepository::saveCampus()` now validates generated IDs as
+  qint64 and atomically rejects IDs outside the positive `int` range. The
+  required pre-fix baseline reproduced ID `4294967297` being stored while
+  `DataService::saveCampus()` returned aliased ID `1`; its exact lifecycle
+  CTest passed 1/1. The final regression preserves campus 1, rejects and rolls
+  back the high-ID insert, and verifies ordinary ID 2 and `INT_MAX`
+  creation/reload.
+- Independent verification sequentially built `ClassMngr` and
+  `ClassMngrDataServiceLifecycleTests` in the standard Debug tree and passed
+  the exact CTest 1/1. Both targets initially hit MSBuild FileTracker access
+  denial before compilation; elevated retries succeeded with no final build
+  warnings. The executor's baseline target build reported one nonblocking
+  MSB8064 AUTOGEN timestamp warning for the unrelated missing
+  `src/next/application/teacher_import_plan_mapper.h`; no full suite ran.
+- The post-F871 audit reviewed all 13 Deferred entries and found none newly
+  actionable; all 13 remain unchanged. Batch 286 is complete. Batch 287
+  selects F872: validate persisted IDs in the legacy
+  `DataService::getAllCampuses()` result before narrowing. Its required
+  SQLite alias baseline and acceptance matrix are recorded in the Phase 2
+  progress log.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;
