@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F904 Speaking Evaluation batch matrix read parent provenance is accepted at source/test commit `f1a1db175e4dca706998dafddb1755bece0c045f`; F905 Speaking Evaluation roster-names projection parent provenance is selected with baseline and acceptance recorded, while implementation and post-change verification remain pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F905 Speaking Evaluation roster-names projection parent provenance is accepted at source/test commit `d3f7585bbaf5d1109e668ae3da4849f85f117036`; F906 Class Details validation-context read parent provenance is selected with baseline and acceptance pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F905 - Speaking Evaluation roster-names projection parent provenance: for a valid canonical positive class ID, only a clean parent-rooted read confirming no `classes` row yields outer recoverable `NotFound`; suppress orphan roster rows and preserve present-parent projection behavior. Baseline and acceptance are recorded; implementation and post-change verification are pending.
-- F906 - Class Details validation-context read parent provenance: classify parent absence in validation context.
+- F906 - Class Details validation-context read parent provenance: classify parent absence in validation context. Baseline and acceptance are pending.
 - F907 - My Classes student-count batch parent provenance: classify parent absence in the batch projection.
 - F908 - Classes Navigation snapshot parent provenance: classify parent absence in navigation entries.
 

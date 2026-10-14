@@ -381,8 +381,20 @@ accepted boundary maps only a clean parent-rooted confirmation of missing
 preserves existing-parent projection, sparse rows, header selection, and the
 no-columns fast path. SQL/cursor/malformed-data errors remain Technical; the
 legacy repository API and behavior, UI, and allocation policy remain
-unchanged. F905 implementation and post-change verification are pending.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+unchanged. F905 is accepted at source/test commit
+`d3f7585bbaf5d1109e668ae3da4849f85f117036`. The independent Tester built
+`ClassMngr` and the registered
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`
+target sequentially in Debug with the FileTracker workaround; exact CTest #320
+passed 1/1, with no warnings in the successful builds. No full suite ran.
+Cursor-failure injection remains unavailable, so the post-iteration error
+check was source-reviewed. An initial shortened target-name invocation was
+not registered (MSB1009); verification then used the exact registered target.
+Two independent post-F905 audits reviewed all 13 official Deferred
+candidates; none became actionable and the list remains unchanged. F906,
+Class Details validation-context read parent provenance, is selected; its
+baseline and acceptance are pending. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

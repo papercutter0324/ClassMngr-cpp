@@ -37672,3 +37672,33 @@ suite ran.
 | Present-parent projection | Preserve the exact current projection: select the first case-insensitive English/Korean headers, flags, sparse-row materialization, and row validation. Zero roster columns yields successful empty and skips the data query. If columns exist without either header, keep both flags false and preserve rows materialized by unrelated valid cells. |
 | Compatibility and scope | Preserve legacy `loadSpeakingEvaluationRosterNames` signature and behavior through a detailed seam for the typed port. Exclude UI/name-import changes, schema/orphan cleanup, other Speaking Evaluation reads, and row-allocation policy. |
 | Verification and status | Use existing `ClassMngrNextPlatformApplicationServicesRosterNamesReadPortTests`. F905 acceptance is defined; implementation and post-change verification remain pending. The baseline CTest #320 is not post-change verification. |
+
+### F905 accepted; post-slice Deferred audit clear; F906 selected - 2026-10-15
+
+F905 is accepted at source/test commit
+`d3f7585bbaf5d1109e668ae3da4849f85f117036`. A detailed parent-aware
+repository outcome now feeds the typed roster-names port: only a clean read
+confirming no `classes` row maps to recoverable `NotFound`; orphan roster
+columns and cells are suppressed. Query, cursor, and malformed-data failures
+remain `Technical`. For present parents, the existing projection and legacy
+`loadSpeakingEvaluationRosterNames` behavior are retained: first
+case-insensitive English/Korean name headers, header flags, sparse rows
+materialized from unrelated valid columns, and row validation. Zero roster
+columns remains successful empty and skips the data query.
+
+The pre-change baseline above recorded two orphan headers and four cells under
+a deleted parent, exposed as a two-row English/Korean snapshot; a never-present
+ID returned empty success, and the existing-parent control returned its
+expected one-row result. Independent verification sequentially built
+`ClassMngr` and the registered
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests`
+with `/p:TrackFileAccess=false /p:ForceRebuild=true`; exact Debug CTest #320
+passed 1/1 without warnings. A mistaken shortened target invocation returned
+MSB1009 before the exact registered target succeeded. No full suite ran.
+Cursor-failure injection remains unavailable, so source error handling was
+reviewed.
+
+Two independent audits rechecked all 13 exact official Deferred candidates;
+none became newly actionable. F906, Class Details validation-context read
+parent provenance, is selected. Its baseline and acceptance are pending.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
