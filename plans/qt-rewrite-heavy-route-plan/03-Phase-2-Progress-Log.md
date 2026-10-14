@@ -36858,3 +36858,47 @@ without metadata. F893 will preserve optional defaults and technical failures
 while defining whether confirmed parent absence maps to typed `NotFound`.
 Five further bounded read leads remain in Batch 303. Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+### F893 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change baseline extended the public
+`ApplicationServicesScheduleEditorClassInfoReadPort` route with an unknown
+positive class ID (`2000000000`). A direct query confirmed no `classes` row
+exists for that ID, but the typed port returned a successful snapshot with
+blank grade, level, books, teacher name, and room, plus the default white class
+and black font colors. The existing class-without-`class_info` case also
+returns those defaults. Across the three reads in the probe, repository
+metrics recorded three calls and three statements. Temporary test changes
+were removed and the test file hash returned to its original value.
+
+The standard `build/windows-x64-debug` sequential builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests`
+succeeded after default attempts hit MSBuild FileTracker access denial. The
+matching Debug CTest passed 1/1. An initial temporary-probe build exposed an
+ID type mismatch, which was corrected before final verification; the
+intermediate build reported a stale dependency warning for
+`teacher_import_plan_mapper.h`, while the final successful builds had no
+warnings. No full suite ran.
+
+Read-only route inspection found `loadScheduleEditorClassInfoRecord()` selects
+from a one-row `requested` CTE and LEFT JOINs `class_info` and `teachers`; it
+does not currently query `classes`, so an absent parent still produces a
+default record. F893 will carry explicit parent provenance within that same
+statement by joining the requested ID to `classes` before optional metadata.
+The typed port maps only a clean absent-parent outcome to whole-result
+`NotFound`. Existing parents without `class_info` keep successful defaults;
+full metadata mapping, dangling-teacher blanks, invalid IDs, unavailable
+sessions, and Technical SQL/fetch errors remain intact. The legacy repository
+wrapper retains its prior default record for unknown IDs.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and legacy behavior | One requested-ID query joins `classes` and `LEFT JOIN class_info` so only a clean absent parent is tagged; the typed port returns `NotFound` for that outcome while the legacy repository wrapper preserves default success. |
+| Optional metadata and mapping | Existing parent without metadata keeps blank fields and default colors; normal class fields, teacher/room mapping, dangling-teacher behavior, and current color defaults remain unchanged. |
+| Technical and input behavior | Query execution/fetch errors remain `Technical`; invalid ID and unavailable/closed session outcomes remain unchanged. No diagnostic-text inference for parent absence. |
+| Regression coverage | Through the typed port, cover never-present and deleted parents, existing parent without metadata, successful complete mapping, dangling teacher, legacy wrapper defaults, same-statement metrics, SQL failure, and unavailable-session cases. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests` in `build/windows-x64-debug`; run only its matching Debug CTest. No full suite. |
+
+F893 baseline and acceptance are complete; implementation is next. All 13
+official Deferred candidates remain unchanged and deferred. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

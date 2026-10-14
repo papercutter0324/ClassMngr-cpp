@@ -170,9 +170,13 @@ sequential Debug builds of `ClassMngr` and the typed grade target passed; its
 exact CTest passed 1/1 after bounded FileTracker retries, with no full suite.
 Two independent post-F892 audits found none of the 13 official Deferred
 candidates newly actionable. Batch 303 proceeds with F893, the Schedule
-Editor Class Info read, for baseline work; five further bounded read leads
-remain ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal
-exit gate remains Open.
+Editor Class Info read. Its baseline confirms that unknown positive class ID
+2000000000 currently returns a successful snapshot with blank metadata and
+teacher/room values plus default colors, just like an existing class without
+`class_info`. Acceptance now requires only a missing parent to produce typed
+`NotFound`, preserving the existing-class defaults and technical failures;
+implementation is next. Five further bounded read leads remain ordered in the
+Phase 2 plan. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
