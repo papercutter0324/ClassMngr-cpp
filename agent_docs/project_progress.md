@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F879 accepted; F880 selected)
+## Phase 2 current position — 2026-10-14 (F880 accepted; F881 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5136,18 +5136,34 @@ none newly actionable. Batch 295 application-contract and repository scans
 found no new candidate. Batch 296 validation/business-rule review also found
 no gap. Its document-navigation feedback lead was excluded because F393
 explicitly accepts no warning for a missing resource; the report-job queue
-lead has no live application callsite. Batch 297 selected F880 after the
-typed Class Transfer ApplyPort baseline showed that a real schedule overlap
-returns `Technical` despite retaining the conflict message and performing no
-writes. F880 is scoped to classify only an explicit repository schedule
-overlap as recoverable `Conflict`, preserve the exact message and no-write
-behavior, keep malformed persisted schedules and other failures `Technical`,
-and preserve the legacy QString API. Sequential Debug baseline builds of
-`ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` passed;
-the exact CTest passed 1/1 on an elevated retry after FileTracker access
-denial. The scan also found stale-class-ID classification leads in
-`ClassDetailsSavePort` and `RosterSavePort`; they remain separate and
-unselected. F880 implementation is pending. All 13 Deferred entries remain
-unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
-Open.
+lead has no live application callsite. F880 is accepted at
+`b8e56c40106d35e7ce0176f404abf854c5a47d02`: only an explicit nonempty
+schedule-overlap result maps to recoverable `Conflict` on the typed
+Class Transfer ApplyPort. The exact conflict message and no-write behavior
+remain intact, malformed persisted schedules and other repository failures
+remain `Technical`, and the legacy QString API keeps its behavior.
+
+The independent Tester sequentially built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and
+`ClassMngrClassTransferTests`. The typed ApplyPort CTest passed 1/1. The legacy
+full-target CTest failed in
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()`:
+`Keep local: New Teacher` was returned instead of `Keep local: Romanized One`.
+The unchanged test reads teacher display names and does not call the modified
+import methods. The same full-target CTest was red on the pre-F880 source
+commit `18202c79`, while the isolated
+`importedClassesConflictAtomically` legacy-conflict test passed. No full suite
+ran.
+
+Two independent post-F880 audits reviewed all 13 Deferred entries and found
+none newly actionable; all 13 remain unchanged. Batch 298 selects F881 for
+the separate deleted-class `RosterSavePort` result. The public pre-fix
+baseline showed both a populated roster and a valid zero-row snapshot with
+seven standard columns returning `Technical` after class deletion. Target
+tables stayed empty and sentinel class/roster data were preserved. Sequential
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests` passed, and the
+exact CTest passed 1/1 after elevated FileTracker retries. F881 selection and
+implementation are pending the plan record. The independent
+`ClassDetailsSavePort` stale-class lead remains unselected. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

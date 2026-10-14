@@ -36039,5 +36039,61 @@ no newly actionable entry. Preserve all 13 Deferred items unchanged.
 | Legacy API | Preserve `ClassTransferRepository::importClasses()` and legacy `ClassService` QString messages and behavior. |
 | Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and `ClassMngrClassTransferTests` in `build/windows-x64-debug`; run exactly the two matching CTests. No full suite. |
 
-F880 is selected and implementation is pending. Phase 2 Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+F880 was selected and implementation was pending at this point. Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### F880 accepted; Batch 298 selected F881 - 2026-10-14
+
+F880 is accepted at source/test commit
+`b8e56c40106d35e7ce0176f404abf854c5a47d02`. The typed
+`ApplicationServicesClassTransferApplyPort` now reports a genuine schedule
+overlap detected during preflight as recoverable `Conflict`, preserving the
+existing message and no-write behavior. The classification uses explicit
+failure provenance; other import failures remain `Technical`, and the legacy
+QString import API remains compatible.
+
+Independent sequential Debug builds of `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and
+`ClassMngrClassTransferTests` passed. The exact typed ApplyPort CTest passed
+1/1. The exact legacy CTest failed in
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()` at test
+line 4963: `Keep local: Romanized One` was expected, but the result was
+`Keep local: New Teacher`. This slot exercises unchanged dialog
+teacher-display-name reads, not the modified import methods. The same full
+legacy CTest failed in a separate pre-F880 worktree at source commit
+`18202c79`, establishing that the target was already red before this slice;
+the current failing slot also does not call the changed import methods. The
+isolated `importedClassesConflictAtomically` test passed. `git diff --check`
+passed; no full suite ran.
+
+Two independent post-F880 reviews rechecked all 13 Phase 2 Deferred entries;
+none became actionable, and all 13 remain unchanged.
+
+Batch 298 selected F881 (`Classify missing-class roster saves as NotFound`).
+The public `RosterSaveUseCase::execute()` / ApplyServices-port baseline created
+then deleted a class. Both a populated save and a valid zero-row snapshot with
+the seven standard columns returned `Technical` from SQLite foreign-key
+constraint failure 787. Database counts remained
+`(classes, roster_columns, roster_data) = (0, 0, 0)`; sentinel class counts and
+data remained unchanged. The temporary baseline test was removed. Sequential
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests` passed, and the
+exact CTest passed 1/1. Initial FileTracker `E_ACCESSDENIED` required elevated
+retries; one successful build reported MSB8064 for the missing
+`teacher_import_plan_mapper.h` dependency. `git diff --check` passed. No source
+changes were made for the baseline.
+
+The separate stale-class-ID lead for `ClassDetailsSavePort` remains unselected.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline | The public typed roster-save route reports `Technical` for both a populated roster and a valid zero-row, seven-standard-column snapshot after the referenced class is deleted; no database rows are written. |
+| Failure provenance and race safety | Carry explicit repository-owned provenance only for an absent parent class, without matching diagnostic text; determine parent existence safely within the save transaction so a concurrent deletion cannot be misclassified or race the check. |
+| Typed classification | Map only the proven missing-parent failure to `ErrorCode::NotFound` through the typed RosterSave port. |
+| Compatibility | Preserve legacy `QString` `RosterRepository::saveRoster` behavior and existing success semantics. |
+| Other failures and rollback | SQL, trigger, and transaction failures remain `Technical` and roll back; verify with an unrelated injected trigger failure. |
+| Regression coverage | Cover deleted class for populated and valid zero-row snapshots, unrelated trigger failure with `Technical` rollback, and the existing successful snapshot path. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full-suite run. |
+
+F881 implementation is pending. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.

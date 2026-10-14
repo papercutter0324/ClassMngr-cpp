@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F879 is accepted; Batch 297 selected F880 to classify genuine class-transfer schedule overlap as a recoverable Conflict on the typed ApplyPort, preserving the message, no-write behavior, legacy QString API, and Technical classification for other errors. Implementation is pending; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F880 is accepted; Batch 298 selected F881 to classify missing-class failures from typed roster saves as `NotFound` using repository-owned, transaction-safe provenance; implementation is pending and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 297 - F880: classify genuine class-transfer schedule overlap as a recoverable Conflict on the typed ApplyPort; implementation pending.
+- Batch 298 - F881: classify a missing class during typed roster save as `NotFound` using explicit repository provenance and transaction-safe detection; implementation pending.
 
 #### Deferred candidates
 

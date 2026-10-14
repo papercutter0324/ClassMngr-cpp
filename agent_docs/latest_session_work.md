@@ -5702,23 +5702,32 @@ added, it rebuilt and reran the RosterReadPort target, also 1/1. Builds
 required elevated retries after Visual Studio FileTracker `E_ACCESSDENIED`.
 No full suite ran.
 
-The post-F879 audit reviewed all 13 Phase 2 Deferred entries; none became
-actionable. Batch 295 application-contract and repository scans found no new
-candidate. Batch 296 validation/business-rule review found no gap. Its
-document-navigation feedback lead was excluded because F393 explicitly
-accepts no warning for a missing resource; the report-job queue lead has no
-live application callsite. Batch 297 selected F880 after the ApplyPort
-baseline returned `Technical` for a real schedule overlap while preserving
-the conflict message and performing no writes. F880 will carry explicit
-repository failure provenance so only a genuine overlap maps to recoverable
-`Conflict`; malformed persisted schedules and other failures stay
-`Technical`, and the legacy QString import API remains unchanged. Sequential
-baseline Debug builds of `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` passed;
-the exact CTest passed 1/1 after an elevated retry for FileTracker access
-denial. The public write-result scan also found separate stale-class-ID
-classification leads in `ClassDetailsSavePort` and `RosterSavePort`; they are
-unselected and unresolved. F880 implementation is pending. The existing
+F880 is accepted at source/test commit
+`b8e56c40106d35e7ce0176f404abf854c5a47d02`. Only a nonempty schedule-overlap
+result carries the repository-owned `ScheduleConflict` kind; the typed port
+maps that to recoverable `Conflict`. Malformed persisted schedules and all
+other repository failures remain Technical, and legacy QString imports retain
+their message behavior. The independent Tester sequentially built
+`ClassMngr`, `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`,
+and `ClassMngrClassTransferTests`. The typed ApplyPort CTest passed 1/1. The
+legacy full-target CTest failed at
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()` with
+`Keep local: New Teacher` instead of `Keep local: Romanized One`; that slot
+uses unchanged dialog teacher-display reads and does not call the modified
+import methods. The same full-target CTest was also red at pre-F880 source
+commit `18202c79`; isolated `importedClassesConflictAtomically` passed. No
+full suite ran.
+
+Two independent post-F880 reviews rechecked all 13 Phase 2 Deferred entries;
+none became actionable and all remain unchanged. Batch 298 selected F881 for
+deleted-class errors on `RosterSavePort`. Its public pre-fix baseline showed
+both a populated roster and a valid zero-row snapshot with seven standard
+columns returning Technical after class deletion; target tables remained
+empty and the sentinel class/roster stayed unchanged. Sequential Debug builds
+of `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests`
+passed, and its exact CTest passed 1/1 after elevated retries for FileTracker
+access denial. F881 acceptance and implementation are pending. The separate
+`ClassDetailsSavePort` stale-class lead remains unselected. The existing
 untracked `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`,
 `stdout`, and `txt` artifacts remain outside the slice. Gates 1/2 remain
 Partial; the formal Phase 2 exit gate is Open.
