@@ -37215,3 +37215,29 @@ readers, metrics, and save behavior untouched.
 F897 baseline and acceptance are complete; implementation is next. F898
 remains ordered after F897 in Batch 303. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F897 accepted; post-slice Deferred audit clear; F898 selected - 2026-10-15
+
+F897 is accepted at source/test commit
+`c71c15da7e58ab03c0dfefb71f767ceb4c73b4b6`. The detailed Roster read now
+identifies confirmed parent absence explicitly. The typed read returns
+recoverable `NotFound` without a snapshot for never-present or deleted
+parents, including when orphan columns or cells remain; the legacy wrapper
+preserves requested-ID orphan data. Existing parents without roster columns
+remain successful and empty. Query and cursor failures remain `Technical`;
+batch readers, metrics, and save behavior are unchanged, and transfer
+continues to propagate target-read failures before save.
+
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests` passed in
+`build/windows-x64-debug` after one bounded elevated retry per target for
+FileTracker `E_ACCESSDENIED`. The matching Debug CTest passed 1/1 (#319); the
+successful builds emitted no warnings. No full suite ran. Cursor-iteration
+error handling was code-reviewed but not forced by a fixture.
+
+Two independent audits compared all 13 official Deferred entries with F897
+and found none newly actionable; all 13 remain deferred. Batch 303 proceeds
+with F898, Teacher display-name read provenance, to evaluate structured
+missing-versus-query-failure outcomes across typed page callers. No F898
+baseline or acceptance is recorded yet. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F896 accepted; F897 baseline and acceptance defined)
+### Current state - 2026-10-15 (F897 accepted; F898 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -228,14 +228,16 @@ leaves orphan data that both typed and legacy reads return. Dropping
 `roster_columns` makes both reads fail. Sequential Debug builds of
 `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`
 succeeded after one bounded elevated FileTracker retry per target; exact CTest
-#319 passed 1/1. No full suite ran. F897 acceptance requires explicit
-missing-parent provenance, typed `NotFound` without a snapshot only for a
-confirmed absent parent, legacy orphan-data compatibility, and unchanged
-empty-roster and projection behavior. Query and cursor failures remain
-`Technical`; transfer propagates target-read failure before save. Batch
-readers, metrics, and save behavior stay untouched. F897 implementation is
-next; F898 remains ordered. Gates 1/2 remain Partial and the formal exit gate
-remains Open.
+#319 passed 1/1. No full suite ran. F897 is accepted at source/test commit
+`c71c15da7e58ab03c0dfefb71f767ceb4c73b4b6`. The typed Roster read maps
+confirmed missing parents to recoverable `NotFound` without a snapshot,
+including orphan cases; legacy `loadRoster()` preserves requested-ID orphan
+columns and cells. Existing parents without roster columns remain
+empty-success. Query and cursor failures remain `Technical`; batch APIs,
+metrics, and save behavior are unchanged, and transfer propagates target-read
+failures before save. Two independent audits found none of the 13 official
+Deferred entries newly actionable. F898 is selected next. Gates 1/2 remain
+Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

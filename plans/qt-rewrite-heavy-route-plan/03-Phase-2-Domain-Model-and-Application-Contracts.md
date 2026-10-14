@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F896 is accepted and two independent audits found no official Deferred trigger newly actionable; F897's Roster baseline and acceptance are complete and implementation is next, with F898 still ordered and Gates 1/2 Partial while the formal exit gate remains Open.
+- Current note: F897 is accepted at source/test commit `c71c15da7e58ab03c0dfefb71f767ceb4c73b4b6` and two independent audits found no official Deferred trigger newly actionable; F898, Teacher display-name read provenance, is next in Batch 303, while Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -71,7 +71,6 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch 303:
-  - F897 - Roster read: add explicit parent provenance to the typed read while preserving legacy orphan-row behavior and successful empty rosters for existing parents.
   - F898 - Teacher display-name read provenance: evaluate structured missing-versus-query-failure outcomes across typed page callers.
 
 #### Deferred candidates
