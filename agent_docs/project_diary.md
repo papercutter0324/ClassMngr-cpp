@@ -5353,3 +5353,11 @@ Roster saves replace the full stored snapshot, so a failed read must remain
 visible and block edits, persistence, and output until a later read succeeds.
 Keep a valid empty roster distinct and available for ordinary editing and
 output.
+
+## Phase 2 persisted IDs in deletion predicates - 2026-10-14
+
+Do not narrow a persisted owner ID before using it to delete dependent rows.
+A wrapped ID can match a sibling row and erase that sibling's data while the
+surrounding transaction still succeeds. Prefer a set-based delete constrained
+by the owning record, and keep it inside the existing transaction so later
+failures still roll back the full cascade.

@@ -51,10 +51,19 @@
   states remain explicitly preserved, Speaking Evaluation out-of-range integer
   behavior is covered by F847/F848, and the Calendar port already rejects
   invalid projected summaries. Batch 281's teacher-profile and Native English
-  directory review found no qualifying candidate. Its repository-ID scan
-  selected F866 to stop class deletion from narrowing a wide speaking-evaluation
-  ID and deleting a sibling evaluation's data; the F866 acceptance matrix is
-  recorded in the Phase 2 plan.
+  directory review found no qualifying candidate.
+- F866 source/test commit: `8312111233769650d57a611ce02a679f7c6f4396`;
+  class deletion now removes speaking-evaluation child data through a
+  class-scoped SQL subquery, avoiding narrowed evaluation IDs. Independent
+  verification built `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesClassDeletePortTests`; exactly the
+  Debug CTest passed 1/1. FileTracker denied sandbox builds, so the same build
+  commands passed after elevated retries. The target build had a nonfatal
+  `MSB8064` generated-dependency warning. No full suite ran.
+- The post-F866 audit reviewed all 13 Deferred entries and found none newly
+  actionable. Batch 282 selected F867 to reject an out-of-range generated
+  class ID before `TestingClassRepository` writes details or assignment rows;
+  its acceptance matrix is recorded in the Phase 2 plan.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;

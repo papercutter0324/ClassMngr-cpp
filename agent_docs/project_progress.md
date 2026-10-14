@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F865 accepted; F866 selected)
+### Current state - 2026-10-14 (F866 accepted; F867 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -73,12 +73,16 @@ of exposing a narrowed identity. Independent verification built the product,
 Classes-list port, and class-create port targets; exactly the two focused Debug
 CTests passed 2/2, with no full suite run. The post-F865 audit found none of
 the 13 Deferred entries newly actionable. Batch 281's teacher-profile and
-Native English directory review found no qualifying candidate; the separate
-repository-ID scan selected F866 to prevent class deletion from narrowing a
-wide speaking-evaluation ID and deleting a sibling evaluation's data. Its
-acceptance matrix is recorded in the Phase 2 plan. F579/F598 still require an
-elevated Administrator token; Gates 1/2 remain Partial and the formal exit
-gate remains Open.
+Native English directory review found no qualifying candidate. F866 is
+accepted at `83121112`: class deletion now removes speaking-evaluation child
+data through a class-scoped SQL subquery, avoiding narrowed evaluation IDs.
+Independent verification built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDeletePortTests`; the exact
+Debug CTest passed 1/1. The post-F866 audit also found no Deferred entry newly
+actionable. Batch 282 selected F867 to reject an out-of-range generated class
+ID before TestingClassRepository writes related details or assignment rows.
+F579/F598 still require an elevated Administrator token; Gates 1/2 remain
+Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

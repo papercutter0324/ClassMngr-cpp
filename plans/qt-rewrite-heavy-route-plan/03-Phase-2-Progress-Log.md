@@ -35131,3 +35131,56 @@ rollback behavior. Limit changes to
 
 The 13 Deferred entries remain unchanged. Phase 2 remains In Progress/Open;
 Gates 1/2 remain Partial.
+
+### F866 Wide speaking-evaluation IDs during class deletion - accepted; Batch 281 completion and Batch 282 discovery - 2026-10-14
+
+F866 is accepted at source/test commit
+`8312111233769650d57a611ce02a679f7c6f4396`. Class deletion now removes
+class-linked evaluation child data without narrowing persisted evaluation IDs,
+preserving a sibling evaluation with ID `1` and its child row when the target
+evaluation ID is `4294967297`.
+
+Independent verification built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDeletePortTests` in standard
+`build/windows-x64-debug`; exactly that Debug CTest passed 1/1. Sandbox
+FileTracker `MSB4018` failures required elevated retries. A nonfatal `MSB8064`
+missing generated-dependency warning did not prevent linking. The report did not
+specify whether the build was incremental or fresh. No full suite ran.
+
+F866 completed Batch 281. A fresh audit reviewed all 13 Deferred entries; none
+became actionable, and all 13 remain unchanged.
+
+Batch 282 candidate ranking selected F867 as the sole slice. Its bounded
+transaction boundary is the most actionable of the reviewed candidates;
+choice-read and import-generated-ID sites remain follow-up candidates and do
+not unlock any Deferred trigger.
+
+`TestingClassRepository::createTestingClass()` converts `lastInsertId()`
+directly to `int`, accepts any positive narrowed value, and then uses it for
+`class_info`, `testing_classes`, and optional `schedule_testing_blocks` writes
+inside a transaction. `ClassRepository::createClass()` already validates the
+generated ID as positive `qint64` no greater than `INT_MAX`. The existing
+`TestingClassRepositoryTests` fixture in
+`tests/testing_class_repository_tests.cpp` supports ordinary class creation
+and atomic assignment coverage.
+
+F867 is selected, not implemented. First create ordinary class ID `1` through
+`ClassRepository::createClass()` without details, set `sqlite_sequence` for
+`classes` to `4294967296`, and call valid `createTestingClass()` with an
+assignment. Reproduce the baseline alias to ID `1` and the added testing-class,
+details, and assignment records on that existing class; if it does not
+reproduce, stop for plan revision. Then reject generated ID `4294967297`
+before related writes and verify the transaction rolls back the high-ID class,
+leaving existing ID `1` and its name unchanged with no new related rows.
+Preserve normal ID generation and positive `INT_MAX` boundary acceptance.
+Limit implementation to `src/data/repositories/testing_class_repository.cpp`
+and `tests/testing_class_repository_tests.cpp`.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Existing fixture creates class ID `1` without details, advances `sqlite_sequence` to `4294967296`, and shows valid assigned `createTestingClass()` aliases generated ID `4294967297` to `1` while writing testing-class/details/assignment records to the existing class. Stop for plan revision if not reproduced. |
+| Range rejection and rollback | Reject generated ID `4294967297` before related writes; verify rollback removes the inserted high-ID class and preserves existing ID `1` and its name, with no new `class_info`, `testing_classes`, or `schedule_testing_blocks` rows. |
+| Compatibility | Preserve ordinary generated IDs and positive `INT_MAX` boundary acceptance. |
+| Scope and focused verification | Change only `src/data/repositories/testing_class_repository.cpp` and `tests/testing_class_repository_tests.cpp`; build `ClassMngr` and `ClassMngrTestingClassRepositoryTests` in standard `build/windows-x64-debug`; run exactly `ClassMngrTestingClassRepositoryTests` in Debug. No full suite or new target. |
+
+Phase 2 remains In Progress/Open; Gates 1/2 remain Partial.

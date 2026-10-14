@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F865 is accepted; F866 is selected for Batch 281, not implemented; Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: F866 is accepted; F867 is selected for Batch 282, not implemented; Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,9 +70,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Batch 281 (one candidate):
+Batch 282 (one candidate):
 
-- F866 - Delete class-linked evaluation data without narrowing persisted evaluation IDs; preserve sibling rows when IDs exceed `int` range.
+- F867 - Reject out-of-range generated class IDs before writing testing-class details or assignments.
 
 #### Deferred candidates
 
