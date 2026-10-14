@@ -286,6 +286,12 @@ struct RosterPrintClassInfoReadRecord final
     QList<ClassTime> regularTimes;
 };
 
+struct RosterPrintClassInfoReadOutcome final
+{
+    RosterPrintClassInfoReadRecord record;
+    bool parentMissing = false;
+};
+
 struct RosterPrintClassInfoBatchReadMetrics final
 {
     int callCount = 0;
@@ -580,6 +586,8 @@ public:
         loadMyClassesClassSummaryRecords(const QList<int>& classIds);
     [[nodiscard]] Result<RosterPrintClassInfoReadRecord>
         loadRosterPrintClassInfoRecord(int classId);
+    [[nodiscard]] Result<RosterPrintClassInfoReadOutcome>
+        loadRosterPrintClassInfoRecordDetailed(int classId);
     [[nodiscard]] Result<QList<RosterPrintClassInfoReadRecord>>
         loadRosterPrintClassInfoRecords(const QList<int>& classIds);
     [[nodiscard]] Result<QList<SubPrepRosterOutputClassInfoReadRecord>>

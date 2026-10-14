@@ -3311,6 +3311,20 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
     int classId
     )
 {
+    const auto loaded = loadRosterPrintClassInfoRecordDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->record);
+}
+
+Result<RosterPrintClassInfoReadOutcome>
+ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
+    int classId
+    )
+{
     if (classId <= 0)
     {
         return std::unexpected(
@@ -3320,12 +3334,15 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
-    RosterPrintClassInfoReadRecord record;
-    record.classId = classId;
+    RosterPrintClassInfoReadOutcome outcome;
+    outcome.record.classId = classId;
 
     QSqlQuery metadataQuery(m_database);
     metadataQuery.prepare(R"(
+        WITH requested(class_id) AS (VALUES (?))
         SELECT
+            requested.class_id AS requested_class_id,
+            classes.id AS parent_class_id,
             ci.class_grade,
             ci.class_level,
             t.teacher_en,
@@ -3335,9 +3352,10 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
             t.wifi_password,
             t.zoom_id,
             t.zoom_password
-        FROM class_info ci
+        FROM requested
+        LEFT JOIN classes ON classes.id = requested.class_id
+        LEFT JOIN class_info ci ON ci.class_id = requested.class_id
         LEFT JOIN teachers t ON ci.teacher_id = t.id
-        WHERE ci.class_id = ?
     )");
     metadataQuery.addBindValue(classId);
 
@@ -3351,27 +3369,45 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
         return std::unexpected(loadedMetadata.error().userMessage());
     }
 
-    if (metadataQuery.next())
+    const bool parentRowFound = metadataQuery.next();
+    if (metadataQuery.lastError().isValid())
     {
-        record.classGrade =
-            metadataQuery.value("class_grade").toString();
-        record.classLevel =
-            metadataQuery.value("class_level").toString();
-        record.teacherEnglishName =
-            metadataQuery.value("teacher_en").toString();
-        record.teacherKoreanName =
-            metadataQuery.value("teacher_kr").toString();
-        record.roomNumber =
-            metadataQuery.value("room_number").toString();
-        record.wifiName =
-            metadataQuery.value("wifi_name").toString();
-        record.wifiPassword =
-            metadataQuery.value("wifi_password").toString();
-        record.zoomId =
-            metadataQuery.value("zoom_id").toString();
-        record.zoomPassword =
-            metadataQuery.value("zoom_password").toString();
+        return std::unexpected(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading roster print class information"),
+            {},
+            identity
+            ).userMessage());
     }
+
+    if (!parentRowFound)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading roster print class information failed: no result was returned for class id %1."
+            ).arg(classId));
+    }
+
+    outcome.parentMissing = metadataQuery.value("parent_class_id").isNull();
+    outcome.record.classId = metadataQuery.value("requested_class_id").toInt();
+
+    outcome.record.classGrade =
+        metadataQuery.value("class_grade").toString();
+    outcome.record.classLevel =
+        metadataQuery.value("class_level").toString();
+    outcome.record.teacherEnglishName =
+        metadataQuery.value("teacher_en").toString();
+    outcome.record.teacherKoreanName =
+        metadataQuery.value("teacher_kr").toString();
+    outcome.record.roomNumber =
+        metadataQuery.value("room_number").toString();
+    outcome.record.wifiName =
+        metadataQuery.value("wifi_name").toString();
+    outcome.record.wifiPassword =
+        metadataQuery.value("wifi_password").toString();
+    outcome.record.zoomId =
+        metadataQuery.value("zoom_id").toString();
+    outcome.record.zoomPassword =
+        metadataQuery.value("zoom_password").toString();
 
     QSqlQuery scheduleQuery(m_database);
     scheduleQuery.prepare(R"(
@@ -3394,14 +3430,24 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
 
     while (scheduleQuery.next())
     {
-        record.regularTimes.append({
+        outcome.record.regularTimes.append({
             scheduleQuery.value("day").toString(),
             scheduleQuery.value("start_time").toString(),
             scheduleQuery.value("end_time").toString()
         });
     }
 
-    return record;
+    if (scheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            scheduleQuery,
+            QObject::tr("Loading roster print regular class times"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    return outcome;
 }
 
 Result<QList<RosterPrintClassInfoReadRecord>>

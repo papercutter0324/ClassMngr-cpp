@@ -74,6 +74,9 @@ private slots:
     void mapsOnlyPrintFieldsAndRegularScheduleFromActiveSession();
     void missingSessionAndInvalidIdsFail();
     void absentClassInfoRowReturnsBlankMetadataAndRegularSchedule();
+    void confirmedMissingClassParentReturnsNotFound();
+    void deletedParentSuppressesTypedResultButLegacyReadKeepsOrphanData();
+    void metadataReadFailureRemainsTechnical();
     void repositoryReadFailurePropagates();
 };
 
@@ -201,6 +204,106 @@ absentClassInfoRowReturnsBlankMetadataAndRegularSchedule()
     QCOMPARE(result.value().regularSchedule.size(), std::size_t(2));
     QCOMPARE(result.value().regularSchedule[0].day, std::u16string(u"Tuesday"));
     QCOMPARE(result.value().regularSchedule[1].day, std::u16string(u"Friday"));
+}
+
+void NextPlatformApplicationServicesRosterPrintClassInfoReadPortTests::
+confirmedMissingClassParentReturnsNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Platform::ApplicationServicesRosterPrintClassInfoReadPort port(&services);
+    const Application::RosterPrintClassInfoReadQuery query(port);
+    const auto missing = query.execute(classId(987654321));
+    QVERIFY(!missing);
+    QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(missing.error().recoverable);
+}
+
+void NextPlatformApplicationServicesRosterPrintClassInfoReadPortTests::
+deletedParentSuppressesTypedResultButLegacyReadKeepsOrphanData()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Orphan Teacher");
+    const auto teacherId =
+        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+    QVERIFY(teacherId);
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Deleted roster print class")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(*createdClass, *teacherId)
+        ));
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id = ?"));
+    deleteParent.addBindValue(*createdClass);
+    QVERIFY(deleteParent.exec());
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QVERIFY(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")));
+
+    Platform::ApplicationServicesRosterPrintClassInfoReadPort port(&services);
+    const Application::RosterPrintClassInfoReadQuery query(port);
+    const auto typedResult = query.execute(classId(*createdClass));
+    QVERIFY(!typedResult);
+    QCOMPARE(typedResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(typedResult.error().recoverable);
+
+    ClassInfoRepository* const repository =
+        services.databaseSession()->classInfoRepository();
+    const auto detailed =
+        repository->loadRosterPrintClassInfoRecordDetailed(*createdClass);
+    QVERIFY(detailed);
+    QVERIFY(detailed->parentMissing);
+    QCOMPARE(detailed->record.classGrade, QStringLiteral("E5"));
+    QCOMPARE(detailed->record.teacherEnglishName,
+             QStringLiteral("Orphan Teacher"));
+    QCOMPARE(detailed->record.regularTimes.size(), 2);
+
+    const auto legacy =
+        repository->loadRosterPrintClassInfoRecord(*createdClass);
+    QVERIFY(legacy);
+    QCOMPARE(legacy->classGrade, QStringLiteral("E5"));
+    QCOMPARE(legacy->classLevel, QStringLiteral("Odyssey"));
+    QCOMPARE(legacy->teacherEnglishName, QStringLiteral("Orphan Teacher"));
+    QCOMPARE(legacy->regularTimes.size(), 2);
+    QCOMPARE(legacy->regularTimes[0].day, QStringLiteral("Tuesday"));
+    QCOMPARE(legacy->regularTimes[1].day, QStringLiteral("Friday"));
+}
+
+void NextPlatformApplicationServicesRosterPrintClassInfoReadPortTests::
+metadataReadFailureRemainsTechnical()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Metadata read failure")
+        );
+    QVERIFY(createdClass);
+    QSqlQuery dropClassInfo(services.databaseSession()->database());
+    QVERIFY(dropClassInfo.exec(QStringLiteral("DROP TABLE class_info")));
+
+    Platform::ApplicationServicesRosterPrintClassInfoReadPort port(&services);
+    const Application::RosterPrintClassInfoReadQuery query(port);
+    const auto failure = query.execute(classId(*createdClass));
+    QVERIFY(!failure);
+    QVERIFY(!failure.error().message.empty());
+    QCOMPARE(failure.error().code, Domain::ErrorCode::Technical);
 }
 
 void NextPlatformApplicationServicesRosterPrintClassInfoReadPortTests::

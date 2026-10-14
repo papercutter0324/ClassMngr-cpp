@@ -65,12 +65,12 @@ public:
                 ));
         }
 
-        Result<RosterPrintClassInfoReadRecord> loaded = [&]()
-            -> Result<RosterPrintClassInfoReadRecord>
+        Result<RosterPrintClassInfoReadOutcome> loaded = [&]()
+            -> Result<RosterPrintClassInfoReadOutcome>
         {
             try
             {
-                return classRepository->loadRosterPrintClassInfoRecord(
+                return classRepository->loadRosterPrintClassInfoRecordDetailed(
                     *legacyClassId
                     );
             }
@@ -95,7 +95,16 @@ public:
                 );
         }
 
-        const std::string returnedId = std::to_string(loaded->classId);
+        if (loaded->parentMissing)
+        {
+            return Application::RosterPrintClassInfoReadResult::failure(error(
+                Domain::ErrorCode::NotFound,
+                "The requested class was not found."
+                ));
+        }
+
+        const RosterPrintClassInfoReadRecord& record = loaded->record;
+        const std::string returnedId = std::to_string(record.classId);
         const auto typedReturnedId = Domain::ClassId::fromString(returnedId);
         if (!typedReturnedId)
         {
@@ -108,19 +117,19 @@ public:
         Application::RosterPrintClassInfoReadSnapshot snapshot(
             *typedReturnedId
             );
-        snapshot.classGrade = loaded->classGrade.toStdU16String();
-        snapshot.classLevel = loaded->classLevel.toStdU16String();
-        snapshot.teacherEn = loaded->teacherEnglishName.toStdU16String();
-        snapshot.teacherKr = loaded->teacherKoreanName.toStdU16String();
-        snapshot.roomNumber = loaded->roomNumber.toStdU16String();
-        snapshot.wifiName = loaded->wifiName.toStdU16String();
-        snapshot.wifiPassword = loaded->wifiPassword.toStdU16String();
-        snapshot.zoomId = loaded->zoomId.toStdU16String();
-        snapshot.zoomPassword = loaded->zoomPassword.toStdU16String();
+        snapshot.classGrade = record.classGrade.toStdU16String();
+        snapshot.classLevel = record.classLevel.toStdU16String();
+        snapshot.teacherEn = record.teacherEnglishName.toStdU16String();
+        snapshot.teacherKr = record.teacherKoreanName.toStdU16String();
+        snapshot.roomNumber = record.roomNumber.toStdU16String();
+        snapshot.wifiName = record.wifiName.toStdU16String();
+        snapshot.wifiPassword = record.wifiPassword.toStdU16String();
+        snapshot.zoomId = record.zoomId.toStdU16String();
+        snapshot.zoomPassword = record.zoomPassword.toStdU16String();
         snapshot.regularSchedule.reserve(
-            static_cast<std::size_t>(loaded->regularTimes.size())
+            static_cast<std::size_t>(record.regularTimes.size())
             );
-        for (const ClassTime& row : loaded->regularTimes)
+        for (const ClassTime& row : record.regularTimes)
         {
             snapshot.regularSchedule.push_back({
                 row.day.toStdU16String(),
