@@ -37767,7 +37767,7 @@ temporary test source was restored byte-for-byte (SHA-256
 
 | Acceptance point | Required behavior |
 | --- | --- |
-| Parent provenance and batch shape | Preserve outer success, request order, and valid siblings. Only a clean parent-rooted read confirming no `classes` row maps that entry to recoverable `NotFound`; suppress orphan columns and cells. Carry the same parent provenance through repository fallback. |
+| Parent provenance and batch shape | Preserve outer success, request order, and valid siblings. Only a clean parent-rooted read confirming no `classes` row maps that entry to the new class-absence `NotFound`; suppress orphan columns and cells, with the same parent provenance through repository fallback. Preserve per-entry recoverable `NotFound` for unavailable session/repository as infrastructure behavior, not evidence of class absence. |
 | Existing-parent count | Preserve the count of one per `row_index` with any nonblank trimmed English or Korean value. No columns, or neither exact `English` nor exact `Korean` header, remains count 0; if exactly one header exists, count using that header as current logic does. |
 | Validation, failures, and metrics | Preserve request validation and order, empty-input behavior, current metrics, and the existing batch-to-per-class fallback. Only unrecovered SQL, cursor, or malformed-row failures remain `Technical`; query errors never establish parent absence. |
 | Scope and status | Leave UI, schema/orphan cleanup, Sub Prep and legacy count paths, and count policy unchanged. F907 baseline and acceptance are recorded; implementation and post-change verification remain pending. |

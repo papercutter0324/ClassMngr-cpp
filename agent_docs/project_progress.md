@@ -428,14 +428,15 @@ forced build logged nonfatal MSB8064 for missing generated
 `teacher_import_plan_mapper.h`. No full suite ran. The temporary test source
 was restored byte-for-byte (SHA-256
 `79663EB37B9BC521EC06F4A8E1862688002ECD6F6CD6DF420356BA78D2ABD0EA`). The
-recorded F907 boundary preserves ordered per-entry results and maps only
-clean parent-rooted absence to recoverable `NotFound` in both normal batch
-and fallback paths, while preserving zero counts, count semantics, metrics,
-and the existing batch-to-fallback recovery. Unrecovered SQL, cursor, or
-malformed-read failures remain per-entry `Technical`; failed reads never
-establish absence. F907 implementation and post-change verification are
-pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
-Open.
+recorded F907 boundary preserves ordered per-entry results and the existing
+unavailable-session/repository `NotFound` behavior without treating it as
+class-absence evidence. For class absence, it maps only clean parent-rooted
+absence to recoverable `NotFound` in both normal batch and fallback paths,
+while preserving zero counts, count semantics, metrics, and the existing
+batch-to-fallback recovery. Unrecovered SQL, cursor, or malformed-read
+failures remain per-entry `Technical`; failed reads never establish absence.
+F907 implementation and post-change verification are pending. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
