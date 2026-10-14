@@ -834,11 +834,32 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
     const int classId
     )
 {
+    const auto loaded =
+        loadClassCoTeacherAssignmentValidationSnapshotDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error().message);
+    }
+
+    return *loaded;
+}
+
+ClassCoTeacherAssignmentValidationSnapshotDetailedResult
+ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
+    const int classId
+    )
+{
     if (classId <= 0)
     {
         return std::unexpected(
-            QObject::tr("Loading class information failed: invalid class id %1.")
-                .arg(classId)
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        Technical,
+                .message = QObject::tr(
+                    "Loading class information failed: invalid class id %1."
+                    ).arg(classId)
+            }
             );
     }
 
@@ -872,13 +893,44 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
         );
     if (!loadedInfo)
     {
-        return std::unexpected(loadedInfo.error().userMessage());
+        return std::unexpected(
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        Technical,
+                .message = loadedInfo.error().userMessage()
+            }
+            );
     }
     if (!query.next())
     {
+        if (query.lastError().isValid())
+        {
+            const auto readError = SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading class information"),
+                {},
+                identity
+                );
+            return std::unexpected(
+                ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                    .kind =
+                        ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                            Technical,
+                    .message = readError.userMessage()
+                }
+                );
+        }
+
         return std::unexpected(
-            QObject::tr("Loading class information failed for %1: class not found.")
-                .arg(identity)
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        ClassNotFound,
+                .message = QObject::tr(
+                    "Loading class information failed for %1: class not found."
+                    ).arg(identity)
+            }
             );
     }
 
@@ -915,7 +967,14 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
         );
     if (!loadedRegularTimes)
     {
-        return std::unexpected(loadedRegularTimes.error().userMessage());
+        return std::unexpected(
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        Technical,
+                .message = loadedRegularTimes.error().userMessage()
+            }
+            );
     }
     while (query.next())
     {
@@ -941,7 +1000,14 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshot(
         );
     if (!loadedIntensiveTimes)
     {
-        return std::unexpected(loadedIntensiveTimes.error().userMessage());
+        return std::unexpected(
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        Technical,
+                .message = loadedIntensiveTimes.error().userMessage()
+            }
+            );
     }
     while (query.next())
     {

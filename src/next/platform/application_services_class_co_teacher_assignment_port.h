@@ -91,13 +91,28 @@ public:
 
         try
         {
-            const Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
-                loaded = repository->loadClassCoTeacherAssignmentValidationSnapshot(
-                    *classId
-                    );
+            const ClassCoTeacherAssignmentValidationSnapshotDetailedResult
+                loaded = repository
+                    ->loadClassCoTeacherAssignmentValidationSnapshotDetailed(
+                        *classId
+                        );
             if (!loaded)
             {
-                return repositoryFailure(session, loaded.error());
+                const auto& error = loaded.error();
+                if (
+                    error.kind
+                        == ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                            ClassNotFound
+                    && session->isOpen()
+                    )
+                {
+                    return failure(
+                        Domain::ErrorCode::NotFound,
+                        toStdString(error.message)
+                        );
+                }
+
+                return repositoryFailure(session, error.message);
             }
 
             ClassInfo info;

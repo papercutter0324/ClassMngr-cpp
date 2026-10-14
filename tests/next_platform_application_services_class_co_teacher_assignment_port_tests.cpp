@@ -275,6 +275,7 @@ private slots:
     void assignmentPreservesRawMetadataAndScheduleRows();
     void assignmentCreatesMissingClassInfoRowWithDefaults();
     void teacherIdStatementFailurePreservesClassInfoAndSchedules();
+    void validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation();
     void unavailableSessionReturnsStructuredFailure();
 };
 
@@ -462,6 +463,27 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
     QCOMPARE(invalidTeacher.error().code, Domain::ErrorCode::InvalidInput);
 
     const int unknownClassId = classId + 100000;
+    const QString unknownClassDiagnostic = QStringLiteral(
+        "Loading class information failed for class id %1: class not found."
+        ).arg(unknownClassId);
+    const auto legacyUnknownClass =
+        repository->loadClassCoTeacherAssignmentValidationSnapshot(
+            unknownClassId
+            );
+    QVERIFY(!legacyUnknownClass);
+    QCOMPARE(legacyUnknownClass.error(), unknownClassDiagnostic);
+
+    const auto detailedUnknownClass =
+        repository->loadClassCoTeacherAssignmentValidationSnapshotDetailed(
+            unknownClassId
+            );
+    QVERIFY(!detailedUnknownClass);
+    QCOMPARE(
+        detailedUnknownClass.error().kind,
+        ClassCoTeacherAssignmentValidationSnapshotFailureKind::ClassNotFound
+        );
+    QCOMPARE(detailedUnknownClass.error().message, unknownClassDiagnostic);
+
     const auto unknownClass =
         Application::ClassCoTeacherAssignmentUseCase::execute(
             unknownClassId,
@@ -469,7 +491,7 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
             port
             );
     QVERIFY(!unknownClass);
-    QCOMPARE(unknownClass.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(unknownClass.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(QString::fromStdString(unknownClass.error().message).contains(
         QStringLiteral("class not found")
         ));
@@ -1114,6 +1136,79 @@ teacherIdStatementFailurePreservesClassInfoAndSchedules()
     const auto savedAfter = repository->loadClassInfo(selectedClassId);
     QVERIFY(savedAfter);
     QVERIFY(sameCompleteClassInfo(*savedAfter, *savedBefore));
+}
+
+void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
+validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int selectedClassId = createClass(
+        services,
+        QStringLiteral("Snapshot Read Failure Co-Teacher Assignment")
+        );
+    const int originalTeacherId = createTeacher(
+        services,
+        QStringLiteral("Original Teacher")
+        );
+    const int assignedTeacherId = createTeacher(
+        services,
+        QStringLiteral("Assigned Teacher")
+        );
+    QVERIFY(selectedClassId > 0);
+    QVERIFY(originalTeacherId > 0);
+    QVERIFY(assignedTeacherId > 0);
+
+    ClassInfo original = newClassInfo(
+        services,
+        selectedClassId,
+        originalTeacherId
+        );
+    original.classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+    }};
+    QVERIFY(saveClassInfo(services, original));
+
+    QSqlDatabase database = services.databaseSession()->database();
+    const QVariantList persistedFieldsBefore = rawClassInfoFields(
+        database,
+        selectedClassId
+        );
+    const QVariant persistedTeacherIdBefore = readRawTeacherId(
+        database,
+        selectedClassId
+        );
+
+    QSqlQuery removeRequiredScheduleTable(database);
+    QVERIFY2(
+        removeRequiredScheduleTable.exec(QStringLiteral(
+            "DROP TABLE class_times"
+            )),
+        qPrintable(removeRequiredScheduleTable.lastError().text())
+        );
+
+    Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
+    const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
+        selectedClassId,
+        assignedTeacherId,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("Loading regular class times failed")
+        ));
+
+    QCOMPARE(
+        rawClassInfoFields(database, selectedClassId),
+        persistedFieldsBefore
+        );
+    QCOMPARE(readRawTeacherId(database, selectedClassId), persistedTeacherIdBefore);
 }
 
 void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::

@@ -14,6 +14,7 @@
 #include <QStringList>
 #include <QtGlobal>
 
+#include <expected>
 #include <optional>
 #include <vector>
 
@@ -152,6 +153,25 @@ struct ClassCoTeacherAssignmentValidationSnapshotReadRecord final
     QList<ClassTime> regularTimes;
     QList<ClassTime> intensiveTimes;
 };
+
+enum class ClassCoTeacherAssignmentValidationSnapshotFailureKind
+{
+    Technical,
+    ClassNotFound
+};
+
+struct ClassCoTeacherAssignmentValidationSnapshotReadFailure final
+{
+    ClassCoTeacherAssignmentValidationSnapshotFailureKind kind =
+        ClassCoTeacherAssignmentValidationSnapshotFailureKind::Technical;
+    QString message;
+};
+
+using ClassCoTeacherAssignmentValidationSnapshotDetailedResult =
+    std::expected<
+        ClassCoTeacherAssignmentValidationSnapshotReadRecord,
+        ClassCoTeacherAssignmentValidationSnapshotReadFailure
+        >;
 
 struct ScheduleEditorClassInfoReadRecord final
 {
@@ -418,6 +438,8 @@ public:
         );
     [[nodiscard]] Result<ClassCoTeacherAssignmentValidationSnapshotReadRecord>
         loadClassCoTeacherAssignmentValidationSnapshot(int classId);
+    [[nodiscard]] ClassCoTeacherAssignmentValidationSnapshotDetailedResult
+        loadClassCoTeacherAssignmentValidationSnapshotDetailed(int classId);
     [[nodiscard]] Result<ClassPageDetailsReadRecord> loadClassPageDetails(
         int classId
         );
