@@ -11,13 +11,13 @@
 namespace
 {
 CampusRecord campusFromQuery(
-    const QSqlQuery& query
+    const QSqlQuery& query,
+    int campusId
     )
 {
     CampusRecord campus;
 
-    campus.id =
-        query.value("id").toInt();
+    campus.id = campusId;
     campus.name =
         query.value("name").toString();
     campus.buildingName =
@@ -259,7 +259,10 @@ Result<CampusRecord> CampusRecordRepository::getCampus(
             );
     }
 
-    return campusFromQuery(query);
+    return campusFromQuery(
+        query,
+        query.value("id").toInt()
+        );
 }
 
 Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
@@ -284,8 +287,34 @@ Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
 
     while (query.next())
     {
+        bool campusIdConversionOk = false;
+        const qint64 storedCampusId =
+            query.value("id").toLongLong(&campusIdConversionOk);
+        if (!campusIdConversionOk || storedCampusId <= 0)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading campuses failed: the database returned invalid "
+                    "campus id %1."
+                    ).arg(QString::number(storedCampusId))
+                );
+        }
+
+        if (storedCampusId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading campuses failed: campus id %1 is outside the "
+                    "supported integer range."
+                    ).arg(QString::number(storedCampusId))
+                );
+        }
+
         campuses.append(
-            campusFromQuery(query)
+            campusFromQuery(
+                query,
+                static_cast<int>(storedCampusId)
+                )
             );
     }
 

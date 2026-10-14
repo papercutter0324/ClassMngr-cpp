@@ -243,6 +243,7 @@ private slots:
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
     void campusCreationValidatesGeneratedIdAtomically();
+    void campusListValidatesPersistedIds();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
@@ -931,6 +932,122 @@ void DataServiceLifecycleTests::campusCreationValidatesGeneratedIdAtomically()
     QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
     QCOMPARE(query.value("name").toString(),
         QStringLiteral("F871 Maximum Campus"));
+    QVERIFY(!query.next());
+}
+
+void DataServiceLifecycleTests::campusListValidatesPersistedIds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("campus-list-id-validation.db"))
+        ).has_value());
+
+    const Result<QList<CampusRecord>> emptyCampuses =
+        service.getAllCampuses();
+    QVERIFY(emptyCampuses);
+    QVERIFY(emptyCampuses->isEmpty());
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO campuses (id, name) VALUES "
+        "(1, 'F872 A Campus'), "
+        "(2147483647, 'F872 B Campus')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 2);
+
+    const Result<QList<CampusRecord>> campuses = service.getAllCampuses();
+    QVERIFY(campuses);
+    QCOMPARE(campuses->size(), 2);
+    QCOMPARE(campuses->first().id, 1);
+    QCOMPARE(campuses->first().name, QStringLiteral("F872 A Campus"));
+    QCOMPARE(campuses->last().id, std::numeric_limits<int>::max());
+    QCOMPARE(campuses->last().name, QStringLiteral("F872 B Campus"));
+
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO campuses (id, name) "
+        "VALUES (4294967297, 'F872 C Wide Campus')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    const Result<QList<CampusRecord>> campusesWithWideId =
+        service.getAllCampuses();
+    QVERIFY(!campusesWithWideId);
+    QVERIFY(campusesWithWideId.error().contains(
+        QStringLiteral("outside the supported integer range")
+        ));
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT id, name, typeof(id) AS id_type "
+        "FROM campuses ORDER BY id"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{1});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value("name").toString(), QStringLiteral("F872 A Campus"));
+
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{2147483647LL});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value("name").toString(), QStringLiteral("F872 B Campus"));
+
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{4294967297LL});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value("name").toString(),
+        QStringLiteral("F872 C Wide Campus"));
+    QVERIFY(!query.next());
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "DELETE FROM campuses WHERE id=?"
+        )));
+    query.addBindValue(qint64{4294967297LL});
+    QVERIFY(query.exec());
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO campuses (id, name) "
+        "VALUES (0, 'F872 C Zero Campus')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    const Result<QList<CampusRecord>> campusesWithZeroId =
+        service.getAllCampuses();
+    QVERIFY(!campusesWithZeroId);
+    QVERIFY(campusesWithZeroId.error().contains(
+        QStringLiteral("invalid campus id 0")
+        ));
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT id, name, typeof(id) AS id_type "
+        "FROM campuses ORDER BY id"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{0});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(
+        query.value("name").toString(),
+        QStringLiteral("F872 C Zero Campus")
+        );
+
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{1});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(
+        query.value("name").toString(),
+        QStringLiteral("F872 A Campus")
+        );
+
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{2147483647LL});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(
+        query.value("name").toString(),
+        QStringLiteral("F872 B Campus")
+        );
     QVERIFY(!query.next());
 }
 
