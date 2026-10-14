@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F889 accepted; F890 selected)
+### Current state - 2026-10-15 (F890 accepted; F891 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -145,14 +145,18 @@ defaults for missing optional metadata, retains an independent roster count,
 and keeps legacy defaults. Its exact focused Debug CTest passed 1/1 after
 bounded FileTracker retries; no full suite ran. Two independent post-F889
 audits again found none of the 13 official Deferred entries actionable.
-Batch 302 proceeds with F890 after its public baseline showed both a missing
-class parent and an existing class without Testing Class details return
-unrecoverable `Technical` with the same legacy diagnostic and no write. The
-selected boundary maps only a parent absent inside the assignment transaction
-to typed `NotFound`; missing subtype/details, conflicts, and query failures
-remain `Technical`. Batch 303's leading Class Notes Page read follow-up and
-similar page-read leads remain in the Phase 2 progress log. Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+F890 is accepted at source/test commit
+`4f474b3a5c2c22f63951c6078f3e3a68d2e203d6`: the typed Testing Assignment save
+maps only a class parent confirmed absent inside the Immediate transaction to
+`NotFound`; missing subtype/details, conflicts, and repository failures remain
+`Technical`, and the legacy diagnostic is preserved. Independent sequential
+Debug builds of `ClassMngr` and the two focused assignment targets succeeded;
+the exact CTests passed 2/2 after bounded FileTracker retries, with no full
+suite run. Two independent post-F890 audits found none of the 13 official
+Deferred candidates newly actionable. Batch 303 selects F891, a typed Class
+Notes Page read, for baseline and acceptance work; seven further bounded read
+leads are ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal
+exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

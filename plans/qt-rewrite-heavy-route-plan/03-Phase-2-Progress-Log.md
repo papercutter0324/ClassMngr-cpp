@@ -36623,3 +36623,67 @@ preflight and prevents a concurrent deletion from racing the classification.
 F890 baseline and acceptance are complete; implementation is next. All 13
 official Deferred candidates remain unchanged; Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
+
+### F890 accepted; Batch 302 complete; Batch 303 selected - 2026-10-15
+
+F890 is accepted at source/test commit
+`4f474b3a5c2c22f63951c6078f3e3a68d2e203d6`. The typed Testing Assignment
+save now receives an explicit repository failure kind for a class parent
+confirmed absent inside an Immediate transaction. Only that result maps to
+typed `NotFound`; an existing ordinary class without its Testing Class subtype
+or required details, slot conflicts, SQL/query failures, and other repository
+failures remain `Technical`. The legacy `Status` wrapper retains the exact
+`The selected testing class no longer exists.` diagnostic. The parent check,
+subtype/details validation, conflict check, and assignment write remain in the
+same transaction.
+
+Regression coverage includes missing parent with no assignment row, an
+existing class without subtype/details, the exact legacy diagnostic, missing
+required details, conflict preservation, successful assignment and
+replacement, and a forced classification-query execution failure. Independent
+sequential Debug builds of `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests`,
+and `ClassMngrTestingBlockRepositoryTests` passed in
+`build/windows-x64-debug`; the two matching Debug CTests passed 2/2 after
+bounded FileTracker retries. No compiler warnings appeared in the successful
+build outputs; no full suite ran. The parent-absence test uses an unknown ID
+without separately creating then deleting that parent. Query fetch failure
+after an unsuccessful `next()` and a concurrent deletion race were not
+directly injected; the transaction boundary and error mapping were reviewed.
+
+Two independent post-F890 audits reviewed each of the 13 official Deferred
+candidates and found no reopening trigger satisfied. No required heap capture,
+memory measurement, export measurement, macOS runner, live helper callsite,
+Calendar injection seam, policy decision, allocation decision, or Teacher ID
+width migration was produced by F888-F890. All 13 official candidates remain
+unchanged and deferred.
+
+Batch 302 is complete. Batch 303 discovery reviewed eight bounded read
+provenance leads; the ordered shortlist is:
+
+1. **F891 - Typed Class Notes Page read.** Distinguish an absent class parent
+   from an existing class without optional `class_info` while preserving valid
+   empty fields, schedules, and technical read failures.
+2. **F892 - Selected Class Grade read.** Check whether an absent parent can be
+   distinguished from missing grade metadata without changing empty-grade
+   behavior.
+3. **F893 - Schedule Editor Class Info read.** Check whether the requested
+   class projection distinguishes an absent parent from optional metadata.
+4. **F894 - Co-Teacher Page read.** Check parent provenance while preserving
+   defaults for an existing class without metadata.
+5. **F895 - Selected Class Subtitle read.** Check parent provenance across
+   subtitle, schedule, and optional teacher components.
+6. **F896 - Roster Print Class Info read.** Check parent provenance while
+   preserving existing metadata defaults and schedule behavior.
+7. **F897 - Roster read.** Evaluate parent provenance while retaining the
+   independent successful empty-roster result.
+8. **F898 - Teacher display-name read provenance.** Assess structured
+   missing-versus-query-failure outcomes across typed page callers.
+
+Two independent read-only reviews selected F891 because the public port test
+already covers both an existing class without `class_info` (including its
+schedule) and an unknown ID returning default-success. The production route is
+bounded to the typed Class Notes Page port and its repository read, and F889
+provides a close parent-rooted optional-metadata precedent. Baseline inspection
+and acceptance definition are next. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.

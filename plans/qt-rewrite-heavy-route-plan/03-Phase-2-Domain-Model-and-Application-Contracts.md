@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F889 is accepted; F890's public baseline confirms deleted parents and missing Testing Class details currently collapse to `Technical`, and implementation will classify only a missing parent inside the assignment transaction; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F890 is accepted, and two independent reviews found none of the 13 official Deferred candidates newly actionable; Batch 303 selects F891 for a typed Class Notes Page read baseline, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,15 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 302 - F890: classify only an absent class during typed Testing Assignment save; keep missing subtype/details, conflicts, and query failures `Technical`; baseline captured and acceptance defined.
+- Batch 303:
+  - F891 - Typed Class Notes Page read: baseline missing-parent behavior against an existing class without optional `class_info`.
+  - F892 - Selected Class Grade read: check whether parent absence is distinguishable from missing grade metadata.
+  - F893 - Schedule Editor Class Info read: check whether its requested-class projection distinguishes a missing parent from optional metadata.
+  - F894 - Co-Teacher Page read: baseline missing-parent behavior while preserving existing-class defaults.
+  - F895 - Selected Class Subtitle read: check parent provenance across subtitle, schedule, and optional teacher reads.
+  - F896 - Roster Print Class Info read: check parent provenance while preserving metadata defaults and schedules.
+  - F897 - Roster read: evaluate whether typed parent provenance is needed while keeping independent empty-roster behavior.
+  - F898 - Teacher display-name read provenance: evaluate structured missing-versus-query-failure outcomes across typed page callers.
 
 #### Deferred candidates
 
