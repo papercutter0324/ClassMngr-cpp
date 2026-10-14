@@ -124,6 +124,7 @@ class NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests
 
 private slots:
     void readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder();
+    void blankNameWidePersistedConflictIdPreservesFullFallback();
     void repositoryOwnsSelfOverlapAndBoundaryBehavior();
     void unavailableSessionsAreNotFoundAndDoNotUseFallback();
     void missingClassAndRepositoryFailureAreTechnical();
@@ -321,6 +322,147 @@ readsRegularAndIntensiveConflictsAndPreservesRepositoryOrder()
             );
     QVERIFY(intensiveWrongMode);
     QVERIFY(intensiveWrongMode.value().empty());
+}
+
+void NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests::
+blankNameWidePersistedConflictIdPreservesFullFallback()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int target = createClass(
+        services,
+        QStringLiteral("Requested Class")
+        );
+    QVERIFY(target > 0);
+
+    constexpr qlonglong ordinaryConflictingClassId = 42;
+    constexpr qlonglong wideConflictingClassId = 4294967297LL;
+    QSqlQuery insertOrdinaryClass(services.databaseSession()->database());
+    insertOrdinaryClass.prepare(
+        QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
+        );
+    insertOrdinaryClass.addBindValue(
+        QVariant::fromValue<qlonglong>(ordinaryConflictingClassId)
+        );
+    insertOrdinaryClass.addBindValue(QString{});
+    QVERIFY2(
+        insertOrdinaryClass.exec(),
+        qPrintable(insertOrdinaryClass.lastError().text())
+        );
+
+    QSqlQuery insertOrdinaryTime(services.databaseSession()->database());
+    insertOrdinaryTime.prepare(
+        QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+            )
+        );
+    insertOrdinaryTime.addBindValue(
+        QVariant::fromValue<qlonglong>(ordinaryConflictingClassId)
+        );
+    insertOrdinaryTime.addBindValue(QStringLiteral("Monday"));
+    insertOrdinaryTime.addBindValue(QStringLiteral("9:00 AM"));
+    insertOrdinaryTime.addBindValue(QStringLiteral("9:55 AM"));
+    QVERIFY2(
+        insertOrdinaryTime.exec(),
+        qPrintable(insertOrdinaryTime.lastError().text())
+        );
+
+    QSqlQuery insertClass(services.databaseSession()->database());
+    insertClass.prepare(
+        QStringLiteral("INSERT INTO classes (id, name) VALUES (?, ?)")
+        );
+    insertClass.addBindValue(
+        QVariant::fromValue<qlonglong>(wideConflictingClassId)
+        );
+    insertClass.addBindValue(QString{});
+    QVERIFY2(insertClass.exec(), qPrintable(insertClass.lastError().text()));
+
+    QSqlQuery insertTime(services.databaseSession()->database());
+    insertTime.prepare(
+        QStringLiteral(
+            "INSERT INTO class_times "
+            "(class_id, day, start_time, end_time) VALUES (?, ?, ?, ?)"
+            )
+        );
+    insertTime.addBindValue(
+        QVariant::fromValue<qlonglong>(wideConflictingClassId)
+        );
+    insertTime.addBindValue(QStringLiteral("Monday"));
+    insertTime.addBindValue(QStringLiteral("9:00 AM"));
+    insertTime.addBindValue(QStringLiteral("9:55 AM"));
+    QVERIFY2(insertTime.exec(), qPrintable(insertTime.lastError().text()));
+
+    QSqlQuery persisted(services.databaseSession()->database());
+    persisted.prepare(
+        QStringLiteral(
+            "SELECT classes.id, typeof(classes.id), classes.name, "
+            "class_times.class_id, typeof(class_times.class_id) "
+            "FROM classes INNER JOIN class_times "
+            "ON class_times.class_id = classes.id "
+            "WHERE classes.id = ?"
+            )
+        );
+    persisted.addBindValue(
+        QVariant::fromValue<qlonglong>(wideConflictingClassId)
+        );
+    QVERIFY2(persisted.exec(), qPrintable(persisted.lastError().text()));
+    QVERIFY(persisted.next());
+    QCOMPARE(persisted.value(0).toLongLong(), wideConflictingClassId);
+    QCOMPARE(persisted.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(persisted.value(2).toString().isEmpty());
+    QCOMPARE(persisted.value(3).toLongLong(), wideConflictingClassId);
+    QCOMPARE(persisted.value(4).toString(), QStringLiteral("integer"));
+    QVERIFY(!persisted.next());
+
+    Platform::ApplicationServicesClassDetailsScheduleConflictPort port(
+        &services
+        );
+    const auto result = Application::ClassDetailsScheduleConflictQuery::execute(
+        request(
+            target,
+            Application::ClassDetailsScheduleMode::Regular,
+            {domainTime(0, 9 * 60 + 10, 9 * 60 + 40)}
+            ),
+        port
+        );
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(2));
+    bool sawOrdinaryFallback = false;
+    bool sawWideFallback = false;
+    for (const auto& conflict : result.value())
+    {
+        if (conflict.conflictingClassName == std::u16string(u"Class 42"))
+        {
+            sawOrdinaryFallback = true;
+        }
+        if (
+            conflict.conflictingClassName
+            == std::u16string(u"Class 4294967297")
+            )
+        {
+            sawWideFallback = true;
+        }
+        QCOMPARE(conflict.className, std::u16string(u"Requested Class"));
+        QCOMPARE(conflict.day, std::u16string(u"Monday"));
+    }
+    QVERIFY(sawOrdinaryFallback);
+    QVERIFY(sawWideFallback);
+
+    persisted.bindValue(
+        0,
+        QVariant::fromValue<qlonglong>(wideConflictingClassId)
+        );
+    QVERIFY2(persisted.exec(), qPrintable(persisted.lastError().text()));
+    QVERIFY(persisted.next());
+    QCOMPARE(persisted.value(0).toLongLong(), wideConflictingClassId);
+    QCOMPARE(persisted.value(1).toString(), QStringLiteral("integer"));
+    QVERIFY(persisted.value(2).toString().isEmpty());
+    QCOMPARE(persisted.value(3).toLongLong(), wideConflictingClassId);
+    QCOMPARE(persisted.value(4).toString(), QStringLiteral("integer"));
+    QVERIFY(!persisted.next());
 }
 
 void NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests::

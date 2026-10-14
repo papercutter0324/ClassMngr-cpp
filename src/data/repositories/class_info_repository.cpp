@@ -174,7 +174,7 @@ bool intervalsOverlap(
 
 QString classDisplayName(
     const QString& className,
-    int classId
+    qint64 classId
     )
 {
     if (!className.trimmed().isEmpty())
@@ -5187,8 +5187,8 @@ Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
             continue;
         }
 
-        const int conflictingClassId =
-            query.value("class_id").toInt();
+        const qint64 conflictingClassId =
+            query.value("class_id").toLongLong();
 
         const QString conflictingClassName =
             classDisplayName(
