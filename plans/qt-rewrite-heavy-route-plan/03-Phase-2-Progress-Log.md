@@ -36444,6 +36444,85 @@ its existing public regression assertion a narrow production/core change.
 | Regression coverage | Change the existing deleted/missing Teacher reload assertion to `NotFound`; retain successful reload and update behavior. Cover repository lookup failure as `Technical` through the typed reload path where the existing SQL failure seam permits. |
 | Focused verification | Before implementation, capture the existing missing-record baseline. Then sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests` in `build/windows-x64-debug`; run only the matching CTest. No full suite. |
 
-F888 baseline and implementation are pending. All 13 Phase 2 Deferred
+### F888 accepted; F889 selected; Batch 303 discovery started - 2026-10-15
+
+F888 is accepted at source/test commit
+`88e1f0e4ad1b7fdbda6ce58f8a47d73e4c28146a`. The typed Teacher Profile Edit
+reload now consumes `TeacherRepository::lookupTeacherById()`'s explicit
+`Found`/`Missing`/`Failure` outcome: only `Missing` maps to typed `NotFound`,
+while lookup failures remain `Technical`. Successful field mapping, requested
+identity validation, invalid-input and unavailable-session behavior, the
+update path, and the legacy `getTeacher()` diagnostic remain unchanged.
+
+The pre-change public baseline returned `Technical` for an unknown positive
+Teacher ID with the repository's no-matching-record diagnostic. Regressions now
+cover an actually deleted Teacher, an unknown positive ID with the exact
+repository diagnostic, and a forced SQL lookup failure as `Technical`. The
+initial independent implementation review caught two test-only compile errors;
+they were corrected before acceptance. The final independent sequential Debug
+builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests`
+passed in `build/windows-x64-debug`, and the exact matching Debug CTest passed
+1/1. The baseline build reported an existing MSB8064 missing-dependency
+warning for `teacher_import_plan_mapper.h`; it did not recur in the final
+successful builds. FileTracker `ZERO_CHECK` access denials required bounded
+elevated retries. No full suite ran.
+
+Two independent post-F888 audits reviewed all 13 official Deferred entries;
+none met its reopening condition, and all 13 remain unchanged. In particular,
+F888 does not unblock the blank-draft Teacher contract or the int-based
+Sidebar Teacher selection APIs.
+
+F889 is next in Batch 302. Its baseline review used an empty temporary
+database and the public Class Details Page read port for unknown positive
+class ID 42. The current result is overall success: `classFields` succeeds
+with default empty text and default colors, the teacher name succeeds as an
+empty string, and student count succeeds as 0. No diagnostics are returned.
+This separates the externally observed baseline from the intended typed
+classification. The acceptance boundary is to classify only confirmed absence
+from `classes` as typed `classFields: NotFound`. Because teacher identity
+depends on class details, that dependent result is `NotFound` when the parent
+is absent; the independent roster read still succeeds with count 0. An
+existing parent without `class_info` keeps default fields/colors and reads
+schedules as before. Metadata/schedule SQL, fetch, or malformed-data failures
+stay `Technical`, and must not suppress a successful independent roster read.
+Use one `classes`-rooted query with `LEFT JOIN class_info` to distinguish parent
+absence from optional metadata absence in the same read. The legacy repository
+wrapper keeps its existing success/default behavior for unknown IDs.
+
+The temporary baseline slot was removed and the test file is clean. The
+baseline target built after an elevated FileTracker retry; its build reported
+the existing MSB8064 missing-dependency warning for
+`src/next/application/teacher_import_plan_mapper.h`. Its exact temporary
+baseline CTest passed; no full suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and optional metadata | A single parent-rooted query with `LEFT JOIN class_info` tags only a confirmed absent `classes` row; existing parent without metadata retains defaults and its schedule read. The legacy repository wrapper preserves unknown-ID success/default behavior. |
+| Independent page results | A missing parent maps `classFields` and the dependent teacher name to `NotFound`, while the independent roster count succeeds with 0. A class-fields SQL/malformed-data failure remains `Technical` and does not discard successful roster count. |
+| Existing contract and failures | Keep successful field mapping, malformed stored-data validation, optional teacher handling, invalid input/unavailable-session outcomes, and schedule SQL/fetch failures unchanged. |
+| Regression coverage | Through the public typed port, assert missing parent, existing parent without `class_info` plus schedules, defaults, successful mapping, and SQL/malformed-data error paths. Check the metadata statement count to prove parent classification is part of the same query. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` in `build/windows-x64-debug`; run exactly the matching Debug CTest. No full suite. |
+
+F889 was the second-last Batch 302 candidate when it started, so Batch 303
+discovery began on schedule. Its strongest lead is the typed Class Notes Page
+read: current `class_info`-rooted lookup appears to default-success for an
+unknown class, while an existing class with absent optional metadata already
+has a regression. A `classes`-rooted query with `LEFT JOIN class_info` could
+distinguish those states. Other leads for bounded discovery are the Co-Teacher
+Page read, Schedule Editor Class Info read, Selected Class Grade and Subtitle
+reads, Roster Read, Roster Print Class Info read, and broader Teacher
+display-name lookup provenance. These are discovery leads, not official
+Deferred candidates; preserve valid-empty and existing-parent/no-metadata
+behavior when evaluating them.
+
+Batch 302 remaining order:
+
+1. F889 - distinguish deleted parent during Class Details Page read from
+   absent optional metadata; preserve independent teacher and roster outcomes.
+2. F890 - classify an absent class during typed Testing Assignment save while
+   keeping missing subtype/details, conflicts, and query failures `Technical`.
+
+F888 is accepted; F889 baseline is captured and implementation is next. All 13 Phase 2 Deferred
 candidates remain unchanged; Gates 1/2 remain Partial and the formal exit gate
 remains Open.

@@ -5461,3 +5461,10 @@ query at the parent table and LEFT JOIN the optional subtype. A null subtype key
 then means the parent exists without that subtype; zero rows means the parent is
 absent. This avoids a race between a subtype-rooted lookup and a second parent
 existence query while preserving optional joined data and defaults.
+
+## Phase 2 typed missing-record reads - 2026-10-15
+
+When a repository already exposes `Found`, `Missing`, and `Failure`, use that
+provenance at the typed port. Map only a successful missing-record outcome to
+`NotFound`; keep query failures `Technical` without parsing their diagnostic.
+Retain the legacy lookup path where its behavior is part of compatibility.
