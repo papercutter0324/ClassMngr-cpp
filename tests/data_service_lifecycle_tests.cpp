@@ -12,6 +12,8 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <limits>
+
 namespace
 {
 struct DatabaseIds
@@ -240,6 +242,7 @@ private slots:
     void schemaFailureClosesDatabaseSession();
     void classDeleteFailureRollsBackAllChanges();
     void teacherDeleteFailureRollsBackClassAssignments();
+    void campusCreationValidatesGeneratedIdAtomically();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
@@ -843,6 +846,92 @@ void DataServiceLifecycleTests
         service.loadClassInfo(*createdClass)->teacherId,
         *createdTeacher
         );
+}
+
+void DataServiceLifecycleTests::campusCreationValidatesGeneratedIdAtomically()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("campus-wide-id-baseline.db"))
+        ).has_value());
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO campuses (id, name) "
+        "VALUES (1, 'F871 Sentinel Campus')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    CampusRecord normalCampus;
+    normalCampus.name = QStringLiteral("F871 Normal Campus");
+    const Result<int> normalCampusId = service.saveCampus(normalCampus);
+    QVERIFY(normalCampusId);
+    QCOMPARE(*normalCampusId, 2);
+    const Result<CampusRecord> reloadedNormalCampus =
+        service.getCampus(*normalCampusId);
+    QVERIFY(reloadedNormalCampus);
+    QCOMPARE(reloadedNormalCampus->name, normalCampus.name);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq=2147483646 "
+        "WHERE name='campuses'"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    CampusRecord maximumCampus;
+    maximumCampus.name = QStringLiteral("F871 Maximum Campus");
+    const Result<int> maximumCampusId = service.saveCampus(maximumCampus);
+    QVERIFY(maximumCampusId);
+    QCOMPARE(*maximumCampusId, std::numeric_limits<int>::max());
+    const Result<CampusRecord> reloadedMaximumCampus =
+        service.getCampus(*maximumCampusId);
+    QVERIFY(reloadedMaximumCampus);
+    QCOMPARE(reloadedMaximumCampus->id, *maximumCampusId);
+    QCOMPARE(reloadedMaximumCampus->name, maximumCampus.name);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq=4294967296 "
+        "WHERE name='campuses'"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    CampusRecord campus;
+    campus.name = QStringLiteral("F871 Out Of Range Campus");
+    const Result<int> createdCampus = service.saveCampus(campus);
+    QVERIFY(!createdCampus);
+    QVERIFY(createdCampus.error().contains(
+        QStringLiteral("outside the supported integer range")
+        ));
+
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT id, name, typeof(id) AS id_type "
+        "FROM campuses ORDER BY id"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{1});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value("name").toString(),
+        QStringLiteral("F871 Sentinel Campus"));
+
+    QVERIFY(query.next());
+    QCOMPARE(query.value("id").toLongLong(), qint64{2});
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value("name").toString(),
+        QStringLiteral("F871 Normal Campus"));
+
+    QVERIFY(query.next());
+    QCOMPARE(
+        query.value("id").toLongLong(),
+        qint64{std::numeric_limits<int>::max()}
+        );
+    QCOMPARE(query.value("id_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value("name").toString(),
+        QStringLiteral("F871 Maximum Campus"));
+    QVERIFY(!query.next());
 }
 
 void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()

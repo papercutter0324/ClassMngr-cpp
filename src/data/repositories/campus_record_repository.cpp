@@ -1,9 +1,12 @@
 #include "campus_record_repository.h"
 
+#include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 
 #include <QObject>
 #include <QSqlQuery>
+
+#include <limits>
 
 namespace
 {
@@ -130,6 +133,15 @@ Result<int> CampusRecordRepository::saveCampus(
         return campus.id;
     }
 
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(
+            QObject::tr("Creating %1 failed: could not start a transaction.")
+                .arg(campusIdentity(campus))
+            );
+    }
+
     query.prepare(R"(
         INSERT INTO campuses (
             name,
@@ -175,14 +187,35 @@ Result<int> CampusRecordRepository::saveCampus(
         return std::unexpected(executed.error().userMessage());
     }
 
-    const int campusId = query.lastInsertId().toInt();
-    if (campusId <= 0)
+    bool campusIdConversionOk = false;
+    const qint64 generatedCampusId =
+        query.lastInsertId().toLongLong(&campusIdConversionOk);
+    if (!campusIdConversionOk || generatedCampusId <= 0)
     {
         return std::unexpected(
             QObject::tr(
                 "Creating %1 failed: the database did not return a valid "
                 "record id."
                 ).arg(campusIdentity(campus))
+            );
+    }
+
+    if (generatedCampusId > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating %1 failed: the database returned an id outside "
+                "the supported integer range."
+                ).arg(campusIdentity(campus))
+            );
+    }
+
+    const int campusId = static_cast<int>(generatedCampusId);
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Creating %1 failed: could not commit the transaction.")
+                .arg(campusIdentity(campus))
             );
     }
 
