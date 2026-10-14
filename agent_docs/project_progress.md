@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F888 accepted; F889 selected)
+### Current state - 2026-10-15 (F889 accepted; F890 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -138,15 +138,18 @@ accepted at `88e1f0e4ad1b7fdbda6ce58f8a47d73e4c28146a`: typed Teacher Profile
 reload maps the repository's explicit missing-Teacher outcome to `NotFound`,
 while lookup failures remain `Technical`; its exact focused Debug CTest passed
 1/1 after bounded FileTracker retries. Two independent post-F888 audits
-reviewed the 13 official Phase 2 Deferred entries; none became actionable,
-and all remain unchanged. Batch 302 proceeds with F889, whose baseline review
-showed an unknown class currently returns successful default class fields,
-empty teacher name, and roster count 0. The slice will distinguish deleted
-parent from absent optional metadata and retain independent teacher/roster
-outcomes. Batch 303 discovery started on schedule; the leading follow-up is
-the typed Class Notes Page read, with similar page-read leads recorded in the
-Phase 2 progress log. Gates 1/2 remain Partial and the formal exit gate
-remains Open.
+reviewed the 13 official Phase 2 Deferred entries; none became actionable.
+F889 is accepted at `a9555f323f01f0e174f7f69a1e82b0546c5b883b`: the typed Class
+Details Page now classifies only a deleted parent as `NotFound`, preserves
+defaults for missing optional metadata, retains an independent roster count,
+and keeps legacy defaults. Its exact focused Debug CTest passed 1/1 after
+bounded FileTracker retries; no full suite ran. Two independent post-F889
+audits again found none of the 13 official Deferred entries actionable.
+Batch 302 proceeds with F890 discovery for absent-parent classification during
+typed Testing Assignment save, preserving Technical outcomes for missing
+subtype/details, conflicts, and query failures. Batch 303's leading Class
+Notes Page read follow-up and similar page-read leads remain in the Phase 2
+progress log. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F888 is accepted and F889's public baseline is captured; implement typed deleted-parent classification while preserving optional-metadata defaults and independent teacher/roster outcomes; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F889 is accepted and F890 discovery is underway for typed Testing Assignment save classification of an absent class parent; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 302 - F889: distinguish a deleted parent during Class Details Page read from absent optional metadata; preserve independent teacher and roster outcomes; baseline captured.
-- Batch 302 - F890: classify an absent class during typed Testing Assignment save; keep missing subtype/details, conflicts, and query failures `Technical`.
+- Batch 302 - F890: classify only an absent class during typed Testing Assignment save; keep missing subtype/details, conflicts, and query failures `Technical`; discovery and baseline review in progress.
 
 #### Deferred candidates
 

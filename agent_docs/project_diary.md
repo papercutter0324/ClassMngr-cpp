@@ -5468,3 +5468,11 @@ When a repository already exposes `Found`, `Missing`, and `Failure`, use that
 provenance at the typed port. Map only a successful missing-record outcome to
 `NotFound`; keep query failures `Technical` without parsing their diagnostic.
 Retain the legacy lookup path where its behavior is part of compatibility.
+
+## Phase 2 SQL cursor classification - 2026-10-15
+
+`executePrepared()` establishes that a query executed; it does not establish
+that row fetching completed. When an empty cursor means a typed NotFound, check
+the query's `lastError()` after `next()` returns false and classify only a clean
+end-of-results as missing. Apply the same check after streamed row iteration so
+a fetch failure cannot look like a successful short result.

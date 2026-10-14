@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F888 is accepted and F889's public baseline is captured; implement typed deleted-parent classification while preserving optional-metadata defaults and independent teacher/roster results. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F889 is accepted and F890 discovery is underway for typed Testing Assignment save classification of an absent class parent. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

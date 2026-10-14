@@ -36526,3 +36526,56 @@ Batch 302 remaining order:
 F888 is accepted; F889 baseline is captured and implementation is next. All 13 Phase 2 Deferred
 candidates remain unchanged; Gates 1/2 remain Partial and the formal exit gate
 remains Open.
+
+### F889 accepted; F890 discovery active; post-slice audit clear - 2026-10-15
+
+F889 is accepted at source/test commit
+`a9555f323f01f0e174f7f69a1e82b0546c5b883b`. Before the change, the public
+Class Details Page read for unknown class ID 42 on an empty database returned
+overall success with default class fields/colors and schedules, an empty
+successful teacher name, roster count 0, and no diagnostics. The temporary
+baseline was captured and removed before implementation.
+
+The typed repository read now uses one `classes`-rooted `LEFT JOIN class_info`
+query. A clean no-row result carries explicit `parentMissing` provenance;
+fetch failure remains a repository error. The typed page maps only a missing
+parent to `NotFound` for class fields and dependent teacher name while its
+independent roster count remains successful at 0. An existing parent without
+`class_info` still receives default fields/colors and its schedules. The
+legacy `loadClassDetailsPageRecord()` wrapper retains success/default behavior
+for an unknown ID. Metadata and schedule cursor fetch errors now remain
+Technical through repository error mapping; no deterministic SQLite seam was
+available to inject either cursor-fetch failure, so those two guards were
+code-reviewed rather than directly exercised.
+
+The regression covers both a never-inserted ID (`INT_MAX`) and a real class
+deleted before the typed read, checks component outcomes and statement counts,
+and verifies legacy wrapper defaults. Existing coverage retains parent-without-
+metadata schedules, successful mapping, malformed teacher data, unavailable
+session, SQL execution failures, and independent teacher/roster results.
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests` passed
+in `build/windows-x64-debug`; the exact matching Debug CTest passed 1/1
+(CTest #325). The initial sandbox build hit MSBuild FileTracker access denied
+at `ZERO_CHECK`; bounded elevated retries passed. No compiler warnings were
+reported by the successful builds; Git reported LF-to-CRLF working-copy
+warnings. No full suite ran.
+
+Two independent post-F889 audits reviewed all 13 official Phase 2 Deferred
+entries and found none newly actionable. All 13 remain unchanged. F889 adds no
+measurement, runner, callsite, query-injection seam, policy decision, or ID
+width migration that meets an entry's reopening condition.
+
+F890 is next in Batch 302: classify only an absent class parent during typed
+Testing Assignment save, while existing-class missing subtype/details,
+conflicts, and query failures remain `Technical`. Read-only context and
+solution reviews are now establishing the public baseline and transaction
+boundary before the acceptance matrix and implementation.
+
+Batch 302 remaining order:
+
+1. F890 - classify an absent class during typed Testing Assignment save while
+   keeping missing subtype/details, conflicts, and query failures `Technical`.
+
+All 13 official Deferred candidates remain unchanged; Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
