@@ -110,7 +110,7 @@ public:
                 snapshots;
             snapshots.reserve(classIds.size());
             const Domain::OperationError classError =
-                legacyError(loadedClasses.error());
+                technicalError(loadedClasses.error());
             for (const Domain::ClassId& classId : classIds)
             {
                 snapshots.push_back({
@@ -156,6 +156,24 @@ public:
                         "The selected class subtitle repository returned a different class identifier order."
                         )
                     );
+            }
+
+            if (loadedClass.parentMissing)
+            {
+                const Domain::OperationError parentError = error(
+                    Domain::ErrorCode::NotFound,
+                    "The selected class does not exist."
+                    );
+                snapshots.push_back({
+                    classIds[index],
+                    Domain::Result<
+                        Application::SelectedClassSubtitleFields
+                        >::failure(parentError),
+                    Domain::Result<std::optional<
+                        Application::SelectedClassSubtitleTeacherFields
+                        >>::failure(parentError)
+                });
+                continue;
             }
 
             Application::SelectedClassSubtitleFields fields;
@@ -397,6 +415,19 @@ private:
         const QByteArray bytes = message.toUtf8();
         return error(
             code,
+            bytes.isEmpty()
+                ? "The selected class subtitle source failed."
+                : bytes.toStdString()
+            );
+    }
+
+    [[nodiscard]] static Domain::OperationError technicalError(
+        const QString& message
+        )
+    {
+        const QByteArray bytes = message.toUtf8();
+        return error(
+            Domain::ErrorCode::Technical,
             bytes.isEmpty()
                 ? "The selected class subtitle source failed."
                 : bytes.toStdString()

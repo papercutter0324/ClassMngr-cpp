@@ -231,6 +231,7 @@ struct SelectedClassGradeReadOutcome final
 struct ClassSubtitleBatchReadRecord final
 {
     int classId = -1;
+    bool parentMissing = false;
     qint64 teacherId = -1;
     QString grade;
     QString level;

@@ -2507,12 +2507,14 @@ ClassInfoRepository::loadClassSubtitleRecords(
         metadataQuery,
         requestedTable + QStringLiteral(R"(
             SELECT requested.class_id,
+                   classes.id AS parent_class_id,
                    ci.class_id AS class_info_class_id,
                    ci.teacher_id,
                    ci.class_grade,
                    ci.class_level
             FROM requested
-            LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+            LEFT JOIN classes ON classes.id = requested.class_id
+            LEFT JOIN class_info ci ON ci.class_id = classes.id
             ORDER BY requested.ordinal
         )"),
         QObject::tr("Loading class subtitle metadata")
@@ -2526,7 +2528,9 @@ ClassInfoRepository::loadClassSubtitleRecords(
     {
         ClassSubtitleBatchReadRecord record;
         record.classId = metadataQuery.value("class_id").toInt();
-        if (!metadataQuery.value("class_info_class_id").isNull())
+        record.parentMissing = metadataQuery.value("parent_class_id").isNull();
+        if (!record.parentMissing
+            && !metadataQuery.value("class_info_class_id").isNull())
         {
             const QVariant teacherId = metadataQuery.value("teacher_id");
             if (!teacherId.isNull())
@@ -2548,6 +2552,14 @@ ClassInfoRepository::loadClassSubtitleRecords(
         records.append(std::move(record));
     }
 
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading class subtitle metadata")
+            ).userMessage());
+    }
+
     if (records.size() != classIds.size())
     {
         return std::unexpected(QObject::tr(
@@ -2562,8 +2574,8 @@ ClassInfoRepository::loadClassSubtitleRecords(
         requestedTable + QStringLiteral(R"(
             SELECT schedule.class_id, schedule.day, schedule.start_time
             FROM requested
-            INNER JOIN class_times schedule
-            ON schedule.class_id = requested.class_id
+            INNER JOIN classes ON classes.id = requested.class_id
+            INNER JOIN class_times schedule ON schedule.class_id = classes.id
             ORDER BY requested.ordinal, schedule.id
         )"),
         QObject::tr("Loading class subtitle regular schedules")
@@ -2587,6 +2599,14 @@ ClassInfoRepository::loadClassSubtitleRecords(
             scheduleQuery.value("start_time").toString(),
             QString{}
         });
+    }
+
+    if (scheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            scheduleQuery,
+            QObject::tr("Loading class subtitle regular schedules")
+            ).userMessage());
     }
 
     return records;

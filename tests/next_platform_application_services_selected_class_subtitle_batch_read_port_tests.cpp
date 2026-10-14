@@ -65,6 +65,37 @@ ClassInfo classInfo(
     return info;
 }
 
+bool seedClassSchedule(
+    QSqlDatabase database,
+    const int classId,
+    const QList<ClassTime>& times,
+    QString* error
+    )
+{
+    QSqlQuery scheduleQuery(database);
+    scheduleQuery.prepare(QStringLiteral(
+        "INSERT INTO class_times(class_id, day, start_time, end_time) "
+        "VALUES(?, ?, ?, ?)"
+        ));
+    for (const ClassTime& row : times)
+    {
+        scheduleQuery.bindValue(0, classId);
+        scheduleQuery.bindValue(1, row.day);
+        scheduleQuery.bindValue(2, row.startTime);
+        scheduleQuery.bindValue(3, row.endTime);
+        if (!scheduleQuery.exec())
+        {
+            if (error)
+            {
+                *error = scheduleQuery.lastError().text();
+            }
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool seedClassSubtitle(
     QSqlDatabase database,
     const ClassInfo& info,
@@ -91,28 +122,7 @@ bool seedClassSubtitle(
         return false;
     }
 
-    QSqlQuery scheduleQuery(database);
-    scheduleQuery.prepare(QStringLiteral(
-        "INSERT INTO class_times(class_id, day, start_time, end_time) "
-        "VALUES(?, ?, ?, ?)"
-        ));
-    for (const ClassTime& row : info.classTimes)
-    {
-        scheduleQuery.bindValue(0, info.classId);
-        scheduleQuery.bindValue(1, row.day);
-        scheduleQuery.bindValue(2, row.startTime);
-        scheduleQuery.bindValue(3, row.endTime);
-        if (!scheduleQuery.exec())
-        {
-            if (error)
-            {
-                *error = scheduleQuery.lastError().text();
-            }
-            return false;
-        }
-    }
-
-    return true;
+    return seedClassSchedule(database, info.classId, info.classTimes, error);
 }
 
 std::vector<Domain::ClassId> ids(const QList<int>& values)
@@ -135,6 +145,7 @@ class NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests
 
 private slots:
     void readsSubtitleProjectionWithFixedStatementCounts();
+    void missingParentsDoNotExposeOrphanSubtitleData();
     void readsDisplayNamesForWideAssignedTeacherId();
     void missingAssignmentsAndReadFailuresRemainIndependent();
     void missingSessionAndInvalidIdsReturnStructuredErrors();
@@ -271,6 +282,166 @@ readsSubtitleProjectionWithFixedStatementCounts()
     QVERIFY(missingMetadata.value().front().classFields.value().classLevel.empty());
     QVERIFY(missingMetadata.value().front().assignedTeacher);
     QVERIFY(!missingMetadata.value().front().assignedTeacher.value().has_value());
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests::
+missingParentsDoNotExposeOrphanSubtitleData()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TeacherRepository* const teacherRepository = session->teacherRepository();
+    ClassInfoRepository* const classRepository = session->classInfoRepository();
+    QVERIFY(teacherRepository);
+    QVERIFY(classRepository);
+
+    const auto populatedTeacher = teacherRepository->saveTeacher(
+        teacher(QStringLiteral("Populated sibling"))
+        );
+    const auto orphanTeacher = teacherRepository->saveTeacher(
+        teacher(QStringLiteral("Deleted orphan"))
+        );
+    QVERIFY(populatedTeacher);
+    QVERIFY(orphanTeacher);
+
+    const auto populatedClass = services.classService()->create(
+        QStringLiteral("Populated sibling")
+        );
+    const auto deletedClass = services.classService()->create(
+        QStringLiteral("Deleted orphan")
+        );
+    const auto noInfoClass = services.classService()->create(
+        QStringLiteral("Existing class without subtitle metadata")
+        );
+    QVERIFY(populatedClass);
+    QVERIFY(deletedClass);
+    QVERIFY(noInfoClass);
+    QCOMPARE(*populatedClass, 1);
+    QCOMPARE(*deletedClass, 2);
+    QCOMPARE(*noInfoClass, 3);
+
+    QString seedError;
+    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+        *populatedClass,
+        *populatedTeacher,
+        QStringLiteral("Sibling grade"),
+        QStringLiteral("Sibling level"),
+        {{QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:55 AM")}}
+        ), &seedError), qPrintable(seedError));
+    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+        *deletedClass,
+        *orphanTeacher,
+        QStringLiteral("Orphan grade"),
+        QStringLiteral("Orphan level"),
+        {{QStringLiteral("Thursday"), QStringLiteral("6:00 PM"), QStringLiteral("6:55 PM")}}
+        ), &seedError), qPrintable(seedError));
+    QVERIFY2(seedClassSchedule(
+        session->database(),
+        *noInfoClass,
+        {
+            {QStringLiteral("Friday"), QStringLiteral("9:00 AM"), QStringLiteral("9:55 AM")},
+            {QStringLiteral("Monday"), QStringLiteral("10:00 AM"), QStringLiteral("10:55 AM")}
+        },
+        &seedError
+        ), qPrintable(seedError));
+
+    QSqlQuery disableForeignKeys(session->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+    QSqlQuery deleteParent(session->database());
+    QVERIFY(deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?")));
+    deleteParent.addBindValue(*deletedClass);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+    QSqlQuery enableForeignKeys(session->database());
+    QVERIFY(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")));
+
+    QSqlQuery verifyOrphanRows(session->database());
+    QVERIFY(verifyOrphanRows.prepare(QStringLiteral(R"(
+        SELECT
+            (SELECT COUNT(*) FROM classes WHERE id=?),
+            (SELECT COUNT(*) FROM class_info WHERE class_id=?),
+            (SELECT COUNT(*) FROM class_times WHERE class_id=?),
+            (SELECT COUNT(*) FROM class_info WHERE class_id=? AND teacher_id=?)
+    )")));
+    verifyOrphanRows.addBindValue(*deletedClass);
+    verifyOrphanRows.addBindValue(*deletedClass);
+    verifyOrphanRows.addBindValue(*deletedClass);
+    verifyOrphanRows.addBindValue(*deletedClass);
+    verifyOrphanRows.addBindValue(*orphanTeacher);
+    QVERIFY2(verifyOrphanRows.exec(), qPrintable(verifyOrphanRows.lastError().text()));
+    QVERIFY(verifyOrphanRows.next());
+    QCOMPARE(verifyOrphanRows.value(0).toInt(), 0);
+    QCOMPARE(verifyOrphanRows.value(1).toInt(), 1);
+    QCOMPARE(verifyOrphanRows.value(2).toInt(), 1);
+    QCOMPARE(verifyOrphanRows.value(3).toInt(), 1);
+    QVERIFY(!verifyOrphanRows.next());
+
+    Platform::ApplicationServicesSelectedClassSubtitleBatchReadPort port(
+        &services
+        );
+    const Application::SelectedClassSubtitleBatchReadQuery query(port);
+    constexpr int neverPresentClassId = 987654321;
+    const auto result = query.execute(ids({
+        *deletedClass,
+        neverPresentClassId,
+        *populatedClass,
+        *noInfoClass
+    }));
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(4));
+    QVERIFY(result.value()[0].classId == classId(*deletedClass));
+    QVERIFY(result.value()[1].classId == classId(neverPresentClassId));
+    QVERIFY(result.value()[2].classId == classId(*populatedClass));
+    QVERIFY(result.value()[3].classId == classId(*noInfoClass));
+
+    for (const std::size_t index : {std::size_t(0), std::size_t(1)})
+    {
+        QVERIFY(!result.value()[index].classFields);
+        QCOMPARE(result.value()[index].classFields.error().code,
+                 Domain::ErrorCode::NotFound);
+        QVERIFY(!result.value()[index].assignedTeacher);
+        QCOMPARE(result.value()[index].assignedTeacher.error().code,
+                 Domain::ErrorCode::NotFound);
+    }
+
+    const auto& populated = result.value()[2];
+    QVERIFY(populated.classFields);
+    QCOMPARE(populated.classFields.value().classGrade,
+             std::u16string(u"Sibling grade"));
+    QCOMPARE(populated.classFields.value().classLevel,
+             std::u16string(u"Sibling level"));
+    QCOMPARE(populated.classFields.value().regularSchedule.size(), std::size_t(1));
+    QVERIFY((populated.classFields.value().regularSchedule[0] ==
+        Application::SelectedClassSubtitleScheduleRow{u"Monday", u"8:00 AM"}));
+    QVERIFY(populated.assignedTeacher);
+    QVERIFY(populated.assignedTeacher.value().has_value());
+    QCOMPARE(populated.assignedTeacher.value()->teacherEn,
+             std::u16string(u"Populated sibling"));
+
+    const auto& noInfo = result.value()[3];
+    QVERIFY(noInfo.classFields);
+    QVERIFY(noInfo.classFields.value().classGrade.empty());
+    QVERIFY(noInfo.classFields.value().classLevel.empty());
+    QCOMPARE(noInfo.classFields.value().regularSchedule.size(), std::size_t(2));
+    QVERIFY((noInfo.classFields.value().regularSchedule[0] ==
+        Application::SelectedClassSubtitleScheduleRow{u"Friday", u"9:00 AM"}));
+    QVERIFY((noInfo.classFields.value().regularSchedule[1] ==
+        Application::SelectedClassSubtitleScheduleRow{u"Monday", u"10:00 AM"}));
+    QVERIFY(noInfo.assignedTeacher);
+    QVERIFY(!noInfo.assignedTeacher.value().has_value());
+
+    const auto classMetrics = classRepository->classSubtitleBatchReadMetrics();
+    QCOMPARE(classMetrics.callCount, 1);
+    QCOMPARE(classMetrics.requestedClassCount, 4);
+    QCOMPARE(classMetrics.metadataStatementCount, 1);
+    QCOMPARE(classMetrics.regularScheduleStatementCount, 1);
+    const auto teacherMetrics = teacherRepository->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(teacherMetrics.callCount, 1);
+    QCOMPARE(teacherMetrics.requestedTeacherCount, 1);
+    QCOMPARE(teacherMetrics.statementCount, 1);
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests::
@@ -443,6 +614,8 @@ missingAssignmentsAndReadFailuresRemainIndependent()
     const auto classReadFailure = query.execute(ids({*assignedClass}));
     QVERIFY(classReadFailure);
     QVERIFY(!classReadFailure.value().front().classFields);
+    QCOMPARE(classReadFailure.value().front().classFields.error().code,
+             Domain::ErrorCode::Technical);
     QVERIFY(classReadFailure.value().front().assignedTeacher);
     QVERIFY(!classReadFailure.value().front().assignedTeacher.value().has_value());
 }
