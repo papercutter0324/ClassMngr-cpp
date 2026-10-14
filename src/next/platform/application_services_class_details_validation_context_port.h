@@ -65,9 +65,9 @@ public:
         try
         {
             // Keep this read on the active session repository. A successful
-            // missing-row read retains the page reader's default values.
-            const Result<ClassPageDetailsReadRecord> loaded =
-                repository->loadClassPageDetails(*legacyClassId);
+            // parent check distinguishes absent classes from missing metadata.
+            const Result<ClassPageDetailsReadOutcome> loaded =
+                repository->loadClassPageDetailsDetailed(*legacyClassId);
             if (!loaded)
             {
                 return failure(
@@ -76,9 +76,10 @@ public:
                     );
             }
 
+            const ClassPageDetailsReadRecord& record = loaded->record;
             const std::optional<Domain::ClassId> matchedClassId =
                 Domain::ClassId::fromString(
-                    std::to_string(loaded->classId)
+                    std::to_string(record.classId)
                     );
             if (!matchedClassId)
             {
@@ -88,12 +89,20 @@ public:
                     );
             }
 
+            if (loaded->parentMissing)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The requested class does not exist."
+                    );
+            }
+
             return Application::ClassDetailsValidationContextPortResult::success({
                 .matchedClassId = *matchedClassId,
-                .teacherId = loaded->teacherId,
-                .notes = loaded->notes.toStdU16String(),
+                .teacherId = record.teacherId,
+                .notes = record.notes.toStdU16String(),
                 .timeFillerActivities =
-                    loaded->timeFillerActivities.toStdU16String()
+                    record.timeFillerActivities.toStdU16String()
             });
         }
         catch (const std::exception&)

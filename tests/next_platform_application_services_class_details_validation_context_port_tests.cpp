@@ -75,7 +75,9 @@ class NextPlatformApplicationServicesClassDetailsValidationContextPortTests
 
 private slots:
     void readsSentinelTeacherIdAndExactTextFromActiveRepository();
+    void deletedParentWithOrphansIsNotFoundButLegacyReadIsPreserved();
     void missingClassInfoRowPreservesRepositoryDefaults();
+    void neverPresentParentIsRecoverableNotFound();
     void unavailableSessionIsNotFoundWithoutFallback();
     void repositoryErrorIsTechnical();
 };
@@ -152,6 +154,96 @@ readsSentinelTeacherIdAndExactTextFromActiveRepository()
 }
 
 void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
+deletedParentWithOrphansIsNotFoundButLegacyReadIsPreserved()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(
+        services,
+        QStringLiteral("Validation Context Deleted Parent")
+        );
+    QVERIFY(id > 0);
+    QVERIFY(seedClassInfo(services, id));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    QSqlQuery foreignKeys(session->database());
+    QVERIFY2(foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(foreignKeys.lastError().text()));
+
+    const QString notes = QStringLiteral("F906 orphan class-info notes");
+    const QString activities = QStringLiteral(
+        "F906 orphan time-filler activities"
+        );
+    QSqlQuery updateInfo(session->database());
+    updateInfo.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=?, notes=?, "
+        "time_filler_activities=? WHERE class_id=?"
+        ));
+    updateInfo.addBindValue(7319);
+    updateInfo.addBindValue(notes);
+    updateInfo.addBindValue(activities);
+    updateInfo.addBindValue(id);
+    QVERIFY2(updateInfo.exec(), qPrintable(updateInfo.lastError().text()));
+    QCOMPARE(updateInfo.numRowsAffected(), 1);
+
+    QSqlQuery insertTime(session->database());
+    insertTime.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id, day, start_time) "
+        "VALUES (?, ?, ?)"
+        ));
+    insertTime.addBindValue(id);
+    insertTime.addBindValue(QStringLiteral("F906 orphan day"));
+    insertTime.addBindValue(QStringLiteral("F906 orphan start"));
+    QVERIFY2(insertTime.exec(), qPrintable(insertTime.lastError().text()));
+
+    QSqlQuery deleteParent(session->database());
+    deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+    deleteParent.addBindValue(id);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+
+    QSqlQuery orphanCounts(session->database());
+    orphanCounts.prepare(QStringLiteral(
+        "SELECT "
+        "(SELECT COUNT(*) FROM classes WHERE id=?), "
+        "(SELECT COUNT(*) FROM class_info WHERE class_id=?), "
+        "(SELECT COUNT(*) FROM class_times WHERE class_id=?)"
+        ));
+    orphanCounts.addBindValue(id);
+    orphanCounts.addBindValue(id);
+    orphanCounts.addBindValue(id);
+    QVERIFY2(orphanCounts.exec(), qPrintable(orphanCounts.lastError().text()));
+    QVERIFY(orphanCounts.next());
+    QCOMPARE(orphanCounts.value(0).toInt(), 0);
+    QCOMPARE(orphanCounts.value(1).toInt(), 1);
+    QCOMPARE(orphanCounts.value(2).toInt(), 1);
+
+    const auto result = readContext(&services, classId(id));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+
+    const auto legacy = session->classInfoRepository()->loadClassPageDetails(id);
+    QVERIFY(legacy);
+    QCOMPARE(legacy->classId, id);
+    QCOMPARE(legacy->teacherId, 7319);
+    QCOMPARE(legacy->notes, notes);
+    QCOMPARE(legacy->timeFillerActivities, activities);
+    QCOMPARE(legacy->regularTimes.size(), 1);
+    QCOMPARE(
+        legacy->regularTimes.front().day,
+        QStringLiteral("F906 orphan day")
+        );
+    QCOMPARE(
+        legacy->regularTimes.front().startTime,
+        QStringLiteral("F906 orphan start")
+        );
+}
+
+void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
 missingClassInfoRowPreservesRepositoryDefaults()
 {
     QTemporaryDir directory;
@@ -184,6 +276,21 @@ missingClassInfoRowPreservesRepositoryDefaults()
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
     QCOMPARE(metrics.regularScheduleStatementCount, 1);
+}
+
+void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
+neverPresentParentIsRecoverableNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    constexpr int neverPresentClassId = 2147483647;
+    const auto result = readContext(&services, classId(neverPresentClassId));
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
 }
 
 void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
