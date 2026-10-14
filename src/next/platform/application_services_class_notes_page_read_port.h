@@ -66,12 +66,12 @@ public:
                 );
         }
 
-        Result<ClassNotesPageReadRecord> loadedInfo =
-            [&]() -> Result<ClassNotesPageReadRecord>
+        Result<ClassNotesPageReadOutcome> loadedInfo =
+            [&]() -> Result<ClassNotesPageReadOutcome>
         {
             try
             {
-                return classInfoRepository->loadClassNotesPageRecord(
+                return classInfoRepository->loadClassNotesPageRecordDetailed(
                     *legacyClassId
                     );
             }
@@ -108,7 +108,7 @@ public:
 
         const std::optional<Domain::ClassId> matchedClassId =
             Domain::ClassId::fromString(
-                std::to_string(loadedInfo->classId)
+                std::to_string(loadedInfo->record.classId)
                 );
         if (!matchedClassId)
         {
@@ -118,30 +118,50 @@ public:
                 ));
         }
 
+        if (loadedInfo->parentMissing)
+        {
+            const Domain::OperationError missingParentError = error(
+                Domain::ErrorCode::NotFound,
+                "The requested class no longer exists."
+                );
+            Application::ClassNotesPageReadSnapshot snapshot{
+                *matchedClassId,
+                failure<Application::ClassNotesPageFields>(
+                    missingParentError
+                    ),
+                failure<std::u16string>(missingParentError)
+            };
+            return Application::ClassNotesPageReadResult::success(
+                std::move(snapshot)
+                );
+        }
+
+        const ClassNotesPageReadRecord& record = loadedInfo->record;
+
         Application::ClassNotesPageFields fields;
-        fields.classGrade = loadedInfo->classGrade.toStdU16String();
-        fields.classLevel = loadedInfo->classLevel.toStdU16String();
+        fields.classGrade = record.classGrade.toStdU16String();
+        fields.classLevel = record.classLevel.toStdU16String();
         fields.regularSchedule.reserve(
-            static_cast<std::size_t>(loadedInfo->regularTimes.size())
+            static_cast<std::size_t>(record.regularTimes.size())
             );
-        for (const ClassNotesPageRegularTime& time : loadedInfo->regularTimes)
+        for (const ClassNotesPageRegularTime& time : record.regularTimes)
         {
             fields.regularSchedule.push_back({
                 .day = time.day.toStdU16String(),
                 .startTime = time.startTime.toStdU16String()
             });
         }
-        fields.notes = loadedInfo->notes.toStdU16String();
+        fields.notes = record.notes.toStdU16String();
         fields.timeFillerActivities =
-            loadedInfo->timeFillerActivities.toStdU16String();
+            record.timeFillerActivities.toStdU16String();
 
         Domain::Result<std::u16string> teacherName =
             Domain::Result<std::u16string>::success({});
-        if (loadedInfo->teacherId > 0)
+        if (record.teacherId > 0)
         {
             teacherName = loadTeacherDisplayName(
                 session->teacherRepository(),
-                loadedInfo->teacherId
+                record.teacherId
                 );
         }
 

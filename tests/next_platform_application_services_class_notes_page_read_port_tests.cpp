@@ -88,7 +88,8 @@ private slots:
     void wideTeacherIdResolvesPreferredDisplayName();
     void unavailableSessionDoesNotUseDataServiceFallback();
     void skipsNonpositiveTeacherId();
-    void missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults();
+    void existingClassWithoutInfoKeepsScheduleAndUnknownTeacher();
+    void missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults();
     void teacherDisplayNameUsesTrimmedFallbackOrder();
     void classFieldFailureIsReportedIndependently();
     void metadataQueryFailureKeepsPageErrorMapping();
@@ -254,7 +255,7 @@ skipsNonpositiveTeacherId()
 }
 
 void NextPlatformApplicationServicesClassNotesPageReadPortTests::
-missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults()
+existingClassWithoutInfoKeepsScheduleAndUnknownTeacher()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -300,17 +301,72 @@ missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults()
         }));
     QVERIFY(scheduled.value().teacherDisplayName.value().empty());
 
-    const auto unknown = port.readClassNotesPage(classId(812345));
-    QVERIFY(unknown);
-    QVERIFY(unknown.value().classId == classId(812345));
-    QVERIFY(unknown.value().classFields);
-    QVERIFY(unknown.value().teacherDisplayName);
-    QVERIFY(unknown.value().classFields.value().classGrade.empty());
-    QVERIFY(unknown.value().classFields.value().classLevel.empty());
-    QVERIFY(unknown.value().classFields.value().regularSchedule.empty());
-    QVERIFY(unknown.value().classFields.value().notes.empty());
-    QVERIFY(unknown.value().classFields.value().timeFillerActivities.empty());
-    QVERIFY(unknown.value().teacherDisplayName.value().empty());
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+                              ->classNotesPageReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.regularScheduleStatementCount, 1);
+}
+
+void NextPlatformApplicationServicesClassNotesPageReadPortTests::
+missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto deletedClass = services.classService()->create(
+        QStringLiteral("Class Notes Deleted Parent")
+        );
+    QVERIFY(deletedClass);
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    QVERIFY(deleteParent.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id=?"
+        )));
+    deleteParent.addBindValue(*deletedClass);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+
+    constexpr int neverPresentClassId = 2147483647;
+    const int missingClassIds[] = {neverPresentClassId, *deletedClass};
+    Platform::ApplicationServicesClassNotesPageReadPort port(&services);
+    for (const int missingClassId : missingClassIds)
+    {
+        const auto metricsBefore = services.databaseSession()
+                                       ->classInfoRepository()
+                                       ->classNotesPageReadMetrics();
+        const auto result = port.readClassNotesPage(classId(missingClassId));
+
+        QVERIFY(result);
+        const auto& snapshot = result.value();
+        QVERIFY(snapshot.classId == classId(missingClassId));
+        QVERIFY(!snapshot.classFields);
+        QCOMPARE(snapshot.classFields.error().code, Domain::ErrorCode::NotFound);
+        QVERIFY(!snapshot.teacherDisplayName);
+        QCOMPARE(snapshot.teacherDisplayName.error().code,
+                 Domain::ErrorCode::NotFound);
+
+        const auto metricsAfter = services.databaseSession()
+                                      ->classInfoRepository()
+                                      ->classNotesPageReadMetrics();
+        QCOMPARE(metricsAfter.callCount, metricsBefore.callCount + 1);
+        QCOMPARE(metricsAfter.metadataStatementCount,
+                 metricsBefore.metadataStatementCount + 1);
+        QCOMPARE(metricsAfter.regularScheduleStatementCount,
+                 metricsBefore.regularScheduleStatementCount + 1);
+    }
+
+    const auto legacy = services.databaseSession()->classInfoRepository()
+                            ->loadClassNotesPageRecord(neverPresentClassId);
+    QVERIFY(legacy);
+    QCOMPARE(legacy->classId, neverPresentClassId);
+    QCOMPARE(legacy->teacherId, qint64(-1));
+    QVERIFY(legacy->classGrade.isEmpty());
+    QVERIFY(legacy->classLevel.isEmpty());
+    QVERIFY(legacy->regularTimes.isEmpty());
+    QVERIFY(legacy->notes.isEmpty());
+    QVERIFY(legacy->timeFillerActivities.isEmpty());
 }
 
 void NextPlatformApplicationServicesClassNotesPageReadPortTests::

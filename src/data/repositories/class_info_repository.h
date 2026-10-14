@@ -125,6 +125,12 @@ struct ClassNotesPageReadRecord final
     QString timeFillerActivities;
 };
 
+struct ClassNotesPageReadOutcome final
+{
+    ClassNotesPageReadRecord record;
+    bool parentMissing = false;
+};
+
 struct ClassDetailsPageReadRecord final
 {
     int classId = -1;
@@ -503,6 +509,10 @@ public:
     [[nodiscard]] Result<ClassNotesPageReadRecord> loadClassNotesPageRecord(
         int classId
         );
+    // Typed callers can distinguish an absent parent without changing the
+    // legacy record's default-success behavior.
+    [[nodiscard]] Result<ClassNotesPageReadOutcome>
+        loadClassNotesPageRecordDetailed(int classId);
     [[nodiscard]] Result<ClassDetailsPageReadRecord>
         loadClassDetailsPageRecord(int classId);
     [[nodiscard]] Result<ClassDetailsPageReadOutcome>
