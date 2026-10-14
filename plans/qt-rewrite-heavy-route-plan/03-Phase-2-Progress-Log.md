@@ -35539,7 +35539,7 @@ rows, teacher-ID handling, and existing schema/API/model types.
 | Mandatory baseline | In the existing real-SQLite fixture, seed distinct IDs `1` and `4294967297`, names, and `class_times`; observe duplicate source IDs and the handler's duplicate-ID Validation failure, and confirm the database values remain distinct. Stop and revise if not reproduced. |
 | Range failure and no partial list | Validate persisted IDs as `qint64` for conversion, positivity, and `<= INT_MAX`; a wide ID returns repository failure without partial rows and maps to Technical through the source port. |
 | Compatibility | Preserve ordinary IDs through `INT_MAX`, ordering, non-testing filtering, optional profile behavior, regular/intensive rows, teacher-ID handling, and schema/API/model types. |
-| Scope and focused verification | Change only `src/data/repositories/class_info_repository.cpp` and `tests/next_platform_application_services_schedule_builder_source_port_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests` in `build/windows-x64-debug`; run exactly CTest `NextPlatformApplicationServicesScheduleBuilderSourcePort`. No new target or full-suite run. |
+| Scope and focused verification | Change only `src/data/repositories/class_info_repository.cpp` and `tests/next_platform_application_services_schedule_builder_source_port_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests` in `build/windows-x64-debug`; run exactly CTest `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`. No new target or full-suite run. |
 
 Batch 288 also records two upcoming, unimplemented candidates. F874 is the
 separate `TestingClassRepository::loadTestingClasses()` compatibility read:
@@ -35576,3 +35576,69 @@ actionable. Batch 288 contains F873, F874, and F875.
 No other slices were found.
 
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F873 Schedule-builder persisted class-ID validation - accepted; F874 selected - 2026-10-14
+
+F873 is accepted at source/test commit
+`d813993bffacd24c387205ee94fa02bce98b2f4b`. The mandatory real-SQLite
+baseline reproduced the live failure: distinct INTEGER class IDs `1` and
+`4294967297` with separate Monday/Tuesday schedule rows both narrowed to `1`;
+the source map overwrote an entry, both schedules attached to the later
+record, the port returned duplicate Domain IDs, and the handler returned
+Validation with `A schedule source returned duplicate class IDs.` SQLite
+retained distinct class IDs, names, and schedule rows.
+
+The repository now validates persisted IDs as qint64 conversion-success,
+positive, and `<= INT_MAX` before cast, indexing, append, or schedule query.
+Invalid IDs fail at the repository and map through the port/handler to
+Technical. Regression coverage verifies IDs `1` and `INT_MAX` and their
+schedule associations, wide and zero-ID failures, unchanged regular/intensive
+query metrics across repository, port, and handler failures, and unchanged
+database values. Scope was limited to the repository implementation and its
+existing source-port test.
+
+The executor and independent Tester each sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests` in
+the standard Windows x64 Debug tree; the exact registered CTest of the same
+name passed 1/1 in both runs. No full suite ran. FileTracker denied access
+before compilation and required elevated retries; final builds had no
+warnings. An earlier baseline build reported one nonblocking AUTOGEN MSB8064
+warning.
+
+F873 completes the first candidate in Batch 288. The all-13 Deferred review
+found no newly actionable entry; all 13 remain unchanged. Batch 288 now selects
+F874, with F875 upcoming. Gates 1/2 remain Partial and the formal exit gate
+remains Open.
+
+### F874 Testing-class list persisted-ID validation - selected, not implemented - 2026-10-14
+
+`TestingClassRepository::loadTestingClasses()` reads through
+`readTestingClass()`, which currently narrows persisted `class_id` with
+`toInt()`. The public compatibility result is forwarded by
+`DataService::loadTestingClasses()` and `ScheduleService::testingClasses()`;
+there is no current UI caller. The separate `loadTestingClassChoices()` path
+was hardened by F868. F872's public DataService compatibility fix is
+precedent for addressing this exposed legacy contract.
+
+Before editing production code, use the existing fixture in
+`tests/testing_class_repository_tests.cpp` to seed class INTEGER IDs `1` and
+`4294967297` with matching `class_info` and `testing_classes` rows. Call
+`loadTestingClasses()` and confirm both returned IDs alias to `1` while direct
+SQL shows distinct rows. Stop and revise if the alias is not reproduced.
+Then validate stored IDs as qint64 conversion-success, positive, and
+`<= INT_MAX` before narrowing; a wide ID must return typed legacy Result
+failure with no partial list and leave storage unchanged. Preserve IDs `1`
+and `INT_MAX`, fields, ordering, API/schema, and the distinct F868 choices
+path.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Mandatory baseline | Reproduce the wide-ID alias in the existing real-SQLite repository fixture and confirm both stored rows remain distinct; stop if not reproduced. |
+| Range failure and no partial list | Validate persisted IDs as qint64 before narrowing; wide ID returns typed failure with no partial rows and no database changes. |
+| Compatibility | Preserve IDs `1` and `INT_MAX`, fields, ordering, public API/schema, and the independent F868 choices path. |
+| Scope and focused verification | Change only `src/data/repositories/testing_class_repository.cpp` and `tests/testing_class_repository_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run exactly CTest `ClassMngrTestingClassRepositoryTests`. No new target or full-suite run. |
+
+F875 remains the upcoming Batch 288 candidate for the Class Details conflict
+fallback label when a persisted conflicting class ID exceeds `INT_MAX`; its
+baseline recipe and acceptance boundary remain as recorded above. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.

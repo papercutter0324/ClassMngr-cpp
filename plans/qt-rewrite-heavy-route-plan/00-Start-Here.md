@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F872 is accepted at `88aca00b`; its Deferred audit found no newly actionable trigger, Batch 287 is complete, and Batch 288 selects F873 for schedule-builder persisted class-ID validation. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F873 is accepted at `d813993b`; Batch 288 continues with F874 selected for testing-class list persisted-ID validation and F875 upcoming. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

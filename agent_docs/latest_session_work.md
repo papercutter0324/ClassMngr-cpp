@@ -123,14 +123,23 @@
   passed the exact Debug CTest 1/1. No full suite ran.
 - F872 completed Batch 287. The post-F872 audit reviewed all 13 Deferred
   entries and found no newly actionable item; all remain unchanged. Batch 288
-  discovery selected F873: validate persisted class IDs before narrowing in
-  the live Schedule Builder source read. Its pre-fix SQLite baseline and
-  acceptance matrix are recorded in the Phase 2 progress log; implementation
-  has not started. F874 (legacy testing-class list ID validation) and F875
-  (wide testing-class conflict-label fallback) are the next Batch 288
-  candidates and each still requires its own baseline. CalendarEvent identity
-  and the generic class-create range check were rejected as new candidates.
-  Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial.
+- F873 source/test commit: `d813993bffacd24c387205ee94fa02bce98b2f4b`;
+  `ClassInfoRepository::loadScheduleClassInfos()` now rejects persisted class
+  IDs outside the positive `int` range before narrowing or schedule reads. The
+  pre-fix SQLite baseline reproduced IDs 1 and 4294967297 aliasing in the
+  source and misassociating both schedules; the handler rejected duplicate
+  IDs. The final focused test preserves IDs 1 and `INT_MAX`, rejects wide and
+  zero IDs without schedule queries, and confirms SQLite rows remain intact.
+  Executor and independent Tester sequentially built `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`;
+  the exact registered CTest passed 1/1. No full suite ran.
+- F873 completed first in Batch 288. F874 is selected to validate persisted
+  IDs in the public legacy testing-class list read; F868's separate choice
+  read is already guarded. F875, the Class Details conflict-label fallback,
+  remains next. Both require their own pre-fix baseline. Batch 289 candidate
+  discovery begins as F874 starts, following the phase plan's batch cadence.
+  All 13 Deferred entries remain unchanged. Phase 2 is In Progress/Open;
+  Gates 1 and 2 remain Partial.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;
