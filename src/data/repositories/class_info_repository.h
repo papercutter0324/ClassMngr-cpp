@@ -139,6 +139,12 @@ struct ClassDetailsPageReadRecord final
     QList<ClassTime> intensiveTimes;
 };
 
+struct ClassDetailsPageReadOutcome final
+{
+    ClassDetailsPageReadRecord record;
+    bool parentMissing = false;
+};
+
 struct ClassCoTeacherAssignmentValidationSnapshotReadRecord final
 {
     int classId = -1;
@@ -499,6 +505,8 @@ public:
         );
     [[nodiscard]] Result<ClassDetailsPageReadRecord>
         loadClassDetailsPageRecord(int classId);
+    [[nodiscard]] Result<ClassDetailsPageReadOutcome>
+        loadClassDetailsPageRecordDetailed(int classId);
     [[nodiscard]] Result<ScheduleEditorClassInfoReadRecord>
         loadScheduleEditorClassInfoRecord(int classId);
     [[nodiscard]] Result<SelectedClassGradeReadRecord>

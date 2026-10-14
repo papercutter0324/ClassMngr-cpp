@@ -112,8 +112,8 @@ public:
         {
             try
             {
-                const ::Result<ClassDetailsPageReadRecord> source =
-                    classInfoRepository->loadClassDetailsPageRecord(
+                const ::Result<ClassDetailsPageReadOutcome> source =
+                    classInfoRepository->loadClassDetailsPageRecordDetailed(
                         *legacyClassId);
                 if (!source)
                 {
@@ -127,13 +127,24 @@ public:
                         "The class teacher could not be identified because class details were not loaded."
                         );
                 }
+                else if (source->parentMissing)
+                {
+                    snapshot.classFields = classFieldsFailure(
+                        Domain::ErrorCode::NotFound,
+                        "The selected class no longer exists."
+                        );
+                    snapshot.teacherDisplayName = teacherFailure(
+                        Domain::ErrorCode::NotFound,
+                        "The class teacher could not be identified because the selected class no longer exists."
+                        );
+                }
                 else
                 {
-                    loadedClassDetails = *source;
+                    loadedClassDetails = source->record;
                     snapshot.classFields =
                         Domain::Result<
                             Application::ClassDetailsPageFields
-                            >::success(fields(*source));
+                            >::success(fields(source->record));
                 }
             }
             catch (const std::exception&)

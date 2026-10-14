@@ -43,6 +43,7 @@ private slots:
     void readsFieldsOrderedRawSchedulesTeacherAndRosterFromSession();
     void wideTeacherIdResolvesDisplayNameAndPreservesOtherReads();
     void missingMetadataRetainsDefaultsAndReadsSchedules();
+    void missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults();
     void unavailableSessionReturnsIndependentSourceFailures();
     void classReadFailureDoesNotDiscardRosterCount();
     void intensiveScheduleReadFailureDoesNotDiscardRosterCount();
@@ -395,6 +396,72 @@ missingMetadataRetainsDefaultsAndReadsSchedules()
     QCOMPARE(metrics.callCount, 1);
     QCOMPARE(metrics.metadataStatementCount, 1);
     QCOMPARE(metrics.scheduleStatementCount, 1);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto deletedClass = services.classService()->create(
+        QStringLiteral("Class Details Deleted Parent")
+        );
+    QVERIFY(deletedClass);
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    QVERIFY(deleteParent.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id=?"
+        )));
+    deleteParent.addBindValue(*deletedClass);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+
+    constexpr int unknownClassId = 2147483647;
+    const int missingClassIds[] = {unknownClassId, *deletedClass};
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    for (const int missingClassId : missingClassIds)
+    {
+        const auto metricsBefore = services.databaseSession()
+                                       ->classInfoRepository()
+                                       ->classDetailsPageReadMetrics();
+        const auto result = port.readClassDetailsPage(classId(missingClassId));
+
+        QVERIFY(result);
+        const auto& snapshot = result.value();
+        QVERIFY(!snapshot.classFields);
+        QCOMPARE(snapshot.classFields.error().code,
+                 Domain::ErrorCode::NotFound);
+        QVERIFY(!snapshot.teacherDisplayName);
+        QCOMPARE(snapshot.teacherDisplayName.error().code,
+                 Domain::ErrorCode::NotFound);
+        QVERIFY(snapshot.studentCount);
+        QCOMPARE(snapshot.studentCount.value(), 0);
+
+        const auto metricsAfter = services.databaseSession()
+                                      ->classInfoRepository()
+                                      ->classDetailsPageReadMetrics();
+        QCOMPARE(metricsAfter.callCount, metricsBefore.callCount + 1);
+        QCOMPARE(metricsAfter.metadataStatementCount,
+                 metricsBefore.metadataStatementCount + 1);
+        QCOMPARE(metricsAfter.scheduleStatementCount,
+                 metricsBefore.scheduleStatementCount + 1);
+    }
+
+    const auto legacy = services.databaseSession()->classInfoRepository()
+                            ->loadClassDetailsPageRecord(unknownClassId);
+    QVERIFY(legacy);
+    QCOMPARE(legacy->classId, unknownClassId);
+    QCOMPARE(legacy->teacherId, qint64(-1));
+    QVERIFY(legacy->classGrade.isEmpty());
+    QVERIFY(legacy->classLevel.isEmpty());
+    QVERIFY(legacy->readingBook.isEmpty());
+    QVERIFY(legacy->essayBook.isEmpty());
+    QCOMPARE(legacy->classColor, QStringLiteral("#FFFFFF"));
+    QCOMPARE(legacy->fontColor, QStringLiteral("#000000"));
+    QVERIFY(legacy->regularTimes.isEmpty());
+    QVERIFY(legacy->intensiveTimes.isEmpty());
 }
 
 void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
