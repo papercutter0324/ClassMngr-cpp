@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F907 My Classes student-count batch parent provenance is accepted at source/test commit `a9c91c89a128260d3c0e0a7445143698ef5c4353`; F908 Classes Navigation snapshot parent provenance is selected, with baseline and acceptance not yet started. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F907 My Classes student-count batch parent provenance is accepted at source/test commit `a9c91c89a128260d3c0e0a7445143698ef5c4353`; F908 Classes Navigation snapshot parent provenance is selected with baseline and acceptance recorded, while implementation and post-change verification remain pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F908 - Classes Navigation snapshot parent provenance: classify parent absence in navigation entries. Baseline and acceptance are not yet started.
+- F908 - Classes Navigation snapshot parent provenance: keep an outer operation result and ordered identity-bearing entries; only confirmed parent absence yields per-entry recoverable `NotFound`, with valid siblings preserved. Require surfaced parent-aware query/iteration failures to remain outer `Technical`, never per-entry absence. Baseline and acceptance are recorded; implementation and post-change verification are pending.
 
 #### Deferred candidates
 

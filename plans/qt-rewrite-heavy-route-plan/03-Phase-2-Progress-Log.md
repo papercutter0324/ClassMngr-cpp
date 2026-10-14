@@ -37796,3 +37796,33 @@ candidates and found none newly actionable; all remain unchanged. F908, Classes
 Navigation snapshot parent provenance, is selected; its baseline and
 acceptance have not started. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### F908 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change typed outer read succeeded for all four ordered requests:
+deleted-with-orphans, never-present `987654321`, an existing populated class,
+and a present class without `class_info`. The deleted parent had `classes=0`,
+one `class_info`, one regular schedule, and one intensive schedule; its entry
+exposed orphan grade `G8`, level `Orphan metadata`, regular `Orphan Friday`, and
+intensive `Orphan intensive`. The never-present and no-`class_info` entries
+were blank successes. The populated sibling returned grade `G5`, `Existing
+metadata`, and one regular schedule. Successful nonempty repository metrics
+were metadata/regular/intensive statements `1/1/1`.
+
+The focused target was
+`ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests`;
+forced Debug builds of `ClassMngr` and the target used
+`/p:TrackFileAccess=false /p:ForceRebuild=true`, and exact CTest #322 passed
+1/1. Retained final build logs were clean. No full suite ran. The probe source
+was restored byte-for-byte (SHA-256
+`4BB0EF3DA16C3FBD2548FA8D0C651F3FA6E58E63EDA09CC538C482833E2B74BD`). Logs
+and observations are under `build/windows-x64-debug/F908_baseline_*`. Direct
+SQL/cursor failure injection was unavailable.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Outer result and entry identity | Preserve outer `Domain::Result<ClassesNavigationSnapshot>` and one ordered entry per request. Each entry carries requested `classId` and `className` with `Domain::Result<ClassesNavigationDetails>`, keeping `NotFound` attached to its class and preventing failure from coexisting with partial details. Preserve empty, invalid, duplicate, and mismatch behavior. |
+| Parent provenance | Only a clean parent-rooted query confirming no `classes` row maps that entry to recoverable `NotFound`, for deleted and never-present IDs. Suppress orphan `class_info`, regular, and intensive schedule details; valid siblings remain successful. Implementation must surface parent-aware SQL, cursor/iteration, and exception failures as outer `Technical`, never per-entry `NotFound`; structural or identity-validation failures retain the existing outer `Validation` classification. No read error establishes absence. Existing unavailable-session, repository, and operational-error behavior remains unchanged. |
+| Existing-parent projections | A present parent without `class_info` retains successful blank defaults and current schedule behavior. Preserve populated identity, exact projected fields, and regular/intensive ordering and values. |
+| Consumers and fallback | Classes Page and Speaking Evaluation preserve the requested ID, name, and order for an entry whose details fail; do not apply that entry's details, while applying successful siblings. Keep their existing outer-read-failure fallback unchanged. |
+| Repository compatibility and verification | Route through a parent-aware typed repository seam while preserving `loadClassesNavigationRecords` behavior used by ClassTransfer. Successful nonempty reads retain one metadata, one regular, and one intensive statement. F908 baseline and acceptance are recorded; implementation and post-change verification remain pending. No schema, orphan cleanup, or CMake changes. |

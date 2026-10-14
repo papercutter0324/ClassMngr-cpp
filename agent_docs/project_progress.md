@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F907 accepted; F908 selected)
+### Current state - 2026-10-15 (F907 accepted; F908 baseline/acceptance recorded)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -444,8 +444,38 @@ SQL/cursor failure injection was unavailable; source review and the malformed
 row-index fallback test cover this limit. Two independent post-F907 audits
 reviewed all 13 official Deferred candidates; none became newly actionable,
 and the list remains unchanged. F908, Classes Navigation snapshot parent
-provenance, is selected; its baseline and acceptance have not started. Gates
-1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+provenance, is selected. Its pre-change typed query returned four ordered
+successful entries; the deleted parent had `classes=0` but retained one
+`class_info`, regular schedule, and intensive schedule row, all exposed in the
+snapshot (`grade=G8`, `level=Orphan metadata`). The never-present ID also
+returned a blank successful entry. The populated sibling retained
+`grade=G5`, `level=Existing metadata`, and one regular schedule; the present
+parent without `class_info` returned blank metadata/schedules. Successful
+nonempty repository metrics were one metadata, one regular-schedule, and one
+intensive-schedule query. Forced Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests`
+succeeded; exact Debug CTest #322 passed 1/1. Retained forced-build logs
+contain no warnings. No full suite ran. The temporary baseline probe was
+restored byte-for-byte (SHA-256
+`4BB0EF3DA16C3FBD2548FA8D0C651F3FA6E58E63EDA09CC538C482833E2B74BD`); direct
+SQL/cursor failure injection was not part of baseline.
+
+F908 acceptance keeps the outer operation result and ordered entry vector,
+with each identity-bearing entry retaining class ID/name and a typed details
+result. Only a clean parent-rooted confirmation of a missing `classes` row
+produces per-entry recoverable `NotFound`; orphan metadata and schedules are
+suppressed. Existing parents without `class_info` retain blank successful
+details; valid siblings, ordering, values, and one-query-per-component metrics
+remain unchanged. Classes Page and Speaking Evaluation retain the requested
+entry identity/order and apply only successful details, while whole-read
+fallback behavior remains unchanged. The existing shared
+`loadClassesNavigationRecords` behavior used by Class Transfer is preserved.
+Session/repository `NotFound` behavior remains unchanged. Acceptance requires
+surfaced SQL, cursor/iteration, and exception failures to remain outer
+`Technical`; read failures never establish class absence. F908 baseline and
+acceptance are recorded; implementation and post-change verification are
+pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
