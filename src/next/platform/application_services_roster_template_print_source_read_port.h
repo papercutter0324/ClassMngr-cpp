@@ -130,6 +130,36 @@ public:
                     );
             }
 
+            bool parentMissing = false;
+            for (qsizetype index = 0;
+                 index < legacyClassIds.size();
+                 ++index)
+            {
+                const int requestedClassId = legacyClassIds.at(index);
+                const RosterPrintClassInfoReadRecord& classInfo =
+                    classInfoRecords->at(index);
+                const RosterRepository::TemplatePrintReadRecord& roster =
+                    rosterRecords->at(index);
+                if (classInfo.classId != requestedClassId
+                    || roster.classId != requestedClassId)
+                {
+                    return failure(
+                        Domain::ErrorCode::Validation,
+                        "A roster print batch returned a class in the wrong order."
+                        );
+                }
+                parentMissing = parentMissing
+                    || classInfo.parentMissing
+                    || roster.parentMissing;
+            }
+            if (parentMissing)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "A requested class for roster template printing no longer exists."
+                    );
+            }
+
             Application::RosterTemplatePrintSourceReadSnapshot snapshots;
             snapshots.reserve(query.classIds.size());
             for (qsizetype index = 0;

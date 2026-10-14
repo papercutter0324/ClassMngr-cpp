@@ -275,6 +275,7 @@ struct MyClassesClassInformationBatchReadEntry final
 struct RosterPrintClassInfoReadRecord final
 {
     int classId = -1;
+    bool parentMissing = false;
     QString classGrade;
     QString classLevel;
     QString teacherEnglishName;

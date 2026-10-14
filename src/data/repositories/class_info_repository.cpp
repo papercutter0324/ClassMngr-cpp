@@ -3374,7 +3374,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
             t.zoom_password
         FROM requested
         LEFT JOIN classes ON classes.id = requested.class_id
-        LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+        LEFT JOIN class_info ci ON ci.class_id = classes.id
         LEFT JOIN teachers t ON ci.teacher_id = t.id
     )");
     metadataQuery.addBindValue(classId);
@@ -3409,6 +3409,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
 
     outcome.parentMissing = metadataQuery.value("parent_class_id").isNull();
     outcome.record.classId = metadataQuery.value("requested_class_id").toInt();
+    outcome.record.parentMissing = outcome.parentMissing;
 
     outcome.record.classGrade =
         metadataQuery.value("class_grade").toString();
@@ -3431,10 +3432,11 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
 
     QSqlQuery scheduleQuery(m_database);
     scheduleQuery.prepare(R"(
-        SELECT day, start_time, end_time
-        FROM class_times
-        WHERE class_id = ?
-        ORDER BY id
+        SELECT schedule.day, schedule.start_time, schedule.end_time
+        FROM classes
+        INNER JOIN class_times schedule ON schedule.class_id = classes.id
+        WHERE classes.id = ?
+        ORDER BY schedule.id
     )");
     scheduleQuery.addBindValue(classId);
 
@@ -3523,6 +3525,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
         WITH requested(class_id, request_order) AS (VALUES %1)
         SELECT requested.class_id AS requested_class_id,
                requested.request_order AS request_order,
+               classes.id AS parent_class_id,
                ci.class_id AS class_info_class_id,
                ci.class_grade AS class_grade,
                ci.class_level AS class_level,
@@ -3534,7 +3537,8 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
                teachers.zoom_id AS zoom_id,
                teachers.zoom_password AS zoom_password
         FROM requested
-        LEFT JOIN class_info ci ON ci.class_id=requested.class_id
+        LEFT JOIN classes ON classes.id=requested.class_id
+        LEFT JOIN class_info ci ON ci.class_id=classes.id
         LEFT JOIN teachers ON teachers.id=ci.teacher_id
         ORDER BY requested.request_order
     )").arg(requestedValues.join(QStringLiteral(", ")));
@@ -3565,6 +3569,8 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
         }
         metadataRowsSeen[requestOrder] = QStringLiteral("1");
 
+        records[requestOrder].parentMissing =
+            metadataQuery.value("parent_class_id").isNull();
         if (metadataQuery.value("class_info_class_id").isNull())
         {
             continue;
@@ -3619,8 +3625,9 @@ ClassInfoRepository::loadRosterPrintClassInfoRecords(
                schedule.start_time AS start_time,
                schedule.end_time AS end_time
         FROM requested
+        INNER JOIN classes ON classes.id=requested.class_id
         INNER JOIN class_times schedule
-            ON schedule.class_id=requested.class_id
+            ON schedule.class_id=classes.id
         ORDER BY requested.request_order, schedule.id
     )").arg(requestedValues.join(QStringLiteral(", ")));
     const auto loadedSchedule = SqlQueryUtils::execute(

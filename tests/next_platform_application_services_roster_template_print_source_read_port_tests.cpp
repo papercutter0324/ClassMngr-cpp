@@ -73,11 +73,138 @@ class NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests fina
 
 private slots:
     void loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder();
+    void missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot();
     void emptyInputAndAllEmptyRostersSkipUnneededStatements();
     void repositoryBatchFailureIsTechnical();
     void rejectsOutOfRangeIntegerRosterWidthWithoutPartialSnapshot();
     void fractionalColumnIndexIsRejectedByTemplatePrintRead();
 };
+
+void NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests::
+missingParentWithOrphanPrintDataReturnsNotFoundWithoutSnapshot()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int deletedClass = createClass(
+        services,
+        QStringLiteral("Deleted class with orphan print data")
+        );
+    const int retainedClass = createClass(
+        services,
+        QStringLiteral("Retained class")
+        );
+    QVERIFY(deletedClass > 0);
+    QVERIFY(retainedClass > 0);
+
+    Roster retainedRoster;
+    retainedRoster.columns = {QStringLiteral("Student")};
+    retainedRoster.rows = {{QStringLiteral("Retained student")}};
+    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+        retainedClass,
+        retainedRoster
+        ));
+
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(
+            deletedClass,
+            -1,
+            QStringLiteral("Orphan grade"),
+            QStringLiteral("Orphan level"),
+            {{QStringLiteral("Thursday"), QStringLiteral("6:00 PM"), QStringLiteral("6:50 PM")}}
+            )
+        ));
+    Roster orphanRoster;
+    orphanRoster.columns = {QStringLiteral("Student")};
+    orphanRoster.rows = {{QStringLiteral("Orphan student")}};
+    QVERIFY(services.databaseSession()->rosterRepository()->saveRoster(
+        deletedClass,
+        orphanRoster
+        ));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("PRAGMA foreign_keys=OFF")
+        ));
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral("DELETE FROM classes WHERE id=%1").arg(deletedClass)
+        ));
+
+    QSqlQuery orphanCounts(services.databaseSession()->database());
+    QVERIFY(orphanCounts.prepare(QStringLiteral(
+        "SELECT "
+        "(SELECT COUNT(*) FROM class_info WHERE class_id=?) AS class_info_count, "
+        "(SELECT COUNT(*) FROM class_times WHERE class_id=?) AS class_times_count, "
+        "(SELECT COUNT(*) FROM roster_columns WHERE class_id=?) AS columns_count, "
+        "(SELECT COUNT(*) FROM roster_data WHERE class_id=?) AS data_count"
+        )));
+    orphanCounts.addBindValue(deletedClass);
+    orphanCounts.addBindValue(deletedClass);
+    orphanCounts.addBindValue(deletedClass);
+    orphanCounts.addBindValue(deletedClass);
+    QVERIFY2(orphanCounts.exec(), qPrintable(orphanCounts.lastError().text()));
+    QVERIFY(orphanCounts.next());
+    QCOMPARE(orphanCounts.value("class_info_count").toInt(), 1);
+    QCOMPARE(orphanCounts.value("class_times_count").toInt(), 1);
+    QCOMPARE(orphanCounts.value("columns_count").toInt(), 1);
+    QCOMPARE(orphanCounts.value("data_count").toInt(), 1);
+
+    const QList<int> requestedClassIds{retainedClass, deletedClass};
+    const auto classInfoRecords = services.databaseSession()
+        ->classInfoRepository()->loadRosterPrintClassInfoRecords(
+            requestedClassIds
+            );
+    QVERIFY(classInfoRecords);
+    QCOMPARE(classInfoRecords->size(), 2);
+    QCOMPARE(classInfoRecords->at(0).classId, retainedClass);
+    QCOMPARE(classInfoRecords->at(1).classId, deletedClass);
+    QVERIFY(!classInfoRecords->at(0).parentMissing);
+    QVERIFY(classInfoRecords->at(1).parentMissing);
+    QVERIFY(classInfoRecords->at(1).classGrade.isEmpty());
+    QVERIFY(classInfoRecords->at(1).classLevel.isEmpty());
+    QVERIFY(classInfoRecords->at(1).teacherEnglishName.isEmpty());
+    QVERIFY(classInfoRecords->at(1).teacherKoreanName.isEmpty());
+    QVERIFY(classInfoRecords->at(1).roomNumber.isEmpty());
+    QVERIFY(classInfoRecords->at(1).wifiName.isEmpty());
+    QVERIFY(classInfoRecords->at(1).wifiPassword.isEmpty());
+    QVERIFY(classInfoRecords->at(1).zoomId.isEmpty());
+    QVERIFY(classInfoRecords->at(1).zoomPassword.isEmpty());
+    QVERIFY(classInfoRecords->at(1).regularTimes.isEmpty());
+
+    const auto rosterRecords = services.databaseSession()
+        ->rosterRepository()->loadRostersForTemplatePrint(
+            requestedClassIds
+            );
+    QVERIFY(rosterRecords);
+    QCOMPARE(rosterRecords->size(), 2);
+    QCOMPARE(rosterRecords->at(0).classId, retainedClass);
+    QVERIFY(!rosterRecords->at(0).parentMissing);
+    QCOMPARE(rosterRecords->at(0).roster.columns,
+        QStringList{QStringLiteral("Student")});
+    QCOMPARE(rosterRecords->at(0).roster.rows.size(), 1);
+    QCOMPARE(rosterRecords->at(0).roster.rows[0],
+        QStringList{QStringLiteral("Retained student")});
+    QCOMPARE(rosterRecords->at(1).classId, deletedClass);
+    QVERIFY(rosterRecords->at(1).parentMissing);
+    QVERIFY(rosterRecords->at(1).roster.columns.isEmpty());
+    QVERIFY(rosterRecords->at(1).roster.rows.isEmpty());
+
+    Platform::ApplicationServicesRosterTemplatePrintSourceReadPort port(
+        &services
+        );
+    const Application::RosterTemplatePrintSourceReadQuery query(port);
+    const auto result = query.execute({
+        classId(retainedClass),
+        classId(deletedClass)
+    });
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+}
 
 void NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests::
 loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder()
@@ -262,6 +389,10 @@ emptyInputAndAllEmptyRostersSkipUnneededStatements()
 
     const auto noColumns = query.execute({classId(classIdValue)});
     QVERIFY(noColumns);
+    QCOMPARE(noColumns.value().size(), std::size_t(1));
+    QVERIFY(noColumns.value()[0].classInfo.classGrade.empty());
+    QVERIFY(noColumns.value()[0].classInfo.classLevel.empty());
+    QVERIFY(noColumns.value()[0].classInfo.regularSchedule.empty());
     QVERIFY(noColumns.value()[0].roster.columns.empty());
     const auto afterRoster = services.databaseSession()
         ->rosterRepository()->templatePrintBatchReadMetrics();

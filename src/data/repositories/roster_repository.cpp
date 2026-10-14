@@ -884,22 +884,37 @@ RosterRepository::loadFullRostersImpl(
     {
         ++templatePrintMetrics->columnStatementCount;
     }
+    const QString parentColumnSelect = templatePrintContext
+        ? QStringLiteral("classes.id AS parent_class_id,")
+        : QStringLiteral("requested.class_id AS parent_class_id,");
+    const QString parentJoin = templatePrintContext
+        ? QStringLiteral("LEFT JOIN classes ON classes.id=requested.class_id")
+        : QString{};
+    const QString columnJoin = templatePrintContext
+        ? QStringLiteral("LEFT JOIN roster_columns\n            ON roster_columns.class_id=classes.id")
+        : QStringLiteral("LEFT JOIN roster_columns\n            ON roster_columns.class_id=requested.class_id");
     const QString columnsQueryText = QStringLiteral(R"(
         WITH requested(class_id, request_order) AS (VALUES %1)
         SELECT requested.class_id AS requested_class_id,
                requested.request_order AS request_order,
+               %2
                roster_columns.id AS column_id,
                roster_columns.name AS name,
                roster_columns.width AS width,
                typeof(roster_columns.width) AS width_storage_type
         FROM requested
-        LEFT JOIN roster_columns
-            ON roster_columns.class_id=requested.class_id
+        %3
+        %4
         ORDER BY
             requested.request_order,
             roster_columns.position,
             roster_columns.id
-    )").arg(requestedValues.join(QStringLiteral(", ")));
+    )").arg(
+        requestedValues.join(QStringLiteral(", ")),
+        parentColumnSelect,
+        parentJoin,
+        columnJoin
+        );
     const QString columnsAction = templatePrintContext
         ? QObject::tr("Loading template print roster columns")
         : QObject::tr("Loading full roster columns");
@@ -926,6 +941,12 @@ RosterRepository::loadFullRostersImpl(
         {
             invalidColumnIdentity = true;
             break;
+        }
+
+        if (templatePrintContext)
+        {
+            records[requestOrder].parentMissing =
+                columnsQuery.value("parent_class_id").isNull();
         }
 
         if (columnsQuery.value("column_id").isNull())
@@ -1003,6 +1024,12 @@ RosterRepository::loadFullRostersImpl(
     {
         ++templatePrintMetrics->cellStatementCount;
     }
+    const QString parentCellJoin = templatePrintContext
+        ? QStringLiteral("INNER JOIN classes ON classes.id=requested.class_id")
+        : QString{};
+    const QString cellParentId = templatePrintContext
+        ? QStringLiteral("classes.id")
+        : QStringLiteral("requested.class_id");
     const QString cellsQueryText = QStringLiteral(R"(
         WITH requested(class_id, request_order, column_count) AS (VALUES %1)
         SELECT requested.class_id AS requested_class_id,
@@ -1013,8 +1040,9 @@ RosterRepository::loadFullRostersImpl(
                typeof(roster_data.col_index) AS col_index_storage_type,
                roster_data.value AS value
         FROM requested
+        %2
         INNER JOIN roster_data
-            ON roster_data.class_id=requested.class_id
+            ON roster_data.class_id=%3
         WHERE roster_data.row_index >= 0
             AND roster_data.col_index >= 0
             AND roster_data.col_index < requested.column_count
@@ -1022,7 +1050,11 @@ RosterRepository::loadFullRostersImpl(
             requested.request_order,
             roster_data.row_index,
             roster_data.col_index
-    )").arg(cellRequestValues.join(QStringLiteral(", ")));
+    )").arg(
+        cellRequestValues.join(QStringLiteral(", ")),
+        parentCellJoin,
+        cellParentId
+        );
     const QString cellsAction = templatePrintContext
         ? QObject::tr("Loading template print roster cells")
         : QObject::tr("Loading full roster cells");

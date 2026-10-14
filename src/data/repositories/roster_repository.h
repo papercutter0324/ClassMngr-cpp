@@ -53,6 +53,7 @@ public:
     {
         int classId = 0;
         Roster roster;
+        bool parentMissing = false;
     };
 
     using TemplatePrintReadRecord = FullRosterReadRecord;
