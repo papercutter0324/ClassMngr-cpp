@@ -2685,8 +2685,18 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         {
             ++m_myClassesClassInformationBatchReadMetrics
                   .fallbackClassReadCount;
-            entries[index].information =
-                loadMyClassesClassInformationRecord(entries[index].classId);
+            entries[index].parentMissing = false;
+            const auto loaded = loadMyClassesClassInformationRecord(
+                entries[index].classId
+                );
+            if (!loaded)
+            {
+                entries[index].information = std::unexpected(loaded.error());
+                continue;
+            }
+
+            entries[index].parentMissing = loaded->parentMissing;
+            entries[index].information = std::move(loaded->record);
         }
     };
 
@@ -2696,6 +2706,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         metadataQuery,
         requestedTable + QStringLiteral(R"(
             SELECT requested.class_id,
+                   classes.id AS parent_class_id,
                    ci.class_id AS class_info_class_id,
                    ci.teacher_id,
                    ci.class_grade,
@@ -2703,7 +2714,8 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
                    ci.notes,
                    ci.time_filler_activities
             FROM requested
-            LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+            LEFT JOIN classes ON classes.id = requested.class_id
+            LEFT JOIN class_info ci ON ci.class_id = classes.id
             ORDER BY requested.ordinal
         )"),
         QObject::tr("Loading My Classes class information metadata")
@@ -2728,7 +2740,14 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
 
         MyClassesClassInformationReadRecord record;
         record.classId = classId;
-        if (!metadataQuery.value("class_info_class_id").isNull())
+        const bool parentMissing =
+            metadataQuery.value("parent_class_id").isNull();
+        if (parentMissing)
+        {
+            entries[*entryIndex].parentMissing = true;
+            entries[*entryIndex].information = std::move(record);
+        }
+        else if (!metadataQuery.value("class_info_class_id").isNull())
         {
             const QVariant teacherId = metadataQuery.value("teacher_id");
             bool teacherIdOk = true;
@@ -2764,6 +2783,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
     }
 
     if (invalidReturnedClassId
+        || metadataQuery.lastError().isValid()
         || loadedMetadataCount != validEntryIndexes.size())
     {
         loadIndividually();
@@ -2781,8 +2801,9 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
                    schedule.start_time,
                    schedule.end_time
             FROM requested
+            INNER JOIN classes ON classes.id = requested.class_id
             INNER JOIN class_times schedule
-            ON schedule.class_id = requested.class_id
+            ON schedule.class_id = classes.id
             ORDER BY requested.ordinal, schedule.id
         )"),
         QObject::tr("Loading My Classes regular schedules")
@@ -2803,7 +2824,8 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
             invalidReturnedClassId = true;
             break;
         }
-        if (!entries[*entryIndex].information)
+        if (entries[*entryIndex].parentMissing
+            || !entries[*entryIndex].information)
         {
             continue;
         }
@@ -2814,7 +2836,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
         time.endTime = regularScheduleQuery.value("end_time").toString();
         entries[*entryIndex].information->regularTimes.append(std::move(time));
     }
-    if (invalidReturnedClassId)
+    if (invalidReturnedClassId || regularScheduleQuery.lastError().isValid())
     {
         loadIndividually();
         return entries;
@@ -2831,8 +2853,9 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
                    schedule.start_time,
                    schedule.end_time
             FROM requested
+            INNER JOIN classes ON classes.id = requested.class_id
             INNER JOIN class_intensive_times schedule
-            ON schedule.class_id = requested.class_id
+            ON schedule.class_id = classes.id
             ORDER BY requested.ordinal, schedule.id
         )"),
         QObject::tr("Loading My Classes intensive schedules")
@@ -2852,7 +2875,8 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
             invalidReturnedClassId = true;
             break;
         }
-        if (!entries[*entryIndex].information)
+        if (entries[*entryIndex].parentMissing
+            || !entries[*entryIndex].information)
         {
             continue;
         }
@@ -2865,7 +2889,7 @@ ClassInfoRepository::loadMyClassesClassInformationRecords(
             std::move(time)
             );
     }
-    if (invalidReturnedClassId)
+    if (invalidReturnedClassId || intensiveScheduleQuery.lastError().isValid())
     {
         loadIndividually();
         return entries;
@@ -3209,7 +3233,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
     return record;
 }
 
-Result<MyClassesClassInformationReadRecord>
+Result<ClassInfoRepository::MyClassesClassInformationReadOutcome>
 ClassInfoRepository::loadMyClassesClassInformationRecord(
     const int classId
     )
@@ -3224,15 +3248,22 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
-    MyClassesClassInformationReadRecord record;
+    MyClassesClassInformationReadOutcome outcome;
+    MyClassesClassInformationReadRecord& record = outcome.record;
     record.classId = classId;
 
     QSqlQuery metadataQuery(m_database);
     metadataQuery.prepare(R"(
-        SELECT teacher_id, class_grade, class_level, notes,
-               time_filler_activities
-        FROM class_info
-        WHERE class_id = ?
+        SELECT classes.id AS parent_class_id,
+               class_info.class_id AS class_info_class_id,
+               class_info.teacher_id,
+               class_info.class_grade,
+               class_info.class_level,
+               class_info.notes,
+               class_info.time_filler_activities
+        FROM classes
+        LEFT JOIN class_info ON class_info.class_id = classes.id
+        WHERE classes.id = ?
     )");
     metadataQuery.addBindValue(classId);
     const auto loadedMetadata = SqlQueryUtils::executePrepared(
@@ -3245,7 +3276,23 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
         return std::unexpected(loadedMetadata.error().userMessage());
     }
 
-    if (metadataQuery.next())
+    const bool parentFound = metadataQuery.next();
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading My Classes class information metadata"),
+            identity
+            ).userMessage());
+    }
+
+    if (!parentFound)
+    {
+        outcome.parentMissing = true;
+        return outcome;
+    }
+
+    if (!metadataQuery.value("class_info_class_id").isNull())
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
         if (!teacherId.isNull())
@@ -3273,10 +3320,11 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
 
     QSqlQuery regularScheduleQuery(m_database);
     regularScheduleQuery.prepare(R"(
-        SELECT day, start_time, end_time
-        FROM class_times
-        WHERE class_id = ?
-        ORDER BY id
+        SELECT schedule.day, schedule.start_time, schedule.end_time
+        FROM classes
+        INNER JOIN class_times schedule ON schedule.class_id = classes.id
+        WHERE classes.id = ?
+        ORDER BY schedule.id
     )");
     regularScheduleQuery.addBindValue(classId);
     const auto loadedRegularSchedule = SqlQueryUtils::executePrepared(
@@ -3296,13 +3344,23 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
             regularScheduleQuery.value("end_time").toString()
         });
     }
+    if (regularScheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            regularScheduleQuery,
+            QObject::tr("Loading My Classes regular schedules"),
+            identity
+            ).userMessage());
+    }
 
     QSqlQuery intensiveScheduleQuery(m_database);
     intensiveScheduleQuery.prepare(R"(
-        SELECT day, start_time, end_time
-        FROM class_intensive_times
-        WHERE class_id = ?
-        ORDER BY id
+        SELECT schedule.day, schedule.start_time, schedule.end_time
+        FROM classes
+        INNER JOIN class_intensive_times schedule
+            ON schedule.class_id = classes.id
+        WHERE classes.id = ?
+        ORDER BY schedule.id
     )");
     intensiveScheduleQuery.addBindValue(classId);
     const auto loadedIntensiveSchedule = SqlQueryUtils::executePrepared(
@@ -3322,8 +3380,16 @@ ClassInfoRepository::loadMyClassesClassInformationRecord(
             intensiveScheduleQuery.value("end_time").toString()
         });
     }
+    if (intensiveScheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            intensiveScheduleQuery,
+            QObject::tr("Loading My Classes intensive schedules"),
+            identity
+            ).userMessage());
+    }
 
-    return record;
+    return outcome;
 }
 
 Result<RosterPrintClassInfoReadRecord>

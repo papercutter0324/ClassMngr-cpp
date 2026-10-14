@@ -170,6 +170,21 @@ public:
                     );
             }
 
+            if (loadedEntry.parentMissing)
+            {
+                entries.push_back({
+                    .classId = classIds[index],
+                    .information = Domain::Result<
+                        Application::MyClassesClassInformationFields
+                        >::failure(error(
+                            Domain::ErrorCode::NotFound,
+                            "My Classes class information parent was not found.",
+                            true
+                            ))
+                });
+                continue;
+            }
+
             if (!loadedEntry.information)
             {
                 entries.push_back({

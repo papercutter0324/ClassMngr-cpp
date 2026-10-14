@@ -270,6 +270,7 @@ struct MyClassesClassInformationBatchReadEntry final
 {
     int classId = -1;
     Result<MyClassesClassInformationReadRecord> information;
+    bool parentMissing = false;
 };
 
 struct RosterPrintClassInfoReadRecord final
@@ -703,7 +704,12 @@ private:
         );
     [[nodiscard]] Result<MyClassesClassSummaryReadRecord>
         loadMyClassesClassSummaryRecord(int classId);
-    [[nodiscard]] Result<MyClassesClassInformationReadRecord>
+    struct MyClassesClassInformationReadOutcome final
+    {
+        MyClassesClassInformationReadRecord record;
+        bool parentMissing = false;
+    };
+    [[nodiscard]] Result<MyClassesClassInformationReadOutcome>
         loadMyClassesClassInformationRecord(int classId);
 
     QSqlDatabase& m_database;
