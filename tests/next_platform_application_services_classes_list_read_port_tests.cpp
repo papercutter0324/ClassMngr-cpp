@@ -12,6 +12,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
 #include <type_traits>
 
@@ -47,8 +48,10 @@ class NextPlatformApplicationServicesClassesListReadPortTests final
 
 private slots:
     void mapsRepositoryOrderTypedIdsAndNames();
+    void preservesLargestSupportedClassId();
     void preservesEmptyRepositoryResult();
     void unavailableSessionAndRepositoryFailureDoNotFallBack();
+    void rejectsOutOfRangeStoredClassIdWithoutNarrowing();
 };
 
 void NextPlatformApplicationServicesClassesListReadPortTests::
@@ -99,6 +102,37 @@ mapsRepositoryOrderTypedIdsAndNames()
 }
 
 void NextPlatformApplicationServicesClassesListReadPortTests::
+preservesLargestSupportedClassId()
+{
+    const qint64 storedClassId = std::numeric_limits<int>::max();
+    const QString className = QStringLiteral("Largest supported class");
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery insert(services.databaseSession()->database());
+    insert.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    insert.addBindValue(storedClassId);
+    insert.addBindValue(className);
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    Platform::ApplicationServicesClassesListReadPort port(&services);
+    const Application::ClassesListReadQuery query(port);
+    const auto result = query.execute();
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    QCOMPARE(result.value().classes.front().classId.value(),
+        std::to_string(storedClassId));
+    QCOMPARE(result.value().classes.front().className,
+        className.toStdU16String());
+}
+
+void NextPlatformApplicationServicesClassesListReadPortTests::
 preservesEmptyRepositoryResult()
 {
     QTemporaryDir directory;
@@ -143,6 +177,63 @@ unavailableSessionAndRepositoryFailureDoNotFallBack()
     unavailable = port.readClassesList();
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesClassesListReadPortTests::
+rejectsOutOfRangeStoredClassIdWithoutNarrowing()
+{
+    constexpr qint64 storedClassId = 4294967297LL;
+    const QString className = QStringLiteral("Wide stored class");
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery insert(services.databaseSession()->database());
+    insert.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    insert.addBindValue(storedClassId);
+    insert.addBindValue(className);
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    QSqlQuery storedRow(services.databaseSession()->database());
+    storedRow.prepare(QStringLiteral(
+        "SELECT typeof(id) AS id_type, id, name FROM classes WHERE id=?"
+        ));
+    storedRow.addBindValue(storedClassId);
+    QVERIFY2(storedRow.exec(), qPrintable(storedRow.lastError().text()));
+    QVERIFY(storedRow.next());
+    QCOMPARE(storedRow.value(QStringLiteral("id_type")).toString(),
+        QStringLiteral("integer"));
+    QCOMPARE(storedRow.value(QStringLiteral("id")).toLongLong(),
+        storedClassId);
+    QCOMPARE(storedRow.value(QStringLiteral("name")).toString(), className);
+
+    Platform::ApplicationServicesClassesListReadPort port(&services);
+    const Application::ClassesListReadQuery query(port);
+    const auto portResult = port.readClassesList();
+
+    QVERIFY(!portResult);
+    QCOMPARE(portResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!portResult.error().message.empty());
+    QVERIFY(!portResult.error().recoverable);
+
+    const auto queryResult = query.execute();
+    QVERIFY(!queryResult);
+    QCOMPARE(queryResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!queryResult.error().message.empty());
+    QVERIFY(!queryResult.error().recoverable);
+
+    QVERIFY2(storedRow.exec(), qPrintable(storedRow.lastError().text()));
+    QVERIFY(storedRow.next());
+    QCOMPARE(storedRow.value(QStringLiteral("id_type")).toString(),
+        QStringLiteral("integer"));
+    QCOMPARE(storedRow.value(QStringLiteral("id")).toLongLong(),
+        storedClassId);
+    QCOMPARE(storedRow.value(QStringLiteral("name")).toString(), className);
+    QVERIFY(!storedRow.next());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassesListReadPortTests)

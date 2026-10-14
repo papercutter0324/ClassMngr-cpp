@@ -118,8 +118,22 @@ Result<QList<Classroom>> ClassRepository::getClasses()
     {
         Classroom classroom;
 
-        classroom.id =
-            query.value("id").toInt();
+        bool classIdOk = false;
+        const qlonglong storedClassId = query.value("id")
+            .toLongLong(&classIdOk);
+        if (!classIdOk
+            || storedClassId <= 0
+            || storedClassId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading classes failed: stored class id %1 is outside "
+                    "the supported positive integer range."
+                    ).arg(query.value("id").toString())
+                );
+        }
+
+        classroom.id = static_cast<int>(storedClassId);
 
         classroom.name =
             query.value("name").toString();
