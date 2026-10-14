@@ -36245,3 +36245,42 @@ ran; F883 files were untouched during the baseline.
 F884 implementation is pending. F885 remains queued for direct
 `ClassDetailsSavePort` stale-parent classification. Batch 299 remains open;
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F884 accepted; Batch 299 selected F885 - 2026-10-15
+
+F884 is accepted at source/test commit
+`8db6f256c5019eecab75ae2abdeda1113ef19e5d`. The typed Speaking Evaluation
+save path now carries explicit repository `ParentClassMissing` provenance and
+uses an Immediate transaction. The legacy `saveSpeakingEval()` Status API
+retains its original foreign-key diagnostic path.
+
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+passed; the exact matching CTest passed 1/1. No full suite ran. Two independent
+post-F884 audits reviewed all 13 official Deferred candidates; none became
+actionable, and all 13 remain unchanged.
+
+Batch 299 selected F885 to classify a missing parent during direct typed
+`ClassDetailsSavePort` saves. The scope is the direct
+`ClassDetailsSaveUseCase` → `ApplicationServicesClassDetailsSavePort` route;
+the broader page workflow, which performs earlier schedule-conflict reads, is
+excluded. The pre-fix public baseline used unknown positive class ID `100001`,
+a valid request, and empty schedules. It returned `Technical` with exact
+diagnostic `Saving class information failed for class id 100001: FOREIGN KEY
+constraint failed Unable to fetch row (database error 787)` and left no
+`class_info`, `class_times`, or `class_intensive_times` rows. The temporary
+test/output were removed. The focused target built and its exact CTest passed
+1/1; no full suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Provenance and race safety | Add explicit repository-owned provenance only for a confirmed absent parent. Classify it before the port's own detail/conflict reads; check under an Immediate transaction before writes. Do not match diagnostic text. |
+| Typed classification and compatibility | Map only confirmed parent absence to typed `NotFound`. Preserve the legacy Status API and exact foreign-key diagnostic, unavailable-session `NotFound`, and `InvalidInput` behavior. |
+| Other failures and rollback | Query, validation, conflict, SQL, trigger, write, commit, and transaction failures remain `Technical`; a forced trigger/write failure rolls back. |
+| Regression coverage | Cover missing parent without mutation for empty and nonempty requested schedules where feasible, trigger/write failure with `Technical` rollback, and a successful save. |
+| Focused verification | Sequentially build `ClassMngr` then `ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full suite. |
+
+F885 is selected and implementation is pending. Keep the 13 Deferred entries,
+including dense Speaking Evaluation row-limit policy, unchanged. Batch 299
+remains open; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.

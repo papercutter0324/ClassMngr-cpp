@@ -5428,3 +5428,11 @@ the legacy Status/QString call and diagnostic stable while adding a detailed
 repository result for the typed port. Hold the existence check and write in
 one Immediate transaction, tag only the absent-parent case, and retain
 Technical rollback behavior for trigger and SQL failures.
+
+## Phase 2 typed Speaking Evaluation missing parent - 2026-10-15
+
+For a legacy save API that reports a stable foreign-key diagnostic, keep the
+legacy call on that path while adding an explicit detailed result for typed
+callers. Run the typed existence check and writes in one Immediate transaction;
+distinguish a successful no-row lookup from query/fetch and rollback failures.
+Pin the legacy diagnostic with a direct repository regression.

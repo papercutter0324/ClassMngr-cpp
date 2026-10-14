@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-15 (F883 accepted; F884 selected)
+## Phase 2 current position — 2026-10-15 (F884 accepted; F885 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5195,23 +5195,39 @@ Technical with stored notes unchanged. Independent sequential Debug builds of
 `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` passed; the
 exact matching CTest passed 1/1. No full suite ran.
 
-Two independent post-F883 audits reviewed all 13 official Deferred entries
-and found none newly actionable; all blockers remain unchanged. Batch 299
-selects F884 for missing-parent classification on typed Speaking Evaluation
-save. Its temporary public pre-fix baseline used valid evaluation data and
-unknown positive class ID `100001`. The typed use case returned Technical
-with diagnostic `Creating speaking evaluation failed for evaluation
-'Missing Parent Baseline' for class id 100001: FOREIGN KEY constraint failed
-Unable to fetch row (database error 787)`. No evaluation header or matrix-data
-row remained. The focused target built and its exact CTest passed 1/1; the
-focused slot passed 3 QtTest cases including setup/cleanup. The build reported
-a non-fatal missing dependency warning for
-`src/next/application/teacher_import_plan_mapper.h`. The temporary probe was
-removed. F884 will add explicit repository provenance for a missing parent
-inside the existing transaction and map only the typed save result to
-`NotFound`; preserve the legacy Status API and FK diagnostic, unavailable
-service classification, and Technical rollback behavior. Do not change the
-dense Speaking Evaluation row policy. F885 remains queued for direct
-`ClassDetailsSavePort` stale-parent classification; the broader page route
-includes earlier schedule-conflict reads. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate remains Open.
+F884 is accepted at `8db6f256c5019eecab75ae2abdeda1113ef19e5d`. The typed
+Speaking Evaluation save uses an explicit repository `ParentClassMissing`
+result. Its parent lookup and all persistence run inside an Immediate
+transaction; only the explicit missing-parent tag maps to `NotFound`. The
+legacy `saveSpeakingEval()` Status/QString API skips the precheck and retains
+the original SQLite foreign-key diagnostic. Regression tests verify typed
+NotFound with no evaluation header or matrix-data row, exact legacy diagnostic
+preservation, and the existing successful save, Technical write-failure
+rollback, and closed-session behavior. Independent sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+passed; the exact Debug CTest passed 1/1. No full suite ran.
+
+Two independent post-F884 audits rechecked all 13 official Deferred entries;
+none became actionable and all blockers remain unchanged. Batch 299 selected
+F885 for stale-parent classification through the direct typed
+`ClassDetailsSavePort`. Its temporary pre-fix public baseline called
+`ClassDetailsSaveUseCase` directly with valid details, empty schedules, and
+unknown positive class ID `100001`. It returned Technical with diagnostic
+`Saving class information failed for class id 100001: FOREIGN KEY constraint
+failed Unable to fetch row (database error 787)`. No `class_info`,
+`class_times`, or `class_intensive_times` rows were created. The focused target
+built and its exact CTest passed 1/1; the temporary slot/output were removed.
+F885 remains bounded to the direct port; the broader public page workflow's
+earlier conflict reads are outside its scope. Acceptance requires explicit
+repository provenance for a confirmed missing parent before the direct port's
+own detail/conflict reads and within an Immediate transaction before writes;
+preserve the legacy Status/FK diagnostic, unavailable-session and invalid
+input classifications, and Technical rollback for trigger/write failures.
+Test missing positive IDs with empty and nonempty schedules, no persisted
+class-info/schedule rows, valid save behavior, and legacy diagnostic
+preservation. Sequentially build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in
+`build/windows-x64-debug`, then run only its exact Debug CTest. No full suite.
+The five existing untracked artifacts remain untouched. Gates 1/2 remain
+Partial; the formal Phase 2 exit gate is Open.
