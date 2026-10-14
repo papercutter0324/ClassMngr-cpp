@@ -12,6 +12,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <optional>
 #include <string>
 
@@ -90,10 +91,25 @@ bool insertClassInfo(
     return insert.exec();
 }
 
+bool insertPersistedClass(
+    QSqlDatabase database,
+    const qint64 classIdValue,
+    const QString& name
+    )
+{
+    QSqlQuery insert(database);
+    insert.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    insert.addBindValue(classIdValue);
+    insert.addBindValue(name);
+    return insert.exec();
+}
+
 bool insertSchedule(
     QSqlDatabase database,
     const QString& table,
-    const int classIdValue,
+    const qint64 classIdValue,
     const QString& day,
     const QString& start,
     const QString& end
@@ -120,6 +136,7 @@ class NextPlatformApplicationServicesScheduleBuilderSourcePortTests final
 
 private slots:
     void readsActiveSessionCompactSourceInRepositoryOrder();
+    void validatesStoredScheduleClassIdsBeforeNarrowing();
     void distinguishesClosedUnavailableAndFailedReadsWithoutLegacyFallback();
 };
 
@@ -362,6 +379,252 @@ readsActiveSessionCompactSourceInRepositoryOrder()
     QCOMPARE(noTeacher.classColor, std::u16string(u"#FFFFFF"));
     QCOMPARE(noTeacher.fontColor, std::u16string(u"#000000"));
     QCOMPARE(noTeacher.regularSchedule.size(), std::size_t(1));
+}
+
+void NextPlatformApplicationServicesScheduleBuilderSourcePortTests::
+validatesStoredScheduleClassIdsBeforeNarrowing()
+{
+    constexpr qint64 ordinaryClassId = 1;
+    constexpr qint64 maxIntClassId = std::numeric_limits<int>::max();
+    constexpr qint64 wideClassId = 4294967297LL;
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(
+        directory,
+        QStringLiteral("wide-class-id")
+        )));
+
+    const QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(insertPersistedClass(
+        database,
+        ordinaryClassId,
+        QStringLiteral("Alpha ordinary ID")
+        ));
+    QVERIFY(insertPersistedClass(
+        database,
+        maxIntClassId,
+        QStringLiteral("Zulu maximum ID")
+        ));
+
+    QVERIFY(insertSchedule(
+        database,
+        QStringLiteral("class_times"),
+        ordinaryClassId,
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+        ));
+    QVERIFY(insertSchedule(
+        database,
+        QStringLiteral("class_times"),
+        maxIntClassId,
+        QStringLiteral("Tuesday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:50 AM")
+        ));
+
+    const Application::ScheduleBuilderSourceQuery query;
+    Platform::ApplicationServicesScheduleBuilderSourcePort port(services);
+    const auto validPortResult = port.readScheduleClasses(query);
+    QVERIFY2(validPortResult,
+             validPortResult ? "" : qPrintable(QString::fromStdString(
+                 validPortResult.error().message)));
+    QCOMPARE(validPortResult.value().classes.size(), std::size_t(2));
+    QCOMPARE(validPortResult.value().classes[0].classId.value(),
+             std::string("1"));
+    QCOMPARE(validPortResult.value().classes[1].classId.value(),
+             std::to_string(maxIntClassId));
+    QCOMPARE(validPortResult.value().classes[0].regularSchedule.size(),
+             std::size_t(1));
+    QCOMPARE(validPortResult.value().classes[1].regularSchedule.size(),
+             std::size_t(1));
+    QCOMPARE(validPortResult.value().classes[0].regularSchedule[0].day,
+             std::u16string(u"Monday"));
+    QCOMPARE(validPortResult.value().classes[1].regularSchedule[0].day,
+             std::u16string(u"Tuesday"));
+
+    const auto validHandlerResult =
+        Application::ScheduleBuilderSourceQueryHandler::execute(query, port);
+    QVERIFY2(validHandlerResult,
+             validHandlerResult ? "" : qPrintable(QString::fromStdString(
+                 validHandlerResult.error().message)));
+    QCOMPARE(validHandlerResult.value().classes.size(), std::size_t(2));
+
+    QVERIFY(insertPersistedClass(
+        database,
+        wideClassId,
+        QStringLiteral("Middle wide ID")
+        ));
+    QVERIFY(insertSchedule(
+        database,
+        QStringLiteral("class_times"),
+        wideClassId,
+        QStringLiteral("Wednesday"),
+        QStringLiteral("11:00 AM"),
+        QStringLiteral("11:50 AM")
+        ));
+
+    auto* const repository = services.databaseSession()->classInfoRepository();
+    const auto metricsBeforeInvalidId =
+        repository->scheduleClassInfoReadMetrics();
+    const auto invalidRepositoryResult = repository->loadScheduleClassInfos();
+    QVERIFY(!invalidRepositoryResult);
+    QVERIFY(invalidRepositoryResult.error().contains(
+        QString::number(wideClassId)
+        ));
+    QCOMPARE(repository->scheduleClassInfoReadMetrics()
+                 .regularScheduleStatementCount,
+             metricsBeforeInvalidId.regularScheduleStatementCount);
+    QCOMPARE(repository->scheduleClassInfoReadMetrics()
+                 .intensiveScheduleStatementCount,
+             metricsBeforeInvalidId.intensiveScheduleStatementCount);
+
+    const auto invalidPortResult = port.readScheduleClasses(query);
+    QVERIFY(!invalidPortResult);
+    QCOMPARE(invalidPortResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!invalidPortResult.error().message.empty());
+
+    const auto invalidHandlerResult =
+        Application::ScheduleBuilderSourceQueryHandler::execute(query, port);
+    QVERIFY(!invalidHandlerResult);
+    QCOMPARE(invalidHandlerResult.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(invalidHandlerResult.error().message,
+             invalidPortResult.error().message);
+
+    QSqlQuery verifyClasses(database);
+    QVERIFY(verifyClasses.exec(QStringLiteral(
+        "SELECT id, typeof(id) AS id_type, name "
+        "FROM classes ORDER BY id"
+        )));
+    QVERIFY(verifyClasses.next());
+    QCOMPARE(verifyClasses.value(QStringLiteral("id")).toLongLong(),
+             ordinaryClassId);
+    QCOMPARE(verifyClasses.value(QStringLiteral("id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifyClasses.value(QStringLiteral("name")).toString(),
+             QStringLiteral("Alpha ordinary ID"));
+    QVERIFY(verifyClasses.next());
+    QCOMPARE(verifyClasses.value(QStringLiteral("id")).toLongLong(),
+             maxIntClassId);
+    QCOMPARE(verifyClasses.value(QStringLiteral("id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifyClasses.value(QStringLiteral("name")).toString(),
+             QStringLiteral("Zulu maximum ID"));
+    QVERIFY(verifyClasses.next());
+    QCOMPARE(verifyClasses.value(QStringLiteral("id")).toLongLong(),
+             wideClassId);
+    QCOMPARE(verifyClasses.value(QStringLiteral("id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifyClasses.value(QStringLiteral("name")).toString(),
+             QStringLiteral("Middle wide ID"));
+    QVERIFY(!verifyClasses.next());
+
+    QSqlQuery verifySchedules(database);
+    QVERIFY(verifySchedules.exec(QStringLiteral(
+        "SELECT class_id, typeof(class_id) AS class_id_type, day "
+        "FROM class_times ORDER BY id"
+        )));
+    QVERIFY(verifySchedules.next());
+    QCOMPARE(verifySchedules.value(QStringLiteral("class_id")).toLongLong(),
+             ordinaryClassId);
+    QCOMPARE(verifySchedules.value(QStringLiteral("class_id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifySchedules.value(QStringLiteral("day")).toString(),
+             QStringLiteral("Monday"));
+    QVERIFY(verifySchedules.next());
+    QCOMPARE(verifySchedules.value(QStringLiteral("class_id")).toLongLong(),
+             maxIntClassId);
+    QCOMPARE(verifySchedules.value(QStringLiteral("class_id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifySchedules.value(QStringLiteral("day")).toString(),
+             QStringLiteral("Tuesday"));
+    QVERIFY(verifySchedules.next());
+    QCOMPARE(verifySchedules.value(QStringLiteral("class_id")).toLongLong(),
+             wideClassId);
+    QCOMPARE(verifySchedules.value(QStringLiteral("class_id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifySchedules.value(QStringLiteral("day")).toString(),
+             QStringLiteral("Wednesday"));
+    QVERIFY(!verifySchedules.next());
+
+    ApplicationServices zeroIdServices;
+    QVERIFY(zeroIdServices.openDatabase(databasePath(
+        directory,
+        QStringLiteral("zero-class-id")
+        )));
+    const QSqlDatabase zeroIdDatabase =
+        zeroIdServices.databaseSession()->database();
+    QVERIFY(insertPersistedClass(
+        zeroIdDatabase,
+        0,
+        QStringLiteral("Zero class ID")
+        ));
+    QVERIFY(insertSchedule(
+        zeroIdDatabase,
+        QStringLiteral("class_times"),
+        0,
+        QStringLiteral("Thursday"),
+        QStringLiteral("12:00 PM"),
+        QStringLiteral("12:50 PM")
+        ));
+
+    auto* const zeroIdRepository =
+        zeroIdServices.databaseSession()->classInfoRepository();
+    const auto zeroIdMetricsBeforeRead =
+        zeroIdRepository->scheduleClassInfoReadMetrics();
+    const auto zeroIdRepositoryResult =
+        zeroIdRepository->loadScheduleClassInfos();
+    QVERIFY(!zeroIdRepositoryResult);
+    QVERIFY(zeroIdRepositoryResult.error().contains(QStringLiteral("0")));
+
+    Platform::ApplicationServicesScheduleBuilderSourcePort zeroIdPort(
+        zeroIdServices
+        );
+    const auto zeroIdPortResult = zeroIdPort.readScheduleClasses(query);
+    QVERIFY(!zeroIdPortResult);
+    QCOMPARE(zeroIdPortResult.error().code, Domain::ErrorCode::Technical);
+    const auto zeroIdHandlerResult =
+        Application::ScheduleBuilderSourceQueryHandler::execute(
+            query,
+            zeroIdPort
+            );
+    QVERIFY(!zeroIdHandlerResult);
+    QCOMPARE(zeroIdHandlerResult.error().code, Domain::ErrorCode::Technical);
+    const auto zeroIdMetricsAfterPort =
+        zeroIdRepository->scheduleClassInfoReadMetrics();
+    QCOMPARE(zeroIdMetricsAfterPort.regularScheduleStatementCount,
+             zeroIdMetricsBeforeRead.regularScheduleStatementCount);
+    QCOMPARE(zeroIdMetricsAfterPort.intensiveScheduleStatementCount,
+             zeroIdMetricsBeforeRead.intensiveScheduleStatementCount);
+
+    QSqlQuery verifyZeroIdClass(zeroIdDatabase);
+    QVERIFY(verifyZeroIdClass.exec(QStringLiteral(
+        "SELECT id, typeof(id) AS id_type, name FROM classes"
+        )));
+    QVERIFY(verifyZeroIdClass.next());
+    QCOMPARE(verifyZeroIdClass.value(QStringLiteral("id")).toLongLong(), 0LL);
+    QCOMPARE(verifyZeroIdClass.value(QStringLiteral("id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifyZeroIdClass.value(QStringLiteral("name")).toString(),
+             QStringLiteral("Zero class ID"));
+    QVERIFY(!verifyZeroIdClass.next());
+
+    QSqlQuery verifyZeroIdSchedule(zeroIdDatabase);
+    QVERIFY(verifyZeroIdSchedule.exec(QStringLiteral(
+        "SELECT class_id, typeof(class_id) AS class_id_type, day "
+        "FROM class_times"
+        )));
+    QVERIFY(verifyZeroIdSchedule.next());
+    QCOMPARE(verifyZeroIdSchedule.value(QStringLiteral("class_id")).toLongLong(),
+             0LL);
+    QCOMPARE(verifyZeroIdSchedule.value(QStringLiteral("class_id_type")).toString(),
+             QStringLiteral("integer"));
+    QCOMPARE(verifyZeroIdSchedule.value(QStringLiteral("day")).toString(),
+             QStringLiteral("Thursday"));
+    QVERIFY(!verifyZeroIdSchedule.next());
 }
 
 void NextPlatformApplicationServicesScheduleBuilderSourcePortTests::

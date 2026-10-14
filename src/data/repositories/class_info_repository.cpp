@@ -4789,7 +4789,21 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
     while (query.next())
     {
         ClassInfo info;
-        info.classId = query.value(QStringLiteral("class_id")).toInt();
+        const QVariant storedClassIdValue = query.value(QStringLiteral("class_id"));
+        bool storedClassIdOk = false;
+        const qint64 storedClassId =
+            storedClassIdValue.toLongLong(&storedClassIdOk);
+        if (!storedClassIdOk
+            || storedClassId <= 0
+            || storedClassId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading schedule class information failed: invalid class id %1."
+                    ).arg(storedClassIdValue.toString())
+                );
+        }
+        info.classId = static_cast<int>(storedClassId);
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
         info.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
         info.teacherKr = query.value(QStringLiteral("teacher_kr")).toString();
