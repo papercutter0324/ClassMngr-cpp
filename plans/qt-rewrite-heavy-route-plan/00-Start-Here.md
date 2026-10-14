@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F892 is accepted and no official Deferred trigger reopened. F893's baseline confirms an absent class currently returns successful blank details and default colors; implementation will map only a missing parent to typed `NotFound`. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F893 is accepted; two independent post-slice reviews found no official Deferred trigger newly actionable. Batch 303 proceeds with F894, the Co-Teacher Page read, for baseline work; Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

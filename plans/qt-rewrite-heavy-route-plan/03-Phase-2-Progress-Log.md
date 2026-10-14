@@ -36902,3 +36902,43 @@ wrapper retains its prior default record for unknown IDs.
 F893 baseline and acceptance are complete; implementation is next. All 13
 official Deferred candidates remain unchanged and deferred. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F893 accepted; post-slice Deferred audit clear; F894 selected - 2026-10-15
+
+F893 is accepted at source/test commit
+`11d5a99ebc0e413872141678f7e21b83cd430702`. The Schedule Editor Class Info
+repository now carries explicit parent provenance from the existing
+requested-ID query, adding `classes` before the optional `class_info` and
+teacher joins. The typed port maps only a clean missing parent to recoverable
+`NotFound`; an existing parent without metadata retains the blank fields and
+default colors. The legacy repository wrapper keeps its default record for
+unknown IDs. Full mapping, dangling-teacher behavior, and Technical query/fetch
+handling remain intact.
+
+Regressions cover never-present and deleted parents, typed error mapping,
+legacy defaults, noncanonical IDs, existing metadata defaults, full mapping,
+dangling teachers, SQL failures, unavailable sessions, and one-statement
+metrics. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests`
+passed in `build/windows-x64-debug`; the exact registered Debug CTest passed
+1/1 (CTest #333). The verifier first used a nonmatching CTest registration
+name, confirmed that it selected no test, then reran the exact registered name.
+Both initial builds hit FileTracker access denial and bounded elevated retries
+succeeded without compiler warnings. No full suite ran. Fetch-time SQL errors
+are checked in code but have no deterministic injection seam.
+
+Two independent post-F893 audits reviewed all 13 official Deferred triggers
+against F888-F893 and found none newly actionable. No matched heap capture,
+memory/export evidence, macOS runner, live helper callsite, Calendar injection
+seam, policy or allocation decision, or Teacher/sidebar ID-width migration was
+produced. All 13 remain unchanged and deferred.
+
+Batch 303 proceeds with F894, the Co-Teacher Page read. Its public port test
+already covers an existing class without `class_info` plus ordered schedules
+and an unknown ID with default-success fields. Baseline work will verify the
+unknown ID has no parent row and establish component results. The candidate
+uses a similar `class_info`-rooted metadata read plus a separate schedule
+read, so the acceptance boundary must preserve existing-class defaults and
+independent schedule behavior while deciding the typed result for an absent
+parent. Four further bounded read leads remain in Batch 303. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

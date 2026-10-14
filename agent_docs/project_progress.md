@@ -169,14 +169,18 @@ the legacy repository wrapper retains its empty default. Independent
 sequential Debug builds of `ClassMngr` and the typed grade target passed; its
 exact CTest passed 1/1 after bounded FileTracker retries, with no full suite.
 Two independent post-F892 audits found none of the 13 official Deferred
-candidates newly actionable. Batch 303 proceeds with F893, the Schedule
-Editor Class Info read. Its baseline confirms that unknown positive class ID
-2000000000 currently returns a successful snapshot with blank metadata and
-teacher/room values plus default colors, just like an existing class without
-`class_info`. Acceptance now requires only a missing parent to produce typed
-`NotFound`, preserving the existing-class defaults and technical failures;
-implementation is next. Five further bounded read leads remain ordered in the
-Phase 2 plan. Gates 1/2 remain Partial and the formal exit gate remains Open.
+candidates newly actionable. F893 is accepted at
+`11d5a99ebc0e413872141678f7e21b83cd430702`: the Schedule Editor Class Info
+read now maps only a parent confirmed absent in the same requested-ID query to
+typed `NotFound`. Existing parents without `class_info` retain their default
+fields/colors, and the legacy repository wrapper retains unknown-ID defaults.
+Independent sequential Debug builds of `ClassMngr` and its focused target
+succeeded; the exact matching CTest passed 1/1 with no compiler warnings.
+No full suite ran. Two independent post-F893 audits again found none of the 13
+official Deferred candidates actionable. Batch 303 proceeds with F894, the
+Co-Teacher Page read, for baseline work; four further bounded read leads remain
+ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal exit gate
+remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
