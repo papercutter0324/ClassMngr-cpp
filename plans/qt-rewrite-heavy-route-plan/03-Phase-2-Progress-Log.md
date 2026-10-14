@@ -37443,37 +37443,34 @@ with F900, Roster Template Print source batch parent provenance. Its
 public-port baseline is underway; acceptance follows. Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
 
-### F900 acceptance defined; implementation underway - 2026-10-15
+### F900 accepted; post-slice Deferred audit clear; F901 next - 2026-10-15
 
-The attempted missing-parent runtime baseline did not complete. The temporary
-probe first failed to compile; after correction, its link step failed with
-FileTracker `E_ACCESSDENIED`. The one bounded elevated retry for this target
-has already been used. CTest #332 used an executable last built on 2026-10-14,
-so it is stale evidence and does not establish baseline behavior. The probe
-source was restored byte-for-byte (SHA-256
-`4A771ACEDF1AF77C701380D90D9BD7C0672C19A33570B40730860D18B6D8537F`).
+F900 is accepted at source/test commit
+`0f829752d0993008bbcf0b756ff6b89de0edbd57`. Both batch repositories now
+establish requested-parent provenance, and parent-joined metadata, schedule,
+and roster queries filter orphan child rows. The composite print read returns
+one recoverable outer `NotFound` and no snapshot if any requested parent is
+absent. It never returns a partial print snapshot. A present parent without
+optional `class_info` still succeeds with default metadata and its schedules;
+empty roster data remains successful.
 
-Acceptance is therefore grounded in source/API contract and existing focused
-coverage, not a measured missing-parent baseline. The public batch port returns
-one vector-or-error result for one print operation and carries no per-entry
-error state. Adopt an all-or-nothing outcome: if any requested class parent is
-absent, return recoverable outer `NotFound` with no snapshot; never produce a
-partial print snapshot. Parent checks must prevent orphan class metadata,
-schedules, or roster data from entering the result. A present parent without
-optional `class_info` remains successful with default metadata; its schedules
-and empty roster remain valid, and an empty roster is success. This matches
-the existing focused optional-metadata/empty-roster case and the single-class
-typed port's missing-parent behavior.
+The mixed deleted-parent regression includes orphan `class_info`,
+`class_times`, `roster_columns`, and `roster_data`, plus a populated sibling
+cell. It checks repository batch results and the public port's `NotFound`
+outcome. The pre-fix missing-parent runtime baseline was not measured: the
+corrected temporary probe's link step hit FileTracker `E_ACCESSDENIED` after
+the one retry, while CTest #332's earlier executable was stale (built
+2026-10-14). Acceptance derives from the public API contract and existing
+behavior, then the post-fix regression.
 
-| Acceptance point | Required evidence |
-| --- | --- |
-| Parent provenance and atomic result | Confirm requested parent existence; if any parent is absent, return outer recoverable `NotFound` and no snapshot. Do not return partial print data or classify query/cursor failures as missing. |
-| No orphan data | Cover orphan class metadata, schedules, and roster rows; none may enter a successful snapshot. Preserve request order and the existing whole-operation error behavior. |
-| Optional data compatibility | A present class without `class_info` succeeds with default metadata and its actual schedules. Empty roster data remains a successful empty roster. |
-| Regression and verification | Extend the existing focused port test for mixed present/missing parents, no partial snapshot, orphan suppression, and the optional-metadata/empty-roster case. Build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests` in the existing `build/windows-x64-debug`; run only Debug CTest #332. No full suite. |
+An independent tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`
+in `build/windows-x64-debug` with `/p:TrackFileAccess=false /p:ForceRebuild=true`;
+the changed repository and test sources compiled. Fresh exact Debug CTest
+#332 passed 1/1. No full suite ran.
 
-F900 acceptance is established and implementation/verification is underway;
-the missing-parent runtime baseline remains unmeasured. Batch 304 continues
-with F901-F908 in its existing order, and all 13 official Deferred entries
-remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate
-remains Open.
+Two independent post-slice audits reviewed the exact 13 official Deferred
+candidates and found zero newly actionable; all remain unchanged. Batch 304
+continues F901-F908 in its recorded order, with F901, My Classes
+class-information batch parent provenance, next. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.

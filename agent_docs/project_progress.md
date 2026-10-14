@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F899 accepted; F900 acceptance recorded)
+### Current state - 2026-10-15 (F900 accepted; F901 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -255,18 +255,35 @@ defaults and ordered schedules for existing classes without `class_info`.
 Independent Debug builds of `ClassMngr` and its focused test target succeeded;
 CTest #330 passed 1/1, including a recheck of the explicit Technical
 schedule-query failure assertion. No full suite ran. Two post-F899 audits found
-none of the 13 official Deferred triggers newly actionable. Batch 304 proceeds
-with F900, Roster Template Print source batch parent provenance. Its public API
-is an all-or-nothing print snapshot, so the accepted contract is outer
-recoverable `NotFound` with no snapshot if any requested class parent is absent;
-partial output is not represented. Present parents without optional
-`class_info` and empty rosters remain successful. The missing-parent runtime
-baseline was not measured: a temporary probe first failed to compile and its
-corrected link was denied by FileTracker after the single allowed retry. CTest
-#332 used an executable last built 2026-10-14 and is existing-test evidence
-only. The acceptance and this limitation are recorded before implementation;
-focused verification is still pending. Gates 1/2 remain Partial and the formal
-exit gate remains Open.
+none of the 13 official Deferred triggers newly actionable. F900 is accepted
+at source/test commit `0f829752d0993008bbcf0b756ff6b89de0edbd57`: the Roster
+Template Print source batch now carries parent provenance through its class
+information and roster repository results. If any requested parent is absent,
+the composite port returns recoverable outer `NotFound` before constructing a
+snapshot. Parent-joined metadata, schedule, roster-column, and roster-cell
+queries suppress orphan rows. A present class without optional `class_info`
+still succeeds with default metadata and actual schedules; an empty roster
+still succeeds. The regression retains orphan metadata, schedule, column, and
+cell rows under a deleted parent, gives the present sibling a populated cell,
+checks the repository batch results, and verifies the public mixed request has
+no snapshot and returns `NotFound`.
+
+The independent Tester rebuilt `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`
+sequentially in `build/windows-x64-debug` with
+`/p:TrackFileAccess=false /p:ForceRebuild=true`; both changed repository
+sources and the modified test source compiled, and fresh Debug CTest #332 passed
+1/1. The bounded FileTracker workaround avoided an elevated retry. No compiler
+warnings were reported and no full suite ran. The attempted pre-fix public
+baseline did not complete: its corrected probe link hit FileTracker
+`E_ACCESSDENIED` after the single retry, and the earlier CTest #332 executable
+was last built on 2026-10-14. Acceptance is grounded in the public API contract
+and existing behavior plus the post-fix regression; no pre-fix runtime result
+is claimed. Two independent post-F900 audits rechecked all 13 official
+Deferred entries; none became actionable and all remain unchanged. Batch 304
+continues with F901, My Classes class-information batch parent provenance; F902
+through F908 remain in their existing order. Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

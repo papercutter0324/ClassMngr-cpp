@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F899 is accepted at source/test commit `5533778086c20fe798c0db6fa1ebf35ca0bcc804`; F900 Roster Template Print source batch parent provenance has acceptance defined by source inference and implementation/verification underway, while Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F900 Roster Template Print source batch parent provenance is accepted at source/test commit `0f829752d0993008bbcf0b756ff6b89de0edbd57`; F901 My Classes class-information batch parent provenance is next, while Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F900 - Roster Template Print source batch parent provenance: implement all-or-nothing `NotFound` for any absent requested parent and suppress orphan print data.
 - F901 - My Classes class-information batch parent provenance: classify parent absence in the batch projection.
 - F902 - My Classes class-summary batch parent provenance: classify parent absence in the batch projection.
 - F903 - Speaking Evaluation single matrix read parent provenance: classify parent absence in the result read.

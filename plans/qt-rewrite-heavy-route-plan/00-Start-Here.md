@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F899, Selected Class Subtitle batch parent provenance, is accepted at source/test commit `5533778086c20fe798c0db6fa1ebf35ca0bcc804`; F900, Roster Template Print source batch parent provenance, has acceptance defined from the public API contract and implementation/verification underway. Its missing-parent runtime baseline was not measured; the focused CTest executable was stale. The 13 official Deferred candidates remain unchanged. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F900, Roster Template Print source batch parent provenance, is accepted at source/test commit `0f829752d0993008bbcf0b756ff6b89de0edbd57`; F901, My Classes class-information batch parent provenance, is next. Two independent audits found no newly actionable official Deferred candidate; all 13 remain unchanged. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
