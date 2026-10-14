@@ -46,6 +46,8 @@ public:
     };
 
     using ReadResult = std::expected<SpeakingEvalRows, ReadFailure>;
+    using BatchReadResult =
+        std::expected<QList<SpeakingEvalNamedRows>, ReadFailure>;
 
     explicit SpeakingEvalRepository(
         QSqlDatabase& database
@@ -80,6 +82,13 @@ public:
         );
 
     [[nodiscard]] Result<QList<SpeakingEvalNamedRows>> loadSpeakingEvalBatch(
+        int classId,
+        const QStringList& evaluationNames
+        );
+
+    // Typed callers can distinguish a parent class confirmed absent by the
+    // batch result query without changing the legacy batch API behavior.
+    [[nodiscard]] BatchReadResult loadSpeakingEvalBatchDetailed(
         int classId,
         const QStringList& evaluationNames
         );

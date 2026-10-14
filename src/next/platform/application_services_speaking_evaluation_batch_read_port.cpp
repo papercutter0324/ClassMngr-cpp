@@ -168,13 +168,20 @@ ApplicationServicesSpeakingEvaluationBatchReadPort::readEvaluations(
             evaluationNames.append(legacyText(name));
         }
 
-        const Result<QList<SpeakingEvalNamedRows>> loaded =
-            repository->loadSpeakingEvalBatch(*classId, evaluationNames);
+        const SpeakingEvalRepository::BatchReadResult loaded =
+            repository->loadSpeakingEvalBatchDetailed(
+                *classId,
+                evaluationNames
+                );
         if (!loaded)
         {
+            const Domain::ErrorCode code = loaded.error().kind
+                    == SpeakingEvalRepository::ReadFailure::Kind::ParentClassMissing
+                ? Domain::ErrorCode::NotFound
+                : Domain::ErrorCode::Technical;
             return failure(
-                Domain::ErrorCode::Technical,
-                toStdString(loaded.error())
+                code,
+                toStdString(loaded.error().diagnostic)
                 );
         }
 

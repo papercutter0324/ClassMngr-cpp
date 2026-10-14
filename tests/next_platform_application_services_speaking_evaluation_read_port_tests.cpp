@@ -215,6 +215,18 @@ reportsDeletedParentEvenWhenOrphanEvaluationRowsRemain()
     QCOMPARE(legacyRead->at(0).size(), 11);
     QCOMPARE(legacyRead->at(0).at(1), QStringLiteral("Student A"));
 
+    const auto legacyBatchRead = repository->loadSpeakingEvalBatch(
+        *createdClass,
+        {QStringLiteral("Winter")}
+        );
+    QVERIFY(legacyBatchRead);
+    QCOMPARE(legacyBatchRead->size(), 1);
+    QCOMPARE(legacyBatchRead->at(0).rows.size(), 25);
+    QCOMPARE(
+        legacyBatchRead->at(0).rows[0][1],
+        QStringLiteral("Student A")
+        );
+
     Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
     const auto typedRead = Application::SpeakingEvaluationQuery::execute(
         query(*createdClass, u"Winter"),
@@ -223,6 +235,16 @@ reportsDeletedParentEvenWhenOrphanEvaluationRowsRemain()
     QVERIFY(!typedRead);
     QCOMPARE(typedRead.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(typedRead.error().recoverable);
+
+    Platform::ApplicationServicesSpeakingEvaluationBatchReadPort batchPort(services);
+    const auto typedBatchRead =
+        Application::SpeakingEvaluationReadBatchQueryHandler::execute(
+            batchQuery(*createdClass, {u"Winter"}),
+            batchPort
+            );
+    QVERIFY(!typedBatchRead);
+    QCOMPARE(typedBatchRead.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(typedBatchRead.error().recoverable);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
@@ -246,6 +268,16 @@ reportsNeverPresentParentAsNotFound()
     QVERIFY(!typedRead);
     QCOMPARE(typedRead.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(typedRead.error().recoverable);
+
+    Platform::ApplicationServicesSpeakingEvaluationBatchReadPort batchPort(services);
+    const auto typedBatchRead =
+        Application::SpeakingEvaluationReadBatchQueryHandler::execute(
+            batchQuery(*createdClass + 1, {u"Winter"}),
+            batchPort
+            );
+    QVERIFY(!typedBatchRead);
+    QCOMPARE(typedBatchRead.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(typedBatchRead.error().recoverable);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
@@ -317,7 +349,7 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
     Platform::ApplicationServicesSpeakingEvaluationBatchReadPort port(services);
     const Application::SpeakingEvaluationReadBatchQuery requested = batchQuery(
         *createdClass,
-        {u"Speech Contest", u"Missing", u"Winter"}
+        {u"Speech Contest", u"Missing", u"Winter", u"Winter", u" Winter "}
         );
     const auto result = Application::SpeakingEvaluationReadBatchQueryHandler::execute(
         requested,
@@ -328,7 +360,7 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
         result,
         qPrintable(result ? QString() : QString::fromStdString(result.error().message))
         );
-    QCOMPARE(result.value().evaluations.size(), std::size_t(3));
+    QCOMPARE(result.value().evaluations.size(), std::size_t(5));
     for (std::size_t index = 0; index < requested.evaluationNames.size(); ++index)
     {
         QVERIFY(result.value().evaluations[index].classId == requested.classId);
@@ -354,6 +386,8 @@ readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes()
     }
     QCOMPARE(winterRows[7][9], std::u16string(u"Review \U0001F4DA"));
     QCOMPARE(winterRows[24][10], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+    QCOMPARE(result.value().evaluations[3].rows, winterRows);
+    QVERIFY(result.value().evaluations[4].rows.empty());
 
     // Exact-name lookup remains class-scoped and does not trim the requested
     // name, matching the existing single-evaluation query contract.
@@ -564,6 +598,17 @@ mapsRepositoryErrorsToTechnicalFailures()
     QCOMPARE(failedRead.error().code, Domain::ErrorCode::Technical);
     QVERIFY(failedRead.error().recoverable);
     QVERIFY(!failedRead.error().message.empty());
+
+    Platform::ApplicationServicesSpeakingEvaluationBatchReadPort batchPort(services);
+    const auto failedBatchRead =
+        Application::SpeakingEvaluationReadBatchQueryHandler::execute(
+            batchQuery(*createdClass, {u"Winter"}),
+            batchPort
+            );
+    QVERIFY(!failedBatchRead);
+    QCOMPARE(failedBatchRead.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedBatchRead.error().recoverable);
+    QVERIFY(!failedBatchRead.error().message.empty());
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
