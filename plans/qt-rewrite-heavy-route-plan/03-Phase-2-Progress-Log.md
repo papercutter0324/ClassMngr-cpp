@@ -37442,3 +37442,38 @@ triggers newly met or actionable; all 13 remain unchanged. Batch 304 proceeds
 with F900, Roster Template Print source batch parent provenance. Its
 public-port baseline is underway; acceptance follows. Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+### F900 acceptance defined; implementation underway - 2026-10-15
+
+The attempted missing-parent runtime baseline did not complete. The temporary
+probe first failed to compile; after correction, its link step failed with
+FileTracker `E_ACCESSDENIED`. The one bounded elevated retry for this target
+has already been used. CTest #332 used an executable last built on 2026-10-14,
+so it is stale evidence and does not establish baseline behavior. The probe
+source was restored byte-for-byte (SHA-256
+`4A771ACEDF1AF77C701380D90D9BD7C0672C19A33570B40730860D18B6D8537F`).
+
+Acceptance is therefore grounded in source/API contract and existing focused
+coverage, not a measured missing-parent baseline. The public batch port returns
+one vector-or-error result for one print operation and carries no per-entry
+error state. Adopt an all-or-nothing outcome: if any requested class parent is
+absent, return recoverable outer `NotFound` with no snapshot; never produce a
+partial print snapshot. Parent checks must prevent orphan class metadata,
+schedules, or roster data from entering the result. A present parent without
+optional `class_info` remains successful with default metadata; its schedules
+and empty roster remain valid, and an empty roster is success. This matches
+the existing focused optional-metadata/empty-roster case and the single-class
+typed port's missing-parent behavior.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and atomic result | Confirm requested parent existence; if any parent is absent, return outer recoverable `NotFound` and no snapshot. Do not return partial print data or classify query/cursor failures as missing. |
+| No orphan data | Cover orphan class metadata, schedules, and roster rows; none may enter a successful snapshot. Preserve request order and the existing whole-operation error behavior. |
+| Optional data compatibility | A present class without `class_info` succeeds with default metadata and its actual schedules. Empty roster data remains a successful empty roster. |
+| Regression and verification | Extend the existing focused port test for mixed present/missing parents, no partial snapshot, orphan suppression, and the optional-metadata/empty-roster case. Build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests` in the existing `build/windows-x64-debug`; run only Debug CTest #332. No full suite. |
+
+F900 acceptance is established and implementation/verification is underway;
+the missing-parent runtime baseline remains unmeasured. Batch 304 continues
+with F901-F908 in its existing order, and all 13 official Deferred entries
+remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F899 accepted; F900 baseline underway)
+### Current state - 2026-10-15 (F899 accepted; F900 acceptance recorded)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -256,9 +256,17 @@ Independent Debug builds of `ClassMngr` and its focused test target succeeded;
 CTest #330 passed 1/1, including a recheck of the explicit Technical
 schedule-query failure assertion. No full suite ran. Two post-F899 audits found
 none of the 13 official Deferred triggers newly actionable. Batch 304 proceeds
-with F900, Roster Template Print source batch parent provenance; its public-port
-baseline is underway and acceptance follows. Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+with F900, Roster Template Print source batch parent provenance. Its public API
+is an all-or-nothing print snapshot, so the accepted contract is outer
+recoverable `NotFound` with no snapshot if any requested class parent is absent;
+partial output is not represented. Present parents without optional
+`class_info` and empty rosters remain successful. The missing-parent runtime
+baseline was not measured: a temporary probe first failed to compile and its
+corrected link was denied by FileTracker after the single allowed retry. CTest
+#332 used an executable last built 2026-10-14 and is existing-test evidence
+only. The acceptance and this limitation are recorded before implementation;
+focused verification is still pending. Gates 1/2 remain Partial and the formal
+exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
