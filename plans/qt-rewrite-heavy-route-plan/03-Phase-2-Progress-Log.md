@@ -37145,3 +37145,28 @@ schedules. The singular change must not modify the batch loader.
 F896 baseline and acceptance are complete; implementation is next. F897 and
 F898 remain ordered in Batch 303. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F896 accepted; post-slice Deferred audit clear; F897 selected - 2026-10-15
+
+F896 is accepted at source/test commit
+`2fd0dd79de2df3ebad7d165f66bbc032efd852e8`. The detailed Roster Print Class
+Info read now reports explicit parent provenance. The legacy record wrapper
+retains its requested-ID defaults and optional child values, including orphan
+data; the typed read maps only confirmed parent absence to recoverable
+`NotFound` and does not expose orphan data. Existing classes without
+`class_info` retain blank metadata and ordered regular schedules. The separate
+batch loader and its metrics are unchanged.
+
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`
+passed in `build/windows-x64-debug` after one bounded elevated FileTracker
+retry per target. The matching CTest passed 1/1 (#331); no full suite ran.
+Changed metadata/schedule cursor checks are code-reviewed, but no test forces
+a cursor-iteration error; existing schedule SQL-failure coverage remains.
+
+Two independent audits compared each of the 13 official Deferred entries
+against F896 and found no trigger newly actionable. All 13 remain unchanged
+and deferred. Batch 303 proceeds with F897, the Roster read, which will
+evaluate typed parent provenance while preserving independent empty-roster
+behavior. F898 remains ordered next. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.

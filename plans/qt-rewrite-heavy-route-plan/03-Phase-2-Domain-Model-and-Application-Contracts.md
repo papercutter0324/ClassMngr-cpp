@@ -71,7 +71,6 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch 303:
-  - F896 - Roster Print Class Info read: classify a missing parent explicitly while preserving optional metadata, schedules, and legacy child-row behavior.
   - F897 - Roster read: evaluate whether typed parent provenance is needed while keeping independent empty-roster behavior.
   - F898 - Teacher display-name read provenance: evaluate structured missing-versus-query-failure outcomes across typed page callers.
 
