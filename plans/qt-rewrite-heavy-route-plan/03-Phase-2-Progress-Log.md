@@ -37745,3 +37745,29 @@ Two independent post-F906 audits reviewed all 13 exact official Deferred
 candidates; none became newly actionable. F907, My Classes student-count batch
 parent provenance, is selected; its baseline and acceptance are pending. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F907 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change ordered batch requested class IDs `[1, 2, 987654321, 3]`.
+Deleted parent 1 had `classes=0`, two `roster_columns`, and two
+`roster_data` rows, yet returned count 1. Present sibling 2 had two columns and
+four cells and returned count 2; never-present `987654321` and present class 3
+without columns returned count 0. After forcing the repository fallback with a
+fractional row index, the orphan class still counted 1, the malformed sibling
+returned recoverable `Technical` with `invalid-row-index`, and the other two
+entries remained zero.
+
+After reset, normal metrics (`callCount/requested/columns/data/fallback`) were
+`1/4/1/1/0`; after fallback, totals were `2/8/6/4/4`. Exact baseline Debug
+CTest #328 passed 1/1. The forced Debug build logged nonfatal MSB8064 for
+missing generated dependency
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran. The
+temporary test source was restored byte-for-byte (SHA-256
+`79663EB37B9BC521EC06F4A8E1862688002ECD6F6CD6DF420356BA78D2ABD0EA`).
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Parent provenance and batch shape | Preserve outer success, request order, and valid siblings. Only a clean parent-rooted read confirming no `classes` row maps that entry to recoverable `NotFound`; suppress orphan columns and cells. Carry the same parent provenance through repository fallback. |
+| Existing-parent count | Preserve the count of one per `row_index` with any nonblank trimmed English or Korean value. No columns, or neither exact `English` nor exact `Korean` header, remains count 0; if exactly one header exists, count using that header as current logic does. |
+| Validation, failures, and metrics | Preserve request validation and order, empty-input behavior, current metrics, and the existing batch-to-per-class fallback. Only unrecovered SQL, cursor, or malformed-row failures remain `Technical`; query errors never establish parent absence. |
+| Scope and status | Leave UI, schema/orphan cleanup, Sub Prep and legacy count paths, and count policy unchanged. F907 baseline and acceptance are recorded; implementation and post-change verification remain pending. |

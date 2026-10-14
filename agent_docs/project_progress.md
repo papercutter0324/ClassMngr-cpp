@@ -416,9 +416,26 @@ was unavailable and the post-cursor checks were source-reviewed; invalid-ID
 and result-mismatch paths were unchanged and not runtime-exercised. Two
 independent post-F906 audits reviewed all 13 official Deferred candidates;
 none became actionable and the list remains unchanged. F907, My Classes
-student-count batch parent provenance, is selected; its baseline and
-acceptance are pending. Gates 1/2 remain Partial and the formal Phase 2 exit
-gate remains Open.
+student-count batch parent provenance, is selected. Its pre-fix four-entry
+public batch returned outer success and counted a deleted parent with two
+orphan columns/cells as 1, a populated sibling as 2, a never-present ID as 0,
+and a present class without columns as 0. A fractional row index forced the
+repository fallback: the deleted orphan still counted 1, the malformed
+sibling became recoverable Technical, and the other two remained 0. Normal
+metrics were `1/4/1/1/0` for call/requested/column/data/fallback, then
+`2/8/6/4/4` after fallback. Exact baseline Debug CTest #328 passed 1/1; the
+forced build logged nonfatal MSB8064 for missing generated
+`teacher_import_plan_mapper.h`. No full suite ran. The temporary test source
+was restored byte-for-byte (SHA-256
+`79663EB37B9BC521EC06F4A8E1862688002ECD6F6CD6DF420356BA78D2ABD0EA`). The
+recorded F907 boundary preserves ordered per-entry results and maps only
+clean parent-rooted absence to recoverable `NotFound` in both normal batch
+and fallback paths, while preserving zero counts, count semantics, metrics,
+and the existing batch-to-fallback recovery. Unrecovered SQL, cursor, or
+malformed-read failures remain per-entry `Technical`; failed reads never
+establish absence. F907 implementation and post-change verification are
+pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
