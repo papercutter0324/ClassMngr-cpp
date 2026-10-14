@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F903 accepted; F904 selected)
+### Current state - 2026-10-15 (F904 accepted; F905 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -344,22 +344,29 @@ and `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` us
 unavailable in the fixture; checks after cursor iteration were source-
 reviewed. Two independent post-F903 audits reviewed all 13 official Deferred
 candidates, including the dense Speaking Evaluation row-limit item; none
-became actionable and the list is unchanged. F904, Speaking Evaluation batch
-matrix read parent provenance, is selected. Its public pre-fix baseline
+became actionable and the list is unchanged. F904 is accepted at source/test
+commit `f1a1db175e4dca706998dafddb1755bece0c045f`. Its public pre-fix baseline
 confirmed that deleted class 1 had no parent row but retained one evaluation
 header and 25 data rows; the batch returned the orphan 25x11 matrix. A
 never-present class returned ordered empty snapshots, and the existing sibling
-retained ordered populated/empty snapshots. The accepted contract returns one
-outer recoverable `NotFound` only when a nonempty request's parent-rooted query
-successfully confirms that the `classes` row is absent. A valid empty name list
-remains a storage-free successful no-op; existing parents retain ordered
-per-name snapshots, including empty results for missing exact-name evaluations
-or header-only evaluations. SQL and cursor errors remain Technical. The typed
-port will use a detailed repository seam while legacy
-`loadSpeakingEvalBatch` behavior, duplicate ordering, current NULL row-index
-handling, and the absence of a row-cap policy remain unchanged. F904
-implementation is pending. Gates 1/2 remain Partial and the formal Phase 2
-exit gate remains Open.
+retained ordered populated/empty snapshots. The typed batch port now maps only
+a clean parent-rooted confirmation of an absent `classes` row to outer
+recoverable `NotFound`. A valid empty name list remains a storage-free
+successful no-op; existing parents retain ordered per-name snapshots,
+including duplicate requests and empty results for missing exact-name
+evaluations or header-only evaluations. SQL and cursor errors remain
+Technical. The detailed repository seam leaves legacy `loadSpeakingEvalBatch`
+behavior unchanged and preserves current NULL row-index handling; no row cap
+was added. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` used
+`/p:TrackFileAccess=false /p:ForceRebuild=true`; exact Debug CTest #324 passed
+1/1 with no warnings. No full suite ran. Cursor-fetch failure injection is
+unavailable in the fixture; the final error check was source-reviewed. Two
+independent post-F904 audits reviewed all 13 official Deferred candidates;
+none became actionable and the list remains unchanged. F905, Speaking
+Evaluation roster-names projection parent provenance, is selected; its
+baseline and acceptance criteria are pending. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

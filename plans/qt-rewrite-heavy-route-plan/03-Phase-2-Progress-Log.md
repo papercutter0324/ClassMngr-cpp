@@ -37623,3 +37623,31 @@ restored source. Baseline observations are in
 | Empty and existing-parent results | An empty valid name list remains successful without storage access. A present parent keeps outer success and ordered per-name snapshots; exact-name misses and header-only evaluations are empty, while populated matrices and duplicate requested-name order are preserved. |
 | Compatibility and scope | Preserve the legacy `loadSpeakingEvalBatch` signature and behavior; add a detailed repository seam for the typed port. Keep current NULL `row_index` handling and do not add a row cap. |
 | Focused verification | Extend `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` in `tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp`. F904 is selected; implementation and post-change verification are pending. |
+
+### F904 accepted; post-slice Deferred audit clear; F905 selected - 2026-10-15
+
+F904 is accepted at source/test commit
+`f1a1db175e4dca706998dafddb1755bece0c045f`. The detailed batch repository
+result is rooted at `classes`: only a clean query confirming the parent is
+absent maps to outer recoverable `NotFound`; query and cursor failures remain
+`Technical`. Empty valid name lists remain storage-free successful no-ops.
+Present parents retain ordered per-name snapshots, including duplicates,
+missing exact-name evaluations, header-only evaluations, and populated
+matrices. The legacy `loadSpeakingEvalBatch` signature and behavior, current
+NULL `row_index` handling, and no-row-cap policy are preserved.
+
+The pre-change baseline immediately above recorded the deleted class's orphan
+25x11 matrix leak, ordered empty results for never-present class `987654321`,
+and the existing sibling's ordered populated and missing-name snapshots. An
+independent tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` with
+`/p:TrackFileAccess=false /p:ForceRebuild=true`; both builds completed without
+warnings and exact Debug CTest #324 passed 1/1. No full suite ran. Cursor-fetch
+failure injection remains unavailable, so the source error checks were
+reviewed.
+
+Two independent post-F904 audits reviewed all 13 exact official Deferred
+candidates and found none newly actionable; the list is unchanged. F905,
+Speaking Evaluation roster-names projection parent provenance, is selected;
+its baseline and acceptance are pending. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
