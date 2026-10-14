@@ -5063,3 +5063,25 @@ list candidate, F876 for `TeacherRepository::getAllTeachers()` persisted-ID
 narrowing, pending its own SQLite alias baseline after F875. The existing
 Sidebar Teacher Create/Delete ID-width deferral is unaffected. Gates 1 and 2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+## Phase 2 current position — 2026-10-14 (F875 accepted; F876 selected)
+
+F875 is accepted at
+`bd874b5bb111e607875cd87d5672101b0c69c530`. Its real-SQLite baseline showed
+the Class Details conflict port narrowing persisted ID 4294967297 to ID 1 and
+returning `Class 1`, aliasing the requested class. The conflict repository now
+keeps the ID as qint64 through fallback formatting and returns `Class
+4294967297`. The ordinary blank-name fallback `Class 42`, named regular and
+intensive conflicts, and persisted wide INTEGER row are covered. Sequential
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+passed, followed by exact CTest 1/1; the target was rebuilt and CTest repeated
+after a post-call database assertion was added. No full suite ran.
+
+The post-F874 review found none of the 13 Deferred candidates newly
+actionable; their blockers remain unchanged. Batch 288 is complete. F876 is
+selected in Batch 289, pending its required SQLite baseline for
+`TeacherRepository::getAllTeachers()` persisted-ID narrowing. This distinct
+public-list candidate does not resolve the Sidebar Teacher Create/Delete
+int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
+gate remains Open.

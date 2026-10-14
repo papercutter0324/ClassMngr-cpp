@@ -5606,3 +5606,17 @@ actionable. F875 is next. Batch 289 discovery found F876, a separate
 `TeacherRepository::getAllTeachers()` persisted-ID candidate, pending its
 baseline after F875. The Sidebar Teacher Create/Delete ID-width deferral
 remains unchanged. Gates 1/2 are Partial and the Phase 2 exit gate is Open.
+
+F875 Class Details wide conflict fallback is committed as
+`bd874b5bb111e607875cd87d5672101b0c69c530`. The live real-SQLite baseline
+returned `Class 1` for a blank-name conflict persisted as ID 4294967297,
+aliasing the requested class. The repository now retains the qint64 ID through
+fallback formatting and returns `Class 4294967297`; ordinary fallback `Class
+42` and named regular/intensive conflicts remain covered. The focused Debug
+builds and exact CTest passed 1/1, with an independent target rebuild/CTest
+after adding a post-call SQLite integrity assertion. No full suite ran.
+
+All 13 Phase 2 Deferred entries were reviewed after F874; none is newly
+actionable. Batch 288 is complete. F876 is selected for Batch 289, pending a
+SQLite baseline of `TeacherRepository::getAllTeachers()` wide-ID handling.
+Gates 1/2 remain Partial; Phase 2 remains Open.

@@ -35663,3 +35663,53 @@ resolve the separately deferred Sidebar Teacher Create/Delete int-based ID
 contract. F875 remains the only active Batch 288 slice; F876 is selected for
 Batch 289 after F875, pending the required baseline. Gates 1/2 remain Partial
 and the formal exit gate remains Open.
+
+### F875 Class Details conflict fallback ID preservation - accepted; Batch 288 complete and F876 selected - 2026-10-14
+
+F875 is accepted at source/test commit
+`bd874b5bb111e607875cd87d5672101b0c69c530` (`Phase 2: preserve wide conflict
+fallback class IDs (F875)`). The real-SQLite pre-fix baseline seeded a requested
+class and a blank-name conflicting class with INTEGER ID `4294967297` and an
+overlapping Monday time. The live Class Details conflict port returned fallback
+`Class 1`, aliasing the requested class ID; SQLite retained the distinct wide
+INTEGER row. The observed label was `Class 1`, not the initially predicted
+`Class 0`.
+
+The fix keeps the conflict ID as qint64 through fallback-label formatting, so
+the wide row displays as `Class 4294967297`. Coverage retains ordinary blank-name
+fallback `Class 42` and named regular/intensive conflict behavior. A post-port
+query confirms the exact persisted INTEGER class/schedule ID, blank name, and
+single-row result.
+
+The independent verifier sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+in Debug, then the exact CTest passed 1/1. After adding the post-port assertion,
+the focused target was rebuilt and the exact CTest again passed 1/1. FileTracker
+`E_ACCESSDENIED` required an elevated retry. An early baseline build's AUTOGEN
+warning about missing `teacher_import_plan_mapper.h` did not recur; successful
+builds had no warnings. No full suite ran.
+
+| Acceptance point | Evidence |
+| --- | --- |
+| Mandatory baseline | The live port returned `Class 1` for persisted conflict ID `4294967297`; SQLite retained the distinct INTEGER row. |
+| Fallback and compatibility | Wide ID formats as `Class 4294967297`; ordinary blank-name fallback `Class 42` and named regular/intensive behavior remain covered. |
+| Persistence check | Post-port SQL confirms the exact INTEGER class/schedule ID, blank name, and one matching row. |
+| Scope and focused verification | Changed `src/data/repositories/class_info_repository.cpp` and `tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`; sequential Debug builds of `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`; exact CTest passed 1/1, then focused rebuild and CTest passed 1/1 after the added assertion. No full suite. |
+
+F875 completes Batch 288. The post-F874 audit found no newly actionable
+Deferred candidate; all 13 remain unchanged. Batch 289 selected F876,
+`TeacherRepository::getAllTeachers()`: `teacherFromQuery()` narrows persisted
+teacher IDs with `toInt()`, and the public list is exposed through DataService
+and TeacherService. The current Class Transfer startup caller uses only the
+count. This does not resolve the separate Deferred Sidebar Teacher Create/Delete
+ID-width entry.
+
+F876 is selected, not baseline-verified. Before production changes, seed teacher
+IDs `1` and `4294967297`, call `DataService::getAllTeachers()`, and verify
+whether returned IDs alias while SQL retains separate INTEGER rows. Stop and
+revise if aliasing does not reproduce. The likely focused CTest is
+`ClassMngrDataServiceLifecycleTests`; likely implementation and test files are
+`src/data/repositories/teacher_repository.cpp` and
+`tests/data_service_lifecycle_tests.cpp`, subject to baseline findings.
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

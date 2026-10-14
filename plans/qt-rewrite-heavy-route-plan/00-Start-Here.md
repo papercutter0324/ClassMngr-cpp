@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F874 is accepted at `3e74c455`; F875 is next in Batch 288, with F876 selected for Batch 289 pending its baseline after F875. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F875 is accepted at `bd874b5b`; F876 is selected for Batch 289 with its baseline pending. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
