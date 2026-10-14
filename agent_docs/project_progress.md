@@ -153,15 +153,17 @@ maps only a class parent confirmed absent inside the Immediate transaction to
 Debug builds of `ClassMngr` and the two focused assignment targets succeeded;
 the exact CTests passed 2/2 after bounded FileTracker retries, with no full
 suite run. Two independent post-F890 audits found none of the 13 official
-Deferred candidates newly actionable. Batch 303 selects F891, a typed Class
-Notes Page read. Its baseline confirms that unknown class ID 812345 currently
-returns successful empty fields and teacher name, while an existing class
-without `class_info` succeeds with default metadata and its two ordered
-schedule rows. Acceptance now requires only the absent parent to produce typed
-`NotFound`, preserving optional-metadata defaults, schedule results, and
-technical failures; implementation is next. Seven further bounded read leads
-are ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal exit
-gate remains Open.
+Deferred candidates newly actionable. F891 is accepted at
+`a5264b9d28a3d5b2cab147ffb2f66647cfac9f75`: the typed Class Notes read now
+classifies only a missing class parent as `NotFound`, while an existing class
+without optional metadata keeps default fields and schedules and the legacy
+repository wrapper keeps its prior defaults. Independent sequential Debug
+builds of `ClassMngr` and its typed read target succeeded, and the exact CTest
+passed 1/1 after bounded FileTracker retries; no full suite ran. The post-F891
+audit again found none of the 13 official Deferred candidates actionable.
+Batch 303 proceeds with F892, the Selected Class Grade read, for baseline
+work; six further bounded read leads remain ordered in the Phase 2 plan. Gates
+1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

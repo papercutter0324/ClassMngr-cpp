@@ -36733,3 +36733,45 @@ behavior remain intact.
 F891 baseline and acceptance are complete; implementation is next. All 13
 official Deferred candidates remain unchanged and deferred. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F891 accepted; post-slice Deferred audit clear; F892 selected - 2026-10-15
+
+F891 is accepted at source/test commit
+`a5264b9d28a3d5b2cab147ffb2f66647cfac9f75`. The typed Class Notes Page read
+now carries an explicit missing-parent outcome from one `classes`-rooted
+`LEFT JOIN class_info` query. Only an absent parent maps to `NotFound` for the
+class-fields and dependent teacher-name components; the enclosing snapshot
+remains successful. An existing class without `class_info` retains default
+fields, an empty successful teacher name, and its ordered schedules. The legacy
+repository wrapper retains default-success behavior for an absent parent.
+Metadata and schedule cursor errors remain technical failures.
+
+Regression coverage verifies never-present and created-then-deleted parents,
+typed component outcomes, legacy defaults, an existing parent without optional
+metadata plus ordered schedules, metadata statement counts, normal field and
+teacher mapping, and existing SQL/session failure behavior. Independent
+sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests` passed
+in `build/windows-x64-debug`; the exact matching Debug CTest passed 1/1
+(CTest #312). Both initial builds hit MSBuild FileTracker access denial and
+passed on bounded elevated retries; successful builds emitted no compiler
+warnings. No full suite ran. Cursor-fetch failures have no deterministic test
+seam, and deletion between the separate metadata and schedule queries was not
+tested.
+
+Two independent post-F891 reviews compared all 13 official Deferred triggers
+against F888-F891 and found none newly actionable. The F891 read and cursor
+checks add no required memory measurement, export evidence, macOS runner, live
+helper callsite, Calendar injection seam, policy or allocation decision, or
+Teacher/sidebar ID-width migration. All 13 official entries remain unchanged
+and deferred.
+
+Batch 303 proceeds with F892, the Selected Class Grade read. Its repository
+lookup starts at `class_info` and returns an empty grade when no metadata row
+exists; the existing public typed test distinguishes an existing class with
+no metadata from an existing class with an explicitly empty grade, while an
+absent class parent remains untested. F892's baseline will establish that
+missing-parent result, then define whether only confirmed parent absence maps
+to typed `NotFound`, preserving empty-grade and legacy behavior. Six further
+bounded read leads remain in Batch 303. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
