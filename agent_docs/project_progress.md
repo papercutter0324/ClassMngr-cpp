@@ -161,12 +161,16 @@ repository wrapper keeps its prior defaults. Independent sequential Debug
 builds of `ClassMngr` and its typed read target succeeded, and the exact CTest
 passed 1/1 after bounded FileTracker retries; no full suite ran. The post-F891
 audit again found none of the 13 official Deferred candidates actionable.
-Batch 303 proceeds with F892, the Selected Class Grade read. Its public typed
-baseline confirms that an ID without a `classes` row currently returns a
-successful snapshot with an empty grade, matching an existing class without
-`class_info` and one with an explicitly empty grade. Acceptance now requires
-only a missing parent to produce typed `NotFound`, while preserving both
-existing-class cases and the legacy default. Six further bounded read leads
+F892 is accepted at
+`7398760f8af0f6e23524818608d59ca76641951c`: the Selected Class Grade read now
+maps only a parent confirmed absent by the repository to typed `NotFound`.
+Existing classes with missing or empty grade metadata remain successful, and
+the legacy repository wrapper retains its empty default. Independent
+sequential Debug builds of `ClassMngr` and the typed grade target passed; its
+exact CTest passed 1/1 after bounded FileTracker retries, with no full suite.
+Two independent post-F892 audits found none of the 13 official Deferred
+candidates newly actionable. Batch 303 proceeds with F893, the Schedule
+Editor Class Info read, for baseline work; five further bounded read leads
 remain ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal
 exit gate remains Open.
 

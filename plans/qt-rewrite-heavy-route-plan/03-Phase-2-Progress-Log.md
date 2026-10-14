@@ -36819,3 +36819,42 @@ classified as missing.
 F892 baseline and acceptance are complete; implementation is next. All 13
 official Deferred candidates remain unchanged and deferred. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F892 accepted; post-slice Deferred audit clear; F893 selected - 2026-10-15
+
+F892 is accepted at source/test commit
+`7398760f8af0f6e23524818608d59ca76641951c`. The repository now returns
+explicit parent provenance from a single `classes`-rooted `LEFT JOIN
+class_info` query. The typed Selected Class Grade port maps only a clean
+missing parent to recoverable `NotFound`; a class with absent `class_info` or
+an empty grade row still returns a successful empty grade. The legacy
+repository wrapper preserves its default result for an absent parent. Query
+execution and fetch errors remain Technical.
+
+Regressions cover unknown and deleted parents, typed error mapping, legacy
+defaults, existing-parent missing versus empty metadata, whitespace-preserving
+nonempty grade mapping, single-statement metrics, SQL failure, invalid IDs,
+and unavailable/closed sessions. Independent sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`
+passed in `build/windows-x64-debug`; the exact matching Debug CTest passed 1/1
+(CTest #313). Initial builds were blocked by FileTracker access denial and
+bounded elevated retries succeeded without compiler warnings. No full suite
+ran. The cursor-fetch error branch is checked in code but has no deterministic
+test injection seam.
+
+Two independent post-F892 reviews compared each of the 13 official Deferred
+triggers with F888-F892 and found none newly actionable. No fresh heap capture,
+memory/export measurement, suitable macOS runner, live helper callsite,
+Calendar injection seam, policy decision, allocation decision, or
+Teacher/sidebar ID-width migration was produced. All 13 remain unchanged and
+deferred.
+
+Batch 303 proceeds with F893, the Schedule Editor Class Info read. Its current
+repository query manufactures the requested ID in a CTE and left-joins
+optional `class_info`, so the baseline must establish whether an absent
+`classes` parent is currently indistinguishable from an existing parent
+without metadata. F893 will preserve optional defaults and technical failures
+while defining whether confirmed parent absence maps to typed `NotFound`.
+Five further bounded read leads remain in Batch 303. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
