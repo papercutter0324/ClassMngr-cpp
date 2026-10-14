@@ -37170,3 +37170,48 @@ and deferred. Batch 303 proceeds with F897, the Roster read, which will
 evaluate typed parent provenance while preserving independent empty-roster
 behavior. F898 remains ordered next. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F897 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public-port baseline confirmed class `987654321` was absent
+from `classes`; both the typed Roster read and legacy `loadRoster()` succeeded
+with an empty roster. A present class with no roster rows also succeeded
+empty. With foreign keys disabled, deleting a created parent left orphan
+roster data (two columns and one row); typed and legacy reads both returned
+the same populated roster. Dropping `roster_columns` made both reads fail,
+confirming an operational read failure. Current code does not query
+`classes`, so the baseline has no separate parent-query failure case. The
+temporary probe was restored byte-for-byte; test-file SHA-256 before and
+after was
+`AF1FB1FCA2C93747CBFFAAEE5E1CB378D6430A9C4DDEDE9B96A3ACB8CBAF0C7B`.
+
+In the existing `build/windows-x64-debug` tree, sequential builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests` succeeded after
+one bounded elevated FileTracker retry per target. The exact Debug CTest
+passed 1/1 (#319). No full suite ran.
+
+F897 will add a detailed repository read result with explicit `parentMissing`
+provenance and keep `loadRoster(int)` as its compatibility wrapper. Establish
+parent presence and requested-ID roster columns in one requested-ID query;
+retain requested-ID cell loading so the legacy wrapper continues to expose
+orphan child data. Only the typed port maps a confirmed absent parent to
+recoverable `NotFound` with no snapshot, including when orphan data remains.
+An existing parent with no roster columns remains a successful empty roster.
+Query and cursor failures remain `Technical` and cannot imply a missing
+parent. Preserve columns, widths, row order, sparse shape, and all legacy
+behavior. `RosterRowTransferUseCase` must continue propagating target-read
+failures before save, so a missing target fails early. Leave batch roster
+readers, metrics, and save behavior untouched.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and compatibility | A detailed result tags only a successfully confirmed absent `classes` row; the `loadRoster(int)` wrapper preserves existing defaults and requested-ID orphan columns/cells. |
+| Typed missing-parent result | A never-present ID and a deleted parent return recoverable `NotFound` with no typed snapshot, even if child roster rows remain; transfer propagates that read failure before save. |
+| Existing-parent and projection behavior | An existing parent without roster columns remains successful and empty; columns, widths, row order, and sparse row shape remain unchanged for populated rosters. |
+| Operational failures and scope | Query/cursor failures stay `Technical` and do not become missing-parent results. Do not change batch readers, metrics, or save behavior. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterReadPortTests` in `build/windows-x64-debug`; run only the matching Debug CTest (#319). No full suite. |
+
+F897 baseline and acceptance are complete; implementation is next. F898
+remains ordered after F897 in Batch 303. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.

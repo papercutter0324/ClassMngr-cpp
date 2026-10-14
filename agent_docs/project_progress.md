@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F896 accepted; F897 selected)
+### Current state - 2026-10-15 (F896 accepted; F897 baseline and acceptance defined)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -221,10 +221,21 @@ passed in `build/windows-x64-debug` after one bounded elevated FileTracker
 retry per target, and exact CTest #331 passed 1/1; no full suite ran. The
 changed cursor checks were code-reviewed, but no test forces a cursor-iteration
 error; existing schedule SQL-failure coverage remains. Two independent audits
-of all 13 official Deferred entries found no trigger newly actionable. F897,
-the Roster read, is selected next; it will evaluate typed parent provenance
-while preserving independent empty-roster behavior. F898 remains ordered in
-Batch 303. Gates 1/2 remain Partial and the formal exit gate remains Open.
+of all 13 official Deferred entries found no trigger newly actionable. F897's
+baseline confirmed that a never-present class and an existing empty class both
+return successful empty rosters; deleting a parent with foreign keys disabled
+leaves orphan data that both typed and legacy reads return. Dropping
+`roster_columns` makes both reads fail. Sequential Debug builds of
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`
+succeeded after one bounded elevated FileTracker retry per target; exact CTest
+#319 passed 1/1. No full suite ran. F897 acceptance requires explicit
+missing-parent provenance, typed `NotFound` without a snapshot only for a
+confirmed absent parent, legacy orphan-data compatibility, and unchanged
+empty-roster and projection behavior. Query and cursor failures remain
+`Technical`; transfer propagates target-read failure before save. Batch
+readers, metrics, and save behavior stay untouched. F897 implementation is
+next; F898 remains ordered. Gates 1/2 remain Partial and the formal exit gate
+remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
