@@ -10,6 +10,8 @@
 #include <QSqlQuery>
 #include <QVariant>
 
+#include <limits>
+
 namespace
 {
 QString queryFailure(
@@ -244,14 +246,25 @@ Result<int> TestingClassRepository::createTestingClass(
         return std::unexpected(executed.error().userMessage());
     }
 
-    const int classId =
-        query.lastInsertId().toInt();
-    if (classId <= 0)
+    bool classIdOk = false;
+    const qint64 generatedClassId =
+        query.lastInsertId().toLongLong(&classIdOk);
+    if (!classIdOk || generatedClassId <= 0)
     {
         return std::unexpected(
             QObject::tr("Creating the testing class did not return a valid ID.")
             );
     }
+    if (generatedClassId > std::numeric_limits<int>::max())
+    {
+        return std::unexpected(
+            QObject::tr(
+                "Creating the testing class returned an ID outside the "
+                "supported integer range."
+                )
+            );
+    }
+    const int classId = static_cast<int>(generatedClassId);
 
     query.prepare(R"(
         INSERT INTO class_info (

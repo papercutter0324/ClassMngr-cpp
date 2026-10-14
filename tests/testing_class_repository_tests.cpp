@@ -7,6 +7,7 @@
 #include <QtTest>
 
 #include <array>
+#include <limits>
 
 class TestingClassRepositoryTests : public QObject
 {
@@ -18,6 +19,8 @@ private slots:
     void persistsEverySupportedMixedLevel();
     void exposesTestingWorkspaceGradeAndLevelChoices();
     void createsClassAndAssignmentAtomically();
+    void rejectsGeneratedTestingClassIdsAboveIntRangeAndRollsBack();
+    void acceptsMaximumGeneratedTestingClassId();
     void deletesEveryCascadeRowAndPreservesSiblingClass();
     void rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
@@ -604,6 +607,158 @@ void TestingClassRepositoryTests
                 rowsBeforeFailure.at(index)
                 );
         }
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::rejectsGeneratedTestingClassIdsAboveIntRangeAndRollsBack()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_wide_id_rollback");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        ClassRepository classRepository(database);
+        TestingClassRepository testingClassRepository(database);
+        const Result<int> existingClassId =
+            classRepository.createClass(QStringLiteral("Existing ordinary"));
+        QVERIFY(existingClassId);
+        QCOMPARE(*existingClassId, 1);
+
+        QSqlQuery query(database);
+        QVERIFY(query.prepare(
+            QStringLiteral(
+                "UPDATE sqlite_sequence SET seq=? WHERE name='classes'"
+                )
+            ));
+        query.addBindValue(QVariant::fromValue<qlonglong>(4294967296LL));
+        QVERIFY(query.exec());
+        QCOMPARE(query.numRowsAffected(), 1);
+
+        TestingClass testingClass;
+        testingClass.name = QStringLiteral("Rejected wide testing class");
+        testingClass.grade = QStringLiteral("M1");
+        testingClass.level = QStringLiteral("Mixed (All)");
+        testingClass.room = QStringLiteral("Library");
+        const Result<int> rejected =
+            testingClassRepository.createTestingClass(
+                testingClass,
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00")
+                );
+        QVERIFY(!rejected);
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT id, name FROM classes"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(), 1LL);
+        QCOMPARE(query.value(1).toString(), QStringLiteral("Existing ordinary"));
+        QVERIFY(!query.next());
+
+        QCOMPARE(rowCount(database, QStringLiteral("classes")), 1);
+        QCOMPARE(rowCount(database, QStringLiteral("class_info")), 0);
+        QCOMPARE(rowCount(database, QStringLiteral("testing_classes")), 0);
+        QCOMPARE(rowCount(database, QStringLiteral("schedule_testing_blocks")), 0);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::acceptsMaximumGeneratedTestingClassId()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_maximum_id");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        ClassRepository classRepository(database);
+        TestingClassRepository testingClassRepository(database);
+        const Result<int> existingClassId =
+            classRepository.createClass(QStringLiteral("Existing ordinary"));
+        QVERIFY(existingClassId);
+        QCOMPARE(*existingClassId, 1);
+
+        const int maxClassId = std::numeric_limits<int>::max();
+        QSqlQuery query(database);
+        QVERIFY(query.prepare(
+            QStringLiteral(
+                "UPDATE sqlite_sequence SET seq=? WHERE name='classes'"
+                )
+            ));
+        query.addBindValue(
+            QVariant::fromValue<qlonglong>(
+                static_cast<qlonglong>(maxClassId) - 1
+                )
+            );
+        QVERIFY(query.exec());
+        QCOMPARE(query.numRowsAffected(), 1);
+
+        TestingClass testingClass;
+        testingClass.name = QStringLiteral("Maximum ID testing class");
+        testingClass.grade = QStringLiteral("M1");
+        testingClass.level = QStringLiteral("Mixed (All)");
+        testingClass.room = QStringLiteral("Library");
+        const Result<int> created =
+            testingClassRepository.createTestingClass(
+                testingClass,
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00")
+                );
+        QVERIFY(created);
+        QCOMPARE(*created, maxClassId);
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT id, name FROM classes WHERE id=2147483647"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(),
+            static_cast<qlonglong>(maxClassId));
+        QCOMPARE(query.value(1).toString(), testingClass.name);
+        QVERIFY(!query.next());
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT class_id FROM class_info"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(),
+            static_cast<qlonglong>(maxClassId));
+        QVERIFY(!query.next());
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT class_id FROM testing_classes"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(),
+            static_cast<qlonglong>(maxClassId));
+        QVERIFY(!query.next());
+
+        QVERIFY(query.exec(QStringLiteral(
+            "SELECT class_id, day, start_time FROM schedule_testing_blocks"
+            )));
+        QVERIFY(query.next());
+        QCOMPARE(query.value(0).toLongLong(),
+            static_cast<qlonglong>(maxClassId));
+        QCOMPARE(query.value(1).toString(), QStringLiteral("Monday"));
+        QCOMPARE(query.value(2).toString(), QStringLiteral("16:00"));
+        QVERIFY(!query.next());
     }
 
     QSqlDatabase::removeDatabase(connectionName);
