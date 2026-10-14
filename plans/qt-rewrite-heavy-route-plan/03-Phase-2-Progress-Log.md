@@ -37102,3 +37102,46 @@ Batch 303 proceeds with F896, the Roster Print Class Info read. Its bounded
 lead checks parent provenance while preserving metadata defaults and
 schedules. F897 and F898 remain ordered in the active batch. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F896 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public-port baseline used positive class ID `987654321`; direct
+SQL confirmed there was no matching `classes` row. The typed port and query
+returned success with that class ID, all nine metadata strings empty, and an
+empty regular schedule. A real class with its `class_info` row removed also
+returned successful blank metadata while preserving its Tuesday 5:00–5:50 PM
+and Friday 6:00–6:50 PM regular schedule. Existing tests preserve teacher,
+room, Wi-Fi, Zoom, and regular-schedule mapping; absence of
+`class_intensive_times` does not affect this read, while absence of
+`class_times` returns Technical failure. The temporary test probe was
+restored byte-for-byte; its SHA-256 before and after is
+`B9C63CD8AF264DFFAA7BB79E052D513B579C111431BD94B016EBE65848E14708`.
+
+The standard `build/windows-x64-debug` sequential builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`
+succeeded after each standard attempt hit FileTracker access denial and one
+bounded elevated retry. The matching Debug CTest passed 1/1 (CTest #331). The
+successful test-target build emitted MSB8064 for a stale generated dependency
+on `src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
+
+Source inspection found `loadRosterPrintClassInfoRecord()` reads `class_info`
+and an optional `teachers` row by requested ID, then separately reads regular
+`class_times`; it never checks `classes`. F896 will add explicit parent
+provenance while keeping the existing record-returning method as a legacy
+wrapper. The detailed read should preserve optional child values keyed by the
+requested ID, even when an orphan row remains, for legacy compatibility; the
+typed port maps only a confirmed absent parent to recoverable `NotFound`.
+Existing classes without `class_info` keep empty metadata and ordered
+schedules. The singular change must not modify the batch loader.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and compatibility | A detailed repository result derives `parentMissing` from the `classes` row, without diagnostic-text inference; the legacy wrapper preserves its record/default and requested-ID optional child-row behavior. |
+| Typed missing-parent result | Never-present and deleted parents return recoverable `NotFound` from the typed outer read; if orphan data remains, the typed result does not expose it. |
+| Existing-parent behavior | A present class without `class_info` retains all blank metadata defaults and its ordered regular schedule. Complete teacher/room/Wi-Fi/Zoom projection and current narrow print projection remain unchanged. |
+| Operational and input behavior | Invalid IDs, unavailable sessions, and query/cursor failures retain their current typed error behavior; metadata or schedule operational failure is not confused with confirmed parent absence. Intensive schedule data remains outside the projection. |
+| Scope and focused verification | Do not alter `loadRosterPrintClassInfoRecords()` or batch metrics. Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests` in `build/windows-x64-debug`; run only its matching Debug CTest (#331). No full suite. |
+
+F896 baseline and acceptance are complete; implementation is next. F897 and
+F898 remain ordered in Batch 303. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.

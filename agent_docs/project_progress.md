@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F895 accepted; F896 selected)
+### Current state - 2026-10-15 (F896 baseline captured; implementation next)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -209,8 +209,21 @@ schedule order, and independent teacher outcomes remain intact. The standard
 Debug app/test targets and exact CTest #329 passed after bounded elevated
 FileTracker retries; no full suite ran. Two independent audits found no
 Deferred trigger newly actionable; all 13 remain unchanged. Batch 303 proceeds
-with F896, the Roster Print Class Info read; F897 and F898 remain ordered in
-the plan. Gates 1/2 remain Partial and the formal exit gate remains Open.
+with F896, the Roster Print Class Info read. Its pre-change public port returns
+successful blank defaults both for absent class ID `987654321` and for an
+existing class without `class_info`; the latter retains its ordered regular
+schedule. The temporary test probe was restored byte-for-byte. Sequential
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests`
+passed after bounded elevated FileTracker retries, and exact CTest #331 passed
+1/1. The test-target build emitted MSB8064 for the stale generated
+`teacher_import_plan_mapper.h` dependency; no full suite ran. F896 acceptance
+is defined: record parent provenance explicitly, preserve legacy requested-ID
+child data/default behavior, return typed recoverable NotFound only for a
+confirmed missing parent, retain existing-parent optional metadata/schedule
+behavior, and keep the separate batch loader unchanged. F897 and F898 remain
+ordered in Batch 303. Gates 1/2 remain Partial and the formal exit gate
+remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
