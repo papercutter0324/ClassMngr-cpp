@@ -36775,3 +36775,47 @@ missing-parent result, then define whether only confirmed parent absence maps
 to typed `NotFound`, preserving empty-grade and legacy behavior. Six further
 bounded read leads remain in Batch 303. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F892 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change baseline used the public
+`ApplicationServicesSelectedClassGradeReadPort` route. A temporary assertion
+added to the existing `preservesMissingOrEmptyGrade()` test created two parent
+classes: one without `class_info` and one with a `class_info` row whose grade
+was empty. A positive ID with no `classes` row returned a successful typed
+snapshot with the requested ID and an empty grade, indistinguishable from both
+existing-parent cases. The test separately confirmed that the unknown ID had
+no parent row; it recorded three repository calls and three SELECT statements
+across the three reads. The temporary assertion was removed and the test file
+hash returned to its original value.
+
+The standard `build/windows-x64-debug` sequential builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests`
+succeeded after default attempts failed with MSBuild FileTracker access
+denial. The focused matching Debug CTest passed 1/1 (CTest #313). The successful
+test-target build reported MSB8064 for a generated dependency on
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
+
+Read-only route inspection found `loadSelectedClassGradeRecord()` selects
+`class_grade` from `class_info` by ID and returns a default record when no row
+matches. F892 will carry explicit parent provenance from a single
+`classes`-rooted `LEFT JOIN class_info` query to the typed grade port. Only a
+clean absent parent maps to a whole-result `NotFound`; an existing class with
+no `class_info` row and an existing class with an empty grade both remain
+successful empty-grade snapshots. Preserve the legacy repository wrapper's
+default result for an absent parent, nonempty grade mapping including stored
+whitespace, invalid-ID and unavailable-session behavior, and Technical query
+errors. Check `lastError()` on an empty cursor so fetch failure cannot be
+classified as missing.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and legacy behavior | A single `classes`-rooted `LEFT JOIN class_info` lookup distinguishes a clean absent parent from optional metadata absence. The typed port maps only the explicit missing-parent outcome to `NotFound`; the legacy repository wrapper retains its default empty-grade result. |
+| Existing-class grade semantics | Preserve successful empty grade for a parent without `class_info`, successful empty grade for a present empty grade, and exact successful mapping for a nonempty stored grade. |
+| Technical and input behavior | SQL execution/fetch failures remain `Technical`; preserve invalid IDs and unavailable/closed session outcomes. Parent classification must not rely on error-message text. |
+| Regression coverage | Through the public typed port, cover unknown and deleted parents, legacy wrapper default, missing versus empty metadata, nonempty grade mapping, single-statement accounting, SQL failure, invalid input, and session behavior. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests` in `build/windows-x64-debug`; run only the matching Debug CTest. No full suite. |
+
+F892 baseline and acceptance are complete; implementation is next. All 13
+official Deferred candidates remain unchanged and deferred. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

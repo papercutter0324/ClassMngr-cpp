@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F891 is accepted and two independent reviews found no official Deferred trigger newly actionable; F892, the Selected Class Grade read, is next for baseline work, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F891 is accepted and no official Deferred trigger reopened; F892's baseline is captured and its missing-parent `NotFound` acceptance boundary is defined, with implementation next and Gates 1/2 Partial/formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -71,7 +71,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch 303:
-  - F892 - Selected Class Grade read: baseline whether parent absence is distinguishable from missing grade metadata while preserving empty-grade behavior.
+  - F892 - Selected Class Grade read: return typed `NotFound` only for an absent class parent; preserve empty grades for existing classes with absent or empty `class_info`; baseline captured and acceptance defined.
   - F893 - Schedule Editor Class Info read: check whether its requested-class projection distinguishes a missing parent from optional metadata.
   - F894 - Co-Teacher Page read: baseline missing-parent behavior while preserving existing-class defaults.
   - F895 - Selected Class Subtitle read: check parent provenance across subtitle, schedule, and optional teacher reads.

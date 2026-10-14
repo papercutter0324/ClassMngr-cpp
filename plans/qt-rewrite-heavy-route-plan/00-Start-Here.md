@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F891 is accepted; two independent post-slice reviews found no official Deferred trigger newly actionable. Batch 303 proceeds with F892, the Selected Class Grade read, for baseline work; Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F891 is accepted and no official Deferred trigger reopened. F892's baseline confirms an absent class returns a successful empty grade; implementation will classify only missing parents as typed `NotFound`, preserving missing/empty metadata for existing classes. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

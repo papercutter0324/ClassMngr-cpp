@@ -161,9 +161,14 @@ repository wrapper keeps its prior defaults. Independent sequential Debug
 builds of `ClassMngr` and its typed read target succeeded, and the exact CTest
 passed 1/1 after bounded FileTracker retries; no full suite ran. The post-F891
 audit again found none of the 13 official Deferred candidates actionable.
-Batch 303 proceeds with F892, the Selected Class Grade read, for baseline
-work; six further bounded read leads remain ordered in the Phase 2 plan. Gates
-1/2 remain Partial and the formal exit gate remains Open.
+Batch 303 proceeds with F892, the Selected Class Grade read. Its public typed
+baseline confirms that an ID without a `classes` row currently returns a
+successful snapshot with an empty grade, matching an existing class without
+`class_info` and one with an explicitly empty grade. Acceptance now requires
+only a missing parent to produce typed `NotFound`, while preserving both
+existing-class cases and the legacy default. Six further bounded read leads
+remain ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal
+exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
