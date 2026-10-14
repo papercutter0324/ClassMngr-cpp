@@ -228,6 +228,9 @@ private slots:
     void borrowedDataServicePreservesOwnedSession();
     void failedReplacementOpenPreservesSessionAndReleasesCandidate();
     void databaseFileCopyTreatsSameFileAliasesAsNoOp();
+    void databaseFileCopyPreservesDestinationWhenSourceMissing();
+    void databaseFileCopyReplacesDestinationAndCreatesParent();
+    void databaseFileCopyPreservesDestinationWhenReplacementFails();
     void legacyDataServiceOwnsDatabaseFileOperations();
     void applicationServicesOwnDatabaseFileOperations();
     void applicationServicesShareCanonicalSessionAcrossLifecycle();
@@ -456,6 +459,146 @@ void DataServiceLifecycleTests::databaseFileCopyTreatsSameFileAliasesAsNoOp()
     const Result<QVariant> copiedValue = copied.loadSetting(settingKey);
     QVERIFY(copiedValue);
     QCOMPARE(copiedValue->toString(), QStringLiteral("preserved data"));
+}
+
+void DataServiceLifecycleTests::databaseFileCopyPreservesDestinationWhenSourceMissing()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString sourcePath =
+        directory.filePath(QStringLiteral("missing-source.db"));
+    const QString destinationPath =
+        directory.filePath(QStringLiteral("existing-destination.db"));
+    const QByteArray sentinelBytes("existing destination sentinel");
+
+    QVERIFY(sourcePath != destinationPath);
+    QVERIFY(!QFileInfo::exists(sourcePath));
+
+    QFile destination(destinationPath);
+    QVERIFY(destination.open(QIODevice::WriteOnly));
+    QCOMPARE(destination.write(sentinelBytes), qint64(sentinelBytes.size()));
+    destination.close();
+
+    const Status copyResult =
+        DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
+    QVERIFY(!copyResult.has_value());
+    QCOMPARE(
+        copyResult.error(),
+        QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+            .arg(QFileInfo(destinationPath).absoluteFilePath())
+        );
+
+    const bool destinationExists = QFileInfo::exists(destinationPath);
+    QVERIFY(destinationExists);
+    QVERIFY(destination.open(QIODevice::ReadOnly));
+    QCOMPARE(destination.readAll(), sentinelBytes);
+    destination.close();
+}
+
+void DataServiceLifecycleTests::databaseFileCopyReplacesDestinationAndCreatesParent()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString sourcePath =
+        directory.filePath(QStringLiteral("source.db"));
+    const QString destinationPath = directory.filePath(
+        QStringLiteral("nested/target.db")
+        );
+    const QByteArray sourceBytes("replacement source contents");
+    const QByteArray previousBytes("previous destination contents");
+    const QFileDevice::Permissions permissionMask =
+        QFileDevice::ReadOwner
+        | QFileDevice::WriteOwner
+        | QFileDevice::ReadUser
+        | QFileDevice::WriteUser
+        | QFileDevice::ReadGroup
+        | QFileDevice::WriteGroup
+        | QFileDevice::ReadOther
+        | QFileDevice::WriteOther;
+
+    QFile source(sourcePath);
+    QVERIFY(source.open(QIODevice::WriteOnly));
+    QCOMPARE(source.write(sourceBytes), qint64(sourceBytes.size()));
+    source.close();
+    QVERIFY(source.setPermissions(permissionMask));
+    const QFileDevice::Permissions sourcePermissions = source.permissions();
+    QVERIFY(!QFileInfo::exists(QFileInfo(destinationPath).absolutePath()));
+
+    const Status firstCopy =
+        DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
+    QVERIFY2(firstCopy.has_value(),
+             firstCopy ? "" : qPrintable(firstCopy.error()));
+
+    QFile destination(destinationPath);
+    QVERIFY(destination.open(QIODevice::ReadOnly));
+    QCOMPARE(destination.readAll(), sourceBytes);
+    QCOMPARE(destination.permissions(), sourcePermissions);
+    destination.close();
+
+    QVERIFY(source.open(QIODevice::ReadOnly));
+    QCOMPARE(source.readAll(), sourceBytes);
+    QCOMPARE(source.permissions(), sourcePermissions);
+    source.close();
+
+    QVERIFY(destination.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(destination.write(previousBytes), qint64(previousBytes.size()));
+    destination.close();
+
+    const Status replacingCopy =
+        DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
+    QVERIFY2(replacingCopy.has_value(),
+             replacingCopy ? "" : qPrintable(replacingCopy.error()));
+    QVERIFY(destination.open(QIODevice::ReadOnly));
+    QCOMPARE(destination.readAll(), sourceBytes);
+    QCOMPARE(destination.permissions(), sourcePermissions);
+    destination.close();
+
+    QVERIFY(source.open(QIODevice::ReadOnly));
+    QCOMPARE(source.readAll(), sourceBytes);
+    QCOMPARE(source.permissions(), sourcePermissions);
+    source.close();
+}
+
+void DataServiceLifecycleTests::databaseFileCopyPreservesDestinationWhenReplacementFails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString sourcePath =
+        directory.filePath(QStringLiteral("source.db"));
+    const QString destinationPath =
+        directory.filePath(QStringLiteral("existing-destination"));
+    const QString sentinelPath =
+        QDir(destinationPath).filePath(QStringLiteral("sentinel.txt"));
+    const QByteArray sourceBytes("replacement source contents");
+    const QByteArray sentinelBytes("replacement failure sentinel");
+
+    QFile source(sourcePath);
+    QVERIFY(source.open(QIODevice::WriteOnly));
+    QCOMPARE(source.write(sourceBytes), qint64(sourceBytes.size()));
+    source.close();
+
+    QVERIFY(QDir().mkpath(destinationPath));
+    QFile sentinel(sentinelPath);
+    QVERIFY(sentinel.open(QIODevice::WriteOnly));
+    QCOMPARE(sentinel.write(sentinelBytes), qint64(sentinelBytes.size()));
+    sentinel.close();
+
+    const Status copyResult =
+        DatabaseFileOperations::copyDatabaseFile(sourcePath, destinationPath);
+    QVERIFY(!copyResult.has_value());
+    QCOMPARE(
+        copyResult.error(),
+        QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
+            .arg(QFileInfo(destinationPath).absoluteFilePath())
+        );
+
+    QVERIFY(QFileInfo(destinationPath).isDir());
+    QVERIFY(sentinel.open(QIODevice::ReadOnly));
+    QCOMPARE(sentinel.readAll(), sentinelBytes);
+    sentinel.close();
 }
 
 void DataServiceLifecycleTests::legacyDataServiceOwnsDatabaseFileOperations()

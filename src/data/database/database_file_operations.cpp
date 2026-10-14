@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSaveFile>
 
 #include <filesystem>
 #include <system_error>
@@ -80,23 +81,89 @@ Status DatabaseFileOperations::copyDatabaseFile(
             );
     }
 
-    if (
-        QFile::exists(targetPath)
-        && !QFile::remove(targetPath)
-        )
+    QFile source(absoluteSourcePath);
+    const QString copyError =
+        QStringLiteral("Unable to copy Teacher Profile to:\n%1")
+            .arg(targetPath);
+    if (!source.open(QIODevice::ReadOnly))
     {
         return std::unexpected(
-            QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
-                .arg(targetPath)
+            copyError
             );
     }
 
-    if (!QFile::copy(absoluteSourcePath, targetPath))
+    const QFileDevice::Permissions sourcePermissions = source.permissions();
+    const bool targetExisted = QFile::exists(targetPath);
+    const QString replacementError =
+        QStringLiteral("Unable to replace existing Teacher Profile file:\n%1")
+            .arg(targetPath);
+    QSaveFile destination(targetPath);
+    destination.setDirectWriteFallback(false);
+    if (!destination.open(QIODevice::WriteOnly))
     {
+        if (targetExisted)
+        {
+            return std::unexpected(replacementError);
+        }
         return std::unexpected(
-            QStringLiteral("Unable to copy Teacher Profile to:\n%1")
-                .arg(targetPath)
+            copyError
             );
+    }
+
+    QByteArray buffer(64 * 1024, '\0');
+    while (true)
+    {
+        const qint64 bytesRead = source.read(buffer.data(), buffer.size());
+        if (bytesRead < 0)
+        {
+            destination.cancelWriting();
+            return std::unexpected(copyError);
+        }
+        if (bytesRead == 0)
+        {
+            if (source.error() != QFileDevice::NoError)
+            {
+                destination.cancelWriting();
+                return std::unexpected(copyError);
+            }
+            break;
+        }
+
+        qint64 bytesWritten = 0;
+        while (bytesWritten < bytesRead)
+        {
+            const qint64 writeResult = destination.write(
+                buffer.constData() + bytesWritten,
+                bytesRead - bytesWritten
+                );
+            if (writeResult <= 0)
+            {
+                destination.cancelWriting();
+                return std::unexpected(copyError);
+            }
+            bytesWritten += writeResult;
+        }
+    }
+
+    if (!destination.flush())
+    {
+        destination.cancelWriting();
+        return std::unexpected(copyError);
+    }
+
+    if (!destination.setPermissions(sourcePermissions))
+    {
+        destination.cancelWriting();
+        return std::unexpected(copyError);
+    }
+
+    if (!destination.commit())
+    {
+        if (targetExisted)
+        {
+            return std::unexpected(replacementError);
+        }
+        return std::unexpected(copyError);
     }
 
     return {};
