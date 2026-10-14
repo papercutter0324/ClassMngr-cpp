@@ -92,6 +92,7 @@ private slots:
     void invalidRosterPrecedesUnavailableSessionAndWritesNothing();
     void rawBomSnapshotPersistsDecodedTextExactlyOnce();
     void savesCompleteRosterSnapshotToOpenSession();
+    void missingParentClassReturnsNotFoundWithoutWrites();
     void forwardsQuestionableKoreanNameDecision();
     void repositoryFailureMapsTechnicalAndRollsBack();
     void closedSessionReturnsFailureWithoutDataServiceFallback();
@@ -124,6 +125,63 @@ rejectsNonCanonicalIdsBeforeSessionAccess()
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
     }
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+missingParentClassReturnsNotFoundWithoutWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Deleted Roster Parent Test")
+        );
+    QVERIFY(createdClass);
+
+    {
+        QSqlQuery removeClass(services.databaseSession()->database());
+        removeClass.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+        removeClass.addBindValue(*createdClass);
+        QVERIFY2(removeClass.exec(), qPrintable(removeClass.lastError().text()));
+        QCOMPARE(removeClass.numRowsAffected(), 1);
+    }
+
+    Platform::ApplicationServicesRosterSavePort port(services);
+    const auto assertMissingParent = [&](const Application::RosterSaveRequest& value)
+    {
+        const auto result = Application::RosterSaveUseCase::execute(
+            value,
+            port,
+            Platform::rosterSaveCaseInsensitiveEquals
+            );
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+        QVERIFY(!result.error().message.empty());
+
+        QSqlQuery counts(services.databaseSession()->database());
+        counts.prepare(QStringLiteral(
+            "SELECT "
+            "(SELECT COUNT(*) FROM roster_columns WHERE class_id=?), "
+            "(SELECT COUNT(*) FROM roster_data WHERE class_id=?)"
+            ));
+        counts.addBindValue(*createdClass);
+        counts.addBindValue(*createdClass);
+        QVERIFY2(counts.exec(), qPrintable(counts.lastError().text()));
+        QVERIFY(counts.next());
+        QCOMPARE(counts.value(0).toInt(), 0);
+        QCOMPARE(counts.value(1).toInt(), 0);
+    };
+
+    const Application::RosterSaveRequest populated = request(*createdClass);
+    assertMissingParent(populated);
+
+    Application::RosterSaveRequest zeroRows = request(*createdClass);
+    zeroRows.roster.rows.clear();
+    QCOMPARE(zeroRows.roster.columns.size(), std::size_t{7});
+    QVERIFY(zeroRows.roster.rows.empty());
+    assertMissingParent(zeroRows);
 }
 
 void NextPlatformApplicationServicesRosterSavePortTests::

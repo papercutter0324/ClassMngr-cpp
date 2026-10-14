@@ -91,15 +91,19 @@ public:
 
         try
         {
-            const Status saved = repository->saveRoster(
-                *classId,
-                legacyRoster(request.roster)
+            const RosterRepository::SaveResult saved =
+                repository->saveRosterWithParentCheck(
+                    *classId,
+                    legacyRoster(request.roster)
                 );
             if (!saved)
             {
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(saved.error())
+                    saved.error().kind
+                            == RosterRepository::SaveFailure::Kind::ParentClassMissing
+                        ? Domain::ErrorCode::NotFound
+                        : Domain::ErrorCode::Technical,
+                    toStdString(saved.error().diagnostic)
                     );
             }
 

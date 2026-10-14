@@ -97,6 +97,113 @@ Status RosterRepository::saveRoster(
     return {};
 }
 
+RosterRepository::SaveResult RosterRepository::saveRosterWithParentCheck(
+    const int classId,
+    const Roster& roster
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Saving roster failed: invalid class id %1."
+                ).arg(classId)
+        });
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    DatabaseTransaction transaction(
+        m_database,
+        DatabaseTransaction::Mode::Immediate
+        );
+    if (!transaction.started())
+    {
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Starting roster save transaction failed for %1: %2"
+                ).arg(identity, transaction.startError())
+        });
+    }
+
+    bool parentClassExists = false;
+    {
+        QSqlQuery query(m_database);
+        query.prepare(QStringLiteral(
+            "SELECT 1 FROM classes WHERE id=?"
+            ));
+        query.addBindValue(classId);
+
+        const auto loaded = SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Checking roster parent class"),
+            identity
+            );
+        if (!loaded)
+        {
+            return std::unexpected(SaveFailure{
+                .kind = SaveFailure::Kind::Technical,
+                .diagnostic = loaded.error().userMessage()
+            });
+        }
+
+        parentClassExists = query.next();
+        const QSqlError fetchError = query.lastError();
+        query.finish();
+        if (!parentClassExists && fetchError.isValid())
+        {
+            return std::unexpected(SaveFailure{
+                .kind = SaveFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Checking roster parent class failed for %1: %2"
+                    ).arg(identity, fetchError.text())
+            });
+        }
+    }
+
+    if (!parentClassExists)
+    {
+        if (!transaction.rollbackChecked())
+        {
+            return std::unexpected(SaveFailure{
+                .kind = SaveFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Rolling back roster save failed for %1: %2"
+                    ).arg(identity, m_database.lastError().text())
+            });
+        }
+
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::ParentClassMissing,
+            .diagnostic = QObject::tr(
+                "Saving roster failed: parent class id %1 was not found."
+                ).arg(classId)
+        });
+    }
+
+    const Status saved = writeRoster(classId, roster);
+    if (!saved)
+    {
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::Technical,
+            .diagnostic = saved.error()
+        });
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Committing roster save failed for %1: %2"
+                ).arg(identity, m_database.lastError().text())
+        });
+    }
+
+    return {};
+}
+
 Status RosterRepository::saveRosters(
     const QList<QPair<int, Roster>>& rosters
     )

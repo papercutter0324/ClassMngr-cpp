@@ -1,11 +1,30 @@
 #include "database_transaction.h"
 
+#include <QSqlError>
+#include <QSqlQuery>
+
 DatabaseTransaction::DatabaseTransaction(
-    QSqlDatabase& database
+    QSqlDatabase& database,
+    const Mode mode
     )
     : m_database(database)
-    , m_started(database.transaction())
 {
+    if (mode == Mode::Immediate)
+    {
+        QSqlQuery query(m_database);
+        m_started = query.exec(QStringLiteral("BEGIN IMMEDIATE"));
+        if (!m_started)
+        {
+            m_startError = query.lastError().text();
+        }
+        return;
+    }
+
+    m_started = m_database.transaction();
+    if (!m_started)
+    {
+        m_startError = m_database.lastError().text();
+    }
 }
 
 DatabaseTransaction::~DatabaseTransaction()
@@ -19,6 +38,11 @@ DatabaseTransaction::~DatabaseTransaction()
 bool DatabaseTransaction::started() const
 {
     return m_started;
+}
+
+const QString& DatabaseTransaction::startError() const
+{
+    return m_startError;
 }
 
 bool DatabaseTransaction::commit()
@@ -36,11 +60,17 @@ bool DatabaseTransaction::commit()
 
 void DatabaseTransaction::rollback()
 {
+    (void)rollbackChecked();
+}
+
+bool DatabaseTransaction::rollbackChecked()
+{
     if (!m_started || m_finished)
     {
-        return;
+        return true;
     }
 
-    m_database.rollback();
+    const bool rolledBack = m_database.rollback();
     m_finished = true;
+    return rolledBack;
 }

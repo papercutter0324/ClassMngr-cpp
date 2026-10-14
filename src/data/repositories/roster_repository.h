@@ -9,6 +9,7 @@
 #include <QStringList>
 
 #include <cstddef>
+#include <expected>
 #include <functional>
 
 inline constexpr std::size_t kRosterRepositoryOutputMaxColumns = 128;
@@ -22,6 +23,20 @@ inline constexpr std::size_t kRosterRepositoryOutputMaxTextBytes =
 class RosterRepository
 {
 public:
+    struct SaveFailure final
+    {
+        enum class Kind
+        {
+            ParentClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using SaveResult = std::expected<void, SaveFailure>;
+
     struct ColumnNamesForClass final
     {
         int classId = 0;
@@ -95,6 +110,13 @@ public:
         );
 
     [[nodiscard]] Status saveRoster(
+        int classId,
+        const Roster& roster
+        );
+
+    // Used by typed callers that need to distinguish a missing parent class
+    // from other repository failures.
+    [[nodiscard]] SaveResult saveRosterWithParentCheck(
         int classId,
         const Roster& roster
         );
