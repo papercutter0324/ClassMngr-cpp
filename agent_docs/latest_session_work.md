@@ -77,11 +77,22 @@
   were strengthened. The first build hit FileTracker access denied and passed
   after an approved retry; final builds had no warnings/errors. No full suite
   ran.
-- The post-F868 audit reviewed all 13 Deferred entries and found none newly
-  actionable; all 13 remain unchanged. Batch 283 is complete. Batch 284 selects
-  F869: validate Schedule Import's generated class ID before dependent class
-  details and schedule writes. The existing typed active-session apply fixture
-  and acceptance matrix are recorded in the Phase 2 plan.
+- F869 source/test commit: `0ff21b2aad92d5011e5bab7cd78a51e30d643c4b`;
+  Schedule Import now checks generated class IDs as qint64 before related
+  writes. The baseline reproduced a generated ID `4294967297` narrowing to 1,
+  causing a successful CreateNew import to overwrite class 1's details and
+  schedule. Independent Debug builds of `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
+  succeeded; the exact Debug CTest passed 1/1. The initial fixture fast-failed
+  because its sentinel details referenced a missing teacher; setting the
+  sentinel teacher ID to NULL allowed the baseline to reproduce. FileTracker
+  access errors required approved retries; final builds had no warnings. No
+  full suite ran.
+- The post-F869 audit reviewed all 13 Deferred entries and found none newly
+  actionable; all 13 remain unchanged. Batch 284 is complete. Batch 285 selects
+  F870: validate Class Transfer's generated class ID before writing imported
+  class details. The existing active-session apply test and required baseline
+  fixture condition are recorded in the Phase 2 plan.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;

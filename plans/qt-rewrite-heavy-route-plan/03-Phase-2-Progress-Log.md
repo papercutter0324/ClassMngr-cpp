@@ -35299,3 +35299,66 @@ Class Transfer CreateNew generated class-ID narrowing remains an unselected
 follow-up; whether the alias has a wrong effect depends on whether the aliased
 class has `class_info`. Phase 2 Gates 1/2 remain Partial and the formal exit
 gate remains Open.
+
+### F869 Schedule Import generated class-ID range - accepted; Batch 284 completion and Batch 285 discovery - 2026-10-14
+
+F869 is accepted at commit
+`0ff21b2aad92d5011e5bab7cd78a51e30d643c4b` (`Phase2 - Guard Schedule Import
+generated class IDs`). Only `src/data/repositories/schedule_import_repository.cpp`
+and `tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`
+changed. `ScheduleImportRepository::applyCore()` reads `lastInsertId()` as
+`qint64`, checks conversion, positivity, and `<= INT_MAX` before class-info and
+schedule writes; its existing transaction rolls back failures.
+
+The baseline fixture first failed because `class_info.teacher_id=77` had no
+teacher; changing the sentinel to `NULL` corrected the fixture. The pre-fix
+baseline then confirmed generated SQLite INTEGER ID `4294967297` narrowed to
+`1`: typed CreateNew returned success with one class created and overwrote the
+sentinel class's imported details and schedule while preserving its name. The
+regression verifies typed failure and rollback of the new teacher/high-ID
+class, preserves ID `1`'s name/details/schedule, and leaves no high-ID related
+rows. It also accepts generated `INT_MAX` with details and both schedule rows
+under that exact ID; ordinary typed apply remains covered.
+
+Independent incremental Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests` succeeded
+in `build/windows-x64-debug`; exactly that registered Debug CTest passed 1/1.
+Sandbox FileTracker retries were needed; final builds had no warnings.
+`git diff --check` passed before commit. No full suite ran.
+
+F869 completed Batch 284. The post-F869 audit reviewed all 13 Deferred
+triggers; none became newly actionable, and all 13 remain unchanged. Sidebar
+Teacher IDs remain a separate item. Phase 2 Gates 1/2 remain Partial and the
+formal exit gate remains Open.
+
+Batch 285 selects F870 as its sole candidate. In
+`ClassTransferRepository` (`src/data/repositories/class_transfer_repository.cpp`,
+around line 1788), CreateNew converts `query.lastInsertId()` directly to `int`,
+checks only positivity, then records that narrowed ID and passes it to
+`writeClassData()`. That function inserts `class_info` for the supplied ID;
+the operation is inside `DatabaseTransaction` (around line 1704). The existing
+apply-port test is
+`tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`,
+target/CTest `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`.
+
+F870 is selected, not implemented. First seed actual class ID `1` with a
+sentinel name and no `class_info`, set `sqlite_sequence` for `classes` to
+`4294967296`, and apply existing `createCommand()` (CreateNew class/teacher).
+Verify the baseline's generated ID `4294967297` aliases to `1`, imported
+details attach to ID `1`, the high-ID class remains without `class_info`, and
+the summary reports ID `1`. The missing `class_info` is essential: if ID `1`
+already has details, the duplicate-key failure rolls back and is not the
+intended baseline. Stop and revise the plan if the stated alias/wrong
+association does not reproduce.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Existing apply-port fixture seeds class `1` with sentinel name and no `class_info`, sets `sqlite_sequence=4294967296`, then applies `createCommand()` CreateNew. Confirm generated `4294967297` narrows to `1`, imported details attach to class `1`, the high-ID row has no `class_info`, and the summary reports `1`; stop for plan revision if not reproduced. |
+| Range rejection and rollback | Validate generated ID as `qint64` for conversion, positivity, and `<= INT_MAX` before recording it or writing dependent data. Out-of-range typed failure rolls back the high-ID class, new teacher, and related rows; preserve class `1`'s sentinel name and lack of `class_info`, with no alias. |
+| Compatibility | Preserve ordinary CreateNew and positive `INT_MAX` generated-ID acceptance, with imported details under that exact ID. |
+| Scope and focused verification | Change only `src/data/repositories/class_transfer_repository.cpp` and `tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full suite. |
+
+`CampusRecordRepository`'s separate `lastInsertId().toInt()` remains an
+unselected follow-up: it is a legacy DataService path without a matching
+focused DB-backed seam. Keep it outside F870. Phase 2 Gates 1/2 remain Partial
+and the formal exit gate remains Open.

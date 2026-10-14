@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F868 accepted; F869 selected)
+### Current state - 2026-10-14 (F869 accepted; F870 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -95,8 +95,17 @@ persisted class IDs outside `1..INT_MAX` instead of exposing aliases. The
 independent Debug build of `ClassMngr` and its existing choices-read port test
 target succeeded; the exact CTest passed 1/1. No full suite ran. The
 post-F868 audit found no newly actionable item among all 13 Deferred entries.
-Batch 283 is complete. Batch 284 selects F869 to validate Schedule Import's
-generated class ID before related writes. F579/F598 still require an elevated
+Batch 283 is complete. F869 is accepted at
+`0ff21b2aad92d5011e5bab7cd78a51e30d643c4b`: Schedule Import now validates
+generated class IDs before class-info and schedule writes. The regression
+reproduced a generated ID `4294967297` aliasing to class `1` and overwriting
+its details/schedule; after the fix, the transaction rolls back the new class
+and teacher and preserves the existing class. Independent Debug builds of
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
+succeeded; the exact CTest passed 1/1. No full suite ran. The post-F869 audit
+found no newly actionable trigger among all 13 Deferred entries. Batch 284 is
+complete. Batch 285 selects F870 to validate generated Class Transfer class
+IDs before writing imported data. F579/F598 still require an elevated
 Administrator token; Gates 1/2 remain Partial and the formal exit gate remains
 Open.
 
