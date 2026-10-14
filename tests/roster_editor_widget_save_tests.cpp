@@ -15,8 +15,10 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDialog>
 #include <QHeaderView>
 #include <QInputDialog>
+#include <QLabel>
 #include <QListWidget>
 #include <QLineEdit>
 #include <QMenu>
@@ -158,6 +160,7 @@ private slots:
     void failedRosterSaveKeepsTestingClassSelection();
     void loadClassPreservesModelNormalizationWidthsAndCleanState();
     void emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities();
+    void malformedReadBlocksReplacementAndRecovers();
 };
 
 void RosterEditorWidgetSaveTests::
@@ -889,7 +892,15 @@ emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()
     editor.loadClass(Classroom(QStringLiteral("Empty roster"), fixture.classId));
 
     auto* model = editor.findChild<RosterModel*>();
+    auto* table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* failureMessage = editor.findChild<QLabel*>(
+        QStringLiteral("rosterLoadFailureMessage")
+        );
     QVERIFY(model);
+    QVERIFY(table);
+    QVERIFY(failureMessage);
     QCOMPARE(model->rowCount(), 25);
     QCOMPARE(model->columnCount(), Roster::BaseColumns.size());
     QVERIFY(model->data(model->index(0, 0)).toString().isEmpty());
@@ -897,6 +908,9 @@ emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()
     QVERIFY(!editor.hasUnsavedChanges());
     QCOMPARE(capabilitiesSpy.count(), 1);
     QVERIFY(editor.outputCapabilities().printEnabled);
+    QVERIFY(editor.outputCapabilities().saveAsEnabled);
+    QVERIFY(table->isEnabled());
+    QVERIFY(failureMessage->isHidden());
 
     fixture.services.closeDatabase();
     editor.loadClass(Classroom(QStringLiteral("Failed roster read"), fixture.classId));
@@ -906,7 +920,14 @@ emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()
     QVERIFY(model->data(model->index(24, 5)).toString().isEmpty());
     QVERIFY(!editor.hasUnsavedChanges());
     QCOMPARE(capabilitiesSpy.count(), 2);
-    QVERIFY(editor.outputCapabilities().printEnabled);
+    QVERIFY(!editor.outputCapabilities().printEnabled);
+    QVERIFY(!editor.outputCapabilities().saveAsEnabled);
+    QVERIFY(!table->isEnabled());
+    QVERIFY(!failureMessage->isHidden());
+    QVERIFY(failureMessage->text().contains(
+        QStringLiteral("could not be loaded"),
+        Qt::CaseInsensitive
+        ));
 
     editor.clearDatabaseState();
     QCOMPARE(model->rowCount(), 25);
@@ -916,8 +937,350 @@ emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()
     QCOMPARE(capabilitiesSpy.count(), 3);
     QVERIFY(!editor.outputCapabilities().printEnabled);
     QVERIFY(!editor.outputCapabilities().saveAsEnabled);
+    QVERIFY(table->isEnabled());
+    QVERIFY(failureMessage->isHidden());
 }
 
+
+void RosterEditorWidgetSaveTests::malformedReadBlocksReplacementAndRecovers()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    Roster storedRoster;
+    storedRoster.columns = Roster::BaseColumns
+        + QStringList{QStringLiteral("Advisory")};
+    storedRoster.columnWidths = {211, 143, 166, 167, 168, 169, 241};
+    storedRoster.rows = {
+        {
+            QStringLiteral("Stored student"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            QStringLiteral("A+"),
+            QStringLiteral("B"),
+            QStringLiteral("C"),
+            QStringLiteral("D"),
+            QStringLiteral("Keep this note")
+        }
+    };
+    QVERIFY(fixture.services.rosterService()->saveRoster(
+        fixture.classId,
+        storedRoster
+        ));
+
+    auto corruptFirstColumnPosition = [&fixture]()
+    {
+        QSqlQuery corruptPosition(
+            fixture.services.databaseSession()->database()
+            );
+        corruptPosition.prepare(QStringLiteral(
+            "UPDATE roster_columns SET position=? "
+            "WHERE class_id=? AND name=?"
+            ));
+        corruptPosition.addBindValue(QStringLiteral("invalid"));
+        corruptPosition.addBindValue(fixture.classId);
+        corruptPosition.addBindValue(QStringLiteral("English"));
+        return corruptPosition.exec() && corruptPosition.numRowsAffected() == 1;
+    };
+    auto repairFirstColumnPosition = [&fixture]()
+    {
+        QSqlQuery repairPosition(
+            fixture.services.databaseSession()->database()
+            );
+        repairPosition.prepare(QStringLiteral(
+            "UPDATE roster_columns SET position=? "
+            "WHERE class_id=? AND name=?"
+            ));
+        repairPosition.addBindValue(0);
+        repairPosition.addBindValue(fixture.classId);
+        repairPosition.addBindValue(QStringLiteral("English"));
+        return repairPosition.exec() && repairPosition.numRowsAffected() == 1;
+    };
+
+    struct RawRosterState final
+    {
+        QList<QStringList> columns;
+        QList<QStringList> data;
+        QString error;
+        bool valid = false;
+    };
+    auto captureStoredState = [&fixture]()
+    {
+        RawRosterState state;
+        QSqlQuery columns(
+            fixture.services.databaseSession()->database()
+            );
+        if (!columns.prepare(QStringLiteral(
+                "SELECT name, position, typeof(position), width "
+                "FROM roster_columns WHERE class_id=? ORDER BY id"
+                )))
+        {
+            state.error = columns.lastError().text();
+            return state;
+        }
+        columns.addBindValue(fixture.classId);
+        if (!columns.exec())
+        {
+            state.error = columns.lastError().text();
+            return state;
+        }
+        while (columns.next())
+        {
+            state.columns.append(QStringList{
+                columns.value(0).toString(),
+                columns.value(1).toString(),
+                columns.value(2).toString(),
+                columns.value(3).toString()
+            });
+        }
+
+        QSqlQuery data(fixture.services.databaseSession()->database());
+        if (!data.prepare(QStringLiteral(
+                "SELECT row_index, col_index, value FROM roster_data "
+                "WHERE class_id=? ORDER BY row_index, col_index"
+                )))
+        {
+            state.error = data.lastError().text();
+            return state;
+        }
+        data.addBindValue(fixture.classId);
+        if (!data.exec())
+        {
+            state.error = data.lastError().text();
+            return state;
+        }
+        while (data.next())
+        {
+            state.data.append(QStringList{
+                data.value(0).toString(),
+                data.value(1).toString(),
+                data.value(2).toString()
+            });
+        }
+
+        state.valid = true;
+        return state;
+    };
+    auto findButton = [](RosterEditorWidget& editor, const QString& text)
+    {
+        for (QPushButton* button : editor.findChildren<QPushButton*>())
+        {
+            if (button->text().startsWith(text))
+            {
+                return button;
+            }
+        }
+        return static_cast<QPushButton*>(nullptr);
+    };
+
+    QVERIFY(corruptFirstColumnPosition());
+    QVERIFY(!fixture.services.rosterService()->roster(fixture.classId));
+    const RawRosterState manualBefore = captureStoredState();
+    QVERIFY2(manualBefore.valid, qPrintable(manualBefore.error));
+
+    RosterEditorWidget manualEditor(&fixture.services);
+    manualEditor.loadClass(
+        Classroom(QStringLiteral("Malformed roster"), fixture.classId)
+        );
+    manualEditor.setSaveMode(SaveMode::Manual);
+    auto* manualModel = manualEditor.findChild<RosterModel*>();
+    auto* manualTable = manualEditor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* manualFailureMessage = manualEditor.findChild<QLabel*>(
+        QStringLiteral("rosterLoadFailureMessage")
+        );
+    auto* manualAutosave = manualEditor.findChild<AutosaveCoordinator*>();
+    QVERIFY(manualModel);
+    QVERIFY(manualTable);
+    QVERIFY(manualFailureMessage);
+    QVERIFY(manualAutosave);
+    QCOMPARE(manualModel->rowCount(), 25);
+    QCOMPARE(manualModel->columnCount(), Roster::BaseColumns.size());
+    QVERIFY(manualModel->data(manualModel->index(0, 0)).toString().isEmpty());
+    QVERIFY(!manualEditor.hasUnsavedChanges());
+    QVERIFY(!manualTable->isEnabled());
+    QVERIFY(!manualFailureMessage->isHidden());
+    QVERIFY(manualFailureMessage->text().contains(
+        QStringLiteral("invalid position"),
+        Qt::CaseInsensitive
+        ));
+    QVERIFY(!manualAutosave->isSaveAvailable());
+    QVERIFY(!manualEditor.outputCapabilities().printEnabled);
+    QVERIFY(!manualEditor.outputCapabilities().saveAsEnabled);
+
+    auto* const addColumnButton = findButton(
+        manualEditor,
+        QStringLiteral("Add Column")
+        );
+    auto* const importButton = findButton(
+        manualEditor,
+        QStringLiteral("Import Scores")
+        );
+    auto* const saveButton = findButton(
+        manualEditor,
+        QStringLiteral("Save Changes")
+        );
+    QVERIFY(addColumnButton);
+    QVERIFY(importButton);
+    QVERIFY(saveButton);
+    QVERIFY(!addColumnButton->isEnabled());
+    QVERIFY(!importButton->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+
+    int unexpectedOutputDialogs = 0;
+    auto dismissUnexpectedOutputDialog = [&manualEditor, &unexpectedOutputDialogs]()
+    {
+        QTimer::singleShot(0, &manualEditor, [&unexpectedOutputDialogs]()
+        {
+            if (QWidget* const modal = QApplication::activeModalWidget())
+            {
+                ++unexpectedOutputDialogs;
+                if (auto* const dialog = qobject_cast<QDialog*>(modal))
+                {
+                    dialog->reject();
+                }
+                else
+                {
+                    modal->close();
+                }
+            }
+        });
+    };
+    dismissUnexpectedOutputDialog();
+    manualEditor.printCurrentPage();
+    dismissUnexpectedOutputDialog();
+    manualEditor.saveCurrentPageAs();
+    QCoreApplication::processEvents();
+    QCOMPARE(unexpectedOutputDialogs, 0);
+
+    QVERIFY(setStudent(
+        manualModel,
+        0,
+        QStringLiteral("Manual save attempt"),
+        QStringLiteral("\uAE40\uBBFC\uC9C0")
+        ));
+    QVERIFY(manualEditor.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    manualEditor.saveData();
+    QVERIFY(manualEditor.hasUnsavedChanges());
+    QVERIFY(!manualEditor.saveChanges());
+    QVERIFY(manualEditor.hasUnsavedChanges());
+
+    const RawRosterState manualAfter = captureStoredState();
+    QVERIFY2(manualAfter.valid, qPrintable(manualAfter.error));
+    QCOMPARE(manualAfter.columns, manualBefore.columns);
+    QCOMPARE(manualAfter.data, manualBefore.data);
+
+    QVERIFY(repairFirstColumnPosition());
+    manualEditor.loadClass(
+        Classroom(QStringLiteral("Malformed roster"), fixture.classId)
+        );
+    QVERIFY(manualFailureMessage->isHidden());
+    QVERIFY(manualTable->isEnabled());
+    QVERIFY(manualEditor.outputCapabilities().printEnabled);
+    QVERIFY(manualEditor.outputCapabilities().saveAsEnabled);
+    QVERIFY(!manualEditor.hasUnsavedChanges());
+    QCOMPARE(manualModel->columnCount(), storedRoster.columns.size());
+    const int manualEnglishColumn = columnByName(
+        manualModel,
+        QStringLiteral("English")
+        );
+    const int manualAdvisoryColumn = columnByName(
+        manualModel,
+        QStringLiteral("Advisory")
+        );
+    QVERIFY(manualEnglishColumn >= 0);
+    QVERIFY(manualAdvisoryColumn >= 0);
+    QCOMPARE(
+        manualModel->data(manualModel->index(0, manualEnglishColumn)).toString(),
+        QStringLiteral("Stored Student")
+        );
+    QCOMPARE(
+        manualModel->data(manualModel->index(0, manualAdvisoryColumn)).toString(),
+        QStringLiteral("Keep this note")
+        );
+
+    QVERIFY(fixture.services.rosterService()->saveRoster(
+        fixture.classId,
+        storedRoster
+        ));
+    QVERIFY(corruptFirstColumnPosition());
+    QVERIFY(!fixture.services.rosterService()->roster(fixture.classId));
+    const RawRosterState autosaveBefore = captureStoredState();
+    QVERIFY2(autosaveBefore.valid, qPrintable(autosaveBefore.error));
+
+    RosterEditorWidget autosaveEditor(&fixture.services);
+    autosaveEditor.loadClass(
+        Classroom(QStringLiteral("Malformed roster autosave"), fixture.classId)
+        );
+    auto* autosaveModel = autosaveEditor.findChild<RosterModel*>();
+    auto* autosaveTable = autosaveEditor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    auto* autosaveFailureMessage = autosaveEditor.findChild<QLabel*>(
+        QStringLiteral("rosterLoadFailureMessage")
+        );
+    auto* autosave = autosaveEditor.findChild<AutosaveCoordinator*>();
+    QVERIFY(autosaveModel);
+    QVERIFY(autosaveTable);
+    QVERIFY(autosaveFailureMessage);
+    QVERIFY(autosave);
+    QVERIFY(!autosaveEditor.hasUnsavedChanges());
+    QVERIFY(!autosaveTable->isEnabled());
+    QVERIFY(!autosaveFailureMessage->isHidden());
+    QVERIFY(!autosave->isSaveAvailable());
+    QVERIFY(!autosaveEditor.outputCapabilities().printEnabled);
+    QVERIFY(!autosaveEditor.outputCapabilities().saveAsEnabled);
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    autosave->setDebounceInterval(10);
+    QVERIFY(autosaveModel->insertCustomColumn(
+        QStringLiteral("Blocked autosave attempt")
+        ));
+    QVERIFY(autosaveEditor.hasUnsavedChanges());
+    QTest::qWait(50);
+    QCOMPARE(saveSpy.count(), 0);
+    autosave->requestSave(false);
+    QCOMPARE(saveSpy.count(), 0);
+    autosaveEditor.saveData();
+    QVERIFY(autosaveEditor.hasUnsavedChanges());
+
+    const RawRosterState autosaveAfter = captureStoredState();
+    QVERIFY2(autosaveAfter.valid, qPrintable(autosaveAfter.error));
+    QCOMPARE(autosaveAfter.columns, autosaveBefore.columns);
+    QCOMPARE(autosaveAfter.data, autosaveBefore.data);
+
+    QVERIFY(repairFirstColumnPosition());
+    autosaveEditor.loadClass(
+        Classroom(QStringLiteral("Malformed roster autosave"), fixture.classId)
+        );
+    QVERIFY(autosaveFailureMessage->isHidden());
+    QVERIFY(autosaveTable->isEnabled());
+    QVERIFY(autosaveEditor.outputCapabilities().printEnabled);
+    QVERIFY(autosaveEditor.outputCapabilities().saveAsEnabled);
+    QVERIFY(!autosaveEditor.hasUnsavedChanges());
+    QCOMPARE(autosaveModel->columnCount(), storedRoster.columns.size());
+    const int autosaveEnglishColumn = columnByName(
+        autosaveModel,
+        QStringLiteral("English")
+        );
+    const int autosaveAdvisoryColumn = columnByName(
+        autosaveModel,
+        QStringLiteral("Advisory")
+        );
+    QVERIFY(autosaveEnglishColumn >= 0);
+    QVERIFY(autosaveAdvisoryColumn >= 0);
+    QCOMPARE(
+        autosaveModel->data(autosaveModel->index(0, autosaveEnglishColumn)).toString(),
+        QStringLiteral("Stored Student")
+        );
+    QCOMPARE(
+        autosaveModel->data(autosaveModel->index(0, autosaveAdvisoryColumn)).toString(),
+        QStringLiteral("Keep this note")
+        );
+}
 
 void RosterEditorWidgetSaveTests::rejectedQuestionableLengthKeepsFocusDirtyAndStorage()
 {

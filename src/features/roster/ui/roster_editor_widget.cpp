@@ -17,8 +17,11 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/validation/form_validation_binder.h"
 
+#include <QItemSelectionModel>
+#include <QLabel>
 #include <QPushButton>
 #include <QSignalBlocker>
+#include <QVBoxLayout>
 
 #include <string>
 #include <utility>
@@ -121,7 +124,43 @@ RosterEditorWidget::RosterEditorWidget(
     }
 
     buildUi();
+    m_rosterLoadFailureMessage = new QLabel(this);
+    m_rosterLoadFailureMessage->setObjectName(
+        QStringLiteral("rosterLoadFailureMessage")
+        );
+    m_rosterLoadFailureMessage->setWordWrap(true);
+    m_rosterLoadFailureMessage->setTextInteractionFlags(
+        Qt::TextSelectableByMouse
+        );
+    m_rosterLoadFailureMessage->hide();
+    const int tableLayoutIndex = contentLayout()->indexOf(m_table);
+    contentLayout()->insertWidget(
+        tableLayoutIndex >= 0 ? tableLayoutIndex : contentLayout()->count(),
+        m_rosterLoadFailureMessage
+        );
+
     m_autosave->bindSaveButton(m_saveButton);
+    connect(
+        m_autosave,
+        &AutosaveCoordinator::stateChanged,
+        this,
+        &RosterEditorWidget::applyRosterReadFailureRestrictions
+        );
+    connect(
+        m_model,
+        &RosterModel::dirtyChanged,
+        this,
+        &RosterEditorWidget::applyRosterReadFailureRestrictions
+        );
+    connect(
+        m_table->selectionModel(),
+        &QItemSelectionModel::currentChanged,
+        this,
+        [this](const QModelIndex&, const QModelIndex&)
+        {
+            applyRosterReadFailureRestrictions();
+        }
+        );
     connect(
         m_autosave,
         &AutosaveCoordinator::saveRequested,
@@ -141,12 +180,20 @@ void RosterEditorWidget::loadClass(
     const Classroom& classroom
     )
 {
+    m_rosterReadFailed = false;
+    if (m_rosterLoadFailureMessage)
+    {
+        m_rosterLoadFailureMessage->clear();
+        m_rosterLoadFailureMessage->hide();
+    }
+
     m_autosave->setLoading(true);
     m_classroom = classroom;
     updateHeaderText();
     m_loadingRoster = true;
 
     Roster roster;
+    QString rosterReadFailureDetail;
     if (m_services && m_classroom.id > 0)
     {
         const auto classId =
@@ -169,7 +216,25 @@ void RosterEditorWidget::loadClass(
             {
                 roster = rosterFromApplicationSnapshot(loaded.value());
             }
+            else
+            {
+                m_rosterReadFailed = true;
+                rosterReadFailureDetail = QString::fromUtf8(
+                    loaded.error().message.data(),
+                    static_cast<qsizetype>(loaded.error().message.size())
+                    );
+            }
         }
+        else
+        {
+            m_rosterReadFailed = true;
+            rosterReadFailureDetail = tr("The selected class ID is invalid.");
+        }
+    }
+    else if (m_classroom.id > 0)
+    {
+        m_rosterReadFailed = true;
+        rosterReadFailureDetail = tr("The roster service is unavailable.");
     }
 
     m_model->setRoster(roster);
@@ -190,23 +255,60 @@ void RosterEditorWidget::loadClass(
     m_loadingRoster = false;
     m_autosave->setLoading(false);
     m_autosave->markClean();
+
+    if (m_rosterReadFailed)
+    {
+        if (m_rosterLoadFailureMessage)
+        {
+            QString message = tr(
+                "The roster could not be loaded. Editing, saving, printing, "
+                "and Save As are disabled until a successful reload."
+                );
+            if (!rosterReadFailureDetail.isEmpty())
+            {
+                message.append(QLatin1Char('\n'));
+                message.append(rosterReadFailureDetail);
+            }
+            m_rosterLoadFailureMessage->setText(message);
+            m_rosterLoadFailureMessage->show();
+        }
+    }
+    else
+    {
+        m_table->setEnabled(true);
+        m_addColumnButton->setEnabled(true);
+        m_importButton->setEnabled(true);
+        m_koreanKeyboardButton->setEnabled(m_classroom.id > 0);
+    }
+
     updateActions();
+    applyRosterReadFailureRestrictions();
     emit outputCapabilitiesChanged();
 }
 
 PageOutputCapabilities RosterEditorWidget::outputCapabilities() const
 {
-    const bool enabled = m_classroom.id > 0;
+    const bool enabled = m_classroom.id > 0 && !m_rosterReadFailed;
     return {enabled, enabled};
 }
 
 void RosterEditorWidget::printCurrentPage()
 {
+    if (m_rosterReadFailed)
+    {
+        return;
+    }
+
     outputRosters(true);
 }
 
 void RosterEditorWidget::saveCurrentPageAs()
 {
+    if (m_rosterReadFailed)
+    {
+        return;
+    }
+
     outputRosters(false);
 }
 
@@ -325,7 +427,7 @@ bool RosterEditorWidget::saveRosterInternal(
     bool confirmQuestionableLengths
     )
 {
-    if (!m_services || m_classroom.id <= 0)
+    if (m_rosterReadFailed || !m_services || m_classroom.id <= 0)
     {
         return false;
     }
@@ -460,10 +562,46 @@ bool RosterEditorWidget::confirmQuestionableKoreanNameLengths()
 void RosterEditorWidget::scheduleAutosave()
 {
     updateRosterValidation();
-    m_autosave->setSaveAvailable(m_classroom.id > 0);
+    m_autosave->setSaveAvailable(
+        m_classroom.id > 0 && !m_rosterReadFailed
+        );
     m_autosave->setDirty(
         m_widthsDirty || (m_model && m_model->isDirty())
         );
+}
+
+void RosterEditorWidget::applyRosterReadFailureRestrictions()
+{
+    if (!m_rosterReadFailed)
+    {
+        return;
+    }
+
+    if (m_autosave && m_autosave->isSaveAvailable())
+    {
+        m_autosave->setSaveAvailable(false);
+    }
+
+    if (m_table)
+    {
+        m_table->setEnabled(false);
+    }
+    if (m_addColumnButton)
+    {
+        m_addColumnButton->setEnabled(false);
+    }
+    if (m_removeColumnButton)
+    {
+        m_removeColumnButton->setEnabled(false);
+    }
+    if (m_importButton)
+    {
+        m_importButton->setEnabled(false);
+    }
+    if (m_koreanKeyboardButton)
+    {
+        m_koreanKeyboardButton->setEnabled(false);
+    }
 }
 
 void RosterEditorWidget::updateRosterValidation()

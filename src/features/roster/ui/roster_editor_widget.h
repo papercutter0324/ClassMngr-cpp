@@ -119,6 +119,8 @@ private:
 
     void scheduleAutosave();
 
+    void applyRosterReadFailureRestrictions();
+
     void handleNameCellChanged(
         const QModelIndex& topLeft,
         const QModelIndex& bottomRight
@@ -158,6 +160,7 @@ private:
     ApplicationServices* m_services = nullptr;
     Classroom m_classroom;
     bool m_loadingRoster = false;
+    bool m_rosterReadFailed = false;
     bool m_widthsDirty = false;
     bool m_resolvingDuplicateName = false;
     bool m_removingRosterRow = false;
@@ -178,6 +181,7 @@ private:
     RosterColumnLayoutController* m_layoutController = nullptr;
     RosterItemDelegate* m_delegate = nullptr;
     QLabel* m_validationMessage = nullptr;
+    QLabel* m_rosterLoadFailureMessage = nullptr;
 
     QPushButton* m_importButton = nullptr;
     QPushButton* m_koreanKeyboardButton = nullptr;
