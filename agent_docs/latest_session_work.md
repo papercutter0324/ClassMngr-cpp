@@ -66,12 +66,22 @@
   Independent Debug builds of `ClassMngr` and
   `ClassMngrTestingClassRepositoryTests` succeeded; the exact Debug CTest
   passed 1/1 on the rebuilt executable. No full suite ran.
-- The post-F867 audit reviewed all 13 Deferred entries and found none newly
-  actionable; all 13 remain unchanged. Batch 282 is complete. Batch 283 selects
-  F868: reject out-of-range persisted class IDs in
-  `TestingClassRepository::loadTestingClassChoices()` so a wide ID cannot
-  become an alias in the active-session choices query. The acceptance matrix
-  is being recorded in the Phase 2 plan.
+- F868 source/test commit: `e5085a1b79695425ef52d022a427ece11ce69fa8`;
+  `TestingClassRepository::loadTestingClassChoices()` validates persisted class
+  IDs as qint64 in `1..INT_MAX` before narrowing. The regression first
+  reproduced IDs 1 and 4294967297 as two typed choices with ID 1; after the fix,
+  the query returns typed Technical failure with no partial choices and
+  preserves both database rows. Independent Debug builds of `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
+  succeeded; its exact CTest passed 1/1 after the row-preservation assertions
+  were strengthened. The first build hit FileTracker access denied and passed
+  after an approved retry; final builds had no warnings/errors. No full suite
+  ran.
+- The post-F868 audit reviewed all 13 Deferred entries and found none newly
+  actionable; all 13 remain unchanged. Batch 283 is complete. Batch 284 selects
+  F869: validate Schedule Import's generated class ID before dependent class
+  details and schedule writes. The existing typed active-session apply fixture
+  and acceptance matrix are recorded in the Phase 2 plan.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;

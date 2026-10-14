@@ -9,6 +9,9 @@
   consumer's representable range before writing dependent rows. Keep those
   writes in the transaction so an invalid generated identity rolls back rather
   than attaching details or assignments to a narrowed, unrelated record.
+- Read persisted IDs into a wide enough type and check the consumer's range
+  before constructing narrow typed choices. Fail the whole collection when a
+  row is unrepresentable so a partial result cannot expose a colliding alias.
 - ClassMngrNext starts as a separate QCoreApplication console bootstrap. Keep
   it outside ClassMngrRuntime and avoid adding a second UI or legacy resource
   and deployment links; UI work belongs in the later shared-UI phase.

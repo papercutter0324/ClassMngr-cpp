@@ -35231,3 +35231,71 @@ behavior. Limit changes to
 | Range failure and no partial choices | Reject the wide ID at the repository boundary; verify the read port propagates typed Technical failure, returns no aliased or partial choices, and preserves both persisted rows. |
 | Compatibility | Preserve valid IDs through `INT_MAX`, choice ordering, empty results, and existing session/repository error behavior. |
 | Scope and focused verification | Change only `src/data/repositories/testing_class_repository.cpp` and `tests/next_platform_application_services_schedule_testing_class_choices_read_port_tests.cpp`; build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full-suite run. |
+
+### F868 Testing-class choice persisted-ID range - accepted; Batch 283 completion and Batch 284 discovery - 2026-10-14
+
+F868 is accepted at source/test commit
+`e5085a1b79695425ef52d022a427ece11ce69fa8` (`Phase2 - Reject wide testing
+class choice IDs`). Only
+`src/data/repositories/testing_class_repository.cpp` and
+`tests/next_platform_application_services_schedule_testing_class_choices_read_port_tests.cpp`
+changed. `TestingClassRepository::loadTestingClassChoices()` now reads stored
+class IDs as `qint64` and validates `1..INT_MAX` before conversion; invalid IDs
+return repository failure and propagate as typed Technical failure without
+partial choices.
+
+The baseline with SQLite INTEGER IDs `1` and `4294967297` surfaced typed ID `1`
+twice. The regression now verifies Technical failure with no success choices,
+unchanged class IDs/names/storage classes and testing-class IDs/rooms/storage
+classes, and acceptance of `INT_MAX`. Existing ordering, empty-result,
+unavailable-session, and repository-failure cases remain covered.
+
+Independent verification sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
+in `build/windows-x64-debug`; the exact Debug CTest passed 1/1 after the row
+assertions were strengthened. The build was incremental. An initial
+FileTracker access-denied attempt required an approved elevated retry; the final
+successful build had no warnings or errors. No full suite ran.
+
+F868 completed Batch 283. The post-slice audit found no newly actionable item
+among the 13 Deferred entries; all remain unchanged. Sidebar Teacher
+Create/Delete teacher-ID width remains distinct from class-ID handling.
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+Batch 284 discovery selected F869 as its sole candidate. In
+`ScheduleImportRepository::applyCore()` (`src/data/repositories/schedule_import_repository.cpp`,
+around line 1422), `query.lastInsertId().toInt()` narrows a newly generated
+class ID before `class_info` upsert and schedule writes. The method's
+`DatabaseTransaction` begins around line 1139 and rolls back on failure; the
+schema declares `classes.id INTEGER PRIMARY KEY AUTOINCREMENT`. The existing
+active-session port fixture is
+`tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`,
+registered as `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`.
+
+F869 is selected, not implemented. Use existing `typedRequest()` CreateNew to
+seed class ID `1` with sentinel name/details and a distinctive schedule, set
+`sqlite_sequence` to `4294967296`, then reproduce the baseline: generated ID
+`4294967297` narrows to `1`, apply reports success/one class created, and
+imported details and schedule attach to or overwrite the existing ID `1` row.
+If that exact effect does not reproduce, stop and revise the plan. Validate the
+generated ID as `qint64` with conversion, positivity, and `INT_MAX` guards
+before dependent writes. The typed apply must fail and rollback the high-ID
+class plus newly created teacher/related rows, preserving the existing class
+and its sentinel details/schedule with no alias. Preserve ordinary successful
+typed apply and `INT_MAX` acceptance with details/schedule stored under that
+ID. Limit changes to
+`src/data/repositories/schedule_import_repository.cpp` and
+`tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`;
+do not add a target or widen APIs.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Through existing `typedRequest()` CreateNew, seed ID `1` with sentinel name/details/schedule and set `sqlite_sequence` to `4294967296`; verify generated ID `4294967297` aliases to `1`, apply reports success/one class created, and imported details/schedule affect ID `1`. Stop for plan revision if this does not reproduce. |
+| Range failure and rollback | Validate generated ID before related writes; typed apply fails and transaction removes the high-ID class and newly created teacher/related rows, while existing ID `1`, sentinel details, and schedule remain unchanged with no alias. |
+| Compatibility | Preserve ordinary successful typed apply and acceptance of `INT_MAX`, with details and schedule stored under `INT_MAX`. |
+| Scope and focused verification | Change only `src/data/repositories/schedule_import_repository.cpp` and `tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`; build `ClassMngr` then `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full suite. |
+
+Class Transfer CreateNew generated class-ID narrowing remains an unselected
+follow-up; whether the alias has a wrong effect depends on whether the aliased
+class has `class_info`. Phase 2 Gates 1/2 remain Partial and the formal exit
+gate remains Open.

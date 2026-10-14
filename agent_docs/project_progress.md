@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F867 accepted; F868 selected)
+### Current state - 2026-10-14 (F868 accepted; F869 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -89,8 +89,16 @@ assignment rows. Independent Debug builds of `ClassMngr` and
 No full suite ran. The post-F867 audit reviewed all 13 Deferred entries; none
 became actionable. Batch 282 is complete. Batch 283 selects F868 to reject
 out-of-range persisted IDs in testing-class choice reads before they can alias
-another class. F579/F598 still require an elevated Administrator token; Gates
-1/2 remain Partial and the formal exit gate remains Open.
+another class. F868 is accepted at
+`e5085a1b79695425ef52d022a427ece11ce69fa8`: testing-class choices now reject
+persisted class IDs outside `1..INT_MAX` instead of exposing aliases. The
+independent Debug build of `ClassMngr` and its existing choices-read port test
+target succeeded; the exact CTest passed 1/1. No full suite ran. The
+post-F868 audit found no newly actionable item among all 13 Deferred entries.
+Batch 283 is complete. Batch 284 selects F869 to validate Schedule Import's
+generated class ID before related writes. F579/F598 still require an elevated
+Administrator token; Gates 1/2 remain Partial and the formal exit gate remains
+Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F867 is accepted at `cc6b61ac`; Batch 282 is complete after all 13 Deferred candidates remained unchanged, and Batch 283 selects F868; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F868 is accepted at `e5085a1b`; Batch 283 is complete after all 13 Deferred candidates remained unchanged, and Batch 284 selects F869; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,9 +70,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Batch 283 (one candidate):
+Batch 284 (one candidate):
 
-- F868 - Reject out-of-range persisted testing-class choice IDs and propagate Technical without partial choices.
+- F869 - Validate Schedule Import generated class IDs before related writes.
 
 #### Deferred candidates
 
