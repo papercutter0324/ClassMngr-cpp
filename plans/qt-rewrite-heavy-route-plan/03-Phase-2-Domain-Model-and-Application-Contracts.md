@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F897 is accepted at source/test commit `c71c15da7e58ab03c0dfefb71f767ceb4c73b4b6`; F898, Teacher display-name read provenance, has its baseline and acceptance defined and implementation is next, while Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F898 is accepted at source/test commit `77a06e90a470ac609be5b8282da4273b393b9ce6`; Batch 303 is complete and next-slice discovery/selection is pending, while Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 303:
-  - F898 - Teacher display-name read provenance: implement structured lookup outcomes across the four typed page callers while preserving legacy wrappers and per-port error semantics.
+- None; next-slice discovery/selection is pending.
 
 #### Deferred candidates
 

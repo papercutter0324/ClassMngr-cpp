@@ -37303,3 +37303,31 @@ injected-read tests unless a concrete compile dependency requires a change.
 
 F898 baseline and acceptance are complete; implementation is next. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F898 accepted; Batch 303 complete - 2026-10-15
+
+F898 is accepted at implementation commit
+`77a06e90a470ac609be5b8282da4273b393b9ce6`; its baseline and acceptance
+definition was recorded at `661b0dd0`. The display-name-specific repository
+lookup now returns explicit `Found`, `Missing`, `InvalidInput`, and `Failure`
+outcomes for `int` and `qint64` IDs, preserving IDs above `INT_MAX`. The
+legacy singular wrappers and batch APIs remain unchanged. Co-Teacher, Notes,
+Class Details, and Selected Subtitle map outcomes explicitly and preserve
+teacher lookup as an independent component: missing teacher is recoverable in
+Co-Teacher, Notes, and Subtitle, and non-recoverable in Class Details.
+
+Regressions include direct repository outcome coverage, Selected Subtitle
+missing-assigned-teacher coverage, Class Details teacher-projection SQL-failure
+coverage, wide-ID coverage, and recoverability assertions. An independent
+tester built `ClassMngr` and the Co-Teacher, Notes, Details, and Selected
+Subtitle targets, then passed the four focused CTests: #334, #312, #325, and
+#329 (4/4). Each target required one elevated retry after FileTracker
+`E_ACCESSDENIED`; successful builds reported no warnings. No full suite ran.
+No forced cursor-fetch failure fixture was added; the `lastError()` checks
+were inspected directly.
+
+Two independent reviews audited the exact 13 official Phase 2 Deferred
+entries and found none newly actionable; all remain deferred. Batch 303 is
+complete. Next-slice discovery and selection are pending; no next candidate
+has been selected. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.

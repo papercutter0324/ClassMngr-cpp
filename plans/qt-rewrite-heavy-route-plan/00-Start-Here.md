@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F897, the Roster read, is accepted at source/test commit `c71c15da7e58ab03c0dfefb71f767ceb4c73b4b6`; two independent audits found no official Deferred trigger newly actionable. F898, Teacher display-name read provenance, has its baseline and acceptance defined; implementation is next. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F898, Teacher display-name read provenance, is accepted at source/test commit `77a06e90a470ac609be5b8282da4273b393b9ce6`; two independent audits found no official Deferred trigger newly actionable. Batch 303 is complete and next-slice discovery/selection is pending. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
