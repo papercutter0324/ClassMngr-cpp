@@ -37241,3 +37241,65 @@ with F898, Teacher display-name read provenance, to evaluate structured
 missing-versus-query-failure outcomes across typed page callers. No F898
 baseline or acceptance is recorded yet. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F898 baseline captured; acceptance defined - 2026-10-15
+
+The singular `loadTeacherDisplayNameFields(int/qint64)` currently returns a
+legacy `Result` with diagnostic text. A successful query with no row is
+reported as “no matching record” without checking `lastError()`. All four
+typed callers classify legacy text such as “no matching record,” “not found,”
+and “unavailable” as `NotFound`; most other diagnostics map to `Technical`.
+Existing missing-teacher coverage uses ID `812345` in Co-Teacher and Class
+Notes and `987654` in Class Details. Class Details retains its class fields
+and roster count. Missing teacher is recoverable `NotFound` in Co-Teacher and
+Notes, and non-recoverable `NotFound` in Class Details under its current
+mapper. A temporary Selected Subtitle probe on a class assigned to missing
+teacher `987654` confirmed successful class fields plus recoverable
+`NotFound` for assigned teacher; it was restored. Query failures remain
+independent of class data and map to `Technical` in Co-Teacher, Notes, and
+Selected Subtitle. No equivalent Class Details query-failure test existed;
+the temporary SQL-failure fixture failed before exercising the read. The
+Selected Subtitle and Class Details test files were restored byte-for-byte
+(SHA-256 `9FCF6D76FB1F973F01C5504E297E9858C096586A63B4959880FB010D083FB14F`
+and `0C54DB23589A65D46572381C0E5714C2113B4048273FEA921E6548FEBE46A570`,
+respectively). Found-value mapping exists in all four callers; qint64 values
+above `INT_MAX` are covered in Notes, Details, and Selected Subtitle, while
+Co-Teacher accepts `int`. No forced cursor-fetch failure fixture or standalone
+TeacherRepository test target was found.
+
+Baseline verification: sequential standard-folder builds and exact Debug
+CTest runs passed 1/1 for Co-Teacher (#334), Class Notes (#312), and Selected
+Subtitle (#329), each after one bounded elevated FileTracker retry. The Class
+Details target built after one retry, and the existing
+`teacherReadFailureDoesNotDiscardClassOrRoster` slot passed directly; the
+full #325 CTest was not completed cleanly because the temporary fixture failed
+before exercising the read. No full suite ran.
+
+F898 will add a display-name-specific structured lookup with explicit
+`Found`, `Missing`, `InvalidInput`, and `Failure` outcomes, including `int`
+and `qint64` routes that preserve IDs above `INT_MAX`. Existing
+`loadTeacherDisplayNameFields()` overloads remain compatibility wrappers with
+their legacy `Result` and diagnostics. `Missing` is valid only when query
+execution succeeds, `next()` is false, and `lastError()` is clear; SQL/fetch
+failures and invalid or mismatched returned IDs are `Failure`/`Technical`,
+never inferred as missing from text. Invalid inputs remain `InvalidInput`.
+Update the four typed page ports to map status explicitly, keeping teacher
+name as an independent result component and preserving each port's current
+recoverability: missing teacher remains recoverable in Co-Teacher, Notes, and
+Selected Subtitle, and non-recoverable in Class Details. Preserve class,
+roster, notes, and schedule results when only teacher lookup is missing or
+fails. Do not replace this with `lookupTeacherById(int)`, change
+`loadMyClassesTeacherDisplayNameRecords()` batch semantics/metrics, or alter
+other reads. Keep legacy wrappers for the schedule widget stub and existing
+injected-read tests unless a concrete compile dependency requires a change.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Structured singular lookup | Explicit `Found`, `Missing`, `InvalidInput`, and `Failure` outcomes; int widens to qint64 and qint64 values above `INT_MAX` remain intact. Missing requires successful execution, no row, and clear `lastError()`; query/fetch errors and invalid/mismatched returned IDs are failures. |
+| Compatibility | Existing singular overloads retain legacy `Result` diagnostics and behavior; batch lookup semantics and metrics remain unchanged. |
+| Typed caller mapping | Co-Teacher, Class Notes, Class Details, and Selected Subtitle map structured statuses explicitly, preserve teacher as an independent component, retain each port's established recoverability, and preserve unrelated component data. |
+| Regression coverage | Cover found, missing, and SQL failure mappings across all four callers; add Selected Subtitle missing-teacher coverage and Class Details teacher-projection SQL-failure coverage; preserve wide IDs in Notes, Details, and Selected Subtitle. No forced cursor-failure fixture exists, so inspect `lastError()` checks directly. |
+| Scope and verification | Leave other reads untouched and do not use full `lookupTeacherById(int)`. Sequentially build `ClassMngr` and the four exact Co-Teacher, Class Notes, Class Details, and Selected Subtitle test targets in `build/windows-x64-debug`; run CTests matching those four names only. No full suite. |
+
+F898 baseline and acceptance are complete; implementation is next. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

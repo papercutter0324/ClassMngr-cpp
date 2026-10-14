@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F897 accepted; F898 selected)
+### Current state - 2026-10-15 (F897 accepted; F898 baseline and acceptance defined)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -236,8 +236,21 @@ columns and cells. Existing parents without roster columns remain
 empty-success. Query and cursor failures remain `Technical`; batch APIs,
 metrics, and save behavior are unchanged, and transfer propagates target-read
 failures before save. Two independent audits found none of the 13 official
-Deferred entries newly actionable. F898 is selected next. Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+Deferred entries newly actionable. F898's baseline confirmed that missing
+teacher rows currently reach the four typed callers through legacy diagnostic
+text. Missing teacher mapping preserves other class/page fields; its
+recoverability differs in Class Details from the other callers. Co-Teacher
+(#334), Class Notes (#312), and Selected Subtitle (#329) focused CTests passed
+after bounded elevated FileTracker retries. Class Details built and its
+existing missing-teacher slot passed directly, but full #325 was not completed
+cleanly because a temporary SQL-failure fixture failed before exercising the
+read; that caller needs a focused SQL-failure regression. Temporary probes
+were restored byte-for-byte. F898 acceptance defines a structured
+Found/Missing/InvalidInput/Failure lookup for int and qint64 IDs, preserves the
+legacy wrappers and per-port recoverability, and maps outcomes explicitly
+across all four callers while keeping other fields independent. Batch teacher
+display-name semantics stay untouched. No full suite ran; implementation is
+next. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
