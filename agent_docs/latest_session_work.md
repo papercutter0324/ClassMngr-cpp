@@ -5620,3 +5620,18 @@ All 13 Phase 2 Deferred entries were reviewed after F874; none is newly
 actionable. Batch 288 is complete. F876 is selected for Batch 289, pending a
 SQLite baseline of `TeacherRepository::getAllTeachers()` wide-ID handling.
 Gates 1/2 remain Partial; Phase 2 remains Open.
+
+F876 Teacher list persisted-ID validation is committed as
+`cdbe51da607637286c948a44813f361fe64724de`. The baseline reproduced two
+distinct-name rows stored as INTEGER IDs 1 and 4294967297 both returning with
+ID 1. `getAllTeachers()` now checks conversion and the `1..INT_MAX` range before
+narrowing; other reads keep the shared mapper unchanged. Tests verify all
+Teacher fields and ordering for valid IDs 1 and INT_MAX, and full SQL snapshots
+around wide/zero-ID failures. Independent sequential Debug builds and the exact
+`ClassMngrDataServiceLifecycleTests` CTest passed 1/1. No full suite ran.
+
+Batch 289 is complete. A targeted post-F876 audit confirmed Sidebar
+Create/Delete remains blocked by separate int-based choices and selection
+contracts. Batch 290 selects F877, preserving an existing save/export
+destination when a copy fails; its baseline is pending. Gates 1/2 remain
+Partial and Phase 2 remains Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F875 is accepted at `bd874b5b`; F876 is selected for Batch 289 with its baseline pending; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F876 is accepted at `cdbe51da`; F877 is selected for baseline verification in Batch 290; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F876 - Teacher-list persisted-ID validation: reproduce whether `DataService::getAllTeachers()` aliases INTEGER IDs `1` and `4294967297` before production changes.
+- F877 - Preserve an existing database destination when save/export copy fails: run the helper-level sentinel/nonexistent-source baseline and inspect the target after failure.
 
 #### Deferred candidates
 

@@ -35713,3 +35713,63 @@ revise if aliasing does not reproduce. The likely focused CTest is
 `tests/data_service_lifecycle_tests.cpp`, subject to baseline findings.
 
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F876 Teacher-list persisted ID validation - accepted; Batch 289 complete and F877 selected - 2026-10-14
+
+F876 is accepted at source/test commit
+`cdbe51da607637286c948a44813f361fe64724de` (`Phase 2: validate persisted
+teacher list IDs`). The real-SQLite baseline seeded distinct-name teachers
+with INTEGER IDs `1` and `4294967297`; `DataService::getAllTeachers()` returned
+both as ID `1`, while SQL retained the distinct rows. The list reader now
+checks `toLongLong` conversion, positivity, and `<= INT_MAX` before narrowing
+or appending. The shared `teacherFromQuery()` mapper remains unchanged.
+
+Coverage preserves every Teacher field and ordering for IDs `1` and `INT_MAX`;
+IDs `4294967297` and `0` fail with full teacher-table snapshots (all columns
+and `typeof(id)`) unchanged. The executor and independent Tester sequentially
+built `ClassMngr` and `ClassMngrDataServiceLifecycleTests` in Debug; the exact
+CTest passed 1/1, and the expanded test-only assertions were independently
+rechecked with the same builds and CTest. FileTracker `E_ACCESSDENIED`
+required an elevated retry; successful builds had no warnings. No full suite
+ran. Changed only `src/data/repositories/teacher_repository.cpp` and
+`tests/data_service_lifecycle_tests.cpp`.
+
+F876 completes Batch 289. The post-slice audit confirmed that the Deferred
+Sidebar Teacher Create/Delete width path remains int-based through separate
+Initial Setup choices and selection APIs; F876 changes only `getAllTeachers()`.
+The other 12 Deferred entries were unchanged and remain blocked as recorded in
+the post-F874 audit. Batch 289 is complete.
+
+Batch 290 discovery selected F877, a live save/export failure contract.
+`DatabaseFileOperations::copyDatabaseFile()` is used by both save-as and
+export. It removes an existing destination before `QFile::copy()` can fail.
+Because a nonexistent source may not be reachable through an open-session
+ApplicationServices call, the observable baseline is at the helper itself;
+this does not claim reproduction through the public service path. The focused
+target is `ClassMngrDataServiceLifecycleTests`; likely scope is
+`src/data/database/database_file_operations.cpp` and
+`tests/data_service_lifecycle_tests.cpp`, subject to the required baseline.
+
+Other Batch 290 scans found no additional qualifying candidate. Monotonic
+`ImportJobState`/`ReportJobState` decreases were not selected: current tests
+assert FIFO-applied values `2` then `1` produce `1`, and the API has no
+monotonicity invariant. Teacher-mapper paths beyond F876 use int-key queries
+or lack a live caller; domain-value and architecture scans found no other
+concrete issue. All 13 Deferred entries remain unchanged.
+
+F877 is selected, not baseline-verified. Seed an existing destination with
+sentinel contents and call `DatabaseFileOperations::copyDatabaseFile()`
+directly with a nonexistent source. Verify failure and inspect the actual
+destination contents. Stop and revise if the helper leaves the prior target
+unchanged. If reproduced, preserve existing target bytes whenever source-copy
+save/export fails, without changing successful save/export behavior.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Mandatory baseline | At the helper level, seed an existing sentinel destination and copy from a nonexistent source; confirm failure and inspect destination bytes. Stop and revise if the helper leaves them unchanged. |
+| Failure preservation | On reproduction, a failed source copy leaves an existing destination unchanged; successful save/export behavior remains covered. |
+| Scope and focused verification | Expected files: `src/data/database/database_file_operations.cpp` and `tests/data_service_lifecycle_tests.cpp`; build `ClassMngr`, then `ClassMngrDataServiceLifecycleTests` sequentially in `build/windows-x64-debug`, and run exactly CTest `ClassMngrDataServiceLifecycleTests`. No full-suite run. |
+
+No other slices were found.
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

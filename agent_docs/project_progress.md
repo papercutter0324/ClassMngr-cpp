@@ -5085,3 +5085,22 @@ selected in Batch 289, pending its required SQLite baseline for
 public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+## Phase 2 current position — 2026-10-14 (F876 accepted; F877 selected)
+
+F876 is accepted at
+`cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
+`DataService::getAllTeachers()` returning distinct teachers stored as IDs 1 and
+4294967297 with both IDs narrowed to 1. The list reader now validates persisted
+IDs in `1..INT_MAX` before narrowing or appending, while the shared
+`teacherFromQuery()` mapper remains unchanged. Tests cover every Teacher field
+and order for IDs 1 and INT_MAX; wide and zero IDs fail with full-table SQLite
+snapshots unchanged. Independent sequential Debug builds and exact CTest
+`ClassMngrDataServiceLifecycleTests` passed 1/1. No full suite ran.
+
+Batch 289 is complete. The post-F876 check confirmed the separate Sidebar
+Create/Delete path still uses int-based choices and selection APIs; its
+Deferred entry remains unchanged. Batch 290 selects F877: preserve an existing
+save/export destination when a copy operation fails. The required baseline is
+pending in the existing DataService lifecycle test target. Gates 1 and 2 remain
+Partial and the formal Phase 2 exit gate remains Open.
