@@ -12,6 +12,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
 
 using namespace ClassMngr::Next;
@@ -62,6 +63,8 @@ class NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests
 
 private slots:
     void readsOrderedCompactChoicesFromTheActiveSession();
+    void rejectsTestingClassIdsOutsidePositiveIntRange();
+    void preservesMaximumPositiveTestingClassId();
     void keepsTestingClassesWithoutClassInfoWithBlankGradeAndLevel();
     void preservesSuccessfulEmptyRepositoryResults();
     void treatsUnavailableSessionsAsNotFoundWithoutFallback();
@@ -142,6 +145,184 @@ readsOrderedCompactChoicesFromTheActiveSession()
     QCOMPARE(result.value().choices[2].grade, std::u16string(u"M2"));
     QCOMPARE(result.value().choices[2].level, std::u16string(u"A Level"));
     QCOMPARE(result.value().choices[2].room, std::u16string(u"Library"));
+}
+
+void NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests::
+rejectsTestingClassIdsOutsidePositiveIntRange()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlDatabase database = session->database();
+
+    const qint64 classIds[] = { 1, 4294967297LL };
+    const QString classNames[] = {
+        QStringLiteral("Narrow ID"),
+        QStringLiteral("Wide ID")
+    };
+    const QString classRooms[] = {
+        QStringLiteral("Room 1"),
+        QStringLiteral("Room 2")
+    };
+    for (int index = 0; index < 2; ++index)
+    {
+        QSqlQuery insertClass(database);
+        QVERIFY(insertClass.prepare(QStringLiteral(
+            "INSERT INTO classes (id, name) VALUES (?, ?)"
+            )));
+        insertClass.addBindValue(QVariant::fromValue(classIds[index]));
+        insertClass.addBindValue(classNames[index]);
+        QVERIFY2(insertClass.exec(), qPrintable(insertClass.lastError().text()));
+
+        QSqlQuery markTestingClass(database);
+        QVERIFY(markTestingClass.prepare(QStringLiteral(
+            "INSERT INTO testing_classes (class_id, room) VALUES (?, ?)"
+            )));
+        markTestingClass.addBindValue(QVariant::fromValue(classIds[index]));
+        markTestingClass.addBindValue(classRooms[index]);
+        QVERIFY2(
+            markTestingClass.exec(),
+            qPrintable(markTestingClass.lastError().text())
+            );
+    }
+
+    QSqlQuery persistedIds(database);
+    QVERIFY(persistedIds.exec(QStringLiteral(
+        "SELECT id, name, typeof(id) AS storage_type "
+        "FROM classes ORDER BY id"
+        )));
+    for (int index = 0; index < 2; ++index)
+    {
+        QVERIFY(persistedIds.next());
+        bool idOk = false;
+        QCOMPARE(persistedIds.value(QStringLiteral("id")).toLongLong(&idOk),
+                 classIds[index]);
+        QVERIFY(idOk);
+        QCOMPARE(persistedIds.value(QStringLiteral("name")).toString(),
+                 classNames[index]);
+        QCOMPARE(persistedIds.value(QStringLiteral("storage_type")).toString(),
+                 QStringLiteral("integer"));
+    }
+    QVERIFY(!persistedIds.next());
+
+    Platform::ApplicationServicesScheduleTestingClassChoicesReadPort port(
+        services
+        );
+    const auto result =
+        Application::ScheduleTestingClassChoicesReadQueryHandler::execute(
+            {},
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find("Loading testing classes")
+            != std::string::npos);
+    QVERIFY(result.error().message.find("invalid class identifier")
+            != std::string::npos);
+
+    QVERIFY(persistedIds.exec(QStringLiteral(
+        "SELECT id, name, typeof(id) AS storage_type "
+        "FROM classes ORDER BY id"
+        )));
+    for (int index = 0; index < 2; ++index)
+    {
+        QVERIFY(persistedIds.next());
+        bool idOk = false;
+        QCOMPARE(persistedIds.value(QStringLiteral("id")).toLongLong(&idOk),
+                 classIds[index]);
+        QVERIFY(idOk);
+        QCOMPARE(persistedIds.value(QStringLiteral("name")).toString(),
+                 classNames[index]);
+        QCOMPARE(persistedIds.value(QStringLiteral("storage_type")).toString(),
+                 QStringLiteral("integer"));
+    }
+    QVERIFY(!persistedIds.next());
+
+    QSqlQuery persistedTestingIds(database);
+    QVERIFY(persistedTestingIds.exec(QStringLiteral(
+        "SELECT class_id, room, typeof(class_id) AS storage_type "
+        "FROM testing_classes ORDER BY class_id"
+        )));
+    for (int index = 0; index < 2; ++index)
+    {
+        QVERIFY(persistedTestingIds.next());
+        bool idOk = false;
+        QCOMPARE(
+            persistedTestingIds.value(QStringLiteral("class_id"))
+                .toLongLong(&idOk),
+            classIds[index]
+            );
+        QVERIFY(idOk);
+        QCOMPARE(
+            persistedTestingIds.value(QStringLiteral("room")).toString(),
+            classRooms[index]
+            );
+        QCOMPARE(
+            persistedTestingIds.value(QStringLiteral("storage_type"))
+                .toString(),
+            QStringLiteral("integer")
+            );
+    }
+    QVERIFY(!persistedTestingIds.next());
+}
+
+void NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests::
+preservesMaximumPositiveTestingClassId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlDatabase database = session->database();
+
+    const qint64 maximumClassId = std::numeric_limits<int>::max();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        )));
+    insertClass.addBindValue(QVariant::fromValue(maximumClassId));
+    insertClass.addBindValue(QStringLiteral("Maximum Positive ID"));
+    QVERIFY2(insertClass.exec(), qPrintable(insertClass.lastError().text()));
+
+    QSqlQuery markTestingClass(database);
+    QVERIFY(markTestingClass.prepare(QStringLiteral(
+        "INSERT INTO testing_classes (class_id, room) VALUES (?, ?)"
+        )));
+    markTestingClass.addBindValue(QVariant::fromValue(maximumClassId));
+    markTestingClass.addBindValue(QStringLiteral("Top Room"));
+    QVERIFY2(
+        markTestingClass.exec(),
+        qPrintable(markTestingClass.lastError().text())
+        );
+
+    Platform::ApplicationServicesScheduleTestingClassChoicesReadPort port(
+        services
+        );
+    const auto result =
+        Application::ScheduleTestingClassChoicesReadQueryHandler::execute(
+            {},
+            port
+            );
+
+    QVERIFY(result);
+    QCOMPARE(result.value().choices.size(), std::size_t(1));
+    QCOMPARE(
+        result.value().choices[0].classId,
+        classId(std::numeric_limits<int>::max())
+        );
+    QCOMPARE(
+        result.value().choices[0].name,
+        std::u16string(u"Maximum Positive ID")
+        );
+    QCOMPARE(result.value().choices[0].room, std::u16string(u"Top Room"));
 }
 
 void NextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests::

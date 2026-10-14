@@ -588,8 +588,26 @@ TestingClassRepository::loadTestingClassChoices()
 
     while (query.next())
     {
+        const QVariant storedClassId =
+            query.value(QStringLiteral("class_id"));
+        bool classIdOk = false;
+        const qint64 storedClassIdValue =
+            storedClassId.toLongLong(&classIdOk);
+        if (
+            !classIdOk
+            || storedClassIdValue <= 0
+            || storedClassIdValue > std::numeric_limits<int>::max()
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading testing classes found an invalid class identifier."
+                    )
+                );
+        }
+
         choices.append({
-            .classId = query.value(QStringLiteral("class_id")).toInt(),
+            .classId = static_cast<int>(storedClassIdValue),
             .name = query.value(QStringLiteral("name")).toString(),
             .grade = query.value(QStringLiteral("class_grade")).toString(),
             .level = query.value(QStringLiteral("class_level")).toString(),
