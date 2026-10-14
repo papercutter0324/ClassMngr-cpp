@@ -421,6 +421,24 @@ public:
     using ClassNotesSaveDetailedResult =
         std::expected<void, ClassNotesSaveFailure>;
 
+    struct ClassDetailsSaveFailure final
+    {
+        enum class Kind
+        {
+            ParentClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using ClassDetailsSaveDetailedResult =
+        std::expected<void, ClassDetailsSaveFailure>;
+
+    using ClassDetailsParentCheckDetailedResult =
+        std::expected<void, ClassDetailsSaveFailure>;
+
     explicit ClassInfoRepository(
         QSqlDatabase& database
         );
@@ -431,6 +449,15 @@ public:
     // The typed class-details path retains exact teacher identity separately
     // from the legacy int field, including an existing assignment.
     [[nodiscard]] Status saveClassDetails(
+        const ClassInfo& info,
+        qint64 teacherId
+        );
+    // Typed callers can identify a missing parent before loading or checking
+    // editable details, and retain that provenance if the parent disappears
+    // before the write transaction begins.
+    [[nodiscard]] ClassDetailsParentCheckDetailedResult
+        checkClassDetailsParentDetailed(int classId);
+    [[nodiscard]] ClassDetailsSaveDetailedResult saveClassDetailsDetailed(
         const ClassInfo& info,
         qint64 teacherId
         );
@@ -582,6 +609,12 @@ public:
         );
 
 private:
+    enum class ClassInfoSavePath
+    {
+        Legacy,
+        Typed
+    };
+
     [[nodiscard]] Status writeClassNotes(
         int classId,
         const QString& notes,
@@ -590,6 +623,14 @@ private:
     [[nodiscard]] Status saveClassInfoWithTeacherId(
         const ClassInfo& info,
         qint64 teacherId
+        );
+    [[nodiscard]] std::expected<bool, ClassDetailsSaveFailure>
+        classDetailsParentExists(int classId);
+    [[nodiscard]] ClassDetailsSaveDetailedResult
+        saveClassInfoWithTeacherIdDetailed(
+        const ClassInfo& info,
+        qint64 teacherId,
+        ClassInfoSavePath savePath
         );
     [[nodiscard]] Result<MyClassesClassSummaryReadRecord>
         loadMyClassesClassSummaryRecord(int classId);

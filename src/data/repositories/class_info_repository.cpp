@@ -304,33 +304,177 @@ Status ClassInfoRepository::saveClassDetails(
     return saveClassInfoWithTeacherId(info, teacherId);
 }
 
+ClassInfoRepository::ClassDetailsParentCheckDetailedResult
+ClassInfoRepository::checkClassDetailsParentDetailed(const int classId)
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Loading class details failed: invalid class id %1."
+                ).arg(classId)
+        });
+    }
+
+    const auto parentExists = classDetailsParentExists(classId);
+    if (!parentExists)
+    {
+        return std::unexpected(parentExists.error());
+    }
+    if (!*parentExists)
+    {
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::ParentClassMissing,
+            .diagnostic = QObject::tr(
+                "Saving class information failed: parent class id %1 was not found."
+                ).arg(classId)
+        });
+    }
+
+    return {};
+}
+
+ClassInfoRepository::ClassDetailsSaveDetailedResult
+ClassInfoRepository::saveClassDetailsDetailed(
+    const ClassInfo& info,
+    const qint64 teacherId
+    )
+{
+    return saveClassInfoWithTeacherIdDetailed(
+        info,
+        teacherId,
+        ClassInfoSavePath::Typed
+        );
+}
+
 Status ClassInfoRepository::saveClassInfoWithTeacherId(
     const ClassInfo& info,
     const qint64 teacherId
     )
 {
-    if (info.classId <= 0)
-    {
-        return std::unexpected(
-            QObject::tr("Saving class information failed: invalid class id %1.")
-                .arg(info.classId)
+    const ClassDetailsSaveDetailedResult saved =
+        saveClassInfoWithTeacherIdDetailed(
+            info,
+            teacherId,
+            ClassInfoSavePath::Legacy
             );
+    if (!saved)
+    {
+        return std::unexpected(saved.error().diagnostic);
     }
 
-    DatabaseTransaction transaction(m_database);
+    return {};
+}
+
+std::expected<bool, ClassInfoRepository::ClassDetailsSaveFailure>
+ClassInfoRepository::classDetailsParentExists(const int classId)
+{
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    QSqlQuery query(m_database);
+    query.prepare(QStringLiteral(
+        "SELECT 1 FROM classes WHERE id=?"
+        ));
+    query.addBindValue(classId);
+
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Checking class details parent class"),
+        identity
+        );
+    if (!loaded)
+    {
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = loaded.error().userMessage()
+        });
+    }
+
+    const bool exists = query.next();
+    const QSqlError fetchError = query.lastError();
+    query.finish();
+    if (fetchError.isValid())
+    {
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Checking class details parent class failed for %1: %2"
+                ).arg(identity, fetchError.text())
+        });
+    }
+
+    return exists;
+}
+
+ClassInfoRepository::ClassDetailsSaveDetailedResult
+ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
+    const ClassInfo& info,
+    const qint64 teacherId,
+    const ClassInfoRepository::ClassInfoSavePath savePath
+    )
+{
+    if (info.classId <= 0)
+    {
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Saving class information failed: invalid class id %1."
+                ).arg(info.classId)
+        });
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(info.classId);
+    const bool typedSave = savePath == ClassInfoSavePath::Typed;
+    DatabaseTransaction transaction(
+        m_database,
+        typedSave
+            ? DatabaseTransaction::Mode::Immediate
+            : DatabaseTransaction::Mode::Default
+        );
     if (!transaction.started())
     {
-        return std::unexpected(
-            QObject::tr(
+        const QString startError = typedSave
+            ? transaction.startError()
+            : m_database.lastError().text();
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
                 "Starting class information save transaction failed for "
                 "class id %1: %2"
                 ).arg(info.classId)
-                 .arg(m_database.lastError().text())
-            );
+                 .arg(startError)
+        });
+    }
+
+    if (typedSave)
+    {
+        const auto parentExists = classDetailsParentExists(info.classId);
+        if (!parentExists)
+        {
+            return std::unexpected(parentExists.error());
+        }
+        if (!*parentExists)
+        {
+            if (!transaction.rollbackChecked())
+            {
+                return std::unexpected(ClassDetailsSaveFailure{
+                    .kind = ClassDetailsSaveFailure::Kind::Technical,
+                    .diagnostic = QObject::tr(
+                        "Rolling back class information save failed for %1: %2"
+                        ).arg(identity, m_database.lastError().text())
+                });
+            }
+
+            return std::unexpected(ClassDetailsSaveFailure{
+                .kind = ClassDetailsSaveFailure::Kind::ParentClassMissing,
+                .diagnostic = QObject::tr(
+                    "Saving class information failed: parent class id %1 was not found."
+                    ).arg(info.classId)
+            });
+        }
     }
 
     QSqlQuery query(m_database);
-    const QString identity = QObject::tr("class id %1").arg(info.classId);
     auto execute = [&](const QString& action) -> Status
     {
         const auto result = SqlQueryUtils::executePrepared(
@@ -386,7 +530,10 @@ Status ClassInfoRepository::saveClassInfoWithTeacherId(
     Status statement = execute(QObject::tr("Saving class information"));
     if (!statement)
     {
-        return statement;
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = statement.error()
+        });
     }
 
     query.prepare(
@@ -397,7 +544,10 @@ Status ClassInfoRepository::saveClassInfoWithTeacherId(
     statement = execute(QObject::tr("Deleting regular class times"));
     if (!statement)
     {
-        return statement;
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = statement.error()
+        });
     }
 
     for (const ClassTime& time : info.classTimes)
@@ -420,7 +570,10 @@ Status ClassInfoRepository::saveClassInfoWithTeacherId(
         statement = execute(QObject::tr("Inserting regular class time"));
         if (!statement)
         {
-            return statement;
+            return std::unexpected(ClassDetailsSaveFailure{
+                .kind = ClassDetailsSaveFailure::Kind::Technical,
+                .diagnostic = statement.error()
+            });
         }
     }
 
@@ -432,7 +585,10 @@ Status ClassInfoRepository::saveClassInfoWithTeacherId(
     statement = execute(QObject::tr("Deleting intensive class times"));
     if (!statement)
     {
-        return statement;
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = statement.error()
+        });
     }
 
     for (const ClassTime& time : info.intensiveTimes)
@@ -455,16 +611,21 @@ Status ClassInfoRepository::saveClassInfoWithTeacherId(
         statement = execute(QObject::tr("Inserting intensive class time"));
         if (!statement)
         {
-            return statement;
+            return std::unexpected(ClassDetailsSaveFailure{
+                .kind = ClassDetailsSaveFailure::Kind::Technical,
+                .diagnostic = statement.error()
+            });
         }
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(
-            QObject::tr("Committing class information failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
-            );
+        return std::unexpected(ClassDetailsSaveFailure{
+            .kind = ClassDetailsSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Committing class information failed for %1: %2"
+                ).arg(identity, m_database.lastError().text())
+        });
     }
 
     return {};

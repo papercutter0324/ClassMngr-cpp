@@ -93,6 +93,8 @@ private slots:
     void savesWideTeacherIdAtomicallyWithClassDetails();
     void rejectsMalformedTeacherOverrideAtTheAdapterBoundary();
     void absentSchedulesPreservePersistedSchedulesIndependently();
+    void missingParentReturnsNotFoundBeforeDetailAndConflictReads();
+    void legacyMissingParentSavePreservesForeignKeyDiagnostic();
     void unavailableSessionReturnsStructuredFailure();
     void classInfoReadFailureReturnsTechnicalFailure();
     void classInfoSaveFailureReturnsTechnicalFailure();
@@ -506,6 +508,84 @@ unavailableSessionReturnsStructuredFailure()
     QVERIFY(QString::fromStdString(result.error().message).contains(
         QStringLiteral("unavailable")
         ));
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+missingParentReturnsNotFoundBeforeDetailAndConflictReads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Application::ClassDetailsSaveRequest request = requestForClass(100001);
+    Platform::ApplicationServicesClassDetailsSavePort port(services);
+    const auto emptyScheduleResult =
+        Application::ClassDetailsSaveUseCase::execute(request, port);
+
+    QVERIFY(!emptyScheduleResult);
+    QCOMPARE(emptyScheduleResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!emptyScheduleResult.error().recoverable);
+
+    request.regularTimes = std::vector<Domain::ScheduleTime>{
+        scheduleTime(0, 9 * 60, 9 * 60 + 50)
+    };
+    const auto scheduledResult =
+        Application::ClassDetailsSaveUseCase::execute(request, port);
+    QVERIFY(!scheduledResult);
+    QCOMPARE(scheduledResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!scheduledResult.error().recoverable);
+
+    QSqlQuery rowCounts(services.databaseSession()->database());
+    QVERIFY(rowCounts.exec(QStringLiteral(
+        "SELECT "
+        "(SELECT COUNT(*) FROM class_info WHERE class_id=100001), "
+        "(SELECT COUNT(*) FROM class_times WHERE class_id=100001), "
+        "(SELECT COUNT(*) FROM class_intensive_times WHERE class_id=100001)"
+        )));
+    QVERIFY(rowCounts.next());
+    QCOMPARE(rowCounts.value(0).toInt(), 0);
+    QCOMPARE(rowCounts.value(1).toInt(), 0);
+    QCOMPARE(rowCounts.value(2).toInt(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+legacyMissingParentSavePreservesForeignKeyDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(services.databaseSession());
+    ClassInfoRepository* const repository =
+        services.databaseSession()->classInfoRepository();
+    QVERIFY(repository);
+
+    ClassInfo missingParent;
+    missingParent.classId = 100001;
+    const Status saved = repository->saveClassDetails(missingParent, -1);
+
+    QVERIFY(!saved);
+    QCOMPARE(
+        saved.error(),
+        QStringLiteral(
+            "Saving class information failed for class id 100001: "
+            "FOREIGN KEY constraint failed Unable to fetch row "
+            "(database error 787)"
+            )
+        );
+
+    QSqlQuery rowCounts(services.databaseSession()->database());
+    QVERIFY(rowCounts.exec(QStringLiteral(
+        "SELECT "
+        "(SELECT COUNT(*) FROM class_info WHERE class_id=100001), "
+        "(SELECT COUNT(*) FROM class_times WHERE class_id=100001), "
+        "(SELECT COUNT(*) FROM class_intensive_times WHERE class_id=100001)"
+        )));
+    QVERIFY(rowCounts.next());
+    QCOMPARE(rowCounts.value(0).toInt(), 0);
+    QCOMPARE(rowCounts.value(1).toInt(), 0);
+    QCOMPARE(rowCounts.value(2).toInt(), 0);
 }
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::

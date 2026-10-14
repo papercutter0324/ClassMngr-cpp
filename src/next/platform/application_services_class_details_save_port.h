@@ -89,6 +89,13 @@ public:
 
         try
         {
+            const auto parent =
+                repository->checkClassDetailsParentDetailed(*classId);
+            if (!parent)
+            {
+                return repositoryFailure(session, parent.error());
+            }
+
             const Result<ClassDetailsSaveReadRecord> loaded =
                 repository->loadClassDetailsSaveInfo(*classId);
             if (!loaded)
@@ -165,7 +172,11 @@ public:
                 return repositoryFailure(session, intensiveConflicts.error());
             }
 
-            const Status saved = repository->saveClassDetails(normalized, savedTeacherId);
+            const ClassInfoRepository::ClassDetailsSaveDetailedResult saved =
+                repository->saveClassDetailsDetailed(
+                    normalized,
+                    savedTeacherId
+                    );
             if (!saved)
             {
                 return repositoryFailure(session, saved.error());
@@ -349,6 +360,31 @@ private:
             return unavailableFailure();
         }
         return failure(Domain::ErrorCode::Technical, toStdString(message));
+    }
+
+    [[nodiscard]] static Domain::Result<void> repositoryFailure(
+        DatabaseSession* session,
+        const ClassInfoRepository::ClassDetailsSaveFailure& saveFailure
+        )
+    {
+        if (!session || !session->isOpen())
+        {
+            return unavailableFailure();
+        }
+
+        const Domain::ErrorCode code =
+            saveFailure.kind
+                    == ClassInfoRepository::ClassDetailsSaveFailure::Kind::
+                        ParentClassMissing
+                ? Domain::ErrorCode::NotFound
+                : Domain::ErrorCode::Technical;
+        const QByteArray errorBytes = saveFailure.diagnostic.toUtf8();
+        return failure(
+            code,
+            errorBytes.isEmpty()
+                ? "Class details could not be saved."
+                : errorBytes.toStdString()
+            );
     }
 
     [[nodiscard]] static Domain::Result<void> failure(
