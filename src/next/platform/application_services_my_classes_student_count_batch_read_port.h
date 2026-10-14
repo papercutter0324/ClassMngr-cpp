@@ -172,6 +172,19 @@ public:
                 continue;
             }
 
+            if (source.parentMissing)
+            {
+                entries.push_back({
+                    .classId = classIds[index],
+                    .studentCount = Domain::Result<int>::failure(error(
+                        Domain::ErrorCode::NotFound,
+                        "The requested class does not exist.",
+                        true
+                        ))
+                });
+                continue;
+            }
+
             if (!source.studentCount)
             {
                 entries.push_back({

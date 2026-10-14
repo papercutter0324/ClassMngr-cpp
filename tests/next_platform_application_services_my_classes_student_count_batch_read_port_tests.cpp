@@ -72,6 +72,35 @@ bool seedFractionalRowIndexCell(
     return insertCell.exec();
 }
 
+bool deleteClassParentOnly(
+    QSqlDatabase database,
+    const int classIdValue
+    )
+{
+    QSqlQuery removeParent(database);
+    if (!removeParent.prepare(QStringLiteral(
+            "DELETE FROM classes WHERE id=?"
+            )))
+    {
+        return false;
+    }
+    removeParent.addBindValue(classIdValue);
+    return removeParent.exec() && removeParent.numRowsAffected() == 1;
+}
+
+int nextMissingClassId(QSqlDatabase database)
+{
+    QSqlQuery selectId(database);
+    if (!selectId.exec(QStringLiteral(
+            "SELECT COALESCE(MAX(id), 0) + 1 FROM classes"
+            ))
+        || !selectId.next())
+    {
+        return 0;
+    }
+    return selectId.value(0).toInt();
+}
+
 Roster roster(
     const QStringList& columns,
     const QList<QStringList>& rows
@@ -92,7 +121,9 @@ class NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests
 
 private slots:
     void readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace();
+    void reportsMissingParentsInBatchWithoutCountingOrphans();
     void rejectsFractionalRowIndexInBatchAndFallbackStudentCounts();
+    void reportsMissingParentsAfterPerClassFallback();
     void countsDistinctRowsAboveIntMax();
     void fallsBackPerClassWhenBatchCellReadFails();
     void emptyInputAvoidsRepositoryWork();
@@ -228,6 +259,101 @@ readsCountsInRequestedOrderWithExactHeadersAndQtWhitespace()
 }
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
+reportsMissingParentsInBatchWithoutCountingOrphans()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int orphanId = createClass(services, QStringLiteral("Orphan roster"));
+    const int siblingId = createClass(services, QStringLiteral("Valid sibling"));
+    const int noColumnsId = createClass(
+        services,
+        QStringLiteral("Present without roster columns")
+        );
+    QVERIFY(orphanId > 0);
+    QVERIFY(siblingId > 0);
+    QVERIFY(noColumnsId > 0);
+    const QStringList headers{
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    QVERIFY(saveRoster(
+        services,
+        orphanId,
+        roster(
+            headers,
+            {
+                {QStringLiteral("Orphan one"), QString()},
+                {QString(), QStringLiteral("\uD559\uC0DD")}
+            }
+            )
+        ));
+    QVERIFY(saveRoster(
+        services,
+        siblingId,
+        roster(
+            headers,
+            {
+                {QStringLiteral("Sibling one"), QString()},
+                {QString(), QStringLiteral("\uD559\uC0DD")}
+            }
+            )
+        ));
+    QVERIFY(deleteClassParentOnly(
+        services.databaseSession()->database(),
+        orphanId
+        ));
+
+    const int neverPresentId = nextMissingClassId(
+        services.databaseSession()->database()
+        );
+    QVERIFY(neverPresentId > 0);
+    QVERIFY(neverPresentId != orphanId);
+
+    RosterRepository* const repository = services.databaseSession()
+        ->rosterRepository();
+    QVERIFY(repository);
+    const auto before = repository->myClassesStudentCountBatchReadMetrics();
+    Platform::ApplicationServicesMyClassesStudentCountBatchReadPort port(
+        services
+        );
+    const auto loaded = port.readMyClassesStudentCounts({
+        classId(orphanId),
+        classId(siblingId),
+        classId(neverPresentId),
+        classId(noColumnsId)
+    });
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(4));
+    QVERIFY(loaded.value()[0].classId == classId(orphanId));
+    QVERIFY(!loaded.value()[0].studentCount);
+    QCOMPARE(loaded.value()[0].studentCount.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value()[0].studentCount.error().recoverable);
+    QVERIFY(loaded.value()[1].classId == classId(siblingId));
+    QVERIFY(loaded.value()[1].studentCount);
+    QCOMPARE(loaded.value()[1].studentCount.value(), 2);
+    QVERIFY(loaded.value()[2].classId == classId(neverPresentId));
+    QVERIFY(!loaded.value()[2].studentCount);
+    QCOMPARE(loaded.value()[2].studentCount.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value()[2].studentCount.error().recoverable);
+    QVERIFY(loaded.value()[3].classId == classId(noColumnsId));
+    QVERIFY(loaded.value()[3].studentCount);
+    QCOMPARE(loaded.value()[3].studentCount.value(), 0);
+
+    const auto after = repository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 4);
+    QCOMPARE(after.columnStatementCount, before.columnStatementCount + 1);
+    QCOMPARE(after.dataStatementCount, before.dataStatementCount + 1);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
+}
+
+void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
 rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
 {
     QTemporaryDir directory;
@@ -344,6 +470,116 @@ rejectsFractionalRowIndexInBatchAndFallbackStudentCounts()
     QCOMPARE(after.columnStatementCount, before.columnStatementCount + 3);
     QCOMPARE(after.dataStatementCount, before.dataStatementCount + 3);
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount + 2);
+}
+
+void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::
+reportsMissingParentsAfterPerClassFallback()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int orphanId = createClass(services, QStringLiteral("Fallback orphan"));
+    const int siblingId = createClass(services, QStringLiteral("Fallback sibling"));
+    const int malformedId = createClass(
+        services,
+        QStringLiteral("Fallback malformed row")
+        );
+    const int noColumnsId = createClass(
+        services,
+        QStringLiteral("Fallback present without columns")
+        );
+    QVERIFY(orphanId > 0);
+    QVERIFY(siblingId > 0);
+    QVERIFY(malformedId > 0);
+    QVERIFY(noColumnsId > 0);
+
+    const QStringList headers{
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    QVERIFY(saveRoster(
+        services,
+        orphanId,
+        roster(headers, {{QStringLiteral("Orphan student"), QString()}})
+        ));
+    QVERIFY(saveRoster(
+        services,
+        siblingId,
+        roster(
+            headers,
+            {
+                {QStringLiteral("Sibling one"), QString()},
+                {QString(), QStringLiteral("\uD559\uC0DD")}
+            }
+            )
+        ));
+    QVERIFY(saveRoster(
+        services,
+        malformedId,
+        roster({QStringLiteral("English")}, {{QString()}})
+        ));
+    QVERIFY(seedFractionalRowIndexCell(
+        services.databaseSession()->database(),
+        malformedId,
+        QStringLiteral("Fractional trigger")
+        ));
+    QVERIFY(deleteClassParentOnly(
+        services.databaseSession()->database(),
+        orphanId
+        ));
+
+    const int neverPresentId = nextMissingClassId(
+        services.databaseSession()->database()
+        );
+    QVERIFY(neverPresentId > 0);
+    QVERIFY(neverPresentId != orphanId);
+
+    RosterRepository* const repository = services.databaseSession()
+        ->rosterRepository();
+    QVERIFY(repository);
+    const auto before = repository->myClassesStudentCountBatchReadMetrics();
+    Platform::ApplicationServicesMyClassesStudentCountBatchReadPort port(
+        services
+        );
+    const auto loaded = port.readMyClassesStudentCounts({
+        classId(orphanId),
+        classId(siblingId),
+        classId(malformedId),
+        classId(noColumnsId),
+        classId(neverPresentId)
+    });
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(5));
+    QVERIFY(loaded.value()[0].classId == classId(orphanId));
+    QVERIFY(!loaded.value()[0].studentCount);
+    QCOMPARE(loaded.value()[0].studentCount.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value()[0].studentCount.error().recoverable);
+    QVERIFY(loaded.value()[1].classId == classId(siblingId));
+    QVERIFY(loaded.value()[1].studentCount);
+    QCOMPARE(loaded.value()[1].studentCount.value(), 2);
+    QVERIFY(loaded.value()[2].classId == classId(malformedId));
+    QVERIFY(!loaded.value()[2].studentCount);
+    QCOMPARE(loaded.value()[2].studentCount.error().code,
+             Domain::ErrorCode::Technical);
+    QVERIFY(loaded.value()[3].classId == classId(noColumnsId));
+    QVERIFY(loaded.value()[3].studentCount);
+    QCOMPARE(loaded.value()[3].studentCount.value(), 0);
+    QVERIFY(loaded.value()[4].classId == classId(neverPresentId));
+    QVERIFY(!loaded.value()[4].studentCount);
+    QCOMPARE(loaded.value()[4].studentCount.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value()[4].studentCount.error().recoverable);
+
+    const auto after = repository->myClassesStudentCountBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 5);
+    QCOMPARE(after.columnStatementCount, before.columnStatementCount + 6);
+    QCOMPARE(after.dataStatementCount, before.dataStatementCount + 3);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount + 5);
 }
 
 void NextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests::

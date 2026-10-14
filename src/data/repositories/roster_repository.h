@@ -70,6 +70,7 @@ public:
     {
         int classId = 0;
         Result<int> studentCount;
+        bool parentMissing = false;
     };
 
     struct MyClassesStudentCountBatchReadMetrics final
@@ -217,7 +218,8 @@ private:
         int classId,
         const Roster& roster
         );
-    [[nodiscard]] Result<int> loadMyClassesStudentCountRecord(int classId);
+    [[nodiscard]] Result<MyClassesStudentCountReadEntry>
+    loadMyClassesStudentCountRecord(int classId);
     [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadOutcome>
     loadSpeakingEvaluationRosterNamesImpl(int classId, bool parentRooted);
     [[nodiscard]] Result<SubPrepStudentCountReadEntry>
