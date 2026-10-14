@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F876 accepted; F877 selected)
+## Phase 2 current position — 2026-10-14 (F877 accepted; Batch292 discovery underway)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5098,9 +5098,16 @@ and order for IDs 1 and INT_MAX; wide and zero IDs fail with full-table SQLite
 snapshots unchanged. Independent sequential Debug builds and exact CTest
 `ClassMngrDataServiceLifecycleTests` passed 1/1. No full suite ran.
 
-Batch 289 is complete. The post-F876 check confirmed the separate Sidebar
-Create/Delete path still uses int-based choices and selection APIs; its
-Deferred entry remains unchanged. Batch 290 selects F877: preserve an existing
-save/export destination when a copy operation fails. The required baseline is
-pending in the existing DataService lifecycle test target. Gates 1 and 2 remain
-Partial and the formal Phase 2 exit gate remains Open.
+F877 is accepted at `c8178ddf52e94abb02fba1db7392f82aa2fea16f`. Its
+helper-level baseline reproduced deletion of an existing destination when a
+copy from a missing source failed. The shared save/export copy helper now
+stages through `QSaveFile`; the focused DataService lifecycle CTest passed
+1/1 after sequential Debug builds. The baseline is not claimed through an
+open-session ApplicationServices path, and no NTFS ACL guarantee is claimed.
+No full suite ran.
+
+Batch 290 is complete. The post-F877 audit found none of the 13 Phase 2
+Deferred candidates newly actionable. Batch291’s repository/data and
+application-contract scans found no candidate. Batch292 domain-value and
+state/concurrency discovery is underway. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.

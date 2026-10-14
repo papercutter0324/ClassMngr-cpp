@@ -5368,3 +5368,12 @@ A wrapped ID can match a sibling row and erase that sibling's data while the
 surrounding transaction still succeeds. Prefer a set-based delete constrained
 by the owning record, and keep it inside the existing transaction so later
 failures still roll back the full cascade.
+
+## Phase 2 staged file replacement — 2026-10-14
+
+When replacing a user-visible destination, stream to a same-directory
+`QSaveFile` and commit only after the source has been fully read and the
+temporary output flushed. Removing the old destination before the copy succeeds
+turns source and write failures into data loss. Test exact old bytes after a
+failed replacement and verify source integrity on success; report permission
+semantics at the API actually tested, without implying native ACL preservation.

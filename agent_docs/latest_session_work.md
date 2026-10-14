@@ -5630,8 +5630,37 @@ Teacher fields and ordering for valid IDs 1 and INT_MAX, and full SQL snapshots
 around wide/zero-ID failures. Independent sequential Debug builds and the exact
 `ClassMngrDataServiceLifecycleTests` CTest passed 1/1. No full suite ran.
 
-Batch 289 is complete. A targeted post-F876 audit confirmed Sidebar
-Create/Delete remains blocked by separate int-based choices and selection
-contracts. Batch 290 selects F877, preserving an existing save/export
-destination when a copy fails; its baseline is pending. Gates 1/2 remain
-Partial and Phase 2 remains Open.
+Batch 289 is complete. The post-F876 check confirmed the Sidebar
+Create/Delete width path remains deferred. F877 completed Batch 290; the
+acceptance evidence and current Batch292 continuation are recorded below.
+Gates 1/2 remain Partial and Phase 2 remains Open.
+
+## Phase 2 continuation — 2026-10-14 (F877 accepted; Batch292 discovery underway)
+
+F877 is committed as `c8178ddf52e94abb02fba1db7392f82aa2fea16f` and changed
+only `src/data/database/database_file_operations.cpp` and
+`tests/data_service_lifecycle_tests.cpp`. The required helper-level baseline
+seeded an existing destination and copied from a missing source; before the
+fix, failure deleted the destination sentinel. The test seam is the shared
+copy helper: the missing-source case is not claimed through an open-session
+ApplicationServices call.
+
+The helper now streams into a same-directory `QSaveFile` and commits after the
+copy succeeds. Tests cover exact sentinel preservation on source failure,
+successful copy and replacement contents, source integrity, effective Qt
+permission parity, parent creation, same-file alias behavior, and a failed
+replacement where the destination is a directory. No NTFS ACL guarantee is
+claimed. The independent Tester sequentially built `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` in `build/windows-x64-debug`; exact CTest
+passed 1/1. FileTracker `E_ACCESSDENIED` required an elevated retry; no
+successful-build warnings and no full suite. Mid-stream I/O/permission/commit
+failures and parent-creation failure are not injected directly.
+
+The post-F877 audit found none of the 13 Phase 2 Deferred entries newly
+actionable. Batch291’s independent repository/data and application-operation
+scans found no candidate. Batch292 is searching domain values and
+state/concurrency contracts; its result is pending. The Explorer read-only
+Git snapshot reported HEAD `c8178ddf` and only the established untracked
+artifacts (`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`,
+`stdout`, and `txt`). Do not stage or remove those artifacts. Gates 1/2 remain
+Partial; the Phase 2 exit gate is Open.

@@ -35773,3 +35773,40 @@ save/export fails, without changing successful save/export behavior.
 No other slices were found.
 
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F877 Database copy failure preserves destination - accepted; Batch 290 complete - 2026-10-14
+
+F877 is accepted at source/test commit
+`c8178ddf52e94abb02fba1db7392f82aa2fea16f` (`Phase 2: preserve F877
+destination when copy fails`). The required helper-level baseline seeded a
+destination sentinel and copied from a nonexistent source; before the fix, the
+failed copy deleted the sentinel. This does not claim a public
+ApplicationServices-path baseline: the missing source may not be reachable
+through an open-session call.
+
+The fix stages copy bytes with same-directory `QSaveFile` in 64 KiB chunks,
+then commits. Same/file-equivalent no-op, parent creation, existing error
+messages, and successful copy/replacement remain supported. Tests assert exact
+sentinel preservation on failed source copy; successful destination/source bytes
+and effective `QFileDevice::Permissions` match; alias/same-file behavior; and
+failed replacement of a destination directory. No NTFS ACL preservation is
+claimed.
+
+The independent Tester sequentially built `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` in `build/windows-x64-debug`; the exact
+CTest passed 1/1. FileTracker `E_ACCESSDENIED` required an elevated retry;
+successful builds had no warnings. No full suite ran. There is no deterministic
+injection for mid-stream read, write, flush, permission, or commit failures, and
+no direct parent-creation-failure test. Changed only
+`src/data/database/database_file_operations.cpp` and
+`tests/data_service_lifecycle_tests.cpp`.
+
+F877 completes Batch 290. The post-F877 delta audit rechecked all 13 unresolved
+Deferred entries and found no blocker removed; all 13 remain unchanged.
+
+### Batch 291 shortfall; Batch 292 discovery started - 2026-10-14
+
+Batch 291 repository/data and application-contract scans found no candidate.
+Batch 292 discovery has started in the domain-value and state/concurrency
+lanes; results are pending and no candidate has been selected. Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.

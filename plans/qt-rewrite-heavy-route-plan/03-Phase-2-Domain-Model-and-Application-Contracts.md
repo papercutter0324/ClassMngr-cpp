@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F876 is accepted at `cdbe51da`; F877 is selected for baseline verification in Batch 290; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F877 is accepted at `c8178ddf`; Batch 292 discovery is underway with no candidate selected; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F877 - Preserve an existing database destination when save/export copy fails: run the helper-level sentinel/nonexistent-source baseline and inspect the target after failure.
+Batch 292 discovery is underway in the domain-value and state/concurrency lanes; no candidate is selected yet.
 
 #### Deferred candidates
 
