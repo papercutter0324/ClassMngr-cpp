@@ -35500,8 +35500,79 @@ elevated retries; the successful final builds had no warnings. No full suite
 ran.
 
 F872 completed Batch 287. The post-F872 audit rechecked all 13 plan Deferred
-candidates; none became newly actionable and all remain unchanged. An initial
-Batch 288 scan found no additional candidate, while complementary scans are
-reconciling stale document state; next-candidate selection remains pending
-resumed discovery. Phase 2 Gates 1/2 remain Partial and the formal exit gate
-remains Open.
+candidates; none became newly actionable and all remain unchanged. The initial
+Batch 288 scan found no additional candidate; complementary follow-up discovery
+and final selection are recorded below. Phase 2 Gates 1/2 remain Partial and
+the formal exit gate remains Open.
+
+### Batch 288 discovery and F873 selection - 2026-10-14
+
+F872 acceptance documentation is committed at
+`d08166f8be40185749587ffa866d6658e04c6f25`; its source/test commit is
+`88aca00b4ba7884b6283ad859680d0228dc6ffa5`. Batch 288 selects F873,
+`ClassInfoRepository::loadScheduleClassInfos()` persisted class-ID validation.
+The `classes.id` column is `INTEGER PRIMARY KEY AUTOINCREMENT` with no signed
+`int` range constraint. The repository narrows `c.id` with `toInt()` into
+`ClassInfo.classId`, uses an `int`-keyed map, and later narrows
+`times.class_id` for that map. The live schedule-builder source port calls this
+repository read; duplicate Domain class IDs are rejected by
+`ScheduleBuilderSourceQueryHandler`, causing the ScheduleWidget source load to
+fail.
+
+F873 is selected, not implemented, and its mandatory baseline has not run. Use
+the existing real-SQLite ApplicationServices fixture and source-port CTest to
+seed distinct INTEGER class IDs `1` and `4294967297`, distinct names, and
+distinguishable `class_times` rows. Inspect the source-port result and handler:
+the expected current effect is duplicate ID `1` entries (with possible time
+misassociation) followed by the handler's Validation failure for duplicate
+IDs. Query SQLite directly to confirm stored IDs, names, and schedule rows
+remain distinct. Stop and revise if this exact live effect does not reproduce.
+Then validate each persisted class ID as `qint64` for conversion success,
+positivity, and `<= INT_MAX` before narrowing. Invalid input must produce a
+typed repository failure with no partial list and map through the source port
+to Technical. Preserve ordinary IDs through `INT_MAX`, order, the
+non-testing filter, optional profile behavior, regular/intensive schedule
+rows, teacher-ID handling, and existing schema/API/model types.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Mandatory baseline | In the existing real-SQLite fixture, seed distinct IDs `1` and `4294967297`, names, and `class_times`; observe duplicate source IDs and the handler's duplicate-ID Validation failure, and confirm the database values remain distinct. Stop and revise if not reproduced. |
+| Range failure and no partial list | Validate persisted IDs as `qint64` for conversion, positivity, and `<= INT_MAX`; a wide ID returns repository failure without partial rows and maps to Technical through the source port. |
+| Compatibility | Preserve ordinary IDs through `INT_MAX`, ordering, non-testing filtering, optional profile behavior, regular/intensive rows, teacher-ID handling, and schema/API/model types. |
+| Scope and focused verification | Change only `src/data/repositories/class_info_repository.cpp` and `tests/next_platform_application_services_schedule_builder_source_port_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests` in `build/windows-x64-debug`; run exactly CTest `NextPlatformApplicationServicesScheduleBuilderSourcePort`. No new target or full-suite run. |
+
+Batch 288 also records two upcoming, unimplemented candidates. F874 is the
+separate `TestingClassRepository::loadTestingClasses()` compatibility read:
+`readTestingClass()` currently narrows persisted `class_id` with `toInt()`.
+It is exposed through DataService/ScheduleService but has no current UI caller;
+the `loadTestingClassChoices()` path fixed in F868 is separate and already
+validates IDs. Its baseline recipe is to seed distinct testing-class rows for
+INTEGER class IDs `1` and `4294967297`, call `loadTestingClasses()` through the
+existing public service/repository fixture, verify whether the wide ID is
+returned as aliased ID `1`, and query SQLite to confirm rows remain distinct.
+Stop and revise if no alias occurs. The public-facade precedent from F872
+supports candidacy; baseline and implementation remain pending.
+
+F875 is the separate Class Details conflict-display path:
+`ClassInfoRepository::getClassTimeConflicts()` narrows a persisted conflicting
+class ID with `toInt()` before `classDisplayName()` generates a fallback for a
+blank class name. Its baseline recipe is to seed an ordinary requested class
+and a distinct blank-name class with INTEGER ID `4294967297`, give them
+overlapping persisted `class_times`, then invoke the existing live Class
+Details conflict path and inspect `conflictingClassName`. Confirm the fallback
+reflects the narrowed ID instead of the stored wide ID while raw database
+values remain distinct; stop and revise if the wrong display does not
+reproduce. Baseline and implementation remain pending.
+
+The other scanned leads were rejected or already covered: generic
+`createClass()` generated-ID handling is covered by F830's representability
+check and explicit high-row acceptance; CalendarEvent IDs remain qint64
+end-to-end with wide-ID coverage; the adjacent
+`loadScheduleImportStateSnapshotClassInfos()` path is blocked by F865 caller
+validation; and `loadClassTeacherAssignments()` exposes no class IDs at its
+live port. All 13 plan Deferred entries remain unchanged and none became
+actionable. Batch 288 contains F873, F874, and F875.
+
+No other slices were found.
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

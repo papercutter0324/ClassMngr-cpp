@@ -5028,7 +5028,7 @@ existing structured validation issue. Its pre-implementation matrix is in the
 Phase 2 progress log. F707/F709 remain deferred; Gates 1/2 are Partial and the
 formal exit gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F872 accepted; next discovery in progress)
+## Phase 2 current position — 2026-10-14 (F872 accepted; F873 selected)
 
 F870, F871, and F872 are accepted. Their source/test commits are recorded in
 the Phase 2 progress log. F872 validates persisted campus IDs in the legacy
@@ -5038,8 +5038,11 @@ stored. The executor and independent tester each passed the focused lifecycle
 CTest 1/1 after sequential Debug builds. No full suite ran.
 
 The post-F872 review checked all 13 Deferred candidates and found no new
-trigger. Batch 288 discovery rejected the CalendarEvent identity boundary
-because its repository and service contracts are qint64-backed and existing
-focused tests cover wide identities. A fresh class-detail repository scan is
-pending reconciliation of the stale Phase 2 status. Gates 1 and 2 remain
-Partial and the formal Phase 2 exit gate remains Open.
+trigger. Batch 288 selects F873 to validate persisted class IDs before
+narrowing in the live Schedule Builder source read; its mandatory real-SQLite
+baseline remains pending and no implementation has started. F874 is the
+legacy testing-class list read, and F875 is the class-conflict label fallback;
+both remain upcoming and require their own baselines. The CalendarEvent
+identity boundary and generic class-create range validation were rejected as
+new candidates. Gates 1 and 2 remain Partial and the formal Phase 2 exit gate
+remains Open.
