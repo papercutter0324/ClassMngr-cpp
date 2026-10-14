@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F886 is accepted; Batch 301 selected F887 to classify a deleted parent during the typed Testing Class details read as `NotFound`, while an existing class without a Testing Class row remains `Technical`; implementation is pending, and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F887 is accepted; Batch 302 selected F888 to map a missing Teacher during typed profile reload to `NotFound` while preserving `Technical` for repository failures; implementation is pending, and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 301 - F887: classify a deleted parent during the typed Testing Class details read as `NotFound`; keep an existing class without a Testing Class row as `Technical`; implementation pending.
+- Batch 302 - F888: map an explicit missing Teacher lookup during typed profile reload to `NotFound`; keep repository lookup failures `Technical`; implementation pending.
+- Batch 302 - F889: distinguish a deleted parent during Class Details Page read from absent optional metadata; preserve independent teacher and roster outcomes.
+- Batch 302 - F890: classify an absent class during typed Testing Assignment save; keep missing subtype/details, conflicts, and query failures `Technical`.
 
 #### Deferred candidates
 

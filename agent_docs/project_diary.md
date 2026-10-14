@@ -5453,3 +5453,11 @@ carry repository-owned provenance; preserve the established Technical result
 for an existing ordinary class without the subtype row. For writes, hold the
 check and mutation under one Immediate transaction so deletion cannot race the
 classification.
+
+## Phase 2 Testing Class details read snapshot - 2026-10-15
+
+When a read must distinguish a missing parent from a missing subtype, root one
+query at the parent table and LEFT JOIN the optional subtype. A null subtype key
+then means the parent exists without that subtype; zero rows means the parent is
+absent. This avoids a race between a subtype-rooted lookup and a second parent
+existence query while preserving optional joined data and defaults.

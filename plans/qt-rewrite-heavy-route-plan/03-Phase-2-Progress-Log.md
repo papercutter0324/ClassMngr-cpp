@@ -36375,6 +36375,75 @@ CTest passed 1/1. No full suite ran.
 | Regression coverage | Cover deleted parent → `NotFound`, no related rows, exact legacy diagnostic, existing ordinary class with missing Testing Class row → Technical without fallback, successful mapping, and existing missing-`class_info` behavior. Retain forced SQL and malformed-data Technical coverage. |
 | Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`, and `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run only the two matching Debug CTests. No full suite. |
 
-F887 implementation is pending. Keep all 13 Deferred entries, including the
-dense Speaking Evaluation row-limit policy, unchanged. Phase 2 Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+### F887 accepted; Batch 301 complete; Batch 302 selected F888 - 2026-10-15
+
+F887 is accepted at source/test commit
+`066a033679d4b70e6565461b5ac5298517ed4836`. The typed Testing Class details
+read now uses one query rooted at `classes`, with LEFT JOINs to
+`testing_classes` and `class_info`. A successful empty result is tagged as
+`ParentClassMissing`; an existing parent with a null Testing Class key remains
+`Technical` with the exact legacy diagnostic. The legacy repository wrapper
+still returns `The testing class was not found.`. Optional class-info defaults,
+successful field mapping, malformed stored-data validation, and SQL/fetch
+failures remain intact.
+
+Tests cover a class deleted through `ClassService`, no remaining class,
+class-info, or Testing Class rows, typed `NotFound`, and the exact legacy
+diagnostic. They also keep the existing-parent/missing-subtype result
+`Technical`, verify successful reads and both missing-data outcomes each use
+one statement, and check absent `class_info` defaults. Existing unavailable
+session, invalid-input, query-failure, malformed-teacher-ID, optional-teacher,
+and field-mapping coverage remains.
+
+Independent sequential Debug builds of `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`,
+and `ClassMngrTestingClassRepositoryTests` passed in
+`build/windows-x64-debug`; both exact owning CTests passed 2/2. Each initial
+build hit MSBuild FileTracker Access denied at `ZERO_CHECK`; elevated retries
+succeeded and the final builds had no compiler warnings. No full suite ran.
+
+Two independent post-F887 audits reviewed the exact 13 official Deferred
+entries in the Phase 2 plan. None met its reopening condition; all 13 remain
+unchanged. In particular, F887 does not resolve the blank-draft teacher
+contract, either elevated-token capture, the memory/export evidence gates, the
+macOS runner gate, either helper/injection-seam gap, teacher reassignment
+policy, the Class Analytics allocation policy, dense Speaking Evaluation row
+limit policy, or int-based Sidebar Teacher selection APIs.
+
+Batch 302 discovery compared bounded typed-result gaps after F887. The
+independent solution review identified Teacher Profile reload as the smallest
+clear slice: `TeacherRepository::lookupTeacherById()` already returns explicit
+`Found`, `Missing`, and `Failure` outcomes, while the typed reload adapter
+currently calls `getTeacher()` and maps a missing record to `Technical`. The
+existing port test pins that baseline at
+`tests/next_platform_application_services_teacher_profile_edit_persistence_port_tests.cpp`.
+The independent source scan also found a Class Details Page deleted-parent
+read gap and a Testing Assignment missing-parent save gap. They remain ordered
+follow-on candidates because they require preserving independent page-read
+outcomes and distinguishing assignment subtype/details/conflict failures.
+The scan did not promote diagnostic-string classification or plain Class Delete
+idempotency because their broader error or delete contracts need clarification.
+
+Batch 302 order:
+
+1. F888 - map an explicit missing Teacher lookup during typed profile reload
+   to `NotFound`, keeping repository `Failure` as `Technical`.
+2. F889 - distinguish a deleted parent during Class Details Page read from
+   absent optional metadata, preserving independent teacher and roster results.
+3. F890 - classify an absent class during typed Testing Assignment save while
+   keeping missing subtype/details, conflicts, and query failures `Technical`.
+
+No other slices were found. Batch 302 selects F888 because the repository
+already exposes the necessary tri-state lookup, making the typed adapter and
+its existing public regression assertion a narrow production/core change.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Typed lookup classification | Use the explicit repository `Found`/`Missing`/`Failure` outcome. Map only `Missing` to typed `NotFound`; map lookup `Failure` to `Technical` without parsing diagnostics. |
+| Successful read and compatibility | Preserve complete Teacher Profile field mapping and requested-ID validation. Keep invalid canonical IDs as `InvalidInput`, unavailable sessions as `NotFound`, and the legacy repository lookup diagnostic unchanged. |
+| Regression coverage | Change the existing deleted/missing Teacher reload assertion to `NotFound`; retain successful reload and update behavior. Cover repository lookup failure as `Technical` through the typed reload path where the existing SQL failure seam permits. |
+| Focused verification | Before implementation, capture the existing missing-record baseline. Then sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests` in `build/windows-x64-debug`; run only the matching CTest. No full suite. |
+
+F888 baseline and implementation are pending. All 13 Phase 2 Deferred
+candidates remain unchanged; Gates 1/2 remain Partial and the formal exit gate
+remains Open.

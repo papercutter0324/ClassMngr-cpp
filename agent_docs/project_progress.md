@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F871 accepted; F872 selected)
+### Current state - 2026-10-15 (F887 accepted; F888 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -125,8 +125,21 @@ suite ran. The post-F871 audit found no newly actionable trigger among the 13
 Deferred entries. Batch 286 is complete. Batch 287 selects F872 to validate
 persisted Campus IDs in the legacy `getAllCampuses()` result before narrowing;
 its required alias baseline and acceptance matrix are in the Phase 2 progress
-log. F579/F598 still require an elevated Administrator token; Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+log. F579/F598 still require an elevated Administrator token.
+
+Since that snapshot, F872-F887 continued Phase 2 typed contract and persistence
+work. F883-F885 added explicit missing-parent outcomes to typed class-notes,
+Speaking Evaluation, and direct Class Details save paths. F886 and F887 now
+distinguish a deleted parent from an existing class without its Testing Class
+subtype in direct typed update and details-read paths. F887 is accepted at
+`066a033679d4b70e6565461b5ac5298517ed4836`; independent focused Debug builds
+passed without compiler warnings and the two exact CTests passed 2/2. Two
+independent reviews rechecked the 13 official Phase 2 Deferred entries; none
+became actionable, and all remain unchanged. Batch 302 selected F888 to map
+the repository's explicit missing-Teacher lookup outcome to typed `NotFound`
+during profile reload while preserving `Technical` for lookup failures. F888
+is pending baseline and implementation. Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
