@@ -61,12 +61,12 @@ public:
                 ));
         }
 
-        Result<ClassCoTeacherPageDetailsReadRecord> loadedInfo =
-            [&]() -> Result<ClassCoTeacherPageDetailsReadRecord>
+        Result<ClassCoTeacherPageDetailsReadOutcome> loadedInfo =
+            [&]() -> Result<ClassCoTeacherPageDetailsReadOutcome>
         {
             try
             {
-                return classInfoRepository->loadClassCoTeacherPageDetails(
+                return classInfoRepository->loadClassCoTeacherPageDetailsDetailed(
                     *legacyClassId
                     );
             }
@@ -101,8 +101,9 @@ public:
                 );
         }
 
+        const ClassCoTeacherPageDetailsReadRecord& record = loadedInfo->record;
         const std::optional<Domain::ClassId> matchedClassId =
-            Domain::ClassId::fromString(std::to_string(loadedInfo->classId));
+            Domain::ClassId::fromString(std::to_string(record.classId));
         if (!matchedClassId)
         {
             return Application::ClassCoTeacherPageReadResult::failure(error(
@@ -111,13 +112,31 @@ public:
                 ));
         }
 
+        if (loadedInfo->parentMissing)
+        {
+            Application::ClassCoTeacherPageReadSnapshot snapshot{
+                *matchedClassId,
+                failure<Application::ClassCoTeacherPageFields>(error(
+                    Domain::ErrorCode::NotFound,
+                    "The co-teacher class details are unavailable."
+                    )),
+                failure<std::u16string>(error(
+                    Domain::ErrorCode::NotFound,
+                    "The co-teacher display name is unavailable."
+                    ))
+            };
+            return Application::ClassCoTeacherPageReadResult::success(
+                std::move(snapshot)
+                );
+        }
+
         std::optional<Domain::TeacherId> selectedTeacherId;
         Domain::Result<std::u16string> teacherDisplayName =
             Domain::Result<std::u16string>::success({});
-        if (loadedInfo->teacherId > 0)
+        if (record.teacherId > 0)
         {
             const std::string typedTeacherId =
-                std::to_string(loadedInfo->teacherId);
+                std::to_string(record.teacherId);
             selectedTeacherId =
                 Domain::TeacherId::fromString(typedTeacherId);
             if (!selectedTeacherId)
@@ -130,14 +149,14 @@ public:
 
             teacherDisplayName = loadTeacherDisplayName(
                 session->teacherRepository(),
-                loadedInfo->teacherId
+                record.teacherId
                 );
         }
 
         Application::ClassCoTeacherPageReadSnapshot snapshot{
             *matchedClassId,
             Domain::Result<Application::ClassCoTeacherPageFields>::success(
-                projectClassFields(*loadedInfo, selectedTeacherId)
+                projectClassFields(record, selectedTeacherId)
                 ),
             std::move(teacherDisplayName)
         };

@@ -119,7 +119,10 @@ private slots:
     void metadataQueryFailureKeepsPageErrorMapping();
     void teacherDisplayNameUsesTrimmedFallbackOrder();
     void teacherProjectionFailurePreservesSelectedTeacherAndClassFields();
-    void missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults();
+    void missingClassInfoKeepsScheduleAndDefaults();
+    void neverPresentParentMapsToRecoverableNotFoundOutcomes();
+    void deletedParentMapsToRecoverableNotFoundOutcomes();
+    void legacyUnknownClassReadKeepsDefaultSuccessRecord();
 };
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
@@ -441,7 +444,7 @@ teacherProjectionFailurePreservesSelectedTeacherAndClassFields()
 }
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
-missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults()
+missingClassInfoKeepsScheduleAndDefaults()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -488,17 +491,100 @@ missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults()
             {u"Monday", u"1:00 PM"}
         }));
     QVERIFY(scheduled.value().teacherDisplayName.value().empty());
+}
 
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+neverPresentParentMapsToRecoverableNotFoundOutcomes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery parentQuery(services.databaseSession()->database());
+    parentQuery.prepare(QStringLiteral("SELECT COUNT(*) FROM classes WHERE id=?"));
+    parentQuery.addBindValue(812345);
+    QVERIFY2(parentQuery.exec(), qPrintable(parentQuery.lastError().text()));
+    QVERIFY(parentQuery.next());
+    QCOMPARE(parentQuery.value(0).toInt(), 0);
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
     const auto unknown = port.readClassCoTeacherPage(classId(812345));
     QVERIFY(unknown);
     QVERIFY(unknown.value().classId == classId(812345));
-    QVERIFY(unknown.value().classFields);
-    QVERIFY(unknown.value().teacherDisplayName);
-    QVERIFY(!unknown.value().classFields.value().selectedTeacherId);
-    QVERIFY(unknown.value().classFields.value().classGrade.empty());
-    QVERIFY(unknown.value().classFields.value().classLevel.empty());
-    QVERIFY(unknown.value().classFields.value().regularSchedule.empty());
-    QVERIFY(unknown.value().teacherDisplayName.value().empty());
+    QVERIFY(!unknown.value().classFields);
+    QVERIFY(!unknown.value().teacherDisplayName);
+    QCOMPARE(unknown.value().classFields.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(unknown.value().classFields.error().recoverable);
+    QCOMPARE(unknown.value().teacherDisplayName.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(unknown.value().teacherDisplayName.error().recoverable);
+
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+                              ->classPageDetailsReadMetrics();
+    QCOMPARE(metrics.callCount, 1);
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.regularScheduleStatementCount, 1);
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+deletedParentMapsToRecoverableNotFoundOutcomes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(services, QStringLiteral("Deleted co-teacher class"));
+    QVERIFY(id > 0);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(id)
+        ));
+
+    QSqlQuery deleteQuery(services.databaseSession()->database());
+    deleteQuery.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+    deleteQuery.addBindValue(id);
+    QVERIFY2(deleteQuery.exec(), qPrintable(deleteQuery.lastError().text()));
+    QCOMPARE(deleteQuery.numRowsAffected(), 1);
+
+    QSqlQuery parentQuery(services.databaseSession()->database());
+    parentQuery.prepare(QStringLiteral("SELECT COUNT(*) FROM classes WHERE id=?"));
+    parentQuery.addBindValue(id);
+    QVERIFY2(parentQuery.exec(), qPrintable(parentQuery.lastError().text()));
+    QVERIFY(parentQuery.next());
+    QCOMPARE(parentQuery.value(0).toInt(), 0);
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
+    const auto deleted = port.readClassCoTeacherPage(classId(id));
+    QVERIFY(deleted);
+    QVERIFY(deleted.value().classId == classId(id));
+    QVERIFY(!deleted.value().classFields);
+    QVERIFY(!deleted.value().teacherDisplayName);
+    QCOMPARE(deleted.value().classFields.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.value().classFields.error().recoverable);
+    QCOMPARE(deleted.value().teacherDisplayName.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.value().teacherDisplayName.error().recoverable);
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+legacyUnknownClassReadKeepsDefaultSuccessRecord()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    auto* const repository = services.databaseSession()->classInfoRepository();
+    const auto unknown = repository->loadClassCoTeacherPageDetails(812345);
+
+    QVERIFY(unknown);
+    QCOMPARE(unknown->classId, 812345);
+    QCOMPARE(unknown->teacherId, qint64(-1));
+    QVERIFY(unknown->classGrade.isEmpty());
+    QVERIFY(unknown->classLevel.isEmpty());
+    QVERIFY(unknown->regularTimes.isEmpty());
+    QVERIFY(unknown->notes.isEmpty());
+    QVERIFY(unknown->timeFillerActivities.isEmpty());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassCoTeacherPageReadPortTests)

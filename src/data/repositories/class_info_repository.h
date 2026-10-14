@@ -114,6 +114,12 @@ struct ClassCoTeacherPageDetailsReadRecord final
     QString timeFillerActivities;
 };
 
+struct ClassCoTeacherPageDetailsReadOutcome final
+{
+    ClassCoTeacherPageDetailsReadRecord record;
+    bool parentMissing = false;
+};
+
 struct ClassNotesPageReadRecord final
 {
     int classId = -1;
@@ -518,6 +524,10 @@ public:
         );
     [[nodiscard]] Result<ClassCoTeacherPageDetailsReadRecord>
         loadClassCoTeacherPageDetails(int classId);
+    // Typed callers can distinguish a missing parent class while the legacy
+    // record-returning API keeps its successful defaults for unknown IDs.
+    [[nodiscard]] Result<ClassCoTeacherPageDetailsReadOutcome>
+        loadClassCoTeacherPageDetailsDetailed(int classId);
     [[nodiscard]] Result<ClassNotesPageReadRecord> loadClassNotesPageRecord(
         int classId
         );

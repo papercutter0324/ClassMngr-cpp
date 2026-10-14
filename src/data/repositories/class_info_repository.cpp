@@ -1572,6 +1572,18 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
 Result<ClassCoTeacherPageDetailsReadRecord>
 ClassInfoRepository::loadClassCoTeacherPageDetails(const int classId)
 {
+    const auto loaded = loadClassCoTeacherPageDetailsDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->record);
+}
+
+Result<ClassCoTeacherPageDetailsReadOutcome>
+ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
+{
     ++m_classPageDetailsReadMetrics.callCount;
     if (classId <= 0)
     {
@@ -1587,10 +1599,12 @@ ClassInfoRepository::loadClassCoTeacherPageDetails(const int classId)
 
     QSqlQuery metadataQuery(m_database);
     metadataQuery.prepare(R"(
-        SELECT teacher_id, class_grade, class_level, notes,
-               time_filler_activities
-        FROM class_info
-        WHERE class_id = ?
+        SELECT class_info.teacher_id, class_info.class_grade,
+               class_info.class_level, class_info.notes,
+               class_info.time_filler_activities
+        FROM classes
+        LEFT JOIN class_info ON class_info.class_id = classes.id
+        WHERE classes.id = ?
     )");
     metadataQuery.addBindValue(classId);
     ++m_classPageDetailsReadMetrics.metadataStatementCount;
@@ -1604,7 +1618,19 @@ ClassInfoRepository::loadClassCoTeacherPageDetails(const int classId)
         return std::unexpected(loadedMetadata.error().userMessage());
     }
 
-    if (metadataQuery.next())
+    const bool parentRowFound = metadataQuery.next();
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading class information"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    const bool parentMissing = !parentRowFound;
+    if (parentRowFound)
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
         if (teacherId.isNull())
@@ -1657,7 +1683,20 @@ ClassInfoRepository::loadClassCoTeacherPageDetails(const int classId)
         });
     }
 
-    return record;
+    if (regularScheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            regularScheduleQuery,
+            QObject::tr("Loading regular class times"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    return ClassCoTeacherPageDetailsReadOutcome{
+        std::move(record),
+        parentMissing
+    };
 }
 
 Result<ClassNotesPageReadRecord>
