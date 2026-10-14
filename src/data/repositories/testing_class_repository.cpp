@@ -192,6 +192,29 @@ QString testingClassSelect(
         ON ci.class_id = tc.class_id
     )") + suffix;
 }
+
+QString testingClassDetailsReadSelect()
+{
+    return QStringLiteral(R"(
+        SELECT
+            c.id AS class_id,
+            c.name,
+            tc.class_id AS testing_class_id,
+            tc.room,
+            ci.teacher_id,
+            ci.class_grade,
+            ci.class_level,
+            ci.class_color,
+            ci.font_color,
+            ci.notes
+        FROM classes c
+        LEFT JOIN testing_classes tc
+        ON tc.class_id = c.id
+        LEFT JOIN class_info ci
+        ON ci.class_id = c.id
+        WHERE c.id=?
+    )");
+}
 }
 
 TestingClassRepository::TestingClassRepository(
@@ -668,35 +691,91 @@ TestingClassRepository::loadTestingClassDetailsReadRecord(
     int classId
     )
 {
+    const TestingClassDetailsReadResult detailedResult =
+        loadTestingClassDetailsReadRecordDetailed(classId);
+    if (!detailedResult)
+    {
+        return std::unexpected(detailedResult.error().diagnostic);
+    }
+
+    return *detailedResult;
+}
+
+TestingClassDetailsReadResult
+TestingClassRepository::loadTestingClassDetailsReadRecordDetailed(
+    int classId
+    )
+{
+    ++m_testingClassDetailsReadMetrics.callCount;
+
     if (classId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("A valid testing class is required.")
-            );
+        return std::unexpected(TestingClassDetailsReadFailure{
+            .kind = TestingClassDetailsReadFailure::Kind::Technical,
+            .diagnostic = QObject::tr("A valid testing class is required.")
+        });
     }
 
     QSqlQuery query(m_database);
-    query.prepare(
-        testingClassSelect(
-            QStringLiteral(" WHERE tc.class_id=?")
-            )
-        );
+    query.prepare(testingClassDetailsReadSelect());
     query.addBindValue(classId);
+    ++m_testingClassDetailsReadMetrics.statementCount;
     if (!query.exec())
     {
-        return std::unexpected(
-            queryFailure(query, QObject::tr("Loading the testing class"))
-            );
+        return std::unexpected(TestingClassDetailsReadFailure{
+            .kind = TestingClassDetailsReadFailure::Kind::Technical,
+            .diagnostic = queryFailure(
+                query,
+                QObject::tr("Loading the testing class")
+                )
+        });
     }
 
     if (!query.next())
     {
-        return std::unexpected(
-            QObject::tr("The testing class was not found.")
-            );
+        const QSqlError fetchError = query.lastError();
+        query.finish();
+        if (fetchError.isValid())
+        {
+            return std::unexpected(TestingClassDetailsReadFailure{
+                .kind = TestingClassDetailsReadFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Loading the testing class failed: %1"
+                    ).arg(fetchError.text())
+            });
+        }
+
+        return std::unexpected(TestingClassDetailsReadFailure{
+            .kind = TestingClassDetailsReadFailure::Kind::ParentClassMissing,
+            .diagnostic = QObject::tr("The testing class was not found.")
+        });
     }
 
-    return readTestingClassDetails(query);
+    if (query.value(QStringLiteral("testing_class_id")).isNull())
+    {
+        return std::unexpected(TestingClassDetailsReadFailure{
+            .kind = TestingClassDetailsReadFailure::Kind::Technical,
+            .diagnostic = QObject::tr("The testing class was not found.")
+        });
+    }
+
+    const Result<TestingClassDetailsReadRecord> details =
+        readTestingClassDetails(query);
+    if (!details)
+    {
+        return std::unexpected(TestingClassDetailsReadFailure{
+            .kind = TestingClassDetailsReadFailure::Kind::Technical,
+            .diagnostic = details.error()
+        });
+    }
+
+    return *details;
+}
+
+const TestingClassDetailsReadMetrics&
+TestingClassRepository::testingClassDetailsReadMetrics() const noexcept
+{
+    return m_testingClassDetailsReadMetrics;
 }
 
 Result<QList<TestingClass>>

@@ -70,15 +70,20 @@ public:
 
         try
         {
-            const Result<TestingClassDetailsReadRecord> loaded =
-                repository->loadTestingClassDetailsReadRecord(
+            const TestingClassDetailsReadResult loaded =
+                repository->loadTestingClassDetailsReadRecordDetailed(
                     *legacyClassId
                     );
             if (!loaded)
             {
+                const Domain::ErrorCode errorCode =
+                    loaded.error().kind
+                            == TestingClassDetailsReadFailure::Kind::ParentClassMissing
+                        ? Domain::ErrorCode::NotFound
+                        : Domain::ErrorCode::Technical;
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(loaded.error())
+                    errorCode,
+                    toStdString(loaded.error().diagnostic)
                     );
             }
 

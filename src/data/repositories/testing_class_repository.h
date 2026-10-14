@@ -30,7 +30,31 @@ struct TestingClassDetailsReadRecord final
     QString notes;
 };
 
+struct TestingClassDetailsReadFailure final
+{
+    enum class Kind
+    {
+        ParentClassMissing,
+        Technical
+    };
+
+    Kind kind = Kind::Technical;
+    QString diagnostic;
+};
+
+using TestingClassDetailsReadResult =
+    std::expected<
+        TestingClassDetailsReadRecord,
+        TestingClassDetailsReadFailure
+        >;
+
 struct TestingClassChoicesReadMetrics final
+{
+    int callCount = 0;
+    int statementCount = 0;
+};
+
+struct TestingClassDetailsReadMetrics final
 {
     int callCount = 0;
     int statementCount = 0;
@@ -80,6 +104,13 @@ public:
     [[nodiscard]] Result<TestingClassDetailsReadRecord>
         loadTestingClassDetailsReadRecord(int classId);
 
+    // The typed details-read path can distinguish a missing parent class
+    // while preserving the legacy Result diagnostic and behavior.
+    [[nodiscard]] TestingClassDetailsReadResult
+        loadTestingClassDetailsReadRecordDetailed(int classId);
+    [[nodiscard]] const TestingClassDetailsReadMetrics&
+        testingClassDetailsReadMetrics() const noexcept;
+
     [[nodiscard]] Result<QList<TestingClass>> loadTestingClasses();
 
     [[nodiscard]] Result<QList<TestingClassChoiceRecord>>
@@ -102,4 +133,5 @@ private:
 
     QSqlDatabase& m_database;
     TestingClassChoicesReadMetrics m_testingClassChoicesReadMetrics;
+    TestingClassDetailsReadMetrics m_testingClassDetailsReadMetrics;
 };

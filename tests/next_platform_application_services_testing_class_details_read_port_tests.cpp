@@ -93,9 +93,11 @@ class NextPlatformApplicationServicesTestingClassDetailsReadPortTests final
 private slots:
     void mapsEveryFieldFromTheActiveSessionRepository();
     void mapsAnAbsentTeacherAsAnEmptyOptional();
+    void mapsMissingClassInfoToDefaultDetails();
     void mapsStoredZeroTeacherIdAsUnassigned();
     void rejectsMalformedStoredTeacherIdentifiers();
     void reportsUnavailableSessionsAsNotFound();
+    void reportsDeletedParentClassesAsNotFoundAndPreservesLegacyDiagnostic();
     void reportsMissingTestingClassesAsWarningsWithoutFallback();
     void forwardsRepositoryFailuresAsNonNotFoundErrors();
     void rejectsNonCanonicalLegacyIdentifiers();
@@ -169,9 +171,15 @@ mapsEveryFieldFromTheActiveSessionRepository()
     QCOMPARE(verifyStoredTeacherId.value(3).toLongLong(), wideTeacherId);
     QVERIFY(!verifyStoredTeacherId.next());
 
+    const TestingClassDetailsReadMetrics metricsBefore =
+        repository->testingClassDetailsReadMetrics();
     const auto result = readDetails(services, *createdClass);
+    const TestingClassDetailsReadMetrics metricsAfter =
+        repository->testingClassDetailsReadMetrics();
 
     QVERIFY(result);
+    QCOMPARE(metricsAfter.callCount - metricsBefore.callCount, 1);
+    QCOMPARE(metricsAfter.statementCount - metricsBefore.statementCount, 1);
     const Application::TestingClassDetailsSnapshot expected{
         .classId = classId(*createdClass),
         .name = u"Writing Lab \uC2E4\uD5D8",
@@ -222,6 +230,50 @@ mapsAnAbsentTeacherAsAnEmptyOptional()
 
     QVERIFY(result);
     QVERIFY(!result.value().teacherId.has_value());
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::
+mapsMissingClassInfoToDefaultDetails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+    const auto createdClass = repository->createTestingClass(
+        testingClass(QStringLiteral("Testing Class Without Class Info"))
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery removeClassInfo(session->database());
+    removeClassInfo.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id=?"
+        ));
+    removeClassInfo.addBindValue(*createdClass);
+    QVERIFY2(removeClassInfo.exec(),
+             qPrintable(removeClassInfo.lastError().text()));
+    QCOMPARE(removeClassInfo.numRowsAffected(), 1);
+
+    const auto result = readDetails(services, *createdClass);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classId, classId(*createdClass));
+    QCOMPARE(
+        result.value().name,
+        std::u16string(u"Testing Class Without Class Info")
+        );
+    QCOMPARE(result.value().grade, std::u16string{});
+    QCOMPARE(result.value().level, std::u16string{});
+    QCOMPARE(result.value().room, std::u16string(u"Room 204"));
+    QVERIFY(!result.value().teacherId.has_value());
+    QCOMPARE(result.value().classColor, std::u16string(u"#FFFFFF"));
+    QCOMPARE(result.value().fontColor, std::u16string(u"#000000"));
+    QCOMPARE(result.value().notes, std::u16string{});
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::
@@ -356,6 +408,65 @@ reportsUnavailableSessionsAsNotFound()
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::
+reportsDeletedParentClassesAsNotFoundAndPreservesLegacyDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+    const auto createdClass = repository->createTestingClass(
+        testingClass(QStringLiteral("Testing Class With Deleted Parent"))
+        );
+    QVERIFY(createdClass);
+
+    QVERIFY(services.classService()->remove(*createdClass));
+
+    QSqlQuery counts(session->database());
+    QVERIFY(counts.prepare(QStringLiteral(R"(
+        SELECT
+            (SELECT COUNT(*) FROM classes WHERE id=?),
+            (SELECT COUNT(*) FROM class_info WHERE class_id=?),
+            (SELECT COUNT(*) FROM testing_classes WHERE class_id=?)
+    )")));
+    counts.addBindValue(*createdClass);
+    counts.addBindValue(*createdClass);
+    counts.addBindValue(*createdClass);
+    QVERIFY2(counts.exec(), qPrintable(counts.lastError().text()));
+    QVERIFY(counts.next());
+    QCOMPARE(counts.value(0).toInt(), 0);
+    QCOMPARE(counts.value(1).toInt(), 0);
+    QCOMPARE(counts.value(2).toInt(), 0);
+
+    const auto legacyResult =
+        repository->loadTestingClassDetailsReadRecord(*createdClass);
+    QVERIFY(!legacyResult);
+    QCOMPARE(
+        legacyResult.error(),
+        QStringLiteral("The testing class was not found.")
+        );
+
+    const TestingClassDetailsReadMetrics metricsBefore =
+        repository->testingClassDetailsReadMetrics();
+    const auto result = readDetails(services, *createdClass);
+    const TestingClassDetailsReadMetrics metricsAfter =
+        repository->testingClassDetailsReadMetrics();
+
+    verifyNotFound(result);
+    QCOMPARE(metricsAfter.callCount - metricsBefore.callCount, 1);
+    QCOMPARE(metricsAfter.statementCount - metricsBefore.statementCount, 1);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral("The testing class was not found.")
+        );
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::
 reportsMissingTestingClassesAsWarningsWithoutFallback()
 {
     QTemporaryDir directory;
@@ -380,12 +491,37 @@ reportsMissingTestingClassesAsWarningsWithoutFallback()
     removeTestingClass.addBindValue(*createdClass);
     QVERIFY(removeTestingClass.exec());
 
+    QSqlQuery verifyParentExists(
+        services.databaseSession()->database()
+        );
+    verifyParentExists.prepare(QStringLiteral(
+        "SELECT 1 FROM classes WHERE id=?"
+        ));
+    verifyParentExists.addBindValue(*createdClass);
+    QVERIFY2(verifyParentExists.exec(),
+             qPrintable(verifyParentExists.lastError().text()));
+    QVERIFY(verifyParentExists.next());
+
+    const auto legacyResult =
+        repository->loadTestingClassDetailsReadRecord(*createdClass);
+    QVERIFY(!legacyResult);
+    QCOMPARE(
+        legacyResult.error(),
+        QStringLiteral("The testing class was not found.")
+        );
+
+    const TestingClassDetailsReadMetrics metricsBefore =
+        repository->testingClassDetailsReadMetrics();
     const auto result = readDetails(services, *createdClass);
+    const TestingClassDetailsReadMetrics metricsAfter =
+        repository->testingClassDetailsReadMetrics();
 
     QVERIFY(!result);
+    QCOMPARE(metricsAfter.callCount - metricsBefore.callCount, 1);
+    QCOMPARE(metricsAfter.statementCount - metricsBefore.statementCount, 1);
     QVERIFY(result.error().code != Domain::ErrorCode::NotFound);
     const QString errorText = QString::fromStdString(result.error().message);
-    QVERIFY(errorText.contains(QStringLiteral("not found"), Qt::CaseInsensitive));
+    QCOMPARE(errorText, QStringLiteral("The testing class was not found."));
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsReadPortTests::
