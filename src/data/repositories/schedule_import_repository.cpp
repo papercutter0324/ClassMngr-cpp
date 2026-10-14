@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <array>
 #include <charconv>
+#include <limits>
 #include <optional>
 #include <string>
 #include <utility>
@@ -1418,14 +1419,20 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
                         )
                     );
             }
-            classId =
-                query.lastInsertId().toInt();
-            if (classId <= 0)
+            bool classIdOk = false;
+            const qint64 generatedClassId = query.lastInsertId()
+                .toLongLong(&classIdOk);
+            if (
+                !classIdOk
+                || generatedClassId <= 0
+                || generatedClassId > std::numeric_limits<int>::max()
+                )
             {
                 return std::unexpected(
                     QObject::tr("A class could not be created.")
                     );
             }
+            classId = static_cast<int>(generatedClassId);
             insertedClassIdsByCandidate[
                 index
                 ] = classId;

@@ -61,6 +61,35 @@ void requireQuery(QSqlQuery& query, const QString& statement)
         qFatal("SQL query failed: %s", qPrintable(query.lastError().text()));
     }
 }
+
+void seedSentinelClass(QSqlQuery& query)
+{
+    requireQuery(query, QStringLiteral(R"(
+        INSERT INTO classes (id, name) VALUES (1, 'sentinel class')
+    )"));
+    requireQuery(query, QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id, teacher_id, class_grade, class_level,
+            class_color, font_color, notes
+        ) VALUES (1, NULL, 'sentinel grade', 'sentinel level',
+                  '#ABCDEF', '#123456', 'sentinel notes')
+    )"));
+    requireQuery(query, QStringLiteral(R"(
+        INSERT INTO class_times (class_id, day, start_time, end_time)
+        VALUES (1, 'Tuesday', '7:00 PM', '8:00 PM')
+    )"));
+}
+
+void setClassesSequence(QSqlQuery& query, const qint64 sequence)
+{
+    query.prepare(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq = ? WHERE name = 'classes'"));
+    query.addBindValue(sequence);
+    if (!query.exec())
+    {
+        qFatal("SQL query failed: %s", qPrintable(query.lastError().text()));
+    }
+}
 }
 
 class ScheduleImportApplyPortTests : public QObject
@@ -69,6 +98,8 @@ class ScheduleImportApplyPortTests : public QObject
 
 private slots:
     void appliesTypedRequestThroughActiveRepository();
+    void rejectsGeneratedClassIdOutsideIntRangeAndRollsBack();
+    void acceptsGeneratedClassIdAtIntMax();
     void reportsUnavailableAndClosedSession();
     void preservesLegacyScheduleServiceRoute();
     void mapsSummaryAndFailure();
@@ -139,6 +170,139 @@ appliesTypedRequestThroughActiveRepository()
         "SELECT value FROM app_settings WHERE key='myInfo/name'"));
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toString(), QStringLiteral("Alice"));
+    QVERIFY(!query.next());
+}
+
+void ScheduleImportApplyPortTests::
+rejectsGeneratedClassIdOutsideIntRangeAndRollsBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    const Status opened = services.openDatabase(
+        directory.filePath(QStringLiteral("narrowed-class-id.sqlite"))
+        );
+    const QString openError = opened.has_value() ? QString() : opened.error();
+    QVERIFY2(opened.has_value(), qPrintable(openError));
+
+    QSqlQuery query(services.databaseSession()->database());
+    seedSentinelClass(query);
+    setClassesSequence(query, qint64{4294967296LL});
+
+    Platform::ApplicationServicesScheduleImportApplyPort port(&services);
+    const auto result = Application::ScheduleImportApplyUseCase::execute(
+        typedRequest(),
+        port
+        );
+    QVERIFY(!result.has_value());
+    QVERIFY(!result.error().message.empty());
+
+    requireQuery(query, QStringLiteral(R"(
+        SELECT
+            (SELECT COUNT(*) FROM teachers),
+            (SELECT COUNT(*) FROM classes),
+            (SELECT COUNT(*) FROM classes WHERE id = 4294967297),
+            (SELECT COUNT(*) FROM class_info),
+            (SELECT COUNT(*) FROM class_info WHERE class_id = 4294967297),
+            (SELECT COUNT(*) FROM class_times),
+            (SELECT COUNT(*) FROM class_times WHERE class_id = 4294967297)
+    )"));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+    QCOMPARE(query.value(1).toInt(), 1);
+    QCOMPARE(query.value(2).toInt(), 0);
+    QCOMPARE(query.value(3).toInt(), 1);
+    QCOMPARE(query.value(4).toInt(), 0);
+    QCOMPARE(query.value(5).toInt(), 1);
+    QCOMPARE(query.value(6).toInt(), 0);
+    QVERIFY(!query.next());
+
+    requireQuery(query, QStringLiteral(R"(
+        SELECT c.name, ci.teacher_id, ci.class_grade, ci.class_level,
+               ci.class_color, ci.font_color, ci.notes
+        FROM classes c
+        JOIN class_info ci ON ci.class_id = c.id
+        WHERE c.id = 1
+    )"));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("sentinel class"));
+    QVERIFY(query.value(1).isNull());
+    QCOMPARE(query.value(2).toString(), QStringLiteral("sentinel grade"));
+    QCOMPARE(query.value(3).toString(), QStringLiteral("sentinel level"));
+    QCOMPARE(query.value(4).toString(), QStringLiteral("#ABCDEF"));
+    QCOMPARE(query.value(5).toString(), QStringLiteral("#123456"));
+    QCOMPARE(query.value(6).toString(), QStringLiteral("sentinel notes"));
+    QVERIFY(!query.next());
+
+    requireQuery(query, QStringLiteral(R"(
+        SELECT day, start_time, end_time
+        FROM class_times WHERE class_id = 1 ORDER BY id
+    )"));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("Tuesday"));
+    QCOMPARE(query.value(1).toString(), QStringLiteral("7:00 PM"));
+    QCOMPARE(query.value(2).toString(), QStringLiteral("8:00 PM"));
+    QVERIFY(!query.next());
+}
+
+void ScheduleImportApplyPortTests::acceptsGeneratedClassIdAtIntMax()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    const Status opened = services.openDatabase(
+        directory.filePath(QStringLiteral("int-max-class-id.sqlite"))
+        );
+    const QString openError = opened.has_value() ? QString() : opened.error();
+    QVERIFY2(opened.has_value(), qPrintable(openError));
+
+    QSqlQuery query(services.databaseSession()->database());
+    seedSentinelClass(query);
+    setClassesSequence(query, qint64{2147483646});
+
+    Platform::ApplicationServicesScheduleImportApplyPort port(&services);
+    const auto result = Application::ScheduleImportApplyUseCase::execute(
+        typedRequest(),
+        port
+        );
+    const QString failureMessage = result.has_value()
+        ? QString()
+        : QString::fromStdU16String(result.error().message);
+    QVERIFY2(result.has_value(), qPrintable(failureMessage));
+    QCOMPARE(result->teachersCreated, 1);
+    QCOMPARE(result->classesCreated, 1);
+
+    requireQuery(query, QStringLiteral(R"(
+        SELECT typeof(c.id), c.id, c.name, ci.class_grade, ci.class_level,
+               ci.class_color, ci.font_color
+        FROM classes c
+        JOIN class_info ci ON ci.class_id = c.id
+        WHERE c.id = 2147483647
+    )"));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("integer"));
+    QCOMPARE(query.value(1).toLongLong(), qint64{2147483647});
+    QCOMPARE(query.value(2).toString(), QStringLiteral("E4 Hercules"));
+    QCOMPARE(query.value(3).toString(), QStringLiteral("E4"));
+    QCOMPARE(query.value(4).toString(), QStringLiteral("Hercules"));
+    QCOMPARE(query.value(5).toString(), QStringLiteral("#123456"));
+    QCOMPARE(query.value(6).toString(), QStringLiteral("#FFFFFF"));
+    QVERIFY(!query.next());
+
+    requireQuery(query, QStringLiteral(R"(
+        SELECT day, start_time, end_time
+        FROM class_times WHERE class_id = 2147483647 ORDER BY id
+    )"));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("Monday"));
+    QCOMPARE(query.value(1).toString(), QStringLiteral("4:00 PM"));
+    QCOMPARE(query.value(2).toString(), QStringLiteral("4:50 PM"));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), QStringLiteral("Wednesday"));
+    QCOMPARE(query.value(1).toString(), QStringLiteral("4:00 PM"));
+    QCOMPARE(query.value(2).toString(), QStringLiteral("4:50 PM"));
     QVERIFY(!query.next());
 }
 
