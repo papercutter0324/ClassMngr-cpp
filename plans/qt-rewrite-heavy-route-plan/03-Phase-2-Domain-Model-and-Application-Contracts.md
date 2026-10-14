@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F894 is accepted and two independent audits found no official Deferred trigger newly actionable; F895's baseline and acceptance are complete and implementation is next, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F895 is accepted and two independent audits found no official Deferred trigger newly actionable; F896, the Roster Print Class Info read, is next for baseline work, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -71,7 +71,6 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch 303:
-  - F895 - Selected Class Subtitle read: classify a missing parent explicitly while preserving optional data, schedule, teacher, and legacy behavior.
   - F896 - Roster Print Class Info read: check parent provenance while preserving metadata defaults and schedules.
   - F897 - Roster read: evaluate whether typed parent provenance is needed while keeping independent empty-roster behavior.
   - F898 - Teacher display-name read provenance: evaluate structured missing-versus-query-failure outcomes across typed page callers.

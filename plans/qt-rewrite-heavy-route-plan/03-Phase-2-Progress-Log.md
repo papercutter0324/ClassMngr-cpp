@@ -37067,3 +37067,38 @@ are not classified as missing parents.
 F895 baseline and acceptance are complete; implementation is next. F896-F898
 remain ordered in Batch 303. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### F895 accepted; post-slice Deferred audit clear; F896 selected - 2026-10-15
+
+F895 is accepted at source/test commit
+`98d59f211ba7b6c4b0d063c148ef8b229155000f`. The individual Selected Class
+Subtitle repository read now returns explicit parent provenance using a
+requested-ID CTE. It preserves the legacy `loadClassSubtitleRecord()` result,
+including optional metadata and schedules keyed by the requested ID when
+orphan rows remain, while the typed port maps a confirmed missing parent to
+recoverable `NotFound` for both class fields and assigned teacher. Existing
+classes without `class_info` retain empty grade/level, ordered schedules, and
+teacher `nullopt`; SQL errors remain separate from parent status.
+
+Regressions cover a never-present ID, a deleted parent with foreign keys
+disabled and orphan metadata/schedule rows, legacy wrapper preservation, an
+existing parent without metadata and schedule rows inserted out of ID order,
+metadata and schedule SQL failures, wide teacher IDs, and independent teacher
+errors. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`
+passed in `build/windows-x64-debug`; the exact registered Debug CTest passed
+1/1 (CTest #329). FileTracker denied the standard app build and test-target
+build; bounded elevated retries built both targets and CTest passed. No full
+suite ran.
+
+Two independent post-F895 reviews compared all 13 official Deferred triggers
+with the accepted slice and found none newly actionable. No matched heap
+capture, memory/export measurement, macOS runner, live helper callsite,
+Calendar injection seam, allocation or row-limit policy decision, or
+Teacher/sidebar ID-width migration was produced. All 13 remain unchanged and
+deferred.
+
+Batch 303 proceeds with F896, the Roster Print Class Info read. Its bounded
+lead checks parent provenance while preserving metadata defaults and
+schedules. F897 and F898 remain ordered in the active batch. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

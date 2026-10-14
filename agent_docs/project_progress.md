@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F895 baseline captured; implementation next)
+### Current state - 2026-10-15 (F895 accepted; F896 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -199,11 +199,18 @@ change was restored byte-for-byte. Sequential builds of `ClassMngr` and
 in `build/windows-x64-debug` passed after bounded elevated FileTracker
 retries, and the exact CTest passed 1/1 (#329). The target build reported a
 stale generated dependency on `teacher_import_plan_mapper.h`; no full suite
-ran. F895 acceptance is defined: return explicit typed `NotFound` only for a
-confirmed missing parent, retain legacy defaults and existing-parent optional
-metadata/schedule/teacher behavior, and preserve independent operational
-errors. F896-F898 remain ordered in Batch 303. Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+ran. F895 is accepted at `98d59f211ba7b6c4b0d063c148ef8b229155000f`: the
+individual Selected Class Subtitle read now distinguishes an absent class
+parent from optional metadata absence. Its typed port maps only confirmed
+parent absence to recoverable `NotFound` for class fields and assigned
+teacher, while the legacy record API continues returning requested-ID
+metadata and schedules even for orphan rows. Existing-class defaults,
+schedule order, and independent teacher outcomes remain intact. The standard
+Debug app/test targets and exact CTest #329 passed after bounded elevated
+FileTracker retries; no full suite ran. Two independent audits found no
+Deferred trigger newly actionable; all 13 remain unchanged. Batch 303 proceeds
+with F896, the Roster Print Class Info read; F897 and F898 remain ordered in
+the plan. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
