@@ -36002,3 +36002,42 @@ Deferred candidates.
 Batch 297 discovery has started in class-transfer import and public write-result
 contract lanes; results are pending and no candidate has been selected. Phase 2
 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 297 discovery closed; F880 selected - 2026-10-14
+
+The class-transfer import lane found that `preflightSchedules()` detects real
+schedule overlaps before writes but returns an untyped message. The live typed
+route (`SidebarController::importClasses()` through
+`ApplicationServicesClassTransferApplyPort`) currently maps that repository
+failure to `ErrorCode::Technical`. The legacy QString import API is used by
+existing callers and carries the same explanatory message. F880 is selected to
+classify only this genuine schedule-overlap result as recoverable `Conflict` on
+the typed ApplyPort, preserving the exact message, the no-write result, and the
+legacy QString API semantics. Validation, stale-choice, invalid-ID, database,
+and other failures remain `Technical`; do not infer conflict from message text.
+
+The required pre-fix baseline passed: the existing
+`preflightsScheduleConflictBeforeWrites` case returned `Technical`, retained the
+“Schedule conflicts” explanation, and confirmed no writes. Sequential Debug
+builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` passed,
+and the exact matching CTest passed 1/1. FileTracker denied the initial build;
+the recorded successful retry was elevated. This is the existing focused typed
+route baseline, not full-suite evidence.
+
+The public write-result scan also found stale class IDs may be reported as
+`Technical` by `ClassDetailsSavePort` and `RosterSavePort`. These are separate,
+unselected leads; F880 does not resolve them. The post-F879 Deferred audit found
+no newly actionable entry. Preserve all 13 Deferred items unchanged.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Typed classification | A genuine nonempty preflight schedule-overlap result returns recoverable `ErrorCode::Conflict` through `ApplicationServicesClassTransferApplyPort`; do not classify by matching message text. |
+| Message and write behavior | Preserve the existing exact conflict message and prove the repository performs no writes for the overlap. |
+| Preflight distinction | A malformed persisted schedule encountered during preflight remains `ErrorCode::Technical`, not `Conflict`; cover this separately from an actual overlap. |
+| Other failures | Validation, stale choices, invalid IDs, SQL/write failures, and other non-overlap errors remain `ErrorCode::Technical`. |
+| Legacy API | Preserve `ClassTransferRepository::importClasses()` and legacy `ClassService` QString messages and behavior. |
+| Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`, and `ClassMngrClassTransferTests` in `build/windows-x64-debug`; run exactly the two matching CTests. No full suite. |
+
+F880 is selected and implementation is pending. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

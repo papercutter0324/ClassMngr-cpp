@@ -5707,8 +5707,18 @@ actionable. Batch 295 application-contract and repository scans found no new
 candidate. Batch 296 validation/business-rule review found no gap. Its
 document-navigation feedback lead was excluded because F393 explicitly
 accepts no warning for a missing resource; the report-job queue lead has no
-live application callsite. Batch 297 discovery is underway across Class
-Transfer import and public write-result contracts. The existing untracked
-`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
-`txt` artifacts remain outside the slice. Gates 1/2 remain Partial; the formal
-Phase 2 exit gate is Open.
+live application callsite. Batch 297 selected F880 after the ApplyPort
+baseline returned `Technical` for a real schedule overlap while preserving
+the conflict message and performing no writes. F880 will carry explicit
+repository failure provenance so only a genuine overlap maps to recoverable
+`Conflict`; malformed persisted schedules and other failures stay
+`Technical`, and the legacy QString import API remains unchanged. Sequential
+baseline Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` passed;
+the exact CTest passed 1/1 after an elevated retry for FileTracker access
+denial. The public write-result scan also found separate stale-class-ID
+classification leads in `ClassDetailsSavePort` and `RosterSavePort`; they are
+unselected and unresolved. F880 implementation is pending. The existing
+untracked `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`,
+`stdout`, and `txt` artifacts remain outside the slice. Gates 1/2 remain
+Partial; the formal Phase 2 exit gate is Open.

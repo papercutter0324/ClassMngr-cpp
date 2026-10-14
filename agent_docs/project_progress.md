@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F879 accepted; Batch 297 discovery underway)
+## Phase 2 current position — 2026-10-14 (F879 accepted; F880 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5136,6 +5136,18 @@ none newly actionable. Batch 295 application-contract and repository scans
 found no new candidate. Batch 296 validation/business-rule review also found
 no gap. Its document-navigation feedback lead was excluded because F393
 explicitly accepts no warning for a missing resource; the report-job queue
-lead has no live application callsite. Batch 297 discovery is underway across
-Class Transfer import and public write-result contracts. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate remains Open.
+lead has no live application callsite. Batch 297 selected F880 after the
+typed Class Transfer ApplyPort baseline showed that a real schedule overlap
+returns `Technical` despite retaining the conflict message and performing no
+writes. F880 is scoped to classify only an explicit repository schedule
+overlap as recoverable `Conflict`, preserve the exact message and no-write
+behavior, keep malformed persisted schedules and other failures `Technical`,
+and preserve the legacy QString API. Sequential Debug baseline builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` passed;
+the exact CTest passed 1/1 on an elevated retry after FileTracker access
+denial. The scan also found stale-class-ID classification leads in
+`ClassDetailsSavePort` and `RosterSavePort`; they remain separate and
+unselected. F880 implementation is pending. All 13 Deferred entries remain
+unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.

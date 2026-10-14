@@ -5395,3 +5395,12 @@ exposes the overflow; keep SQL NULL and prior non-INTEGER conversion behavior
 intact when the contract does not authorize broader validation changes. Test
 the same repository logic through every public route that consumes it, since a
 shared batch reader may feed multiple features with different error surfaces.
+
+## Phase 2 class-transfer error provenance - 2026-10-14
+
+When a typed application boundary needs to distinguish a legacy repository
+failure, carry explicit failure provenance alongside the existing message.
+Tag only the specific business-conflict branch; other failures can occur in
+the same preflight stage and must keep their current classification. Keep the
+legacy QString API as a wrapper over the detailed result so old callers retain
+their messages and behavior.
