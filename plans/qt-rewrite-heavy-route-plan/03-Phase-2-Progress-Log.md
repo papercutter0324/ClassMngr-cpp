@@ -36095,5 +36095,53 @@ The separate stale-class-ID lead for `ClassDetailsSavePort` remains unselected.
 | Regression coverage | Cover deleted class for populated and valid zero-row snapshots, unrelated trigger failure with `Technical` rollback, and the existing successful snapshot path. |
 | Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full-suite run. |
 
-F881 implementation is pending. Phase 2 Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+F881 was selected and implementation was pending at this point. Phase 2 Gates
+1/2 remain Partial and the formal exit gate remains Open.
+
+### F881 accepted; Batch 298 complete; Batch 299 selected F882 - 2026-10-14
+
+F881 is accepted at source/test commit
+`3aa8f54b6e3d1650bdd0a94984dd0fd9664e328b`. The roster save transaction now
+begins before the class-existence query. Only repository save failures
+explicitly tagged `ParentClassMissing` map to typed `NotFound`; existing
+closed-session/service-unavailable `NotFound` behavior is preserved. Legacy
+QString `RosterRepository::saveRoster` and batch-save behavior remain unchanged.
+
+Regression coverage verifies deleted-parent populated and valid zero-row,
+seven-column snapshots return `NotFound` without roster rows; an injected
+trigger failure remains `Technical` and rolls back; and a successful full
+snapshot still saves. Sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests` passed after
+elevated FileTracker retries. The exact matching CTest passed 1/1. No full
+suite ran.
+
+Two independent post-F881 reviews rechecked all 13 official Deferred entries;
+none became actionable and all stated blockers remain unchanged.
+
+Batch 299 discovery found four off-list leads; none changes the Deferred list.
+F882 (`Classify missing class in typed co-teacher assignment as NotFound`) is
+selected. The existing public test slot
+`malformedClassIdIsRejectedWithoutChangingPersistedFields` in
+`tests/next_platform_application_services_class_co_teacher_assignment_port_tests.cpp`
+calls `ClassCoTeacherAssignmentUseCase::execute()` with an unknown class. The
+baseline result is `Technical`, its message contains `class not found`, and
+persisted class info is unchanged. A sequential Debug build of `ClassMngr`
+passed after an elevated retry for FileTracker `E_ACCESSDENIED`; the focused
+test target built with MSB8064 for missing dependency
+`src/next/application/teacher_import_plan_mapper.h`. Running only that QtTest
+slot reported 3 passed, 0 failed (including init and cleanup). No full target
+or suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Provenance and classification | Use explicit repository-owned provenance only when the class lookup succeeds but finds no class; do not match diagnostic text. Map that failure to typed `NotFound`. |
+| Diagnostic and state compatibility | Retain a useful/compatible diagnostic and assert persisted class info remains unchanged. Preserve existing `InvalidInput` and unavailable-session `NotFound` behavior, plus any legacy repository QString API. |
+| Other failures | Query, validation, conflict, write, SQL, and transaction failures remain `Technical`. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full target or suite. |
+
+The other Batch 299 leads remain queued: F883 class-notes save missing-parent
+classification; F884 Speaking Evaluation save missing-parent classification;
+and F885 direct `ClassDetailsSavePort` stale-parent classification, whose public
+page route also includes earlier schedule-conflict reads and is broader. F882
+implementation is pending. Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.

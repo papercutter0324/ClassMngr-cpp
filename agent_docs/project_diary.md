@@ -5404,3 +5404,11 @@ Tag only the specific business-conflict branch; other failures can occur in
 the same preflight stage and must keep their current classification. Keep the
 legacy QString API as a wrapper over the detailed result so old callers retain
 their messages and behavior.
+
+## Phase 2 serialized missing-parent writes - 2026-10-14
+
+When class existence and a full child-snapshot replacement must agree, perform
+the existence check and write inside the same immediate transaction. Carry an
+explicit repository-owned missing-parent tag to typed callers; keep trigger,
+SQL, and transaction failures Technical, and preserve legacy wrappers and
+separate service-unavailable classifications.

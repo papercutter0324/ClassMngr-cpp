@@ -5718,16 +5718,35 @@ import methods. The same full-target CTest was also red at pre-F880 source
 commit `18202c79`; isolated `importedClassesConflictAtomically` passed. No
 full suite ran.
 
-Two independent post-F880 reviews rechecked all 13 Phase 2 Deferred entries;
-none became actionable and all remain unchanged. Batch 298 selected F881 for
-deleted-class errors on `RosterSavePort`. Its public pre-fix baseline showed
-both a populated roster and a valid zero-row snapshot with seven standard
-columns returning Technical after class deletion; target tables remained
-empty and the sentinel class/roster stayed unchanged. Sequential Debug builds
-of `ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests`
-passed, and its exact CTest passed 1/1 after elevated retries for FileTracker
-access denial. F881 acceptance and implementation are pending. The separate
-`ClassDetailsSavePort` stale-class lead remains unselected. The existing
-untracked `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`,
-`stdout`, and `txt` artifacts remain outside the slice. Gates 1/2 remain
-Partial; the formal Phase 2 exit gate is Open.
+F881 is accepted at `3aa8f54b6e3d1650bdd0a94984dd0fd9664e328b`; the source/test
+commit changes `DatabaseTransaction`, `RosterRepository`, the typed roster
+save port, and its focused tests. An immediate transaction holds the
+missing-parent check and snapshot replacement together. A repository-owned
+`ParentClassMissing` tag is emitted only after the parent lookup finds no row;
+only that repository failure maps to typed `NotFound`. Trigger/SQL/transaction
+errors remain Technical and roll back. Existing closed-session/service
+unavailable `NotFound`, input classifications, legacy QString API, and batch
+behavior are preserved. The independent Tester sequentially built
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests`;
+exact CTest passed 1/1 after elevated FileTracker retries. Tests covered both
+populated and valid zero-row seven-column snapshots after class deletion,
+trigger-failure rollback, and full-snapshot success. No full suite ran.
+
+Two independent post-F881 reviews rechecked all 13 Phase 2 Deferred entries;
+none became actionable and all remain unchanged. Batch 299 selects F882 for
+the typed `ClassCoTeacherAssignmentPort` missing-class result. The public
+pre-fix baseline showed an unknown class returning Technical with the legacy
+`class not found` diagnostic while persisted class information remained
+unchanged. The exact `malformedClassIdIsRejectedWithoutChangingPersistedFields`
+slot passed 1/1 after sequential Debug builds. F882 will add explicit
+repository provenance only for a successful class lookup with no row and map
+that case to typed `NotFound`; query, validation, conflict, write, SQL, and
+transaction errors stay Technical. InvalidInput, unavailable-session
+NotFound, the diagnostic, and legacy QString behavior remain unchanged.
+Batch 299 follow-up candidates are F883 class-notes save, F884 Speaking
+Evaluation save, and F885 the narrower direct `ClassDetailsSavePort` route;
+the broader page route has earlier schedule-conflict checks. The independent
+`ClassDetailsSavePort` candidate is still unselected. The existing untracked
+`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt` artifacts remain outside the slice. Gates 1/2 remain Partial; the formal
+Phase 2 exit gate is Open.

@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F880 accepted; F881 selected)
+## Phase 2 current position — 2026-10-14 (F881 accepted; F882 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5155,15 +5155,27 @@ commit `18202c79`, while the isolated
 `importedClassesConflictAtomically` legacy-conflict test passed. No full suite
 ran.
 
-Two independent post-F880 audits reviewed all 13 Deferred entries and found
-none newly actionable; all 13 remain unchanged. Batch 298 selects F881 for
-the separate deleted-class `RosterSavePort` result. The public pre-fix
-baseline showed both a populated roster and a valid zero-row snapshot with
-seven standard columns returning `Technical` after class deletion. Target
-tables stayed empty and sentinel class/roster data were preserved. Sequential
-Debug builds of `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesRosterSavePortTests` passed, and the
-exact CTest passed 1/1 after elevated FileTracker retries. F881 selection and
-implementation are pending the plan record. The independent
-`ClassDetailsSavePort` stale-class lead remains unselected. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate remains Open.
+F881 is accepted at `3aa8f54b6e3d1650bdd0a94984dd0fd9664e328b`. An immediate
+transaction serializes the roster save with the parent-class existence check;
+only the explicit repository-owned missing-parent failure maps to typed
+`NotFound`. SQL, trigger, and transaction failures remain Technical with
+rollback. Existing closed-session/service-unavailable `NotFound` behavior,
+the legacy QString API, and batch behavior are preserved. Tests cover populated
+and valid zero-row snapshots after parent deletion, trigger-failure rollback,
+and full-snapshot success. The independent Tester sequentially built
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests`;
+the exact CTest passed 1/1 after elevated FileTracker retries. No full suite
+ran.
+
+Two independent post-F881 audits reviewed all 13 Deferred entries and found
+none newly actionable; all remain unchanged. Batch 299 selects F882 for
+missing-class classification on `ClassCoTeacherAssignmentPort`. Its public
+pre-fix baseline confirmed an unknown class returns Technical with a
+`class not found` diagnostic while persisted class information stays
+unchanged. The focused baseline slot passed 1/1 after sequential Debug builds.
+Only a successful parent lookup with no class row will gain explicit
+repository provenance and map to typed `NotFound`; query, validation,
+conflict, write, SQL, and transaction failures remain Technical. Existing
+invalid-input and unavailable-session classifications and legacy diagnostics
+remain unchanged. F883/F884/F885 remain Batch 299 follow-up candidates. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
