@@ -116,6 +116,8 @@ private slots:
     void updatesWideTeacherIdentityAsSqliteIntegerAndCanUnassign();
     void reportsUnavailableSessionsAsNotFound();
     void rejectsAnOrdinaryClassWithoutLegacyFallback();
+    void reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic();
+    void rollsBackEarlierWritesWhenTheTestingRoomUpdateFails();
     void forwardsRepositoryFailuresAsTechnicalErrors();
     void rejectsNoncanonicalIdentifiers();
 };
@@ -335,6 +337,102 @@ rejectsAnOrdinaryClassWithoutLegacyFallback()
     QVERIFY2(classNameQuery.exec(), qPrintable(classNameQuery.lastError().text()));
     QVERIFY(classNameQuery.next());
     QCOMPARE(classNameQuery.value(0).toString(), originalName);
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::
+reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClassRepository* const repository =
+        services.databaseSession()->testingClassRepository();
+    QVERIFY(repository);
+
+    TestingClass original = storedClass(QStringLiteral("Deleted Testing Class"));
+    const auto createdClass = repository->createTestingClass(original);
+    QVERIFY(createdClass);
+    QVERIFY(services.classService()->remove(*createdClass));
+
+    const auto typedResult = update(
+        services,
+        requestForClass(*createdClass)
+        );
+    QVERIFY(!typedResult);
+    QCOMPARE(typedResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!typedResult.error().recoverable);
+
+    QSqlQuery remainingRows(services.databaseSession()->database());
+    QVERIFY2(remainingRows.prepare(QStringLiteral(R"(
+        SELECT
+            (SELECT COUNT(*) FROM classes WHERE id=?),
+            (SELECT COUNT(*) FROM class_info WHERE class_id=?),
+            (SELECT COUNT(*) FROM testing_classes WHERE class_id=?)
+    )")), qPrintable(remainingRows.lastError().text()));
+    remainingRows.addBindValue(*createdClass);
+    remainingRows.addBindValue(*createdClass);
+    remainingRows.addBindValue(*createdClass);
+    QVERIFY2(remainingRows.exec(), qPrintable(remainingRows.lastError().text()));
+    QVERIFY(remainingRows.next());
+    QCOMPARE(remainingRows.value(0).toInt(), 0);
+    QCOMPARE(remainingRows.value(1).toInt(), 0);
+    QCOMPARE(remainingRows.value(2).toInt(), 0);
+
+    original.classId = *createdClass;
+    original.name = QStringLiteral("Legacy update after deletion");
+    const Status legacyResult = repository->updateTestingClass(original);
+    QVERIFY(!legacyResult);
+    QCOMPARE(
+        legacyResult.error(),
+        QStringLiteral("The testing class no longer exists.")
+        );
+}
+
+void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::
+rollsBackEarlierWritesWhenTheTestingRoomUpdateFails()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClassRepository* const repository =
+        services.databaseSession()->testingClassRepository();
+    QVERIFY(repository);
+
+    const TestingClass original =
+        storedClass(QStringLiteral("Original Testing Name"));
+    const auto createdClass = repository->createTestingClass(original);
+    QVERIFY(createdClass);
+
+    QSqlQuery createTrigger(services.databaseSession()->database());
+    QVERIFY2(createTrigger.exec(QStringLiteral(R"(
+        CREATE TRIGGER fail_testing_class_room_update
+        BEFORE UPDATE ON testing_classes
+        BEGIN
+            SELECT RAISE(ABORT, 'forced testing room update failure');
+        END
+    )")), qPrintable(createTrigger.lastError().text()));
+
+    const auto result = update(
+        services,
+        requestForClass(*createdClass)
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+
+    const auto saved = repository->loadTestingClass(*createdClass);
+    QVERIFY(saved);
+    QCOMPARE(saved->name, original.name);
+    QCOMPARE(saved->grade, original.grade);
+    QCOMPARE(saved->level, original.level);
+    QCOMPARE(saved->room, original.room);
+    QCOMPARE(saved->teacherId, original.teacherId);
+    QCOMPARE(saved->classColor, original.classColor);
+    QCOMPARE(saved->fontColor, original.fontColor);
+    QCOMPARE(saved->notes, original.notes);
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::

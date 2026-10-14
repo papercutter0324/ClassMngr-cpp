@@ -110,12 +110,24 @@ public:
                 );
             testingClass.notes = QString::fromStdU16String(request.notes);
 
-            const Status saved = repository->updateTestingClass(testingClass);
+            const TestingClassRepository::UpdateResult saved =
+                repository->updateTestingClassDetailed(testingClass);
             if (!saved)
             {
+                const auto& updateFailure = saved.error();
+                const Domain::ErrorCode code =
+                    updateFailure.kind
+                        == TestingClassRepository::UpdateFailure::Kind::
+                            ParentClassMissing
+                    ? Domain::ErrorCode::NotFound
+                    : Domain::ErrorCode::Technical;
+                const QByteArray errorBytes =
+                    updateFailure.diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
-                    toStdString(saved.error())
+                    code,
+                    errorBytes.isEmpty()
+                        ? "Testing class details could not be saved."
+                        : errorBytes.toStdString()
                     );
             }
 

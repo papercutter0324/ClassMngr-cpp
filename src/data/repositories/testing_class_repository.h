@@ -6,6 +6,8 @@
 #include <QList>
 #include <QSqlDatabase>
 
+#include <expected>
+
 struct TestingClassChoiceRecord final
 {
     int classId = -1;
@@ -37,6 +39,20 @@ struct TestingClassChoicesReadMetrics final
 class TestingClassRepository
 {
 public:
+    struct UpdateFailure final
+    {
+        enum class Kind
+        {
+            ParentClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using UpdateResult = std::expected<void, UpdateFailure>;
+
     explicit TestingClassRepository(
         QSqlDatabase& database
         );
@@ -48,6 +64,12 @@ public:
         );
 
     [[nodiscard]] Status updateTestingClass(
+        const TestingClass& testingClass
+        );
+
+    // The typed details-update path can distinguish a missing parent class
+    // while preserving the legacy Status diagnostic and behavior.
+    [[nodiscard]] UpdateResult updateTestingClassDetailed(
         const TestingClass& testingClass
         );
 
@@ -74,6 +96,10 @@ public:
         );
 
 private:
+    [[nodiscard]] Status writeTestingClass(
+        const TestingClass& testingClass
+        );
+
     QSqlDatabase& m_database;
     TestingClassChoicesReadMetrics m_testingClassChoicesReadMetrics;
 };

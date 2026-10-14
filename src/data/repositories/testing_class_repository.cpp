@@ -399,6 +399,170 @@ Status TestingClassRepository::updateTestingClass(
             );
     }
 
+    const Status updated = writeTestingClass(testingClass);
+    if (!updated)
+    {
+        return updated;
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(
+            QObject::tr("Committing the testing class transaction failed: %1")
+                .arg(m_database.lastError().text())
+            );
+    }
+
+    return {};
+}
+
+TestingClassRepository::UpdateResult
+TestingClassRepository::updateTestingClassDetailed(
+    const TestingClass& testingClass
+    )
+{
+    const Status valid = validateTestingClass(testingClass, true);
+    if (!valid)
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = valid.error()
+        });
+    }
+
+    const QString identity =
+        QObject::tr("class id %1").arg(testingClass.classId);
+    DatabaseTransaction transaction(
+        m_database,
+        DatabaseTransaction::Mode::Immediate
+        );
+    if (!transaction.started())
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Starting the testing class transaction failed for %1: %2"
+                ).arg(identity, transaction.startError())
+        });
+    }
+
+    QSqlQuery parentQuery(m_database);
+    parentQuery.prepare(QStringLiteral(
+        "SELECT 1 FROM classes WHERE id=?"
+        ));
+    parentQuery.addBindValue(testingClass.classId);
+    const auto parentQueryResult = SqlQueryUtils::executePrepared(
+        parentQuery,
+        QObject::tr("Checking testing class parent class"),
+        identity
+        );
+    if (!parentQueryResult)
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = parentQueryResult.error().userMessage()
+        });
+    }
+
+    const bool parentClassExists = parentQuery.next();
+    const QSqlError parentFetchError = parentQuery.lastError();
+    parentQuery.finish();
+    if (parentFetchError.isValid())
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Checking testing class parent class failed for %1: %2"
+                ).arg(identity, parentFetchError.text())
+        });
+    }
+
+    if (!parentClassExists)
+    {
+        if (!transaction.rollbackChecked())
+        {
+            return std::unexpected(UpdateFailure{
+                .kind = UpdateFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Rolling back the testing class transaction failed for "
+                    "%1: %2"
+                    ).arg(identity, m_database.lastError().text())
+            });
+        }
+
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::ParentClassMissing,
+            .diagnostic = QObject::tr(
+                "The testing class parent class was not found for %1."
+                ).arg(identity)
+        });
+    }
+
+    QSqlQuery testingClassQuery(m_database);
+    testingClassQuery.prepare(QStringLiteral(
+        "SELECT 1 FROM testing_classes WHERE class_id=?"
+        ));
+    testingClassQuery.addBindValue(testingClass.classId);
+    const auto testingClassQueryResult = SqlQueryUtils::executePrepared(
+        testingClassQuery,
+        QObject::tr("Checking testing class details target"),
+        identity
+        );
+    if (!testingClassQueryResult)
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = testingClassQueryResult.error().userMessage()
+        });
+    }
+
+    const bool testingClassExists = testingClassQuery.next();
+    const QSqlError testingClassFetchError = testingClassQuery.lastError();
+    testingClassQuery.finish();
+    if (testingClassFetchError.isValid())
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Checking testing class details target failed for %1: %2"
+                ).arg(identity, testingClassFetchError.text())
+        });
+    }
+
+    if (!testingClassExists)
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = QObject::tr("The testing class no longer exists.")
+        });
+    }
+
+    const Status updated = writeTestingClass(testingClass);
+    if (!updated)
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = updated.error()
+        });
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(UpdateFailure{
+            .kind = UpdateFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Committing the testing class transaction failed: %1"
+                ).arg(m_database.lastError().text())
+        });
+    }
+
+    return {};
+}
+
+Status TestingClassRepository::writeTestingClass(
+    const TestingClass& testingClass
+    )
+{
     QSqlQuery query(m_database);
     query.prepare(QStringLiteral("UPDATE classes SET name=? WHERE id=?"));
     query.addBindValue(testingClass.name.trimmed());
@@ -458,14 +622,6 @@ Status TestingClassRepository::updateTestingClass(
     {
         return std::unexpected(
             queryFailure(query, QObject::tr("Updating the testing class room"))
-            );
-    }
-
-    if (!transaction.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Committing the testing class transaction failed: %1")
-                .arg(m_database.lastError().text())
             );
     }
 
