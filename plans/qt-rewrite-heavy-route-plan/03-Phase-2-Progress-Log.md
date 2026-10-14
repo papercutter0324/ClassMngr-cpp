@@ -36193,3 +36193,55 @@ save missing-parent classification. F885 remains scoped to direct
 `ClassDetailsSavePort` stale-parent classification; its public page route also
 includes earlier schedule-conflict reads and is broader. Phase 2 Gates 1/2
 remain Partial and the formal exit gate remains Open.
+
+### F883 accepted; Batch 299 selected F884 - 2026-10-15
+
+F883 is accepted at source/test commit
+`3c3ba64a9a1a90a426477152fe97231d6c7bbe32`. The detailed class-notes save
+tags only a parent that was confirmed absent; its parent lookup and UPSERT run
+in `DatabaseTransaction::Mode::Immediate`. The legacy `saveClassNotes()`
+Status/QString API and exact SQLite foreign-key diagnostic remain unchanged.
+The typed port maps only `ParentClassMissing` to `NotFound`; query, SQL,
+trigger, write, commit, and transaction failures remain `Technical`.
+
+Regression coverage verifies an unknown positive class ID creates neither a
+class nor class-info row, preserves the exact legacy diagnostic, and retains
+successful-save, invalid-input/validation/session, and trigger-failure
+Technical/rollback coverage. Independent sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` passed; the
+exact CTest passed 1/1. No full suite ran. Two independent post-F883 audits
+rechecked all 13 official Deferred entries; none became actionable and all
+remain unchanged.
+
+Batch 299 selected F884 (`Classify missing parent during typed Speaking
+Evaluation save as NotFound`). The public route is
+`SpeakingEvaluationSaveUseCase::execute()` through
+`ApplicationServicesSpeakingEvaluationSavePort::saveEvaluation()` to
+`SpeakingEvalRepository::saveSpeakingEval()`. The pre-fix repository already
+uses a transaction but has no explicit missing-parent provenance; a foreign
+key failure currently reaches the typed port as `Technical`. The public
+baseline used unknown positive class ID `100001`, evaluation name
+`Missing Parent Baseline`, and a valid matrix. It returned `Technical` with
+diagnostic `Creating speaking evaluation failed for evaluation 'Missing Parent
+Baseline' for class id 100001: FOREIGN KEY constraint failed Unable to fetch
+row (database error 787)` and left no evaluation header or joined matrix-data
+row. The temporary test/output were removed. Sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+passed; the exact CTest passed 1/1 and the exact QtTest slot passed 3 cases,
+including setup/cleanup. The build reported a non-fatal missing dependency
+warning for `src/next/application/teacher_import_plan_mapper.h`. No full suite
+ran; F883 files were untouched during the baseline.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Provenance and race safety | Add repository-owned missing-parent provenance only when the parent lookup succeeds but finds no class; perform that lookup and the save in the existing transaction, using `DatabaseTransaction::Mode::Immediate` so the classification cannot race a parent deletion. Do not match diagnostic text. |
+| Typed classification and compatibility | Map only that provenance to `NotFound` through the typed Speaking Evaluation save port. Preserve legacy `saveSpeakingEval()` Status/QString behavior and its foreign-key diagnostic, plus existing service-unavailable `NotFound` and `InvalidInput`. |
+| Other failures and rollback | Query, validation, SQL, trigger, write, transaction, and commit failures remain `Technical` and roll back. |
+| Regression coverage | Assert missing parent leaves no evaluation header or joined matrix-data rows; preserve successful save and Technical rollback coverage, including trigger/write failure and legacy diagnostic behavior. Do not change matrix dimensions or dense row-count policy. |
+| Focused verification | Sequentially build `ClassMngr` then `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full suite. |
+
+F884 implementation is pending. F885 remains queued for direct
+`ClassDetailsSavePort` stale-parent classification. Batch 299 remains open;
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

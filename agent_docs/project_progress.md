@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-15 (F882 accepted; F883 selected)
+## Phase 2 current position — 2026-10-15 (F883 accepted; F884 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5183,18 +5183,35 @@ the forced later schedule query covers the Technical read-error path. Builds
 required elevated retries after FileTracker `E_ACCESSDENIED`; no full suite
 ran.
 
-Two independent post-F882 audits reviewed all 13 official Deferred entries
+F883 is accepted at `3c3ba64a9a1a90a426477152fe97231d6c7bbe32`. The typed
+class-notes save uses a detailed repository result with explicit
+`ParentClassMissing` provenance. The parent check and notes UPSERT run in one
+Immediate transaction, and only that result maps to `NotFound`. The legacy
+`saveClassNotes()` Status API keeps its original SQLite FK diagnostic.
+Regression coverage checks typed `NotFound` with no class/class_info row,
+exact legacy diagnostic preservation, successful save, and trigger failure as
+Technical with stored notes unchanged. Independent sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` passed; the
+exact matching CTest passed 1/1. No full suite ran.
+
+Two independent post-F883 audits reviewed all 13 official Deferred entries
 and found none newly actionable; all blockers remain unchanged. Batch 299
-selects F883 for missing-parent classification on typed class-notes save. The
-temporary public pre-fix baseline used valid notes and unknown positive ID
-100001: the use case returned Technical with SQLite foreign-key diagnostic
-`Saving class notes failed for class id 100001: FOREIGN KEY constraint failed
-Unable to fetch row (database error 787)`. No class or `class_info` row was
-created. The matching focused target built and CTest passed; the temporary
-probe was removed. F883 will add explicit repository provenance for the
-missing-parent case and map only that typed save failure to `NotFound`, with
-parent check and upsert serialized in one immediate transaction. Preserve
-service-unavailable `NotFound`, legacy behavior/diagnostics, and Technical
-classification with rollback for SQL/write/transaction failures. F884 and F885
-remain queued in Batch 299. Gates 1/2 remain Partial and the formal Phase 2
-exit gate remains Open.
+selects F884 for missing-parent classification on typed Speaking Evaluation
+save. Its temporary public pre-fix baseline used valid evaluation data and
+unknown positive class ID `100001`. The typed use case returned Technical
+with diagnostic `Creating speaking evaluation failed for evaluation
+'Missing Parent Baseline' for class id 100001: FOREIGN KEY constraint failed
+Unable to fetch row (database error 787)`. No evaluation header or matrix-data
+row remained. The focused target built and its exact CTest passed 1/1; the
+focused slot passed 3 QtTest cases including setup/cleanup. The build reported
+a non-fatal missing dependency warning for
+`src/next/application/teacher_import_plan_mapper.h`. The temporary probe was
+removed. F884 will add explicit repository provenance for a missing parent
+inside the existing transaction and map only the typed save result to
+`NotFound`; preserve the legacy Status API and FK diagnostic, unavailable
+service classification, and Technical rollback behavior. Do not change the
+dense Speaking Evaluation row policy. F885 remains queued for direct
+`ClassDetailsSavePort` stale-parent classification; the broader page route
+includes earlier schedule-conflict reads. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.

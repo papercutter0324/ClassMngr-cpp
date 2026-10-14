@@ -5733,22 +5733,35 @@ the exact CTest passed 1/1 after elevated FileTracker retries. The initial
 class-row SELECT failure was verified by code inspection; the forced later
 read failure covers Technical classification. No full suite ran.
 
-Two independent post-F882 audits reviewed all 13 official Phase 2 Deferred
-entries; none became actionable and all blockers remain unchanged. Batch 299
-selects F883 for typed class-notes save missing-parent classification. Its
-temporary public pre-fix probe used valid notes and unknown positive ID
-100001. The use case returned Technical with SQLite diagnostic `Saving class
-notes failed for class id 100001: FOREIGN KEY constraint failed Unable to
-fetch row (database error 787)`; no class or `class_info` row was created.
-`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` built and
-its exact CTest passed. The temporary slot/output were removed and the tree
-returned to its previous state. F883 acceptance: add explicit repository
-missing-parent provenance without diagnostic matching, check and upsert
-inside one immediate transaction, map only the typed missing-parent failure
-to `NotFound`, retain legacy diagnostics and unavailable-service behavior,
-and keep SQL/write/transaction errors Technical with rollback. Next candidates
-remain F884 Speaking Evaluation save and F885 direct `ClassDetailsSavePort`;
-the broader page route has earlier schedule-conflict reads. Existing untracked
-`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
-`txt` artifacts remain untouched. Gates 1/2 remain Partial; the formal Phase 2
-exit gate is Open.
+F883 is accepted at `3c3ba64a9a1a90a426477152fe97231d6c7bbe32`. The detailed
+repository result explicitly tags a missing class parent, with the existence
+check and notes UPSERT under an Immediate transaction. The typed port maps
+only that tag to `NotFound`. Legacy `saveClassNotes()` still uses its
+Status/QString API and returned the exact captured FK diagnostic on an unknown
+parent. The public typed test verifies NotFound with no class or `class_info`
+row, and the legacy call verifies exact message/no-row behavior. Existing
+success, invalid input/session, and trigger-failure Technical rollback cases
+remain. Independent Tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`; exact CTest
+passed 1/1. No full suite ran.
+
+Two independent post-F883 audits rechecked all 13 official Deferred entries;
+none became actionable and all blockers remain unchanged. Batch 299 selects
+F884 for missing-parent classification on typed Speaking Evaluation save. The
+temporary pre-fix public route used valid evaluation data for unknown positive
+class ID `100001`. It returned Technical with SQLite diagnostic `Creating
+speaking evaluation failed for evaluation 'Missing Parent Baseline' for class
+id 100001: FOREIGN KEY constraint failed Unable to fetch row (database error
+787)` and left no evaluation header or matrix-data row. The focused target
+built; exact CTest passed 1/1 and the slot reported 3 QtTest cases including
+setup/cleanup. MSBuild emitted a non-fatal missing-dependency warning for
+`teacher_import_plan_mapper.h`. The temporary slot/output were removed.
+F884 acceptance: explicit repository parent-missing provenance inside the
+transaction, typed NotFound only for that result, preserve legacy Status/FK
+diagnostic and unavailable-service behavior, keep query/validation/write and
+transaction failures Technical with rollback, and do not alter the deferred
+dense row-limit policy. F885 remains queued for the narrower direct
+`ClassDetailsSavePort` route; the broader page route also performs schedule
+conflict reads. Existing untracked `%SystemDrive%/`, `Testing/`,
+`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts remain
+untouched. Gates 1/2 remain Partial; the formal Phase 2 exit gate is Open.

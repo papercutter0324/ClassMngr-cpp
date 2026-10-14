@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F882 is accepted; Batch 299 selected F883 to classify a missing parent during typed class-notes save as `NotFound` using repository provenance and an Immediate transaction. Implementation is pending. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F883 is accepted; Batch 299 selected F884 to classify a missing parent during typed Speaking Evaluation save as `NotFound` using repository provenance under an Immediate transaction. Implementation is pending; F885 remains queued. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

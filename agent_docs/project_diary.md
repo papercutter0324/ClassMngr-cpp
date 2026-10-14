@@ -5420,3 +5420,11 @@ kind so a typed caller can return `NotFound` without parsing diagnostics. Keep
 query execution and fetch failures Technical, and let a legacy wrapper forward
 the same message. Exercise both the missing-row case and a separate forced
 read failure through the public typed route.
+
+## Phase 2 typed class-notes missing parent - 2026-10-15
+
+For a typed persistence route that needs missing-parent classification, keep
+the legacy Status/QString call and diagnostic stable while adding a detailed
+repository result for the typed port. Hold the existence check and write in
+one Immediate transaction, tag only the absent-parent case, and retain
+Technical rollback behavior for trigger and SQL failures.
