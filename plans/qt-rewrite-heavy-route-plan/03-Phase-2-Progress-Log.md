@@ -35184,3 +35184,50 @@ and `tests/testing_class_repository_tests.cpp`.
 | Scope and focused verification | Change only `src/data/repositories/testing_class_repository.cpp` and `tests/testing_class_repository_tests.cpp`; build `ClassMngr` and `ClassMngrTestingClassRepositoryTests` in standard `build/windows-x64-debug`; run exactly `ClassMngrTestingClassRepositoryTests` in Debug. No full suite or new target. |
 
 Phase 2 remains In Progress/Open; Gates 1/2 remain Partial.
+
+### F867 Generated testing-class ID range - accepted; Batch 282 completion and Batch 283 discovery - 2026-10-14
+
+F867 is accepted at source/test commit
+`cc6b61ac920ec62ebc1b8c07f6cc1fcf750ade1c`. The repository validates the
+generated `lastInsertId()` as `qint64` for conversion, positivity, and the
+`INT_MAX` ceiling before related writes; invalid IDs roll back. The existing
+test covers generated ID `4294967297` rollback with ID `1` intact and no related
+rows, plus positive `INT_MAX` acceptance with assignment.
+
+Independent Debug builds of `ClassMngr` and
+`ClassMngrTestingClassRepositoryTests` succeeded in
+`build/windows-x64-debug`; the exact Debug CTest passed 1/1 on the rebuilt
+executable. Earlier sandbox and no-TrackFileAccess MSBuild retries hit
+FileTracker `E_ACCESSDENIED`/`MSB4018`; successful elevated builds were
+warning-free. No full suite ran.
+
+F867 completed Batch 282. The post-slice audit found none of the 13 Deferred
+entries newly actionable; all remain unchanged. F867 covers generated class
+IDs only and does not affect the separate teacher ID item. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+Batch 283 selects F868 as its sole candidate: the separate read-side
+testing-class choices query. `TestingClassRepository::loadTestingClassChoices()`
+uses unchecked `.toInt()` for persisted `classes.id` values. The active-session
+adapter stringifies the narrowed integer, and `Domain::ClassId::fromString()`
+accepts positive canonical text; the Application handler is pass-through and
+does not catch duplicates. Thus persisted ID `4294967297` can become typed ID
+`1`, colliding with a real row and misdirecting selection.
+
+F868 is selected, not implemented. Reject persisted IDs outside the positive
+signed-`int` range at the repository choice-read boundary and propagate a typed
+Technical failure without aliased partial choices. First use actual SQLite
+INTEGER IDs `1` and `4294967297` to verify the baseline alias; stop and revise
+the plan if it does not reproduce. After the change, verify failure returns no
+aliased choice and leaves persisted rows unchanged. Preserve IDs through
+`INT_MAX`, ordering, empty results, and existing session/repository error
+behavior. Limit changes to
+`src/data/repositories/testing_class_repository.cpp` and
+`tests/next_platform_application_services_schedule_testing_class_choices_read_port_tests.cpp`; do not add a target or widen APIs.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Existing fixture stores SQLite INTEGER IDs `1` and `4294967297`; verify the current read aliases the wide ID to typed ID `1`. Stop for plan revision if it does not reproduce. |
+| Range failure and no partial choices | Reject the wide ID at the repository boundary; verify the read port propagates typed Technical failure, returns no aliased or partial choices, and preserves both persisted rows. |
+| Compatibility | Preserve valid IDs through `INT_MAX`, choice ordering, empty results, and existing session/repository error behavior. |
+| Scope and focused verification | Change only `src/data/repositories/testing_class_repository.cpp` and `tests/next_platform_application_services_schedule_testing_class_choices_read_port_tests.cpp`; build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full-suite run. |

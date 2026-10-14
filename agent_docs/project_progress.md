@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F866 accepted; F867 selected)
+### Current state - 2026-10-14 (F867 accepted; F868 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -81,8 +81,16 @@ Independent verification built `ClassMngr` and
 Debug CTest passed 1/1. The post-F866 audit also found no Deferred entry newly
 actionable. Batch 282 selected F867 to reject an out-of-range generated class
 ID before TestingClassRepository writes related details or assignment rows.
-F579/F598 still require an elevated Administrator token; Gates 1/2 remain
-Partial and the formal exit gate remains Open.
+F867 is accepted at `cc6b61ac920ec62ebc1b8c07f6cc1fcf750ade1c`:
+`TestingClassRepository::createTestingClass()` validates generated IDs as
+positive, representable qint64 values before writing related details or
+assignment rows. Independent Debug builds of `ClassMngr` and
+`ClassMngrTestingClassRepositoryTests` succeeded; the exact CTest passed 1/1.
+No full suite ran. The post-F867 audit reviewed all 13 Deferred entries; none
+became actionable. Batch 282 is complete. Batch 283 selects F868 to reject
+out-of-range persisted IDs in testing-class choice reads before they can alias
+another class. F579/F598 still require an elevated Administrator token; Gates
+1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

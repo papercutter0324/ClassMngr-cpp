@@ -60,10 +60,18 @@
   Debug CTest passed 1/1. FileTracker denied sandbox builds, so the same build
   commands passed after elevated retries. The target build had a nonfatal
   `MSB8064` generated-dependency warning. No full suite ran.
-- The post-F866 audit reviewed all 13 Deferred entries and found none newly
-  actionable. Batch 282 selected F867 to reject an out-of-range generated
-  class ID before `TestingClassRepository` writes details or assignment rows;
-  its acceptance matrix is recorded in the Phase 2 plan.
+- F867 source/test commit: `cc6b61ac920ec62ebc1b8c07f6cc1fcf750ade1c`;
+  `TestingClassRepository::createTestingClass()` validates the generated
+  `lastInsertId()` as qint64 before dependent details and assignment writes.
+  Independent Debug builds of `ClassMngr` and
+  `ClassMngrTestingClassRepositoryTests` succeeded; the exact Debug CTest
+  passed 1/1 on the rebuilt executable. No full suite ran.
+- The post-F867 audit reviewed all 13 Deferred entries and found none newly
+  actionable; all 13 remain unchanged. Batch 282 is complete. Batch 283 selects
+  F868: reject out-of-range persisted class IDs in
+  `TestingClassRepository::loadTestingClassChoices()` so a wide ID cannot
+  become an alias in the active-session choices query. The acceptance matrix
+  is being recorded in the Phase 2 plan.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;
