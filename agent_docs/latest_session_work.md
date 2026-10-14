@@ -113,12 +113,20 @@
   warnings. The executor's baseline target build reported one nonblocking
   MSB8064 AUTOGEN timestamp warning for the unrelated missing
   `src/next/application/teacher_import_plan_mapper.h`; no full suite ran.
-- The post-F871 audit reviewed all 13 Deferred entries and found none newly
-  actionable; all 13 remain unchanged. Batch 286 is complete. Batch 287
-  selects F872: validate persisted IDs in the legacy
-  `DataService::getAllCampuses()` result before narrowing. Its required
-  SQLite alias baseline and acceptance matrix are recorded in the Phase 2
-  progress log.
+- F872 source/test commit: `88aca00b4ba7884b6283ad859680d0228dc6ffa5`;
+  `DataService::getAllCampuses()` now validates each persisted campus ID as
+  qint64 before narrowing and returns typed failure with no partial list for
+  IDs outside the positive `int` range. The required SQLite baseline
+  reproduced IDs 1 and 4294967297 collapsing to 1 in the returned list while
+  both distinct rows remained stored. Executor and independent Tester each
+  built `ClassMngr` and `ClassMngrDataServiceLifecycleTests` sequentially and
+  passed the exact Debug CTest 1/1. No full suite ran.
+- F872 completed Batch 287. The post-F872 audit reviewed all 13 Deferred
+  entries and found no newly actionable item; all remain unchanged. Batch 288
+  discovery found no additional candidate in the calendar-event boundary or
+  current identity scan. A fresh class-detail repository scan remains after
+  reconciling the stale Phase 2 status. Phase 2 is In Progress/Open; Gates 1
+  and 2 remain Partial.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;

@@ -35478,3 +35478,30 @@ the schema or API.
 | Scope and focused verification | Change only `src/data/repositories/campus_record_repository.cpp` and `tests/data_service_lifecycle_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrDataServiceLifecycleTests` in the standard Debug build tree; run exactly that Debug CTest. No full-suite run. |
 
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F872 Campus-list persisted ID validation - accepted; Batch 287 completion and Batch 288 discovery - 2026-10-14
+
+F872 is accepted at source/test commit
+`88aca00b4ba7884b6283ad859680d0228dc6ffa5`. The mandatory pre-fix SQLite
+baseline seeded INTEGER campus IDs `1` and `4294967297` with distinct names;
+`DataService::getAllCampuses()` returned success with both IDs narrowed to
+`1`, while SQLite retained the distinct rows. The repository now validates
+each persisted ID as `qint64` for conversion, positivity, and `<= INT_MAX`
+before appending. An invalid ID returns typed whole-list failure without
+partial results or database changes.
+
+Coverage preserves empty-list behavior and IDs `1` and `INT_MAX`; it checks a
+wide ID after valid rows, ID `0`, unchanged stored rows, and existing SQL
+failure behavior. The executor sequentially built `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests`; the exact focused Debug CTest passed
+1/1. The independent Tester repeated both builds and the CTest, which passed
+1/1. Standard FileTracker access was denied before compilation and required
+elevated retries; the successful final builds had no warnings. No full suite
+ran.
+
+F872 completed Batch 287. The post-F872 audit rechecked all 13 plan Deferred
+candidates; none became newly actionable and all remain unchanged. An initial
+Batch 288 scan found no additional candidate, while complementary scans are
+reconciling stale document state; next-candidate selection remains pending
+resumed discovery. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
