@@ -69,9 +69,23 @@ Result<TestingClass> readTestingClass(
     const QSqlQuery& query
     )
 {
+    const QVariant storedClassId = query.value(QStringLiteral("class_id"));
+    bool classIdOk = false;
+    const qint64 storedClassIdValue =
+        storedClassId.toLongLong(&classIdOk);
+    if (
+        !classIdOk
+        || storedClassIdValue <= 0
+        || storedClassIdValue > std::numeric_limits<int>::max()
+        )
+    {
+        return std::unexpected(
+            QObject::tr("The testing class has an invalid class identifier.")
+            );
+    }
+
     TestingClass testingClass;
-    testingClass.classId =
-        query.value(QStringLiteral("class_id")).toInt();
+    testingClass.classId = static_cast<int>(storedClassIdValue);
     testingClass.name =
         query.value(QStringLiteral("name")).toString();
     testingClass.grade =

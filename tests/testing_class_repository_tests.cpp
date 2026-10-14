@@ -4,6 +4,7 @@
 
 #include <QSqlDatabase>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QtTest>
 
 #include <array>
@@ -21,6 +22,8 @@ private slots:
     void createsClassAndAssignmentAtomically();
     void rejectsGeneratedTestingClassIdsAboveIntRangeAndRollsBack();
     void acceptsMaximumGeneratedTestingClassId();
+    void preservesSupportedPersistedTestingClassIdsAndOrder();
+    void rejectsInvalidPersistedTestingClassIdsWithoutMutation();
     void deletesEveryCascadeRowAndPreservesSiblingClass();
     void rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
@@ -138,6 +141,211 @@ int rowCount(
         return -1;
     }
     return query.value(0).toInt();
+}
+
+bool insertPersistedTestingClass(
+    QSqlDatabase& database,
+    const qint64 classId,
+    const QString& name,
+    const QString& grade,
+    const QString& level,
+    const QString& room,
+    const qint64 teacherId,
+    const QString& classColor,
+    const QString& fontColor,
+    const QString& notes
+    )
+{
+    QSqlQuery query(database);
+    query.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    query.addBindValue(classId);
+    query.addBindValue(name);
+    if (!query.exec())
+    {
+        return false;
+    }
+
+    query.prepare(QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id,
+            teacher_id,
+            class_grade,
+            class_level,
+            class_color,
+            font_color,
+            notes,
+            time_filler_activities
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, '')
+    )"));
+    query.addBindValue(classId);
+    query.addBindValue(teacherId);
+    query.addBindValue(grade);
+    query.addBindValue(level);
+    query.addBindValue(classColor);
+    query.addBindValue(fontColor);
+    query.addBindValue(notes);
+    if (!query.exec())
+    {
+        return false;
+    }
+
+    query.prepare(QStringLiteral(
+        "INSERT INTO testing_classes (class_id, room) VALUES (?, ?)"
+        ));
+    query.addBindValue(classId);
+    query.addBindValue(room);
+    return query.exec();
+}
+
+bool readPersistedTestingClassSnapshot(
+    QSqlDatabase& database,
+    QStringList* snapshot
+    )
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral(R"(
+        SELECT
+            c.id,
+            typeof(c.id),
+            c.name,
+            tc.class_id,
+            typeof(tc.class_id),
+            tc.room,
+            ci.class_id,
+            typeof(ci.class_id),
+            ci.teacher_id,
+            ci.class_grade,
+            ci.class_level,
+            ci.class_color,
+            ci.font_color,
+            ci.notes
+        FROM classes c
+        JOIN testing_classes tc ON tc.class_id = c.id
+        JOIN class_info ci ON ci.class_id = c.id
+        ORDER BY c.id
+    )")))
+    {
+        return false;
+    }
+
+    snapshot->clear();
+    while (query.next())
+    {
+        QStringList values;
+        for (int column = 0; column < query.record().count(); ++column)
+        {
+            values.append(query.value(column).toString());
+        }
+        snapshot->append(values.join(QChar(0x1f)));
+    }
+    return true;
+}
+
+bool persistedTestingClassSnapshotRowHasId(
+    const QString& row,
+    const qint64 classId
+    )
+{
+    const QStringList values = row.split(QChar(0x1f));
+    if (values.size() != 14)
+    {
+        return false;
+    }
+
+    const QString idText = QString::number(classId);
+    return values.at(0) == idText
+        && values.at(1) == QStringLiteral("integer")
+        && values.at(3) == idText
+        && values.at(4) == QStringLiteral("integer")
+        && values.at(6) == idText
+        && values.at(7) == QStringLiteral("integer");
+}
+
+struct InvalidTestingClassLoadEvidence
+{
+    bool databaseReady = false;
+    bool rowsSeeded = false;
+    bool beforeSnapshotRead = false;
+    bool loadRejected = false;
+    QString error;
+    bool afterSnapshotRead = false;
+    QStringList before;
+    QStringList after;
+};
+
+InvalidTestingClassLoadEvidence loadTestingClassesWithInvalidPersistedId(
+    const qint64 invalidClassId,
+    const QString& connectionName
+    )
+{
+    InvalidTestingClassLoadEvidence evidence;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        evidence.databaseReady =
+            database.isValid()
+            && database.open()
+            && createSchema(database);
+        if (evidence.databaseReady)
+        {
+            evidence.rowsSeeded =
+                insertPersistedTestingClass(
+                    database,
+                    1,
+                    QStringLiteral("Valid First Class"),
+                    QStringLiteral("M1"),
+                    QStringLiteral("Major"),
+                    QStringLiteral("Room 1"),
+                    7,
+                    QStringLiteral("#112233"),
+                    QStringLiteral("#FFFFFF"),
+                    QStringLiteral("Valid row")
+                    )
+                && insertPersistedTestingClass(
+                    database,
+                    invalidClassId,
+                    QStringLiteral("Invalid Later Class"),
+                    QStringLiteral("M2"),
+                    QStringLiteral("Mixed (High)"),
+                    QStringLiteral("Room 2"),
+                    8,
+                    QStringLiteral("#445566"),
+                    QStringLiteral("#000000"),
+                    QStringLiteral("Invalid row")
+                    );
+            if (evidence.rowsSeeded)
+            {
+                evidence.beforeSnapshotRead =
+                    readPersistedTestingClassSnapshot(
+                        database,
+                        &evidence.before
+                        );
+                if (evidence.beforeSnapshotRead)
+                {
+                    TestingClassRepository repository(database);
+                    const Result<QList<TestingClass>> loaded =
+                        repository.loadTestingClasses();
+                    evidence.loadRejected = !loaded;
+                    if (!loaded)
+                    {
+                        evidence.error = loaded.error();
+                    }
+                    evidence.afterSnapshotRead =
+                        readPersistedTestingClassSnapshot(
+                            database,
+                            &evidence.after
+                            );
+                }
+            }
+        }
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return evidence;
 }
 
 bool insertCascadeRows(
@@ -762,6 +970,151 @@ void TestingClassRepositoryTests
     }
 
     QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::preservesSupportedPersistedTestingClassIdsAndOrder()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_supported_persisted_ids");
+
+    {
+        QSqlDatabase database =
+            QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"),
+                connectionName
+                );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        constexpr qint64 supportedClassId = 1;
+        constexpr int maximumClassId = std::numeric_limits<int>::max();
+        QVERIFY(insertPersistedTestingClass(
+            database,
+            supportedClassId,
+            QStringLiteral("Zulu Supported Class"),
+            QStringLiteral("M2"),
+            QStringLiteral("Mixed (High)"),
+            QStringLiteral("Room 1"),
+            17,
+            QStringLiteral("#112233"),
+            QStringLiteral("#FFFFFF"),
+            QStringLiteral("Supported row notes")
+            ));
+        QVERIFY(insertPersistedTestingClass(
+            database,
+            maximumClassId,
+            QStringLiteral("Alpha Maximum Class"),
+            QStringLiteral("M1"),
+            QStringLiteral("Major"),
+            QStringLiteral("Room 2"),
+            23,
+            QStringLiteral("#445566"),
+            QStringLiteral("#000000"),
+            QStringLiteral("Maximum row notes")
+            ));
+
+        QStringList rowsBefore;
+        QVERIFY(readPersistedTestingClassSnapshot(database, &rowsBefore));
+        QCOMPARE(rowsBefore.size(), 2);
+        QVERIFY(persistedTestingClassSnapshotRowHasId(rowsBefore.at(0), 1));
+        QVERIFY(persistedTestingClassSnapshotRowHasId(
+            rowsBefore.at(1),
+            maximumClassId
+            ));
+
+        TestingClassRepository repository(database);
+        const Result<QList<TestingClass>> loaded =
+            repository.loadTestingClasses();
+        QVERIFY(loaded);
+        QCOMPARE(loaded->size(), 2);
+        QCOMPARE(loaded->at(0).classId, maximumClassId);
+        QCOMPARE(loaded->at(0).name, QStringLiteral("Alpha Maximum Class"));
+        QCOMPARE(loaded->at(0).grade, QStringLiteral("M1"));
+        QCOMPARE(loaded->at(0).level, QStringLiteral("Major"));
+        QCOMPARE(loaded->at(0).room, QStringLiteral("Room 2"));
+        QCOMPARE(loaded->at(0).teacherId, 23);
+        QCOMPARE(loaded->at(0).classColor, QStringLiteral("#445566"));
+        QCOMPARE(loaded->at(0).fontColor, QStringLiteral("#000000"));
+        QCOMPARE(loaded->at(0).notes, QStringLiteral("Maximum row notes"));
+        QCOMPARE(loaded->at(1).classId, 1);
+        QCOMPARE(loaded->at(1).name, QStringLiteral("Zulu Supported Class"));
+        QCOMPARE(loaded->at(1).grade, QStringLiteral("M2"));
+        QCOMPARE(loaded->at(1).level, QStringLiteral("Mixed (High)"));
+        QCOMPARE(loaded->at(1).room, QStringLiteral("Room 1"));
+        QCOMPARE(loaded->at(1).teacherId, 17);
+        QCOMPARE(loaded->at(1).classColor, QStringLiteral("#112233"));
+        QCOMPARE(loaded->at(1).fontColor, QStringLiteral("#FFFFFF"));
+        QCOMPARE(loaded->at(1).notes, QStringLiteral("Supported row notes"));
+
+        const Result<QList<TestingClassChoiceRecord>> choices =
+            repository.loadTestingClassChoices();
+        QVERIFY(choices);
+        QCOMPARE(choices->size(), 2);
+        QCOMPARE(choices->at(0).classId, maximumClassId);
+        QCOMPARE(choices->at(0).name, QStringLiteral("Alpha Maximum Class"));
+        QCOMPARE(choices->at(1).classId, 1);
+        QCOMPARE(choices->at(1).name, QStringLiteral("Zulu Supported Class"));
+
+        QStringList rowsAfter;
+        QVERIFY(readPersistedTestingClassSnapshot(database, &rowsAfter));
+        QCOMPARE(rowsAfter, rowsBefore);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::rejectsInvalidPersistedTestingClassIdsWithoutMutation()
+{
+    const InvalidTestingClassLoadEvidence wideIdEvidence =
+        loadTestingClassesWithInvalidPersistedId(
+            4294967297LL,
+            QStringLiteral("testing_class_repository_wide_persisted_id")
+            );
+    QVERIFY(wideIdEvidence.databaseReady);
+    QVERIFY(wideIdEvidence.rowsSeeded);
+    QVERIFY(wideIdEvidence.beforeSnapshotRead);
+    QCOMPARE(wideIdEvidence.before.size(), 2);
+    QVERIFY(persistedTestingClassSnapshotRowHasId(
+        wideIdEvidence.before.at(0),
+        1
+        ));
+    QVERIFY(persistedTestingClassSnapshotRowHasId(
+        wideIdEvidence.before.at(1),
+        4294967297LL
+        ));
+    QVERIFY(wideIdEvidence.loadRejected);
+    QVERIFY(wideIdEvidence.error.contains(
+        QStringLiteral("invalid class identifier")
+        ));
+    QVERIFY(wideIdEvidence.afterSnapshotRead);
+    QCOMPARE(wideIdEvidence.after, wideIdEvidence.before);
+
+    const InvalidTestingClassLoadEvidence zeroIdEvidence =
+        loadTestingClassesWithInvalidPersistedId(
+            0,
+            QStringLiteral("testing_class_repository_zero_persisted_id")
+            );
+    QVERIFY(zeroIdEvidence.databaseReady);
+    QVERIFY(zeroIdEvidence.rowsSeeded);
+    QVERIFY(zeroIdEvidence.beforeSnapshotRead);
+    QCOMPARE(zeroIdEvidence.before.size(), 2);
+    QVERIFY(persistedTestingClassSnapshotRowHasId(
+        zeroIdEvidence.before.at(0),
+        0
+        ));
+    QVERIFY(persistedTestingClassSnapshotRowHasId(
+        zeroIdEvidence.before.at(1),
+        1
+        ));
+    QVERIFY(zeroIdEvidence.loadRejected);
+    QVERIFY(zeroIdEvidence.error.contains(
+        QStringLiteral("invalid class identifier")
+        ));
+    QVERIFY(zeroIdEvidence.afterSnapshotRead);
+    QCOMPARE(zeroIdEvidence.after, zeroIdEvidence.before);
 }
 
 void TestingClassRepositoryTests::
