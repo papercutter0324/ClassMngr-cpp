@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F900 accepted; F901 acceptance defined)
+### Current state - 2026-10-15 (F901 accepted; F902 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -293,9 +293,27 @@ and no fallbacks. The temporary baseline test failed intentionally on the
 expected per-entry `NotFound`, and its source was restored byte-for-byte. The
 accepted contract is per-entry recoverable `NotFound` for both absent parents,
 with the outer vector, input order, valid siblings, and existing optional-data
-behavior preserved; SQL/cursor failures remain technical. Acceptance is
-recorded before implementation. F902-F908 remain in their existing order.
-Gates 1/2 remain Partial and the formal exit gate remains Open.
+behavior preserved; failed SQL/cursor reads alone never imply `NotFound`, and
+fallback failures remain technical. Acceptance is
+recorded before implementation. F901 is accepted at source/test commit
+`514c41ae61e50ab591fa8d1fc56932a60b6f1527`. The repository now confirms
+parent absence from a successful parent-rooted read, joins class information
+and both schedule types through `classes`, and checks cursor errors before
+falling back. The port returns per-entry recoverable `NotFound` for confirmed
+absence while keeping the outer ordered batch successful. Its forced
+intensive-query-failure regression verifies fallback maps a deleted parent
+with orphan rows to `NotFound`, while present siblings remain `Technical`;
+the normal mixed regression preserves valid sibling and optional-metadata
+behavior and metrics. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`
+used `/p:TrackFileAccess=false /p:ForceRebuild=true`; the changed repository
+and focused-test sources compiled, and exact Debug CTest #326 passed 1/1 with
+no warnings. No full suite ran. No cursor-iteration failure fixture exists;
+the cursor checks and fallback were reviewed in source. Two independent
+post-F901 audits rechecked all 13 official Deferred entries; none became
+actionable and all remain unchanged. F902, My Classes class-summary batch
+parent provenance, is next; F903-F908 remain in order. Gates 1/2 remain Partial
+and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

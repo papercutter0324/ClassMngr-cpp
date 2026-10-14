@@ -37475,7 +37475,7 @@ continues F901-F908 in its recorded order, with F901, My Classes
 class-information batch parent provenance, next. Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
 
-### F901 baseline captured; acceptance defined - 2026-10-15
+### F901 accepted; post-slice Deferred audit clear; F902 next - 2026-10-15
 
 The fresh baseline public batch read for IDs `[1, 2, 3, 987654321]` returned
 outer success, four entries in request order, and success for every inner
@@ -37504,9 +37504,33 @@ product source changed.
 | No orphan leakage; valid siblings | Suppress orphan `class_info` fields and regular/intensive schedules. Preserve populated sibling results and a present parent without optional `class_info`, including default fields and its actual schedules. |
 | Existing behavior and errors | Preserve empty-input and validation behavior, whole-operation and inner technical failures, and current fallback semantics. Check cursor errors after metadata, regular-schedule, and intensive-schedule fetches; never classify failures as `NotFound`. |
 | Batch design and metrics | Preserve metric meanings and do not add per-ID batch fallback reads. |
-| Focused verification | Build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests` in the existing `build/windows-x64-debug` using `/p:TrackFileAccess=false /p:ForceRebuild=true`; run only its exact Debug CTest #326. No full suite. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests` in the existing `build/windows-x64-debug` using `/p:TrackFileAccess=false /p:ForceRebuild=true`; run only its exact Debug CTest #326. No full suite. |
 
-F901 baseline is captured and acceptance is defined; implementation is next.
-F902-F908 remain in the existing Batch 304 order, and all 13 official
-Deferred candidates remain unchanged. Gates 1/2 remain Partial and the formal
+F901 is accepted at source/test commit
+`514c41ae61e50ab591fa8d1fc56932a60b6f1527`. The My Classes
+class-information repository's batch and fallback reads carry parent
+provenance. The metadata,
+regular-schedule, and intensive-schedule queries join through `classes`,
+filtering orphan children. All three cursor loops check `lastError()`, and
+fallback reads retain parent provenance. Only confirmed parent absence maps
+to inner recoverable `NotFound`; the outer vector, request order, and valid
+siblings remain intact. Empty input, validation, whole-operation and inner
+technical failures, fallback behavior, and metric meanings are preserved;
+no per-ID batch fallback was added.
+
+The strengthened tests cover normal mixed rows and forced intensive-query
+failure. The deleted parent with verified orphan children becomes per-entry
+`NotFound`; during the forced query failure, present siblings remain
+`Technical`. Metrics are checked. An independent tester sequentially built
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`
+with `/p:TrackFileAccess=false /p:ForceRebuild=true`; changed repository and
+test sources compiled without warnings, and exact Debug CTest #326 passed
+1/1. No cursor-iteration failure fixture exists, so source checks were
+reviewed. No full suite ran.
+
+Two independent post-F901 audits compared all 13 official Deferred entries
+with the slice and found zero newly actionable; all remain unchanged. F902,
+My Classes class-summary batch parent provenance, is next; F903-F908 remain
+in their existing Batch 304 order. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
