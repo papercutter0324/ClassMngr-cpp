@@ -244,6 +244,7 @@ private slots:
     void teacherDeleteFailureRollsBackClassAssignments();
     void campusCreationValidatesGeneratedIdAtomically();
     void campusListValidatesPersistedIds();
+    void teacherListValidatesPersistedIds();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
@@ -1049,6 +1050,225 @@ void DataServiceLifecycleTests::campusListValidatesPersistedIds()
         QStringLiteral("F872 B Campus")
         );
     QVERIFY(!query.next());
+}
+
+void DataServiceLifecycleTests::teacherListValidatesPersistedIds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("teacher-list-wide-id.db"))
+        ).has_value());
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery query(database);
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO teachers ("
+        "id, teacher_kr, teacher_en, preferred_romanization, preferred_name, "
+        "room_number, birthday, phone_number, wifi_name, wifi_password, "
+        "internet_type, zoom_id, zoom_password, projection_type, notes"
+        ") VALUES "
+        "(1, 'F876 A Korean', 'F876 A Teacher', 'F876 A Romanization', "
+        "'F876 A Preferred', 'F876 A Room', '01-02', '010-1000-0001', "
+        "'F876 A WiFi', 'F876 A WiFi Password', 'LAN', 'F876 A Zoom', "
+        "'F876 A Zoom Password', 'Zoom', 'F876 A Notes'), "
+        "(2147483647, 'F876 B Korean', 'F876 B Teacher', "
+        "'F876 B Romanization', 'F876 B Preferred', 'F876 B Room', "
+        "'03-04', '010-2000-0002', 'F876 B WiFi', 'F876 B WiFi Password', "
+        "'Both', 'F876 B Zoom', 'F876 B Zoom Password', 'Any', "
+        "'F876 B Notes')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 2);
+
+    const auto snapshotTeacherRows = [&database]()
+        {
+            QList<QStringList> rows;
+            QSqlQuery snapshotQuery(database);
+            if (!snapshotQuery.exec(QStringLiteral(
+                "SELECT id, teacher_kr, teacher_en, preferred_romanization, "
+                "preferred_name, room_number, birthday, phone_number, "
+                "wifi_name, wifi_password, internet_type, zoom_id, "
+                "zoom_password, projection_type, notes, "
+                "typeof(id) AS id_type "
+                "FROM teachers ORDER BY id"
+                )))
+            {
+                return rows;
+            }
+
+            while (snapshotQuery.next())
+            {
+                rows.append({
+                    snapshotQuery.value("id").toString(),
+                    snapshotQuery.value("teacher_kr").toString(),
+                    snapshotQuery.value("teacher_en").toString(),
+                    snapshotQuery.value("preferred_romanization").toString(),
+                    snapshotQuery.value("preferred_name").toString(),
+                    snapshotQuery.value("room_number").toString(),
+                    snapshotQuery.value("birthday").toString(),
+                    snapshotQuery.value("phone_number").toString(),
+                    snapshotQuery.value("wifi_name").toString(),
+                    snapshotQuery.value("wifi_password").toString(),
+                    snapshotQuery.value("internet_type").toString(),
+                    snapshotQuery.value("zoom_id").toString(),
+                    snapshotQuery.value("zoom_password").toString(),
+                    snapshotQuery.value("projection_type").toString(),
+                    snapshotQuery.value("notes").toString(),
+                    snapshotQuery.value("id_type").toString()
+                });
+            }
+            return rows;
+        };
+
+    const Result<QList<Teacher>> teachers = service.getAllTeachers();
+    QVERIFY(teachers);
+    QCOMPARE(teachers->size(), 2);
+    QCOMPARE(teachers->first().id, 1);
+    QCOMPARE(teachers->first().teacherEn, QStringLiteral("F876 A Teacher"));
+    QCOMPARE(teachers->first().teacherKr, QStringLiteral("F876 A Korean"));
+    QCOMPARE(teachers->first().preferredRomanization,
+        QStringLiteral("F876 A Romanization"));
+    QCOMPARE(teachers->first().preferredName, QStringLiteral("F876 A Preferred"));
+    QCOMPARE(teachers->first().roomNumber, QStringLiteral("F876 A Room"));
+    QCOMPARE(teachers->first().birthday, QStringLiteral("01-02"));
+    QCOMPARE(teachers->first().phoneNumber, QStringLiteral("010-1000-0001"));
+    QCOMPARE(teachers->first().wifiName, QStringLiteral("F876 A WiFi"));
+    QCOMPARE(teachers->first().wifiPassword,
+        QStringLiteral("F876 A WiFi Password"));
+    QCOMPARE(teachers->first().internetType, QStringLiteral("LAN"));
+    QCOMPARE(teachers->first().zoomId, QStringLiteral("F876 A Zoom"));
+    QCOMPARE(teachers->first().zoomPassword,
+        QStringLiteral("F876 A Zoom Password"));
+    QCOMPARE(teachers->first().projectionType, QStringLiteral("Zoom"));
+    QCOMPARE(teachers->first().notes, QStringLiteral("F876 A Notes"));
+    QCOMPARE(teachers->last().id, std::numeric_limits<int>::max());
+    QCOMPARE(teachers->last().teacherEn, QStringLiteral("F876 B Teacher"));
+    QCOMPARE(teachers->last().teacherKr, QStringLiteral("F876 B Korean"));
+    QCOMPARE(teachers->last().preferredRomanization,
+        QStringLiteral("F876 B Romanization"));
+    QCOMPARE(teachers->last().preferredName, QStringLiteral("F876 B Preferred"));
+    QCOMPARE(teachers->last().roomNumber, QStringLiteral("F876 B Room"));
+    QCOMPARE(teachers->last().birthday, QStringLiteral("03-04"));
+    QCOMPARE(teachers->last().phoneNumber, QStringLiteral("010-2000-0002"));
+    QCOMPARE(teachers->last().wifiName, QStringLiteral("F876 B WiFi"));
+    QCOMPARE(teachers->last().wifiPassword,
+        QStringLiteral("F876 B WiFi Password"));
+    QCOMPARE(teachers->last().internetType, QStringLiteral("Both"));
+    QCOMPARE(teachers->last().zoomId, QStringLiteral("F876 B Zoom"));
+    QCOMPARE(teachers->last().zoomPassword,
+        QStringLiteral("F876 B Zoom Password"));
+    QCOMPARE(teachers->last().projectionType, QStringLiteral("Any"));
+    QCOMPARE(teachers->last().notes, QStringLiteral("F876 B Notes"));
+
+    const QList<QStringList> expectedRows = {
+        {
+            QStringLiteral("1"), QStringLiteral("F876 A Korean"),
+            QStringLiteral("F876 A Teacher"),
+            QStringLiteral("F876 A Romanization"),
+            QStringLiteral("F876 A Preferred"), QStringLiteral("F876 A Room"),
+            QStringLiteral("01-02"), QStringLiteral("010-1000-0001"),
+            QStringLiteral("F876 A WiFi"), QStringLiteral("F876 A WiFi Password"),
+            QStringLiteral("LAN"), QStringLiteral("F876 A Zoom"),
+            QStringLiteral("F876 A Zoom Password"), QStringLiteral("Zoom"),
+            QStringLiteral("F876 A Notes"), QStringLiteral("integer")
+        },
+        {
+            QStringLiteral("2147483647"), QStringLiteral("F876 B Korean"),
+            QStringLiteral("F876 B Teacher"),
+            QStringLiteral("F876 B Romanization"),
+            QStringLiteral("F876 B Preferred"), QStringLiteral("F876 B Room"),
+            QStringLiteral("03-04"), QStringLiteral("010-2000-0002"),
+            QStringLiteral("F876 B WiFi"), QStringLiteral("F876 B WiFi Password"),
+            QStringLiteral("Both"), QStringLiteral("F876 B Zoom"),
+            QStringLiteral("F876 B Zoom Password"), QStringLiteral("Any"),
+            QStringLiteral("F876 B Notes"), QStringLiteral("integer")
+        }
+    };
+    QCOMPARE(snapshotTeacherRows(), expectedRows);
+
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO teachers ("
+        "id, teacher_kr, teacher_en, preferred_romanization, preferred_name, "
+        "room_number, birthday, phone_number, wifi_name, wifi_password, "
+        "internet_type, zoom_id, zoom_password, projection_type, notes"
+        ") VALUES (4294967297, 'F876 C Wide Korean', "
+        "'F876 C Wide Teacher', 'F876 C Wide Romanization', "
+        "'F876 C Wide Preferred', 'F876 C Wide Room', '05-06', "
+        "'010-3000-0003', 'F876 C Wide WiFi', 'F876 C Wide WiFi Password', "
+        "'N/A', 'F876 C Wide Zoom', 'F876 C Wide Zoom Password', 'HDMI', "
+        "'F876 C Wide Notes')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    const QList<QStringList> expectedRowsWithWideId = {
+        expectedRows.at(0),
+        expectedRows.at(1),
+        {
+            QStringLiteral("4294967297"), QStringLiteral("F876 C Wide Korean"),
+            QStringLiteral("F876 C Wide Teacher"),
+            QStringLiteral("F876 C Wide Romanization"),
+            QStringLiteral("F876 C Wide Preferred"),
+            QStringLiteral("F876 C Wide Room"), QStringLiteral("05-06"),
+            QStringLiteral("010-3000-0003"), QStringLiteral("F876 C Wide WiFi"),
+            QStringLiteral("F876 C Wide WiFi Password"), QStringLiteral("N/A"),
+            QStringLiteral("F876 C Wide Zoom"),
+            QStringLiteral("F876 C Wide Zoom Password"), QStringLiteral("HDMI"),
+            QStringLiteral("F876 C Wide Notes"),
+            QStringLiteral("integer")
+        }
+    };
+    const QList<QStringList> rowsBeforeWideRead = snapshotTeacherRows();
+    QCOMPARE(rowsBeforeWideRead, expectedRowsWithWideId);
+
+    const Result<QList<Teacher>> teachersWithWideId = service.getAllTeachers();
+    QVERIFY(!teachersWithWideId);
+    QVERIFY(!teachersWithWideId.error().isEmpty());
+    QCOMPARE(snapshotTeacherRows(), rowsBeforeWideRead);
+
+    QVERIFY(query.prepare(QStringLiteral(
+        "DELETE FROM teachers WHERE id=?"
+        )));
+    query.addBindValue(qint64{4294967297LL});
+    QVERIFY(query.exec());
+    QCOMPARE(query.numRowsAffected(), 1);
+    QVERIFY(query.exec(QStringLiteral(
+        "INSERT INTO teachers ("
+        "id, teacher_kr, teacher_en, preferred_romanization, preferred_name, "
+        "room_number, birthday, phone_number, wifi_name, wifi_password, "
+        "internet_type, zoom_id, zoom_password, projection_type, notes"
+        ") VALUES (0, 'F876 C Zero Korean', 'F876 C Zero Teacher', "
+        "'F876 C Zero Romanization', 'F876 C Zero Preferred', "
+        "'F876 C Zero Room', '07-08', '010-4000-0004', 'F876 C Zero WiFi', "
+        "'F876 C Zero WiFi Password', 'LAN', 'F876 C Zero Zoom', "
+        "'F876 C Zero Zoom Password', 'Zoom', 'F876 C Zero Notes')"
+        )));
+    QCOMPARE(query.numRowsAffected(), 1);
+
+    const QList<QStringList> expectedRowsWithZeroId = {
+        {
+            QStringLiteral("0"), QStringLiteral("F876 C Zero Korean"),
+            QStringLiteral("F876 C Zero Teacher"),
+            QStringLiteral("F876 C Zero Romanization"),
+            QStringLiteral("F876 C Zero Preferred"),
+            QStringLiteral("F876 C Zero Room"), QStringLiteral("07-08"),
+            QStringLiteral("010-4000-0004"), QStringLiteral("F876 C Zero WiFi"),
+            QStringLiteral("F876 C Zero WiFi Password"), QStringLiteral("LAN"),
+            QStringLiteral("F876 C Zero Zoom"),
+            QStringLiteral("F876 C Zero Zoom Password"), QStringLiteral("Zoom"),
+            QStringLiteral("F876 C Zero Notes"), QStringLiteral("integer")
+        },
+        expectedRows.at(0),
+        expectedRows.at(1)
+    };
+    const QList<QStringList> rowsBeforeZeroRead = snapshotTeacherRows();
+    QCOMPARE(rowsBeforeZeroRead, expectedRowsWithZeroId);
+
+    const Result<QList<Teacher>> teachersWithZeroId = service.getAllTeachers();
+    QVERIFY(!teachersWithZeroId);
+    QVERIFY(!teachersWithZeroId.error().isEmpty());
+    QCOMPARE(snapshotTeacherRows(), rowsBeforeZeroRead);
 }
 
 void DataServiceLifecycleTests::repositoryWriteFailuresAreObservable()

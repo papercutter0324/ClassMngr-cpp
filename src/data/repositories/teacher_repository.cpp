@@ -1749,9 +1749,25 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
 
     while (query.next())
     {
-        teachers.append(
-            teacherFromQuery(query)
-            );
+        bool teacherIdOk = false;
+        const qint64 storedTeacherId =
+            query.value(QStringLiteral("id")).toLongLong(&teacherIdOk);
+        if (
+            !teacherIdOk
+            || storedTeacherId <= 0
+            || storedTeacherId > std::numeric_limits<int>::max()
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading teachers found an invalid teacher identifier %1."
+                    ).arg(query.value(QStringLiteral("id")).toString())
+                );
+        }
+
+        Teacher teacher = teacherFromQuery(query);
+        teacher.id = static_cast<int>(storedTeacherId);
+        teachers.append(std::move(teacher));
     }
 
     return teachers;
