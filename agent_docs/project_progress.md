@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F900 accepted; F901 selected)
+### Current state - 2026-10-15 (F900 accepted; F901 acceptance defined)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -280,10 +280,22 @@ baseline did not complete: its corrected probe link hit FileTracker
 was last built on 2026-10-14. Acceptance is grounded in the public API contract
 and existing behavior plus the post-fix regression; no pre-fix runtime result
 is claimed. Two independent post-F900 audits rechecked all 13 official
-Deferred entries; none became actionable and all remain unchanged. Batch 304
-continues with F901, My Classes class-information batch parent provenance; F902
-through F908 remain in their existing order. Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+Deferred entries; none became actionable and all remain unchanged. F901 is
+My Classes class-information batch parent provenance. Its fresh public-port
+baseline returned outer success and four ordered successful entries for a
+deleted class with orphan rows, a populated sibling, a present class without
+`class_info`, and a never-present ID. The deleted class leaked orphan
+grade/level/notes and Thursday regular/Saturday intensive schedules; the
+never-present ID returned successful defaults. The valid no-`class_info`
+parent correctly returned defaults and its Tuesday schedule. Metrics were one
+batch call, four requested IDs, one metadata/regular/intensive statement each,
+and no fallbacks. The temporary baseline test failed intentionally on the
+expected per-entry `NotFound`, and its source was restored byte-for-byte. The
+accepted contract is per-entry recoverable `NotFound` for both absent parents,
+with the outer vector, input order, valid siblings, and existing optional-data
+behavior preserved; SQL/cursor failures remain technical. Acceptance is
+recorded before implementation. F902-F908 remain in their existing order.
+Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

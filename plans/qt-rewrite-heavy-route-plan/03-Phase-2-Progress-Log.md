@@ -37474,3 +37474,39 @@ candidates and found zero newly actionable; all remain unchanged. Batch 304
 continues F901-F908 in its recorded order, with F901, My Classes
 class-information batch parent provenance, next. Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
+
+### F901 baseline captured; acceptance defined - 2026-10-15
+
+The fresh baseline public batch read for IDs `[1, 2, 3, 987654321]` returned
+outer success, four entries in request order, and success for every inner
+class-information result. Deleted parent 1 leaked orphan grade, level, notes,
+a Thursday regular schedule, and a Saturday intensive schedule. Never-present
+ID `987654321` returned blank metadata and no schedules. Present class 3
+without `class_info` returned default metadata and its Tuesday schedule.
+With foreign keys disabled during fixture setup, reads verified for ID 1:
+`classes=0` and one row each in `class_info`, `class_times`, and
+`class_intensive_times`; for ID 3: `classes=1`, `class_info=0`, and one regular
+schedule.
+
+Baseline batch deltas were `callCount=1`, `requestedClassCount=4`,
+`metadataStatementCount=1`, `regularScheduleStatementCount=1`,
+`intensiveScheduleStatementCount=1`, and `fallbackClassReadCount=0`. The
+temporary probe's CTest failed intentionally at its expected missing-parent
+`NotFound` assertion against pre-fix behavior. Its executable was fresh and
+built with `/p:TrackFileAccess=false /p:ForceRebuild=true`. The original test
+source was restored byte-for-byte (SHA-256
+`7842A0C745F2ACF7ECEC3DE4253C92857882DC044735329E60865B74ECD0F799`); no
+product source changed.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and per-entry outcome | Return an outer-success vector with the same requested-entry count and order. Both a never-present ID and a deleted parent with orphan children yield per-entry recoverable `NotFound`. Establish parent absence from a successful query; do not infer it from query/cursor failures. |
+| No orphan leakage; valid siblings | Suppress orphan `class_info` fields and regular/intensive schedules. Preserve populated sibling results and a present parent without optional `class_info`, including default fields and its actual schedules. |
+| Existing behavior and errors | Preserve empty-input and validation behavior, whole-operation and inner technical failures, and current fallback semantics. Check cursor errors after metadata, regular-schedule, and intensive-schedule fetches; never classify failures as `NotFound`. |
+| Batch design and metrics | Preserve metric meanings and do not add per-ID batch fallback reads. |
+| Focused verification | Build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests` in the existing `build/windows-x64-debug` using `/p:TrackFileAccess=false /p:ForceRebuild=true`; run only its exact Debug CTest #326. No full suite. |
+
+F901 baseline is captured and acceptance is defined; implementation is next.
+F902-F908 remain in the existing Batch 304 order, and all 13 official
+Deferred candidates remain unchanged. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
