@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-15 (F885 accepted; F886 selected)
+## Phase 2 current position — 2026-10-15 (F886 accepted; F887 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5248,3 +5248,24 @@ build `ClassMngr`,
 and `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run
 only the two matching Debug CTests. No full suite. Gates 1/2 remain Partial;
 the formal Phase 2 exit gate is Open.
+
+F886 is accepted at source/test commit
+`e4f2d089e1001dea6c980f46962938586b8a30b8`. The detailed update route tags
+only an absent parent `classes` row inside its Immediate transaction; existing
+ordinary classes without a Testing Class row remain Technical. The legacy
+diagnostic is preserved, and trigger coverage verifies rollback of earlier
+field writes. Independent Debug builds of `ClassMngr` and the two planned
+focused targets passed; the exact two CTests passed 2/2. An initial un-elevated
+build hit FileTracker access denied at `ZERO_CHECK`; the approved retry passed.
+No full suite ran.
+
+Two independent post-F886 audits found none of the 13 official Deferred
+entries newly actionable. Batch 300 is complete. Batch 301 selects F887 for
+deleted-parent classification on the typed Testing Class details-read route.
+The pre-fix public baseline returned Technical with exact message
+`The testing class was not found.` after a real Testing Class parent was
+deleted; all three related row counts were zero. The existing parent-without-
+Testing-Class regression remains the classification boundary. Focused target
+cleanup verification passed 1/1 after elevated FileTracker retries, and the
+temporary test slot was removed before F887 implementation. Gates 1/2 remain
+Partial and the formal exit gate is Open.

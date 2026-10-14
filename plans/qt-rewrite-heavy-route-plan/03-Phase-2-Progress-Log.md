@@ -36325,8 +36325,56 @@ not repeat that warning. No full suite ran.
 | Regression coverage | Cover a real deleted class returning typed `NotFound` with no mutation, the exact legacy diagnostic, ordinary class remaining `Technical`, successful update, and trigger-failure rollback. |
 | Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`, and `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run exactly those two matching Debug CTests. No full suite. |
 
-F886 is selected and implementation is pending. No additional Batch 300
-candidates are selected.
-Keep all 13 Deferred entries, including dense Speaking Evaluation row-limit
-policy, unchanged. Phase 2 Gates 1/2 remain Partial and the formal exit gate
-remains Open.
+### F886 accepted; Batch 300 complete; Batch 301 selected F887 - 2026-10-15
+
+F886 is accepted at source/test commit
+`e4f2d089e1001dea6c980f46962938586b8a30b8`. The direct typed Testing Class
+details-update route now carries explicit repository `ParentClassMissing`
+provenance. The parent and subtype checks plus writes run under one Immediate
+transaction; only confirmed absence of the parent `classes` row maps to typed
+`NotFound`. An existing ordinary class without a Testing Class row remains
+`Technical`, and the legacy `updateTestingClass()` diagnostic is unchanged.
+
+Tests cover a genuinely deleted class returning `NotFound` with no persisted
+rows, the exact legacy diagnostic, the ordinary-class `Technical` boundary,
+successful update, and rollback of earlier writes when a trigger rejects the
+Testing Class room update. Independent sequential Debug builds of `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`,
+and `ClassMngrTestingClassRepositoryTests` passed. The two exact matching
+Debug CTests passed 2/2. The initial `ClassMngr` build hit MSBuild FileTracker
+Access denied at `ZERO_CHECK`; its approved elevated retry succeeded. Final
+builds had no compiler warnings. No full suite ran.
+
+Two independent post-F886 audits reviewed all 13 official Deferred entries;
+none became newly actionable, and all 13 remain unchanged.
+
+Batch 301 selected F887, the direct typed
+`TestingClassDetailsReadQueryHandler` →
+`ApplicationServicesTestingClassDetailsReadPort` →
+`TestingClassRepository` route. Fresh discovery compared details read with
+Testing Class delete and Schedule Testing assignment. The read route was
+selected because it is bounded and read-only, while an existing focused test
+already pins an existing class with no `testing_classes` row as a non-NotFound
+warning/Technical result. The pre-fix repository query starts from
+`testing_classes` and joins `classes`; a no-row result therefore conflates a
+deleted parent with an existing ordinary class lacking a Testing Class row.
+The public typed port maps both through the generic failure path to Technical.
+The captured pre-fix public baseline created a Testing Class, deleted it via
+`ClassService::remove()`, then read its details: the result was Technical
+(ErrorCode value 5), exact message `The testing class was not found.`, with
+`classes`, `class_info`, and `testing_classes` row counts all zero. No
+production code was changed for the baseline. The temporary slot was removed;
+after elevated FileTracker retries, the cleanup target rebuilt and its exact
+CTest passed 1/1. No full suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Provenance and row distinction | Carry repository-owned failure provenance for a positively confirmed absent parent. An existing parent with no `testing_classes` row stays Technical; do not infer NotFound from a generic no-row result or diagnostic text. |
+| Typed and legacy behavior | Map only confirmed parent absence to typed `NotFound`; preserve the legacy `Result` diagnostic `The testing class was not found.`, existing missing-subtype warning/Technical behavior, unavailable-session `NotFound`, and `InvalidInput`. |
+| Existing read contract | Preserve successful field mapping, missing-`class_info` defaults, malformed stored-data validation, and query/fetch failures as Technical. |
+| Regression coverage | Cover deleted parent → `NotFound`, no related rows, exact legacy diagnostic, existing ordinary class with missing Testing Class row → Technical without fallback, successful mapping, and existing missing-`class_info` behavior. Retain forced SQL and malformed-data Technical coverage. |
+| Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests`, and `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run only the two matching Debug CTests. No full suite. |
+
+F887 implementation is pending. Keep all 13 Deferred entries, including the
+dense Speaking Evaluation row-limit policy, unchanged. Phase 2 Gates 1/2 remain
+Partial and the formal exit gate remains Open.

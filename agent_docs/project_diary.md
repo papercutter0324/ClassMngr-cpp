@@ -5444,3 +5444,12 @@ check for a missing parent before those reads, then check again with the write
 inside one Immediate transaction. The early check classifies stale IDs on the
 direct port route; the transactional check protects the actual save. Keep the
 legacy FK path available to legacy callers.
+
+## Phase 2 Testing Class parent classification - 2026-10-15
+
+For a typed operation on a Testing Class subtype, a missing subtype row does
+not prove that its parent class is absent. Confirm the parent explicitly and
+carry repository-owned provenance; preserve the established Technical result
+for an existing ordinary class without the subtype row. For writes, hold the
+check and mutation under one Immediate transaction so deletion cannot race the
+classification.
