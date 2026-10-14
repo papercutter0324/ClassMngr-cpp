@@ -264,6 +264,7 @@ struct MyClassesClassSummaryBatchReadEntry final
 {
     int classId = -1;
     Result<MyClassesClassSummaryReadRecord> summary;
+    bool parentMissing = false;
 };
 
 struct MyClassesClassInformationBatchReadEntry final
@@ -702,7 +703,12 @@ private:
         qint64 teacherId,
         ClassInfoSavePath savePath
         );
-    [[nodiscard]] Result<MyClassesClassSummaryReadRecord>
+    struct MyClassesClassSummaryReadOutcome final
+    {
+        MyClassesClassSummaryReadRecord record;
+        bool parentMissing = false;
+    };
+    [[nodiscard]] Result<MyClassesClassSummaryReadOutcome>
         loadMyClassesClassSummaryRecord(int classId);
     struct MyClassesClassInformationReadOutcome final
     {

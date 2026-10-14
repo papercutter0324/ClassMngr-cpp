@@ -2968,8 +2968,18 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
         for (const std::size_t index : validEntryIndexes)
         {
             ++m_myClassesClassSummaryBatchReadMetrics.fallbackClassReadCount;
-            entries[index].summary =
-                loadMyClassesClassSummaryRecord(entries[index].classId);
+            entries[index].parentMissing = false;
+            auto loaded = loadMyClassesClassSummaryRecord(
+                entries[index].classId
+                );
+            if (!loaded)
+            {
+                entries[index].summary = std::unexpected(loaded.error());
+                continue;
+            }
+
+            entries[index].parentMissing = loaded->parentMissing;
+            entries[index].summary = std::move(loaded->record);
         }
     };
 
@@ -2979,12 +2989,14 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
         metadataQuery,
         requestedTable + QStringLiteral(R"(
             SELECT requested.class_id,
+                   classes.id AS parent_class_id,
                    ci.class_id AS class_info_class_id,
                    ci.teacher_id,
                    ci.class_grade,
                    ci.class_level
             FROM requested
-            LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+            LEFT JOIN classes ON classes.id = requested.class_id
+            LEFT JOIN class_info ci ON ci.class_id = classes.id
             ORDER BY requested.ordinal
         )"),
         QObject::tr("Loading My Classes class summaries")
@@ -3009,7 +3021,14 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
 
         MyClassesClassSummaryReadRecord record;
         record.classId = classId;
-        if (!metadataQuery.value("class_info_class_id").isNull())
+        const bool parentMissing =
+            metadataQuery.value("parent_class_id").isNull();
+        entries[*entryIndex].parentMissing = parentMissing;
+        if (parentMissing)
+        {
+            entries[*entryIndex].summary = std::move(record);
+        }
+        else if (!metadataQuery.value("class_info_class_id").isNull())
         {
             const QVariant teacherId = metadataQuery.value("teacher_id");
             bool teacherIdOk = true;
@@ -3041,6 +3060,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
     }
 
     if (invalidReturnedClassId
+        || metadataQuery.lastError().isValid()
         || loadedMetadataCount != validEntryIndexes.size())
     {
         loadIndividually();
@@ -3061,8 +3081,9 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
                        schedule.start_time,
                        schedule.end_time
                 FROM requested
+                INNER JOIN classes ON classes.id = requested.class_id
                 INNER JOIN class_times schedule
-                ON schedule.class_id = requested.class_id
+                ON schedule.class_id = classes.id
                 UNION ALL
                 SELECT requested.ordinal,
                        requested.class_id,
@@ -3072,8 +3093,9 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
                        schedule.start_time,
                        schedule.end_time
                 FROM requested
+                INNER JOIN classes ON classes.id = requested.class_id
                 INNER JOIN class_intensive_times schedule
-                ON schedule.class_id = requested.class_id
+                ON schedule.class_id = classes.id
             )
             SELECT class_id,
                    schedule_type,
@@ -3100,7 +3122,8 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
             invalidReturnedClassId = true;
             break;
         }
-        if (!entries[*entryIndex].summary)
+        if (entries[*entryIndex].parentMissing
+            || !entries[*entryIndex].summary)
         {
             continue;
         }
@@ -3121,7 +3144,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
         }
     }
 
-    if (invalidReturnedClassId)
+    if (invalidReturnedClassId || scheduleQuery.lastError().isValid())
     {
         loadIndividually();
     }
@@ -3129,7 +3152,7 @@ ClassInfoRepository::loadMyClassesClassSummaryRecords(
     return entries;
 }
 
-Result<MyClassesClassSummaryReadRecord>
+Result<ClassInfoRepository::MyClassesClassSummaryReadOutcome>
 ClassInfoRepository::loadMyClassesClassSummaryRecord(
     const int classId
     )
@@ -3141,14 +3164,20 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
             ).arg(classId));
     }
 
-    MyClassesClassSummaryReadRecord record;
+    MyClassesClassSummaryReadOutcome outcome;
+    MyClassesClassSummaryReadRecord& record = outcome.record;
     record.classId = classId;
 
     QSqlQuery metadataQuery(m_database);
     metadataQuery.prepare(R"(
-        SELECT teacher_id, class_grade, class_level
-        FROM class_info
-        WHERE class_id = ?
+        SELECT classes.id AS parent_class_id,
+               class_info.class_id AS class_info_class_id,
+               class_info.teacher_id,
+               class_info.class_grade,
+               class_info.class_level
+        FROM classes
+        LEFT JOIN class_info ON class_info.class_id = classes.id
+        WHERE classes.id = ?
     )");
     metadataQuery.addBindValue(classId);
     const auto loadedMetadata = SqlQueryUtils::executePrepared(
@@ -3161,7 +3190,23 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
         return std::unexpected(loadedMetadata.error().userMessage());
     }
 
-    if (metadataQuery.next())
+    const bool parentFound = metadataQuery.next();
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            metadataQuery,
+            QObject::tr("Loading My Classes class-summary metadata"),
+            QObject::tr("class id %1").arg(classId)
+            ).userMessage());
+    }
+
+    if (!parentFound)
+    {
+        outcome.parentMissing = true;
+        return outcome;
+    }
+
+    if (!metadataQuery.value("class_info_class_id").isNull())
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
         if (!teacherId.isNull())
@@ -3186,20 +3231,23 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
     QSqlQuery scheduleQuery(m_database);
     scheduleQuery.prepare(R"(
         SELECT 0 AS schedule_type,
-               id AS schedule_id,
-               day,
-               start_time,
-               end_time
-        FROM class_times
-        WHERE class_id = ?
+               class_times.id AS schedule_id,
+               class_times.day,
+               class_times.start_time,
+               class_times.end_time
+        FROM classes
+        INNER JOIN class_times ON class_times.class_id = classes.id
+        WHERE classes.id = ?
         UNION ALL
         SELECT 1 AS schedule_type,
-               id AS schedule_id,
-               day,
-               start_time,
-               end_time
-        FROM class_intensive_times
-        WHERE class_id = ?
+               class_intensive_times.id AS schedule_id,
+               class_intensive_times.day,
+               class_intensive_times.start_time,
+               class_intensive_times.end_time
+        FROM classes
+        INNER JOIN class_intensive_times
+            ON class_intensive_times.class_id = classes.id
+        WHERE classes.id = ?
         ORDER BY schedule_type, schedule_id
     )");
     scheduleQuery.addBindValue(classId);
@@ -3230,7 +3278,16 @@ ClassInfoRepository::loadMyClassesClassSummaryRecord(
         }
     }
 
-    return record;
+    if (scheduleQuery.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            scheduleQuery,
+            QObject::tr("Loading My Classes class-summary schedules"),
+            QObject::tr("class id %1").arg(classId)
+            ).userMessage());
+    }
+
+    return outcome;
 }
 
 Result<ClassInfoRepository::MyClassesClassInformationReadOutcome>

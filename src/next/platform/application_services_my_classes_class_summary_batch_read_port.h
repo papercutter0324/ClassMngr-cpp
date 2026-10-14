@@ -152,6 +152,21 @@ public:
                 continue;
             }
 
+            if (source.parentMissing)
+            {
+                entries.push_back({
+                    .classId = classIds[index],
+                    .summary = Domain::Result<
+                        Application::MyClassesClassSummaryFields
+                        >::failure(error(
+                            Domain::ErrorCode::NotFound,
+                            "The requested class was not found.",
+                            true
+                            ))
+                });
+                continue;
+            }
+
             if (!source.summary)
             {
                 entries.push_back({

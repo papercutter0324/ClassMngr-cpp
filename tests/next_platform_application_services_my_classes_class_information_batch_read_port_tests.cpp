@@ -5,7 +5,9 @@
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "next/application/my_classes_class_information_batch_read_query.h"
+#include "next/application/my_classes_class_summary_batch_read_query.h"
 #include "next/platform/application_services_my_classes_class_information_batch_read_port.h"
+#include "next/platform/application_services_my_classes_class_summary_batch_read_port.h"
 
 #include <QSqlError>
 #include <QSqlQuery>
@@ -55,6 +57,8 @@ private slots:
     void readsWideTeacherIdsAndKeepsSiblingsInBatch();
     void keepsPerClassRepositoryFailuresAlongsideSuccessfulSiblings();
     void batchSqlFailureReturnsIndependentEntriesForEveryClass();
+    void classSummaryBatchDistinguishesMissingParentsAndKeepsPresentSchedules();
+    void classSummaryScheduleFailureUsesParentAwareFallback();
     void emptyInputAvoidsRepositoryWork();
     void reportsUnavailableServices();
 };
@@ -775,6 +779,331 @@ batchSqlFailureReturnsIndependentEntriesForEveryClass()
     QCOMPARE(after.intensiveScheduleStatementCount,
              before.intensiveScheduleStatementCount + 2);
     QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount + 6);
+}
+
+void NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests::
+classSummaryBatchDistinguishesMissingParentsAndKeepsPresentSchedules()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int deletedId = createClass(
+        services,
+        QStringLiteral("Deleted class with orphan summary children")
+        );
+    const int populatedId = createClass(
+        services,
+        QStringLiteral("Populated summary sibling")
+        );
+    const int noInformationId = createClass(
+        services,
+        QStringLiteral("Summary class without optional metadata")
+        );
+    QVERIFY(deletedId > 0);
+    QVERIFY(populatedId > 0);
+    QVERIFY(noInformationId > 0);
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Summary batch teacher");
+    const auto createdTeacher = services.databaseSession()
+        ->teacherRepository()->createTeacher(teacher);
+    QVERIFY(createdTeacher);
+
+    ClassInfoRepository* const repository = services.databaseSession()
+        ->classInfoRepository();
+    QVERIFY(repository);
+
+    ClassInfo deletedInfo;
+    deletedInfo.classId = deletedId;
+    deletedInfo.teacherId = *createdTeacher;
+    deletedInfo.classGrade = QStringLiteral("Orphan summary grade");
+    deletedInfo.classLevel = QStringLiteral("Orphan summary level");
+    deletedInfo.classTimes = {
+        {
+            .day = QStringLiteral("Thursday"),
+            .startTime = QStringLiteral("06:00 PM"),
+            .endTime = QStringLiteral("06:50 PM")
+        }
+    };
+    deletedInfo.intensiveTimes = {
+        {
+            .day = QStringLiteral("Saturday"),
+            .startTime = QStringLiteral("09:00 AM"),
+            .endTime = QStringLiteral("09:45 AM")
+        }
+    };
+    QVERIFY(repository->saveClassInfo(deletedInfo));
+
+    ClassInfo populatedInfo;
+    populatedInfo.classId = populatedId;
+    populatedInfo.teacherId = *createdTeacher;
+    populatedInfo.classGrade = QStringLiteral("E5");
+    populatedInfo.classLevel = QStringLiteral("Healthy summary level");
+    populatedInfo.classTimes = {
+        {
+            .day = QStringLiteral("Monday"),
+            .startTime = QStringLiteral("03:00 PM"),
+            .endTime = QStringLiteral("03:50 PM")
+        }
+    };
+    populatedInfo.intensiveTimes = {
+        {
+            .day = QStringLiteral("Sunday"),
+            .startTime = QStringLiteral("10:00 AM"),
+            .endTime = QStringLiteral("10:45 AM")
+        }
+    };
+    QVERIFY(repository->saveClassInfo(populatedInfo));
+
+    ClassInfo noInformationInfo;
+    noInformationInfo.classId = noInformationId;
+    noInformationInfo.teacherId = *createdTeacher;
+    noInformationInfo.classGrade = QStringLiteral("Deleted optional grade");
+    noInformationInfo.classTimes = {
+        {
+            .day = QStringLiteral("Tuesday"),
+            .startTime = QStringLiteral("11:00 AM"),
+            .endTime = QStringLiteral("11:50 AM")
+        }
+    };
+    noInformationInfo.intensiveTimes = {
+        {
+            .day = QStringLiteral("Friday"),
+            .startTime = QStringLiteral("01:00 PM"),
+            .endTime = QStringLiteral("01:45 PM")
+        }
+    };
+    QVERIFY(repository->saveClassInfo(noInformationInfo));
+
+    QSqlQuery deleteOptionalMetadata(services.databaseSession()->database());
+    deleteOptionalMetadata.prepare(QStringLiteral(
+        "DELETE FROM class_info WHERE class_id=?"));
+    deleteOptionalMetadata.addBindValue(noInformationId);
+    QVERIFY2(deleteOptionalMetadata.exec(),
+             qPrintable(deleteOptionalMetadata.lastError().text()));
+    QCOMPARE(deleteOptionalMetadata.numRowsAffected(), 1);
+    deleteOptionalMetadata.finish();
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral(
+                 "PRAGMA foreign_keys = OFF")),
+             qPrintable(disableForeignKeys.lastError().text()));
+    disableForeignKeys.finish();
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+    deleteParent.addBindValue(deletedId);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+    deleteParent.finish();
+
+    QSqlQuery verifyOrphanChildren(services.databaseSession()->database());
+    verifyOrphanChildren.prepare(QStringLiteral(
+        "SELECT "
+        "(SELECT COUNT(*) FROM class_info WHERE class_id=?), "
+        "(SELECT COUNT(*) FROM class_times WHERE class_id=?), "
+        "(SELECT COUNT(*) FROM class_intensive_times WHERE class_id=?)"));
+    verifyOrphanChildren.addBindValue(deletedId);
+    verifyOrphanChildren.addBindValue(deletedId);
+    verifyOrphanChildren.addBindValue(deletedId);
+    QVERIFY2(verifyOrphanChildren.exec(),
+             qPrintable(verifyOrphanChildren.lastError().text()));
+    QVERIFY(verifyOrphanChildren.next());
+    QCOMPARE(verifyOrphanChildren.value(0).toInt(), 1);
+    QCOMPARE(verifyOrphanChildren.value(1).toInt(), 1);
+    QCOMPARE(verifyOrphanChildren.value(2).toInt(), 1);
+    QVERIFY(!verifyOrphanChildren.next());
+    verifyOrphanChildren.finish();
+
+    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral(
+                 "PRAGMA foreign_keys = ON")),
+             qPrintable(enableForeignKeys.lastError().text()));
+    enableForeignKeys.finish();
+
+    const auto before = repository->myClassesClassSummaryBatchReadMetrics();
+    Platform::ApplicationServicesMyClassesClassSummaryBatchReadPort port(
+        &services
+        );
+    const Application::MyClassesClassSummaryBatchReadQuery query(port);
+    const std::vector<Domain::ClassId> requested{
+        classId(deletedId),
+        classId(populatedId),
+        classId(987654321),
+        classId(noInformationId)
+    };
+    const auto loaded = query.execute(requested);
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), requested.size());
+    for (std::size_t index = 0; index < requested.size(); ++index)
+    {
+        QVERIFY(loaded.value()[index].classId == requested[index]);
+    }
+
+    const auto& deleted = loaded.value()[0].summary;
+    QVERIFY(!deleted);
+    QCOMPARE(deleted.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.error().recoverable);
+
+    const auto& populated = loaded.value()[1].summary;
+    QVERIFY(populated);
+    QVERIFY(populated.value().classGrade == u"E5");
+    QVERIFY(populated.value().classLevel == u"Healthy summary level");
+    QVERIFY(populated.value().teacherId
+        == Domain::TeacherId::fromString(std::to_string(*createdTeacher)));
+    QCOMPARE(populated.value().regularSchedule.size(), std::size_t(1));
+    QVERIFY(populated.value().regularSchedule[0].day == u"Monday");
+    QCOMPARE(populated.value().intensiveSchedule.size(), std::size_t(1));
+    QVERIFY(populated.value().intensiveSchedule[0].day == u"Sunday");
+
+    const auto& neverPresent = loaded.value()[2].summary;
+    QVERIFY(!neverPresent);
+    QCOMPARE(neverPresent.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(neverPresent.error().recoverable);
+
+    const auto& noInformation = loaded.value()[3].summary;
+    QVERIFY(noInformation);
+    QVERIFY(noInformation.value().classGrade.empty());
+    QVERIFY(noInformation.value().classLevel.empty());
+    QVERIFY(!noInformation.value().teacherId);
+    QCOMPARE(noInformation.value().regularSchedule.size(), std::size_t(1));
+    QVERIFY(noInformation.value().regularSchedule[0].day == u"Tuesday");
+    QCOMPARE(noInformation.value().intensiveSchedule.size(), std::size_t(1));
+    QVERIFY(noInformation.value().intensiveSchedule[0].day == u"Friday");
+
+    const auto after = repository->myClassesClassSummaryBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 4);
+    QCOMPARE(after.metadataStatementCount, before.metadataStatementCount + 1);
+    QCOMPARE(after.scheduleStatementCount, before.scheduleStatementCount + 1);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount);
+}
+
+void NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests::
+classSummaryScheduleFailureUsesParentAwareFallback()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int deletedId = createClass(
+        services,
+        QStringLiteral("Deleted summary fallback class")
+        );
+    const int firstId = createClass(
+        services,
+        QStringLiteral("First summary fallback sibling")
+        );
+    const int secondId = createClass(
+        services,
+        QStringLiteral("Second summary fallback sibling")
+        );
+    QVERIFY(deletedId > 0);
+    QVERIFY(firstId > 0);
+    QVERIFY(secondId > 0);
+
+    ClassInfoRepository* const repository = services.databaseSession()
+        ->classInfoRepository();
+    QVERIFY(repository);
+    int intensiveStartHour = 9;
+    for (const auto [classIdValue, grade] : {
+             std::pair{deletedId, QStringLiteral("Orphan fallback grade")},
+             std::pair{firstId, QStringLiteral("First fallback grade")},
+             std::pair{secondId, QStringLiteral("Second fallback grade")}
+         })
+    {
+        const int scheduleHour = intensiveStartHour++;
+        ClassInfo info;
+        info.classId = classIdValue;
+        info.classGrade = grade;
+        info.classLevel = QStringLiteral("Fallback summary fixture");
+        info.classTimes = {
+            {
+                .day = QStringLiteral("Thursday"),
+                .startTime = QStringLiteral("06:00 PM"),
+                .endTime = QStringLiteral("06:50 PM")
+            }
+        };
+        info.intensiveTimes = {
+            {
+                .day = QStringLiteral("Saturday"),
+                .startTime = QStringLiteral("%1:00 AM").arg(
+                    scheduleHour,
+                    2,
+                    10,
+                    QChar('0')),
+                .endTime = QStringLiteral("%1:45 AM").arg(
+                    scheduleHour,
+                    2,
+                    10,
+                    QChar('0'))
+            }
+        };
+        QVERIFY(repository->saveClassInfo(info));
+    }
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral(
+                 "PRAGMA foreign_keys = OFF")),
+             qPrintable(disableForeignKeys.lastError().text()));
+    disableForeignKeys.finish();
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+    deleteParent.addBindValue(deletedId);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+    deleteParent.finish();
+    QSqlQuery enableForeignKeys(services.databaseSession()->database());
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral(
+                 "PRAGMA foreign_keys = ON")),
+             qPrintable(enableForeignKeys.lastError().text()));
+    enableForeignKeys.finish();
+
+    QSqlQuery dropIntensiveSchedules(
+        services.databaseSession()->database());
+    QVERIFY2(dropIntensiveSchedules.exec(QStringLiteral(
+                 "DROP TABLE class_intensive_times")),
+             qPrintable(dropIntensiveSchedules.lastError().text()));
+    dropIntensiveSchedules.finish();
+
+    const auto before = repository->myClassesClassSummaryBatchReadMetrics();
+    Platform::ApplicationServicesMyClassesClassSummaryBatchReadPort port(
+        &services
+        );
+    const auto loaded = port.readMyClassesClassSummaries({
+        classId(deletedId),
+        classId(firstId),
+        classId(secondId)
+    });
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(3));
+    QVERIFY(loaded.value()[0].classId == classId(deletedId));
+    QVERIFY(!loaded.value()[0].summary);
+    QCOMPARE(loaded.value()[0].summary.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value()[0].summary.error().recoverable);
+
+    for (std::size_t index = 1; index < loaded.value().size(); ++index)
+    {
+        QVERIFY(loaded.value()[index].classId == classId(
+            index == 1 ? firstId : secondId));
+        QVERIFY(!loaded.value()[index].summary);
+        QCOMPARE(loaded.value()[index].summary.error().code,
+                 Domain::ErrorCode::Technical);
+        QVERIFY(loaded.value()[index].summary.error().recoverable);
+        QVERIFY(!loaded.value()[index].summary.error().message.empty());
+    }
+
+    const auto after = repository->myClassesClassSummaryBatchReadMetrics();
+    QCOMPARE(after.callCount, before.callCount + 1);
+    QCOMPARE(after.requestedClassCount, before.requestedClassCount + 3);
+    QCOMPARE(after.metadataStatementCount, before.metadataStatementCount + 1);
+    QCOMPARE(after.scheduleStatementCount, before.scheduleStatementCount + 1);
+    QCOMPARE(after.fallbackClassReadCount, before.fallbackClassReadCount + 3);
 }
 
 void NextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests::
