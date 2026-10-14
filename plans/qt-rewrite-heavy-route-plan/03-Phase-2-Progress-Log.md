@@ -37408,3 +37408,37 @@ must refresh it. No product source changed and no full suite ran.
 
 F899 baseline is complete and acceptance is defined; implementation is next.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F899 accepted; post-slice Deferred audit clear; F900 selected - 2026-10-15
+
+F899 is accepted at source/test commit
+`5533778086c20fe798c0db6fa1ebf35ca0bcc804`; the baseline and acceptance were
+recorded at `de2ef23bc2862039b2fb1ee73cfd8a66a7070f7f`
+([baseline and acceptance](03-Phase-2-Progress-Log.md:37378)). The metadata
+query now checks each requested parent in `classes`, and the schedule query
+joins through `classes`, suppressing orphan schedules. The typed batch keeps
+outer success, input order, and valid siblings while returning per-entry
+`NotFound` for both class fields and assigned teacher only when the parent is
+absent. Existing parents without `class_info` retain successful blank fields
+and ordered schedules. SQL/cursor failures remain `Technical`, with
+`lastError()` checked; teacher lookup, batch metrics, and singular F895 behavior
+remain intact.
+
+The mixed regression covers never-present, existing-without-metadata, deleted
+orphan, and populated sibling entries, including order, statuses, orphan
+non-leakage, and metrics. The forced schedule-query SQL error now asserts
+`Technical` class fields while the independent teacher result remains
+successful. An independent tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`;
+each initially hit FileTracker `E_ACCESSDENIED` and passed its one bounded
+elevated retry with no successful-build warnings. CTest #330 passed 1/1, and
+after the assertion repair the target was rebuilt after one retry and #330
+passed again. The baseline probe executable was refreshed; no full suite ran.
+No cursor-failure fixture is forceable, so its `lastError()` paths were
+reviewed.
+
+Two independent exact-plan audits found zero of the 13 official Deferred
+triggers newly met or actionable; all 13 remain unchanged. Batch 304 proceeds
+with F900, Roster Template Print source batch parent provenance. Its
+public-port baseline is underway; acceptance follows. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.

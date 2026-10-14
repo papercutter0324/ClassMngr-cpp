@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F898 accepted; F899 acceptance defined)
+### Current state - 2026-10-15 (F899 accepted; F900 baseline underway)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -247,13 +247,18 @@ of `ClassMngr` and the four affected page-port targets succeeded; exact CTests
 retry per target. Successful builds emitted no warnings; no full suite ran.
 Cursor-fetch failure has no fixture and was code-reviewed. Two independent
 post-F898 audits found none of the 13 official Deferred entries newly
-actionable. Batch 303 is complete. Batch 304 selects F899, the Selected Class
-Subtitle batch read. Its baseline distinguishes never-present IDs from
-deleted parents retaining `class_info`, schedules, and assigned teachers;
-acceptance now requires per-entry `NotFound` for both typed components only
-when the parent is confirmed absent, while valid classes without metadata
-remain successful. Focused implementation verification is next. Gates 1/2
-remain Partial and the formal exit gate remains Open.
+actionable. Batch 303 is complete. F899 is accepted at source/test commit
+`5533778086c20fe798c0db6fa1ebf35ca0bcc804`: the Selected Class Subtitle batch
+read now reports missing parents as per-entry `NotFound` for class fields and
+assigned teacher, filters orphan subtitle data, and preserves successful
+defaults and ordered schedules for existing classes without `class_info`.
+Independent Debug builds of `ClassMngr` and its focused test target succeeded;
+CTest #330 passed 1/1, including a recheck of the explicit Technical
+schedule-query failure assertion. No full suite ran. Two post-F899 audits found
+none of the 13 official Deferred triggers newly actionable. Batch 304 proceeds
+with F900, Roster Template Print source batch parent provenance; its public-port
+baseline is underway and acceptance follows. Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
