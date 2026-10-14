@@ -37651,3 +37651,24 @@ candidates and found none newly actionable; the list is unchanged. F905,
 Speaking Evaluation roster-names projection parent provenance, is selected;
 its baseline and acceptance are pending. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F905 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public typed roster-names query returned outer success for a
+class absent from `classes` but retaining two `roster_columns` rows and four
+`roster_data` rows; its snapshot contained two rows with English and Korean
+names. A never-present ID returned empty success, while an existing-parent
+control returned the expected one-row snapshot. The exact baseline Debug CTest
+#320 passed 1/1. The first build attempt logged MSB8064 for missing generated
+dependency `src/next/application/teacher_import_plan_mapper.h`; a forced
+focused-target retry succeeded without warnings. The temporary probe source was
+restored byte-for-byte (SHA-256
+`C32961A901738555CEDF8596197530FEE657BC65DEA986D56A3C2B4C79B36256`). No full
+suite ran.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Parent provenance | For a valid canonical positive class ID, return outer recoverable `NotFound` only when a clean parent-rooted read confirms no `classes` row. This covers never-present and deleted-with-orphans parents; suppress orphan `roster_columns` and `roster_data`. Query, cursor, and malformed-data failures remain `Technical`. |
+| Present-parent projection | Preserve the exact current projection: select the first case-insensitive English/Korean headers, flags, sparse-row materialization, and row validation. Zero roster columns yields successful empty and skips the data query. If columns exist without either header, keep both flags false and preserve rows materialized by unrelated valid cells. |
+| Compatibility and scope | Preserve legacy `loadSpeakingEvaluationRosterNames` signature and behavior through a detailed seam for the typed port. Exclude UI/name-import changes, schema/orphan cleanup, other Speaking Evaluation reads, and row-allocation policy. |
+| Verification and status | Use existing `ClassMngrNextPlatformApplicationServicesRosterNamesReadPortTests`. F905 acceptance is defined; implementation and post-change verification remain pending. The baseline CTest #320 is not post-change verification. |

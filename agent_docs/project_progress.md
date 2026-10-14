@@ -364,9 +364,25 @@ was added. Independent sequential Debug builds of `ClassMngr` and
 unavailable in the fixture; the final error check was source-reviewed. Two
 independent post-F904 audits reviewed all 13 official Deferred candidates;
 none became actionable and the list remains unchanged. F905, Speaking
-Evaluation roster-names projection parent provenance, is selected; its
-baseline and acceptance criteria are pending. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate remains Open.
+Evaluation roster-names projection parent provenance, is selected. Its
+pre-fix public query baseline showed a deleted class retaining two roster
+headers and four data rows; the typed query incorrectly returned success with
+a two-row snapshot containing English and Korean names. A never-present ID
+also returned empty success, while the existing-parent control returned its
+expected one-row snapshot. Baseline Debug CTest #320 passed 1/1 in
+`ClassMngrNextPlatformApplicationServicesRosterNamesReadPortTests`; the first
+build reported MSB8064 for missing generated dependency
+`src/next/application/teacher_import_plan_mapper.h`, and a forced retry passed
+without warnings. No full suite ran. The temporary test source was restored
+byte-for-byte (SHA-256
+`C32961A901738555CEDF8596197530FEE657BC65DEA986D56A3C2B4C79B36256`). The
+accepted boundary maps only a clean parent-rooted confirmation of missing
+`classes` to recoverable `NotFound`, suppresses orphan roster rows, and
+preserves existing-parent projection, sparse rows, header selection, and the
+no-columns fast path. SQL/cursor/malformed-data errors remain Technical; the
+legacy repository API and behavior, UI, and allocation policy remain
+unchanged. F905 implementation and post-change verification are pending.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
