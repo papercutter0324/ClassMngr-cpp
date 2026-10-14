@@ -6,6 +6,7 @@
 #include "next/platform/application_services_schedule_testing_assignment_read_port.h"
 
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -124,6 +125,7 @@ class NextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests
 private slots:
     void readsOrderedRawAssignmentsAndJoinedSpecialMetadata();
     void usesOneStatementAsAssignmentCountGrows();
+    void reportsMalformedClassIdAsTechnicalFailure();
     void distinguishesUnavailableSessionFromRepositoryFailure();
 };
 
@@ -335,6 +337,60 @@ usesOneStatementAsAssignmentCountGrows()
         ->testingAssignmentDisplayReadMetrics();
     QCOMPARE(metrics.callCount, 2);
     QCOMPARE(metrics.statementCount, 2);
+}
+
+void NextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests::
+reportsMalformedClassIdAsTechnicalFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(
+        directory,
+        QStringLiteral("malformed-class-id")
+        )));
+    const QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY(disableForeignKeys.exec(QStringLiteral(
+        "PRAGMA foreign_keys=OFF"
+        )));
+
+    QSqlQuery insertMalformedAssignment(database);
+    insertMalformedAssignment.prepare(QStringLiteral(R"(
+        INSERT INTO schedule_testing_blocks (day, start_time, room, class_id)
+        VALUES (?, ?, ?, ?)
+    )"));
+    insertMalformedAssignment.addBindValue(QStringLiteral("Monday"));
+    insertMalformedAssignment.addBindValue(QStringLiteral("09:00"));
+    insertMalformedAssignment.addBindValue(QStringLiteral("Original"));
+    insertMalformedAssignment.addBindValue(
+        QStringLiteral("not-an-id")
+        );
+    QVERIFY2(
+        insertMalformedAssignment.exec(),
+        qPrintable(insertMalformedAssignment.lastError().text())
+        );
+
+    QSqlQuery verifyStorageType(database);
+    QVERIFY(verifyStorageType.exec(QStringLiteral(R"(
+        SELECT typeof(class_id)
+        FROM schedule_testing_blocks
+        WHERE day='Monday' AND start_time='09:00'
+    )")));
+    QVERIFY(verifyStorageType.next());
+    QCOMPARE(verifyStorageType.value(0).toString(), QStringLiteral("text"));
+
+    Platform::ApplicationServicesScheduleTestingAssignmentReadPort port(
+        services
+        );
+    const auto result = Application::
+        ScheduleTestingAssignmentReadQueryHandler::execute({}, port);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find("invalid class ID")
+            != std::string::npos);
 }
 
 void NextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests::

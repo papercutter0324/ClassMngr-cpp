@@ -7,6 +7,9 @@
 #include <QObject>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QVariant>
+
+#include <limits>
 
 namespace
 {
@@ -42,6 +45,44 @@ QString queryFailure(
     return SqlQueryUtils::errorFor(query, action).userMessage();
 }
 
+Result<int> decodeTestingClassId(
+    const QVariant& storedValue,
+    const QString& storageType,
+    int nullValue
+    )
+{
+    if (storageType == QStringLiteral("null"))
+    {
+        return nullValue;
+    }
+
+    if (storageType != QStringLiteral("integer"))
+    {
+        return std::unexpected(
+            QObject::tr(
+                "A testing assignment contains an invalid class ID."
+                )
+            );
+    }
+
+    bool converted = false;
+    const qlonglong classId = storedValue.toLongLong(&converted);
+    if (
+        !converted
+        || classId <= 0
+        || classId > std::numeric_limits<int>::max()
+        )
+    {
+        return std::unexpected(
+            QObject::tr(
+                "A testing assignment contains an invalid class ID."
+                )
+            );
+    }
+
+    return static_cast<int>(classId);
+}
+
 Status validateKey(
     const QString& day,
     const QString& startTime
@@ -71,7 +112,9 @@ Result<int> existingClassId(
 
     QSqlQuery query(database);
     query.prepare(R"(
-        SELECT class_id
+        SELECT
+            class_id,
+            typeof(class_id) AS class_id_storage_type
         FROM schedule_testing_blocks
         WHERE day=?
         AND start_time=?
@@ -93,12 +136,11 @@ Result<int> existingClassId(
         return -1;
     }
 
-    if (query.value(QStringLiteral("class_id")).isNull())
-    {
-        return 0;
-    }
-
-    return query.value(QStringLiteral("class_id")).toInt();
+    return decodeTestingClassId(
+        query.value(QStringLiteral("class_id")),
+        query.value(QStringLiteral("class_id_storage_type")).toString(),
+        0
+        );
 }
 
 Status validateTestingClass(
@@ -217,7 +259,8 @@ TestingBlockRepository::loadTestingAssignments()
             day,
             start_time,
             room,
-            class_id
+            class_id,
+            typeof(class_id) AS class_id_storage_type
         FROM schedule_testing_blocks
         ORDER BY day, start_time
     )"))
@@ -239,10 +282,16 @@ TestingBlockRepository::loadTestingAssignments()
             query.value(QStringLiteral("start_time")).toString();
         assignment.room =
             query.value(QStringLiteral("room")).toString();
-        assignment.classId =
-            query.value(QStringLiteral("class_id")).isNull()
-                ? -1
-                : query.value(QStringLiteral("class_id")).toInt();
+        const auto classId = decodeTestingClassId(
+            query.value(QStringLiteral("class_id")),
+            query.value(QStringLiteral("class_id_storage_type")).toString(),
+            -1
+            );
+        if (!classId)
+        {
+            return std::unexpected(classId.error());
+        }
+        assignment.classId = *classId;
         assignment.kind =
             assignment.classId > 0
                 ? TestingAssignmentKind::SpecialClass
@@ -269,6 +318,7 @@ TestingBlockRepository::loadTestingAssignmentDisplayRecords()
                 b.start_time,
                 b.room,
                 b.class_id,
+                typeof(b.class_id) AS class_id_storage_type,
                 tc.class_id AS testing_class_id,
                 c.id AS testing_class_record_id,
                 c.name AS testing_class_name,
@@ -305,10 +355,16 @@ TestingBlockRepository::loadTestingAssignmentDisplayRecords()
         assignment.startTime =
             query.value(QStringLiteral("start_time")).toString();
         assignment.room = query.value(QStringLiteral("room")).toString();
-        assignment.classId =
-            query.value(QStringLiteral("class_id")).isNull()
-                ? -1
-                : query.value(QStringLiteral("class_id")).toInt();
+        const auto classId = decodeTestingClassId(
+            query.value(QStringLiteral("class_id")),
+            query.value(QStringLiteral("class_id_storage_type")).toString(),
+            -1
+            );
+        if (!classId)
+        {
+            return std::unexpected(classId.error());
+        }
+        assignment.classId = *classId;
         assignment.hasSpecialClass =
             !query.value(QStringLiteral("testing_class_id")).isNull()
             && !query.value(

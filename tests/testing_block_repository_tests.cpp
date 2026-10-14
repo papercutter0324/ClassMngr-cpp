@@ -4,6 +4,8 @@
 #include <QSqlQuery>
 #include <QtTest>
 
+#include <limits>
+
 class TestingBlockRepositoryTests : public QObject
 {
     Q_OBJECT
@@ -12,6 +14,7 @@ private slots:
     void savesUpdatesDeletesAndClearsBlocks();
     void assignsTestingClassesAndRequiresExplicitReplacement();
     void reportsInvalidKeysAndDatabaseFailures();
+    void rejectsMalformedClassIdsWithoutOverwritingBlocks();
 };
 
 namespace
@@ -131,6 +134,7 @@ void TestingBlockRepositoryTests
             assignments->first().kind,
             TestingAssignmentKind::PlainTesting
             );
+        QCOMPARE(assignments->first().classId, -1);
         QCOMPARE(assignments->first().room, QStringLiteral("405"));
 
         QVERIFY(
@@ -324,6 +328,189 @@ void TestingBlockRepositoryTests
             );
         QVERIFY(!repository.loadTestingBlocks());
         QVERIFY(!repository.clearTestingBlocks());
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingBlockRepositoryTests::
+rejectsMalformedClassIdsWithoutOverwritingBlocks()
+{
+    const QString connectionName =
+        QStringLiteral("testing_block_repository_malformed_ids");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createTable(database));
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(R"(
+            CREATE TABLE testing_classes (
+                class_id INTEGER PRIMARY KEY,
+                room TEXT NOT NULL
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE classes (
+                id INTEGER PRIMARY KEY,
+                name TEXT
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE class_info (
+                class_id INTEGER PRIMARY KEY,
+                class_grade TEXT,
+                class_level TEXT,
+                class_color TEXT,
+                font_color TEXT,
+                teacher_id INTEGER
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE teachers (
+                id INTEGER PRIMARY KEY,
+                teacher_kr TEXT,
+                teacher_en TEXT,
+                preferred_name TEXT
+            )
+        )"));
+
+        TestingBlockRepository repository(database);
+        struct MalformedClassId
+        {
+            QString description;
+            QVariant value;
+            QString storageType;
+        };
+        const QList<MalformedClassId> malformedValues{
+            {
+                QStringLiteral("non-numeric TEXT"),
+                QStringLiteral("not-an-id"),
+                QStringLiteral("text")
+            },
+            {
+                QStringLiteral("fractional REAL"),
+                42.5,
+                QStringLiteral("real")
+            },
+            {
+                QStringLiteral("zero INTEGER"),
+                0,
+                QStringLiteral("integer")
+            },
+            {
+                QStringLiteral("negative INTEGER"),
+                -42,
+                QStringLiteral("integer")
+            },
+            {
+                QStringLiteral("above INT_MAX INTEGER"),
+                QVariant::fromValue<qlonglong>(
+                    static_cast<qlonglong>(
+                        std::numeric_limits<int>::max()
+                        ) + 1
+                    ),
+                QStringLiteral("integer")
+            }
+        };
+
+        for (const MalformedClassId& malformed : malformedValues)
+        {
+            QVERIFY2(
+                query.exec(QStringLiteral(
+                    "DELETE FROM schedule_testing_blocks"
+                    )),
+                qPrintable(malformed.description)
+                );
+
+            QSqlQuery insert(database);
+            insert.prepare(QStringLiteral(R"(
+                INSERT INTO schedule_testing_blocks (
+                    day, start_time, room, class_id
+                ) VALUES ('Monday', '16:00', 'Original', ?)
+            )"));
+            insert.addBindValue(malformed.value);
+            QVERIFY2(insert.exec(), qPrintable(malformed.description));
+
+            QSqlQuery before(database);
+            QVERIFY2(before.exec(QStringLiteral(R"(
+                SELECT room, class_id, typeof(class_id) AS storage_type
+                FROM schedule_testing_blocks
+                WHERE day='Monday' AND start_time='16:00'
+            )")), qPrintable(malformed.description));
+            QVERIFY(before.next());
+            QCOMPARE(
+                before.value(QStringLiteral("storage_type")).toString(),
+                malformed.storageType
+                );
+            const QString persistedClassId =
+                before.value(QStringLiteral("class_id")).toString();
+
+            const auto assignments = repository.loadTestingAssignments();
+            QVERIFY2(!assignments, qPrintable(malformed.description));
+            QVERIFY(assignments.error().contains(
+                QStringLiteral("invalid class ID"), Qt::CaseInsensitive));
+
+            const auto displayRecords =
+                repository.loadTestingAssignmentDisplayRecords();
+            QVERIFY2(!displayRecords, qPrintable(malformed.description));
+            QVERIFY(displayRecords.error().contains(
+                QStringLiteral("invalid class ID"), Qt::CaseInsensitive));
+
+            const auto save = repository.saveTestingBlock(
+                QStringLiteral("Monday"),
+                QStringLiteral("16:00"),
+                QStringLiteral("Replacement")
+                );
+            QVERIFY2(!save, qPrintable(malformed.description));
+
+            QSqlQuery after(database);
+            QVERIFY(after.exec(QStringLiteral(R"(
+                SELECT room, class_id, typeof(class_id) AS storage_type
+                FROM schedule_testing_blocks
+                WHERE day='Monday' AND start_time='16:00'
+            )")));
+            QVERIFY(after.next());
+            QCOMPARE(
+                after.value(QStringLiteral("room")).toString(),
+                QStringLiteral("Original")
+                );
+            QCOMPARE(
+                after.value(QStringLiteral("storage_type")).toString(),
+                malformed.storageType
+                );
+            QCOMPARE(
+                after.value(QStringLiteral("class_id")).toString(),
+                persistedClassId
+                );
+        }
+
+        QVERIFY(query.exec(QStringLiteral(
+            "DELETE FROM schedule_testing_blocks"
+            )));
+        QVERIFY(query.exec(QStringLiteral(R"(
+            INSERT INTO schedule_testing_blocks (
+                day, start_time, room, class_id
+            ) VALUES ('Monday', '16:00', '', 2147483647)
+        )")));
+        const auto maximumIdAssignments = repository.loadTestingAssignments();
+        QVERIFY(maximumIdAssignments);
+        QCOMPARE(maximumIdAssignments->size(), 1);
+        QCOMPARE(
+            maximumIdAssignments->first().classId,
+            std::numeric_limits<int>::max()
+            );
+        const auto maximumIdDisplay =
+            repository.loadTestingAssignmentDisplayRecords();
+        QVERIFY(maximumIdDisplay);
+        QCOMPARE(maximumIdDisplay->size(), 1);
+        QCOMPARE(
+            maximumIdDisplay->first().classId,
+            std::numeric_limits<int>::max()
+            );
     }
 
     QSqlDatabase::removeDatabase(connectionName);
