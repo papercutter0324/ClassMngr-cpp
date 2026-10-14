@@ -37045,20 +37045,21 @@ The successful test-target build reported a stale generated dependency on
 `src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
 
 Source inspection found `loadClassSubtitleRecord()` reads `class_info` and
-then `class_times` independently without checking `classes`, making absent
-and metadata-free parents indistinguishable. F895 will add an explicit
-detailed parent outcome while preserving the legacy record API's default
-behavior. The typed port will keep its successful outer snapshot and map only
-a confirmed missing parent to recoverable `NotFound` for `classFields` and
-`assignedTeacher`. An existing class without `class_info` retains empty
-subtitle defaults, its ordered schedule, and teacher `nullopt`. Preserve
-independent teacher errors and ensure SQL execution/cursor failures are not
-classified as missing parents.
+then `class_times` independently by requested ID without checking `classes`,
+making absent and metadata-free parents indistinguishable. F895 will add an
+explicit detailed parent outcome while preserving the legacy record API's
+default behavior and any prior ID-keyed optional child data. The typed port
+will keep its successful outer snapshot and map only a confirmed missing
+parent to recoverable `NotFound` for `classFields` and `assignedTeacher`; it
+will not expose orphan child data. An existing class without `class_info`
+retains empty subtitle defaults, its ordered schedule, and teacher `nullopt`.
+Preserve independent teacher errors and ensure SQL execution/cursor failures
+are not classified as missing parents.
 
 | Acceptance point | Required evidence |
 | --- | --- |
-| Parent provenance and compatibility | The detailed read identifies a missing `classes` parent explicitly without diagnostic-text inference; `loadClassSubtitleRecord()` retains its record-returning legacy defaults for unknown IDs. |
-| Typed missing-parent result | Never-present and deleted parents produce an outer-success snapshot with recoverable `NotFound` for both class fields and assigned teacher. |
+| Parent provenance and compatibility | The detailed read identifies a missing `classes` parent explicitly without diagnostic-text inference; `loadClassSubtitleRecord()` retains its legacy record behavior, including requested-ID child rows if the parent is absent. |
+| Typed missing-parent result | Never-present and deleted parents produce an outer-success snapshot with recoverable `NotFound` for both class fields and assigned teacher, even if orphan child rows remain. |
 | Existing-parent optional data | Existing class without `class_info` keeps successful empty grade/level, ordered schedule rows, and successful teacher `nullopt`; full subtitle projection remains narrow and unchanged. |
 | Independent failures | Existing teacher lookup failure remains independent from successful class fields. Metadata/schedule SQL or cursor failures remain operational (class fields Technical) rather than parent-missing outcomes; include focused SQL failure assertions where coherent. Invalid IDs and unavailable sessions remain unchanged. |
 | Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests` in `build/windows-x64-debug`; run only its matching Debug CTest (#329). No full suite. |
