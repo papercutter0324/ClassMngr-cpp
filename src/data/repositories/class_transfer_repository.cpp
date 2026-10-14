@@ -1785,15 +1785,19 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
                     );
             }
 
-            classId = query.lastInsertId().toInt();
+            bool classIdValid = false;
+            const qint64 generatedClassId = query.lastInsertId().toLongLong(
+                &classIdValid);
 
-            if (classId <= 0)
+            if (!classIdValid || generatedClassId <= 0
+                || generatedClassId > std::numeric_limits<int>::max())
             {
                 return std::unexpected(
                     QObject::tr("The imported class did not receive a Teacher Profile ID.")
                     );
             }
 
+            classId = static_cast<int>(generatedClassId);
             summary.createdClassIds.append(classId);
         }
         else

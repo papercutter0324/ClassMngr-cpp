@@ -13,6 +13,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -128,6 +129,8 @@ private slots:
     void preflightsScheduleConflictBeforeWrites();
     void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
+    void createNewRejectsGeneratedClassIdOutsideIntAndRollsBack();
+    void createNewAcceptsIntMaxGeneratedClassId();
     void replacesClassAndTeacherThroughRepository();
     void importsSpeakingEvaluationWithWideGeneratedId();
     void lateWriteFailureRollsBackTransferRows();
@@ -294,6 +297,125 @@ createsWithNormalizedPayloadAndTypedSummary()
     QVERIFY2(createCommand().package.teachers.front().teacher.teacherEn
         != stored->teacherEn.toStdU16String(),
         "fixture should require normalization");
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+createNewRejectsGeneratedClassIdOutsideIntAndRollsBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery existingClass(database);
+    QVERIFY(existingClass.exec(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (1, 'Preexisting Sentinel Class')")));
+    QCOMPARE(count(database, QStringLiteral("class_info")), 0);
+
+    QSqlQuery setClassSequence(database);
+    setClassSequence.prepare(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq = ? WHERE name = 'classes'"));
+    setClassSequence.addBindValue(qint64(4294967296LL));
+    QVERIFY(setClassSequence.exec());
+    QCOMPARE(setClassSequence.numRowsAffected(), 1);
+
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+    const auto result = port.apply(createCommand());
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(count(database, QStringLiteral("teachers")), 0);
+    QCOMPARE(count(database, QStringLiteral("classes")), 1);
+    QCOMPARE(count(database, QStringLiteral("class_info")), 0);
+    QCOMPARE(count(database, QStringLiteral("class_times")), 0);
+    QCOMPARE(count(database, QStringLiteral("class_intensive_times")), 0);
+    QCOMPARE(count(database, QStringLiteral("roster_columns")), 0);
+    QCOMPARE(count(database, QStringLiteral("roster_data")), 0);
+    QCOMPARE(count(database, QStringLiteral("speaking_evaluations")), 0);
+    QCOMPARE(count(database, QStringLiteral("speaking_eval_data")), 0);
+
+    QSqlQuery sentinelClass(database);
+    sentinelClass.prepare(QStringLiteral(
+        "SELECT name FROM classes WHERE id = 1"));
+    QVERIFY(sentinelClass.exec());
+    QVERIFY(sentinelClass.next());
+    QCOMPARE(sentinelClass.value(0).toString(),
+        QStringLiteral("Preexisting Sentinel Class"));
+    QVERIFY(!sentinelClass.next());
+
+    QSqlQuery aliasedClassInfo(database);
+    aliasedClassInfo.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM class_info WHERE class_id = 1"));
+    QVERIFY(aliasedClassInfo.exec());
+    QVERIFY(aliasedClassInfo.next());
+    QCOMPARE(aliasedClassInfo.value(0).toInt(), 0);
+
+    QSqlQuery generatedClass(database);
+    QVERIFY(generatedClass.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM classes WHERE id = 4294967297")));
+    QVERIFY(generatedClass.next());
+    QCOMPARE(generatedClass.value(0).toInt(), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+createNewAcceptsIntMaxGeneratedClassId()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery seedClass(database);
+    QVERIFY(seedClass.exec(QStringLiteral(
+        "INSERT INTO classes (name) VALUES ('Class Sequence Seed')")));
+    const qint64 seedClassId = seedClass.lastInsertId().toLongLong();
+    QVERIFY(seedClassId > 0);
+
+    QSqlQuery removeSeedClass(database);
+    removeSeedClass.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id = ?"));
+    removeSeedClass.addBindValue(seedClassId);
+    QVERIFY(removeSeedClass.exec());
+
+    constexpr int maximumClassId = std::numeric_limits<int>::max();
+    QSqlQuery setClassSequence(database);
+    setClassSequence.prepare(QStringLiteral(
+        "UPDATE sqlite_sequence SET seq = ? WHERE name = 'classes'"));
+    setClassSequence.addBindValue(qint64(maximumClassId) - 1);
+    QVERIFY(setClassSequence.exec());
+    QCOMPARE(setClassSequence.numRowsAffected(), 1);
+
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+    const auto result = port.apply(createCommand());
+
+    QVERIFY2(result, result ? "" : result.error().message.c_str());
+    QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));
+    QCOMPARE(result.value().createdClassIds.front().value(),
+        std::to_string(maximumClassId));
+
+    QSqlQuery importedClass(database);
+    importedClass.prepare(QStringLiteral(
+        "SELECT name FROM classes WHERE id = ?"));
+    importedClass.addBindValue(maximumClassId);
+    QVERIFY(importedClass.exec());
+    QVERIFY(importedClass.next());
+    QCOMPARE(importedClass.value(0).toString(),
+        QStringLiteral("Imported Class"));
+    QVERIFY(!importedClass.next());
+
+    QSqlQuery importedClassInfo(database);
+    importedClassInfo.prepare(QStringLiteral(
+        "SELECT class_grade, class_level, teacher_id FROM class_info "
+        "WHERE class_id = ?"));
+    importedClassInfo.addBindValue(maximumClassId);
+    QVERIFY(importedClassInfo.exec());
+    QVERIFY(importedClassInfo.next());
+    QCOMPARE(importedClassInfo.value(0).toString(), QStringLiteral("E4"));
+    QCOMPARE(importedClassInfo.value(1).toString(), QStringLiteral("Theseus"));
+    QVERIFY(importedClassInfo.value(2).toLongLong() > 0);
+    QVERIFY(!importedClassInfo.next());
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
