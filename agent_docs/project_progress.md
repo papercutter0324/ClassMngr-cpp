@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F906 accepted; F907 selected)
+### Current state - 2026-10-15 (F907 accepted; F908 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -416,8 +416,8 @@ was unavailable and the post-cursor checks were source-reviewed; invalid-ID
 and result-mismatch paths were unchanged and not runtime-exercised. Two
 independent post-F906 audits reviewed all 13 official Deferred candidates;
 none became actionable and the list remains unchanged. F907, My Classes
-student-count batch parent provenance, is selected. Its pre-fix four-entry
-public batch returned outer success and counted a deleted parent with two
+student-count batch parent provenance, initially returned outer success for
+four entries and counted a deleted parent with two
 orphan columns/cells as 1, a populated sibling as 2, a never-present ID as 0,
 and a present class without columns as 0. A fractional row index forced the
 repository fallback: the deleted orphan still counted 1, the malformed
@@ -435,8 +435,17 @@ absence to recoverable `NotFound` in both normal batch and fallback paths,
 while preserving zero counts, count semantics, metrics, and the existing
 batch-to-fallback recovery. Unrecovered SQL, cursor, or malformed-read
 failures remain per-entry `Technical`; failed reads never establish absence.
-F907 implementation and post-change verification are pending. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate remains Open.
+F907 is accepted at source/test commit
+`a9c91c89a128260d3c0e0a7445143698ef5c4353`. Forced Debug builds of `ClassMngr`
+and `ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`
+succeeded with `/p:TrackFileAccess=false /p:ForceRebuild=true`; exact Debug
+CTest #328 passed 1/1 with no build warnings. No full suite ran. Direct
+SQL/cursor failure injection was unavailable; source review and the malformed
+row-index fallback test cover this limit. Two independent post-F907 audits
+reviewed all 13 official Deferred candidates; none became newly actionable,
+and the list remains unchanged. F908, Classes Navigation snapshot parent
+provenance, is selected; its baseline and acceptance have not started. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

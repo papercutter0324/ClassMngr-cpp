@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F906, Class Details validation-context read parent provenance, is accepted at source/test commit `6900d2a3a6a53af65f3eb949053bb5a51ad688e1`; F907, My Classes student-count batch parent provenance, is selected with baseline and acceptance recorded. It preserves per-class fallback and unavailable-session/repository `NotFound` as infrastructure behavior, not class-absence evidence; implementation and post-change verification are pending. Two independent post-F906 audits found none of the 13 official Deferred candidates newly actionable. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F907, My Classes student-count batch parent provenance, is accepted at source/test commit `a9c91c89a128260d3c0e0a7445143698ef5c4353`; F908, Classes Navigation snapshot parent provenance, is selected, with baseline and acceptance not yet started. Two independent post-F907 audits found none of the 13 official Deferred candidates newly actionable. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

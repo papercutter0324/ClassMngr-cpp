@@ -37771,3 +37771,28 @@ temporary test source was restored byte-for-byte (SHA-256
 | Existing-parent count | Preserve the count of one per `row_index` with any nonblank trimmed English or Korean value. No columns, or neither exact `English` nor exact `Korean` header, remains count 0; if exactly one header exists, count using that header as current logic does. |
 | Validation, failures, and metrics | Preserve request validation and order, empty-input behavior, current metrics, and the existing batch-to-per-class fallback. Only unrecovered SQL, cursor, or malformed-row failures remain `Technical`; query errors never establish parent absence. |
 | Scope and status | Leave UI, schema/orphan cleanup, Sub Prep and legacy count paths, and count policy unchanged. F907 baseline and acceptance are recorded; implementation and post-change verification remain pending. |
+
+### F907 accepted; post-slice Deferred audit clear; F908 selected - 2026-10-15
+
+F907 is accepted at source/test commit
+`a9c91c89a128260d3c0e0a7445143698ef5c4353`. Parent-rooted column
+provenance is preserved in both batch and per-class fallback reads, and
+parent-rooted cell reads suppress orphan rows. Only a confirmed absent parent,
+including a never-present ID, yields per-entry recoverable `NotFound`. The
+outer-success ordered result, valid siblings, no-column results, row-counting
+semantics, metrics, and fallback behavior are preserved. Existing
+unavailable-session/repository `NotFound` remains infrastructure behavior;
+unrecovered read errors remain `Technical` and never establish class absence.
+
+Independent Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests`
+used `/p:TrackFileAccess=false /p:ForceRebuild=true`; exact registered Debug
+CTest #328 passed 1/1 without warnings. No full suite ran. Direct SQL/cursor
+failure injection was unavailable; source review and the malformed-row
+fallback test covered that limit.
+
+Two independent post-F907 audits reviewed all 13 exact official Deferred
+candidates and found none newly actionable; all remain unchanged. F908, Classes
+Navigation snapshot parent provenance, is selected; its baseline and
+acceptance have not started. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
