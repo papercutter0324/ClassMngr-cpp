@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F902, My Classes class-summary batch parent provenance, is accepted at source/test commit `647d824c679855b5b03c59033358574a513e8c68`; F903, Speaking Evaluation single matrix read parent provenance, is next. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F903, Speaking Evaluation single matrix read parent provenance, is accepted at source/test commit `dff1860044b99c236698c84355b49821144def6e`; F904, Speaking Evaluation batch matrix read parent provenance, is selected. Two independent post-F903 audits found none of the 13 official Deferred candidates newly actionable. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

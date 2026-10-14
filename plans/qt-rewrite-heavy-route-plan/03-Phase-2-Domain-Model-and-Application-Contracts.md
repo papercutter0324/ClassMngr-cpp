@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F902 My Classes class-summary batch parent provenance is accepted at source/test commit `647d824c679855b5b03c59033358574a513e8c68`; F903 Speaking Evaluation single matrix read parent provenance is next, while Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F903 Speaking Evaluation single matrix read parent provenance is accepted at source/test commit `dff1860044b99c236698c84355b49821144def6e`; F904 Speaking Evaluation batch matrix read parent provenance is selected, while Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F903 - Speaking Evaluation single matrix read parent provenance: classify parent absence in the result read. Next: use a parent-rooted query so only confirmed parent absence returns recoverable `NotFound`; a present parent with no exact-name evaluation or no data remains empty success.
-- F904 - Speaking Evaluation batch matrix read parent provenance: classify parent absence in the batch result read.
+- F904 - Speaking Evaluation batch matrix read parent provenance: for nonempty names, return outer recoverable `NotFound` only when a clean parent-rooted query confirms the class is absent; keep empty names a storage-free success and existing-parent snapshots ordered. Baseline leaked the deleted class's orphan 25x11 matrix; implement with a detailed repository seam, preserving legacy batch behavior.
 - F905 - Speaking Evaluation roster-names projection parent provenance: classify parent absence in the roster-names projection.
 - F906 - Class Details validation-context read parent provenance: classify parent absence in validation context.
 - F907 - My Classes student-count batch parent provenance: classify parent absence in the batch projection.

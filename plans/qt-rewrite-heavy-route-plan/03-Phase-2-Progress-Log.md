@@ -37588,3 +37588,38 @@ are recorded in `build/windows-x64-debug/F903_baseline_observations.txt`.
 | Existing-parent empty results | An existing parent with no exact-name evaluation, or an evaluation with zero data rows, remains successful with an empty matrix. Preserve populated matrix identity, exact-name semantics, Unicode content, and 25x11 row/column ordering. |
 | Errors and compatibility | Query execution and cursor-fetch failures remain `Technical`. Preserve `loadSpeakingEval`, the legacy service contract and diagnostics, and unavailable-session behavior. Leave F904 batch behavior, F905 roster-names projection, UI, roster-score import, and the deferred dense-row-limit/allocation policy unchanged. |
 | Focused verification | Extend `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` in `tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp`; no new CMake target is needed. The current fixture cannot inject cursor-iteration failure, so review those source checks. F903 remains active; implementation and acceptance are pending. |
+
+### F903 accepted; post-slice Deferred audit clear; F904 selected - 2026-10-15
+
+F903 is accepted at source/test commit
+`dff1860044b99c236698c84355b49821144def6e`. The typed single-read adapter
+now distinguishes a confirmed absent parent from technical repository failure
+through its detailed read; only the former maps to recoverable `NotFound`.
+Orphan matrices are suppressed, while present-parent exact-name misses and
+header-only evaluations remain empty success. The legacy
+`loadSpeakingEval` behavior is preserved. An independent tester built
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`;
+exact Debug CTest #324 passed 1/1. No full suite ran. Cursor-fetch failure
+injection remains unavailable, so the `lastError()` path was source-reviewed.
+
+Two independent post-F903 audits reviewed all 13 exact official Deferred
+candidates and found none newly actionable; the list is unchanged.
+
+### F904 baseline captured; contract selected - 2026-10-15
+
+The pre-change public batch baseline showed class 1 absent from `classes` but
+retaining one evaluation header and 25 data rows. The batch returned outer
+success and leaked `Orphan Batch` as a 25x11 matrix; `Missing Orphan Name` was
+empty. Never-present class `987654321` returned ordered empty snapshots, and
+the existing sibling retained ordered populated and missing-name snapshots.
+The exact focused Debug CTest #324 passed 1/1. The temporary test source was
+restored byte-for-byte; its force-built executable is stale relative to that
+restored source. Baseline observations are in
+`build/windows-x64-debug/F904_baseline_observations.txt`.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Parent provenance | For a nonempty valid name list, return outer recoverable `NotFound` only when a clean parent-rooted query confirms no `classes` row. Suppress orphan matrices; query and cursor failures remain `Technical`. |
+| Empty and existing-parent results | An empty valid name list remains successful without storage access. A present parent keeps outer success and ordered per-name snapshots; exact-name misses and header-only evaluations are empty, while populated matrices and duplicate requested-name order are preserved. |
+| Compatibility and scope | Preserve the legacy `loadSpeakingEvalBatch` signature and behavior; add a detailed repository seam for the typed port. Keep current NULL `row_index` handling and do not add a row cap. |
+| Focused verification | Extend `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` in `tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp`. F904 is selected; implementation and post-change verification are pending. |
