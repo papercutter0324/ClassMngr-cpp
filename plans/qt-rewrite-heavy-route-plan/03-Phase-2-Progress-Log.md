@@ -37568,3 +37568,23 @@ Two independent audits of all 13 exact official Deferred candidates found
 none newly actionable; the list remains unchanged. F903, Speaking Evaluation
 single matrix read parent provenance, is next. Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
+
+### F903 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public typed single-read baseline was verified through
+`SpeakingEvaluationQuery` and
+`ApplicationServicesSpeakingEvaluationReadPort`. The focused Debug CTest
+#324 passed, and the source was restored byte-for-byte. A deleted class with
+retained orphan evaluation header/data returned success with a 25x11 matrix;
+a never-present canonical ID returned empty success; and an existing parent
+with an exact-name miss also returned empty success. SQLite confirmed the
+deleted parent count was zero, with one orphan header and 25 data rows. A
+populated sibling returned its matching ordered 25x11 matrix. Observations
+are recorded in `build/windows-x64-debug/F903_baseline_observations.txt`.
+
+| Acceptance point | Required behavior and evidence |
+| --- | --- |
+| Parent provenance | The typed single read returns recoverable `NotFound` only when its parent-rooted result query succeeds and confirms no `classes` row. Orphan evaluation/matrix data is not exposed. Do not infer absence from missing child data or a separate uncoordinated check. |
+| Existing-parent empty results | An existing parent with no exact-name evaluation, or an evaluation with zero data rows, remains successful with an empty matrix. Preserve populated matrix identity, exact-name semantics, Unicode content, and 25x11 row/column ordering. |
+| Errors and compatibility | Query execution and cursor-fetch failures remain `Technical`. Preserve `loadSpeakingEval`, the legacy service contract and diagnostics, and unavailable-session behavior. Leave F904 batch behavior, F905 roster-names projection, UI, roster-score import, and the deferred dense-row-limit/allocation policy unchanged. |
+| Focused verification | Extend `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` in `tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp`; no new CMake target is needed. The current fixture cannot inject cursor-iteration failure, so review those source checks. F903 remains active; implementation and acceptance are pending. |

@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F903 - Speaking Evaluation single matrix read parent provenance: classify parent absence in the result read.
+- F903 - Speaking Evaluation single matrix read parent provenance: classify parent absence in the result read. Next: use a parent-rooted query so only confirmed parent absence returns recoverable `NotFound`; a present parent with no exact-name evaluation or no data remains empty success.
 - F904 - Speaking Evaluation batch matrix read parent provenance: classify parent absence in the batch result read.
 - F905 - Speaking Evaluation roster-names projection parent provenance: classify parent absence in the roster-names projection.
 - F906 - Class Details validation-context read parent provenance: classify parent absence in validation context.
