@@ -5718,35 +5718,37 @@ import methods. The same full-target CTest was also red at pre-F880 source
 commit `18202c79`; isolated `importedClassesConflictAtomically` passed. No
 full suite ran.
 
-F881 is accepted at `3aa8f54b6e3d1650bdd0a94984dd0fd9664e328b`; the source/test
-commit changes `DatabaseTransaction`, `RosterRepository`, the typed roster
-save port, and its focused tests. An immediate transaction holds the
-missing-parent check and snapshot replacement together. A repository-owned
-`ParentClassMissing` tag is emitted only after the parent lookup finds no row;
-only that repository failure maps to typed `NotFound`. Trigger/SQL/transaction
-errors remain Technical and roll back. Existing closed-session/service
-unavailable `NotFound`, input classifications, legacy QString API, and batch
-behavior are preserved. The independent Tester sequentially built
-`ClassMngr` and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests`;
-exact CTest passed 1/1 after elevated FileTracker retries. Tests covered both
-populated and valid zero-row seven-column snapshots after class deletion,
-trigger-failure rollback, and full-snapshot success. No full suite ran.
+F882 is accepted at source/test commit
+`334783d2b341125f659e03c94c94de57c713ade4`. The detailed repository read
+result tags only a successful class lookup with no row; the legacy QString
+result wrapper preserves the exact `class not found` diagnostic. The typed
+co-teacher port maps only this tag to `NotFound`; `InvalidInput` and
+unavailable-session `NotFound` remain unchanged, and all other
+read/validation/conflict/write failures stay Technical. Tests verify missing-class
+classification and persisted-state preservation, plus a forced regular
+schedule-query SQL failure remains Technical without class/teacher mutation.
+Independent Tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`;
+the exact CTest passed 1/1 after elevated FileTracker retries. The initial
+class-row SELECT failure was verified by code inspection; the forced later
+read failure covers Technical classification. No full suite ran.
 
-Two independent post-F881 reviews rechecked all 13 Phase 2 Deferred entries;
-none became actionable and all remain unchanged. Batch 299 selects F882 for
-the typed `ClassCoTeacherAssignmentPort` missing-class result. The public
-pre-fix baseline showed an unknown class returning Technical with the legacy
-`class not found` diagnostic while persisted class information remained
-unchanged. The exact `malformedClassIdIsRejectedWithoutChangingPersistedFields`
-slot passed 1/1 after sequential Debug builds. F882 will add explicit
-repository provenance only for a successful class lookup with no row and map
-that case to typed `NotFound`; query, validation, conflict, write, SQL, and
-transaction errors stay Technical. InvalidInput, unavailable-session
-NotFound, the diagnostic, and legacy QString behavior remain unchanged.
-Batch 299 follow-up candidates are F883 class-notes save, F884 Speaking
-Evaluation save, and F885 the narrower direct `ClassDetailsSavePort` route;
-the broader page route has earlier schedule-conflict checks. The independent
-`ClassDetailsSavePort` candidate is still unselected. The existing untracked
+Two independent post-F882 audits reviewed all 13 official Phase 2 Deferred
+entries; none became actionable and all blockers remain unchanged. Batch 299
+selects F883 for typed class-notes save missing-parent classification. Its
+temporary public pre-fix probe used valid notes and unknown positive ID
+100001. The use case returned Technical with SQLite diagnostic `Saving class
+notes failed for class id 100001: FOREIGN KEY constraint failed Unable to
+fetch row (database error 787)`; no class or `class_info` row was created.
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` built and
+its exact CTest passed. The temporary slot/output were removed and the tree
+returned to its previous state. F883 acceptance: add explicit repository
+missing-parent provenance without diagnostic matching, check and upsert
+inside one immediate transaction, map only the typed missing-parent failure
+to `NotFound`, retain legacy diagnostics and unavailable-service behavior,
+and keep SQL/write/transaction errors Technical with rollback. Next candidates
+remain F884 Speaking Evaluation save and F885 direct `ClassDetailsSavePort`;
+the broader page route has earlier schedule-conflict reads. Existing untracked
 `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
-`txt` artifacts remain outside the slice. Gates 1/2 remain Partial; the formal
-Phase 2 exit gate is Open.
+`txt` artifacts remain untouched. Gates 1/2 remain Partial; the formal Phase 2
+exit gate is Open.

@@ -50,10 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-14
+- Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F881 is accepted; Batch 299 selected F882 to classify a missing class during typed co-teacher assignment as `NotFound` using explicit repository provenance; implementation is pending and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F882 is accepted; Batch 299 selected F883 to classify a missing parent during typed class-notes save as `NotFound` using explicit repository provenance under an Immediate transaction; implementation is pending and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 299 - F882: classify a missing class during typed co-teacher assignment as `NotFound`; implementation pending.
-- Batch 299 - F883: classify a missing parent during class-notes save.
+- Batch 299 - F883: classify a missing parent during typed class-notes save as `NotFound` using repository provenance under an Immediate transaction; implementation pending.
 - Batch 299 - F884: classify a missing parent during Speaking Evaluation save.
 - Batch 299 - F885: classify a stale parent in direct `ClassDetailsSavePort` saves; the public page route also performs earlier schedule-conflict reads and is broader.
 

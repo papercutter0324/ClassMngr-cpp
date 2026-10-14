@@ -5412,3 +5412,11 @@ the existence check and write inside the same immediate transaction. Carry an
 explicit repository-owned missing-parent tag to typed callers; keep trigger,
 SQL, and transaction failures Technical, and preserve legacy wrappers and
 separate service-unavailable classifications.
+
+## Phase 2 distinguish missing rows from failed reads - 2026-10-15
+
+When a successful lookup returns no row, carry an explicit repository failure
+kind so a typed caller can return `NotFound` without parsing diagnostics. Keep
+query execution and fetch failures Technical, and let a legacy wrapper forward
+the same message. Exercise both the missing-row case and a separate forced
+read failure through the public typed route.

@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F881 accepted; F882 selected)
+## Phase 2 current position — 2026-10-15 (F882 accepted; F883 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5167,15 +5167,34 @@ and full-snapshot success. The independent Tester sequentially built
 the exact CTest passed 1/1 after elevated FileTracker retries. No full suite
 ran.
 
-Two independent post-F881 audits reviewed all 13 Deferred entries and found
-none newly actionable; all remain unchanged. Batch 299 selects F882 for
-missing-class classification on `ClassCoTeacherAssignmentPort`. Its public
-pre-fix baseline confirmed an unknown class returns Technical with a
-`class not found` diagnostic while persisted class information stays
-unchanged. The focused baseline slot passed 1/1 after sequential Debug builds.
-Only a successful parent lookup with no class row will gain explicit
-repository provenance and map to typed `NotFound`; query, validation,
-conflict, write, SQL, and transaction failures remain Technical. Existing
-invalid-input and unavailable-session classifications and legacy diagnostics
-remain unchanged. F883/F884/F885 remain Batch 299 follow-up candidates. Gates
-1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+F882 is accepted at `334783d2b341125f659e03c94c94de57c713ade4`. The detailed
+repository read result tags a missing class only when the class query succeeds
+with no row and no SQL error. The existing QString-backed result remains a
+wrapper with the same `class not found` diagnostic. The typed co-teacher port
+maps only that tag to `NotFound`; invalid input and unavailable-session
+behavior remain unchanged, and later schedule-query, validation, conflict,
+write, and transaction errors remain Technical. The missing-class test checks
+the diagnostic and unchanged persisted fields. A second test forces the
+regular-schedule query to fail and verifies Technical with class/teacher state
+unchanged. The independent Tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`;
+exact CTest passed 1/1. The initial class-row query failure is source-inspected;
+the forced later schedule query covers the Technical read-error path. Builds
+required elevated retries after FileTracker `E_ACCESSDENIED`; no full suite
+ran.
+
+Two independent post-F882 audits reviewed all 13 official Deferred entries
+and found none newly actionable; all blockers remain unchanged. Batch 299
+selects F883 for missing-parent classification on typed class-notes save. The
+temporary public pre-fix baseline used valid notes and unknown positive ID
+100001: the use case returned Technical with SQLite foreign-key diagnostic
+`Saving class notes failed for class id 100001: FOREIGN KEY constraint failed
+Unable to fetch row (database error 787)`. No class or `class_info` row was
+created. The matching focused target built and CTest passed; the temporary
+probe was removed. F883 will add explicit repository provenance for the
+missing-parent case and map only that typed save failure to `NotFound`, with
+parent check and upsert serialized in one immediate transaction. Preserve
+service-unavailable `NotFound`, legacy behavior/diagnostics, and Technical
+classification with rollback for SQL/write/transaction failures. F884 and F885
+remain queued in Batch 299. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.

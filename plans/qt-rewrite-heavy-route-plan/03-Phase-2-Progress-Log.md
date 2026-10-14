@@ -36139,9 +36139,57 @@ or suite ran.
 | Other failures | Query, validation, conflict, write, SQL, and transaction failures remain `Technical`. |
 | Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full target or suite. |
 
-The other Batch 299 leads remain queued: F883 class-notes save missing-parent
-classification; F884 Speaking Evaluation save missing-parent classification;
-and F885 direct `ClassDetailsSavePort` stale-parent classification, whose public
-page route also includes earlier schedule-conflict reads and is broader. F882
-implementation is pending. Phase 2 Gates 1/2 remain Partial and the formal
-exit gate remains Open.
+### F882 accepted; Batch 299 selected F883 - 2026-10-15
+
+F882 is accepted at source/test commit
+`334783d2b341125f659e03c94c94de57c713ade4`. The repository's detailed class
+lookup reports `ClassNotFound` only when query preparation and execution
+succeed without SQL error and return no row; the legacy `Result<Record>/QString`
+API remains a wrapper with the exact `class not found` diagnostic. The typed
+co-teacher assignment port maps only that result to `NotFound` when the session
+is open. Other detailed/query/validation/schedule/write failures remain
+`Technical`; unavailable-session `NotFound` and invalid-input behavior remain.
+
+Tests cover the legacy and detailed diagnostics, public `NotFound` with
+unchanged persisted fields, and a forced regular-schedule query SQL failure
+that remains `Technical` without changing class or teacher data. The initial
+class-row SELECT execution failure was source-inspected; the forced-failure
+test covers the later schedule query. Independent sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`
+passed; the exact matching CTest passed 1/1. FileTracker sandbox denial
+required an elevated retry. No full suite ran.
+
+Two independent post-F882 audits reviewed all 13 official Deferred entries;
+none became newly actionable and all remain unchanged.
+
+F883 (`Classify missing parent during typed class-notes save as NotFound`) is
+selected. The traced public route is
+`ClassNotesSaveUseCase::execute()` →
+`ApplicationServicesClassNotesSavePort::saveClassNotes()` →
+`ClassInfoRepository::saveClassNotes()`. The repository currently performs a
+single notes-field UPSERT without parent lookup or transaction; the parent
+foreign key is enabled and cascades on delete. The open-session adapter maps
+repository failures to `Technical`; unavailable-session behavior remains
+`NotFound`.
+
+The public pre-fix baseline used unknown positive class ID `100001` and valid
+notes. It returned `Technical` with diagnostic
+`Saving class notes failed for class id 100001: FOREIGN KEY constraint failed Unable to fetch row (database error 787)` and created neither a `classes` row nor a `class_info` row. The temporary test and output were removed. Sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` passed; the
+exact CTest passed 1/1, and the focused slot captured the diagnostic. No full
+suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Provenance and race safety | Add repository-owned missing-parent provenance only when a parent lookup succeeds but finds no row; perform the check and UPSERT in the same Immediate transaction so deletion cannot race the classification. Do not match diagnostic text. |
+| Typed classification and compatibility | Map only that provenance to `NotFound` through the typed class-notes port. Preserve unavailable-session `NotFound` and legacy QString/Status behavior and diagnostic. |
+| Other failures and rollback | Query, SQL, trigger, write, and transaction failures remain `Technical` and roll back. |
+| Regression coverage | Cover missing parent with no inserted rows, successful notes save, and a forced write/query failure that remains `Technical` with no mutation. |
+| Focused verification | Sequentially build `ClassMngr` then `ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full suite. |
+
+F883 implementation is pending. F884 remains queued for Speaking Evaluation
+save missing-parent classification. F885 remains scoped to direct
+`ClassDetailsSavePort` stale-parent classification; its public page route also
+includes earlier schedule-conflict reads and is broader. Phase 2 Gates 1/2
+remain Partial and the formal exit gate remains Open.
