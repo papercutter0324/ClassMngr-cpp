@@ -5377,3 +5377,12 @@ temporary output flushed. Removing the old destination before the copy succeeds
 turns source and write failures into data loss. Test exact old bytes after a
 failed replacement and verify source integrity on success; report permission
 semantics at the API actually tested, without implying native ACL preservation.
+
+## Phase 2 conditional persistence guard - 2026-10-14
+
+When a write depends on mutable persisted state, a separate read cannot
+authorize the later write: another connection can change the row in between.
+Put the invariant in the same conditional UPDATE or UPSERT as the mutation and
+map a zero-row result to the existing conflict error. Keep preliminary reads
+for persisted-value validation, and test that rejected writes preserve the
+stored row as well as testing the explicit override path.

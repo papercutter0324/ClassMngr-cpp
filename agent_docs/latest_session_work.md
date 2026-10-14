@@ -2,7 +2,7 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `phase2_resume_20261014_f860`; Heavy route; resumed 2026-10-14.
+- Deployment: `qt-phase2-resume-20261014`; Heavy route; resumed 2026-10-14.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,
@@ -5635,7 +5635,7 @@ Create/Delete width path remains deferred. F877 completed Batch 290; the
 acceptance evidence and current Batch292 continuation are recorded below.
 Gates 1/2 remain Partial and Phase 2 remains Open.
 
-## Phase 2 continuation — 2026-10-14 (F877 accepted; F878 baseline verified)
+## Phase 2 continuation — 2026-10-14 (F878 accepted; Batch294 discovery underway)
 
 F877 is committed as `c8178ddf52e94abb02fba1db7392f82aa2fea16f` and changed
 only `src/data/database/database_file_operations.cpp` and
@@ -5656,31 +5656,26 @@ passed 1/1. FileTracker `E_ACCESSDENIED` required an elevated retry; no
 successful-build warnings and no full suite. Mid-stream I/O/permission/commit
 failures and parent-creation failure are not injected directly.
 
-The post-F877 audit found none of the 13 Phase 2 Deferred entries newly
-actionable. Batches 291 and 292 found no candidate across repository/data,
-application-operation, domain-value, and state/concurrency surfaces; the
-invalid-enum cast edge has no normal production path, and decreasing job
-progress has no monotonicity contract. Batch293 selected F878 after tracing a
-possible lost assignment from Schedule Widget `SavePlainTesting` through the
-application port to `TestingBlockRepository::saveTestingBlock()`. The
-helper-level SQLite baseline used two named file-backed connections: A read
-an unassigned row; B called the real `assignTestingClass()` and committed; A
-executed the exact current save-plain UPSERT. It succeeded, changed the room to
-`405`, and cleared `class_id`. This reproduces only the SQL statement sequence,
-not a full repository or ApplicationServices call. The temporary baseline test
-was removed after verification. Sequential Debug builds of `ClassMngr` and
-`ClassMngrTestingBlockRepositoryTests` and exact CTest 1/1 passed; FileTracker
-`E_ACCESSDENIED` required an elevated retry. No production changes were made.
+F878 is committed as `12df019fa58ba87611bc9bef021346b94d6ea2d2`; its only
+paths are `src/data/repositories/testing_block_repository.cpp` and
+`tests/testing_block_repository_tests.cpp`. The conditional UPSERT predicate
+allows writes for NULL/nonpositive assignment IDs or explicit replacement;
+zero affected rows returns the existing replacement-confirmation error. The
+focused method test proves a rejected save preserves room and `class_id`, then
+proves explicit replacement succeeds. Existing ordinary CRUD and malformed-ID
+coverage remains intact.
 
-Main selected a conditional UPSERT guard as the implementation: retain the
-existing persisted-ID validation read, but make the SQL predicate authoritative
-for whether a positive assignment may be cleared; a zero affected-row count
-returns the existing replacement-confirmation error. Preserve explicit
-replacement and ordinary plain-save behavior. The post-F877 audit found no
-newly actionable Deferred item. Batch293’s complementary application-boundary
-scan found only a previously deferred Co-Teacher error-identity observation.
-The Explorer read-only Git snapshot before the F877 documentation commit
-reported HEAD `c8178ddf` and only the established untracked artifacts
-(`%SystemDrive/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
-`txt`). Do not stage or remove those artifacts. Gates 1/2 remain Partial; the
-Phase 2 exit gate is Open.
+The independent Tester sequentially rebuilt `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` in `build/windows-x64-debug`, then exact
+CTest passed 1/1. Both builds first hit Visual Studio FileTracker
+`E_ACCESSDENIED` and passed after authorized elevated retries. No full suite
+ran. The required pre-fix race baseline only reproduced the stale read/UPSERT
+statement sequence with two file-backed connections; it did not invoke the
+whole repository method or public `ApplicationServices` path.
+
+The post-F878 audit reviewed all 13 Phase 2 Deferred entries and found none
+actionable. Batch294 discovery is underway in two read-only lanes: other
+repository-to-domain persistence boundaries and observable application-service
+contracts. The existing untracked `%SystemDrive%/`, `Testing/`,
+`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts remain outside
+the slice. Gates 1/2 remain Partial; the formal Phase 2 exit gate is Open.

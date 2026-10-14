@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F877 accepted; F878 selected for implementation)
+## Phase 2 current position — 2026-10-14 (F878 accepted; Batch294 discovery underway)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5106,15 +5106,19 @@ stages through `QSaveFile`; the focused DataService lifecycle CTest passed
 open-session ApplicationServices path, and no NTFS ACL guarantee is claimed.
 No full suite ran.
 
-The post-F877 audit found none of the 13 Phase 2 Deferred candidates newly
-actionable. Batches 291 and 292 found no candidate. Batch293 selected F878:
-`TestingBlockRepository::saveTestingBlock()` can clear an assignment committed
-between its confirmation read and UPSERT. A helper-level SQLite baseline
-reproduced the stale statement sequence; it did not invoke the whole repository
-or public ApplicationServices method. Sequential Debug builds of `ClassMngr`
-and `ClassMngrTestingBlockRepositoryTests` passed, and exact CTest passed 1/1.
-The implementation direction is a conditional UPSERT that treats zero
-affected rows as the existing replacement-confirmation failure. The
-complementary boundary scan found no independent issue; its Co-Teacher
-error-identity observation remains covered by an earlier deferral. Gates 1/2
-remain Partial and the formal Phase 2 exit gate remains Open.
+F878 is accepted at `12df019fa58ba87611bc9bef021346b94d6ea2d2`. The
+conditional UPSERT guard makes the write authoritative: it preserves a
+positive class assignment unless replacement is explicitly allowed, and a
+zero-row result returns the existing confirmation error. The focused test
+asserts that rejection preserves both room and class ID, and that explicit
+replacement succeeds. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` passed; exact CTest passed 1/1. Both
+build targets required approved elevated retries after Visual Studio
+FileTracker `E_ACCESSDENIED`; no full suite ran. The baseline remains
+helper-level evidence of the stale SQL sequence, not a full-method or public
+ApplicationServices race reproduction.
+
+The post-F878 review covered all 13 Deferred entries; none became actionable.
+Batch294 discovery is underway across repository-to-domain persistence
+boundaries and observable application-service contracts. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

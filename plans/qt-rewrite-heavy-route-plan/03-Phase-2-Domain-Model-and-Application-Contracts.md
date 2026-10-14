@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F878 helper-level SQL-pattern baseline is verified; implement the authoritative UPSERT guard and verify assigned-row preservation at method level; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F878 is accepted; F879 is provisionally selected pending a public RosterReadPort baseline for persisted roster-column width narrowing; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F878 - Guard plain testing-block saves against concurrent assignments: implement the authoritative UPSERT predicate and zero-row replacement error; verify method-level assignment preservation and compatibility.
+- F879 - Reject out-of-range persisted roster-column widths: first reproduce `4294967297` aliasing to `1` through the public RosterReadPort; selection remains provisional until that baseline passes.
 
 #### Deferred candidates
 

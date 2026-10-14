@@ -35895,3 +35895,36 @@ assignment to win.
 
 The baseline is complete; F878 implementation and method-level verification are
 pending. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F878 accepted; Batch 294 discovery and provisional F879 selection - 2026-10-14
+
+F878 is accepted at source/test commit
+`12df019fa58ba87611bc9bef021346b94d6ea2d2`. The independent Tester
+sequentially built `ClassMngr` and `ClassMngrTestingBlockRepositoryTests` in
+`build/windows-x64-debug`; both builds needed authorized elevated retries after
+FileTracker `E_ACCESSDENIED`. The exact CTest passed 1/1. No full suite ran.
+F878's pre-fix baseline was the helper-level two-connection SQL statement
+sequence only; it did not reproduce the full repository method or public
+ApplicationServices path. All 13 unresolved Deferred entries were reviewed;
+none became newly actionable.
+
+Batch 294 repository/domain discovery found a plausible persisted-width
+conversion issue: SQLite INTEGER `roster_columns.width = 4294967297` may pass
+through unchecked `.toInt()` in `RosterRepository::loadRoster()` and alias to
+`1` via the public `ApplicationServicesRosterReadPort`. The complementary
+application-contract lane found no new issue. F285's blank teacher draft
+remains unresolved pending product/domain policy. F879 (`Reject out-of-range
+persisted roster-column widths`) is provisionally selected; its required
+public-port pre-fix baseline is pending. Speaking Evaluation row-index overflow
+was not selected: F847 explicitly preserved the existing out-of-range INTEGER
+behavior, so that overlapping lead is excluded.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Mandatory pre-fix baseline | Through `ApplicationServicesRosterReadPort`, seed persisted INTEGER width `4294967297` and verify whether `loadRoster()` returns aliased width `1`; inspect the database type/value and complete result. Stop and revise if the public-port reproduction does not confirm narrowing. |
+| Width compatibility | Preserve NULL-to-zero conversion and every representable `int` width, including existing negative and large values. Do not add an arbitrary width or column cap. |
+| Out-of-range behavior | Reject persisted INTEGER widths outside the `int` range with a typed Technical failure and no partially populated roster snapshot. |
+| Focused verification | After implementation, build the affected production target and `NextPlatformApplicationServicesRosterReadPort` sequentially in `build/windows-x64-debug`, then run exactly CTest `NextPlatformApplicationServicesRosterReadPort`. No full-suite run. |
+
+F879 remains provisional until the required pre-fix baseline passes. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.
