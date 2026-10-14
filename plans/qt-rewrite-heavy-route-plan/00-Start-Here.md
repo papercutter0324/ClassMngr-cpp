@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F890 is accepted; two independent reviews found none of the 13 official Deferred candidates newly actionable. Batch 303 selects F891, the typed Class Notes Page read, for baseline and acceptance work. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F890 is accepted and no official Deferred trigger reopened. F891's baseline confirms an unknown class returns default-success while a class without optional metadata also succeeds with its schedules; implementation will classify only the missing parent as typed `NotFound`. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

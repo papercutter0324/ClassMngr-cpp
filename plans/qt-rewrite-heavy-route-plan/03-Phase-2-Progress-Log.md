@@ -36687,3 +36687,49 @@ bounded to the typed Class Notes Page port and its repository read, and F889
 provides a close parent-rooted optional-metadata precedent. Baseline inspection
 and acceptance definition are next. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F891 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public typed-port baseline is pinned by
+`missingClassInfoKeepsScheduleAndUnknownClassUsesDefaults()` in
+`tests/next_platform_application_services_class_notes_page_read_port_tests.cpp`.
+Its fresh temporary database contains one created class with no `class_info`
+row, plus two regular schedule rows. The read returns successful default class
+metadata, an empty successful teacher name, and both schedules in insertion
+order. Reading unknown ID 812345 also returns overall success with empty class
+fields, no schedules, and an empty teacher name. The fixture creates only the
+one class; the test does not separately query the parent table for 812345.
+
+The baseline built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests` in the
+standard `build/windows-x64-debug` folder, then passed exactly
+`ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests` (1/1).
+Both builds required bounded elevated retries after MSBuild FileTracker access
+denials; the test-target build reported MSB8064 for the stale
+`teacher_import_plan_mapper.h` dependency. No files were edited and no full
+suite ran.
+
+Read-only route inspection found `loadClassNotesPageRecord()` starts metadata
+at `class_info`, then queries `class_times`; neither query establishes parent
+existence. SQL execution errors are returned, but the metadata and schedule
+cursor loops do not check `lastError()` when iteration ends. F891 will carry
+explicit parent-missing provenance from a `classes`-rooted `LEFT JOIN
+class_info` repository read to the typed port. Keep the legacy repository
+wrapper's missing-parent defaults. The page-level result stays successful;
+only the missing class's `classFields` and dependent `teacherDisplayName`
+components become `NotFound`. An existing class without metadata keeps empty
+defaults, schedule rows, and an empty successful teacher name. Existing
+field/schedule mapping, teacher fallback, invalid-ID and unavailable-session
+behavior remain intact.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and legacy behavior | One parent-rooted metadata query with `LEFT JOIN class_info` explicitly distinguishes a clean absent parent from an existing parent without optional metadata. The typed port maps only the explicit absent-parent outcome to component `NotFound`; the legacy repository wrapper retains unknown-ID default success. |
+| Optional metadata and independent components | Existing parent without `class_info` keeps successful empty metadata, schedules, and empty teacher name. Missing parent makes class fields and dependent teacher name `NotFound` while the outer snapshot remains successful. |
+| Technical failures and existing behavior | Metadata/schedule SQL, fetch, malformed stored-data, invalid-ID, unavailable-session, successful mapping, and teacher display-name behavior remain as currently contracted. Check cursor `lastError()` so failed iteration cannot be mistaken for missing parent or a short successful schedule. |
+| Regression coverage | Through the public typed port, cover unknown and deleted parents, parent-without-metadata plus ordered schedules, legacy wrapper defaults, successful mapping and teacher fallback, and existing SQL/malformed-data/session paths. Assert parent classification occurs in the single metadata statement. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests` in `build/windows-x64-debug`; run only the matching Debug CTest. No full suite. |
+
+F891 baseline and acceptance are complete; implementation is next. All 13
+official Deferred candidates remain unchanged and deferred. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

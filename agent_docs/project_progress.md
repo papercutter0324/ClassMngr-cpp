@@ -154,9 +154,14 @@ Debug builds of `ClassMngr` and the two focused assignment targets succeeded;
 the exact CTests passed 2/2 after bounded FileTracker retries, with no full
 suite run. Two independent post-F890 audits found none of the 13 official
 Deferred candidates newly actionable. Batch 303 selects F891, a typed Class
-Notes Page read, for baseline and acceptance work; seven further bounded read
-leads are ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal
-exit gate remains Open.
+Notes Page read. Its baseline confirms that unknown class ID 812345 currently
+returns successful empty fields and teacher name, while an existing class
+without `class_info` succeeds with default metadata and its two ordered
+schedule rows. Acceptance now requires only the absent parent to produce typed
+`NotFound`, preserving optional-metadata defaults, schedule results, and
+technical failures; implementation is next. Seven further bounded read leads
+are ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal exit
+gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
