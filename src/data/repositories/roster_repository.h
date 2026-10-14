@@ -103,6 +103,12 @@ public:
         QList<SpeakingEvaluationRosterNamePairReadRecord> rows;
     };
 
+    struct SpeakingEvaluationRosterNamesReadOutcome final
+    {
+        SpeakingEvaluationRosterNamesReadRecord rosterNames;
+        bool parentMissing = false;
+    };
+
     struct SubPrepStudentCountBatchReadMetrics final
     {
         int callCount = 0;
@@ -145,6 +151,10 @@ public:
     // valid roster cell.
     [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadRecord>
     loadSpeakingEvaluationRosterNames(int classId);
+    // Adds parent provenance for typed callers while keeping the legacy
+    // projection API and its requested-ID child-row behavior intact.
+    [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadOutcome>
+    loadSpeakingEvaluationRosterNamesDetailed(int classId);
 
     [[nodiscard]] Result<QList<TemplatePrintReadRecord>>
     loadRostersForTemplatePrint(const QList<int>& classIds);
@@ -208,6 +218,8 @@ private:
         const Roster& roster
         );
     [[nodiscard]] Result<int> loadMyClassesStudentCountRecord(int classId);
+    [[nodiscard]] Result<SpeakingEvaluationRosterNamesReadOutcome>
+    loadSpeakingEvaluationRosterNamesImpl(int classId, bool parentRooted);
     [[nodiscard]] Result<SubPrepStudentCountReadEntry>
     loadSubPrepStudentCountRecord(int classId);
     [[nodiscard]] Result<QList<FullRosterReadRecord>> loadFullRostersImpl(

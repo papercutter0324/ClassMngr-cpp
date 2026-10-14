@@ -645,6 +645,29 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
     const int classId
     )
 {
+    auto loaded = loadSpeakingEvaluationRosterNamesImpl(classId, false);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->rosterNames);
+}
+
+Result<RosterRepository::SpeakingEvaluationRosterNamesReadOutcome>
+RosterRepository::loadSpeakingEvaluationRosterNamesDetailed(
+    const int classId
+    )
+{
+    return loadSpeakingEvaluationRosterNamesImpl(classId, true);
+}
+
+Result<RosterRepository::SpeakingEvaluationRosterNamesReadOutcome>
+RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
+    const int classId,
+    const bool parentRooted
+    )
+{
     if (classId <= 0)
     {
         return std::unexpected(
@@ -655,17 +678,35 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
             );
     }
 
-    SpeakingEvaluationRosterNamesReadRecord record;
+    SpeakingEvaluationRosterNamesReadOutcome outcome;
+    SpeakingEvaluationRosterNamesReadRecord& record = outcome.rosterNames;
     int englishColumn = -1;
     int koreanColumn = -1;
     int columnCount = 0;
     QSqlQuery columnsQuery(m_database);
-    columnsQuery.prepare(R"(
-        SELECT name
-        FROM roster_columns
-        WHERE class_id=?
-        ORDER BY position, id
-    )");
+    if (parentRooted)
+    {
+        columnsQuery.prepare(R"(
+            SELECT
+                classes.id AS parent_class_id,
+                roster_columns.id AS roster_column_id,
+                roster_columns.name
+            FROM classes
+            LEFT JOIN roster_columns
+                ON roster_columns.class_id=classes.id
+            WHERE classes.id=?
+            ORDER BY roster_columns.position, roster_columns.id
+        )");
+    }
+    else
+    {
+        columnsQuery.prepare(R"(
+            SELECT name
+            FROM roster_columns
+            WHERE class_id=?
+            ORDER BY position, id
+        )");
+    }
     columnsQuery.addBindValue(classId);
 
     const QString identity = QObject::tr("class id %1").arg(classId);
@@ -679,9 +720,8 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
         return std::unexpected(loadedColumns.error().userMessage());
     }
 
-    while (columnsQuery.next())
+    auto collectColumnName = [&](const QString& columnName)
     {
-        const QString columnName = columnsQuery.value(0).toString();
         if (
             englishColumn < 0
             && columnName.compare(
@@ -699,6 +739,48 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
             koreanColumn = columnCount;
         }
         ++columnCount;
+    };
+
+    if (parentRooted)
+    {
+        if (!columnsQuery.next())
+        {
+            if (columnsQuery.lastError().isValid())
+            {
+                return std::unexpected(
+                    QObject::tr(
+                        "Loading Speaking Evaluation roster name columns failed "
+                        "for %1: %2"
+                        ).arg(identity, columnsQuery.lastError().text())
+                    );
+            }
+
+            outcome.parentMissing = true;
+            return outcome;
+        }
+        if (columnsQuery.value(0).isNull())
+        {
+            return std::unexpected(QObject::tr(
+                "Loading Speaking Evaluation roster name columns failed "
+                "for %1: parent provenance was unavailable."
+                ).arg(identity));
+        }
+
+        do
+        {
+            if (!columnsQuery.value(1).isNull())
+            {
+                collectColumnName(columnsQuery.value(2).toString());
+            }
+        }
+        while (columnsQuery.next());
+    }
+    else
+    {
+        while (columnsQuery.next())
+        {
+            collectColumnName(columnsQuery.value(0).toString());
+        }
     }
     if (columnsQuery.lastError().isValid())
     {
@@ -714,48 +796,99 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
     record.hasKoreanColumn = koreanColumn >= 0;
     if (columnCount == 0)
     {
-        return record;
+        return outcome;
     }
 
     QSqlQuery rowsQuery(m_database);
-    rowsQuery.prepare(R"(
-        WITH valid_rows AS (
+    if (parentRooted)
+    {
+        rowsQuery.prepare(R"(
+            WITH parent_class(class_id) AS (
+                SELECT id FROM classes WHERE id=?
+            ),
+            valid_rows AS (
+                SELECT
+                    parent_class.class_id,
+                    roster_data.row_index,
+                    MAX(CASE
+                        WHEN typeof(roster_data.col_index) <> 'integer'
+                        THEN 1 ELSE 0 END
+                    ) AS has_non_integer_column_index,
+                    MAX(CASE
+                        WHEN typeof(roster_data.row_index) <> 'integer'
+                        THEN 1 ELSE 0 END
+                    ) AS has_non_integer_row_index
+                FROM parent_class
+                INNER JOIN roster_data
+                    ON roster_data.class_id=parent_class.class_id
+                WHERE roster_data.row_index >= 0
+                  AND roster_data.col_index >= 0
+                  AND roster_data.col_index < ?
+                GROUP BY parent_class.class_id, roster_data.row_index
+            )
             SELECT
-                row_index,
-                MAX(CASE WHEN typeof(col_index) <> 'integer' THEN 1 ELSE 0 END)
-                    AS has_non_integer_column_index,
-                MAX(CASE WHEN typeof(row_index) <> 'integer' THEN 1 ELSE 0 END)
-                    AS has_non_integer_row_index
-            FROM roster_data
-            WHERE class_id=?
-              AND row_index >= 0
-              AND col_index >= 0
-              AND col_index < ?
-            GROUP BY row_index
-        )
-        SELECT
-            valid_rows.row_index,
-            valid_rows.has_non_integer_column_index,
-            valid_rows.has_non_integer_row_index,
-            english.value AS english_name,
-            korean.value AS korean_name
-        FROM valid_rows
-        LEFT JOIN roster_data AS english
-            ON english.class_id=?
-           AND english.row_index=valid_rows.row_index
-           AND english.col_index=?
-        LEFT JOIN roster_data AS korean
-            ON korean.class_id=?
-           AND korean.row_index=valid_rows.row_index
-           AND korean.col_index=?
-        ORDER BY valid_rows.row_index
-    )");
-    rowsQuery.addBindValue(classId);
-    rowsQuery.addBindValue(columnCount);
-    rowsQuery.addBindValue(classId);
-    rowsQuery.addBindValue(englishColumn);
-    rowsQuery.addBindValue(classId);
-    rowsQuery.addBindValue(koreanColumn);
+                valid_rows.row_index,
+                valid_rows.has_non_integer_column_index,
+                valid_rows.has_non_integer_row_index,
+                english.value AS english_name,
+                korean.value AS korean_name
+            FROM valid_rows
+            LEFT JOIN roster_data AS english
+                ON english.class_id=valid_rows.class_id
+               AND english.row_index=valid_rows.row_index
+               AND english.col_index=?
+            LEFT JOIN roster_data AS korean
+                ON korean.class_id=valid_rows.class_id
+               AND korean.row_index=valid_rows.row_index
+               AND korean.col_index=?
+            ORDER BY valid_rows.row_index
+        )");
+        rowsQuery.addBindValue(classId);
+        rowsQuery.addBindValue(columnCount);
+        rowsQuery.addBindValue(englishColumn);
+        rowsQuery.addBindValue(koreanColumn);
+    }
+    else
+    {
+        rowsQuery.prepare(R"(
+            WITH valid_rows AS (
+                SELECT
+                    row_index,
+                    MAX(CASE WHEN typeof(col_index) <> 'integer' THEN 1 ELSE 0 END)
+                        AS has_non_integer_column_index,
+                    MAX(CASE WHEN typeof(row_index) <> 'integer' THEN 1 ELSE 0 END)
+                        AS has_non_integer_row_index
+                FROM roster_data
+                WHERE class_id=?
+                  AND row_index >= 0
+                  AND col_index >= 0
+                  AND col_index < ?
+                GROUP BY row_index
+            )
+            SELECT
+                valid_rows.row_index,
+                valid_rows.has_non_integer_column_index,
+                valid_rows.has_non_integer_row_index,
+                english.value AS english_name,
+                korean.value AS korean_name
+            FROM valid_rows
+            LEFT JOIN roster_data AS english
+                ON english.class_id=?
+               AND english.row_index=valid_rows.row_index
+               AND english.col_index=?
+            LEFT JOIN roster_data AS korean
+                ON korean.class_id=?
+               AND korean.row_index=valid_rows.row_index
+               AND korean.col_index=?
+            ORDER BY valid_rows.row_index
+        )");
+        rowsQuery.addBindValue(classId);
+        rowsQuery.addBindValue(columnCount);
+        rowsQuery.addBindValue(classId);
+        rowsQuery.addBindValue(englishColumn);
+        rowsQuery.addBindValue(classId);
+        rowsQuery.addBindValue(koreanColumn);
+    }
 
     const auto loadedRows = SqlQueryUtils::executePrepared(
         rowsQuery,
@@ -832,7 +965,7 @@ RosterRepository::loadSpeakingEvaluationRosterNames(
             );
     }
 
-    return record;
+    return outcome;
 }
 
 Result<QList<RosterRepository::FullRosterReadRecord>>

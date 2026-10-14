@@ -86,7 +86,9 @@ public:
         try
         {
             const auto loaded =
-                repository->loadSpeakingEvaluationRosterNames(*classId);
+                repository->loadSpeakingEvaluationRosterNamesDetailed(
+                    *classId
+                    );
             if (!loaded)
             {
                 return failure(
@@ -94,16 +96,23 @@ public:
                     toStdString(loaded.error())
                     );
             }
+            if (loaded->parentMissing)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "Class " + std::to_string(*classId) + " was not found."
+                    );
+            }
 
             Application::SpeakingEvaluationRosterNamesReadSnapshot snapshot(
                 request.classId
                 );
-            snapshot.hasEnglishColumn = loaded->hasEnglishColumn;
-            snapshot.hasKoreanColumn = loaded->hasKoreanColumn;
+            snapshot.hasEnglishColumn = loaded->rosterNames.hasEnglishColumn;
+            snapshot.hasKoreanColumn = loaded->rosterNames.hasKoreanColumn;
             snapshot.rows.reserve(
-                static_cast<std::size_t>(loaded->rows.size())
+                static_cast<std::size_t>(loaded->rosterNames.rows.size())
                 );
-            for (const auto& row : loaded->rows)
+            for (const auto& row : loaded->rosterNames.rows)
             {
                 snapshot.rows.push_back({
                     row.englishName.toStdU16String(),

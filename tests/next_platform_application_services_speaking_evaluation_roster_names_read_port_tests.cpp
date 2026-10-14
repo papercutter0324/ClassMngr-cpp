@@ -119,6 +119,8 @@ class NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests 
 
 private slots:
     void missingSessionReturnsNotFound();
+    void missingParentWithOrphansReturnsNotFoundAndPreservesLegacyRead();
+    void neverPresentParentReturnsNotFound();
     void readsFirstCaseInsensitiveHeadersAndLegacySparseRows();
     void rejectsFractionalRowIndexBeforeOverwritingRosterName();
     void rejectsRowIndexOutsideLegacyRange();
@@ -126,6 +128,7 @@ private slots:
     void preservesMissingHeadersAndRowsMaterializedByUnrelatedCells();
     void skipsCellReadWhenNoColumnsExist();
     void emptyRosterWithNameColumnsIsSuccessful();
+    void missingParentQueryFailureIsTechnical();
     void repositoryFailureIsStructured();
 };
 
@@ -143,6 +146,127 @@ missingSessionReturnsNotFound()
 
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+missingParentWithOrphansReturnsNotFoundAndPreservesLegacyRead()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Deleted Speaking Evaluation Roster Parent")
+        );
+    QVERIFY(createdClass);
+
+    const QString englishName = QStringLiteral("Orphan English");
+    const QString koreanName = QStringLiteral("Orphan Korean");
+    const QString secondEnglishName = QStringLiteral("Second orphan English");
+    const QString secondKoreanName = QStringLiteral("Second orphan Korean");
+    QString error;
+    QVERIFY2(
+        seedRoster(
+            services.databaseSession()->database(),
+            *createdClass,
+            {QStringLiteral("English"), QStringLiteral("Korean")},
+            {
+                {0, 0, englishName},
+                {0, 1, koreanName},
+                {1, 0, secondEnglishName},
+                {1, 1, secondKoreanName}
+            },
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(
+        disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(disableForeignKeys.lastError().text())
+        );
+    QSqlQuery deleteParent(database);
+    QVERIFY2(
+        deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?")),
+        qPrintable(deleteParent.lastError().text())
+        );
+    deleteParent.addBindValue(*createdClass);
+    QVERIFY2(
+        deleteParent.exec(),
+        qPrintable(deleteParent.lastError().text())
+        );
+    QCOMPARE(deleteParent.numRowsAffected(), qint64(1));
+
+    QSqlQuery orphanCounts(database);
+    QVERIFY2(
+        orphanCounts.prepare(QStringLiteral(
+            "SELECT "
+            "(SELECT COUNT(*) FROM classes WHERE id=?), "
+            "(SELECT COUNT(*) FROM roster_columns WHERE class_id=?), "
+            "(SELECT COUNT(*) FROM roster_data WHERE class_id=?)"
+            )),
+        qPrintable(orphanCounts.lastError().text())
+        );
+    orphanCounts.addBindValue(*createdClass);
+    orphanCounts.addBindValue(*createdClass);
+    orphanCounts.addBindValue(*createdClass);
+    QVERIFY2(
+        orphanCounts.exec(),
+        qPrintable(orphanCounts.lastError().text())
+        );
+    QVERIFY(orphanCounts.next());
+    QCOMPARE(orphanCounts.value(0).toInt(), 0);
+    QCOMPARE(orphanCounts.value(1).toInt(), 2);
+    QCOMPARE(orphanCounts.value(2).toInt(), 4);
+
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(*createdClass),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository != nullptr);
+    const auto legacy =
+        repository->loadSpeakingEvaluationRosterNames(*createdClass);
+    QVERIFY2(legacy, legacy ? "" : qPrintable(legacy.error()));
+    QVERIFY(legacy->hasEnglishColumn);
+    QVERIFY(legacy->hasKoreanColumn);
+    QCOMPARE(legacy->rows.size(), 2);
+    QCOMPARE(legacy->rows[0].englishName, englishName);
+    QCOMPARE(legacy->rows[0].koreanName, koreanName);
+    QCOMPARE(legacy->rows[1].englishName, secondEnglishName);
+    QCOMPARE(legacy->rows[1].koreanName, secondKoreanName);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+neverPresentParentReturnsNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(987654321),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
@@ -558,6 +682,32 @@ emptyRosterWithNameColumnsIsSuccessful()
     QVERIFY(result.value().hasEnglishColumn);
     QVERIFY(result.value().hasKoreanColumn);
     QVERIFY(result.value().rows.empty());
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
+missingParentQueryFailureIsTechnical()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlQuery dropColumns(services.databaseSession()->database());
+    QVERIFY2(
+        dropColumns.exec(QStringLiteral("DROP TABLE roster_columns")),
+        qPrintable(dropColumns.lastError().text())
+        );
+
+    Platform::ApplicationServicesSpeakingEvaluationRosterNamesReadPort port(
+        services);
+    const auto result = Application::
+        SpeakingEvaluationRosterNamesReadQuery::execute(
+            request(987654321),
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests::
