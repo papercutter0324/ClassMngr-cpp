@@ -5635,7 +5635,7 @@ Create/Delete width path remains deferred. F877 completed Batch 290; the
 acceptance evidence and current Batch292 continuation are recorded below.
 Gates 1/2 remain Partial and Phase 2 remains Open.
 
-## Phase 2 continuation — 2026-10-14 (F878 accepted; F879 implementation selected)
+## Phase 2 continuation — 2026-10-14 (F878 and F879 accepted; Batch 297 discovery underway)
 
 F877 is committed as `c8178ddf52e94abb02fba1db7392f82aa2fea16f` and changed
 only `src/data/database/database_file_operations.cpp` and
@@ -5683,14 +5683,32 @@ paths are excluded. The pre-fix baseline through public `RosterReadUseCase`
 confirmed that SQLite INTEGER `4294967297` was returned in the snapshot as
 width `1`; the temporary regression was removed after verification.
 
-F879 implementation covers both repository conversion sites and three focused
-public targets: RosterReadPort, Class Transfer export source, and Template Print
-source read. The fix preserves NULL-to-zero and every `int`-representable
-width, rejects values outside the `int` range through typed Technical errors,
-and adds no arbitrary width or column-count cap. Sequential Debug builds of
-`ClassMngr` and the RosterReadPort target passed, followed by exact CTest 1/1;
-the `ClassMngr` build required an elevated retry after FileTracker
-`E_ACCESSDENIED`. Batch294's complementary application-contract scan found no
-new issue; F285 remains unresolved pending product/domain policy. The existing untracked `%SystemDrive%/`, `Testing/`,
-`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts remain outside
-the slice. Gates 1/2 remain Partial; the formal Phase 2 exit gate is Open.
+F879 is accepted at `18202c7908ce36fa85a27872257358c75d92f1b4`. Its public
+pre-fix RosterReadPort baseline stored SQLite INTEGER `4294967297` and returned
+width `1`; it covered `loadRoster()` only. The accepted fix checks persisted
+widths in both `loadRoster()` and shared `loadFullRostersImpl()`, protecting
+RosterReadPort, Class Transfer export, and Template Print. It preserves SQL
+NULL-to-zero and every signed-int-representable INTEGER width, including
+negative values and INT_MIN/INT_MAX, rejects only out-of-range INTEGER widths
+with contextual Technical/roster-stage errors, and preserves the old
+`toInt()` behavior for non-INTEGER storage. No width or column-count cap was
+added.
+
+Public tests confirm stored INTEGER behavior through all three routes, plus
+NULL, integer boundaries, and nonnumeric TEXT fallback through RosterReadPort.
+The independent Tester sequentially built `ClassMngr` and the three focused
+targets and passed each exact CTest 1/1; after the TEXT compatibility test was
+added, it rebuilt and reran the RosterReadPort target, also 1/1. Builds
+required elevated retries after Visual Studio FileTracker `E_ACCESSDENIED`.
+No full suite ran.
+
+The post-F879 audit reviewed all 13 Phase 2 Deferred entries; none became
+actionable. Batch 295 application-contract and repository scans found no new
+candidate. Batch 296 validation/business-rule review found no gap. Its
+document-navigation feedback lead was excluded because F393 explicitly
+accepts no warning for a missing resource; the report-job queue lead has no
+live application callsite. Batch 297 discovery is underway across Class
+Transfer import and public write-result contracts. The existing untracked
+`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt` artifacts remain outside the slice. Gates 1/2 remain Partial; the formal
+Phase 2 exit gate is Open.

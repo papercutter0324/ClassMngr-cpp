@@ -35968,3 +35968,37 @@ positivity rules or arbitrary width/column-count caps.
 Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
 F285 remains deferred pending product/domain policy; preserve F847's accepted
 out-of-range INTEGER compatibility for Speaking Evaluation.
+
+### F879 accepted; Batch 296 shortfall and Batch 297 discovery started - 2026-10-14
+
+F879 is accepted at source/test commit
+`18202c7908ce36fa85a27872257358c75d92f1b4`. Both persisted roster-width
+conversion sites now reject SQLite INTEGER values outside the signed `int`
+range with contextual Technical errors at the roster stage, without returning
+a partial public result. SQL NULL remains width zero; signed-int boundaries
+and representable negative values remain supported. Non-INTEGER storage keeps
+the prior `toInt()` fallback. No positivity rule or width/column-count cap was
+added.
+
+The independent Tester sequentially built `ClassMngr` and the three focused
+route targets: `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`, and
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`.
+The exact CTest passed 1/1 for each. After the non-INTEGER compatibility test
+was added, the RosterRead target was built and its exact CTest passed 1/1 again.
+All builds passed on authorized elevated retries after FileTracker
+`E_ACCESSDENIED`; no full suite ran. The pre-fix public baseline covered only
+`loadRoster()`: SQLite INTEGER `4294967297` produced width `1`.
+
+Two independent reviews rechecked all 13 Deferred entries after F879; none
+became actionable, and every entry remains unchanged. Batch 295 validation and
+repository scans found no candidate. Batch 296 was a discovery shortfall: the
+validation/business-rule lane found no gap; document-navigation error feedback
+was not actionable because F393 accepts no warning for missing resources and
+resource resolution before the leave prompt; and `ReportJobEventQueue`'s full
+case has no live application callsite. These findings are not added as
+Deferred candidates.
+
+Batch 297 discovery has started in class-transfer import and public write-result
+contract lanes; results are pending and no candidate has been selected. Phase 2
+Gates 1/2 remain Partial and the formal exit gate remains Open.

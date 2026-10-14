@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F878 accepted; F879 implementation selected)
+## Phase 2 current position — 2026-10-14 (F879 accepted; Batch 297 discovery underway)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5118,15 +5118,24 @@ FileTracker `E_ACCESSDENIED`; no full suite ran. The baseline remains
 helper-level evidence of the stale SQL sequence, not a full-method or public
 ApplicationServices race reproduction.
 
-The post-F878 review covered all 13 Deferred entries; none became actionable.
-Batch294 selected F879: two `RosterRepository` paths narrow persisted
-`roster_columns.width` through unchecked `toInt()`. The public pre-fix
-RosterReadPort baseline confirmed SQLite INTEGER `4294967297` returned as
-snapshot width `1`. The implementation covers both conversion sites; the
-shared full-roster path serves Class Transfer export and Template Print. It
-preserves NULL-to-zero and all representable `int` widths, rejects only values
-outside `int` range, and adds no arbitrary width or column-count cap. Focused
-coverage spans RosterReadPort, Class Transfer export, and Template Print source
-read targets. The application-contract scan found no new issue; F285 remains
-blocked on product/domain policy. Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+F879 is accepted at `18202c7908ce36fa85a27872257358c75d92f1b4`. The public
+pre-fix RosterReadPort baseline stored SQLite INTEGER `4294967297` and returned
+snapshot width `1`. The implementation checks both `RosterRepository` width
+read paths, covers RosterReadPort, Class Transfer export, and Template Print,
+preserves NULL as zero and all signed-int-representable values, and rejects
+only out-of-range SQLite INTEGER values. Non-INTEGER storage keeps the prior
+`toInt()` behavior. Tests cover NULL, INT_MIN/INT_MAX, a nonnumeric TEXT width,
+and the wide INTEGER through all three public routes. The independent Tester
+sequentially built `ClassMngr` and all three test targets; each exact CTest
+passed 1/1. The RosterReadPort target was rebuilt and rerun after adding the
+TEXT compatibility test. Builds needed elevated retries after Visual Studio
+FileTracker `E_ACCESSDENIED`; no full suite ran.
+
+Two independent post-F879 audits reviewed all 13 Deferred entries and found
+none newly actionable. Batch 295 application-contract and repository scans
+found no new candidate. Batch 296 validation/business-rule review also found
+no gap. Its document-navigation feedback lead was excluded because F393
+explicitly accepts no warning for a missing resource; the report-job queue
+lead has no live application callsite. Batch 297 discovery is underway across
+Class Transfer import and public write-result contracts. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

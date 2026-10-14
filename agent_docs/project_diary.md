@@ -5386,3 +5386,12 @@ Put the invariant in the same conditional UPDATE or UPSERT as the mutation and
 map a zero-row result to the existing conflict error. Keep preliminary reads
 for persisted-value validation, and test that rejected writes preserve the
 stored row as well as testing the explicit override path.
+
+## Phase 2 persisted roster width conversion — 2026-10-14
+
+Before narrowing persisted SQLite integers to `int`, convert to a wide signed
+type and check both bounds. Scope the new rejection to the storage class that
+exposes the overflow; keep SQL NULL and prior non-INTEGER conversion behavior
+intact when the contract does not authorize broader validation changes. Test
+the same repository logic through every public route that consumes it, since a
+shared batch reader may feed multiple features with different error surfaces.
