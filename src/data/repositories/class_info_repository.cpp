@@ -1380,6 +1380,18 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
 Result<SelectedClassGradeReadRecord>
 ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
 {
+    const auto loaded = loadSelectedClassGradeRecordDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->record);
+}
+
+Result<SelectedClassGradeReadOutcome>
+ClassInfoRepository::loadSelectedClassGradeRecordDetailed(const int classId)
+{
     ++m_selectedClassGradeReadMetrics.callCount;
     if (classId <= 0)
     {
@@ -1389,14 +1401,15 @@ ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
             );
     }
 
-    SelectedClassGradeReadRecord record;
-    record.classId = classId;
+    SelectedClassGradeReadOutcome outcome;
+    outcome.record.classId = classId;
 
     QSqlQuery query(m_database);
     query.prepare(R"(
-        SELECT class_grade
-        FROM class_info
-        WHERE class_id = ?
+        SELECT classes.id AS parent_class_id, class_info.class_grade
+        FROM classes
+        LEFT JOIN class_info ON class_info.class_id = classes.id
+        WHERE classes.id = ?
     )");
     query.addBindValue(classId);
 
@@ -1411,12 +1424,26 @@ ClassInfoRepository::loadSelectedClassGradeRecord(const int classId)
         return std::unexpected(loaded.error().userMessage());
     }
 
-    if (query.next())
+    const bool parentRowFound = query.next();
+    if (query.lastError().isValid())
     {
-        record.classGrade = query.value("class_grade").toString();
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class information"),
+            {},
+            QObject::tr("class id %1").arg(classId)
+            ).userMessage());
     }
 
-    return record;
+    if (!parentRowFound)
+    {
+        outcome.parentMissing = true;
+        return outcome;
+    }
+
+    outcome.record.classGrade =
+        query.value("class_grade").toString();
+    return outcome;
 }
 
 Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(

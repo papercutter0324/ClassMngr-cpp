@@ -62,12 +62,12 @@ public:
                 );
         }
 
-        Result<SelectedClassGradeReadRecord> source = [&]()
-            -> Result<SelectedClassGradeReadRecord>
+        Result<SelectedClassGradeReadOutcome> source = [&]()
+            -> Result<SelectedClassGradeReadOutcome>
         {
             try
             {
-                return repository->loadSelectedClassGradeRecord(
+                return repository->loadSelectedClassGradeRecordDetailed(
                     *legacyClassId
                     );
             }
@@ -93,8 +93,18 @@ public:
                 );
         }
 
+        if (source->parentMissing)
+        {
+            return failure(
+                Domain::ErrorCode::NotFound,
+                "The selected class does not exist."
+                );
+        }
+
         const std::optional<Domain::ClassId> loadedClassId =
-            Domain::ClassId::fromString(std::to_string(source->classId));
+            Domain::ClassId::fromString(
+                std::to_string(source->record.classId)
+                );
         if (!loadedClassId)
         {
             return failure(
@@ -103,7 +113,7 @@ public:
                 );
         }
 
-        const QByteArray gradeBytes = source->classGrade.toUtf8();
+        const QByteArray gradeBytes = source->record.classGrade.toUtf8();
         Application::SelectedClassGradeReadSnapshot snapshot{
             *loadedClassId,
             gradeBytes.toStdString()

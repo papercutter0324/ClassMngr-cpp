@@ -204,6 +204,12 @@ struct SelectedClassGradeReadRecord final
     QString classGrade;
 };
 
+struct SelectedClassGradeReadOutcome final
+{
+    SelectedClassGradeReadRecord record;
+    bool parentMissing = false;
+};
+
 struct ClassSubtitleBatchReadRecord final
 {
     int classId = -1;
@@ -521,6 +527,11 @@ public:
         loadScheduleEditorClassInfoRecord(int classId);
     [[nodiscard]] Result<SelectedClassGradeReadRecord>
         loadSelectedClassGradeRecord(int classId);
+    // Typed callers can distinguish an absent parent class from a class that
+    // exists without grade metadata while the legacy wrapper keeps its empty
+    // successful result for either case.
+    [[nodiscard]] Result<SelectedClassGradeReadOutcome>
+        loadSelectedClassGradeRecordDetailed(int classId);
     [[nodiscard]] Result<ClassTransferExportClassInfoReadRecord>
         loadClassTransferExportClassInfoRecord(int classId);
     [[nodiscard]] Result<QList<ClassTransferExportClassInfoReadRecord>>

@@ -1,6 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/platform/application_services_selected_class_grade_read_port.h"
 
@@ -46,6 +47,8 @@ class NextPlatformApplicationServicesSelectedClassGradeReadPortTests final
 private slots:
     void readsSelectedClassGradeFromActiveRepository();
     void preservesMissingOrEmptyGrade();
+    void missingParentHasTypedProvenanceAndLegacyDefault();
+    void rejectsNonCanonicalClassId();
     void unavailableOrClosedSessionDoesNotFallBack();
     void repositoryFailureIsReturned();
 };
@@ -122,6 +125,71 @@ preservesMissingOrEmptyGrade()
         ->classInfoRepository()->selectedClassGradeReadMetrics();
     QCOMPARE(metrics.callCount, 2);
     QCOMPARE(metrics.statementCount, 2);
+}
+
+void NextPlatformApplicationServicesSelectedClassGradeReadPortTests::
+missingParentHasTypedProvenanceAndLegacyDefault()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int deletedId = createClass(
+        services,
+        QStringLiteral("Deleted grade class")
+        );
+    QVERIFY(deletedId > 0);
+
+    ClassInfo info;
+    info.classId = deletedId;
+    info.classGrade = QStringLiteral("M3");
+    QVERIFY(services.databaseSession()->classInfoRepository()
+        ->saveClassInfo(info));
+    QVERIFY(services.databaseSession()->classRepository()
+        ->deleteClass(deletedId));
+
+    constexpr int unknownId = 2000000000;
+    Platform::ApplicationServicesSelectedClassGradeReadPort port(services);
+    const auto unknown = port.readSelectedClassGrade(typedClassId(unknownId));
+    const auto deleted = port.readSelectedClassGrade(typedClassId(deletedId));
+
+    QVERIFY(!unknown);
+    QCOMPARE(unknown.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(unknown.error().recoverable);
+    QVERIFY(!deleted);
+    QCOMPARE(deleted.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.error().recoverable);
+
+    const auto legacyUnknown = services.databaseSession()
+        ->classInfoRepository()->loadSelectedClassGradeRecord(unknownId);
+    const auto legacyDeleted = services.databaseSession()
+        ->classInfoRepository()->loadSelectedClassGradeRecord(deletedId);
+    QVERIFY(legacyUnknown);
+    QVERIFY(legacyDeleted);
+    QCOMPARE(legacyUnknown->classId, unknownId);
+    QCOMPARE(legacyDeleted->classId, deletedId);
+    QVERIFY(legacyUnknown->classGrade.isEmpty());
+    QVERIFY(legacyDeleted->classGrade.isEmpty());
+
+    const auto& metrics = services.databaseSession()
+        ->classInfoRepository()->selectedClassGradeReadMetrics();
+    QCOMPARE(metrics.callCount, 4);
+    QCOMPARE(metrics.statementCount, 4);
+}
+
+void NextPlatformApplicationServicesSelectedClassGradeReadPortTests::
+rejectsNonCanonicalClassId()
+{
+    ApplicationServices services;
+    Platform::ApplicationServicesSelectedClassGradeReadPort port(services);
+    const auto nonCanonicalId = Domain::ClassId::fromString("01");
+    QVERIFY(nonCanonicalId.has_value());
+
+    const auto result = port.readSelectedClassGrade(*nonCanonicalId);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextPlatformApplicationServicesSelectedClassGradeReadPortTests::
