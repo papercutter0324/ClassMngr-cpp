@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F878 accepted; Batch294 discovery underway)
+## Phase 2 current position — 2026-10-14 (F878 accepted; F879 baseline selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5119,6 +5119,13 @@ helper-level evidence of the stale SQL sequence, not a full-method or public
 ApplicationServices race reproduction.
 
 The post-F878 review covered all 13 Deferred entries; none became actionable.
-Batch294 discovery is underway across repository-to-domain persistence
-boundaries and observable application-service contracts. Gates 1/2 remain
+Batch294 selected F879 provisionally: two `RosterRepository` paths narrow
+persisted `roster_columns.width` through unchecked `toInt()`. The shared full-
+roster path feeds Class Transfer export and Template Print as well as the
+separate public RosterReadPort path. A pre-fix public-port baseline for INTEGER
+`4294967297` is running. The selected fix must cover both conversion sites,
+preserve NULL-to-zero and all representable `int` widths, and add no width or
+column-count cap. Focused coverage spans RosterReadPort, Class Transfer export,
+and Template Print source read targets. The application-contract scan found no
+new issue; F285 remains blocked on product/domain policy. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.

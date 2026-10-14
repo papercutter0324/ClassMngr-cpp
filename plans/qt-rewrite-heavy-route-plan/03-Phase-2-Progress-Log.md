@@ -35908,23 +35908,32 @@ sequence only; it did not reproduce the full repository method or public
 ApplicationServices path. All 13 unresolved Deferred entries were reviewed;
 none became newly actionable.
 
-Batch 294 repository/domain discovery found a plausible persisted-width
-conversion issue: SQLite INTEGER `roster_columns.width = 4294967297` may pass
-through unchecked `.toInt()` in `RosterRepository::loadRoster()` and alias to
-`1` via the public `ApplicationServicesRosterReadPort`. The complementary
-application-contract lane found no new issue. F285's blank teacher draft
-remains unresolved pending product/domain policy. F879 (`Reject out-of-range
-persisted roster-column widths`) is provisionally selected; its required
-public-port pre-fix baseline is pending. Speaking Evaluation row-index overflow
-was not selected: F847 explicitly preserved the existing out-of-range INTEGER
-behavior, so that overlapping lead is excluded.
+Batch 294 repository/domain discovery found two persisted-width conversions:
+SQLite INTEGER `roster_columns.width = 4294967297` may pass through unchecked
+`.toInt()` in both `RosterRepository::loadRoster()` and
+`loadFullRostersImpl()`, aliasing to `1`. `loadRoster()` feeds the public
+`ApplicationServicesRosterReadPort`; `loadFullRostersImpl()` feeds public Class
+Transfer export and Template Print source ports. Fixing only `loadRoster()`
+would leave the latter two routes exposed. Analytics and
+`loadRosterForOutput()` do not read persisted roster widths and are outside this
+candidate. The current temporary baseline tests `loadRoster()` only; it is
+pending and does not yet cover `loadFullRostersImpl()` or its two public routes.
+
+The complementary application-contract lane found no new issue. F285's blank
+teacher draft remains unresolved pending product/domain policy. F879 (`Reject
+out-of-range persisted roster-column widths`) remains provisionally selected
+until public pre-fix baselines cover both read paths and all three routes:
+RosterReadPort, Class Transfer export, and Template Print source. Speaking
+Evaluation row-index overflow was not selected: F847 explicitly preserved the
+existing out-of-range INTEGER behavior, so that overlapping lead is excluded.
 
 | Acceptance point | Required evidence |
 | --- | --- |
-| Mandatory pre-fix baseline | Through `ApplicationServicesRosterReadPort`, seed persisted INTEGER width `4294967297` and verify whether `loadRoster()` returns aliased width `1`; inspect the database type/value and complete result. Stop and revise if the public-port reproduction does not confirm narrowing. |
-| Width compatibility | Preserve NULL-to-zero conversion and every representable `int` width, including existing negative and large values. Do not add an arbitrary width or column cap. |
-| Out-of-range behavior | Reject persisted INTEGER widths outside the `int` range with a typed Technical failure and no partially populated roster snapshot. |
-| Focused verification | After implementation, build the affected production target and `NextPlatformApplicationServicesRosterReadPort` sequentially in `build/windows-x64-debug`, then run exactly CTest `NextPlatformApplicationServicesRosterReadPort`. No full-suite run. |
+| Mandatory pre-fix baseline | Through the public `ApplicationServicesRosterReadPort`, Class Transfer export, and Template Print source routes, seed persisted INTEGER width `4294967297` and inspect each complete result for aliasing to `1`; cover `loadRoster()` and `loadFullRostersImpl()`. The current temporary baseline tests only `loadRoster()` and is pending. Stop and revise if either source-path reproduction fails to confirm narrowing. |
+| Width compatibility | Preserve NULL-to-zero conversion and every representable `int` width, including existing negative and large values. Do not impose positivity or a new magnitude/column cap. |
+| Out-of-range behavior | Reject only persisted INTEGER widths outside the `int` range with typed Technical errors and no partially populated result/snapshot. |
+| Focused verification | After implementation, sequentially build the affected production target and test targets `NextPlatformApplicationServicesRosterReadPort`, `NextPlatformClassTransferExportSource`, and `NextPlatformApplicationServicesRosterTemplatePrintSourceReadPort` in `build/windows-x64-debug`; run exactly the three matching CTests. No full-suite run. |
 
-F879 remains provisional until the required pre-fix baseline passes. Phase 2
-Gates 1/2 remain Partial and the formal exit gate remains Open.
+F879 remains provisional until the required pre-fix baseline passes for both
+repository read paths. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.
