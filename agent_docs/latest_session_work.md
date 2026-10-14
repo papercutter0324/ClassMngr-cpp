@@ -40,13 +40,21 @@
   available. Independent verification built `ClassMngr` and
   `ClassMngrRosterEditorWidgetSaveTests`; its exact CTest passed 1/1. No full
   suite ran.
-- The post-F864 audit reviewed all 13 Deferred entries and found none newly
+- F865 source/test commit: `015cd8d0f6aeb98cba28102cac62155cfb8f874b`;
+  `ClassRepository::getClasses()` now rejects persisted IDs outside the
+  positive signed-int range before they can become a different class identity.
+  Independent verification built `ClassMngr`, the Classes-list port target, and
+  the class-create port target; exactly the two focused Debug CTests passed
+  2/2. No full suite ran.
+- The post-F865 audit reviewed all 13 Deferred entries and found none newly
   actionable. Batch 279 found no qualifying candidate; unknown schedule slot
   states remain explicitly preserved, Speaking Evaluation out-of-range integer
   behavior is covered by F847/F848, and the Calendar port already rejects
-  invalid projected summaries. Batch 280 selected F865 to reject stored class
-  IDs outside the signed-int range before repository narrowing; its
-  pre-implementation alias reproduction is the next gate.
+  invalid projected summaries. Batch 281's teacher-profile and Native English
+  directory review found no qualifying candidate. Its repository-ID scan
+  selected F866 to stop class deletion from narrowing a wide speaking-evaluation
+  ID and deleting a sibling evaluation's data; the F866 acceptance matrix is
+  recorded in the Phase 2 plan.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;

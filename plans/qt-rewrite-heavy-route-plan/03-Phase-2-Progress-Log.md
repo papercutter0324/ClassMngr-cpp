@@ -35082,3 +35082,52 @@ schema, or change F830's explicit create-overflow persisted-row compatibility.
 
 The 13 Deferred entries remain unchanged. Phase 2 remains In Progress/Open;
 Gates 1/2 remain Partial.
+
+### F865 Classes list persisted-ID range - accepted; Batch 280 completion and Batch 281 discovery - 2026-10-14
+
+F865 is accepted at source/test commit
+`015cd8d0f6aeb98cba28102cac62155cfb8f874b`. `ClassRepository::getClasses()`
+now rejects persisted IDs outside the positive signed-int range before
+narrowing, and the typed read failure propagates through the Classes list
+platform port and Application query. The regression preserves the stored
+wide ID/name, prevents exposing an alias, and retains `INT_MAX` readability.
+
+Independent verification built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesClassesListReadPortTests`, and
+`ClassMngrNextPlatformApplicationServicesClassCreatePortTests` in the standard
+Windows x64 Debug build tree. Exactly the two focused CTests passed, 2/2; no
+full suite ran.
+
+F865 completed Batch 280. The post-slice audit reviewed all 13 Deferred entries;
+none became actionable, and all 13 remain unchanged.
+
+Batch 281 discovery found no candidate in the teacher-profile/native English
+directory review. The policy-dependent Co-Teacher case remains unresolved. A
+repository ID scan selected F866; other ID findings remain follow-up candidates,
+not selected slices, and campus-record caller reach remains unclear.
+
+`ClassRepository::deleteClass()` narrows persisted
+`speaking_evaluations.id` values before deleting dependent `speaking_eval_data`.
+The existing class-delete platform-port test is the acceptance seam. The
+reproduction fixture pairs evaluation IDs `1` and `4294967297`; narrowing the
+wide ID can make deletion of the target class's evaluation child data affect
+the sibling evaluation's child row.
+
+F866 is selected, not implemented. Delete child data for the target class
+without narrowing persisted evaluation IDs; a set-based DELETE is recommended.
+With target evaluation ID `4294967297` and sibling ID `1`, deleting the target
+class/evaluation must remove only the target and preserve sibling ID `1`, its
+child row, and its content. Preserve ordinary class deletion and transaction
+rollback behavior. Limit changes to
+`src/data/repositories/class_repository.cpp` and
+`tests/next_platform_application_services_class_delete_port_tests.cpp`.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Wide-ID reproduction and deletion | Using the existing class-delete port test fixture, reproduce evaluation IDs `1` and `4294967297`; delete the class owning the wide-ID evaluation and confirm the target class/evaluation and its child data are removed without narrowing the persisted ID. |
+| Sibling preservation | Verify sibling evaluation ID `1`, its `speaking_eval_data` row, and its content survive the target deletion. |
+| Compatibility and rollback | Preserve normal class deletion and existing transaction rollback behavior. |
+| Scope and focused verification | Change only `src/data/repositories/class_repository.cpp` and `tests/next_platform_application_services_class_delete_port_tests.cpp`; build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassDeletePortTests` in standard `build/windows-x64-debug`; run exactly the `ClassMngrNextPlatformApplicationServicesClassDeletePortTests` CTest. No full suite. |
+
+The 13 Deferred entries remain unchanged. Phase 2 remains In Progress/Open;
+Gates 1/2 remain Partial.

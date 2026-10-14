@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F864 accepted; F865 selected)
+### Current state - 2026-10-14 (F865 accepted; F866 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -66,12 +66,19 @@ successful read; valid empty-roster behavior remains. The standard Debug build
 of `ClassMngr` and `ClassMngrRosterEditorWidgetSaveTests` passed, and its exact
 CTest passed 1/1 in independent verification. The post-F864 audit found no
 newly actionable item among the 13 Deferred entries. Batch 279 found no
-qualifying candidate. Batch 280 selected F865 to reject stored class IDs
-outside the signed-int range before `getClasses()` can narrow them into a
-different identity. Its pre-implementation reproduction and acceptance matrix
-are being recorded in the Phase 2 plan. F579/F598 still
-require an elevated Administrator token; Gates 1/2 remain Partial and the
-formal exit gate remains Open.
+qualifying candidate. F865 is accepted at
+`015cd8d0f6aeb98cba28102cac62155cfb8f874b`: `ClassRepository::getClasses()`
+now rejects persisted class IDs outside the positive signed-int range instead
+of exposing a narrowed identity. Independent verification built the product,
+Classes-list port, and class-create port targets; exactly the two focused Debug
+CTests passed 2/2, with no full suite run. The post-F865 audit found none of
+the 13 Deferred entries newly actionable. Batch 281's teacher-profile and
+Native English directory review found no qualifying candidate; the separate
+repository-ID scan selected F866 to prevent class deletion from narrowing a
+wide speaking-evaluation ID and deleting a sibling evaluation's data. Its
+acceptance matrix is recorded in the Phase 2 plan. F579/F598 still require an
+elevated Administrator token; Gates 1/2 remain Partial and the formal exit
+gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
