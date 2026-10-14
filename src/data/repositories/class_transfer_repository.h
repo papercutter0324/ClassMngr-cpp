@@ -10,6 +10,9 @@
 #include <QHash>
 #include <QSqlDatabase>
 
+#include <expected>
+#include <utility>
+
 // Owning staged export reads. Errors remain attached to their original read
 // position; the Application boundary replays them without further database reads.
 struct ClassTransferExportSourceClass
@@ -38,6 +41,33 @@ struct ClassTransferExportSource
     QString selectionOrReadError;
 };
 
+struct ClassTransferImportError
+{
+    enum class Kind
+    {
+        RepositoryFailure,
+        ScheduleConflict
+    };
+
+    Kind kind = Kind::RepositoryFailure;
+    QString message;
+
+    // Ordinary repository failures keep their existing string-only behavior.
+    ClassTransferImportError(QString failureMessage)
+        : message(std::move(failureMessage))
+    {
+    }
+
+    ClassTransferImportError(Kind failureKind, QString failureMessage)
+        : kind(failureKind),
+          message(std::move(failureMessage))
+    {
+    }
+};
+
+using ClassTransferDetailedImportResult =
+    std::expected<ClassImportSummary, ClassTransferImportError>;
+
 class ClassTransferRepository
 {
 public:
@@ -65,6 +95,14 @@ public:
         );
 
     [[nodiscard]] Result<ClassImportSummary> importClasses(
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferApplyRequest& request
+        );
+
+    // Retains the failure origin needed by typed callers while the established
+    // importClasses overloads continue to expose their QString errors.
+    [[nodiscard]] ClassTransferDetailedImportResult
+    importClassesWithFailureDetails(
         const ClassTransferPackage& package,
         const ClassMngr::Next::Application::ClassTransferApplyRequest& request
         );

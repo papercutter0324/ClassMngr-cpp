@@ -76,15 +76,21 @@ public:
                     );
             }
 
-            const auto imported = repository->importClasses(
+            const ClassTransferDetailedImportResult imported =
+                repository->importClassesWithFailureDetails(
                 *normalized,
                 command.choices
                 );
             if (!imported)
             {
-                const QByteArray message = imported.error().toUtf8();
+                const QByteArray message = imported.error().message.toUtf8();
+                const Domain::ErrorCode code =
+                    imported.error().kind
+                        == ClassTransferImportError::Kind::ScheduleConflict
+                    ? Domain::ErrorCode::Conflict
+                    : Domain::ErrorCode::Technical;
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    code,
                     std::string(message.constData(),
                         static_cast<std::size_t>(message.size())),
                     true

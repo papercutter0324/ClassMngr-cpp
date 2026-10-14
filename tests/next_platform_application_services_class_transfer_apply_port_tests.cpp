@@ -88,6 +88,17 @@ int count(QSqlDatabase database, const QString& table)
     return query.value(0).toInt();
 }
 
+qint64 totalChanges(QSqlDatabase database)
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral("SELECT total_changes()"))
+        || !query.next())
+    {
+        return -1;
+    }
+    return query.value(0).toLongLong();
+}
+
 bool insertLocalClass(
     ApplicationServices& services,
     const QString& name,
@@ -127,6 +138,7 @@ private slots:
     void rejectsStaleChoiceWithoutWrites();
     void rejectsOnceValidChoiceAfterDestinationChanges();
     void preflightsScheduleConflictBeforeWrites();
+    void keepsMalformedPersistedScheduleTechnicalBeforeWrites();
     void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
     void createNewRejectsGeneratedClassIdOutsideIntAndRollsBack();
@@ -257,15 +269,58 @@ preflightsScheduleConflictBeforeWrites()
         QStringLiteral("Monday"), QStringLiteral("9:00 AM"),
         QStringLiteral("10:00 AM")
     });
+    const qint64 changesBefore =
+        totalChanges(services.databaseSession()->database());
+    QVERIFY(changesBefore >= 0);
     Platform::ApplicationServicesClassTransferApplyPort port(services);
 
     const auto result = port.apply(createCommand(std::move(package)));
 
     QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(result.error().message.find("Schedule conflicts") != std::string::npos);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Conflict);
+    QVERIFY(result.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral(
+            "Schedule conflicts prevent this import:\n\n"
+            "Regular schedule: E4 Theseus \u2014 Monday 9:00 AM\u201310:00 AM "
+            "conflicts with E4 Theseus \u2014 Monday 9:00 AM\u201310:00 AM"));
     QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("teachers")), 0);
     QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("classes")), 1);
+    QCOMPARE(count(services.databaseSession()->database(), QStringLiteral("class_info")), 1);
+    QCOMPARE(totalChanges(services.databaseSession()->database()), changesBefore);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+keepsMalformedPersistedScheduleTechnicalBeforeWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    int localClass = -1;
+    QVERIFY(insertLocalClass(services, QStringLiteral("Malformed Schedule Class"),
+        -1, &localClass));
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery malformedSchedule(database);
+    malformedSchedule.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id, day, start_time, end_time) "
+        "VALUES (?, 'Not a weekday', '9:00 AM', '10:00 AM')"));
+    malformedSchedule.addBindValue(localClass);
+    QVERIFY(malformedSchedule.exec());
+    const qint64 changesBefore = totalChanges(database);
+    QVERIFY(changesBefore >= 0);
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand());
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(result.error().message.find("invalid regular schedule entry")
+        != std::string::npos);
+    QCOMPARE(totalChanges(database), changesBefore);
+    QCOMPARE(count(database, QStringLiteral("teachers")), 0);
+    QCOMPARE(count(database, QStringLiteral("classes")), 1);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::

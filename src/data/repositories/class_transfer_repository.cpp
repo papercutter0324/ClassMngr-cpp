@@ -793,7 +793,7 @@ Result<ValidatedPlan> validatePlan(
     return validated;
 }
 
-Status preflightSchedules(
+std::expected<void, ClassTransferImportError> preflightSchedules(
     QSqlDatabase& database,
     const ClassTransferPackage& package,
     const ValidatedPlan& plan
@@ -931,10 +931,11 @@ Status preflightSchedules(
 
     if (!conflicts.isEmpty())
     {
-        return std::unexpected(
+        return std::unexpected(ClassTransferImportError{
+            ClassTransferImportError::Kind::ScheduleConflict,
             QObject::tr("Schedule conflicts prevent this import:\n\n%1")
                 .arg(conflicts.join(QLatin1Char('\n')))
-            );
+        });
     }
 
     return {};
@@ -1669,6 +1670,21 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
     const ClassMngr::Next::Application::ClassTransferApplyRequest& request
     )
 {
+    const ClassTransferDetailedImportResult result =
+        importClassesWithFailureDetails(package, request);
+    if (!result)
+    {
+        return std::unexpected(result.error().message);
+    }
+    return *result;
+}
+
+ClassTransferDetailedImportResult
+ClassTransferRepository::importClassesWithFailureDetails(
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& request
+    )
+{
     if (!m_database.isOpen())
     {
         return std::unexpected(QObject::tr("No Teacher Profile is open."));
@@ -1681,7 +1697,7 @@ Result<ClassImportSummary> ClassTransferRepository::importClasses(
         return std::unexpected(validatedResult.error());
     }
 
-    const Status schedulesReady = preflightSchedules(
+    const auto schedulesReady = preflightSchedules(
         m_database, package, *validatedResult);
 
     if (!schedulesReady)
