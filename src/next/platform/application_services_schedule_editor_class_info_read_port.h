@@ -60,8 +60,10 @@ public:
 
         try
         {
-            const Result<ScheduleEditorClassInfoReadRecord> loaded =
-                repository->loadScheduleEditorClassInfoRecord(*legacyClassId);
+            const Result<ScheduleEditorClassInfoReadOutcome> loaded =
+                repository->loadScheduleEditorClassInfoRecordDetailed(
+                    *legacyClassId
+                    );
             if (!loaded)
             {
                 return failure(
@@ -70,8 +72,18 @@ public:
                     );
             }
 
+            if (loaded->parentMissing)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The selected class does not exist."
+                    );
+            }
+
+            const ScheduleEditorClassInfoReadRecord& record = loaded->record;
+
             const auto snapshotClassId = Domain::ClassId::fromString(
-                std::to_string(loaded->classId)
+                std::to_string(record.classId)
                 );
             if (!snapshotClassId)
             {
@@ -83,15 +95,15 @@ public:
 
             return Application::ScheduleEditorClassInfoReadResult::success({
                 .classId = *snapshotClassId,
-                .classGrade = loaded->classGrade.toStdU16String(),
-                .classLevel = loaded->classLevel.toStdU16String(),
-                .readingBook = loaded->readingBook.toStdU16String(),
-                .essayBook = loaded->essayBook.toStdU16String(),
-                .classColor = loaded->classColor.toStdU16String(),
-                .fontColor = loaded->fontColor.toStdU16String(),
+                .classGrade = record.classGrade.toStdU16String(),
+                .classLevel = record.classLevel.toStdU16String(),
+                .readingBook = record.readingBook.toStdU16String(),
+                .essayBook = record.essayBook.toStdU16String(),
+                .classColor = record.classColor.toStdU16String(),
+                .fontColor = record.fontColor.toStdU16String(),
                 .teacherKoreanName =
-                    loaded->teacherKoreanName.toStdU16String(),
-                .roomNumber = loaded->roomNumber.toStdU16String()
+                    record.teacherKoreanName.toStdU16String(),
+                .roomNumber = record.roomNumber.toStdU16String()
             });
         }
         catch (const std::exception&)

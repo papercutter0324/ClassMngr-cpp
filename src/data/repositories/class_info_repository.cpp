@@ -1307,6 +1307,20 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
 Result<ScheduleEditorClassInfoReadRecord>
 ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
 {
+    const auto loaded = loadScheduleEditorClassInfoRecordDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->record);
+}
+
+Result<ScheduleEditorClassInfoReadOutcome>
+ClassInfoRepository::loadScheduleEditorClassInfoRecordDetailed(
+    const int classId
+    )
+{
     ++m_scheduleEditorClassInfoReadMetrics.callCount;
     if (classId <= 0)
     {
@@ -1317,13 +1331,14 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
-    ScheduleEditorClassInfoReadRecord record;
-    record.classId = classId;
+    ScheduleEditorClassInfoReadOutcome outcome;
+    outcome.record.classId = classId;
 
     QSqlQuery query(m_database);
     query.prepare(R"(
         WITH requested(class_id) AS (VALUES (?))
         SELECT requested.class_id AS requested_class_id,
+               classes.id AS parent_class_id,
                ci.class_grade AS class_grade,
                ci.class_level AS class_level,
                ci.reading_book AS reading_book,
@@ -1333,7 +1348,8 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
                teachers.teacher_kr AS teacher_korean_name,
                teachers.room_number AS room_number
         FROM requested
-        LEFT JOIN class_info ci ON ci.class_id = requested.class_id
+        LEFT JOIN classes ON classes.id = requested.class_id
+        LEFT JOIN class_info ci ON ci.class_id = classes.id
         LEFT JOIN teachers ON teachers.id = ci.teacher_id
     )");
     query.addBindValue(classId);
@@ -1349,32 +1365,61 @@ ClassInfoRepository::loadScheduleEditorClassInfoRecord(const int classId)
         return std::unexpected(loaded.error().userMessage());
     }
 
-    if (query.next())
+    const bool rowFound = query.next();
+    if (!rowFound)
     {
-        record.classId = query.value("requested_class_id").toInt();
-        record.classGrade = query.value("class_grade").toString();
-        record.classLevel = query.value("class_level").toString();
-        record.readingBook = query.value("reading_book").toString();
-        record.essayBook = query.value("essay_book").toString();
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading class information"),
+                {},
+                identity
+                ).userMessage());
+        }
+
+        return std::unexpected(QObject::tr(
+            "Loading class information failed: no result was returned for class id %1."
+            ).arg(classId));
+    }
+
+    outcome.parentMissing = query.value("parent_class_id").isNull();
+    if (!outcome.parentMissing)
+    {
+        outcome.record.classId = query.value("requested_class_id").toInt();
+        outcome.record.classGrade = query.value("class_grade").toString();
+        outcome.record.classLevel = query.value("class_level").toString();
+        outcome.record.readingBook = query.value("reading_book").toString();
+        outcome.record.essayBook = query.value("essay_book").toString();
 
         const QString classColor = query.value("class_color").toString();
         if (!classColor.isEmpty())
         {
-            record.classColor = classColor;
+            outcome.record.classColor = classColor;
         }
 
         const QString fontColor = query.value("font_color").toString();
         if (!fontColor.isEmpty())
         {
-            record.fontColor = fontColor;
+            outcome.record.fontColor = fontColor;
         }
 
-        record.teacherKoreanName =
+        outcome.record.teacherKoreanName =
             query.value("teacher_korean_name").toString();
-        record.roomNumber = query.value("room_number").toString();
+        outcome.record.roomNumber = query.value("room_number").toString();
     }
 
-    return record;
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class information"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    return outcome;
 }
 
 Result<SelectedClassGradeReadRecord>

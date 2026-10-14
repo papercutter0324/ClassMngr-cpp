@@ -99,11 +99,98 @@ class NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests
     Q_OBJECT
 
 private slots:
+    void mapsOnlyMissingClassParentsToNotFoundAndPreservesLegacyDefaults();
+    void rejectsNonCanonicalClassIdsBeforeRepositoryRead();
     void readsEveryFieldFromTheActiveSessionRepository();
     void readsDefaultsWithoutMetadataAndBlanksForDanglingTeacher();
     void nullMissingAndClosedSessionsDoNotUseServiceFallback();
     void forwardsRepositoryReadFailure();
 };
+
+void NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests::
+mapsOnlyMissingClassParentsToNotFoundAndPreservesLegacyDefaults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    Platform::ApplicationServicesScheduleEditorClassInfoReadPort port(
+        &services
+        );
+
+    constexpr int unknownClassId = 2000000000;
+    const Domain::ClassId unknownId = classId(unknownClassId);
+    const auto unknown = port.readScheduleEditorClassInfo(unknownId);
+
+    QVERIFY(!unknown);
+    QCOMPARE(unknown.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(unknown.error().recoverable);
+    const auto& afterUnknown = services.databaseSession()
+        ->classInfoRepository()->scheduleEditorClassInfoReadMetrics();
+    QCOMPARE(afterUnknown.callCount, 1);
+    QCOMPARE(afterUnknown.statementCount, 1);
+
+    const auto legacyUnknown = services.databaseSession()
+        ->classInfoRepository()->loadScheduleEditorClassInfoRecord(
+            unknownClassId
+            );
+    QVERIFY(legacyUnknown);
+    QCOMPARE(legacyUnknown->classId, unknownClassId);
+    QVERIFY(legacyUnknown->classGrade.isEmpty());
+    QVERIFY(legacyUnknown->classLevel.isEmpty());
+    QVERIFY(legacyUnknown->readingBook.isEmpty());
+    QVERIFY(legacyUnknown->essayBook.isEmpty());
+    QCOMPARE(legacyUnknown->classColor, QStringLiteral("#FFFFFF"));
+    QCOMPARE(legacyUnknown->fontColor, QStringLiteral("#000000"));
+    QVERIFY(legacyUnknown->teacherKoreanName.isEmpty());
+    QVERIFY(legacyUnknown->roomNumber.isEmpty());
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Deleted Schedule Editor Read Test")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(services.classService()->remove(*createdClass));
+
+    QSqlQuery verifyDeleted(services.databaseSession()->database());
+    verifyDeleted.prepare(QStringLiteral(
+        "SELECT 1 FROM classes WHERE id = ?"
+        ));
+    verifyDeleted.addBindValue(*createdClass);
+    QVERIFY2(verifyDeleted.exec(), qPrintable(verifyDeleted.lastError().text()));
+    QVERIFY(!verifyDeleted.next());
+
+    const auto deleted = port.readScheduleEditorClassInfo(classId(*createdClass));
+    QVERIFY(!deleted);
+    QCOMPARE(deleted.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.error().recoverable);
+    const auto& afterDeleted = services.databaseSession()
+        ->classInfoRepository()->scheduleEditorClassInfoReadMetrics();
+    QCOMPARE(afterDeleted.callCount, 3);
+    QCOMPARE(afterDeleted.statementCount, 3);
+}
+
+void NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests::
+rejectsNonCanonicalClassIdsBeforeRepositoryRead()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto nonCanonicalId = Domain::ClassId::fromString("01");
+    QVERIFY(nonCanonicalId);
+    Platform::ApplicationServicesScheduleEditorClassInfoReadPort port(
+        &services
+        );
+    const auto result = port.readScheduleEditorClassInfo(*nonCanonicalId);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    const auto& metrics = services.databaseSession()->classInfoRepository()
+        ->scheduleEditorClassInfoReadMetrics();
+    QCOMPARE(metrics.callCount, 0);
+    QCOMPARE(metrics.statementCount, 0);
+}
 
 void NextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests::
 readsEveryFieldFromTheActiveSessionRepository()

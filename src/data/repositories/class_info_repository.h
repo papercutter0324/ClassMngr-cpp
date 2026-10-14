@@ -198,6 +198,12 @@ struct ScheduleEditorClassInfoReadRecord final
     QString roomNumber;
 };
 
+struct ScheduleEditorClassInfoReadOutcome final
+{
+    ScheduleEditorClassInfoReadRecord record;
+    bool parentMissing = false;
+};
+
 struct SelectedClassGradeReadRecord final
 {
     int classId = -1;
@@ -525,6 +531,10 @@ public:
         loadClassDetailsPageRecordDetailed(int classId);
     [[nodiscard]] Result<ScheduleEditorClassInfoReadRecord>
         loadScheduleEditorClassInfoRecord(int classId);
+    // Typed callers can distinguish an absent class parent while the legacy
+    // wrapper above retains its successful default record for unknown IDs.
+    [[nodiscard]] Result<ScheduleEditorClassInfoReadOutcome>
+        loadScheduleEditorClassInfoRecordDetailed(int classId);
     [[nodiscard]] Result<SelectedClassGradeReadRecord>
         loadSelectedClassGradeRecord(int classId);
     // Typed callers can distinguish an absent parent class from a class that
