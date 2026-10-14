@@ -35937,3 +35937,34 @@ existing out-of-range INTEGER behavior, so that overlapping lead is excluded.
 F879 remains provisional until the required pre-fix baseline passes for both
 repository read paths. Phase 2 Gates 1/2 remain Partial and the formal exit gate
 remains Open.
+
+### F879 public pre-fix baseline verified; implementation selected - 2026-10-14
+
+The public `RosterReadUseCase::execute()` baseline seeded
+`roster_columns.width` as SQLite INTEGER `4294967297` (confirmed by reading it
+back with `toLongLong()`); the pre-fix snapshot returned width `1`. This
+reproduces narrowing through `loadRoster()` only. It does not baseline
+`loadFullRostersImpl()` or the Class Transfer export and Template Print source
+routes. The temporary baseline test was removed; no source changes were made.
+
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests` passed, and the
+exact CTest passed 1/1. The `ClassMngr` build required an authorized elevated
+retry after FileTracker `E_ACCESSDENIED`. No full suite ran.
+
+F879 implementation is selected to cover both persisted-width conversions and
+all three public routes. Preserve SQL NULL as width zero and all `int`-
+representable values, including negative and large values. Reject only values
+outside `int` representability with typed Technical failures. Do not add
+positivity rules or arbitrary width/column-count caps.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Pre-fix baseline | Verified through `RosterReadUseCase::execute()`: persisted SQLite INTEGER `4294967297` read back with `toLongLong()`; pre-fix `loadRoster()` snapshot returned `1`. Runtime baseline covers only `loadRoster()`. |
+| Conversion coverage | Handle persisted widths in both `RosterRepository::loadRoster()` and `loadFullRostersImpl()`; the latter covers Class Transfer export and Template Print source consumers. |
+| Compatibility and errors | Preserve SQL NULL-to-zero and every `int`-representable value, including negatives and large values; reject only unrepresentable values with typed Technical failures and no partial snapshot. Add no positivity rule or arbitrary width/column-count cap. |
+| Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesRosterReadPortTests`, `ClassMngrNextPlatformClassTransferExportSourceTests`, and `ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests` in `build/windows-x64-debug`; then run exactly one CTest for each of the three test targets. No full-suite run. |
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+F285 remains deferred pending product/domain policy; preserve F847's accepted
+out-of-range INTEGER compatibility for Speaking Evaluation.

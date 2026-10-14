@@ -5635,7 +5635,7 @@ Create/Delete width path remains deferred. F877 completed Batch 290; the
 acceptance evidence and current Batch292 continuation are recorded below.
 Gates 1/2 remain Partial and Phase 2 remains Open.
 
-## Phase 2 continuation — 2026-10-14 (F878 accepted; F879 baseline selected)
+## Phase 2 continuation — 2026-10-14 (F878 accepted; F879 implementation selected)
 
 F877 is committed as `c8178ddf52e94abb02fba1db7392f82aa2fea16f` and changed
 only `src/data/database/database_file_operations.cpp` and
@@ -5674,21 +5674,23 @@ statement sequence with two file-backed connections; it did not invoke the
 whole repository method or public `ApplicationServices` path.
 
 The post-F878 audit reviewed all 13 Phase 2 Deferred entries and found none
-actionable. Batch294 selected F879 provisionally after locating both persisted
-width narrowing sites in `RosterRepository`: `loadRoster()` and shared
+actionable. Batch294 selected F879 after locating both persisted width
+narrowing sites in `RosterRepository`: `loadRoster()` and shared
 `loadFullRostersImpl()`. The latter feeds Class Transfer export and Template
 Print; the former feeds the public RosterReadPort. Analytics reads only
 column metadata, and `loadRosterForOutput()` synthesizes zero widths, so those
-paths are excluded. The required pre-fix baseline is running through the public
-RosterReadPort with SQLite INTEGER width `4294967297`; baseline results are
-pending.
+paths are excluded. The pre-fix baseline through public `RosterReadUseCase`
+confirmed that SQLite INTEGER `4294967297` was returned in the snapshot as
+width `1`; the temporary regression was removed after verification.
 
-F879 acceptance now covers both repository conversion sites and three focused
+F879 implementation covers both repository conversion sites and three focused
 public targets: RosterReadPort, Class Transfer export source, and Template Print
-source read. The fix must preserve NULL-to-zero and every `int`-representable
-width, reject values outside the `int` range through typed Technical errors,
-and add no arbitrary width or column-count cap. Batch294's complementary
-application-contract scan found no new issue; F285 remains unresolved pending
-product/domain policy. The existing untracked `%SystemDrive%/`, `Testing/`,
+source read. The fix preserves NULL-to-zero and every `int`-representable
+width, rejects values outside the `int` range through typed Technical errors,
+and adds no arbitrary width or column-count cap. Sequential Debug builds of
+`ClassMngr` and the RosterReadPort target passed, followed by exact CTest 1/1;
+the `ClassMngr` build required an elevated retry after FileTracker
+`E_ACCESSDENIED`. Batch294's complementary application-contract scan found no
+new issue; F285 remains unresolved pending product/domain policy. The existing untracked `%SystemDrive%/`, `Testing/`,
 `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts remain outside
 the slice. Gates 1/2 remain Partial; the formal Phase 2 exit gate is Open.

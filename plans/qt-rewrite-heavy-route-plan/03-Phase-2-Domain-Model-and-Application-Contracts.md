@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F878 is accepted; F879 remains provisional pending public baselines for persisted width narrowing in both `loadRoster()` and `loadFullRostersImpl()`; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F878 is accepted; F879's public `loadRoster()` baseline is verified, and implementation must cover both persisted-width conversions and all three consumer routes; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F879 - Reject out-of-range persisted roster-column widths: reproduce `4294967297` aliasing to `1` across RosterReadPort, Class Transfer export, and Template Print source routes; selection remains provisional until both repository read paths are covered.
+- F879 - Reject out-of-range persisted roster-column widths: implement checked conversion in `loadRoster()` and `loadFullRostersImpl()`, then verify RosterReadPort, Class Transfer export, and Template Print source routes.
 
 #### Deferred candidates
 
