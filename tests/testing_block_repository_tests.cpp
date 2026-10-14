@@ -13,6 +13,7 @@ class TestingBlockRepositoryTests : public QObject
 private slots:
     void savesUpdatesDeletesAndClearsBlocks();
     void assignsTestingClassesAndRequiresExplicitReplacement();
+    void classifiesMissingParentAndIncompleteClassSeparately();
     void reportsInvalidKeysAndDatabaseFailures();
     void rejectsMalformedClassIdsWithoutOverwritingBlocks();
 };
@@ -203,11 +204,16 @@ void TestingBlockRepositoryTests
             INSERT INTO testing_classes (class_id, room)
             VALUES (44, '403')
         )"));
-        QVERIFY(
-            !repository.assignTestingClass(
-                QStringLiteral("Wednesday"),
-                QStringLiteral("16:00"),
-                44
+        const Status missingRequiredDetails = repository.assignTestingClass(
+            QStringLiteral("Wednesday"),
+            QStringLiteral("16:00"),
+            44
+            );
+        QVERIFY(!missingRequiredDetails);
+        QCOMPARE(
+            missingRequiredDetails.error(),
+            QStringLiteral(
+                "The selected testing class is missing required details."
                 )
             );
 
@@ -234,6 +240,105 @@ void TestingBlockRepositoryTests
             ));
         QVERIFY(query.next());
         QCOMPARE(query.value(0).toInt(), 3);
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingBlockRepositoryTests
+    ::classifiesMissingParentAndIncompleteClassSeparately()
+{
+    const QString connectionName =
+        QStringLiteral("testing_assignment_repository_classification");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createTable(database));
+
+        QSqlQuery query(database);
+        QVERIFY(query.exec(R"(
+            CREATE TABLE testing_classes (
+                class_id INTEGER PRIMARY KEY,
+                room TEXT NOT NULL
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE classes (
+                id INTEGER PRIMARY KEY,
+                name TEXT
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            CREATE TABLE class_info (
+                class_id INTEGER PRIMARY KEY,
+                class_grade TEXT,
+                class_level TEXT
+            )
+        )"));
+        QVERIFY(query.exec(R"(
+            INSERT INTO classes (id, name)
+            VALUES (42, 'Ordinary Class')
+        )"));
+
+        TestingBlockRepository repository(database);
+        QVERIFY(repository.saveTestingBlock(
+            QStringLiteral("Monday"),
+            QStringLiteral("16:00"),
+            QStringLiteral("Original")
+            ));
+
+        const auto missingParent = repository.assignTestingClassDetailed(
+            QStringLiteral("Tuesday"),
+            QStringLiteral("17:00"),
+            2000000000
+            );
+        QVERIFY(!missingParent);
+        QCOMPARE(
+            missingParent.error().kind,
+            TestingClassAssignmentSaveFailureKind::ParentClassMissing
+            );
+        QCOMPARE(
+            missingParent.error().message,
+            QStringLiteral("The selected testing class no longer exists.")
+            );
+
+        const auto incompleteClass = repository.assignTestingClassDetailed(
+            QStringLiteral("Tuesday"),
+            QStringLiteral("17:00"),
+            42
+            );
+        QVERIFY(!incompleteClass);
+        QCOMPARE(
+            incompleteClass.error().kind,
+            TestingClassAssignmentSaveFailureKind::Technical
+            );
+        QCOMPARE(
+            incompleteClass.error().message,
+            QStringLiteral("The selected testing class no longer exists.")
+            );
+
+        const Status legacyFailure = repository.assignTestingClass(
+            QStringLiteral("Tuesday"),
+            QStringLiteral("17:00"),
+            42
+            );
+        QVERIFY(!legacyFailure);
+        QCOMPARE(
+            legacyFailure.error(),
+            QStringLiteral("The selected testing class no longer exists.")
+            );
+
+        const auto assignments = repository.loadTestingAssignments();
+        QVERIFY(assignments);
+        QCOMPARE(assignments->size(), 1);
+        QCOMPARE(assignments->first().day, QStringLiteral("Monday"));
+        QCOMPARE(assignments->first().classId, -1);
+        QCOMPARE(assignments->first().room, QStringLiteral("Original"));
     }
 
     QSqlDatabase::removeDatabase(connectionName);

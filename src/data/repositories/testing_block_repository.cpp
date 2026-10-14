@@ -143,14 +143,24 @@ Result<int> existingClassId(
         );
 }
 
-Status validateTestingClass(
+TestingClassAssignmentSaveDetailedResult technicalAssignmentFailure(
+    const QString& message
+    )
+{
+    return std::unexpected(TestingClassAssignmentSaveFailure{
+        .kind = TestingClassAssignmentSaveFailureKind::Technical,
+        .message = message
+    });
+}
+
+TestingClassAssignmentSaveDetailedResult validateTestingClass(
     QSqlDatabase& database,
     int classId
     )
 {
     if (classId <= 0)
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             QObject::tr("A valid testing class is required.")
             );
     }
@@ -159,21 +169,23 @@ Status validateTestingClass(
     query.prepare(R"(
         SELECT
             c.name,
+            tc.class_id AS testing_class_id,
+            tc.room,
+            ci.class_id AS class_info_id,
             ci.class_grade,
-            ci.class_level,
-            tc.room
-        FROM testing_classes tc
-        JOIN classes c
-        ON c.id=tc.class_id
-        JOIN class_info ci
-        ON ci.class_id=tc.class_id
-        WHERE tc.class_id=?
+            ci.class_level
+        FROM classes c
+        LEFT JOIN testing_classes tc
+        ON tc.class_id=c.id
+        LEFT JOIN class_info ci
+        ON ci.class_id=c.id
+        WHERE c.id=?
     )");
     query.addBindValue(classId);
 
     if (!query.exec())
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             queryFailure(
                 query,
                 QObject::tr("Checking the testing class")
@@ -183,7 +195,31 @@ Status validateTestingClass(
 
     if (!query.next())
     {
-        return std::unexpected(
+        if (query.lastError().isValid())
+        {
+            return technicalAssignmentFailure(
+                queryFailure(
+                    query,
+                    QObject::tr("Checking the testing class")
+                    )
+                );
+        }
+
+        return std::unexpected(TestingClassAssignmentSaveFailure{
+            .kind =
+                TestingClassAssignmentSaveFailureKind::ParentClassMissing,
+            .message = QObject::tr(
+                "The selected testing class no longer exists."
+                )
+        });
+    }
+
+    if (
+        query.value(QStringLiteral("testing_class_id")).isNull()
+        || query.value(QStringLiteral("class_info_id")).isNull()
+        )
+    {
+        return technicalAssignmentFailure(
             QObject::tr("The selected testing class no longer exists.")
             );
     }
@@ -199,7 +235,7 @@ Status validateTestingClass(
             .toString().trimmed().isEmpty()
         )
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             QObject::tr(
                 "The selected testing class is missing required details."
                 )
@@ -513,6 +549,29 @@ Status TestingBlockRepository::assignTestingClass(
     bool replaceExisting
     )
 {
+    const TestingClassAssignmentSaveDetailedResult assigned =
+        assignTestingClassDetailed(
+            day,
+            startTime,
+            classId,
+            replaceExisting
+            );
+    if (!assigned)
+    {
+        return std::unexpected(assigned.error().message);
+    }
+
+    return {};
+}
+
+TestingClassAssignmentSaveDetailedResult
+TestingBlockRepository::assignTestingClassDetailed(
+    const QString& day,
+    const QString& startTime,
+    int classId,
+    bool replaceExisting
+    )
+{
     const Status valid =
         validateKey(
             day,
@@ -521,20 +580,23 @@ Status TestingBlockRepository::assignTestingClass(
 
     if (!valid)
     {
-        return valid;
+        return technicalAssignmentFailure(valid.error());
     }
 
-    DatabaseTransaction transaction(m_database);
+    DatabaseTransaction transaction(
+        m_database,
+        DatabaseTransaction::Mode::Immediate
+        );
     if (!transaction.started())
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             QObject::tr(
                 "Could not start the testing assignment transaction."
                 )
             );
     }
 
-    const Status validClass =
+    const TestingClassAssignmentSaveDetailedResult validClass =
         validateTestingClass(
             m_database,
             classId
@@ -554,7 +616,7 @@ Status TestingBlockRepository::assignTestingClass(
 
     if (!existing)
     {
-        return std::unexpected(existing.error());
+        return technicalAssignmentFailure(existing.error());
     }
 
     if (
@@ -563,7 +625,7 @@ Status TestingBlockRepository::assignTestingClass(
         && !replaceExisting
         )
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             QObject::tr("This slot already has a testing assignment. Confirm replacement first.")
             );
     }
@@ -592,7 +654,7 @@ Status TestingBlockRepository::assignTestingClass(
 
     if (!query.exec())
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             queryFailure(
                 query,
                 QObject::tr("Assigning the testing class")
@@ -602,7 +664,7 @@ Status TestingBlockRepository::assignTestingClass(
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return technicalAssignmentFailure(
             QObject::tr(
                 "Committing the testing assignment transaction failed: %1"
                 )

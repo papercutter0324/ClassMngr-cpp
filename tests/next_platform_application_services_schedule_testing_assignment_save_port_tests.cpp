@@ -165,6 +165,7 @@ private slots:
     void initTestCase();
     void savesPlainAssignmentAndRemovesOnlyItsKey();
     void enforcesReplaceExistingForClassAndPlainTransitions();
+    void classifiesMissingParentAndRepositoryFailures();
     void rejectsWritesWithoutAnOpenSessionWithoutFallback();
     void forwardsRepositoryFailureAsStructuredError();
 
@@ -305,6 +306,73 @@ enforcesReplaceExistingForClassAndPlainTransitions()
     QCOMPARE(assignments.last().day, QStringLiteral("Tuesday"));
     QCOMPARE(assignments.last().startTime, QStringLiteral("10:00"));
     QCOMPARE(assignments.last().classId, classId);
+}
+
+void NextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests::
+classifiesMissingParentAndRepositoryFailures()
+{
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(m_directory)));
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery ordinaryClassQuery(database);
+    QVERIFY(ordinaryClassQuery.exec(QStringLiteral(R"(
+        INSERT INTO classes (name) VALUES ('Ordinary Class')
+    )")));
+    const int ordinaryClassId = ordinaryClassQuery.lastInsertId().toInt();
+    QVERIFY(ordinaryClassId > 0);
+
+    Platform::ApplicationServicesScheduleTestingAssignmentSavePort port(
+        services
+        );
+
+    auto result = executeSave(
+        classRequest(u"Monday", u"09:00", 2000000000),
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        result.error().message,
+        std::string("The selected testing class no longer exists.")
+        );
+    QVERIFY(!result.error().recoverable);
+
+    result = executeSave(
+        classRequest(u"Monday", u"09:00", ordinaryClassId),
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(
+        result.error().message,
+        std::string("The selected testing class no longer exists.")
+        );
+    QVERIFY(!result.error().recoverable);
+
+    const QList<TestingAssignment> afterClassFailures =
+        loadedAssignments(services);
+    QVERIFY(afterClassFailures.isEmpty());
+
+    const int completeClassId = insertTestingClass(database);
+    QVERIFY(completeClassId > 0);
+    QVERIFY(execute(
+        database,
+        QStringLiteral("DROP TABLE testing_classes")
+        ));
+
+    result = executeSave(
+        classRequest(u"Monday", u"09:00", completeClassId),
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
+    QVERIFY(!result.error().message.empty());
+
+    const QList<TestingAssignment> afterQueryFailure =
+        loadedAssignments(services);
+    QVERIFY(afterQueryFailure.isEmpty());
 }
 
 void NextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests::

@@ -7,6 +7,24 @@
 #include <QSqlDatabase>
 #include <QString>
 
+#include <expected>
+
+enum class TestingClassAssignmentSaveFailureKind
+{
+    ParentClassMissing,
+    Technical
+};
+
+struct TestingClassAssignmentSaveFailure final
+{
+    TestingClassAssignmentSaveFailureKind kind =
+        TestingClassAssignmentSaveFailureKind::Technical;
+    QString message;
+};
+
+using TestingClassAssignmentSaveDetailedResult =
+    std::expected<void, TestingClassAssignmentSaveFailure>;
+
 struct TestingAssignmentDisplayRecord final
 {
     QString day;
@@ -56,6 +74,14 @@ public:
         );
 
     [[nodiscard]] Status assignTestingClass(
+        const QString& day,
+        const QString& startTime,
+        int classId,
+        bool replaceExisting = false
+        );
+
+    [[nodiscard]] TestingClassAssignmentSaveDetailedResult
+    assignTestingClassDetailed(
         const QString& day,
         const QString& startTime,
         int classId,

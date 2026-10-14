@@ -97,6 +97,47 @@ public:
                 QString::fromStdU16String(request.startTime);
             const QString room = QString::fromStdU16String(request.room);
 
+            if (
+                request.mutation
+                == Application::ScheduleTestingAssignmentMutation::
+                    AssignTestingClass
+                )
+            {
+                const std::optional<int> classId =
+                    legacyClassId(*request.classId);
+                if (!classId)
+                {
+                    return failure(
+                        Domain::ErrorCode::Technical,
+                        "A valid testing class is required."
+                        );
+                }
+
+                const TestingClassAssignmentSaveDetailedResult assigned =
+                    repository->assignTestingClassDetailed(
+                        day,
+                        startTime,
+                        *classId,
+                        request.replaceExisting
+                        );
+                if (!assigned)
+                {
+                    const Domain::ErrorCode code =
+                        assigned.error().kind
+                            == TestingClassAssignmentSaveFailureKind::
+                                ParentClassMissing
+                            ? Domain::ErrorCode::NotFound
+                            : Domain::ErrorCode::Technical;
+                    return failure(
+                        code,
+                        toStdString(assigned.error().message)
+                        );
+                }
+
+                return Application::ScheduleTestingAssignmentSaveResult::
+                    success();
+            }
+
             const Status saved = [&]() -> Status
             {
                 switch (request.mutation)
@@ -109,28 +150,6 @@ public:
                         );
 
                 case Application::ScheduleTestingAssignmentMutation::
-                    AssignTestingClass:
-                {
-                    const std::optional<int> classId =
-                        legacyClassId(*request.classId);
-                    if (!classId)
-                    {
-                        return Status(std::unexpected(
-                            QStringLiteral(
-                                "A valid testing class is required."
-                                )
-                            ));
-                    }
-
-                    return repository->assignTestingClass(
-                        day,
-                        startTime,
-                        *classId,
-                        request.replaceExisting
-                        );
-                }
-
-                case Application::ScheduleTestingAssignmentMutation::
                     SavePlainTesting:
                     return repository->saveTestingBlock(
                         day,
@@ -138,6 +157,10 @@ public:
                         room,
                         request.replaceExisting
                         );
+
+                case Application::ScheduleTestingAssignmentMutation::
+                    AssignTestingClass:
+                    break;
                 }
 
                 return Status(std::unexpected(
