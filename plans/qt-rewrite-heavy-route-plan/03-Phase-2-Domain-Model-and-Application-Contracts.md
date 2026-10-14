@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F884 is accepted; Batch 299 selected F885 to classify a missing parent during direct typed `ClassDetailsSavePort` saves as `NotFound` using repository provenance and an Immediate transaction; implementation is pending, and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F885 is accepted; Batch 300 selected F886 to classify a deleted parent during the direct typed Testing Class details update route as `NotFound`, while an ordinary class without a Testing Class row remains `Technical`; implementation is pending, and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 299 - F885: classify a missing parent during direct typed `ClassDetailsSavePort` saves as `NotFound`; preserve legacy behavior and keep the broader page workflow out of scope; implementation pending.
+- Batch 300 - F886: classify a deleted parent during the direct typed Testing Class details update route as `NotFound`; keep an ordinary class without a Testing Class row as `Technical`; implementation pending.
 
 #### Deferred candidates
 

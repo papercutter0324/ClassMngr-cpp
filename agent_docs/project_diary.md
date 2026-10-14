@@ -5436,3 +5436,11 @@ legacy call on that path while adding an explicit detailed result for typed
 callers. Run the typed existence check and writes in one Immediate transaction;
 distinguish a successful no-row lookup from query/fetch and rollback failures.
 Pin the legacy diagnostic with a direct repository regression.
+
+## Phase 2 Class Details stale parent - 2026-10-15
+
+When a typed save port performs detail and conflict reads before persistence,
+check for a missing parent before those reads, then check again with the write
+inside one Immediate transaction. The early check classifies stale IDs on the
+direct port route; the transactional check protects the actual save. Keep the
+legacy FK path available to legacy callers.

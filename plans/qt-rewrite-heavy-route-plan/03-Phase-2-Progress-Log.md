@@ -36280,7 +36280,53 @@ test/output were removed. The focused target built and its exact CTest passed
 | Regression coverage | Cover missing parent without mutation for empty and nonempty requested schedules where feasible, trigger/write failure with `Technical` rollback, and a successful save. |
 | Focused verification | Sequentially build `ClassMngr` then `ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in `build/windows-x64-debug`; run exactly the matching CTest. No full suite. |
 
-F885 is selected and implementation is pending. Keep the 13 Deferred entries,
-including dense Speaking Evaluation row-limit policy, unchanged. Batch 299
-remains open; Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
-Open.
+### F885 accepted; Batch 299 complete; Batch 300 selected F886 - 2026-10-15
+
+F885 is accepted at source/test commit
+`c119c6f56099931beae32ec2c3c6c26b98b1be73`. Repository-owned
+`ParentClassMissing` provenance now lets the direct typed class-details save
+route return `NotFound` before its detail/conflict reads. The typed write path
+repeats the parent check and writes under an Immediate transaction to close
+the deletion race. The legacy `saveClassDetails()` Status API retains its exact
+SQLite foreign-key diagnostic; the typed route maps only explicit
+`ParentClassMissing` provenance to `NotFound`.
+
+Regression coverage checks missing parents with empty and nonempty requested
+schedules return `NotFound` without class-info or schedule rows, and that the
+legacy API keeps its exact diagnostic without mutation. Independent sequential
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` passed; the
+exact matching CTest passed 1/1. No full suite ran. Two independent post-F885
+audits rechecked all 13 official Deferred candidates; none became actionable,
+and all 13 remain unchanged.
+
+Batch 300 selects F886: classify a deleted parent during the direct typed
+`TestingClassDetailsUpdateUseCase` ->
+`ApplicationServicesTestingClassDetailsUpdatePort` ->
+`TestingClassRepository` route as `NotFound`. An existing ordinary class with
+no `testing_classes` row remains `Technical`. In the public pre-fix baseline,
+the test created a real Testing Class, deleted it through
+`services.classService()->remove(id)`, and then called the direct update route.
+It returned `Technical` (ErrorCode value 5) with exact diagnostic
+`The testing class no longer exists.`; `classes`, `class_info`, and
+`testing_classes` rows remained absent. The ordinary-class case also remained
+`Technical` and passed. Temporary instrumentation was removed and the focused
+target rebuilt after cleanup. The target and exact CTest passed 1/1. An
+initial/elevated build required FileTracker access retries and initially
+reported a non-fatal missing dependency warning for
+`src/next/application/teacher_import_plan_mapper.h`; the cleanup rebuild did
+not repeat that warning. No full suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Provenance and race safety | Tag `ParentClassMissing` only after confirming the `classes` parent is absent, with the parent check and update in one Immediate transaction. Do not classify an existing ordinary class merely because its `testing_classes` row is absent. |
+| Typed classification and compatibility | Map only `ParentClassMissing` to typed `NotFound`; preserve the legacy `updateTestingClass` Status diagnostic, ordinary-class `Technical` behavior, and existing `InvalidInput`/unavailable-session behavior. |
+| Other failures and rollback | Query, validation, write, commit, and transaction failures remain `Technical`; injected trigger failure after an earlier update rolls back. |
+| Regression coverage | Cover a real deleted class returning typed `NotFound` with no mutation, the exact legacy diagnostic, ordinary class remaining `Technical`, successful update, and trigger-failure rollback. |
+| Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`, and `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run exactly those two matching Debug CTests. No full suite. |
+
+F886 is selected and implementation is pending. No additional Batch 300
+candidates are selected.
+Keep all 13 Deferred entries, including dense Speaking Evaluation row-limit
+policy, unchanged. Phase 2 Gates 1/2 remain Partial and the formal exit gate
+remains Open.

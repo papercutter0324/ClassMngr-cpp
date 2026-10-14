@@ -5756,22 +5756,34 @@ id 100001: FOREIGN KEY constraint failed Unable to fetch row (database error
 built; exact CTest passed 1/1 and the slot reported 3 QtTest cases including
 setup/cleanup. MSBuild emitted a non-fatal missing-dependency warning for
 `teacher_import_plan_mapper.h`. The temporary slot/output were removed.
-F884 is accepted at `8db6f256c5019eecab75ae2abdeda1113ef19e5d`. The detailed
-repository result tags only a confirmed missing parent; its lookup and writes
-use an Immediate transaction. The typed port maps only that tag to `NotFound`,
-while legacy `saveSpeakingEval()` preserves its Status/QString foreign-key
-diagnostic. Independent sequential Debug builds of `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
-passed; exact Debug CTest passed 1/1. No full suite ran. Two independent
-post-F884 audits rechecked all 13 official Deferred candidates; none became
-actionable. F885 is selected for the direct typed `ClassDetailsSavePort`
-route. Its public pre-fix baseline with valid fields, empty schedules, and
-unknown positive ID `100001` returned Technical with exact diagnostic
-`Saving class information failed for class id 100001: FOREIGN KEY constraint
-failed Unable to fetch row (database error 787)` and created no
-`class_info`, `class_times`, or `class_intensive_times` rows. The focused
-target and exact CTest passed 1/1; temporary test/output were removed. F885
-excludes the broader page workflow's earlier conflict reads. Existing
-untracked `%SystemDrive%/`, `Testing/`,
-`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts remain
-untouched. Gates 1/2 remain Partial; the formal Phase 2 exit gate is Open.
+F885 is accepted at `c119c6f56099931beae32ec2c3c6c26b98b1be73`. The direct
+typed Class Details port now checks the parent before its own detail/conflict
+reads and maps only explicit `ParentClassMissing` to `NotFound`. The save
+rechecks the parent and writes details/schedules in one Immediate transaction.
+Legacy `saveClassDetails()` retains its Status/QString FK diagnostic.
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` passed;
+the exact Debug CTest passed 1/1. No full suite ran.
+
+Two independent post-F885 audits rechecked the 13 official Deferred entries;
+none became actionable and all remain unchanged. Batch 299 is complete. Batch
+300 selects F886 for deleted-parent classification on direct typed Testing
+Class details update. The temporary public baseline created then deleted a
+real Testing Class and called the direct update use case. It returned
+Technical (ErrorCode value 5), message `The testing class no longer exists.`;
+the `classes`, `class_info`, and `testing_classes` rows remained absent. The
+existing ordinary-class case also remains Technical. The temporary slot was
+removed; exact CTest passed 1/1 and the target rebuilt after cleanup. A
+nonfatal missing dependency warning for `teacher_import_plan_mapper.h` did not
+recur on that rebuild. F886 acceptance: explicit repository missing-parent
+provenance only when the parent `classes` row is absent; check and update in
+one Immediate transaction; map only that tag to `NotFound`; preserve the
+legacy diagnostic, ordinary-class Technical behavior, InvalidInput and
+unavailable-session results, and Technical rollback for query/write/commit
+failures. Test deleted class/no mutation, legacy diagnostic, ordinary class,
+success, and trigger failure after an earlier write. Build `ClassMngr`, the
+typed update-port target, and `ClassMngrTestingClassRepositoryTests`; run only
+the two matching Debug CTests. No full suite ran. Existing untracked
+`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt` artifacts remain untouched. Gates 1/2 remain Partial; the formal Phase 2
+exit gate is Open.

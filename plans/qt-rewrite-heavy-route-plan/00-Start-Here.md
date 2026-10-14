@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F884 is accepted; Batch 299 selected F885 to classify a missing parent during direct typed `ClassDetailsSavePort` saves as `NotFound` using repository provenance and an Immediate transaction. Implementation is pending. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F885 is accepted; Batch 300 selected F886 to classify a deleted parent during the direct typed Testing Class details update route as `NotFound`, while an ordinary class without a Testing Class row remains `Technical`. Implementation is pending. Gates 1/2 remain Partial and the formal exit gate remains Open; see the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

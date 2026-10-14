@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-15 (F884 accepted; F885 selected)
+## Phase 2 current position — 2026-10-15 (F885 accepted; F886 selected)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5208,26 +5208,43 @@ rollback, and closed-session behavior. Independent sequential Debug builds of
 `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
 passed; the exact Debug CTest passed 1/1. No full suite ran.
 
-Two independent post-F884 audits rechecked all 13 official Deferred entries;
-none became actionable and all blockers remain unchanged. Batch 299 selected
-F885 for stale-parent classification through the direct typed
-`ClassDetailsSavePort`. Its temporary pre-fix public baseline called
-`ClassDetailsSaveUseCase` directly with valid details, empty schedules, and
-unknown positive class ID `100001`. It returned Technical with diagnostic
-`Saving class information failed for class id 100001: FOREIGN KEY constraint
-failed Unable to fetch row (database error 787)`. No `class_info`,
-`class_times`, or `class_intensive_times` rows were created. The focused target
-built and its exact CTest passed 1/1; the temporary slot/output were removed.
-F885 remains bounded to the direct port; the broader public page workflow's
-earlier conflict reads are outside its scope. Acceptance requires explicit
-repository provenance for a confirmed missing parent before the direct port's
-own detail/conflict reads and within an Immediate transaction before writes;
-preserve the legacy Status/FK diagnostic, unavailable-session and invalid
-input classifications, and Technical rollback for trigger/write failures.
-Test missing positive IDs with empty and nonempty schedules, no persisted
-class-info/schedule rows, valid save behavior, and legacy diagnostic
-preservation. Sequentially build `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in
-`build/windows-x64-debug`, then run only its exact Debug CTest. No full suite.
-The five existing untracked artifacts remain untouched. Gates 1/2 remain
-Partial; the formal Phase 2 exit gate is Open.
+F885 is accepted at `c119c6f56099931beae32ec2c3c6c26b98b1be73`. The direct
+typed Class Details port now returns explicit repository `ParentClassMissing`
+provenance before its own detail/conflict reads. Its detailed save rechecks
+the parent and writes details/schedules within one Immediate transaction.
+Only the missing-parent tag maps to `NotFound`; legacy `saveClassDetails()`
+retains the Status/QString FK diagnostic. Tests cover missing parents with
+empty and nonempty schedules and no stored rows, exact legacy diagnostic,
+successful saves, trigger rollback, and unavailable-session behavior.
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` passed;
+the exact Debug CTest passed 1/1. No full suite ran.
+
+Two independent post-F885 audits reviewed all 13 official Deferred entries;
+none became actionable and all 13 remain unchanged. Batch 299 is complete.
+Batch 300 selected F886 for deleted-parent classification during direct typed
+Testing Class details update. The temporary public baseline created a real
+Testing Class, deleted it through `ClassService::remove()`, then called the
+direct update use case. The result was `Technical` (ErrorCode value 5) with
+exact message `The testing class no longer exists.`; `classes`, `class_info`,
+and `testing_classes` rows remained absent. The existing ordinary-class case
+also remains Technical and passed. The temporary test was removed; the target
+and exact CTest passed 1/1, and the target rebuilt after cleanup. The initial
+target build reported a nonfatal missing dependency warning for
+`teacher_import_plan_mapper.h`, which did not recur during cleanup rebuild.
+
+F886 scope is the direct `TestingClassDetailsUpdateUseCase` to
+`ApplicationServicesTestingClassDetailsUpdatePort` path. Add explicit
+repository provenance only when a successful query confirms the parent
+`classes` row is absent; check and update under one Immediate transaction.
+Map only that tag to typed `NotFound`. Preserve the legacy
+`updateTestingClass()` diagnostic, existing ordinary-class `Technical`
+behavior, InvalidInput/unavailable-session behavior, and Technical rollback
+for query/write/commit failures. Cover a genuinely deleted class with no
+mutation, exact legacy diagnostic, ordinary class, successful update, and a
+trigger failure after an earlier write that proves rollback. Sequentially
+build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`,
+and `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run
+only the two matching Debug CTests. No full suite. Gates 1/2 remain Partial;
+the formal Phase 2 exit gate is Open.
