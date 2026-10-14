@@ -6,6 +6,7 @@
 #include "next/domain/teacher_profile.h"
 #include "next/platform/application_services_teacher_profile_edit_persistence_port.h"
 
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
@@ -82,7 +83,7 @@ class NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests fina
 
 private slots:
     void updatesAndReloadsEveryProfileFieldThroughActiveRepository();
-    void mapsDeletedTeacherUpdateToNotFound();
+    void mapsDeletedTeacherUpdateAndReloadToNotFound();
     void mapsUnavailableSessionAndRepositoryFailures();
 };
 
@@ -145,7 +146,7 @@ updatesAndReloadsEveryProfileFieldThroughActiveRepository()
 }
 
 void NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests::
-mapsDeletedTeacherUpdateToNotFound()
+mapsDeletedTeacherUpdateAndReloadToNotFound()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -171,6 +172,14 @@ mapsDeletedTeacherUpdateToNotFound()
     const TeacherByIdLookupResult stored =
         repository->lookupTeacherById(teacherId);
     QCOMPARE(stored.code, TeacherByIdLookupCode::Missing);
+    QVERIFY(stored.diagnostic.contains(
+        QStringLiteral("no matching record"), Qt::CaseInsensitive));
+
+    const Domain::Result<Domain::TeacherProfile> reloaded =
+        port.reload(profile(teacherId).id);
+    QVERIFY(!reloaded);
+    QCOMPARE(reloaded.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(reloaded.error().message, stored.diagnostic.toStdString());
 }
 
 void NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests::
@@ -215,12 +224,34 @@ mapsUnavailableSessionAndRepositoryFailures()
     const auto missingId = Domain::TeacherId::fromString(
         std::to_string(teacherId + 1000));
     QVERIFY(missingId);
-    const Domain::Result<Domain::TeacherProfile> reloadFailure =
+    TeacherRepository* const repository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(repository);
+    const TeacherByIdLookupResult missingLookup =
+        repository->lookupTeacherById(teacherId + 1000);
+    QCOMPARE(missingLookup.code, TeacherByIdLookupCode::Missing);
+    QVERIFY(missingLookup.diagnostic.contains(
+        QStringLiteral("no matching record"), Qt::CaseInsensitive));
+    const Domain::Result<Domain::TeacherProfile> missingReload =
         port.reload(*missingId);
+    QVERIFY(!missingReload);
+    QCOMPARE(missingReload.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(missingReload.error().message,
+        missingLookup.diagnostic.toStdString());
+
+    QSqlQuery dropTeachers(services.databaseSession()->database());
+    QVERIFY2(dropTeachers.exec(QStringLiteral("DROP TABLE teachers")),
+        qPrintable(dropTeachers.lastError().text()));
+    const TeacherByIdLookupResult queryFailure =
+        repository->lookupTeacherById(teacherId);
+    QCOMPARE(queryFailure.code, TeacherByIdLookupCode::Failure);
+    QVERIFY(!queryFailure.diagnostic.isEmpty());
+    const Domain::Result<Domain::TeacherProfile> reloadFailure =
+        port.reload(profile(teacherId).id);
     QVERIFY(!reloadFailure);
     QCOMPARE(reloadFailure.error().code, Domain::ErrorCode::Technical);
-    QVERIFY(fromUtf8(reloadFailure.error().message).contains(
-        QStringLiteral("no matching record"), Qt::CaseInsensitive));
+    QCOMPARE(reloadFailure.error().message,
+        queryFailure.diagnostic.toStdString());
 
     services.closeDatabase();
     const auto closedSession = port.reload(

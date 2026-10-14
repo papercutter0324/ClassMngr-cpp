@@ -119,24 +119,36 @@ public:
 
         try
         {
-            const Result<Teacher> result = repository->getTeacher(*legacyId);
-            if (!result)
+            const TeacherByIdLookupResult result =
+                repository->lookupTeacherById(*legacyId);
+            switch (result.code)
             {
+            case TeacherByIdLookupCode::Found:
+                if (result.teacher.id != *legacyId)
+                {
+                    return Domain::Result<Domain::TeacherProfile>::failure(
+                        technicalError(QStringLiteral(
+                            "Reloaded teacher ID does not match the requested ID.")));
+                }
+
+                return Domain::Result<Domain::TeacherProfile>::success({
+                    .id = id,
+                    .fields = profileFieldsFromTeacher(result.teacher)
+                });
+            case TeacherByIdLookupCode::Missing:
+                return Domain::Result<Domain::TeacherProfile>::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = utf8(result.diagnostic),
+                    .recoverable = true
+                });
+            case TeacherByIdLookupCode::Failure:
                 return Domain::Result<Domain::TeacherProfile>::failure(
-                    technicalError(result.error(),
+                    technicalError(result.diagnostic,
                         QStringLiteral("Reloading teacher failed.")));
             }
-            if (result->id != *legacyId)
-            {
-                return Domain::Result<Domain::TeacherProfile>::failure(
-                    technicalError(QStringLiteral(
-                        "Reloaded teacher ID does not match the requested ID.")));
-            }
 
-            return Domain::Result<Domain::TeacherProfile>::success({
-                .id = id,
-                .fields = profileFieldsFromTeacher(*result)
-            });
+            return Domain::Result<Domain::TeacherProfile>::failure(
+                technicalError(QStringLiteral("Reloading teacher failed.")));
         }
         catch (const std::exception&)
         {
