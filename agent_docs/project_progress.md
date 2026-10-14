@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_f417_resume_20261009`. Route: Heavy.
+Current deployment: `phase2_resume_20261014_f860`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,26 +53,20 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-13 (F785 accepted; F786 selected)
+### Current state - 2026-10-14 (F863 accepted; F864 selected)
 
-F785 is committed at `3f47a158dfd7c5f6ee7b0abcd7d29d52f567b4dd`. In the
-Visual Studio 18 x64 Debug tree, `ClassMngr` and the repository, platform-port,
-and Calendar cache test targets built after the identical bounded retry
-outside the sandbox following FileTracker `E_ACCESSDENIED`. The exact CTests
-`ClassMngrCalendarEventRepositoryTests`,
-`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
-`ClassMngrCalendarEventCacheTests` each registered once and passed 3/3. The
-regressions cover visitor ordering and early stop, the exact 4,097th-row
-capacity failure, 4,096 valid projected rows with raw ID 0 skipped, and
-metadata-error precedence after overflow. No full suite ran. The separately
-requested CMake source-ownership optimization is committed.
-
-Batch 199 selected F786 to align Qt-free Calendar title blankness with the Qt
-UI and projection boundary: they treat Unicode-whitespace-only titles such as
-U+00A0 NO-BREAK SPACE as blank, while Application contracts currently check
-whitespace byte by byte. Its pre-implementation acceptance matrix is in the
-Phase 2 progress log. F707/F709 remain deferred; Gates 1/2 are Partial and the
-formal exit gate is Open.
+F863 is accepted at source/test commit `2fad90b6`; the shared Schedule Testing
+repository decoder preserves SQL NULL sentinels, accepts positive SQLite
+INTEGER IDs through `INT_MAX`, and rejects malformed storage in assignment
+reads and the save overwrite precheck. Independent verification built the five
+planned Debug targets and passed the four exact CTests 4/4; no full suite ran.
+The post-F863 audit reviewed all 13 Deferred entries and found none newly
+actionable; their recorded triggers remain unresolved. Batch 278 selected
+F864: Roster Editor currently treats a failed roster read as an empty clean
+snapshot, although a later full-snapshot save can replace stored roster data.
+The acceptance record and focused verification scope are being added to the
+Phase 2 plan. F579/F598 still require an elevated Administrator token; Gates
+1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

@@ -34929,3 +34929,77 @@ validation; do not redesign the schema or widen unrelated ID types.
 | Corrupt occupied slot | `existingClassId()` failure prevents `saveTestingBlock()` from treating corrupt data as an empty slot; verify the stored row is unchanged. |
 | Error propagation and UI state | The platform read port returns typed Technical failure, the Application query propagates it, and `ScheduleWidget` retains its current assignment map. |
 | Compatibility and focused verification | Preserve valid positive-ID class mapping, query ordering, normal plain-block saves, and request-side validation. Sequentially build `ClassMngr`, `ClassMngrTestingBlockRepositoryTests`, `ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`, `ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`, and `ClassMngrScheduleWidgetTests` in standard `build/windows-x64-debug`; run exactly these four CTests: `ClassMngrTestingBlockRepositoryTests`, `ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`, `ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`, and `ClassMngrScheduleWidgetTests`. Use existing targets only; no full suite or new target. |
+
+### F863 Strict persisted Schedule Testing ID decoding - accepted - 2026-10-14
+
+F863 is accepted at source/test commit
+`2fad90b6195344ea6cdb4e48601e62da77b18786`; the preceding F862/F863
+selection and acceptance plan commit is `7786990df543b816e9c7c1675ae306304097dd77`.
+The shared decoder checks SQLite storage type: SQL NULL retains each caller's
+existing sentinel, positive INTEGER IDs through `INT_MAX` are accepted, and
+other types or ranges fail in both repository reads and the save overwrite
+precheck. The Executor reproduced nonnumeric TEXT decoding to zero and an
+overwrite. Tests now cover nonnumeric TEXT, fractional REAL, zero, negative,
+above-`INT_MAX`, valid `INT_MAX`, and stored-row preservation. The platform
+test asserts typed Technical; existing Application query propagation and
+ScheduleWidget retain-on-read-failure tests were reused unchanged. The commit
+changes repository and repository/platform-port test C++ files only; no CMake
+target was added.
+
+Independent Tester review covered source and assertions, then sequentially
+built `ClassMngr`, `ClassMngrTestingBlockRepositoryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`, and
+`ClassMngrScheduleWidgetTests` in `build/windows-x64-debug`. Exactly the four
+planned Debug CTest registrations passed, 4/4. Sandbox attempts hit FileTracker
+`E_ACCESSDENIED`; elevated standard-tree retries passed. The Executor observed
+nonblocking ScheduleWidget link warnings LNK4006/LNK4088 (`/FORCE`); the
+independent run reported no C++ compiler warnings. No full suite ran.
+
+### Batch 277 completion and deferred-candidate audit - 2026-10-14
+
+F863 completed Batch 277. An Explorer reviewed every Deferred entry; none of
+the 13 became actionable, and the list remains unchanged. F579/F598 still need
+an elevated Administrator token; F629 remains session-limited; F709 still
+lacks a Calendar summary injection seam. The recorded policy, measurement,
+allocation, and caller triggers remain unresolved, and F863 does not overlap
+those scopes. Phase 2 Gates 1/2 remain Partial; the formal exit gate remains
+Open.
+
+### Batch 278 discovery and selection - 2026-10-14
+
+The initial scan found no actionable item: no production caller passes a
+negative `initiallySkippedCount` to Calendar Import. A second scan found a
+stronger Roster Editor failure path, confirmed by an Investigator as
+conditionally production-reachable. `RosterEditorWidget::loadClass()`
+(`src/features/roster/ui/roster_editor_widget.cpp:140-195`) starts with a
+blank roster, silently installs it after a typed read failure, and marks it
+clean. With a positive class ID, autosave and output remain enabled; a later
+full-snapshot save can replace the stored roster. Malformed persisted column
+positions or row indexes make `RosterRepository::loadRoster()` fail while the
+database and selected class can remain active. The save transaction deletes
+the existing roster columns/data before replacement (`src/data/repositories/roster_repository.cpp:104-142`).
+Existing test `emptyAndFailedReadsKeepBlankRosterAndRefreshOutputCapabilities()`
+(`tests/roster_editor_widget_save_tests.cpp:877`) currently expects both valid
+empty and failed reads to be blank, clean, and print-enabled. Normal close and
+reopen clears page state; the relevant path is corruption or a roster read
+error while the database stays open. Existing deterministic fixture and SQL
+seams suffice; no new target is needed.
+
+F864 is selected, not implemented. Distinguish a successful empty roster from
+a failed read: report the read failure and keep the fallback blank model
+uneditable, unsavable, and unavailable to print/save-as. Prevent autosave and
+manual save, and prove an attempted mutation/save leaves stored rows and
+columns unchanged. A valid empty result stays blank, clean, editable, and
+available for output. After repairing the record, a successful read restores
+the actual roster and normal capabilities and clears failure state. Preserve
+ordinary autosave/save, dirty/failure rollback, and testing-class selection
+rollback behavior. Do not redesign the schema or add unrelated repository
+hardening.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Failed read protection | Start with a nonempty stored roster, corrupt persisted position/row-index metadata so the read use case returns Technical, load it, then attempt mutation, save, and autosave; report failure, disable editing/persistence/output, and preserve stored rows/columns. |
+| Valid empty and recovery | A successful empty read remains blank, clean, and available for ordinary editing/output. After repairing the same record, a successful read restores its roster, normal capabilities, and clears failure state. |
+| Compatibility | Preserve ordinary autosave/save, dirty/failure rollback, and existing testing-class selection rollback behavior. |
+| Focused verification | Use existing `ClassMngr` and `ClassMngrRosterEditorWidgetSaveTests`; sequentially build both in `build/windows-x64-debug` and run exactly the registered `ClassMngrRosterEditorWidgetSaveTests` CTest in Debug. No new seam/target or full-suite run. |

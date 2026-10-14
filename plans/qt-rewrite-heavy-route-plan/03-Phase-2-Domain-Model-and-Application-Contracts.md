@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F862 is accepted; F863 is selected for Batch 277; Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: F863 is accepted; F864 is selected for Batch 278; Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,9 +70,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Batch 277 (one candidate):
+Batch 278 (one candidate):
 
-- F863 - Strictly decode persisted Schedule Testing class IDs and propagate corrupt stored assignments as read failures.
+- F864 - Keep a failed Roster Editor read from becoming an editable blank snapshot; distinguish it from a valid empty roster.
 
 #### Deferred candidates
 

@@ -5320,3 +5320,36 @@ current Next tests explicitly expect rejection, and projection overflow's
 pre-cap full materialization for a separate bounded-reader slice. F707/F709
 remain deferred, Gates 1/2 remain Partial, and the formal exit gate remains
 Open.
+
+## Phase 2 Custom Website paired preference persistence - 2026-10-14
+
+When one UI choice updates two QSettings keys, stage both values and perform
+one checked sync so the visible selection changes only after success. On a
+reported sync error, restore each key's previous presence and raw value and
+reopen the settings object. This is a compensating-write pattern, not a
+crash-safe or concurrent-write transaction; document that limit rather than
+claiming strict atomicity.
+
+## Phase 2 portable package migration - 2026-10-14
+
+When extracting a Qt-free package contract, migrate every in-repository
+consumer to its explicit portable type and remove the temporary legacy alias
+once the full package is used by both apply and export paths. Keeping an alias
+after all consumers have migrated obscures which boundary the contract now
+represents and can make the incomplete migration look finished.
+
+## Phase 2 selected-record read failure - 2026-10-14
+
+When a selection change fails to load its requested record, keep the visible
+selector aligned with the last successfully loaded editable record. Otherwise
+the next edit/save can target a different identity than the selector names.
+On admin-only screens, use the existing status area to report the failed load;
+preserve explicitly tested read-only behavior where it has no write risk.
+
+## Phase 2 roster snapshot read failure - 2026-10-14
+
+Do not install a default empty roster as though it were a successful read.
+Roster saves replace the full stored snapshot, so a failed read must remain
+visible and block edits, persistence, and output until a later read succeeds.
+Keep a valid empty roster distinct and available for ordinary editing and
+output.
