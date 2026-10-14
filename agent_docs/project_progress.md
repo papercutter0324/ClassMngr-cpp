@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F904 accepted; F905 selected)
+### Current state - 2026-10-15 (F905 accepted; F906 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -392,9 +392,22 @@ check was source-reviewed. An initial shortened target-name invocation was
 not registered (MSB1009); verification then used the exact registered target.
 Two independent post-F905 audits reviewed all 13 official Deferred
 candidates; none became actionable and the list remains unchanged. F906,
-Class Details validation-context read parent provenance, is selected; its
-baseline and acceptance are pending. Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+Class Details validation-context read parent provenance, is selected. Its
+pre-fix public baseline deleted a parent while retaining one `class_info` row
+and one `class_times` row; the typed query incorrectly succeeded with teacher
+ID 7319, notes `F906 orphan class-info notes`, and time-filler text
+`F906 orphan time-filler activities`. A never-present ID and an existing
+parent without `class_info` both returned successful defaults (teacher ID -1
+and empty notes/time-filler). Exact baseline Debug CTest #317 passed 1/1; the
+forced build logged nonfatal MSB8064 for the generated
+`teacher_import_plan_mapper.h` dependency. No full suite ran. The temporary
+probe was restored byte-for-byte (SHA-256
+`2036F682AE2CF1AF7EFA6851D595F64B88777996C924904DAC8CB3F001BB3F45`). The
+recorded F906 boundary maps only clean parent-rooted absence to recoverable
+`NotFound`, preserves defaults for a present parent without metadata and the
+legacy `loadClassPageDetails` behavior, and keeps SQL/cursor/exception errors
+Technical. F906 implementation and post-change verification are pending.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

@@ -37702,3 +37702,23 @@ Two independent audits rechecked all 13 exact official Deferred candidates;
 none became newly actionable. F906, Class Details validation-context read
 parent provenance, is selected. Its baseline and acceptance are pending.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F906 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change typed validation-context query for deleted class ID 1 returned
+success despite `classes=0`, `class_info=1`, and `class_times=1`; it exposed
+`teacherId=7319`, `notes="F906 orphan class-info notes"`, and
+`timeFillerActivities="F906 orphan time-filler activities"`. A never-present
+ID and an existing parent without `class_info` both returned successful
+`teacherId=-1` defaults with empty notes and time-filler values. Baseline Debug
+CTest #317 passed 1/1. Its build logged nonfatal MSB8064 for missing generated
+dependency `src/next/application/teacher_import_plan_mapper.h`. No full suite
+ran. The temporary test source was restored byte-for-byte (SHA-256
+`2036F682AE2CF1AF7EFA6851D595F64B88777996C924904DAC8CB3F001BB3F45`).
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Parent provenance | For a valid canonical positive class ID, return outer recoverable `NotFound` only after a clean parent-rooted query confirms no `classes` row. Suppress orphan `class_info` and `class_times`. Check cursor errors before classifying absence; SQL, cursor-fetch, and exceptions remain `Technical`. |
+| Present-parent projection | A present parent without `class_info` remains successful with defaults (`teacherId=-1`, empty notes and time-filler). Preserve class identity, raw signed teacher ID, and exact notes/time-filler for populated parents. |
+| Compatibility and scope | Preserve unavailable-session `NotFound`, invalid-ID and result-mismatch behavior, and legacy `loadClassPageDetails` signature and behavior; use a detailed seam for the typed port. Leave ClassDetailsSaveWorkflow fallback, schedule conflict/save ports, UI, schema, and orphan cleanup unchanged. |
+| Verification and status | Baseline CTest #317 passed 1/1. F906 baseline and acceptance are recorded; implementation and post-change verification remain pending. |
