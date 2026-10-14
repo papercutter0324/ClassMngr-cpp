@@ -35810,3 +35810,88 @@ Batch 291 repository/data and application-contract scans found no candidate.
 Batch 292 discovery has started in the domain-value and state/concurrency
 lanes; results are pending and no candidate has been selected. Phase 2 Gates
 1/2 remain Partial and the formal exit gate remains Open.
+
+### Batch 292 shortfall; Batch 293 discovery started - 2026-10-14
+
+Batch 292 domain-value, result, validator, mapping, and traced application
+state/concurrency scans found no reachable defect. An invalid enum cast had no
+normal production path. Decreasing job progress has no monotonic contract;
+existing tests require FIFO updates `2` then `1` to yield `1`.
+
+Batch 293 discovery has started in repository transaction/failure semantics
+and legacy-to-v2 boundary lanes. Results are pending and no candidate has been
+selected. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains
+Open.
+
+### Batch 293 discovery and F878 selection - 2026-10-14
+
+The repository scan found a reachable possible lost assignment in
+`TestingBlockRepository::saveTestingBlock()`: it reads the existing
+`class_id`, then a separate UPSERT clears `class_id=NULL`. Concurrent
+`assignTestingClass()` uses a transaction on another `DatabaseSession`
+connection, which could commit between the guard read and UPSERT. The reachable
+path is Schedule Widget `SavePlainTesting` -> Next application save port ->
+repository. A plain save with `replaceExisting=false` could then return success
+after clearing the concurrent assignment. F878 (`Guard plain testing-block
+saves against concurrent assignments`) is selected for a pre-fix baseline only;
+no reproduction or production change is recorded.
+
+A deterministic seam inside the real repository method was not found without
+a production hook or direct SQLite C API dependency. The pending baseline uses
+a helper-level sequence against one file-backed SQLite database: connection A
+performs the same existing-class read as `saveTestingBlock()`; connection B
+calls the real `assignTestingClass()` repository method and commits; then A
+executes the exact current UPSERT used by `saveTestingBlock()`. Inspect
+`class_id` after that sequence. This reproduces the matching SQLite statement
+sequence only; it does not invoke or reproduce the full `saveTestingBlock()`
+or ApplicationServices method, and the report must state that limitation. Stop
+and revise if the sequence does not show the assignment cleared.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Mandatory pre-fix baseline | File-backed SQLite connections A/B: A performs the same existing-class read as `saveTestingBlock()`; B calls real `assignTestingClass()` and commits; A executes the exact current `saveTestingBlock()` UPSERT; inspect `class_id` for loss. This is only a matching statement-sequence reproduction, not full repository/ApplicationServices-method reproduction; state this limitation. Stop/revise if assignment is not cleared. |
+| Non-replacement safety | At method level, after a fix, `saveTestingBlock(replaceExisting=false)` retains an assigned class and does not report success as if it cleared the assignment; assignment state remains unchanged. |
+| Replacement and ordinary saves | Explicit `replaceExisting=true` retains intended replacement behavior; ordinary unassigned/plain saves retain fields and existing errors. |
+| Focused verification | Likely target `ClassMngrTestingBlockRepositoryTests`; sequentially build `ClassMngr`, then that target in `build/windows-x64-debug`, and run exactly its CTest. No full suite. |
+
+The complementary legacy-to-v2 scan found no independent candidate. It surfaced
+only the previously deferred Co-Teacher error-identity issue, which remains
+deferred.
+
+No other slices were found.
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.
+
+### F878 helper-level baseline verified; implementation direction selected - 2026-10-14
+
+The deterministic helper-level baseline used two independent named `QSqlDatabase`
+connections to one temporary file. Connection A read no assignment; connection B
+called the real `assignTestingClass()` and committed; A then executed the exact
+current plain-save UPSERT. The UPSERT succeeded, changed the room to `405`, and
+left `class_id` NULL. This confirms the current SQL-pattern stale-write effect
+only; it did not invoke `saveTestingBlock()` end-to-end or the public
+ApplicationServices method. The temporary test was removed after validation, so
+there is no direct regression coverage of the precise interleaving.
+
+Sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` passed; the exact CTest passed 1/1.
+FileTracker denial required an elevated retry. No production changes were made.
+
+The selected fix makes the UPSERT predicate authoritative:
+`class_id IS NULL OR class_id <= 0 OR replaceExisting`. Keep the existing read
+for malformed-ID validation, but do not let its assigned-ID observation
+authorize or deny the write. After successful statement execution, zero affected
+rows must return the current replacement-confirmation error. Qt QSQLite affected
+row counts (`sqlite3_changes`) support that check. This preserves the explicit
+replacement path and ordinary unassigned saves while allowing an intervening
+assignment to win.
+
+| Acceptance point | Status and required evidence |
+| --- | --- |
+| Pre-fix helper-level baseline | Verified with the two-connection read/real-assignment-commit/exact-UPSERT sequence above; report only the matching statement-sequence result, not full-method or public-path reproduction. |
+| Method-level non-replacement | Pending implementation: with `replaceExisting=false` on an assigned row, preserve the assignment and return the current replacement-confirmation error when the guarded UPSERT affects zero rows. |
+| Replacement and ordinary saves | Pending verification: explicit `replaceExisting=true` retains intended replacement behavior; ordinary unassigned/plain saves retain fields and existing errors. |
+| Focused verification | Baseline Debug builds of `ClassMngr` and `ClassMngrTestingBlockRepositoryTests` plus exact CTest passed 1/1; after implementation, repeat those sequential builds and exact CTest in `build/windows-x64-debug`. No full suite. |
+
+The baseline is complete; F878 implementation and method-level verification are
+pending. Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

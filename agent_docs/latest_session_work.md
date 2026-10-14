@@ -5635,7 +5635,7 @@ Create/Delete width path remains deferred. F877 completed Batch 290; the
 acceptance evidence and current Batch292 continuation are recorded below.
 Gates 1/2 remain Partial and Phase 2 remains Open.
 
-## Phase 2 continuation — 2026-10-14 (F877 accepted; Batch292 discovery underway)
+## Phase 2 continuation — 2026-10-14 (F877 accepted; F878 baseline verified)
 
 F877 is committed as `c8178ddf52e94abb02fba1db7392f82aa2fea16f` and changed
 only `src/data/database/database_file_operations.cpp` and
@@ -5657,10 +5657,30 @@ successful-build warnings and no full suite. Mid-stream I/O/permission/commit
 failures and parent-creation failure are not injected directly.
 
 The post-F877 audit found none of the 13 Phase 2 Deferred entries newly
-actionable. Batch291’s independent repository/data and application-operation
-scans found no candidate. Batch292 is searching domain values and
-state/concurrency contracts; its result is pending. The Explorer read-only
-Git snapshot reported HEAD `c8178ddf` and only the established untracked
-artifacts (`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`,
-`stdout`, and `txt`). Do not stage or remove those artifacts. Gates 1/2 remain
-Partial; the Phase 2 exit gate is Open.
+actionable. Batches 291 and 292 found no candidate across repository/data,
+application-operation, domain-value, and state/concurrency surfaces; the
+invalid-enum cast edge has no normal production path, and decreasing job
+progress has no monotonicity contract. Batch293 selected F878 after tracing a
+possible lost assignment from Schedule Widget `SavePlainTesting` through the
+application port to `TestingBlockRepository::saveTestingBlock()`. The
+helper-level SQLite baseline used two named file-backed connections: A read
+an unassigned row; B called the real `assignTestingClass()` and committed; A
+executed the exact current save-plain UPSERT. It succeeded, changed the room to
+`405`, and cleared `class_id`. This reproduces only the SQL statement sequence,
+not a full repository or ApplicationServices call. The temporary baseline test
+was removed after verification. Sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` and exact CTest 1/1 passed; FileTracker
+`E_ACCESSDENIED` required an elevated retry. No production changes were made.
+
+Main selected a conditional UPSERT guard as the implementation: retain the
+existing persisted-ID validation read, but make the SQL predicate authoritative
+for whether a positive assignment may be cleared; a zero affected-row count
+returns the existing replacement-confirmation error. Preserve explicit
+replacement and ordinary plain-save behavior. The post-F877 audit found no
+newly actionable Deferred item. Batch293’s complementary application-boundary
+scan found only a previously deferred Co-Teacher error-identity observation.
+The Explorer read-only Git snapshot before the F877 documentation commit
+reported HEAD `c8178ddf` and only the established untracked artifacts
+(`%SystemDrive/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt`). Do not stage or remove those artifacts. Gates 1/2 remain Partial; the
+Phase 2 exit gate is Open.

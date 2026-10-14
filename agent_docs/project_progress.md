@@ -5086,7 +5086,7 @@ public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-## Phase 2 current position — 2026-10-14 (F877 accepted; Batch292 discovery underway)
+## Phase 2 current position — 2026-10-14 (F877 accepted; F878 selected for implementation)
 
 F876 is accepted at
 `cdbe51da607637286c948a44813f361fe64724de`. Its SQLite baseline showed
@@ -5106,8 +5106,15 @@ stages through `QSaveFile`; the focused DataService lifecycle CTest passed
 open-session ApplicationServices path, and no NTFS ACL guarantee is claimed.
 No full suite ran.
 
-Batch 290 is complete. The post-F877 audit found none of the 13 Phase 2
-Deferred candidates newly actionable. Batch291’s repository/data and
-application-contract scans found no candidate. Batch292 domain-value and
-state/concurrency discovery is underway. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate remains Open.
+The post-F877 audit found none of the 13 Phase 2 Deferred candidates newly
+actionable. Batches 291 and 292 found no candidate. Batch293 selected F878:
+`TestingBlockRepository::saveTestingBlock()` can clear an assignment committed
+between its confirmation read and UPSERT. A helper-level SQLite baseline
+reproduced the stale statement sequence; it did not invoke the whole repository
+or public ApplicationServices method. Sequential Debug builds of `ClassMngr`
+and `ClassMngrTestingBlockRepositoryTests` passed, and exact CTest passed 1/1.
+The implementation direction is a conditional UPSERT that treats zero
+affected rows as the existing replacement-confirmation failure. The
+complementary boundary scan found no independent issue; its Co-Teacher
+error-identity observation remains covered by an earlier deferral. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

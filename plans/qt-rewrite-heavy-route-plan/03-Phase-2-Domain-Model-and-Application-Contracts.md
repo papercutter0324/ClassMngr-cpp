@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F877 is accepted at `c8178ddf`; Batch 292 discovery is underway with no candidate selected; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F878 helper-level SQL-pattern baseline is verified; implement the authoritative UPSERT guard and verify assigned-row preservation at method level; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Batch 292 discovery is underway in the domain-value and state/concurrency lanes; no candidate is selected yet.
+- F878 - Guard plain testing-block saves against concurrent assignments: implement the authoritative UPSERT predicate and zero-row replacement error; verify method-level assignment preservation and compatibility.
 
 #### Deferred candidates
 
