@@ -112,13 +112,34 @@ void TestingBlockRepositoryTests
         QCOMPARE(assignments->first().classId, 42);
         QVERIFY(assignments->first().room.isEmpty());
 
-        QVERIFY(
-            !repository.saveTestingBlock(
+        const auto rejectedReplacement =
+            repository.saveTestingBlock(
                 QStringLiteral("Monday"),
                 QStringLiteral("16:00"),
                 QStringLiteral("405")
+                );
+        QVERIFY(!rejectedReplacement);
+        QVERIFY(
+            rejectedReplacement.error().contains(
+                QStringLiteral("Confirm replacement first.")
                 )
             );
+
+        QSqlQuery unchangedAssignment(database);
+        QVERIFY(unchangedAssignment.exec(R"(
+            SELECT room, class_id
+            FROM schedule_testing_blocks
+            WHERE day='Monday' AND start_time='16:00'
+        )"));
+        QVERIFY(unchangedAssignment.next());
+        QVERIFY(
+            unchangedAssignment.value(QStringLiteral("room")).toString().isEmpty()
+            );
+        QCOMPARE(
+            unchangedAssignment.value(QStringLiteral("class_id")).toInt(),
+            42
+            );
+
         QVERIFY(
             repository.saveTestingBlock(
                 QStringLiteral("Monday"),

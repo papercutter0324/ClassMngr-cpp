@@ -454,13 +454,6 @@ Status TestingBlockRepository::saveTestingBlock(
         return std::unexpected(existing.error());
     }
 
-    if (*existing > 0 && !replaceExisting)
-    {
-        return std::unexpected(
-            QObject::tr("This slot is assigned to a testing class. Confirm replacement first.")
-            );
-    }
-
     const auto key = canonicalScheduleKey(day, startTime);
     Q_ASSERT(key);
 
@@ -478,6 +471,9 @@ Status TestingBlockRepository::saveTestingBlock(
         DO UPDATE SET
             room=excluded.room,
             class_id=NULL
+        WHERE schedule_testing_blocks.class_id IS NULL
+        OR schedule_testing_blocks.class_id <= 0
+        OR ? = 1
     )");
     query.addBindValue(key->day);
     query.addBindValue(key->startTime);
@@ -488,6 +484,7 @@ Status TestingBlockRepository::saveTestingBlock(
             ? QStringLiteral("")
             : normalizedRoom
         );
+    query.addBindValue(replaceExisting);
 
     if (!query.exec())
     {
@@ -496,6 +493,13 @@ Status TestingBlockRepository::saveTestingBlock(
                 query,
                 QObject::tr("Saving the testing block")
                 )
+            );
+    }
+
+    if (query.numRowsAffected() == 0)
+    {
+        return std::unexpected(
+            QObject::tr("This slot is assigned to a testing class. Confirm replacement first.")
             );
     }
 
