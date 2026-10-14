@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F898 accepted; F899 baseline underway)
+### Current state - 2026-10-15 (F898 accepted; F899 acceptance defined)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -248,8 +248,12 @@ retry per target. Successful builds emitted no warnings; no full suite ran.
 Cursor-fetch failure has no fixture and was code-reviewed. Two independent
 post-F898 audits found none of the 13 official Deferred entries newly
 actionable. Batch 303 is complete. Batch 304 selects F899, the Selected Class
-Subtitle batch read; its public-port baseline is underway, with acceptance
-pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
+Subtitle batch read. Its baseline distinguishes never-present IDs from
+deleted parents retaining `class_info`, schedules, and assigned teachers;
+acceptance now requires per-entry `NotFound` for both typed components only
+when the parent is confirmed absent, while valid classes without metadata
+remain successful. Focused implementation verification is next. Gates 1/2
+remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

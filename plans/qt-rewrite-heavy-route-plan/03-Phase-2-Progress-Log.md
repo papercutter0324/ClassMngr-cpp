@@ -37374,3 +37374,37 @@ F903-F905 cover evaluation editing and related reads
 F906-F908 are lower-readiness validation, student-count, and navigation
 follow-ups from the code inventory, retained after plan cross-check.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F899 baseline captured; acceptance defined - 2026-10-15
+
+Batch 304 selection was recorded at plan commit
+`90f75a7996cdd926528bb20a45abf7a18e198fdf`. The public batch request for IDs
+`987654321`, `1`, and `2` succeeded in input order. Never-present ID
+`987654321` and existing class `1` without `class_info` both returned
+successful empty grade/level, no schedule, and `assignedTeacher=success(nullopt)`.
+Deleted parent `2` had a verified `classes` count of zero while orphan
+`class_info`, `class_times`, and assigned-teacher counts were each one; the
+read returned success with orphan grade `F899 grade`, level `F899 level`, a
+Thursday 6:00 PM schedule, and teacher `F899 orphan teacher`.
+
+Baseline metrics were one class-repository call, one metadata statement, one
+schedule statement, three requested classes, and one teacher-repository call
+with one statement. The focused Debug CTest passed 1/1 (#330) after building
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`
+following one bounded elevated retry for FileTracker `E_ACCESSDENIED`. The
+temporary probe source was restored byte-for-byte (SHA-256 before and after
+`07CF44B84A6B5E5D5708CE1BAC895C0A28969E4195F94762E8C281DC61BAA463`). Its
+generated executable still contains the probe because the post-restore build
+hit FileTracker `E_ACCESSDENIED` and was not retried; the implementation build
+must refresh it. No product source changed and no full suite ran.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Repository parent provenance | A detailed batch result tags a requested parent missing only after a successful query confirms its `classes` row is absent. Keep the check in the metadata query; add no per-ID SQL and do not infer missing status from legacy message text. |
+| Typed per-entry results | A confirmed missing parent yields per-entry `NotFound` for both `classFields` and `assignedTeacher`, with no orphan metadata, schedule, or teacher. Keep the outer batch successful, preserve request order and valid siblings, and retain component-level error independence. |
+| Existing parent behavior | A present class without optional `class_info` remains per-entry success with blank fields, its actual ordered schedules when present, and `assignedTeacher=nullopt`. |
+| Operational failures and scope | Query/cursor failures remain `Technical` and cannot be tagged missing; inspect `lastError()` paths because no forced cursor-failure fixture exists. Preserve batch metric meanings, teacher display-name batch behavior, the singular F895 read, and other ports. |
+| Regression and focused verification | Cover a mixed never-present/existing-no-info/deleted-orphan request plus a populated sibling, request order, per-entry results, no orphan leakage, and metrics. Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests` in `build/windows-x64-debug`; run only its matching Debug CTest (#330). No full suite. |
+
+F899 baseline is complete and acceptance is defined; implementation is next.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
