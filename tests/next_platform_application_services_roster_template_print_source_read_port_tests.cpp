@@ -7,9 +7,11 @@
 #include "next/application/roster_template_print_source_read_query.h"
 #include "next/platform/application_services_roster_template_print_source_read_port.h"
 
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QUuid>
+#include <QVariant>
 #include <QtTest/QtTest>
 
 #include <string>
@@ -73,6 +75,7 @@ private slots:
     void loadsFullClassInfoAndSparseRosterSnapshotsInRequestedOrder();
     void emptyInputAndAllEmptyRostersSkipUnneededStatements();
     void repositoryBatchFailureIsTechnical();
+    void rejectsOutOfRangeIntegerRosterWidthWithoutPartialSnapshot();
     void fractionalColumnIndexIsRejectedByTemplatePrintRead();
 };
 
@@ -292,6 +295,58 @@ repositoryBatchFailureIsTechnical()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests::
+rejectsOutOfRangeIntegerRosterWidthWithoutPartialSnapshot()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Out of range template print roster width")
+        );
+    QVERIFY(classIdValue > 0);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, 'Student', 0, ?)"
+        )));
+    insertColumn.addBindValue(classIdValue);
+    insertColumn.addBindValue(QVariant::fromValue<qlonglong>(4294967297LL));
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery storedWidth(database);
+    QVERIFY(storedWidth.prepare(QStringLiteral(
+        "SELECT width, typeof(width) AS storage_type FROM roster_columns "
+        "WHERE class_id=?"
+        )));
+    storedWidth.addBindValue(classIdValue);
+    QVERIFY2(storedWidth.exec(), qPrintable(storedWidth.lastError().text()));
+    QVERIFY(storedWidth.next());
+    QCOMPARE(storedWidth.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedWidth.value("width").toLongLong(), qlonglong(4294967297LL));
+    QVERIFY(!storedWidth.next());
+
+    Platform::ApplicationServicesRosterTemplatePrintSourceReadPort port(
+        &services
+        );
+    const Application::RosterTemplatePrintSourceReadQuery query(port);
+    const auto result = query.execute({classId(classIdValue)});
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("class id %1").arg(classIdValue))
+            && diagnostic.contains(QStringLiteral("width"), Qt::CaseInsensitive)
+            && diagnostic.contains(QStringLiteral("4294967297")),
+        qPrintable(diagnostic)
+        );
 }
 
 void NextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests::

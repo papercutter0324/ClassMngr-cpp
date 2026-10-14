@@ -10,10 +10,44 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSet>
+#include <QVariant>
 
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <vector>
+
+namespace
+{
+
+std::optional<int> checkedRosterWidth(
+    const QVariant& widthValue,
+    const QString& storageType
+    )
+{
+    if (widthValue.isNull())
+    {
+        return 0;
+    }
+
+    if (storageType != QStringLiteral("integer"))
+    {
+        return widthValue.toInt();
+    }
+
+    bool valid = false;
+    const qlonglong width = widthValue.toLongLong(&valid);
+    if (!valid
+        || width < std::numeric_limits<int>::min()
+        || width > std::numeric_limits<int>::max())
+    {
+        return std::nullopt;
+    }
+
+    return static_cast<int>(width);
+}
+
+} // namespace
 
 RosterRepository::RosterRepository(
     QSqlDatabase& database
@@ -242,6 +276,7 @@ Result<Roster> RosterRepository::loadRoster(
         SELECT
             name,
             width,
+            typeof(width) AS width_storage_type,
             position,
             typeof(position) AS position_storage_type
         FROM roster_columns
@@ -285,9 +320,22 @@ Result<Roster> RosterRepository::loadRoster(
             query.value("name").toString()
             );
 
-        roster.columnWidths.append(
-            query.value("width").toInt()
+        const QVariant widthValue = query.value("width");
+        const auto width = checkedRosterWidth(
+            widthValue,
+            query.value("width_storage_type").toString()
             );
+        if (!width)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading roster columns failed for class id %1: width %2 is outside the supported int range."
+                    )
+                    .arg(classId)
+                    .arg(widthValue.toString())
+                );
+        }
+        roster.columnWidths.append(*width);
     }
 
     if (roster.columns.isEmpty())
@@ -664,7 +712,8 @@ RosterRepository::loadFullRostersImpl(
                requested.request_order AS request_order,
                roster_columns.id AS column_id,
                roster_columns.name AS name,
-               roster_columns.width AS width
+               roster_columns.width AS width,
+               typeof(roster_columns.width) AS width_storage_type
         FROM requested
         LEFT JOIN roster_columns
             ON roster_columns.class_id=requested.class_id
@@ -707,8 +756,27 @@ RosterRepository::loadFullRostersImpl(
         }
 
         Roster& roster = records[requestOrder].roster;
+        const QVariant widthValue = columnsQuery.value("width");
+        const auto width = checkedRosterWidth(
+            widthValue,
+            columnsQuery.value("width_storage_type").toString()
+            );
+        if (!width)
+        {
+            return std::unexpected(
+                (templatePrintContext
+                    ? QObject::tr(
+                        "Loading template print roster columns failed for class id %1: width %2 is outside the supported int range."
+                        )
+                    : QObject::tr(
+                        "Loading full roster columns failed for class id %1: width %2 is outside the supported int range."
+                        ))
+                    .arg(classId)
+                    .arg(widthValue.toString())
+                );
+        }
         roster.columns.append(columnsQuery.value("name").toString());
-        roster.columnWidths.append(columnsQuery.value("width").toInt());
+        roster.columnWidths.append(*width);
     }
     if (columnsQuery.lastError().isValid())
     {

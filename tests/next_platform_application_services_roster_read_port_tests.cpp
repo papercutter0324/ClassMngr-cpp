@@ -12,6 +12,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QVariant>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -247,6 +248,9 @@ class NextPlatformApplicationServicesRosterReadPortTests final : public QObject
 private slots:
     void rejectsNonCanonicalIdsBeforeSessionAccess();
     void readsCompleteRawSnapshotWithoutUiRowLimit();
+    void rejectsOutOfRangeIntegerRosterWidth();
+    void preservesNullAndBoundaryIntegerRosterWidths();
+    void preservesNonIntegerTextWidthFallback();
     void rejectsMalformedColumnPosition();
     void acceptsSparsePositionBeyondIntRange();
     void rejectsMalformedColumnIndexWithoutOverwritingColumnZero();
@@ -334,6 +338,174 @@ readsCompleteRawSnapshotWithoutUiRowLimit()
     QVERIFY(result.value().rows[23][4].empty());
     QCOMPARE(result.value().rows[24][2], std::u16string(u"Middle 25"));
     QCOMPARE(result.value().rows[37][4], std::u16string(u"\uC218\uC5C5 \U0001F4DA"));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rejectsOutOfRangeIntegerRosterWidth()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Out of range roster width")
+        );
+    QVERIFY(createdClass);
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, 'Student', 0, ?)"
+        )));
+    insertColumn.addBindValue(*createdClass);
+    insertColumn.addBindValue(QVariant::fromValue<qlonglong>(4294967297LL));
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery storedWidth(database);
+    QVERIFY(storedWidth.prepare(QStringLiteral(
+        "SELECT width, typeof(width) AS storage_type FROM roster_columns "
+        "WHERE class_id=?"
+        )));
+    storedWidth.addBindValue(*createdClass);
+    QVERIFY2(storedWidth.exec(), qPrintable(storedWidth.lastError().text()));
+    QVERIFY(storedWidth.next());
+    QCOMPARE(storedWidth.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedWidth.value("width").toLongLong(), qlonglong(4294967297LL));
+    QVERIFY(!storedWidth.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(result.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("class id %1").arg(*createdClass))
+            && diagnostic.contains(QStringLiteral("width"), Qt::CaseInsensitive)
+            && diagnostic.contains(QStringLiteral("4294967297")),
+        qPrintable(diagnostic)
+        );
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+preservesNullAndBoundaryIntegerRosterWidths()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Boundary roster widths")
+        );
+    QVERIFY(createdClass);
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    const QVector<QPair<QString, QVariant>> columns{
+        {QStringLiteral("Minimum"), QVariant::fromValue<qlonglong>(
+            std::numeric_limits<int>::min())},
+        {QStringLiteral("Null"), QVariant{}},
+        {QStringLiteral("Maximum"), QVariant::fromValue<qlonglong>(
+            std::numeric_limits<int>::max())}
+    };
+    for (int index = 0; index < columns.size(); ++index)
+    {
+        insertColumn.bindValue(0, *createdClass);
+        insertColumn.bindValue(1, columns[index].first);
+        insertColumn.bindValue(2, index);
+        insertColumn.bindValue(3, columns[index].second);
+        QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+    }
+
+    QSqlQuery storedWidths(database);
+    QVERIFY(storedWidths.prepare(QStringLiteral(
+        "SELECT width, typeof(width) AS storage_type FROM roster_columns "
+        "WHERE class_id=? ORDER BY position"
+        )));
+    storedWidths.addBindValue(*createdClass);
+    QVERIFY2(storedWidths.exec(), qPrintable(storedWidths.lastError().text()));
+    QVERIFY(storedWidths.next());
+    QCOMPARE(storedWidths.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedWidths.value("width").toLongLong(),
+        qlonglong(std::numeric_limits<int>::min()));
+    QVERIFY(storedWidths.next());
+    QCOMPARE(storedWidths.value("storage_type").toString(), QStringLiteral("null"));
+    QVERIFY(storedWidths.value("width").isNull());
+    QVERIFY(storedWidths.next());
+    QCOMPARE(storedWidths.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedWidths.value("width").toLongLong(),
+        qlonglong(std::numeric_limits<int>::max()));
+    QVERIFY(!storedWidths.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(result.value().columnWidths, (std::vector<int>{
+        std::numeric_limits<int>::min(),
+        0,
+        std::numeric_limits<int>::max()
+    }));
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+preservesNonIntegerTextWidthFallback()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Text roster width fallback")
+        );
+    QVERIFY(createdClass);
+    QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, 'Student', 0, ?)"
+        )));
+    insertColumn.addBindValue(*createdClass);
+    insertColumn.addBindValue(QStringLiteral("not-a-width"));
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery storedWidth(database);
+    QVERIFY(storedWidth.prepare(QStringLiteral(
+        "SELECT width, typeof(width) AS storage_type FROM roster_columns "
+        "WHERE class_id=?"
+        )));
+    storedWidth.addBindValue(*createdClass);
+    QVERIFY2(storedWidth.exec(), qPrintable(storedWidth.lastError().text()));
+    QVERIFY(storedWidth.next());
+    QCOMPARE(storedWidth.value("storage_type").toString(), QStringLiteral("text"));
+    QCOMPARE(storedWidth.value("width").toString(), QStringLiteral("not-a-width"));
+    const int legacyWidth = storedWidth.value("width").toInt();
+    QCOMPARE(legacyWidth, 0);
+    QVERIFY(!storedWidth.next());
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(result.value().columnWidths, (std::vector<int>{legacyWidth}));
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

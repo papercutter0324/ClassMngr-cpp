@@ -21,6 +21,7 @@ class ClassTransferExportSourceTests : public QObject
     Q_OBJECT
 private slots:
     void successfulSourceHasEveryRequiredStageAndSanitizedProjection();
+    void outOfRangeIntegerRosterWidthFailsTheRosterStage();
     void malformedRosterRowIndexReturnsEstablishedReadError();
     void fractionalRosterRowIndexReturnsEstablishedReadError();
     void sparseIntegerRosterRowRemainsValid();
@@ -53,6 +54,55 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
     auto database = services.databaseSession()->database(); QVERIFY(database.transaction()); QVERIFY(database.rollback());
+}
+void ClassTransferExportSourceTests::outOfRangeIntegerRosterWidthFailsTheRosterStage()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral(
+        "INSERT INTO classes(name) VALUES('Out of range roster width')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery insertColumn(database);
+    QVERIFY(insertColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns(class_id,name,position,width) VALUES(?, 'Student', 0, ?)")));
+    insertColumn.addBindValue(classId);
+    insertColumn.addBindValue(QVariant::fromValue<qlonglong>(4294967297LL));
+    QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+
+    QSqlQuery storedWidth(database);
+    QVERIFY(storedWidth.prepare(QStringLiteral(
+        "SELECT width, typeof(width) AS storage_type FROM roster_columns WHERE class_id=?")));
+    storedWidth.addBindValue(classId);
+    QVERIFY2(storedWidth.exec(), qPrintable(storedWidth.lastError().text()));
+    QVERIFY(storedWidth.next());
+    QCOMPARE(storedWidth.value("storage_type").toString(), QStringLiteral("integer"));
+    QCOMPARE(storedWidth.value("width").toLongLong(), qlonglong(4294967297LL));
+    QVERIFY(!storedWidth.next());
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    const auto source = port.readSource({{id(classId)}});
+    QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& roster = source.value().classes.front().roster;
+    QCOMPARE(roster.state(), ClassExportStageState::Error);
+    QCOMPARE(roster.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(roster.error().message);
+    QVERIFY2(
+        diagnostic.contains(QStringLiteral("class id %1").arg(classId))
+            && diagnostic.contains(QStringLiteral("width"), Qt::CaseInsensitive)
+            && diagnostic.contains(QStringLiteral("4294967297")),
+        qPrintable(diagnostic)
+        );
+
+    const auto exported = ClassTransferExportQuery(port).execute({{id(classId)}});
+    QVERIFY(!exported);
+    QCOMPARE(exported.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(exported.error().message).contains(
+        QStringLiteral("width"), Qt::CaseInsensitive));
 }
 void ClassTransferExportSourceTests::malformedRosterRowIndexReturnsEstablishedReadError()
 {
