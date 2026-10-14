@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F893 is accepted and two independent reviews found no official Deferred trigger newly actionable; F894, the Co-Teacher Page read, is next for baseline work, with Gates 1/2 Partial and the formal exit gate Open.
+- Current note: F894, the Co-Teacher Page read, has a captured baseline and acceptance criteria; implementation is next, with Gates 1/2 Partial and the formal exit gate Open.
 
 ### Slice discovery batches
 
@@ -71,7 +71,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch 303:
-  - F894 - Co-Teacher Page read: baseline missing-parent behavior while preserving existing-class defaults and schedules.
+  - F894 - Co-Teacher Page read: return typed NotFound only for a confirmed missing class parent while preserving existing-class defaults and schedules.
   - F895 - Selected Class Subtitle read: check parent provenance across subtitle, schedule, and optional teacher reads.
   - F896 - Roster Print Class Info read: check parent provenance while preserving metadata defaults and schedules.
   - F897 - Roster read: evaluate whether typed parent provenance is needed while keeping independent empty-roster behavior.

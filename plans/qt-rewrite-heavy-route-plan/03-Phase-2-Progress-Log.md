@@ -36942,3 +36942,44 @@ read, so the acceptance boundary must preserve existing-class defaults and
 independent schedule behavior while deciding the typed result for an absent
 parent. Four further bounded read leads remain in Batch 303. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F894 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public-port baseline added a temporary assertion confirming
+that positive class ID `812345` has no row in `classes`. The existing-class
+case without `class_info` returned successful default fields and an empty
+successful teacher display name while preserving its Wednesday 2:00 PM then
+Monday 1:00 PM schedules. The unknown class returned the same successful
+defaults with no schedule. The temporary assertion was removed and the test
+file's SHA-256 returned to its original value.
+
+The standard `build/windows-x64-debug` sequential builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`
+succeeded after initial MSBuild FileTracker access-denied failures and bounded
+elevated retries. The matching Debug CTest passed 1/1 (CTest #334). A stale
+dependency warning for `teacher_import_plan_mapper.h` appeared in the test
+target build; successful builds emitted no compiler warnings. No full suite
+ran.
+
+Read-only inspection found that the repository loads metadata from
+`class_info WHERE class_id = ?` and then loads `class_times` separately, so it
+cannot tell an unknown class from an existing parent with no metadata. The
+typed port currently treats both as successful defaults. F894 will add an
+explicit parent-missing outcome using a `classes`-rooted metadata query, while
+keeping the existing record-returning repository method as a compatibility
+wrapper. The typed port will preserve its successful outer snapshot and map
+only confirmed parent absence to recoverable `NotFound` for both class fields
+and the dependent teacher display name. Existing classes without
+`class_info` keep defaults, schedules, and an empty successful display name.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and compatibility | A detailed repository outcome identifies a missing parent from the `classes` row, without diagnostic-text inference; the legacy record API retains its default-success behavior for an unknown ID. |
+| Typed missing-parent result | The outer snapshot remains successful; only confirmed parent absence makes `classFields` and `teacherDisplayName` recoverable `NotFound`. Cover never-present and deleted parents. |
+| Existing-parent behavior | A class without `class_info` retains successful default fields, its ordered schedule, and an empty successful teacher name. Normal metadata mapping and the independent missing-teacher display-name failure remain unchanged. |
+| Operational and input behavior | Invalid IDs and unavailable sessions remain unchanged. Metadata/schedule execution and cursor failures do not become parent-missing outcomes; existing Technical component mapping and one-metadata/one-schedule successful-path metrics remain intact. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests` in `build/windows-x64-debug`; run only its matching Debug CTest. No full suite. |
+
+F894 baseline and acceptance are complete; implementation is next. The 13
+official Deferred candidates have not yet been re-audited after F894. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
