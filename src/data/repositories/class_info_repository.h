@@ -80,6 +80,12 @@ struct ClassSubtitleReadRecord final
     QList<ClassTime> regularTimes;
 };
 
+struct ClassSubtitleReadOutcome final
+{
+    ClassSubtitleReadRecord record;
+    bool parentMissing = false;
+};
+
 struct ClassPageDetailsRegularTime final
 {
     QString day;
@@ -562,6 +568,10 @@ public:
     [[nodiscard]] Result<ClassSubtitleReadRecord> loadClassSubtitleRecord(
         int classId
         );
+    // Typed callers can distinguish an absent parent while the legacy
+    // record-returning wrapper keeps its successful defaults for unknown IDs.
+    [[nodiscard]] Result<ClassSubtitleReadOutcome>
+        loadClassSubtitleRecordDetailed(int classId);
     [[nodiscard]] Result<QList<ClassSubtitleBatchReadRecord>>
         loadClassSubtitleRecords(const QList<int>& classIds);
     [[nodiscard]] Result<std::vector<MyClassesClassInformationBatchReadEntry>>

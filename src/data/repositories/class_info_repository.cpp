@@ -2335,6 +2335,18 @@ Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
     int classId
     )
 {
+    const auto loaded = loadClassSubtitleRecordDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->record);
+}
+
+Result<ClassSubtitleReadOutcome>
+ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
+{
     if (classId <= 0)
     {
         return std::unexpected(
@@ -2344,14 +2356,20 @@ Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
-    ClassSubtitleReadRecord record;
-    record.classId = classId;
+    ClassSubtitleReadOutcome outcome;
+    outcome.record.classId = classId;
 
     QSqlQuery query(m_database);
     query.prepare(R"(
-        SELECT teacher_id, class_grade, class_level
-        FROM class_info
-        WHERE class_id = ?
+        WITH requested(class_id) AS (VALUES (?))
+        SELECT requested.class_id AS requested_class_id,
+               classes.id AS parent_class_id,
+               ci.teacher_id AS teacher_id,
+               ci.class_grade AS class_grade,
+               ci.class_level AS class_level
+        FROM requested
+        LEFT JOIN classes ON classes.id = requested.class_id
+        LEFT JOIN class_info ci ON ci.class_id = requested.class_id
     )");
     query.addBindValue(classId);
 
@@ -2365,23 +2383,41 @@ Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
         return std::unexpected(loadedFields.error().userMessage());
     }
 
-    if (query.next())
+    const bool parentRowFound = query.next();
+    if (query.lastError().isValid())
     {
-        const QVariant teacherId = query.value("teacher_id");
-        if (!teacherId.isNull())
-        {
-            bool teacherIdOk = false;
-            record.teacherId = teacherId.toLongLong(&teacherIdOk);
-            if (!teacherIdOk)
-            {
-                return std::unexpected(QObject::tr(
-                    "Loading class subtitle failed: the database returned an invalid teacher identifier."
-                    ));
-            }
-        }
-        record.grade = query.value("class_grade").toString();
-        record.level = query.value("class_level").toString();
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class subtitle details"),
+            {},
+            identity
+            ).userMessage());
     }
+
+    if (!parentRowFound)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading class subtitle failed: no result was returned for class id %1."
+            ).arg(classId));
+    }
+
+    outcome.parentMissing = query.value("parent_class_id").isNull();
+    outcome.record.classId = query.value("requested_class_id").toInt();
+
+    const QVariant teacherId = query.value("teacher_id");
+    if (!teacherId.isNull())
+    {
+        bool teacherIdOk = false;
+        outcome.record.teacherId = teacherId.toLongLong(&teacherIdOk);
+        if (!teacherIdOk)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading class subtitle failed: the database returned an invalid teacher identifier."
+                ));
+        }
+    }
+    outcome.record.grade = query.value("class_grade").toString();
+    outcome.record.level = query.value("class_level").toString();
 
     query.prepare(R"(
         SELECT day, start_time
@@ -2407,10 +2443,20 @@ Result<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitleRecord(
         time.day = query.value("day").toString();
         time.startTime = query.value("start_time").toString();
         time.endTime.clear();
-        record.regularTimes.append(std::move(time));
+        outcome.record.regularTimes.append(std::move(time));
     }
 
-    return record;
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class subtitle schedule"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    return outcome;
 }
 
 Result<QList<ClassSubtitleBatchReadRecord>>

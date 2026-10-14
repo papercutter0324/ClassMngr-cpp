@@ -63,12 +63,14 @@ public:
                 ));
         }
 
-        Result<ClassSubtitleReadRecord> loadedClass = [&]()
-            -> Result<ClassSubtitleReadRecord>
+        Result<ClassSubtitleReadOutcome> loadedClass = [&]()
+            -> Result<ClassSubtitleReadOutcome>
         {
             try
             {
-                return classRepository->loadClassSubtitleRecord(*legacyClassId);
+                return classRepository->loadClassSubtitleRecordDetailed(
+                    *legacyClassId
+                    );
             }
             catch (const std::exception&)
             {
@@ -100,7 +102,7 @@ public:
                 );
         }
 
-        if (loadedClass->classId != *legacyClassId)
+        if (loadedClass->record.classId != *legacyClassId)
         {
             return Application::SelectedClassSubtitleReadResult::failure(error(
                 Domain::ErrorCode::Validation,
@@ -108,13 +110,33 @@ public:
                 ));
         }
 
+        if (loadedClass->parentMissing)
+        {
+            const Domain::OperationError missingClass = error(
+                Domain::ErrorCode::NotFound,
+                "The selected class no longer exists."
+                );
+            Application::SelectedClassSubtitleReadSnapshot snapshot{
+                classId,
+                Domain::Result<
+                    Application::SelectedClassSubtitleFields
+                    >::failure(missingClass),
+                Domain::Result<std::optional<
+                    Application::SelectedClassSubtitleTeacherFields
+                    >>::failure(missingClass)
+            };
+            return Application::SelectedClassSubtitleReadResult::success(
+                std::move(snapshot)
+                );
+        }
+
         Application::SelectedClassSubtitleFields classFields;
-        classFields.classGrade = loadedClass->grade.toStdU16String();
-        classFields.classLevel = loadedClass->level.toStdU16String();
+        classFields.classGrade = loadedClass->record.grade.toStdU16String();
+        classFields.classLevel = loadedClass->record.level.toStdU16String();
         classFields.regularSchedule.reserve(
-            static_cast<std::size_t>(loadedClass->regularTimes.size())
+            static_cast<std::size_t>(loadedClass->record.regularTimes.size())
             );
-        for (const ClassTime& row : loadedClass->regularTimes)
+        for (const ClassTime& row : loadedClass->record.regularTimes)
         {
             classFields.regularSchedule.push_back({
                 row.day.toStdU16String(),
@@ -129,7 +151,7 @@ public:
                     Application::SelectedClassSubtitleTeacherFields
                     >>::success(std::nullopt);
 
-        if (loadedClass->teacherId > 0)
+        if (loadedClass->record.teacherId > 0)
         {
             TeacherRepository* const teacherRepository =
                 session->teacherRepository();
@@ -150,7 +172,7 @@ public:
                     try
                     {
                         return teacherRepository->loadTeacherDisplayNameFields(
-                            loadedClass->teacherId
+                            loadedClass->record.teacherId
                             );
                     }
                     catch (const std::exception&)

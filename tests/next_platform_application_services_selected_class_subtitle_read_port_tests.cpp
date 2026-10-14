@@ -78,8 +78,11 @@ class NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests final
 private slots:
     void readsOnlySubtitleProjectionFromActiveSessionRepositories();
     void readsDisplayNamesForWideAssignedTeacherId();
+    void missingParentsHaveRecoverableComponentErrorsAndLegacyDefaults();
+    void existingParentWithoutMetadataReadsOrderedSchedule();
     void missingSessionAndInvalidIdsDoNotFallBackToServices();
     void classAndTeacherFailuresRemainIndependent();
+    void metadataFailureRemainsTechnical();
 };
 
 void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
@@ -226,6 +229,131 @@ readsDisplayNamesForWideAssignedTeacherId()
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
+missingParentsHaveRecoverableComponentErrorsAndLegacyDefaults()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    constexpr int neverPresentClassId = 2'000'000'000;
+    Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
+    const Application::SelectedClassSubtitleReadQuery query(port);
+    const auto neverPresent = query.execute(classId(neverPresentClassId));
+    QVERIFY(neverPresent);
+    QVERIFY(neverPresent.value().classId == classId(neverPresentClassId));
+    QVERIFY(!neverPresent.value().classFields);
+    QCOMPARE(neverPresent.value().classFields.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(neverPresent.value().classFields.error().recoverable);
+    QVERIFY(!neverPresent.value().assignedTeacher);
+    QCOMPARE(neverPresent.value().assignedTeacher.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(neverPresent.value().assignedTeacher.error().recoverable);
+
+    const auto legacyUnknown = services.databaseSession()->classInfoRepository()
+        ->loadClassSubtitleRecord(neverPresentClassId);
+    QVERIFY(legacyUnknown);
+    QCOMPARE(legacyUnknown->classId, neverPresentClassId);
+    QCOMPARE(legacyUnknown->teacherId, qint64(-1));
+    QVERIFY(legacyUnknown->grade.isEmpty());
+    QVERIFY(legacyUnknown->level.isEmpty());
+    QVERIFY(legacyUnknown->regularTimes.isEmpty());
+
+    const auto deletedClass = services.classService()->create(
+        QStringLiteral("Deleted Subtitle Parent")
+        );
+    QVERIFY(deletedClass);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(*deletedClass, -1)
+        ));
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    QVERIFY(deleteParent.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id = ?")));
+    deleteParent.addBindValue(*deletedClass);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+
+    const auto deleted = query.execute(classId(*deletedClass));
+    QVERIFY(deleted);
+    QVERIFY(deleted.value().classId == classId(*deletedClass));
+    QVERIFY(!deleted.value().classFields);
+    QCOMPARE(deleted.value().classFields.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.value().classFields.error().recoverable);
+    QVERIFY(!deleted.value().assignedTeacher);
+    QCOMPARE(deleted.value().assignedTeacher.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(deleted.value().assignedTeacher.error().recoverable);
+
+    const auto legacyDeleted = services.databaseSession()->classInfoRepository()
+        ->loadClassSubtitleRecord(*deletedClass);
+    QVERIFY(legacyDeleted);
+    QCOMPARE(legacyDeleted->classId, *deletedClass);
+    QCOMPARE(legacyDeleted->teacherId, qint64(-1));
+    QCOMPARE(legacyDeleted->grade, QStringLiteral(" E4 "));
+    QCOMPARE(legacyDeleted->level, QStringLiteral("Theseus"));
+    QCOMPARE(legacyDeleted->regularTimes.size(), 2);
+    QCOMPARE(legacyDeleted->regularTimes[0].day, QStringLiteral("Monday"));
+    QCOMPARE(legacyDeleted->regularTimes[0].startTime,
+             QStringLiteral("9:00 AM"));
+    QCOMPARE(legacyDeleted->regularTimes[1].day, QStringLiteral("Friday"));
+    QCOMPARE(legacyDeleted->regularTimes[1].startTime,
+             QStringLiteral("9:00 AM"));
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
+existingParentWithoutMetadataReadsOrderedSchedule()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("No Subtitle Metadata")
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery insertTimes(services.databaseSession()->database());
+    QVERIFY(insertTimes.prepare(QStringLiteral(R"(
+        INSERT INTO class_times (
+            id, class_id, day, start_time, end_time
+        ) VALUES
+            (22, ?, 'Friday', '9:00 AM', '9:55 AM'),
+            (9, ?, 'Monday', '9:00 AM', '9:55 AM')
+    )")));
+    insertTimes.addBindValue(*createdClass);
+    insertTimes.addBindValue(*createdClass);
+    QVERIFY2(insertTimes.exec(), qPrintable(insertTimes.lastError().text()));
+
+    Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
+    const Application::SelectedClassSubtitleReadQuery query(port);
+    const auto result = query.execute(classId(*createdClass));
+    QVERIFY(result);
+    QVERIFY(result.value().classFields);
+    QVERIFY(result.value().assignedTeacher);
+    QVERIFY(!result.value().assignedTeacher.value().has_value());
+
+    const auto& fields = result.value().classFields.value();
+    QVERIFY(fields.classGrade.empty());
+    QVERIFY(fields.classLevel.empty());
+    QCOMPARE(fields.regularSchedule.size(), std::size_t(2));
+    QVERIFY((fields.regularSchedule[0] ==
+        Application::SelectedClassSubtitleScheduleRow{
+            u"Monday", u"9:00 AM"
+        }));
+    QVERIFY((fields.regularSchedule[1] ==
+        Application::SelectedClassSubtitleScheduleRow{
+            u"Friday", u"9:00 AM"
+        }));
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
 missingSessionAndInvalidIdsDoNotFallBackToServices()
 {
     ApplicationServices services;
@@ -277,6 +405,8 @@ classAndTeacherFailuresRemainIndependent()
     const auto classFailure = query.execute(classId(*createdClass));
     QVERIFY(classFailure);
     QVERIFY(!classFailure.value().classFields);
+    QCOMPARE(classFailure.value().classFields.error().code,
+             Domain::ErrorCode::Technical);
     QVERIFY(classFailure.value().assignedTeacher);
     QVERIFY(!classFailure.value().assignedTeacher.value().has_value());
 
@@ -300,6 +430,35 @@ classAndTeacherFailuresRemainIndependent()
     QVERIFY(!teacherFailure.value().assignedTeacher);
     QCOMPARE(teacherFailure.value().assignedTeacher.error().code,
              Domain::ErrorCode::Technical);
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
+metadataFailureRemainsTechnical()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Metadata Failure")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(*createdClass, -1)
+        ));
+
+    QSqlQuery dropMetadata(services.databaseSession()->database());
+    QVERIFY(dropMetadata.exec(QStringLiteral("DROP TABLE class_info")));
+
+    Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
+    const Application::SelectedClassSubtitleReadQuery query(port);
+    const auto result = query.execute(classId(*createdClass));
+    QVERIFY(result);
+    QVERIFY(!result.value().classFields);
+    QCOMPARE(result.value().classFields.error().code,
+             Domain::ErrorCode::Technical);
+    QVERIFY(result.value().assignedTeacher);
+    QVERIFY(!result.value().assignedTeacher.value().has_value());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests)
