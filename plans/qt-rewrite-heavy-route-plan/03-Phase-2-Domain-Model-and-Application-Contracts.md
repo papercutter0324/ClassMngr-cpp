@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F901 My Classes class-information batch parent provenance is accepted at source/test commit `514c41ae61e50ab591fa8d1fc56932a60b6f1527`; F902 My Classes class-summary batch parent provenance is next, while Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F902 My Classes class-summary batch parent provenance is accepted at source/test commit `647d824c679855b5b03c59033358574a513e8c68`; F903 Speaking Evaluation single matrix read parent provenance is next, while Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F902 - My Classes class-summary batch parent provenance: classify parent absence in the batch projection.
 - F903 - Speaking Evaluation single matrix read parent provenance: classify parent absence in the result read.
 - F904 - Speaking Evaluation batch matrix read parent provenance: classify parent absence in the batch result read.
 - F905 - Speaking Evaluation roster-names projection parent provenance: classify parent absence in the roster-names projection.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F901 accepted; F902 selected)
+### Current state - 2026-10-15 (F902 accepted; F903 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -311,9 +311,28 @@ and focused-test sources compiled, and exact Debug CTest #326 passed 1/1 with
 no warnings. No full suite ran. No cursor-iteration failure fixture exists;
 the cursor checks and fallback were reviewed in source. Two independent
 post-F901 audits rechecked all 13 official Deferred entries; none became
-actionable and all remain unchanged. F902, My Classes class-summary batch
-parent provenance, is next; F903-F908 remain in order. Gates 1/2 remain Partial
-and the formal exit gate remains Open.
+actionable and all remain unchanged. F902 is accepted at source/test commit
+`647d824c679855b5b03c59033358574a513e8c68`. The My Classes class-summary
+batch now roots metadata and both schedule types in `classes`, returns
+recoverable per-entry `NotFound` for a confirmed missing parent, and preserves
+ordered successful siblings. A present parent without optional `class_info`
+retains default fields and real schedules. The fallback path also proves the
+parent before classifying absence; query/fetch errors remain Technical. Its
+public-port baseline had shown orphan grade/level and regular/intensive
+schedules leaking from a deleted parent. The mixed-batch regression checks
+deleted and never-present IDs, a populated sibling, an existing parent without
+`class_info`, and normal-path metrics. The schedule-query failure regression
+checks parent-aware fallback and Technical failures for present siblings.
+Independent Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`
+passed with `/p:TrackFileAccess=false /p:ForceRebuild=true`; exact Debug CTest
+#326 passed 1/1 with no build warnings. No full suite ran. Cursor-iteration
+error injection is unavailable in this fixture; the explicit post-iteration
+error checks were reviewed. Two independent post-F902 audits reviewed all 13
+official Deferred candidates; none became actionable and the list is
+unchanged. F903, Speaking Evaluation single-matrix-read parent provenance, is
+next, followed by F904's batch matrix read. Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

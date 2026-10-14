@@ -37370,7 +37370,7 @@ loader and metrics were left unchanged
 F901-F902 cover My Classes summaries and selected details
 ([projection contract](03-Phase-2-Domain-Model-and-Application-Contracts.md:222));
 F903-F905 cover evaluation editing and related reads
-([use cases](03-Phase-2-Domain-Model-and-Application-Contracts.md:172));
+([use cases](03-Phase-2-Domain-Model-and-Application-Contracts.md:169));
 F906-F908 are lower-readiness validation, student-count, and navigation
 follow-ups from the code inventory, retained after plan cross-check.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
@@ -37534,3 +37534,37 @@ with the slice and found zero newly actionable; all remain unchanged. F902,
 My Classes class-summary batch parent provenance, is next; F903-F908 remain
 in their existing Batch 304 order. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F902 accepted; post-slice Deferred audit clear; F903 next - 2026-10-15
+
+The public batch baseline requested `[1, 2, 10002, 3]` and returned outer
+success with all inner results successful. Deleted parent 1 leaked grade/level
+and Thursday regular plus Saturday intensive schedules; sibling 2 was correct;
+never-present 10002 and present parent 3 without `class_info` returned defaults.
+SQLite confirmed parent 1 was absent with retained child rows and parent 3
+existed without `class_info`. Baseline metrics were one batch call, four
+requested IDs, one metadata statement, one schedule statement, and no fallback.
+
+F902 is accepted at source/test commit
+`647d824c679855b5b03c59033358574a513e8c68`. Summary metadata and regular and
+intensive schedules are now rooted at `classes`, and batch and fallback paths
+carry parent-missing provenance. Only confirmed absence maps to per-entry
+recoverable `NotFound`; query/fetch failures remain `Technical`. A present
+parent without optional `class_info` remains a successful default summary
+with its actual schedules. Mixed batches preserve request order and valid
+siblings. The forced schedule-query failure fixture confirms fallback returns
+`NotFound` for the absent parent and `Technical` for present siblings, with
+three fallback reads. Normal metrics remain one call, one metadata statement,
+one schedule statement, and zero fallback.
+
+Independent verification built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests`
+in the existing `build/windows-x64-debug` with
+`/p:TrackFileAccess=false /p:ForceRebuild=true`. Exact Debug CTest #326 passed
+1/1 with no warnings. No cursor-iteration failure fixture exists; those error
+checks were source-reviewed. No full suite ran.
+
+Two independent audits of all 13 exact official Deferred candidates found
+none newly actionable; the list remains unchanged. F903, Speaking Evaluation
+single matrix read parent provenance, is next. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.
