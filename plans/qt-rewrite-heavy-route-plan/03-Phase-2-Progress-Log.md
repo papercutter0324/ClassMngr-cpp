@@ -37021,3 +37021,48 @@ Batch 303 proceeds with F895, the Selected Class Subtitle read. Its candidate
 checks parent provenance across subtitle, schedule, and optional teacher
 reads. Four further bounded read leads remain ordered in the active batch.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F895 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public-port baseline used positive class ID `2000000000`; a
+direct SQL check confirmed no matching `classes` row. The typed port returned
+outer success, successful class fields with empty grade/level and no schedule,
+and successful assigned-teacher `nullopt`. A real class with no `class_info`
+row and one schedule row returned the same empty defaults while preserving
+that schedule and teacher `nullopt`. Existing teacher regressions also passed:
+absent teacher remained successful `nullopt`, while teacher lookup failure
+remained an independent `Technical` result. The existing schedule-table
+failure returned outer success and failed class fields, but did not assert the
+component error code. The temporary baseline assertions were removed; the
+test-file SHA-256 before and after is
+`A801CF7E47A17AEFC571E7EF8F4B33C5D15C01F5E49225348DD04B487E7A43DD`.
+
+The standard `build/windows-x64-debug` builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`
+succeeded after the standard attempts hit MSBuild FileTracker access denial
+and bounded elevated retries. The matching Debug CTest passed 1/1 (CTest #329).
+The successful test-target build reported a stale generated dependency on
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
+
+Source inspection found `loadClassSubtitleRecord()` reads `class_info` and
+then `class_times` independently without checking `classes`, making absent
+and metadata-free parents indistinguishable. F895 will add an explicit
+detailed parent outcome while preserving the legacy record API's default
+behavior. The typed port will keep its successful outer snapshot and map only
+a confirmed missing parent to recoverable `NotFound` for `classFields` and
+`assignedTeacher`. An existing class without `class_info` retains empty
+subtitle defaults, its ordered schedule, and teacher `nullopt`. Preserve
+independent teacher errors and ensure SQL execution/cursor failures are not
+classified as missing parents.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Parent provenance and compatibility | The detailed read identifies a missing `classes` parent explicitly without diagnostic-text inference; `loadClassSubtitleRecord()` retains its record-returning legacy defaults for unknown IDs. |
+| Typed missing-parent result | Never-present and deleted parents produce an outer-success snapshot with recoverable `NotFound` for both class fields and assigned teacher. |
+| Existing-parent optional data | Existing class without `class_info` keeps successful empty grade/level, ordered schedule rows, and successful teacher `nullopt`; full subtitle projection remains narrow and unchanged. |
+| Independent failures | Existing teacher lookup failure remains independent from successful class fields. Metadata/schedule SQL or cursor failures remain operational (class fields Technical) rather than parent-missing outcomes; include focused SQL failure assertions where coherent. Invalid IDs and unavailable sessions remain unchanged. |
+| Focused verification | Sequentially build `ClassMngr` and `ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests` in `build/windows-x64-debug`; run only its matching Debug CTest (#329). No full suite. |
+
+F895 baseline and acceptance are complete; implementation is next. F896-F898
+remain ordered in Batch 303. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.

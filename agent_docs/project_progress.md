@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F894 accepted; F895 selected)
+### Current state - 2026-10-15 (F895 baseline captured; implementation next)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -190,9 +190,20 @@ passed in `build/windows-x64-debug`; the exact CTest passed 1/1 (#334) after
 bounded elevated FileTracker retries, with no compiler warnings. Cursor-fetch
 branches were not directly injected; no full suite ran. Two independent
 post-F894 audits found no Deferred trigger newly actionable, so all 13 remain
-unchanged. Batch 303 proceeds with F895, the Selected Class Subtitle read;
-four further bounded leads remain ordered in the Phase 2 plan. Gates 1/2
-remain Partial and the formal exit gate remains Open.
+unchanged. F895's public-port baseline confirmed that an absent parent ID
+`2000000000` currently returns outer success with empty successful class
+fields and assigned-teacher `nullopt`, indistinguishable from an existing
+class without `class_info` (which retains a schedule row). The temporary test
+change was restored byte-for-byte. Sequential builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`
+in `build/windows-x64-debug` passed after bounded elevated FileTracker
+retries, and the exact CTest passed 1/1 (#329). The target build reported a
+stale generated dependency on `teacher_import_plan_mapper.h`; no full suite
+ran. F895 acceptance is defined: return explicit typed `NotFound` only for a
+confirmed missing parent, retain legacy defaults and existing-parent optional
+metadata/schedule/teacher behavior, and preserve independent operational
+errors. F896-F898 remain ordered in Batch 303. Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
