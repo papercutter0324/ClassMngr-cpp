@@ -35610,35 +35610,56 @@ found no newly actionable entry; all 13 remain unchanged. Batch 288 now selects
 F874, with F875 upcoming. Gates 1/2 remain Partial and the formal exit gate
 remains Open.
 
-### F874 Testing-class list persisted-ID validation - selected, not implemented - 2026-10-14
+### F874 Testing-class list persisted-ID validation - accepted; F875 next - 2026-10-14
 
-`TestingClassRepository::loadTestingClasses()` reads through
-`readTestingClass()`, which currently narrows persisted `class_id` with
-`toInt()`. The public compatibility result is forwarded by
-`DataService::loadTestingClasses()` and `ScheduleService::testingClasses()`;
-there is no current UI caller. The separate `loadTestingClassChoices()` path
-was hardened by F868. F872's public DataService compatibility fix is
-precedent for addressing this exposed legacy contract.
+F874 is accepted at source/test commit
+`3e74c455fc20f1675651ae772e8266382454b5e7` (`Phase 2: validate persisted
+testing class IDs`). The required real-SQLite baseline seeded matching
+`class_info` and `testing_classes` rows for class IDs `1` and `4294967297`;
+`loadTestingClasses()` returned both IDs as `1` while SQL retained distinct
+INTEGER rows.
 
-Before editing production code, use the existing fixture in
-`tests/testing_class_repository_tests.cpp` to seed class INTEGER IDs `1` and
-`4294967297` with matching `class_info` and `testing_classes` rows. Call
-`loadTestingClasses()` and confirm both returned IDs alias to `1` while direct
-SQL shows distinct rows. Stop and revise if the alias is not reproduced.
-Then validate stored IDs as qint64 conversion-success, positive, and
-`<= INT_MAX` before narrowing; a wide ID must return typed legacy Result
-failure with no partial list and leave storage unchanged. Preserve IDs `1`
-and `INT_MAX`, fields, ordering, API/schema, and the distinct F868 choices
-path.
+`readTestingClass()` now requires `toLongLong` conversion success and validates
+IDs in `1..INT_MAX` before casting. Wide and zero IDs fail; valid IDs `1` and
+`INT_MAX` preserve fields and ordering. Public reads return no partial list on
+failure, snapshots confirm storage is unchanged, and the separate F868 choices
+path remains unchanged and covered.
 
-| Acceptance point | Required evidence |
+The executor and independent Tester sequentially built `ClassMngr`, then
+`ClassMngrTestingClassRepositoryTests`, in `build/windows-x64-debug`; the exact
+CTest passed 1/1. FileTracker `E_ACCESSDENIED` required an elevated retry; the
+successful builds had no warnings. No full suite ran.
+
+| Acceptance point | Evidence |
 | --- | --- |
-| Mandatory baseline | Reproduce the wide-ID alias in the existing real-SQLite repository fixture and confirm both stored rows remain distinct; stop if not reproduced. |
-| Range failure and no partial list | Validate persisted IDs as qint64 before narrowing; wide ID returns typed failure with no partial rows and no database changes. |
-| Compatibility | Preserve IDs `1` and `INT_MAX`, fields, ordering, public API/schema, and the independent F868 choices path. |
-| Scope and focused verification | Change only `src/data/repositories/testing_class_repository.cpp` and `tests/testing_class_repository_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrTestingClassRepositoryTests` in `build/windows-x64-debug`; run exactly CTest `ClassMngrTestingClassRepositoryTests`. No new target or full-suite run. |
+| Mandatory baseline | Real SQLite reproduced IDs `1` and `4294967297` both returning as `1`, with distinct INTEGER rows retained. |
+| Range validation and failure behavior | `readTestingClass()` checks conversion and `1..INT_MAX` before cast; wide and zero IDs fail without partial results or storage changes. |
+| Compatibility | IDs `1` and `INT_MAX`, fields, ordering, and the separate F868 choices path are preserved and covered. |
+| Scope and focused verification | Changed `src/data/repositories/testing_class_repository.cpp` and `tests/testing_class_repository_tests.cpp`; sequential Debug builds of `ClassMngr`, then `ClassMngrTestingClassRepositoryTests`; exact CTest passed 1/1. No full suite. |
 
-F875 remains the upcoming Batch 288 candidate for the Class Details conflict
-fallback label when a persisted conflicting class ID exceeds `INT_MAX`; its
-baseline recipe and acceptance boundary remain as recorded above. Phase 2
-Gates 1/2 remain Partial and the formal exit gate remains Open.
+F874 completed Batch 288. The post-slice audit reviewed all 13 Deferred
+candidates; none became actionable and all remain unchanged. Their current
+blockers remain: F579/F598 require admin-token matched heap captures; F629
+requires a suitable macOS universal runner; F614/F618/F626 lack owner-specific
+memory evidence; F285 awaits the blank-draft contract; F707 has no observed
+callsite; F709 lacks a focused injection seam; Batch 197 awaits resolution of
+the stricter parity policy; Class Analytics has no accepted cap/sparse policy;
+Dense Speaking Evaluation has no row-limit policy; and Sidebar Teacher
+Create/Delete remains int-based. F874 does not change these blockers.
+
+Batch 289 discovery began when work started on second-last Batch 288 slice
+F874. The complementary application-contract scan found no new candidate. The
+repository scan selected upcoming candidate
+F876, `TeacherRepository::getAllTeachers()`: its persisted teacher ID is
+narrowed with `toInt()`, and the list is exposed through DataService and
+TeacherService; the current startup caller uses only the count. F876 is not
+implemented or baseline-verified. After F875, seed teachers with IDs `1` and
+`4294967297`, inspect `DataService::getAllTeachers()` and the SQL values, and
+stop/revise if the alias does not reproduce. The likely focused target is
+`ClassMngrDataServiceLifecycleTests`, with likely scope
+`src/data/repositories/teacher_repository.cpp` and
+`tests/data_service_lifecycle_tests.cpp`. This list-read candidate does not
+resolve the separately deferred Sidebar Teacher Create/Delete int-based ID
+contract. F875 remains the only active Batch 288 slice; F876 is selected for
+Batch 289 after F875, pending the required baseline. Gates 1/2 remain Partial
+and the formal exit gate remains Open.

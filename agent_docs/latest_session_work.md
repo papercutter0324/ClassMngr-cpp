@@ -5589,3 +5589,20 @@ use a typed checked write and a pre-commit gate that preserves action, state,
 stored value, viewer and viewport appearance on failure; retry must update all
 together. Preserve Default/White/Black mappings and the existing direct
 OptionState persistence contract. The matrix is in the Phase 2 progress log.
+
+F874 Testing Class persisted-ID validation is committed as
+`3e74c455fc20f1675651ae772e8266382454b5e7`. The pre-fix real-SQLite baseline
+showed persisted IDs 1 and 4294967297 both loading as 1 while SQL retained
+distinct INTEGER rows. `readTestingClass()` now validates qint64 conversion,
+positivity, and the `INT_MAX` bound before narrowing. Valid IDs preserve fields
+and order; zero and wide IDs fail without storage changes or a partial public
+result. Sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingClassRepositoryTests` passed, and the exact CTest passed 1/1
+under independent verification. The sandbox FileTracker access denial needed
+an elevated retry; successful builds had no warnings. No full suite ran.
+
+The post-F874 audit rechecked all 13 Phase 2 Deferred entries; none became
+actionable. F875 is next. Batch 289 discovery found F876, a separate
+`TeacherRepository::getAllTeachers()` persisted-ID candidate, pending its
+baseline after F875. The Sidebar Teacher Create/Delete ID-width deferral
+remains unchanged. Gates 1/2 are Partial and the Phase 2 exit gate is Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F873 is accepted at `d813993b`; Batch 288 continues with F874 selected for testing-class list persisted-ID validation and F875 upcoming; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F874 is accepted at `3e74c455`; F875 is next in Batch 288 and F876 is selected for Batch 289 pending its baseline after F875; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F874 - Testing-class list persisted-ID validation: validate IDs in the public compatibility list read.
 - F875 - Class-conflict fallback label for wide IDs: preserve the correct ID-derived label in the Class Details conflict path.
 
 #### Deferred candidates

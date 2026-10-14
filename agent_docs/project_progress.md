@@ -5042,3 +5042,24 @@ trigger. Batch 288 now selects F874, the public legacy testing-class list ID
 read; F875, the conflict-label fallback, is next. Each requires its own
 pre-fix baseline. Batch 289 candidate discovery begins with F874. Gates 1 and
 2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+## Phase 2 current position — 2026-10-14 (F874 accepted; F875 selected)
+
+F874 is accepted at
+`3e74c455fc20f1675651ae772e8266382454b5e7`. Its pre-fix SQLite baseline
+reproduced distinct testing-class IDs 1 and 4294967297 both loading as ID 1
+while SQLite retained separate INTEGER rows. Persisted IDs are now checked as
+positive qint64 values no greater than INT_MAX before narrowing. IDs 1 and
+INT_MAX retain their fields and order; zero and wide IDs fail without a partial
+public result or database changes. The independent F874 Debug builds passed
+sequentially and exact CTest `ClassMngrTestingClassRepositoryTests` passed
+1/1. No full suite ran.
+
+The post-F874 audit rechecked all 13 Phase 2 Deferred entries; none became
+actionable and all remain unchanged. Their platform, matched-measurement,
+caller, validation-seam, or product-policy blockers still apply. F875 is the
+next Batch 288 slice. Batch 289 discovery found one separate upcoming public
+list candidate, F876 for `TeacherRepository::getAllTeachers()` persisted-ID
+narrowing, pending its own SQLite alias baseline after F875. The existing
+Sidebar Teacher Create/Delete ID-width deferral is unaffected. Gates 1 and 2
+remain Partial and the formal Phase 2 exit gate remains Open.
