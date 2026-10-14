@@ -94,8 +94,10 @@ public:
                 classIds.append(classId);
             }
 
-            const Result<QList<ClassNavigationReadRecord>> loaded =
-                repository->loadClassesNavigationRecords(classIds);
+            const Result<QList<ClassNavigationParentAwareReadRecord>> loaded =
+                repository->loadClassesNavigationRecordsWithParentProvenance(
+                    classIds
+                    );
             if (!loaded)
             {
                 return failure(
@@ -104,14 +106,22 @@ public:
                     );
             }
 
-            std::unordered_map<int, const ClassNavigationReadRecord*>
+            if (loaded->size() != static_cast<qsizetype>(query.classes.size()))
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    "The classes navigation source returned a different number of records."
+                    );
+            }
+
+            std::unordered_map<int, const ClassNavigationParentAwareReadRecord*>
                 recordsById;
             recordsById.reserve(
                 static_cast<std::size_t>(loaded->size())
                 );
-            for (const ClassNavigationReadRecord& record : *loaded)
+            for (const ClassNavigationParentAwareReadRecord& record : *loaded)
             {
-                if (!recordsById.emplace(record.classId, &record).second)
+                if (!recordsById.emplace(record.details.classId, &record).second)
                 {
                     return failure(
                         Domain::ErrorCode::Validation,
@@ -140,21 +150,40 @@ public:
                         );
                 }
 
-                const ClassNavigationReadRecord& metadata = *record->second;
-                if (metadata.hasClassInfo)
+                const ClassNavigationParentAwareReadRecord& parentRecord =
+                    *record->second;
+                const ClassNavigationReadRecord& metadata =
+                    parentRecord.details;
+                if (!parentRecord.parentExists)
                 {
-                    entry.grade = metadata.grade.toStdU16String();
-                    entry.level = metadata.level.toStdU16String();
-                    entry.teacherEnglishName =
-                        metadata.teacherEnglishName.toStdU16String();
-                    entry.teacherKoreanName =
-                        metadata.teacherKoreanName.toStdU16String();
-                    entry.regularSchedule = scheduleRows(
-                        metadata.regularTimes
-                        );
-                    entry.intensiveSchedule = scheduleRows(
-                        metadata.intensiveTimes
-                        );
+                    entry.details =
+                        Application::ClassesNavigationDetailsResult::failure({
+                            .code = Domain::ErrorCode::NotFound,
+                            .message =
+                                "The requested class no longer exists.",
+                            .recoverable = true
+                        });
+                }
+                else if (metadata.hasClassInfo)
+                {
+                    Application::ClassesNavigationDetails details{
+                        .grade = metadata.grade.toStdU16String(),
+                        .level = metadata.level.toStdU16String(),
+                        .regularSchedule = scheduleRows(
+                            metadata.regularTimes
+                            ),
+                        .intensiveSchedule = scheduleRows(
+                            metadata.intensiveTimes
+                            ),
+                        .teacherEnglishName =
+                            metadata.teacherEnglishName.toStdU16String(),
+                        .teacherKoreanName =
+                            metadata.teacherKoreanName.toStdU16String()
+                    };
+                    entry.details =
+                        Application::ClassesNavigationDetailsResult::success(
+                            std::move(details)
+                            );
                 }
 
                 snapshot.classes.push_back(std::move(entry));

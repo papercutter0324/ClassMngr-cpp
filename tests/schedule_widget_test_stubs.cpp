@@ -115,6 +115,7 @@ bool distinctIntensiveDays = false;
 bool includeAlternativeMatchingClass = false;
 bool duplicateKoreanTeacherNames = false;
 bool classesNavigationReadFailure = false;
+QSet<int> classesNavigationParentMissing;
 bool scheduleClassInfoReadFailure = false;
 int legacyClassListReadCount = 0;
 int repositoryClassListReadCount = 0;
@@ -231,6 +232,7 @@ void reset()
     includeAlternativeMatchingClass = false;
     duplicateKoreanTeacherNames = false;
     classesNavigationReadFailure = false;
+    classesNavigationParentMissing.clear();
     scheduleClassInfoReadFailure = false;
     legacyClassListReadCount = 0;
     repositoryClassListReadCount = 0;
@@ -467,6 +469,21 @@ void setClassesNavigationReadFailure(
     )
 {
     classesNavigationReadFailure = fails;
+}
+
+void setClassesNavigationParentMissing(
+    const int classId,
+    const bool missing
+    )
+{
+    if (missing)
+    {
+        classesNavigationParentMissing.insert(classId);
+    }
+    else
+    {
+        classesNavigationParentMissing.remove(classId);
+    }
 }
 
 void setIncludeAlternativeMatchingClass(
@@ -1253,6 +1270,45 @@ ClassInfoRepository::loadClassesNavigationRecords(
         records.append(std::move(record));
     }
     return records;
+}
+
+Result<QList<ClassNavigationParentAwareReadRecord>>
+ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
+    const QList<int>& classIds
+    )
+{
+    Result<QList<ClassNavigationReadRecord>> records =
+        loadClassesNavigationRecords(classIds);
+    if (!records)
+    {
+        return std::unexpected(records.error());
+    }
+
+    QList<ClassNavigationParentAwareReadRecord> parentAwareRecords;
+    parentAwareRecords.reserve(records->size());
+    for (ClassNavigationReadRecord& record : *records)
+    {
+        ClassNavigationParentAwareReadRecord parentRecord;
+        parentRecord.parentExists =
+            !ScheduleWidgetTestStubs::classesNavigationParentMissing
+                 .contains(record.classId);
+        if (!parentRecord.parentExists)
+        {
+            record.hasClassInfo = false;
+            record.teacherId = -1;
+            record.grade.clear();
+            record.level.clear();
+            record.teacherEnglishName.clear();
+            record.teacherKoreanName.clear();
+            record.regularTimes.clear();
+            record.intensiveTimes.clear();
+        }
+
+        parentRecord.details = std::move(record);
+        parentAwareRecords.append(std::move(parentRecord));
+    }
+
+    return parentAwareRecords;
 }
 
 Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()

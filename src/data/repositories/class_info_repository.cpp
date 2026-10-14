@@ -4267,6 +4267,225 @@ ClassInfoRepository::loadClassesNavigationRecords(
     return records;
 }
 
+Result<QList<ClassNavigationParentAwareReadRecord>>
+ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<ClassNavigationParentAwareReadRecord>{};
+    }
+
+    QSet<int> seenClassIds;
+    QStringList requestedValues;
+    requestedValues.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds[index];
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading classes navigation failed: class identifiers must be positive and unique."
+                ));
+        }
+
+        seenClassIds.insert(classId);
+        requestedValues.append(
+            QStringLiteral("(%1, %2)").arg(classId).arg(index)
+            );
+    }
+
+    const QString requestedValuesSql =
+        requestedValues.join(QStringLiteral(", "));
+    const QString metadataQueryText = QStringLiteral(R"(
+        WITH requested(class_id, ordinal) AS (
+            VALUES %1
+        )
+        SELECT
+            requested.class_id,
+            c.id AS parent_class_id,
+            ci.class_id AS class_info_class_id,
+            ci.teacher_id,
+            ci.class_grade,
+            ci.class_level,
+            t.teacher_en,
+            t.teacher_kr
+        FROM requested
+        LEFT JOIN classes c
+        ON c.id = requested.class_id
+        LEFT JOIN class_info ci
+        ON ci.class_id = c.id
+        LEFT JOIN teachers t
+        ON t.id = ci.teacher_id
+        ORDER BY requested.ordinal
+    )").arg(requestedValuesSql);
+
+    QList<ClassNavigationParentAwareReadRecord> records;
+    records.reserve(classIds.size());
+    QHash<int, qsizetype> indexByClassId;
+    indexByClassId.reserve(classIds.size());
+    QSqlQuery metadataQuery(m_database);
+    ++m_classesNavigationReadMetrics.metadataStatementCount;
+    const auto loadedMetadata = SqlQueryUtils::execute(
+        metadataQuery,
+        metadataQueryText,
+        QObject::tr("Loading classes navigation metadata")
+        );
+    if (!loadedMetadata)
+    {
+        return std::unexpected(loadedMetadata.error().userMessage());
+    }
+
+    while (metadataQuery.next())
+    {
+        ClassNavigationParentAwareReadRecord parentRecord;
+        ClassNavigationReadRecord& record = parentRecord.details;
+        record.classId = metadataQuery.value("class_id").toInt();
+        parentRecord.parentExists =
+            !metadataQuery.value("parent_class_id").isNull();
+        record.hasClassInfo = parentRecord.parentExists
+            && !metadataQuery.value("class_info_class_id").isNull();
+        if (record.hasClassInfo)
+        {
+            const QVariant teacherId = metadataQuery.value("teacher_id");
+            if (!teacherId.isNull())
+            {
+                bool teacherIdValid = false;
+                const qint64 parsedTeacherId =
+                    teacherId.toLongLong(&teacherIdValid);
+                if (!teacherIdValid)
+                {
+                    return std::unexpected(QObject::tr(
+                        "Loading classes navigation failed: a teacher identifier is invalid."
+                        ));
+                }
+                record.teacherId = parsedTeacherId;
+            }
+            record.grade = metadataQuery.value("class_grade").toString();
+            record.level = metadataQuery.value("class_level").toString();
+            record.teacherEnglishName =
+                metadataQuery.value("teacher_en").toString();
+            record.teacherKoreanName =
+                metadataQuery.value("teacher_kr").toString();
+        }
+
+        if (!indexByClassId.contains(record.classId))
+        {
+            indexByClassId.insert(record.classId, records.size());
+        }
+        records.append(std::move(parentRecord));
+    }
+
+    if (metadataQuery.lastError().isValid())
+    {
+        return std::unexpected(metadataQuery.lastError().text());
+    }
+
+    const auto loadTimes = [this,
+                            &indexByClassId,
+                            &records,
+                            &requestedValuesSql](
+        const QString& table,
+        const QString& action,
+        const bool intensive
+        ) -> Status
+    {
+        QSqlQuery timesQuery(m_database);
+        if (intensive)
+        {
+            ++m_classesNavigationReadMetrics.intensiveScheduleStatementCount;
+        }
+        else
+        {
+            ++m_classesNavigationReadMetrics.regularScheduleStatementCount;
+        }
+
+        const QString queryText = QStringLiteral(R"(
+            WITH requested(class_id, ordinal) AS (
+                VALUES %1
+            )
+            SELECT schedule.class_id, schedule.day,
+                   schedule.start_time, schedule.end_time
+            FROM requested
+            INNER JOIN classes parent
+            ON parent.id = requested.class_id
+            INNER JOIN class_info info
+            ON info.class_id = parent.id
+            INNER JOIN %2 schedule
+            ON schedule.class_id = parent.id
+            ORDER BY requested.ordinal, schedule.id
+        )").arg(requestedValuesSql, table);
+        const auto loadedTimes = SqlQueryUtils::execute(
+            timesQuery,
+            queryText,
+            action
+            );
+        if (!loadedTimes)
+        {
+            return std::unexpected(loadedTimes.error().userMessage());
+        }
+
+        while (timesQuery.next())
+        {
+            const int classId = timesQuery.value("class_id").toInt();
+            const auto recordIndex = indexByClassId.constFind(classId);
+            if (recordIndex == indexByClassId.cend())
+            {
+                continue;
+            }
+
+            ClassNavigationParentAwareReadRecord& parentRecord =
+                records[*recordIndex];
+            ClassNavigationReadRecord& record = parentRecord.details;
+            if (!parentRecord.parentExists || !record.hasClassInfo)
+            {
+                continue;
+            }
+
+            ClassTime time;
+            time.day = timesQuery.value("day").toString();
+            time.startTime = timesQuery.value("start_time").toString();
+            time.endTime = timesQuery.value("end_time").toString();
+            if (intensive)
+            {
+                record.intensiveTimes.append(std::move(time));
+            }
+            else
+            {
+                record.regularTimes.append(std::move(time));
+            }
+        }
+
+        if (timesQuery.lastError().isValid())
+        {
+            return std::unexpected(timesQuery.lastError().text());
+        }
+
+        return {};
+    };
+
+    if (const Status loadedRegular = loadTimes(
+            QStringLiteral("class_times"),
+            QObject::tr("Loading regular classes navigation schedules"),
+            false
+            ); !loadedRegular)
+    {
+        return std::unexpected(loadedRegular.error());
+    }
+
+    if (const Status loadedIntensive = loadTimes(
+            QStringLiteral("class_intensive_times"),
+            QObject::tr("Loading intensive classes navigation schedules"),
+            true
+            ); !loadedIntensive)
+    {
+        return std::unexpected(loadedIntensive.error());
+    }
+
+    return records;
+}
+
 const ClassesNavigationReadMetrics&
 ClassInfoRepository::classesNavigationReadMetrics() const noexcept
 {

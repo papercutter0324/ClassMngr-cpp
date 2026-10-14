@@ -403,15 +403,21 @@ void SpeakingEvalPage::rebuildClassTabs(
                  ++index)
             {
                 const auto& source = snapshot.value().classes[index];
+                if (!source.details)
+                {
+                    continue;
+                }
+
+                const auto& details = source.details.value();
                 ClassTabNavigation::ClassEntry& entry =
                     entries[static_cast<qsizetype>(index)];
-                entry.grade = QString::fromStdU16String(source.grade);
-                entry.level = QString::fromStdU16String(source.level);
+                entry.grade = QString::fromStdU16String(details.grade);
+                entry.level = QString::fromStdU16String(details.level);
                 entry.teacherEn = QString::fromStdU16String(
-                    source.teacherEnglishName
+                    details.teacherEnglishName
                     );
                 entry.teacherKr = QString::fromStdU16String(
-                    source.teacherKoreanName
+                    details.teacherKoreanName
                     );
 
                 const auto appendSchedule = [](
@@ -433,8 +439,8 @@ void SpeakingEvalPage::rebuildClassTabs(
                         });
                     }
                 };
-                appendSchedule(source.regularSchedule, entry.regularTimes);
-                appendSchedule(source.intensiveSchedule, entry.intensiveTimes);
+                appendSchedule(details.regularSchedule, entry.regularTimes);
+                appendSchedule(details.intensiveSchedule, entry.intensiveTimes);
             }
         }
     }

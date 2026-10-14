@@ -35,10 +35,8 @@ struct ClassesNavigationScheduleRow final
         ) = default;
 };
 
-struct ClassesNavigationEntry final
+struct ClassesNavigationDetails final
 {
-    Domain::ClassId classId;
-    std::u16string className;
     std::u16string grade;
     std::u16string level;
     std::vector<ClassesNavigationScheduleRow> regularSchedule;
@@ -47,9 +45,36 @@ struct ClassesNavigationEntry final
     std::u16string teacherKoreanName;
 
     friend bool operator==(
-        const ClassesNavigationEntry&,
-        const ClassesNavigationEntry&
+        const ClassesNavigationDetails&,
+        const ClassesNavigationDetails&
         ) = default;
+};
+
+using ClassesNavigationDetailsResult = Domain::Result<ClassesNavigationDetails>;
+
+struct ClassesNavigationEntry final
+{
+    Domain::ClassId classId;
+    std::u16string className;
+    ClassesNavigationDetailsResult details =
+        ClassesNavigationDetailsResult::success({});
+
+    friend bool operator==(
+        const ClassesNavigationEntry& left,
+        const ClassesNavigationEntry& right
+        )
+    {
+        if (left.classId != right.classId || left.className != right.className
+            || static_cast<bool>(left.details)
+                != static_cast<bool>(right.details))
+        {
+            return false;
+        }
+
+        return left.details
+            ? left.details.value() == right.details.value()
+            : left.details.error() == right.details.error();
+    }
 };
 
 struct ClassesNavigationSnapshot final

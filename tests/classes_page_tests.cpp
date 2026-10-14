@@ -76,6 +76,7 @@ void setClassNavigationScheduleRows(
     QList<ClassTime> intensiveRows
     );
 void setClassesNavigationReadFailure(bool fails);
+void setClassesNavigationParentMissing(int classId, bool missing);
 extern int legacyClassListReadCount;
 extern int repositoryClassListReadCount;
 extern int legacyClassInfoReadCount;
@@ -363,6 +364,7 @@ private slots:
     void testingModeUsesRegularMeetingsForDayFiltering();
     void allGradeTabShowsClassesAcrossGrades();
     void classesNavigationReadFailureKeepsNamesAndBlankMetadata();
+    void classesNavigationEntryFailureKeepsIdentityAndValidSiblingDetails();
     void classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave();
     void selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes();
     void selectedClassSubtitleFallbackChainUsesTrimmedValues();
@@ -1617,6 +1619,61 @@ void ClassesPageTests::classesNavigationReadFailureKeepsNamesAndBlankMetadata()
     QCOMPARE(metrics.classInfoResultRowCount, 0);
     QCOMPARE(metrics.classInfoScheduleRowCount, 0);
     QCOMPARE(metrics.teacherResultRowCount, 0);
+}
+
+void ClassesPageTests::
+classesNavigationEntryFailureKeepsIdentityAndValidSiblingDetails()
+{
+    ScheduleWidgetTestStubs::setClassesVisibilityAll();
+    ScheduleWidgetTestStubs::setClassesNavigationParentMissing(43, true);
+
+    ApplicationServices services;
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+
+    auto* gradeNavigation = gradeTabs(&page);
+    QVERIFY(gradeNavigation);
+    auto* allClassesTabs = gradeNavigation->currentWidget()
+        ? gradeNavigation->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesTabs);
+    QCOMPARE(allClassesTabs->count(), 2);
+
+    QList<int> visibleClassIds;
+    for (int index = 0; index < allClassesTabs->count(); ++index)
+    {
+        const QWidget* const tabPage = allClassesTabs->widget(index);
+        QVERIFY(tabPage);
+        const int classId = tabPage->property("class_id").toInt();
+        visibleClassIds.append(classId);
+        const QString label = allClassesTabs->tabText(index);
+
+        if (classId == 42)
+        {
+            QVERIFY(label.contains(QStringLiteral("Hercules")));
+            QVERIFY(label.contains(QStringLiteral("E4")));
+            QVERIFY(label.contains(QStringLiteral("4:00")));
+        }
+        else if (classId == 43)
+        {
+            QVERIFY(label.contains(QStringLiteral("Athena")));
+            QVERIFY(!label.contains(QStringLiteral("E5")));
+            QVERIFY(!label.contains(QStringLiteral("5:00")));
+            QVERIFY(!label.contains(QStringLiteral("Thomas")));
+        }
+        else
+        {
+            QFAIL("The navigation included an unexpected class ID.");
+        }
+    }
+    QCOMPARE(visibleClassIds, QList<int>({42, 43}));
+
+    const ClassesPageRuntimeMetrics metrics = page.runtimeMetrics();
+    QCOMPARE(metrics.classInfoResultRowCount, 2);
+    QCOMPARE(metrics.classInfoScheduleRowCount, 1);
+    QCOMPARE(metrics.teacherResultRowCount, 1);
 }
 
 void ClassesPageTests::

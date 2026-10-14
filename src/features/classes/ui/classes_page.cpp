@@ -1169,13 +1169,19 @@ bool ClassesPage::refreshNavigationSnapshot()
             const auto& source = snapshot.value().classes[index];
             ClassTabNavigation::ClassEntry& entry =
                 entries[static_cast<qsizetype>(index)];
-            entry.grade = QString::fromStdU16String(source.grade);
-            entry.level = QString::fromStdU16String(source.level);
+            if (!source.details)
+            {
+                continue;
+            }
+
+            const auto& details = source.details.value();
+            entry.grade = QString::fromStdU16String(details.grade);
+            entry.level = QString::fromStdU16String(details.level);
             entry.teacherEn = QString::fromStdU16String(
-                source.teacherEnglishName
+                details.teacherEnglishName
                 );
             entry.teacherKr = QString::fromStdU16String(
-                source.teacherKoreanName
+                details.teacherKoreanName
                 );
 
             const auto appendSchedule = [](
@@ -1197,14 +1203,14 @@ bool ClassesPage::refreshNavigationSnapshot()
                     });
                 }
             };
-            appendSchedule(source.regularSchedule, entry.regularTimes);
-            appendSchedule(source.intensiveSchedule, entry.intensiveTimes);
+            appendSchedule(details.regularSchedule, entry.regularTimes);
+            appendSchedule(details.intensiveSchedule, entry.intensiveTimes);
 
             m_classInfoScheduleRowCount +=
-                static_cast<int>(source.regularSchedule.size())
-                + static_cast<int>(source.intensiveSchedule.size());
-            if (!source.teacherEnglishName.empty()
-                || !source.teacherKoreanName.empty())
+                static_cast<int>(details.regularSchedule.size())
+                + static_cast<int>(details.intensiveSchedule.size());
+            if (!details.teacherEnglishName.empty()
+                || !details.teacherKoreanName.empty())
             {
                 ++m_teacherResultRowCount;
             }

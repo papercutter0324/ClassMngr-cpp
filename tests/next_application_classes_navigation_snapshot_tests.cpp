@@ -55,6 +55,7 @@ private slots:
     void rejectsNonCanonicalAndDuplicateIdsWithoutCallingPort();
     void returnsSuccessfulEmptySnapshotWithoutCallingPort();
     void preservesRequestedOrderExactUnicodeAndRawScheduleRows();
+    void rejectsIdentityMismatchWhenDetailsFailed();
     void propagatesPortErrorAndRejectsMalformedSnapshots();
 };
 
@@ -132,21 +133,28 @@ preservesRequestedOrderExactUnicodeAndRawScheduleRows()
             {
                 .classId = requested.classes[0].classId,
                 .className = requested.classes[0].className,
-                .grade = u"E4",
-                .level = u"Perseus",
-                .regularSchedule = {
-                    {u"Raw Friday", u" 4:00 PM ", u"4:55 PM"},
-                    {u"Monday", u"4:00 PM", u"4:50 PM"}
-                },
-                .intensiveSchedule = {
-                    {u"Holiday", u"09:00", u"09:55"}
-                },
-                .teacherEnglishName = u"Teacher \U0001F9ED",
-                .teacherKoreanName = u"김민지"
+                .details = ClassesNavigationDetailsResult::success({
+                    .grade = u"E4",
+                    .level = u"Perseus",
+                    .regularSchedule = {
+                        {u"Raw Friday", u" 4:00 PM ", u"4:55 PM"},
+                        {u"Monday", u"4:00 PM", u"4:50 PM"}
+                    },
+                    .intensiveSchedule = {
+                        {u"Holiday", u"09:00", u"09:55"}
+                    },
+                    .teacherEnglishName = u"Teacher \U0001F9ED",
+                    .teacherKoreanName = u"김민지"
+                })
             },
             {
                 .classId = requested.classes[1].classId,
-                .className = requested.classes[1].className
+                .className = requested.classes[1].className,
+                .details = ClassesNavigationDetailsResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = "Class no longer exists.",
+                    .recoverable = true
+                })
             }
         }
     });
@@ -161,24 +169,107 @@ preservesRequestedOrderExactUnicodeAndRawScheduleRows()
     QVERIFY(result.value().classes[0].classId == classId("43"));
     QCOMPARE(result.value().classes[0].className,
              std::u16string(u"  안녕 \U0001F9ED  "));
-    QCOMPARE(result.value().classes[0].grade, std::u16string(u"E4"));
-    QCOMPARE(result.value().classes[0].regularSchedule.size(), std::size_t(2));
-    QCOMPARE(result.value().classes[0].regularSchedule[0].day,
+    QCOMPARE(result.value().classes[0].details.value().grade,
+             std::u16string(u"E4"));
+    QCOMPARE(
+        result.value().classes[0].details.value().regularSchedule.size(),
+        std::size_t(2)
+        );
+    QCOMPARE(result.value().classes[0].details.value().regularSchedule[0].day,
              std::u16string(u"Raw Friday"));
-    QCOMPARE(result.value().classes[0].regularSchedule[0].startTime,
-             std::u16string(u" 4:00 PM "));
-    QCOMPARE(result.value().classes[0].regularSchedule[1].day,
+    QCOMPARE(
+        result.value().classes[0].details.value().regularSchedule[0].startTime,
+        std::u16string(u" 4:00 PM ")
+        );
+    QCOMPARE(result.value().classes[0].details.value().regularSchedule[1].day,
              std::u16string(u"Monday"));
-    QCOMPARE(result.value().classes[0].intensiveSchedule.size(), std::size_t(1));
-    QCOMPARE(result.value().classes[0].intensiveSchedule[0].endTime,
+    QCOMPARE(
+        result.value().classes[0].details.value().intensiveSchedule.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(result.value().classes[0].details.value().intensiveSchedule[0].endTime,
              std::u16string(u"09:55"));
-    QCOMPARE(result.value().classes[0].teacherEnglishName,
+    QCOMPARE(result.value().classes[0].details.value().teacherEnglishName,
              std::u16string(u"Teacher \U0001F9ED"));
-    QCOMPARE(result.value().classes[0].teacherKoreanName,
+    QCOMPARE(result.value().classes[0].details.value().teacherKoreanName,
              std::u16string(u"김민지"));
     QVERIFY(result.value().classes[1].classId == classId("42"));
-    QVERIFY(result.value().classes[1].grade.empty());
-    QVERIFY(result.value().classes[1].regularSchedule.empty());
+    QCOMPARE(result.value().classes[1].className,
+             requested.classes[1].className);
+    QCOMPARE(result.value().classes[1].details.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(result.value().classes[1].details.error().recoverable);
+}
+
+void NextApplicationClassesNavigationSnapshotTests::
+rejectsIdentityMismatchWhenDetailsFailed()
+{
+    RecordingClassesNavigationReadPort port;
+    const ClassesNavigationSnapshotQuery requested{
+        .classes = {
+            sourceClass("42", u"Class 42"),
+            sourceClass("43", u"Class 43")
+        }
+    };
+    port.result = ClassesNavigationSnapshotResult::success({
+        .classes = {
+            {
+                .classId = requested.classes[0].classId,
+                .className = requested.classes[0].className,
+                .details = ClassesNavigationDetailsResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = "Missing parent.",
+                    .recoverable = true
+                })
+            },
+            {
+                .classId = requested.classes[1].classId,
+                .className = u"Changed name",
+                .details = ClassesNavigationDetailsResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = "Missing parent.",
+                    .recoverable = true
+                })
+            }
+        }
+    });
+
+    const auto result =
+        ClassesNavigationSnapshotQueryHandler::execute(requested, port);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(result.error().message,
+             std::string(
+                 "A classes navigation read changed class identity or order."
+                 ));
+
+    port.result = ClassesNavigationSnapshotResult::success({
+        .classes = {
+            {
+                .classId = requested.classes[1].classId,
+                .className = requested.classes[1].className,
+                .details = ClassesNavigationDetailsResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = "Missing parent.",
+                    .recoverable = true
+                })
+            },
+            {
+                .classId = requested.classes[0].classId,
+                .className = requested.classes[0].className,
+                .details = ClassesNavigationDetailsResult::failure({
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = "Missing parent.",
+                    .recoverable = true
+                })
+            }
+        }
+    });
+    const auto reorderedResult =
+        ClassesNavigationSnapshotQueryHandler::execute(requested, port);
+    QVERIFY(!reorderedResult);
+    QCOMPARE(reorderedResult.error().code, Domain::ErrorCode::Validation);
 }
 
 void NextApplicationClassesNavigationSnapshotTests::

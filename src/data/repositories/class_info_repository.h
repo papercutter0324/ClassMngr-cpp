@@ -71,6 +71,12 @@ struct ClassNavigationReadRecord final
     QList<ClassTime> intensiveTimes;
 };
 
+struct ClassNavigationParentAwareReadRecord final
+{
+    bool parentExists = false;
+    ClassNavigationReadRecord details;
+};
+
 struct ClassSubtitleReadRecord final
 {
     int classId = -1;
@@ -617,6 +623,12 @@ public:
 
     [[nodiscard]] Result<QList<ClassNavigationReadRecord>>
         loadClassesNavigationRecords(const QList<int>& classIds);
+    // Parent-aware typed route for Next navigation. The legacy reader above
+    // intentionally retains its orphan/default behavior for Class Transfer.
+    [[nodiscard]] Result<QList<ClassNavigationParentAwareReadRecord>>
+        loadClassesNavigationRecordsWithParentProvenance(
+            const QList<int>& classIds
+            );
     [[nodiscard]] const ClassesNavigationReadMetrics&
         classesNavigationReadMetrics() const noexcept;
     [[nodiscard]] const ScheduleClassInfoReadMetrics&

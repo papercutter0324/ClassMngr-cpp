@@ -113,6 +113,7 @@ class NextPlatformApplicationServicesClassesNavigationReadPortTests final
 
 private slots:
     void readsBatchedCompactSnapshotAndPreservesMissingRowsAndOrder();
+    void deletedParentsWithOrphansReturnPerEntryNotFound();
     void closedOrUnavailableSessionFailsWithoutLegacyFallback();
 };
 
@@ -255,42 +256,247 @@ readsBatchedCompactSnapshotAndPreservesMissingRowsAndOrder()
     QVERIFY(result.value().classes[0].classId == classId(*missingInfo));
     QCOMPARE(result.value().classes[0].className,
              std::u16string(u"  Missing Ω \U0001F9ED  "));
-    QVERIFY(result.value().classes[0].grade.empty());
-    QVERIFY(result.value().classes[0].level.empty());
-    QVERIFY(result.value().classes[0].regularSchedule.empty());
-    QVERIFY(result.value().classes[0].intensiveSchedule.empty());
-    QVERIFY(result.value().classes[0].teacherEnglishName.empty());
-    QVERIFY(result.value().classes[0].teacherKoreanName.empty());
+    QVERIFY(result.value().classes[0].details);
+    const auto& missingInfoDetails = result.value().classes[0].details.value();
+    QVERIFY(missingInfoDetails.grade.empty());
+    QVERIFY(missingInfoDetails.level.empty());
+    QVERIFY(missingInfoDetails.regularSchedule.empty());
+    QVERIFY(missingInfoDetails.intensiveSchedule.empty());
+    QVERIFY(missingInfoDetails.teacherEnglishName.empty());
+    QVERIFY(missingInfoDetails.teacherKoreanName.empty());
 
     const auto& valid = result.value().classes[1];
     QVERIFY(valid.classId == classId(*validTeacherClass));
     QCOMPARE(valid.className, std::u16string(u"Zeta 안녕"));
-    QCOMPARE(valid.grade, std::u16string(u"E4"));
-    QCOMPARE(valid.level, std::u16string(u"Perseus"));
-    QCOMPARE(valid.regularSchedule.size(), std::size_t(2));
-    QCOMPARE(valid.regularSchedule[0].day, std::u16string(u"Legacy Friday"));
-    QCOMPARE(valid.regularSchedule[0].startTime, std::u16string(u" 4:00 PM "));
-    QCOMPARE(valid.regularSchedule[1].day, std::u16string(u"Monday"));
-    QCOMPARE(valid.intensiveSchedule.size(), std::size_t(1));
-    QCOMPARE(valid.intensiveSchedule[0].day, std::u16string(u"Not a weekday"));
-    QCOMPARE(valid.intensiveSchedule[0].endTime, std::u16string(u"end text"));
-    QCOMPARE(valid.teacherEnglishName,
+    QVERIFY(valid.details);
+    QCOMPARE(valid.details.value().grade, std::u16string(u"E4"));
+    QCOMPARE(valid.details.value().level, std::u16string(u"Perseus"));
+    QCOMPARE(valid.details.value().regularSchedule.size(), std::size_t(2));
+    QCOMPARE(
+        valid.details.value().regularSchedule[0].day,
+        std::u16string(u"Legacy Friday")
+        );
+    QCOMPARE(
+        valid.details.value().regularSchedule[0].startTime,
+        std::u16string(u" 4:00 PM ")
+        );
+    QCOMPARE(
+        valid.details.value().regularSchedule[1].day,
+        std::u16string(u"Monday")
+        );
+    QCOMPARE(valid.details.value().intensiveSchedule.size(), std::size_t(1));
+    QCOMPARE(
+        valid.details.value().intensiveSchedule[0].day,
+        std::u16string(u"Not a weekday")
+        );
+    QCOMPARE(
+        valid.details.value().intensiveSchedule[0].endTime,
+        std::u16string(u"end text")
+        );
+    QCOMPARE(valid.details.value().teacherEnglishName,
              std::u16string(u"Teacher \U0001F9ED"));
-    QCOMPARE(valid.teacherKoreanName, std::u16string(u"김민지"));
+    QCOMPARE(valid.details.value().teacherKoreanName, std::u16string(u"김민지"));
 
     const auto& missingTeacher = result.value().classes[2];
     QVERIFY(missingTeacher.classId == classId(*missingTeacherClass));
-    QCOMPARE(missingTeacher.regularSchedule.size(), std::size_t(1));
-    QCOMPARE(missingTeacher.regularSchedule[0].day,
+    QVERIFY(missingTeacher.details);
+    QCOMPARE(
+        missingTeacher.details.value().regularSchedule.size(),
+        std::size_t(1)
+        );
+    QCOMPARE(missingTeacher.details.value().regularSchedule[0].day,
              std::u16string(u"Raw Wednesday"));
-    QVERIFY(missingTeacher.teacherEnglishName.empty());
-    QVERIFY(missingTeacher.teacherKoreanName.empty());
+    QVERIFY(missingTeacher.details.value().teacherEnglishName.empty());
+    QVERIFY(missingTeacher.details.value().teacherKoreanName.empty());
 
     const auto& invalidTeacher = result.value().classes[3];
     QVERIFY(invalidTeacher.classId == classId(*invalidTeacherClass));
-    QCOMPARE(invalidTeacher.grade, std::u16string(u"M1"));
-    QVERIFY(invalidTeacher.teacherEnglishName.empty());
-    QVERIFY(invalidTeacher.teacherKoreanName.empty());
+    QVERIFY(invalidTeacher.details);
+    QCOMPARE(
+        invalidTeacher.details.value().grade,
+        std::u16string(u"M1")
+        );
+    QVERIFY(invalidTeacher.details.value().teacherEnglishName.empty());
+    QVERIFY(invalidTeacher.details.value().teacherKoreanName.empty());
+
+    const ClassesNavigationReadMetrics& metrics =
+        services.databaseSession()->classInfoRepository()
+            ->classesNavigationReadMetrics();
+    QCOMPARE(metrics.metadataStatementCount, 1);
+    QCOMPARE(metrics.regularScheduleStatementCount, 1);
+    QCOMPARE(metrics.intensiveScheduleStatementCount, 1);
+}
+
+void NextPlatformApplicationServicesClassesNavigationReadPortTests::
+deletedParentsWithOrphansReturnPerEntryNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto deletedParent = services.classService()->create(
+        QStringLiteral("Deleted with orphans")
+        );
+    const auto populatedParent = services.classService()->create(
+        QStringLiteral("Existing populated")
+        );
+    const auto noInfoParent = services.classService()->create(
+        QStringLiteral("Existing without info")
+        );
+    QVERIFY(deletedParent);
+    QVERIFY(populatedParent);
+    QVERIFY(noInfoParent);
+
+    const QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY2(
+        insertClassInfo(
+            database,
+            *deletedParent,
+            std::nullopt,
+            QStringLiteral("G8"),
+            QStringLiteral("Orphan metadata")
+            ),
+        "Could not seed orphan metadata."
+        );
+    QVERIFY2(
+        insertSchedule(
+            database,
+            QStringLiteral("class_times"),
+            *deletedParent,
+            QStringLiteral("Orphan Friday"),
+            QStringLiteral("orphan start"),
+            QStringLiteral("orphan end")
+            ),
+        "Could not seed an orphan regular schedule."
+        );
+    QVERIFY2(
+        insertSchedule(
+            database,
+            QStringLiteral("class_intensive_times"),
+            *deletedParent,
+            QStringLiteral("Orphan intensive"),
+            QStringLiteral("orphan intensive start"),
+            QStringLiteral("orphan intensive end")
+            ),
+        "Could not seed an orphan intensive schedule."
+        );
+    QVERIFY2(
+        insertClassInfo(
+            database,
+            *populatedParent,
+            std::nullopt,
+            QStringLiteral("G5"),
+            QStringLiteral("Existing metadata")
+            ),
+        "Could not seed populated class metadata."
+        );
+    QVERIFY(insertSchedule(
+        database,
+        QStringLiteral("class_times"),
+        *populatedParent,
+        QStringLiteral("Raw Wednesday"),
+        QStringLiteral(" 4:03 PM "),
+        QStringLiteral("4:57 PM")
+        ));
+    QVERIFY(insertSchedule(
+        database,
+        QStringLiteral("class_intensive_times"),
+        *populatedParent,
+        QStringLiteral("Raw holiday"),
+        QStringLiteral("start text"),
+        QStringLiteral("end text")
+        ));
+    QVERIFY(insertSchedule(
+        database,
+        QStringLiteral("class_times"),
+        *noInfoParent,
+        QStringLiteral("Must be suppressed"),
+        QStringLiteral("start"),
+        QStringLiteral("end")
+        ));
+
+    QSqlQuery foreignKeys(database);
+    QVERIFY2(
+        foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(foreignKeys.lastError().text())
+        );
+    QSqlQuery deleteParent(database);
+    deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+    deleteParent.addBindValue(*deletedParent);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+    QVERIFY2(
+        foreignKeys.exec(QStringLiteral("PRAGMA foreign_keys = ON")),
+        qPrintable(foreignKeys.lastError().text())
+        );
+
+    QSqlQuery orphanCounts(database);
+    orphanCounts.prepare(QStringLiteral(R"(
+        SELECT
+            (SELECT COUNT(*) FROM class_info WHERE class_id=?),
+            (SELECT COUNT(*) FROM class_times WHERE class_id=?),
+            (SELECT COUNT(*) FROM class_intensive_times WHERE class_id=?)
+    )"));
+    orphanCounts.addBindValue(*deletedParent);
+    orphanCounts.addBindValue(*deletedParent);
+    orphanCounts.addBindValue(*deletedParent);
+    QVERIFY2(orphanCounts.exec(), qPrintable(orphanCounts.lastError().text()));
+    QVERIFY(orphanCounts.next());
+    QCOMPARE(orphanCounts.value(0).toInt(), 1);
+    QCOMPARE(orphanCounts.value(1).toInt(), 1);
+    QCOMPARE(orphanCounts.value(2).toInt(), 1);
+
+    constexpr int neverPresentClassId = 987654321;
+    const Application::ClassesNavigationSnapshotQuery requested = query({
+        {*deletedParent, QStringLiteral("Deleted with orphans")},
+        {neverPresentClassId, QStringLiteral("Never present")},
+        {*populatedParent, QStringLiteral("Existing populated")},
+        {*noInfoParent, QStringLiteral("Existing without info")}
+    });
+    Platform::ApplicationServicesClassesNavigationReadPort port(services);
+    const auto result =
+        Application::ClassesNavigationSnapshotQueryHandler::execute(
+            requested,
+            port
+            );
+
+    QVERIFY2(
+        result,
+        qPrintable(result ? QString() : QString::fromStdString(result.error().message))
+        );
+    QCOMPARE(result.value().classes.size(), std::size_t(4));
+    for (std::size_t index = 0; index < 2; ++index)
+    {
+        const auto& entry = result.value().classes[index];
+        QVERIFY(entry.classId == requested.classes[index].classId);
+        QCOMPARE(entry.className, requested.classes[index].className);
+        QVERIFY(!entry.details);
+        QCOMPARE(entry.details.error().code, Domain::ErrorCode::NotFound);
+        QVERIFY(entry.details.error().recoverable);
+    }
+
+    const auto& populated = result.value().classes[2];
+    QVERIFY(populated.classId == classId(*populatedParent));
+    const auto& populatedDetails = populated.details.value();
+    QCOMPARE(populatedDetails.grade, std::u16string(u"G5"));
+    QCOMPARE(populatedDetails.level, std::u16string(u"Existing metadata"));
+    QCOMPARE(populatedDetails.regularSchedule.size(), std::size_t(1));
+    QCOMPARE(populatedDetails.regularSchedule[0].day,
+             std::u16string(u"Raw Wednesday"));
+    QCOMPARE(populatedDetails.regularSchedule[0].startTime,
+             std::u16string(u" 4:03 PM "));
+    QCOMPARE(populatedDetails.intensiveSchedule.size(), std::size_t(1));
+    QCOMPARE(populatedDetails.intensiveSchedule[0].day,
+             std::u16string(u"Raw holiday"));
+
+    const auto& noInfo = result.value().classes[3];
+    QVERIFY(noInfo.classId == classId(*noInfoParent));
+    QVERIFY(noInfo.details);
+    QVERIFY(noInfo.details.value().grade.empty());
+    QVERIFY(noInfo.details.value().level.empty());
+    QVERIFY(noInfo.details.value().regularSchedule.empty());
+    QVERIFY(noInfo.details.value().intensiveSchedule.empty());
 
     const ClassesNavigationReadMetrics& metrics =
         services.databaseSession()->classInfoRepository()
