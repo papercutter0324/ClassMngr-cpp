@@ -35358,7 +35358,76 @@ association does not reproduce.
 | Compatibility | Preserve ordinary CreateNew and positive `INT_MAX` generated-ID acceptance, with imported details under that exact ID. |
 | Scope and focused verification | Change only `src/data/repositories/class_transfer_repository.cpp` and `tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full suite. |
 
-`CampusRecordRepository`'s separate `lastInsertId().toInt()` remains an
-unselected follow-up: it is a legacy DataService path without a matching
-focused DB-backed seam. Keep it outside F870. Phase 2 Gates 1/2 remain Partial
-and the formal exit gate remains Open.
+At the Batch 285 scan, `CampusRecordRepository`'s separate
+`lastInsertId().toInt()` remained unselected because no matching focused
+DB-backed seam had been identified. Batch 286 re-evaluates it after finding an
+existing lifecycle test seam. Phase 2 Gates 1/2 remain Partial and the formal
+exit gate remains Open.
+
+### F870 Class Transfer generated class-ID range - accepted; Batch 285 completion and Batch 286 discovery - 2026-10-14
+
+F870 is accepted at source/test commit
+`63058294f1f24ae9f63e6814c51d0dfbe82b5794` (`Phase2 - Guard Class Transfer generated class IDs`).
+Only `src/data/repositories/class_transfer_repository.cpp` and
+`tests/next_platform_application_services_class_transfer_apply_port_tests.cpp`
+changed. CreateNew now reads `lastInsertId()` as `qint64`, validates
+conversion, positivity, and `<= INT_MAX` before casting or summary/data writes.
+
+The required baseline used existing class ID `1` with a sentinel name and no
+`class_info`, set `sqlite_sequence` for `classes` to `4294967296`, and applied
+the existing typed CreateNew command. It reproduced generated ID
+`4294967297` narrowing to `1`: apply succeeded with summary ID `1`, imported
+`class_info` attached to ID `1`, and the high-ID row lacked details. The
+missing-details precondition is essential; existing `class_info` at ID `1`
+causes transaction rollback instead of the alias effect. Regression coverage
+checks Technical failure and rollback of the high-ID class and new teacher,
+no related rows, and the unchanged sentinel/no-details row. Positive `INT_MAX`
+is accepted with created class/details under that ID; ordinary success remains
+covered.
+
+Independent incremental Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests` succeeded
+in `build/windows-x64-debug`; exactly that Debug CTest passed 1/1. Sandbox
+FileTracker access errors required approved retries; the successful build had
+no warnings. No full suite ran.
+
+F870 completed Batch 285. The post-F870 audit reviewed all 13 Deferred
+triggers; none became newly actionable, and all 13 remain unchanged.
+Teacher-ID width remains a separate item. Batch 286 candidate discovery found
+F871 as its sole candidate: the prior scan had left Campus unselected for lack
+of a focused DB-backed seam, but the existing DataService lifecycle test has
+an actual-SQLite sequence fixture that can exercise it.
+
+`CampusRecordRepository::saveCampus()`
+(`src/data/repositories/campus_record_repository.cpp`) inserts a new campus
+then calls unchecked `query.lastInsertId().toInt()`; the result can be an
+error for a nonpositive narrow value or alias an existing ID. The insert path
+has no transaction. The schema defines `campuses.id` as
+`INTEGER PRIMARY KEY AUTOINCREMENT`, and `DataService::saveCampus()` forwards
+`Result<int>`. Existing coverage belongs in
+`tests/data_service_lifecycle_tests.cpp`, target/CTest
+`ClassMngrDataServiceLifecycleTests`; it already includes repository code and
+sequence/DataService fixtures, so no new target is needed.
+
+F871 is selected, not implemented. First seed actual campus ID `1` with a
+sentinel name, set `sqlite_sequence` for `campuses` to `4294967296`, and call
+`DataService::saveCampus()` for a new campus. Verify current Qt/QSQLITE
+generates INTEGER ID `4294967297` but reports success with returned ID `1`,
+while both the existing row and new row are persisted. If that alias does not
+reproduce, stop and revise the plan. After the fix, validate `lastInsertId()`
+as `qint64` for conversion, positivity, and `<= INT_MAX`; make the insert
+atomic so an unrepresentable ID returns failure and leaves no high-ID row,
+while campus `1` remains unchanged. Preserve normal create and generated
+`INT_MAX` success/reload. Keep the API as `int`, do not widen the schema, and
+exclude read-side `campusFromQuery()` narrowing. This is a compatibility-facing
+legacy DataService path; the current Next Campus Dashboard uses a JSON
+repository, so keep the slice bounded to this generated-ID defect.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Baseline reproduction | Seed actual campus ID `1` with a sentinel name, set `sqlite_sequence=4294967296`, and call `DataService::saveCampus()` for a new row. Confirm generated ID `4294967297` is persisted but returned as aliased ID `1`, with the existing row unchanged and the new row present. Stop and revise if this does not reproduce. |
+| Range rejection and atomicity | Read the generated ID as `qint64` and validate conversion, positivity, and `<= INT_MAX`; an unrepresentable ID returns failure and leaves no high-ID row, while existing campus `1` stays unchanged. |
+| Compatibility | Preserve ordinary creation and generated `INT_MAX` success/reload. Keep `Result<int>` and the schema unchanged; do not expand to `campusFromQuery()` read-side narrowing. |
+| Scope and focused verification | Change only `src/data/repositories/campus_record_repository.cpp` and `tests/data_service_lifecycle_tests.cpp`; sequentially build `ClassMngr`, then `ClassMngrDataServiceLifecycleTests` in `build/windows-x64-debug`; run exactly that Debug CTest. No new target or full-suite run. |
+
+Phase 2 Gates 1/2 remain Partial and the formal exit gate remains Open.

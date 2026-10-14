@@ -88,11 +88,22 @@
   sentinel teacher ID to NULL allowed the baseline to reproduce. FileTracker
   access errors required approved retries; final builds had no warnings. No
   full suite ran.
-- The post-F869 audit reviewed all 13 Deferred entries and found none newly
-  actionable; all 13 remain unchanged. Batch 284 is complete. Batch 285 selects
-  F870: validate Class Transfer's generated class ID before writing imported
-  class details. The existing active-session apply test and required baseline
-  fixture condition are recorded in the Phase 2 plan.
+- F870 source/test commit: `63058294f1f24ae9f63e6814c51d0dfbe82b5794`;
+  Class Transfer CreateNew now checks generated class IDs as qint64 before
+  recording the ID or writing imported class details. The baseline reproduced
+  a generated ID `4294967297` aliasing to class `1` when that class had no
+  `class_info`; the import returned success and attached details to class 1.
+  Independent Debug builds of `ClassMngr` and
+  `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`
+  succeeded; the exact Debug CTest passed 1/1. FileTracker access errors
+  required approved retries; the final build had no warnings. No full suite
+  ran.
+- The post-F870 audit reviewed all 13 Deferred entries and found none newly
+  actionable; all 13 remain unchanged. Batch 285 is complete. Batch 286 selects
+  F871: validate and atomically reject an out-of-range generated campus ID in
+  `CampusRecordRepository::saveCampus()`. The existing DataService lifecycle
+  target provides a real SQLite seam; its exact wide-ID alias must be
+  reproduced before implementation.
 - Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F869 accepted; F870 selected)
+### Current state - 2026-10-14 (F870 accepted; F871 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -104,10 +104,16 @@ and teacher and preserves the existing class. Independent Debug builds of
 `ClassMngr` and `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
 succeeded; the exact CTest passed 1/1. No full suite ran. The post-F869 audit
 found no newly actionable trigger among all 13 Deferred entries. Batch 284 is
-complete. Batch 285 selects F870 to validate generated Class Transfer class
-IDs before writing imported data. F579/F598 still require an elevated
-Administrator token; Gates 1/2 remain Partial and the formal exit gate remains
-Open.
+complete. F870 is accepted at
+`63058294f1f24ae9f63e6814c51d0dfbe82b5794`: Class Transfer CreateNew now
+validates the generated class ID before recording it or writing class data.
+The baseline reproduced a wide ID attaching details to an existing class
+whose `class_info` row was absent; independent Debug verification passed the
+exact CTest 1/1. The post-F870 audit found no newly actionable Deferred
+trigger. Batch 285 is complete. Batch 286 selects F871 to validate and
+atomically reject unrepresentable generated campus IDs. F579/F598 still
+require an elevated Administrator token; Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
