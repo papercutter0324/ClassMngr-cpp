@@ -20,6 +20,12 @@ inline constexpr std::size_t kRosterRepositoryOutputMaxColumnNameBytes = 256;
 inline constexpr std::size_t kRosterRepositoryOutputMaxTextBytes =
     32 * 1024 * 1024;
 
+struct RosterReadOutcome final
+{
+    Roster roster;
+    bool parentMissing = false;
+};
+
 class RosterRepository
 {
 public:
@@ -126,6 +132,10 @@ public:
         );
 
     [[nodiscard]] Result<Roster> loadRoster(
+        int classId
+        );
+    // Adds parent provenance while retaining requested-ID child row loading.
+    [[nodiscard]] Result<RosterReadOutcome> loadRosterDetailed(
         int classId
         );
 

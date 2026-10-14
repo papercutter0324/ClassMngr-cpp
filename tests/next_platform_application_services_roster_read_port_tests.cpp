@@ -260,8 +260,11 @@ private slots:
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
     void rejectsMalformedAvailabilityColumnIndex();
+    void missingParentReturnsRecoverableNotFound();
+    void deletedParentWithOrphanRosterKeepsLegacyData();
     void missingRosterIsSuccessfulEmptySnapshot();
     void repositoryErrorIsStructured();
+    void rosterDataQueryErrorIsTechnical();
     void closedSessionFailsWithoutDataServiceFallback();
 };
 
@@ -1170,6 +1173,12 @@ missingRosterIsSuccessfulEmptySnapshot()
         );
     QVERIFY(createdClass);
 
+    const auto detailed = services.databaseSession()->rosterRepository()
+        ->loadRosterDetailed(*createdClass);
+    QVERIFY(detailed);
+    QVERIFY(!detailed->parentMissing);
+    QVERIFY(detailed->roster.columns.isEmpty());
+
     Platform::ApplicationServicesRosterReadPort port(services);
     const auto result = Application::RosterReadUseCase::execute(
         query(*createdClass),
@@ -1180,6 +1189,88 @@ missingRosterIsSuccessfulEmptySnapshot()
     QVERIFY(result.value().columns.empty());
     QVERIFY(result.value().columnWidths.empty());
     QVERIFY(result.value().rows.empty());
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+missingParentReturnsRecoverableNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(987654321),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+deletedParentWithOrphanRosterKeepsLegacyData()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Deleted Parent Orphan Roster Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English"), QStringLiteral("Korean")},
+        {{0, 0, QStringLiteral("Legacy cell")}}
+        ));
+
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(
+        disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(disableForeignKeys.lastError().text())
+        );
+    QSqlQuery deleteParent(database);
+    QVERIFY(deleteParent.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id=?"
+        )));
+    deleteParent.addBindValue(*createdClass);
+    QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto typed = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+    QVERIFY(!typed);
+    QCOMPARE(typed.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(typed.error().recoverable);
+
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    const auto detailed = repository->loadRosterDetailed(*createdClass);
+    QVERIFY(detailed);
+    QVERIFY(detailed->parentMissing);
+    QCOMPARE(detailed->roster.columns,
+        (QStringList{QStringLiteral("English"), QStringLiteral("Korean")}));
+    QCOMPARE(detailed->roster.rows.size(), 1);
+    QCOMPARE(detailed->roster.rows[0].size(), 2);
+    QCOMPARE(detailed->roster.rows[0][0], QStringLiteral("Legacy cell"));
+    QVERIFY(detailed->roster.rows[0][1].isEmpty());
+
+    const auto legacy = repository->loadRoster(*createdClass);
+    QVERIFY(legacy);
+    QCOMPARE(legacy->columns, detailed->roster.columns);
+    QCOMPARE(legacy->columnWidths, detailed->roster.columnWidths);
+    QCOMPARE(legacy->rows, detailed->roster.rows);
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::
@@ -1198,6 +1289,43 @@ repositoryErrorIsStructured()
     QSqlQuery dropTable(services.databaseSession()->database());
     QVERIFY2(dropTable.exec(QStringLiteral("DROP TABLE roster_columns")),
         qPrintable(dropTable.lastError().text()));
+
+    Platform::ApplicationServicesRosterReadPort port(services);
+    const auto result = Application::RosterReadUseCase::execute(
+        query(*createdClass),
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().message.empty());
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+rosterDataQueryErrorIsTechnical()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Broken Roster Data Read Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *createdClass,
+        {QStringLiteral("English")},
+        {}
+        ));
+    QSqlQuery dropTable(database);
+    QVERIFY2(
+        dropTable.exec(QStringLiteral("DROP TABLE roster_data")),
+        qPrintable(dropTable.lastError().text())
+        );
 
     Platform::ApplicationServicesRosterReadPort port(services);
     const auto result = Application::RosterReadUseCase::execute(

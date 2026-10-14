@@ -367,7 +367,20 @@ Result<Roster> RosterRepository::loadRoster(
     int classId
     )
 {
-    Roster roster;
+    auto loaded = loadRosterDetailed(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return std::move(loaded->roster);
+}
+
+Result<RosterReadOutcome> RosterRepository::loadRosterDetailed(
+    int classId
+    )
+{
+    RosterReadOutcome outcome;
 
     if (classId <= 0)
     {
@@ -380,15 +393,21 @@ Result<Roster> RosterRepository::loadRoster(
     QSqlQuery query(m_database);
 
     query.prepare(R"(
+        WITH requested(class_id) AS (VALUES (?))
         SELECT
-            name,
-            width,
-            typeof(width) AS width_storage_type,
-            position,
-            typeof(position) AS position_storage_type
-        FROM roster_columns
-        WHERE class_id=?
-        ORDER BY position, id
+            requested.class_id AS requested_class_id,
+            classes.id AS parent_class_id,
+            roster_columns.id AS roster_column_id,
+            roster_columns.name,
+            roster_columns.width,
+            typeof(roster_columns.width) AS width_storage_type,
+            roster_columns.position,
+            typeof(roster_columns.position) AS position_storage_type
+        FROM requested
+        LEFT JOIN classes ON classes.id = requested.class_id
+        LEFT JOIN roster_columns
+            ON roster_columns.class_id = requested.class_id
+        ORDER BY roster_columns.position, roster_columns.id
     )");
 
     query.addBindValue(classId);
@@ -404,8 +423,35 @@ Result<Roster> RosterRepository::loadRoster(
         return std::unexpected(loadedColumns.error().userMessage());
     }
 
-    while (query.next())
+    const bool parentRowFound = query.next();
+    if (query.lastError().isValid())
     {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading roster columns"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    if (!parentRowFound)
+    {
+        return std::unexpected(QObject::tr(
+            "Loading roster columns failed: no result was returned for %1."
+            ).arg(identity));
+    }
+
+    outcome.parentMissing = query.value("parent_class_id").isNull();
+
+    do
+    {
+        // The requested-ID join keeps orphan column rows available to the
+        // legacy wrapper while parent provenance is derived independently.
+        if (query.value("roster_column_id").isNull())
+        {
+            continue;
+        }
+
         bool positionValid = false;
         const qlonglong position =
             query.value("position").toLongLong(&positionValid);
@@ -423,7 +469,7 @@ Result<Roster> RosterRepository::loadRoster(
                 );
         }
 
-        roster.columns.append(
+        outcome.roster.columns.append(
             query.value("name").toString()
             );
 
@@ -442,12 +488,23 @@ Result<Roster> RosterRepository::loadRoster(
                     .arg(widthValue.toString())
                 );
         }
-        roster.columnWidths.append(*width);
+        outcome.roster.columnWidths.append(*width);
+    }
+    while (query.next());
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading roster columns"),
+            {},
+            identity
+            ).userMessage());
     }
 
-    if (roster.columns.isEmpty())
+    if (outcome.roster.columns.isEmpty())
     {
-        return roster;
+        return outcome;
     }
 
     query.prepare(R"(
@@ -543,30 +600,44 @@ Result<Roster> RosterRepository::loadRoster(
 
         if (
             columnIndex < 0
-            || columnIndex >= roster.columns.size()
+            || columnIndex >= outcome.roster.columns.size()
             )
         {
             continue;
         }
         const int column = static_cast<int>(columnIndex);
 
-        while (roster.rows.size() <= row)
+        while (outcome.roster.rows.size() <= row)
         {
             QStringList emptyRow;
 
-            for (int index = 0; index < roster.columns.size(); ++index)
+            for (
+                int index = 0;
+                index < outcome.roster.columns.size();
+                ++index
+                )
             {
                 emptyRow.append(QString());
             }
 
-            roster.rows.append(emptyRow);
+            outcome.roster.rows.append(emptyRow);
         }
 
-        roster.rows[row][column] =
+        outcome.roster.rows[row][column] =
             query.value("value").toString();
     }
 
-    return roster;
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading roster data"),
+            {},
+            identity
+            ).userMessage());
+    }
+
+    return outcome;
 }
 
 Result<RosterRepository::SpeakingEvaluationRosterNamesReadRecord>

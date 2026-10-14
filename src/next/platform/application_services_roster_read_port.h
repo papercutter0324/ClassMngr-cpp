@@ -84,7 +84,8 @@ public:
 
         try
         {
-            const Result<Roster> loaded = repository->loadRoster(*classId);
+            const Result<RosterReadOutcome> loaded =
+                repository->loadRosterDetailed(*classId);
             if (!loaded)
             {
                 return failure(
@@ -93,8 +94,16 @@ public:
                     );
             }
 
+            if (loaded->parentMissing)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "Roster class was not found."
+                    );
+            }
+
             return Application::RosterReadResult::success(
-                applicationSnapshot(*loaded)
+                applicationSnapshot(loaded->roster)
                 );
         }
         catch (const std::exception&)
