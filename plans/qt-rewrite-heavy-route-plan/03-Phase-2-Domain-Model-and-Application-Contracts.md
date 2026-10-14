@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-14
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F863 is accepted; F864 is selected for Batch 278; Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: F864 is accepted; F865 is selected for Batch 280, not implemented; Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,9 +70,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-Batch 278 (one candidate):
+Batch 280 (one candidate):
 
-- F864 - Keep a failed Roster Editor read from becoming an editable blank snapshot; distinguish it from a valid empty roster.
+- F865 - Reject persisted Classes list IDs outside positive signed-int range and propagate typed read failure.
 
 #### Deferred candidates
 

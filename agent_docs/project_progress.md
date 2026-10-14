@@ -53,20 +53,25 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-14 (F863 accepted; F864 selected)
+### Current state - 2026-10-14 (F864 accepted; F865 selected)
 
-F863 is accepted at source/test commit `2fad90b6`; the shared Schedule Testing
+F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
 INTEGER IDs through `INT_MAX`, and rejects malformed storage in assignment
 reads and the save overwrite precheck. Independent verification built the five
 planned Debug targets and passed the four exact CTests 4/4; no full suite ran.
-The post-F863 audit reviewed all 13 Deferred entries and found none newly
-actionable; their recorded triggers remain unresolved. Batch 278 selected
-F864: Roster Editor currently treats a failed roster read as an empty clean
-snapshot, although a later full-snapshot save can replace stored roster data.
-The acceptance record and focused verification scope are being added to the
-Phase 2 plan. F579/F598 still require an elevated Administrator token; Gates
-1/2 remain Partial and the formal exit gate remains Open.
+Batch 278's F864 is accepted at `30add1d6`: Roster Editor now surfaces failed
+roster reads and disables editing, persistence, print, and Save As until a
+successful read; valid empty-roster behavior remains. The standard Debug build
+of `ClassMngr` and `ClassMngrRosterEditorWidgetSaveTests` passed, and its exact
+CTest passed 1/1 in independent verification. The post-F864 audit found no
+newly actionable item among the 13 Deferred entries. Batch 279 found no
+qualifying candidate. Batch 280 selected F865 to reject stored class IDs
+outside the signed-int range before `getClasses()` can narrow them into a
+different identity. Its pre-implementation reproduction and acceptance matrix
+are being recorded in the Phase 2 plan. F579/F598 still
+require an elevated Administrator token; Gates 1/2 remain Partial and the
+formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

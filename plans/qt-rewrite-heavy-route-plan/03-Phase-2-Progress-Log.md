@@ -35003,3 +35003,82 @@ hardening.
 | Valid empty and recovery | A successful empty read remains blank, clean, and available for ordinary editing/output. After repairing the same record, a successful read restores its roster, normal capabilities, and clears failure state. |
 | Compatibility | Preserve ordinary autosave/save, dirty/failure rollback, and existing testing-class selection rollback behavior. |
 | Focused verification | Use existing `ClassMngr` and `ClassMngrRosterEditorWidgetSaveTests`; sequentially build both in `build/windows-x64-debug` and run exactly the registered `ClassMngrRosterEditorWidgetSaveTests` CTest in Debug. No new seam/target or full-suite run. |
+
+### F864 Failed Roster Editor reads cannot overwrite stored rosters - accepted; Batch 278 completion and Batch 279 scan - 2026-10-14
+
+F864 is accepted at source/test commit
+`30add1d6d16021b7be0e725066b8658053055eb7`. Roster Editor now reports failed
+roster reads and disables editing, manual/autosave persistence, print, and Save
+As for that failed state. Successful empty rosters remain editable and
+output-enabled; a successful subsequent read restores the actual data and
+normal capability. Before the fix, the Executor reproduced data loss when a
+malformed persisted column position caused a typed read failure: the blank
+fallback could overwrite existing data through `saveData()` or autosave after
+adding a column. The regression test verifies original metadata and cell data
+remain unchanged after manual/autosave/output attempts and that recovery works.
+
+Independent verification sequentially built `ClassMngr` and
+`ClassMngrRosterEditorWidgetSaveTests` in standard `build/windows-x64-debug`;
+the single exact Debug CTest registration #117 passed 1/1. Sandbox FileTracker
+failures required approved elevated retries. Direct QtTest output included
+environment warnings for a missing Qt font directory and keyboard SVG
+resource; an earlier build emitted a stale missing-header dependency warning,
+but final builds passed. No full suite ran.
+
+F864 completed Batch 278. The post-F864 audit found none of the 13 Deferred
+entries newly actionable; all remain unchanged. F579/F598 still require an
+Administrator token, F629 remains session-limited, and F709 still lacks a
+Calendar Page summary injection seam. F864 changed none of those triggers.
+
+Batch 279's no-candidate scan found no strong candidate in schedule slot-state
+(existing tests intentionally preserve unknown raw states), Speaking
+Evaluation indexes (F847/F848 already accepted explicit out-of-range INTEGER
+compatibility), or Calendar event reads (the typed port rejects invalid
+projected summaries). Discovery made no edits and ran no build or tests.
+Batch 280 scan results and its sole F865 selection are recorded below.
+Phase 2 remains In Progress/Open, and Gates 1/2 remain Partial.
+
+### Batch 280 discovery and F865 selection - 2026-10-14
+
+The write-failure scan found no actionable slice: roster transfer, Calendar
+Import/repeat, Class Transfer apply, and directory reconciliation already have
+repository transactions with late-failure rollback tests. The persisted-value
+scan found no candidate in schedule slot-state (unknown raw states are
+intentionally preserved), Speaking Evaluation indexes (F847/F848 accepted
+explicit out-of-range INTEGER compatibility), or Calendar reads (the typed
+port rejects invalid projected summaries). It selected the separate Classes
+list repository read boundary as F865.
+
+`ClassRepository::getClasses()` (`src/data/repositories/class_repository.cpp:94-128`)
+narrows persisted SQLite row IDs using unchecked `query.value("id").toInt()`.
+The schema uses `INTEGER PRIMARY KEY AUTOINCREMENT`, while `Classroom.id` and
+the repository create contract are signed `int`. The platform list port then
+stringifies the narrowed positive value and checks only positivity; the
+Application query checks canonical positive syntax and duplicates but cannot
+recover the original SQLite width. A single wide ID can therefore wrap to a
+different, otherwise unused positive class ID. F830 established the same Qt
+6.12/QSQLITE conversion of `4294967297` to `1`; F831/F832 accepted read-side
+representability checks for other directory repositories. F830 covers create,
+and F163 preserved ordinary Classes list IDs/order but not wide stored IDs.
+
+F865 is selected, not implemented. First seed one class row with SQLite
+INTEGER ID `4294967297` and a known name, verify `typeof(id)='integer'`, then
+run the existing `ClassesListReadQuery` through
+`ApplicationServicesClassesListReadPort`. Confirm the baseline returns typed
+ID `1`; if it does not, stop and report for plan revision. After the fix,
+reject IDs outside positive signed-int range in `ClassRepository::getClasses()`
+and propagate a typed nonrecoverable Technical failure through the query.
+Verify the stored ID/name remain unchanged and no wrong ID is exposed. Preserve
+representable IDs including `INT_MAX`, ordinary ordering/names, empty results,
+and existing repository/session errors. Do not widen the model/API, alter the
+schema, or change F830's explicit create-overflow persisted-row compatibility.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Reproduction | Existing fixture stores a single row at ID `4294967297` as SQLite INTEGER with a known name; the current read query returns typed alias ID `1`. Stop for plan revision if this baseline does not reproduce. |
+| Strict read and propagation | Reject out-of-range IDs in `ClassRepository::getClasses()` as typed nonrecoverable Technical failure through the platform port and Application query; verify the stored ID/name are unchanged and no alias is exposed. |
+| Compatibility | Preserve representable IDs through `INT_MAX`, ordinary names/order, empty result, and existing repository/session errors; retain F830 create-overflow compatibility and do not widen APIs or alter schema. |
+| Focused verification | Change only `src/data/repositories/class_repository.cpp` and `tests/next_platform_application_services_classes_list_read_port_tests.cpp`. Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesClassesListReadPortTests`, and `ClassMngrNextPlatformApplicationServicesClassCreatePortTests` in standard `build/windows-x64-debug`; run exactly those two focused CTests in Debug. No full suite or new CMake target. |
+
+The 13 Deferred entries remain unchanged. Phase 2 remains In Progress/Open;
+Gates 1/2 remain Partial.

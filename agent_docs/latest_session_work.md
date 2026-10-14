@@ -34,11 +34,20 @@
   became newly actionable. F579/F598 still require an elevated Administrator
   token; F629 remains a session-limited runner gap. F709 still lacks a seam
   that reaches CalendarPage summary formatting.
-- Batch 277 is complete. Batch 278 selected F864: a failed Roster Editor read
-  is installed as an empty clean roster, while a later full-snapshot save can
-  replace stored data. The acceptance matrix is being recorded in the Phase 2
-  plan before implementation. Phase 2 is In Progress/Open; Gates 1 and 2
-  remain Partial. See
+- F864 source/test commit: `30add1d6d16021b7be0e725066b8658053055eb7`; the
+  roster editor now visibly reports failed reads and disables editing, saves,
+  print, and Save As until a successful read. Valid empty rosters remain
+  available. Independent verification built `ClassMngr` and
+  `ClassMngrRosterEditorWidgetSaveTests`; its exact CTest passed 1/1. No full
+  suite ran.
+- The post-F864 audit reviewed all 13 Deferred entries and found none newly
+  actionable. Batch 279 found no qualifying candidate; unknown schedule slot
+  states remain explicitly preserved, Speaking Evaluation out-of-range integer
+  behavior is covered by F847/F848, and the Calendar port already rejects
+  invalid projected summaries. Batch 280 selected F865 to reject stored class
+  IDs outside the signed-int range before repository narrowing; its
+  pre-implementation alias reproduction is the next gate.
+- Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
   `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 - An elevated Administrator session was requested for the deferred WPR captures;
   no user reply is recorded yet.

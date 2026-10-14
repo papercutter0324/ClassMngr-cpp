@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-14
-- Current milestone: Phase 2 remains in progress: F863 is accepted at `2fad90b6`, and F864 is selected for Batch 278. The post-F863 audit found none of the 13 Deferred candidates newly actionable; Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: Phase 2 remains in progress: F864 is accepted at `30add1d6` and completed Batch 278; its audit left all 13 Deferred candidates unchanged, Batch 279 found no strong candidate, and Batch 280 selected F865 for the Classes list persisted-ID read boundary. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
