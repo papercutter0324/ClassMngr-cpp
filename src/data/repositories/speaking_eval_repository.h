@@ -33,6 +33,20 @@ public:
 
     using SaveResult = std::expected<void, SaveFailure>;
 
+    struct ReadFailure final
+    {
+        enum class Kind
+        {
+            ParentClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using ReadResult = std::expected<SpeakingEvalRows, ReadFailure>;
+
     explicit SpeakingEvalRepository(
         QSqlDatabase& database
         );
@@ -54,6 +68,13 @@ public:
         );
 
     [[nodiscard]] Result<SpeakingEvalRows> loadSpeakingEval(
+        int classId,
+        const QString& evaluationName
+        );
+
+    // Typed callers can distinguish a parent class confirmed absent by the
+    // result query without changing the legacy QString-error API.
+    [[nodiscard]] ReadResult loadSpeakingEvalDetailed(
         int classId,
         const QString& evaluationName
         );

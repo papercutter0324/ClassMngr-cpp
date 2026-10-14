@@ -93,6 +93,9 @@ class NextPlatformApplicationServicesSpeakingEvaluationReadPortTests final
 
 private slots:
     void readsExactNameAndPreservesOrderedUnicodeMatrix();
+    void reportsDeletedParentEvenWhenOrphanEvaluationRowsRemain();
+    void reportsNeverPresentParentAsNotFound();
+    void readsExistingEvaluationHeaderWithNoRowsAsEmpty();
     void readsBatchWithRequestedOrderAndSuccessfulEmptyOutcomes();
     void rejectsFractionalRowIndexesInTypedReads();
     void emptyBatchDoesNotRequireAnActiveSession();
@@ -150,6 +153,130 @@ readsExactNameAndPreservesOrderedUnicodeMatrix()
     QVERIFY(exactNameMiss);
     QVERIFY(exactNameMiss.value().rows.empty());
     QCOMPARE(exactNameMiss.value().evaluationName, std::u16string(u" Winter "));
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
+reportsDeletedParentEvenWhenOrphanEvaluationRowsRemain()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Orphan Read Test")
+        );
+    QVERIFY(createdClass);
+
+    SpeakingEvalRepository* const repository =
+        services.databaseSession()->speakingEvalRepository();
+    QVERIFY(repository->saveSpeakingEval(
+        *createdClass,
+        QStringLiteral("Winter"),
+        makeRows()
+        ));
+
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")));
+
+    QSqlQuery deleteParent(services.databaseSession()->database());
+    deleteParent.prepare(QStringLiteral("DELETE FROM classes WHERE id=?"));
+    deleteParent.addBindValue(*createdClass);
+    QVERIFY(deleteParent.exec());
+    QCOMPARE(deleteParent.numRowsAffected(), 1);
+
+    QSqlQuery orphanCounts(services.databaseSession()->database());
+    orphanCounts.prepare(QStringLiteral(R"(
+        SELECT
+            (SELECT COUNT(*) FROM speaking_evaluations WHERE class_id=?)
+                AS evaluation_count,
+            (SELECT COUNT(*) FROM speaking_eval_data WHERE evaluation_id=(
+                SELECT id FROM speaking_evaluations
+                WHERE class_id=? AND evaluation_name=?
+            )) AS data_count
+    )"));
+    orphanCounts.addBindValue(*createdClass);
+    orphanCounts.addBindValue(*createdClass);
+    orphanCounts.addBindValue(QStringLiteral("Winter"));
+    QVERIFY(orphanCounts.exec());
+    QVERIFY(orphanCounts.next());
+    QCOMPARE(orphanCounts.value("evaluation_count").toInt(), 1);
+    QCOMPARE(orphanCounts.value("data_count").toInt(), 25);
+    orphanCounts.finish();
+
+    // The legacy API keeps its historical child-table behavior. The typed
+    // read uses its parent-rooted result query and classifies this ID as absent.
+    const auto legacyRead = repository->loadSpeakingEval(
+        *createdClass,
+        QStringLiteral("Winter")
+        );
+    QVERIFY(legacyRead);
+    QCOMPARE(legacyRead->size(), 25);
+    QCOMPARE(legacyRead->at(0).size(), 11);
+    QCOMPARE(legacyRead->at(0).at(1), QStringLiteral("Student A"));
+
+    Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
+    const auto typedRead = Application::SpeakingEvaluationQuery::execute(
+        query(*createdClass, u"Winter"),
+        port
+        );
+    QVERIFY(!typedRead);
+    QCOMPARE(typedRead.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(typedRead.error().recoverable);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
+reportsNeverPresentParentAsNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Missing Parent Test")
+        );
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
+    const auto typedRead = Application::SpeakingEvaluationQuery::execute(
+        query(*createdClass + 1, u"Winter"),
+        port
+        );
+    QVERIFY(!typedRead);
+    QCOMPARE(typedRead.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(typedRead.error().recoverable);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::
+readsExistingEvaluationHeaderWithNoRowsAsEmpty()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Empty Header Test")
+        );
+    QVERIFY(createdClass);
+
+    QSqlQuery insertHeader(services.databaseSession()->database());
+    insertHeader.prepare(QStringLiteral(R"(
+        INSERT INTO speaking_evaluations (class_id, evaluation_name)
+        VALUES (?, ?)
+    )"));
+    insertHeader.addBindValue(*createdClass);
+    insertHeader.addBindValue(QStringLiteral("Header Only"));
+    QVERIFY(insertHeader.exec());
+
+    Platform::ApplicationServicesSpeakingEvaluationReadPort port(services);
+    const auto typedRead = Application::SpeakingEvaluationQuery::execute(
+        query(*createdClass, u"Header Only"),
+        port
+        );
+    QVERIFY(typedRead);
+    QVERIFY(typedRead.value().rows.empty());
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationReadPortTests::

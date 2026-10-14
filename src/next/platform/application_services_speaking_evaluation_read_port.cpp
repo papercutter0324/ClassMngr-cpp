@@ -153,15 +153,27 @@ ApplicationServicesSpeakingEvaluationReadPort::readEvaluation(
 
     try
     {
-        const Result<SpeakingEvalRows> loaded = repository->loadSpeakingEval(
+        const SpeakingEvalRepository::ReadResult loaded =
+            repository->loadSpeakingEvalDetailed(
             *classId,
             legacyText(query.evaluationName)
             );
         if (!loaded)
         {
+            if (
+                loaded.error().kind
+                == SpeakingEvalRepository::ReadFailure::Kind::ParentClassMissing
+                )
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    toStdString(loaded.error().diagnostic)
+                    );
+            }
+
             return failure(
                 Domain::ErrorCode::Technical,
-                toStdString(loaded.error())
+                toStdString(loaded.error().diagnostic)
                 );
         }
 

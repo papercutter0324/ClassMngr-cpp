@@ -516,6 +516,149 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
     return rows;
 }
 
+SpeakingEvalRepository::ReadResult
+SpeakingEvalRepository::loadSpeakingEvalDetailed(
+    const int classId,
+    const QString& evaluationName
+    )
+{
+    const auto technicalFailure = [](QString diagnostic) -> ReadResult
+    {
+        return std::unexpected(ReadFailure{
+            .kind = ReadFailure::Kind::Technical,
+            .diagnostic = std::move(diagnostic)
+        });
+    };
+
+    if (classId <= 0 || evaluationName.trimmed().isEmpty())
+    {
+        return technicalFailure(
+            QObject::tr(
+                "Loading speaking evaluation failed: invalid class id or "
+                "evaluation name."
+                )
+            );
+    }
+
+    const QString identity = QObject::tr(
+        "class id %1, evaluation '%2'")
+        .arg(classId)
+        .arg(evaluationName);
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        SELECT
+            classes.id AS parent_class_id,
+            speaking_eval_data.evaluation_id AS data_evaluation_id,
+            speaking_eval_data.row_index,
+            typeof(speaking_eval_data.row_index)
+                AS row_index_storage_type,
+            speaking_eval_data.col_0,
+            speaking_eval_data.col_1,
+            speaking_eval_data.col_2,
+            speaking_eval_data.col_3,
+            speaking_eval_data.col_4,
+            speaking_eval_data.col_5,
+            speaking_eval_data.col_6,
+            speaking_eval_data.col_7,
+            speaking_eval_data.col_8,
+            speaking_eval_data.col_9,
+            speaking_eval_data.col_10
+        FROM classes
+        LEFT JOIN speaking_evaluations
+            ON speaking_evaluations.class_id=classes.id
+            AND speaking_evaluations.evaluation_name=?
+        LEFT JOIN speaking_eval_data
+            ON speaking_eval_data.evaluation_id=speaking_evaluations.id
+        WHERE classes.id=?
+        ORDER BY speaking_eval_data.row_index
+    )");
+    query.addBindValue(evaluationName);
+    query.addBindValue(classId);
+
+    const auto loaded = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading speaking evaluation"),
+        identity
+        );
+    if (!loaded)
+    {
+        return technicalFailure(loaded.error().userMessage());
+    }
+
+    SpeakingEvalRows rows;
+    bool parentClassFound = false;
+    while (query.next())
+    {
+        if (query.value("parent_class_id").isNull())
+        {
+            return technicalFailure(
+                QObject::tr(
+                    "Loading speaking evaluation failed for %1: invalid "
+                    "parent class result."
+                    ).arg(identity)
+                );
+        }
+
+        parentClassFound = true;
+
+        // evaluation_id is a non-null identity for every matching data row;
+        // row_index may legitimately be SQL NULL in supported legacy data.
+        if (query.value("data_evaluation_id").isNull())
+        {
+            continue;
+        }
+
+        if (
+            !query.value("row_index").isNull()
+            && query.value("row_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return technicalFailure(
+                QObject::tr(
+                    "Loading speaking evaluation rows failed for %1: "
+                    "invalid row index storage type."
+                    ).arg(identity)
+                );
+        }
+
+        QStringList row;
+        row.reserve(SpeakingEval::ColumnCount);
+        for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
+        {
+            row.append(
+                query.value(QStringLiteral("col_%1").arg(column)).toString()
+                );
+        }
+        rows.append(std::move(row));
+    }
+
+    if (query.lastError().isValid())
+    {
+        return technicalFailure(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading speaking evaluation"),
+                {},
+                identity
+                ).userMessage()
+            );
+    }
+
+    if (!parentClassFound)
+    {
+        return std::unexpected(ReadFailure{
+            .kind = ReadFailure::Kind::ParentClassMissing,
+            .diagnostic = QObject::tr(
+                "Loading speaking evaluation failed: parent class id %1 "
+                "was not found."
+                ).arg(classId)
+        });
+    }
+
+    return rows;
+}
+
 Result<QList<SpeakingEvalNamedRows>>
 SpeakingEvalRepository::loadSpeakingEvalBatch(
     const int classId,
