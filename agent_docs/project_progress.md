@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F898 accepted; next slice pending selection)
+### Current state - 2026-10-15 (F898 accepted; F899 baseline underway)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -247,8 +247,9 @@ of `ClassMngr` and the four affected page-port targets succeeded; exact CTests
 retry per target. Successful builds emitted no warnings; no full suite ran.
 Cursor-fetch failure has no fixture and was code-reviewed. Two independent
 post-F898 audits found none of the 13 official Deferred entries newly
-actionable. Batch 303 is complete; no next candidate is currently selected.
-Gates 1/2 remain Partial and the formal exit gate remains Open.
+actionable. Batch 303 is complete. Batch 304 selects F899, the Selected Class
+Subtitle batch read; its public-port baseline is underway, with acceptance
+pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

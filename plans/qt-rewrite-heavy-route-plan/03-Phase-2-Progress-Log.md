@@ -37331,3 +37331,46 @@ entries and found none newly actionable; all remain deferred. Batch 303 is
 complete. Next-slice discovery and selection are pending; no next candidate
 has been selected. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### Batch 304 discovered; F899 selected - 2026-10-15
+
+Two independent full-scope reviews after F898 found no newly actionable item
+among the 13 official Deferred candidates; all remain unchanged. The broader
+nine-lead code scan plus plan cross-check produced this ten-slice Batch 304
+order: F899 Selected Class Subtitle batch; F900 Roster Template Print source
+batch; F901 My Classes class-information batch; F902 My Classes class-summary
+batch; F903 Speaking Evaluation single matrix read; F904 Speaking Evaluation
+batch matrix read; F905 Speaking Evaluation roster-names projection; F906
+Class Details validation-context read; F907 My Classes student-count batch;
+and F908 Classes Navigation snapshot, each for parent provenance.
+Class-summary has no focused adapter target, so follows class-information.
+Classes Navigation remains last because its per-entry shape is unresolved.
+These active candidates do not change the official Deferred list.
+
+F899 is first because it is the batch sibling to accepted F895
+([acceptance](03-Phase-2-Progress-Log.md:37071)).
+The repository batch read uses a requested-class list and left-joins
+`class_info` without checking `classes`
+([repository read](../../src/data/repositories/class_info_repository.cpp:2496)).
+The platform batch port maps returned rows to successful class fields
+([port mapping](../../src/next/platform/application_services_selected_class_subtitle_batch_read_port.h:142)),
+while the focused test already verifies that a valid class without subtitle
+metadata succeeds with blank grade/level and no assigned teacher
+([test](../../tests/next_platform_application_services_selected_class_subtitle_batch_read_port_tests.cpp:263)).
+This suggests that an absent parent may also currently produce a successful
+default projection; that is a source-based inference, not a measured baseline.
+The public-port baseline is in progress and acceptance remains pending. The
+existing focused test target is
+`NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPort`
+([target registration](../../cmake/tests/next.cmake:2584)).
+
+F900 follows accepted F896, whose evidence records that the separate batch
+loader and metrics were left unchanged
+([F896 record](03-Phase-2-Progress-Log.md:37149)).
+F901-F902 cover My Classes summaries and selected details
+([projection contract](03-Phase-2-Domain-Model-and-Application-Contracts.md:222));
+F903-F905 cover evaluation editing and related reads
+([use cases](03-Phase-2-Domain-Model-and-Application-Contracts.md:172));
+F906-F908 are lower-readiness validation, student-count, and navigation
+follow-ups from the code inventory, retained after plan cross-check.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
