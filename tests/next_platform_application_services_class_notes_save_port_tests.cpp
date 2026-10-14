@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
+#include "next/application/class_notes_save_use_case.h"
 #include "next/platform/application_services_class_notes_save_port.h"
 
 #include <QByteArray>
@@ -76,6 +77,7 @@ private slots:
     void rejectsInvalidAndOverLimitInputBeforeAnyWrite();
     void mapsUnavailableAndClosedSession();
     void mapsRepositoryWriteFailureAndPreservesStoredNotes();
+    void unknownPositiveClassIdReturnsNotFoundAndPreservesLegacyDiagnostic();
 };
 
 void NextPlatformApplicationServicesClassNotesSavePortTests::
@@ -296,6 +298,100 @@ mapsRepositoryWriteFailureAndPreservesStoredNotes()
         loaded->timeFillerActivities,
         QStringLiteral("Original activities")
         );
+}
+
+void NextPlatformApplicationServicesClassNotesSavePortTests::
+unknownPositiveClassIdReturnsNotFoundAndPreservesLegacyDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int existingClassId = createClass(services);
+    QVERIFY(existingClassId > 0);
+    const int unknownClassId = existingClassId + 100000;
+    ClassInfoRepository* const repository = classInfoRepository(services);
+    QVERIFY(repository);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery classBeforeQuery(database);
+    classBeforeQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM classes WHERE id=?"
+        ));
+    classBeforeQuery.addBindValue(unknownClassId);
+    QVERIFY(classBeforeQuery.exec());
+    QVERIFY(classBeforeQuery.next());
+    QCOMPARE(classBeforeQuery.value(0).toInt(), 0);
+
+    QSqlQuery classInfoBeforeQuery(database);
+    classInfoBeforeQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM class_info WHERE class_id=?"
+        ));
+    classInfoBeforeQuery.addBindValue(unknownClassId);
+    QVERIFY(classInfoBeforeQuery.exec());
+    QVERIFY(classInfoBeforeQuery.next());
+    QCOMPARE(classInfoBeforeQuery.value(0).toInt(), 0);
+
+    const Status legacySave = repository->saveClassNotes(
+        unknownClassId,
+        QStringLiteral("Legacy notes"),
+        QStringLiteral("Legacy activities")
+        );
+    QVERIFY(!legacySave);
+    QCOMPARE(
+        legacySave.error(),
+        QStringLiteral(
+            "Saving class notes failed for class id %1: FOREIGN KEY constraint "
+            "failed Unable to fetch row (database error 787)"
+            ).arg(unknownClassId)
+        );
+
+    QSqlQuery classInfoAfterLegacyQuery(database);
+    classInfoAfterLegacyQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM class_info WHERE class_id=?"
+        ));
+    classInfoAfterLegacyQuery.addBindValue(unknownClassId);
+    QVERIFY(classInfoAfterLegacyQuery.exec());
+    QVERIFY(classInfoAfterLegacyQuery.next());
+    QCOMPARE(classInfoAfterLegacyQuery.value(0).toInt(), 0);
+
+    Platform::ApplicationServicesClassNotesSavePort port(services);
+    const Application::ClassNotesSaveResult typedSave =
+        Application::ClassNotesSaveUseCase::execute(
+            request(
+                std::to_string(unknownClassId),
+                u"Typed notes",
+                u"Typed activities"
+                ),
+            port
+            );
+    QVERIFY(!typedSave);
+    QCOMPARE(typedSave.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        fromUtf8(typedSave.error().message),
+        QStringLiteral(
+            "Saving class notes failed: parent class id %1 was not found."
+            ).arg(unknownClassId)
+        );
+
+    QSqlQuery classAfterQuery(database);
+    classAfterQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM classes WHERE id=?"
+        ));
+    classAfterQuery.addBindValue(unknownClassId);
+    QVERIFY(classAfterQuery.exec());
+    QVERIFY(classAfterQuery.next());
+    QCOMPARE(classAfterQuery.value(0).toInt(), 0);
+
+    QSqlQuery classInfoAfterTypedQuery(database);
+    classInfoAfterTypedQuery.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM class_info WHERE class_id=?"
+        ));
+    classInfoAfterTypedQuery.addBindValue(unknownClassId);
+    QVERIFY(classInfoAfterTypedQuery.exec());
+    QVERIFY(classInfoAfterTypedQuery.next());
+    QCOMPARE(classInfoAfterTypedQuery.value(0).toInt(), 0);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassNotesSavePortTests)

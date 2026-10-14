@@ -112,7 +112,8 @@ public:
                     );
             }
 
-            const Status saved = repository->saveClassNotes(
+            const ClassInfoRepository::ClassNotesSaveDetailedResult saved =
+                repository->saveClassNotesDetailed(
                 *classId,
                 notes,
                 activities
@@ -124,9 +125,16 @@ public:
                     return unavailableFailure();
                 }
 
-                const QByteArray errorBytes = saved.error().toUtf8();
+                const auto& saveFailure = saved.error();
+                const Domain::ErrorCode code =
+                    saveFailure.kind
+                        == ClassInfoRepository::ClassNotesSaveFailure::Kind::
+                            ParentClassMissing
+                    ? Domain::ErrorCode::NotFound
+                    : Domain::ErrorCode::Technical;
+                const QByteArray errorBytes = saveFailure.diagnostic.toUtf8();
                 return failure(
-                    Domain::ErrorCode::Technical,
+                    code,
                     errorBytes.isEmpty()
                         ? "Class notes could not be saved."
                         : errorBytes.toStdString()

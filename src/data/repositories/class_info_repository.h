@@ -406,6 +406,21 @@ struct MyClassesClassSummaryBatchReadMetrics final
 class ClassInfoRepository
 {
 public:
+    struct ClassNotesSaveFailure final
+    {
+        enum class Kind
+        {
+            ParentClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using ClassNotesSaveDetailedResult =
+        std::expected<void, ClassNotesSaveFailure>;
+
     explicit ClassInfoRepository(
         QSqlDatabase& database
         );
@@ -424,6 +439,13 @@ public:
         );
 
     [[nodiscard]] Status saveClassNotes(
+        int classId,
+        const QString& notes,
+        const QString& timeFillerActivities
+        );
+    // Typed callers can distinguish a missing parent class from other save
+    // failures without changing the legacy Status/QString API above.
+    [[nodiscard]] ClassNotesSaveDetailedResult saveClassNotesDetailed(
         int classId,
         const QString& notes,
         const QString& timeFillerActivities
@@ -560,6 +582,11 @@ public:
         );
 
 private:
+    [[nodiscard]] Status writeClassNotes(
+        int classId,
+        const QString& notes,
+        const QString& timeFillerActivities
+        );
     [[nodiscard]] Status saveClassInfoWithTeacherId(
         const ClassInfo& info,
         qint64 teacherId

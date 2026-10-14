@@ -484,6 +484,128 @@ Status ClassInfoRepository::saveClassNotes(
             );
     }
 
+    return writeClassNotes(classId, notes, timeFillerActivities);
+}
+
+ClassInfoRepository::ClassNotesSaveDetailedResult
+ClassInfoRepository::saveClassNotesDetailed(
+    const int classId,
+    const QString& notes,
+    const QString& timeFillerActivities
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(ClassNotesSaveFailure{
+            .kind = ClassNotesSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Saving class notes failed: invalid class id %1."
+                ).arg(classId)
+        });
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    DatabaseTransaction transaction(
+        m_database,
+        DatabaseTransaction::Mode::Immediate
+        );
+    if (!transaction.started())
+    {
+        return std::unexpected(ClassNotesSaveFailure{
+            .kind = ClassNotesSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Starting class notes save transaction failed for %1: %2"
+                ).arg(identity, transaction.startError())
+        });
+    }
+
+    bool parentClassExists = false;
+    {
+        QSqlQuery query(m_database);
+        query.prepare(QStringLiteral(
+            "SELECT 1 FROM classes WHERE id=?"
+            ));
+        query.addBindValue(classId);
+
+        const auto loaded = SqlQueryUtils::executePrepared(
+            query,
+            QObject::tr("Checking class notes parent class"),
+            identity
+            );
+        if (!loaded)
+        {
+            return std::unexpected(ClassNotesSaveFailure{
+                .kind = ClassNotesSaveFailure::Kind::Technical,
+                .diagnostic = loaded.error().userMessage()
+            });
+        }
+
+        parentClassExists = query.next();
+        const QSqlError fetchError = query.lastError();
+        query.finish();
+        if (!parentClassExists && fetchError.isValid())
+        {
+            return std::unexpected(ClassNotesSaveFailure{
+                .kind = ClassNotesSaveFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Checking class notes parent class failed for %1: %2"
+                    ).arg(identity, fetchError.text())
+            });
+        }
+    }
+
+    if (!parentClassExists)
+    {
+        if (!transaction.rollbackChecked())
+        {
+            return std::unexpected(ClassNotesSaveFailure{
+                .kind = ClassNotesSaveFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Rolling back class notes save failed for %1: %2"
+                    ).arg(identity, m_database.lastError().text())
+            });
+        }
+
+        return std::unexpected(ClassNotesSaveFailure{
+            .kind = ClassNotesSaveFailure::Kind::ParentClassMissing,
+            .diagnostic = QObject::tr(
+                "Saving class notes failed: parent class id %1 was not found."
+                ).arg(classId)
+        });
+    }
+
+    const Status saved = writeClassNotes(
+        classId,
+        notes,
+        timeFillerActivities
+        );
+    if (!saved)
+    {
+        return std::unexpected(ClassNotesSaveFailure{
+            .kind = ClassNotesSaveFailure::Kind::Technical,
+            .diagnostic = saved.error()
+        });
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(ClassNotesSaveFailure{
+            .kind = ClassNotesSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Committing class notes save failed for %1: %2"
+                ).arg(identity, m_database.lastError().text())
+        });
+    }
+
+    return {};
+}
+
+Status ClassInfoRepository::writeClassNotes(
+    const int classId,
+    const QString& notes,
+    const QString& timeFillerActivities
+    )
+{
     QSqlQuery query(m_database);
 
     query.prepare(R"(
