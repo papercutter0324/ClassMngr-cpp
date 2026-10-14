@@ -145,11 +145,14 @@ defaults for missing optional metadata, retains an independent roster count,
 and keeps legacy defaults. Its exact focused Debug CTest passed 1/1 after
 bounded FileTracker retries; no full suite ran. Two independent post-F889
 audits again found none of the 13 official Deferred entries actionable.
-Batch 302 proceeds with F890 discovery for absent-parent classification during
-typed Testing Assignment save, preserving Technical outcomes for missing
-subtype/details, conflicts, and query failures. Batch 303's leading Class
-Notes Page read follow-up and similar page-read leads remain in the Phase 2
-progress log. Gates 1/2 remain Partial and the formal exit gate remains Open.
+Batch 302 proceeds with F890 after its public baseline showed both a missing
+class parent and an existing class without Testing Class details return
+unrecoverable `Technical` with the same legacy diagnostic and no write. The
+selected boundary maps only a parent absent inside the assignment transaction
+to typed `NotFound`; missing subtype/details, conflicts, and query failures
+remain `Technical`. Batch 303's leading Class Notes Page read follow-up and
+similar page-read leads remain in the Phase 2 progress log. Gates 1/2 remain
+Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

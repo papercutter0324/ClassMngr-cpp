@@ -5476,3 +5476,11 @@ that row fetching completed. When an empty cursor means a typed NotFound, check
 the query's `lastError()` after `next()` returns false and classify only a clean
 end-of-results as missing. Apply the same check after streamed row iteration so
 a fetch failure cannot look like a successful short result.
+
+## Phase 2 typed assignment parent classification - 2026-10-15
+
+For a typed assignment write, classify parent absence inside the same
+Immediate transaction that validates subtype/details, checks slot conflicts,
+and writes the assignment. Use an explicit repository failure kind so only a
+confirmed missing parent maps to `NotFound`; keep legacy missing-row messages,
+subtype/details errors, conflicts, and operational failures intact.

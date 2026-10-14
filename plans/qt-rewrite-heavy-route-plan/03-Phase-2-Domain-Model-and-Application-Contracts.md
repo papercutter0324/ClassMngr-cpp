@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F889 is accepted and F890 discovery is underway for typed Testing Assignment save classification of an absent class parent; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F889 is accepted; F890's public baseline confirms deleted parents and missing Testing Class details currently collapse to `Technical`, and implementation will classify only a missing parent inside the assignment transaction; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch 302 - F890: classify only an absent class during typed Testing Assignment save; keep missing subtype/details, conflicts, and query failures `Technical`; discovery and baseline review in progress.
+- Batch 302 - F890: classify only an absent class during typed Testing Assignment save; keep missing subtype/details, conflicts, and query failures `Technical`; baseline captured and acceptance defined.
 
 #### Deferred candidates
 

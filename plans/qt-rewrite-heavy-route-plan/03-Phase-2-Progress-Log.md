@@ -36579,3 +36579,47 @@ Batch 302 remaining order:
 
 All 13 official Deferred candidates remain unchanged; Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+### F890 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change public typed baseline used a valid `AssignTestingClass` request
+for two states: a missing class ID (`2000000000`) and a real ordinary class
+created without `class_info` or `testing_classes` rows. Both returned
+unrecoverable `Technical`, message `The selected testing class no longer
+exists.`, and wrote no assignment row. The temporary baseline slot was
+removed, and the test file hash matched its pre-edit value. Its focused Debug
+target passed the temporary baseline CTest 1/1 after the bounded FileTracker
+retry; the initial build reported MSB8064 for the stale
+`teacher_import_plan_mapper.h` dependency. No full suite ran.
+
+Independent route discovery confirmed `validateTestingClass()` currently
+starts at `testing_classes` and INNER JOINs `classes` and `class_info`, so a
+missing parent and missing subtype/details share the same no-row error. The
+typed port maps this repository failure to `Technical`. The repository already
+owns class validation, conflict detection, and assignment mutation in one
+transaction, but starts that transaction in the default mode.
+
+F890 will keep the authoritative write boundary in `TestingBlockRepository`.
+The detailed assignment save will start an Immediate transaction, use a
+`classes`-rooted query with LEFT JOINs to Testing Class subtype and `class_info`
+to identify only an absent `classes` row, then keep subtype/details validation,
+slot conflict checks, and the write in that transaction. A detailed
+repository-owned failure kind maps only confirmed parent absence to typed
+`NotFound`. The legacy `Status` API remains a wrapper that forwards the exact
+diagnostic. Existing-class missing subtype/details, missing required fields,
+slot conflicts, validation errors, query/fetch failures, transaction start,
+write, and commit failures remain Technical; input validation order and
+unavailable-session behavior remain unchanged. This avoids a port-side
+preflight and prevents a concurrent deletion from racing the classification.
+
+| Acceptance point | Required evidence |
+| --- | --- |
+| Missing-parent classification and transaction | A valid public typed assignment to an absent class returns `NotFound`, writes no assignment, and uses repository-owned provenance. Parent classification, subtype/details validation, conflict check, and write remain under one Immediate transaction. |
+| Existing-class and legacy behavior | An ordinary class without Testing Class subtype/details remains typed `Technical`. Preserve exact legacy `The selected testing class no longer exists.` for the no-row cases and the existing missing-required-details diagnostic; legacy `assignTestingClass()` remains a Status wrapper. |
+| Conflict and failure behavior | Valid-class conflicts remain Technical and preserve the stored assignment; replacement success and ordinary save behavior remain intact. Query/fetch, transaction-start, write, and commit failures stay Technical. Keep invalid request and unavailable-session outcomes unchanged. |
+| Regression coverage | Cover missing parent with no mutation, existing ordinary class without subtype/details, legacy diagnostic, missing required details, conflict preservation, successful assignment/replacement, and a forced query failure on the typed public path where the current SQLite seam permits. |
+| Focused verification | Sequentially build `ClassMngr`, `ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests`, and `ClassMngrTestingBlockRepositoryTests` in `build/windows-x64-debug`; run exactly those two matching Debug CTests. No full suite. |
+
+F890 baseline and acceptance are complete; implementation is next. All 13
+official Deferred candidates remain unchanged; Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.
