@@ -37722,3 +37722,26 @@ ran. The temporary test source was restored byte-for-byte (SHA-256
 | Present-parent projection | A present parent without `class_info` remains successful with defaults (`teacherId=-1`, empty notes and time-filler). Preserve class identity, raw signed teacher ID, and exact notes/time-filler for populated parents. |
 | Compatibility and scope | Preserve unavailable-session `NotFound`, invalid-ID and result-mismatch behavior, and legacy `loadClassPageDetails` signature and behavior; use a detailed seam for the typed port. Leave ClassDetailsSaveWorkflow fallback, schedule conflict/save ports, UI, schema, and orphan cleanup unchanged. |
 | Verification and status | Baseline CTest #317 passed 1/1. F906 baseline and acceptance are recorded; implementation and post-change verification remain pending. |
+
+### F906 accepted; post-slice Deferred audit clear; F907 selected - 2026-10-15
+
+F906 is accepted at source/test commit
+`6900d2a3a6a53af65f3eb949053bb5a51ad688e1`. The typed port now uses a
+detailed parent-rooted read outcome: only a clean query confirming an absent
+`classes` row maps to recoverable `NotFound`, and orphan `class_info` and
+`class_times` do not produce typed context values. A present parent without
+`class_info` retains successful defaults. Legacy `loadClassPageDetails`
+behavior remains unchanged. SQL, cursor-fetch, and exception failures remain
+`Technical`.
+
+Independent Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`
+used `/p:TrackFileAccess=false /p:ForceRebuild=true`; exact CTest #317 passed
+1/1 with no warnings. No full suite ran. Cursor injection is unavailable, so
+source error handling was reviewed. Invalid-ID and result-mismatch behavior
+is unchanged and was not runtime-exercised.
+
+Two independent post-F906 audits reviewed all 13 exact official Deferred
+candidates; none became newly actionable. F907, My Classes student-count batch
+parent provenance, is selected; its baseline and acceptance are pending. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.

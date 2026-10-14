@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F905 accepted; F906 selected)
+### Current state - 2026-10-15 (F906 accepted; F907 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -406,8 +406,19 @@ probe was restored byte-for-byte (SHA-256
 recorded F906 boundary maps only clean parent-rooted absence to recoverable
 `NotFound`, preserves defaults for a present parent without metadata and the
 legacy `loadClassPageDetails` behavior, and keeps SQL/cursor/exception errors
-Technical. F906 implementation and post-change verification are pending.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+Technical. F906 is accepted at source/test commit
+`6900d2a3a6a53af65f3eb949053bb5a51ad688e1`. Independent Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`
+passed with `/p:TrackFileAccess=false /p:ForceRebuild=true`; exact Debug CTest
+#317 passed 1/1 with no warnings. No full suite ran. Cursor-fetch injection
+was unavailable and the post-cursor checks were source-reviewed; invalid-ID
+and result-mismatch paths were unchanged and not runtime-exercised. Two
+independent post-F906 audits reviewed all 13 official Deferred candidates;
+none became actionable and the list remains unchanged. F907, My Classes
+student-count batch parent provenance, is selected; its baseline and
+acceptance are pending. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

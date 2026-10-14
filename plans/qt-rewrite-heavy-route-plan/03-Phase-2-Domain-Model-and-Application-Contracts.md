@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F905 Speaking Evaluation roster-names projection parent provenance is accepted at source/test commit `d3f7585bbaf5d1109e668ae3da4849f85f117036`; F906 Class Details validation-context read parent provenance is selected with baseline and acceptance recorded, while implementation and post-change verification remain pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F906 Class Details validation-context read parent provenance is accepted at source/test commit `6900d2a3a6a53af65f3eb949053bb5a51ad688e1`; F907 My Classes student-count batch parent provenance is selected with baseline and acceptance pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F906 - Class Details validation-context read parent provenance: only a clean parent-rooted query confirming no `classes` row yields recoverable `NotFound`; suppress orphan context and preserve present-parent defaults and legacy behavior. Baseline and acceptance are recorded; implementation and post-change verification are pending.
-- F907 - My Classes student-count batch parent provenance: classify parent absence in the batch projection.
+- F907 - My Classes student-count batch parent provenance: classify parent absence in the batch projection. Baseline and acceptance are pending.
 - F908 - Classes Navigation snapshot parent provenance: classify parent absence in navigation entries.
 
 #### Deferred candidates
