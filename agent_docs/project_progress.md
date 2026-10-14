@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F894 baseline captured; implementation next)
+### Current state - 2026-10-15 (F894 accepted; F895 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -177,22 +177,22 @@ fields/colors, and the legacy repository wrapper retains unknown-ID defaults.
 Independent sequential Debug builds of `ClassMngr` and its focused target
 succeeded; the exact matching CTest passed 1/1 with no compiler warnings.
 No full suite ran. Two independent post-F893 audits again found none of the 13
-official Deferred candidates actionable. F894's public-port baseline
-confirmed that unknown class ID `812345` has no parent row, yet currently
-returns the same successful defaults as a real class without `class_info`.
-The existing-class case retains ordered schedules; the unknown class has no
-schedule. The temporary assertion was removed and the test file hash restored.
-Sequential builds of `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests` in
-`build/windows-x64-debug` passed after bounded FileTracker retries, and the
-matching CTest passed 1/1 (CTest #334). A stale dependency warning appeared in
-the target build; no full suite ran. F894 acceptance is defined: add explicit
-parent provenance for the typed result, map only a missing parent to
-recoverable `NotFound` for class fields and teacher display name, preserve
-existing-parent defaults/schedules and the legacy repository wrapper, and
-keep operational failures distinct. Four later Batch 303 read leads remain
-ordered in the Phase 2 plan. Gates 1/2 remain Partial and the formal exit gate
-remains Open.
+official Deferred candidates actionable. F894 is accepted at
+`aa0314579afc056428aee26cfba82d537167d8da`: the Co-Teacher Page repository
+now reports explicit parent provenance while its legacy record wrapper keeps
+successful defaults for unknown IDs; the typed port maps confirmed parent
+absence to recoverable `NotFound` for class fields and teacher display name.
+Existing classes without `class_info` keep defaults and ordered schedules,
+and metadata/schedule cursor failures remain operational errors. Independent
+Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`
+passed in `build/windows-x64-debug`; the exact CTest passed 1/1 (#334) after
+bounded elevated FileTracker retries, with no compiler warnings. Cursor-fetch
+branches were not directly injected; no full suite ran. Two independent
+post-F894 audits found no Deferred trigger newly actionable, so all 13 remain
+unchanged. Batch 303 proceeds with F895, the Selected Class Subtitle read;
+four further bounded leads remain ordered in the Phase 2 plan. Gates 1/2
+remain Partial and the formal exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

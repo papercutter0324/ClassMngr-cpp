@@ -36983,3 +36983,41 @@ and the dependent teacher display name. Existing classes without
 F894 baseline and acceptance are complete; implementation is next. The 13
 official Deferred candidates have not yet been re-audited after F894. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F894 accepted; post-slice Deferred audit clear; F895 selected - 2026-10-15
+
+F894 is accepted at source/test commit
+`aa0314579afc056428aee26cfba82d537167d8da`. The Co-Teacher Page repository
+now returns explicit parent provenance from a `classes`-rooted `LEFT JOIN`
+while keeping `loadClassCoTeacherPageDetails()` as a record-returning wrapper
+that retains its successful default result for unknown IDs. The typed port
+maps only a confirmed absent parent to recoverable `NotFound` for both class
+fields and teacher display name inside the successful outer snapshot. An
+existing class without `class_info` retains empty defaults and its ordered
+schedule; teacher projection remains independent. Metadata and schedule
+cursor errors are checked after iteration.
+
+Regressions cover never-present and deleted parents, recoverable component
+errors, legacy unknown-ID defaults, and an existing class without metadata
+with insertion-ordered schedule rows. Existing teacher mapping, independent
+teacher failures, invalid IDs, unavailable sessions, and SQL execution failure
+coverage remains. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`
+passed in `build/windows-x64-debug`; the exact registered Debug CTest passed
+1/1 (CTest #334). The first build failed in `ZERO_CHECK` with FileTracker
+access denial; `/p:TrackFileAccess=false` also failed during `CL`, while the
+bounded elevated retries built both targets successfully without compiler
+warnings. No full suite ran. Cursor-fetch error branches are code-reviewed but
+not directly injected.
+
+Two independent post-F894 audits compared each of the 13 official Deferred
+triggers with the accepted change and found none newly actionable. F894 adds
+no matched heap capture, memory/export measurement, macOS runner, live helper
+callsite, Calendar injection seam, allocation or row-limit policy decision,
+or Teacher/sidebar ID-width migration. All 13 candidates remain unchanged
+and deferred.
+
+Batch 303 proceeds with F895, the Selected Class Subtitle read. Its candidate
+checks parent provenance across subtitle, schedule, and optional teacher
+reads. Four further bounded read leads remain ordered in the active batch.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
