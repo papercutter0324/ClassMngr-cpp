@@ -189,15 +189,15 @@ public:
             {
                 try
                 {
-                    const ::Result<TeacherDisplayNameReadRecord> source =
-                        teacherRepository->loadTeacherDisplayNameFields(
+                    const TeacherDisplayNameLookupResult source =
+                        teacherRepository->lookupTeacherDisplayName(
                             loadedClassDetails->teacherId
                             );
-                    if (!source)
+                    if (source.code != TeacherDisplayNameLookupCode::Found)
                     {
                         snapshot.teacherDisplayName = teacherFailure(
-                            fromRepositoryError(
-                                source.error(),
+                            fromTeacherDisplayNameLookup(
+                                source,
                                 "The class teacher display name could not be loaded."
                                 )
                             );
@@ -205,11 +205,11 @@ public:
                     else
                     {
                         Teacher teacher;
-                        teacher.teacherKr = source->teacherKr;
-                        teacher.teacherEn = source->teacherEn;
+                        teacher.teacherKr = source.record.teacherKr;
+                        teacher.teacherEn = source.record.teacherEn;
                         teacher.preferredRomanization =
-                            source->preferredRomanization;
-                        teacher.preferredName = source->preferredName;
+                            source.record.preferredRomanization;
+                        teacher.preferredName = source.record.preferredName;
                         snapshot.teacherDisplayName =
                             Domain::Result<std::string>::success(
                                 utf8(teacher.preferredDisplayName())
@@ -371,6 +371,34 @@ private:
         }
 
         const QByteArray bytes = message.toUtf8();
+        return {
+            .code = code,
+            .message = bytes.isEmpty() ? fallback : bytes.toStdString(),
+            .recoverable = false
+        };
+    }
+
+    [[nodiscard]] static Domain::OperationError fromTeacherDisplayNameLookup(
+        const TeacherDisplayNameLookupResult& lookup,
+        const char* fallback
+        )
+    {
+        Domain::ErrorCode code = Domain::ErrorCode::Technical;
+        switch (lookup.code)
+        {
+        case TeacherDisplayNameLookupCode::Missing:
+            code = Domain::ErrorCode::NotFound;
+            break;
+        case TeacherDisplayNameLookupCode::InvalidInput:
+            code = Domain::ErrorCode::InvalidInput;
+            break;
+        case TeacherDisplayNameLookupCode::Found:
+        case TeacherDisplayNameLookupCode::Failure:
+            code = Domain::ErrorCode::Technical;
+            break;
+        }
+
+        const QByteArray bytes = lookup.diagnostic.toUtf8();
         return {
             .code = code,
             .message = bytes.isEmpty() ? fallback : bytes.toStdString(),

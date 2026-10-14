@@ -242,6 +242,21 @@ struct TeacherByIdLookupResult final
     QString diagnostic;
 };
 
+enum class TeacherDisplayNameLookupCode
+{
+    Found,
+    Missing,
+    InvalidInput,
+    Failure
+};
+
+struct TeacherDisplayNameLookupResult final
+{
+    TeacherDisplayNameLookupCode code = TeacherDisplayNameLookupCode::Failure;
+    TeacherDisplayNameReadRecord record;
+    QString diagnostic;
+};
+
 enum class TeacherUpdateOutcomeCode
 {
     Updated,
@@ -285,6 +300,12 @@ public:
         );
     [[nodiscard]] TeacherByIdLookupResult lookupTeacherById(
         int teacherId
+        );
+    [[nodiscard]] TeacherDisplayNameLookupResult lookupTeacherDisplayName(
+        int teacherId
+        );
+    [[nodiscard]] TeacherDisplayNameLookupResult lookupTeacherDisplayName(
+        qint64 teacherId
         );
     [[nodiscard]] Result<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(int teacherId);

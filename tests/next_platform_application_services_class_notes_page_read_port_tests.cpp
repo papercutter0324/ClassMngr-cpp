@@ -530,6 +530,7 @@ teacherFailurePreservesClassTextFields()
     QVERIFY(result.value().classFields);
     QVERIFY(!result.value().teacherDisplayName);
     QCOMPARE(result.value().teacherDisplayName.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.value().teacherDisplayName.error().recoverable);
     QVERIFY(result.value().classFields.value().notes == u"  exact notes \U0001F642  ");
     QVERIFY(result.value().classFields.value().timeFillerActivities
         == u"  exact activities  ");

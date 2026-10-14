@@ -413,12 +413,36 @@ TeacherRepository::loadTeacherDisplayNameFields(
     qint64 teacherId
     )
 {
+    const TeacherDisplayNameLookupResult lookup =
+        lookupTeacherDisplayName(teacherId);
+    if (lookup.code == TeacherDisplayNameLookupCode::Found)
+    {
+        return lookup.record;
+    }
+    return std::unexpected(lookup.diagnostic);
+}
+
+TeacherDisplayNameLookupResult
+TeacherRepository::lookupTeacherDisplayName(
+    int teacherId
+    )
+{
+    return lookupTeacherDisplayName(static_cast<qint64>(teacherId));
+}
+
+TeacherDisplayNameLookupResult
+TeacherRepository::lookupTeacherDisplayName(
+    qint64 teacherId
+    )
+{
     if (teacherId <= 0)
     {
-        return std::unexpected(
-            QObject::tr("Loading teacher display name failed: invalid teacher id %1.")
-                .arg(teacherId)
-            );
+        return {
+            .code = TeacherDisplayNameLookupCode::InvalidInput,
+            .diagnostic = QObject::tr(
+                "Loading teacher display name failed: invalid teacher id %1."
+                ).arg(teacherId)
+        };
     }
 
     QSqlQuery query(m_database);
@@ -440,16 +464,46 @@ TeacherRepository::loadTeacherDisplayNameFields(
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return {
+            .code = TeacherDisplayNameLookupCode::Failure,
+            .diagnostic = executed.error().userMessage()
+        };
     }
 
     if (!query.next())
     {
-        return std::unexpected(
-            QObject::tr(
+        if (query.lastError().isValid())
+        {
+            return {
+                .code = TeacherDisplayNameLookupCode::Failure,
+                .diagnostic = SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading teacher display name"),
+                    {},
+                    teacherIdentity(teacherId)
+                    ).userMessage()
+            };
+        }
+
+        return {
+            .code = TeacherDisplayNameLookupCode::Missing,
+            .diagnostic = QObject::tr(
                 "Loading teacher display name failed for %1: no matching record exists."
                 ).arg(teacherIdentity(teacherId))
-            );
+        };
+    }
+
+    if (query.lastError().isValid())
+    {
+        return {
+            .code = TeacherDisplayNameLookupCode::Failure,
+            .diagnostic = SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading teacher display name"),
+                {},
+                teacherIdentity(teacherId)
+                ).userMessage()
+        };
     }
 
     bool returnedTeacherIdOk = false;
@@ -458,18 +512,22 @@ TeacherRepository::loadTeacherDisplayNameFields(
         );
     if (!returnedTeacherIdOk || returnedTeacherId != teacherId)
     {
-        return std::unexpected(
-            QObject::tr(
+        return {
+            .code = TeacherDisplayNameLookupCode::Failure,
+            .diagnostic = QObject::tr(
                 "Loading teacher display name failed for %1: the database returned an invalid teacher identifier."
                 ).arg(teacherIdentity(teacherId))
-            );
+        };
     }
 
-    return TeacherDisplayNameReadRecord{
-        query.value("teacher_kr").toString(),
-        query.value("teacher_en").toString(),
-        query.value("preferred_romanization").toString(),
-        query.value("preferred_name").toString()
+    return {
+        .code = TeacherDisplayNameLookupCode::Found,
+        .record = {
+            query.value("teacher_kr").toString(),
+            query.value("teacher_en").toString(),
+            query.value("preferred_romanization").toString(),
+            query.value("preferred_name").toString()
+        }
     };
 }
 

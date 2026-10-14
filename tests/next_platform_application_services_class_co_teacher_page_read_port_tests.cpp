@@ -111,6 +111,7 @@ class NextPlatformApplicationServicesClassCoTeacherPageReadPortTests final
     Q_OBJECT
 
 private slots:
+    void teacherDisplayNameLookupReportsStructuredOutcomes();
     void mapsAssignedClassAndPreferredTeacherFromActiveSession();
     void mapsUnassignedTeacherToEmptyTypedSelection();
     void treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields();
@@ -124,6 +125,59 @@ private slots:
     void deletedParentMapsToRecoverableNotFoundOutcomes();
     void legacyUnknownClassReadKeepsDefaultSuccessRecord();
 };
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+teacherDisplayNameLookupReportsStructuredOutcomes()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TeacherRepository* const repository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(repository);
+
+    const int teacherId = createTeacher(services);
+    QVERIFY(teacherId > 0);
+    const TeacherDisplayNameLookupResult found =
+        repository->lookupTeacherDisplayName(teacherId);
+    QCOMPARE(found.code, TeacherDisplayNameLookupCode::Found);
+    QCOMPARE(found.record.preferredName, QStringLiteral(" Preferred Display "));
+    const auto legacyFound = repository->loadTeacherDisplayNameFields(teacherId);
+    QVERIFY(legacyFound);
+    QCOMPARE(legacyFound->preferredName, found.record.preferredName);
+
+    constexpr int missingTeacherId = 812345;
+    const TeacherDisplayNameLookupResult missing =
+        repository->lookupTeacherDisplayName(missingTeacherId);
+    QCOMPARE(missing.code, TeacherDisplayNameLookupCode::Missing);
+    QVERIFY(missing.diagnostic.contains(QStringLiteral("no matching record")));
+    const auto legacyMissing =
+        repository->loadTeacherDisplayNameFields(missingTeacherId);
+    QVERIFY(!legacyMissing);
+    QCOMPARE(legacyMissing.error(), missing.diagnostic);
+
+    const TeacherDisplayNameLookupResult invalid =
+        repository->lookupTeacherDisplayName(0);
+    QCOMPARE(invalid.code, TeacherDisplayNameLookupCode::InvalidInput);
+    const auto legacyInvalid = repository->loadTeacherDisplayNameFields(0);
+    QVERIFY(!legacyInvalid);
+    QCOMPARE(legacyInvalid.error(), invalid.diagnostic);
+
+    QSqlQuery damageProjection(services.databaseSession()->database());
+    QVERIFY2(damageProjection.exec(QStringLiteral(
+        "ALTER TABLE teachers RENAME COLUMN preferred_name "
+        "TO preferred_name_after_failure"
+        )), qPrintable(damageProjection.lastError().text()));
+    const TeacherDisplayNameLookupResult failure =
+        repository->lookupTeacherDisplayName(teacherId);
+    QCOMPARE(failure.code, TeacherDisplayNameLookupCode::Failure);
+    QVERIFY(!failure.diagnostic.isEmpty());
+    const auto legacyFailure =
+        repository->loadTeacherDisplayNameFields(teacherId);
+    QVERIFY(!legacyFailure);
+    QCOMPARE(legacyFailure.error(), failure.diagnostic);
+}
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
 mapsAssignedClassAndPreferredTeacherFromActiveSession()
@@ -294,6 +348,7 @@ classAndTeacherSourceFailuresRemainIndependent()
     QVERIFY(!result.value().teacherDisplayName);
     QCOMPARE(result.value().teacherDisplayName.error().code,
              Domain::ErrorCode::NotFound);
+    QVERIFY(result.value().teacherDisplayName.error().recoverable);
     QVERIFY(result.value().classFields.value().classGrade == u"E4");
 
     QSqlQuery query(services.databaseSession()->database());

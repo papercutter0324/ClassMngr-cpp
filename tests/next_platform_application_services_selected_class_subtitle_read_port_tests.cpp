@@ -78,6 +78,7 @@ class NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests final
 private slots:
     void readsOnlySubtitleProjectionFromActiveSessionRepositories();
     void readsDisplayNamesForWideAssignedTeacherId();
+    void assignedMissingTeacherIsRecoverableNotFound();
     void missingParentsHaveRecoverableComponentErrorsAndLegacyDefaults();
     void existingParentWithoutMetadataReadsOrderedSchedule();
     void missingSessionAndInvalidIdsDoNotFallBackToServices();
@@ -226,6 +227,48 @@ readsDisplayNamesForWideAssignedTeacherId()
     QCOMPARE(fields.teacherEn, std::u16string(u"Wide Teacher English"));
     QCOMPARE(fields.preferredRomanization, std::u16string(u"Wide Romanized Name"));
     QCOMPARE(fields.preferredName, std::u16string(u"Wide Preferred Name"));
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
+assignedMissingTeacherIsRecoverableNotFound()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Assigned Missing Subtitle Teacher")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(*createdClass, -1)
+        ));
+
+    QSqlQuery assignMissingTeacher(services.databaseSession()->database());
+    QVERIFY2(assignMissingTeacher.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+             qPrintable(assignMissingTeacher.lastError().text()));
+    QVERIFY(assignMissingTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        )));
+    assignMissingTeacher.addBindValue(812345);
+    assignMissingTeacher.addBindValue(*createdClass);
+    QVERIFY2(assignMissingTeacher.exec(),
+             qPrintable(assignMissingTeacher.lastError().text()));
+    QCOMPARE(assignMissingTeacher.numRowsAffected(), 1);
+
+    Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
+    const Application::SelectedClassSubtitleReadQuery query(port);
+    const auto result = query.execute(classId(*createdClass));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classFields);
+    QVERIFY(result.value().classFields.value().classGrade
+        == std::u16string(u" E4 "));
+    QVERIFY(!result.value().assignedTeacher);
+    QCOMPARE(result.value().assignedTeacher.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(result.value().assignedTeacher.error().recoverable);
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::

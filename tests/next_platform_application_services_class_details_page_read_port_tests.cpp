@@ -48,6 +48,7 @@ private slots:
     void classReadFailureDoesNotDiscardRosterCount();
     void intensiveScheduleReadFailureDoesNotDiscardRosterCount();
     void teacherReadFailureDoesNotDiscardClassOrRoster();
+    void teacherProjectionSqlFailureDoesNotDiscardClassOrRoster();
     void rosterReadFailureDoesNotDiscardClassOrTeacher();
     void nonCanonicalClassIdReturnsInvalidInputOutcomes();
 };
@@ -591,6 +592,51 @@ teacherReadFailureDoesNotDiscardClassOrRoster()
     QVERIFY(!snapshot.teacherDisplayName);
     QCOMPARE(snapshot.teacherDisplayName.error().code,
              Domain::ErrorCode::NotFound);
+    QVERIFY(!snapshot.teacherDisplayName.error().recoverable);
+    QVERIFY(snapshot.studentCount);
+    QCOMPARE(snapshot.studentCount.value(), 0);
+}
+
+void NextPlatformApplicationServicesClassDetailsPageReadPortTests::
+teacherProjectionSqlFailureDoesNotDiscardClassOrRoster()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Class Details Teacher Projection Failure")
+        );
+    QVERIFY(createdClass);
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Teacher English Name");
+    const auto createdTeacher = services.teacherService()->save(teacher);
+    QVERIFY(createdTeacher);
+    const auto original = services.classService()->classInfo(*createdClass);
+    QVERIFY(original);
+    ClassInfo info = *original;
+    info.teacherId = *createdTeacher;
+    QVERIFY(services.classService()->saveClassInfo(info));
+
+    QSqlQuery damageTeacherProjection(
+        services.databaseSession()->database()
+        );
+    QVERIFY2(damageTeacherProjection.exec(QStringLiteral(
+        "ALTER TABLE teachers RENAME COLUMN preferred_name "
+        "TO preferred_name_after_failure"
+        )), qPrintable(damageTeacherProjection.lastError().text()));
+
+    Platform::ApplicationServicesClassDetailsPageReadPort port(services);
+    const auto result = port.readClassDetailsPage(classId(*createdClass));
+
+    QVERIFY(result);
+    const auto& snapshot = result.value();
+    QVERIFY(snapshot.classFields);
+    QVERIFY(!snapshot.teacherDisplayName);
+    QCOMPARE(snapshot.teacherDisplayName.error().code,
+             Domain::ErrorCode::Technical);
+    QVERIFY(!snapshot.teacherDisplayName.error().recoverable);
     QVERIFY(snapshot.studentCount);
     QCOMPARE(snapshot.studentCount.value(), 0);
 }
