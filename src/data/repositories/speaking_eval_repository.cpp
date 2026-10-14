@@ -14,6 +14,7 @@
 
 #include <array>
 #include <string_view>
+#include <utility>
 
 namespace NextDomain = ClassMngr::Next::Domain;
 
@@ -31,9 +32,58 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     const QList<SpeakingEvalCellChange>& dirtyCells
     )
 {
+    const SaveResult saved = saveSpeakingEvalInternal(
+        classId,
+        evaluationName,
+        rows,
+        dirtyCells,
+        ParentClassPolicy::PreserveLegacyForeignKey
+        );
+    if (!saved)
+    {
+        return std::unexpected(saved.error().diagnostic);
+    }
+
+    return {};
+}
+
+SpeakingEvalRepository::SaveResult
+SpeakingEvalRepository::saveSpeakingEvalDetailed(
+    const int classId,
+    const QString& evaluationName,
+    const SpeakingEvalRows& rows,
+    const QList<SpeakingEvalCellChange>& dirtyCells
+    )
+{
+    return saveSpeakingEvalInternal(
+        classId,
+        evaluationName,
+        rows,
+        dirtyCells,
+        ParentClassPolicy::ClassifyMissingParent
+        );
+}
+
+SpeakingEvalRepository::SaveResult
+SpeakingEvalRepository::saveSpeakingEvalInternal(
+    const int classId,
+    const QString& evaluationName,
+    const SpeakingEvalRows& rows,
+    const QList<SpeakingEvalCellChange>& dirtyCells,
+    const ParentClassPolicy parentClassPolicy
+    )
+{
+    const auto technicalFailure = [](QString diagnostic) -> SaveResult
+    {
+        return std::unexpected(SaveFailure{
+            .kind = SaveFailure::Kind::Technical,
+            .diagnostic = std::move(diagnostic)
+        });
+    };
+
     if (classId <= 0 || evaluationName.trimmed().isEmpty())
     {
-        return std::unexpected(
+        return technicalFailure(
             QObject::tr(
                 "Saving speaking evaluation failed: invalid class id or "
                 "evaluation name."
@@ -45,13 +95,78 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     const QString identity = QObject::tr("evaluation '%1' for class id %2")
         .arg(normalizedEvaluationName)
         .arg(classId);
-    DatabaseTransaction transaction(m_database);
+    const bool classifyMissingParent =
+        parentClassPolicy == ParentClassPolicy::ClassifyMissingParent;
+    DatabaseTransaction transaction(
+        m_database,
+        classifyMissingParent
+            ? DatabaseTransaction::Mode::Immediate
+            : DatabaseTransaction::Mode::Default
+        );
     if (!transaction.started())
     {
-        return std::unexpected(
+        return technicalFailure(
             QObject::tr("Starting speaking evaluation transaction failed for %1: %2")
-                .arg(identity, m_database.lastError().text())
+                .arg(
+                    identity,
+                    classifyMissingParent
+                        ? transaction.startError()
+                        : m_database.lastError().text()
+                    )
             );
+    }
+
+    if (classifyMissingParent)
+    {
+        QSqlQuery parentQuery(m_database);
+        parentQuery.prepare(QStringLiteral(
+            "SELECT 1 FROM classes WHERE id=?"
+            ));
+        parentQuery.addBindValue(classId);
+
+        const auto loaded = SqlQueryUtils::executePrepared(
+            parentQuery,
+            QObject::tr("Checking speaking evaluation parent class"),
+            QObject::tr("class id %1").arg(classId)
+            );
+        if (!loaded)
+        {
+            return technicalFailure(loaded.error().userMessage());
+        }
+
+        const bool parentClassExists = parentQuery.next();
+        const QSqlError fetchError = parentQuery.lastError();
+        parentQuery.finish();
+        if (fetchError.isValid())
+        {
+            return technicalFailure(
+                QObject::tr(
+                    "Checking speaking evaluation parent class failed for "
+                    "class id %1: %2"
+                    ).arg(classId).arg(fetchError.text())
+                );
+        }
+
+        if (!parentClassExists)
+        {
+            if (!transaction.rollbackChecked())
+            {
+                return technicalFailure(
+                    QObject::tr(
+                        "Rolling back speaking evaluation save failed for "
+                        "class id %1: %2"
+                        ).arg(classId).arg(m_database.lastError().text())
+                    );
+            }
+
+            return std::unexpected(SaveFailure{
+                .kind = SaveFailure::Kind::ParentClassMissing,
+                .diagnostic = QObject::tr(
+                    "Saving speaking evaluation failed: parent class id %1 "
+                    "was not found."
+                    ).arg(classId)
+            });
+        }
     }
 
     QSqlQuery query(m_database);
@@ -78,10 +193,21 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     Status statement = execute(QObject::tr("Loading speaking evaluation"));
     if (!statement)
     {
-        return statement;
+        return technicalFailure(statement.error());
     }
 
-    if (query.next())
+    const bool evaluationExists = query.next();
+    const QSqlError evaluationFetchError = query.lastError();
+    if (evaluationFetchError.isValid())
+    {
+        return technicalFailure(
+            QObject::tr(
+                "Loading speaking evaluation failed for %1: %2"
+                ).arg(identity, evaluationFetchError.text())
+            );
+    }
+
+    if (evaluationExists)
     {
         evaluationId =
             query.value("id").toLongLong();
@@ -102,7 +228,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         statement = execute(QObject::tr("Creating speaking evaluation"));
         if (!statement)
         {
-            return statement;
+            return technicalFailure(statement.error());
         }
 
         evaluationId =
@@ -110,7 +236,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
 
         if (evaluationId <= 0)
         {
-            return std::unexpected(
+            return technicalFailure(
                 QObject::tr(
                     "Creating %1 failed: the database did not return a valid "
                     "record id."
@@ -135,7 +261,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         statement = execute(QObject::tr("Ensuring speaking evaluation row"));
         if (!statement)
         {
-            return statement;
+            return technicalFailure(statement.error());
         }
     }
 
@@ -150,7 +276,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
     statement = execute(QObject::tr("Loading speaking evaluation rows"));
     if (!statement)
     {
-        return statement;
+        return technicalFailure(statement.error());
     }
 
     QHash<int, QStringList> existingRows;
@@ -178,7 +304,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
             rowIndexValue.toLongLong(&rowIndexValid);
             if (!rowIndexValid)
             {
-                return std::unexpected(
+                return technicalFailure(
                     QObject::tr(
                         "Loading speaking evaluation rows failed for %1: "
                         "invalid row index."
@@ -188,7 +314,7 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         }
         if (rowIndexStorageType != QStringLiteral("integer"))
         {
-            return std::unexpected(
+            return technicalFailure(
                 QObject::tr(
                     "Loading speaking evaluation rows failed for %1: "
                     "invalid row index."
@@ -199,6 +325,16 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         existingRows.insert(
             rowIndexValue.toInt(),
             values
+            );
+    }
+
+    const QSqlError rowsFetchError = query.lastError();
+    if (rowsFetchError.isValid())
+    {
+        return technicalFailure(
+            QObject::tr(
+                "Loading speaking evaluation rows failed for %1: %2"
+                ).arg(identity, rowsFetchError.text())
             );
     }
 
@@ -262,13 +398,13 @@ Status SpeakingEvalRepository::saveSpeakingEval(
         statement = execute(QObject::tr("Updating speaking evaluation cell"));
         if (!statement)
         {
-            return statement;
+            return technicalFailure(statement.error());
         }
     }
 
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return technicalFailure(
             QObject::tr("Committing speaking evaluation failed for %1: %2")
                 .arg(identity, m_database.lastError().text())
             );

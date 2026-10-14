@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/speaking_eval_repository.h"
 #include "domain/validation/speaking_eval_validator.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
 #include "next/platform/application_services_speaking_evaluation_save_port.h"
@@ -112,6 +113,8 @@ private slots:
     void appValidationMatchesLegacySpeakingEvaluationRules();
     void questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision();
     void repositoryWriteFailureMapsTechnicalAndRollsBack();
+    void missingParentMapsNotFoundWithoutCreatingEvaluationRows();
+    void legacyMissingParentPreservesForeignKeyDiagnostic();
     void rejectsRealRowIndexBeforeNarrowingAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
     void closedSessionFailsWithoutDataServiceFallback();
@@ -524,6 +527,122 @@ repositoryWriteFailureMapsTechnicalAndRollsBack()
         );
     QVERIFY(afterFailure);
     QCOMPARE(*afterFailure, *beforeFailure);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+missingParentMapsNotFoundWithoutCreatingEvaluationRows()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int missingClassId = 100001;
+    const QString evaluationName =
+        QStringLiteral("Missing Parent Baseline");
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+    Application::SpeakingEvaluationSaveRequest saveRequest =
+        request(missingClassId);
+    saveRequest.evaluationName = evaluationName.toStdU16String();
+
+    const auto result = Application::SpeakingEvaluationSaveUseCase::execute(
+        saveRequest,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!result.error().recoverable);
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QSqlQuery query(session->database());
+    query.prepare(R"(
+        SELECT COUNT(*)
+        FROM speaking_evaluations
+        WHERE class_id=? AND evaluation_name=?
+    )");
+    query.addBindValue(missingClassId);
+    query.addBindValue(evaluationName);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+
+    query.prepare(R"(
+        SELECT COUNT(*)
+        FROM speaking_eval_data
+        WHERE evaluation_id IN (
+            SELECT id
+            FROM speaking_evaluations
+            WHERE class_id=? AND evaluation_name=?
+        )
+    )");
+    query.addBindValue(missingClassId);
+    query.addBindValue(evaluationName);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+legacyMissingParentPreservesForeignKeyDiagnostic()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int missingClassId = 100001;
+    const QString evaluationName =
+        QStringLiteral("Missing Parent Baseline");
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+
+    QSqlDatabase database = session->database();
+    SpeakingEvalRepository repository(database);
+    const SpeakingEvalRows rows;
+    const Status result = repository.saveSpeakingEval(
+        missingClassId,
+        evaluationName,
+        rows
+        );
+    QVERIFY(!result);
+    QCOMPARE(
+        result.error(),
+        QStringLiteral(
+            "Creating speaking evaluation failed for evaluation "
+            "'Missing Parent Baseline' for class id 100001: FOREIGN KEY "
+            "constraint failed Unable to fetch row (database error 787)"
+            )
+        );
+
+    QSqlQuery query(session->database());
+    query.prepare(R"(
+        SELECT COUNT(*)
+        FROM speaking_evaluations
+        WHERE class_id=? AND evaluation_name=?
+    )");
+    query.addBindValue(missingClassId);
+    query.addBindValue(evaluationName);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
+
+    query.prepare(R"(
+        SELECT COUNT(*)
+        FROM speaking_eval_data
+        WHERE evaluation_id IN (
+            SELECT id
+            FROM speaking_evaluations
+            WHERE class_id=? AND evaluation_name=?
+        )
+    )");
+    query.addBindValue(missingClassId);
+    query.addBindValue(evaluationName);
+    QVERIFY(query.exec());
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toInt(), 0);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::

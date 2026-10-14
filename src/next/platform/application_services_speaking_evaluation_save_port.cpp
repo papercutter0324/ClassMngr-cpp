@@ -151,7 +151,8 @@ saveEvaluation(
                 );
         }
 
-        const Status saved = repository->saveSpeakingEval(
+        const SpeakingEvalRepository::SaveResult saved =
+            repository->saveSpeakingEvalDetailed(
             *classId,
             legacyText(request.evaluationName),
             legacyRows(request.evaluation.rows),
@@ -159,9 +160,15 @@ saveEvaluation(
             );
         if (!saved)
         {
+            const Domain::ErrorCode code =
+                saved.error().kind
+                    == SpeakingEvalRepository::SaveFailure::Kind::
+                        ParentClassMissing
+                ? Domain::ErrorCode::NotFound
+                : Domain::ErrorCode::Technical;
             return failure(
-                Domain::ErrorCode::Technical,
-                toStdString(saved.error())
+                code,
+                toStdString(saved.error().diagnostic)
                 );
         }
 

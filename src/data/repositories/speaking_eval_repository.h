@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <expected>
+
 struct SpeakingEvalNamedRows
 {
     QString evaluationName;
@@ -17,11 +19,34 @@ struct SpeakingEvalNamedRows
 class SpeakingEvalRepository
 {
 public:
+    struct SaveFailure final
+    {
+        enum class Kind
+        {
+            ParentClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using SaveResult = std::expected<void, SaveFailure>;
+
     explicit SpeakingEvalRepository(
         QSqlDatabase& database
         );
 
     [[nodiscard]] Status saveSpeakingEval(
+        int classId,
+        const QString& evaluationName,
+        const SpeakingEvalRows& rows,
+        const QList<SpeakingEvalCellChange>& dirtyCells = {}
+        );
+
+    // Typed callers can distinguish a missing parent class without changing
+    // the legacy Status/QString API or its foreign-key failure behavior.
+    [[nodiscard]] SaveResult saveSpeakingEvalDetailed(
         int classId,
         const QString& evaluationName,
         const SpeakingEvalRows& rows,
@@ -44,5 +69,19 @@ public:
         );
 
 private:
+    enum class ParentClassPolicy
+    {
+        PreserveLegacyForeignKey,
+        ClassifyMissingParent
+    };
+
+    [[nodiscard]] SaveResult saveSpeakingEvalInternal(
+        int classId,
+        const QString& evaluationName,
+        const SpeakingEvalRows& rows,
+        const QList<SpeakingEvalCellChange>& dirtyCells,
+        ParentClassPolicy parentClassPolicy
+        );
+
     QSqlDatabase& m_database;
 };
