@@ -149,6 +149,18 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForDate(
             );
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading calendar events for date"),
+                {},
+                QObject::tr("date %1").arg(isoDate)
+                ).userMessage()
+            );
+    }
+
     return events;
 }
 
@@ -395,6 +407,20 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadUpcomingCalendarEvents
     {
         events.append(
             eventFromQuery(query)
+            );
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading upcoming calendar events"),
+                {},
+                QObject::tr("from %1, limit %2")
+                    .arg(fromDate.toString(Qt::ISODate))
+                    .arg(limit)
+                ).userMessage()
             );
     }
 
