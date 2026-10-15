@@ -1,11 +1,9 @@
 #pragma once
 
 #include "next/application/campus_dashboard_selected_campus_read_port.h"
+#include "next/application/qt_compatible_text.h"
 
-#include <algorithm>
-#include <cctype>
 #include <string>
-#include <string_view>
 
 namespace ClassMngr::Next::Application
 {
@@ -21,23 +19,6 @@ struct CampusDashboardSelectedCampusReadRequest final
 
 namespace CampusDashboardSelectedCampusReadDetail
 {
-
-[[nodiscard]] inline bool isBlank(
-    const std::string_view value
-    ) noexcept
-{
-    return value.empty()
-        || std::all_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
-}
 
 [[nodiscard]] inline Domain::OperationError invalidCampusId()
 {
@@ -70,7 +51,7 @@ public:
         using namespace CampusDashboardSelectedCampusReadDetail;
 
         if (
-            isBlank(request.campusId)
+            isBlankUtf8Text(request.campusId)
             || request.campusId.size() > kCampusDashboardCampusIdMaxLength
             )
         {

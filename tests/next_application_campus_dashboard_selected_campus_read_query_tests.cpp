@@ -65,6 +65,8 @@ void rejectsBlankAndOversizedIdsBeforeCallingPort()
     for (const std::string id : {
              std::string(),
              std::string(" \t\r\n"),
+             std::string("\xC2\xA0"),
+             std::string("\xE3\x80\x80"),
              std::string(
                  Application::kCampusDashboardCampusIdMaxLength + 1,
                  'x'
@@ -78,6 +80,11 @@ void rejectsBlankAndOversizedIdsBeforeCallingPort()
                 );
         assert(!result);
         assert(result.error().code == Domain::ErrorCode::InvalidInput);
+        assert(
+            result.error().message
+            == "Campus identifier must be non-blank and bounded."
+            );
+        assert(!result.error().recoverable);
     }
     assert(port.callCount == 0);
 }
