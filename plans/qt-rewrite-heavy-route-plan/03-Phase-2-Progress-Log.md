@@ -39717,3 +39717,43 @@ F935 remains in active Batch307; implementation is gated on committing this
 preimplementation record. F936 stays queued, the 13 official Deferred entries
 remain unchanged from the post-F934 audits, Gates 1/2 remain Partial, and the
 formal Phase 2 exit gate remains Open.
+
+### F935 accepted; post-F935 Deferred audits clear; F936 next - 2026-10-15
+
+F935 is accepted at source/test commit
+`66726d096aa69ced8cabfbdd877fbd6328b3e513` (`Phase2 - Reject partial shared
+class-info reads`). Its permanent DataService tests preflight the exact regular
+and intensive schedule queries with a valid first row followed by a malformed
+JSON terminal-fetch error, then verify contextual failure and no partial
+success. The clean missing-row default remains covered by CTest #24. The new
+first-row `query.next() == false && lastError()` branch was source-reviewed:
+with this Qt 6.12 QSQLITE driver, malformed first-row JSON fails during
+`exec()`, before that branch can be exercised.
+
+Independent verification sequentially passed Debug builds in standard
+`build/windows-x64-debug` for `ClassMngr --clean-first`,
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, and
+`ClassMngrScheduleImportTests`, using `/p:TrackFileAccess=false`. CTest #24 and
+#315 passed. CTest #33 failed at
+`typedApplyPreservesExactTargetIdsThroughStateValidation`
+(`tests/schedule_import_tests.cpp:6946`, missing `stateValidationError`). The
+implementer rebuilt the baseline using `class_info_repository.cpp` from
+`ce09623b` and reproduced the same failure; F935 does not change the
+ScheduleImportRepository call path. This existing baseline failure is excluded
+from F935 regression judgment and is not reported as passing. `git diff
+--check` passed; no full suite ran.
+
+Two independent audits rechecked all 13 official Deferred entries and found
+none actionable, resolved, superseded, or changed. F579/F598 still require an
+elevated Administrator capture; F285's blank-draft contract remains unclear;
+F614/F618/F626 lack the required owner-specific packaged Release measurements
+or contract; F629 lacks an evidenced macOS universal runner in this Windows
+session; F707 has no live callsite; F709 lacks a Calendar malformed-summary
+injection seam; Batch197 teacher parity and Dense Speaking row-limit policy
+remain unresolved; Class Analytics allocation/sparse policy is separate; and
+Sidebar Teacher IDs remain `int` based. All 13 entries remain in Deferred.
+
+F936, legacy Class Transfer regular/intensive schedule terminal checks, is now
+next in Batch307. Batch308 remains queued with F937/F938 as recorded above.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

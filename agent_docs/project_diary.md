@@ -5579,3 +5579,21 @@ stream a valid prefix before a malformed later row. Use direct cursor
 preflight assertions to prove which behavior the exact query has. If the
 terminal-error branch still requires SQLite-native callbacks or a custom
 driver solely for coverage, prefer source review over a production seam.
+
+## Phase 2 shared class-info reader terminal errors - 2026-10-15
+
+F935's clean missing `class_info` row remains a valid default result, so the
+first-row `next()` failure must be paired with `lastError().isValid()` before
+returning an error. Qt 6.12 QSQLITE evaluates malformed class-info JSON during
+`exec()`, which exercises the existing execute failure path rather than this
+new first-row branch; source review covers that guard without adding a driver
+or callback seam.
+
+For the regular and intensive schedule loops, a plain backing table with
+`id INTEGER PRIMARY KEY` and a JSON-extracting view let the exact ordered
+production query stream one valid row before malformed JSON fails on the next
+fetch. Permanent DataService tests preflight each exact query and assert the
+whole class-info read fails rather than returning its valid prefix. Preserve
+both the successful clean-default coverage and the explicit baseline failure
+in Schedule Import CTest #33: it reproduced against F934 and uses a separate
+typed state reader outside F935.

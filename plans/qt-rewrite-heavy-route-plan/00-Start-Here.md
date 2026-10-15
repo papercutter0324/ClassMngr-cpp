@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F934, co-teacher validation schedule-query terminal checks, is accepted at `e5e6e8c8`; F935's preimplementation baseline and acceptance are recorded, with implementation pending their commit in Batch307; all 13 Deferred entries remain unchanged as last audited post-F934. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F935, shared class-info and schedule cursor error checks, is accepted at `66726d09`; focused CTests #24 and #315 passed, while #33 reproduced its existing baseline failure, and all 13 Deferred entries remain unchanged after independent audits. F936 is next in Batch307; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

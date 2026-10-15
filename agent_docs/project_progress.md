@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F934 accepted; F935 next)
+### Current state - 2026-10-15 (F935 accepted; F936 next)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -112,12 +112,24 @@ behavior and Technical/no-mutation through the typed port. Independent
 sequential Debug builds of `ClassMngr` and the focused port target passed with
 `/p:TrackFileAccess=false`; exact CTest #348 passed 1/1. Two independent
 post-F934 audits found all 13 official Deferred entries unchanged and none
-actionable, resolved, or superseded. F935, the shared class-info reader's
-first-row and schedule cursor checks, is next; its baseline and acceptance are
-being established. Batch308 discovery queued F937 Calendar next-event date
-failure and F938 setting fetch failure, with no other credible slices in the
-bounded scan. Gates 1/2 remain Partial and the formal Phase 2 exit gate is
-Open.
+actionable, resolved, or superseded. F935, shared class-info reader first-row
+and schedule cursor checks, is accepted at source/test commit
+`66726d096aa69ced8cabfbdd877fbd6328b3e513`. Both regular and intensive late
+fetch failures now reject partial class-info results; the first-row error guard
+preserves clean missing-row defaults, covered by the existing lifecycle test.
+Forced sequential Debug builds passed for `ClassMngr`,
+`ClassMngrDataServiceLifecycleTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, and
+`ClassMngrScheduleImportTests`. Exact CTests #24 and #315 passed. CTest #33
+failed in `typedApplyPreservesExactTargetIdsThroughStateValidation`; the
+implementer reproduced the same failure after rebuilding against the accepted
+F934 baseline, and the failing test/call path is outside F935. Keep this
+baseline failure visible; do not attribute it to F935. No full suite ran. Two
+independent post-F935 audits found all 13 official Deferred candidates
+unchanged and none actionable, resolved, or superseded. F936, Legacy Class
+Transfer regular/intensive schedule terminal checks, is next. Batch308 remains
+queued with F937 Calendar next-event date failure and F938 setting fetch
+failure. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
