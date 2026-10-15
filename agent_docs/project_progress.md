@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_resume_20261014_f860`. Route: Heavy.
+Current deployment: `phase2-f909-resume-20261015`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F908 accepted; F909 selected)
+### Current state - 2026-10-15 (F909 accepted; F910 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -515,9 +515,54 @@ while preserving siblings and whole-read fallback. A dedicated parent-aware
 typed batch route keeps the existing one-query behavior; legacy
 `loadRosterColumnNamesForClasses`, `RosterAvailabilityBatchReadPort`/transfer
 menu, Sub Prep fallback, schema, output limits, and CMake are unchanged.
-F909 baseline and acceptance are recorded; implementation and post-change
-verification remain pending. Gates 1/2 remain Partial and the formal Phase 2
-exit gate remains Open.
+F909 is accepted at source/test commit
+`bf3dbcf7bad2789c35a9ada7970d1ee0aada7902`. Independent forced Debug builds
+passed for `ClassMngr` and the application query (#223), platform port (#321),
+and Roster Print Dialog targets; all three exact Debug CTests passed 1/1.
+The verifier found no production defect or changes to the legacy reader,
+availability route, Sub Prep, schema, output limits, or CMake. The only
+warning was LNK4075 on the dialog target because `/FORCE` disabled incremental
+linking; no full suite ran. The five unrelated untracked user artifacts were
+unchanged. SQL statement failure remains outer `Technical`; query cursor
+failure and thrown-exception injection were not available in focused tests,
+and those branches received source review.
+
+Three independent audits reviewed every one of the 13 exact official Deferred
+candidates after F909; none became actionable and the list remains unchanged.
+The audits confirmed F909 did not clear their contract, measurement,
+call-site, fixture-seam, product-policy, or environment prerequisites.
+
+F910, Roster Availability batch parent provenance, is selected for the
+transfer-menu read. A focused temporary probe built
+`ClassMngrNextPlatformApplicationServicesRosterReadPortTests` in Debug and
+passed only `baselineAvailabilityParentCases` (3 QtTest passes including
+setup and cleanup); no CTest or full suite ran. Ordered requests
+`[1,2,3,4,987654321]` all succeeded with `firstEmptyRow` values `[1,0,1,0,0]`.
+ID 1 was present with one column and three cells; ID 2 was present empty; ID 3
+had one orphan column and row 0 before parent deletion and retained both
+children afterward; ID 4 had no roster children; the last ID was never
+present. Thus the current route treats a deleted class with orphan roster
+data as occupied at row 0. The probe source was restored byte-for-byte
+(SHA-256
+`5D03A8EFAE719F2E566E7AFF3ED711B7F2A054AA458ED23ABCB34396EFB9ED76`). Build
+and observation logs are in
+`build/windows-x64-debug/F910_availability_baseline_*`.
+
+F910 acceptance preserves an ordered outer batch with one identity-bearing
+per-entry availability outcome. Only a clean parent-rooted confirmation of
+absence yields recoverable per-entry `NotFound`; orphan headers/cells never
+affect the result, while a present class without roster columns remains empty
+success at row 0. Preserve valid siblings and the existing column projection,
+case-insensitive aliases, modeled 25-row boundary, and `firstEmptyRow` values
+`[0,24]` or `-1` for full. SQL, cursor/iteration, transaction, and exception
+failures remain outer `Technical`; validation and session/repository errors
+keep their existing outer behavior. The two repository reads use one read
+transaction for a consistent snapshot. The transfer menu omits only a
+confirmed-missing target and keeps valid siblings; whole-read failure retains
+the currently tested behavior of leaving targets enabled as if empty. Keep
+the legacy column reader, Sub Prep fallback, schema, output limits, and CMake
+unchanged. Implementation and post-change verification remain pending. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

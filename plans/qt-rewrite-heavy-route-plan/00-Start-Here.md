@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F908, Classes Navigation snapshot parent provenance, is accepted at source/test commit `e9f269850ee879fe36f0a28d16169888a5cde883`; F909, Roster Column Names batch parent provenance, has baseline and acceptance recorded, with implementation and post-change verification pending. Two independent post-F908 audits found none of the 13 official Deferred candidates newly actionable. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F909, Roster Column Names batch parent provenance, is accepted at source/test commit `bf3dbcf7bad2789c35a9ada7970d1ee0aada7902`; three independent post-F909 audits of all 13 official Deferred candidates found none newly actionable, and the list remains unchanged. F910, Roster Availability batch parent provenance, is selected with baseline and acceptance recorded; implementation and post-change verification are pending. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

@@ -37883,3 +37883,47 @@ suite ran. Baseline logs and observations are in
 | Present-parent values | Preserve valid sibling results and exact UTF-16 column values and order. An existing class without roster columns remains successful with empty columns. Preserve the current one-query nonempty batch behavior through a dedicated parent-aware typed repository route. |
 | Consumer and compatibility | `RosterPrintDialog` skips a failed entry while retaining sibling columns and existing whole-read failure behavior. Leave legacy `loadRosterColumnNamesForClasses`, `RosterAvailabilityBatchReadPort`/transfer menu, Sub Prep fallback, schema, output limits, and CMake unchanged. |
 | Verification and status | The baseline target CTest #321 passed with the temporary probe and after byte-for-byte restoration; forced product and focused-target Debug builds passed. F909 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
+
+### F909 accepted; post-slice Deferred audit clear; F910 selected - 2026-10-15
+
+F909, Roster Column Names batch parent provenance, is accepted at source/test
+commit bf3dbcf7bad2789c35a9ada7970d1ee0aada7902 (Phase2 - Preserve roster
+column batch parent provenance). Independent Debug builds passed for
+ClassMngr and three focused targets; exact CTests #223, #321, and #119 passed
+1/1. The dialog target emitted LNK4075 because /FORCE disables incremental
+linking. No full suite ran. SQL statement failure was covered as outer
+Technical; query-iteration failure and exception injection were unavailable,
+so those branches were reviewed. The legacy reader, availability path, Sub
+Prep, schema, output limits, and CMake remain unchanged.
+
+Three independent read-only audits reviewed all 13 exact official Deferred
+candidates; none became newly actionable, and the list is unchanged. F910,
+Roster Availability batch parent provenance, is selected with baseline and
+acceptance recorded. Implementation and post-change verification are pending.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F910 baseline captured; acceptance defined - 2026-10-15
+
+The ordered IDs [1, 2, 3, 4, 987654321] all returned outer success with
+firstEmptyRow=[1, 0, 1, 0, 0]. ID 1 had one column and three cells at rows 0,
+2, and 24; present ID 2 had no roster children. Deleted ID 3 retained one
+English header and a row-0 cell as orphans, so the result was 1. Deleted ID 4
+had no children and returned 0; never-present 987654321 also returned 0.
+This confirms the current route treats deleted ID 3's orphan row 0 as
+occupied.
+
+After a Debug build of
+ClassMngrNextPlatformApplicationServicesRosterReadPortTests, temporary
+baselineAvailabilityParentCases passed (3 QtTest passes including setup and
+cleanup). No CTest or full suite ran. The source was restored byte-for-byte
+(SHA-256
+5D03A8EFAE719F2E566E7AFF3ED711B7F2A054AA458ED23ABCB34396EFB9ED76).
+Logs are under build/windows-x64-debug/F910_availability_baseline_*; the
+existing platform target is CTest #319 and transfer-menu target #118.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Parent provenance and batch shape | Preserve the ordered outer availability batch with one identity-bearing per-entry outcome. Only clean parent-rooted confirmation of a missing classes row yields recoverable per-entry NotFound and suppresses orphan headers/cells. A present parent without roster columns remains empty success (firstEmptyRow=0). |
+| Existing siblings and rows | Preserve valid sibling capacities, the existing column projection and case-insensitive aliases, and the modeled 25-row boundary. Return values in [0,24] or -1 when full. |
+| Errors and consumer behavior | Perform both repository reads in one read transaction. SQL, cursor, iteration, transaction, and exception failures remain outer Technical; validation and session/repository outer errors retain existing behavior. The transfer menu omits only a confirmed-missing target and keeps valid siblings; a whole-read failure keeps targets enabled as if empty. |
+| Compatibility and status | Preserve the legacy column reader, Sub Prep fallback, schema, output limits, and CMake. F910 baseline and acceptance are recorded; implementation and post-change verification remain pending. The baseline probe passed, but no CTest or full suite ran. |

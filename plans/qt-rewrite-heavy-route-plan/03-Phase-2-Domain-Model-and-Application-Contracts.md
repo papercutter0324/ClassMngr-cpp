@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F908 Classes Navigation snapshot parent provenance is accepted at source/test commit `e9f269850ee879fe36f0a28d16169888a5cde883`; F909 Roster Column Names batch parent provenance has baseline and acceptance recorded, with implementation and post-change verification pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F909 Roster Column Names batch parent provenance is accepted at source/test commit `bf3dbcf7bad2789c35a9ada7970d1ee0aada7902`; F910 Roster Availability batch parent provenance has baseline and acceptance recorded, with implementation and post-change verification pending; three independent post-F909 audits found none of the 13 official Deferred candidates newly actionable and the list remains unchanged; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F909 - Roster Column Names batch parent provenance: use a dedicated parent-aware typed batch route so only clean parent-rooted absence yields per-entry recoverable `NotFound`; preserve identity/order, valid siblings, and existing batch callers. Baseline and acceptance are recorded; implementation and post-change verification are pending.
+- F910 - Roster Availability batch parent provenance: keep ordered identity-bearing availability outcomes; only cleanly confirmed missing parents yield per-entry recoverable `NotFound`, suppress orphan data, and preserve valid sibling capacities. Implement and verify the recorded acceptance.
 
 #### Deferred candidates
 
