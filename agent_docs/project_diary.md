@@ -6076,26 +6076,52 @@ independent audits confirmed all 13 official Deferred entries remain
 unchanged and none is actionable, resolved, or superseded. Batch325 later
 closed without a candidate.
 
-## F957 complete; F958 selected - 2026-10-16
+## F957 and F958 complete; Batch329 closed; F959 accepted - 2026-10-16
 
-F957 completed at code commit `a14de63f`, after acceptance docs commit
+F957 completed at source/test commit `a14de63f`, after acceptance docs commit
 `683bdacc`. The independent Tester rebuilt
 `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
 `/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
-Two independent post-commit audits found all 13 official Deferred entries
-verbatim unchanged. Batch326 closed; Batch327 found no defensible candidate.
+Two fresh post-commit audits found all 13 official Deferred entries unchanged.
 
-Batch328 also found no candidate in typed read/result or non-class command
-scans. Its class/teacher/schedule scan selected F958: recheck regular and
-intensive schedule conflicts within the typed Class Details save's existing
-`BEGIN IMMEDIATE` transaction before the first write. The pre-transaction
-checks can be stale across separate writable sessions; the concern is
-code-derived and reachable, but not runtime reproduced. This acceptance does
-not claim collaborative editing or a profile-wide concurrency guarantee.
-Preserve Technical classification and the existing diagnostic format
-(`Class schedule conflict: ...`), port preflight, and static-conflict behavior.
-Do not modify legacy save paths. Add deterministic two-session regressions for
-regular and intensive overlaps; build the app and
-focused save-port target sequentially in standard Debug, run only its exact
-CTest, and do not run the full suite. Gates 1/2 remain Partial; Phase 2 exit is
-Open.
+Batch328's typed read/result and non-class command scans found no other
+candidate. Its class/teacher/schedule scan selected F958 after finding that
+regular and intensive conflict prechecks occur before the typed repository's
+`BEGIN IMMEDIATE` transaction. Separate writable sessions can pass stale
+prechecks; the path is reachable by code inspection but was not runtime
+reproduced. F958 added in-transaction rechecks before writes to typed Class
+Details saves. It preserves Technical classification and the existing
+`Class schedule conflict: ...` format, leaves port preflight and legacy save
+paths unchanged, and makes no profile-wide concurrency guarantee.
+
+F958 completed at source/test commit `305a0553` after acceptance docs commit
+`8f935055`. The independent Tester sequentially rebuilt `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in
+standard Debug with `/p:TrackFileAccess=false`; exact CTest #315 passed 1/1 and
+`git diff --check` passed. The first test fixture used invalid grade/book
+values; after retaining valid grade, level, and book values, the final focused
+run passed. No full suite ran.
+
+Two fresh independent post-commit audits reviewed all 13 official Deferred
+entries; none is actionable, resolved, or superseded. Batch328 is closed.
+
+Batch329 closed after three bounded discovery angles. The Schedule Testing
+angle found no uncovered contract. The Testing Class delete-race lead was
+rejected because the ID-scoped cascade remains transactional and completes the
+requested final state after a concurrent delete; no conflicting result contract
+or deterministic synchronization seam exists.
+
+F959 is accepted for Application-boundary hardening in teacher-import plan
+validation. The use case validates duplicate Korean identities from
+adapter-supplied `validationKey` strings, then derives matching identity from
+`teacherKr`. The current legacy adapter derives both from the same Hangul-only
+domain key, so current UI imports already follow the expected mapping. A direct
+caller can nevertheless provide distinct, mirrored validation keys for names
+that derive to the same `KoreanTeacherKey`. F959 will detect missing or
+duplicate derived identities before persistence, after the existing request,
+review, and source-date checks and before downstream namespaces. An app-less
+regression will assert `DuplicateKoreanTeacherName` and zero persistence calls;
+no separate platform test is required because the adapter mapping and
+repository duplicate behavior already have coverage. The F959 acceptance
+checkpoint is being recorded before implementation. All 13 official Deferred
+entries remain unchanged. Gates 1/2 remain Partial; Phase 2 exit remains Open.

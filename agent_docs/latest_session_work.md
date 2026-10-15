@@ -5788,29 +5788,29 @@ the two matching Debug CTests. No full suite ran. Existing untracked
 `txt` artifacts remain untouched. Gates 1/2 remain Partial; the formal Phase 2
 exit gate is Open.
 
-## Current continuation - 2026-10-16 (F958 active in Batch328)
+## Current continuation - 2026-10-16 (F959 accepted; implementation pending)
 
-F957 completed at source/test commit `a14de63f` after acceptance docs commit
-`683bdacc`. The independent Tester rebuilt
-`ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
-`/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
-Two fresh post-commit audits found all 13 official Deferred entries verbatim
-unchanged. Batch326 is closed; Batch327 found no defensible candidate.
+F958 completed at source/test commit `305a0553` after acceptance docs commit
+`8f935055`. Typed Class Details saves now recheck regular and intensive
+conflicts within `BEGIN IMMEDIATE` after the parent check and before writes;
+Technical classification and the existing `Class schedule conflict: ...`
+format remain, and legacy saves are unchanged. The independent Tester
+sequentially rebuilt `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in
+`build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`. Exact CTest
+#315 passed 1/1; `git diff --check` passed. The first fixture used invalid
+grade/book values; the corrected fixture retained valid metadata, and the
+final focused test passed. No full suite ran.
 
-Batch328 found no candidate in its typed read/result or non-class command
-scans. The class/teacher/schedule scan accepted F958: recheck regular and
-intensive conflicts inside the typed Class Details save's existing
-`BEGIN IMMEDIATE` transaction before the first write. Separate writable
-sessions can pass stale prechecks; this is reachable by code inspection but
-was not runtime reproduced, and no collaborative-editing guarantee is claimed.
-Keep the current Technical classification, diagnostic format
-(`Class schedule conflict: ...`), and port preflight; leave legacy save paths
-unchanged. Add deterministic two-session regressions for both conflict types.
-Next, implement the repository transaction guard and
-focused tests, have the independent Tester build `ClassMngr` then
-`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`
-sequentially in `build/windows-x64-debug` with `/p:TrackFileAccess=false`, and
-run only that exact CTest. Inspect changes and `git diff --check`; no full suite.
-After the source/test commit, make two fresh audits of all 13 official Deferred
-entries and start the next discovery batch. Keep Gates 1/2 Partial and Phase 2
-exit Open. Existing unrelated untracked artifacts remain untouched.
+Two fresh independent post-commit audits reviewed all 13 official Deferred
+entries. None became actionable, resolved, or superseded, so all remain
+unchanged. Batch329 closed after its three scans. F959 is accepted to check
+Korean teacher identities derived from `teacherKr` during Qt-free teacher
+import plan validation, after request/review/date checks and before
+persistence. The current adapter maps the same canonical key into its
+validation fields; F959 adds direct-use-case contract enforcement. The
+app-less regression will use two distinct mirrored validation keys for names
+with the same Hangul-only identity and assert rejection before persistence.
+The acceptance checkpoint is being committed before source changes. Gates 1/2
+remain Partial and Phase 2 exit remains Open. Existing unrelated untracked
+artifacts remain untouched.

@@ -5761,36 +5761,48 @@ names on the single Speaking Evaluation query while preserving recoverable
 InvalidInput semantics, exact padded-name lookup, and batch fallback. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
-### F958 active in Batch328 - 2026-10-16
+### F958 complete; Batch329 closed; F959 active - 2026-10-16
 
 F957 is complete at source/test commit `a14de63f`, following acceptance docs
-commit `683bdacc`. The independent Tester rebuilt
-`ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
-`/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
-Two post-commit audits found all 13 official Deferred entries verbatim
-unchanged, with none actionable, resolved, or superseded. Batch326 is closed.
+commit `683bdacc`; its focused Debug CTest #170 passed 1/1, and two audits
+found all 13 official Deferred entries unchanged. Batch326 closed; Batch327
+found no defensible candidate. Batch328 had no typed read/result or non-class
+command candidate; its class/teacher/schedule scan selected F958 after finding
+a reachable stale schedule-conflict precheck across separate writable sessions.
 
-Batch327's Qt-free Domain-invariant and general Application-boundary scans
-found no defensible candidate. Batch328's typed read/result and non-class
-command scans also found no other candidate. Its class/teacher/schedule scan
-identified a possible stale schedule-conflict precheck in typed Class Details
-saves. Two independent reviews found regular and intensive conflict reads
-happen before the typed repository opens its `BEGIN IMMEDIATE` transaction;
-the transaction checked only the parent before writing. Separate writable
-sessions can therefore both pass the old-state checks and serialize
-overlapping schedules. This is code-derived and reachable, but not runtime
-reproduced. The UI is synchronous, and collaborative editing is not an
-explicit product guarantee; F958 is narrowly a typed-save integrity guard,
-not a profile-wide concurrency guarantee.
+F958 completed at source/test commit `305a0553`, following acceptance docs
+commit `8f935055`. In the typed Class Details save, regular and intensive
+conflicts are rechecked inside `BEGIN IMMEDIATE` after the parent check and
+before the first write. Conflict/query errors stay Technical with the existing
+`Class schedule conflict: ...` format; port preflight and legacy save paths
+are unchanged. The independent Tester sequentially rebuilt `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in standard
+Debug with `/p:TrackFileAccess=false`; exact CTest #315 passed 1/1, and
+`git diff --check` passed. The initial fixture had invalid grade/book values;
+after retaining valid grade, level, and book values, the final run passed. No
+full suite ran.
 
-F958 acceptance: after acquiring the typed save's `BEGIN IMMEDIATE` transaction
-and confirming the parent, recheck regular and intensive conflicts before any
-write. Preserve the `Technical` failure classification and diagnostic format
-(`Class schedule conflict: ...`); keep port preflight and static-conflict
-behavior. Leave legacy save paths unchanged. Add deterministic two-session
-stale-precheck regressions for both regular and intensive overlaps, asserting
-the losing save fails and does not mutate its class. Build `ClassMngr` then
-`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`
-sequentially in standard Debug with `/p:TrackFileAccess=false`; run only the
-matching exact CTest. No full suite. Gates 1/2 remain Partial; Phase 2 exit
-remains Open.
+Two fresh independent post-commit audits reviewed all 13 official Deferred
+entries. All remain unchanged; none is actionable, resolved, or superseded by
+F958. Batch328 is closed.
+
+Batch329 closed after scans of Next teacher-profile/import contracts, Testing
+Class lifecycle, and Schedule Testing use cases. The Schedule Testing scan
+found no uncovered contract. The Testing Class deletion race lead was rejected:
+the ID-scoped transactional cascade completes the requested final state if
+another session already deleted the class, no stable concurrent-delete result
+is specified, and deterministic synchronization would require a new seam.
+The teacher-import scan selected F959 as Qt-free Application-boundary
+hardening. Plan validation checks adapter-supplied Korean validation keys,
+while matching derives identity from `teacherKr`; the production adapter
+currently supplies the same Hangul-only key to both paths. F959 checks the
+derived domain identity for missing or duplicate Korean teacher names before
+persistence, preserving shape/review/date precedence and the current adapter
+mapping. Its focused regression uses two distinct mirrored validation keys
+for sources with the same `KoreanTeacherKey` and requires
+`DuplicateKoreanTeacherName` before any persistence call. This strengthens
+direct use-case callers; the current UI adapter already produces canonical
+keys.
+
+F959 is the sole active slice. No source changes have been made for it yet.
+Gates 1/2 remain Partial; the formal Phase 2 exit gate remains Open.

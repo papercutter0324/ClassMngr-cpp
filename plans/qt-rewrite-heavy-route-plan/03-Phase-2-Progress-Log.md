@@ -41141,3 +41141,73 @@ F958 acceptance for implementation:
    Inspect the diff and run `git diff --check`; do not run the full suite.
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F958 complete; Batch328 closed; Batch329 discovery active - 2026-10-16
+
+F958 completed at source/test commit
+`305a0553213177bb13defb576388b857e9b741d9`, following acceptance/current-position
+commit `8f93505552e0d44750d5d92d005f63b726e1e7e8`. Typed Class Details saves
+now recheck regular and intensive schedule conflicts inside the existing
+`BEGIN IMMEDIATE` transaction after the parent check and before the first
+write. Conflict and query failures remain `Technical`; conflict text retains
+the existing `Class schedule conflict: ...` format. Port preflight and legacy
+save paths are unchanged.
+
+The independent Tester sequentially rebuilt `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests` in standard
+Debug with `/p:TrackFileAccess=false`; exact CTest #315 passed 1/1 and
+`git diff --check` passed. The first focused run exposed invalid grade/book
+values in the new test fixture before it reached the conflict guard. The
+fixture was corrected to retain valid grade, level, and book values and vary
+only valid fields; the final independent run passed. No full suite ran.
+
+Two fresh independent post-commit audits reviewed all 13 official Deferred
+entries. All remain unchanged; none is actionable, resolved, or superseded by
+F958. In particular, Batch 197 teacher reassignment policy, the Sidebar Teacher
+ID-width item, and the measurement/platform-gated items retain their existing
+prerequisites. Batch328 is closed.
+
+Batch329 discovery is active across Next teacher-profile/import contracts,
+Testing Class lifecycle contracts, and Schedule Testing use-case contracts.
+One discovery angle has completed so far; no candidate has yet been selected.
+Keep the official Deferred entries intact unless evidence resolves or
+supersedes an item. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
+
+### Batch329 closed; F959 selected - 2026-10-16
+
+The teacher-import Application-boundary scan selected F959. Import duplicate
+validation currently uses adapter-provided Korean `validationKey` strings,
+while matching identity is later derived from
+`Domain::KoreanTeacherKey::fromName(source.teacherKr)`. The current legacy
+adapter derives both from the same Hangul-only key, so this is hardening for
+malformed direct Application requests, not a current UI defect. Two independent
+reviewers confirmed a request can carry distinct mirrored validation keys for
+source names that derive to the same Korean identity; this is a reusable
+contract gap.
+
+The Testing Class delete-race lead was rejected: ID-scoped transactional
+deletes make a concurrent second delete effectively idempotent, no conflicting
+result contract is specified, and no deterministic seam is available. The
+Schedule Testing angle ended in a discovery shortfall. Batch329 is closed with
+F959 as its sole active slice; the existing Deferred entries and gates remain
+unchanged (Gates 1/2 Partial; formal exit gate Open).
+
+F959 acceptance for implementation:
+
+1. In the teacher-import Application boundary, detect missing and duplicate
+   Hangul-only `Domain::KoreanTeacherKey` identities derived from each
+   `source.teacherKr`. Preserve existing shape, review-state, and source-date
+   validation precedence; perform this check before persistence.
+2. A duplicate derived identity returns `DuplicateKoreanTeacherName` before
+   any persistence call. Preserve the existing missing-identity result and
+   diagnostic behavior.
+3. Add an app-less regression with two source names that collapse to the same
+   derived key but have distinct mirrored `validationKey` strings. Assert
+   `DuplicateKoreanTeacherName` with zero persistence calls.
+4. Keep the current adapter mapping and existing production-adapter behavior
+   unchanged. Treat this as reusable direct-Application contract hardening;
+   do not claim a current UI defect. No separate platform test or full-suite
+   run is required for this slice.
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

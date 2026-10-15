@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F957 and Batch326 are complete; Batch327 found no defensible candidate and F958 is the sole active Batch328 typed schedule-save integrity slice; two post-F957 audits found all 13 official Deferred entries verbatim unchanged, with none actionable, resolved, or superseded; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F958 and Batch328 are complete; Batch329 is closed with F959 as the sole active teacher-import Application-contract slice. Two fresh audits found all 13 official Deferred entries unchanged, with none actionable, resolved, or superseded; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,7 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F958 - Typed Class Details schedule-conflict integrity: recheck regular and intensive conflicts inside the transaction before the first write.
+- F959 - Teacher-import identity validation: check missing and duplicate Hangul-only identities derived from `source.teacherKr` after existing precedence checks and before persistence.
 
 ## Objective
 
