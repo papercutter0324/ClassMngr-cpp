@@ -249,6 +249,7 @@ private slots:
     void teacherDeleteFailureRollsBackClassAssignments();
     void campusCreationValidatesGeneratedIdAtomically();
     void campusListValidatesPersistedIds();
+    void campusListRejectsLateFetchFailure();
     void teacherListValidatesPersistedIds();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
@@ -1199,6 +1200,86 @@ void DataServiceLifecycleTests::campusListValidatesPersistedIds()
         QStringLiteral("F872 B Campus")
         );
     QVERIFY(!query.next());
+}
+
+void DataServiceLifecycleTests::campusListRejectsLateFetchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("late-campus-fetch.db"))
+        ));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery setup(database);
+    QVERIFY(setup.exec(QStringLiteral("DROP TABLE campuses")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        CREATE TABLE campus_cursor_error_backing (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            payload TEXT NOT NULL
+        )
+    )")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        CREATE INDEX campus_cursor_error_name_idx
+        ON campus_cursor_error_backing (name)
+    )")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        INSERT INTO campus_cursor_error_backing (id, name, payload)
+        VALUES
+            (1, 'A Alpha Campus', '{}'),
+            (2, 'Z Broken Campus', '{')
+    )")));
+    QVERIFY(setup.exec(QStringLiteral(R"(
+        CREATE VIEW campuses AS
+        SELECT
+            id,
+            name,
+            json_extract(payload, '$.building_name') AS building_name,
+            NULL AS address,
+            NULL AS phone_number,
+            NULL AS office_number,
+            NULL AS transit_steps,
+            NULL AS arrival_info,
+            NULL AS image_path,
+            NULL AS office_wifi,
+            NULL AS office_wifi_password,
+            NULL AS printer_name,
+            NULL AS printer_steps,
+            NULL AS photocopier_code,
+            NULL AS housing_locations
+        FROM campus_cursor_error_backing
+    )")));
+
+    QSqlQuery preflight(database);
+    QVERIFY(preflight.exec(QStringLiteral(
+        "SELECT * FROM campuses ORDER BY name"
+        )));
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value(QStringLiteral("id")).toInt(), 1);
+    QCOMPARE(
+        preflight.value(QStringLiteral("name")).toString(),
+        QStringLiteral("A Alpha Campus")
+        );
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    const QString terminalCursorDetail =
+        preflight.lastError().text().trimmed();
+    QVERIFY(!terminalCursorDetail.isEmpty());
+    QVERIFY(terminalCursorDetail.contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
+        ));
+    preflight.finish();
+
+    const Result<QList<CampusRecord>> failedCampuses =
+        service.getAllCampuses();
+    QVERIFY(!failedCampuses);
+    QVERIFY(failedCampuses.error().contains(
+        QStringLiteral("Loading campuses")
+        ));
+    QVERIFY(failedCampuses.error().contains(terminalCursorDetail));
 }
 
 void DataServiceLifecycleTests::teacherListValidatesPersistedIds()

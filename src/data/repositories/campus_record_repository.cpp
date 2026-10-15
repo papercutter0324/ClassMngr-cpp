@@ -4,6 +4,7 @@
 #include "data/database/sql_query_utils.h"
 
 #include <QObject>
+#include <QSqlError>
 #include <QSqlQuery>
 
 #include <limits>
@@ -315,6 +316,16 @@ Result<QList<CampusRecord>> CampusRecordRepository::getAllCampuses()
                 query,
                 static_cast<int>(storedCampusId)
                 )
+            );
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading campuses")
+                ).userMessage()
             );
     }
 
