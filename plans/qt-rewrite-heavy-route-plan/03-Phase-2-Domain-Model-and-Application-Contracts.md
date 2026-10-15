@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F955 and Batch323 are closed; F956 is the sole active Batch324 Schedule View Projection display-text validation slice. All 13 Deferred entries remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F956 and Batch324 are complete; F957 is the sole active Batch326 roster-transfer Application-contract slice after the workspace/setup scan found no distinct candidate. Two independent audits found all 13 official Deferred entries verbatim unchanged, with none actionable, resolved, or superseded by F957; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,7 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F956 - Schedule View Projection display-text validation: reject whitespace-only required and nonempty optional display text; preserve identifiers and empty optional values.
+- F957 - Roster row transfer source validation: reject an over-wide selected source row before transfer preparation, after ID and row-removal checks.
 
 ## Objective
 

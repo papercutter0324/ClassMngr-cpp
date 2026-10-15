@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-16 (F946 complete; Batch311 discovery ongoing)
+### Current state - 2026-10-16 (F957 active in Batch326)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -5658,6 +5658,25 @@ text, exact nonblank values, byte bounds, and malformed-UTF-8 behavior. Test
 U+00A0 and U+3000 across all six fields. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
 
+### F956 complete; Batch325 discovery underway - 2026-10-16
+
+F956 is complete at source/test commit `2d3bda62`, following acceptance docs
+commit `b9d3516c` and active-row correction `009dc213`. Required and nonempty
+optional Schedule View display text now uses shared
+`Application::isBlankUtf8Text()`; local byte-wise blank handling for typed
+identifiers remains unchanged. The contract still allows empty optional text,
+preserves byte limits, exact nonblank values, malformed-UTF-8 behavior, and
+existing diagnostics. No current production `create`/`validate` callsite was
+found, so this is API-level hardening, not a current UI defect claim.
+
+The independent Tester rebuilt `ClassMngrNextApplicationScheduleViewTests` in
+the standard Debug folder with `/p:TrackFileAccess=false`; the exact CTest
+passed 1/1. `git diff --check` passed with Git line-ending normalization
+notices only. No full suite ran. Two independent post-F956 audits reviewed all
+13 official Deferred entries; none became actionable, resolved, or
+superseded. Batch325's read-only scans later found no actionable candidate.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
 ## Phase 2 current position — 2026-10-16 (F949 complete; Batch319 discovery)
 
 F949 remains complete at acceptance commit `af31c6da` and implementation/test
@@ -5741,3 +5760,25 @@ one of the official Deferred entries. F954 is now active: reject blank-only
 names on the single Speaking Evaluation query while preserving recoverable
 InvalidInput semantics, exact padded-name lookup, and batch fallback. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F957 active in Batch326 - 2026-10-16
+
+F956 is complete at source/test commit `2d3bda62`; its focused Schedule View
+projection Debug build and exact CTest passed 1/1. Batch325 closed without an
+actionable candidate. Batch326's workspace/setup scan found no distinct issue;
+its roster-transfer scan selected F957 because a direct use-case caller can
+provide extra cells on the selected source row that projection ignores. The
+current UI preflights the full roster, so this is API-contract hardening, not
+a demonstrated UI defect. F650's final-snapshot checks do not validate the
+selected row after removal. Two independent audits found all 13 official
+Deferred entries unchanged; the Class Analytics allocation item is a broad
+thematic match only.
+
+Acceptance: reject only a selected row wider than `sourceRoster.columns`
+after ID and row-removal checks, using the existing nonrecoverable Source
+validation error before remaining-source validation or target read. Preserve
+short rows, other validation/preparation order, F650 checks, atomic save, and
+UI/adapter/repository behavior. Implement an app-less regression, then build
+and run only `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in the
+standard Debug folder. No full suite. Gates 1/2 remain Partial; Phase 2 exit
+remains Open.

@@ -41023,3 +41023,63 @@ active Batch324 slice with this acceptance:
 
 All 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
+
+### F956 complete; Batch324 closed; Batch325 shortfall; Batch326 discovery underway - 2026-10-16
+
+F956 is complete at code commit `2d3bda62`, following acceptance commit
+`b9d3516c` and active-row correction commit `009dc213`. The independent
+`ClassMngrNextApplicationScheduleViewTests` Debug rebuild and exact registered
+CTest passed 1/1. `git diff --check` passed with line-ending notices; no full
+suite ran. Two audits confirmed all 13 official Deferred entries remain
+unchanged.
+
+Batch325's two scans found no actionable candidate. The teacher/student
+write-boundary scan found existing validation and focused tests. The Teacher
+Import latest-source-date query forwards its port result, while the production
+adapter canonicalizes and normalizes malformed stored values to absence;
+existing tests cover this, so no present mismatch was found. Batch325 closed
+without a selected slice.
+
+Batch326 discovery is underway in workspace/setup state transitions and
+roster/transfer projections. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
+
+### Batch326 discovery; F957 selected - 2026-10-16
+
+The workspace/setup-state scan found no distinct candidate. The roster-transfer
+scan selected F957 after identifying a code-derived data-loss consequence when
+the original selected source row exceeds the roster's declared column count.
+F650 validates only final source/target snapshots after selected-row removal,
+so it does not cover this original-row shape. The current UI preflights the full
+roster and reconstructs rows to its declared shape; F957 is direct Application
+contract hardening, and no current UI defect is asserted. Two independent
+post-discovery audits compared all 13 official Deferred entries; both found
+them verbatim unchanged and none actionable, resolved, or superseded by F957.
+Their only broad thematic relationship was to Class Analytics roster-allocation
+work, with no material overlap: F957 validates selected-source-row width before
+transfer and does not change Class Analytics allocation policy.
+
+F957 acceptance for implementation:
+
+1. In `src/next/application/roster_row_transfer_use_case.h`, after ID checks
+   and after `removeRosterRow` succeeds, reject the original selected source
+   row only when its cell count exceeds `sourceRoster.columns.size()`. This
+   preserves invalid-index and empty-row error precedence and permits short
+   rows.
+2. Return the existing Source validation result: nonrecoverable
+   `Domain::ErrorCode::Validation` with the exact message
+   `Source roster failed validation before transfer.` Reject before remaining-
+   source validation, target read, mapping, or save.
+3. Preserve all other selected-row/content validation and preparation ordering,
+   IDs, target behavior, F650 final-source/final-target validation, atomic
+   dual-snapshot save, UI preflight, and adapter/repository/API behavior.
+4. Add an app-less regression to the existing transfer use-case test using an
+   otherwise-valid selected row with one extra cell. Assert exact error code,
+   message, and `recoverable=false`; zero read/save calls; no saved request; and
+   an unchanged input request.
+5. Build `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in Debug in
+   `build/windows-x64-debug` with `/p:TrackFileAccess=false`; run only the exact
+   registered CTest `ClassMngrNextApplicationRosterRowTransferUseCaseTests`.
+   Inspect the diff and run `git diff --check`; do not run the full suite.
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

@@ -6059,3 +6059,35 @@ existing app-less test, asserting nonrecoverable `InvalidInput`. The review
 found no production callsite for projection creation or validation, so this is
 API-level contract hardening, not a claim about an existing UI defect. The
 complementary platform-read scan found no other actionable candidate.
+
+## F956 complete - 2026-10-16
+
+F956 is complete at source/test commit `2d3bda62`, following acceptance docs
+commit `b9d3516c` and active-row correction `009dc213`. The projection now
+uses the shared UTF-8 Qt-whitespace helper only for required and optional
+display text. Typed-ID blankness, empty optional text, limits, exact nonblank
+values, malformed-UTF-8 behavior, and diagnostic paths remain unchanged.
+
+The independent Tester rebuilt
+`ClassMngrNextApplicationScheduleViewTests` in the standard Windows x64 Debug
+folder with `/p:TrackFileAccess=false`; the exact CTest passed 1/1. The diff
+check passed with only line-ending notices. No full suite ran. Two
+independent audits confirmed all 13 official Deferred entries remain
+unchanged and none is actionable, resolved, or superseded. Batch325 later
+closed without a candidate.
+
+## F957 selected - 2026-10-16
+
+Batch326's workspace/setup scan found no distinct candidate. Its roster-transfer
+scan selected an Application-contract hardening change: reject a selected
+source row whose cell count exceeds the declared columns, after ID and row
+removal checks but before validating the remaining source or reading the
+target. This prevents extra cells from being silently omitted by projection
+while preserving invalid-index and empty-row precedence and short-row support.
+Use the existing nonrecoverable Source validation result. Keep all other
+selected-row/content behavior, F650 final-snapshot checks, and atomic save
+contract unchanged. The current Roster UI preflights the full roster, so this
+is not a claim of a live UI defect. Two independent audits confirmed all 13
+official Deferred entries remain verbatim deferred; the Class Analytics
+allocation item is only a broad thematic match. Focused implementation and
+verification are pending.

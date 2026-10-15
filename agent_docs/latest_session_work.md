@@ -5787,3 +5787,29 @@ the two matching Debug CTests. No full suite ran. Existing untracked
 `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
 `txt` artifacts remain untouched. Gates 1/2 remain Partial; the formal Phase 2
 exit gate is Open.
+
+## Current continuation - 2026-10-16 (F957 active in Batch326)
+
+F956 is complete at code commit `2d3bda62`. The focused Schedule View projection
+Debug build and exact CTest passed 1/1; no full suite ran. Batch325 closed
+without an actionable candidate.
+
+Batch326 selected F957 after the workspace/setup scan found no distinct issue
+and the roster-transfer scan found that extra selected-row cells can be
+ignored during projection for a direct Application caller. The current UI
+preflights the roster, so this is API contract hardening rather than a claimed
+UI-path failure. Two independent audits found all 13 official Deferred entries
+unchanged; the Class Analytics allocation item is thematically related only.
+
+F957 acceptance is limited to rejecting a selected row with more cells than
+the declared source columns after ID and row-removal checks, using the existing
+nonrecoverable Source validation result before remaining-source validation,
+target read, or mapping. Preserve shorter rows, other validation and
+preparation behavior, F650 final-snapshot checks, and atomic dual-snapshot
+save. The app-less regression should prove exact error classification and
+message, zero port calls/save, and immutable input. Next: commit acceptance
+docs, implement in the use case and existing focused test, have the independent
+Tester build `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in
+`build/windows-x64-debug` with `/p:TrackFileAccess=false`, run only its exact
+CTest, then close F957 and begin Batch327 discovery. Keep Gates 1/2 Partial and
+Phase 2 exit Open. Existing unrelated untracked artifacts remain untouched.
