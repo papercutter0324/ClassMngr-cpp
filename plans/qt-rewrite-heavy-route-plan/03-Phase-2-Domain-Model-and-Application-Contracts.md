@@ -113,7 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F955 - Campus Dashboard selected-campus read validation: reject Unicode-whitespace-only IDs before the application port.
+- F956 - Schedule View Projection display-text validation: reject whitespace-only required and nonempty optional display text; preserve identifiers and empty optional values.
 
 ## Objective
 
