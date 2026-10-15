@@ -81,10 +81,15 @@ Clean EOF, including empty-list success, and typed `Technical`/unavailable
 `NotFound` propagation were source-reviewed; those edge paths were not
 separately fault-injected. No full suite ran. Two independent audits found
 none of the 13 official Deferred candidates newly actionable. Batch 305 now
-has F918 and F919 remaining; F918 is selected with baseline and acceptance
-pending. Batch 306 read-only discovery is underway because F918 is the
-second-last candidate. Gates 1/2 remain Partial and the formal Phase 2 exit
-gate is Open.
+has F918 and F919 remaining. F918's baseline and acceptance are recorded at
+F917 source HEAD `e3655c1c`; forced sequential Debug builds passed for
+`ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`,
+and CTests #21 and #397 passed. The typed-port build emitted nonfatal MSB8064
+for missing `src/next/application/teacher_import_plan_mapper.h`; the build and
+test passed. F918 implementation and post-change verification remain pending.
+Batch 306 read-only discovery is underway because F918 is the second-last
+candidate. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

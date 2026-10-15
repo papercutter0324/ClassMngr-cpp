@@ -38390,3 +38390,18 @@ pending. F919, Intensive slot-state read, remains queued in Batch 305. Since
 F918 is the second-last remaining candidate, read-only next-batch discovery is
 underway; record its candidates only after the discovery reports arrive.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F918 baseline captured; acceptance defined - 2026-10-15
+
+The pre-change source baseline is F917 HEAD `e3655c1cf87c12b86ac729a54f5a6bd84a993565`. Forced sequential Debug builds passed for `ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and `ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`. Exact Debug CTests #21 and #397 passed 1/1 each; the registered names match their target names. The typed-port target build emitted nonfatal MSB8064 because its custom-build dependency `src/next/application/teacher_import_plan_mapper.h` does not exist; the build and CTest still passed. No full suite ran and no code changed.
+
+`ClassInfoRepository::loadClassTeacherAssignments()` in `src/data/repositories/class_info_repository.cpp` runs one ordered query over regular classes, LEFT JOINs testing classes and class info, and appends rows while `query.next()` succeeds. It checks query execution but not terminal `lastError()`, then returns accumulated records. `ApplicationServicesClassTeacherAssignmentsReadPort` maps repository failure to unrecoverable `Technical`; an unavailable repository/session remains recoverable `NotFound`. Sidebar refresh consumes this port. UI and legacy paths are out of scope. Existing direct coverage is in `tests/testing_class_repository_tests.cpp`, including `loadsRegularClassTeacherAssignmentsInOneSnapshot()`; typed-port tests cover repository `Technical` and unavailable `NotFound`.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Terminal cursor failure | After the loop, return the existing repository SQL failure when the terminal cursor error is valid, before returning accumulated records. Preserve clean EOF and empty success. |
+| Existing behavior and scope | Preserve ordering, the single-query projection, regular-class filter, nullable teacher mapping, and typed `Technical` / unavailable-session `NotFound` classification. Do not edit consumers, UI, or legacy paths. |
+| Regression feasibility | Prefer a deterministic QSQLITE regression that invokes the real repository method and proves a first row is fetched before a later fetch error, with no partial result returned. The indexed-view overflow fixture from F917 is only a hypothesis for this joined, ordered query: prove it is deterministic against the exact method before making it permanent. Add no custom driver or direct SQLite linkage. If no reliable fixture is feasible, record that limit and use focused source review rather than fragile duplicated SQL. |
+| Post-change verification | Force sequential Debug builds, in order, for `ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and `ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests` with `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; run exact Debug CTests #21 and #397 only. No full suite. Baseline and acceptance are recorded; implementation and post-change verification are pending. |
+
+Batch 305 remains active with F918 and F919 in order. All 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

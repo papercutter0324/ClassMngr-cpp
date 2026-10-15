@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F917 Testing assignment display read is accepted at source/test commit `e3655c1c`; F918 Class-teacher assignments read is next with baseline and acceptance pending, and F919 remains queued in Batch 305; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F917 is accepted at source/test commit `e3655c1c`; F918 baseline and acceptance are recorded at that source HEAD, with implementation and post-change verification pending; F919 remains queued in Batch 305, and Gates 1/2 remain Partial with the formal exit gate Open.
 
 ### Slice discovery batches
 
