@@ -38666,3 +38666,69 @@ or superseded. All 13 remain unchanged. F921, Class Transfer evaluation read,
 is selected next in active Batch306 (F921-F929). Its baseline is not yet
 captured and will start at code HEAD `46ccd11354d1bfc13f1fb6a96f8de98ada16c874`.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F921 baseline captured; acceptance defined - 2026-10-15
+
+The F921 production-source baseline is
+`46ccd11354d1bfc13f1fb6a96f8de98ada16c874`. Current full docs HEAD
+`5b3e1bfc45ea82ff545f14d112719840c696a162` includes only later F920 docs
+commits; production source is unchanged. Baseline
+`ClassTransferRepository::loadEvaluations()` runs two ordered SELECT loops
+(headers, then matrix rows) without terminal `lastError()` checks. Forced
+sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformClassTransferExportSourceTests` exited 0. In the standard
+`build/windows-x64-debug` tree, the exact matching test is CTest #248, not
+#247; Debug CTest #248 passed 1/1 before probes and after the restored-source
+rebuild. No full suite ran. One invocation omitted `-C Debug` and did not run;
+the corrected Debug invocation passed.
+
+For the exact header SELECT, the temporary fixture fetched id 101 / “Valid
+header,” then returned false with a valid malformed-JSON “Unable to fetch row”
+error. The corresponding matrix query completed with one valid row. The
+unchanged source port nevertheless returned evaluation stage Value with that
+header and “Valid matrix row,” silently incomplete. For the exact matrix
+SELECT, the fixture fetched evaluation_id 101 / row_index 0 / col_0 “Valid
+first matrix row,” then returned false with a valid malformed-JSON error; the
+baseline source port returned Value with that one-row prefix. Both fixtures
+used indexed payload tables/views matching the production ORDER BY, and
+runtime assertions proved the current SQLite query plan’s valid-prefix/error
+sequence. ORDER BY alone does not establish that failure timing.
+
+Temporary test edits were removed byte-for-byte; the restored assigned test
+file SHA-256 is
+`44D3BA74FB121C24A712E39D907DC5DA27AC0D0D08CA8F24444E25284FD4B724`. Stale MOC
+initially referenced temporary slots; after refreshing the restored source
+timestamp, the sequential target rebuild and post-restore CTest #248 passed
+1/1. No production or durable test changes remain.
+
+Acceptance for F921:
+1. After the header `evaluationQuery` loop, check valid terminal
+   `lastError()` before the empty-header fast path or matrix query. Use the
+   existing `Unable to read speaking evaluations: %1` diagnostic and return no
+   evaluations, so partial headers cannot succeed. Preserve clean EOF and
+   clean empty success.
+2. After the matrix `rowQuery` loop, check valid terminal `lastError()` and set
+   the existing `Unable to read speaking evaluation rows: %1` diagnostic;
+   return no evaluations instead of incomplete matrix rows.
+3. Preserve both ordered queries and projections, ID parsing, initialized row
+   shape, valid integer row-index handling and malformed/out-of-range row
+   filtering, staged-read behavior, and typed-port `Technical`
+   classification. Limit production scope to
+   `ClassTransferRepository::loadEvaluations()` and regression coverage in the
+   existing platform source test; do not edit app/use-case, UI, schema, or
+   write paths.
+4. Add permanent coverage for both header and matrix cursor failures in
+   `tests/next_platform_class_transfer_export_source_tests.cpp`. For each,
+   assert the exact raw SELECT yields the expected valid prefix then false with
+   a valid malformed-JSON error; call the actual source port and assert the
+   evaluation stage is Error/Technical without the partial prefix. Reuse
+   indexed payload-table/view fixtures and runtime sequence/error assertions.
+5. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`, then
+   `ClassMngrNextPlatformClassTransferExportSourceTests`; run only Debug CTest
+   #248. No full suite.
+
+Implementation and post-change verification are pending. Batch306
+(F921-F929) remains active; all 13 official Deferred candidates remain
+unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.

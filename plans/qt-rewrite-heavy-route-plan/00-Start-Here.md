@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F920 Class schedule conflict read is accepted at source/test commit `46ccd11354d1bfc13f1fb6a96f8de98ada16c874`; two independent post-F920 audits found none of the 13 official Deferred candidates newly actionable, resolved, or superseded. F921 Class Transfer evaluation read is selected next in active Batch306; its baseline is not yet captured and will start at code HEAD `46ccd113`. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F920 is accepted at source/test commit `46ccd113`; two post-F920 audits found none of the 13 official Deferred candidates newly actionable, resolved, or superseded. F921 Class Transfer evaluation read has a verified baseline and defined acceptance at source HEAD `46ccd113` (current full HEAD `5b3e1bfc` is F920 docs-only); implementation and post-change verification remain pending. Batch306 (F921-F929) remains active; Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

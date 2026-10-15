@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F921 Class Transfer evaluation read is selected as the next active Batch306 candidate; its baseline is not yet captured and will start at code HEAD `46ccd113`. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F921 Class Transfer evaluation read has a verified baseline and defined acceptance at source HEAD `46ccd113` (current full HEAD `5b3e1bfc` is F920 docs-only); implementation and post-change verification remain pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
