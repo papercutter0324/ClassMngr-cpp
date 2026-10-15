@@ -233,6 +233,32 @@ QList<QVariantList> rawScheduleRows(
     return rows;
 }
 
+QList<QVariantList> rawJsonScheduleRows(
+    QSqlDatabase database,
+    const QString& tableName
+    )
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral(
+            "SELECT id, class_id, payload FROM %1 ORDER BY id"
+            ).arg(tableName)))
+    {
+        qFatal("Raw JSON schedule rows must be readable in test setup.");
+    }
+
+    QList<QVariantList> rows;
+    while (query.next())
+    {
+        QVariantList row;
+        for (int column = 0; column < query.record().count(); ++column)
+        {
+            row.append(query.value(column));
+        }
+        rows.append(row);
+    }
+    return rows;
+}
+
 int scheduleWriteAuditCount(QSqlDatabase database)
 {
     QSqlQuery query(database);
@@ -258,6 +284,70 @@ QVariant readRawTeacherId(QSqlDatabase database, const int classId)
     return query.value(0);
 }
 
+bool installMalformedJsonScheduleView(
+    QSqlDatabase database,
+    const QString& scheduleTable,
+    const QString& backingTable,
+    const int classId,
+    const QString& validPayload,
+    QString* failureMessage
+    )
+{
+    auto execute = [&](const QString& statement)
+    {
+        QSqlQuery query(database);
+        if (query.exec(statement))
+        {
+            return true;
+        }
+
+        if (failureMessage)
+        {
+            *failureMessage = query.lastError().text();
+        }
+        return false;
+    };
+
+    if (!execute(QStringLiteral("DROP TABLE %1").arg(scheduleTable))
+        || !execute(QStringLiteral(
+            "CREATE TABLE %1 ("
+            "id INTEGER PRIMARY KEY, class_id INTEGER, payload TEXT NOT NULL)"
+            ).arg(backingTable)))
+    {
+        return false;
+    }
+
+    for (int id = 1; id <= 2; ++id)
+    {
+        QSqlQuery insertRow(database);
+        insertRow.prepare(QStringLiteral(
+            "INSERT INTO %1 (id, class_id, payload) VALUES (?, ?, ?)"
+            ).arg(backingTable));
+        insertRow.addBindValue(id);
+        insertRow.addBindValue(classId);
+        insertRow.addBindValue(
+            id == 1 ? validPayload : QStringLiteral("{ malformed json")
+            );
+        if (!insertRow.exec())
+        {
+            if (failureMessage)
+            {
+                *failureMessage = insertRow.lastError().text();
+            }
+            return false;
+        }
+    }
+
+    return execute(QStringLiteral(
+        "CREATE VIEW %1 AS "
+        "SELECT id, class_id, "
+        "json_extract(payload, '$.day') AS day, "
+        "json_extract(payload, '$.start_time') AS start_time, "
+        "json_extract(payload, '$.end_time') AS end_time "
+        "FROM %2"
+        ).arg(scheduleTable, backingTable));
+}
+
 }
 
 class NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests final
@@ -276,6 +366,8 @@ private slots:
     void assignmentCreatesMissingClassInfoRowWithDefaults();
     void teacherIdStatementFailurePreservesClassInfoAndSchedules();
     void validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation();
+    void regularScheduleLateFetchFailureReturnsTechnicalWithoutMutation();
+    void intensiveScheduleLateFetchFailureReturnsTechnicalWithoutMutation();
     void unavailableSessionReturnsStructuredFailure();
 };
 
@@ -1209,6 +1301,259 @@ validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation()
         persistedFieldsBefore
         );
     QCOMPARE(readRawTeacherId(database, selectedClassId), persistedTeacherIdBefore);
+}
+
+void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
+regularScheduleLateFetchFailureReturnsTechnicalWithoutMutation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int selectedClassId = createClass(
+        services,
+        QStringLiteral("Regular Late Fetch Failure Co-Teacher Assignment")
+        );
+    const int originalTeacherId = createTeacher(
+        services,
+        QStringLiteral("Original Teacher")
+        );
+    const int assignedTeacherId = createTeacher(
+        services,
+        QStringLiteral("Assigned Teacher")
+        );
+    QVERIFY(selectedClassId > 0);
+    QVERIFY(originalTeacherId > 0);
+    QVERIFY(assignedTeacherId > 0);
+
+    ClassInfo original = newClassInfo(
+        services,
+        selectedClassId,
+        originalTeacherId
+        );
+    original.classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+    }};
+    QVERIFY(saveClassInfo(services, original));
+
+    QSqlDatabase database = services.databaseSession()->database();
+    const QVariantList persistedFieldsBefore = rawClassInfoFields(
+        database,
+        selectedClassId
+        );
+    const QVariant persistedTeacherIdBefore = readRawTeacherId(
+        database,
+        selectedClassId
+        );
+
+    QString fixtureFailure;
+    QVERIFY2(
+        installMalformedJsonScheduleView(
+            database,
+            QStringLiteral("class_times"),
+            QStringLiteral("f934_regular_json_schedule_rows"),
+            selectedClassId,
+            QStringLiteral(
+                R"({"day":"Monday","start_time":"9:00 AM","end_time":"9:50 AM"})"
+                ),
+            &fixtureFailure
+            ),
+        qPrintable(fixtureFailure)
+        );
+
+    QSqlQuery lateFetchProbe(database);
+    lateFetchProbe.prepare(QStringLiteral(
+        "SELECT day, start_time, end_time FROM class_times "
+        "WHERE class_id = ? ORDER BY id"
+        ));
+    lateFetchProbe.addBindValue(selectedClassId);
+    QVERIFY2(lateFetchProbe.exec(), qPrintable(lateFetchProbe.lastError().text()));
+    QVERIFY(lateFetchProbe.next());
+    QCOMPARE(lateFetchProbe.value(0).toString(), QStringLiteral("Monday"));
+    QCOMPARE(lateFetchProbe.value(1).toString(), QStringLiteral("9:00 AM"));
+    QCOMPARE(lateFetchProbe.value(2).toString(), QStringLiteral("9:50 AM"));
+    QVERIFY(!lateFetchProbe.next());
+    const QSqlError lateFetchError = lateFetchProbe.lastError();
+    QVERIFY2(lateFetchError.isValid(), qPrintable(lateFetchError.text()));
+    QVERIFY(lateFetchError.text().contains(
+        QStringLiteral("malformed"),
+        Qt::CaseInsensitive
+        ));
+    lateFetchProbe.finish();
+    const QList<QVariantList> jsonScheduleRowsBefore = rawJsonScheduleRows(
+        database,
+        QStringLiteral("f934_regular_json_schedule_rows")
+        );
+
+    Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
+    const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
+        selectedClassId,
+        assignedTeacherId,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("Loading regular class times failed")
+        ));
+
+    QCOMPARE(
+        rawClassInfoFields(database, selectedClassId),
+        persistedFieldsBefore
+        );
+    QCOMPARE(readRawTeacherId(database, selectedClassId), persistedTeacherIdBefore);
+    QCOMPARE(
+        rawJsonScheduleRows(
+            database,
+            QStringLiteral("f934_regular_json_schedule_rows")
+            ),
+        jsonScheduleRowsBefore
+        );
+}
+
+void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
+intensiveScheduleLateFetchFailureReturnsTechnicalWithoutMutation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int selectedClassId = createClass(
+        services,
+        QStringLiteral("Intensive Late Fetch Failure Co-Teacher Assignment")
+        );
+    const int originalTeacherId = createTeacher(
+        services,
+        QStringLiteral("Original Teacher")
+        );
+    const int assignedTeacherId = createTeacher(
+        services,
+        QStringLiteral("Assigned Teacher")
+        );
+    QVERIFY(selectedClassId > 0);
+    QVERIFY(originalTeacherId > 0);
+    QVERIFY(assignedTeacherId > 0);
+
+    ClassInfo original = newClassInfo(
+        services,
+        selectedClassId,
+        originalTeacherId
+        );
+    original.classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+    }};
+    QVERIFY(saveClassInfo(services, original));
+
+    QSqlDatabase database = services.databaseSession()->database();
+    const QVariantList persistedFieldsBefore = rawClassInfoFields(
+        database,
+        selectedClassId
+        );
+    const QVariant persistedTeacherIdBefore = readRawTeacherId(
+        database,
+        selectedClassId
+        );
+
+    QSqlQuery regularScheduleProbe(database);
+    regularScheduleProbe.prepare(QStringLiteral(
+        "SELECT day, start_time, end_time FROM class_times "
+        "WHERE class_id = ? ORDER BY id"
+        ));
+    regularScheduleProbe.addBindValue(selectedClassId);
+    QVERIFY2(
+        regularScheduleProbe.exec(),
+        qPrintable(regularScheduleProbe.lastError().text())
+        );
+    QVERIFY(regularScheduleProbe.next());
+    QCOMPARE(regularScheduleProbe.value(0).toString(), QStringLiteral("Monday"));
+    QCOMPARE(regularScheduleProbe.value(1).toString(), QStringLiteral("9:00 AM"));
+    QCOMPARE(regularScheduleProbe.value(2).toString(), QStringLiteral("9:50 AM"));
+    QVERIFY(!regularScheduleProbe.next());
+    QVERIFY(!regularScheduleProbe.lastError().isValid());
+    regularScheduleProbe.finish();
+    const QList<QVariantList> regularScheduleRowsBefore = rawScheduleRows(
+        database,
+        selectedClassId,
+        QStringLiteral("class_times")
+        );
+
+    QString fixtureFailure;
+    QVERIFY2(
+        installMalformedJsonScheduleView(
+            database,
+            QStringLiteral("class_intensive_times"),
+            QStringLiteral("f934_intensive_json_schedule_rows"),
+            selectedClassId,
+            QStringLiteral(
+                R"({"day":"Friday","start_time":"10:00 AM","end_time":"10:50 AM"})"
+                ),
+            &fixtureFailure
+            ),
+        qPrintable(fixtureFailure)
+        );
+
+    QSqlQuery lateFetchProbe(database);
+    lateFetchProbe.prepare(QStringLiteral(
+        "SELECT day, start_time, end_time FROM class_intensive_times "
+        "WHERE class_id = ? ORDER BY id"
+        ));
+    lateFetchProbe.addBindValue(selectedClassId);
+    QVERIFY2(lateFetchProbe.exec(), qPrintable(lateFetchProbe.lastError().text()));
+    QVERIFY(lateFetchProbe.next());
+    QCOMPARE(lateFetchProbe.value(0).toString(), QStringLiteral("Friday"));
+    QCOMPARE(lateFetchProbe.value(1).toString(), QStringLiteral("10:00 AM"));
+    QCOMPARE(lateFetchProbe.value(2).toString(), QStringLiteral("10:50 AM"));
+    QVERIFY(!lateFetchProbe.next());
+    const QSqlError lateFetchError = lateFetchProbe.lastError();
+    QVERIFY2(lateFetchError.isValid(), qPrintable(lateFetchError.text()));
+    QVERIFY(lateFetchError.text().contains(
+        QStringLiteral("malformed"),
+        Qt::CaseInsensitive
+        ));
+    lateFetchProbe.finish();
+    const QList<QVariantList> jsonScheduleRowsBefore = rawJsonScheduleRows(
+        database,
+        QStringLiteral("f934_intensive_json_schedule_rows")
+        );
+
+    Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
+    const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
+        selectedClassId,
+        assignedTeacherId,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromStdString(result.error().message).contains(
+        QStringLiteral("Loading intensive class times failed")
+        ));
+
+    QCOMPARE(
+        rawClassInfoFields(database, selectedClassId),
+        persistedFieldsBefore
+        );
+    QCOMPARE(readRawTeacherId(database, selectedClassId), persistedTeacherIdBefore);
+    QCOMPARE(
+        rawScheduleRows(
+            database,
+            selectedClassId,
+            QStringLiteral("class_times")
+            ),
+        regularScheduleRowsBefore
+        );
+    QCOMPARE(
+        rawJsonScheduleRows(
+            database,
+            QStringLiteral("f934_intensive_json_schedule_rows")
+            ),
+        jsonScheduleRowsBefore
+        );
 }
 
 void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::

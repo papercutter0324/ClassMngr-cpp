@@ -1267,6 +1267,22 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
             query.value("end_time").toString()
         });
     }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        Technical,
+                .message = SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading regular class times"),
+                    {},
+                    identity
+                    ).userMessage()
+            }
+            );
+    }
 
     query.prepare(R"(
         SELECT day, start_time, end_time
@@ -1299,6 +1315,22 @@ ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed(
             query.value("start_time").toString(),
             query.value("end_time").toString()
         });
+    }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            ClassCoTeacherAssignmentValidationSnapshotReadFailure{
+                .kind =
+                    ClassCoTeacherAssignmentValidationSnapshotFailureKind::
+                        Technical,
+                .message = SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading intensive class times"),
+                    {},
+                    identity
+                    ).userMessage()
+            }
+            );
     }
 
     return snapshot;
