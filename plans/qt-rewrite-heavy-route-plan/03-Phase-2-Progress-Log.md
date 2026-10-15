@@ -40778,10 +40778,10 @@ rows; and preservation of ASCII behavior, malformed-input behavior, and ID
 trimming/persistence policy. Sequentially build
 `ClassMngrNextApplicationCalendarEventTests` and
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` in
-`build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
-`NextApplicationCalendarEvent` and
-`NextPlatformApplicationServicesCalendarEventPort`, review the changes, and
-run `git diff --check`. No full suite.
+`build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only CTests
+`ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; review the
+changes and run `git diff --check`. No full suite.
 
 The Batch321 domain scan selected F953. GS Team and Native English save
 requests define an absent optional row ID as insert, but accept any integer;
@@ -40832,9 +40832,9 @@ Revised F952 acceptance supersedes the Create-only acceptance above:
 5. Sequentially build `ClassMngrNextApplicationCalendarEventTests` and
    `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` in
    `build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
-   CTests `NextApplicationCalendarEvent` and
-   `NextPlatformApplicationServicesCalendarEventPort`, review changes, and
-   run `git diff --check`. Do not run the full suite.
+   CTests `ClassMngrNextApplicationCalendarEventTests` and
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; review
+   the changes, then run `git diff --check`. Do not run the full suite.
 
 Batch321 ordering is unchanged: F952 remains first and F953 second. Batch322
 discovery remains underway. All 13 official Deferred entries remain
