@@ -463,6 +463,18 @@ QList<Teacher> sortedTeachers(
     return teachers;
 }
 
+qint64 chooseRecord(
+    QWidget* parent,
+    const QString& title,
+    const QString& prompt,
+    const QList<QPair<QString, qint64>>& records
+    )
+{
+    RecordSelectionDialog dialog(title, prompt, records, parent);
+    return dialog.exec() == QDialog::Accepted
+        ? dialog.selectedWideRecordId() : -1;
+}
+
 int chooseRecord(
     QWidget* parent,
     const QString& title,

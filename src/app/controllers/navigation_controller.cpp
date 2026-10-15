@@ -24,6 +24,7 @@
 #include <QFileInfo>
 #include <QLocale>
 
+#include <limits>
 #include <string>
 #include <utility>
 namespace
@@ -57,13 +58,14 @@ QString evaluationNameForKey(
 
 Teacher teacherFromReadSnapshot(
     const ClassMngr::Next::Application::TeacherProfileReadSnapshot& snapshot,
-    const int teacherId
+    const qint64 teacherId
     )
 {
     const ClassMngr::Next::Domain::TeacherProfileFields& fields =
         snapshot.fields;
     return {
-        .id = teacherId,
+        .id = teacherId <= std::numeric_limits<int>::max()
+            ? static_cast<int>(teacherId) : -1,
         .teacherKr = QString::fromStdU16String(fields.teacherKr),
         .teacherEn = QString::fromStdU16String(fields.teacherEn),
         .preferredRomanization = QString::fromStdU16String(
@@ -188,7 +190,7 @@ void NavigationController::handleTeacher(
 
     page->loadTeacher(teacherFromReadSnapshot(
         profile.value(),
-        data.teacherId));
+        data.teacherId), data.teacherId);
 
     m_pages->showPage(
         PageType::TeacherInfo

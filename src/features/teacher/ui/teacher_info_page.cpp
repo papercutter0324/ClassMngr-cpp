@@ -45,6 +45,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <limits>
 #include <optional>
 #include <string>
 #include <system_error>
@@ -1128,9 +1129,18 @@ QLabel* TeacherInfoPage::createFieldLabel(
 void TeacherInfoPage::loadTeacher(
     const Teacher& teacher)
 {
+    loadTeacher(teacher, teacher.id);
+}
+
+void TeacherInfoPage::loadTeacher(const Teacher& teacher, const qint64 teacherId)
+{
+    m_teacherId = teacherId;
     m_autosave->setLoading(true);
 
     m_teacher = teacher;
+    m_teacher.id = teacherId >= std::numeric_limits<int>::min()
+        && teacherId <= std::numeric_limits<int>::max()
+        ? static_cast<int>(teacherId) : -1;
 
     QString displayName =
         SidebarNodeNaming::formatTeacherDisplayName(teacher);
@@ -1229,7 +1239,7 @@ void TeacherInfoPage::discardChanges()
 {
     m_autosave->cancelPendingSave();
 
-    loadTeacher(m_teacher);
+    loadTeacher(m_teacher, m_teacherId);
 }
 
 QString TeacherInfoPage::unsavedChangesTitle() const
@@ -1350,9 +1360,12 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
             m_services);
     const NextApplication::TeacherProfileEditResult result =
         NextApplication::TeacherProfileEditUseCase::execute(
-            NextApplication::TeacherProfileEditRequest::fromIntId(
-                updated.id,
-                profileFieldsFromTeacher(updated)),
+            NextApplication::TeacherProfileEditRequest{
+                .id = m_teacherId > 0
+                    ? NextDomain::TeacherId::fromString(std::to_string(m_teacherId))
+                    : std::nullopt,
+                .fields = profileFieldsFromTeacher(updated)
+            },
             validationPolicy,
             persistence
             );
@@ -1420,9 +1433,11 @@ bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 
     clearDirty();
 
-    emit teacherSaved(
-        m_teacher.id
-        );
+    emit teacherIdentitySaved(m_teacherId);
+    if (m_teacher.id > 0)
+    {
+        emit teacherSaved(m_teacher.id);
+    }
 
     return !m_autosave->isDirty();
 }
@@ -1435,7 +1450,7 @@ void TeacherInfoPage::clearDirty()
 
 void TeacherInfoPage::updateActions()
 {
-    m_autosave->setSaveAvailable(m_teacher.id > 0);
+    m_autosave->setSaveAvailable(m_teacherId > 0);
     m_autosave->setSaveMode(m_autosave->saveMode());
 }
 
@@ -1596,7 +1611,7 @@ void TeacherInfoPage::retranslateUi()
 {
     if (m_pageHeader)
     {
-        if (m_teacher.id > 0)
+        if (m_teacherId > 0)
         {
             m_pageHeader->setTitle(
                 tr("Teacher Information for %1")

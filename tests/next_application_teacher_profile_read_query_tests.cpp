@@ -64,9 +64,37 @@ class NextApplicationTeacherProfileReadQueryTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void acceptsCanonicalSigned64BitBoundaries();
     void callsPortOnceWithTypedIdAndPreservesAllFields();
     void propagatesPortErrorAndRejectsMismatchedIdentity();
 };
+
+void NextApplicationTeacherProfileReadQueryTests::acceptsCanonicalSigned64BitBoundaries()
+{
+    RecordingReadPort port;
+    const TeacherProfileReadQuery query(port);
+    for (const std::string value : {"1", "2147483647", "2147483648", "9223372036854775807"})
+    {
+        const auto id = Domain::TeacherId::fromString(value);
+        QVERIFY(id);
+        port.result = TeacherProfileReadResult::success({.teacherId = *id, .fields = fields()});
+        const auto result = query.execute(*id);
+        QVERIFY(result);
+        QCOMPARE(result.value().teacherId.value(), value);
+        QCOMPARE(port.requests.back().value(), value);
+    }
+    const int callsBeforeInvalidIds = port.callCount;
+    for (const std::string value : {"0", "-1", "+1", "01", " 1", "1 ", "1x", "9223372036854775808"})
+    {
+        const auto id = Domain::TeacherId::fromString(value);
+        QVERIFY(id);
+        const auto result = query.execute(*id);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, callsBeforeInvalidIds);
+    }
+}
 
 void NextApplicationTeacherProfileReadQueryTests::
 callsPortOnceWithTypedIdAndPreservesAllFields()

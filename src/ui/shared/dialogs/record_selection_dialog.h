@@ -21,7 +21,15 @@ public:
         QWidget* parent = nullptr
         );
 
+    RecordSelectionDialog(
+        const QString& title,
+        const QString& prompt,
+        const QList<QPair<QString, qint64>>& records,
+        QWidget* parent = nullptr
+        );
+
     [[nodiscard]] int selectedRecordId() const;
+    [[nodiscard]] qint64 selectedWideRecordId() const;
 
 private:
     NoWheelComboBox* m_records = nullptr;

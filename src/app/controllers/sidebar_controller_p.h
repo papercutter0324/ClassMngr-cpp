@@ -41,6 +41,12 @@ bool sidebarClassNodeLessThan(
     const SidebarClassNode& right
     );
 QList<Teacher> sortedTeachers(QList<Teacher> teachers);
+qint64 chooseRecord(
+    QWidget* parent,
+    const QString& title,
+    const QString& prompt,
+    const QList<QPair<QString, qint64>>& records
+    );
 int chooseRecord(
     QWidget* parent,
     const QString& title,

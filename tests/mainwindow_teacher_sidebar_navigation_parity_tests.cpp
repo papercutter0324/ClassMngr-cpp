@@ -8,6 +8,7 @@
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "domain/validation/teacher_validator.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -28,6 +29,8 @@
 #include <QSignalSpy>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSqlRecord>
+#include <QVariantMap>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTextEdit>
@@ -36,6 +39,7 @@
 #include <QtTest>
 
 #include <array>
+#include <optional>
 #include <utility>
 
 namespace
@@ -161,7 +165,7 @@ QTreeWidgetItem* findTopLevelItemByKey(
 QTreeWidgetItem* findTeacherLeaf(
     QTreeWidget* tree,
     const QStringList& keyPath,
-    const int teacherId
+    const qint64 teacherId
     )
 {
     if (keyPath.isEmpty())
@@ -185,7 +189,7 @@ QTreeWidgetItem* findTeacherLeaf(
             {
                 QTreeWidgetItem* const child = item->child(childIndex);
                 if (child->data(0, Qt::UserRole + 4).toString() == key
-                    && child->data(0, Qt::UserRole + 3).toInt()
+                    && child->data(0, Qt::UserRole + 3).toLongLong()
                         == teacherId)
                 {
                     teacherLeaf = child;
@@ -203,7 +207,7 @@ QTreeWidgetItem* findTeacherLeaf(
     if (!item
         || item->data(0, Qt::UserRole).toInt()
             != static_cast<int>(NodeType::Teacher)
-        || item->data(0, Qt::UserRole + 3).toInt() != teacherId)
+        || item->data(0, Qt::UserRole + 3).toLongLong() != teacherId)
     {
         return nullptr;
     }
@@ -326,6 +330,8 @@ class MainWindowTeacherSidebarNavigationParityTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void wideTeacherSidebarRoundTrip_data();
+    void wideTeacherSidebarRoundTrip();
     void initTestCase();
     void addTeacherActionPreservesRequiredNameValidationOutcome();
     void manualTeacherSavePreservesSelectedDuplicateOccurrence();
@@ -839,11 +845,11 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
     QVERIFY(unassignedLeaf);
     QVERIFY(sourceLeaf);
     QCOMPARE(
-        assignedLeaf->data(0, Qt::UserRole + 3).toInt(),
+        assignedLeaf->data(0, Qt::UserRole + 3).toLongLong(),
         assignedTeacher.id
         );
     QCOMPARE(
-        unassignedLeaf->data(0, Qt::UserRole + 3).toInt(),
+        unassignedLeaf->data(0, Qt::UserRole + 3).toLongLong(),
         unassignedTeacher.id
         );
     QVERIFY(sourceLeaf != unassignedLeaf);
@@ -911,7 +917,7 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
         QVERIFY(targetCase.leaf);
         QVERIFY(targetCase.leaf != sourceLeaf);
         QCOMPARE(
-            targetCase.leaf->data(0, Qt::UserRole + 3).toInt(),
+            targetCase.leaf->data(0, Qt::UserRole + 3).toLongLong(),
             targetCase.teacherId
             );
 
@@ -1959,6 +1965,234 @@ deleteTeacherActionChooserDeleteRemovesOnlyTarget()
     QCOMPARE(services->databaseSession(), activeSession);
     QVERIFY(activeSession->isOpen());
     QCOMPARE(services->currentDatabasePath(), workspacePath);
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::wideTeacherSidebarRoundTrip_data()
+{
+    QTest::addColumn<bool>("chooserDeletion");
+    QTest::newRow("selected-delete") << false;
+    QTest::newRow("chooser-delete") << true;
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::wideTeacherSidebarRoundTrip()
+{
+    QFETCH(bool, chooserDeletion);
+    constexpr qint64 wideId = 2147483648LL;
+    QTemporaryDir workspace;
+    QVERIFY(workspace.isValid());
+    const QString path = workspace.filePath(QStringLiteral("f960-wide-teacher.tps"));
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(path));
+    Teacher sibling = teacherFixture(QStringLiteral("김선생"),
+        QStringLiteral("Sibling Teacher"), QStringLiteral("Sibling Teacher"),
+        QStringLiteral("Sibling notes"));
+    Teacher target = teacherFixture(QStringLiteral("박선생"),
+        QStringLiteral("Wide Teacher"), QStringLiteral("Wide Teacher"),
+        QStringLiteral("Wide notes before"));
+    sibling.preferredRomanization = QStringLiteral("Sibling Roman");
+    target.preferredRomanization = QStringLiteral("Wide Roman");
+    QVERIFY(!TeacherValidator::validate(sibling).hasErrors());
+    QVERIFY(!TeacherValidator::validate(target).hasErrors());
+    QVERIFY(persistTeacher(seedServices, sibling) > 0);
+    QVERIFY(persistTeacher(seedServices, target) > 0);
+    QVERIFY(assignTeacherToClass(seedServices, sibling.id));
+    const auto targetClass = seedServices.classService()->create(
+        QStringLiteral("F960 wide assigned class"));
+    QVERIFY(targetClass);
+    QSqlQuery seed(seedServices.databaseSession()->database());
+    seed.prepare(QStringLiteral("UPDATE teachers SET id=? WHERE id=?"));
+    seed.addBindValue(wideId);
+    seed.addBindValue(target.id);
+    QVERIFY2(seed.exec(), qPrintable(seed.lastError().text()));
+    seed.prepare(QStringLiteral(
+        "INSERT INTO class_info (class_id, teacher_id, class_grade, class_level) "
+        "VALUES (?, ?, 'E4', 'Orion')"));
+    seed.addBindValue(*targetClass);
+    seed.addBindValue(wideId);
+    QVERIFY2(seed.exec(), qPrintable(seed.lastError().text()));
+    seed.prepare(QStringLiteral(
+        "INSERT INTO class_times (class_id, day, start_time, end_time) "
+        "VALUES (?, 'Monday', '4:00 PM', '5:00 PM')"));
+    seed.addBindValue(*targetClass);
+    QVERIFY2(seed.exec(), qPrintable(seed.lastError().text()));
+    seedServices.closeDatabase();
+
+    LanguageService language;
+    QVERIFY(language.setLanguage(Language::English));
+    MainWindowStartupOptions options;
+    options.loadMostRecentDatabase = false;
+    options.initialDatabasePath = path;
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope scope(&prompts);
+    MainWindow window([](const QString&) {}, false, &language, nullptr, std::move(options));
+    window.show();
+    QApplication::processEvents();
+    auto* services = window.services();
+    QVERIFY(services && services->hasOpenDatabase());
+    auto* session = services->databaseSession();
+    auto* repository = session->teacherRepository();
+    auto* pages = window.pageManager();
+    QVERIFY(pages);
+    pages->setSaveMode(SaveMode::Manual);
+    auto* sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    auto* tree = sidebar->findChild<QTreeWidget*>(QStringLiteral("sidebarTree"));
+    QVERIFY(tree);
+    const QStringList coKeys{QStringLiteral("co_teachers"), QStringLiteral("teacher")};
+    const QStringList allKeys{QStringLiteral("campus_staff"),
+        QStringLiteral("teachers_all_korean"), QStringLiteral("teacher")};
+    const auto snapshot = [&](const QString& sql)
+        -> std::optional<QList<QVariantMap>>
+    {
+        QSqlQuery query(session->database());
+        if (!query.exec(sql)) return std::nullopt;
+        QList<QVariantMap> rows;
+        while (query.next())
+        {
+            QVariantMap row;
+            const auto record = query.record();
+            for (int column = 0; column < record.count(); ++column)
+                row.insert(record.fieldName(column), query.value(column));
+            rows.append(row);
+        }
+        if (query.lastError().isValid()) return std::nullopt;
+        return rows;
+    };
+    auto expectedTeachers = snapshot(QStringLiteral("SELECT * FROM teachers ORDER BY id"));
+    const auto assignmentsBefore = snapshot(QStringLiteral("SELECT * FROM class_info ORDER BY class_id"));
+    const auto classesBefore = snapshot(QStringLiteral("SELECT * FROM classes ORDER BY id"));
+    const auto timesBefore = snapshot(QStringLiteral("SELECT * FROM class_times ORDER BY class_id"));
+    QVERIFY(expectedTeachers && assignmentsBefore && classesBefore && timesBefore);
+    QCOMPARE(expectedTeachers->size(), 2);
+    QCOMPARE(assignmentsBefore->size(), 2);
+    QVERIFY(!classesBefore->isEmpty());
+    QVERIFY(!timesBefore->isEmpty());
+    QSignalSpy routeSpy(sidebar, &Sidebar::itemSelected);
+    for (const auto& keys : {coKeys, allKeys})
+    {
+        auto* leaf = findTeacherLeaf(tree, keys, wideId);
+        QVERIFY(leaf);
+        QCOMPARE(leaf->data(0, Qt::UserRole + 3).toLongLong(), wideId);
+        QCOMPARE(leaf->text(0), target.preferredDisplayName());
+        QVERIFY(clickTreeItem(tree, leaf));
+        QVERIFY(!routeSpy.isEmpty());
+        const auto route = qvariant_cast<NavigationData>(routeSpy.takeLast().at(0));
+        QCOMPARE(route.teacherId, wideId);
+        QCOMPARE(route.keys, keys);
+        QCOMPARE(sidebar->getSelectedTeacherId(), wideId);
+        QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+        QVERIFY(pages->teacherPage());
+        QCOMPARE(pages->teacherPage()->teacherId(), wideId);
+    }
+    auto* page = pages->teacherPage();
+    auto* room = page->findChild<QLineEdit*>(QStringLiteral("roomNumberEdit"));
+    auto* notes = page->findChild<QTextEdit*>(QStringLiteral("teacherNotesEdit"));
+    QVERIFY(room && notes);
+    QSignalSpy saved(page, &TeacherInfoPage::teacherIdentitySaved);
+    room->setText(QStringLiteral("Wide Room Saved"));
+    notes->setPlainText(QStringLiteral("Wide notes saved through exact identity"));
+    QVERIFY(page->hasUnsavedChanges());
+    QVERIFY(page->saveChanges());
+    QCOMPARE(saved.size(), 1);
+    QCOMPARE(saved.constFirst().at(0).toLongLong(), wideId);
+    QCOMPARE(page->teacherId(), wideId);
+    QCOMPARE(sidebar->getSelectedTeacherId(), wideId);
+    QCOMPARE(sidebar->selectedKeys(), allKeys);
+    QVERIFY(!page->hasUnsavedChanges());
+    for (auto& row : *expectedTeachers)
+    {
+        if (row.value(QStringLiteral("id")).toLongLong() == wideId)
+        {
+            row[QStringLiteral("room_number")] = QStringLiteral("Wide Room Saved");
+            row[QStringLiteral("notes")] = QStringLiteral("Wide notes saved through exact identity");
+        }
+    }
+    const auto teachersSaved = snapshot(QStringLiteral("SELECT * FROM teachers ORDER BY id"));
+    QVERIFY(teachersSaved);
+    QCOMPARE(*teachersSaved, *expectedTeachers);
+    const auto assignmentsSaved = snapshot(QStringLiteral("SELECT * FROM class_info ORDER BY class_id"));
+    QVERIFY(assignmentsSaved);
+    QCOMPARE(*assignmentsSaved, *assignmentsBefore);
+    // Saving refreshes both Sidebar occurrences. Revisit each through public navigation.
+    for (const auto& keys : {coKeys, allKeys})
+    {
+        auto* leaf = findTeacherLeaf(tree, keys, wideId);
+        QVERIFY(leaf);
+        QVERIFY(clickTreeItem(tree, leaf));
+        QCOMPARE(page->teacherId(), wideId);
+        QCOMPARE(room->text(), QStringLiteral("Wide Room Saved"));
+        QCOMPARE(notes->toPlainText(), QStringLiteral("Wide notes saved through exact identity"));
+    }
+    room->setText(QStringLiteral("Discarded draft"));
+    page->discardChanges();
+    QCOMPARE(page->teacherId(), wideId);
+    QCOMPARE(room->text(), QStringLiteral("Wide Room Saved"));
+    const auto loaded = repository->lookupTeacherProfileById(wideId);
+    QCOMPARE(loaded.code, TeacherProfileLookupCode::Found);
+    QCOMPARE(loaded.profile.teacherId, wideId);
+    QCOMPARE(loaded.profile.roomNumber, QStringLiteral("Wide Room Saved"));
+
+    bool chooserSeen = false;
+    qint64 chooserId = -1;
+    if (chooserDeletion)
+    {
+        tree->setCurrentItem(findTopLevelItemByKey(tree, QStringLiteral("classes")));
+        QCOMPARE(sidebar->getSelectedTeacherId(), qint64{-1});
+        QTimer::singleShot(0, &window, [&]()
+        {
+            auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+            if (!dialog) return;
+            chooserSeen = true;
+            auto* combo = dialog->findChild<QComboBox*>(QStringLiteral("sidebarRecordSelectionCombo"));
+            auto* buttons = dialog->findChild<QDialogButtonBox*>(QStringLiteral("sidebarRecordSelectionButtonBox"));
+            if (!combo || !buttons) { dialog->reject(); return; }
+            const int index = combo->findData(QVariant::fromValue(wideId));
+            if (index < 0) { dialog->reject(); return; }
+            combo->setCurrentIndex(index);
+            chooserId = combo->currentData().toLongLong();
+            auto* accept = buttons->button(QDialogButtonBox::Ok);
+            if (!accept || !accept->isEnabled()) { dialog->reject(); return; }
+            accept->click();
+        });
+    }
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    QVERIFY(window.actions().deleteTeacher->isEnabled());
+    window.actions().deleteTeacher->trigger();
+    QApplication::processEvents();
+    QCOMPARE(chooserSeen, chooserDeletion);
+    if (chooserDeletion) QCOMPARE(chooserId, wideId);
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.confirmations.constFirst().message,
+        QStringLiteral("Delete '%1'?").arg(target.preferredDisplayName()));
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(repository->lookupTeacherProfileById(wideId).code, TeacherProfileLookupCode::Missing);
+    QVERIFY(!findTeacherLeaf(tree, coKeys, wideId));
+    QVERIFY(!findTeacherLeaf(tree, allKeys, wideId));
+    QVERIFY(findTeacherLeaf(tree, coKeys, sibling.id));
+    QVERIFY(findTeacherLeaf(tree, allKeys, sibling.id));
+    expectedTeachers->removeIf([&](const QVariantMap& row)
+        { return row.value(QStringLiteral("id")).toLongLong() == wideId; });
+    const auto teachersAfter = snapshot(QStringLiteral("SELECT * FROM teachers ORDER BY id"));
+    const auto assignmentsAfter = snapshot(QStringLiteral("SELECT * FROM class_info ORDER BY class_id"));
+    const auto classesAfter = snapshot(QStringLiteral("SELECT * FROM classes ORDER BY id"));
+    const auto timesAfter = snapshot(QStringLiteral("SELECT * FROM class_times ORDER BY class_id"));
+    QVERIFY(teachersAfter && assignmentsAfter && classesAfter && timesAfter);
+    QCOMPARE(*teachersAfter, *expectedTeachers);
+    QCOMPARE(*classesAfter, *classesBefore);
+    QCOMPARE(*timesAfter, *timesBefore);
+    QCOMPARE(assignmentsAfter->size(), assignmentsBefore->size());
+    for (qsizetype index = 0; index < assignmentsBefore->size(); ++index)
+    {
+        auto before = assignmentsBefore->at(index);
+        auto after = assignmentsAfter->at(index);
+        if (before.value(QStringLiteral("teacher_id")).toLongLong() == wideId)
+        {
+            QVERIFY(after.value(QStringLiteral("teacher_id")).isNull());
+            before.remove(QStringLiteral("teacher_id"));
+            after.remove(QStringLiteral("teacher_id"));
+        }
+        QCOMPARE(after, before);
+    }
 }
 
 QTEST_MAIN(MainWindowTeacherSidebarNavigationParityTests)

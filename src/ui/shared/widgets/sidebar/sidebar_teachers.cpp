@@ -2,7 +2,7 @@
 
 void Sidebar::addTeacherNode(
     const QString &displayName,
-    int teacherId,
+    qint64 teacherId,
     bool myCoTeacher
     )
 {

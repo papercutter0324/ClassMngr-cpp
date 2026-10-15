@@ -113,7 +113,7 @@ void SidebarController::addTeacher()
 
 void SidebarController::deleteTeacher()
 {
-    int teacherId =
+    qint64 teacherId =
         m_sidebar->getSelectedTeacherId();
 
     if (teacherId <= 0)
@@ -167,7 +167,6 @@ void SidebarController::deleteTeacher()
 
     const auto& fields = profile.value().fields;
     Teacher teacher;
-    teacher.id = teacherId;
     teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
     teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
     teacher.preferredRomanization = QString::fromStdU16String(

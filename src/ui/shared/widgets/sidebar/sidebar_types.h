@@ -25,7 +25,7 @@ struct NavigationData
 
     int classId = -1;
 
-    int teacherId = -1;
+    qint64 teacherId = -1;
 };
 
 Q_DECLARE_METATYPE(NavigationData)

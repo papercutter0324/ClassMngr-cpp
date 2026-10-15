@@ -60,8 +60,8 @@ public:
             return Domain::Result<void>::failure(unavailableError());
         }
 
-        const std::optional<int> legacyId = legacyTeacherId(profile.id);
-        if (!legacyId)
+        const std::optional<qint64> parsedId = wideTeacherId(profile.id);
+        if (!parsedId)
         {
             return Domain::Result<void>::failure(invalidTeacherIdError());
         }
@@ -70,7 +70,7 @@ public:
         {
             const TeacherUpdateOutcome result =
                 repository->updateTeacherWithOutcome(
-                    teacherFromProfile(profile, *legacyId));
+                    teacherFromProfile(profile), *parsedId);
             if (result.code == TeacherUpdateOutcomeCode::Missing)
             {
                 return Domain::Result<void>::failure({
@@ -103,8 +103,8 @@ public:
         const Domain::TeacherId id
         ) const override
     {
-        const std::optional<int> legacyId = legacyTeacherId(id);
-        if (!legacyId)
+        const std::optional<qint64> parsedId = wideTeacherId(id);
+        if (!parsedId)
         {
             return Domain::Result<Domain::TeacherProfile>::failure(
                 invalidTeacherIdError());
@@ -119,12 +119,13 @@ public:
 
         try
         {
-            const TeacherByIdLookupResult result =
-                repository->lookupTeacherById(*legacyId);
+            const TeacherProfileLookupResult result =
+                repository->lookupTeacherProfileById(
+                    *parsedId, QObject::tr("Loading teacher"));
             switch (result.code)
             {
-            case TeacherByIdLookupCode::Found:
-                if (result.teacher.id != *legacyId)
+            case TeacherProfileLookupCode::Found:
+                if (result.profile.teacherId != *parsedId)
                 {
                     return Domain::Result<Domain::TeacherProfile>::failure(
                         technicalError(QStringLiteral(
@@ -133,15 +134,15 @@ public:
 
                 return Domain::Result<Domain::TeacherProfile>::success({
                     .id = id,
-                    .fields = profileFieldsFromTeacher(result.teacher)
+                    .fields = profileFieldsFromRecord(result.profile)
                 });
-            case TeacherByIdLookupCode::Missing:
+            case TeacherProfileLookupCode::Missing:
                 return Domain::Result<Domain::TeacherProfile>::failure({
                     .code = Domain::ErrorCode::NotFound,
                     .message = utf8(result.diagnostic),
                     .recoverable = true
                 });
-            case TeacherByIdLookupCode::Failure:
+            case TeacherProfileLookupCode::Failure:
                 return Domain::Result<Domain::TeacherProfile>::failure(
                     technicalError(result.diagnostic,
                         QStringLiteral("Reloading teacher failed.")));
@@ -163,12 +164,12 @@ public:
     }
 
 private:
-    [[nodiscard]] static std::optional<int> legacyTeacherId(
+    [[nodiscard]] static std::optional<qint64> wideTeacherId(
         const Domain::TeacherId& id
         )
     {
         const std::string& value = id.value();
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),
@@ -216,13 +217,11 @@ private:
     }
 
     [[nodiscard]] static Teacher teacherFromProfile(
-        const Domain::TeacherProfile& profile,
-        const int legacyId
+        const Domain::TeacherProfile& profile
         )
     {
         const Domain::TeacherProfileFields& fields = profile.fields;
         return {
-            .id = legacyId,
             .teacherKr = legacyText(fields.teacherKr),
             .teacherEn = legacyText(fields.teacherEn),
             .preferredRomanization = legacyText(fields.preferredRomanization),
@@ -240,8 +239,8 @@ private:
         };
     }
 
-    [[nodiscard]] static Domain::TeacherProfileFields profileFieldsFromTeacher(
-        const Teacher& teacher
+    [[nodiscard]] static Domain::TeacherProfileFields profileFieldsFromRecord(
+        const TeacherProfileReadRecord& teacher
         )
     {
         return {

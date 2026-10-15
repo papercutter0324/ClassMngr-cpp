@@ -57,7 +57,7 @@ public slots:
         );
 
     void handleTeacherSaved(
-        int teacherId
+        qint64 teacherId
         );
 
 private slots:
@@ -92,7 +92,7 @@ private:
 
     int promptForClassToDelete() const;
 
-    int promptForTeacherToDelete() const;
+    qint64 promptForTeacherToDelete() const;
 
     QString classDisplayName(
         const Classroom& classroom

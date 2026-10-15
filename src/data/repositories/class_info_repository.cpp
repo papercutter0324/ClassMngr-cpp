@@ -6101,6 +6101,53 @@ ClassInfoRepository::loadClassTeacherAssignments()
     return assignments;
 }
 
+Result<QList<ClassTeacherAssignmentReadRecord>>
+ClassInfoRepository::loadClassTeacherAssignmentRecords()
+{
+    QList<ClassTeacherAssignmentReadRecord> assignments;
+    QSqlQuery query(m_database);
+
+    const auto executed = SqlQueryUtils::execute(
+        query,
+        QStringLiteral(R"(
+            SELECT
+                c.id AS class_id,
+                ci.teacher_id
+            FROM classes c
+            LEFT JOIN testing_classes tc
+            ON tc.class_id = c.id
+            LEFT JOIN class_info ci
+            ON ci.class_id = c.id
+            WHERE tc.class_id IS NULL
+            ORDER BY c.name, c.id
+        )"),
+        QObject::tr("Loading class teacher assignments")
+        );
+    if (!executed)
+    {
+        return std::unexpected(executed.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
+        assignments.append({
+            query.value(QStringLiteral("class_id")).toInt(),
+            teacherId.isNull() ? -1 : teacherId.toLongLong()
+        });
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class teacher assignments")
+            ).userMessage());
+    }
+
+    return assignments;
+}
+
 Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
 {
     ++m_scheduleClassInfoReadMetrics.scheduleClassInfosCallCount;

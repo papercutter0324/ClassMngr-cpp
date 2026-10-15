@@ -6,9 +6,7 @@
 #include "next/platform/application_services_initial_setup_teacher_choices_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include <charconv>
-#include <string>
-#include <system_error>
+#include <algorithm>
 #include <utility>
 
 using namespace SidebarControllerPrivate;
@@ -90,117 +88,64 @@ void SidebarController::refreshTeacherSidebar()
         return;
     }
 
-    QList<Teacher> teachers;
-    teachers.reserve(
-        static_cast<qsizetype>(teacherChoices.value().teachers.size())
-        );
+    struct SidebarTeacher
+    {
+        qint64 id;
+        Teacher fields;
+    };
+    QList<SidebarTeacher> teachers;
     for (const auto& choice : teacherChoices.value().teachers)
     {
-        int teacherId = 0;
-        const std::string& teacherIdValue = choice.teacherId.value();
-        const auto [end, conversionError] = std::from_chars(
-            teacherIdValue.data(),
-            teacherIdValue.data() + teacherIdValue.size(),
-            teacherId
-            );
-        if (conversionError != std::errc{}
-            || end != teacherIdValue.data() + teacherIdValue.size()
-            || teacherId <= 0
-            || std::to_string(teacherId) != teacherIdValue)
+        const auto id = ClassMngr::Next::Application::
+            parseCanonicalPositiveDecimalId64(choice.teacherId.value());
+        if (!id)
         {
             continue;
         }
-
-        Teacher teacher;
-        teacher.id = teacherId;
-        teacher.teacherKr = QString::fromStdU16String(choice.teacherKr);
-        teacher.teacherEn = QString::fromStdU16String(choice.teacherEn);
-        teacher.preferredRomanization = QString::fromStdU16String(
-            choice.preferredRomanization
-            );
-        teacher.preferredName = QString::fromStdU16String(
-            choice.preferredName
-            );
-        teachers.append(std::move(teacher));
+        Teacher fields;
+        fields.teacherKr = QString::fromStdU16String(choice.teacherKr);
+        fields.teacherEn = QString::fromStdU16String(choice.teacherEn);
+        fields.preferredRomanization = QString::fromStdU16String(
+            choice.preferredRomanization);
+        fields.preferredName = QString::fromStdU16String(choice.preferredName);
+        teachers.append({*id, std::move(fields)});
     }
-
-    QHash<int, Teacher> teachersById;
-
-    for (const Teacher& teacher : teachers)
-    {
-        if (teacher.id > 0)
+    std::sort(teachers.begin(), teachers.end(),
+        [](const SidebarTeacher& left, const SidebarTeacher& right)
         {
-            teachersById.insert(
-                teacher.id,
-                teacher
-                );
-        }
-    }
+            if (SidebarNodeNaming::teacherDisplayLessThan(left.fields, right.fields))
+            {
+                return true;
+            }
+            if (SidebarNodeNaming::teacherDisplayLessThan(right.fields, left.fields))
+            {
+                return false;
+            }
+            return left.id < right.id;
+        });
 
-    QSet<int> myTeacherIds;
-    QList<Teacher> myTeachers;
-
+    QSet<qint64> myTeacherIds;
     for (const auto& assignment : assignments.value().assignments)
     {
-        if (!assignment.teacherId)
+        if (assignment.teacherId)
         {
-            continue;
+            const auto id = ClassMngr::Next::Application::
+                parseCanonicalPositiveDecimalId64(assignment.teacherId->value());
+            if (id)
+            {
+                myTeacherIds.insert(*id);
+            }
         }
-
-        int teacherId = 0;
-        const std::string& teacherIdValue = assignment.teacherId->value();
-        const auto [end, conversionError] = std::from_chars(
-            teacherIdValue.data(),
-            teacherIdValue.data() + teacherIdValue.size(),
-            teacherId
-            );
-
-        if (
-            conversionError != std::errc{}
-            || end != teacherIdValue.data() + teacherIdValue.size()
-            || teacherId <= 0
-            || std::to_string(teacherId) != teacherIdValue
-            || myTeacherIds.contains(teacherId)
-            || !teachersById.contains(teacherId)
-            )
+    }
+    for (const auto& teacher : teachers)
+    {
+        const QString displayName = SidebarNodeNaming::formatTeacherDisplayName(
+            teacher.fields);
+        if (myTeacherIds.contains(teacher.id))
         {
-            continue;
+            m_sidebar->addTeacherNode(displayName, teacher.id, true);
         }
-
-        myTeacherIds.insert(
-            teacherId
-            );
-        myTeachers.append(
-            teachersById.value(teacherId)
-            );
-    }
-
-    for (const Teacher& teacher : sortedTeachers(myTeachers))
-    {
-        const QString displayName =
-            SidebarNodeNaming::formatTeacherDisplayName(
-                teacher
-                );
-
-        m_sidebar->addTeacherNode(
-            displayName,
-            teacher.id,
-            true
-            );
-    }
-
-    for (const Teacher& teacher : sortedTeachers(teachers))
-    {
-        const QString displayName =
-            SidebarNodeNaming::formatTeacherDisplayName(
-                teacher
-                );
-
-        m_sidebar->addTeacherNode(
-            displayName,
-            teacher.id,
-            false
-            );
+        m_sidebar->addTeacherNode(displayName, teacher.id, false);
     }
 
     updateActionStates(
@@ -222,7 +167,7 @@ void SidebarController::handleClassInfoSaved(
 }
 
 void SidebarController::handleTeacherSaved(
-    int teacherId
+    qint64 teacherId
     )
 {
     const QStringList selectedKeys = m_sidebar

@@ -33,6 +33,10 @@ public:
         const Teacher& teacher
         );
 
+    // Retain identity separately from the legacy int-based Teacher fields.
+    void loadTeacher(const Teacher& fields, qint64 teacherId);
+    [[nodiscard]] qint64 teacherId() const { return m_teacherId; }
+
     void saveData() override;
 
     bool saveChanges() override;
@@ -55,6 +59,9 @@ signals:
     void teacherSaved(
         int teacherId
         );
+
+    // Active Sidebar and navigation consumers use this full identity.
+    void teacherIdentitySaved(qint64 teacherId);
 
 protected:
 
@@ -103,6 +110,7 @@ private:
     // =====================================================
 
     Teacher m_teacher;
+    qint64 m_teacherId = -1;
     AutosaveCoordinator* m_autosave = nullptr;
     FormValidationBinder* m_validationBinder = nullptr;
 

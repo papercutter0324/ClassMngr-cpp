@@ -82,10 +82,57 @@ class NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests fina
     Q_OBJECT
 
 private slots:
+    void wideIdentitiesUpdateAndReloadWithoutAffectingSibling();
     void updatesAndReloadsEveryProfileFieldThroughActiveRepository();
     void mapsDeletedTeacherUpdateAndReloadToNotFound();
     void mapsUnavailableSessionAndRepositoryFailures();
 };
+
+void NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests::
+wideIdentitiesUpdateAndReloadWithoutAffectingSibling()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int siblingId = createTeacher(services);
+    QVERIFY(siblingId > 0);
+    auto* repository = services.databaseSession()->teacherRepository();
+    const auto sibling = repository->getTeacher(siblingId);
+    QVERIFY(sibling);
+    Platform::ApplicationServicesTeacherProfileEditPersistencePort port(services);
+    for (const std::string value : {"2147483648", "9223372036854775807"})
+    {
+        QSqlQuery seed(services.databaseSession()->database());
+        seed.prepare(QStringLiteral("INSERT INTO teachers (id, teacher_en) VALUES (?, 'Wide Before')"));
+        seed.addBindValue(QString::fromStdString(value).toLongLong());
+        QVERIFY2(seed.exec(), qPrintable(seed.lastError().text()));
+        const auto id = Domain::TeacherId::fromString(value);
+        QVERIFY(id);
+        const Domain::TeacherProfile expected{.id = *id, .fields = fields()};
+        QVERIFY(port.update(expected));
+        const auto reloaded = port.reload(*id);
+        QVERIFY(reloaded);
+        QVERIFY(reloaded.value() == expected);
+        const auto unchanged = repository->getTeacher(siblingId);
+        QVERIFY(unchanged);
+        QCOMPARE(unchanged->teacherEn, sibling->teacherEn);
+        QCOMPARE(unchanged->notes, sibling->notes);
+    }
+    for (const std::string value : {"0", "-1", "+1", "01", " 1", "1 ", "1x", "9223372036854775808"})
+    {
+        const auto id = Domain::TeacherId::fromString(value);
+        QVERIFY(id);
+        const auto updated = port.update({.id = *id, .fields = fields()});
+        QVERIFY(!updated);
+        QCOMPARE(updated.error().code, Domain::ErrorCode::InvalidInput);
+        QVERIFY(updated.error().recoverable);
+        const auto reloaded = port.reload(*id);
+        QVERIFY(!reloaded);
+        QCOMPARE(reloaded.error().code, Domain::ErrorCode::InvalidInput);
+        QVERIFY(reloaded.error().recoverable);
+    }
+}
 
 void NextPlatformApplicationServicesTeacherProfileEditPersistencePortTests::
 updatesAndReloadsEveryProfileFieldThroughActiveRepository()

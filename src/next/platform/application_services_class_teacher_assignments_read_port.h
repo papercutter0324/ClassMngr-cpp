@@ -51,8 +51,8 @@ public:
 
         try
         {
-            const Result<QList<ClassTeacherAssignment>> loaded =
-                repository->loadClassTeacherAssignments();
+            const Result<QList<ClassTeacherAssignmentReadRecord>> loaded =
+                repository->loadClassTeacherAssignmentRecords();
             if (!loaded)
             {
                 // Repository errors are technical failures, regardless of their
@@ -67,7 +67,7 @@ public:
             snapshot.assignments.reserve(
                 static_cast<std::size_t>(loaded->size())
                 );
-            for (const ClassTeacherAssignment& assignment : *loaded)
+            for (const ClassTeacherAssignmentReadRecord& assignment : *loaded)
             {
                 std::optional<Domain::TeacherId> teacherId;
                 if (assignment.teacherId > 0)

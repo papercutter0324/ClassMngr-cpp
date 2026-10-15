@@ -37,17 +37,17 @@ public:
 
     void addTeacherNode(
         const QString &displayName,
-        int teacherId,
+        qint64 teacherId,
         bool myCoTeacher
         );
 
     void clearTeachers();
 
     void selectTeacher(
-        int teacherId
+        qint64 teacherId
         );
 
-    int getSelectedTeacherId() const;
+    qint64 getSelectedTeacherId() const;
 
 
 
@@ -82,7 +82,7 @@ public:
 
     void selectByKeys(
         const QStringList& keys,
-        int teacherId = -1
+        qint64 teacherId = -1
         );
 
 
@@ -247,7 +247,7 @@ private:
         > m_nodes;
 
     QHash<
-        int,
+        qint64,
         QList<QTreeWidgetItem*>
         > m_teacherItems;
 };

@@ -60,7 +60,7 @@ public:
                 );
         }
 
-        const int teacherId = legacyPositiveInteger(request.teacherId.value());
+        const qint64 teacherId = widePositiveInteger(request.teacherId.value());
         if (teacherId <= 0)
         {
             return failure(
@@ -116,11 +116,11 @@ public:
     }
 
 private:
-    [[nodiscard]] static int legacyPositiveInteger(
+    [[nodiscard]] static qint64 widePositiveInteger(
         const std::string& value
         )
     {
-        int parsed = 0;
+        qint64 parsed = 0;
         const auto [end, error] = std::from_chars(
             value.data(),
             value.data() + value.size(),

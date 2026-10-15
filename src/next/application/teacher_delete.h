@@ -13,7 +13,7 @@ struct TeacherDeleteRequest final
 
     [[nodiscard]] Domain::Result<void> validate() const
     {
-        if (!isCanonicalPositiveDecimalId(teacherId.value()))
+        if (!isCanonicalPositiveDecimalId64(teacherId.value()))
         {
             return invalidInput();
         }

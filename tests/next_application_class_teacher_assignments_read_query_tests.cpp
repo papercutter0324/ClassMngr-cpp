@@ -58,7 +58,11 @@ preservesAssignmentRowOrderAndUnassignedRows()
         .assignments = {
             {.teacherId = teacherId("17")},
             {.teacherId = std::nullopt},
-            {.teacherId = teacherId("3")}
+            {.teacherId = teacherId("3")},
+            {.teacherId = teacherId("1")},
+            {.teacherId = teacherId("2147483647")},
+            {.teacherId = teacherId("2147483648")},
+            {.teacherId = teacherId("9223372036854775807")}
         }
     };
     port.result = ClassTeacherAssignmentsReadResult::success(expected);
@@ -69,7 +73,7 @@ preservesAssignmentRowOrderAndUnassignedRows()
     QVERIFY(result);
     QCOMPARE(port.callCount, 1);
     QVERIFY(result.value() == expected);
-    QCOMPARE(result.value().assignments.size(), std::size_t(3));
+    QCOMPARE(result.value().assignments.size(), std::size_t(7));
     QCOMPARE(
         result.value().assignments[0].teacherId->value(),
         std::string("17")
@@ -90,7 +94,7 @@ treatsMalformedTeacherIdsAsUnassignedWithoutDroppingRows()
             {.teacherId = teacherId("0")},
             {.teacherId = teacherId("01")},
             {.teacherId = teacherId("-1")},
-            {.teacherId = teacherId("2147483648")},
+            {.teacherId = teacherId("9223372036854775808")},
             {.teacherId = teacherId("23x")},
             {.teacherId = teacherId("23")}
         }

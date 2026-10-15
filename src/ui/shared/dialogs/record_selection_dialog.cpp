@@ -8,10 +8,36 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include <limits>
+
+namespace
+{
+QList<QPair<QString, qint64>> wideRecords(
+    const QList<QPair<QString, int>>& records)
+{
+    QList<QPair<QString, qint64>> result;
+    for (const auto& record : records)
+    {
+        result.append({record.first, record.second});
+    }
+    return result;
+}
+}
+
 RecordSelectionDialog::RecordSelectionDialog(
     const QString& title,
     const QString& prompt,
     const QList<QPair<QString, int>>& records,
+    QWidget* parent
+    )
+    : RecordSelectionDialog(title, prompt, wideRecords(records), parent)
+{
+}
+
+RecordSelectionDialog::RecordSelectionDialog(
+    const QString& title,
+    const QString& prompt,
+    const QList<QPair<QString, qint64>>& records,
     QWidget* parent
     )
     : DialogShell(QStringLiteral("sidebarRecordSelection"), parent)
@@ -54,7 +80,7 @@ RecordSelectionDialog::RecordSelectionDialog(
         {
             if (okButton)
             {
-                okButton->setEnabled(selectedRecordId() > 0);
+                okButton->setEnabled(selectedWideRecordId() > 0);
             }
         }
         );
@@ -62,5 +88,13 @@ RecordSelectionDialog::RecordSelectionDialog(
 
 int RecordSelectionDialog::selectedRecordId() const
 {
-    return m_records->currentData().toInt();
+    const qint64 id = selectedWideRecordId();
+    return id >= std::numeric_limits<int>::min()
+        && id <= std::numeric_limits<int>::max()
+        ? static_cast<int>(id) : -1;
+}
+
+qint64 RecordSelectionDialog::selectedWideRecordId() const
+{
+    return m_records->currentData().toLongLong();
 }

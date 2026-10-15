@@ -169,7 +169,7 @@ public:
         )
     {
         if (!request.id
-            || !isCanonicalPositiveDecimalId(request.id->value()))
+            || !isCanonicalPositiveDecimalId64(request.id->value()))
         {
             return std::unexpected(TeacherProfileEditFailure{
                 .kind = TeacherProfileEditFailureKind::InvalidTeacherId,

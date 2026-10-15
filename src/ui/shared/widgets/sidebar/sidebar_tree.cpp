@@ -281,7 +281,7 @@ QStringList Sidebar::selectedKeys() const
 
 void Sidebar::selectByKeys(
     const QStringList& keys,
-    int teacherId
+    qint64 teacherId
     )
 {
     if (keys.isEmpty())
@@ -329,7 +329,7 @@ void Sidebar::selectByKeys(
                         == normalizedKeys.constLast()
                     && child->data(0, Qt::UserRole).toInt()
                         == static_cast<int>(NodeType::Teacher)
-                    && child->data(0, Qt::UserRole + 3).toInt() == teacherId)
+                    && child->data(0, Qt::UserRole + 3).toLongLong() == teacherId)
                 {
                     teacherItem = child;
                     break;

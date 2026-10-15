@@ -306,6 +306,10 @@ public:
         const Teacher& teacher
         );
 
+    [[nodiscard]] TeacherUpdateOutcome updateTeacherWithOutcome(
+        const Teacher& fields, qint64 teacherId
+        );
+
     [[nodiscard]] Result<Teacher> getTeacher(
         int teacherId
         );
@@ -338,6 +342,10 @@ public:
         teacherProfileBatchReadMetrics() const noexcept;
     [[nodiscard]] TeacherProfileLookupResult lookupTeacherProfileById(
         qint64 teacherId
+        );
+    // Allows edit reloads to retain the legacy operation diagnostic.
+    [[nodiscard]] TeacherProfileLookupResult lookupTeacherProfileById(
+        qint64 teacherId, const QString& action
         );
     [[nodiscard]] Result<
         QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
@@ -374,6 +382,8 @@ public:
     [[nodiscard]] Status deleteTeacher(
         int teacherId
         );
+
+    [[nodiscard]] Status deleteTeacher(qint64 teacherId);
 
 private:
     [[nodiscard]] Result<SubPrepPrintSourceTeacherProfileReadFields>

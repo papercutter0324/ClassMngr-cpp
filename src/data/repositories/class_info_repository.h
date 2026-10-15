@@ -18,6 +18,12 @@
 #include <optional>
 #include <vector>
 
+struct ClassTeacherAssignmentReadRecord final
+{
+    int classId = -1;
+    qint64 teacherId = -1;
+};
+
 struct ClassDetailsSaveReadRecord final
 {
     ClassInfo info;
@@ -712,6 +718,8 @@ public:
 
     [[nodiscard]] Result<QList<ClassTeacherAssignment>>
         loadClassTeacherAssignments();
+    [[nodiscard]] Result<QList<ClassTeacherAssignmentReadRecord>>
+        loadClassTeacherAssignmentRecords();
 
     [[nodiscard]] Result<QList<ClassInfo>> loadScheduleClassInfos();
     [[nodiscard]] Result<

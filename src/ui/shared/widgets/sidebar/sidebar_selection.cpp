@@ -1,7 +1,7 @@
 #include "sidebar_p.h"
 
 void Sidebar::selectTeacher(
-    int teacherId
+    qint64 teacherId
     )
 {
     const auto items =
@@ -28,7 +28,7 @@ void Sidebar::selectTeacher(
 // Get Selected Teacher ID
 // =========================================================
 
-int Sidebar::getSelectedTeacherId() const
+qint64 Sidebar::getSelectedTeacherId() const
 {
     auto *item =
         m_tree->currentItem();
@@ -54,7 +54,7 @@ int Sidebar::getSelectedTeacherId() const
     return item->data(
                    0,
                    Qt::UserRole + 3
-                   ).toInt();
+                   ).toLongLong();
 }
 
 
@@ -249,7 +249,7 @@ void Sidebar::onItemClicked(
             item->data(
                     0,
                     Qt::UserRole + 3
-                    ).toInt();
+                    ).toLongLong();
     }
 
     emit itemSelected(data);

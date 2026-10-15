@@ -46,6 +46,7 @@ class NextApplicationTeacherDeleteUseCaseTests final : public QObject
 
 private slots:
     void rejectsInvalidTeacherIdsBeforePort();
+    void forwardsCanonicalSigned64BitBoundaries();
     void forwardsValidTeacherIdAndReturnsSuccess();
     void preservesStructuredPortFailure();
 };
@@ -60,7 +61,8 @@ rejectsInvalidTeacherIdsBeforePort()
              "017",
              "teacher-17",
              "17x",
-             "2147483648"
+             "9223372036854775808",
+             "+17", " 17", "17 "
          })
     {
         const Application::TeacherDeleteRequest request{
@@ -83,6 +85,19 @@ rejectsInvalidTeacherIdsBeforePort()
 
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());
+}
+
+void NextApplicationTeacherDeleteUseCaseTests::forwardsCanonicalSigned64BitBoundaries()
+{
+    RecordingTeacherDeletePort port;
+    for (const std::string value : {"1", "2147483647", "2147483648", "9223372036854775807"})
+    {
+        const auto result = Application::TeacherDeleteUseCase::execute(
+            {.teacherId = teacherId(value)}, port);
+        QVERIFY(result);
+        QCOMPARE(port.lastRequest->teacherId.value(), value);
+    }
+    QCOMPARE(port.callCount, 4);
 }
 
 void NextApplicationTeacherDeleteUseCaseTests::

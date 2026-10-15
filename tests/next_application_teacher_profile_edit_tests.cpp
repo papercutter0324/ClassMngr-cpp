@@ -193,12 +193,30 @@ void invalidInputsDoNotWrite()
 
     requireInvalidId(TeacherProfileEditRequest::fromIntId(0, fields()));
 
-    for (const auto* value : {"0", "08", "not-an-id"})
+    for (const auto* value : {"0", "08", "not-an-id", "-1", "+8", " 8", "8 ", "9223372036854775808"})
     {
         auto typedId = Domain::TeacherId::fromString(value);
         require(typedId.has_value(),
             "test malformed teacher ID should construct a present typed ID");
         requireInvalidId({.id = std::move(typedId), .fields = fields()});
+    }
+}
+
+void wideIdentitySurvivesPolicyUpdateAndReload()
+{
+    for (const std::string value : {"1", "2147483647", "2147483648", "9223372036854775807"})
+    {
+        FakePolicy policy;
+        FakePort port;
+        const auto id = Domain::TeacherId::fromString(value);
+        require(id.has_value(), "boundary ID must construct");
+        port.canonical = {.id = *id, .fields = fields()};
+        const auto result = TeacherProfileEditUseCase::execute(
+            {.id = *id, .fields = fields()}, policy, port);
+        require(result.has_value(), "canonical signed 64-bit ID must save");
+        require(result->id == *id && policy.inputs.front().id == *id
+            && port.updates.front().id == *id && port.reloads.front() == *id,
+            "edit must preserve exact identity across every boundary");
     }
 }
 
@@ -354,6 +372,7 @@ int main()
     try
     {
         invalidInputsDoNotWrite();
+        wideIdentitySurvivesPolicyUpdateAndReload();
         validSavePreservesFieldsOrderAndCanonicalReturn();
         updateFailureDoesNotReload();
         reloadIdentifierMismatchReportsCompletedWrite();

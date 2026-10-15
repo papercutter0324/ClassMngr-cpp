@@ -46,10 +46,48 @@ class NextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests
     Q_OBJECT
 
 private slots:
+    void preservesWideTeacherIdentitiesAndIntClassIds();
     void readsAssignedAndUnassignedRegularClassesInRepositoryOrder();
     void reportsRepositoryFailureAsTechnical();
     void reportsUnavailableSessionAsStructuredNotFound();
 };
+
+void NextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests::
+preservesWideTeacherIdentitiesAndIntClassIds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    auto* session = services.databaseSession();
+    Platform::ApplicationServicesClassTeacherAssignmentsReadPort port(&services);
+    int expectedClassId = 0;
+    for (const qint64 id : {qint64{2147483648LL}, qint64{9223372036854775807LL}})
+    {
+        QSqlQuery seed(session->database());
+        seed.prepare(QStringLiteral("INSERT INTO teachers (id, teacher_en) VALUES (?, 'Wide Teacher')"));
+        seed.addBindValue(id);
+        QVERIFY(seed.exec());
+        const auto createdClass = session->classRepository()->createClass(QString::number(id));
+        QVERIFY(createdClass);
+        expectedClassId = *createdClass;
+        seed.prepare(QStringLiteral("INSERT INTO class_info (class_id, teacher_id) VALUES (?, ?)"));
+        seed.addBindValue(*createdClass);
+        seed.addBindValue(id);
+        QVERIFY(seed.exec());
+    }
+    const auto records = session->classInfoRepository()->loadClassTeacherAssignmentRecords();
+    QVERIFY(records);
+    QCOMPARE(records->size(), 2);
+    QCOMPARE(records->at(0).teacherId, qint64{2147483648LL});
+    QCOMPARE(records->at(1).teacherId, qint64{9223372036854775807LL});
+    QCOMPARE(records->at(1).classId, expectedClassId);
+    const auto result = port.readClassTeacherAssignments();
+    QVERIFY(result);
+    QCOMPARE(result.value().assignments.size(), std::size_t{2});
+    QCOMPARE(result.value().assignments[0].teacherId->value(), std::string("2147483648"));
+    QCOMPARE(result.value().assignments[1].teacherId->value(), std::string("9223372036854775807"));
+}
 
 void NextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests::
 readsAssignedAndUnassignedRegularClassesInRepositoryOrder()

@@ -271,7 +271,7 @@ int SidebarController::promptForClassToDelete() const
         );
 }
 
-int SidebarController::promptForTeacherToDelete() const
+qint64 SidebarController::promptForTeacherToDelete() const
 {
     auto* teachers =
         openTeacherService(m_services);
@@ -281,7 +281,7 @@ int SidebarController::promptForTeacherToDelete() const
         return -1;
     }
 
-    QList<QPair<QString, int>> records;
+    QList<QPair<QString, qint64>> records;
     ClassMngr::Next::Platform::
         ApplicationServicesInitialSetupTeacherChoicesReadPort readPort(
             m_services
@@ -302,7 +302,7 @@ int SidebarController::promptForTeacherToDelete() const
 
     for (const auto& choice : loadedTeachers.value().teachers)
     {
-        int teacherId = 0;
+        qint64 teacherId = 0;
         const std::string& teacherIdValue = choice.teacherId.value();
         const auto [end, conversionError] = std::from_chars(
             teacherIdValue.data(),
@@ -318,7 +318,6 @@ int SidebarController::promptForTeacherToDelete() const
         }
 
         Teacher teacher;
-        teacher.id = teacherId;
         teacher.teacherKr = QString::fromStdU16String(choice.teacherKr);
         teacher.teacherEn = QString::fromStdU16String(choice.teacherEn);
         teacher.preferredRomanization = QString::fromStdU16String(
@@ -333,7 +332,7 @@ int SidebarController::promptForTeacherToDelete() const
                 SidebarNodeNaming::formatTeacherDisplayName(
                     teacher
                     ),
-                teacher.id
+                teacherId
             }
             );
     }

@@ -20,7 +20,7 @@ public:
         const Domain::TeacherId& id
         ) const
     {
-        if (!isCanonicalPositiveDecimalId(id.value()))
+        if (!isCanonicalPositiveDecimalId64(id.value()))
         {
             return TeacherProfileReadResult::failure({
                 .code = Domain::ErrorCode::InvalidInput,

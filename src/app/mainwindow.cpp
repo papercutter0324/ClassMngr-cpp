@@ -818,7 +818,7 @@ void MainWindow::retranslateUi()
             ? ui->sidebarWidget->selectedKeys()
             : QStringList();
 
-    const int selectedTeacherId =
+    const qint64 selectedTeacherId =
         ui && ui->sidebarWidget
             ? ui->sidebarWidget->getSelectedTeacherId()
             : -1;
@@ -1286,16 +1286,16 @@ void MainWindow::connectSignals()
 
             connect(
                 page,
-                &TeacherInfoPage::teacherSaved,
+                &TeacherInfoPage::teacherIdentitySaved,
                 m_sidebarController.get(),
                 &SidebarController::handleTeacherSaved
                 );
 
             connect(
                 page,
-                &TeacherInfoPage::teacherSaved,
+                &TeacherInfoPage::teacherIdentitySaved,
                 this,
-                [this](int)
+                [this](qint64)
                 {
                     if (m_pages)
                     {

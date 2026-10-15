@@ -255,6 +255,14 @@ TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
     const Teacher& teacher
     )
 {
+    return updateTeacherWithOutcome(teacher, static_cast<qint64>(teacher.id));
+}
+
+TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
+    const Teacher& teacher,
+    const qint64 teacherId
+    )
+{
     QSqlQuery query(m_database);
 
     query.prepare(R"(
@@ -293,12 +301,12 @@ TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
     query.addBindValue(
         normalizedProjectionType(teacher.projectionType));
     query.addBindValue(teacher.notes);
-    query.addBindValue(teacher.id);
+    query.addBindValue(teacherId);
 
     const auto executed = SqlQueryUtils::executePrepared(
         query,
         QObject::tr("Updating teacher"),
-        teacherIdentity(teacher.id)
+        teacherIdentity(teacherId)
         );
     if (!executed)
     {
@@ -314,7 +322,7 @@ TeacherUpdateOutcome TeacherRepository::updateTeacherWithOutcome(
             .code = TeacherUpdateOutcomeCode::Missing,
             .diagnostic = QObject::tr(
                 "Updating teacher failed for %1: no matching record exists."
-                ).arg(teacherIdentity(teacher.id))
+                ).arg(teacherIdentity(teacherId))
         };
     }
 
@@ -1166,8 +1174,13 @@ TeacherRepository::teacherProfileBatchReadMetrics() const noexcept
 TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
     const qint64 teacherId)
 {
-    return lookupTeacherProfileRecord(
-        m_database, teacherId, QObject::tr("Loading teacher profile"));
+    return lookupTeacherProfileById(teacherId, QObject::tr("Loading teacher profile"));
+}
+
+TeacherProfileLookupResult TeacherRepository::lookupTeacherProfileById(
+    const qint64 teacherId, const QString& action)
+{
+    return lookupTeacherProfileRecord(m_database, teacherId, action);
 }
 
 Result<QList<SubPrepPrintSourceTeacherProfileBatchReadRecord>>
@@ -2142,6 +2155,13 @@ TeacherRepository::loadKoreanTeacherBirthdayDirectoryRecords()
 
 Status TeacherRepository::deleteTeacher(
     int teacherId
+    )
+{
+    return deleteTeacher(static_cast<qint64>(teacherId));
+}
+
+Status TeacherRepository::deleteTeacher(
+    qint64 teacherId
     )
 {
     if (teacherId <= 0)

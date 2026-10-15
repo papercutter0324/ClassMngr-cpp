@@ -30,7 +30,7 @@ public:
              result.value().assignments)
         {
             if (assignment.teacherId
-                && !isCanonicalPositiveDecimalId(
+                && !isCanonicalPositiveDecimalId64(
                     assignment.teacherId->value()))
             {
                 assignment.teacherId.reset();
