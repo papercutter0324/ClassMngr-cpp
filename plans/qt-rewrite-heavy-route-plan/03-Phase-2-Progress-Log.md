@@ -40130,3 +40130,42 @@ Schedule Import preview, is next with baseline and acceptance pending. F943-
 F945 remain queued in Batch309. Begin Batch310 discovery when F944, the
 second-last item, starts. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F942 baseline and acceptance - 2026-10-15
+
+F942 targets the legacy `TeacherRepository::getAllTeachers()` list API. Caller
+review found that the regular Schedule Import UI uses the already guarded
+typed `loadScheduleImportTeacherRecords()` snapshot, while legacy
+`ScheduleImportRepository::preview()` has no in-tree production caller. The
+legacy list API is called by opt-in
+`--startup-performance-class-transfer-lifecycle`, which checks the result and
+metrics only. Keep the typed Schedule Import route untouched.
+
+The exact `SELECT * FROM teachers ORDER BY teacher_en` baseline used indexed
+JSON-backed rows: `next()` yielded one valid teacher, then failed on a terminal
+malformed-JSON fetch error. Public `DataService::getAllTeachers()` returned
+success with that prefix. The temporary probe source was restored byte for
+byte, and focused CTest #24 (`ClassMngrDataServiceLifecycleTests`) passed after
+the rebuild. This is baseline probe evidence; no full suite ran.
+
+Acceptance:
+
+1. After the `getAllTeachers()` row loop, inspect terminal `lastError()` and
+   return a contextual `SqlQueryUtils::errorFor(...)` failure rather than a
+   successful partial teacher list.
+2. Preserve the public API, query and ordering, teacher-ID validation/mapping,
+   and clean empty-list success. Do not change the typed Schedule Import UI
+   path.
+3. Add a permanent lifecycle regression using an indexed JSON view to prove a
+   valid prefix followed by a late fetch failure, then assert the public legacy
+   API returns a contextual failure with no partial success.
+4. Sequentially build `ClassMngr` and `ClassMngrDataServiceLifecycleTests` in
+   standard `build/windows-x64-debug` Debug with
+   `/p:TrackFileAccess=false`; run exact CTest #24; review the source change and
+   run `git diff --check`. Do not run the full suite.
+
+F942 acceptance is complete and implementation is next. F943-F945 remain
+queued in Batch309, with F943 next after F942. Begin Batch310 discovery when
+F944, the second-last item, starts. No independent post-F942 Deferred audit is
+recorded here; leave all official Deferred entries unchanged pending that
+audit. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

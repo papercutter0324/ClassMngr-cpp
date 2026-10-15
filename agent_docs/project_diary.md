@@ -5696,3 +5696,25 @@ first-fetch error remains source-reviewed only. Two independent post-F941
 audits found none of the 13 official Deferred candidates actionable, resolved,
 superseded, or otherwise changed; all remain deferred. F942 is next in Batch309.
 No full suite ran.
+
+## F942 baseline and acceptance - 2026-10-15
+
+The exact ordered legacy teacher query returned one valid row, then a terminal
+malformed-JSON fetch error. In a temporary public lifecycle probe,
+`DataService::getAllTeachers()` nevertheless returned that one-row prefix as
+success. The probe edit was restored byte-for-byte (SHA-256
+`06BF84FE41249AC449239F53E815C46850BA00D83FCFA79E5B50C8A462D99A2C`); the
+restored Debug `ClassMngrDataServiceLifecycleTests` target rebuilt and exact
+CTest #24 passed 1/1. No full suite ran.
+
+Caller review found the active Schedule Import dialog uses the typed
+`loadScheduleImportTeacherRecords()` snapshot path, which already rejects
+terminal fetch errors. The legacy `ScheduleImportRepository::preview()` has no
+in-tree production caller. The public legacy full-list API is also exercised by
+an opt-in startup-performance Class Transfer lifecycle, which checks the
+result and metrics only. F942 is accepted narrowly: reject terminal cursor
+errors after the `getAllTeachers()` loop with the contextual SQL error, while
+preserving the API, query and ordering, ID validation/mapping, and clean empty
+success. Leave the typed Schedule Import UI unchanged and add the permanent
+regression to the existing lifecycle test. Implementation and independent
+verification remain pending; the Phase 2 plan records the acceptance.

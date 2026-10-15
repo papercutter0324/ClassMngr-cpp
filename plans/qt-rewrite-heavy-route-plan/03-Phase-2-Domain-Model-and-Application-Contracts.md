@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F941 is accepted; F942 Schedule Import teacher-directory cursor handling is next with baseline and acceptance pending, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F942 legacy teacher-list baseline and acceptance are recorded, and implementation is next; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 309)
 
-- F942 - TeacherRepository::getAllTeachers(): evaluate partial full-directory results in Schedule Import preview.
+- F942 - TeacherRepository::getAllTeachers(): reject partial legacy lists on terminal cursor failure in the opt-in Class Transfer lifecycle; leave typed Schedule Import unchanged.
 - F943 - CalendarEventRepository date/upcoming lists: evaluate partial results from `loadCalendarEventsForDate()` and `loadUpcomingCalendarEvents()`.
 - F944 - TestingClassRepository::loadTestingClasses(): evaluate partial legacy chooser-list behavior.
 - F945 - TestingBlockRepository::loadTestingAssignments(): evaluate partial legacy assignment-list behavior.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F941 accepted; F942 next in Batch309)
+### Current state - 2026-10-15 (F942 acceptance complete; implementation active)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -184,9 +184,22 @@ independent Debug builds of `ClassMngr` and
 `/p:TrackFileAccess=false`; independent CTest #24 passed 1/1. The header-query
 first-fetch error remains source-reviewed only. Two independent post-F941
 audits found all 13 official Deferred candidates unchanged; none is actionable,
-resolved, or superseded. F942 is next in Batch309; F943-F945 remain queued, and
-Batch310 discovery begins when F944 starts. No full suite ran. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate is Open.
+resolved, or superseded. F943-F945 remain queued, and Batch310 discovery begins
+when F944 starts. No full suite ran. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate is Open.
+
+F942 acceptance is complete and implementation is active. An indexed JSON-view
+baseline for `TeacherRepository::getAllTeachers()` yielded one valid teacher,
+then failed on a terminal fetch; public `DataService::getAllTeachers()` exposed
+that prefix as success. The permanent regression will cover the same route and
+require a contextual failure. Caller review confirmed that the regular Schedule
+Import dialog already uses the guarded typed snapshot read, the legacy preview
+has no in-tree production caller, and the public list API is also reached by an
+opt-in startup-performance lifecycle that checks the result without presenting
+the list. The accepted scope changes only the legacy full-list terminal-error
+contract; query/order, API, ID validation/mapping, clean empty results, and the
+typed UI route remain unchanged. Baseline and acceptance details are in the
+Phase 2 progress log.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
