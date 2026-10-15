@@ -109,8 +109,16 @@ truncated, so warning-free status cannot be certified. No full suite ran.
 Two independent post-F918 audits reviewed all 13 exact official Deferred
 candidates; none became newly actionable, resolved, or superseded. Batch 305
 now has F919 only. F919, Intensive slot-state read, is selected and its
-baseline is being captured at source HEAD `9da48f77`; Batch 306 (F920-F929)
-remains queued after it. These future candidates are not yet accepted.
+baseline and acceptance are recorded at source HEAD `9da48f77`. The three
+planned forced sequential Debug builds passed, as did exact Debug CTests #19
+and #389. The temporary indexed-view probe reproduced baseline partial
+success, was restored byte-for-byte (SHA-256
+`638C3B2A30F1CF1C5CC47DCC264225BE0C999CFCDC410F1055167CF5DD2A44C9`), and
+the restored repository target and CTest #19 passed. Both test-target builds
+emitted nonfatal MSB8064 for missing
+`src/next/application/teacher_import_plan_mapper.h`. F919 implementation and
+post-change verification remain pending. Batch 306 (F920-F929) remains queued
+after F919; these candidates are not yet accepted.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)

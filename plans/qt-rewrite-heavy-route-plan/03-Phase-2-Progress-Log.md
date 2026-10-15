@@ -38491,3 +38491,45 @@ remain unchanged. F919, Intensive slot-state read, is now the sole active
 Batch305 candidate, with baseline capture starting at source/test commit
 `9da48f77`. Batch306 (F920-F929) remains queued after F919. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F919 baseline captured; acceptance defined - 2026-10-15
+
+At source HEAD `9da48f7775399a5ed2d9a99b49a67601523ec479`,
+`IntensiveSlotStateRepository::loadIntensiveSlotStates()` uses one ordered
+SELECT and row loop but does not check `query.lastError()` after iteration.
+The typed schedule-slot-state port maps repository failure to `Technical` and
+an unavailable repository/session to `NotFound`.
+
+Forced sequential Debug builds of `ClassMngr`,
+`ClassMngrIntensiveSlotStateRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests` passed.
+Exact Debug CTests #19 and #389 passed 1/1 each. Both test-target builds emitted
+the nonfatal MSB8064 missing-dependency warning for
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
+
+A temporary indexed QSQLITE view fixture exercised the exact SELECT: it yielded
+Monday 09:00 / essay, then `next()` failed with a valid nonempty SQL error;
+the unchanged baseline repository returned success with that one partial row.
+The temporary test source was restored byte-for-byte (SHA-256
+`638C3B2A30F1CF1C5CC47DCC264225BE0C999CFCDC410F1055167CF5DD2A44C9`). After a
+timestamp-only touch to clear stale MOC output, the restored forced target build
+and CTest #19 passed. The temporary probe needed a direct `QSqlError` include
+before its focused CTest passed.
+
+Acceptance for F919: (1) check terminal `query.lastError()` after iteration and
+return the existing `Loading intensive slot states` SQL failure before any
+accumulated states escape, while preserving clean EOF and empty success; (2)
+preserve the ordered one-query projection, raw day/start_time/state mapping,
+typed `Technical`/unavailable `NotFound` classifications, and avoid service,
+UI, schema, or write-path edits; (3) add a direct repository regression proving
+the exact raw row-then-error and failure without a partial result; (4) after
+implementation, build `ClassMngr`,
+`ClassMngrIntensiveSlotStateRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests` in that
+order with `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`, then run only
+Debug CTests #19 and #389.
+
+No implementation or post-change verification is claimed. F919 is the sole
+active Batch305 candidate; Batch306 (F920-F929) remains queued after it. All 13
+official Deferred entries remain unchanged. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
