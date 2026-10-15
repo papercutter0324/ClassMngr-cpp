@@ -11,11 +11,12 @@ class GsTeamDirectorySaveUseCase final
 public:
     [[nodiscard]] static GsTeamDirectorySaveOutcome execute(
         const GsTeamDirectorySaveRequest& request,
-        const GsTeamDirectorySavePort& port
+        const GsTeamDirectorySavePort& port,
+        GsTeamDirectorySaveNameKeyPolicy& nameKeyPolicy
         )
     {
         const GsTeamDirectorySaveValidation validation =
-            validateGsTeamDirectorySave(request);
+            validateGsTeamDirectorySave(request, nameKeyPolicy);
         if (!validation.isValid())
         {
             return GsTeamDirectorySaveOutcome::invalid(validation);

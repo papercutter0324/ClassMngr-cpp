@@ -3,6 +3,7 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string_view>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -11,18 +12,42 @@ namespace
 {
 
 Application::GsTeamDirectorySaveRow row(
-    std::u16string englishKey,
-    std::u16string koreanKey = {},
+    std::u16string englishName,
+    std::u16string koreanName = {},
     std::u16string birthday = {}
     )
 {
     Application::GsTeamDirectorySaveRow value;
-    value.name = englishKey;
-    value.koreanName = koreanKey;
-    value.normalizedEnglishNameKey = std::move(englishKey);
-    value.normalizedKoreanNameKey = std::move(koreanKey);
+    value.name = std::move(englishName);
+    value.koreanName = std::move(koreanName);
     value.birthday = std::move(birthday);
     return value;
+}
+
+std::u16string testNameKey(const std::u16string_view rawName)
+{
+    std::u16string key;
+    bool appendSpace = false;
+    for (char16_t character : rawName)
+    {
+        if (character == u' ' || character == u'\t'
+            || character == u'\r' || character == u'\n')
+        {
+            appendSpace = !key.empty();
+            continue;
+        }
+        if (appendSpace)
+        {
+            key.push_back(u' ');
+            appendSpace = false;
+        }
+        if (character >= u'A' && character <= u'Z')
+        {
+            character = static_cast<char16_t>(character + (u'a' - u'A'));
+        }
+        key.push_back(character);
+    }
+    return key;
 }
 
 class RecordingSavePort final : public Application::GsTeamDirectorySavePort
@@ -57,6 +82,7 @@ private slots:
     void reportsTheFirstInvalidRow();
     void callsThePortOnceForValidInputAndNeverForInvalidInput();
     void rejectsInvalidRowAndDeletedIdsBeforeCallingPort();
+    void usesRawNamesForValidationBeforeCallingPort();
 };
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -64,7 +90,9 @@ requiresAtLeastOneNameAndEnforcesEnglishUniqueness()
 {
     Application::GsTeamDirectorySaveRequest noNames;
     noNames.rows = {row(u"", u"")};
-    auto validation = Application::validateGsTeamDirectorySave(noNames);
+    auto validation = Application::validateGsTeamDirectorySave(
+        noNames,
+        testNameKey);
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::MissingNames);
@@ -75,7 +103,9 @@ requiresAtLeastOneNameAndEnforcesEnglishUniqueness()
         row(u"sarah", u"\uC0AC\uB77C"),
         row(u"sarah", u"\uC774\uC601")
     };
-    validation = Application::validateGsTeamDirectorySave(duplicateEnglish);
+    validation = Application::validateGsTeamDirectorySave(
+        duplicateEnglish,
+        testNameKey);
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateEnglishName);
@@ -92,7 +122,9 @@ enforcesKoreanUniquenessWithinItsOwnNamespace()
     };
 
     const auto validation =
-        Application::validateGsTeamDirectorySave(duplicateKorean);
+        Application::validateGsTeamDirectorySave(
+            duplicateKorean,
+            testNameKey);
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateKoreanName);
@@ -108,7 +140,9 @@ allowsMatchingKeysAcrossNameNamespaces()
         row(u"different", u"same")
     };
 
-    const auto validation = Application::validateGsTeamDirectorySave(request);
+    const auto validation = Application::validateGsTeamDirectorySave(
+        request,
+        testNameKey);
     QVERIFY(validation.isValid());
     QCOMPARE(
         validation.issue,
@@ -124,7 +158,9 @@ acceptsBlankAndLeapDayBirthdayText()
         row(u"leap day", u"", u"02-29")
     };
 
-    auto validation = Application::validateGsTeamDirectorySave(request);
+    auto validation = Application::validateGsTeamDirectorySave(
+        request,
+        testNameKey);
     QVERIFY(validation.isValid());
 }
 
@@ -134,7 +170,9 @@ rejectsInvalidCalendarDay()
     Application::GsTeamDirectorySaveRequest request;
     request.rows = {row(u"member", u"", u"02-30")};
 
-    const auto validation = Application::validateGsTeamDirectorySave(request);
+    const auto validation = Application::validateGsTeamDirectorySave(
+        request,
+        testNameKey);
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::InvalidBirthday);
@@ -151,7 +189,9 @@ void NextApplicationGsTeamDirectorySaveTests::reportsTheFirstInvalidRow()
         row(u"", u"")
     };
 
-    const auto validation = Application::validateGsTeamDirectorySave(request);
+    const auto validation = Application::validateGsTeamDirectorySave(
+        request,
+        testNameKey);
     QCOMPARE(
         validation.issue,
         Application::GsTeamDirectorySaveIssue::DuplicateEnglishName);
@@ -174,7 +214,10 @@ callsThePortOnceForValidInputAndNeverForInvalidInput()
 
     RecordingSavePort port;
     auto outcome =
-        Application::GsTeamDirectorySaveUseCase::execute(valid, port);
+        Application::GsTeamDirectorySaveUseCase::execute(
+            valid,
+            port,
+            testNameKey);
     QVERIFY(outcome.saved);
     QVERIFY(outcome.validation.isValid());
     QVERIFY(!outcome.error.has_value());
@@ -183,7 +226,10 @@ callsThePortOnceForValidInputAndNeverForInvalidInput()
 
     Application::GsTeamDirectorySaveRequest invalid;
     invalid.rows = {row(u"", u"")};
-    outcome = Application::GsTeamDirectorySaveUseCase::execute(invalid, port);
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(
+        invalid,
+        port,
+        testNameKey);
     QVERIFY(!outcome.saved);
     QCOMPARE(
         outcome.validation.issue,
@@ -191,7 +237,10 @@ callsThePortOnceForValidInputAndNeverForInvalidInput()
     QCOMPARE(port.calls, 1);
 
     invalid.rows = {row(u"Alex", u"\uC54C\uB809\uC2A4", u"02-30")};
-    outcome = Application::GsTeamDirectorySaveUseCase::execute(invalid, port);
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(
+        invalid,
+        port,
+        testNameKey);
     QVERIFY(!outcome.saved);
     QCOMPARE(
         outcome.validation.issue,
@@ -212,7 +261,8 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
         invalid.rows.front().id = Domain::GsTeamMemberId(id);
         outcome = Application::GsTeamDirectorySaveUseCase::execute(
             invalid,
-            port);
+            port,
+            testNameKey);
         QVERIFY(!outcome.saved);
         QVERIFY(!outcome.error.has_value());
         QCOMPARE(
@@ -228,7 +278,10 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
     };
     invalid.rows[0].id = Domain::GsTeamMemberId(42);
     invalid.rows[1].id = Domain::GsTeamMemberId(42);
-    outcome = Application::GsTeamDirectorySaveUseCase::execute(invalid, port);
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(
+        invalid,
+        port,
+        testNameKey);
     QVERIFY(!outcome.saved);
     QVERIFY(!outcome.error.has_value());
     QCOMPARE(
@@ -243,7 +296,8 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
         invalid.deletedIds = {Domain::GsTeamMemberId(id)};
         outcome = Application::GsTeamDirectorySaveUseCase::execute(
             invalid,
-            port);
+            port,
+            testNameKey);
         QVERIFY(!outcome.saved);
         QVERIFY(!outcome.error.has_value());
         QCOMPARE(
@@ -251,6 +305,55 @@ rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
             Application::GsTeamDirectorySaveIssue::InvalidDeletedId);
         QCOMPARE(port.calls, 0);
     }
+}
+
+void NextApplicationGsTeamDirectorySaveTests::
+usesRawNamesForValidationBeforeCallingPort()
+{
+    RecordingSavePort port;
+    Application::GsTeamDirectorySaveRequest request;
+    request.rows = {
+        row(u"  Taylor  James ", u"\uC11C\uC5F0"),
+        row(u"taylor james", u"\uC774\uC601")
+    };
+
+    auto outcome = Application::GsTeamDirectorySaveUseCase::execute(
+        request,
+        port,
+        testNameKey);
+    QVERIFY(!outcome.saved);
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::GsTeamDirectorySaveIssue::DuplicateEnglishName);
+    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(port.calls, 0);
+
+    request.rows = {
+        row(u"Alex", u"  \uC11C\uC5F0   "),
+        row(u"Bea", u"\uC11C\uC5F0")
+    };
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(
+        request,
+        port,
+        testNameKey);
+    QVERIFY(!outcome.saved);
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::GsTeamDirectorySaveIssue::DuplicateKoreanName);
+    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(port.calls, 0);
+
+    request.rows = {row(u" \t ", u"\r\n ")};
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(
+        request,
+        port,
+        testNameKey);
+    QVERIFY(!outcome.saved);
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::GsTeamDirectorySaveIssue::MissingNames);
+    QCOMPARE(outcome.validation.rowIndex, std::size_t(0));
+    QCOMPARE(port.calls, 0);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationGsTeamDirectorySaveTests)

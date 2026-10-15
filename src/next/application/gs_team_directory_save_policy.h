@@ -10,7 +10,8 @@ namespace ClassMngr::Next::Application
 
 [[nodiscard]] inline GsTeamDirectorySaveValidation
 validateGsTeamDirectorySave(
-    const GsTeamDirectorySaveRequest& request
+    const GsTeamDirectorySaveRequest& request,
+    GsTeamDirectorySaveNameKeyPolicy& nameKeyPolicy
     )
 {
     std::unordered_set<std::u16string> englishNameKeys;
@@ -37,24 +38,25 @@ validateGsTeamDirectorySave(
                 };
             }
         }
-        if (row.normalizedEnglishNameKey.empty()
-            && row.normalizedKoreanNameKey.empty())
+        const std::u16string englishNameKey = nameKeyPolicy(row.name);
+        const std::u16string koreanNameKey = nameKeyPolicy(row.koreanName);
+        if (englishNameKey.empty() && koreanNameKey.empty())
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::MissingNames,
                 .rowIndex = index
             };
         }
-        if (!row.normalizedEnglishNameKey.empty()
-            && !englishNameKeys.insert(row.normalizedEnglishNameKey).second)
+        if (!englishNameKey.empty()
+            && !englishNameKeys.insert(englishNameKey).second)
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::DuplicateEnglishName,
                 .rowIndex = index
             };
         }
-        if (!row.normalizedKoreanNameKey.empty()
-            && !koreanNameKeys.insert(row.normalizedKoreanNameKey).second)
+        if (!koreanNameKey.empty()
+            && !koreanNameKeys.insert(koreanNameKey).second)
         {
             return {
                 .issue = GsTeamDirectorySaveIssue::DuplicateKoreanName,

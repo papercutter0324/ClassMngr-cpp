@@ -159,6 +159,7 @@ private slots:
     void cleanup();
     void createsUpdatesDeletesAndReloadsFiveFieldsWithTypedIds();
     void requiresEitherNameAndRejectsDuplicateEnglishNamesWithoutWriting();
+    void preservesQtCaseFoldedNameNormalizationRules();
     void rejectsDuplicateKoreanNamesWithoutWriting();
     void permitsMatchingKeysAcrossEnglishAndKoreanNamespaces();
     void rejectsInvalidBirthdayAndPreservesDatabaseState();
@@ -332,6 +333,51 @@ requiresEitherNameAndRejectsDuplicateEnglishNamesWithoutWriting()
         ->gsTeamRepository()->getAll();
     QVERIFY(afterDuplicate);
     QVERIFY(sameMembers(*afterDuplicate, *before));
+}
+
+void StaffDirectoryGsTeamSaveTests::
+preservesQtCaseFoldedNameNormalizationRules()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedDirectory(services));
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+
+    setEnglishName(*table, 0, QStringLiteral("Stra\u00DFe"));
+    setEnglishName(*table, 1, QStringLiteral("STRASSE"));
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    QVERIFY(page.saveChanges());
+    QCOMPARE(saved.count(), 1);
+    QCOMPARE(prompts.messages.size(), 0);
+    const auto afterDistinctNames = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(afterDistinctNames);
+    QCOMPARE(memberNamed(*afterDistinctNames, QStringLiteral("Stra\u00DFe")).name,
+        QStringLiteral("Stra\u00DFe"));
+    QCOMPARE(memberNamed(*afterDistinctNames, QStringLiteral("STRASSE")).name,
+        QStringLiteral("STRASSE"));
+
+    setEnglishName(*table, 0, QStringLiteral("\u00C4"));
+    setEnglishName(*table, 1, QStringLiteral("\u00E4"));
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(saved.count(), 1);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.first().message, expectedValidationWarning());
+    const auto afterEquivalentNames = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(afterEquivalentNames);
+    QVERIFY(sameMembers(*afterEquivalentNames, *afterDistinctNames));
 }
 
 void StaffDirectoryGsTeamSaveTests::

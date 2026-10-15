@@ -6,14 +6,18 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
 {
 
-// The feature edge supplies Qt-normalized name keys. Application validates
-// birthday text directly while remaining independent of Qt.
+// The feature edge supplies a stateless name-key policy so Application can
+// derive uniqueness keys from the raw names without depending on Qt.
+using GsTeamDirectorySaveNameKeyPolicy =
+    std::u16string(std::u16string_view);
+
 struct GsTeamDirectorySaveRow final
 {
     // A missing ID explicitly represents a row that must be inserted.
@@ -23,8 +27,6 @@ struct GsTeamDirectorySaveRow final
     std::u16string position;
     std::u16string phoneNumber;
     std::u16string birthday;
-    std::u16string normalizedEnglishNameKey;
-    std::u16string normalizedKoreanNameKey;
 
     friend bool operator==(
         const GsTeamDirectorySaveRow&,

@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace
@@ -370,6 +371,13 @@ QString cellText(const QAbstractItemModel* model, int row, int column)
 QString normalizedName(const QString& value)
 {
     return value.simplified().toCaseFolded();
+}
+
+std::u16string gsTeamDirectorySaveNameKey(const std::u16string_view value)
+{
+    return normalizedName(
+        QString::fromStdU16String(std::u16string(value))
+        ).toStdU16String();
 }
 }
 
@@ -817,10 +825,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
         member.position = cellText(model, row, 2).toStdU16String();
         member.phoneNumber = cellText(model, row, 3).toStdU16String();
         member.birthday = birthday.toStdU16String();
-        member.normalizedEnglishNameKey =
-            normalizedName(name).toStdU16String();
-        member.normalizedKoreanNameKey =
-            normalizedName(koreanName).toStdU16String();
         request.rows.push_back(std::move(member));
     }
 
@@ -834,7 +838,8 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
     const auto outcome =
         ClassMngr::Next::Application::GsTeamDirectorySaveUseCase::execute(
             request,
-            port
+            port,
+            gsTeamDirectorySaveNameKey
             );
     if (!outcome.validation.isValid())
     {

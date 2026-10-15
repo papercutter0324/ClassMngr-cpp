@@ -69,9 +69,6 @@ Application::GsTeamDirectorySaveRow saveRow(
     row.position = QStringLiteral("Team Leader").toStdU16String();
     row.phoneNumber = QStringLiteral("010-2222-3333").toStdU16String();
     row.birthday = QStringLiteral("02-29").toStdU16String();
-    row.normalizedEnglishNameKey = name.simplified().toCaseFolded().toStdU16String();
-    row.normalizedKoreanNameKey =
-        koreanName.simplified().toCaseFolded().toStdU16String();
     return row;
 }
 
