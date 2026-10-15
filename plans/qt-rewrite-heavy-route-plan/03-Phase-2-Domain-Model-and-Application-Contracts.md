@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F941 legacy Speaking Evaluation cursor-failure acceptance is complete and its restored-source Debug rebuild passed; implementation has not started, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F941 is accepted; F942 Schedule Import teacher-directory cursor handling is next with baseline and acceptance pending, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 309)
 
-- F941 - Legacy SpeakingEvalRepository::loadSpeakingEval(): guard header first-next and score-row terminal failures on the opt-in lifecycle route while preserving the public API and clean-missing success.
 - F942 - TeacherRepository::getAllTeachers(): evaluate partial full-directory results in Schedule Import preview.
 - F943 - CalendarEventRepository date/upcoming lists: evaluate partial results from `loadCalendarEventsForDate()` and `loadUpcomingCalendarEvents()`.
 - F944 - TestingClassRepository::loadTestingClasses(): evaluate partial legacy chooser-list behavior.

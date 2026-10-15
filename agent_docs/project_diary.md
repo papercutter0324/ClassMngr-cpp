@@ -5679,3 +5679,20 @@ preserves the API, row mapping and validation, clean missing-evaluation
 success, and the normal typed `loadSpeakingEvalDetailed()` path while adding
 contextual checks for the header first-fetch and score-row terminal error. No
 custom driver or test seam is warranted. Implementation has not started.
+
+## Phase 2 legacy Speaking Evaluation cursor handling - 2026-10-15
+
+F941 is accepted at source/test commit `1f6f8442`. The legacy reader now
+reports contextual failure on a header-query first-fetch error and on a
+terminal score-row fetch error, preventing a valid prefix from escaping as
+success. The public API, row mapping/validation, clean missing-evaluation
+behavior, and typed detailed route remain unchanged. A permanent lifecycle
+regression proves the indexed JSON-view query returns one valid row before a
+malformed-JSON terminal fetch error, then verifies the public call fails with
+context. Independent Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed with
+`/p:TrackFileAccess=false`; independent CTest #24 passed 1/1. The header
+first-fetch error remains source-reviewed only. Two independent post-F941
+audits found none of the 13 official Deferred candidates actionable, resolved,
+superseded, or otherwise changed; all remain deferred. F942 is next in Batch309.
+No full suite ran.

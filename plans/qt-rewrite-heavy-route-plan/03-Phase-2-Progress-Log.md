@@ -40097,3 +40097,36 @@ queued in Batch309; begin Batch310 discovery when F944, the second-last item,
 starts. The existing 13 Deferred entries remain unchanged based on the prior
 post-F939 audits; no post-F940 or post-F941 independent audit is claimed.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F941 accepted; F942 next in Batch309 - 2026-10-15
+
+F941 is accepted in source/test commit `1f6f8442`. The implementation adds
+contextual error handling when the evaluation-header query's first `next()`
+fails and when the score-row loop ends with a terminal fetch error. It
+preserves the public API, clean missing-evaluation success, evaluation
+row/index mapping and validation, and the normal typed
+`loadSpeakingEvalDetailed()` reader.
+
+The permanent lifecycle regression at
+`tests/data_service_lifecycle_tests.cpp:1786` preflights a valid score-row
+prefix followed by malformed-JSON terminal fetch failure, then verifies the
+public legacy service returns failure instead of that prefix as success. This
+runtime evidence covers the score-row terminal path. A header first-fetch
+failure remains source-reviewed only; no runtime reproduction is claimed.
+
+Independent Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed with `/p:TrackFileAccess=false`.
+Independent CTest #24 (`ClassMngrDataServiceLifecycleTests`) passed 1/1, and
+`git diff --check` passed. No full suite ran.
+
+Two independent read-only audits reviewed all 13 official Deferred entries;
+none is actionable, resolved, superseded, or changed: F285, F579, F614, F618,
+F626, F629, F707, F709, F598, Batch 197 teacher reassignment parity, Class
+Analytics allocation cap/sparse representation, Dense Speaking Evaluation
+row-limit, and Sidebar Teacher-ID width. The Deferred list remains unchanged.
+
+F942, `TeacherRepository::getAllTeachers()` partial full-directory results in
+Schedule Import preview, is next with baseline and acceptance pending. F943-
+F945 remain queued in Batch309. Begin Batch310 discovery when F944, the
+second-last item, starts. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

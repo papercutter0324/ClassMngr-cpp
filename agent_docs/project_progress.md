@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F940 covered; F941 accepted, implementation active)
+### Current state - 2026-10-15 (F941 accepted; F942 next in Batch309)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -171,23 +171,22 @@ view probe could not reach the terminal branch because the exact query failed
 at `exec()` with malformed JSON before yielding a row; that temporary edit was
 restored byte-for-byte. After restoration, the focused Debug target built with
 `/p:TrackFileAccess=false` and exact CTest #310 passed 1/1. No full suite ran.
-F941 targets legacy `SpeakingEvalRepository::loadSpeakingEval()` on the opt-in
-`--startup-performance-speaking-evaluation-lifecycle` route. Acceptance adds a
-contextual error when the header query's first `next()` fails, and a terminal
-error check after score-row iteration so a partial prefix cannot escape as
-success. Preserve the public API, row/index mapping and validation, clean
-missing-evaluation success, and the normal typed `loadSpeakingEvalDetailed()`
-route. The exact ordered score query returned one valid prefix row before its
-second call to `next()` failed with `lastError()`; the public DataService
-baseline returned that prefix as success. The focused temporary probe passed,
-CTest #24 passed in Debug, and the restored-source lifecycle target rebuilt
-successfully with `/p:TrackFileAccess=false`. The temporary slot is absent from
-source/generated MOC and source SHA-256 matches its pre-probe value. The
-header-query first-fetch failure remains source-review-only. Commit the
-acceptance documentation before implementation; F941 implementation has not
-started. F942-F945 remain queued in Batch309; begin Batch310 discovery when
-F944 starts. No post-F941 Deferred audit has run. Gates 1/2 remain Partial and
-the formal Phase 2 exit gate is Open.
+F941 is accepted at source/test commit `1f6f8442`. Legacy
+`SpeakingEvalRepository::loadSpeakingEval()` now reports a contextual error
+when the header query's first `next()` fails, and after a terminal score-row
+fetch error rather than returning prefix rows as success. The public API,
+row/index mapping and validation, clean missing-evaluation success, and normal
+typed `loadSpeakingEvalDetailed()` route remain unchanged. Its permanent
+lifecycle regression preflights one valid score row followed by a malformed-
+JSON terminal fetch error and verifies the public call fails contextually. Two
+independent Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed with
+`/p:TrackFileAccess=false`; independent CTest #24 passed 1/1. The header-query
+first-fetch error remains source-reviewed only. Two independent post-F941
+audits found all 13 official Deferred candidates unchanged; none is actionable,
+resolved, or superseded. F942 is next in Batch309; F943-F945 remain queued, and
+Batch310 discovery begins when F944 starts. No full suite ran. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
