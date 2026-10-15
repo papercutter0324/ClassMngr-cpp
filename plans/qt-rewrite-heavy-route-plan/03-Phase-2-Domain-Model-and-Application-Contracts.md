@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F925 Schedule testing-class choices read has a verified baseline and defined acceptance at source HEAD `24a99551`; implementation and post-change verification remain pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F926 Teacher choice projections are selected next in Batch306; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 306)
 
-- F925 - Schedule testing-class choices read: reject partial choice records.
 - F926 - Teacher choice projections: reject terminal fetch failure in Initial Setup, Testing, and Class Co-Teacher reads.
 - F927 - My Classes teacher display-name batch read: distinguish terminal failure from valid missing-teacher rows.
 - F928 - Calendar repeat-series edit read: reject an incomplete event suffix.

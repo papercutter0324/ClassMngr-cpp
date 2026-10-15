@@ -5518,3 +5518,15 @@ not exercise a repository method whose query is local to its synchronous loop.
 When no deterministic database fixture or existing injection seam reaches the
 branch, keep the production check local and record independent source review
 instead of adding a test-only query abstraction.
+
+## Phase 2 testing-class choices cursor limitation - 2026-10-15
+
+For `TestingClassRepository::loadTestingClassChoices()`, the exact ordered
+SELECT uses a SQLite temporary sorter. Malformed-JSON indexed-view probes
+failed during `exec()` before returning a row, even after changing grade
+values, adding order-related indexes, and testing a constant-grade/level
+`class_info` view. Keep this limitation explicit: the focused repository and
+typed-port regressions verify existing behavior, while independent source
+review verifies the local post-loop `lastError()` guard. Do not claim direct
+terminal-fetch-branch runtime coverage or add a test-only query seam without a
+deterministic route.

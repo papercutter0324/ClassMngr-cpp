@@ -177,11 +177,24 @@ sequence, direct repository failure, and typed `RepositoryReadFailed` from
 `ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`;
 exact Debug CTest #410 passed 1/1. No full suite ran.
 
-Two independent post-F924 audits reviewed all 13 exact official Deferred
+F925, Schedule testing-class choices read, is accepted at source commit
+`1a61d3c7a74b9568ac05f485e7363f347c0bf30b`. Its repository now rejects a
+terminal query error after row iteration instead of returning accumulated
+choices as success. The exact ordered SELECT's SQLite temporary sorter caused
+malformed-JSON fixture probes to fail during `exec()` before yielding a row;
+no partial-choice baseline or direct terminal-fetch assertion is claimed.
+Forced sequential Debug builds passed for `ClassMngr`,
+`ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`.
+Only exact Debug CTests #21 and #391 ran; both passed 1/1. Independent source
+review confirmed the guard placement, error context, and preserved query and
+mapping. No full suite ran.
+
+Two independent post-F925 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch306
-(F920-F929) remains active with F925-F929 remaining. F925, Schedule
-testing-class choices read, is selected next. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate is Open.
+(F920-F929) remains active with F926-F929 remaining. F926, Teacher choice
+projections for Initial Setup, Testing, and Class Co-Teacher reads, is selected
+next. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

@@ -39027,3 +39027,30 @@ Acceptance for F925:
 Implementation and post-change verification are pending. F925 remains active
 in Batch306 (F925-F929); all 13 official Deferred candidates remain unchanged.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F925 accepted; post-F925 Deferred reviews clear; F926 selected - 2026-10-15
+
+F925, Schedule testing-class choices read, is accepted at source commit
+`1a61d3c7a74b9568ac05f485e7363f347c0bf30b`. A post-loop terminal
+`query.lastError()` check in `TestingClassRepository::loadTestingClassChoices()`
+now returns a repository failure through the existing `queryFailure` helper
+and “Loading testing classes” context. It preserves execution-failure handling,
+ordered SELECT, validation, field mapping, empty and missing-`class_info`
+success, and typed `Technical` mapping.
+
+Independent verification passed forced sequential Debug builds of
+`ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
+(all exit 0); only Debug CTests #21 and #391 ran, and both passed 1/1. No full
+suite ran. The acceptance limitation remains: malformed-JSON indexed-view
+probes for the exact ordered query failed at `exec()` before a row because of
+SQLite's temporary sorter. No partial-result baseline or direct terminal-fetch
+error assertion is claimed; acceptance rests on source review and focused
+existing regressions.
+
+Two independent post-F925 reviews checked the exact 13 official Deferred
+candidates; none became actionable, resolved, superseded, or newly triggered,
+and the list remains unchanged. F926, Teacher choice projections for Initial
+Setup, Testing, and Class Co-Teacher, is selected next in active Batch306, now
+F926-F929. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
