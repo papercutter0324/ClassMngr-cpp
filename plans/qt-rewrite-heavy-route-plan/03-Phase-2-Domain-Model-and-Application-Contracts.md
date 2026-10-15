@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F961 is complete; Batch332 is closed and F962 is accepted as the sole active slice. Blank-draft Sidebar Add remains deferred under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F962 is complete; Batch333 is closed and F963 is accepted as the sole active slice. Blank-draft Sidebar Add remains deferred under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F962 - Native English teacher import identity: derive validation and stored-record matching from the exact source name written, using an injected Qt-compatible UTF-16 key policy.
+- F963 - Speaking Evaluation report output: preserve committed file paths and notify users when later printing is canceled or fails.
 
 ## Objective
 

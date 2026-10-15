@@ -41401,3 +41401,61 @@ F962 acceptance for implementation:
 F962 is the sole active slice. Blank-draft Sidebar Add remains excluded under
 F285, all other official Deferred entries remain unchanged, Gates 1/2 remain
 Partial, and the formal Phase 2 exit gate remains Open.
+
+### F962 complete; Batch333 closed; F963 accepted - 2026-10-16
+
+F962 completed at source/test commit `9cbf1026`, following documentation
+acceptance checkpoints `39a78988` and Start Here pointer commit `eff2e44b`.
+The Native English import Application contract now derives validation and
+stored-record matching from the exact source name written, using the injected
+Qt-free UTF-16 key policy. Caller-controlled identity fields were removed;
+production retains `QString::simplified().toCaseFolded()` semantics. Validation
+order and transaction behavior remain unchanged, and UI behavior is unchanged.
+
+An independent Tester sequentially built `ClassMngr`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests` with
+MSVC x64 Debug Ninja. Each exact focused CTest passed 1/1. After a
+main-directed assertion enhancement, the app-less target build reported no
+work because the revised source timestamp was already built; its exact CTest
+also passed 1/1. `git diff --check` passed. No full suite ran. An earlier
+Visual Studio generator app build stopped before source compilation when
+MSBuild FileTracker returned `E_ACCESSDENIED`; the successful Ninja app build
+provides compilation acceptance.
+
+Two independent complete post-F962 audits found all 13 official Deferred
+entries unchanged. Batch333's Speaking Evaluation failed-read/blank editable
+grid scan found only a code-derived misassociation risk: the forced read
+failure drops the data table and blocks the subsequent write, so no successful
+write was reproduced. Do not select this risk or add it as an official
+Deferred entry. The workspace/report scan selected F963: report export can
+commit requested PDF/archive destinations before a later print cancel/failure
+returns empty saved paths, leaving the dialog silent on cancel or showing only
+the print error. An independent Investigator confirmed the flow and its
+testability.
+
+F963 acceptance for implementation:
+
+1. For save-plus-print requests, if `commitFiles` has committed destination
+   outputs before printing is canceled or fails, preserve
+   `DocumentOutputStatus::Canceled` or `Failed` and return the exact persisted
+   paths in `DocumentOutputResult.savedPdfPaths` and/or `savedArchivePath`.
+   Never report staging or temporary paths.
+2. The export dialog must say the files exist and identify their paths after a
+   post-commit print cancellation or failure. Cancellation before commit with
+   no files remains quiet; save/commit failures remain unchanged; print-only
+   outcomes have no saved paths. Keep Completed semantics and `succeeded()`
+   unchanged.
+3. Cover individual PDFs, archive-only, and archive plus individual outputs
+   where relevant. Preserve path verification and rollback before commit.
+   Add a narrow deterministic printer-result seam at the service boundary if
+   needed; do not add generic framework or global test hooks.
+4. Focused service/UI tests must simulate post-commit print Canceled and
+   Failed, checking status, persisted paths, and the visible partial-outcome
+   notice, plus unchanged precommit cancellation behavior. Build `ClassMngr`
+   and only exact affected focused targets/CTest registrations. Do not run the
+   full suite.
+
+F963 is accepted as the sole active slice; implementation has not started.
+Blank-draft Sidebar Add remains excluded under F285. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
