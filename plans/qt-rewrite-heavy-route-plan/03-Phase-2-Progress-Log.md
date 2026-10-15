@@ -39296,3 +39296,57 @@ unchanged. F929, Staff directory full reads, is selected next; Batch306 now
 contains only F929. Batch307 candidates F933-F936 remain next only after F929
 closes Batch306 and are distinct from the official Deferred list. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F929 baseline captured; acceptance defined - 2026-10-15
+
+The F929 source baseline is accepted F928 source/test commit `19feb328`; the
+F928 docs closeout is `67546412`. Both production methods perform full-table
+ordered SELECTs and return accumulated rows without checking terminal
+`lastError()`: `GsTeamRepository::getAll()` in
+`src/data/repositories/gs_team_repository.cpp` and
+`NativeEnglishTeacherRepository::getAll()` in
+`src/data/repositories/native_english_teacher_repository.cpp`.
+
+Temporary Qt QSQLITE probes on SQLite 3.53.4 exercised each production-shaped
+SELECT against an indexed JSON view. Both `exec()` calls succeeded; the first
+fetch returned `Valid GS` or `Valid Native`, then a later fetch failed with
+`malformed JSON Unable to fetch row`. Each forced-ordering plan scanned its
+backing table. Both repositories returned successful one-row partial results,
+and both typed directory-read ports returned successful one-row snapshots.
+Probe test files were restored byte-for-byte: GS SHA-256
+`8207AB090AEFD63D36B02562D4DC3383BE28BB902CDADD4666A0E61ED6FF0969`, Native
+English `C5DBF9A77005CCE48FDC21AAF6E80969DF17357FF25CA6FF0B22B6261ABFE7C7`.
+No production source changed.
+
+After restoration, forced Debug builds and exact CTests passed for
+`ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests`
+(CTest #346) and
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests`
+(CTest #341), each 1/1. Logs are under
+`build/windows-x64-debug/f929-baseline-20261015/`; no full suite ran. Temporary
+probe builds emitted a nonfatal MSB8064 warning for missing
+`src/next/application/teacher_import_plan_mapper.h`. The initial restored GS
+target build also saw stale generated MOC output referencing the temporary
+slot; a timestamp refresh resolved it with test bytes unchanged. Final restored
+builds passed without warning or error output.
+
+Acceptance for F929:
+1. After each `getAll()` loop, if `query.lastError().isValid()`, return the
+   repository SQL failure with context `Loading GS Team directory` or
+   `Loading Native English Teacher directory`, rather than accumulated rows.
+   Preserve each SELECT, validation, ordering, field mapping, and existing
+   mid-loop invalid-ID result.
+2. Permanently cover both exact queries with the proven row-then-fetch-error
+   fixtures; assert repository failure and nonrecoverable typed `Technical`
+   without a partial snapshot. Preserve existing query-execution-failure cases.
+3. Preserve successful full and empty directory reads, ordering and field
+   projections, positive 32-bit ID bounds, and current UI warning/clearing
+   behavior. Do not redesign queries or add a production seam or CMake target.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr` and both directory-read port
+   targets; run only exact matching Debug CTests #346 and #341 (indexes can
+   vary by generator). No full suite.
+
+F929 remains active in Batch306. Implementation and post-change acceptance are
+pending; the post-F929 audit of the 13 official Deferred entries remains due.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
