@@ -40633,7 +40633,7 @@ here only. Batch317 scans of domain identity conversions and typed write
 contracts are underway. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
 
-### F949 accepted; Batch317 implementation pending - 2026-10-16
+### F949 acceptance - 2026-10-16
 
 The Calendar platform adapter currently checks session availability before
 parsing a present update ID as a positive legacy integer: ID `"0"` returns
@@ -40653,6 +40653,22 @@ F949 acceptance for implementation:
 4. Preserve date-validation order and existing save, repository transaction,
    and error behavior.
 
-No implementation, tests, or builds have been run for F949. All 13 official
-Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+### F949 complete; Batch318 discovery continues - 2026-10-16
+
+Acceptance criteria were committed in `af31c6da`; implementation and regression
+tests were committed in `28cd2d38`. The Calendar platform adapter now parses a
+present update ID as a positive integer after date validation and before
+session lookup; `CalendarEventSaveRequest` remains adapter-neutral. Regression
+tests cover invalid ID `0` with open, unavailable, and closed sessions, plus
+valid update and create IDs with an unavailable session.
+
+The executor's focused Debug target build and CTest passed. The independent
+Tester also built `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+passed CTest #356 (1/1), and passed `git diff --check`. No test combines an
+invalid date with an invalid ID, so that ordering is visible in source but not
+covered by a combined regression.
+
+Two independent post-F949 audits reviewed the exact 13 official Deferred
+entries; none became actionable, and all 13 remain unchanged. No Deferred
+implementation started and blockers are unchanged. Gates 1/2 remain Partial;
+the formal Phase 2 exit gate remains Open.

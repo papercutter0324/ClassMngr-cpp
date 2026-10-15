@@ -5580,3 +5580,22 @@ CalendarEventTimeStatus cast that has no production construction path and was
 already rejected in history; the other inspected read ports are covered by
 explicit parent provenance or prior fixes. Batch317 source discovery is now
 underway in persisted identity conversions and typed write contracts.
+
+## Phase 2 current position — 2026-10-16 (F949 complete; Batch318 discovery)
+
+F949 was accepted at documentation commit `af31c6da` and completed at
+source/test commit `28cd2d38`. Calendar Event Save now validates a present
+legacy update ID after date validation and before checking session
+availability. The request contract remains adapter-neutral and continues to
+allow opaque bounded IDs. Invalid ID `0` returns InvalidInput with open,
+unopened, and closed sessions; valid update and create requests still return
+NotFound when the session is unavailable. Repository and transaction behavior
+remain unchanged.
+
+The focused Debug target built with `/p:TrackFileAccess=false`; the independent
+Tester rebuilt it and passed CTest #356 (1/1). `git diff --check` passed. The
+source preserves date-before-ID validation order, though no regression combines
+an invalid date and invalid ID. No full suite ran. Two independent post-F949
+audits reviewed all 13 official Deferred candidates; none became actionable
+and their listed blockers remain. Batch318 source discovery is underway. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F949 is the active Batch317 implementation slice and implementation is pending; all 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F949 is complete; Batch318 discovery continues. All 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,8 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F949 - Calendar save update-ID precedence - validate present legacy update
-  IDs before session availability in the Calendar platform adapter.
+- Batch318 discovery continues.
 
 ## Objective
 

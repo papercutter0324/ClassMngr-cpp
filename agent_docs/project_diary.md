@@ -5953,3 +5953,12 @@ cast lead has no production path and is already rejected in Phase 2 history.
 Roster and Selected Class Grade parent provenance are covered, while GS Team
 and Native English ID/cursor cases were resolved earlier. Batch317 now checks
 persisted identity-conversion boundaries and typed write contracts.
+
+## F949 Calendar Event Save ID precedence — 2026-10-16
+
+Keep update-ID parsing adapter-local: `CalendarEventSaveRequest` accepts an
+opaque bounded string so other application ports are not coupled to the legacy
+integer key. In the legacy-backed save adapter, validate dates first, then
+classify an invalid numeric update ID before checking session availability.
+This keeps InvalidInput stable across session states while valid requests with
+an unavailable session remain NotFound.
