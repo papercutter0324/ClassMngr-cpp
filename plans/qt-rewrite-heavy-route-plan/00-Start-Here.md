@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F927, My Classes teacher display-name batch read, is accepted at source commit `6dc10fa6`; two independent post-F927 audits found none of the 13 official Deferred candidates actionable, resolved, superseded, or newly triggered. F928, Calendar repeat-series edit read, is selected next in active Batch306 (F928-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F933, Class Analytics roster-name read terminal cursor check, is accepted at `3318f537`; F934 baseline and preimplementation acceptance are committed at `3333c02f`, with implementation next in active Batch307; all 13 Deferred entries remain unchanged as last audited after F933. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
