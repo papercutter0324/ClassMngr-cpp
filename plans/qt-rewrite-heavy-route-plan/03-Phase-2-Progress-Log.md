@@ -41514,3 +41514,66 @@ F964 is the sole active accepted slice. Mapping history remains open for
 post-implementation closeout. All 13 official Deferred entries remain
 unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F964 complete; Batch335 discovery closed; F965 accepted - 2026-10-16
+
+F964 was implemented at source commit `60146c8f`, following F963 at
+`d8edd7a4`; documentation checkpoint `61dd8a01` preceded this closeout. Its
+independent verification built `ClassMngr` and
+`ClassMngrNextFeatureClassNotesPageTests`, then ran only the focused CTest; it
+passed 1/1. No full suite ran. Two complete independent post-F964 audits found
+all 13 official Deferred entries unchanged.
+
+Batch335 selected only F965. The independent Investigator and main source
+review confirmed that a failed Class Details read can leave fallback form
+values editable while the save path captures and submits fields and schedules.
+`ClassDetailsPage::loadClass` applies fallback
+values when the snapshot or nested `classFields` is unavailable
+(`src/features/classes/ui/class_details_page.cpp:808-829,873-900`);
+`classInfoFromForm` captures grade, level, books, colors, and both schedules
+(`src/features/classes/ui/class_details_page.cpp:1037-1049`). Save availability
+and the internal save guard currently check only the class ID
+(`src/features/classes/ui/class_details_page.cpp:995-1010,1031-1034,1116-1137`),
+while the save workflow
+includes schedules by default (`src/next/application/class_details_save_workflow.h:20`)
+and the production adapter replaces stored fields and schedules
+(`src/next/platform/application_services_class_details_save_port.h:99-136`).
+Empty grade and level are permitted
+(`src/next/application/class_details_validation_policy.h:558-571`), so fallback
+values can form an accepted replacement. Existing failed-read coverage checks
+display fallbacks only; the successful-save case uses successful fields
+(`tests/class_details_page_display_tests.cpp:228-280,284+`). This is a
+write-safety risk supported by the path; no destructive save is claimed as
+reproduced.
+
+F965 acceptance for implementation:
+
+1. Track whether the currently displayed editable Class Details values were
+   populated by a successful `classFields` result for the current class. Reset
+   before every `loadClass`; set true only when a matching current-class typed
+   snapshot and `classFields` result succeed and are applied to controls; reset
+   on database clear. `restoreFromState` derives availability from the state
+   snapshot whose values it applies.
+2. `retranslateUi` does not apply editable values: retain availability tied to
+   the controls even if its refreshed title/read snapshot succeeds or fails.
+   A successful save refresh also retains availability while the saved fields
+   remain displayed. Teacher-display and roster-count failures remain
+   independent when editable class fields loaded.
+3. Gate AutosaveCoordinator availability and manual Save, and guard
+   `saveClassInfoInternal` before context, conflict, or save ports. This covers
+   `saveData`, `saveChanges`, and autosave. Keep empty/default display
+   fallbacks; fields may remain editable/dirty, but unavailable fields must
+   never reach a save call. Add no retry or read-error UI.
+4. Cover top-level and nested `classFields` failures; teacher/roster-only
+   failures with successful fields; valid then failed reload; database clear;
+   restoration from failed fields; retranslation success/failure without form
+   reapplication; blocked manual, autosave, and direct saves; and successful
+   save plus availability after successful load.
+5. Build `ClassMngr` and the exact `ClassDetailsPageDisplay` focused target and
+   run only its registered CTest. Do not run the full suite.
+
+F965 is the sole active accepted slice. Do not add unselected Batch335 leads to
+the official Deferred list. Leave the migration mapping update for F965
+post-implementation closeout. All 13 official Deferred entries remain
+unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.

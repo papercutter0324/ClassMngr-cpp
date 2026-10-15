@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F963 is complete; Batch334 is closed and F964 is accepted as the sole active slice. Blank-draft Sidebar Add remains deferred under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F964 is complete and F965 is accepted as the sole active slice; Batch335 selected only the Class Details failed-read save-safety issue. Blank-draft Sidebar Add remains deferred under F285; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F964 - Class Notes write safety: block autosave and saves when current class fields are unavailable.
+- F965 - Class Details write safety: block autosave and saves until the displayed editable class fields were populated by a successful read.
 
 ## Objective
 
