@@ -5599,3 +5599,17 @@ an invalid date and invalid ID. No full suite ran. Two independent post-F949
 audits reviewed all 13 official Deferred candidates; none became actionable
 and their listed blockers remain. Batch318 source discovery is underway. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+## Phase 2 current position — 2026-10-16 (F949 complete; Batch319 discovery)
+
+F949 remains complete at acceptance commit `af31c6da` and implementation/test
+commit `28cd2d38`; the post-slice closeout and Deferred audit are recorded in
+`d9980e06`. Its focused Debug target and CTest #356 passed, and the exact 13
+official Deferred entries remain unchanged with no item newly actionable.
+
+Batch318 ended without a selected slice. The use-case scan found no distinct
+contract gap. The Class Details Page malformed teacher-ID lead was rejected
+because F889's accepted contract preserves Technical for malformed
+class-detail data; F947/F948 remain route-specific. Batch319 discovery is
+underway across Qt-free domain invariants and non-class feature projections.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

@@ -5962,3 +5962,10 @@ integer key. In the legacy-backed save adapter, validate dates first, then
 classify an invalid numeric update ID before checking session availability.
 This keeps InvalidInput stable across session states while valid requests with
 an unavailable session remain NotFound.
+
+## Batch318 Class Details classification decision — 2026-10-16
+
+F889 explicitly preserves Technical for malformed Class Details data.
+F947/F948 added Validation handling only to their own routes and do not change
+that contract. A later Class Details mapping change must first reopen F889's
+accepted rule rather than infer a project-wide policy from neighboring ports.

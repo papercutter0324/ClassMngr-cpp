@@ -40672,3 +40672,20 @@ Two independent post-F949 audits reviewed the exact 13 official Deferred
 entries; none became actionable, and all 13 remain unchanged. No Deferred
 implementation started and blockers are unchanged. Gates 1/2 remain Partial;
 the formal Phase 2 exit gate remains Open.
+
+### Batch318 shortfall; Batch319 discovery underway - 2026-10-16
+
+Batch318's Qt-free application-contract scan found no distinct actionable
+candidate. The feature-boundary scan identified F950 in
+`ApplicationServicesClassDetailsPageReadPort`: nonnumeric stored
+`class_info.teacher_id` maps to `Technical` without a textual-ID fixture.
+F889's accepted contract explicitly retains `Technical` for malformed Class
+Details data, so F950 is rejected under the current contract. F889's existing
+coverage statement remains, although its numeric orphan-ID fixture does not
+exercise nonnumeric text. No source/test change or F889 reopening is warranted.
+F947/F948 validation mappings were route-specific and establish no project-wide
+malformed-data policy. The post-F949 audit found all 13 official Deferred
+candidates unchanged and none actionable. Batch318 closes without a selected
+slice; Batch319 discovery is active in Qt-free domain/value-object invariants
+and non-Class feature result/projection contracts. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.
