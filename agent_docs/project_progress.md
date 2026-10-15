@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F928 accepted; F929 selected)
+### Current state - 2026-10-15 (F929 accepted; F933 next)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -84,11 +84,19 @@ covered. Independent sequential Debug builds of `ClassMngr`,
 CTests #22 and #356 passed 1/1. The Executor's initial self-check emitted a
 nonfatal MSB8064 dependency warning for `teacher_import_plan_mapper.h`; the
 independent forced builds completed without warning output. No full suite ran.
-Two independent post-F928 audits found all 13 official Deferred candidates
-unchanged. Batch307 source discovery closed with F933-F936 selected for after
-F929; F930-F932 were omitted because the caller review found no regular
-in-tree UI path. F929, Staff directory full reads, is next in active Batch306.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
+F929, Staff directory full reads, is accepted at source/test commit
+`1768d46b`. Both repositories now reject terminal cursor failures, and
+permanent indexed JSON-view regressions preflight a valid first row followed
+by a malformed-JSON fetch error before asserting direct repository failure
+and nonrecoverable typed `Technical` without a partial snapshot. Forced
+sequential Debug builds passed for `ClassMngr` and both focused read-port test
+targets after the initial MSBuild CL file-tracking access failure was retried
+with `/p:TrackFileAccess=false`; exact CTests #346 and #341 passed 1/1. No full
+suite ran. Two independent post-F929 audits found all 13 official Deferred
+candidates unchanged. Batch306 is closed and Batch307 is active with F933-F936;
+F933, the Class Analytics roster-name read, is next. F930-F932 remain omitted
+because the caller review found no regular in-tree UI path. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

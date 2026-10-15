@@ -5560,3 +5560,11 @@ fetch fails. In the typed edit test, an `INSTEAD OF UPDATE` trigger with a
 distinct sentinel proves the load error stopped execution before persistence;
 assert the load diagnostic, absence of the sentinel, and unchanged backing
 data.
+
+## Phase 2 staff directory full-read cursor errors - 2026-10-15
+
+For an ordered full-directory read, check `QSqlQuery::lastError()` after row
+iteration before returning the snapshot. A matching SQLite order index and an
+exact-query probe can establish that malformed projected JSON fails only
+after a valid first row; then assert both repository failure and typed
+Technical failure without a partial result.

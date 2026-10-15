@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F928, Calendar repeat-series edit read, is accepted at source/test commit `19feb328`; two independent post-F928 audits found all 13 official Deferred entries unchanged; F929, Staff directory full reads, is next in active Batch306. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F929, Staff directory full reads, is accepted at source/test commit `1768d46b`; two independent post-F929 audits found all 13 official Deferred entries unchanged; F933, Class Analytics roster-name read terminal cursor check, is active in Batch307 with its focused failure gate open. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch (Batch 306)
+#### Active batch (Batch 307)
 
-- F929 - Staff directory full reads: reject partial GS Team and Native English snapshots.
+- F933 - Class Analytics roster-name read terminal cursor check: reject incomplete names after terminal fetch failure; focused CTest #159.
+- F934 - Co-teacher assignment validation schedule-query terminal checks: reject incomplete schedule reads in the live typed validation path.
+- F935 - Shared class-info reader first-row failure and schedule cursor checks: distinguish read failure from clean missing/default and check regular/intensive schedules.
+- F936 - Legacy Class Transfer regular/intensive schedule terminal checks: reject incomplete reads for live import/export consumers; adjacent parent-aware route already checks.
 
 #### Deferred candidates
 

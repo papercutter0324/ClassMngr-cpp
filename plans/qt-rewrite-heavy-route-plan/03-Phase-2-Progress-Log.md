@@ -39350,3 +39350,55 @@ Acceptance for F929:
 F929 remains active in Batch306. Implementation and post-change acceptance are
 pending; the post-F929 audit of the 13 official Deferred entries remains due.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F929 accepted; post-F929 Deferred audits clear; F933 selected - 2026-10-15
+
+The F929 acceptance baseline was defined and committed at `7d3908c9`. Source/test
+acceptance is commit `1768d46b` (`Phase2 - Reject partial staff directory
+reads`), changing only the GS Team and Native English teacher repositories and
+their focused port tests. Both repositories now check `query.lastError()` after
+row iteration and return contextual SQL failures (`Loading GS Team directory`
+and `Loading Native English Teacher directory`). Permanent regressions cover
+both exact ordered queries with one valid row followed by a malformed-JSON
+terminal fetch failure; direct repository reads fail, and typed ports return
+nonrecoverable `Technical` without partial results.
+
+Independent verification forced sequential Debug builds in
+`build/windows-x64-debug` for `ClassMngr` and both focused directory-read port
+targets. The first unmodified `ClassMngr` invocation failed with MSB4018 and
+`UnauthorizedAccessException` in MSBuild CL file tracking; retrying with
+`/p:TrackFileAccess=false` passed. The successful `ClassMngr` invocation kept
+`--clean-first`; subsequent focused target builds passed. Successful builds
+had no compiler warnings; translation generation printed catalog counts. Exact
+focused Debug CTest #346 (GS Team) passed 1/1 with
+`ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -I 346,346`;
+CTest #341 (Native English) passed 1/1 with the same command using `-I 341,341`.
+File-tracking behavior itself was not verified. No full suite ran.
+
+Two independent audits examined all 13 official Deferred entries after
+`1768d46b`; all remain deferred, with none actionable, resolved, or
+superseded. F285's blank-draft contract remains unresolved; F579 and F598
+still require elevated Administrator heap captures; F614, F618, and F626 still
+lack requested owner-specific or matched Release memory evidence; F629 remains
+blocked on session-limited macOS runner availability; F707 has no live callsite
+and F709 has no focused summary-injection seam. Batch197 teacher reassignment
+and Dense Speaking policies remain unresolved, Class Analytics allocation-cap
+and sparse-representation policy remains unresolved, and Sidebar Teacher ID
+width remains legacy `int` based. F929 changes none of those triggers.
+
+F930-F932 remain omitted because their reviewed APIs are compatibility/gated
+with no regular in-tree UI caller, as recorded in the Batch307 discovery; that
+omission is distinct from the 13 official Deferred entries. Batch307 is now
+active in this order: F933 Class Analytics roster-name terminal cursor check,
+F934 co-teacher assignment validation schedule-query terminal checks, F935
+shared class-info first-row and regular/intensive schedule checks, and F936
+legacy Class Transfer regular/intensive schedule checks. F933 was independently
+rechecked: the live
+`ApplicationServicesClassAnalyticsDashboardReadPort::readRosterNames()` does
+not check terminal `lastError()` after its `do/while` loop, while adjacent
+`readEvaluationBatch()` does. Its focused target is
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`
+(current Debug CTest #159). Class Analytics allocation-cap policy remains a
+separate Deferred item. F933 is discovery only; no implementation or baseline
+has begun. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
