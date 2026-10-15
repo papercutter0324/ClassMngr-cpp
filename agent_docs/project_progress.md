@@ -5556,3 +5556,21 @@ in the Phase 2 progress log. Class Notes and Testing Class remain outside this
 local slice because their routes retain separate accepted behavior; no
 project-wide malformed-data classification rule is claimed. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+F948 completed at source/test commit `236cea99`, following acceptance docs
+commit `271c35d0`. Both Selected Class Subtitle read paths now return
+nonrecoverable Validation for malformed persisted teacher IDs, retain their
+exact repository diagnostics, and keep the outer snapshots and independent
+teacher components successful. The batch regression also checks requested ID
+order and confirms teacher lookup is not attempted after the repository
+failure. Sequential Debug builds of `ClassMngr` and both subtitle read-port
+test targets passed with `/p:TrackFileAccess=false`; exact CTests #329 and
+#330 passed 1/1 each. No full suite ran.
+
+Two independent Batch315 scans found no distinct next candidate and confirmed
+the exact 13 official Deferred entries remain unchanged. The Phase 2 progress
+log records the inspected surfaces and rejected duplicate leads. Gates 1/2
+remain Partial and the formal exit gate remains Open.
+
+Batch316 source discovery is underway in separate Qt-free domain/application
+contracts and feature port/repository boundaries.

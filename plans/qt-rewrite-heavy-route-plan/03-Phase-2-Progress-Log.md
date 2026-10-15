@@ -40590,3 +40590,33 @@ F948 acceptance for implementation:
 F947 is complete and F948 is accepted as next in Batch314. The exact 13
 official Deferred entries remain unchanged after the two post-F947 audits.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F948 complete; Batch315 discovery continues - 2026-10-16
+
+F948 is complete in source/test commit `236cea99`, following acceptance-docs
+commit `271c35d0`. The single and batch Selected Class Subtitle adapters now
+map the matching repository diagnostic for malformed persisted
+`class_info.teacher_id` to nonrecoverable `Validation`; other class-repository
+failures remain `Technical`. DB-backed regressions assert the exact route
+diagnostic, successful outer snapshots, and independent successful empty
+teacher components. The batch case also checks requested IDs and order and
+that no teacher lookup occurs.
+
+The independent Tester sequentially built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`,
+and
+`ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`
+in the standard Windows x64 Debug folder with `/p:TrackFileAccess=false`.
+Exact CTests #329 and #330 passed 1/1 each. Source review and
+`git diff --check` passed; no full suite ran.
+
+Batch315 use-case and repository/typed-port scans found no distinct new
+candidate accepted for implementation. The use-case scan rejected the
+Calendar Import negative skipped-count lead as already rejected in Batches
+262/278 and found current contracts for the other checked paths. The
+repository/typed-port scan excluded the completed F944-F948 cases. Both
+independent scans re-audited the exact 13 official Deferred entries and found
+none actionable, resolved, superseded, or materially changed; all 13 remain
+unchanged. The Batch315 discovery shortfall is recorded here only; Batch316
+source discovery is underway. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.

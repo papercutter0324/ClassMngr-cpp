@@ -5922,3 +5922,28 @@ missing-parent, SQL/cursor, unassigned, and independent teacher behavior.
 Class Notes and Testing Class are excluded because their accepted routes do
 not establish a global corruption-classification policy. F948 acceptance is
 recorded in the Phase 2 plan; implementation is next.
+
+## F948 implementation and Batch315 review - 2026-10-16
+
+F948 completed at source/test commit `236cea99`. Single and batch Selected
+Class Subtitle reads now classify their shared malformed persisted
+`class_info.teacher_id` failure as nonrecoverable Validation, retaining the
+route-specific repository diagnostic. Other class repository failures remain
+Technical. The public regressions verify successful outer snapshots and empty
+independent teacher components; the batch case also checks the requested ID
+order and confirms that no teacher lookup follows the failed class projection.
+Independent sequential Debug builds of `ClassMngr` and both focused subtitle
+read-port targets passed; CTests #329 and #330 passed 1/1 each. Acceptance docs
+are in commit `271c35d0`. No full suite ran.
+
+Two Batch315 scans found no distinct candidate, and both confirmed the 13
+official Deferred entries were unchanged. The application scan rechecked
+historical Calendar Import skipped-count leads and found no reopening basis;
+the repository scan excluded already covered class-teacher-ID and parent-
+provenance routes. This local subtitle decision does not define a global
+classification policy. Phase 2 remains in progress with Gates 1/2 Partial and
+the formal exit gate Open.
+
+Batch316 source discovery began in two separate areas: Qt-free domain and
+application contracts, and other feature port/repository boundaries. Both
+scans exclude the recently completed slices and known rejected leads.
