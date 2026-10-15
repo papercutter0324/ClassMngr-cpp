@@ -276,7 +276,7 @@ private slots:
     void allEmptyTeacherNamesKeepAdapterFallbacks();
     void selectedClassDetailsReadUsesOnlyScopedSessionData();
     void selectedClassDetailsPreservesWideTeacherId();
-    void selectedClassDetailsUnavailableSessionsDoNotFallback();
+    void selectedClassDetailsUnavailableSessionsAreTechnical();
     void selectedClassDetailsSqlRepositoryFailureIsTechnical();
     void selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields();
     void projectsSelectedClassesInRequestOrderAndCopiesFilteredSource();
@@ -1332,7 +1332,7 @@ selectedClassDetailsPreservesWideTeacherId()
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
-selectedClassDetailsUnavailableSessionsDoNotFallback()
+selectedClassDetailsUnavailableSessionsAreTechnical()
 {
     ApplicationServices unopenedServices;
     QVERIFY(unopenedServices.dataService());
@@ -1341,7 +1341,7 @@ selectedClassDetailsUnavailableSessionsDoNotFallback()
     ApplicationServicesSubPrepClassDetailsPort unopenedPort(unopenedServices);
     auto result = unopenedPort.loadDetails(classId(42));
     QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
 
     ApplicationServices closedServices;
     const QString path = databasePath(m_directory);
@@ -1366,7 +1366,7 @@ selectedClassDetailsUnavailableSessionsDoNotFallback()
     ApplicationServicesSubPrepClassDetailsPort closedPort(closedServices);
     result = closedPort.loadDetails(classId(selectedClass));
     QVERIFY(!result);
-    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
 
     QVERIFY(closedServices.openDatabase(path));
     const auto persisted = closedServices.databaseSession()
@@ -1401,6 +1401,15 @@ selectedClassDetailsSqlRepositoryFailureIsTechnical()
         "WHERE type = 'table' AND name = 'class_info'"
         )));
     QVERIFY(!confirmAbsent.next());
+
+    const auto repositoryFailure = services.databaseSession()
+        ->classInfoRepository()
+        ->loadSubPrepClassDetailsDetailed(selectedClass);
+    QVERIFY(!repositoryFailure);
+    QCOMPARE(
+        repositoryFailure.error().kind,
+        SubPrepClassDetailsReadFailure::Kind::Technical
+        );
 
     ApplicationServicesSubPrepClassDetailsPort port(services);
     const auto result = port.loadDetails(classId(selectedClass));
@@ -1482,6 +1491,12 @@ selectedClassDetailsUsesMissingTeacherFallbackAndBoundsFields()
     QVERIFY(noInfo);
     QCOMPARE(noInfo.value().classNotes, std::string());
     QVERIFY(!noInfo.value().teacherId.has_value());
+
+    const auto missingClassOutcome = services.databaseSession()
+        ->classInfoRepository()
+        ->loadSubPrepClassDetailsDetailed(999999);
+    QVERIFY(missingClassOutcome);
+    QVERIFY(missingClassOutcome->parentMissing);
 
     const auto missingClass = port.loadDetails(classId(999999));
     QVERIFY(!missingClass);

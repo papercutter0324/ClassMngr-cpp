@@ -4575,18 +4575,49 @@ ClassInfoRepository::loadSubPrepClassDetails(
     const int classId
     )
 {
-    if (classId <= 0)
+    const SubPrepClassDetailsDetailedResult detailed =
+        loadSubPrepClassDetailsDetailed(classId);
+    if (!detailed)
+    {
+        return std::unexpected(detailed.error().diagnostic);
+    }
+
+    if (detailed->parentMissing)
     {
         return std::unexpected(
             QObject::tr(
-                "Loading selected Sub Prep class details failed: invalid class id %1."
+                "Loading selected Sub Prep class details failed: no matching record exists for class id %1."
                 ).arg(classId)
             );
     }
 
+    return detailed->record;
+}
+
+SubPrepClassDetailsDetailedResult
+ClassInfoRepository::loadSubPrepClassDetailsDetailed(
+    const int classId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(
+            SubPrepClassDetailsReadFailure{
+                .kind = SubPrepClassDetailsReadFailure::Kind::InvalidInput,
+                .diagnostic = QObject::tr(
+                "Loading selected Sub Prep class details failed: invalid class id %1."
+                ).arg(classId)
+            }
+        );
+    }
+
+    const QString action = QObject::tr(
+        "Loading selected Sub Prep class details"
+        );
+    const QString identity = QObject::tr("class id %1").arg(classId);
     QSqlQuery query(m_database);
     query.setForwardOnly(true);
-    query.prepare(QStringLiteral(R"(
+    const QString queryText = QStringLiteral(R"(
         SELECT
             c.id AS class_id,
             ci.teacher_id AS assigned_teacher_id,
@@ -4611,27 +4642,52 @@ ClassInfoRepository::loadSubPrepClassDetails(
         ON t.id = ci.teacher_id
         WHERE c.id = ?
         LIMIT 1
-    )"));
+    )");
+    if (!query.prepare(queryText))
+    {
+        return std::unexpected(SubPrepClassDetailsReadFailure{
+            .kind = SubPrepClassDetailsReadFailure::Kind::Technical,
+            .diagnostic = SqlQueryUtils::errorFor(
+                query,
+                action,
+                queryText,
+                identity
+                ).userMessage()
+        });
+    }
     query.addBindValue(classId);
 
-    const QString identity = QObject::tr("class id %1").arg(classId);
     const auto executed = SqlQueryUtils::executePrepared(
         query,
-        QObject::tr("Loading selected Sub Prep class details"),
+        action,
         identity
         );
     if (!executed)
     {
-        return std::unexpected(executed.error().userMessage());
+        return std::unexpected(SubPrepClassDetailsReadFailure{
+            .kind = SubPrepClassDetailsReadFailure::Kind::Technical,
+            .diagnostic = executed.error().userMessage()
+        });
     }
 
     if (!query.next())
     {
-        return std::unexpected(
-            QObject::tr(
-                "Loading selected Sub Prep class details failed: no matching record exists for class id %1."
-                ).arg(classId)
-            );
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(SubPrepClassDetailsReadFailure{
+                .kind = SubPrepClassDetailsReadFailure::Kind::Technical,
+                .diagnostic = SqlQueryUtils::errorFor(
+                    query,
+                    action,
+                    query.lastQuery(),
+                    identity
+                    ).userMessage()
+            });
+        }
+
+        return SubPrepClassDetailsReadOutcome{
+            .parentMissing = true
+        };
     }
 
     SubPrepClassDetailsRecord record;
@@ -4686,7 +4742,10 @@ ClassInfoRepository::loadSubPrepClassDetails(
             ).toString();
     }
 
-    return record;
+    return SubPrepClassDetailsReadOutcome{
+        .record = std::move(record),
+        .parentMissing = false
+    };
 }
 
 Result<QList<SubPrepClassSummaryRecord>>

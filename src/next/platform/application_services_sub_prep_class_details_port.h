@@ -74,7 +74,7 @@ public:
             if (!session || !session->isOpen())
             {
                 return failure(
-                    Domain::ErrorCode::NotFound,
+                    Domain::ErrorCode::Technical,
                     "The Sub Prep class details service is unavailable."
                     );
             }
@@ -84,26 +84,34 @@ public:
             if (!repository)
             {
                 return failure(
-                    Domain::ErrorCode::NotFound,
+                    Domain::ErrorCode::Technical,
                     "The Sub Prep class details service is unavailable."
                     );
             }
 
-            const ::Result<SubPrepClassDetailsRecord> source =
-                repository->loadSubPrepClassDetails(*legacyClassId);
+            const SubPrepClassDetailsDetailedResult source =
+                repository->loadSubPrepClassDetailsDetailed(*legacyClassId);
             if (!source)
             {
                 if (!session->isOpen())
                 {
                     return failure(
-                        Domain::ErrorCode::NotFound,
+                        Domain::ErrorCode::Technical,
                         "The Sub Prep class details service became unavailable while loading details."
                         );
                 }
                 return repositoryFailure(source.error());
             }
 
-            const SubPrepClassDetailsRecord& record = source.value();
+            if (source->parentMissing)
+            {
+                return failure(
+                    Domain::ErrorCode::NotFound,
+                    "The selected Sub Prep class details were not found."
+                    );
+            }
+
+            const SubPrepClassDetailsRecord& record = source->record;
             if (record.classId != *legacyClassId)
             {
                 return failure(
@@ -292,49 +300,21 @@ private:
 
     [[nodiscard]] static Application::SubPrepClassDetailsReadResult
     repositoryFailure(
-        const QString& repositoryError
+        const SubPrepClassDetailsReadFailure& repositoryError
         )
     {
-        const QString normalized = repositoryError.toLower();
-        if (normalized.contains(QStringLiteral("service is available"))
-            || normalized.contains(QStringLiteral("service unavailable")))
-        {
-            return failure(
-                Domain::ErrorCode::NotFound,
-                errorText(repositoryError,
-                    "The Sub Prep class details service is unavailable.")
-                );
-        }
-        if (normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("does not exist")))
-        {
-            return failure(
-                Domain::ErrorCode::NotFound,
-                errorText(repositoryError,
-                    "The selected Sub Prep class details were not found.")
-                );
-        }
-        if (normalized.contains(QStringLiteral("invalid")))
+        if (repositoryError.kind == SubPrepClassDetailsReadFailure::Kind::InvalidInput)
         {
             return failure(
                 Domain::ErrorCode::InvalidInput,
-                errorText(repositoryError,
+                errorText(repositoryError.diagnostic,
                     "The selected Sub Prep class identifier is invalid.")
-                );
-        }
-        if (normalized.contains(QStringLiteral("validation")))
-        {
-            return failure(
-                Domain::ErrorCode::Validation,
-                errorText(repositoryError,
-                    "The selected Sub Prep class details failed validation.")
                 );
         }
 
         return failure(
             Domain::ErrorCode::Technical,
-            errorText(repositoryError,
+            errorText(repositoryError.diagnostic,
                 "Selected Sub Prep class details could not be loaded.")
             );
     }

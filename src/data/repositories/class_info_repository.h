@@ -358,6 +358,29 @@ struct SubPrepPrintSourceClassInfoReadRecord final
     QList<ClassTime> intensiveTimes;
 };
 
+struct SubPrepClassDetailsReadOutcome final
+{
+    SubPrepClassDetailsRecord record;
+    bool parentMissing = false;
+};
+
+struct SubPrepClassDetailsReadFailure final
+{
+    enum class Kind
+    {
+        InvalidInput,
+        Technical
+    };
+
+    Kind kind = Kind::Technical;
+    QString diagnostic;
+};
+
+using SubPrepClassDetailsDetailedResult = std::expected<
+    SubPrepClassDetailsReadOutcome,
+    SubPrepClassDetailsReadFailure
+    >;
+
 struct SubPrepRosterOutputScheduleBatchReadMetrics final
 {
     int callCount = 0;
@@ -658,6 +681,8 @@ public:
 
     [[nodiscard]] Result<SubPrepClassDetailsRecord>
         loadSubPrepClassDetails(int classId);
+    [[nodiscard]] SubPrepClassDetailsDetailedResult
+        loadSubPrepClassDetailsDetailed(int classId);
 
     [[nodiscard]] Result<QList<SubPrepClassSummaryRecord>>
         loadSubPrepClassSummaries(
