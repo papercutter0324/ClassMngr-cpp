@@ -247,36 +247,112 @@ batchQueryValidatesResponseShapeAndAvailabilityRange()
         classId("8")
     };
 
-    port.records = {{.classId = classId("8"), .firstEmptyRow = 1}};
+    port.records = {{
+        .classId = classId("8"),
+        .firstEmptyRowResult = Domain::Result<int>::success(1)
+    }};
     auto result = query.execute(requested, {});
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
 
     port.records = {
-        {.classId = classId("8"), .firstEmptyRow = 1},
-        {.classId = classId("7"), .firstEmptyRow = -1}
+        {
+            .classId = classId("8"),
+            .firstEmptyRowResult = Domain::Result<int>::success(1)
+        },
+        {
+            .classId = classId("7"),
+            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+        }
     };
     result = query.execute(requested, {});
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
 
     port.records = {
-        {.classId = classId("7"), .firstEmptyRow = 25},
-        {.classId = classId("8"), .firstEmptyRow = -1}
+        {
+            .classId = classId("7"),
+            .firstEmptyRowResult = Domain::Result<int>::success(25)
+        },
+        {
+            .classId = classId("8"),
+            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+        }
     };
     result = query.execute(requested, {});
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
 
     port.records = {
-        {.classId = classId("7"), .firstEmptyRow = 0},
-        {.classId = classId("8"), .firstEmptyRow = -1}
+        {
+            .classId = classId("7"),
+            .firstEmptyRowResult = Domain::Result<int>::success(-2)
+        },
+        {
+            .classId = classId("8"),
+            .firstEmptyRowResult = Domain::Result<int>::success(24)
+        }
+    };
+    result = query.execute(requested, {});
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+
+    port.records = {
+        {
+            .classId = classId("7"),
+            .firstEmptyRowResult = Domain::Result<int>::success(0)
+        },
+        {
+            .classId = classId("8"),
+            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+        }
     };
     result = query.execute(requested, {u"English"});
     QVERIFY(result);
-    QCOMPARE(result.value()[0].firstEmptyRow, 0);
-    QCOMPARE(result.value()[1].firstEmptyRow, -1);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), 0);
+    QCOMPARE(result.value()[1].firstEmptyRowResult.value(), -1);
     QCOMPARE(port.receivedBaseColumnNames, (std::vector<std::u16string>{u"English"}));
+
+    const std::vector<Domain::ClassId> mixedRequested{
+        classId("7"),
+        classId("8"),
+        classId("9")
+    };
+    const Domain::OperationError missingParent{
+        .code = Domain::ErrorCode::NotFound,
+        .message = "The requested class does not exist.",
+        .recoverable = true
+    };
+    port.records = {
+        {
+            .classId = classId("7"),
+            .firstEmptyRowResult = Domain::Result<int>::success(24)
+        },
+        {
+            .classId = classId("8"),
+            .firstEmptyRowResult =
+                Domain::Result<int>::failure(missingParent)
+        },
+        {
+            .classId = classId("9"),
+            .firstEmptyRowResult = Domain::Result<int>::success(-1)
+        }
+    };
+    result = query.execute(mixedRequested, {});
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(3));
+    QCOMPARE(result.value()[0].classId, mixedRequested[0]);
+    QVERIFY(result.value()[0].firstEmptyRowResult);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), 24);
+    QCOMPARE(result.value()[1].classId, mixedRequested[1]);
+    QVERIFY(!result.value()[1].firstEmptyRowResult);
+    QCOMPARE(
+        result.value()[1].firstEmptyRowResult.error(),
+        missingParent
+        );
+    QCOMPARE(result.value()[2].classId, mixedRequested[2]);
+    QVERIFY(result.value()[2].firstEmptyRowResult);
+    QCOMPARE(result.value()[2].firstEmptyRowResult.value(), -1);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationRosterAvailabilityBatchReadQueryTests)

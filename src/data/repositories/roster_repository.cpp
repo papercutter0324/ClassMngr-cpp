@@ -2378,6 +2378,154 @@ Status RosterRepository::forEachRosterDataCellForClasses(
     return {};
 }
 
+Status RosterRepository::forEachRosterDataCellForExistingClasses(
+    const QList<int>& classIds,
+    const int rowLimit,
+    const std::function<void(int, int, int, const QString&)>& consumer
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return {};
+    }
+    if (rowLimit <= 0 || !consumer)
+    {
+        return std::unexpected(
+            QObject::tr("Loading parent-rooted roster availability failed: invalid request.")
+            );
+    }
+
+    QStringList requestedClasses;
+    requestedClasses.reserve(classIds.size());
+    QSet<int> seenClassIds;
+    seenClassIds.reserve(classIds.size());
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(
+                QObject::tr("Loading parent-rooted roster availability failed: class ids must be positive and unique.")
+                );
+        }
+
+        seenClassIds.insert(classId);
+        requestedClasses.append(
+            QStringLiteral("(%1, %2)")
+                .arg(classId)
+                .arg(index)
+            );
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (
+            VALUES %1
+        )
+        SELECT
+            classes.id AS class_id,
+            roster_data.row_index AS row_index,
+            typeof(roster_data.row_index) AS row_index_storage_type,
+            roster_data.col_index AS col_index,
+            typeof(roster_data.col_index) AS col_index_storage_type,
+            roster_data.value AS value
+        FROM requested
+        JOIN classes
+            ON classes.id=requested.class_id
+        JOIN roster_data
+            ON roster_data.class_id=classes.id
+        WHERE roster_data.row_index >= 0
+            AND roster_data.row_index < ?
+        ORDER BY
+            requested.request_order,
+            roster_data.row_index,
+            roster_data.col_index
+    )").arg(requestedClasses.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    if (!query.prepare(queryText))
+    {
+        return std::unexpected(
+            QObject::tr("Preparing parent-rooted roster availability read failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+    query.addBindValue(rowLimit);
+
+    const auto loadedCells = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading parent-rooted roster availability cells"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedCells)
+    {
+        return std::unexpected(loadedCells.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        if (
+            query.value("row_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading parent-rooted roster availability failed: invalid row index."
+                    )
+                );
+        }
+
+        if (
+            query.value("col_index_storage_type").toString()
+                != QStringLiteral("integer")
+            )
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading parent-rooted roster availability failed: invalid column index."
+                    )
+                );
+        }
+
+        bool columnIndexValid = false;
+        const qlonglong columnIndex =
+            query.value("col_index").toLongLong(&columnIndexValid);
+        if (!columnIndexValid)
+        {
+            return std::unexpected(
+                QObject::tr(
+                    "Loading parent-rooted roster availability failed: invalid column index."
+                    )
+                );
+        }
+        if (
+            columnIndex < std::numeric_limits<int>::min()
+            || columnIndex > std::numeric_limits<int>::max()
+            )
+        {
+            continue;
+        }
+
+        consumer(
+            query.value("class_id").toInt(),
+            query.value("row_index").toInt(),
+            static_cast<int>(columnIndex),
+            query.value("value").toString()
+            );
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading parent-rooted roster availability cells failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+
+    return {};
+}
+
 Result<RosterRepository::MyClassesStudentCountReadEntry>
 RosterRepository::loadMyClassesStudentCountRecord(
     const int classId

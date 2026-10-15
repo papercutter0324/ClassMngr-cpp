@@ -76,9 +76,12 @@ public:
                     "A roster availability batch returned records in a different identifier order."
                     );
             }
-            if (snapshots[index].firstEmptyRow < -1
-                || snapshots[index].firstEmptyRow
-                    >= static_cast<int>(RosterModeledRowCount))
+            const Domain::Result<int>& firstEmptyRowResult =
+                snapshots[index].firstEmptyRowResult;
+            if (firstEmptyRowResult
+                && (firstEmptyRowResult.value() < -1
+                    || firstEmptyRowResult.value()
+                        >= static_cast<int>(RosterModeledRowCount)))
             {
                 return validationFailure(
                     "A roster availability batch returned an invalid first empty row."

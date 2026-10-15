@@ -423,11 +423,29 @@ void RosterEditorWidget::showRosterContextMenu(
                 && availability.value().size()
                     == static_cast<std::size_t>(targets.size()))
             {
+                QList<TransferClassTarget> targetsWithAvailability;
+                targetsWithAvailability.reserve(targets.size());
                 for (std::size_t index = 0; index < targets.size(); ++index)
                 {
-                    targets[static_cast<qsizetype>(index)].full =
-                        availability.value()[index].firstEmptyRow < 0;
+                    const auto& firstEmptyRowResult = availability.value()[index]
+                        .firstEmptyRowResult;
+                    if (!firstEmptyRowResult
+                        && firstEmptyRowResult.error().code
+                            == ClassMngr::Next::Domain::ErrorCode::NotFound
+                        && firstEmptyRowResult.error().recoverable)
+                    {
+                        continue;
+                    }
+
+                    TransferClassTarget target =
+                        targets.at(static_cast<qsizetype>(index));
+                    if (firstEmptyRowResult)
+                    {
+                        target.full = firstEmptyRowResult.value() < 0;
+                    }
+                    targetsWithAvailability.append(std::move(target));
                 }
+                targets = std::move(targetsWithAvailability);
             }
         }
 

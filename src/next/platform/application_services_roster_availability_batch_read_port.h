@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/application_services.h"
+#include "data/database/database_transaction.h"
 #include "data/database/database_session.h"
 #include "data/repositories/roster_repository.h"
 #include "next/application/roster_availability_accumulator.h"
@@ -8,6 +9,7 @@
 
 #include <QByteArray>
 #include <QHash>
+#include <QSqlError>
 #include <QString>
 
 #include <charconv>
@@ -100,8 +102,24 @@ public:
 
         try
         {
-            const Result<QList<RosterRepository::ColumnNamesForClass>> loaded =
-                repository->loadRosterColumnNamesForClasses(legacyClassIds);
+            QSqlDatabase database = session->database();
+            DatabaseTransaction transaction(database);
+            if (!transaction.started())
+            {
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    toStdString(QStringLiteral(
+                        "Starting the roster availability read transaction failed: %1"
+                        ).arg(transaction.startError()))
+                    );
+            }
+
+            const Result<
+                QList<RosterRepository::ParentAwareColumnNamesForClass>
+                > loaded = repository
+                    ->loadRosterColumnNamesForClassesWithParentProvenance(
+                        legacyClassIds
+                        );
             if (!loaded)
             {
                 return failure(
@@ -123,7 +141,7 @@ public:
             accumulators.reserve(classIds.size());
             for (std::size_t index = 0; index < classIds.size(); ++index)
             {
-                const RosterRepository::ColumnNamesForClass& record =
+                const RosterRepository::ParentAwareColumnNamesForClass& record =
                     loaded->at(static_cast<qsizetype>(index));
                 if (record.classId != legacyClassIds.at(
                         static_cast<qsizetype>(index)
@@ -152,7 +170,7 @@ public:
 
             bool sawUnexpectedClassId = false;
             const Status streamed =
-                repository->forEachRosterDataCellForClasses(
+                repository->forEachRosterDataCellForExistingClasses(
                     legacyClassIds,
                     static_cast<int>(Application::RosterModeledRowCount),
                     [&accumulators,
@@ -197,10 +215,44 @@ public:
             snapshots.reserve(classIds.size());
             for (std::size_t index = 0; index < classIds.size(); ++index)
             {
-                snapshots.push_back({
-                    .classId = classIds[index],
-                    .firstEmptyRow = accumulators[index].firstEmptyRow()
-                });
+                const RosterRepository::ParentAwareColumnNamesForClass& record =
+                    loaded->at(static_cast<qsizetype>(index));
+                if (record.parentMissing)
+                {
+                    snapshots.push_back({
+                        .classId = classIds[index],
+                        .firstEmptyRowResult =
+                            Domain::Result<int>::failure({
+                                .code = Domain::ErrorCode::NotFound,
+                                .message = "The requested class does not exist.",
+                                .recoverable = true
+                            })
+                    });
+                }
+                else
+                {
+                    snapshots.push_back({
+                        .classId = classIds[index],
+                        .firstEmptyRowResult = Domain::Result<int>::success(
+                            accumulators[index].firstEmptyRow()
+                            )
+                    });
+                }
+            }
+
+            if (!transaction.commit())
+            {
+                QString error = database.lastError().text();
+                if (error.isEmpty())
+                {
+                    error = QStringLiteral("unknown database error");
+                }
+                return failure(
+                    Domain::ErrorCode::Technical,
+                    toStdString(QStringLiteral(
+                        "Committing the roster availability read transaction failed: %1"
+                        ).arg(error))
+                    );
             }
             return Application::RosterAvailabilityBatchReadResult::success(
                 std::move(snapshots)

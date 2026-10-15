@@ -259,6 +259,7 @@ private slots:
     void rejectsFractionalAvailabilityRowIndex();
     void rejectsRowIndexBeyondIntRangeWithoutDenseExpansion();
     void readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit();
+    void preservesMixedParentProvenanceOutcomesInRequestOrder();
     void rejectsMalformedAvailabilityColumnIndex();
     void missingParentReturnsRecoverableNotFound();
     void deletedParentWithOrphanRosterKeepsLegacyData();
@@ -1058,15 +1059,20 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
         );
     QCOMPARE(result.value().size(), std::size_t(5));
     QCOMPARE(result.value()[0].classId.value(), std::to_string(fullId));
-    QCOMPARE(result.value()[0].firstEmptyRow, -1);
+    QVERIFY(result.value()[0].firstEmptyRowResult);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), -1);
     QCOMPARE(result.value()[1].classId.value(), std::to_string(emptyId));
-    QCOMPARE(result.value()[1].firstEmptyRow, 0);
+    QVERIFY(result.value()[1].firstEmptyRowResult);
+    QCOMPARE(result.value()[1].firstEmptyRowResult.value(), 0);
     QCOMPARE(result.value()[2].classId.value(), std::to_string(aliasId));
-    QCOMPARE(result.value()[2].firstEmptyRow, 1);
+    QVERIFY(result.value()[2].firstEmptyRowResult);
+    QCOMPARE(result.value()[2].firstEmptyRowResult.value(), 1);
     QCOMPARE(result.value()[3].classId.value(), std::to_string(customId));
-    QCOMPARE(result.value()[3].firstEmptyRow, 1);
+    QVERIFY(result.value()[3].firstEmptyRowResult);
+    QCOMPARE(result.value()[3].firstEmptyRowResult.value(), 1);
     QCOMPARE(result.value()[4].classId.value(), std::to_string(overflowId));
-    QCOMPARE(result.value()[4].firstEmptyRow, 0);
+    QVERIFY(result.value()[4].firstEmptyRowResult);
+    QCOMPARE(result.value()[4].firstEmptyRowResult.value(), 0);
 
     std::vector<std::tuple<int, int, int>> streamedOrder;
     const Status streamed =
@@ -1103,6 +1109,122 @@ readsMultipleRosterCapacitiesWithModelProjectionAndRowLimit()
     const auto failed = port.readRosterAvailability(typedIds, baseColumnNames());
     QVERIFY(!failed);
     QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+}
+
+void NextPlatformApplicationServicesRosterReadPortTests::
+preservesMixedParentProvenanceOutcomesInRequestOrder()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto populated = services.classService()->create(
+        QStringLiteral("Populated Availability Class")
+        );
+    const auto empty = services.classService()->create(
+        QStringLiteral("Empty Availability Class")
+        );
+    const auto deletedWithOrphans = services.classService()->create(
+        QStringLiteral("Deleted Availability Class With Orphans")
+        );
+    const auto deletedWithoutChildren = services.classService()->create(
+        QStringLiteral("Deleted Availability Class Without Children")
+        );
+    const auto fullSibling = services.classService()->create(
+        QStringLiteral("Full Availability Sibling")
+        );
+    QVERIFY(populated);
+    QVERIFY(empty);
+    QVERIFY(deletedWithOrphans);
+    QVERIFY(deletedWithoutChildren);
+    QVERIFY(fullSibling);
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QVERIFY(seedSparseRoster(
+        database,
+        *populated,
+        {QStringLiteral("English")},
+        {{0, 0, QStringLiteral("Student")}}
+        ));
+    QVERIFY(seedSparseRoster(
+        database,
+        *deletedWithOrphans,
+        {QStringLiteral("English")},
+        {{0, 0, QStringLiteral("Orphaned student")}}
+        ));
+    std::vector<CellValue> fullCells;
+    fullCells.reserve(25);
+    for (int row = 0; row < 25; ++row)
+    {
+        fullCells.push_back({row, 0, QStringLiteral("Student")});
+    }
+    QVERIFY(seedSparseRoster(
+        database,
+        *fullSibling,
+        {QStringLiteral("English")},
+        fullCells
+        ));
+
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(
+        disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(disableForeignKeys.lastError().text())
+        );
+    QSqlQuery deleteParent(database);
+    QVERIFY2(deleteParent.prepare(QStringLiteral(
+        "DELETE FROM classes WHERE id=?"
+        )), qPrintable(deleteParent.lastError().text()));
+    for (const int classId : {*deletedWithOrphans, *deletedWithoutChildren})
+    {
+        deleteParent.bindValue(0, classId);
+        QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
+        QCOMPARE(deleteParent.numRowsAffected(), 1);
+    }
+
+    const QList<int> orderedIds{
+        *populated,
+        *empty,
+        *deletedWithOrphans,
+        *deletedWithoutChildren,
+        987654321,
+        *fullSibling
+    };
+    std::vector<Domain::ClassId> typedIds;
+    typedIds.reserve(static_cast<std::size_t>(orderedIds.size()));
+    for (const int classId : orderedIds)
+    {
+        typedIds.push_back(typedClassId(classId));
+    }
+
+    Platform::ApplicationServicesRosterAvailabilityBatchReadPort port(services);
+    const Application::RosterAvailabilityBatchReadQuery query(port);
+    const auto result = query.execute(typedIds, baseColumnNames());
+    QVERIFY2(
+        result,
+        result ? "" : qPrintable(QString::fromStdString(result.error().message))
+        );
+    QCOMPARE(result.value().size(), std::size_t(6));
+
+    for (std::size_t index = 0; index < typedIds.size(); ++index)
+    {
+        QCOMPARE(result.value()[index].classId, typedIds[index]);
+    }
+    QVERIFY(result.value()[0].firstEmptyRowResult);
+    QCOMPARE(result.value()[0].firstEmptyRowResult.value(), 1);
+    QVERIFY(result.value()[1].firstEmptyRowResult);
+    QCOMPARE(result.value()[1].firstEmptyRowResult.value(), 0);
+    for (const std::size_t missingIndex : {2U, 3U, 4U})
+    {
+        QVERIFY(!result.value()[missingIndex].firstEmptyRowResult);
+        QCOMPARE(
+            result.value()[missingIndex].firstEmptyRowResult.error().code,
+            Domain::ErrorCode::NotFound
+            );
+        QVERIFY(result.value()[missingIndex].firstEmptyRowResult.error().recoverable);
+    }
+    QVERIFY(result.value()[5].firstEmptyRowResult);
+    QCOMPARE(result.value()[5].firstEmptyRowResult.value(), -1);
 }
 
 void NextPlatformApplicationServicesRosterReadPortTests::

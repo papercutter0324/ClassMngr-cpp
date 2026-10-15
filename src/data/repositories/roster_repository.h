@@ -212,6 +212,13 @@ public:
         int rowLimit,
         const std::function<void(int, int, int, const QString&)>& consumer
         );
+    // Streams sparse cells only through an existing parent class. Orphaned
+    // roster rows are excluded even when their class id was requested.
+    [[nodiscard]] Status forEachRosterDataCellForExistingClasses(
+        const QList<int>& classIds,
+        int rowLimit,
+        const std::function<void(int, int, int, const QString&)>& consumer
+        );
 
     // Loads only the requested columns and rejects row, cell, or UTF-8 byte
     // limits before allocating the projected cell matrix.
