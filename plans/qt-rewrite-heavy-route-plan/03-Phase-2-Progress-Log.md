@@ -39120,3 +39120,42 @@ unchanged. F927, My Classes teacher display-name batch read: distinguish
 terminal failure from valid missing-teacher rows, is selected next in active
 Batch306 (F927-F929). Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### F927 baseline captured; acceptance defined - 2026-10-15
+
+The F927 source baseline is F926 source/test commit
+`274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`. The production CTE query requests
+IDs `[1, 999999, 2]`, INNER JOINs `teachers`, and orders by
+`requested.ordinal`. Its plan uses a `requested` co-routine over three constant
+rows, an INTEGER PRIMARY KEY search on the backing table, and a temporary
+B-tree for ordering. Malformed JSON made `exec()` fail before the first row
+for both `[1, 999999, 2]` and `[1, 2]`; therefore no partial-result
+terminal-fetch baseline is claimed, and the Tester did not call the repository
+or port on that malformed fixture. Source separately returns accumulated rows
+after the loop without checking `query.lastError()`. The existing valid
+missing-teacher/order regression passed and covers omission semantics.
+
+The temporary test source was restored byte-for-byte (SHA-256
+`9D0426FB6F4EA945FFECAC81C142DFF3DFFEFFAC820C73DDD13D98FC822D6DA4`). The
+restored forced sequential Debug target build in `build/windows-x64-debug`
+passed; the target reported 5/0, and exact CTest #338 passed 1/1. Final logs
+had no warnings; no full suite ran.
+
+Acceptance for F927:
+1. After the loop in
+   `TeacherRepository::loadMyClassesTeacherDisplayNameRecords()`, reject a
+   valid terminal `query.lastError()` using
+   `SqlQueryUtils::errorFor(query, QObject::tr("Loading teacher display names"))`
+   converted with `.userMessage()`.
+2. Preserve execution-failure behavior, the single statement and metrics,
+   requested-ID validation and order, field mapping, empty input, INNER JOIN
+   omission semantics for missing IDs, and nonrecoverable `Technical`
+   mapping/propagation. Keep the existing valid missing-ID/order regression.
+3. Because malformed JSON fails at `exec()` before a row, do not claim direct
+   terminal-fetch runtime coverage or add a production test-only seam. Base
+   acceptance on source review and focused existing application-query and
+   platform-port tests/builds.
+
+F927 implementation and post-change verification are pending in active
+Batch306 (F927-F929). All 13 official Deferred candidates remain unchanged.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

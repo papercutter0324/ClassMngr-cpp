@@ -5541,3 +5541,12 @@ failure so no partial choice list escapes. The Testing typed port intentionally
 marks Technical errors recoverable; preserve that port-specific contract in
 assertions instead of assuming one recoverability value for every Technical
 result.
+
+## Phase 2 My Classes display-name cursor limitation - 2026-10-15
+
+F927's exact `VALUES` CTE query orders joined rows by its requested ordinal.
+SQLite used a temporary B-tree for that order and evaluated malformed JSON
+during `exec()`, before a first row could be observed. Treat this as no
+partial-result runtime baseline; retain the valid missing-teacher success
+regression and source-review the terminal `lastError()` guard rather than
+changing repository abstractions solely to force this cursor state.
