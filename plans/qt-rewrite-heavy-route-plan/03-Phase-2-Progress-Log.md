@@ -37927,3 +37927,84 @@ existing platform target is CTest #319 and transfer-menu target #118.
 | Existing siblings and rows | Preserve valid sibling capacities, the existing column projection and case-insensitive aliases, and the modeled 25-row boundary. Return values in [0,24] or -1 when full. |
 | Errors and consumer behavior | Perform both repository reads in one read transaction. SQL, cursor, iteration, transaction, and exception failures remain outer Technical; validation and session/repository outer errors retain existing behavior. The transfer menu omits only a confirmed-missing target and keeps valid siblings; a whole-read failure keeps targets enabled as if empty. |
 | Compatibility and status | Preserve the legacy column reader, Sub Prep fallback, schema, output limits, and CMake. F910 baseline and acceptance are recorded; implementation and post-change verification remain pending. The baseline probe passed, but no CTest or full suite ran. |
+
+### F910 accepted; post-F910 Deferred audit clear; Batch 304 complete; Batch 305 discovered; F911 selected - 2026-10-15
+
+F910, Roster Availability batch parent provenance, is accepted at source/test
+commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d` (Phase2 - Preserve roster
+availability parent provenance). The typed batch combines F909's parent-aware
+column read with a parent-filtered sparse-cell stream in one read transaction.
+A clean missing-parent result yields per-entry recoverable `NotFound` and
+suppresses orphan columns and cells; a present empty roster remains success at
+row 0, valid sibling capacities are preserved, and the transfer menu omits
+only a confirmed-missing target. A whole-read failure still enables the target
+as empty. The legacy column reader and Sub Prep remain unchanged.
+
+Independent sequential forced Debug builds passed for `ClassMngr` and the
+application query, platform read, and transfer-menu targets. Exact CTests #224
+and #319 passed 1/1. Exact CTest #118 failed twice in
+`workflowProjectionMatchesRosterModel` at line 1188; that case calls only the
+stubbed row-transfer use case and does not exercise F910 or menu availability.
+There is no pre-F910 aggregate baseline, so this failure is unresolved and is
+not established as pre-existing. Four named menu cases passed individually
+(three QtTest passes each). No full suite ran. SQL/cursor injection was
+unavailable; source review checked error paths.
+
+Two independent read-only audits compared all 13 exact official Deferred
+candidates after F910; none became newly actionable and all remain unchanged.
+Batch 304 is complete. Batch 305 contains these nine ordered candidates:
+
+1. F911 Class Details Page - suppress orphan roster count after the typed
+   detail query confirms a missing parent.
+2. F912 Testing Classes - restore editor loading state on every early
+   detail-read exit.
+3. F913 My Classes Teacher Profile batch - distinguish a cleanly missing
+   teacher from repository failure per entry.
+4. F914 Sub Prep selected-class details - return an explicit missing-parent
+   outcome and classify fetch errors as `Technical`.
+5. F915 Schedule class-information reads - preserve terminal cursor failures
+   as `Technical` across builder and import-state readers.
+6. F916 Classes list - prevent partial success after a terminal cursor error.
+7. F917 Testing assignment display read - prevent partial success after a
+   terminal cursor error.
+8. F918 Class-teacher assignments read - prevent partial success after a
+   terminal cursor error.
+9. F919 Intensive slot-state read - prevent partial success after a terminal
+   cursor error.
+
+No other slices were found.
+
+F916-F919 are source-led cursor-error candidates; no forced cursor fixture was
+identified. F911 is active. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
+
+### F911 baseline captured; acceptance defined - 2026-10-15
+
+The focused target is
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`,
+registered as CTest #325; the named function
+`missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults` was invoked
+directly, not through CTest. In the isolated probe, the parent was deleted;
+then, with foreign-key enforcement off, English/Korean columns and two data
+cells were inserted. SQL confirmed `classes=0`,
+`roster_columns=2`, and `roster_data=2`. The public snapshot's outer result
+succeeded; `classFields` and `teacherDisplayName` were `NotFound`, while
+`studentCount` incorrectly succeeded with 1. A never-present ID control had
+count 0, confirming the orphan-inclusive count bug.
+
+The Debug target was rebuilt after an initial FileTracker access-denied
+attempt, using `/p:TrackFileAccess=false /p:ForceRebuild=true`, and rebuilt
+after source restoration. The temporary test was restored byte-for-byte
+(source SHA-256
+`D547791D7B43F53C8C0E50D83292D459E1138437443B6A00D723B50D5F4D47D1`). No
+CTest or full suite ran. The baseline's named-function execution is not a
+CTest #325 pass.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Confirmed missing parent | When `loadClassDetailsPageRecordDetailed` cleanly confirms `parentMissing`, typed `studentCount` is recoverable `NotFound` and does not call the orphan-inclusive legacy count path. Preserve `classFields` and teacher missing-parent outcomes. |
+| Present parent and other detail errors | Preserve present-parent counts. For other detail errors (`Technical`, unavailable, or validation), keep the independent roster-count read so F889's count independence on read error remains. |
+| Compatibility and scope | Keep legacy `loadClassDetailsPageRecord()` defaults and `getRosterStudentCount()` behavior, schema, UI/page fallback, saves, Sub Prep, and unrelated paths unchanged. The page's existing failed-count fallback remains 0; no UI redesign. |
+| Verification and status | Cover a deleted parent with orphan columns/cells, exact typed outcomes, a valid parent count, and the SQL read-failure case that still reads count. F911 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

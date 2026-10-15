@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F909 Roster Column Names batch parent provenance is accepted at source/test commit `bf3dbcf7bad2789c35a9ada7970d1ee0aada7902`; F910 Roster Availability batch parent provenance has baseline and acceptance recorded, with implementation and post-change verification pending; three independent post-F909 audits found none of the 13 official Deferred candidates newly actionable and the list remains unchanged; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F910 Roster Availability batch parent provenance is accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`, two independent post-F910 audits found none of the 13 official Deferred candidates newly actionable, and F911 Class Details Page is active; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,15 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F910 - Roster Availability batch parent provenance: keep ordered identity-bearing availability outcomes; only cleanly confirmed missing parents yield per-entry recoverable `NotFound`, suppress orphan data, and preserve valid sibling capacities. Implement and verify the recorded acceptance.
+- F911 - Class Details Page: return `NotFound` for roster count when the typed detail query confirms a missing parent; preserve present-parent counts and independent count reads on other detail errors.
+- F912 - Testing Classes: restore editor loading state on every early detail-read exit.
+- F913 - My Classes Teacher Profile batch: distinguish a cleanly missing teacher from repository failure per entry.
+- F914 - Sub Prep selected-class details: return an explicit missing-parent outcome and classify fetch errors as `Technical`.
+- F915 - Schedule class-information reads: preserve terminal cursor failures as `Technical` in builder and import-state readers.
+- F916 - Classes list: prevent partial success after a terminal cursor error.
+- F917 - Testing assignment display read: prevent partial success after a terminal cursor error.
+- F918 - Class-teacher assignments read: prevent partial success after a terminal cursor error.
+- F919 - Intensive slot-state read: prevent partial success after a terminal cursor error.
 
 #### Deferred candidates
 
