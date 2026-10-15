@@ -5597,3 +5597,20 @@ whole class-info read fails rather than returning its valid prefix. Preserve
 both the successful clean-default coverage and the explicit baseline failure
 in Schedule Import CTest #33: it reproduced against F934 and uses a separate
 typed state reader outside F935.
+
+## Phase 2 Class Transfer navigation schedule baseline - 2026-10-15
+
+After F935, the remaining legacy Class Transfer gap is the regular and
+intensive schedule loop in `ClassInfoRepository::loadClassesNavigationRecords()`;
+scalar export now uses F935's guarded shared reader, and the batch/export path
+already checks its cursor. The legacy navigation reader serves both import
+preview and schedule preflight.
+
+For its exact requested-CTE/join/order schedule query, SQLite uses a temporary
+`ORDER BY` B-tree. The malformed-JSON row fails during `exec()` before the
+first row, so the valid-prefix view fixture cannot directly reach the terminal
+`next()` branch. Both public Class Transfer paths returned the execution error
+and left classes, teachers, and `total_changes()` unchanged in the pre-F936
+baseline. Prefer source review of the adjacent parent-aware guard over adding
+a query seam or custom driver solely to force this state. Keep CTest #26's
+unrelated baseline label failure visible when reporting focused results.

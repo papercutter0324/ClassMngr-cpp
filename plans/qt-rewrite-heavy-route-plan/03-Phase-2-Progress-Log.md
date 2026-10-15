@@ -39757,3 +39757,68 @@ Sidebar Teacher IDs remain `int` based. All 13 entries remain in Deferred.
 F936, legacy Class Transfer regular/intensive schedule terminal checks, is now
 next in Batch307. Batch308 remains queued with F937/F938 as recorded above.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F936 preimplementation baseline and acceptance - 2026-10-15
+
+F936 targets the regular and intensive schedule loops in the `loadTimes`
+lambda of legacy `ClassInfoRepository::loadClassesNavigationRecords()` at
+`src/data/repositories/class_info_repository.cpp:4139` (lambda around lines
+4265–4311). Live readers include Class Transfer preview at
+`src/data/repositories/class_transfer_repository.cpp:640` and schedule
+preflight at `:893`. Batched and export scalar readers already check terminal
+errors; the scalar path was addressed by F935 and is outside F936. An adjacent
+parent-aware navigation reader checks `lastError()` after its schedule loops
+near line 4525.
+
+At baseline commit `6a4ee8e3e0daaab14ac90145b483967b86a325da`, a temporary
+QtTest observation slot used valid id 1 followed by malformed JSON id 2 for
+the exact regular and intensive CTE/join/order queries. `EXPLAIN QUERY PLAN`
+showed a TEMP B-TREE FOR ORDER BY. Under Qt 6.12 QSQLITE, evaluation of the
+malformed value failed during `exec()`, before any row was returned. Both
+public `previewClassImport()` and `importClasses()` reported an execution
+failure; teachers/classes remained 1→1 and `total_changes()` 43→43. Thus this
+fixture cannot exercise a terminal-fetch error and no proportionate direct
+late-fetch seam was found. The temporary test file was restored byte-for-byte
+(SHA-256 `50A2D41B8FB26FA8DF45DFEC93F9B95F95E60F061E6B50D9627E10EFBD83511A`);
+the `ClassMngrClassTransferTests` Debug target built successfully with
+`/p:TrackFileAccess=false`.
+
+The accepted verification for the terminal guard is independent source review
+plus existing public-path SQL-failure regressions:
+`previewFailsWhenDestinationClassInfoBatchReadFails` for the regular query and
+`schedulePreflightReadFailureAbortsBeforeWrites` for the intensive query. Do
+not add a query abstraction or custom driver solely to force late fetch.
+
+Before implementation, CTest #26 failed at
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`
+(`tests/class_transfer_tests.cpp:4963`): actual `Keep local: New Teacher`
+versus expected `Keep local: Romanized One`. Running the restored executable
+directly reproduced the same result (60 passed, 1 failed). Record this as an
+existing baseline failure, keep it visible, and do not attribute it to F936.
+No full suite ran.
+
+**Acceptance criteria**
+
+1. After each complete regular and intensive loop in the shared `loadTimes`
+   lambda, inspect `lastError()` and return the existing context-formatted
+   repository SQL read failure when valid. Preserve successful clean EOF,
+   projections, ordering, row mapping, and other navigation behavior.
+2. Do not expose a successful navigation snapshot with partial schedules.
+   Keep changes scoped to the legacy navigation reader and corresponding
+   existing Class Transfer tests; do not alter export/batched readers or add a
+   custom driver, query abstraction, or production seam solely for coverage.
+3. Independently source-review the terminal guard. Use the existing public
+   regressions `previewFailsWhenDestinationClassInfoBatchReadFails` (regular)
+   and `schedulePreflightReadFailureAbortsBeforeWrites` (intensive); retain
+   their SQL-failure and zero-write assertions. No direct late-fetch test is
+   required because the exact baseline query fails during `exec()`.
+4. Sequentially build `ClassMngr --clean-first` and
+   `ClassMngrClassTransferTests` in standard `build/windows-x64-debug`, using
+   `/p:TrackFileAccess=false`. Run the two named focused QtTest slots and CTest
+   #26; report the reproduced baseline failure rather than treating it as a
+   pass. Run `git diff --check`; do not run the full suite.
+
+This preimplementation record is committed; F936 implementation may begin.
+Batch308 remains queued with F937/F938, all 13 Deferred entries remain
+unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains
+Open.
