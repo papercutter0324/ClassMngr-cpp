@@ -39822,3 +39822,35 @@ This preimplementation record is committed; F936 implementation may begin.
 Batch308 remains queued with F937/F938, all 13 Deferred entries remain
 unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains
 Open.
+
+### F936 accepted; Batch307 closed; Batch308 active - 2026-10-15
+
+F936 is accepted. Source commit `0c4c302afc7153c19aa9e2a8801de07eec33d3c3`
+adds a context-formatted `lastError()` check after the regular/intensive
+schedule loop in the `loadTimes` lambda of
+`ClassInfoRepository::loadClassesNavigationRecords()`; it changes only
+`class_info_repository.cpp`. Acceptance documentation was committed at
+`9d2c463b`.
+
+Independent verification sequentially built `ClassMngr --clean-first` and
+`ClassMngrClassTransferTests` in standard `build/windows-x64-debug`, using
+`/p:TrackFileAccess=false`; both builds passed. The focused slots
+`previewFailsWhenDestinationClassInfoBatchReadFails` and
+`schedulePreflightReadFailureAbortsBeforeWrites` each passed (3/3). An
+independent source review confirmed the terminal guard. No test files changed
+and no full suite ran. There is no direct late-fetch test: the exact CTE/join/
+order query fails on malformed JSON during `exec()`, as recorded in the
+preimplementation baseline.
+
+CTest #26 failed at the same preimplementation baseline test,
+`importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`
+(`tests/class_transfer_tests.cpp:4963`): actual `Keep local: New Teacher`,
+expected `Keep local: Romanized One`. Direct execution reported 60 passed and
+1 failed; this is the same failure, with no new or different failing case.
+It remains visible and is not reported as a pass. `git diff --check` passed.
+
+Two independent post-F936 audits found all 13 official Deferred entries
+unchanged; none is newly actionable, resolved, superseded, or changed. Batch307
+is closed and Batch308 is active with F937 Calendar next-event date first-row
+failure followed by F938 shared application-setting first-row failure. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.

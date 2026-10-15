@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F936's legacy Class Transfer import-navigation schedule terminal checks are active; its preimplementation baseline and acceptance are committed, and implementation is next, with Gates 1/2 Partial and the formal Phase 2 exit gate Open.
+- Current note: F936 is accepted and F937 Calendar next-event date first-row failure is next in Batch308; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch (Batch 307)
+#### Active batch (Batch 308)
 
-- F936 - Legacy Class Transfer import-navigation regular/intensive schedule terminal checks: reject incomplete reads in `loadClassesNavigationRecords()`; preserve clean EOF and existing mapping.
+- F937 - Calendar next-event date first-row failure: reject a failed first-row fetch in `findNextCalendarEventStartDate()`; preserve clean no-event success.
+- F938 - Shared application-setting first-row failure: reject a failed first-row fetch in `loadSetting()`; preserve the unset default.
 
 #### Deferred candidates
 

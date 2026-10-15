@@ -5614,3 +5614,11 @@ and left classes, teachers, and `total_changes()` unchanged in the pre-F936
 baseline. Prefer source review of the adjacent parent-aware guard over adding
 a query seam or custom driver solely to force this state. Keep CTest #26's
 unrelated baseline label failure visible when reporting focused results.
+
+F936 adds the terminal-error check after the shared legacy navigation schedule
+loop, so one guard protects regular and intensive reads. Independent source
+review and sequential Debug builds passed; the existing public preview and
+preflight SQL-failure slots also passed. CTest #26 retained the same
+preimplementation teacher-label failure (60 passed, 1 failed). No test file
+changed and no full suite ran. Two independent reviews found no Deferred item
+actionable after F936.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F935 accepted; F936 next)
+### Current state - 2026-10-15 (F936 accepted; F937 next)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -126,10 +126,23 @@ implementer reproduced the same failure after rebuilding against the accepted
 F934 baseline, and the failing test/call path is outside F935. Keep this
 baseline failure visible; do not attribute it to F935. No full suite ran. Two
 independent post-F935 audits found all 13 official Deferred candidates
-unchanged and none actionable, resolved, or superseded. F936, Legacy Class
-Transfer regular/intensive schedule terminal checks, is next. Batch308 remains
-queued with F937 Calendar next-event date failure and F938 setting fetch
-failure. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
+unchanged and none actionable, resolved, or superseded. F936, legacy Class
+Transfer import-navigation schedule terminal checks, is accepted at source
+commit `0c4c302afc7153c19aa9e2a8801de07eec33d3c3`. The shared legacy navigation
+reader now checks terminal SQL errors after its schedule loop for both regular
+and intensive reads. Forced sequential Debug builds passed for `ClassMngr`
+and `ClassMngrClassTransferTests`; the existing public preview and schedule
+preflight failure slots passed. CTest #26 failed with the same preimplementation
+baseline mismatch in `importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`
+(60 passed, 1 failed), with no new failure attributed to F936. The exact
+ordered CTE query uses a temporary sort, so malformed JSON fails during
+`exec()` before the new terminal guard can be exercised; acceptance relies on
+source review and existing SQL-failure regressions. No full suite ran. Two
+independent post-F936 audits found all 13 official Deferred candidates
+unchanged and none actionable, resolved, or superseded. Batch307 is closed;
+Batch308 is active with F937 Calendar next-event date failure and F938 setting
+fetch failure. Gates 1/2 remain Partial and the formal Phase 2 exit gate is
+Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
