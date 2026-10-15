@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F958 and Batch328 are complete; Batch329 is closed with F959 as the sole active teacher-import Application-contract slice. Two fresh audits found all 13 official Deferred entries unchanged, with none actionable, resolved, or superseded; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F959 and Batch330 are complete; F960 is the active existing-teacher wide-ID Sidebar slice, with blank-draft Add excluded under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

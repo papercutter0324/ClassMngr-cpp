@@ -41211,3 +41211,72 @@ F959 acceptance for implementation:
    run is required for this slice.
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F959 complete; Batch329 closed; Batch330 closed; F960 active - 2026-10-16
+
+F959 was accepted in docs commit
+`856ea07722d443bd655009dac07f4a721bea4786` and implemented in
+`22571c4e170f56627ac04904a2308944a4774fa5`. It checks missing and duplicate
+Hangul-only identities derived from `source.teacherKr` after existing
+request/review/date and supplied-key checks and before persistence. Independent
+focused verification rebuilt `ClassMngr` and
+`ClassMngrNextApplicationTeacherImportUseCaseTests` in standard Windows x64
+Debug with `/p:TrackFileAccess=false`; exact CTest #269 passed 1/1 and
+`git diff --check` passed. No full suite ran. Two fresh post-slice audits found
+none of the 13 official Deferred candidates actionable, resolved, or
+superseded; their blockers otherwise remain unchanged.
+
+Batch330's general Qt-free Application-contract scan found no candidate; its
+malformed-surrogate schedule helper and document-path adapter split were
+evidence-short near-misses. The typed read/provenance scan found no candidate.
+The write-path scan surfaced Sidebar Teacher Create/Delete ID width. Two direct
+reviews agreed current blank Sidebar Add cannot reach persistence:
+`SidebarController::addTeacher()` passes an empty draft and required-name
+validation rejects it before the port (F285 remains unresolved). They differed
+only on whether the separate existing-wide-ID delete/list/navigation/edit path
+was actionable. F960 accepts that existing-teacher path and excludes Add.
+
+F960 acceptance for implementation:
+
+1. Support an already-existing, imported, or seeded teacher with a positive
+   canonical signed-qint64/SQLite INTEGER ID above `INT_MAX`; use `2147483648`
+   for the direct regression. Accept only canonical decimal IDs from
+   `1` through `9223372036854775807`; reject malformed, noncanonical,
+   nonpositive, and out-of-range values. Add no smaller arbitrary cap.
+2. Carry the exact ID without narrowing through Sidebar refresh/display,
+   assignment grouping, item storage and selection, `NavigationData`, profile
+   navigation/read, Teacher Info identity retention and edit persistence, the
+   teacher-delete chooser, and selected/prompted deletion through typed
+   Application read/delete contracts and platform/repository operations.
+   Preserve identity across selection, page save/reload, and delete.
+3. Preserve behavior for int-range teachers and unrelated class IDs. Do not
+   widen generic legacy Teacher/TeacherService/DataService APIs wholesale;
+   prefer additive typed identity on this active route and an additive
+   repository operation where needed. Preserve typed error classification and
+   legacy diagnostics.
+4. End-to-end coverage seeds teacher `2147483648`, verifies Sidebar refresh and
+   selection navigation preserve it, saves and reloads a profile field through
+   that ID, then deletes and verifies only that teacher row and its expected
+   class assignments are affected. Cover selected and chooser deletion if
+   practical. Add Application/query/port canonical-qint64 boundary validation
+   coverage as appropriate.
+5. Build `ClassMngr` and only the focused targets required by implemented
+   paths: `ClassMngrNextApplicationTeacherProfileReadQueryTests`,
+   `ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests`,
+   `ClassMngrNextApplicationTeacherDeleteUseCaseTests`,
+   `ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests`,
+   `ClassMngrSidebarTeacherDeleteParityTests`,
+   `ClassMngrMainWindowTeacherSidebarNavigationParityTests`, and
+   `ClassMngrTeacherInfoPagePersistenceParityTests`. Use standard Windows x64
+   Debug with `/p:TrackFileAccess=false`, then run only exact matching CTests;
+   no full suite. The independent Tester owns this verification after
+   implementation.
+6. Sidebar Add Teacher remains excluded: it starts with an empty draft rejected
+   before persistence under unresolved F285. Do not change its contract or add
+   a fake success seam; keep only the narrower Add/post-create identity
+   transition deferred under F285.
+
+Batch330 is closed. The remaining Deferred candidates are unresolved; the
+Sidebar entry is narrowed to the F285-gated Add/post-create identity transition
+and does not claim the combined Create/Delete candidate is resolved. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

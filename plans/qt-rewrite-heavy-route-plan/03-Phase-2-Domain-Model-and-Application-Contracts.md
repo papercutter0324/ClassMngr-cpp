@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F958 and Batch328 are complete; Batch329 is closed with F959 as the sole active teacher-import Application-contract slice. Two fresh audits found all 13 official Deferred entries unchanged, with none actionable, resolved, or superseded; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F959 and Batch330 are complete; F960 is the active existing-teacher wide-ID Sidebar slice, with blank-draft Add excluded under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -108,12 +108,13 @@ Treat this plan as an operational summary, not a history:
   not introduce arbitrary 4,096- or 25-row limits.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
-- Sidebar Teacher Create/Delete teacher-ID width - deferred because the
-  legacy Teacher/sidebar selection APIs remain int-based.
+- Sidebar Add/post-create wide-ID transition - deferred under F285: blank-draft
+  Add is rejected before persistence, so revisit create-path identity propagation
+  only after the draft-creation contract is clarified.
 
 #### Active batch
 
-- F959 - Teacher-import identity validation: check missing and duplicate Hangul-only identities derived from `source.teacherKr` after existing precedence checks and before persistence.
+- F960 - Existing-teacher wide-ID Sidebar route: carry positive canonical qint64 teacher IDs through refresh, navigation, profile save/reload, and deletion; keep blank-draft Add excluded under F285.
 
 ## Objective
 
