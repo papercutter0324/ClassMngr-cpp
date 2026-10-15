@@ -38405,3 +38405,50 @@ The pre-change source baseline is F917 HEAD `e3655c1cf87c12b86ac729a54f5a6bd84a9
 | Post-change verification | Force sequential Debug builds, in order, for `ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and `ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests` with `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; run exact Debug CTests #21 and #397 only. No full suite. Baseline and acceptance are recorded; implementation and post-change verification are pending. |
 
 Batch 305 remains active with F918 and F919 in order. All 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### Batch 306 discovered; queued after F919 - 2026-10-15
+
+Three independent read-only scans used source HEAD
+`e3655c1cf87c12b86ac729a54f5a6bd84a993565`. The two broad scans overlapped on
+the Sub Prep roster-output and print-source readers, schedule testing-class
+choices, and both staff directories. The plan-gap scan also found the My
+Classes teacher display-name batch, class-schedule conflict, and Calendar
+collection paths. The read-path scan also found the Schedule-import teacher
+snapshot, teacher-choice projections, Calendar repeat-series, TestingBlock
+base read, and `TeacherRepository::getAllTeachers()`. Separately, the focused
+live-consumer scan confirmed Class Transfer evaluation export, both Sub Prep
+reads, the Schedule-import snapshot, schedule testing-class choices, Initial
+Setup and Testing teacher-choice reads, and both staff-directory readers.
+Other findings were
+`ClassInfoRepository::getClassTimeConflicts()` (an incomplete conflict set may
+be treated as no conflict by typed save; this impact is an inference), the
+Calendar repeat-series edit read, and the My Classes teacher display-name
+batch read. The latter intentionally permits valid missing-teacher rows, so
+any future failure handling must distinguish that partial behavior from a
+terminal fetch failure. `loadClassInfosForScheduleScope()` was excluded because
+no live callsite was found. Additional scan findings not selected in this
+ten-item order were the Calendar date/upcoming collection reads,
+`TeacherRepository::getAllTeachers()`, and `TestingBlockRepository::loadTestingAssignments()`.
+Scans were source-only and non-exhaustive; no Batch306 cursor fault was
+injected. None of the 13 official Deferred triggers was met.
+
+Batch306 is recorded after active Batch305's F918 and F919. The candidates,
+their source symbols, and existing focused test surfaces are:
+
+| ID | Source evidence | Existing test surface |
+| --- | --- | --- |
+| F920 | `ClassInfoRepository::getClassTimeConflicts()`; typed Class Details conflict/save path. | `tests/next_application_class_details_schedule_conflict_query_tests.cpp`; `tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp` |
+| F921 | `ClassTransferRepository::loadEvaluations()`; typed export-source read port. | `tests/next_application_class_transfer_export_query_tests.cpp`; `tests/next_platform_class_transfer_export_source_tests.cpp` |
+| F922 | `ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords()`. | `tests/next_application_sub_prep_roster_output_source_query_tests.cpp`; `tests/next_platform_application_services_sub_prep_roster_output_source_port_tests.cpp` |
+| F923 | `ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope()`. | `tests/next_application_sub_prep_print_source_query_tests.cpp`; `tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp` |
+| F924 | `TeacherRepository::loadScheduleImportTeacherRecords()`. | `tests/next_application_schedule_import_state_snapshot_tests.cpp`; `tests/next_platform_application_services_schedule_import_state_snapshot_port_tests.cpp` |
+| F925 | `TestingClassRepository::loadTestingClassChoices()`. | `tests/next_application_schedule_testing_class_choices_read_query_tests.cpp`; `tests/next_platform_application_services_schedule_testing_class_choices_read_port_tests.cpp` |
+| F926 | `TeacherRepository::loadInitialSetupTeacherChoiceRecords()`, `loadTestingTeacherChoiceRecords()`, and `loadClassCoTeacherTeacherChoiceRecords()`. | `tests/next_platform_application_services_initial_setup_teacher_choices_read_port_tests.cpp`; `tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp`; `tests/next_platform_application_services_class_co_teacher_teacher_choices_read_port_tests.cpp` |
+| F927 | `TeacherRepository::loadMyClassesTeacherDisplayNameRecords()`. | `tests/next_application_teacher_display_name_batch_read_query_tests.cpp`; `tests/next_platform_application_services_teacher_display_name_batch_read_port_tests.cpp` |
+| F928 | `CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`. | `tests/calendar_event_repository_tests.cpp`; `tests/next_platform_application_services_calendar_event_port_tests.cpp` |
+| F929 | `GsTeamRepository::getAll()` and `NativeEnglishTeacherRepository::getAll()`. | `tests/next_platform_application_services_gs_team_directory_read_port_tests.cpp`; `tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp` |
+
+These are future candidates only: no implementation, acceptance, or candidate
+tests are claimed. Batch305 remains active with F918 and F919 visible; all 13
+Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.

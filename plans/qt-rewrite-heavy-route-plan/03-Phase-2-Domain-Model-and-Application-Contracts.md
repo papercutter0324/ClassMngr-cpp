@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F917 is accepted at source/test commit `e3655c1c`; F918 baseline and acceptance are recorded at that source HEAD, with implementation and post-change verification pending; F919 remains queued in Batch 305, and Gates 1/2 remain Partial with the formal exit gate Open.
+- Current note: F917 is accepted at source/test commit `e3655c1c`; F918 baseline and acceptance are recorded at that source HEAD, with implementation and post-change verification pending; F919 remains queued in Batch 305 and Batch 306 (F920-F929) is recorded after it, while Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -72,6 +72,19 @@ Treat this plan as an operational summary, not a history:
 
 - F918 - Class-teacher assignments read: prevent partial success after a terminal cursor error.
 - F919 - Intensive slot-state read: prevent partial success after a terminal cursor error.
+
+#### Next batch (queued after F919)
+
+- F920 - Class schedule conflict read: reject partial conflict sets after terminal cursor failure.
+- F921 - Class Transfer evaluation read: reject incomplete evaluation headers and matrix rows.
+- F922 - Sub Prep roster-output schedule read: reject partial schedule records.
+- F923 - Sub Prep print-source class-information read: reject partial source records.
+- F924 - Schedule-import teacher snapshot read: reject partial teacher records.
+- F925 - Schedule testing-class choices read: reject partial choice records.
+- F926 - Teacher choice projections: reject terminal fetch failure in Initial Setup, Testing, and Class Co-Teacher reads.
+- F927 - My Classes teacher display-name batch read: distinguish terminal failure from valid missing-teacher rows.
+- F928 - Calendar repeat-series edit read: reject an incomplete event suffix.
+- F929 - Staff directory full reads: reject partial GS Team and Native English snapshots.
 
 #### Deferred candidates
 
