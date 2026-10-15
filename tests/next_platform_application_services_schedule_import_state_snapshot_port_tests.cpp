@@ -139,6 +139,7 @@ class NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests
 private slots:
     void mapsActiveSessionRecordsInRepositoryOrder();
     void preservesWideTeacherIdsAndLowIdAssociations();
+    void rejectsPartialTeacherCursorRead();
     void reportsUnavailableAndClosedSessions();
     void reportsEachRepositoryReadFailureWithoutLegacyFallback();
 };
@@ -601,6 +602,159 @@ preservesWideTeacherIdsAndLowIdAssociations()
     QVERIFY(wideAssignment != snapshot->classes.end());
     QCOMPARE(lowAssignment->teacherId.value(), std::string("1"));
     QCOMPARE(wideAssignment->teacherId.value(), std::string("2147483648"));
+}
+
+void NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests::
+rejectsPartialTeacherCursorRead()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(
+        databasePath(directory, QStringLiteral("partial-teacher-read"))
+        ));
+    const QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery foreignKeysOff(database);
+    QVERIFY2(
+        foreignKeysOff.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(foreignKeysOff.lastError().text())
+        );
+    QVERIFY2(
+        dropTable(database, QStringLiteral("teachers")),
+        "Could not replace the teachers table with the indexed test view."
+        );
+
+    QSqlQuery payloadTable(database);
+    QVERIFY2(
+        payloadTable.exec(QStringLiteral(R"(
+            CREATE TABLE schedule_import_teacher_payloads (
+                id INTEGER PRIMARY KEY,
+                teacher_en TEXT NOT NULL,
+                teacher_kr TEXT NOT NULL,
+                payload TEXT NOT NULL
+            )
+        )")),
+        qPrintable(payloadTable.lastError().text())
+        );
+    QSqlQuery payloadIndex(database);
+    QVERIFY2(
+        payloadIndex.exec(QStringLiteral(R"(
+            CREATE INDEX schedule_import_teacher_payloads_teacher_en_idx
+            ON schedule_import_teacher_payloads (teacher_en)
+        )")),
+        qPrintable(payloadIndex.lastError().text())
+        );
+    QSqlQuery teacherView(database);
+    QVERIFY2(
+        teacherView.exec(QStringLiteral(R"(
+            CREATE VIEW teachers AS
+            SELECT id, teacher_en, teacher_kr,
+                   json_extract(payload, '$.room') AS room_number
+            FROM schedule_import_teacher_payloads
+        )")),
+        qPrintable(teacherView.lastError().text())
+        );
+
+    const auto insertPayload = [&](const qint64 id,
+                                   const QString& englishName,
+                                   const QString& koreanName,
+                                   const QString& payload)
+    {
+        QSqlQuery insert(database);
+        insert.prepare(QStringLiteral(R"(
+            INSERT INTO schedule_import_teacher_payloads
+                (id, teacher_en, teacher_kr, payload)
+            VALUES (?, ?, ?, ?)
+        )"));
+        insert.addBindValue(id);
+        insert.addBindValue(englishName);
+        insert.addBindValue(koreanName);
+        insert.addBindValue(payload);
+        return insert.exec();
+    };
+    QVERIFY(insertPayload(
+        1,
+        QStringLiteral("A Valid"),
+        QStringLiteral("Valid Korean"),
+        QStringLiteral(R"({"room":"Room 1"})")
+        ));
+    QVERIFY(insertPayload(
+        2,
+        QStringLiteral("B Broken"),
+        QStringLiteral("Broken Korean"),
+        QStringLiteral("{broken-json")
+        ));
+
+    QSqlQuery plan(database);
+    QVERIFY2(
+        plan.exec(QStringLiteral(R"(
+            EXPLAIN QUERY PLAN
+            SELECT id, teacher_kr, room_number
+            FROM teachers
+            ORDER BY teacher_en
+        )")),
+        qPrintable(plan.lastError().text())
+        );
+    bool usesTeacherEnglishIndex = false;
+    while (plan.next())
+    {
+        usesTeacherEnglishIndex = usesTeacherEnglishIndex
+            || plan.value(3).toString().contains(
+                QStringLiteral(
+                    "schedule_import_teacher_payloads_teacher_en_idx"
+                    ),
+                Qt::CaseInsensitive
+                );
+    }
+    QVERIFY(usesTeacherEnglishIndex);
+
+    QSqlQuery rawQuery(database);
+    QVERIFY2(
+        rawQuery.exec(QStringLiteral(
+            "SELECT id, teacher_kr, room_number FROM teachers "
+            "ORDER BY teacher_en"
+            )),
+        qPrintable(rawQuery.lastError().text())
+        );
+    QVERIFY(rawQuery.next());
+    QCOMPARE(rawQuery.value(QStringLiteral("id")).toLongLong(), qint64(1));
+    QCOMPARE(
+        rawQuery.value(QStringLiteral("teacher_kr")).toString(),
+        QStringLiteral("Valid Korean")
+        );
+    QCOMPARE(
+        rawQuery.value(QStringLiteral("room_number")).toString(),
+        QStringLiteral("Room 1")
+        );
+    QVERIFY(!rawQuery.next());
+    QVERIFY(rawQuery.lastError().isValid());
+    QVERIFY(rawQuery.lastError().text().contains(
+        QStringLiteral("malformed JSON"),
+        Qt::CaseInsensitive
+        ));
+
+    const auto teacherRecords = services.databaseSession()
+        ->teacherRepository()->loadScheduleImportTeacherRecords();
+    QVERIFY(!teacherRecords.has_value());
+
+    Platform::ApplicationServicesScheduleImportStateSnapshotPort port(services);
+    const Application::ScheduleImportStateSnapshotQuery query;
+    const auto result = Application::ScheduleImportStateSnapshotQueryHandler::
+        execute(query, port);
+    const auto* readFailure = failure(result);
+    QVERIFY(readFailure);
+    QCOMPARE(
+        readFailure->kind,
+        Application::ScheduleImportStateSnapshotFailureKind::
+            RepositoryReadFailed
+        );
+    QCOMPARE(
+        readFailure->source,
+        Application::ScheduleImportStateSnapshotFailureSource::Teachers
+        );
+    QVERIFY(!std::get_if<Application::ScheduleImportStateSnapshot>(&result));
 }
 
 void NextPlatformApplicationServicesScheduleImportStateSnapshotPortTests::

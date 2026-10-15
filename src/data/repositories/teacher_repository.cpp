@@ -1897,6 +1897,14 @@ TeacherRepository::loadScheduleImportTeacherRecords()
         });
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading schedule import teachers")
+            ).userMessage());
+    }
+
     return teachers;
 }
 
