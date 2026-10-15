@@ -125,6 +125,26 @@ bool invalidRemainingSourceRosterPreventsReadAndSave()
         && req.sourceRoster == sourceBefore;
 }
 
+bool overWideSelectedSourceRowPreventsReadAndSave()
+{
+    auto req = request();
+    req.sourceRoster.rows[0].push_back(u"Unmodeled selected data");
+    const auto requestBefore = req;
+    Ports ports;
+
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error && error->code == Domain::ErrorCode::Validation
+        && error->message == "Source roster failed validation before transfer."
+        && !error->recoverable
+        && ports.calls.empty() && !ports.saved
+        && req.sourceClassId == requestBefore.sourceClassId
+        && req.targetClassId == requestBefore.targetClassId
+        && req.sourceRoster == requestBefore.sourceRoster
+        && req.sourceRow == requestBefore.sourceRow
+        && req.baseColumnNames == requestBefore.baseColumnNames;
+}
+
 bool invalidIdsPreventReadAndSave()
 {
     for (const auto& pair : std::vector<std::pair<std::string,std::string>>{
@@ -293,6 +313,7 @@ int main()
         {"success projection and immutable inputs",successProjectsAndCompactsWithoutMutatingInputs},
         {"invalid and empty source",invalidSourcePreventsReadAndSave},
         {"invalid remaining source roster",invalidRemainingSourceRosterPreventsReadAndSave},
+        {"over-wide selected source row",overWideSelectedSourceRowPreventsReadAndSave},
         {"invalid IDs",invalidIdsPreventReadAndSave},
         {"maximum class ID forwarding",maximumClassIdForwardsThroughReadAndSave},
         {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},

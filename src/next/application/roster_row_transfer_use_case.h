@@ -81,6 +81,11 @@ public:
         if (const auto* error = std::get_if<RosterRowRemovalError>(&removed))
             return *error;
 
+        const auto selectedRowIndex = static_cast<std::size_t>(request.sourceRow);
+        if (request.sourceRoster.rows[selectedRowIndex].size()
+            > request.sourceRoster.columns.size())
+            return validationError("Source");
+
         auto&& equals = caseInsensitiveEquals;
         const RosterSaveCaseInsensitiveEquals validationEquals =
             [&equals](const std::u16string_view left,
