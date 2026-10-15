@@ -41459,3 +41459,58 @@ F963 acceptance for implementation:
 F963 is accepted as the sole active slice; implementation has not started.
 Blank-draft Sidebar Add remains excluded under F285. Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+### F963 complete; Batch334 closed; F964 accepted - 2026-10-16
+
+F963 was accepted at documentation checkpoint `d1473555` and implemented in
+source/test commit `d8edd7a4`. Its report-output path now preserves committed
+PDF/archive paths when later printing is canceled or fails and reports that
+partial outcome in the export dialog. Independent focused `ClassMngr`/target
+build verification passed; the 12 focused F963 cases passed 12/12. The wider
+aggregate CTest result was 70 passed, 9 failed, and 5 skipped; all nine failures
+were unrelated AI clipboard tests reporting `OpenClipboard Failed`. No full
+suite was run, and the aggregate result is not a full-suite pass.
+
+Two independent post-F963 audits found all 13 official Deferred entries
+unchanged. Batch334's first two scans found no eligible contract or persistence
+lead. A third scan selected the Class Notes write-safety candidate: F154 keeps
+default/empty display values on read failure without a DataService fallback
+(`plans/qt-rewrite-heavy-route-plan/phase2-legacy-application-mapping.md:4206-4216`);
+`ClassNotesPage::loadClass` leaves defaults and clears dirty state when the
+overall read or nested `classFields` result fails
+(`src/features/classes/ui/class_notes_page.cpp:66-156`), while a later save
+submits both editor strings
+(`src/features/classes/ui/class_notes_page.cpp:206-253`). The save validator
+accepts empty strings (`src/next/application/class_notes_save_port.h:33-58`) and the
+repository writes both values (`src/data/repositories/class_info_repository.cpp:838-858`).
+Existing read-failure coverage checks default display and independent teacher
+display failure, but not save availability (`tests/next_feature_class_notes_page_tests.cpp:486-560`).
+The bounded response is a page-level availability guard; this evidence does not
+claim a reproduced destructive save.
+
+F964 acceptance for implementation:
+
+1. Track whether current class fields are available. On every class load,
+   enable saves only after both the current typed snapshot and its `classFields`
+   result succeed. Clear availability in `clearDatabaseState`; a failed later
+   load, class switch, or reset must not retain availability from a prior
+   successful load.
+2. Keep teacher-display failure independent: if `classFields` succeeded, saves
+   remain available even when teacher display failed. Preserve F154's
+   default/empty display fallback and do not add a DataService fallback.
+3. Editors may remain editable and dirty while fields are unavailable, but
+   autosave must not schedule, manual Save must be unavailable, and direct save
+   calls must be rejected before reaching the save port. Successful loads keep
+   current manual-save and autosave semantics. Do not add retry or read-error
+   message UI in this slice.
+4. Cover top-level snapshot failure, nested `classFields` failure,
+   teacher-only failure with successful field save, success followed by failed
+   class reload/reset, dirty state with no save-port call while unavailable,
+   and normal save availability after a successful load.
+5. Build `ClassMngr` and the `NextFeatureClassNotesPage` focused target; run only
+   its registered focused CTest. Do not run the full suite.
+
+F964 is the sole active accepted slice. Mapping history remains open for
+post-implementation closeout. All 13 official Deferred entries remain
+unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
