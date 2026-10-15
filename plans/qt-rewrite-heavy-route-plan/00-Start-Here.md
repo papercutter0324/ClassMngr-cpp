@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F919 Intensive slot-state read is accepted at source/test commit `c735aca7693d56d418015bd86386b60fef8208b6`; two independent audits found none of the 13 official Deferred candidates newly actionable, resolved, or superseded. F920 Class schedule conflict read is the active next candidate in Batch306, with baseline beginning at `c735aca7693d56d418015bd86386b60fef8208b6`; its SELECT has no ORDER BY, so fixture ordering is unproven. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F919 is accepted at source/test commit `c735aca7`; two post-F919 Deferred audits found no actionable, resolved, or superseded candidates. F920 Class schedule conflict read has a verified baseline and defined acceptance at code HEAD `c735aca7` (current full HEAD `624de212` is docs-only); implementation and post-change verification remain pending. Its runtime fixture proved row-then-error for the current query, which has no SQL ordering guarantee. Batch306 (F920-F929) is active; Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

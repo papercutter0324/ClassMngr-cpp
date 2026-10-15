@@ -38573,3 +38573,59 @@ ordering is unproven. The target is
 `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
 (CTest #316). No F920 baseline outcome or acceptance is verified. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F920 baseline captured; acceptance defined - 2026-10-15
+
+The F920 code baseline was `c735aca7693d56d418015bd86386b60fef8208b6`.
+Current full HEAD `624de21269c6ef4fd4ef17b310620054f6eb5bcc` is a docs commit;
+production and assigned test sources are unchanged across it. Forced
+sequential Debug builds passed for `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`.
+Exact Debug CTest #316 passed 1/1.
+
+A temporary test slot executed the exact production SELECT, which has no
+`ORDER BY`. At runtime this fixture returned one overlapping Monday conflict
+row first; the next fetch returned false with a valid `QSqlError` containing
+`malformed JSON`. The unchanged
+`ClassInfoRepository::getClassTimeConflicts()` returned success with exactly
+that one `Cursor Source` conflict, demonstrating partial-result behavior for
+this fixture. The temporary probe CTest #316 passed. The test file was
+restored byte-for-byte (20,434 bytes; SHA-256
+`2686449E71C362EE91C5BFD72C17EED741BAF9682CA5EC0D814F8A031989E500`). The
+post-restore forced target rebuild first failed because generated MOC still
+referenced the temporary slot; after refreshing the restored source timestamp,
+the sequential target rebuild and CTest #316 passed 1/1. The final Git diff
+for the test file is clean. Git emitted an LF-to-CRLF advisory during
+restoration. No other warnings were reported; five known untracked artifacts
+remain untouched. No full suite ran. The row-then-error evidence is specific
+to the current Windows Debug/QSQLITE fixture and query plan: the SQL itself
+does not guarantee row ordering.
+
+Acceptance for F920:
+1. In `ClassInfoRepository::getClassTimeConflicts()`, after result iteration,
+   reject any valid terminal `query.lastError()` via `SqlQueryUtils::errorFor`
+   with action `Loading class time conflicts` and class-id identity. Return
+   failure rather than accumulated local conflicts. Preserve clean EOF and
+   clean empty success.
+2. Preserve query count, projection and types, conflict ordering and mapping,
+   raw day/time conversion, candidate self-overlap and boundary behavior,
+   fallback class names, and typed port classification (`Technical` for
+   repository failure; unavailable session remains `NotFound`). Limit
+   production scope to the repository method and direct typed-port integration
+   regression; do not edit application/use-case, UI, schema, or write paths.
+3. Add a permanent regression to
+   `tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`.
+   At runtime, prove the exact raw query yields one conflicting row then a
+   valid cursor error; call the actual repository and prove no partial conflict
+   list escapes; assert the typed port reports `Technical`. Since the query
+   has no `ORDER BY`, assert the fixture’s observed sequence and error at
+   runtime rather than assume row order.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`, then
+   `ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`;
+   run only Debug CTest #316. No full suite.
+
+Implementation and post-change verification are pending. Batch306
+(F920-F929) remains active; all 13 official Deferred candidates remain
+unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.

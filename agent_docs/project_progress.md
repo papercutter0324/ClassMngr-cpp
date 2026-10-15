@@ -116,10 +116,15 @@ separately fault-injected; no full suite ran.
 
 Two independent post-F919 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch 305 is
-complete. Batch 306 (F920-F929) is active, with F920 selected and its baseline
-underway at source HEAD `c735aca7`. Its conflict query has no `ORDER BY`, so
-row-before-error fixture ordering remains unproven. Gates 1/2 remain Partial
-and the formal Phase 2 exit gate is Open.
+complete. Batch 306 (F920-F929) is active, with F920 selected. Its baseline
+probe at code HEAD `c735aca7` reproduced partial success after the exact query
+returned one conflict row and then a valid malformed-JSON cursor error. The
+unchanged repository returned that one conflict as success. The focused
+target and CTest #316 passed before and after restoration. The no-`ORDER BY`
+row sequence was asserted for this Windows Debug/QSQLITE fixture, but is not
+guaranteed by SQL. F920 acceptance is defined; implementation and post-change
+verification remain pending. No full suite ran. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
