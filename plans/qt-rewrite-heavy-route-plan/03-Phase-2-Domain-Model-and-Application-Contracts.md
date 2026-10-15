@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F949 is complete; Batch319 discovery is active. All 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F949 is complete; F951 (Campus Dashboard JSON create-ID collision protection) is accepted for implementation. The post-F949 audit remains current until source changes; all 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,7 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch319 discovery is active.
+- F951 - Campus Dashboard JSON create-ID collision protection: add explicit Create/Update intent and reject colliding Create saves without replacing existing JSON.
 
 ## Objective
 

@@ -5613,3 +5613,13 @@ because F889's accepted contract preserves Technical for malformed
 class-detail data; F947/F948 remain route-specific. Batch319 discovery is
 underway across Qt-free domain invariants and non-class feature projections.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+## Phase 2 current position — 2026-10-16 (F949 complete; Batch320 discovery)
+
+Batch319 closed without a selected slice. The domain scan found no invariant
+gap across the inspected value objects; the projection scan found no uncovered
+ordering, bounds, or optional-value mismatch in its inspected features. No
+source changed, so the post-F949 audit remains the current review of all 13
+official Deferred entries. Batch320 discovery is active in additional non-class,
+non-calendar Next read/write adapters. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.

@@ -40689,3 +40689,58 @@ candidates unchanged and none actionable. Batch318 closes without a selected
 slice; Batch319 discovery is active in Qt-free domain/value-object invariants
 and non-Class feature result/projection contracts. Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
+
+### Batch319 shortfall; Batch320 discovery underway - 2026-10-16
+
+Independent domain-contract discovery found no gap in ScheduleTime, Course
+parsing and meeting-day rules, speaking-grade aggregation/name grouping, or
+GregorianDate contracts; focused tests already cover the relevant boundaries.
+Independent feature-projection discovery found no result, ordering, optionality,
+or bounds mismatch in GS Team, Native English, birthday ordering (the active
+consumer sorts), Document Catalog, or the teacher-import latest-source-date
+read. No candidate was selected.
+
+No files changed and no builds or tests ran during discovery. No source changed
+after F949 source commit `28cd2d38`, so the post-F949 audit recorded in
+`d9980e06` remains current: all 13 official Deferred entries are unchanged and
+none is actionable. Batch319 closes without a selected slice; Batch320
+discovery is active. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
+
+### F951 acceptance - 2026-10-16
+
+`CampusInfo` keeps persisted `id` separate from editable `campusName`; a new
+draft starts with an empty ID, and `readFieldsIntoCampus()` derives a slug only
+while that ID is empty. Existing edits retain their loaded ID after a name
+change. `CampusJsonRepository::idFromName()` lowercases names and maps runs of
+non-ASCII-alphanumeric characters to `_`; `filePathForCampusId()` uses that
+normalized ID. `saveCampus()` currently writes through `QSaveFile` without an
+existence check, so `North-West` and `North West` target the same
+`north_west.json`; a new draft can replace its contents and then clear dirty
+state. The typed save port carries only a snapshot, not Create/Update intent.
+F395 covers ordinary save failures and rename behavior, but not slug collisions.
+Independent Investigator and Explorer reviews agree; select conflict
+protection rather than automatic alternate IDs.
+
+F951 acceptance for implementation:
+
+1. Add adapter-neutral Create/Update intent to the existing typed campus-save
+   boundary. The page sends Create when the pre-save current record has a blank
+   ID and Update when it has a retained ID.
+2. A Create whose normalized JSON destination exists returns nonrecoverable
+   `Conflict` and preserves the existing file data; cover `North-West` seeded,
+   then new `North West` attempted.
+3. A Create at an unused normalized ID succeeds and stores the slug ID; later
+   saves use Update.
+4. Update may change an existing campus display name and fields while saving
+   under its retained ID, preserving F395 rename behavior.
+5. A collision leaves the current new draft selected and dirty; retain F395's
+   existing save-failure feedback and state behavior.
+6. Other repository I/O failures remain `Technical`; keep legacy
+   `CampusJsonRepository::saveCampus()` callers, name normalization, and codec
+   unchanged. Do not generate suffixes or change identity policy.
+
+F951 is the active Batch320 implementation slice. The 13 official Deferred
+entries remain unchanged, and the post-F949 audit remains current until source
+changes. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
