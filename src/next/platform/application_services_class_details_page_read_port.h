@@ -97,6 +97,7 @@ public:
             session->rosterRepository();
 
         std::optional<ClassDetailsPageReadRecord> loadedClassDetails;
+        bool confirmedParentMissing = false;
         if (!classInfoRepository)
         {
             snapshot.classFields = classFieldsFailure(
@@ -129,6 +130,7 @@ public:
                 }
                 else if (source->parentMissing)
                 {
+                    confirmedParentMissing = true;
                     snapshot.classFields = classFieldsFailure(
                         Domain::ErrorCode::NotFound,
                         "The selected class no longer exists."
@@ -233,7 +235,17 @@ public:
             }
         }
 
-        if (!rosterRepository)
+        if (confirmedParentMissing)
+        {
+            snapshot.studentCount = studentCountFailure(
+                Domain::OperationError{
+                    .code = Domain::ErrorCode::NotFound,
+                    .message = "The selected class no longer exists.",
+                    .recoverable = true
+                }
+                );
+        }
+        else if (!rosterRepository)
         {
             snapshot.studentCount = studentCountFailure(
                 Domain::ErrorCode::NotFound,

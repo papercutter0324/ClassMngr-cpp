@@ -419,6 +419,60 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
     QVERIFY2(deleteParent.exec(), qPrintable(deleteParent.lastError().text()));
     QCOMPARE(deleteParent.numRowsAffected(), 1);
 
+    QSqlQuery disableForeignKeys(services.databaseSession()->database());
+    QVERIFY2(
+        disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(disableForeignKeys.lastError().text())
+        );
+    QSqlQuery insertOrphanColumn(services.databaseSession()->database());
+    QVERIFY(insertOrphanColumn.prepare(QStringLiteral(
+        "INSERT INTO roster_columns (class_id, name, position, width) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    const QString orphanColumnNames[] = {
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    for (int index = 0; index < 2; ++index)
+    {
+        insertOrphanColumn.bindValue(0, *deletedClass);
+        insertOrphanColumn.bindValue(1, orphanColumnNames[index]);
+        insertOrphanColumn.bindValue(2, index);
+        insertOrphanColumn.bindValue(3, 120);
+        QVERIFY2(
+            insertOrphanColumn.exec(),
+            qPrintable(insertOrphanColumn.lastError().text())
+            );
+        insertOrphanColumn.finish();
+    }
+    QSqlQuery insertOrphanCell(services.databaseSession()->database());
+    QVERIFY(insertOrphanCell.prepare(QStringLiteral(
+        "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+        "VALUES (?, ?, ?, ?)"
+        )));
+    const QString orphanCellValues[] = {
+        QStringLiteral("Orphan Student"),
+        QStringLiteral("고아 학생")
+    };
+    for (int index = 0; index < 2; ++index)
+    {
+        insertOrphanCell.bindValue(0, *deletedClass);
+        insertOrphanCell.bindValue(1, 1);
+        insertOrphanCell.bindValue(2, index);
+        insertOrphanCell.bindValue(3, orphanCellValues[index]);
+        QVERIFY2(
+            insertOrphanCell.exec(),
+            qPrintable(insertOrphanCell.lastError().text())
+            );
+        insertOrphanCell.finish();
+    }
+
+    const auto legacyOrphanCount = services.databaseSession()
+                                       ->rosterRepository()
+                                       ->getRosterStudentCount(*deletedClass);
+    QVERIFY(legacyOrphanCount);
+    QCOMPARE(*legacyOrphanCount, 1);
+
     constexpr int unknownClassId = 2147483647;
     const int missingClassIds[] = {unknownClassId, *deletedClass};
     Platform::ApplicationServicesClassDetailsPageReadPort port(services);
@@ -437,8 +491,10 @@ missingParentIsNotFoundToTypedReadButLegacyReadKeepsDefaults()
         QVERIFY(!snapshot.teacherDisplayName);
         QCOMPARE(snapshot.teacherDisplayName.error().code,
                  Domain::ErrorCode::NotFound);
-        QVERIFY(snapshot.studentCount);
-        QCOMPARE(snapshot.studentCount.value(), 0);
+        QVERIFY(!snapshot.studentCount);
+        QCOMPARE(snapshot.studentCount.error().code,
+                 Domain::ErrorCode::NotFound);
+        QVERIFY(snapshot.studentCount.error().recoverable);
 
         const auto metricsAfter = services.databaseSession()
                                       ->classInfoRepository()
