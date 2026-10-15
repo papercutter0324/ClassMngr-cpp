@@ -5643,7 +5643,7 @@ underway across typed application ports, repository/feature projections, and
 domain values. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
 
-### F952 complete; F953 acceptance recording - 2026-10-16
+### F953 complete; F954 active - 2026-10-16
 
 F952 is complete at source/test commit `55d510fe`. Calendar repeat-series
 Create and Edit request validation now uses the existing UTF-8-aware blank
@@ -5660,11 +5660,26 @@ with those names passed 1/1 each. `git diff --check` passed. No full suite ran.
 Two independent post-F952 audits found all 13 official Deferred entries
 unchanged, including F709's unavailable Calendar projection seam.
 
-F953 is selected next in Batch321. Acceptance records symmetric row-ID and
-deleted-ID validation in the GS Team and Native English save policies while
-preserving absent-ID inserts, duplicate positive deletions, the legacy `-1`
-adapter sentinel, and repository/UI behavior. F953 implementation remains
-paused until its acceptance record is committed. Batch322 discovery selected
-F954 for the single Speaking Evaluation query's blank-name classification;
-batch-query fallback and exact-name semantics remain outside that candidate.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+F953 is complete at source/test commit `5ce0e0f9`, after acceptance docs
+commit `9d6cf5c8`. Both application policies now reject present nonpositive
+row IDs, duplicate positive row IDs, and nonpositive deleted IDs before the
+port call. Missing IDs remain valid inserts, duplicate positive deletions
+remain allowed, and the existing `saved=false`/validation result is retained.
+The legacy adapter sentinel and repository/UI behavior are unchanged.
+
+The independent Tester sequentially rebuilt
+`ClassMngrNextApplicationGsTeamDirectorySaveTests` and
+`ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests` in the
+standard Debug folder with `/p:TrackFileAccess=false`. Exact CTests #278 and
+#277 passed 1/1 each; `git diff --check` passed. The Executor observed an
+MSB8064 stale dependency warning for absent `teacher_import_plan_mapper.h`,
+but compilation and linking succeeded; the final independent rebuilds also
+passed. No full suite ran.
+
+Two independent post-F953 audits reviewed all 13 official Deferred entries;
+all remain unchanged and none became actionable, resolved, or superseded.
+Batch321 is closed. Batch322 selected F954, a separate candidate rather than
+one of the official Deferred entries. F954 is now active: reject blank-only
+names on the single Speaking Evaluation query while preserving recoverable
+InvalidInput semantics, exact padded-name lookup, and batch fallback. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.

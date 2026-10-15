@@ -5989,3 +5989,15 @@ existing UTF-8-aware blank helper in these two contracts while preserving
 their byte limits, diagnostics, validation order, padded-ID trimming, and
 malformed-UTF-8 behavior. Keep this rule local to repeat-series IDs; it does
 not establish a global text-whitespace policy.
+
+## F953 directory save identity validation - 2026-10-16
+
+The GS Team and Native English save requests define an absent optional row ID
+as insert, but a present nonpositive ID previously flowed through the legacy
+`-1` sentinel and became an insert. Repeated positive row IDs could update the
+same record in sequence, while nonpositive delete IDs were silently skipped.
+Validate these identities in both application policies before the port call:
+reject present IDs at or below zero, duplicate positive row IDs, and
+nonpositive delete IDs. Keep duplicate positive deletions allowed, preserve
+the legacy sentinel only for absent IDs, and leave repository and UI behavior
+unchanged.

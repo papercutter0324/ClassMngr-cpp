@@ -40889,9 +40889,62 @@ The write scan's Calendar Edit lead was independently verified and folded into
 F952 because Create/Edit are adjacent repeat-series ID request validators
 using the same helper and test targets. A separate Speaking Evaluation lead
 was independently investigated; F954 is the sole Batch322 candidate and is
-queued after F953. Its scope is to reject a whitespace-only name on a single
-`SpeakingEvaluationQuery` as nonrecoverable `InvalidInput` via
-`trimQtWhitespace`, while leaving batch query validation unchanged: batch
-queries return one outer `Result`, and prevalidation would break mixed-item
-fallback. The 13 official Deferred entries remain unchanged. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate remains Open.
+queued after F953. The single `SpeakingEvaluationQuery` currently rejects only
+exact-empty names and sends whitespace-only names to its port, where the
+repository reports recoverable `Technical`. Its application validation helper
+already marks required-name `InvalidInput` recoverable, so the queued scope is
+recoverable `InvalidInput` (correcting the earlier nonrecoverable wording).
+F954 acceptance is:
+
+1. In single `SpeakingEvaluationQuery` only, use
+   `trimQtWhitespace(name).empty()` to reject whitespace-only names with the
+   existing diagnostic and recoverable `InvalidInput` before calling the
+   port. Preserve existing empty-name and invalid-`ClassId` recoverability and
+   validation ordering.
+2. In the app-less query tests, cover exact-empty, ASCII whitespace, U+00A0,
+   and U+3000 names; each must return recoverable `InvalidInput` with zero port
+   calls. Update the existing platform read-port test for ASCII whitespace to
+   expect recoverable `InvalidInput`.
+3. Preserve exact forwarding and lookup for padded nonblank names; do not trim
+   the query. In particular, `" Winter "` remains an exact lookup miss.
+4. Leave batch-query validation and mixed-item roster-import fallback,
+   adapters, repository behavior, and query APIs unchanged. Batch query has a
+   separate validator and its outer `Result`/fallback behavior depends on
+   processing each item independently.
+5. Sequentially build `ClassMngrNextApplicationSpeakingEvaluationQueryTests`
+   and
+   `ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests`
+   in `build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
+   the registered CTests with those exact names. Inspect the source changes
+   and run `git diff --check`; do not run the full suite.
+
+The 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
+
+### F953 complete; Batch321 closed; F954 active - 2026-10-16
+
+F953 is complete at source/test commit `5ce0e0f9`, following acceptance-docs
+commit `9d6cf5c8`. Independent verification
+sequentially built `ClassMngrNextApplicationGsTeamDirectorySaveTests` and
+`ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests` in
+`build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; exact CTests
+#278 and #277 passed 1/1 each. `git diff --check` passed and no full suite ran.
+The Executor saw MSB8064 notices for stale references to the missing
+`teacher_import_plan_mapper.h`; compile/link succeeded and the final
+independent rerun passed.
+
+Two independent post-commit audits inspected all 13 official Deferred entries;
+all remain unchanged, with none actionable, resolved, or superseded. Batch321
+is closed. F954 is active in Batch322 as a separately selected query-contract
+slice, not a Deferred candidate: single `SpeakingEvaluationQuery` rejects
+`trimQtWhitespace(name).empty()` as existing-diagnostic, recoverable
+`InvalidInput` before the port call. Preserve existing empty-name and invalid-
+`ClassId` recoverability and validation order, and preserve exact forwarding of
+nonblank padded names (`" Winter "` remains an exact miss). Cover empty, ASCII
+whitespace, U+00A0, and U+3000 in the app-less tests with zero port calls;
+update the platform ASCII-whitespace expectation to recoverable
+`InvalidInput`. Leave batch validation/fallback, adapters, repository, and APIs
+unchanged. Build the two named Speaking Evaluation targets sequentially in the
+standard Debug folder with `/p:TrackFileAccess=false`, run only their exact
+CTest names, inspect the source, and run `git diff --check`; no full suite.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

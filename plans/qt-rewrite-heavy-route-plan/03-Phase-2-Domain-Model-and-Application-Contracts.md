@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F952 is complete and F953 is the active Batch321 implementation slice; F954 is the sole Batch322 candidate queued after F953; all 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: Batch321 is closed with F953 complete; F954 is the active Batch322 slice, all 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,11 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F953 - GS Team/Native English write identity validation: reject nonpositive present IDs and duplicate row IDs before port calls in both policies; retain absent-ID inserts.
-
-#### Next batch queued after F953
-
-- F954 - Speaking Evaluation single-query name validation: reject whitespace-only `SpeakingEvaluationQuery` names with nonrecoverable `InvalidInput`; leave batch query validation unchanged.
+- F954 - Speaking Evaluation single-query name validation: reject whitespace-only `SpeakingEvaluationQuery` names as recoverable `InvalidInput`; leave batch query validation unchanged.
 
 ## Objective
 
