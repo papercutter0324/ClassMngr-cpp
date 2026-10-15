@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F946 `CampusRecordRepository::getAllCampuses()` completed in source commit `9fc0f7c9`; Batch311 discovery continues, all 13 official Deferred candidates remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F947 is accepted for implementation next in Batch312; all 13 official Deferred candidates remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -67,6 +67,10 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and remove its candidate from this plan in the same edit. Replace the active batch in place; do not append snapshots or carry-forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
+
+#### Active batch (Batch 312)
+
+- F947 - Co-Teacher page persisted-ID error mapping: classify repository-side malformed stored `teacher_id` as `Validation` while preserving caller-ID behavior and other results.
 
 #### Deferred candidates
 

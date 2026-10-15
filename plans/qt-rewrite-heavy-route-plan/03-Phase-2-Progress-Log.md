@@ -40485,3 +40485,50 @@ were restored, test-area files match their HEAD clean-filter hashes, and no
 production file changed. Only a direct temporary QtTest probe was built and
 run; the full suite did not run. Source discovery continues. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F947 baseline and acceptance - 2026-10-16
+
+Source review establishes the current path without a separate temporary
+pre-fix probe. With a valid caller `ClassId`,
+`ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed()` fails to parse
+a nonnumeric persisted `class_info.teacher_id` and returns
+`Loading class information failed: invalid co-teacher id for <class identity>.`
+The typed read port preserves its early caller-ID `InvalidInput` guard, but
+maps repository error strings containing `invalid` to `InvalidInput`; the
+repository failure is carried in `classFields` of a successful page snapshot.
+Teacher-display lookup is an independent result. Existing app-less coverage
+checks nonpositive stored IDs as unassigned success and metadata SQL failure
+as `Technical`, but not malformed textual `teacher_id`; its helper can mutate
+`class_info` with foreign keys disabled. Nearby typed-port code classifies
+malformed persisted identity as `Validation`.
+
+The vague historical Batch293 “Co-Teacher error-identity issue” note does not
+identify this malformed stored-ID mapping. F755, F816, F894, and F926 cover
+different cases. This F947 acceptance does not revise any of the 13 official
+Deferred entries.
+
+Acceptance for implementation:
+
+1. Change only `ApplicationServicesClassCoTeacherPageReadPort` so
+   repository-originated `invalid` diagnostics from persisted co-teacher
+   details map to nonrecoverable `Domain::ErrorCode::Validation`; retain
+   caller-supplied invalid `ClassId` as early `InvalidInput`.
+2. Add a regression to
+   `next_platform_application_services_class_co_teacher_page_read_port_tests.cpp`
+   using a valid positive caller ID and nonnumeric persisted `teacher_id`.
+   Assert the public port returns a successful snapshot, `classFields` fails
+   with `Validation` and the exact repository diagnostic, and the separate
+   teacher-display component retains its existing unavailable/`NotFound`
+   result.
+3. Preserve nonpositive stored IDs as unassigned success, missing-parent
+   `NotFound`, SQL/cursor `Technical` failures, other field behavior, and the
+   UI contract. No visible user impact is claimed.
+4. Sequentially build `ClassMngr` and
+   `ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`
+   in `build/windows-x64-debug` with `/p:TrackFileAccess=false`; run only the
+   exact corresponding CTest, review the source, and run `git diff --check`.
+   Do not run the full suite.
+
+F947 is accepted; implementation is next in Batch312. No code implementation
+has begun. All 13 official Deferred entries remain unchanged. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
