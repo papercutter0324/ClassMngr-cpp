@@ -38172,3 +38172,43 @@ Schedule class-information reads, is selected next: preserve terminal cursor
 failures as `Technical` in builder and import-state readers. Baseline and
 acceptance are pending. Batch 305 remains active with F915-F919 in order.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F915 baseline captured; acceptance defined - 2026-10-15
+
+The source baseline is `5d79b793` (docs-only HEAD later advanced to
+`241cf11c`; source and tests were unchanged). In
+`ClassInfoRepository::loadScheduleClassInfos()` and
+`loadScheduleImportStateSnapshotClassInfos()`, each metadata, regular-time,
+and intensive-time `while (query.next())` loop lacks a terminal
+`lastError()` check. Builder repository failures already propagate as Domain
+`Technical`; a closed or unavailable session remains `NotFound`. Import-state
+class-schedule repository failures propagate as `RepositoryReadFailed` with
+source `ClassSchedules`; classes and teachers state reads are out of scope.
+Both metadata LEFT JOINs allow classes with no `class_info` and preserve valid
+defaults.
+
+Existing focused SQL tests cover prepare, execute, and dropped-table failures,
+but not terminal fetch failure. Explorer and Investigator found no lightweight
+deterministic cursor-error seam; Qt/SQLite interruption would require
+driver-specific infrastructure, so no cursor injector is planned.
+
+Forced sequential Debug builds passed for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`
+with `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`. Exact CTests #409
+and #410 passed 1/1 each with `-C Debug`. The first #409 invocation omitted
+the configuration and found no matching test; the corrected Debug invocation
+passed. The import-state target build emitted MSB8064 referring to missing
+`src/next/application/teacher_import_plan_mapper.h`; the forced rebuild
+succeeded, and no pre-change baseline establishes the warning's origin. No
+full suite ran.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Terminal cursor failures | Check `lastError()` immediately after each of all six loops. On terminal failure, return the existing repository failure type and context so no accumulated partial list escapes. |
+| Existing outcomes | Preserve clean empty results, query ordering, field mapping and order, schedule metrics, LEFT JOIN defaults, builder UI fallbacks, legacy APIs, and unrelated read routes. Keep prepare/execute and unavailable-session classifications unchanged. Classes and teachers import-state reads remain out of scope. |
+| Regression and verification | Retain existing prepare/execute/drop-table regressions. Do not add broad or driver-specific cursor injection infrastructure; Tester source-reviews every loop and failure branch. Rebuild the app and both focused targets with the same forced sequential Debug settings, then run exact CTests #409 and #410 with `-C Debug`. F915 baseline and acceptance are recorded; implementation and post-change verification are pending. No full suite ran. |
+
+Batch 305 remains active with F915-F919 in order; the 13 official Deferred
+entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

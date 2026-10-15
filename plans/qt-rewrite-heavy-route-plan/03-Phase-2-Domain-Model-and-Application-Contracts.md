@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F914 Sub Prep selected-class details is accepted at source/test commit `5d79b793f913db691f9a2800acc7db4a21a40d1e`; two independent post-F914 audits found none of the 13 official Deferred candidates newly actionable, and F915 Schedule class-information reads is selected with baseline and acceptance pending; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F914 Sub Prep selected-class details is accepted at source/test commit `5d79b793f913db691f9a2800acc7db4a21a40d1e`; two independent post-F914 audits found none of the 13 official Deferred candidates newly actionable, and F915 Schedule class-information reads has its baseline and acceptance recorded; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
