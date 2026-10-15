@@ -40632,3 +40632,27 @@ candidate accepted for implementation. This discovery shortfall is recorded
 here only. Batch317 scans of domain identity conversions and typed write
 contracts are underway. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F949 accepted; Batch317 implementation pending - 2026-10-16
+
+The Calendar platform adapter currently checks session availability before
+parsing a present update ID as a positive legacy integer: ID `"0"` returns
+`NotFound` with an unavailable session and `InvalidInput` with an open
+session. This is a consistency gap, not a documented precedence violation.
+`CalendarEventSaveRequest` intentionally keeps its ID as a bounded,
+adapter-neutral string, and a fake application port accepts opaque ID
+`"event-42"`; positive-integer parsing therefore belongs in the Calendar
+platform adapter.
+
+F949 acceptance for implementation:
+
+1. A present invalid or nonpositive legacy update ID returns `InvalidInput`
+   whether the session is open or unavailable.
+2. A valid positive update ID with an unavailable session remains `NotFound`.
+3. A valid create request with an unavailable session remains `NotFound`.
+4. Preserve date-validation order and existing save, repository transaction,
+   and error behavior.
+
+No implementation, tests, or builds have been run for F949. All 13 official
+Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
