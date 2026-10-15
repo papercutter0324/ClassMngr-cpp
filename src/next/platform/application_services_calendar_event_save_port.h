@@ -78,6 +78,19 @@ public:
                     );
             }
 
+            std::optional<qint64> legacyId;
+            if (request.id.has_value())
+            {
+                legacyId = legacyEventId(*request.id);
+                if (!legacyId)
+                {
+                    return failure(
+                        Domain::ErrorCode::InvalidInput,
+                        "Calendar event identifier must be a positive integer."
+                        );
+                }
+            }
+
             DatabaseSession* const session = m_services.databaseSession();
             if (!session || !session->isOpen())
             {
@@ -88,16 +101,8 @@ public:
             }
 
             CalendarEvent event;
-            if (request.id.has_value())
+            if (legacyId.has_value())
             {
-                const auto legacyId = legacyEventId(*request.id);
-                if (!legacyId)
-                {
-                    return failure(
-                        Domain::ErrorCode::InvalidInput,
-                        "Calendar event identifier must be a positive integer."
-                        );
-                }
                 event.id = *legacyId;
             }
 

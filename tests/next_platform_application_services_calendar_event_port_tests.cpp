@@ -1951,6 +1951,17 @@ reportsUnavailableSaveSessionStructurally()
 
     ApplicationServicesCalendarEventSavePort port(services);
 
+    auto invalidUpdateId = validSaveRequest();
+    invalidUpdateId.id = *CalendarEventId::fromString("0");
+    verifyFailure(
+        port.saveEvent(invalidUpdateId),
+        ErrorCode::InvalidInput
+        );
+
+    auto validUpdate = validSaveRequest();
+    validUpdate.id = calendarEventId(1);
+    verifyFailure(port.saveEvent(validUpdate), ErrorCode::NotFound);
+
     verifyFailure(
         port.saveEvent(validSaveRequest()),
         ErrorCode::NotFound
@@ -1961,6 +1972,11 @@ reportsUnavailableSaveSessionStructurally()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
+
+    verifyFailure(
+        port.saveEvent(invalidUpdateId),
+        ErrorCode::InvalidInput
+        );
 
     verifyFailure(
         port.saveEvent(validSaveRequest()),
