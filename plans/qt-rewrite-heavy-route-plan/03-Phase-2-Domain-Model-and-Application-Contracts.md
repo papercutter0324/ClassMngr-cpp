@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F914 Sub Prep selected-class details is accepted at source/test commit `5d79b793f913db691f9a2800acc7db4a21a40d1e`; two independent post-F914 audits found none of the 13 official Deferred candidates newly actionable, and F915 Schedule class-information reads has its baseline and acceptance recorded; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F915 Schedule class-information reads is accepted at source/test commit `bc59d4804f2114b4de6243348ed9c00b692ec0ce`; F916 Classes list is selected to preserve terminal cursor failures, with baseline and acceptance pending; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F915 - Schedule class-information reads: preserve terminal cursor failures as `Technical` in builder and import-state readers.
 - F916 - Classes list: prevent partial success after a terminal cursor error.
 - F917 - Testing assignment display read: prevent partial success after a terminal cursor error.
 - F918 - Class-teacher assignments read: prevent partial success after a terminal cursor error.

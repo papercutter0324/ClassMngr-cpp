@@ -38212,3 +38212,35 @@ full suite ran.
 Batch 305 remains active with F915-F919 in order; the 13 official Deferred
 entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F915 accepted; post-F915 Deferred audits clear; F916 selected - 2026-10-15
+
+F915, Schedule class-information reads, is accepted at source/test commit
+`bc59d4804f2114b4de6243348ed9c00b692ec0ce`. Both
+`ClassInfoRepository::loadScheduleClassInfos()` and
+`loadScheduleImportStateSnapshotClassInfos()` now check terminal query errors
+following each metadata, regular-time, and intensive-time loop (six loop
+executions total). Existing repository failures propagate before accumulated
+partial lists can escape.
+
+Forced sequential Debug builds passed for `ClassMngr` and both focused targets:
+`ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests` and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`.
+Exact CTests #409 and #410 passed 1/1 each with `-C Debug`. Independent Tester
+source review covered all six checks. Existing tests cover SQL execution
+failures and successful mappings, but not direct cursor failure; no broad or
+driver-specific injector was added. No full suite ran.
+
+Two independent post-F915 audits reviewed all 13 exact official Deferred
+entries; none became newly actionable, and the list remains unchanged. F618
+still requires a reproducible large-export driver and a matched packaged
+Release measurement from the same source revision.
+
+F916, Classes list terminal cursor errors, is selected next. The shared
+`ClassRepository::getClasses()` checks SQL execution but not terminal cursor
+errors, so a fetch failure can currently return a partial list as success. The
+reader feeds the typed Classes List port and multiple legacy/application
+callers, including schedule import state; F915 intentionally left its
+class-list state read out of scope. F916 baseline and acceptance are pending.
+Batch 305 continues with F916-F919 in order. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
