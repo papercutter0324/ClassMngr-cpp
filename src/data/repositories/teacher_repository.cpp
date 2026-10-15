@@ -1863,6 +1863,14 @@ Result<QList<Teacher>> TeacherRepository::getAllTeachers()
         teachers.append(std::move(teacher));
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading teachers")
+            ).userMessage());
+    }
+
     return teachers;
 }
 

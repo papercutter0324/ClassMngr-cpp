@@ -4,6 +4,7 @@
 #include "data/repositories/roster_repository.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "teacher_choices_cursor_error_fixture.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -251,6 +252,7 @@ private slots:
     void teacherListValidatesPersistedIds();
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
+    void teacherDirectoryRejectsLateFetchFailure();
     void compoundAndCollectionReadFailuresAreObservable();
     void speakingEvaluationRejectsLateScoreRowFetchFailure();
     void classInfoRejectsLateRegularScheduleFetchFailure();
@@ -1681,6 +1683,48 @@ void DataServiceLifecycleTests::coreLookupReadFailuresAreObservable()
         ));
     QVERIFY(failedTeachers.error().contains(
         QStringLiteral("Loading teachers")
+        ));
+}
+
+void DataServiceLifecycleTests::teacherDirectoryRejectsLateFetchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("late-teacher-directory-fetch.db"))
+        ));
+
+    QSqlDatabase database = service.databaseSession()->database();
+    const QString setupError =
+        TeacherChoicesCursorErrorFixture::install(database);
+    QVERIFY2(setupError.isEmpty(), qPrintable(setupError));
+
+    QSqlQuery preflight(database);
+    QVERIFY(preflight.exec(QStringLiteral(
+        "SELECT * FROM teachers ORDER BY teacher_en"
+        )));
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value(QStringLiteral("id")).toInt(), 1);
+    QCOMPARE(
+        preflight.value(QStringLiteral("teacher_en")).toString(),
+        QStringLiteral("A Alpha")
+        );
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    QVERIFY(preflight.lastError().text().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
+        ));
+    preflight.finish();
+
+    const Result<QList<Teacher>> failedTeachers = service.getAllTeachers();
+    QVERIFY(!failedTeachers);
+    QVERIFY(failedTeachers.error().contains(
+        QStringLiteral("Loading teachers")
+        ));
+    QVERIFY(failedTeachers.error().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
         ));
 }
 
