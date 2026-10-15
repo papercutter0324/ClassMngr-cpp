@@ -5979,3 +5979,13 @@ collision. Reject an occupied Create destination as Conflict, preserve the
 existing JSON and dirty draft, and keep Update under its retained ID so
 renames continue to work. Do not generate alternate IDs or change slug
 normalization.
+
+## F952 Calendar repeat-series identity validation - 2026-10-16
+
+The repeat-series Create and Edit request contracts both normalize IDs with
+Qt trimming in their legacy-backed adapter, so request-level blank checks
+must recognize the same Unicode whitespace set before persistence. Use the
+existing UTF-8-aware blank helper in these two contracts while preserving
+their byte limits, diagnostics, validation order, padded-ID trimming, and
+malformed-UTF-8 behavior. Keep this rule local to repeat-series IDs; it does
+not establish a global text-whitespace policy.

@@ -40840,3 +40840,58 @@ Batch321 ordering is unchanged: F952 remains first and F953 second. Batch322
 discovery remains underway. All 13 official Deferred entries remain
 unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F952 complete; F953 accepted as active Batch321 slice - 2026-10-16
+
+F952 is complete at source/test commit `55d510fe`; the revised Create/Edit
+acceptance is recorded in `1dfb218`, with test-name correction in `9e2c01d`.
+Both repeat-series request blank checks use `Application::isBlankUtf8Text`.
+Create and Edit reject U+00A0/U+3000 whitespace-only IDs as nonrecoverable
+`InvalidInput`. Application regressions reject before the ports; Create
+platform tests assert no port call and no persisted rows. Edit preserves its
+diagnostic and limit, valid padded nonblank behavior, and adapter trimming.
+Sequential Debug builds of `ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` passed. Exact
+registered CTests #250 and #356 passed (2/2). `git diff --check` passed; no
+full suite ran.
+
+Two independent post-F952 audits reviewed all 13 official Deferred entries
+and found none actionable or changed, including F709's missing projection
+injection seam.
+
+F953 is accepted as the active Batch321 implementation slice. In both GS Team
+and Native English application policies:
+
+1. Treat an absent optional row ID as insert. Reject a present row ID <= 0 as
+   `InvalidRowId` with its zero-based `rowIndex`; reject a duplicate positive
+   row ID as `DuplicateRowId` with the later row's zero-based `rowIndex`.
+2. Reject a nonpositive `deletedIds` entry as `InvalidDeletedId`; document
+   `rowIndex` as unused for this collection-level issue. Use the existing
+   `saved=false`/validation result shape, reject before the port call, and add
+   no `OperationError`.
+3. Keep absent IDs and positive unique row IDs valid. Allow duplicate positive
+   `deletedIds` as idempotent. Add no row/delete-overlap validation; preserve
+   existing delete-before-save transaction failure behavior.
+4. Keep internal adapter sentinel `-1` only for an absent row ID and preserve
+   legacy repository semantics. Make no repository or UI changes; normal UI
+   emits positive persisted IDs.
+5. In both existing app-less test files, cover all three invalid conditions
+   with otherwise-valid rows and distinct name keys, asserting zero port
+   calls. Retain existing valid insert/update/delete coverage. Sequentially
+   build `ClassMngrNextApplicationGsTeamDirectorySaveTests` and
+   `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests` in
+   `build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
+   CTests with those exact registered names, review the changes, and run
+   `git diff --check`. Do not run the full suite.
+
+Batch322 discovery began when F952 started as the second-last Batch321 item.
+The write scan's Calendar Edit lead was independently verified and folded into
+F952 because Create/Edit are adjacent repeat-series ID request validators
+using the same helper and test targets. A separate Speaking Evaluation lead
+was independently investigated; F954 is the sole Batch322 candidate and is
+queued after F953. Its scope is to reject a whitespace-only name on a single
+`SpeakingEvaluationQuery` as nonrecoverable `InvalidInput` via
+`trimQtWhitespace`, while leaving batch query validation unchanged: batch
+queries return one outer `Result`, and prevalidation would break mixed-item
+fallback. The 13 official Deferred entries remain unchanged. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

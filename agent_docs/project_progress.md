@@ -5642,3 +5642,29 @@ official Deferred entries unchanged and none actionable. Batch321 discovery is
 underway across typed application ports, repository/feature projections, and
 domain values. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### F952 complete; F953 acceptance recording - 2026-10-16
+
+F952 is complete at source/test commit `55d510fe`. Calendar repeat-series
+Create and Edit request validation now uses the existing UTF-8-aware blank
+helper, so Qt-compatible Unicode-whitespace-only IDs fail as InvalidInput
+before the use-case port or platform repository path. Byte limits, diagnostics,
+validation order, padded-ID trimming, and malformed-UTF-8 behavior remain
+unchanged.
+
+The independent Tester sequentially built
+`ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` in the
+standard Windows x64 Debug folder with `/p:TrackFileAccess=false`; exact CTests
+with those names passed 1/1 each. `git diff --check` passed. No full suite ran.
+Two independent post-F952 audits found all 13 official Deferred entries
+unchanged, including F709's unavailable Calendar projection seam.
+
+F953 is selected next in Batch321. Acceptance records symmetric row-ID and
+deleted-ID validation in the GS Team and Native English save policies while
+preserving absent-ID inserts, duplicate positive deletions, the legacy `-1`
+adapter sentinel, and repository/UI behavior. F953 implementation remains
+paused until its acceptance record is committed. Batch322 discovery selected
+F954 for the single Speaking Evaluation query's blank-name classification;
+batch-query fallback and exact-name semantics remain outside that candidate.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
