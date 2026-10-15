@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_f938_resume_20261015`. Route: Heavy.
+Current deployment: `phase2_resume_20260929`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-16 (F944 acceptance complete; implementation pending)
+### Current state - 2026-10-16 (F944 complete; F945 baseline underway)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -211,24 +211,19 @@ runtime partial-result defect is claimed. Three sequential Debug builds and
 exact CTests #22/#24 passed. Two independent audits found all 13 official
 Deferred candidates unchanged.
 
-F944 acceptance covers only `TestingClassRepository::loadTestingClasses()`:
-add a contextual terminal-error check after its row loop while preserving its
-API, query/order, mapping/ID validation, defaults, and clean-empty behavior.
-The live Schedule Assignment chooser uses `loadTestingClassChoices()`, which
-already checks terminal errors; no legacy list caller was found in-tree. An
-exact ordered-query malformed-JSON probe failed during `exec()` because
-SQLite's temporary ORDER BY sort evaluated the malformed row before yielding
-any result. The exploratory test was removed, the test file restored to HEAD,
-and the repository target plus exact CTest passed after cleanup. No runtime
-partial-list defect is claimed and no late-fetch seam or permanent test is
-accepted. Focused sequential Debug builds of `ClassMngr`,
-`ClassMngrTestingClassRepositoryTests`, and
-`ClassMngrTestingClassesPageCancelFailureParityTests`, their exact CTests,
-source review, and `git diff --check` are the accepted verification gates.
-Batch310 discovery has started; the `CampusRecordRepository::getAllCampuses()`
-lead is conditional on a reproducible pre-fix baseline and is not selected.
-F945 remains queued. Gates 1/2 remain Partial and the Phase 2 exit gate is
-Open.
+F944 completed at source/test commit `17bc41ee`. The legacy
+`TestingClassRepository::loadTestingClasses()` method now checks terminal
+cursor errors after its loop; the guarded typed chooser is unchanged. Its
+clean-empty regression and repository CTest #21 passed. Page-parity CTest #44
+failed both with and without the F944 guard. The post-change direct QtTest
+reported the existing F146 `createPort.callCount` mismatch (0 vs 1). The exact
+ordered malformed-JSON probe fails during `exec()` before a row, so no partial-list
+runtime defect is claimed. Two independent reviews found all 13 official
+Deferred candidates unchanged. F945 `TestingBlockRepository::loadTestingAssignments()`
+is current; its exact-query pre-fix baseline is underway. Batch310 discovery
+has started; the separate `CampusRecordRepository::getAllCampuses()` lead
+remains conditional and unselected. Gates 1/2 remain Partial and Phase 2's
+formal exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

@@ -5806,3 +5806,16 @@ matching CTests, source review, and `git diff --check`. No full suite. F945
 remains queued; Batch310 discovery is underway, with the Campus repository
 lead conditional on a reproducible pre-fix baseline. Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+## F944 implementation outcome - 2026-10-16
+
+F944 completed at source/test commit `17bc41ee`. Its post-loop cursor guard
+prevents `loadTestingClasses()` from returning an accumulated list after a
+terminal SQL fetch error; the direct clean-empty regression passed. The
+repository CTest #21 passed. Page-parity CTest #44 failed before and after
+temporarily removing the guard. The post-change direct QtTest reported the
+existing F146 `createPort.callCount` mismatch (0 vs 1); do not attribute that
+failure to F944. The exact ordered malformed-JSON query fails during `exec()`
+before yielding a row, so no runtime partial-list defect is established. Two
+independent audits found all 13 official Deferred candidates unchanged. F945
+is current and its exact legacy-query pre-fix baseline is underway.

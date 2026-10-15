@@ -40316,3 +40316,40 @@ lead is conditionally reviewed but remains unselected until its pre-fix exact-
 query baseline verifies late-fetch behavior. The 13 official Deferred
 candidates remain unchanged. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### F944 accepted; F945 current in Batch309 - 2026-10-16
+
+F944 is complete in source/test commit `17bc41ee` (`Phase2 - Reject partial
+testing class lists`). `TestingClassRepository::loadTestingClasses()` now
+checks `query.lastError().isValid()` after the row loop and returns the
+existing contextual query failure for terminal errors. The typed
+`loadTestingClassChoices()` path is unchanged. The direct
+`returnsEmptyTestingClassListWhenNoneExist()` regression verifies clean-empty
+success.
+
+Independent Debug builds of `ClassMngr`,
+`ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrTestingClassesPageCancelFailureParityTests` completed. Exact CTest
+#21 (repository) passed. Exact CTest #44 failed with F944's guard and again
+after temporarily removing that sole guard and rebuilding; this comparison
+establishes that the CTest failure predates F944. Separately, the post-change
+direct QtTest run reported 5 passed/1 failed: F146
+`f146CreateFailureRetainsDraftAndPendingSlot` at line 292 observed
+`createPort.callCount` 0 versus expected 1. The focused repository clean-empty
+test passed. No full suite ran.
+
+The exact-query malformed-JSON probe failed at `exec()` before yielding a
+prefix because SQLite temporary `ORDER BY` evaluation failed. No runtime
+partial-list defect is established; no permanent late-fetch test or seam was
+added.
+
+Two independent post-F944 audits checked the exact 13 official Deferred
+entries; none was actionable, resolved, superseded, or materially changed.
+All 13 remain unchanged. The separate Batch310
+`CampusRecordRepository::getAllCampuses()` lead remains conditional on a
+reproducible pre-fix exact-query baseline and is unselected.
+
+F945, `TestingBlockRepository::loadTestingAssignments()`, is the current
+Batch309 slice; its exact-query pre-fix baseline is in progress and neither
+baseline nor acceptance is complete. Batch310 status remains unchanged. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.

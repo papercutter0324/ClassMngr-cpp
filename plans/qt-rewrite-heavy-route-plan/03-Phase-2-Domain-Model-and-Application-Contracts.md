@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F944 TestingClassRepository chooser-list handling is accepted and implementation is next; Batch310 discovery is underway, F945 remains queued, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F945 TestingBlockRepository::loadTestingAssignments() is the current Batch309 slice with its exact-query pre-fix baseline in progress; the conditional Batch310 CampusRecordRepository lead remains unselected, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 309)
 
-- F944 - TestingClassRepository::loadTestingClasses(): add the accepted contextual terminal-query-error check after the legacy list loop.
-- F945 - TestingBlockRepository::loadTestingAssignments(): evaluate partial legacy assignment-list behavior.
+- F945 - TestingBlockRepository::loadTestingAssignments(): evaluate partial legacy assignment-list behavior; exact-query pre-fix baseline is in progress.
 
 #### Deferred candidates
 
