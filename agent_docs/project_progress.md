@@ -5632,6 +5632,32 @@ normal callers validate `TeacherId` in the use case and its discrepancy is
 limited to direct adapter error precedence. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
 
+### F955 complete; F956 accepted as active Batch324 slice - 2026-10-16
+
+F955 is complete at source/test commit `0df727c2`, following acceptance-docs
+commit `bc020f3f`. The Qt-free selected-campus query now uses the shared
+`isBlankUtf8Text()` helper before constructing `CampusId`; Qt-compatible
+Unicode whitespace-only IDs fail with the existing nonrecoverable
+`InvalidInput` before the port call. Nonblank IDs are still forwarded exactly,
+and adapter, repository, UI, and global campus-ID policy are unchanged.
+
+The independent Tester sequentially rebuilt
+`ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests` in the
+standard Debug folder with `/p:TrackFileAccess=false`; exact CTest #160 passed
+1/1. `git diff --check` passed, with Git only reporting LF-to-CRLF
+normalization warnings. No full suite ran. Two independent post-F955 audits
+reviewed all 13 official Deferred entries; none became actionable, resolved,
+or superseded. Batch324's application-contract scan selected F956:
+`ScheduleViewProjection` currently applies byte-wise blank checks to display
+text, while a separate platform-read scan found no actionable candidate. The
+independent review found no production `create`/`validate` callsite, so F956 is
+accepted as API-level application-contract hardening without a current UI
+defect claim. Use shared `isBlankUtf8Text()` only for the four required and two
+nonempty optional display-text fields; preserve identifiers, empty optional
+text, exact nonblank values, byte bounds, and malformed-UTF-8 behavior. Test
+U+00A0 and U+3000 across all six fields. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
+
 ## Phase 2 current position — 2026-10-16 (F949 complete; Batch319 discovery)
 
 F949 remains complete at acceptance commit `af31c6da` and implementation/test

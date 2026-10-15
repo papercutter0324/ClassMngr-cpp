@@ -40984,3 +40984,42 @@ F955 acceptance for implementation:
 
 All 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial and
 the formal Phase 2 exit gate remains Open.
+
+### F955 complete; Batch323 closed; F956 active in Batch324 - 2026-10-16
+
+F955 is complete at code commit `0df727c2`, following acceptance-docs commit
+`bc020f3f`. An independent Debug rebuild of
+`ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests` in
+`build/windows-x64-debug` with `/p:TrackFileAccess=false` passed; exact CTest
+#160 passed 1/1. `git diff --check` reported line-ending warnings only. No full
+suite ran. Two independent audits confirmed all 13 official Deferred entries
+remain unchanged; none became actionable. Batch323 is closed.
+
+Batch324 comparison found no actionable candidate in the platform-read scan.
+The app-contract scan found byte-wise blank checks for required and optional
+Schedule View Projection display text. Independent review accepts this as
+API-level core contract hardening; no current production `create` or `validate`
+callsite was found, so this is not an established UI defect. F956 is the sole
+active Batch324 slice with this acceptance:
+
+1. In `src/next/application/schedule_view_projection.h`, use
+   `Application::isBlankUtf8Text` only for required and optional display-text
+   validation. Preserve the local `isBlank` predicate and all identifier
+   validation, including `ClassId` and `TeacherId`, unchanged.
+2. Required display fields `dayLabel`, `rowLabel`, `startText`, and `endText`
+   reject blank input. Nonempty optional `meetingText` and `roomText` reject
+   ASCII- or Unicode-whitespace-only input; empty optional values remain valid.
+3. In `tests/next_application_schedule_view_tests.cpp`, add U+00A0 and U+3000
+   cases for all six fields. Assert `InvalidInput` and `recoverable=false`,
+   preserving existing diagnostic/error paths.
+4. Retain exact nonblank text, existing ASCII behavior, byte-length bounds,
+   empty optional behavior, and malformed-UTF8 behavior (the helper treats
+   malformed input as nonblank). Do not change ID validation.
+5. In `build/windows-x64-debug`, build
+   `ClassMngrNextApplicationScheduleViewTests` in Debug with
+   `/p:TrackFileAccess=false`, run only the exact registered CTest
+   `ClassMngrNextApplicationScheduleViewTests`, inspect the changes, and run
+   `git diff --check`. Do not run the full suite.
+
+All 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.

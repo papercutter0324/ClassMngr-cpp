@@ -6027,3 +6027,35 @@ test, and keep exact nonblank ID forwarding plus adapter, repository, UI, and
 project-wide campus-ID policy unchanged. A separate Class Details adapter
 validation-order lead was not selected because normal callers validate the
 TeacherId in the use case first.
+
+## F955 complete - 2026-10-16
+
+F955 is complete at source/test commit `0df727c2`, following acceptance-docs
+commit `bc020f3f`. The selected-campus read query now rejects Unicode
+whitespace-only IDs with the existing nonrecoverable `InvalidInput` before
+the port by using the shared UTF-8 Qt-whitespace helper. Exact nonblank ID
+forwarding and all adapter, repository, UI, and global campus-ID behavior
+remain unchanged.
+
+The independent Tester rebuilt
+`ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests` in the
+standard Windows x64 Debug folder with `/p:TrackFileAccess=false`; exact CTest
+#160 passed 1/1. `git diff --check` passed with only line-ending normalization
+warnings; no full suite ran. Two independent audits confirmed all 13 official
+Deferred entries remain unchanged and none is actionable, resolved, or
+superseded. Batch324 discovery is underway.
+
+## F956 ScheduleViewProjection display-text whitespace - accepted - 2026-10-16
+
+Batch324's application-contract scan found that the public
+`ScheduleViewProjection` validation boundary treats only ASCII byte-wise
+whitespace as blank for required and nonempty optional display text. Accept
+use of the shared `Application::isBlankUtf8Text()` helper only in the
+required/optional display-text validators. Keep typed identifier validation
+unchanged, preserve empty optional text, exact nonblank text, existing byte
+limits, malformed-UTF-8 handling, and existing `InvalidInput` error paths.
+Add U+00A0 and U+3000 regressions for all six display-text fields in the
+existing app-less test, asserting nonrecoverable `InvalidInput`. The review
+found no production callsite for projection creation or validation, so this is
+API-level contract hardening, not a claim about an existing UI defect. The
+complementary platform-read scan found no other actionable candidate.
