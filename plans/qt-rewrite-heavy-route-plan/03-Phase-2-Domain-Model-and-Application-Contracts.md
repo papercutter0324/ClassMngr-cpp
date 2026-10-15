@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F934's preimplementation baseline and acceptance are recorded; implementation remains next. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F935's shared class-info reader baseline and preimplementation acceptance are recorded; implementation remains pending until this record is committed. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 307)
 
-- F934 - Co-teacher assignment validation schedule-query terminal checks: reject incomplete schedule reads in the live typed validation path.
 - F935 - Shared class-info reader first-row failure and schedule cursor checks: distinguish read failure from clean missing/default and check regular/intensive schedules.
 - F936 - Legacy Class Transfer regular/intensive schedule terminal checks: reject incomplete reads for live import/export consumers; adjacent parent-aware route already checks.
 

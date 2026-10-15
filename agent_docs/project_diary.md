@@ -5571,8 +5571,11 @@ Technical failure without a partial result.
 
 ## Phase 2 ordered-query terminal error testability - 2026-10-15
 
-An index lookup does not prove an ordered query can stream rows. Probe the
-exact production SQL: a temporary `ORDER BY` B-tree may evaluate a malformed
-projected value during `exec()`, before the first row. If reaching the later
-fetch error requires SQLite-native callbacks or a custom driver solely for the
-test, prefer source review and existing focused tests over a production seam.
+An index lookup does not prove an ordered query can stream rows. Probe and
+explain the exact production SQL: a temporary `ORDER BY` B-tree may evaluate a
+malformed projected value during `exec()` before the first row, while a plain
+backing table with `id INTEGER PRIMARY KEY` and a JSON-extracting view can
+stream a valid prefix before a malformed later row. Use direct cursor
+preflight assertions to prove which behavior the exact query has. If the
+terminal-error branch still requires SQLite-native callbacks or a custom
+driver solely for coverage, prefer source review over a production seam.

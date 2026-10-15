@@ -39588,3 +39588,132 @@ The 13 official Deferred entries remain as last audited after F933; no new
 post-F934 Deferred audit was performed. F934 remains active in Batch307 with
 implementation and final acceptance pending. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F934 accepted; post-F934 Deferred audits clear; F935 selected - 2026-10-15
+
+F934 is accepted at source/test commit
+`e5e6e8c8d5acc4980df1812d4f117fda9e458dc4` (`Phase2 - Reject partial
+co-teacher validation schedules`), which changes only
+`class_info_repository.cpp` and its focused port test; its preimplementation
+acceptance is at `3333c02f`.
+`ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed()`
+now checks `lastError()` after both regular and intensive schedule loops and
+returns detailed `Technical` failures before snapshot success. The focused port
+tests use the exact production queries with JSON-backed valid-first-row then
+malformed-JSON terminal-fetch failures. Each typed use case returns `Technical`
+and leaves class fields, assigned teacher, and schedule backing rows unchanged;
+the intensive case also proves the regular query completes. The global Start
+Here sync is `b24212b0`.
+
+Independent Tester review and sequential standard `build/windows-x64-debug`
+Debug builds passed for `ClassMngr --clean-first` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`,
+both with `/p:TrackFileAccess=false`. Exact Debug CTest #348 passed 1/1 and
+`git diff --check` passed. No full suite ran.
+
+Two independent post-F934 audits reviewed all 13 official Deferred entries;
+none is newly actionable, resolved, superseded, or otherwise changed. F579 and
+F598 still require an elevated Administrator token; F614/F618/F626 lack the
+required owner-specific or matched Release measurements and/or contract
+evidence; F629 lacks evidenced access to a suitable packaged macOS universal
+24-route runner in this Windows session (global availability is unknown); and
+F285's blank-draft contract remains unresolved. F707 has no live helper
+callsite, F709 no Calendar malformed-summary injection seam, Batch197 teacher
+parity and Dense Speaking policy remain unresolved, Class Analytics allocation
+and sparse-representation policy remains separate, and Sidebar Teacher ID APIs
+remain `int` based. The audits found no trigger in F934's typed schedule-read
+change. All 13 plan entries are unchanged.
+
+F935, shared class-info reader first-row failure and schedule cursor checks, is
+selected next in Batch307. Its baseline and preimplementation acceptance are
+recorded below; no F935 implementation or permanent test change exists. F936
+remains queued in Batch307.
+
+Next-batch discovery completed after Batch307's second-last candidate was
+started. Ordered Batch308 candidates are F937, Calendar next-event date
+first-row failure in
+`src/data/repositories/calendar_event_repository.cpp:404-440`,
+`CalendarEventRepository::findNextCalendarEventStartDate` (live projection and
+cache callers; focused CTests #22/#23; preserve clean no-event success), then
+F938, shared application-setting first-row failure in
+`src/data/repositories/settings_repository.cpp:90-121`,
+`SettingsRepository::loadSetting` (live calendar, current-campus, and schedule
+display preference ports; focused CTest #24; preserve the unset default).
+
+No other slices were found.
+
+The bounded source/plan/log and live-caller scan found no other candidates;
+compatibility callers outside the repository are unknown. Batch308 is
+discovered/queued after Batch307 and does not replace the still-active Batch307
+list in the operational plan.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F935 preimplementation baseline and acceptance - 2026-10-15
+
+F935 targets the shared anonymous `loadClassInfoRecord<Record>()` helper in
+`src/data/repositories/class_info_repository.cpp:894`, consumed by public
+`DataService::loadClassInfo`, Schedule Import preview, and typed Class Details
+Save. The production baseline is source/test commit
+`e5e6e8c8d5acc4980df1812d4f117fda9e458dc4`; no F935 source or permanent test
+change exists.
+
+The class-info query has no error check after successful `executePrepared()`
+when its first `query.next()` is false. A clean missing `class_info` row
+intentionally returns defaults, and the existing focused test passed. A
+malformed JSON value in the first class-info row made QSQLITE `exec()` fail
+under Qt 6.12; existing `executePrepared()` returned failure. This does not
+exercise the post-exec first-`next()` error branch. Source review is therefore
+the accepted verification for that branch; no direct injection seam was
+identified, and no custom driver, native callback, production seam, or
+test-only slice is accepted.
+
+The regular and intensive schedule loops query
+`SELECT * FROM class_times WHERE class_id=? ORDER BY id` and
+`SELECT * FROM class_intensive_times WHERE class_id=? ORDER BY id`; neither
+checks `lastError()` after iteration. Temporary JSON-view probes in
+`tests/data_service_lifecycle_tests.cpp` proved each exact query executed,
+returned valid row id 1, then failed on malformed JSON in row 2. Before any
+production change, public `DataService::loadClassInfo` returned success with
+one regular row; in the intensive case it completed the regular read and
+returned one regular plus one partial intensive row. The temporary probes were
+removed and the test file restored byte-for-byte (SHA-256
+`813F188EFB2D3C80CD10E92736D7E3E42077B20F88BF9B5BDA7507BFDF1CB701`).
+
+After restoration, standard `build/windows-x64-debug` Debug builds passed for
+`ClassMngr`, `ClassMngrDataServiceLifecycleTests`, and
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, each with
+`/p:TrackFileAccess=false`. Exact Debug CTests #24 and #315 passed 1/1 each.
+No full suite ran.
+
+**Acceptance criteria**
+
+1. After successful `executePrepared()`, if the first `query.next()` is false
+   and `lastError()` is valid, return the existing formatted SQL read failure;
+   if false with no error, retain the successful default record. Preserve
+   mapping when a row is returned.
+2. After each complete regular and intensive schedule loop, check `lastError()`
+   and return the existing formatted SQL failure rather than expose an
+   incomplete `Record`. Preserve successful empty schedules.
+3. Preserve query projections and ordering, exact teacher-ID behavior, default
+   colors and other defaults, normalization, invalid-ID handling, and existing
+   caller semantics. Limit production changes to
+   `loadClassInfoRecord<Record>()` and corresponding tests. Exclude sibling and
+   detailed readers, `loadScheduleClassInfos()`, F915, and caller/UI changes.
+4. Permanently test regular and intensive late-fetch failures through public
+   `DataService::loadClassInfo`. Preflight that each exact query returns a
+   first row and then a terminal error; assert failure rather than a partial
+   result. Preserve the clean missing/default assertion. Source-review the
+   first-`next()` error branch because malformed first-row JSON fails during
+   QSQLITE `exec()` and no proportionate direct seam was found; add no custom
+   driver, native callback, production seam, or test-only slice.
+5. After implementation, sequentially build in standard
+   `build/windows-x64-debug`: `ClassMngr --clean-first`,
+   `ClassMngrDataServiceLifecycleTests`,
+   `ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`, and
+   `ClassMngrScheduleImportTests`, all with `/p:TrackFileAccess=false`. Run
+   exactly Debug CTests #24, #315, and #33; do not run the full suite.
+
+F935 remains in active Batch307; implementation is gated on committing this
+preimplementation record. F936 stays queued, the 13 official Deferred entries
+remain unchanged from the post-F934 audits, Gates 1/2 remain Partial, and the
+formal Phase 2 exit gate remains Open.
