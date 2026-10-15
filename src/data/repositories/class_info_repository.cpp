@@ -6007,6 +6007,13 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         indexesByClassId.insert(info.classId, infos.size());
         infos.append(std::move(info));
     }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Loading schedule class information failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
 
     auto loadTimes = [&]<typename Times>(
         const QString& tableName,
@@ -6062,6 +6069,13 @@ Result<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
                 timesQuery.value(QStringLiteral("start_time")).toString(),
                 timesQuery.value(QStringLiteral("end_time")).toString()
             });
+        }
+        if (timesQuery.lastError().isValid())
+        {
+            return std::unexpected(
+                QObject::tr("Loading schedule class times from %1 failed: %2")
+                    .arg(tableName, timesQuery.lastError().text())
+                );
         }
 
         return {};
@@ -6157,6 +6171,13 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
         indexesByClassId.insert(info.classId, infos.size());
         infos.append(std::move(info));
     }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Loading schedule class information failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
 
     const auto loadTimes = [&]<typename Times>(
         const QString& tableName,
@@ -6214,6 +6235,13 @@ ClassInfoRepository::loadScheduleImportStateSnapshotClassInfos()
                 timesQuery.value(QStringLiteral("start_time")).toString(),
                 timesQuery.value(QStringLiteral("end_time")).toString()
             });
+        }
+        if (timesQuery.lastError().isValid())
+        {
+            return std::unexpected(
+                QObject::tr("Loading schedule class times from %1 failed: %2")
+                    .arg(tableName, timesQuery.lastError().text())
+                );
         }
 
         return {};
