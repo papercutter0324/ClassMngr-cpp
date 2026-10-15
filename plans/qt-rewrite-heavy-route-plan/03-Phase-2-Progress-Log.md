@@ -40744,3 +40744,58 @@ F951 is the active Batch320 implementation slice. The 13 official Deferred
 entries remain unchanged, and the post-F949 audit remains current until source
 changes. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F951 complete; Batch321 active with F952/F953 - 2026-10-16
+
+F951 is complete at source/test commit `1294d32df72261b2dbfa122da7ed294ae091f0e2`,
+following acceptance commit `8dc6f3b5f739c5d7fef46212c3f367d9fa7b3909`.
+Explicit Create/Update intent crosses the typed Campus save boundary. Create
+to an occupied normalized JSON path returns nonrecoverable `Conflict` without
+replacing data; Update retains the ID across rename, and failed Create leaves
+the draft selected and dirty. The three targets
+`ClassMngrNextApplicationCampusDashboardCampusSavePortTests`,
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and
+`ClassMngrCampusDashboardPageTests` were built sequentially. Exact CTests #161,
+#367, and #152 passed 1/1; after adding Create-path I/O-failure `Technical`
+coverage, the adapter target and CTest #367 were rerun and passed. `git diff
+--check` passed; no full suite ran. Two independent post-source audits reviewed
+the exact 13 official Deferred entries and found none actionable or changed.
+Batch320 closes with all 13 entries unchanged.
+
+Batch321 application discovery selected F952. `CalendarEventSeriesCreateRequest`
+uses byte-wise `std::isspace`, while its platform adapter later applies
+`QString::trimmed()`; U+00A0 and U+3000 whitespace-only IDs can therefore pass
+request validation and normalize empty. The repeat-series domain validator
+permits empty IDs, allowing repository saves without the requested series ID.
+F790 (By-ID) and F791 (repeat-series delete) are Unicode-blank-check
+precedents, not duplicates. The accepted scope is to use existing
+`Application::isBlankUtf8Text` in series-create blank validation only, keeping
+the byte-length limit, ASCII behavior, adapter normalization, and
+malformed-UTF-8-as-nonblank behavior. Acceptance requires app-less U+00A0 and
+U+3000 regressions returning nonrecoverable `InvalidInput` before the port;
+open-session platform regressions asserting `InvalidInput` and no persisted
+rows; and preservation of ASCII behavior, malformed-input behavior, and ID
+trimming/persistence policy. Sequentially build
+`ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` in
+`build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
+`NextApplicationCalendarEvent` and
+`NextPlatformApplicationServicesCalendarEventPort`, review the changes, and
+run `git diff --check`. No full suite.
+
+The Batch321 domain scan selected F953. GS Team and Native English save
+requests define an absent optional row ID as insert, but accept any integer;
+policies validate fields rather than identities. Present nonpositive IDs pass
+through typed use cases/adapters, nonpositive deleted IDs are skipped, and
+duplicate positive row IDs can update one record repeatedly while success is
+reported. Normal UI emits positive persisted IDs, so exposure is limited;
+F831/F832 cover read-side behavior only. The candidate contract is symmetric
+application-policy rejection of nonpositive present row/deletion IDs and
+duplicate row IDs before port calls in both directories, retaining absent-ID
+inserts and positive unique-ID updates/deletes. Keep legacy sentinel `-1`
+internal and do not change legacy repository handling. Repository/projection
+discovery found no third candidate. F952 is first and F953 second in this
+two-candidate batch; Batch322 discovery starts when F952 implementation begins.
+Discovery traces and Investigator reasoning were read-only; no builds or tests
+ran during discovery. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.

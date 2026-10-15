@@ -5623,3 +5623,22 @@ source changed, so the post-F949 audit remains the current review of all 13
 official Deferred entries. Batch320 discovery is active in additional non-class,
 non-calendar Next read/write adapters. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+## Phase 2 current position - 2026-10-16 (F951 complete; Batch321 discovery)
+
+F951 completed at source/test commit `1294d32d`, following acceptance-docs
+commit `8dc6f3b5`. Campus Dashboard saves now carry explicit Create/Update
+intent. A Create whose normalized JSON path is already occupied returns
+Conflict without replacing the existing file; updates continue under the
+retained ID, including display-name changes. A failed Create keeps the draft
+selected and dirty.
+
+The executor sequentially built the three focused Debug targets for the save
+port, repository adapter, and Campus Dashboard page. CTests #161, #367, and
+#152 passed 1/1; after adding direct Create-path I/O-failure coverage, the
+repository-adapter target and CTest #367 passed again. `git diff --check`
+passed, and no full suite ran. Two independent post-F951 audits found all 13
+official Deferred entries unchanged and none actionable. Batch321 discovery is
+underway across typed application ports, repository/feature projections, and
+domain values. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.

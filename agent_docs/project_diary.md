@@ -5969,3 +5969,13 @@ F889 explicitly preserves Technical for malformed Class Details data.
 F947/F948 added Validation handling only to their own routes and do not change
 that contract. A later Class Details mapping change must first reopen F889's
 accepted rule rather than infer a project-wide policy from neighboring ports.
+
+## F951 Campus Create collision contract - 2026-10-16
+
+Carry Create/Update intent through the typed Campus save boundary. A blank
+persisted ID identifies a new draft; after slug derivation, repository code
+cannot safely infer whether an occupied path is a legitimate update or a
+collision. Reject an occupied Create destination as Conflict, preserve the
+existing JSON and dirty draft, and keep Update under its retained ID so
+renames continue to work. Do not generate alternate IDs or change slug
+normalization.
