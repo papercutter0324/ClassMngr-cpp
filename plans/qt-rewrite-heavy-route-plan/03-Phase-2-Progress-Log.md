@@ -37826,3 +37826,60 @@ SQL/cursor failure injection was unavailable.
 | Existing-parent projections | A present parent without `class_info` retains successful blank defaults and current schedule behavior. Preserve populated identity, exact projected fields, and regular/intensive ordering and values. |
 | Consumers and fallback | Classes Page and Speaking Evaluation preserve the requested ID, name, and order for an entry whose details fail; do not apply that entry's details, while applying successful siblings. Keep their existing outer-read-failure fallback unchanged. |
 | Repository compatibility and verification | Route through a parent-aware typed repository seam while preserving `loadClassesNavigationRecords` behavior used by ClassTransfer. Successful nonempty reads retain one metadata, one regular, and one intensive statement. F908 baseline and acceptance are recorded; implementation and post-change verification remain pending. No schema, orphan cleanup, or CMake changes. |
+
+### F908 accepted; post-slice Deferred audit clear; F909 selected - 2026-10-15
+
+F908 is accepted at source/test commit
+`e9f269850ee879fe36f0a28d16169888a5cde883`. The snapshot retains an outer
+operation result and ordered identity-bearing entries whose details carry a
+typed result. Only clean parent-rooted confirmation of an absent `classes`
+row yields per-entry recoverable `NotFound`; orphan metadata and schedules are
+suppressed. Query, cursor/iteration, and exception failures remain outer
+`Technical`. A present parent without `class_info` remains a blank success;
+valid siblings, order, values, and the one-query-per-component metrics are
+preserved. Classes Page and Speaking Evaluation keep each requested identity
+and apply only successful details. The legacy
+`loadClassesNavigationRecords` and ClassTransfer path remain unchanged.
+
+Independent sequential forced Debug builds passed for `ClassMngr`, the
+application snapshot target (#226), the platform read-port target (#322),
+Classes Page, Speaking Evaluation, and Class Transfer. Application #226 and
+platform #322 passed 1/1. The new Classes Page per-entry case passed. After a
+fixture repair, the new Speaking Evaluation per-entry case passed and exact
+CTest #120 passed 1/1. The focused batch also reported eight failures in the
+Classes Page target (#126), covering selected-grade/section/subtitle,
+form-validation, and keyboard tests, plus one teacher-profile fallback failure
+in Class Transfer (#26). Read-only source review found no F908 path connection
+to those failures, but there is no pre-change aggregate baseline; they remain
+unresolved and are not established as pre-existing. The Classes Page link
+reported configured-override LNK4006/LNK4088 warnings; Speaking Evaluation
+reported a nonfatal MSB8064 stale autogen dependency warning. No full suite ran.
+SQL/cursor injection was unavailable; source review covered error checks.
+
+Two independent post-F908 audits reviewed all 13 exact official Deferred
+candidates; none became newly actionable and the list remains unchanged.
+F909, Roster Column Names batch parent provenance, is selected; its baseline
+and acceptance are pending. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
+
+### F909 baseline captured; acceptance defined - 2026-10-15
+
+The ordered requests `[1, 2, 3, 987654321]` returned outer success and kept
+their order. ID 1 returned `[Given, Family]`; existing ID 2 without roster
+columns returned `[]`; deleted ID 3 returned orphan values `[Orphan Alpha,
+Orphan Beta]`; never-present ID `987654321` returned `[]`. Before deleting ID
+3 with foreign keys disabled, the database had `classes=3` and
+`roster_columns=4`; afterward it had `classes=2` and `roster_columns=4`, proving
+the orphan columns remained. The focused target's temporary-probe Debug CTest
+#321 passed, and passed again after restoring its source byte-for-byte (SHA-256
+`09FAD645AA0F68C23A2AC977C63FCDB4EF0FBED044904F1EF90A84BEDF25F632`). Forced
+sequential Debug builds of `ClassMngr` and the exact target passed. No full
+suite ran. Baseline logs and observations are in
+`build/windows-x64-debug/F909_baseline_artifacts`.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Result shape and parent provenance | Preserve the outer typed result and one ordered identity-bearing entry per request. Only a clean parent-rooted query confirming an absent `classes` row yields per-entry recoverable `NotFound`, including deleted and never-present parents; suppress orphan columns. Preserve SQL/iteration/cursor/exception failures as outer `Technical`, invalid/duplicate/mismatch as `Validation`, and existing session/repository outer `NotFound` behavior. |
+| Present-parent values | Preserve valid sibling results and exact UTF-16 column values and order. An existing class without roster columns remains successful with empty columns. Preserve the current one-query nonempty batch behavior through a dedicated parent-aware typed repository route. |
+| Consumer and compatibility | `RosterPrintDialog` skips a failed entry while retaining sibling columns and existing whole-read failure behavior. Leave legacy `loadRosterColumnNamesForClasses`, `RosterAvailabilityBatchReadPort`/transfer menu, Sub Prep fallback, schema, output limits, and CMake unchanged. |
+| Verification and status | The baseline target CTest #321 passed with the temporary probe and after byte-for-byte restoration; forced product and focused-target Debug builds passed. F909 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |

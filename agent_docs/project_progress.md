@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F907 accepted; F908 baseline/acceptance recorded)
+### Current state - 2026-10-15 (F908 accepted; F909 selected)
 
 F863 is accepted at source/test commit `2fad90b6`; its shared Schedule Testing
 repository decoder preserves SQL NULL sentinels, accepts positive SQLite
@@ -470,12 +470,54 @@ remain unchanged. Classes Page and Speaking Evaluation retain the requested
 entry identity/order and apply only successful details, while whole-read
 fallback behavior remains unchanged. The existing shared
 `loadClassesNavigationRecords` behavior used by Class Transfer is preserved.
-Session/repository `NotFound` behavior remains unchanged. Acceptance requires
-surfaced SQL, cursor/iteration, and exception failures to remain outer
-`Technical`; read failures never establish class absence. F908 baseline and
-acceptance are recorded; implementation and post-change verification are
-pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
-Open.
+Session/repository `NotFound` behavior remains unchanged. Surfaced SQL,
+cursor/iteration, and exception failures remain outer `Technical`; read
+failures never establish class absence. F908 is accepted at source/test commit
+`e9f269850ee879fe36f0a28d16169888a5cde883`.
+
+Independent sequential forced Debug builds passed for `ClassMngr`,
+application snapshot #226, platform read-port #322, Classes Page, Speaking
+Evaluation, and Class Transfer. The application and platform CTests passed
+1/1; the new Classes Page per-entry case passed; after fixture repair, the new
+Speaking Evaluation per-entry case passed and CTest #120 passed 1/1. The
+Classes Page CTest #126 still reports eight selected-grade/section/subtitle,
+form-validation, and keyboard failures; Class Transfer CTest #26 reports one
+teacher-profile fallback failure. Read-only source review found no F908 path
+connection, but no pre-change aggregate baseline exists, so these failures
+remain unresolved and are not proven pre-existing. The Classes Page link
+emitted configured-override LNK4006/LNK4088 warnings; Speaking Evaluation
+emitted a nonfatal MSB8064 stale autogen dependency warning. No full suite ran.
+SQL/cursor injection was unavailable; source review covered error checks.
+
+Two independent post-F908 audits reviewed all 13 official Deferred
+candidates; none became newly actionable and the list remains unchanged.
+F909, Roster Column Names batch parent provenance, has a recorded baseline:
+ordered requests `[1, 2, 3, 987654321]` returned outer success; populated ID 1
+yielded `[Given, Family]`, ID 2 without columns was empty, deleted ID 3 exposed
+`[Orphan Alpha, Orphan Beta]`, and never-present ID `987654321` was empty.
+Database counts changed from `classes=3/roster_columns=4` to
+`classes=2/roster_columns=4` after deleting ID 3 with foreign keys disabled.
+Forced sequential Debug builds of `ClassMngr` and the exact target passed;
+baseline CTest #321 passed with the temporary probe and after restoring the
+source byte-for-byte (SHA-256
+`09FAD645AA0F68C23A2AC977C63FCDB4EF0FBED044904F1EF90A84BEDF25F632`). No full
+suite ran; artifacts are in
+`build/windows-x64-debug/F909_baseline_artifacts`.
+
+F909 acceptance preserves the outer typed result, ordered identity-bearing
+entries, exact UTF-16 column values/order, and valid siblings. Only clean
+parent-rooted confirmation of absence yields per-entry recoverable `NotFound`
+and suppresses orphan columns; SQL/iteration/cursor/exception errors remain
+outer `Technical`. Existing parent without roster columns remains empty
+success; invalid/duplicate/mismatch `Validation` and session/repository outer
+`NotFound` behavior remain unchanged. `RosterPrintDialog` skips a failed entry
+while preserving siblings and whole-read fallback. A dedicated parent-aware
+typed batch route keeps the existing one-query behavior; legacy
+`loadRosterColumnNamesForClasses`, `RosterAvailabilityBatchReadPort`/transfer
+menu, Sub Prep fallback, schema, output limits, and CMake are unchanged.
+F909 baseline and acceptance are recorded; implementation and post-change
+verification remain pending. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
