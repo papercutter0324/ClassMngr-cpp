@@ -5632,3 +5632,13 @@ into the repository's contextual error, so adding another guard after
 `query.next()` would be redundant for the observed route. The existing
 no-event result remains successful with an invalid `QDate`; focused repository
 and cache CTests #22/#23 passed. No source or permanent test change was needed.
+
+## Phase 2 shared application-setting first-row baseline - 2026-10-15
+
+F938's exact `SELECT value FROM app_settings WHERE key=?` also fails during
+`exec()` on a malformed-JSON-backed view under installed Qt 6.12.0 QSQLITE.
+The existing `SqlQueryUtils::executePrepared()` path returns the contextual
+setting error, while the clean missing-key default remains covered. Confirm the
+exact query and caller path before adding a first-row cursor guard; an already
+reported execution failure is not evidence that the post-exec `next()` branch
+is missing.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F937 is closed as already covered by installed Qt 6.12 QSQLITE behavior; F938 shared application-setting first-row failure is next in Batch308 with baseline and acceptance pending; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F939 roster output-source row accumulation is next in Batch309 with baseline and acceptance pending; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,15 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch (Batch 308)
+#### Active batch (Batch 309)
 
-- F938 - Shared application-setting first-row failure: establish baseline and acceptance for rejecting a failed first-row fetch in `loadSetting()` while preserving the unset default.
+- F939 - RosterRepository::loadRosterForOutput(): establish baseline and acceptance that row-loop failures cannot emit partial roster columns/cells to the typed Sub Prep output-source port.
+- F940 - ClassInfoRepository::loadSubPrepClassSummaries(): evaluate terminal loop failures on the live typed Sub Prep schedule-summary route.
+- F941 - Legacy SpeakingEvalRepository::loadSpeakingEval() first-row/score-row failures: confirm scope against the active legacy caller.
+- F942 - TeacherRepository::getAllTeachers(): evaluate partial full-directory results in Schedule Import preview.
+- F943 - CalendarEventRepository date/upcoming lists: evaluate partial results from `loadCalendarEventsForDate()` and `loadUpcomingCalendarEvents()`.
+- F944 - TestingClassRepository::loadTestingClasses(): evaluate partial legacy chooser-list behavior.
+- F945 - TestingBlockRepository::loadTestingAssignments(): evaluate partial legacy assignment-list behavior.
 
 #### Deferred candidates
 

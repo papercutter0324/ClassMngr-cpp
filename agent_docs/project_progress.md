@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2-f909-resume-20261015`. Route: Heavy.
+Current deployment: `phase2_f938_resume_20261015`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F936 accepted; F938 next)
+### Current state - 2026-10-15 (F938 covered; Batch309 active)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -148,9 +148,16 @@ still succeeds with an invalid `QDate`. The temporary probe was restored
 byte-for-byte. Debug builds of `ClassMngrCalendarEventRepositoryTests` and
 `ClassMngrCalendarEventCacheTests` passed; CTests #22 and #23 passed 1/1. The
 cache-target build emitted one existing MSBuild warning for missing
-`teacher_import_plan_mapper.h`. No full suite ran. Batch308 continues with
-F938, shared application-setting first-row failure. Gates 1/2 remain Partial
-and the formal Phase 2 exit gate is Open.
+`teacher_import_plan_mapper.h`. No full suite ran. F938, shared
+application-setting first-row failure, is closed as already covered by
+`SqlQueryUtils::executePrepared()` on installed Qt 6.12.0 QSQLITE: the exact
+query failed in `exec()` and the existing lifecycle path returned contextual
+failure while the clean missing-setting default remained covered. The
+temporary probe was restored byte-for-byte; Debug lifecycle build and CTest
+#24 passed. Two independent audits found all 13 official Deferred entries
+unchanged and none actionable. Batch309 is active with F939, Sub Prep roster
+output cursor errors, next; F940-F945 are queued. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

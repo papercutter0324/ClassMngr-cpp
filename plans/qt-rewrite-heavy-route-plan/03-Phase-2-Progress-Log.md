@@ -39878,6 +39878,64 @@ reported one existing MSBuild warning about missing
 results apply to the installed Qt 6.12.0 QSQLITE environment and the cited
 existing tests only.
 
-Batch308 remains active with F938, shared application-setting first-row
-failure, as its sole candidate; F938 baseline and acceptance are pending.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+### F938 already covered; Batch309 active - 2026-10-15
+
+F938, `SettingsRepository::loadSetting()` first-row error handling, is closed
+as already covered at baseline HEAD
+`88714dc643a35476d2a33009d97c4cfe7f736d01`; no production or permanent test
+change is warranted. On installed Qt 6.12.0 QSQLITE, the malformed-JSON-backed
+exact query `SELECT value FROM app_settings WHERE key=?` fails in `exec()`;
+`SqlQueryUtils::executePrepared()` already returns contextual failure with the
+operation and key. The existing clean-missing-setting success is retained.
+The temporary `tests/data_service_lifecycle_tests.cpp` probe was restored
+byte-for-byte (SHA-256
+`B8401408D619D07942077BC2C78F8E3CB4D0A7A067D925B86D0F1688016BBC8D`; no diff).
+The Debug `ClassMngrDataServiceLifecycleTests` target built in the standard
+`build/windows-x64-debug` folder with `/p:TrackFileAccess=false`; exact CTest
+#24 passed 1/1. No full suite ran. This verification closeout has no source or
+test change.
+
+Two independent auditors reviewed each of the 13 official Deferred entries;
+none is actionable, resolved, superseded, or changed, and all 13 remain
+unchanged. Their existing triggers remain: F285 blank-draft contract; F579
+and F598 elevated Administrator captures; F614 larger-fixture or owner-specific
+memory evidence; F618 matched packaged Release export peak; F626 owner-specific
+memory evidence and safe state/re-entry contract; F629 a suitable macOS
+universal runner; F707 a live callsite; F709 the Calendar Page malformed-summary
+injection seam; Batch197 parity policy; Class Analytics allocation/sparse
+policy; Dense Speaking row-limit policy; and Sidebar Teacher Create/Delete
+APIs remaining int-based.
+
+Batch309 discovery selected seven row-accumulation candidates in this order:
+
+1. F939, `RosterRepository::loadRosterForOutput()` at
+   `src/data/repositories/roster_repository.cpp:2683`: establish baseline and
+   acceptance preventing partial roster columns/cells from reaching the typed
+   Sub Prep output-source port at
+   `src/next/platform/application_services_sub_prep_roster_output_source_port.h:684`.
+2. F940, `ClassInfoRepository::loadSubPrepClassSummaries()` at
+   `src/data/repositories/class_info_repository.cpp:4826`: evaluate terminal
+   loop failures on the live typed Sub Prep schedule-summary route in
+   `src/next/platform/application_services_sub_prep_print_source_port.h`.
+3. F941, legacy `SpeakingEvalRepository::loadSpeakingEval()` at
+   `src/data/repositories/speaking_eval_repository.cpp:416`: confirm first-row
+   and score-row failure scope against its active legacy caller.
+4. F942, `TeacherRepository::getAllTeachers()` at
+   `src/data/repositories/teacher_repository.cpp:1823`: evaluate partial
+   full-directory results in Schedule Import preview.
+5. F943, `CalendarEventRepository::loadCalendarEventsForDate()` and
+   `loadUpcomingCalendarEvents()` at
+   `src/data/repositories/calendar_event_repository.cpp:96,340`: evaluate
+   partial lists as one repository slice; exclude the checked range visitor
+   and F937's next-date method.
+6. F944, `TestingClassRepository::loadTestingClasses()` at
+   `src/data/repositories/testing_class_repository.cpp:782`: evaluate partial
+   legacy chooser results; exclude guarded `loadTestingClassChoices()`.
+7. F945, `TestingBlockRepository::loadTestingAssignments()` at
+   `src/data/repositories/testing_block_repository.cpp:288`: evaluate partial
+   legacy assignment lists; exclude F917's already-guarded display read.
+
+No other slices were found. F939 is next; its baseline and acceptance are
+pending. Begin Batch310 discovery when F944, the second-last Batch309 item,
+starts. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
