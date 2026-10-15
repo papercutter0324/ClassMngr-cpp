@@ -56,6 +56,7 @@ private slots:
     void rejectsInvalidCalendarDay();
     void reportsTheFirstInvalidRow();
     void useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput();
+    void rejectsInvalidRowAndDeletedIdsBeforeCallingPort();
 };
 
 void NextApplicationNativeEnglishTeacherDirectorySaveTests::
@@ -169,9 +170,12 @@ void NextApplicationNativeEnglishTeacherDirectorySaveTests::
 useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput()
 {
     Application::NativeEnglishTeacherDirectorySaveRequest valid;
-    valid.rows = {row(u"teacher")};
+    valid.rows = {row(u"teacher"), row(u"co-teacher")};
     valid.rows.front().id = Domain::NativeEnglishTeacherId(42);
-    valid.deletedIds = {Domain::NativeEnglishTeacherId(31)};
+    valid.deletedIds = {
+        Domain::NativeEnglishTeacherId(31),
+        Domain::NativeEnglishTeacherId(31)
+    };
 
     RecordingSavePort port;
     auto outcome = Application::NativeEnglishTeacherDirectorySaveUseCase::
@@ -200,6 +204,57 @@ useCaseCallsThePortOnceForValidInputAndNeverForInvalidInput()
         outcome.validation.issue,
         Application::NativeEnglishTeacherDirectorySaveIssue::InvalidBirthday);
     QCOMPARE(port.calls, 1);
+}
+
+void NextApplicationNativeEnglishTeacherDirectorySaveTests::
+rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
+{
+    RecordingSavePort port;
+    Application::NativeEnglishTeacherDirectorySaveRequest invalid;
+    Application::NativeEnglishTeacherDirectorySaveOutcome outcome;
+
+    for (const int id : std::array<int, 2>{0, -7})
+    {
+        invalid.rows = {row(u"valid teacher")};
+        invalid.rows.front().id = Domain::NativeEnglishTeacherId(id);
+        outcome = Application::NativeEnglishTeacherDirectorySaveUseCase::
+            execute(invalid, port);
+        QVERIFY(!outcome.saved);
+        QVERIFY(!outcome.error.has_value());
+        QCOMPARE(
+            outcome.validation.issue,
+            Application::NativeEnglishTeacherDirectorySaveIssue::InvalidRowId);
+        QCOMPARE(outcome.validation.rowIndex, std::size_t(0));
+        QCOMPARE(port.calls, 0);
+    }
+
+    invalid.rows = {row(u"first teacher"), row(u"second teacher")};
+    invalid.rows[0].id = Domain::NativeEnglishTeacherId(42);
+    invalid.rows[1].id = Domain::NativeEnglishTeacherId(42);
+    outcome = Application::NativeEnglishTeacherDirectorySaveUseCase::
+        execute(invalid, port);
+    QVERIFY(!outcome.saved);
+    QVERIFY(!outcome.error.has_value());
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::NativeEnglishTeacherDirectorySaveIssue::DuplicateRowId);
+    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(port.calls, 0);
+
+    invalid.rows = {row(u"valid insert")};
+    for (const int id : std::array<int, 2>{0, -7})
+    {
+        invalid.deletedIds = {Domain::NativeEnglishTeacherId(id)};
+        outcome = Application::NativeEnglishTeacherDirectorySaveUseCase::
+            execute(invalid, port);
+        QVERIFY(!outcome.saved);
+        QVERIFY(!outcome.error.has_value());
+        QCOMPARE(
+            outcome.validation.issue,
+            Application::NativeEnglishTeacherDirectorySaveIssue::
+                InvalidDeletedId);
+        QCOMPARE(port.calls, 0);
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationNativeEnglishTeacherDirectorySaveTests)

@@ -15,9 +15,28 @@ validateGsTeamDirectorySave(
 {
     std::unordered_set<std::u16string> englishNameKeys;
     std::unordered_set<std::u16string> koreanNameKeys;
+    std::unordered_set<int> rowIds;
     for (std::size_t index = 0; index < request.rows.size(); ++index)
     {
         const GsTeamDirectorySaveRow& row = request.rows[index];
+        if (row.id.has_value())
+        {
+            const int id = row.id->value();
+            if (id <= 0)
+            {
+                return {
+                    .issue = GsTeamDirectorySaveIssue::InvalidRowId,
+                    .rowIndex = index
+                };
+            }
+            if (!rowIds.insert(id).second)
+            {
+                return {
+                    .issue = GsTeamDirectorySaveIssue::DuplicateRowId,
+                    .rowIndex = index
+                };
+            }
+        }
         if (row.normalizedEnglishNameKey.empty()
             && row.normalizedKoreanNameKey.empty())
         {
@@ -48,6 +67,16 @@ validateGsTeamDirectorySave(
             return {
                 .issue = GsTeamDirectorySaveIssue::InvalidBirthday,
                 .rowIndex = index
+            };
+        }
+    }
+
+    for (const Domain::GsTeamMemberId deletedId : request.deletedIds)
+    {
+        if (deletedId.value() <= 0)
+        {
+            return {
+                .issue = GsTeamDirectorySaveIssue::InvalidDeletedId
             };
         }
     }

@@ -48,13 +48,18 @@ enum class NativeEnglishTeacherDirectorySaveIssue
     None,
     EmptyName,
     DuplicateName,
-    InvalidBirthday
+    InvalidBirthday,
+    InvalidRowId,
+    DuplicateRowId,
+    InvalidDeletedId
 };
 
 struct NativeEnglishTeacherDirectorySaveValidation final
 {
     NativeEnglishTeacherDirectorySaveIssue issue =
         NativeEnglishTeacherDirectorySaveIssue::None;
+    // Row-specific issues report their row here. InvalidDeletedId is a
+    // collection-level issue, so rowIndex is unused for that result.
     std::size_t rowIndex = 0;
 
     [[nodiscard]] bool isValid() const noexcept

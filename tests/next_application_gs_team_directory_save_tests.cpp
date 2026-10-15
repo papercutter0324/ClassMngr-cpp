@@ -2,6 +2,7 @@
 
 #include <QtTest/QtTest>
 
+#include <array>
 #include <utility>
 
 using namespace ClassMngr::Next;
@@ -55,6 +56,7 @@ private slots:
     void rejectsInvalidCalendarDay();
     void reportsTheFirstInvalidRow();
     void callsThePortOnceForValidInputAndNeverForInvalidInput();
+    void rejectsInvalidRowAndDeletedIdsBeforeCallingPort();
 };
 
 void NextApplicationGsTeamDirectorySaveTests::
@@ -160,9 +162,15 @@ void NextApplicationGsTeamDirectorySaveTests::
 callsThePortOnceForValidInputAndNeverForInvalidInput()
 {
     Application::GsTeamDirectorySaveRequest valid;
-    valid.rows = {row(u"Alex", u"\uC54C\uB809\uC2A4")};
+    valid.rows = {
+        row(u"Alex", u"\uC54C\uB809\uC2A4"),
+        row(u"Bea", u"\uBE44\uC544")
+    };
     valid.rows.front().id = Domain::GsTeamMemberId(42);
-    valid.deletedIds = {Domain::GsTeamMemberId(31)};
+    valid.deletedIds = {
+        Domain::GsTeamMemberId(31),
+        Domain::GsTeamMemberId(31)
+    };
 
     RecordingSavePort port;
     auto outcome =
@@ -189,6 +197,60 @@ callsThePortOnceForValidInputAndNeverForInvalidInput()
         outcome.validation.issue,
         Application::GsTeamDirectorySaveIssue::InvalidBirthday);
     QCOMPARE(port.calls, 1);
+}
+
+void NextApplicationGsTeamDirectorySaveTests::
+rejectsInvalidRowAndDeletedIdsBeforeCallingPort()
+{
+    RecordingSavePort port;
+    Application::GsTeamDirectorySaveRequest invalid;
+    Application::GsTeamDirectorySaveOutcome outcome;
+
+    for (const int id : std::array<int, 2>{0, -7})
+    {
+        invalid.rows = {row(u"valid row", u"\uD658\uC601")};
+        invalid.rows.front().id = Domain::GsTeamMemberId(id);
+        outcome = Application::GsTeamDirectorySaveUseCase::execute(
+            invalid,
+            port);
+        QVERIFY(!outcome.saved);
+        QVERIFY(!outcome.error.has_value());
+        QCOMPARE(
+            outcome.validation.issue,
+            Application::GsTeamDirectorySaveIssue::InvalidRowId);
+        QCOMPARE(outcome.validation.rowIndex, std::size_t(0));
+        QCOMPARE(port.calls, 0);
+    }
+
+    invalid.rows = {
+        row(u"first row", u"\uCCAB\uC9F8"),
+        row(u"second row", u"\uB458\uC9F8")
+    };
+    invalid.rows[0].id = Domain::GsTeamMemberId(42);
+    invalid.rows[1].id = Domain::GsTeamMemberId(42);
+    outcome = Application::GsTeamDirectorySaveUseCase::execute(invalid, port);
+    QVERIFY(!outcome.saved);
+    QVERIFY(!outcome.error.has_value());
+    QCOMPARE(
+        outcome.validation.issue,
+        Application::GsTeamDirectorySaveIssue::DuplicateRowId);
+    QCOMPARE(outcome.validation.rowIndex, std::size_t(1));
+    QCOMPARE(port.calls, 0);
+
+    invalid.rows = {row(u"valid insert", u"\uC0C8\uB85C")};
+    for (const int id : std::array<int, 2>{0, -7})
+    {
+        invalid.deletedIds = {Domain::GsTeamMemberId(id)};
+        outcome = Application::GsTeamDirectorySaveUseCase::execute(
+            invalid,
+            port);
+        QVERIFY(!outcome.saved);
+        QVERIFY(!outcome.error.has_value());
+        QCOMPARE(
+            outcome.validation.issue,
+            Application::GsTeamDirectorySaveIssue::InvalidDeletedId);
+        QCOMPARE(port.calls, 0);
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationGsTeamDirectorySaveTests)
