@@ -40169,3 +40169,37 @@ queued in Batch309, with F943 next after F942. Begin Batch310 discovery when
 F944, the second-last item, starts. No independent post-F942 Deferred audit is
 recorded here; leave all official Deferred entries unchanged pending that
 audit. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F942 accepted; F943 next in Batch309 - 2026-10-15
+
+F942 is accepted in source/test commit `200e5a85`, after acceptance commit
+`3e03a5c8`. `TeacherRepository::getAllTeachers()` now checks terminal
+`lastError()` after its loop and returns contextual
+`SqlQueryUtils::errorFor(..., Loading teachers).userMessage()` failure instead
+of a partial list. It preserves the API, query and ordering, teacher-ID
+validation/mapping, clean empty-list success, and typed Schedule Import
+snapshot path.
+
+The permanent `teacherDirectoryRejectsLateFetchFailure` lifecycle regression
+reuses the indexed JSON-view fixture: the exact ordered query yields a valid
+row followed by malformed-JSON terminal fetch failure, and public
+`DataService::getAllTeachers()` fails contextually rather than returning the
+prefix. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed in `build/windows-x64-debug` with
+`/p:TrackFileAccess=false`; exact CTest #24
+(`ClassMngrDataServiceLifecycleTests`) passed 1/1. `git diff --check`
+passed. No full suite ran and no build/test warnings were reported; Git emitted
+its existing LF-to-CRLF notice.
+
+Two independent post-implementation audits after `200e5a85` checked all 13
+official Deferred entries and found none actionable, resolved, superseded, or
+materially changed: F285, F579, F614, F618, F626, F629, F707, F709, F598,
+Batch 197 teacher reassignment parity, Class Analytics arbitrary
+roster-allocation cap and sparse representation change, Dense Speaking
+Evaluation row-limit change, and Sidebar Teacher Create/Delete teacher-ID
+width. The Deferred list remains unchanged.
+
+F943, Calendar event date/upcoming lists, is next in Batch309 with baseline and
+acceptance pending. F944-F945 remain queued; begin Batch310 discovery when F944,
+the second-last item, starts. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.

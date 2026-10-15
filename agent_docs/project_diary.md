@@ -5717,4 +5717,25 @@ errors after the `getAllTeachers()` loop with the contextual SQL error, while
 preserving the API, query and ordering, ID validation/mapping, and clean empty
 success. Leave the typed Schedule Import UI unchanged and add the permanent
 regression to the existing lifecycle test. Implementation and independent
-verification remain pending; the Phase 2 plan records the acceptance.
+verification were pending at this acceptance entry; the Phase 2 plan records
+the acceptance.
+
+## F942 accepted; F943 next in Batch309 - 2026-10-15
+
+F942 is accepted at source/test commit `200e5a85`, following acceptance commit
+`3e03a5c8`. The legacy full-teacher-list reader now checks the terminal SQL
+cursor error after iteration and returns the contextual failure instead of
+the valid prefix. The permanent lifecycle regression preflights the exact
+ordered query against the indexed JSON view, confirms one teacher row then a
+malformed-JSON fetch error, and verifies the public legacy API reports failure
+with context. Existing query/order, teacher-ID validation/mapping, clean empty
+success, and typed Schedule Import snapshot behavior remain unchanged.
+
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed in `build/windows-x64-debug` with
+`/p:TrackFileAccess=false`; exact CTest #24 passed 1/1, and `git diff --check`
+passed. Two independent post-implementation reviews checked all 13 official
+Deferred candidates: none became actionable, resolved, superseded, or changed,
+so all remain unchanged. No full suite ran. F943 is next in Batch309; begin
+Batch310 discovery when F944, the second-last Batch309 slice, starts. Gates
+1/2 remain Partial and the formal Phase 2 exit gate is Open.

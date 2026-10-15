@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F942 acceptance complete; implementation active)
+### Current state - 2026-10-15 (F942 accepted; F943 next in Batch309)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -188,18 +188,20 @@ resolved, or superseded. F943-F945 remain queued, and Batch310 discovery begins
 when F944 starts. No full suite ran. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate is Open.
 
-F942 acceptance is complete and implementation is active. An indexed JSON-view
-baseline for `TeacherRepository::getAllTeachers()` yielded one valid teacher,
-then failed on a terminal fetch; public `DataService::getAllTeachers()` exposed
-that prefix as success. The permanent regression will cover the same route and
-require a contextual failure. Caller review confirmed that the regular Schedule
-Import dialog already uses the guarded typed snapshot read, the legacy preview
-has no in-tree production caller, and the public list API is also reached by an
-opt-in startup-performance lifecycle that checks the result without presenting
-the list. The accepted scope changes only the legacy full-list terminal-error
-contract; query/order, API, ID validation/mapping, clean empty results, and the
-typed UI route remain unchanged. Baseline and acceptance details are in the
-Phase 2 progress log.
+F942 is accepted at source/test commit `200e5a85`, following acceptance commit
+`3e03a5c8`. The legacy teacher-list reader now returns a contextual error on a
+terminal cursor failure instead of exposing its prefix as success. Its indexed
+JSON-view regression preflights one valid row followed by a malformed-JSON
+fetch error, then checks the public `DataService::getAllTeachers()` result.
+Caller review confirmed that the regular Schedule Import dialog retains its
+guarded typed snapshot path and the legacy preview has no in-tree production
+caller. Independent Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed with `/p:TrackFileAccess=false`;
+exact CTest #24 passed 1/1. Two independent post-F942 audits reviewed all 13
+official Deferred candidates and found none newly actionable, resolved,
+superseded, or changed; all remain unchanged. F943 is next in Batch309, with
+F944 still the Batch310 discovery trigger. No full suite ran. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
