@@ -39532,3 +39532,59 @@ existing Debug CTest #348 covers execution failure after dropping
 fetch-failure fixture. No F934 baseline or acceptance has begun; no build or
 test has run. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F934 preimplementation baseline and acceptance - 2026-10-15
+
+F934 is scoped to the regular and intensive schedule cursor loops in
+`ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed()`
+(`src/data/repositories/class_info_repository.cpp`), called by the live typed
+path through `ApplicationServicesClassCoTeacherAssignmentPort`. The exact
+queries are `SELECT day, start_time, end_time FROM class_times WHERE
+class_id=? ORDER BY id` and the same projection/order against
+`class_intensive_times`. Both execute successfully, but neither loop checks
+`lastError()` after iteration; the class-row first-result path and adjacent
+conflict query already have error guards.
+
+Temporary JSON-backed views reproduced a late fetch error for each exact query:
+`exec()` succeeded, the first `next()` returned a valid row, and the second
+`next()` returned false with valid `lastError()` (malformed JSON, "Unable to
+fetch row"). `EXPLAIN QUERY PLAN` showed a table scan with no sort. For the
+intensive-query case, the regular schedule query remained readable and was
+verified complete. The typed-port baseline unexpectedly returned success for
+both late-fetch cases and changed persisted `teacher_id` from 1 to 2; no
+schedule or class-info fields changed.
+
+Temporary regression probes touched only the assigned focused test file, then
+restored it byte-for-byte (SHA-256
+`93D034A76833B34AD718EF490AADC71C4BB8877652BA640FF1CC8E2CC73D488B`). The
+restored focused target built successfully in standard
+`build/windows-x64-debug` with `/p:TrackFileAccess=false` after a restored-source
+timestamp refresh and retry. Exact Debug CTest #348 passed 1/1; no full suite
+ran. The F934 production baseline remains F933 source/test commit `3318f537`;
+the only repository change since that baseline is the F933 documentation
+closeout. No F934 implementation or acceptance is claimed.
+
+**Acceptance criteria**
+
+1. Add terminal-error checks after both complete schedule loops and before
+   continuing or returning. Map each query failure to detailed failure kind
+   `Technical` using the established query diagnostics; no partial snapshot
+   prefix may escape.
+2. Preserve the exact queries, ordering, mapping, clean empty schedules,
+   class-not-found handling, and downstream validation/conflict behavior.
+   Keep this change limited to the typed co-teacher validation snapshot; exclude
+   neighboring readers and F915's class-information loops.
+3. Permanently regress both real late-fetch paths using JSON-backed views and
+   typed-port assertions: return `Technical` and do not mutate persistence,
+   including the assigned teacher. In the intensive case, verify the regular
+   schedule read completes. Add no production seam, native callbacks, or
+   custom driver.
+4. After implementation, sequentially build `ClassMngr` and
+   `ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`
+   in standard `build/windows-x64-debug` with `/p:TrackFileAccess=false`, then
+   run exactly Debug CTest #348. Do not run the full suite.
+
+The 13 official Deferred entries remain as last audited after F933; no new
+post-F934 Deferred audit was performed. F934 remains active in Batch307 with
+implementation and final acceptance pending. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
