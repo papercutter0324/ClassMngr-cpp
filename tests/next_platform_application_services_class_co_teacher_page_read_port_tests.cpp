@@ -85,6 +85,25 @@ bool updateTeacherId(
     return query.exec() && query.numRowsAffected() == 1;
 }
 
+bool updateTeacherIdText(
+    ApplicationServices& services,
+    const int classIdValue,
+    const QString& teacherIdValue
+    )
+{
+    QSqlQuery query(services.databaseSession()->database());
+    if (!query.exec(QStringLiteral("PRAGMA foreign_keys=OFF")))
+    {
+        return false;
+    }
+    query.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        ));
+    query.addBindValue(teacherIdValue);
+    query.addBindValue(classIdValue);
+    return query.exec() && query.numRowsAffected() == 1;
+}
+
 bool insertRegularTime(
     ApplicationServices& services,
     const int classIdValue,
@@ -115,6 +134,7 @@ private slots:
     void mapsAssignedClassAndPreferredTeacherFromActiveSession();
     void mapsUnassignedTeacherToEmptyTypedSelection();
     void treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields();
+    void classifiesMalformedStoredTeacherIdAsValidation();
     void unavailableSessionDoesNotUseDataServiceFallback();
     void classAndTeacherSourceFailuresRemainIndependent();
     void metadataQueryFailureKeepsPageErrorMapping();
@@ -302,6 +322,46 @@ treatsNonpositiveTeacherIdsAsUnassignedAndPreservesClassFields()
         }));
     QVERIFY(result.value().teacherDisplayName);
     QVERIFY(result.value().teacherDisplayName.value().empty());
+}
+
+void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::
+classifiesMalformedStoredTeacherIdAsValidation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(services, QStringLiteral("Malformed Co-Teacher ID"));
+    QVERIFY(id > 0);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(id)
+        ));
+    QVERIFY(updateTeacherIdText(
+        services,
+        id,
+        QStringLiteral("not-a-teacher-id")
+        ));
+
+    Platform::ApplicationServicesClassCoTeacherPageReadPort port(&services);
+    const auto result = port.readClassCoTeacherPage(classId(id));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classId == classId(id));
+    QVERIFY(!result.value().classFields);
+    QCOMPARE(result.value().classFields.error().code,
+             Domain::ErrorCode::Validation);
+    QCOMPARE(result.value().classFields.error().message,
+             QStringLiteral(
+                 "Loading class information failed: invalid co-teacher id "
+                 "for class id %1."
+                 ).arg(id).toStdString());
+    QVERIFY(!result.value().classFields.error().recoverable);
+    QVERIFY(!result.value().teacherDisplayName);
+    QCOMPARE(result.value().teacherDisplayName.error().code,
+             Domain::ErrorCode::NotFound);
+    QVERIFY(result.value().teacherDisplayName.error().recoverable);
+    QCOMPARE(result.value().teacherDisplayName.error().message,
+             std::string("The co-teacher display name is unavailable."));
 }
 
 void NextPlatformApplicationServicesClassCoTeacherPageReadPortTests::

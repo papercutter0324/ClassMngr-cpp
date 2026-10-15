@@ -225,7 +225,7 @@ private:
         }
         else if (normalized.contains(QStringLiteral("invalid")))
         {
-            code = Domain::ErrorCode::InvalidInput;
+            code = Domain::ErrorCode::Validation;
         }
 
         const QByteArray bytes = message.toUtf8();
