@@ -6438,5 +6438,15 @@ Result<QList<ClassConflict>> ClassInfoRepository::getClassTimeConflicts(
         }
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class time conflicts"),
+            {},
+            QObject::tr("class id %1").arg(classId)
+            ).userMessage());
+    }
+
     return conflicts;
 }

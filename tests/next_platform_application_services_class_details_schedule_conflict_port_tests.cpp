@@ -127,6 +127,7 @@ private slots:
     void blankNameWidePersistedConflictIdPreservesFullFallback();
     void repositoryOwnsSelfOverlapAndBoundaryBehavior();
     void unavailableSessionsAreNotFoundAndDoNotUseFallback();
+    void terminalConflictCursorFailureDiscardsPartialConflicts();
     void missingClassAndRepositoryFailureAreTechnical();
 };
 
@@ -575,6 +576,162 @@ unavailableSessionsAreNotFoundAndDoNotUseFallback()
     closedServices.closeDatabase();
     QVERIFY(!session->isOpen());
     verifyUnavailable(query(&closedServices));
+}
+
+void NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests::
+terminalConflictCursorFailureDiscardsPartialConflicts()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int target = createClass(
+        services,
+        QStringLiteral("Requested Class")
+        );
+    const int source = createClass(
+        services,
+        QStringLiteral("Cursor Source")
+        );
+    QVERIFY(target > 0);
+    QVERIFY(source > 0);
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    ClassInfoRepository* const repository = session->classInfoRepository();
+    QVERIFY(repository);
+
+    const QSqlDatabase database = session->database();
+    QSqlQuery schemaQuery(database);
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral("DROP TABLE class_times")),
+        qPrintable(schemaQuery.lastError().text())
+        );
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral(R"(
+            CREATE TABLE class_time_cursor_rows (
+                id INTEGER PRIMARY KEY,
+                class_id INTEGER NOT NULL,
+                payload TEXT NOT NULL
+            )
+        )")),
+        qPrintable(schemaQuery.lastError().text())
+        );
+    QVERIFY2(
+        schemaQuery.exec(QStringLiteral(R"(
+            CREATE VIEW class_times AS
+            SELECT
+                id,
+                class_id,
+                json_extract(payload, '$.day') AS day,
+                json_extract(payload, '$.start_time') AS start_time,
+                json_extract(payload, '$.end_time') AS end_time
+            FROM class_time_cursor_rows
+        )")),
+        qPrintable(schemaQuery.lastError().text())
+        );
+
+    QSqlQuery validRow(database);
+    validRow.prepare(QStringLiteral(
+        "INSERT INTO class_time_cursor_rows (id, class_id, payload) "
+        "VALUES (?, ?, ?)"
+        ));
+    validRow.addBindValue(1);
+    validRow.addBindValue(source);
+    validRow.addBindValue(QStringLiteral(
+        R"({"day":"Monday","start_time":"9:00 AM","end_time":"9:55 AM"})"
+        ));
+    QVERIFY2(validRow.exec(), qPrintable(validRow.lastError().text()));
+
+    QSqlQuery malformedRow(database);
+    malformedRow.prepare(QStringLiteral(
+        "INSERT INTO class_time_cursor_rows (id, class_id, payload) "
+        "VALUES (?, ?, ?)"
+        ));
+    malformedRow.addBindValue(2);
+    malformedRow.addBindValue(source);
+    malformedRow.addBindValue(QStringLiteral("{malformed json"));
+    QVERIFY2(
+        malformedRow.exec(),
+        qPrintable(malformedRow.lastError().text())
+        );
+
+    // Keep this SELECT identical to the repository query. The assertions below
+    // verify the actual cursor order before exercising the repository and port.
+    QSqlQuery rawQuery(database);
+    rawQuery.prepare(QStringLiteral(R"(
+        SELECT
+            times.class_id,
+            classes.name AS class_name,
+            times.day,
+            times.start_time,
+            times.end_time
+        FROM class_times times
+        LEFT JOIN classes
+        ON classes.id = times.class_id
+        WHERE times.class_id != ?
+    )"));
+    rawQuery.addBindValue(target);
+    QVERIFY2(rawQuery.exec(), qPrintable(rawQuery.lastError().text()));
+    QVERIFY2(
+        rawQuery.next(),
+        "the first production-query row must be the valid overlapping conflict"
+        );
+    QCOMPARE(rawQuery.value("class_id").toInt(), source);
+    QCOMPARE(rawQuery.value("class_name").toString(),
+        QStringLiteral("Cursor Source"));
+    QCOMPARE(rawQuery.value("day").toString(), QStringLiteral("Monday"));
+    QCOMPARE(rawQuery.value("start_time").toString(), QStringLiteral("9:00 AM"));
+    QCOMPARE(rawQuery.value("end_time").toString(), QStringLiteral("9:55 AM"));
+    QVERIFY2(
+        !rawQuery.next(),
+        "the malformed JSON row must terminate the cursor after one valid row"
+        );
+    const QSqlError rawCursorError = rawQuery.lastError();
+    QVERIFY2(rawCursorError.isValid(), "the terminal cursor error must be valid");
+    QVERIFY2(
+        rawCursorError.text().contains(
+            QStringLiteral("malformed JSON"),
+            Qt::CaseInsensitive
+            ),
+        qPrintable(rawCursorError.text())
+        );
+    rawQuery.finish();
+
+    const QList<ClassTime> candidateTimes{
+        legacyTime(
+            QStringLiteral("Monday"),
+            QStringLiteral("9:10 AM"),
+            QStringLiteral("9:40 AM")
+            )
+    };
+    const auto repositoryResult = repository->getClassTimeConflicts(
+        target,
+        candidateTimes,
+        ScheduleType::Regular
+        );
+    QVERIFY(!repositoryResult);
+    QVERIFY(repositoryResult.error().contains(
+        QStringLiteral("Loading class time conflicts")
+        ));
+    QVERIFY(repositoryResult.error().contains(
+        QStringLiteral("class id %1").arg(target)
+        ));
+
+    Platform::ApplicationServicesClassDetailsScheduleConflictPort port(
+        &services
+        );
+    const auto typedResult =
+        Application::ClassDetailsScheduleConflictQuery::execute(
+            request(
+                target,
+                Application::ClassDetailsScheduleMode::Regular,
+                {domainTime(0, 9 * 60 + 10, 9 * 60 + 40)}
+                ),
+            port
+            );
+    QVERIFY(!typedResult);
+    QCOMPARE(typedResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!typedResult.error().message.empty());
 }
 
 void NextPlatformApplicationServicesClassDetailsScheduleConflictPortTests::
