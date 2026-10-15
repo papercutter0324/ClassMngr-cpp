@@ -2,6 +2,7 @@
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/platform/application_services_class_co_teacher_teacher_choices_read_port.h"
+#include "teacher_choices_cursor_error_fixture.h"
 
 #include <QSqlError>
 #include <QSqlQuery>
@@ -62,6 +63,7 @@ private slots:
     void unavailableSessionDoesNotUseDataServiceFallback();
     void repositoryFailureReturnsStructuredTechnicalError();
     void rejectsNonpositiveTeacherIdsAsNonrecoverableValidation();
+    void rejectsPartialTeacherChoicesAfterCursorError();
 };
 
 void NextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests::
@@ -204,6 +206,78 @@ rejectsNonpositiveTeacherIdsAsNonrecoverableValidation()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
     QVERIFY(!result.error().recoverable);
+}
+
+void NextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests::
+rejectsPartialTeacherChoicesAfterCursorError()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlDatabase database = session->database();
+
+    const QString setupError =
+        TeacherChoicesCursorErrorFixture::install(database);
+    QVERIFY2(setupError.isEmpty(), qPrintable(setupError));
+
+    const QString selectSql = QStringLiteral(R"(
+        SELECT
+            id,
+            teacher_kr,
+            teacher_en,
+            room_number,
+            internet_type,
+            wifi_name,
+            wifi_password,
+            projection_type,
+            zoom_id,
+            zoom_password
+        FROM teachers
+        ORDER BY teacher_en
+    )");
+    const auto plan = TeacherChoicesCursorErrorFixture::explain(
+        database,
+        selectSql
+        );
+    QVERIFY2(plan.executed, qPrintable(plan.error));
+    QVERIFY2(
+        plan.details.join(QLatin1Char('\n')).contains(
+            QStringLiteral("teacher_choices_cursor_teacher_en_idx")
+            ),
+        qPrintable(plan.details.join(QLatin1Char('\n')))
+        );
+
+    const auto probe = TeacherChoicesCursorErrorFixture::probe(
+        database,
+        selectSql
+        );
+    QVERIFY2(probe.executed, qPrintable(probe.terminalError.text()));
+    QVERIFY(probe.firstRowFound);
+    QCOMPARE(probe.firstTeacherId, qint64(1));
+    QCOMPARE(probe.firstTeacherKr, QStringLiteral("A Alpha"));
+    QVERIFY(!probe.secondRowFound);
+    QVERIFY(probe.terminalError.isValid());
+    QVERIFY(probe.terminalError.text().contains(
+        QStringLiteral("malformed"), Qt::CaseInsensitive
+        ));
+
+    TeacherRepository* const repository = session->teacherRepository();
+    QVERIFY(repository);
+    const auto records = repository->loadClassCoTeacherTeacherChoiceRecords();
+    QVERIFY(!records);
+    QVERIFY(records.error().contains(QStringLiteral("malformed"), Qt::CaseInsensitive));
+
+    Platform::ApplicationServicesClassCoTeacherTeacherChoicesReadPort port(
+        &services
+        );
+    const auto result = port.readClassCoTeacherTeacherChoices();
+    QVERIFY(!result.hasValue());
+    QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
+    QVERIFY(result.error().message.find("malformed") != std::string::npos);
 }
 
 QTEST_MAIN(

@@ -2635,6 +2635,7 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPort
     SOURCES
         tests/next_platform_application_services_class_co_teacher_teacher_choices_read_port_tests.cpp
+        tests/teacher_choices_cursor_error_fixture.h
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test
