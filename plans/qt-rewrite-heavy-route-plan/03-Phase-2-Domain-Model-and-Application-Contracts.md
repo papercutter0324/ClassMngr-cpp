@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch321 is closed with F953 complete; F954 is the active Batch322 slice, all 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F954 and Batch322 are closed; F955 is the sole active Batch323 slice, all 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,7 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F954 - Speaking Evaluation single-query name validation: reject whitespace-only `SpeakingEvaluationQuery` names as recoverable `InvalidInput`; leave batch query validation unchanged.
+- F955 - Campus Dashboard selected-campus read validation: reject Unicode-whitespace-only IDs before the application port.
 
 ## Objective
 

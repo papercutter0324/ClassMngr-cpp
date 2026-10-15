@@ -5600,6 +5600,38 @@ audits reviewed all 13 official Deferred candidates; none became actionable
 and their listed blockers remain. Batch318 source discovery is underway. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
+### F954 complete; F955 accepted as active Batch323 slice - 2026-10-16
+
+F954 is complete at source/test commit `140bb639`, following acceptance docs
+commit `f9bfec14`. The Qt-free single `SpeakingEvaluationQuery` now rejects
+Qt-whitespace-only names as recoverable `InvalidInput` with its existing
+diagnostic before the read port. Empty-name and invalid-ClassId recoverability,
+validation order, exact forwarding of padded nonblank names, and the separate
+batch-query fallback remain unchanged.
+
+The independent Tester sequentially built
+`ClassMngrNextApplicationSpeakingEvaluationQueryTests` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests` in
+the standard Debug folder with `/p:TrackFileAccess=false`; exact CTests #232
+and #324 passed 1/1 each. `git diff --check` passed. The Executor saw an
+MSBuild warning for the missing generated dependency
+`teacher_import_plan_mapper.h`, while the targets linked and the final
+independent builds exited successfully. No full suite ran.
+
+Two independent post-F954 audits reviewed all 13 official Deferred entries;
+all remain unchanged and none is actionable, resolved, or superseded. The
+Dense Speaking Evaluation row-limit item remains a separate unresolved product
+policy. Batch323 read-only scans found two leads. F955 is selected for the
+Campus Dashboard selected-campus read: replace the query's byte-wise blank
+check with shared `Application::isBlankUtf8Text()` so Unicode whitespace-only
+IDs are rejected as the existing nonrecoverable `InvalidInput` before the
+port. Cover U+00A0 and U+3000 in the app-less test. Preserve exact forwarding
+for nonblank IDs and do not change the adapter, repository, UI, or global
+campus-ID policy. The Class Details save adapter lead was not selected because
+normal callers validate `TeacherId` in the use case and its discrepancy is
+limited to direct adapter error precedence. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
+
 ## Phase 2 current position — 2026-10-16 (F949 complete; Batch319 discovery)
 
 F949 remains complete at acceptance commit `af31c6da` and implementation/test

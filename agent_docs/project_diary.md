@@ -6001,3 +6001,29 @@ reject present IDs at or below zero, duplicate positive row IDs, and
 nonpositive delete IDs. Keep duplicate positive deletions allowed, preserve
 the legacy sentinel only for absent IDs, and leave repository and UI behavior
 unchanged.
+
+## F954 Speaking Evaluation query name validation - 2026-10-16
+
+The single Speaking Evaluation query rejected only an exact-empty name before
+calling its port. The repository then treated whitespace-only text as a
+recoverable Technical failure, while the shared query validation helper
+already classifies invalid required inputs as recoverable InvalidInput. Use
+`trimQtWhitespace(name).empty()` in the single-query guard and keep that
+recoverability and existing diagnostic. Do not normalize nonblank padded
+names or extend the check to batch queries, whose per-item fallback depends on
+separate validation and outer-result behavior.
+
+## F955 Campus Dashboard selected-campus read blank-ID validation - 2026-10-16
+
+Batch323 source scans found that the selected-campus application query checks
+UTF-8 input one byte at a time with `std::isspace`, while the platform
+repository later applies `QString::trimmed()` to construct a lookup ID. A
+Unicode-whitespace-only request can therefore pass the query and map to the
+`campus.json` filename fallback if that file exists. Use the shared
+`Application::isBlankUtf8Text()` helper in this query before typed-ID
+construction; preserve its existing nonrecoverable `InvalidInput` diagnostic
+and reject before the port. Cover U+00A0 and U+3000 in the existing app-less
+test, and keep exact nonblank ID forwarding plus adapter, repository, UI, and
+project-wide campus-ID policy unchanged. A separate Class Details adapter
+validation-order lead was not selected because normal callers validate the
+TeacherId in the use case first.

@@ -40948,3 +40948,39 @@ unchanged. Build the two named Speaking Evaluation targets sequentially in the
 standard Debug folder with `/p:TrackFileAccess=false`, run only their exact
 CTest names, inspect the source, and run `git diff --check`; no full suite.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F954 complete; Batch322 closed; F955 active in Batch323 - 2026-10-16
+
+F954 is complete at source/test commit `140bb639`, following acceptance-docs
+commit `f9bfec14`. The focused Debug targets and CTests #232 and #324 passed;
+no full suite ran.
+
+Batch323 scans found two candidates. A: the Campus Dashboard selected-campus
+read accepts Unicode whitespace such as U+00A0 and U+3000 as nonblank, while
+downstream Qt trimming can turn the ID into the `campus.json` filename
+fallback. That path can access `campus.json` if it exists; default campus data
+is not guaranteed. B: the Class Details Save direct adapter validates optional
+TeacherId after database reads. Normal production calls validate in the use
+case first, so B affects only direct-adapter error precedence. Select A as
+F955; record B as investigated and not selected.
+
+F955 acceptance for implementation:
+
+1. In `CampusDashboardSelectedCampusReadQuery`, use the shared
+   `Application::isBlankUtf8Text` policy before constructing `CampusId`.
+   Empty, ASCII-blank, Unicode-blank (including U+00A0/U+3000), and valid
+   UTF-8 blank-only values return the existing nonrecoverable `InvalidInput`
+   diagnostic before the port call.
+2. Extend the existing app-less test with U+00A0 and U+3000, asserting code,
+   diagnostic, recoverability, and zero port calls.
+3. Preserve exact forwarding for nonblank IDs and existing empty, ASCII, and
+   oversized rules. Do not change the adapter, repository, UI, or global
+   campus-ID policy.
+4. In `build/windows-x64-debug`, build
+   `ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests` in
+   Debug with `/p:TrackFileAccess=false`; run only the exact registered CTest
+   `ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests`.
+   Review the diff and run `git diff --check`; do not run the full suite.
+
+All 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.
