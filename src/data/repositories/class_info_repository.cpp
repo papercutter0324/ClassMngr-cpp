@@ -472,6 +472,80 @@ ClassInfoRepository::saveClassInfoWithTeacherIdDetailed(
                     ).arg(info.classId)
             });
         }
+
+        const auto checkScheduleConflicts = [this, &info](
+            const QList<ClassTime>& times,
+            const ScheduleType type
+            ) -> ClassDetailsSaveDetailedResult
+        {
+            if (times.isEmpty())
+            {
+                return {};
+            }
+
+            const Result<QList<ClassConflict>> conflicts =
+                getClassTimeConflicts(info.classId, times, type);
+            if (!conflicts)
+            {
+                return std::unexpected(ClassDetailsSaveFailure{
+                    .kind = ClassDetailsSaveFailure::Kind::Technical,
+                    .diagnostic = conflicts.error()
+                });
+            }
+            if (conflicts->isEmpty())
+            {
+                return {};
+            }
+
+            const ClassConflict& first = conflicts->first();
+            return std::unexpected(ClassDetailsSaveFailure{
+                .kind = ClassDetailsSaveFailure::Kind::Technical,
+                .diagnostic = QStringLiteral(
+                    "Class schedule conflict: %1 %2\u2013%3 conflicts with %4."
+                    ).arg(
+                        first.day,
+                        first.startTime,
+                        first.endTime,
+                        first.conflictingClassName
+                        )
+            });
+        };
+
+        const auto rollbackScheduleCheckFailure =
+            [this, &transaction, &identity](
+                const ClassDetailsSaveFailure& failure
+                ) -> ClassDetailsSaveDetailedResult
+        {
+            if (!transaction.rollbackChecked())
+            {
+                return std::unexpected(ClassDetailsSaveFailure{
+                    .kind = ClassDetailsSaveFailure::Kind::Technical,
+                    .diagnostic = QObject::tr(
+                        "Rolling back class information save failed for %1: %2"
+                        ).arg(identity, m_database.lastError().text())
+                });
+            }
+
+            return std::unexpected(failure);
+        };
+
+        const auto regularConflicts = checkScheduleConflicts(
+            info.classTimes,
+            ScheduleType::Regular
+            );
+        if (!regularConflicts)
+        {
+            return rollbackScheduleCheckFailure(regularConflicts.error());
+        }
+
+        const auto intensiveConflicts = checkScheduleConflicts(
+            info.intensiveTimes,
+            ScheduleType::Intensive
+            );
+        if (!intensiveConflicts)
+        {
+            return rollbackScheduleCheckFailure(intensiveConflicts.error());
+        }
     }
 
     QSqlQuery query(m_database);

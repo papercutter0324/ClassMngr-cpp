@@ -80,6 +80,210 @@ bool sameTime(
     return value.day == day && value.startTime == start && value.endTime == end;
 }
 
+bool sameTimes(
+    const QList<ClassTime>& left,
+    const QList<ClassTime>& right
+    )
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+
+    for (qsizetype index = 0; index < left.size(); ++index)
+    {
+        if (!sameTime(
+                left[index],
+                right[index].day,
+                right[index].startTime,
+                right[index].endTime
+                ))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void verifyStaleScheduleConflictRejected(const ScheduleType type)
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    const QString profilePath = databasePath(directory);
+    ApplicationServices firstServices;
+    QVERIFY(firstServices.openDatabase(profilePath));
+
+    const QString scenario = type == ScheduleType::Regular
+        ? QStringLiteral("Regular")
+        : QStringLiteral("Intensive");
+    const auto winnerId = firstServices.classService()->create(
+        QStringLiteral("F958 %1 Winner").arg(scenario)
+        );
+    const auto losingId = firstServices.classService()->create(
+        QStringLiteral("F958 %1 Losing").arg(scenario)
+        );
+    QVERIFY(winnerId);
+    QVERIFY(losingId);
+
+    auto winnerSeed = firstServices.classService()->classInfo(*winnerId);
+    auto losingSeed = firstServices.classService()->classInfo(*losingId);
+    QVERIFY(winnerSeed);
+    QVERIFY(losingSeed);
+
+    winnerSeed->classColor = QStringLiteral("#123456");
+    winnerSeed->fontColor = QStringLiteral("#654321");
+    winnerSeed->notes = QStringLiteral("Winner notes before");
+    winnerSeed->timeFillerActivities = QStringLiteral("Winner filler before");
+    winnerSeed->classTimes = {
+        {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:50 AM")}
+    };
+    winnerSeed->intensiveTimes = {
+        {QStringLiteral("Friday"), QStringLiteral("10:00 AM"), QStringLiteral("10:50 AM")}
+    };
+    const auto winnerSeedSaved =
+        firstServices.classService()->saveClassInfo(*winnerSeed);
+    QVERIFY2(
+        winnerSeedSaved.has_value(),
+        winnerSeedSaved ? "" : qPrintable(winnerSeedSaved.error())
+        );
+
+    losingSeed->classColor = QStringLiteral("#234567");
+    losingSeed->fontColor = QStringLiteral("#765432");
+    losingSeed->notes = QStringLiteral("Losing notes before");
+    losingSeed->timeFillerActivities = QStringLiteral("Losing filler before");
+    losingSeed->classTimes = {
+        {QStringLiteral("Tuesday"), QStringLiteral("9:00 AM"), QStringLiteral("9:50 AM")}
+    };
+    losingSeed->intensiveTimes = {
+        {QStringLiteral("Saturday"), QStringLiteral("10:00 AM"), QStringLiteral("10:50 AM")}
+    };
+    const auto losingSeedSaved =
+        firstServices.classService()->saveClassInfo(*losingSeed);
+    QVERIFY2(
+        losingSeedSaved.has_value(),
+        losingSeedSaved ? "" : qPrintable(losingSeedSaved.error())
+        );
+
+    ApplicationServices secondServices;
+    QVERIFY(secondServices.openDatabase(profilePath));
+    ClassInfoRepository* const firstRepository =
+        firstServices.databaseSession()->classInfoRepository();
+    ClassInfoRepository* const secondRepository =
+        secondServices.databaseSession()->classInfoRepository();
+    QVERIFY(firstRepository);
+    QVERIFY(secondRepository);
+
+    const auto winnerBefore =
+        firstRepository->loadClassDetailsSaveInfo(*winnerId);
+    const auto losingBefore =
+        secondRepository->loadClassDetailsSaveInfo(*losingId);
+    QVERIFY(winnerBefore);
+    QVERIFY(losingBefore);
+    QCOMPARE(losingBefore->info.classTimes.size(), 1);
+    QCOMPARE(losingBefore->info.intensiveTimes.size(), 1);
+
+    ClassInfo winnerCandidate = winnerBefore->info;
+    ClassInfo losingCandidate = losingBefore->info;
+    winnerCandidate.classColor = QStringLiteral("#A1B2C3");
+    winnerCandidate.fontColor = QStringLiteral("#C3B2A1");
+    winnerCandidate.notes = QStringLiteral("Winner notes after");
+    winnerCandidate.timeFillerActivities = QStringLiteral("Winner filler after");
+    losingCandidate.classColor = QStringLiteral("#AABBCC");
+    losingCandidate.fontColor = QStringLiteral("#CCBBAA");
+    losingCandidate.notes = QStringLiteral("Losing notes attempted");
+    losingCandidate.timeFillerActivities = QStringLiteral("Losing filler attempted");
+
+    const ClassTime conflictSlot = type == ScheduleType::Regular
+        ? ClassTime{
+            QStringLiteral("Wednesday"),
+            QStringLiteral("6:00 PM"),
+            QStringLiteral("6:50 PM")
+        }
+        : ClassTime{
+            QStringLiteral("Thursday"),
+            QStringLiteral("7:00 PM"),
+            QStringLiteral("7:50 PM")
+        };
+    if (type == ScheduleType::Regular)
+    {
+        winnerCandidate.classTimes = {conflictSlot};
+        losingCandidate.classTimes = {conflictSlot};
+    }
+    else
+    {
+        winnerCandidate.intensiveTimes = {conflictSlot};
+        losingCandidate.intensiveTimes = {conflictSlot};
+    }
+
+    const QList<ClassTime> candidateTimes{conflictSlot};
+    const auto winnerPrecheck = firstRepository->getClassTimeConflicts(
+        *winnerId,
+        candidateTimes,
+        type
+        );
+    const auto losingPrecheck = secondRepository->getClassTimeConflicts(
+        *losingId,
+        candidateTimes,
+        type
+        );
+    QVERIFY(winnerPrecheck);
+    QVERIFY(losingPrecheck);
+    QVERIFY(winnerPrecheck->isEmpty());
+    QVERIFY(losingPrecheck->isEmpty());
+
+    const auto winnerSaved = firstRepository->saveClassDetailsDetailed(
+        winnerCandidate,
+        winnerBefore->teacherId
+        );
+    QVERIFY2(
+        winnerSaved.has_value(),
+        winnerSaved ? "" : qPrintable(winnerSaved.error().diagnostic)
+        );
+
+    const auto losingSaved = secondRepository->saveClassDetailsDetailed(
+        losingCandidate,
+        losingBefore->teacherId
+        );
+    QVERIFY(!losingSaved);
+    QCOMPARE(
+        losingSaved.error().kind,
+        ClassInfoRepository::ClassDetailsSaveFailure::Kind::Technical
+        );
+    const QString expectedDiagnostic = QStringLiteral(
+        "Class schedule conflict: %1 %2\u2013%3 conflicts with %4."
+        ).arg(
+            conflictSlot.day,
+            conflictSlot.startTime,
+            conflictSlot.endTime,
+            QStringLiteral("F958 %1 Winner").arg(scenario)
+            );
+    QCOMPARE(losingSaved.error().diagnostic, expectedDiagnostic);
+
+    const auto losingAfter =
+        secondRepository->loadClassDetailsSaveInfo(*losingId);
+    QVERIFY(losingAfter);
+    QCOMPARE(losingAfter->teacherId, losingBefore->teacherId);
+    QCOMPARE(losingAfter->info.teacherId, losingBefore->info.teacherId);
+    QCOMPARE(losingAfter->info.classGrade, losingBefore->info.classGrade);
+    QCOMPARE(losingAfter->info.classLevel, losingBefore->info.classLevel);
+    QCOMPARE(losingAfter->info.readingBook, losingBefore->info.readingBook);
+    QCOMPARE(losingAfter->info.essayBook, losingBefore->info.essayBook);
+    QCOMPARE(losingAfter->info.classColor, losingBefore->info.classColor);
+    QCOMPARE(losingAfter->info.fontColor, losingBefore->info.fontColor);
+    QCOMPARE(losingAfter->info.notes, losingBefore->info.notes);
+    QCOMPARE(
+        losingAfter->info.timeFillerActivities,
+        losingBefore->info.timeFillerActivities
+        );
+    QVERIFY(sameTimes(losingAfter->info.classTimes, losingBefore->info.classTimes));
+    QVERIFY(sameTimes(
+        losingAfter->info.intensiveTimes,
+        losingBefore->info.intensiveTimes
+        ));
+}
+
 }
 
 class NextPlatformApplicationServicesClassDetailsSavePortTests final
@@ -100,6 +304,8 @@ private slots:
     void classInfoSaveFailureReturnsTechnicalFailure();
     void invalidPreservedDataFailsMergedClassInfoValidation();
     void scheduleConflictRetainsClassInfoValidationBehavior();
+    void staleRegularConflictIsRejectedInsideTypedSave();
+    void staleIntensiveConflictIsRejectedInsideTypedSave();
 };
 
 void NextPlatformApplicationServicesClassDetailsSavePortTests::
@@ -743,6 +949,18 @@ scheduleConflictRetainsClassInfoValidationBehavior()
     const auto unchanged = services.classService()->classInfo(*selectedClass);
     QVERIFY(unchanged);
     QVERIFY(unchanged->classTimes.isEmpty());
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+staleRegularConflictIsRejectedInsideTypedSave()
+{
+    verifyStaleScheduleConflictRejected(ScheduleType::Regular);
+}
+
+void NextPlatformApplicationServicesClassDetailsSavePortTests::
+staleIntensiveConflictIsRejectedInsideTypedSave()
+{
+    verifyStaleScheduleConflictRejected(ScheduleType::Intensive);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesClassDetailsSavePortTests)
