@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F926 is accepted at source/test commit `274feeac`; two independent post-F926 reviews found none of the 13 official Deferred candidates newly actionable, resolved, superseded, or newly triggered. F927, My Classes teacher display-name batch read, has a verified baseline and defined acceptance from that commit; implementation and post-change verification remain pending in active Batch306 (F927-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F927, My Classes teacher display-name batch read, is accepted at source commit `6dc10fa6`; two independent post-F927 audits found none of the 13 official Deferred candidates actionable, resolved, superseded, or newly triggered. F928, Calendar repeat-series edit read, is selected next in active Batch306 (F928-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

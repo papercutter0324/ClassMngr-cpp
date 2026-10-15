@@ -39159,3 +39159,37 @@ Acceptance for F927:
 F927 implementation and post-change verification are pending in active
 Batch306 (F927-F929). All 13 official Deferred candidates remain unchanged.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F927 accepted; post-F927 Deferred audits clear; F928 selected - 2026-10-15
+
+F927, My Classes teacher display-name batch read, is accepted at source commit
+`6dc10fa6acc2297a2ccc6c7ab52d626ba8a9a782`. It adds only a post-loop
+`query.lastError().isValid()` guard in
+`TeacherRepository::loadMyClassesTeacherDisplayNameRecords()`, returning
+`SqlQueryUtils::errorFor(query, QObject::tr("Loading teacher display names"))`
+converted with `.userMessage()`. No tests or CMake files changed. Independent
+Tester source review confirmed the guard follows the full loop and that query,
+metrics, requested-ID validation and order, mapping, and missing-row semantics
+remain unchanged.
+
+Forced sequential Debug builds in `build/windows-x64-debug` used
+`/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true` and passed for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesTeacherDisplayNameBatchReadPortTests`,
+and `ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests`. The final
+application-query target build emitted one nonfatal MSB8064 warning for missing
+`src/next/application/teacher_import_plan_mapper.h`; the other two builds had
+no warnings. Exact CTest #338 passed 1/1. Exact CTest #272 failed 0/1 at the
+unchanged `tests/next_application_teacher_display_name_batch_read_query_tests.cpp:104`
+because `2147483648` is expected to be rejected. This same failure reproduced
+at pre-F927 source HEAD `dcbf83a05c70c37382b101a96c3fb5703ff2f5bc` and is a
+pre-existing baseline failure outside F927. No full suite ran.
+
+The exact malformed-JSON CTE probe used a temporary B-tree and failed during
+`exec()` before any row; no partial-result terminal-fetch runtime baseline is
+claimed. Acceptance rests on source review and the focused existing tests.
+
+Two independent post-F927 audits reviewed all 13 official Deferred candidates;
+none became actionable, resolved, superseded, or newly triggered, and all 13
+remain unchanged. F928, Calendar repeat-series edit read: reject an incomplete
+event suffix, is selected next in active Batch306 (F928-F929). Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

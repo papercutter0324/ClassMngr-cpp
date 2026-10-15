@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F926 accepted; F927 baseline captured)
+### Current state - 2026-10-15 (F927 accepted; F928 selected)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -62,13 +62,17 @@ passed for `ClassMngr` and all three affected read-port test targets; only
 CTests #335, #393, and #396 ran, and all passed 1/1. Two independent reviews
 found all 13 official Deferred candidates unchanged.
 
-F927's exact My Classes display-name CTE query materializes its ordinal order
-in a temporary B-tree, so malformed JSON failed at `exec()` before a row was
-returned; no partial-result runtime baseline is claimed. F927 acceptance is
-defined to add a post-loop terminal-error guard, preserve successful missing-
-teacher omissions, and source-review the guard because the exact query offers
-no deterministic cursor-error seam. Implementation is pending. Gates 1/2
-remain Partial and the formal Phase 2 exit gate is Open.
+F927 is accepted at source commit `6dc10fa6acc2297a2ccc6c7ab52d626ba8a9a782`.
+The My Classes display-name repository now rejects a terminal cursor error
+after row iteration. The exact CTE/ordinal query uses a temporary sort, so the
+malformed-JSON probe failed during `exec()` before a row; no partial-result
+runtime baseline is claimed. Forced sequential Debug builds passed for
+`ClassMngr` and both focused test targets. CTest #338 passed; #272 failed the
+same 32-bit ID expectation against pre-F927 source `dcbf83a05c70c37382b101a96c3fb5703ff2f5bc`,
+so it is recorded as a baseline failure outside F927. No full suite ran.
+Two independent post-F927 reviews found all 13 official Deferred candidates
+unchanged. F928, Calendar repeat-series edit read, is next. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
