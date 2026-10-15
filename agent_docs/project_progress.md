@@ -87,7 +87,11 @@ F917 source HEAD `e3655c1c`; forced sequential Debug builds passed for
 `ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`,
 and CTests #21 and #397 passed. The typed-port build emitted nonfatal MSB8064
 for missing `src/next/application/teacher_import_plan_mapper.h`; the build and
-test passed. F918 implementation and post-change verification remain pending.
+test passed. A temporary QSQLITE probe then proved the exact class-teacher
+query yields class 1 / teacher 11 before the next fetch returns a valid SQL
+error; the unchanged repository returned that partial assignment as success.
+The temporary test source was restored byte-for-byte, and the restored CTest
+#21 passed. F918 implementation and post-change verification remain pending.
 Batch 306 (F920-F929) is recorded after F919 based on three non-exhaustive
 read-only source scans; these future candidates are not yet accepted.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.

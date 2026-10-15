@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F917 is accepted at source/test commit `e3655c1c`; F918 baseline and acceptance are recorded at that source HEAD, with implementation and post-change verification pending; F919 remains queued in Batch 305 and Batch 306 (F920-F929) is recorded after it, while Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F917 is accepted at source/test commit `e3655c1c`; F918 baseline and acceptance are at that source HEAD, with the QSQLITE view fixture proven against the real query and baseline partial success reproduced; implementation and post-change verification are pending. F919 remains queued in Batch 305, Batch 306 (F920-F929) follows it, Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
