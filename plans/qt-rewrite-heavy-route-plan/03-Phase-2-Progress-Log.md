@@ -38099,8 +38099,53 @@ sibling, requested order, and one statement. SQL failure returns per-entry
 | Acceptance point | Required behavior |
 | --- | --- |
 | Missing teacher and failures | Map only LEFT JOIN confirmation of no teacher row to per-entry recoverable `NotFound`; map query, prepare, SQL, execution, and unavailable session/repository failures to `Technical`, with one failed result per requested ID where the batch API currently does so. Keep malformed, incomplete, reordered, or wrong-ID repository result shapes as `Validation`. Do not classify by diagnostic-string matching. |
-| Batch compatibility | Preserve successful siblings and requested order; a present-but-empty row succeeds; retain duplicate/canonical-ID validation, one ordered query with no fallback reads, and field mapping. |
+| Batch compatibility | Preserve successful siblings and requested order; a present row with empty unconstrained profile fields succeeds (schema-required fields retain valid defaults); retain duplicate/canonical-ID validation, one ordered query with no fallback reads, and field mapping. |
 | Consumer behavior | Keep the current silent Unassigned page presentation for any profile error; do not change UI behavior. |
 | Verification and status | Build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`, using forced sequential Debug builds; run exact CTest #327 only. The F913 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F913 accepted; post-F913 Deferred audits clear; F914 selected - 2026-10-15
+
+F913, My Classes Teacher Profile batch missing-row classification, is accepted
+at source/test commit
+`22879783089cd6e2a0daea3400a54c7a1204b406`. For each requested record, only
+affirmative LEFT JOIN evidence of a missing teacher maps to recoverable
+`NotFound`; query/read and unavailable-service failures map to `Technical`,
+and malformed repository result shapes remain `Validation`. The mixed batch
+preserves successful siblings, requested order, its single query, and field
+mapping. The page remains unchanged. The regression verifies that a present
+row with empty unconstrained profile fields succeeds; schema-required fields
+have valid defaults.
+
+Forced sequential Debug builds passed for `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`;
+exact CTest #327 passed 1/1. Malformed-shape and mid-iteration cursor-failure
+branches were source-reviewed but not separately fault-injected. No full suite
+ran.
+
+Two independent post-F913 audits reviewed all 13 exact official Deferred
+entries; none became newly actionable, and the list remains unchanged. F618
+still lacks a reproducible large-export driver and a matched current-source
+packaged Release measurement. Do not add a discovery marker or edit its
+Deferred wording.
+
+F914, Sub Prep selected-class details, is selected at F913 HEAD
+`22879783089cd6e2a0daea3400a54c7a1204b406`. Forced sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed;
+exact focused CTest #310 passed 1/1. The baseline returns `NotFound` for a
+nonexistent class, `Technical` when `class_info` is dropped, and `NotFound`
+for an unavailable DB session/service; absent class-info or teacher details
+retain their existing empty-detail fallback. The repository currently
+conflates a clean no-row result with `query.next()` cursor errors and reports
+"no matching record"; the port classifies repository errors by diagnostic
+text. No cursor-fetch error is injected.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Parent absence and operational errors | Return `NotFound` only after successful query execution, clean `query.next() == false`, and invalid `lastError()`. Classify prepare, execute, iteration, fetch, unavailable-session, and repository errors as `Technical`, without diagnostic substring matching. Keep invalid IDs as `InvalidInput` and malformed read data/validation at existing codes. |
+| Existing behavior | Preserve absent class-info and teacher-detail fallback, fields, wide IDs, the single query, selected-class state, and warning UI behavior. |
+| Regression and verification | Add focused missing-parent and error regressions; verify cursor-error classification in source. Do not invent broad test infrastructure if no straightforward cursor-failure seam exists. Build `ClassMngr`, then the focused port target with forced sequential Debug settings, and run exact CTest #310 only. Baseline and acceptance are recorded; implementation and post-change verification are pending. No full suite ran. |
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
