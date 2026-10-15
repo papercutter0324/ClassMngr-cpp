@@ -2,6 +2,7 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/repositories/roster_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/roster.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
@@ -68,6 +69,139 @@ bool executeSql(ApplicationServices& services, const QString& statement)
     }
     QSqlQuery query(dataService->databaseSession()->database());
     return query.exec(statement);
+}
+
+bool installMalformedRosterColumnsCursorFixture(
+    ApplicationServices& services,
+    const int classIdValue
+    )
+{
+    if (!executeSql(services, QStringLiteral(R"(
+        CREATE TEMP TABLE roster_columns_cursor_fixture (
+            id INTEGER NOT NULL,
+            class_id INTEGER NOT NULL,
+            position INTEGER NOT NULL,
+            payload TEXT NOT NULL
+        )
+    )"))
+        || !executeSql(services, QStringLiteral(
+            "CREATE INDEX roster_columns_cursor_fixture_order "
+            "ON roster_columns_cursor_fixture (class_id, position, id)"
+            ))
+        || !executeSql(services, QStringLiteral(R"(
+            CREATE TEMP VIEW roster_columns AS
+            SELECT id, class_id, position,
+                   json_extract(payload, '$.name') AS name,
+                   0 AS width
+            FROM roster_columns_cursor_fixture
+        )")))
+    {
+        return false;
+    }
+
+    DatabaseSession* const session = services.databaseSession();
+    if (!session)
+    {
+        return false;
+    }
+
+    QSqlQuery insert(session->database());
+    if (!insert.prepare(QStringLiteral(
+            "INSERT INTO roster_columns_cursor_fixture "
+            "(id, class_id, position, payload) VALUES (?, ?, ?, ?)"
+            )))
+    {
+        return false;
+    }
+
+    insert.addBindValue(1);
+    insert.addBindValue(classIdValue);
+    insert.addBindValue(0);
+    insert.addBindValue(QStringLiteral(R"({"name":"English"})"));
+    if (!insert.exec())
+    {
+        return false;
+    }
+    insert.finish();
+    if (!insert.prepare(QStringLiteral(
+            "INSERT INTO roster_columns_cursor_fixture "
+            "(id, class_id, position, payload) VALUES (?, ?, ?, ?)"
+            )))
+    {
+        return false;
+    }
+
+    insert.addBindValue(2);
+    insert.addBindValue(classIdValue);
+    insert.addBindValue(1);
+    insert.addBindValue(QStringLiteral("not-json"));
+    return insert.exec();
+}
+
+bool installMalformedRosterDataCursorFixture(
+    ApplicationServices& services,
+    const int classIdValue
+    )
+{
+    if (!executeSql(services, QStringLiteral(R"(
+        CREATE TEMP TABLE roster_data_cursor_fixture (
+            class_id INTEGER NOT NULL,
+            row_index INTEGER NOT NULL,
+            col_index INTEGER NOT NULL,
+            payload TEXT NOT NULL
+        )
+    )"))
+        || !executeSql(services, QStringLiteral(
+            "CREATE INDEX roster_data_cursor_fixture_order "
+            "ON roster_data_cursor_fixture (class_id, row_index, col_index)"
+            ))
+        || !executeSql(services, QStringLiteral(R"(
+            CREATE TEMP VIEW roster_data AS
+            SELECT class_id, row_index, col_index,
+                   json_extract(payload, '$.value') AS value
+            FROM roster_data_cursor_fixture
+        )")))
+    {
+        return false;
+    }
+
+    DatabaseSession* const session = services.databaseSession();
+    if (!session)
+    {
+        return false;
+    }
+
+    QSqlQuery insert(session->database());
+    if (!insert.prepare(QStringLiteral(
+            "INSERT INTO roster_data_cursor_fixture "
+            "(class_id, row_index, col_index, payload) VALUES (?, ?, ?, ?)"
+            )))
+    {
+        return false;
+    }
+
+    insert.addBindValue(classIdValue);
+    insert.addBindValue(0);
+    insert.addBindValue(0);
+    insert.addBindValue(QStringLiteral(R"({"value":"Alex"})"));
+    if (!insert.exec())
+    {
+        return false;
+    }
+    insert.finish();
+    if (!insert.prepare(QStringLiteral(
+            "INSERT INTO roster_data_cursor_fixture "
+            "(class_id, row_index, col_index, payload) VALUES (?, ?, ?, ?)"
+            )))
+    {
+        return false;
+    }
+
+    insert.addBindValue(classIdValue);
+    insert.addBindValue(0);
+    insert.addBindValue(1);
+    insert.addBindValue(QStringLiteral("not-json"));
+    return insert.exec();
 }
 
 bool insertRosterOutputColumns(
@@ -249,6 +383,8 @@ private slots:
     void initTestCase();
     void readsSelectedClassesModeAndRequestedRosterColumns();
     void rejectsFractionalRosterRowIndexAsTechnical();
+    void rejectsLateRosterColumnFetchFailureAsTechnical();
+    void rejectsLateRosterCellFetchFailureAsTechnical();
     void returnsEmptyRosterOutputWhenHeadersHaveNoStoredCells();
     void projectsSparseIntegerRosterRowsWithBlankGaps();
     void preservesWideTeacherIdFromSqliteThroughRosterOutputSourcePort();
@@ -607,6 +743,146 @@ rejectsFractionalRosterRowIndexAsTechnical()
         result.error().message.find("row_index has non-INTEGER SQLite storage")
         != std::string::npos
         );
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsLateRosterColumnFetchFailureAsTechnical()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Late roster column fetch failure"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+    QVERIFY(installMalformedRosterColumnsCursorFixture(services, classIdValue));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery preflight(session->database());
+    preflight.setForwardOnly(true);
+    QVERIFY(preflight.prepare(QStringLiteral(R"(
+        SELECT substr(name, 1, 257) AS bounded_name,
+               length(CAST(name AS BLOB)) AS name_bytes
+        FROM roster_columns
+        WHERE class_id=?
+        ORDER BY position, id
+        LIMIT ?
+    )")));
+    preflight.addBindValue(classIdValue);
+    preflight.addBindValue(4'097);
+    QVERIFY2(preflight.exec(), qPrintable(preflight.lastError().text()));
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value("bounded_name").toString(), QStringLiteral("English"));
+    QCOMPARE(preflight.value("name_bytes").toInt(), 7);
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    QVERIFY(preflight.lastError().text().contains(
+        QStringLiteral("malformed JSON"),
+        Qt::CaseInsensitive
+        ));
+    preflight.finish();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QVERIFY(result.error().message.find(
+        "Loading bounded roster output columns failed"
+        ) != std::string::npos);
+    QVERIFY(result.error().message.find(
+        "class id " + std::to_string(classIdValue)
+        ) != std::string::npos);
+    QVERIFY(result.error().message.find("malformed JSON") != std::string::npos);
+}
+
+void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::
+rejectsLateRosterCellFetchFailureAsTechnical()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    const int teacher = createTeacher(services);
+    QVERIFY(teacher > 0);
+    const int classIdValue = createClass(
+        services,
+        QStringLiteral("Late roster cell fetch failure"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Hercules"),
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("10:00 AM")
+        );
+    QVERIFY(classIdValue > 0);
+
+    QStringList columns = Roster::BaseColumns;
+    columns.append(QStringLiteral("Notes"));
+    QVERIFY(insertRosterOutputColumns(services, classIdValue, columns));
+    QVERIFY(installMalformedRosterDataCursorFixture(services, classIdValue));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QSqlQuery preflight(session->database());
+    preflight.setForwardOnly(true);
+    QVERIFY(preflight.prepare(QStringLiteral(R"(
+        SELECT row_index, col_index,
+               substr(value, 1, %1) AS bounded_value,
+               length(CAST(value AS BLOB)) AS value_bytes
+        FROM roster_data
+        WHERE class_id=? AND row_index>=0 AND col_index IN (%2)
+        ORDER BY row_index, col_index
+        LIMIT ?
+    )")
+        .arg(static_cast<qulonglong>(
+            kRosterRepositoryOutputMaxCellBytes + 1
+            ))
+        .arg(QStringLiteral("?,?,?"))));
+    preflight.addBindValue(classIdValue);
+    preflight.addBindValue(0);
+    preflight.addBindValue(1);
+    preflight.addBindValue(6);
+    preflight.addBindValue(4);
+    QVERIFY2(preflight.exec(), qPrintable(preflight.lastError().text()));
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value("row_index").toInt(), 0);
+    QCOMPARE(preflight.value("col_index").toInt(), 0);
+    QCOMPARE(preflight.value("bounded_value").toString(), QStringLiteral("Alex"));
+    QCOMPARE(preflight.value("value_bytes").toInt(), 4);
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    QVERIFY(preflight.lastError().text().contains(
+        QStringLiteral("malformed JSON"),
+        Qt::CaseInsensitive
+        ));
+    preflight.finish();
+
+    ApplicationServicesSubPrepRosterOutputSourcePort port(services);
+    const auto result = port.loadSource(requestFor(
+        {classId(classIdValue)},
+        {SubPrepWeekday::Monday}
+        ));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Technical);
+    QVERIFY(result.error().message.find(
+        "Loading bounded roster output values failed"
+        ) != std::string::npos);
+    QVERIFY(result.error().message.find(
+        "class id " + std::to_string(classIdValue)
+        ) != std::string::npos);
+    QVERIFY(result.error().message.find("malformed JSON") != std::string::npos);
 }
 
 void NextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests::

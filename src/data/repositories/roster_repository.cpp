@@ -2822,6 +2822,17 @@ Result<Roster> RosterRepository::loadRosterForOutput(
         }
         ++sourceColumnIndex;
     }
+    if (columnsQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                columnsQuery,
+                QObject::tr("Loading bounded roster output columns"),
+                {},
+                identity
+                ).userMessage()
+            );
+    }
     columnsQuery.finish();
 
     Roster roster;
@@ -3034,6 +3045,17 @@ Result<Roster> RosterRepository::loadRosterForOutput(
 
         roster.rows[static_cast<qsizetype>(rowIndex)][*outputIndex] =
             valuesQuery.value("bounded_value").toString();
+    }
+    if (valuesQuery.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                valuesQuery,
+                QObject::tr("Loading bounded roster output values"),
+                {},
+                identity
+                ).userMessage()
+            );
     }
 
     return roster;
