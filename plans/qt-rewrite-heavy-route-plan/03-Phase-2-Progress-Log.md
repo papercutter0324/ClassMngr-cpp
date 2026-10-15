@@ -41280,3 +41280,85 @@ Batch330 is closed. The remaining Deferred candidates are unresolved; the
 Sidebar entry is narrowed to the F285-gated Add/post-create identity transition
 and does not claim the combined Create/Delete candidate is resolved. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F960 complete; Batch330 closed; Batch331 discovery closed; F961 accepted - 2026-10-16
+
+F960 was accepted at documentation checkpoint
+`c930c1509e9c41fd664b38fb1616c3688062520c` and implemented in source/test
+commit `ecb65dd565f28775d14175b7fd48e08ac67beb36`. The existing-teacher route
+preserves a wide teacher ID through Sidebar grouping, selection and navigation,
+profile read/edit, the delete chooser, and selected or prompted deletion. The
+typed assignment read and repository route are additive and retain legacy int
+assignment APIs and class-ID width. Blank-draft Sidebar Add remains excluded
+under F285. An independent Tester rebuilt `ClassMngr` and ten focused targets
+in standard Windows x64 Debug (`build/windows-x64-debug`,
+`/p:TrackFileAccess=false`); the ten matching Debug CTests passed 10/10.
+MainWindow exercised `2147483648` through identity, save/reload/discard, and
+both deletion entry points; direct application/platform coverage also tested
+`9223372036854775807`. `git diff --check` passed. No full suite ran. The build
+succeeded with one nonblocking MSB8064 autogen missing-dependency warning for
+`src/next/application/teacher_import_plan_mapper.h`.
+
+Two fresh post-F960 audits reviewed all 13 official Deferred entries; none
+became actionable, resolved, or superseded, and all blockers remain. Their
+disposition results agree; their normalized-list hashes differ, so no hash is
+recorded. F285 and the separate Sidebar Add/post-create transition remain
+Deferred.
+
+Batch331 selected F961 from the GS Team save boundary: the request carries raw
+names and separate normalized keys, while the Qt-free validator trusts only
+the keys. `StaffDirectoryPage` currently derives them with
+`QString::simplified().toCaseFolded()`; the repository independently
+recomputes raw-name identity and rejects duplicates, and its typed platform
+port maps that failure to Technical. This is direct Application contract
+hardening, not a current UI corruption or duplicate-write defect. The
+persistence/platform scan found no candidate: Class Analytics read checks
+were already covered or policy-deferred, Native English ID remains an
+intentional tested `int` model boundary, and typed projection catches invalid
+Calendar Event times. The UI/controller scan found no candidate; a Teacher
+profile read error without an explicit user-facing contract was not selected.
+Independent review confirms the established F161/F162 and F959 normalization
+precedent and exact Qt 6.12 behavior: `Ä`/`ä` collide,
+`Straße`/`STRASSE` remain distinct, English and Korean are separate
+uniqueness namespaces, cross-namespace matches are allowed, and Korean
+whitespace handling remains covered.
+
+F961 acceptance for implementation:
+
+1. Make raw `name` and `koreanName` authoritative for GS Team missing-name and
+   duplicate validation. Remove redundant caller-supplied
+   `normalizedEnglishNameKey` and `normalizedKoreanNameKey` values if needed;
+   do not use them as Application identity. Keep Application Qt-free through
+   an injected stateless UTF-16 name-key policy in validation/use-case
+   contracts. Production
+   `StaffDirectoryPage` wiring must match current
+   `QString::simplified().toCaseFolded()` semantics; do not add a standard-
+   library Unicode normalizer. Retain the repository duplicate check as
+   defense in depth and preserve stored-field normalization.
+2. Preserve validation precedence: invalid row ID, duplicate row ID, missing
+   names, duplicate English name, duplicate Korean name, invalid birthday;
+   validate deleted IDs only after all rows. Preserve first-invalid-row
+   reporting, separate English/Korean namespaces, cross-namespace matches,
+   birthday rules, the add/update/delete transaction, UI warnings, and
+   autosave state.
+3. Add app-less `RecordingSavePort` coverage proving raw names that normalize
+   to duplicate English or Korean identities return the existing appropriate
+   `Duplicate*` issue on the later row and never call the port, even when the
+   old request could carry inconsistent keys. Whitespace-only raw names must
+   derive to `MissingNames`. Keep the repository check and current UI behavior;
+   do not claim an existing UI or persistence defect.
+4. Keep Qt-backed `StaffDirectoryGsTeamSave` coverage for `Ä`/`ä` collision,
+   distinct `Straße`/`STRASSE`, Korean whitespace, and namespace behavior under
+   installed Qt. Existing UI callers supply consistent values, so visible
+   save behavior should remain unchanged.
+5. Build `ClassMngr` and the focused targets/CTest registrations
+   `NextApplicationGsTeamDirectorySave`,
+   `NextPlatformApplicationServicesGsTeamDirectorySavePort`, and
+   `StaffDirectoryGsTeamSave` in standard Windows x64 Debug with
+   `/p:TrackFileAccess=false`; run only those focused CTests. Do not run the
+   full suite or require a pinned visual-parity run while visible behavior is
+   unchanged. If implementation changes visible UI behavior, stop for a main
+   decision. Do not expand this into a repository-wide redesign or migration.
+
+F961 is the sole active slice in Batch331. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
