@@ -5681,6 +5681,17 @@ ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope(
         }
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading scoped Sub Prep print source information"),
+                identity
+                ).userMessage()
+            );
+    }
+
     return records;
 }
 
