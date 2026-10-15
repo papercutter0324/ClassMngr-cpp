@@ -5530,3 +5530,14 @@ typed-port regressions verify existing behavior, while independent source
 review verifies the local post-loop `lastError()` guard. Do not claim direct
 terminal-fetch-branch runtime coverage or add a test-only query seam without a
 deterministic route.
+
+## Phase 2 teacher-choice cursor fixture - 2026-10-15
+
+The exact Initial Setup, Testing, and Class Co-Teacher teacher-choice SELECTs
+can each stream a valid row before the indexed JSON-backed view reports a
+terminal fetch error. Keep the regression tied to each production projection
+and assert both the direct query failure and the public repository/typed-port
+failure so no partial choice list escapes. The Testing typed port intentionally
+marks Technical errors recoverable; preserve that port-specific contract in
+assertions instead of assuming one recoverability value for every Technical
+result.

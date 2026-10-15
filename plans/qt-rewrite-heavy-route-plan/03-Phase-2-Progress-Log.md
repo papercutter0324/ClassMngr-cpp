@@ -39093,3 +39093,30 @@ Acceptance for F926:
 F926 remains active until independent post-change verification. All 13 official
 Deferred candidates remain unchanged pending the post-slice audit. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F926 accepted; post-F926 Deferred reviews clear; F927 selected - 2026-10-15
+
+F926, Teacher choice projections for Initial Setup, Testing, and Class
+Co-Teacher, is accepted at source/test commit
+`274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`. Initial Setup and Testing now
+reject terminal `query.lastError()` after their choice loops; the existing
+Class Co-Teacher guard remains. Permanent regressions cover all three exact
+production SELECTs, the indexed `teacher_en` plan, valid A Alpha followed by a
+malformed-JSON terminal fetch error, repository failure without partial
+records, and typed `Technical` without partial values. The shared fixture is
+registered under exact CMake source ownership.
+
+Forced sequential Debug builds in `build/windows-x64-debug` used
+`/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`. `ClassMngr` passed after
+the final production and CMake changes; the independent Tester then passed
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests`,
+`ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`,
+and `ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`.
+Only Debug CTests #335, #393, and #396 ran; each passed 1/1. No full suite ran.
+
+Two independent post-F926 reviews found none of the 13 official Deferred
+candidates newly actionable, resolved, superseded, or triggered; all remain
+unchanged. F927, My Classes teacher display-name batch read: distinguish
+terminal failure from valid missing-teacher rows, is selected next in active
+Batch306 (F927-F929). Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
