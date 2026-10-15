@@ -39193,3 +39193,77 @@ none became actionable, resolved, superseded, or newly triggered, and all 13
 remain unchanged. F928, Calendar repeat-series edit read: reject an incomplete
 event suffix, is selected next in active Batch306 (F928-F929). Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F928 baseline captured; acceptance defined; Batch307 discovery closed - 2026-10-15
+
+The F928 production-source baseline is F927 source/test commit
+`6dc10fa6acc2297a2ccc6c7ab52d626ba8a9a782`; full HEAD
+`5b256bde` adds only the F927 docs closeout. In
+`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()`
+(`src/data/repositories/calendar_event_repository.cpp`), `executePrepared()`
+is checked, but the method returns rows accumulated by `query.next()` without
+a terminal `query.lastError()` check.
+
+An actual Qt QSQLITE probe of the production-shaped SELECT against an
+indexed JSON-backed `calendar_events` view used a covering index on
+`(repeat_series_id, start_date, start_time, title, id, ...)`. `exec()`
+succeeded, row 1 was a valid event, and the next `query.next()` failed on
+malformed JSON. The repository returned the one-event partial suffix as
+success. No typed-adapter runtime baseline is claimed. The temporary probe
+run passed 1/1 in `ClassMngrCalendarEventRepositoryTests` (CTest #22); the
+test source was restored byte-for-byte and production source was unchanged.
+The restored forced target build and CTest #22 passed 1/1. Raw logs are under
+`build/windows-x64-debug/F928-BASELINE-*`; no full suite ran.
+
+Acceptance for F928:
+1. After the loop in `loadCalendarEventsForRepeatSeriesFromDate()`, a valid
+   terminal `query.lastError()` must return repository failure using
+   `SqlQueryUtils::errorFor(query, QObject::tr("Loading calendar repeat series events"), {}, QObject::tr("repeat series '%1' from %2").arg(normalizedRepeatSeriesId, startDate.toString(Qt::ISODate))).userMessage()`; accumulated incomplete rows must not escape.
+2. Add permanent regression coverage for a valid row followed by a fetch error
+   on the exact query fixture, and verify the repository or typed edit rejects
+   the incomplete suffix. The feasible port-test fixture disables foreign-key
+   checks before replacing `calendar_events` with an indexed backing table and
+   a JSON-extracting view; a valid 2026-12-08 row precedes malformed payload.
+   An `INSTEAD OF UPDATE` trigger raises `F928_PERSISTENCE_REACHED`. The typed
+   edit must return `Technical` with the loading error before that trigger.
+   This fixture was inspected as feasible, not run through the typed adapter.
+   Preserve `reportsRepeatSeriesEditReadFailureStructurally()`.
+3. Preserve clean empty-suffix no-op and valid ordered-suffix parity
+   (`acceptsEmptyRepeatSeriesEditSuffixAsNoOp()` and
+   `editsValidRepeatSeriesSuffixWithTypedParity()`), earlier and unrelated
+   events, request validation, and write-error behavior. Do not expand the
+   query, CMake, or production test seam.
+4. Force sequential Debug builds in `build/windows-x64-debug` for `ClassMngr`,
+   `ClassMngrCalendarEventRepositoryTests`, and
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` with
+   `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; run only exact
+   matching Debug CTests #22 and #356 (CTest index varies by generator). No
+   full suite.
+
+Batch307 source-only discovery, begun with F928, is complete. The caller-check
+Explorer recommends omitting F930 TeacherRepository `getAllTeachers`, F931
+Calendar date/upcoming reads, and F932 `TestingBlockRepository` assignment
+reads: these are gated diagnostic/compatibility APIs or lack a regular
+in-tree user path, while current UI routes use typed/cached reads. This is a
+source-callsite inference; external compatibility contracts are unknown.
+The exhaustive scan found four live-path candidate slices for the next batch:
+F933 Class Analytics roster-name terminal cursor check
+(`application_services_class_analytics_dashboard_read_port.h`, live Class
+Analytics page, existing port tests); F934 co-teacher assignment validation
+schedule-query terminal checks (`class_info_repository.cpp` detailed
+snapshot, live typed assignment port, existing port tests); F935 shared
+class-info reader first-row failure versus clean missing/default plus
+regular/intensive schedule cursor checks (Schedule Import and Class Details
+Save callers); and F936 legacy Class Transfer regular/intensive schedule
+terminal checks for live import/export consumers (the adjacent parent-aware
+route already checks).
+`TestingClassRepository::loadTestingClasses` was omitted because F874 is
+accepted and the old service path has no current UI caller; active F928/F929
+were excluded. The discovery itself changed no files, builds, tests, or Git
+state.
+
+F928 remains active in Batch306 (F928-F929); Batch307 candidates are selected
+for after Batch306 closes, with no implementation begun. The active plan stays
+on Batch306. The required 13-item Deferred audit remains due after F928
+acceptance. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
