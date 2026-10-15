@@ -40799,3 +40799,44 @@ two-candidate batch; Batch322 discovery starts when F952 implementation begins.
 Discovery traces and Investigator reasoning were read-only; no builds or tests
 ran during discovery. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### F952 acceptance expanded to Edit; Batch322 discovery underway - 2026-10-16
+
+After F952 implementation began, a Batch322 Edit lead was independently
+verified and folded into F952: `CalendarEventSeriesEditRequestDetail::isBlank`
+also uses byte-wise `std::isspace`, while `isRequiredText` retains its 128-byte
+limit. The use case and adapter validate before session lookup; afterward the
+adapter trims the ID, the repository rejects empty input before querying, and
+the adapter classifies it as `Technical`. This is an error-classification gap,
+not a persistence risk. The adjacent repeat-series Create and Edit requests
+share the existing `Application::isBlankUtf8Text` helper and form one
+identifier-validation rule. F790/F791 are precedent. This is source-trace
+evidence only; no runtime probe was run. The expanded-scope verification is
+pending, and F952 implementation remains paused and uncommitted.
+
+Revised F952 acceptance supersedes the Create-only acceptance above:
+
+1. Use `Application::isBlankUtf8Text` for both repeat-series Create and Edit
+   request blank checks so Qt-compatible Unicode-whitespace-only IDs are
+   blank. Preserve each request's 128-byte limit, validation order, existing
+   `InvalidInput` diagnostic, and all other request rules.
+2. Application tests for U+00A0 and U+3000 assert nonrecoverable
+   `InvalidInput` before either use-case port is called.
+3. Open-session Create platform regressions for U+00A0 and U+3000 assert
+   `InvalidInput` and no persisted rows. Edit direct-call platform regressions
+   assert the same `InvalidInput` before session or repository use; no
+   separate persistence-state test is required.
+4. Preserve valid padded nonblank ID normalization/trimming, ASCII behavior,
+   and malformed UTF-8 as nonblank. Do not add strict UTF-8 decoding or widen
+   the whitespace policy.
+5. Sequentially build `ClassMngrNextApplicationCalendarEventTests` and
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` in
+   `build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
+   CTests `NextApplicationCalendarEvent` and
+   `NextPlatformApplicationServicesCalendarEventPort`, review changes, and
+   run `git diff --check`. Do not run the full suite.
+
+Batch321 ordering is unchanged: F952 remains first and F953 second. Batch322
+discovery remains underway. All 13 official Deferred entries remain
+unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F951 is complete; Batch321 contains F952 first and F953 second, with Batch322 discovery starting when F952 implementation begins. All 13 Deferred entries remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F951 is complete; F952's expanded repeat-series Create/Edit Unicode-whitespace ID acceptance is defined and implementation is paused, Batch322 discovery is underway, and F953 remains second in Batch321; all 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -113,7 +113,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F952 - Calendar repeat-series Unicode-blank ID validation: use `Application::isBlankUtf8Text` in the create-request blank check and reject Unicode whitespace-only IDs before the port.
+- F952 - Calendar repeat-series Create/Edit Unicode-whitespace ID validation: use `Application::isBlankUtf8Text` in both request blank checks and reject U+00A0/U+3000 before the ports.
 - F953 - GS Team/Native English write identity validation: reject nonpositive present IDs and duplicate row IDs before port calls in both policies; retain absent-ID inserts.
 
 ## Objective
