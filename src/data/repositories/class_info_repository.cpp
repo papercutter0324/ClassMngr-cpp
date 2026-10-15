@@ -1018,6 +1018,17 @@ Result<Record> loadClassInfoRecord(
         info.timeFillerActivities =
             query.value("time_filler_activities").toString();
     }
+    else if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading class information"),
+                {},
+                identity
+                ).userMessage()
+            );
+    }
 
     query.prepare(R"(
         SELECT *
@@ -1048,6 +1059,17 @@ Result<Record> loadClassInfoRecord(
 
         info.classTimes.append(time);
     }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading regular class times"),
+                {},
+                identity
+                ).userMessage()
+            );
+    }
 
     query.prepare(R"(
         SELECT *
@@ -1077,6 +1099,17 @@ Result<Record> loadClassInfoRecord(
         time.endTime =   query.value("end_time").toString();
 
         info.intensiveTimes.append(time);
+    }
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading intensive class times"),
+                {},
+                identity
+                ).userMessage()
+            );
     }
 
     return info;

@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -251,6 +252,8 @@ private slots:
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
+    void classInfoRejectsLateRegularScheduleFetchFailure();
+    void classInfoRejectsLateIntensiveScheduleFetchFailure();
     void speakingEvaluationRepositoryPreservesWideIds();
     void speakingEvaluationSaveRejectsMalformedStoredRowIndex();
     void legacyRepositoryWriteFailuresRollBack();
@@ -1775,6 +1778,188 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
         ));
     QVERIFY(failedSetting.error().contains(
         QStringLiteral("setting key 'missing/read-contract'")
+        ));
+}
+
+void DataServiceLifecycleTests::classInfoRejectsLateRegularScheduleFetchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("late-regular-schedule-fetch.db"))
+        ));
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Late Regular Fetch Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery setup(database);
+    QVERIFY(setup.exec(QStringLiteral("DROP TABLE class_times")));
+    QVERIFY(setup.exec(R"(
+        CREATE TABLE regular_class_times_json (
+            id INTEGER PRIMARY KEY,
+            class_id INTEGER,
+            payload TEXT
+        )
+    )"));
+    QVERIFY(setup.prepare(QStringLiteral(
+        "INSERT INTO regular_class_times_json (id, class_id, payload) "
+        "VALUES (?, ?, ?)"
+        )));
+    setup.addBindValue(1);
+    setup.addBindValue(classId);
+    setup.addBindValue(QStringLiteral(
+        "{\"day\":\"Monday\",\"start_time\":\"3:00 PM\","
+        "\"end_time\":\"3:50 PM\"}"
+        ));
+    QVERIFY(setup.exec());
+    setup.prepare(QStringLiteral(
+        "INSERT INTO regular_class_times_json (id, class_id, payload) "
+        "VALUES (?, ?, ?)"
+        ));
+    setup.addBindValue(2);
+    setup.addBindValue(classId);
+    setup.addBindValue(QStringLiteral("{malformed"));
+    QVERIFY(setup.exec());
+    QVERIFY(setup.exec(R"(
+        CREATE VIEW class_times AS
+        SELECT
+            id,
+            class_id,
+            json_extract(payload, '$.day') AS day,
+            json_extract(payload, '$.start_time') AS start_time,
+            json_extract(payload, '$.end_time') AS end_time
+        FROM regular_class_times_json
+    )"));
+
+    QSqlQuery preflight(database);
+    QVERIFY(preflight.prepare(QStringLiteral(
+        "SELECT * FROM class_times WHERE class_id = ? ORDER BY id"
+        )));
+    preflight.addBindValue(classId);
+    QVERIFY(preflight.exec());
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value(QStringLiteral("id")).toInt(), 1);
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    QVERIFY(preflight.lastError().text().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
+        ));
+
+    const Result<ClassInfo> failedClassInfo = service.loadClassInfo(classId);
+    QVERIFY(!failedClassInfo);
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("Loading regular class times")
+        ));
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
+        ));
+}
+
+void DataServiceLifecycleTests::classInfoRejectsLateIntensiveScheduleFetchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("late-intensive-schedule-fetch.db"))
+        ));
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Late Intensive Fetch Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+
+    ClassInfo initialInfo;
+    initialInfo.classId = classId;
+    initialInfo.classTimes.append({
+        QStringLiteral("Tuesday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")
+    });
+    QVERIFY(service.saveClassInfo(initialInfo));
+
+    const Result<ClassInfo> readableRegularSchedule =
+        service.loadClassInfo(classId);
+    QVERIFY(readableRegularSchedule);
+    QCOMPARE(readableRegularSchedule->classTimes.size(), 1);
+    QCOMPARE(
+        readableRegularSchedule->classTimes.first().day,
+        QStringLiteral("Tuesday")
+        );
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery setup(database);
+    QVERIFY(setup.exec(QStringLiteral("DROP TABLE class_intensive_times")));
+    QVERIFY(setup.exec(R"(
+        CREATE TABLE intensive_class_times_json (
+            id INTEGER PRIMARY KEY,
+            class_id INTEGER,
+            payload TEXT
+        )
+    )"));
+    QVERIFY(setup.prepare(QStringLiteral(
+        "INSERT INTO intensive_class_times_json (id, class_id, payload) "
+        "VALUES (?, ?, ?)"
+        )));
+    setup.addBindValue(1);
+    setup.addBindValue(classId);
+    setup.addBindValue(QStringLiteral(
+        "{\"day\":\"Wednesday\",\"start_time\":\"5:00 PM\","
+        "\"end_time\":\"5:50 PM\"}"
+        ));
+    QVERIFY(setup.exec());
+    setup.prepare(QStringLiteral(
+        "INSERT INTO intensive_class_times_json (id, class_id, payload) "
+        "VALUES (?, ?, ?)"
+        ));
+    setup.addBindValue(2);
+    setup.addBindValue(classId);
+    setup.addBindValue(QStringLiteral("{malformed"));
+    QVERIFY(setup.exec());
+    QVERIFY(setup.exec(R"(
+        CREATE VIEW class_intensive_times AS
+        SELECT
+            id,
+            class_id,
+            json_extract(payload, '$.day') AS day,
+            json_extract(payload, '$.start_time') AS start_time,
+            json_extract(payload, '$.end_time') AS end_time
+        FROM intensive_class_times_json
+    )"));
+
+    QSqlQuery preflight(database);
+    QVERIFY(preflight.prepare(QStringLiteral(
+        "SELECT * FROM class_intensive_times WHERE class_id = ? ORDER BY id"
+        )));
+    preflight.addBindValue(classId);
+    QVERIFY(preflight.exec());
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value(QStringLiteral("id")).toInt(), 1);
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    QVERIFY(preflight.lastError().text().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
+        ));
+
+    const Result<ClassInfo> failedClassInfo = service.loadClassInfo(classId);
+    QVERIFY(!failedClassInfo);
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("Loading intensive class times")
+        ));
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("class id %1").arg(classId)
+        ));
+    QVERIFY(failedClassInfo.error().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
         ));
 }
 
