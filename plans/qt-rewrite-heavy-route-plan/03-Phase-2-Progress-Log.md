@@ -38906,3 +38906,56 @@ entries; none became newly actionable, resolved, or superseded, and all remain
 unchanged. F924, Schedule-import teacher snapshot read, is selected next in
 active Batch306, now F924-F929. Gates 1/2 remain Partial and the formal Phase
 2 exit gate remains Open.
+
+### F924 baseline captured; acceptance defined - 2026-10-15
+
+The F924 production-source baseline is commit
+`fff9471e3332f1467f47d28939cbca2785ad11aa`; full HEAD
+`97e2d88da3cfdb2a64dec44ccf866161dbca8d01` adds only the F923 docs closeout.
+`TeacherRepository::loadScheduleImportTeacherRecords()`
+(`src/data/repositories/teacher_repository.cpp:1860-1900`) executes
+`SELECT id, teacher_kr, room_number FROM teachers ORDER BY teacher_en`, loops
+over rows, and returns without checking terminal `lastError()`. The platform
+port maps a Teachers repository failure to `RepositoryReadFailed`.
+
+Baseline forced sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`
+passed; exact Debug CTest #410 passed 1/1 before and after the probe. An
+indexed `teacher_en` backing-table/view fixture runtime-asserted that the exact
+SELECT returned one valid row then a malformed-JSON cursor error. The direct
+repository returned one partial record, and the actual snapshot port returned
+`Value` with a one-teacher snapshot. The temporary test edit was restored
+byte-for-byte (SHA-256
+`D8CB87F4EE95C5C3081B960F3FDD2CE9A11A64B9192E26A5E5BC2B57069D8969`); the
+restored forced target rebuild and CTest #410 passed. An earlier incremental
+build without `/p:TrackFileAccess=false` hit access denied; the required forced
+build passed. No full suite ran.
+
+Acceptance for F924:
+1. After the teacher-row loop, if `query.lastError().isValid()`, return the
+   existing contextual repository failure before returning accumulated rows:
+
+   ```cpp
+   return std::unexpected(SqlQueryUtils::errorFor(
+       query,
+       QObject::tr("Loading schedule import teachers")
+       ).userMessage());
+   ```
+2. Preserve the SELECT, projection and ordering, qint64 ID mapping, and typed
+   schedule-import snapshot behavior.
+3. Add a permanent regression in
+   `tests/next_platform_application_services_schedule_import_state_snapshot_port_tests.cpp`.
+   Use an indexed `teacher_en` view, assert at runtime that the exact SELECT
+   yields the valid row then cursor error, verify the repository returns
+   failure without its partial list, and verify the actual snapshot port
+   returns `RepositoryReadFailed` for source `Teachers` without a partial
+   `Value` snapshot.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`, then
+   `ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`
+   with `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; run only exact
+   Debug CTest #410. No full suite.
+
+Implementation and post-change verification are pending. F924 remains active
+in Batch306 (F924-F929); all 13 official Deferred candidates remain unchanged.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

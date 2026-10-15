@@ -167,8 +167,18 @@ fault result is claimed; no full suite ran.
 Two independent post-F923 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch306
 (F920-F929) remains active with F924-F929 remaining. F924, Schedule-import
-teacher snapshot read, is selected next. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate is Open.
+teacher snapshot read, has a verified baseline and defined acceptance at
+source HEAD `fff9471e` (the current full documentation HEAD is `97e2d88d`).
+Forced sequential Debug builds passed for `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`;
+exact Debug CTest #410 passed 1/1 before and after the temporary probe. The
+indexed `teacher_en` view produced one valid row then a malformed-JSON cursor
+error; both the repository and actual snapshot port returned one-teacher
+partial success. The probe file was restored byte-for-byte (SHA-256
+`D8CB87F4EE95C5C3081B960F3FDD2CE9A11A64B9192E26A5E5BC2B57069D8969`). The
+permanent regression will pin repository failure and typed Teachers-source
+failure. Implementation and post-change verification remain pending; no full
+suite ran. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
