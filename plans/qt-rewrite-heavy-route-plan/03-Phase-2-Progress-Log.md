@@ -38149,3 +38149,26 @@ text. No cursor-fetch error is injected.
 | Regression and verification | Add focused missing-parent and error regressions; verify cursor-error classification in source. Do not invent broad test infrastructure if no straightforward cursor-failure seam exists. Build `ClassMngr`, then the focused port target with forced sequential Debug settings, and run exact CTest #310 only. Baseline and acceptance are recorded; implementation and post-change verification are pending. No full suite ran. |
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F914 accepted; post-slice Deferred audits clear; F915 selected - 2026-10-15
+
+F914, Sub Prep selected-class details, is accepted at source/test commit
+`5d79b793f913db691f9a2800acc7db4a21a40d1e` (Phase2 - Distinguish Sub Prep
+missing class from fetch error). A typed missing-parent result is returned
+only after successful query execution and a clean end of results; cursor,
+SQL, unavailable-session, and repository failures remain `Technical`, without
+diagnostic-string matching. Existing class-info and teacher-detail fallbacks,
+fields, wide IDs, one-query behavior, selected-class state, and warning UI
+remain unchanged.
+
+Forced sequential Debug builds passed for `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; exact
+CTest #310 passed 1/1. The cursor-error branch was source-reviewed because no
+injection seam was available. No full suite ran.
+
+Two independent post-F914 audits reviewed the exact 13 official Deferred
+entries; none became newly actionable and all 13 remain unchanged. F915,
+Schedule class-information reads, is selected next: preserve terminal cursor
+failures as `Technical` in builder and import-state readers. Baseline and
+acceptance are pending. Batch 305 remains active with F915-F919 in order.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

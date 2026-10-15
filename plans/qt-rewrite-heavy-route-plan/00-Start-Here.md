@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F913 My Classes Teacher Profile batch is accepted at source/test commit `22879783089cd6e2a0daea3400a54c7a1204b406`; two independent post-F913 audits found none of the 13 official Deferred candidates newly actionable, and F914 Sub Prep selected-class details is selected with baseline and acceptance recorded. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F914 Sub Prep selected-class details is accepted at source/test commit `5d79b793f913db691f9a2800acc7db4a21a40d1e`; two independent post-F914 audits found none of the 13 official Deferred candidates newly actionable, and F915 Schedule class-information reads is selected. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
