@@ -38320,3 +38320,35 @@ and exact CTest #390 cover success, order, mapping, and SQL execution failure,
 but not terminal cursor failure. F917 baseline and acceptance are pending.
 Batch 305 continues with F917-F919 in order. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F917 baseline captured; acceptance defined - 2026-10-15
+
+The source baseline is `edfa7abd` (docs-only HEAD later advanced to
+`a16e627e`; source and tests were unchanged). Forced sequential Debug builds
+passed for `ClassMngr`, `ClassMngrTestingBlockRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`.
+Exact Debug CTests #20 and #390 passed 1/1 each; no warnings or failures were
+reported.
+
+A focused temporary QSQLITE probe in
+`tests/testing_block_repository_tests.cpp` established a deterministic
+terminal-fetch failure: an index-covering backing table is ordered Monday
+09:00 then 10:00, and a view forces ordered index scanning while
+`room=abs(CAST('-9223372036854775808' AS INTEGER))` fails on the second row.
+The exact reader query returned the first row, then `query.next()` returned
+false with valid `lastError()`. At baseline,
+`loadTestingAssignmentDisplayRecords()` incorrectly returned that partial row
+as success. The temporary test file was restored byte-for-byte with SHA-256
+`F123D29329842AB0845BCBCC14AD5C5B46B1F0FC92F328FDEEF8049BAE132A1C`, matching
+`edfa7abd`; the restored build and exact CTest #20 passed. No custom driver or
+direct SQLite linkage is needed.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Terminal cursor regression | Add a permanent regression in `tests/testing_block_repository_tests.cpp` using the verified view fixture; assert the first row is fetched, the next fetch fails with valid `lastError()`, and the repository reader returns failure rather than partial success. Check for a clean terminal query error immediately after the reader loop. |
+| Existing behavior and propagation | Preserve clean-empty success, ordering, field and optional-detail mapping, and the single query. Keep the typed port's `Technical` classification, unavailable-session/repository `NotFound`, and `ScheduleWidget` behavior: clear only on `NotFound`, warn and return for other errors. Do not edit consumers. |
+| Regression constraints and verification | Use the existing SQLite fixture only; add no custom driver or direct SQLite linkage. Force sequential Debug builds of `ClassMngr`, `ClassMngrTestingBlockRepositoryTests`, and `ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`; run exact CTests #20 and #390 only. Baseline and acceptance are recorded; implementation and post-change verification are pending. No full suite ran. |
+
+Batch 305 remains active with F917-F919 in order. The 13 official Deferred
+entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

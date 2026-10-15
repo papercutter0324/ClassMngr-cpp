@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F916 Classes list terminal cursor errors is accepted at source/test commit `edfa7abd`; F917 Testing assignment display read is next, with baseline and acceptance pending; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F916 Classes list terminal cursor errors is accepted at source/test commit `edfa7abd`; F917 Testing assignment display read has a recorded baseline and acceptance, with implementation and post-change verification pending; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 

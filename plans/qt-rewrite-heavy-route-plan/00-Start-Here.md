@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F916 Classes list terminal cursor errors is accepted at source/test commit `edfa7abd`; two independent audits found none of the 13 official Deferred candidates newly actionable. F917 Testing assignment display read is next, with baseline and acceptance pending. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F916 Classes list terminal cursor errors is accepted at source/test commit `edfa7abd`; two independent audits found none of the 13 official Deferred candidates newly actionable. F917 Testing assignment display read has a recorded baseline and acceptance; implementation and post-change verification are pending. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
