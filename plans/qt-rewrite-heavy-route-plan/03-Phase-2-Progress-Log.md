@@ -38062,3 +38062,45 @@ the build commands exited 0. No full suite ran.
 | Regression and verification | After a Technical detail-read failure, preserve warning/no-fallback assertions and prove recovery by selecting/loading another valid class; do not make post-failure field editing the contract. Build `ClassMngr` then `ClassMngrTestingClassesPageTests` with forced sequential Debug settings and run exact CTest #45 only. F912 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F912 accepted; post-slice Deferred audit clear; F913 selected - 2026-10-15
+
+F912, Testing Classes editor loading-state restoration, is accepted at
+source/test commit
+`90fbe0a3021f694fc37302352e255dd58c436f8d`. A scope guard now restores
+loading on every early exit. The regression retains warning/no-fallback
+assertions after a Technical detail-read failure, then proves recovery by
+selecting and loading a second valid class. Forced sequential Debug builds of
+`ClassMngr` and `ClassMngrTestingClassesPageTests` passed. The focused F912
+slot passed.
+
+CTest #45 remains red: both the captured pre-F912 baseline and post-patch run
+reported 31 passed and 3 failed, with the same unrelated assertions at
+`rosterKeyboardTriggerOpensInAppPalette` line 600,
+`rosterKeyboardWritesToKoreanNameCell` line 640, and
+`outputAvailabilityFollowsRosterTabAndLoadedClass` line 701. Those failures
+were present in the captured baseline; the target is not green. No full suite
+ran.
+
+Two independent post-F912 audits reviewed all 13 exact official Deferred
+entries; none became newly actionable. F618 remains deferred pending a
+reproducible large-export driver and matched packaged Release measurement.
+
+F913, My Classes Teacher Profile batch missing-row classification, was
+selected at pre-change HEAD `90fbe0a3`. Forced sequential Debug builds of
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`
+passed, and exact focused CTest #327 passed 1/1. The existing mixed batch
+returns `Technical` for a confirmed missing row while preserving its successful
+sibling, requested order, and one statement. SQL failure returns per-entry
+`Technical`; a null application-services pointer returns per-entry recoverable
+`NotFound`. The target has no dedicated present-but-empty case.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Missing teacher and failures | Map only LEFT JOIN confirmation of no teacher row to per-entry recoverable `NotFound`; map query, prepare, SQL, execution, and unavailable session/repository failures to `Technical`, with one failed result per requested ID where the batch API currently does so. Keep malformed, incomplete, reordered, or wrong-ID repository result shapes as `Validation`. Do not classify by diagnostic-string matching. |
+| Batch compatibility | Preserve successful siblings and requested order; a present-but-empty row succeeds; retain duplicate/canonical-ID validation, one ordered query with no fallback reads, and field mapping. |
+| Consumer behavior | Keep the current silent Unassigned page presentation for any profile error; do not change UI behavior. |
+| Verification and status | Build `ClassMngr`, then `ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests`, using forced sequential Debug builds; run exact CTest #327 only. The F913 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
