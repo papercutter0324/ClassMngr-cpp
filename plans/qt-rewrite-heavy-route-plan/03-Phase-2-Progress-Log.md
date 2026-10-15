@@ -38959,3 +38959,26 @@ Acceptance for F924:
 Implementation and post-change verification are pending. F924 remains active
 in Batch306 (F924-F929); all 13 official Deferred candidates remain unchanged.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F924 accepted; post-F924 Deferred audits clear; F925 selected - 2026-10-15
+
+F924, Schedule-import teacher snapshot read, is accepted at source/test commit
+`24a9955147ba04d41a8bca3a154280827b3669c9`. The terminal `query.lastError()`
+guard in `TeacherRepository::loadScheduleImportTeacherRecords()` now rejects
+partial teacher reads. The permanent `rejectsPartialTeacherCursorRead()`
+regression in the Schedule Import snapshot port test uses the indexed
+`teacher_en` view to assert the exact SELECT returns one valid row followed by
+a malformed-JSON fetch error, verifies repository failure without the partial
+list, and verifies `RepositoryReadFailed` for source `Teachers` without a
+partial snapshot.
+
+Independent Tester verification passed forced sequential Debug builds of
+`ClassMngr`, then
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`;
+exact Debug CTest #410 passed 1/1. No full suite ran.
+
+Two independent post-F924 audits checked all 13 exact official Deferred
+candidates; none became newly actionable, resolved, or superseded, and all
+remain unchanged. F925, Schedule testing-class choices read, is selected next
+in active Batch306, now F925-F929. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
