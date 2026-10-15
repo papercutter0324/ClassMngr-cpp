@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F917 is accepted at source/test commit `e3655c1c`; F918 baseline and acceptance are at that source HEAD, with the QSQLITE view fixture proven against the real query and baseline partial success reproduced; implementation and post-change verification are pending. F919 remains queued in Batch 305, Batch 306 (F920-F929) follows it, Gates 1/2 remain Partial, and the formal exit gate remains Open.
+- Current note: F918 is accepted at source/test commit `9da48f77`; F919 is selected with baseline capture at `9da48f77` underway, Batch 306 (F920-F929) remains queued after it, Gates 1/2 remain Partial, and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F918 - Class-teacher assignments read: prevent partial success after a terminal cursor error.
 - F919 - Intensive slot-state read: prevent partial success after a terminal cursor error.
 
 #### Next batch (queued after F919)

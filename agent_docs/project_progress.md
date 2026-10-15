@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F917 accepted; F918 selected)
+### Current state - 2026-10-15 (F918 accepted; F919 selected)
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
@@ -79,21 +79,38 @@ Forced sequential Debug builds passed for `ClassMngr` and the direct
 repository and typed-port targets; exact CTests #20 and #390 passed 1/1 each.
 Clean EOF, including empty-list success, and typed `Technical`/unavailable
 `NotFound` propagation were source-reviewed; those edge paths were not
-separately fault-injected. No full suite ran. Two independent audits found
-none of the 13 official Deferred candidates newly actionable. Batch 305 now
-has F918 and F919 remaining. F918's baseline and acceptance are recorded at
-F917 source HEAD `e3655c1c`; forced sequential Debug builds passed for
+separately fault-injected. No full suite ran.
+
+F918, Class-teacher assignments read, is accepted at source/test commit
+`9da48f7775399a5ed2d9a99b49a67601523ec479`. Its repository guard now rejects
+a terminal cursor error before accumulated assignments can escape. A permanent
+indexed QSQLITE view regression proves that the exact query yields class 1 /
+teacher 11 before the next fetch reports a malformed-JSON error; the repository
+returns failure with that query error rather than the partial assignment.
+The fixture includes `classes(name, id)` ordering index: without it SQLite
+used a temporary sort and raised the malformed-JSON error during `exec()`,
+before any row was returned. Existing snapshot coverage preserves order,
+regular-class filtering, teacher mapping, and nullable teacher `-1`; typed-port
+CTest #397 covers `Technical` and unavailable-session `NotFound`. Clean empty
+success was source-reviewed rather than separately fault-injected.
+
+At baseline source HEAD `e3655c1cf87c12b86ac729a54f5a6bd84a993565`, the three
+planned forced sequential Debug builds and CTests #21/#397 passed. The typed
+port baseline build emitted nonfatal MSB8064 for missing
+`src/next/application/teacher_import_plan_mapper.h`. A temporary QSQLITE probe
+proved baseline partial success, was restored byte-for-byte (SHA-256
+`27D464E635251AD53ABA540D199A81B39E351B7E0537FE9E98C7B67EC4AEC161`), and
+the restored CTest #21 passed. Final forced sequential Debug builds of
 `ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and
-`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`,
-and CTests #21 and #397 passed. The typed-port build emitted nonfatal MSB8064
-for missing `src/next/application/teacher_import_plan_mapper.h`; the build and
-test passed. A temporary QSQLITE probe then proved the exact class-teacher
-query yields class 1 / teacher 11 before the next fetch returns a valid SQL
-error; the unchanged repository returned that partial assignment as success.
-The temporary test source was restored byte-for-byte, and the restored CTest
-#21 passed. F918 implementation and post-change verification remain pending.
-Batch 306 (F920-F929) is recorded after F919 based on three non-exhaustive
-read-only source scans; these future candidates are not yet accepted.
+`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`
+passed; exact Debug CTests #21 and #397 passed 1/1 each. Build output was
+truncated, so warning-free status cannot be certified. No full suite ran.
+
+Two independent post-F918 audits reviewed all 13 exact official Deferred
+candidates; none became newly actionable, resolved, or superseded. Batch 305
+now has F919 only. F919, Intensive slot-state read, is selected and its
+baseline is being captured at source HEAD `9da48f77`; Batch 306 (F920-F929)
+remains queued after it. These future candidates are not yet accepted.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)

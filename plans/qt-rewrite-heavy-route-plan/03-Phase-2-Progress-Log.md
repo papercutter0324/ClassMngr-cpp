@@ -38454,3 +38454,40 @@ These are future candidates only: no implementation, acceptance, or candidate
 tests are claimed. Batch305 remains active with F918 and F919 visible; all 13
 Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F918 accepted; post-F918 Deferred audits clear; F919 selected - 2026-10-15
+
+F918, Class-teacher assignments read, is accepted at source/test commit
+`9da48f7775399a5ed2d9a99b49a67601523ec479`. The terminal query-error guard in
+`ClassInfoRepository::loadClassTeacherAssignments()` now returns the existing
+SQL failure rather than exposing accumulated assignments after a cursor
+failure.
+
+The permanent indexed QSQLITE view fixture exercised the exact production
+query: it returned row 1 (class 1, teacher 11), then `next()` failed with a
+valid malformed-JSON error; the repository returned failure with the same
+cursor error and context. A test-only `classes(name,id)` ordering index is
+required: without it, SQLite selected `USE TEMP B-TREE FOR ORDER BY` and the
+malformed JSON failed during query execution before any row was returned.
+Existing order, regular-class filter, nullable teacher/`-1` mapping tests and
+typed-port CTest #397 cover unchanged behavior. Clean empty success was
+source-reviewed, not separately fault-injected.
+
+At F917 source HEAD `e3655c1c`, the three planned forced sequential Debug
+builds and exact Debug CTests #21 and #397 passed 1/1. The typed-port baseline
+build had a nonfatal MSB8064 warning for missing dependency
+`src/next/application/teacher_import_plan_mapper.h`. The temporary baseline
+probe reproduced partial success and was restored byte-for-byte (SHA-256
+`27D464E635251AD53ABA540D199A81B39E351B7E0537FE9E98C7B67EC4AEC161`); the
+restored CTest #21 passed. After the change, forced sequential Debug builds of
+`ClassMngr`, `ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests`
+passed, as did exact Debug CTests #21 and #397 (1/1 each). Build output was
+truncated, so warning-free status is unknown. No full suite ran.
+
+Two independent post-F918 audits reviewed all 13 exact official Deferred
+candidates; none became newly actionable, resolved, or superseded, and all 13
+remain unchanged. F919, Intensive slot-state read, is now the sole active
+Batch305 candidate, with baseline capture starting at source/test commit
+`9da48f77`. Batch306 (F920-F929) remains queued after F919. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.

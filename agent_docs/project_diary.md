@@ -5492,3 +5492,9 @@ an indexed view can stream a covering-index row before evaluating an
 overflowing expression on the next row. Reproduce the behavior against the
 exact production SELECT first; the regression can then assert both the
 intermediate `next()` error and the repository's no-partial-success result.
+
+When the production SELECT has `ORDER BY`, fixture indexes must also support
+that ordering. Without an index matching the class-name/id order, SQLite used
+a temporary sort and evaluated malformed JSON during `exec()`, before a first
+row existed. Adding the per-fixture order index restored the intended
+row-then-terminal-error behavior without changing the production query.
