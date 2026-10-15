@@ -148,6 +148,7 @@ private slots:
     void missingParentsDoNotExposeOrphanSubtitleData();
     void readsDisplayNamesForWideAssignedTeacherId();
     void missingAssignmentsAndReadFailuresRemainIndependent();
+    void malformedPersistedTeacherIdIsValidationForOrderedBatch();
     void missingSessionAndInvalidIdsReturnStructuredErrors();
 };
 
@@ -618,6 +619,125 @@ missingAssignmentsAndReadFailuresRemainIndependent()
              Domain::ErrorCode::Technical);
     QVERIFY(classReadFailure.value().front().assignedTeacher);
     QVERIFY(!classReadFailure.value().front().assignedTeacher.value().has_value());
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests::
+malformedPersistedTeacherIdIsValidationForOrderedBatch()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+
+    const auto assignedTeacher = session->teacherRepository()->saveTeacher(
+        teacher(QStringLiteral("Must not be looked up"))
+        );
+    QVERIFY(assignedTeacher);
+    const auto assignedClass = services.classService()->create(
+        QStringLiteral("Assigned sibling")
+        );
+    const auto malformedClass = services.classService()->create(
+        QStringLiteral("Malformed persisted teacher ID")
+        );
+    const auto unassignedClass = services.classService()->create(
+        QStringLiteral("Unassigned sibling")
+        );
+    QVERIFY(assignedClass);
+    QVERIFY(malformedClass);
+    QVERIFY(unassignedClass);
+
+    QString seedError;
+    const QList<ClassTime> times{
+        {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:55 AM")}
+    };
+    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+        *assignedClass,
+        *assignedTeacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Orion"),
+        times
+        ), &seedError), qPrintable(seedError));
+    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+        *malformedClass,
+        -1,
+        QStringLiteral("E5"),
+        QStringLiteral("Hydra"),
+        times
+        ), &seedError), qPrintable(seedError));
+    QVERIFY2(seedClassSubtitle(session->database(), classInfo(
+        *unassignedClass,
+        -1,
+        QStringLiteral("M1"),
+        QStringLiteral("Theseus"),
+        times
+        ), &seedError), qPrintable(seedError));
+
+    QSqlQuery disableForeignKeys(session->database());
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+             qPrintable(disableForeignKeys.lastError().text()));
+    QSqlQuery corruptTeacherId(session->database());
+    QVERIFY(corruptTeacherId.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?")));
+    corruptTeacherId.addBindValue(QStringLiteral("not-a-number"));
+    corruptTeacherId.addBindValue(*malformedClass);
+    QVERIFY2(corruptTeacherId.exec(),
+             qPrintable(corruptTeacherId.lastError().text()));
+    QCOMPARE(corruptTeacherId.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredId(session->database());
+    QVERIFY(verifyStoredId.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id = ?")));
+    verifyStoredId.addBindValue(*malformedClass);
+    QVERIFY2(verifyStoredId.exec(), qPrintable(verifyStoredId.lastError().text()));
+    QVERIFY(verifyStoredId.next());
+    QCOMPARE(verifyStoredId.value(0).toString(), QStringLiteral("text"));
+    QCOMPARE(verifyStoredId.value(1).toString(), QStringLiteral("not-a-number"));
+    QVERIFY(!verifyStoredId.next());
+
+    Platform::ApplicationServicesSelectedClassSubtitleBatchReadPort port(
+        &services
+        );
+    const Application::SelectedClassSubtitleBatchReadQuery query(port);
+    const auto requestedIds = ids({
+        *unassignedClass,
+        *malformedClass,
+        *assignedClass
+    });
+    const auto result = query.execute(requestedIds);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(3));
+    const std::vector<Domain::ClassId> expectedIds{
+        classId(*unassignedClass),
+        classId(*malformedClass),
+        classId(*assignedClass)
+    };
+    const std::string expectedDiagnostic =
+        "Loading class subtitles failed: the database returned an invalid teacher identifier.";
+    for (std::size_t index = 0; index < expectedIds.size(); ++index)
+    {
+        QVERIFY(result.value()[index].classId == expectedIds[index]);
+        QVERIFY(!result.value()[index].classFields);
+        QCOMPARE(result.value()[index].classFields.error().code,
+                 Domain::ErrorCode::Validation);
+        QVERIFY(!result.value()[index].classFields.error().recoverable);
+        QCOMPARE(result.value()[index].classFields.error().message,
+                 expectedDiagnostic);
+        QVERIFY(result.value()[index].assignedTeacher);
+        QVERIFY(!result.value()[index].assignedTeacher.value().has_value());
+    }
+
+    const auto classMetrics =
+        session->classInfoRepository()->classSubtitleBatchReadMetrics();
+    QCOMPARE(classMetrics.callCount, 1);
+    QCOMPARE(classMetrics.requestedClassCount, 3);
+    QCOMPARE(classMetrics.metadataStatementCount, 1);
+    QCOMPARE(classMetrics.regularScheduleStatementCount, 0);
+    const auto teacherMetrics =
+        session->teacherRepository()->teacherDisplayNameBatchReadMetrics();
+    QCOMPARE(teacherMetrics.callCount, 0);
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests::

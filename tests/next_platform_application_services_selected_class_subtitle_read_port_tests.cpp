@@ -83,6 +83,7 @@ private slots:
     void existingParentWithoutMetadataReadsOrderedSchedule();
     void missingSessionAndInvalidIdsDoNotFallBackToServices();
     void classAndTeacherFailuresRemainIndependent();
+    void malformedPersistedTeacherIdIsValidationAndDoesNotLoadTeacher();
     void metadataFailureRemainsTechnical();
 };
 
@@ -473,6 +474,66 @@ classAndTeacherFailuresRemainIndependent()
     QVERIFY(!teacherFailure.value().assignedTeacher);
     QCOMPARE(teacherFailure.value().assignedTeacher.error().code,
              Domain::ErrorCode::Technical);
+}
+
+void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::
+malformedPersistedTeacherIdIsValidationAndDoesNotLoadTeacher()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Must not be looked up");
+    const auto teacherId =
+        services.databaseSession()->teacherRepository()->saveTeacher(teacher);
+    QVERIFY(teacherId);
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Malformed Persisted Subtitle Teacher")
+        );
+    QVERIFY(createdClass);
+    QVERIFY(services.databaseSession()->classInfoRepository()->saveClassInfo(
+        classInfo(*createdClass, *teacherId)
+        ));
+
+    const QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+             qPrintable(disableForeignKeys.lastError().text()));
+    QSqlQuery corruptTeacherId(database);
+    QVERIFY(corruptTeacherId.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id = ? WHERE class_id = ?")));
+    corruptTeacherId.addBindValue(QStringLiteral("not-a-number"));
+    corruptTeacherId.addBindValue(*createdClass);
+    QVERIFY2(corruptTeacherId.exec(),
+             qPrintable(corruptTeacherId.lastError().text()));
+    QCOMPARE(corruptTeacherId.numRowsAffected(), 1);
+
+    QSqlQuery verifyStoredId(database);
+    QVERIFY(verifyStoredId.prepare(QStringLiteral(
+        "SELECT typeof(teacher_id), teacher_id FROM class_info WHERE class_id = ?")));
+    verifyStoredId.addBindValue(*createdClass);
+    QVERIFY2(verifyStoredId.exec(), qPrintable(verifyStoredId.lastError().text()));
+    QVERIFY(verifyStoredId.next());
+    QCOMPARE(verifyStoredId.value(0).toString(), QStringLiteral("text"));
+    QCOMPARE(verifyStoredId.value(1).toString(), QStringLiteral("not-a-number"));
+    QVERIFY(!verifyStoredId.next());
+
+    Platform::ApplicationServicesSelectedClassSubtitleReadPort port(&services);
+    const Application::SelectedClassSubtitleReadQuery query(port);
+    const auto result = query.execute(classId(*createdClass));
+
+    QVERIFY(result);
+    QVERIFY(result.value().classId == classId(*createdClass));
+    QVERIFY(!result.value().classFields);
+    QCOMPARE(result.value().classFields.error().code,
+             Domain::ErrorCode::Validation);
+    QVERIFY(!result.value().classFields.error().recoverable);
+    QCOMPARE(result.value().classFields.error().message,
+             std::string("Loading class subtitle failed: the database returned an invalid teacher identifier."));
+    QVERIFY(result.value().assignedTeacher);
+    QVERIFY(!result.value().assignedTeacher.value().has_value());
 }
 
 void NextPlatformApplicationServicesSelectedClassSubtitleReadPortTests::

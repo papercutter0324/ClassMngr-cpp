@@ -92,7 +92,9 @@ public:
                 classId,
                 Domain::Result<
                     Application::SelectedClassSubtitleFields
-                    >::failure(legacyError(loadedClass.error())),
+                    >::failure(classFieldsRepositoryError(
+                        loadedClass.error()
+                        )),
                 Domain::Result<std::optional<
                     Application::SelectedClassSubtitleTeacherFields
                     >>::success(std::nullopt)
@@ -277,30 +279,18 @@ private:
             );
     }
 
-    [[nodiscard]] static Domain::OperationError legacyError(
+    [[nodiscard]] static Domain::OperationError classFieldsRepositoryError(
         const QString& message
         )
     {
-        const QString normalized = message.toLower();
-        Domain::ErrorCode code = Domain::ErrorCode::Technical;
-        if (normalized.contains(QStringLiteral("not found"))
-            || normalized.contains(QStringLiteral("no matching record"))
-            || normalized.contains(QStringLiteral("unavailable")))
-        {
-            code = Domain::ErrorCode::NotFound;
-        }
-        else if (normalized.contains(QStringLiteral("invalid")))
-        {
-            code = Domain::ErrorCode::InvalidInput;
-        }
-        else if (normalized.contains(QStringLiteral("validation")))
-        {
-            code = Domain::ErrorCode::Validation;
-        }
-
+        const bool invalidPersistedTeacherId = message.toLower().contains(
+            QStringLiteral("database returned an invalid teacher identifier")
+            );
         const QByteArray bytes = message.toUtf8();
         return error(
-            code,
+            invalidPersistedTeacherId
+                ? Domain::ErrorCode::Validation
+                : Domain::ErrorCode::Technical,
             bytes.isEmpty()
                 ? "The selected class subtitle source failed."
                 : bytes.toStdString()

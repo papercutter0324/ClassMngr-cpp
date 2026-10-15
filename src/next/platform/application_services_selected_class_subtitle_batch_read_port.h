@@ -110,7 +110,7 @@ public:
                 snapshots;
             snapshots.reserve(classIds.size());
             const Domain::OperationError classError =
-                technicalError(loadedClasses.error());
+                classFieldsRepositoryError(loadedClasses.error());
             for (const Domain::ClassId& classId : classIds)
             {
                 snapshots.push_back({
@@ -421,13 +421,18 @@ private:
             );
     }
 
-    [[nodiscard]] static Domain::OperationError technicalError(
+    [[nodiscard]] static Domain::OperationError classFieldsRepositoryError(
         const QString& message
         )
     {
+        const bool invalidPersistedTeacherId = message.toLower().contains(
+            QStringLiteral("database returned an invalid teacher identifier")
+            );
         const QByteArray bytes = message.toUtf8();
         return error(
-            Domain::ErrorCode::Technical,
+            invalidPersistedTeacherId
+                ? Domain::ErrorCode::Validation
+                : Domain::ErrorCode::Technical,
             bytes.isEmpty()
                 ? "The selected class subtitle source failed."
                 : bytes.toStdString()
