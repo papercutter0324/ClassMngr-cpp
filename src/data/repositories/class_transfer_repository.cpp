@@ -151,6 +151,13 @@ QList<ClassTransferEvaluation> loadEvaluations(
         evaluations.append(evaluation);
     }
 
+    if (evaluationQuery.lastError().isValid())
+    {
+        *errorMessage = QObject::tr("Unable to read speaking evaluations: %1")
+            .arg(evaluationQuery.lastError().text());
+        return {};
+    }
+
     if (evaluations.isEmpty())
     {
         return evaluations;
@@ -216,6 +223,13 @@ QList<ClassTransferEvaluation> loadEvaluations(
             evaluation.rows[rowIndex][column] =
                 rowQuery.value(column + 3).toString();
         }
+    }
+
+    if (rowQuery.lastError().isValid())
+    {
+        *errorMessage = QObject::tr("Unable to read speaking evaluation rows: %1")
+            .arg(rowQuery.lastError().text());
+        return {};
     }
 
     return evaluations;

@@ -27,6 +27,8 @@ private slots:
     void sparseIntegerRosterRowRemainsValid();
     void outOfRangeRosterRowIndexReturnsEstablishedReadError();
     void wideTeacherIdentityKeepsFullProfileAndSharedPortableReference();
+    void partialEvaluationHeaderFetchErrorFailsEvaluationStage();
+    void partialEvaluationMatrixFetchErrorFailsEvaluationStage();
     void wideEvaluationIdsKeepTheirOwnExportRows();
     void stagedErrorRollsBackAndKeepsDownstreamNotAttempted();
     void beginAndUnavailableErrorsStayAtSourceBoundary();
@@ -523,6 +525,180 @@ void ClassTransferExportSourceTests::wideEvaluationIdsKeepTheirOwnExportRows()
     }
     QVERIFY(foundA);
     QVERIFY(foundB);
+}
+void ClassTransferExportSourceTests::partialEvaluationHeaderFetchErrorFailsEvaluationStage()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral(
+        "INSERT INTO classes(name) VALUES('Partial evaluation header fetch')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery setup(database);
+    QVERIFY2(setup.exec(QStringLiteral(
+        "CREATE TEMP TABLE class_transfer_evaluation_payloads ("
+        "id INTEGER NOT NULL, class_id INTEGER NOT NULL, payload TEXT NOT NULL)")),
+        qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(
+        "CREATE INDEX class_transfer_evaluation_payload_order "
+        "ON class_transfer_evaluation_payloads(class_id, id)")),
+        qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(
+        "CREATE TEMP VIEW speaking_evaluations AS "
+        "SELECT id, class_id, json_extract(payload, '$.name') AS evaluation_name "
+        "FROM class_transfer_evaluation_payloads")),
+        qPrintable(setup.lastError().text()));
+
+    QSqlQuery insertPayload(database);
+    QVERIFY(insertPayload.prepare(QStringLiteral(
+        "INSERT INTO class_transfer_evaluation_payloads(id, class_id, payload) "
+        "VALUES(?, ?, ?)")));
+    insertPayload.addBindValue(101);
+    insertPayload.addBindValue(classId);
+    insertPayload.addBindValue(QStringLiteral("{\"name\":\"Valid header\"}"));
+    QVERIFY2(insertPayload.exec(), qPrintable(insertPayload.lastError().text()));
+    QSqlQuery insertMalformedPayload(database);
+    QVERIFY(insertMalformedPayload.prepare(QStringLiteral(
+        "INSERT INTO class_transfer_evaluation_payloads(id, class_id, payload) "
+        "VALUES(?, ?, ?)")));
+    insertMalformedPayload.addBindValue(102);
+    insertMalformedPayload.addBindValue(classId);
+    insertMalformedPayload.addBindValue(QStringLiteral("{"));
+    QVERIFY2(insertMalformedPayload.exec(),
+        qPrintable(insertMalformedPayload.lastError().text()));
+
+    QSqlQuery evaluationQuery(database);
+    QVERIFY(evaluationQuery.prepare(QStringLiteral(R"(
+        SELECT id, evaluation_name
+        FROM speaking_evaluations
+        WHERE class_id=?
+        ORDER BY id
+    )")));
+    evaluationQuery.addBindValue(classId);
+    QVERIFY2(evaluationQuery.exec(), qPrintable(evaluationQuery.lastError().text()));
+    QVERIFY(evaluationQuery.next());
+    QCOMPARE(evaluationQuery.value(QStringLiteral("id")).toLongLong(), qlonglong(101));
+    QCOMPARE(evaluationQuery.value(QStringLiteral("evaluation_name")).toString(),
+        QStringLiteral("Valid header"));
+    QVERIFY(!evaluationQuery.next());
+    QVERIFY(evaluationQuery.lastError().isValid());
+    const QString queryError = evaluationQuery.lastError().text();
+    QVERIFY2(queryError.contains(QStringLiteral("malformed JSON"), Qt::CaseInsensitive),
+        qPrintable(queryError));
+    evaluationQuery.finish();
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    const auto source = port.readSource({{id(classId)}});
+    QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& evaluations = source.value().classes.front().evaluations;
+    QCOMPARE(evaluations.state(), ClassExportStageState::Error);
+    QCOMPARE(evaluations.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(evaluations.error().message);
+    QVERIFY2(diagnostic.startsWith(QStringLiteral(
+        "Unable to read speaking evaluations: "))
+        && diagnostic.contains(QStringLiteral("malformed JSON"), Qt::CaseInsensitive),
+        qPrintable(diagnostic));
+}
+void ClassTransferExportSourceTests::partialEvaluationMatrixFetchErrorFailsEvaluationStage()
+{
+    QTemporaryDir directory; QVERIFY(directory.isValid()); ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath(QStringLiteral("source.db"))));
+    auto database = services.databaseSession()->database();
+    QSqlQuery insertClass(database);
+    QVERIFY(insertClass.exec(QStringLiteral(
+        "INSERT INTO classes(name) VALUES('Partial evaluation matrix fetch')")));
+    const int classId = insertClass.lastInsertId().toInt();
+
+    QSqlQuery insertEvaluation(database);
+    QVERIFY(insertEvaluation.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluations(class_id, evaluation_name) VALUES(?, ?)")));
+    insertEvaluation.addBindValue(classId);
+    insertEvaluation.addBindValue(QStringLiteral("Valid header"));
+    QVERIFY2(insertEvaluation.exec(), qPrintable(insertEvaluation.lastError().text()));
+    const qlonglong evaluationId = insertEvaluation.lastInsertId().toLongLong();
+
+    QSqlQuery setup(database);
+    QVERIFY2(setup.exec(QStringLiteral(
+        "CREATE TEMP TABLE class_transfer_evaluation_row_payloads ("
+        "evaluation_id INTEGER NOT NULL, row_index INTEGER NOT NULL, payload TEXT NOT NULL)")),
+        qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(
+        "CREATE INDEX class_transfer_evaluation_row_order "
+        "ON class_transfer_evaluation_row_payloads(evaluation_id, row_index)")),
+        qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(
+        "CREATE TEMP VIEW speaking_eval_data AS "
+        "SELECT evaluation_id, row_index, "
+        "json_extract(payload, '$.col_0') AS col_0, "
+        "NULL AS col_1, NULL AS col_2, NULL AS col_3, NULL AS col_4, "
+        "NULL AS col_5, NULL AS col_6, NULL AS col_7, NULL AS col_8, "
+        "NULL AS col_9, NULL AS col_10 "
+        "FROM class_transfer_evaluation_row_payloads")),
+        qPrintable(setup.lastError().text()));
+
+    QSqlQuery insertPayload(database);
+    QVERIFY(insertPayload.prepare(QStringLiteral(
+        "INSERT INTO class_transfer_evaluation_row_payloads "
+        "(evaluation_id, row_index, payload) VALUES(?, ?, ?)")));
+    insertPayload.addBindValue(evaluationId);
+    insertPayload.addBindValue(0);
+    insertPayload.addBindValue(QStringLiteral("{\"col_0\":\"Valid first matrix row\"}"));
+    QVERIFY2(insertPayload.exec(), qPrintable(insertPayload.lastError().text()));
+    QSqlQuery insertMalformedPayload(database);
+    QVERIFY(insertMalformedPayload.prepare(QStringLiteral(
+        "INSERT INTO class_transfer_evaluation_row_payloads "
+        "(evaluation_id, row_index, payload) VALUES(?, ?, ?)")));
+    insertMalformedPayload.addBindValue(evaluationId);
+    insertMalformedPayload.addBindValue(1);
+    insertMalformedPayload.addBindValue(QStringLiteral("{"));
+    QVERIFY2(insertMalformedPayload.exec(),
+        qPrintable(insertMalformedPayload.lastError().text()));
+
+    QSqlQuery rowQuery(database);
+    QVERIFY(rowQuery.prepare(QStringLiteral(R"(
+        SELECT evaluation_id, row_index,
+            typeof(row_index) AS row_index_storage_type,
+            col_0, col_1, col_2, col_3, col_4, col_5,
+            col_6, col_7, col_8, col_9, col_10
+        FROM speaking_eval_data
+        WHERE evaluation_id IN (
+            SELECT id
+            FROM speaking_evaluations
+            WHERE class_id=?
+        )
+        ORDER BY evaluation_id, row_index
+    )")));
+    rowQuery.addBindValue(classId);
+    QVERIFY2(rowQuery.exec(), qPrintable(rowQuery.lastError().text()));
+    QVERIFY(rowQuery.next());
+    QCOMPARE(rowQuery.value(QStringLiteral("evaluation_id")).toLongLong(), evaluationId);
+    QCOMPARE(rowQuery.value(QStringLiteral("row_index")).toInt(), 0);
+    QCOMPARE(rowQuery.value(QStringLiteral("row_index_storage_type")).toString(),
+        QStringLiteral("integer"));
+    QCOMPARE(rowQuery.value(QStringLiteral("col_0")).toString(),
+        QStringLiteral("Valid first matrix row"));
+    QVERIFY(!rowQuery.next());
+    QVERIFY(rowQuery.lastError().isValid());
+    const QString queryError = rowQuery.lastError().text();
+    QVERIFY2(queryError.contains(QStringLiteral("malformed JSON"), Qt::CaseInsensitive),
+        qPrintable(queryError));
+    rowQuery.finish();
+
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(services);
+    const auto source = port.readSource({{id(classId)}});
+    QVERIFY(source);
+    QCOMPARE(source.value().classes.size(), std::size_t(1));
+    const auto& evaluations = source.value().classes.front().evaluations;
+    QCOMPARE(evaluations.state(), ClassExportStageState::Error);
+    QCOMPARE(evaluations.error().code, Domain::ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(evaluations.error().message);
+    QVERIFY2(diagnostic.startsWith(QStringLiteral(
+        "Unable to read speaking evaluation rows: "))
+        && diagnostic.contains(QStringLiteral("malformed JSON"), Qt::CaseInsensitive),
+        qPrintable(diagnostic));
 }
 void ClassTransferExportSourceTests::stagedErrorRollsBackAndKeepsDownstreamNotAttempted()
 {
