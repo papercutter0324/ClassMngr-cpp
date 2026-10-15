@@ -7,6 +7,7 @@
 #include "next/application/teacher_import_match_cardinality.h"
 #include "next/application/teacher_import_plan_validation.h"
 #include "next/domain/gregorian_date.h"
+#include "next/domain/korean_teacher_key.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -14,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -276,6 +278,27 @@ namespace Detail
     };
 }
 
+[[nodiscard]] inline TeacherImportPlanValidationIssue validateDerivedKoreanTeacherKeys(
+    const std::vector<TeacherImportKoreanSource>& sources
+    )
+{
+    std::unordered_set<std::u16string> keys;
+    for (const TeacherImportKoreanSource& source : sources)
+    {
+        const Domain::KoreanTeacherKey key =
+            Domain::KoreanTeacherKey::fromName(source.teacherKr);
+        if (key.empty())
+        {
+            return TeacherImportPlanValidationIssue::MissingKoreanTeacherName;
+        }
+        if (!keys.insert(key.value()).second)
+        {
+            return TeacherImportPlanValidationIssue::DuplicateKoreanTeacherName;
+        }
+    }
+    return TeacherImportPlanValidationIssue::None;
+}
+
 [[nodiscard]] inline TeacherImportUseCaseError rollbackAndReturn(
     TeacherImportPersistencePort& port,
     TeacherImportUseCaseError error
@@ -390,11 +413,35 @@ public:
             && Domain::GregorianDate::fromIsoString(
                 request.sourceDateIso
                 ).has_value();
-        const TeacherImportPlanValidationIssue validationIssue =
-            validateTeacherImportPlan(validation);
-        if (validationIssue != TeacherImportPlanValidationIssue::None)
+
+        // Preserve review, source-date, and supplied Korean-key validation
+        // precedence before validating the canonical identity used to match
+        // and persist Korean teachers. Other namespaces remain downstream.
+        TeacherImportPlanValidationInput koreanValidation = validation;
+        koreanValidation.nativeEnglishTeacherKeys.clear();
+        koreanValidation.gsTeamMemberKeys.clear();
+        const TeacherImportPlanValidationIssue koreanValidationIssue =
+            validateTeacherImportPlan(koreanValidation);
+        if (koreanValidationIssue != TeacherImportPlanValidationIssue::None)
         {
-            return std::unexpected(Detail::validationError(validationIssue));
+            return std::unexpected(Detail::validationError(koreanValidationIssue));
+        }
+
+        const TeacherImportPlanValidationIssue derivedKoreanIssue =
+            Detail::validateDerivedKoreanTeacherKeys(request.koreanTeachers);
+        if (derivedKoreanIssue != TeacherImportPlanValidationIssue::None)
+        {
+            return std::unexpected(Detail::validationError(derivedKoreanIssue));
+        }
+
+        TeacherImportPlanValidationInput downstreamValidation = validation;
+        downstreamValidation.koreanTeacherKeys.clear();
+        downstreamValidation.reviewedKoreanTeacherKeys.reset();
+        const TeacherImportPlanValidationIssue downstreamValidationIssue =
+            validateTeacherImportPlan(downstreamValidation);
+        if (downstreamValidationIssue != TeacherImportPlanValidationIssue::None)
+        {
+            return std::unexpected(Detail::validationError(downstreamValidationIssue));
         }
 
         const auto started = persistence.beginTransaction();

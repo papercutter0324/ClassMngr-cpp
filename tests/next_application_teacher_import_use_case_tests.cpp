@@ -554,6 +554,125 @@ void reviewAndPlanRejectionPrecedePersistence()
     }
 }
 
+void derivedKoreanIdentitiesAreValidatedBeforePersistence()
+{
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.koreanTeachers = {
+            koreanSource("kim-a", u"김하늘 A"),
+            koreanSource("kim-b", u"김하늘 B")
+        };
+        request.validation.koreanTeacherKeys = {"kim-a", "kim-b"};
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::DuplicateKoreanTeacherName,
+                "duplicate derived Korean identities were not rejected");
+        require(persistence.calls.empty(),
+                "duplicate derived Korean identities reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.koreanTeachers = {koreanSource("nonempty-validation-key", u"Teacher A")};
+        request.validation.koreanTeacherKeys = {"nonempty-validation-key"};
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::MissingKoreanTeacherName,
+                "missing derived Korean identity was not rejected");
+        require(persistence.calls.empty(),
+                "missing derived Korean identity reached persistence");
+    }
+}
+
+void derivedKoreanIdentityValidationPreservesPrecedence()
+{
+    const auto duplicateDerivedRequest = []
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.koreanTeachers = {
+            koreanSource("kim-a", u"김하늘 A"),
+            koreanSource("kim-b", u"김하늘 B")
+        };
+        request.validation.koreanTeacherKeys = {"kim-a", "kim-b"};
+        return request;
+    };
+
+    {
+        TeacherImportUseCaseRequest request = duplicateDerivedRequest();
+        request.validation.koreanTeacherKeys[1] = "other-key";
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::ReviewSelectionMismatch,
+                "request-shape mismatch did not precede derived Korean duplicate validation");
+        require(persistence.calls.empty(),
+                "request-shape mismatch reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = duplicateDerivedRequest();
+        request.review = TeacherImportReview{
+            .candidateGroups = {{"M1", {"kim-a"}}},
+            .decisions = {{"M1", TeacherImportGroupMode::Selected, {1}}}
+        };
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidReview
+                    && result.error().reviewIssue
+                        == TeacherImportReviewIssue::CandidateIndexOutOfRange,
+                "invalid review decision did not precede derived Korean duplicate validation");
+        require(persistence.calls.empty(),
+                "invalid review decision reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = duplicateDerivedRequest();
+        request.sourceDateIso = "2023-02-29";
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::InvalidSourceDate,
+                "invalid source date did not precede derived Korean duplicate validation");
+        require(persistence.calls.empty(),
+                "invalid source date reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = duplicateDerivedRequest();
+        request.nativeEnglishTeachers = {
+            nativeSource("same", u"same", u"Same"),
+            nativeSource("same", u"same", u"Same duplicate")
+        };
+        request.validation.nativeEnglishTeacherKeys = {"same", "same"};
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = TeacherImportUseCase::execute(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::DuplicateKoreanTeacherName,
+                "downstream Native English duplicate preceded the Korean identity duplicate");
+        require(persistence.calls.empty(),
+                "duplicate Korean identity reached persistence");
+    }
+}
+
 void sourceDateValidationPrecedesPersistenceAndPreservesIsoDate()
 {
     {
@@ -698,6 +817,8 @@ int main()
         successfulOrchestrationAcrossNamespaces();
         noMatchCreatesAcrossAllNamespaces();
         reviewAndPlanRejectionPrecedePersistence();
+        derivedKoreanIdentitiesAreValidatedBeforePersistence();
+        derivedKoreanIdentityValidationPreservesPrecedence();
         sourceDateValidationPrecedesPersistenceAndPreservesIsoDate();
         ambiguousMatchRollsBackEarlierWrites();
         queryWriteAndCommitFailuresRollBack();
