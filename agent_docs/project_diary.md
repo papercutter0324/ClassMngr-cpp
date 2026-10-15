@@ -5819,3 +5819,27 @@ failure to F944. The exact ordered malformed-JSON query fails during `exec()`
 before yielding a row, so no runtime partial-list defect is established. Two
 independent audits found all 13 official Deferred candidates unchanged. F945
 is current and its exact legacy-query pre-fix baseline is underway.
+
+## F945 baseline and acceptance - 2026-10-16
+
+The exact ordered `loadTestingAssignments()` SELECT streamed Monday 09:00,
+then returned `false` from `next()` with a valid, nonempty cursor error caused
+by the indexed view's overflow expression. Before any production change, the
+public repository method returned success with that one-row prefix (empty
+room, class ID `-1`, PlainTesting). The temporary probe was removed; the test
+file was restored to SHA-256
+`E455301E92F560E5159C085C542C31865F3B2D941510607DE3AFB5D1602D906C`. The
+restored Debug repository target rebuilt and exact CTest passed 1/1.
+
+Accept F945 narrowly: after the legacy assignment-list loop, check terminal
+`lastError()` and return the existing contextual `Loading testing blocks`
+failure. Preserve the API, SQL/order, row mapping and class-ID validation,
+kind selection, clean-empty success, wrappers, and typed display-record path.
+Extend the existing indexed-view fixture to preflight the exact legacy SELECT
+and verify the public list method fails contextually rather than returning the
+prefix. No seam or custom driver is needed. Build `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` sequentially in the standard Debug
+folder, run only the matching CTest, review the source, and check the diff. No
+full suite. The typed Schedule UI path remains unchanged; the legacy wrappers
+have no other in-tree caller found by the Explorer. Post-F945 Deferred audits
+remain pending; the separate Campus lead remains unselected.

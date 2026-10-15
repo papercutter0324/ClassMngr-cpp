@@ -40353,3 +40353,42 @@ F945, `TestingBlockRepository::loadTestingAssignments()`, is the current
 Batch309 slice; its exact-query pre-fix baseline is in progress and neither
 baseline nor acceptance is complete. Batch310 status remains unchanged. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F945 baseline and acceptance - 2026-10-16
+
+F945 covers legacy `TestingBlockRepository::loadTestingAssignments()`. The
+pre-fix exact legacy ordered SELECT streamed a fixture row for Monday 09:00,
+then `next()` returned false with a valid, nonempty `lastError()`. Before any
+production change, `loadTestingAssignments()` incorrectly returned success
+with that one-row prefix: Monday 09:00, empty room, `classId == -1`, and
+`PlainTesting`.
+
+The existing indexed-view overflow fixture is suitable for this exact query. The
+temporary probe was removed; the test file was restored with SHA-256
+`E455301E92F560E5159C085C542C31865F3B2D941510607DE3AFB5D1602D906C`. The
+restored repository target rebuilt and its exact CTest passed 1/1. No
+production source changed during baseline. The active Schedule UI uses typed
+`loadTestingAssignmentDisplayRecords()`; no other in-tree callers of the
+legacy wrappers were found, so no active UI impact is claimed.
+
+Acceptance:
+
+1. After the `loadTestingAssignments()` loop, check for a terminal cursor
+   error and return the existing contextual `Loading testing blocks` query
+   failure.
+2. Preserve public APIs, exact SQL and ordering, row mapping, class-ID
+   validation, kind selection, clean-empty success, wrappers, and the typed
+   `loadTestingAssignmentDisplayRecords()` path.
+3. Add a permanent regression to the existing indexed-view fixture. Preflight
+   the exact legacy query, then assert the public method fails contextually
+   instead of returning the prefix. Do not add a custom SQL seam or driver.
+4. Sequentially build `ClassMngr` and
+   `ClassMngrTestingBlockRepositoryTests` in standard Windows x64 Debug, run
+   the exact repository CTest, review the source change, and run
+   `git diff --check`. Do not run the full suite.
+
+F945 acceptance is complete and implementation is next in Batch309. All 13
+official Deferred entries remain unchanged after the F944 audits; no
+post-F945 audit is recorded. The separate conditional Batch310
+`CampusRecordRepository::getAllCampuses()` lead remains unselected. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.
