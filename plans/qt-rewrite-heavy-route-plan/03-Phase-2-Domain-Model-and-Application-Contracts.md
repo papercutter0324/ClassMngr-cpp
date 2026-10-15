@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F960 is complete; Batch331 discovery is closed; F961 is accepted before implementation as the sole active slice. Blank-draft Sidebar Add remains deferred under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F961 is complete; Batch332 is closed and F962 is accepted as the sole active slice. Blank-draft Sidebar Add remains deferred under F285. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F961 - GS Team raw-name validation: derive missing and duplicate identities from raw names through an injected Qt-compatible UTF-16 policy; preserve row-validation precedence and visible behavior.
+- F962 - Native English teacher import identity: derive validation and stored-record matching from the exact source name written, using an injected Qt-compatible UTF-16 key policy.
 
 ## Objective
 

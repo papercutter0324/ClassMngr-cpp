@@ -41360,5 +41360,44 @@ F961 acceptance for implementation:
    unchanged. If implementation changes visible UI behavior, stop for a main
    decision. Do not expand this into a repository-wide redesign or migration.
 
-F961 is the sole active slice in Batch331. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate remains Open.
+F961 acceptance was recorded in docs commit
+`ff479240d5a6c82ae9082c16bacc349af72c1d81`; its source/test changes are in
+`4ebcbef4d4ab8664123657b5994061f36199a683`. The Application boundary now
+derives GS Team name identities from raw values through the injected Qt-free
+UTF-16 policy; the UI supplies the existing Qt normalization behavior. The
+app-less and Qt-backed regressions accompany the implementation. F961 is
+complete; no current UI defect was found.
+
+Two fresh independent post-F961 audits reviewed all 13 official Deferred
+entries; all remain unchanged, with none actionable, resolved, or superseded.
+Batch332 closed after two discovery shortfalls and one selection. The
+document/session/catalog scan found no candidate because silent document
+navigation error UX has no specified policy. The typed write/outcome scan
+found no candidate; F830 covers no-op behavior and existing errors remain
+preserved. The Native English teacher import mismatch is selected: direct
+`TeacherImportUseCase` callers can forge `source.normalizedMatchKey`, which is
+used to match stored rows before `source.name` is written. This is Application
+contract hardening; the production mapper derives identity consistently with
+`QString::simplified().toCaseFolded()`, so no current UI bug was found.
+
+F962 acceptance for implementation:
+
+1. Remove caller-controlled Native English match/validation identity
+   authorities from the request. Inject a Qt-free
+   `std::u16string(std::u16string_view)` key policy and derive Native English
+   missing/duplicate validation and stored-record matching from the exact
+   source name used for the write. Preserve
+   `QString::simplified().toCaseFolded()` semantics at the Qt edge.
+2. Preserve review/source-date/Korean validation precedence and
+   Native-English-before-GS downstream validation order. Keep diagnostic-label
+   behavior, stored-key adapter behavior, ambiguity rollback, update/create/
+   no-op merge semantics, and the transaction boundary unchanged.
+3. Add app-less regressions proving forged keys cannot mutate a different
+   stored teacher or suppress create. Cover missing and duplicate derived
+   names with no transaction; add current Unicode-policy boundary coverage as
+   needed. Keep live UI behavior unchanged.
+4. Use focused verification only; do not run the full suite.
+
+F962 is the sole active slice. Blank-draft Sidebar Add remains excluded under
+F285, all other official Deferred entries remain unchanged, Gates 1/2 remain
+Partial, and the formal Phase 2 exit gate remains Open.
