@@ -40392,3 +40392,35 @@ official Deferred entries remain unchanged after the F944 audits; no
 post-F945 audit is recorded. The separate conditional Batch310
 `CampusRecordRepository::getAllCampuses()` lead remains unselected. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F945 complete; F946 baseline underway in Batch310 - 2026-10-16
+
+F945 is complete in code commit `273654e0`. The legacy
+`TestingBlockRepository::loadTestingAssignments()` now checks terminal cursor
+failure after its row loop and returns the contextual `Loading testing blocks`
+failure instead of partial success. Its permanent indexed-view regression
+preflights the exact legacy ordered query and verifies contextual failure
+instead of one-row prefix success. The active Schedule UI remains on typed
+`loadTestingAssignmentDisplayRecords()`; no active UI impact is claimed.
+
+The pre-fix baseline streamed Monday 09:00, then `next()` returned false with
+a valid nonempty `lastError()`; the unmodified public method returned that
+one-row prefix as success. The temporary test was removed and the repository
+test file restored with SHA-256
+`E455301E92F560E5159C085C542C31865F3B2D941510607DE3AFB5D1602D906C`. The
+restored `ClassMngrTestingBlockRepositoryTests` target rebuilt and its exact
+CTest passed 1/1. Post-commit, independent
+sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` passed in
+`build/windows-x64-debug` with `/p:TrackFileAccess=false`; exact CTest #20
+passed 1/1, and source review plus `git diff --check` passed. No full suite
+ran.
+
+Two independent post-F945 audits reviewed every official Deferred entry; all
+13 remain unchanged, with none actionable, resolved, superseded, or materially
+changed. The separate conditional `CampusRecordRepository::getAllCampuses()`
+lead is outside the Deferred list. Its exact pre-fix baseline has started but
+is not complete. Keep F946 unaccepted unless
+`SELECT * FROM campuses ORDER BY name` yields a valid row prefix followed by a
+terminal cursor error and the public method returns that prefix as success.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

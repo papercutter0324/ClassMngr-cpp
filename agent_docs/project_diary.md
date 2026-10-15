@@ -5843,3 +5843,21 @@ folder, run only the matching CTest, review the source, and check the diff. No
 full suite. The typed Schedule UI path remains unchanged; the legacy wrappers
 have no other in-tree caller found by the Explorer. Post-F945 Deferred audits
 remain pending; the separate Campus lead remains unselected.
+
+## F945 implementation outcome and Deferred review - 2026-10-16
+
+F945 completed at source/test commit `273654e0`. The legacy
+`loadTestingAssignments()` now checks `lastError()` after iteration and
+returns contextual `Loading testing blocks` failure instead of its valid
+prefix. Its permanent indexed-view regression preflights the exact ordered
+SELECT and checks both cursor detail and context; the existing typed display
+failure assertion remains. The typed Schedule UI route is unchanged.
+
+Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingBlockRepositoryTests` passed in `build/windows-x64-debug`
+with `/p:TrackFileAccess=false`. Exact CTest #20 passed 1/1, source review
+passed, and `git diff --check` passed. No full suite ran. Two independent
+post-commit audits found all 13 official Deferred entries unchanged and none
+actionable, resolved, superseded, or materially changed. The separate Batch310
+Campus lead remains conditional; its exact production-query baseline is
+underway.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F944 is complete; F945 `TestingBlockRepository::loadTestingAssignments()` is accepted and implementation is next. The conditional Batch310 `CampusRecordRepository::getAllCampuses()` lead remains unselected. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F944 and F945 are complete, with F945's baseline and implementation outcome recorded. The conditional Batch310 F946 `CampusRecordRepository::getAllCampuses()` exact pre-fix baseline is underway; keep it unaccepted until it proves a valid prefix followed by terminal error and public success with that prefix. All 13 official Deferred candidates remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
