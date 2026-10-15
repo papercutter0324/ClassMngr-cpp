@@ -864,6 +864,13 @@ TestingClassRepository::loadTestingClassChoices()
         });
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            queryFailure(query, QObject::tr("Loading testing classes"))
+            );
+    }
+
     return choices;
 }
 
