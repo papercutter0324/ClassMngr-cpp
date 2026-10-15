@@ -335,6 +335,16 @@ TestingBlockRepository::loadTestingAssignments()
         assignments.append(assignment);
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            queryFailure(
+                query,
+                QObject::tr("Loading testing blocks")
+                )
+            );
+    }
+
     return assignments;
 }
 

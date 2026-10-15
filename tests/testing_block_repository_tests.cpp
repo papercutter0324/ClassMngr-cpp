@@ -17,7 +17,7 @@ private slots:
     void classifiesMissingParentAndIncompleteClassSeparately();
     void reportsInvalidKeysAndDatabaseFailures();
     void rejectsMalformedClassIdsWithoutOverwritingBlocks();
-    void reportsDisplayCursorFailuresWithoutReturningPartialRecords();
+    void reportsLegacyAndDisplayCursorFailuresWithoutReturningPartialRecords();
 };
 
 namespace
@@ -347,7 +347,7 @@ void TestingBlockRepositoryTests
 }
 
 void TestingBlockRepositoryTests
-    ::reportsDisplayCursorFailuresWithoutReturningPartialRecords()
+    ::reportsLegacyAndDisplayCursorFailuresWithoutReturningPartialRecords()
 {
     const QString connectionName =
         QStringLiteral("testing_assignment_repository_cursor_failure");
@@ -437,7 +437,40 @@ void TestingBlockRepositoryTests
             )
         )"));
 
-        QString cursorDetail;
+        QString legacyCursorDetail;
+        {
+            QSqlQuery legacyProductionSelect(database);
+            QVERIFY(legacyProductionSelect.exec(QStringLiteral(R"(
+                SELECT
+                    day,
+                    start_time,
+                    room,
+                    class_id,
+                    typeof(class_id) AS class_id_storage_type
+                FROM schedule_testing_blocks
+                ORDER BY day, start_time
+            )")));
+            QVERIFY(legacyProductionSelect.next());
+            QCOMPARE(
+                legacyProductionSelect.value(
+                    QStringLiteral("day")
+                    ).toString(),
+                QStringLiteral("Monday")
+                );
+            QCOMPARE(
+                legacyProductionSelect.value(
+                    QStringLiteral("start_time")
+                    ).toString(),
+                QStringLiteral("09:00")
+                );
+            QVERIFY(!legacyProductionSelect.next());
+            const QSqlError cursorError = legacyProductionSelect.lastError();
+            QVERIFY(cursorError.isValid());
+            legacyCursorDetail = cursorError.text();
+            QVERIFY(!legacyCursorDetail.trimmed().isEmpty());
+        }
+
+        QString displayCursorDetail;
         {
             QSqlQuery productionSelect(database);
             QVERIFY(productionSelect.exec(QStringLiteral(R"(
@@ -481,16 +514,26 @@ void TestingBlockRepositoryTests
             QVERIFY(!productionSelect.next());
             const QSqlError cursorError = productionSelect.lastError();
             QVERIFY(cursorError.isValid());
-            cursorDetail = cursorError.text();
-            QVERIFY(!cursorDetail.trimmed().isEmpty());
+            displayCursorDetail = cursorError.text();
+            QVERIFY(!displayCursorDetail.trimmed().isEmpty());
         }
 
         TestingBlockRepository repository(database);
+        const auto assignments = repository.loadTestingAssignments();
+        QVERIFY(!assignments);
+        QVERIFY2(
+            assignments.error().contains(legacyCursorDetail),
+            qPrintable(assignments.error())
+            );
+        QVERIFY(assignments.error().contains(
+            QStringLiteral("Loading testing blocks")
+            ));
+
         const auto displayRecords =
             repository.loadTestingAssignmentDisplayRecords();
         QVERIFY(!displayRecords);
         QVERIFY2(
-            displayRecords.error().contains(cursorDetail),
+            displayRecords.error().contains(displayCursorDetail),
             qPrintable(displayRecords.error())
             );
     }
