@@ -5642,3 +5642,13 @@ setting error, while the clean missing-key default remains covered. Confirm the
 exact query and caller path before adding a first-row cursor guard; an already
 reported execution failure is not evidence that the post-exec `next()` branch
 is missing.
+
+## Phase 2 Sub Prep roster output cursor checks - 2026-10-15
+
+For row-accumulating SQL reads, inspect the cursor's terminal error after the
+loop and before using or returning the accumulated projection. F939's public
+port tests establish that QSQLITE can return a valid roster prefix before a
+later malformed-JSON fetch fails; the port must report the contextual
+Technical error rather than expose that prefix. SQL operation labels reused by
+F939 predated the slice, so translation notices alone did not justify expanding
+its source/test scope.

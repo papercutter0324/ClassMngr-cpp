@@ -40004,3 +40004,30 @@ second-last Batch309 item, starts. All 13 official Deferred entries remain
 unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open. This acceptance record is uncommitted; F939 implementation is gated on
 committing it. No implementation has started.
+
+### F939 accepted; F940 next in Batch309 - 2026-10-15
+
+F939 is accepted. Source/test commit `11ea4898` (`Phase2 - Reject partial Sub
+Prep roster outputs`) follows acceptance commit `8a950106` and F938 closeout
+commit `d31d96a`. It checks terminal `lastError()` after each bounded roster
+column/value loop, before using accumulated column metadata or returning the
+roster, and preserves the typed port's existing `Technical` failure mapping.
+The existing typed-port test target now covers both late-fetch failures and
+asserts contextual errors without partial successful output.
+
+The Debug `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+targets built in `build/windows-x64-debug` with `/p:TrackFileAccess=false`.
+Independent verification's exact typed-port CTest passed 1/1 in about 2.37
+seconds, and `git diff --check` passed. No full suite ran. Independent build
+output noted untranslated operation labels, “Loading bounded roster output
+columns” and “Loading bounded roster output values.” Both labels existed before
+F939 and were reused by it, so no new translation-catalog omission or catalog
+change is part of this slice.
+
+Two independent post-F939 audits found all 13 official Deferred entries
+unchanged; none is newly actionable, resolved, superseded, or changed. F940,
+`ClassInfoRepository::loadSubPrepClassSummaries()`, is next in Batch309; its
+baseline and acceptance are pending. F941-F945 remain queued. Begin Batch310
+discovery when F944, the second-last Batch309 item, starts. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
