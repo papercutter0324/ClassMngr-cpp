@@ -38732,3 +38732,24 @@ Implementation and post-change verification are pending. Batch306
 (F921-F929) remains active; all 13 official Deferred candidates remain
 unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F921 accepted; post-F921 Deferred audits clear; F922 selected - 2026-10-15
+
+F921, Class Transfer evaluation read, is accepted at source/test commit
+`6fd601e0b7485d3ae3159792b58ab5df34c4f88`. In
+`ClassTransferRepository::loadEvaluations()`, terminal cursor errors after the
+speaking-evaluation header query and matrix-row query now fail the read instead
+of returning a partial snapshot. Two permanent direct source-port regressions
+cover those stages and assert the `Error`/`Technical` result without the fetched
+prefix.
+
+Independent post-change verification force-built `ClassMngr` and
+`ClassMngrNextPlatformClassTransferExportSourceTests` sequentially in
+`build/windows-x64-debug` with the required Debug flags. Exact Debug CTest #248
+passed 1/1. No full suite ran.
+
+Two independent audits checked all 13 entries in the official Deferred list;
+none became newly actionable, resolved, or superseded, and all remain
+unchanged. F922, Sub Prep roster-output schedule read, is selected next in
+Batch306, now active from F922 through F929. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
