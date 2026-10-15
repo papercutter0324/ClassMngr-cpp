@@ -7,11 +7,26 @@
 #include <QList>
 #include <QString>
 
+#include <expected>
 #include <optional>
 
 class CampusJsonRepository
 {
 public:
+    struct CreateError final
+    {
+        enum class Code
+        {
+            Conflict,
+            Technical
+        };
+
+        Code code = Code::Technical;
+        QString message;
+    };
+
+    using CreateResult = std::expected<void, CreateError>;
+
     explicit CampusJsonRepository(
         QString directoryPath
         );
@@ -26,6 +41,10 @@ public:
         const CampusInfo& campus
         ) const;
 
+    [[nodiscard]] CreateResult createCampus(
+        const CampusInfo& campus
+        ) const;
+
     [[nodiscard]] QString filePathForCampusId(
         const QString& campusId
         ) const;
@@ -36,6 +55,11 @@ public:
 
 private:
     [[nodiscard]] Status ensureDirectory() const;
+
+    [[nodiscard]] Status writeCampusFile(
+        const CampusInfo& campus,
+        const QString& filePath
+        ) const;
 
     [[nodiscard]] std::optional<CampusInfo> readCampusFile(
         const QString& filePath

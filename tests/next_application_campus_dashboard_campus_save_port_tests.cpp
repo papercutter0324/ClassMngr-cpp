@@ -17,13 +17,17 @@ class RecordingCampusSavePort final
 public:
     mutable int callCount = 0;
     mutable std::optional<Application::CampusDashboardCampusSnapshot> saved;
+    mutable Application::CampusDashboardCampusSaveIntent savedIntent =
+        Application::CampusDashboardCampusSaveIntent::Update;
 
     [[nodiscard]] Domain::Result<void> saveCampus(
-        const Application::CampusDashboardCampusSnapshot& campus
+        const Application::CampusDashboardCampusSnapshot& campus,
+        Application::CampusDashboardCampusSaveIntent intent
         ) const override
     {
         ++callCount;
         saved = campus;
+        savedIntent = intent;
         return Domain::Result<void>::success();
     }
 };
@@ -75,10 +79,17 @@ void snapshotOwnsTheTypedSaveRequest()
     };
 
     RecordingCampusSavePort port;
-    const Domain::Result<void> result = port.saveCampus(snapshot);
+    const Domain::Result<void> result = port.saveCampus(
+        snapshot,
+        Application::CampusDashboardCampusSaveIntent::Create
+        );
 
     assert(result);
     assert(port.callCount == 1);
+    assert(
+        port.savedIntent
+        == Application::CampusDashboardCampusSaveIntent::Create
+        );
     assert(port.saved.has_value());
     assert(port.saved->id == snapshot.id);
     assert(port.saved->campusName == snapshot.campusName);

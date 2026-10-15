@@ -6,13 +6,20 @@
 namespace ClassMngr::Next::Application
 {
 
+enum class CampusDashboardCampusSaveIntent
+{
+    Create,
+    Update
+};
+
 class CampusDashboardCampusSavePort
 {
 public:
     virtual ~CampusDashboardCampusSavePort() = default;
 
     [[nodiscard]] virtual Domain::Result<void> saveCampus(
-        const CampusDashboardCampusSnapshot& campus
+        const CampusDashboardCampusSnapshot& campus,
+        CampusDashboardCampusSaveIntent intent
         ) const = 0;
 };
 

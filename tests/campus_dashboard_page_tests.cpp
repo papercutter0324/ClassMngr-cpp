@@ -96,15 +96,34 @@ public:
     }
 
     QString failureMessage;
+    QString createConflictMessage;
     mutable std::vector<
         ClassMngr::Next::Application::CampusDashboardCampusSnapshot
         > savedSnapshots;
+    mutable std::vector<
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent
+        > saveIntents;
 
     [[nodiscard]] ClassMngr::Next::Domain::Result<void> saveCampus(
-        const ClassMngr::Next::Application::CampusDashboardCampusSnapshot& campus
+        const ClassMngr::Next::Application::CampusDashboardCampusSnapshot& campus,
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent intent
         ) const override
     {
         savedSnapshots.push_back(campus);
+        saveIntents.push_back(intent);
+        if (
+            intent == ClassMngr::Next::Application::
+                          CampusDashboardCampusSaveIntent::Create
+            && !createConflictMessage.isEmpty()
+            )
+        {
+            return ClassMngr::Next::Domain::Result<void>::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::Conflict,
+                .message = createConflictMessage.toUtf8().toStdString(),
+                .recoverable = false
+            });
+        }
+
         if (!failureMessage.isEmpty())
         {
             return ClassMngr::Next::Domain::Result<void>::failure({
@@ -116,7 +135,7 @@ public:
 
         return ClassMngr::Next::Platform::
             CampusDashboardCampusRepositoryAdapter(m_directory)
-                .saveCampus(campus);
+                .saveCampus(campus, intent);
     }
 
 private:
@@ -324,6 +343,8 @@ private slots:
     void automaticSaveFailureRetainsDirtyForm();
     void failedSaveRestoresSelectionAndSkipsRequestedRead();
     void failedSavePreventsNewCampusDraft();
+    void successfulNewCampusSaveRetainsIdForUpdates();
+    void saveIntentTracksDraftAndCreateConflictRetainsIt();
     void missingSelectedCampusDetailLeavesVisibleAndStoredStateUntouched();
     void failedSelectedCampusDetailLeavesVisibleAndStoredStateUntouched();
     void adminSelectedCampusDetailFailureRestoresLoadedCampus_data();
@@ -763,6 +784,10 @@ manualSaveWaitsForActionAndPersistsNormalizedFields()
     saveButton->click();
 
     QCOMPARE(fixture.savePort.savedSnapshots.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.saveIntents.front(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Update
+        );
     const auto& savedSnapshot = fixture.savePort.savedSnapshots.front();
     QCOMPARE(savedSnapshot.id.value(), std::string("alpha"));
     QCOMPARE(savedSnapshot.campusName, std::string("Alpha Revised"));
@@ -984,6 +1009,127 @@ void CampusDashboardPageTests::failedSavePreventsNewCampusDraft()
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(fixture.readPort.readIds.size(), std::size_t(1));
     QVERIFY(labelWithText(page, failureMessage));
+}
+
+void CampusDashboardPageTests::
+successfulNewCampusSaveRetainsIdForUpdates()
+{
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize());
+    CampusDashboardPage& page = *fixture.page;
+
+    auto* selector = page.findChild<QComboBox*>();
+    QVERIFY(selector);
+    QPushButton* newCampusButton = buttonWithText(
+        page,
+        QStringLiteral("New Campus")
+        );
+    QVERIFY(newCampusButton);
+    newCampusButton->click();
+
+    QPushButton* saveButton = buttonWithText(
+        page,
+        QStringLiteral("Save Campus")
+        );
+    QVERIFY(saveButton);
+    saveButton->click();
+
+    QCOMPARE(fixture.savePort.saveIntents.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.saveIntents.front(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.front().id.value(),
+        std::string("new_campus")
+        );
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("new_campus"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const QString updatedName = QStringLiteral("New Campus Edited");
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        updatedName,
+        QStringLiteral("NEW-EDITED")
+        ));
+    saveButton->click();
+
+    QCOMPARE(fixture.savePort.saveIntents.size(), std::size_t(2));
+    QCOMPARE(
+        fixture.savePort.saveIntents.back(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.back().id.value(),
+        std::string("new_campus")
+        );
+    const auto saved = CampusJsonRepository(fixture.campusDirectory.path())
+        .loadCampus(QStringLiteral("new_campus"));
+    QVERIFY(saved.has_value());
+    QCOMPARE(saved->campusName, updatedName);
+    QCOMPARE(saved->campusCode, QStringLiteral("NEW-EDITED"));
+}
+
+void CampusDashboardPageTests::
+saveIntentTracksDraftAndCreateConflictRetainsIt()
+{
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize());
+    CampusDashboardPage& page = *fixture.page;
+
+    auto* selector = page.findChild<QComboBox*>();
+    QVERIFY(selector);
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        QStringLiteral("Alpha Updated Before Draft"),
+        QStringLiteral("ALPHA-2")
+        ));
+
+    QPushButton* saveButton = buttonWithText(
+        page,
+        QStringLiteral("Save Campus")
+        );
+    QVERIFY(saveButton);
+    saveButton->click();
+    QCOMPARE(fixture.savePort.saveIntents.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.saveIntents.front(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Update
+        );
+
+    fixture.savePort.createConflictMessage =
+        QStringLiteral("A campus with this ID already exists.");
+    QPushButton* newCampusButton = buttonWithText(
+        page,
+        QStringLiteral("New Campus")
+        );
+    QVERIFY(newCampusButton);
+    newCampusButton->click();
+
+    const QString editedName = QStringLiteral("North West");
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        editedName,
+        QStringLiteral("NW")
+        ));
+    saveButton->click();
+
+    QCOMPARE(fixture.savePort.saveIntents.size(), std::size_t(2));
+    QCOMPARE(
+        fixture.savePort.saveIntents.back(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.back().id.value(),
+        std::string("north_west")
+        );
+    QVERIFY(selector->currentData().toString().isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(
+        page.findChild<QLineEdit*>(QStringLiteral("campusNameEdit"))->text(),
+        editedName
+        );
+    QVERIFY(labelWithText(page, fixture.savePort.createConflictMessage));
 }
 
 void CampusDashboardPageTests::

@@ -146,6 +146,9 @@ private slots:
     void init();
     void savesAndReloadsEveryCampusField();
     void savesStandaloneMainImageWithoutMapPaths();
+    void createCollisionPreservesExistingNormalizedDestination();
+    void createThenUpdateRetainsTheCreatedId();
+    void mapsCreateRepositoryFailureToTechnicalWithExactMessage();
     void mapsRepositoryFailureToTechnicalWithExactMessage();
 
 private:
@@ -170,7 +173,10 @@ savesAndReloadsEveryCampusField()
     Platform::CampusDashboardCampusRepositoryAdapter adapter(
         m_directory.path()
         );
-    const Domain::Result<void> saved = adapter.saveCampus(expected.value());
+    const Domain::Result<void> saved = adapter.saveCampus(
+        expected.value(),
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
     QVERIFY(saved);
 
     const auto loaded = CampusJsonRepository(m_directory.path())
@@ -198,7 +204,10 @@ savesStandaloneMainImageWithoutMapPaths()
     Platform::CampusDashboardCampusRepositoryAdapter adapter(
         m_directory.path()
         );
-    const Domain::Result<void> saved = adapter.saveCampus(expected.value());
+    const Domain::Result<void> saved = adapter.saveCampus(
+        expected.value(),
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
     QVERIFY(saved);
 
     const auto loaded = CampusJsonRepository(m_directory.path())
@@ -211,6 +220,133 @@ savesStandaloneMainImageWithoutMapPaths()
     compareSnapshots(actual.value(), expected.value());
     QCOMPARE(actual->imageMain, std::string("standalone-campus-cover.png"));
     QVERIFY(actual->mapImagePaths.empty());
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+createCollisionPreservesExistingNormalizedDestination()
+{
+    CampusInfo existing = representativeCampus();
+    existing.id = QStringLiteral("north_west");
+    existing.campusName = QStringLiteral("North-West");
+    existing.campusCode = QStringLiteral("SENTINEL-CODE");
+    existing.buildingName = QStringLiteral("Sentinel Building");
+    existing.address = QStringLiteral("Sentinel Address");
+
+    CampusJsonRepository repository(m_directory.path());
+    const Status seeded = repository.saveCampus(existing);
+    QVERIFY(seeded);
+
+    const QString existingPath = repository.filePathForCampusId(existing.id);
+    QFile existingFile(existingPath);
+    QVERIFY(existingFile.open(QIODevice::ReadOnly));
+    const QByteArray before = existingFile.readAll();
+    existingFile.close();
+
+    CampusInfo duplicate = representativeCampus();
+    duplicate.id = QStringLiteral("North West");
+    duplicate.campusName = QStringLiteral("North West");
+    duplicate.campusCode = QStringLiteral("DUPLICATE-CODE");
+    duplicate.buildingName = QStringLiteral("Duplicate Building");
+    const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
+        snapshotFromCampusInfo(duplicate);
+    QVERIFY(snapshot.has_value());
+
+    const Domain::Result<void> created =
+        Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
+            .saveCampus(
+                snapshot.value(),
+                Application::CampusDashboardCampusSaveIntent::Create
+                );
+    QVERIFY(!created);
+    QCOMPARE(created.error().code, Domain::ErrorCode::Conflict);
+    QVERIFY(!created.error().recoverable);
+
+    QFile unchangedFile(existingPath);
+    QVERIFY(unchangedFile.open(QIODevice::ReadOnly));
+    QCOMPARE(unchangedFile.readAll(), before);
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+createThenUpdateRetainsTheCreatedId()
+{
+    CampusInfo source = representativeCampus();
+    source.id = QStringLiteral("unused_slug");
+    source.campusName = QStringLiteral("Unused Slug");
+    source.buildingName = QStringLiteral("Original Building");
+    const auto createSnapshot =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(source);
+    QVERIFY(createSnapshot.has_value());
+
+    Platform::CampusDashboardCampusRepositoryAdapter adapter(
+        m_directory.path()
+        );
+    const Domain::Result<void> created = adapter.saveCampus(
+        createSnapshot.value(),
+        Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QVERIFY(created);
+
+    source.campusName = QStringLiteral("Renamed Display Name");
+    source.buildingName = QStringLiteral("Edited Building");
+    const auto updateSnapshot =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(source);
+    QVERIFY(updateSnapshot.has_value());
+    const Domain::Result<void> updated = adapter.saveCampus(
+        updateSnapshot.value(),
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QVERIFY(updated);
+
+    const CampusJsonRepository repository(m_directory.path());
+    const auto saved = repository.loadCampus(QStringLiteral("unused_slug"));
+    QVERIFY(saved.has_value());
+    QCOMPARE(saved->id, QStringLiteral("unused_slug"));
+    QCOMPARE(saved->campusName, QStringLiteral("Renamed Display Name"));
+    QCOMPARE(saved->buildingName, QStringLiteral("Edited Building"));
+    QVERIFY(!QFile::exists(
+        repository.filePathForCampusId(QStringLiteral("renamed_display_name"))
+        ));
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+mapsCreateRepositoryFailureToTechnicalWithExactMessage()
+{
+    QTemporaryDir blockerDirectory;
+    QVERIFY(blockerDirectory.isValid());
+
+    QFile blocker(blockerDirectory.filePath(QStringLiteral("not-a-directory")));
+    QVERIFY(blocker.open(QIODevice::WriteOnly));
+    blocker.write("file blocks directory creation");
+    blocker.close();
+
+    const CampusInfo source = representativeCampus();
+    const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
+        snapshotFromCampusInfo(source);
+    QVERIFY(snapshot.has_value());
+
+    const CampusJsonRepository::CreateResult repositoryFailure =
+        CampusJsonRepository(blocker.fileName()).createCampus(source);
+    QVERIFY(!repositoryFailure);
+    QCOMPARE(
+        repositoryFailure.error().code,
+        CampusJsonRepository::CreateError::Code::Technical
+        );
+
+    const Domain::Result<void> mappedFailure =
+        Platform::CampusDashboardCampusRepositoryAdapter(blocker.fileName())
+            .saveCampus(
+                snapshot.value(),
+                Application::CampusDashboardCampusSaveIntent::Create
+                );
+    QVERIFY(!mappedFailure);
+    QCOMPARE(mappedFailure.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(
+        mappedFailure.error().message,
+        repositoryFailure.error().message.toUtf8().toStdString()
+        );
+    QVERIFY(!mappedFailure.error().recoverable);
 }
 
 void CampusDashboardCampusRepositoryAdapterTests::
@@ -235,7 +371,10 @@ mapsRepositoryFailureToTechnicalWithExactMessage()
 
     const Domain::Result<void> mappedFailure =
         Platform::CampusDashboardCampusRepositoryAdapter(blocker.fileName())
-            .saveCampus(snapshot.value());
+            .saveCampus(
+                snapshot.value(),
+                Application::CampusDashboardCampusSaveIntent::Update
+                );
     QVERIFY(!mappedFailure);
     QCOMPARE(mappedFailure.error().code, Domain::ErrorCode::Technical);
     QCOMPARE(

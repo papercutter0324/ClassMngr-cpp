@@ -43,12 +43,33 @@ public:
         ) = delete;
 
     [[nodiscard]] Domain::Result<void> saveCampus(
-        const Application::CampusDashboardCampusSnapshot& snapshot
+        const Application::CampusDashboardCampusSnapshot& snapshot,
+        Application::CampusDashboardCampusSaveIntent intent
         ) const override
     {
-        const Status saved = m_repository.saveCampus(
-            campusInfoFromSnapshot(snapshot)
-            );
+        const CampusInfo campus = campusInfoFromSnapshot(snapshot);
+        if (intent == Application::CampusDashboardCampusSaveIntent::Create)
+        {
+            const CampusJsonRepository::CreateResult created =
+                m_repository.createCampus(campus);
+            if (!created)
+            {
+                const Domain::ErrorCode code =
+                    created.error().code
+                            == CampusJsonRepository::CreateError::Code::Conflict
+                        ? Domain::ErrorCode::Conflict
+                        : Domain::ErrorCode::Technical;
+                return Domain::Result<void>::failure({
+                    .code = code,
+                    .message = utf8(created.error().message),
+                    .recoverable = false
+                });
+            }
+
+            return Domain::Result<void>::success();
+        }
+
+        const Status saved = m_repository.saveCampus(campus);
         if (!saved)
         {
             return Domain::Result<void>::failure({

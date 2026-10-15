@@ -513,6 +513,13 @@ bool CampusDashboardPage::saveCurrentCampus()
         return true;
     }
 
+    const auto saveIntent =
+        m_currentCampus.id.trimmed().isEmpty()
+            ? ClassMngr::Next::Application::
+                  CampusDashboardCampusSaveIntent::Create
+            : ClassMngr::Next::Application::
+                  CampusDashboardCampusSaveIntent::Update;
+
     CampusInfo updated;
 
     const Status fieldsRead =
@@ -540,7 +547,7 @@ bool CampusDashboardPage::saveCurrentCampus()
     }
 
     const ClassMngr::Next::Domain::Result<void> saved =
-        m_campusSavePort->saveCampus(snapshot.value());
+        m_campusSavePort->saveCampus(snapshot.value(), saveIntent);
 
     if (!saved)
     {

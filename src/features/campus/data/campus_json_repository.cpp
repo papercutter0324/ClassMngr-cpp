@@ -126,9 +126,60 @@ Status CampusJsonRepository::saveCampus(
                 );
     }
 
-    QSaveFile file(
+    return writeCampusFile(
+        campusToSave,
         filePathForCampusId(campusToSave.id)
         );
+}
+
+CampusJsonRepository::CreateResult CampusJsonRepository::createCampus(
+    const CampusInfo& campus
+    ) const
+{
+    const auto technicalFailure = [](const QString& message)
+    {
+        return CreateResult(std::unexpected(CreateError{
+            .code = CreateError::Code::Technical,
+            .message = message
+        }));
+    };
+
+    const Status directoryReady = ensureDirectory();
+    if (!directoryReady)
+    {
+        return technicalFailure(directoryReady.error());
+    }
+
+    CampusInfo campusToSave = campus;
+    if (campusToSave.id.trimmed().isEmpty())
+    {
+        campusToSave.id = idFromName(campusToSave.campusName);
+    }
+
+    const QString filePath = filePathForCampusId(campusToSave.id);
+    if (QFileInfo::exists(filePath))
+    {
+        return CreateResult(std::unexpected(CreateError{
+            .code = CreateError::Code::Conflict,
+            .message = QObject::tr("A campus with this ID already exists.")
+        }));
+    }
+
+    const Status saved = writeCampusFile(campusToSave, filePath);
+    if (!saved)
+    {
+        return technicalFailure(saved.error());
+    }
+
+    return {};
+}
+
+Status CampusJsonRepository::writeCampusFile(
+    const CampusInfo& campus,
+    const QString& filePath
+    ) const
+{
+    QSaveFile file(filePath);
 
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
     {
@@ -139,7 +190,7 @@ Status CampusJsonRepository::saveCampus(
     }
 
     const QJsonDocument document(
-        CampusJsonCodec::toJson(campusToSave)
+        CampusJsonCodec::toJson(campus)
         );
 
     file.write(
