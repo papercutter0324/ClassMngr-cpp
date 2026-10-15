@@ -38883,3 +38883,26 @@ Acceptance for F923:
 Implementation and post-change verification are pending. F923 remains active
 in Batch306 (F923-F929); all 13 official Deferred candidates remain unchanged.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F923 accepted; post-F923 Deferred audits clear; F924 selected - 2026-10-15
+
+F923, Sub Prep print-source class-information read, is accepted at source-only
+commit `fff9471e3332f1467f47d28939cbca2785ad11aa`. A post-loop terminal
+`query.lastError()` guard now returns the existing contextual repository error
+with identity rather than exposing an incomplete result.
+
+Independent source review passed. Forced sequential Debug builds of
+`ClassMngr`, then
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, passed;
+exact Debug CTest #310 passed 1/1. Direct terminal cursor fault injection was
+not established: the temporary probe was inconclusive and its test file was
+restored byte-for-byte (SHA-256
+`3FE51A2DA33F78D3F5AFAEFD92FD98188CE9ABC1A50A7D40ED54AFD6051450A4`), while
+scratch SQLite 3.50.4 query-shape probes failed before the first row. No
+reasonable deterministic QSQLITE seam was found. No full suite ran.
+
+Two independent post-F923 audits reviewed all 13 exact official Deferred
+entries; none became newly actionable, resolved, or superseded, and all remain
+unchanged. F924, Schedule-import teacher snapshot read, is selected next in
+active Batch306, now F924-F929. Gates 1/2 remain Partial and the formal Phase
+2 exit gate remains Open.
