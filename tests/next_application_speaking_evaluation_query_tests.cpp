@@ -79,7 +79,7 @@ class NextApplicationSpeakingEvaluationQueryTests final : public QObject
 
 private slots:
     void rejectsInvalidClassIdsWithoutCallingPort();
-    void rejectsEmptyNameWithoutCallingPort();
+    void rejectsBlankNameWithoutCallingPort();
     void preservesExactQueryIdentityAndOrderedUnicodeMatrix();
     void preservesSuccessfulEmptyResult();
     void propagatesPortErrorAndRejectsMismatchedIdentity();
@@ -118,17 +118,32 @@ rejectsInvalidClassIdsWithoutCallingPort()
 }
 
 void NextApplicationSpeakingEvaluationQueryTests::
-rejectsEmptyNameWithoutCallingPort()
+rejectsBlankNameWithoutCallingPort()
 {
     RecordingSpeakingEvaluationReadPort port;
-    const auto result = SpeakingEvaluationQuery::execute(
-        query("42", {}),
-        port
-        );
+    const std::vector<std::u16string> blankNames{
+        {},
+        u" \t\r\n",
+        u"\u00A0",
+        u"\u3000"
+    };
 
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
-    QVERIFY(port.requests.empty());
+    for (const std::u16string& name : blankNames)
+    {
+        const auto result = SpeakingEvaluationQuery::execute(
+            query("42", name),
+            port
+            );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Evaluation name must not be empty.")
+            );
+        QVERIFY(result.error().recoverable);
+        QVERIFY(port.requests.empty());
+    }
 }
 
 void NextApplicationSpeakingEvaluationQueryTests::

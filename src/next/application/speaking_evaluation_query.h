@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/positive_decimal_id_validation.h"
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -63,7 +64,7 @@ public:
                 );
         }
 
-        if (query.evaluationName.empty())
+        if (trimQtWhitespace(query.evaluationName).empty())
         {
             return failure(
                 Domain::ErrorCode::InvalidInput,

@@ -572,11 +572,12 @@ mapsRepositoryErrorsToTechnicalFailures()
         port
         );
     QVERIFY(!blankName);
-    QCOMPARE(blankName.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(blankName.error().code, Domain::ErrorCode::InvalidInput);
     QVERIFY(blankName.error().recoverable);
-    QVERIFY(QString::fromStdString(blankName.error().message).contains(
-        QStringLiteral("invalid class id or evaluation name")
-        ));
+    QCOMPARE(
+        blankName.error().message,
+        std::string("Evaluation name must not be empty.")
+        );
 
     SpeakingEvalRepository* const repository =
         services.databaseSession()->speakingEvalRepository();
