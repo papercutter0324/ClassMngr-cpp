@@ -40424,3 +40424,40 @@ is not complete. Keep F946 unaccepted unless
 `SELECT * FROM campuses ORDER BY name` yields a valid row prefix followed by a
 terminal cursor error and the public method returns that prefix as success.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F946 baseline and acceptance - 2026-10-16
+
+The pre-fix exact query `SELECT * FROM campuses ORDER BY name` yielded valid
+row id 1, `A Alpha Campus`; the next `next()` returned false with valid,
+nonempty error `malformed JSON Unable to fetch row`. Before any source change,
+public `DataService::getAllCampuses()` returned success with that one-row
+prefix.
+
+The temporary lifecycle test was removed and the file restored with SHA-256
+`5E77045D92B5C24C3C8D0B1C8C543DA2EDEB9C8A37C53BB73C30561962427543`. The
+focused Debug target build succeeded, and exact CTest
+`ClassMngrDataServiceLifecycleTests` passed during baseline and after
+restoration. One post-restore build first found a stale generated MOC reference
+to the temporary slot; touching the restored file regenerated MOC and the
+rebuild passed. No production source changed during baseline.
+
+Acceptance:
+
+1. After the `getAllCampuses()` loop, check whether terminal `lastError()` is
+   valid and return the contextual `Loading campuses` failure using repository
+   conventions.
+2. Preserve the public API, exact SELECT and ordering, field mapping, ID
+   validation and bounds, clean-empty success, DataService forwarding, and
+   unrelated typed, UI, and JSON routes.
+3. Add a permanent lifecycle regression that preflights the exact query, then
+   asserts public `DataService::getAllCampuses()` fails with cursor detail and
+   context instead of returning the prefix. Do not add a seam or custom driver.
+4. Sequentially build `ClassMngr` and `ClassMngrDataServiceLifecycleTests` in
+   standard Windows x64 Debug with `/p:TrackFileAccess=false`; run exact CTest
+   #24 only, review the source change, and run `git diff --check`. Do not run
+   the full suite.
+
+F946 is accepted based on its reproduced Batch310 baseline and implementation
+is next. F945 is complete; its two independent audits found all 13 official
+Deferred entries unchanged. Keep the exact Deferred list unchanged. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

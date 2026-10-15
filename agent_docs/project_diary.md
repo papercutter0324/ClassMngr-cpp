@@ -5861,3 +5861,28 @@ post-commit audits found all 13 official Deferred entries unchanged and none
 actionable, resolved, superseded, or materially changed. The separate Batch310
 Campus lead remains conditional; its exact production-query baseline is
 underway.
+
+## F946 Campus list baseline and acceptance - 2026-10-16
+
+The exact `SELECT * FROM campuses ORDER BY name` preflight streamed valid row
+id 1 (`A Alpha Campus`), then `next()` returned false with valid, nonempty
+cursor error `malformed JSON Unable to fetch row`. Before any production
+change, `DataService::getAllCampuses()` returned success with that one-row
+prefix. The temporary test was removed and the file restored to SHA-256
+`5E77045D92B5C24C3C8D0B1C8C543DA2EDEB9C8A37C53BB73C30561962427543`.
+The focused lifecycle target built and its exact CTest passed during the
+baseline and after restoration. A post-restore build first found a stale MOC
+reference to the temporary slot; refreshing the restored source timestamp
+regenerated MOC and the rebuild passed.
+
+Accept F946 narrowly: after `getAllCampuses()` iteration, check terminal
+`lastError()` and return contextual `Loading campuses` failure. Preserve its
+API, SQL/order, field mapping and campus-ID validation/bounds, clean-empty
+success, DataService forwarding, and unrelated JSON/UI routes. Add a permanent
+regression in the existing lifecycle target that preflights the exact ordered
+SELECT and requires the public method to fail with both cursor detail and
+context rather than return its prefix. No custom driver or seam. Build
+`ClassMngr` and `ClassMngrDataServiceLifecycleTests` sequentially in the
+standard Debug folder, run only CTest #24, review source, and check the diff.
+No full suite. The 13 official Deferred entries remain unchanged after F945's
+two independent audits; F946 implementation and post-slice audit are pending.

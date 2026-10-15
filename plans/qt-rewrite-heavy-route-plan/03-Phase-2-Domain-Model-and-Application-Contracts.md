@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F945 is complete with its baseline and implementation outcome recorded; conditional Batch310 F946 `CampusRecordRepository::getAllCampuses()` exact pre-fix baseline is underway and remains unaccepted pending a valid-prefix terminal-error reproduction, all 13 official Deferred candidates remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F946 `CampusRecordRepository::getAllCampuses()` has a reproduced baseline and accepted scope, with implementation next in Batch310; all 13 official Deferred candidates remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 310)
 
-- F946 - CampusRecordRepository::getAllCampuses(): attempt a pre-fix baseline for `SELECT * FROM campuses ORDER BY name`; accept only if it yields a valid prefix followed by terminal error and the public method returns that prefix as success.
+- F946 - CampusRecordRepository::getAllCampuses(): implement the post-loop contextual `Loading campuses` failure and lifecycle regression.
 
 #### Deferred candidates
 
