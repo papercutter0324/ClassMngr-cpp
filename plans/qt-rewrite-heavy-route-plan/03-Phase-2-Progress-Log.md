@@ -39054,3 +39054,42 @@ and the list remains unchanged. F926, Teacher choice projections for Initial
 Setup, Testing, and Class Co-Teacher, is selected next in active Batch306, now
 F926-F929. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F926 baseline captured; acceptance defined - 2026-10-15
+
+The F926 production-source baseline is commit
+`bc8058dfffd453c377536ebb5876df32652b078e`. An actual QtTest fixture with an
+indexed JSON-backed `teachers` view and `teacher_en` index exercised all three
+production SELECTs. `EXPLAIN` used the index; each `exec()` succeeded, returned
+valid teacher A Alpha first, and a later `next()` produced a malformed-JSON
+terminal `lastError()`. Initial Setup and Testing repository and typed-port
+baselines returned one partial choice successfully; Class Co-Teacher already
+returned repository failure and typed `Technical`.
+
+The temporary probe slot stayed within its test file and was byte-restored.
+Baseline CTest #335 passed 1/1 before and after the probe; the restored target
+was force-built and #335 passed again. Build output contained only the
+informational MSB8064 dependency warning for missing
+`teacher_import_plan_mapper.h`; the build succeeded. No full suite ran.
+
+Acceptance for F926:
+1. After the Initial Setup and Testing choice loops, detect valid terminal
+   `query.lastError()` and return
+   `SqlQueryUtils::errorFor(query, QObject::tr("Loading teachers"))`
+   converted to its user message, rather than accumulated choices.
+2. Retain the Class Co-Teacher terminal-error guard. Permanently cover all
+   three exact SELECTs: assert the indexed plan and valid A Alpha row followed
+   by terminal malformed-JSON error; verify direct repository failure without
+   partial records; and verify typed `Technical` without a partial result.
+3. Preserve the three queries, ordering and projections, ID behavior,
+   successful empty reads, and existing execution-failure behavior.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`,
+   `ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests`,
+   `ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests`,
+   then `ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests`;
+   run only Debug CTests #335, #393, and #396. No full suite.
+
+F926 remains active until independent post-change verification. All 13 official
+Deferred candidates remain unchanged pending the post-slice audit. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

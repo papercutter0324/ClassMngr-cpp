@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F925 is accepted at source commit `1a61d3c7`; two independent post-F925 reviews found none of the 13 official Deferred candidates newly actionable, resolved, superseded, or newly triggered. F926 Teacher choice projections is selected next in active Batch306 (F926-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F925 is accepted at source commit `1a61d3c7`; two independent post-F925 reviews found none of the 13 official Deferred candidates newly actionable, resolved, superseded, or newly triggered. F926 Teacher choice projections has a verified baseline and defined acceptance at source HEAD `bc8058df`; implementation and post-change verification remain pending in active Batch306 (F926-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

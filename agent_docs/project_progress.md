@@ -193,8 +193,16 @@ mapping. No full suite ran.
 Two independent post-F925 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch306
 (F920-F929) remains active with F926-F929 remaining. F926, Teacher choice
-projections for Initial Setup, Testing, and Class Co-Teacher reads, is selected
-next. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
+projections for Initial Setup, Testing, and Class Co-Teacher reads, has a
+verified baseline and defined acceptance at source HEAD
+`bc8058dfffd453c377536ebb5876df32652b078e`. The indexed JSON-backed teacher
+view produced a valid first row followed by a terminal fetch error for all
+three exact SELECTs. Baseline Initial Setup and Testing repository/port reads
+returned one partial choice; Class Co-Teacher already returned a repository
+error mapped to Technical. The temporary probe was byte-restored; its target
+was force-rebuilt and CTest #335 passed 1/1. Implementation and post-change
+verification are pending. Gates 1/2 remain Partial and the formal Phase 2
+exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
