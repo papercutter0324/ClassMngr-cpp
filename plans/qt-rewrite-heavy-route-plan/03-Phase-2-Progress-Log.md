@@ -38753,3 +38753,56 @@ none became newly actionable, resolved, or superseded, and all remain
 unchanged. F922, Sub Prep roster-output schedule read, is selected next in
 Batch306, now active from F922 through F929. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F922 baseline captured; acceptance defined - 2026-10-15
+
+The F922 production-source baseline is commit `6fd601e0`; the current full
+documentation HEAD at baseline capture was `eb776053`. In
+`ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords()`
+(`src/data/repositories/class_info_repository.cpp:5848-5886`), the query checks
+`SqlQueryUtils::executePrepared()`, appends records while `query.next()`
+succeeds, and then returns without checking terminal `lastError()`. The typed
+source port maps a repository failure to `Technical`.
+
+The baseline Tester force-built
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+with the required sequential Debug flags; exact Debug CTest #354 passed 1/1
+both before and after the probe. The
+temporary test edit was restored byte-for-byte (SHA-256
+`F772090EFAD7B6BA373694B081DCCDFAA06A8C18E79D80A31E861DB3EB6F9C8D`). An
+indexed JSON-view fixture using the production two-window `ROW_NUMBER()` query
+and outer ordering failed during `exec()` before yielding any row, so it did
+not demonstrate a partial repository result. The tested window/sorter
+fixtures fail before the first row, and two independent investigations found
+no reasonable deterministic QSQLITE injection seam. A raw SQLite interrupt
+does not exercise the repository's local query. Therefore,
+the terminal-error branch will be independently source-reviewed; no direct
+fault-injection result is claimed. No full suite ran.
+
+Acceptance for F922:
+1. After the roster-output query loop, if `query.lastError().isValid()`, return
+   the unexpected repository failure rather than accumulated records:
+
+   ```cpp
+   return std::unexpected(SqlQueryUtils::errorFor(
+       query,
+       QObject::tr("Loading scoped Sub Prep roster-output schedule"),
+       identity
+       ).userMessage());
+   ```
+2. Preserve the SQL, projection, ordering, grouping and record mapping, clean
+   EOF and empty-result behavior, per-class and total limit-sentinel behavior,
+   and typed-port `Technical` classification. Keep the change scoped to the
+   repository read; do not introduce a production test-only query abstraction.
+3. Independently source-review the terminal-error branch because the actual
+   production query has no reasonable deterministic QSQLITE seam for a
+   row-prefix followed by cursor failure.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`, then
+   `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+   with `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; run only exact
+   Debug CTest #354. No full suite.
+
+Implementation and post-change verification are pending. F922 remains active
+in Batch306 (F922-F929); all 13 official Deferred candidates remain unchanged.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

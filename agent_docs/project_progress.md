@@ -137,9 +137,15 @@ passed 1/1. No full suite ran.
 Two independent post-F921 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch306
 (F920-F929) remains active with F922-F929 remaining. F922, Sub Prep
-roster-output schedule read, is selected; its baseline and acceptance are the
-next work item. Gates 1/2 remain Partial and the formal Phase 2 exit gate is
-Open.
+roster-output schedule read, has a verified baseline and defined acceptance at
+source HEAD `6fd601e0`. The focused port target built with the required
+sequential Debug flags, and CTest #354 passed 1/1 before and after the
+temporary probe was restored. The exact windowed query fixture failed during
+execution before yielding a row, so it did not demonstrate partial success;
+the terminal-error branch will be source-reviewed because no reasonable
+deterministic QSQLITE injection seam was found. Implementation and
+post-change verification remain pending; no full suite ran. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

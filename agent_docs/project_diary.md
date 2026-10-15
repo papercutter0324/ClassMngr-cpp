@@ -5507,3 +5507,14 @@ To make malformed JSON fail during fetch, store the payload in a plain backing
 table and project it through a view. A virtual generated column evaluated the
 malformed payload during insertion instead, before the query could reach the
 terminal-cursor path.
+
+## Phase 2 windowed schedule cursor-error fixtures - 2026-10-15
+
+Validate cursor-failure fixtures against the exact production query. F922's
+schedule query uses two `ROW_NUMBER()` windows and an outer order; the indexed
+malformed-view fixture failed during `exec()` before returning a row. A
+scratch SQLite interrupt after a fetched row proves SQLite behavior; it does
+not exercise a repository method whose query is local to its synchronous loop.
+When no deterministic database fixture or existing injection seam reaches the
+branch, keep the production check local and record independent source review
+instead of adding a test-only query abstraction.
