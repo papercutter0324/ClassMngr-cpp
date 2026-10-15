@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F942 is accepted; F943 Calendar event date/upcoming cursor handling is next with baseline and acceptance pending; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F943 Calendar event-list acceptance is recorded and implementation is active; F944/F945 remain queued and Batch310 discovery begins when F944 starts, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 309)
 
-- F943 - CalendarEventRepository date/upcoming lists: evaluate partial results from `loadCalendarEventsForDate()` and `loadUpcomingCalendarEvents()`.
+- F943 - CalendarEventRepository date/upcoming lists: add contextual terminal-fetch checks to both public list contracts; preserve the typed CalendarPage range path.
 - F944 - TestingClassRepository::loadTestingClasses(): evaluate partial legacy chooser-list behavior.
 - F945 - TestingBlockRepository::loadTestingAssignments(): evaluate partial legacy assignment-list behavior.
 

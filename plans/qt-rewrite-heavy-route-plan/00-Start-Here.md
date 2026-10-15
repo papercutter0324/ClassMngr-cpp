@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F942 legacy teacher-list cursor handling is accepted; F943 Calendar event date/upcoming cursor handling is next with baseline and acceptance pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F943 Calendar event-list acceptance is recorded and implementation is active; F944/F945 remain queued, with Batch310 discovery beginning when F944 starts. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

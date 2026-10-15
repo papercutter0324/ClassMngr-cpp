@@ -5739,3 +5739,33 @@ Deferred candidates: none became actionable, resolved, superseded, or changed,
 so all remain unchanged. No full suite ran. F943 is next in Batch309; begin
 Batch310 discovery when F944, the second-last Batch309 slice, starts. Gates
 1/2 remain Partial and the formal Phase 2 exit gate is Open.
+
+## F943 baseline and acceptance - 2026-10-15
+
+The two target methods, `CalendarEventRepository::loadCalendarEventsForDate()`
+and `loadUpcomingCalendarEvents()`, append query rows and return their lists
+without checking terminal `lastError()`. Repository/source review found no
+in-tree production callers beyond DataService and CalendarService forwarding
+definitions. The current Calendar Page uses typed cached/range projections;
+`visitCalendarEventsInRange()` checks terminal query errors. F943 is accepted
+as public repository API hardening for both legacy list methods; this does not
+establish current Calendar Page impact.
+
+A temporary indexed JSON-view probe was attempted for both exact SELECT
+shapes, but the probe produced no observable execution results, so it does not
+prove either late-fetch state. The temporary test source was restored
+byte-for-byte (SHA-256
+`1CAA2D00909D16275C8AB4B8603E0BA7266E19E37299A534798C522D135F661C`); after
+refreshing AutoMoc from the restored source, the standard Debug repository
+target rebuilt and exact CTest #22 passed 1/1. No permanent test or custom SQL
+seam is accepted for this source-review-only branch.
+
+Acceptance requires a contextual terminal-error check after each list loop,
+with the existing date or `fromDate`/limit identity, while preserving public
+APIs, SQL/bindings/order/limit, event mapping, invalid-input behavior, and clean
+empty success. Leave the live typed Calendar Page range path unchanged. The
+accepted focused verification is sequential Debug builds of `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`, and
+`ClassMngrDataServiceLifecycleTests`, followed by exact CTests #22 and #24,
+source review and `git diff --check`; no full suite. Implementation and its
+independent verification remain pending.

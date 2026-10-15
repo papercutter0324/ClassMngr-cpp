@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F942 accepted; F943 next in Batch309)
+### Current state - 2026-10-15 (F943 acceptance complete; implementation active)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -202,6 +202,21 @@ official Deferred candidates and found none newly actionable, resolved,
 superseded, or changed; all remain unchanged. F943 is next in Batch309, with
 F944 still the Batch310 discovery trigger. No full suite ran. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate is Open.
+
+F943 acceptance is recorded and implementation is active. Source review found
+that both `CalendarEventRepository::loadCalendarEventsForDate()` and
+`loadUpcomingCalendarEvents()` return accumulated lists without checking the
+terminal cursor error. They have no in-tree production callsites beyond
+DataService/CalendarService forwarding definitions; the live Calendar Page
+uses the guarded typed range projection. A temporary indexed JSON-view probe
+did not produce observable results, so no runtime reproduction is claimed.
+Its source was restored byte-for-byte (SHA-256
+`1CAA2D00909D16275C8AB4B8603E0BA7266E19E37299A534798C522D135F661C`), and the
+restored Debug repository target and CTest #22 passed 1/1. The accepted scope
+adds contextual terminal-error checks to both legacy list methods while
+preserving their queries and caller-facing behavior; it leaves the typed
+Calendar Page path unchanged. See the Phase 2 progress log for the exact
+acceptance and verification plan.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

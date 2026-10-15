@@ -40203,3 +40203,46 @@ F943, Calendar event date/upcoming lists, is next in Batch309 with baseline and
 acceptance pending. F944-F945 remain queued; begin Batch310 discovery when F944,
 the second-last item, starts. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### F943 baseline and acceptance - 2026-10-15
+
+F943 covers the public repository list contracts
+`CalendarEventRepository::loadCalendarEventsForDate()` and
+`loadUpcomingCalendarEvents()`. Caller review found no in-tree production
+callsites beyond the `DataService`/`CalendarService` forwarders. The active
+CalendarPage uses `CalendarEventCache`, range projections, and
+`visitCalendarEventsInRange()`, which already checks terminal errors. Keep this
+slice limited to the two public repository list methods; both loops currently
+return accumulated rows without a post-loop `lastError()` check.
+
+The temporary indexed JSON-view probe produced no observable output for either
+exact SELECT, so runtime reproduction is inconclusive and no late-fetch defect
+was confirmed. The original
+`tests/calendar_event_repository_tests.cpp` was restored byte-identically
+(SHA-256 `1CAA2D00909D16275C8AB4B8603E0BA7266E19E37299A534798C522D135F661C`),
+the diff was empty, the target rebuilt, and exact CTest #22 passed 1/1.
+
+Acceptance:
+
+1. After each date-list and upcoming-list row loop, check terminal
+   `lastError()` and return a contextual `SqlQueryUtils::errorFor()` failure.
+   Preserve the existing action and identity context: ISO date for the date
+   list; `fromDate` and `limit` for the upcoming list.
+2. Preserve public APIs, SQL, bindings, ordering, limits, event mapping,
+   invalid-input behavior, and clean empty results. Leave the typed CalendarPage
+   range path and `visitCalendarEventsInRange()` unchanged.
+3. Do not add a test seam, custom driver, or permanent fixture for an
+   unobservable late-fetch case. Source-review both terminal-error guards and
+   use existing repository/lifecycle coverage for normal and filter behavior,
+   clean-empty success, and query-execution failures through CTests #22/#24.
+4. Sequentially build `ClassMngr`, `ClassMngrCalendarEventRepositoryTests`, and
+   `ClassMngrDataServiceLifecycleTests` in standard `build/windows-x64-debug`
+   Debug with `/p:TrackFileAccess=false`; run exact CTests #22 and #24, review
+   both guards, and run `git diff --check`. Do not run the full suite.
+
+F943 acceptance is recorded and implementation is active; it is not yet
+accepted as complete. F944 and F945 remain queued in Batch309, and Batch310
+discovery begins when F944, the second-last item, starts. No independent
+post-F943 Deferred audit is recorded; leave all official Deferred entries
+unchanged pending that audit. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
