@@ -38008,3 +38008,57 @@ CTest #325 pass.
 | Verification and status | Cover a deleted parent with orphan columns/cells, exact typed outcomes, a valid parent count, and the SQL read-failure case that still reads count. F911 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F911 accepted; post-slice Deferred audit clear; F912 selected - 2026-10-15
+
+F911, Class Details Page missing-parent count handling, is accepted at
+source/test commit `2c4d37f1` (Phase2 - Suppress orphan count for missing
+class). When the typed detail read explicitly confirms `parentMissing`,
+`studentCount` now returns recoverable `NotFound` without calling the legacy
+orphan-inclusive count route. Present-parent counts and independent count
+reads on every other detail failure remain. The legacy wrapper/count and page
+fallback are unchanged.
+
+The executor and independent verifier completed forced sequential Debug
+builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests`;
+CTest #325 passed 1/1 with `-C Debug`. An initial invocation without the
+configuration reported the test unavailable and was rerun successfully with
+Debug. The regression retains orphan columns/cells after parent deletion and
+checks legacy count 1 plus typed `NotFound` for deleted and never-present IDs.
+Source review confirms only explicit `parentMissing` skips the legacy route;
+there is no separate count-call instrument. `git diff --check` passed. No full
+suite ran.
+
+Two independent post-F911 audits reviewed all 13 exact official Deferred
+entries; none became newly actionable and all remain unchanged. F618 remains
+deferred: the packaged Release executable is stale relative to F813 and codec
+alias-removal export changes; the large Class Transfer route measures
+import/apply, while the app export test uses one class. There is no reproducible
+large-export driver or memory-capture procedure. Revisit only when a
+reproducible large-export driver and measurement can run against a Release
+package built from the same source revision.
+
+F912, Testing Classes editor loading-state restoration, is selected. Baseline
+inspection of `TestingClassesPage::loadClass()` found early exits after
+`m_autosave->setLoading(true)` that leave loading active. The existing
+`testingClassDetailsReadFailureShowsWarningWithoutFallback()` injects a
+Technical detail-read failure; a temporary field-edit probe then left
+`page.hasUnsavedChanges()` false. The named QtTest slot was run directly (not
+through CTest): two passed and one failed at the new assertion. Forced
+sequential Debug builds of `ClassMngr` and
+`ClassMngrTestingClassesPageTests` succeeded with
+`/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; the target was rebuilt
+after restoring the test, whose SHA-256 is
+`ABB836B507CECD5D4DE0464109CD62DB3851D2663DEAF0B83A2D9909E4F60478`.
+The target is CTest #45, which identifies the whole target, not that slot. A
+Qt font-directory warning and duplicate-symbol/LNK4088 link warnings occurred;
+the build commands exited 0. No full suite ran.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Every early exit restores loading | After `m_autosave->setLoading(true)`, restore loading to false for nonpositive IDs, typed-ID parse failure, detail-query failure (including silent `NotFound` versus warned operational/validation errors), and invalid teacher ID. |
+| Preserve existing outcomes | Keep current error and warning behavior, no-fallback UI values, and the success path, class data, save behavior, and unrelated Testing Classes/Sub Prep routes unchanged. |
+| Regression and verification | After a Technical detail-read failure, preserve warning/no-fallback assertions and prove recovery by selecting/loading another valid class; do not make post-failure field editing the contract. Build `ClassMngr` then `ClassMngrTestingClassesPageTests` with forced sequential Debug settings and run exact CTest #45 only. F912 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F910 Roster Availability batch parent provenance is accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`, two independent post-F910 audits found none of the 13 official Deferred candidates newly actionable, and F911 Class Details Page is active; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F911 Class Details Page missing-parent count handling is accepted at source/test commit `2c4d37f1`, two independent post-F911 audits found none of the 13 official Deferred candidates newly actionable, and F912 Testing Classes is active; Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F911 - Class Details Page: return `NotFound` for roster count when the typed detail query confirms a missing parent; preserve present-parent counts and independent count reads on other detail errors.
 - F912 - Testing Classes: restore editor loading state on every early detail-read exit.
 - F913 - My Classes Teacher Profile batch: distinguish a cleanly missing teacher from repository failure per entry.
 - F914 - Sub Prep selected-class details: return an explicit missing-parent outcome and classify fetch errors as `Technical`.

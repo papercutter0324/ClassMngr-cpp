@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F910, Roster Availability batch parent provenance, is accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`; two independent post-F910 audits found none of the 13 official Deferred candidates newly actionable, and F911 Class Details Page is active. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F911, Class Details Page missing-parent count handling, is accepted at source/test commit `2c4d37f1`; two independent post-F911 audits found none of the 13 official Deferred candidates newly actionable, and F912 Testing Classes is active. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
