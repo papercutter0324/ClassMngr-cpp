@@ -5574,3 +5574,9 @@ remain Partial and the formal exit gate remains Open.
 
 Batch316 source discovery is underway in separate Qt-free domain/application
 contracts and feature port/repository boundaries.
+
+Batch316 found no distinct candidate. The nearest domain lead was an invalid
+CalendarEventTimeStatus cast that has no production construction path and was
+already rejected in history; the other inspected read ports are covered by
+explicit parent provenance or prior fixes. Batch317 source discovery is now
+underway in persisted identity conversions and typed write contracts.

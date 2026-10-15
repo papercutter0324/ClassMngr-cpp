@@ -5947,3 +5947,9 @@ the formal exit gate Open.
 Batch316 source discovery began in two separate areas: Qt-free domain and
 application contracts, and other feature port/repository boundaries. Both
 scans exclude the recently completed slices and known rejected leads.
+
+Batch316 completed without a distinct candidate. The CalendarEventTimeStatus
+cast lead has no production path and is already rejected in Phase 2 history.
+Roster and Selected Class Grade parent provenance are covered, while GS Team
+and Native English ID/cursor cases were resolved earlier. Batch317 now checks
+persisted identity-conversion boundaries and typed write contracts.

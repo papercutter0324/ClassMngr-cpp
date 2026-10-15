@@ -40620,3 +40620,15 @@ none actionable, resolved, superseded, or materially changed; all 13 remain
 unchanged. The Batch315 discovery shortfall is recorded here only; Batch316
 source discovery is underway. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### Batch316 shortfall; Batch317 discovery underway - 2026-10-16
+
+Batch316's Qt-free contract scan rejected the invalid `CalendarEventTimeStatus`
+cast: production constructors parse names, and history had already rejected
+this lead in Batch278. The feature-port scan found Roster and Selected Class
+Grade parent provenance covered; GS Team/Native English ID and cursor cases
+were already resolved in F832/F929. Neither read-only area found a new
+candidate accepted for implementation. This discovery shortfall is recorded
+here only. Batch317 scans of domain identity conversions and typed write
+contracts are underway. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
