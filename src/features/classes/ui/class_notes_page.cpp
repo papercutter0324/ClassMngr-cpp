@@ -68,6 +68,8 @@ void ClassNotesPage::loadClass(
     )
 {
     m_autosave->setLoading(true);
+    m_classFieldsAvailable = false;
+    updateActions();
 
     m_classroom = classroom;
 
@@ -92,6 +94,7 @@ void ClassNotesPage::loadClass(
             const auto& classFields = snapshot.value().classFields;
             if (classFields)
             {
+                m_classFieldsAvailable = true;
                 const auto& fields = classFields.value();
                 info.classId = classroom.id;
                 info.classGrade = QString::fromStdU16String(fields.classGrade);
@@ -161,6 +164,8 @@ void ClassNotesPage::clearDatabaseState()
     m_autosave->setLoading(true);
 
     m_classroom = {};
+    m_classFieldsAvailable = false;
+    updateActions();
     m_savedNotes.clear();
     m_savedTimeFillerActivities.clear();
     m_subtitleText.clear();
@@ -209,6 +214,7 @@ bool ClassNotesPage::saveClassNotesInternal(
 {
     if (
         !m_services
+        || !m_classFieldsAvailable
         || m_classroom.id <= 0
         )
     {
@@ -476,6 +482,9 @@ void ClassNotesPage::clearDirty()
 
 void ClassNotesPage::updateActions()
 {
-    m_autosave->setSaveAvailable(m_classroom.id > 0);
+    m_autosave->setSaveAvailable(
+        m_classroom.id > 0
+        && m_classFieldsAvailable
+        );
     m_autosave->setSaveMode(m_autosave->saveMode());
 }

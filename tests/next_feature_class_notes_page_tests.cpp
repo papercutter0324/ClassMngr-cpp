@@ -8,6 +8,7 @@
 #include "ui/shared/pages/page_header.h"
 #include "core/utils/sidebar_node_naming.h"
 
+#include <QPushButton>
 #include <QTemporaryDir>
 #include <QTextEdit>
 #include <QUuid>
@@ -176,6 +177,11 @@ private slots:
     void discardReloadsSavedValuesAndCancelsAutosave();
     void loadsTypedSnapshotAndReadsOnlyForLoadOrDiscard();
     void failedSourceResultsKeepDefaultAndIndependentDisplayBehavior();
+    void topLevelReadFailureBlocksManualAndAutomaticSaves();
+    void classFieldsFailureBlocksManualAndAutomaticSaves();
+    void teacherReadFailureStillAllowsClassNotesSave();
+    void failedClassSwitchClearsSaveAvailability();
+    void clearDatabaseStateClearsSaveAvailability();
 
 private:
     RecordingPromptService m_promptService;
@@ -557,6 +563,218 @@ failedSourceResultsKeepDefaultAndIndependentDisplayBehavior()
         classFields, Teacher{}));
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(readPort.callCount, 3);
+}
+
+void NextFeatureClassNotesPageTests::
+topLevelReadFailureBlocksManualAndAutomaticSaves()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createSeededClass(services);
+    QVERIFY(classId > 0);
+
+    RecordingClassNotesSavePort savePort;
+    RecordingClassNotesPageReadPort readPort;
+    readPort.result = Application::ClassNotesPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "page snapshot unavailable",
+        .recoverable = false
+    });
+
+    ClassNotesPage page(&services, false, nullptr, &savePort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Unavailable class"), classId));
+
+    const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
+    QCOMPARE(editors.size(), 2);
+    auto* saveButton = page.findChild<QPushButton*>();
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isEnabled());
+
+    editors[0]->setPlainText(QStringLiteral("Edit after failed page read"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+
+    page.setSaveMode(SaveMode::Automatic);
+    QTest::qWait(AutosaveCoordinator::DefaultDebounceIntervalMs + 100);
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(m_promptService.requests.empty());
+}
+
+void NextFeatureClassNotesPageTests::
+classFieldsFailureBlocksManualAndAutomaticSaves()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createSeededClass(services);
+    QVERIFY(classId > 0);
+
+    RecordingClassNotesSavePort savePort;
+    RecordingClassNotesPageReadPort readPort;
+    readPort.result = readSnapshot(
+        classId,
+        Domain::Result<Application::ClassNotesPageFields>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "class source failed",
+            .recoverable = true
+        }),
+        Domain::Result<std::u16string>::success(u"Teacher still available")
+        );
+
+    ClassNotesPage page(&services, false, nullptr, &savePort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Unavailable class"), classId));
+
+    const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
+    QCOMPARE(editors.size(), 2);
+    auto* saveButton = page.findChild<QPushButton*>();
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isEnabled());
+
+    editors[1]->setPlainText(QStringLiteral("Edit after failed fields read"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    page.saveData();
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+
+    page.setSaveMode(SaveMode::Automatic);
+    QTest::qWait(AutosaveCoordinator::DefaultDebounceIntervalMs + 100);
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(m_promptService.requests.empty());
+}
+
+void NextFeatureClassNotesPageTests::
+teacherReadFailureStillAllowsClassNotesSave()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createSeededClass(services);
+    QVERIFY(classId > 0);
+
+    RecordingClassNotesSavePort savePort;
+    RecordingClassNotesPageReadPort readPort;
+    readPort.result = readSnapshot(
+        classId,
+        Domain::Result<Application::ClassNotesPageFields>::success(
+            notesPageFields(
+                u"E4", u"Theseus", u"Loaded notes", u"Loaded activities"
+                )
+            ),
+        Domain::Result<std::u16string>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "teacher source failed",
+            .recoverable = true
+        })
+        );
+
+    ClassNotesPage page(&services, false, nullptr, &savePort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Fallback class name"), classId));
+
+    const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
+    QCOMPARE(editors.size(), 2);
+    editors[0]->setPlainText(QStringLiteral("Save despite missing teacher"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void NextFeatureClassNotesPageTests::
+failedClassSwitchClearsSaveAvailability()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int firstClassId = createSeededClass(services);
+    const int secondClassId = createSeededClass(services);
+    QVERIFY(firstClassId > 0);
+    QVERIFY(secondClassId > 0);
+
+    RecordingClassNotesSavePort savePort;
+    RecordingClassNotesPageReadPort readPort;
+    readPort.result = readSnapshot(
+        firstClassId,
+        Domain::Result<Application::ClassNotesPageFields>::success(
+            notesPageFields(u"E4", u"Theseus", u"Loaded", u"Activities")
+            ),
+        Domain::Result<std::u16string>::success(u"Teacher")
+        );
+
+    ClassNotesPage page(&services, false, nullptr, &savePort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("First class"), firstClassId));
+
+    readPort.result = Application::ClassNotesPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "second class snapshot unavailable",
+        .recoverable = false
+    });
+    page.loadClass(Classroom(QStringLiteral("Second class"), secondClassId));
+
+    auto* saveButton = page.findChild<QPushButton*>();
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isEnabled());
+    const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
+    QCOMPARE(editors.size(), 2);
+    editors[0]->setPlainText(QStringLiteral("Edit after failed class switch"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void NextFeatureClassNotesPageTests::
+clearDatabaseStateClearsSaveAvailability()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int classId = createSeededClass(services);
+    QVERIFY(classId > 0);
+
+    RecordingClassNotesSavePort savePort;
+    RecordingClassNotesPageReadPort readPort;
+    readPort.result = readSnapshot(
+        classId,
+        Domain::Result<Application::ClassNotesPageFields>::success(
+            notesPageFields(u"E4", u"Theseus", u"Loaded", u"Activities")
+            ),
+        Domain::Result<std::u16string>::success(u"Teacher")
+        );
+
+    ClassNotesPage page(&services, false, nullptr, &savePort, &readPort);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Loaded class"), classId));
+    page.clearDatabaseState();
+
+    auto* saveButton = page.findChild<QPushButton*>();
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isEnabled());
+    const QList<QTextEdit*> editors = page.findChildren<QTextEdit*>();
+    QCOMPARE(editors.size(), 2);
+    editors[0]->setPlainText(QStringLiteral("Edit after database clear"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(page.hasUnsavedChanges());
 }
 
 QTEST_MAIN(NextFeatureClassNotesPageTests)

@@ -68,6 +68,7 @@ private:
     QString m_savedTimeFillerActivities;
     QString m_subtitleText;
     bool m_embedded = false;
+    bool m_classFieldsAvailable = false;
 
     AutosaveCoordinator* m_autosave = nullptr;
     PageHeader* m_pageHeader = nullptr;
