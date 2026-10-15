@@ -304,6 +304,11 @@ public:
                 }
             }
             while (rosterQuery.next());
+            if (rosterQuery.lastError().isValid())
+            {
+                return sqlFailure<Application::ClassAnalyticsRosterNames>(
+                    rosterQuery.lastError().text());
+            }
             return Domain::Result<
                 Application::ClassAnalyticsRosterNames>::success(
                     std::move(roster));
