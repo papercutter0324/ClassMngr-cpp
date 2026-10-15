@@ -5622,3 +5622,13 @@ preflight SQL-failure slots also passed. CTest #26 retained the same
 preimplementation teacher-label failure (60 passed, 1 failed). No test file
 changed and no full suite ran. Two independent reviews found no Deferred item
 actionable after F936.
+
+## Phase 2 Calendar next-event first-fetch baseline - 2026-10-15
+
+F937's aggregate `MIN(start_date)` query returns a first-fetch failure from
+`QSqlQuery::exec()` with the installed Qt 6.12.0 QSQLITE driver when the view
+contains malformed JSON. `SqlQueryUtils::executePrepared()` already turns that
+into the repository's contextual error, so adding another guard after
+`query.next()` would be redundant for the observed route. The existing
+no-event result remains successful with an invalid `QDate`; focused repository
+and cache CTests #22/#23 passed. No source or permanent test change was needed.

@@ -39854,3 +39854,30 @@ unchanged; none is newly actionable, resolved, superseded, or changed. Batch307
 is closed and Batch308 is active with F937 Calendar next-event date first-row
 failure followed by F938 shared application-setting first-row failure. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F937 already covered; F938 remains next - 2026-10-15
+
+F937 is closed as already covered on baseline HEAD
+`43929ec00744917cb03551b50d3ac4bfff676ab9`; no code or test change is needed.
+A temporary QtTest used a malformed-JSON-backed `calendar_events` view. The
+exact `SELECT MIN(start_date) FROM calendar_events WHERE start_date >= ?`
+returned `exec() == false` and `next() == false`, with
+`malformed JSON Unable to fetch row` in `lastError()`. The repository method
+`findNextCalendarEventStartDate(QDate(2026, 7, 1))` already returned a
+contextual `unexpected` through `SqlQueryUtils::executePrepared()`. Clean
+no-event input remains successful with an invalid `QDate`; adding a redundant
+`lastError()` guard or regression test is not warranted.
+
+The temporary test was restored byte-for-byte (SHA-256
+`1CAA2D00909D16275C8AB4B8603E0BA7266E19E37299A534798C522D135F661C`; no diff).
+The Debug `ClassMngrCalendarEventRepositoryTests` build passed with
+`/p:TrackFileAccess=false`, and CTest #22 passed 1/1. The Debug
+`ClassMngrCalendarEventCacheTests` build and exact CTest #23 passed; its build
+reported one existing MSBuild warning about missing
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran. These
+results apply to the installed Qt 6.12.0 QSQLITE environment and the cited
+existing tests only.
+
+Batch308 remains active with F938, shared application-setting first-row
+failure, as its sole candidate; F938 baseline and acceptance are pending.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

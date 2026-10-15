@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F936 is accepted and F937 Calendar next-event date first-row failure is next in Batch308; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F937 is closed as already covered by installed Qt 6.12 QSQLITE behavior; F938 shared application-setting first-row failure is next in Batch308 with baseline and acceptance pending; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,8 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 308)
 
-- F937 - Calendar next-event date first-row failure: reject a failed first-row fetch in `findNextCalendarEventStartDate()`; preserve clean no-event success.
-- F938 - Shared application-setting first-row failure: reject a failed first-row fetch in `loadSetting()`; preserve the unset default.
+- F938 - Shared application-setting first-row failure: establish baseline and acceptance for rejecting a failed first-row fetch in `loadSetting()` while preserving the unset default.
 
 #### Deferred candidates
 
