@@ -38629,3 +38629,40 @@ Implementation and post-change verification are pending. Batch306
 (F920-F929) remains active; all 13 official Deferred candidates remain
 unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F920 accepted; post-F920 Deferred audits clear; F921 selected - 2026-10-15
+
+F920, Class schedule conflict read, is accepted at source/test commit
+`46ccd11354d1bfc13f1fb6a96f8de98ada16c874`. Its baseline and acceptance were
+recorded separately at docs commit `9dc58f72`. In
+`ClassInfoRepository::getClassTimeConflicts()`, the terminal
+`query.lastError()` check now returns `SqlQueryUtils::errorFor` with the
+existing action and class-id context before any accumulated conflicts escape;
+clean EOF returns the conflict list.
+
+The permanent `terminalConflictCursorFailureDiscardsPartialConflicts()`
+regression in
+`tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp`
+uses a plain payload backing table and `class_times` view so malformed JSON
+evaluation is deferred to the SELECT. The exact query has no `ORDER BY`; at
+runtime the fixture returned the valid Monday row first, then a valid
+malformed-JSON cursor error. The repository returned failure with action/ID
+context, and the typed port returned `Technical`. This proves the observed
+sequence for the fixture, not an SQL ordering guarantee.
+
+The initial post-change CTest #316 was silent-fail: the first generated-column
+fixture evaluated malformed JSON during insert, and the isolated `-txt` report
+identified `malformedRow.exec()` failing. The executor repaired the fixture
+with the table-plus-view setup, keeping evaluation in the SELECT. Independent
+Tester verification then passed forced sequential Debug builds for
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`,
+exact Debug CTest #316 (1/1), and the isolated new-slot report (3 passed,
+0 failed). `git diff --check` passed. No full suite ran.
+
+Two independent post-F920 audits reviewed all 13 official Deferred candidates,
+including F707/F709 and Batch197 adjacency; none became actionable, resolved,
+or superseded. All 13 remain unchanged. F921, Class Transfer evaluation read,
+is selected next in active Batch306 (F921-F929). Its baseline is not yet
+captured and will start at code HEAD `46ccd11354d1bfc13f1fb6a96f8de98ada16c874`.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F920 Class schedule conflict read has a verified baseline and defined acceptance at code HEAD `c735aca7` (current full HEAD `624de212` is docs-only); implementation and post-change verification remain pending. The runtime fixture proved one row then a valid cursor error, but this SELECT has no SQL ordering guarantee. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F921 Class Transfer evaluation read is selected as the next active Batch306 candidate; its baseline is not yet captured and will start at code HEAD `46ccd113`. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 306)
 
-- F920 - Class schedule conflict read: reject partial conflict sets after terminal cursor failure.
 - F921 - Class Transfer evaluation read: reject incomplete evaluation headers and matrix rows.
 - F922 - Sub Prep roster-output schedule read: reject partial schedule records.
 - F923 - Sub Prep print-source class-information read: reject partial source records.

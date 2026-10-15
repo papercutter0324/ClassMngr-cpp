@@ -5498,3 +5498,12 @@ that ordering. Without an index matching the class-name/id order, SQLite used
 a temporary sort and evaluated malformed JSON during `exec()`, before a first
 row existed. Adding the per-fixture order index restored the intended
 row-then-terminal-error behavior without changing the production query.
+
+## Phase 2 unordered schedule-conflict cursor fixture - 2026-10-15
+
+When the production SELECT has no `ORDER BY`, a cursor-error fixture must
+assert the actual row sequence at runtime; SQL does not guarantee the order.
+To make malformed JSON fail during fetch, store the payload in a plain backing
+table and project it through a view. A virtual generated column evaluated the
+malformed payload during insertion instead, before the query could reach the
+terminal-cursor path.

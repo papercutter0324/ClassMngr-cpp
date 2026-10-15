@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F919 accepted; F920 selected)
+### Current state - 2026-10-15 (F920 accepted; F921 selected)
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
@@ -114,17 +114,19 @@ Debug builds of the application and both focused targets passed, as did exact
 Debug CTests #19 and #389. Clean empty success was source-reviewed but not
 separately fault-injected; no full suite ran.
 
-Two independent post-F919 audits reviewed all 13 exact official Deferred
-candidates; none became actionable, resolved, or superseded. Batch 305 is
-complete. Batch 306 (F920-F929) is active, with F920 selected. Its baseline
-probe at code HEAD `c735aca7` reproduced partial success after the exact query
-returned one conflict row and then a valid malformed-JSON cursor error. The
-unchanged repository returned that one conflict as success. The focused
-target and CTest #316 passed before and after restoration. The no-`ORDER BY`
-row sequence was asserted for this Windows Debug/QSQLITE fixture, but is not
-guaranteed by SQL. F920 acceptance is defined; implementation and post-change
-verification remain pending. No full suite ran. Gates 1/2 remain Partial and
-the formal Phase 2 exit gate is Open.
+F920, Class schedule conflict read, is accepted at source/test commit
+`46ccd11354d1bfc13f1fb6a96f8de98ada16c874`. The repository now rejects a
+terminal query error before returning partial conflict results. The permanent
+view-backed regression asserts one valid row followed by a malformed-JSON
+cursor error, repository failure, and typed `Technical`. Forced sequential
+Debug builds of `ClassMngr` and the focused port target passed; CTest #316
+passed 1/1 and the isolated new slot passed 3/3. No full suite ran.
+
+Two independent post-F920 audits reviewed all 13 exact official Deferred
+candidates; none became actionable, resolved, or superseded. Batch306
+(F920-F929) is active with F921-F929 remaining. F921, Class Transfer
+evaluation read, is selected; its baseline is pending at code HEAD
+`46ccd113`. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
