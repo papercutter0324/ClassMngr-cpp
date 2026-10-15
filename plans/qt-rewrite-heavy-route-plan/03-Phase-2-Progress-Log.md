@@ -38533,3 +38533,43 @@ No implementation or post-change verification is claimed. F919 is the sole
 active Batch305 candidate; Batch306 (F920-F929) remains queued after it. All 13
 official Deferred entries remain unchanged. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F919 accepted; post-F919 Deferred audits clear; F920 selected - 2026-10-15
+
+F919, Intensive slot-state read, is accepted at source/test commit
+`c735aca7693d56d418015bd86386b60fef8208b6`. The terminal
+`lastError()` guard in `IntensiveSlotStateRepository::loadIntensiveSlotStates()`
+rejects a cursor failure after iteration, preserving the one-query projection
+and mapping and the typed port’s `Technical` / unavailable `NotFound`
+classification. The permanent direct repository indexed QSQLITE view
+regression proves the exact one-row-then-valid-cursor-error and failure without
+a partial result.
+
+At pre-change source HEAD
+`9da48f7775399a5ed2d9a99b49a67601523ec479`, forced sequential Debug builds
+passed for `ClassMngr`, `ClassMngrIntensiveSlotStateRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests`;
+exact Debug CTests #19 and #389 passed 1/1 each. Both test builds emitted
+nonfatal MSB8064 for missing dependency
+`src/next/application/teacher_import_plan_mapper.h`. The temporary fixture
+was restored byte-for-byte (SHA-256
+`638C3B2A30F1CF1C5CC47DCC264225BE0C999CFCDC410F1055167CF5DD2A44C9`); after
+a timestamp-only refresh, the restored target build and CTest #19 passed. The
+temporary probe needed a direct `QSqlError` include before its focused CTest
+passed.
+
+After the change, the same three forced sequential Debug targets passed with
+no warnings or failures observed, and exact Debug CTests #19 and #389 passed
+1/1 each. `git diff --check` passed. No full suite ran. Clean empty success
+was source-reviewed, not separately fault-injected.
+
+Two independent post-F919 audits reviewed all 13 exact official Deferred
+candidates; none became actionable, resolved, or superseded, and all 13 remain
+unchanged. F920, Class schedule conflict read, is selected as the first active
+candidate in Batch306 (F920-F929). Its baseline begins at source HEAD
+`c735aca7693d56d418015bd86386b60fef8208b6`; the target
+`ClassInfoRepository::getClassTimeConflicts()` has no `ORDER BY`, so fixture
+ordering is unproven. The target is
+`ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests`
+(CTest #316). No F920 baseline outcome or acceptance is verified. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

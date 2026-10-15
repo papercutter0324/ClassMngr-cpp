@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F918 accepted; F919 selected)
+### Current state - 2026-10-15 (F919 accepted; F920 selected)
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
@@ -106,20 +106,20 @@ the restored CTest #21 passed. Final forced sequential Debug builds of
 passed; exact Debug CTests #21 and #397 passed 1/1 each. Build output was
 truncated, so warning-free status cannot be certified. No full suite ran.
 
-Two independent post-F918 audits reviewed all 13 exact official Deferred
-candidates; none became newly actionable, resolved, or superseded. Batch 305
-now has F919 only. F919, Intensive slot-state read, is selected and its
-baseline and acceptance are recorded at source HEAD `9da48f77`. The three
-planned forced sequential Debug builds passed, as did exact Debug CTests #19
-and #389. The temporary indexed-view probe reproduced baseline partial
-success, was restored byte-for-byte (SHA-256
-`638C3B2A30F1CF1C5CC47DCC264225BE0C999CFCDC410F1055167CF5DD2A44C9`), and
-the restored repository target and CTest #19 passed. Both test-target builds
-emitted nonfatal MSB8064 for missing
-`src/next/application/teacher_import_plan_mapper.h`. F919 implementation and
-post-change verification remain pending. Batch 306 (F920-F929) remains queued
-after F919; these candidates are not yet accepted.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
+F919, Intensive slot-state read, is accepted at source/test commit
+`c735aca7693d56d418015bd86386b60fef8208b6`. The repository rejects a valid
+terminal cursor failure before accumulated states escape; its one-query
+projection and typed error classification remain intact. Forced sequential
+Debug builds of the application and both focused targets passed, as did exact
+Debug CTests #19 and #389. Clean empty success was source-reviewed but not
+separately fault-injected; no full suite ran.
+
+Two independent post-F919 audits reviewed all 13 exact official Deferred
+candidates; none became actionable, resolved, or superseded. Batch 305 is
+complete. Batch 306 (F920-F929) is active, with F920 selected and its baseline
+underway at source HEAD `c735aca7`. Its conflict query has no `ORDER BY`, so
+row-before-error fixture ordering remains unproven. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

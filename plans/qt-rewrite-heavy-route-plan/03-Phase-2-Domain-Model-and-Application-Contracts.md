@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F918 is accepted at source/test commit `9da48f77`; F919's baseline and acceptance are recorded at `9da48f77`, with implementation and post-change verification pending as Batch305's sole active candidate, Batch306 (F920-F929) queued after it, Gates 1/2 Partial, and the formal exit gate Open.
+- Current note: F920 Class schedule conflict read is selected as the active next slice in Batch306; its baseline begins at source HEAD `c735aca7693d56d418015bd86386b60fef8208b6`, and its SELECT has no ORDER BY, so fixture ordering is unproven. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch
-
-- F919 - Intensive slot-state read: prevent partial success after a terminal cursor error.
-
-#### Next batch (queued after F919)
+#### Active batch (Batch 306)
 
 - F920 - Class schedule conflict read: reject partial conflict sets after terminal cursor failure.
 - F921 - Class Transfer evaluation read: reject incomplete evaluation headers and matrix rows.
