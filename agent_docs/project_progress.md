@@ -137,15 +137,23 @@ passed 1/1. No full suite ran.
 Two independent post-F921 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch306
 (F920-F929) remains active with F922-F929 remaining. F922, Sub Prep
-roster-output schedule read, has a verified baseline and defined acceptance at
-source HEAD `6fd601e0`. The focused port target built with the required
-sequential Debug flags, and CTest #354 passed 1/1 before and after the
-temporary probe was restored. The exact windowed query fixture failed during
-execution before yielding a row, so it did not demonstrate partial success;
-the terminal-error branch will be source-reviewed because no reasonable
-deterministic QSQLITE injection seam was found. Implementation and
-post-change verification remain pending; no full suite ran. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate is Open.
+roster-output schedule read, is accepted at source commit
+`1f9dbf15617adc4e4a988977b5003c509804a576`. Its repository rejects terminal
+cursor errors after schedule iteration instead of returning accumulated
+records; the source port retains Technical classification. Independent source
+review confirmed the guard’s placement, diagnostic context, and unchanged
+query/mapping. Forced sequential Debug builds passed for `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`;
+exact Debug CTest #354 passed 1/1. The two-window query’s malformed-view probe
+failed during execution before yielding a row, so the terminal fetch branch
+was not fault-injected. No direct fault-injection result is claimed; no full
+suite ran.
+
+Two independent post-F922 audits reviewed all 13 exact official Deferred
+candidates; none became actionable, resolved, or superseded. Batch306
+(F920-F929) remains active with F923-F929 remaining. F923, Sub Prep print-source
+class-information read, is selected next. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

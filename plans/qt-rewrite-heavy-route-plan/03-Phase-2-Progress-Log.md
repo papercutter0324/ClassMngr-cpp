@@ -38806,3 +38806,27 @@ Acceptance for F922:
 Implementation and post-change verification are pending. F922 remains active
 in Batch306 (F922-F929); all 13 official Deferred candidates remain unchanged.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F922 accepted; post-F922 Deferred audits clear; F923 selected - 2026-10-15
+
+F922, Sub Prep roster-output schedule read, is accepted at source commit
+`1f9dbf15617adc4e4a988977b5003c509804a576`. A terminal `query.lastError()`
+check after iteration now returns the existing `SqlQueryUtils::errorFor`
+failure with scoped-operation and identity context rather than exposing
+accumulated records.
+
+Independent Tester source review verified the new terminal-error branch.
+Forced sequential Debug builds of `ClassMngr`, then
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`,
+passed; exact Debug CTest #354 passed 1/1. Existing CTest coverage exercises
+selected-mode schedule behavior and SQL execution failure/`Technical` mapping,
+not terminal fetch failure. No direct cursor fault injection is claimed: the
+exact two-window query fixture failed before yielding a row and no reasonable
+deterministic QSQLITE seam was found. Build output contained translation
+generation notices only. No full suite ran.
+
+Two independent post-F922 audits checked all 13 official Deferred candidates;
+none became newly actionable, resolved, or superseded, and all remain
+unchanged. F923, Sub Prep print-source class-information read, is selected next
+in active Batch306, now F923-F929. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
