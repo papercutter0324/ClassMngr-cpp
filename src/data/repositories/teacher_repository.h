@@ -215,10 +215,21 @@ struct MyClassesTeacherProfileReadFields final
     QString notes;
 };
 
+enum class MyClassesTeacherProfileReadCode
+{
+    Found,
+    Missing,
+    Invalid,
+    Failure
+};
+
 struct MyClassesTeacherProfileBatchReadRecord final
 {
     qint64 requestedTeacherId = -1;
-    Result<MyClassesTeacherProfileReadFields> profile;
+    MyClassesTeacherProfileReadCode code =
+        MyClassesTeacherProfileReadCode::Failure;
+    MyClassesTeacherProfileReadFields profile;
+    QString diagnostic;
 };
 
 struct MyClassesTeacherProfileBatchReadMetrics final

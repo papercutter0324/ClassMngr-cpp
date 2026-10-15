@@ -67,7 +67,8 @@ class NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests
     Q_OBJECT
 
 private slots:
-    void readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure();
+    void readsConsumedFieldsInRequestedOrderAndReportsMissingTeacher();
+    void readsPresentTeacherWithEmptyFieldsAsSuccess();
     void readsWideTeacherIdFromIntegerPrimaryKey();
     void batchSqlFailurePreservesIndependentPerTeacherFailures();
     void emptyInputAvoidsRepositoryWork();
@@ -75,7 +76,7 @@ private slots:
 };
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
-readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure()
+readsConsumedFieldsInRequestedOrderAndReportsMissingTeacher()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -109,7 +110,8 @@ readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure()
     QVERIFY(loaded.value()[0].teacherId == requested[0]);
     QVERIFY(!loaded.value()[0].profile);
     QCOMPARE(loaded.value()[0].profile.error().code,
-             Domain::ErrorCode::Technical);
+             Domain::ErrorCode::NotFound);
+    QVERIFY(loaded.value()[0].profile.error().recoverable);
     QVERIFY(loaded.value()[0].profile.error().message.find(
                 "no matching record") != std::string::npos);
 
@@ -140,6 +142,43 @@ readsConsumedFieldsInRequestedOrderAndKeepsMissingTeacherFailure()
         repository->teacherProfileBatchReadMetrics();
     QCOMPARE(broadAfter.callCount, broadBefore.callCount);
     QCOMPARE(broadAfter.statementCount, broadBefore.statementCount);
+}
+
+void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
+readsPresentTeacherWithEmptyFieldsAsSuccess()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const Teacher emptyTeacher;
+    const int existingId = createTeacher(services, emptyTeacher);
+    QVERIFY(existingId > 0);
+
+    Platform::ApplicationServicesMyClassesTeacherProfileBatchReadPort port(
+        services
+        );
+    const Application::MyClassesTeacherProfileBatchReadQuery query(port);
+    const auto loaded = query.execute({teacherId(existingId)});
+
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().size(), std::size_t(1));
+    QVERIFY(loaded.value()[0].profile);
+    const Application::MyClassesTeacherProfileFields& fields =
+        loaded.value()[0].profile.value();
+    QVERIFY(fields.teacherKr.empty());
+    QVERIFY(fields.teacherEn.empty());
+    QVERIFY(fields.preferredRomanization.empty());
+    QVERIFY(fields.preferredName.empty());
+    QVERIFY(fields.roomNumber.empty());
+    QVERIFY(fields.wifiName.empty());
+    QVERIFY(fields.wifiPassword.empty());
+    QVERIFY(fields.internetType == std::u16string(u"WiFi"));
+    QVERIFY(fields.zoomId.empty());
+    QVERIFY(fields.zoomPassword.empty());
+    QVERIFY(fields.projectionType == std::u16string(u"HDMI"));
+    QVERIFY(fields.notes.empty());
 }
 
 void NextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests::
@@ -266,6 +305,7 @@ batchSqlFailurePreservesIndependentPerTeacherFailures()
         QVERIFY(!loaded.value()[index].profile);
         QCOMPARE(loaded.value()[index].profile.error().code,
                  Domain::ErrorCode::Technical);
+        QVERIFY(!loaded.value()[index].profile.error().recoverable);
         QVERIFY(!loaded.value()[index].profile.error().message.empty());
     }
 
@@ -316,8 +356,9 @@ reportsUnavailableServicesPerTeacher()
     QVERIFY(loaded.value()[0].teacherId == teacherId(3));
     QVERIFY(!loaded.value()[0].profile);
     QCOMPARE(loaded.value()[0].profile.error().code,
-             Domain::ErrorCode::NotFound);
-    QVERIFY(loaded.value()[0].profile.error().recoverable);
+             Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.value()[0].profile.error().recoverable);
+    QVERIFY(!loaded.value()[0].profile.error().message.empty());
 }
 
 QTEST_MAIN(

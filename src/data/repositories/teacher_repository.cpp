@@ -1697,9 +1697,15 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
     {
         if (rowIndex >= teacherIds.size())
         {
-            return std::unexpected(QObject::tr(
-                "Loading My Classes teacher profiles failed: the database returned an unexpected number of records."
-                ));
+            entries.append({
+                .requestedTeacherId = -1,
+                .code = MyClassesTeacherProfileReadCode::Invalid,
+                .diagnostic = QObject::tr(
+                    "Loading My Classes teacher profiles failed: the database returned an unexpected number of records."
+                    )
+            });
+            ++rowIndex;
+            continue;
         }
 
         const qint64 requestedTeacherId = teacherIds[rowIndex];
@@ -1707,22 +1713,36 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         const qint64 returnedRequestedTeacherId = query.value(
             "requested_teacher_id"
             ).toLongLong(&returnedRequestedTeacherIdValid);
+        bool returnedOrdinalValid = false;
+        const int returnedOrdinal = query.value("requested_ordinal").toInt(
+            &returnedOrdinalValid
+            );
         if (!returnedRequestedTeacherIdValid
             || returnedRequestedTeacherId != requestedTeacherId
-            || query.value("requested_ordinal").toInt() != rowIndex)
+            || !returnedOrdinalValid
+            || returnedOrdinal != rowIndex)
         {
-            return std::unexpected(QObject::tr(
-                "Loading My Classes teacher profiles failed: the database returned records in a different identifier order."
-                ));
+            entries.append({
+                .requestedTeacherId = returnedRequestedTeacherIdValid
+                    ? returnedRequestedTeacherId
+                    : -1,
+                .code = MyClassesTeacherProfileReadCode::Invalid,
+                .diagnostic = QObject::tr(
+                    "Loading My Classes teacher profiles failed: the database returned records in a different identifier order."
+                    )
+            });
+            ++rowIndex;
+            continue;
         }
 
         if (query.value("id").isNull())
         {
             entries.append({
-                requestedTeacherId,
-                std::unexpected(QObject::tr(
+                .requestedTeacherId = requestedTeacherId,
+                .code = MyClassesTeacherProfileReadCode::Missing,
+                .diagnostic = QObject::tr(
                     "Loading teacher failed for %1: no matching record exists."
-                    ).arg(teacherIdentity(requestedTeacherId)))
+                    ).arg(teacherIdentity(requestedTeacherId))
             });
             ++rowIndex;
             continue;
@@ -1736,18 +1756,20 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
             || returnedTeacherId != requestedTeacherId)
         {
             entries.append({
-                requestedTeacherId,
-                std::unexpected(QObject::tr(
+                .requestedTeacherId = requestedTeacherId,
+                .code = MyClassesTeacherProfileReadCode::Invalid,
+                .diagnostic = QObject::tr(
                     "Loading My Classes teacher failed for %1: the database returned a different teacher identifier."
-                    ).arg(teacherIdentity(requestedTeacherId)))
+                    ).arg(teacherIdentity(requestedTeacherId))
             });
             ++rowIndex;
             continue;
         }
 
         entries.append({
-            requestedTeacherId,
-            MyClassesTeacherProfileReadFields{
+            .requestedTeacherId = requestedTeacherId,
+            .code = MyClassesTeacherProfileReadCode::Found,
+            .profile = MyClassesTeacherProfileReadFields{
                 .teacherId = returnedTeacherId,
                 .teacherKr = query.value("teacher_kr").toString(),
                 .teacherEn = query.value("teacher_en").toString(),
@@ -1769,11 +1791,14 @@ TeacherRepository::loadMyClassesTeacherProfileRecords(
         ++rowIndex;
     }
 
-    if (rowIndex != teacherIds.size())
+    if (query.lastError().isValid())
     {
-        return std::unexpected(QObject::tr(
-            "Loading My Classes teacher profiles failed: the database returned an incomplete record list."
-            ));
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading My Classes teacher profiles"),
+            {},
+            QStringLiteral("assigned teachers")
+            ).userMessage());
     }
 
     return entries;

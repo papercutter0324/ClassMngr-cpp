@@ -92,9 +92,9 @@ public:
             return failedEntries(
                 teacherIds,
                 error(
-                    Domain::ErrorCode::NotFound,
+                    Domain::ErrorCode::Technical,
                     "No active Teacher Profile database session is available.",
-                    true
+                    false
                     )
                 );
         }
@@ -105,9 +105,9 @@ public:
             return failedEntries(
                 teacherIds,
                 error(
-                    Domain::ErrorCode::NotFound,
+                    Domain::ErrorCode::Technical,
                     "The Teacher Profile repository is unavailable.",
-                    true
+                    false
                     )
                 );
         }
@@ -175,18 +175,51 @@ public:
                 continue;
             }
 
-            if (!source.profile)
+            switch (source.code)
             {
+            case MyClassesTeacherProfileReadCode::Missing:
                 entries.push_back({
                     .teacherId = teacherIds[index],
                     .profile = Domain::Result<
                         Application::MyClassesTeacherProfileFields
-                        >::failure(repositoryError(source.profile.error()))
+                        >::failure(error(
+                            Domain::ErrorCode::NotFound,
+                            repositoryDiagnostic(
+                                source.diagnostic,
+                                "The assigned teacher record was not found."
+                                ),
+                            true
+                            ))
                 });
                 continue;
+            case MyClassesTeacherProfileReadCode::Invalid:
+                entries.push_back({
+                    .teacherId = teacherIds[index],
+                    .profile = Domain::Result<
+                        Application::MyClassesTeacherProfileFields
+                        >::failure(error(
+                            Domain::ErrorCode::Validation,
+                            repositoryDiagnostic(
+                                source.diagnostic,
+                                "The My Classes Teacher Profile repository returned an invalid record."
+                                ),
+                            false
+                            ))
+                });
+                continue;
+            case MyClassesTeacherProfileReadCode::Failure:
+                entries.push_back({
+                    .teacherId = teacherIds[index],
+                    .profile = Domain::Result<
+                        Application::MyClassesTeacherProfileFields
+                        >::failure(repositoryError(source.diagnostic))
+                });
+                continue;
+            case MyClassesTeacherProfileReadCode::Found:
+                break;
             }
 
-            if (source.profile->teacherId != legacyTeacherIds.at(
+            if (source.profile.teacherId != legacyTeacherIds.at(
                     static_cast<qsizetype>(index)))
             {
                 entries.push_back({
@@ -206,8 +239,7 @@ public:
                 .teacherId = teacherIds[index],
                 .profile = Domain::Result<
                     Application::MyClassesTeacherProfileFields
-                    >::success(profileFieldsFromReadFields(
-                        source.profile.value()))
+                    >::success(profileFieldsFromReadFields(source.profile))
             });
         }
 
@@ -264,6 +296,15 @@ private:
                 : bytes.toStdString(),
             false
             );
+    }
+
+    [[nodiscard]] static std::string repositoryDiagnostic(
+        const QString& message,
+        const char* fallback
+        )
+    {
+        const QByteArray bytes = message.toUtf8();
+        return bytes.isEmpty() ? fallback : bytes.toStdString();
     }
 
     [[nodiscard]] static Application::MyClassesTeacherProfileBatchReadResult
