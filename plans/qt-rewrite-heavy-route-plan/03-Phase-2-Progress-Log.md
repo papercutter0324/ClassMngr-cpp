@@ -40058,3 +40058,42 @@ The prior two post-F939 audits found all 13 official Deferred entries
 unchanged; no post-F940 independent audit was run, and this closeout leaves the
 Deferred list unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F941 baseline and acceptance - 2026-10-15
+
+F941 targets legacy `SpeakingEvalRepository::loadSpeakingEval()` when called
+by the opt-in `--startup-performance-speaking-evaluation-lifecycle` route.
+It does not change the public API or the normal typed
+`loadSpeakingEvalDetailed()` route.
+
+An indexed JSON-view baseline using the exact ordered score-row query yielded
+row 0, then returned `false` on the second `next()` with a valid `lastError()`.
+The public `DataService::loadSpeakingEval()` call nevertheless succeeded with
+exactly that prefix row. The header-query first-`next()` failure has no runtime
+reproduction; its guard is source-reviewed. Keep the clean no-row result as
+success and preserve the existing clean-missing lifecycle assertion. Do not add
+a custom driver or test seam.
+
+Acceptance:
+
+1. For the header query, distinguish a clean no-row result from a failed first
+   `next()` using `query.lastError()` and `SqlQueryUtils::errorFor`; propagate a
+   contextual failure only for the query error.
+2. After the score-row loop, inspect terminal `lastError()` and return a
+   contextual failure instead of successful prefix rows.
+3. Preserve the public API, evaluation row/index mapping, clean missing-
+   evaluation success, current row validation, and query shape. Leave the
+   normal typed `loadSpeakingEvalDetailed()` route unchanged.
+
+For the focused Debug baseline, the temporary probe slot passed and CTest #24,
+`ClassMngrDataServiceLifecycleTests`, passed with `-C Debug`. After restoring
+the temporary probe, the required clean build passed with
+`cmake --build build/windows-x64-debug --config Debug --target ClassMngrDataServiceLifecycleTests -- /p:TrackFileAccess=false`.
+The restored source SHA-256 still matches, and the temporary slot is absent
+from generated MOC. No full suite ran.
+
+F941 acceptance is complete; implementation has not started. F942-F945 remain
+queued in Batch309; begin Batch310 discovery when F944, the second-last item,
+starts. The existing 13 Deferred entries remain unchanged based on the prior
+post-F939 audits; no post-F940 or post-F941 independent audit is claimed.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

@@ -5662,3 +5662,20 @@ or terminal cursor state is invalid. The malformed-JSON probe failed during
 `exec()` before returning rows, so this installed QSQLITE query shape did not
 provide runtime evidence for the late-fetch branch. Keep that limit explicit
 and rely on source review rather than introducing a test seam or custom driver.
+
+## Phase 2 legacy Speaking Evaluation cursor-failure baseline - 2026-10-15
+
+F941 targets legacy `SpeakingEvalRepository::loadSpeakingEval()` on the opt-in
+`--startup-performance-speaking-evaluation-lifecycle` route. The exact ordered
+score-row query, backed by an indexed JSON view, returned a valid first row and
+then `false` from `next()` with a valid `lastError()`. The public
+`DataService::loadSpeakingEval()` baseline nevertheless returned success with
+that one-row prefix. A focused temporary QtTest slot passed, CTest #24 passed
+in Debug, and the restored-source target rebuilt successfully with
+`/p:TrackFileAccess=false`; the source hash matches its saved pre-probe hash and
+the temporary slot is absent from generated MOC. The header-query first-fetch
+failure was not reproduced and remains source-review-only. F941 acceptance
+preserves the API, row mapping and validation, clean missing-evaluation
+success, and the normal typed `loadSpeakingEvalDetailed()` path while adding
+contextual checks for the header first-fetch and score-row terminal error. No
+custom driver or test seam is warranted. Implementation has not started.
