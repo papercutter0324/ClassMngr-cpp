@@ -681,6 +681,16 @@ TeacherRepository::loadMyClassesTeacherDisplayNameRecords(
         });
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading teacher display names")
+                ).userMessage()
+            );
+    }
+
     return records;
 }
 
