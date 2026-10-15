@@ -38244,3 +38244,46 @@ callers, including schedule import state; F915 intentionally left its
 class-list state read out of scope. F916 baseline and acceptance are pending.
 Batch 305 continues with F916-F919 in order. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### F916 baseline captured; acceptance defined - 2026-10-15
+
+The source baseline is `bc59d4804f2114b4de6243348ed9c00b692ec0ce`; current
+HEAD may include docs-only commit `a43d6c9f`, with source and tests unchanged.
+`ClassRepository::getClasses()` in
+`src/data/repositories/class_repository.cpp:94` returns
+`Result<QList<Classroom>>`. It checks query execution but not `lastError()`
+after iteration, so a terminal cursor failure may return a partial list as
+success. It filters out Testing classes, orders by `c.name` without a tie
+breaker, and maps supported positive `int` IDs and names. Preserve these
+semantics.
+
+The typed Classes List port maps repository errors to nonrecoverable Domain
+`Technical`; an unavailable session remains recoverable `NotFound`.
+`ClassesListReadQuery` forwards repository errors. The shared reader also
+feeds schedule-import snapshots (`RepositoryReadFailed` / `Classes`), legacy
+`ClassService` and `DataService`, class transfer, and legacy schedule import;
+their current error propagation must remain. No consumer or UI changes are
+intended. Existing repository tests do not inject a deterministic post-row
+cursor error, and the local `QSqlQuery` has no lightweight seam; do not add
+custom-driver or broad fault-injection infrastructure.
+
+Forced sequential Debug builds passed for `ClassMngr`,
+`ClassMngrTestingClassRepositoryTests`,
+`ClassMngrNextApplicationClassesListReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesClassesListReadPortTests`, and
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`.
+Exact Debug CTests #21, #228, #230, and #410 each passed 1/1. The application
+query target build emitted MSB8064 about missing
+`src/next/application/teacher_import_plan_mapper.h`; the forced build passed,
+but its origin is not classified. No full suite ran.
+
+| Acceptance point | Required behavior |
+| --- | --- |
+| Terminal cursor failure | Check `query.lastError()` immediately after `getClasses()` finishes iterating. Return the existing repository error so accumulated partial rows cannot escape as success. Preserve a clean empty result. |
+| Existing query and mapping behavior | Keep the Testing-class filter, `c.name` ordering with no added tie-breaker, supported positive `int` ID validation, name mapping, and normal list contents/order unchanged. |
+| Result propagation and scope | Preserve typed-port `Technical` and unavailable-session recoverable `NotFound`; forward repository errors through `ClassesListReadQuery` and existing schedule-import, legacy, class-transfer, and legacy-import callers. Do not edit consumers or UI. |
+| Regression and verification | Retain SQL-execution failure and success regressions; Tester source-reviews the loop/error branch because no direct cursor injector is available. After implementation, force sequential Debug builds of the five targets above and run exact CTests #21, #228, #230, and #410 only. F916 baseline and acceptance are recorded; implementation and post-change verification remain pending. No full suite ran. |
+
+Batch 305 remains active with F916-F919 in order; the 13 official Deferred
+entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

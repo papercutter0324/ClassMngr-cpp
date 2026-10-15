@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F915 Schedule class-information reads is accepted at source/test commit `bc59d4804f2114b4de6243348ed9c00b692ec0ce`; two independent audits found none of the 13 official Deferred candidates newly actionable. F916 Classes list is selected, with baseline and acceptance pending; Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F915 Schedule class-information reads is accepted at source/test commit `bc59d4804f2114b4de6243348ed9c00b692ec0ce`; two independent audits found none of the 13 official Deferred candidates newly actionable. F916 Classes list baseline and acceptance are recorded; implementation and post-change verification are pending. Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
