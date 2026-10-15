@@ -1,6 +1,7 @@
 #include "data/repositories/testing_block_repository.h"
 
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QtTest>
 
@@ -16,6 +17,7 @@ private slots:
     void classifiesMissingParentAndIncompleteClassSeparately();
     void reportsInvalidKeysAndDatabaseFailures();
     void rejectsMalformedClassIdsWithoutOverwritingBlocks();
+    void reportsDisplayCursorFailuresWithoutReturningPartialRecords();
 };
 
 namespace
@@ -339,6 +341,158 @@ void TestingBlockRepositoryTests
         QCOMPARE(assignments->first().day, QStringLiteral("Monday"));
         QCOMPARE(assignments->first().classId, -1);
         QCOMPARE(assignments->first().room, QStringLiteral("Original"));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingBlockRepositoryTests
+    ::reportsDisplayCursorFailuresWithoutReturningPartialRecords()
+{
+    const QString connectionName =
+        QStringLiteral("testing_assignment_repository_cursor_failure");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createTable(database));
+
+        QSqlQuery setup(database);
+        QVERIFY(setup.exec(QStringLiteral(
+            "DROP TABLE schedule_testing_blocks"
+            )));
+        QVERIFY(setup.exec(R"(
+            CREATE TABLE schedule_testing_blocks_backing (
+                day TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                room TEXT NOT NULL,
+                class_id INTEGER
+            )
+        )"));
+        QVERIFY(setup.exec(R"(
+            CREATE INDEX schedule_testing_blocks_scan
+            ON schedule_testing_blocks_backing (
+                day, start_time, room, class_id
+            )
+        )"));
+
+        // This covering index supplies every raw view column in the same
+        // order required by the production SELECT. INDEXED BY pins the scan,
+        // so SQLite streams Monday 09:00 before evaluating row 2's failing
+        // room expression when the cursor advances.
+        QVERIFY(setup.exec(R"(
+            CREATE VIEW schedule_testing_blocks AS
+            SELECT
+                day,
+                start_time,
+                CASE
+                    WHEN room = 'trigger overflow'
+                    THEN abs(CAST('-9223372036854775808' AS INTEGER))
+                    ELSE room
+                END AS room,
+                class_id
+            FROM schedule_testing_blocks_backing
+            INDEXED BY schedule_testing_blocks_scan
+        )"));
+        QVERIFY(setup.exec(R"(
+            INSERT INTO schedule_testing_blocks_backing (
+                day, start_time, room, class_id
+            ) VALUES
+                ('Monday', '09:00', '', NULL),
+                ('Monday', '10:00', 'trigger overflow', NULL)
+        )"));
+
+        QVERIFY(setup.exec(R"(
+            CREATE TABLE testing_classes (
+                class_id INTEGER PRIMARY KEY,
+                room TEXT NOT NULL
+            )
+        )"));
+        QVERIFY(setup.exec(R"(
+            CREATE TABLE classes (
+                id INTEGER PRIMARY KEY,
+                name TEXT
+            )
+        )"));
+        QVERIFY(setup.exec(R"(
+            CREATE TABLE class_info (
+                class_id INTEGER PRIMARY KEY,
+                class_grade TEXT,
+                class_level TEXT,
+                class_color TEXT,
+                font_color TEXT,
+                teacher_id INTEGER
+            )
+        )"));
+        QVERIFY(setup.exec(R"(
+            CREATE TABLE teachers (
+                id INTEGER PRIMARY KEY,
+                teacher_kr TEXT,
+                teacher_en TEXT,
+                preferred_name TEXT
+            )
+        )"));
+
+        QString cursorDetail;
+        {
+            QSqlQuery productionSelect(database);
+            QVERIFY(productionSelect.exec(QStringLiteral(R"(
+                SELECT
+                    b.day,
+                    b.start_time,
+                    b.room,
+                    b.class_id,
+                    typeof(b.class_id) AS class_id_storage_type,
+                    tc.class_id AS testing_class_id,
+                    c.id AS testing_class_record_id,
+                    c.name AS testing_class_name,
+                    tc.room AS testing_class_room,
+                    ci.class_grade,
+                    ci.class_level,
+                    ci.class_color,
+                    ci.font_color,
+                    t.teacher_kr,
+                    t.teacher_en,
+                    t.preferred_name
+                FROM schedule_testing_blocks b
+                LEFT JOIN testing_classes tc
+                ON tc.class_id = b.class_id
+                LEFT JOIN classes c
+                ON c.id = tc.class_id
+                LEFT JOIN class_info ci
+                ON ci.class_id = tc.class_id
+                LEFT JOIN teachers t
+                ON t.id = ci.teacher_id
+                ORDER BY b.day, b.start_time
+            )")));
+            QVERIFY(productionSelect.next());
+            QCOMPARE(
+                productionSelect.value(QStringLiteral("day")).toString(),
+                QStringLiteral("Monday")
+                );
+            QCOMPARE(
+                productionSelect.value(QStringLiteral("start_time")).toString(),
+                QStringLiteral("09:00")
+                );
+            QVERIFY(!productionSelect.next());
+            const QSqlError cursorError = productionSelect.lastError();
+            QVERIFY(cursorError.isValid());
+            cursorDetail = cursorError.text();
+            QVERIFY(!cursorDetail.trimmed().isEmpty());
+        }
+
+        TestingBlockRepository repository(database);
+        const auto displayRecords =
+            repository.loadTestingAssignmentDisplayRecords();
+        QVERIFY(!displayRecords);
+        QVERIFY2(
+            displayRecords.error().contains(cursorDetail),
+            qPrintable(displayRecords.error())
+            );
     }
 
     QSqlDatabase::removeDatabase(connectionName);
