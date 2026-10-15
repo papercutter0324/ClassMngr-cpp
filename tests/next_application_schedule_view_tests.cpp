@@ -136,6 +136,7 @@ void verifyInvalid(
     QVERIFY(!result.hasValue());
     QCOMPARE(result.error().code, ErrorCode::InvalidInput);
     QVERIFY(!result.error().message.empty());
+    QVERIFY(!result.error().recoverable);
 }
 
 }
@@ -441,6 +442,48 @@ void NextApplicationScheduleViewTests::blankAndOversizedFieldsAreRejected()
         auto input = validInput();
         input.rows.front().cells.front().meetingText = " \t";
         verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+    }
+
+    for (const auto& unicodeBlank : {
+             std::string("\xC2\xA0"),
+             std::string("\xE3\x80\x80")
+         })
+    {
+        {
+            auto input = validInput();
+            input.rows.front().dayLabel = unicodeBlank;
+            verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+        }
+
+        {
+            auto input = validInput();
+            input.rows.front().rowLabel = unicodeBlank;
+            verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+        }
+
+        {
+            auto input = validInput();
+            input.rows.front().cells.front().startText = unicodeBlank;
+            verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+        }
+
+        {
+            auto input = validInput();
+            input.rows.front().cells.front().endText = unicodeBlank;
+            verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+        }
+
+        {
+            auto input = validInput();
+            input.rows.front().cells.front().meetingText = unicodeBlank;
+            verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+        }
+
+        {
+            auto input = validInput();
+            input.rows.front().cells.front().roomText = unicodeBlank;
+            verifyInvalid(ScheduleViewProjection::create(std::move(input)));
+        }
     }
 
     {
