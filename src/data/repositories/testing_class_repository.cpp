@@ -806,6 +806,13 @@ TestingClassRepository::loadTestingClasses()
         testingClasses.append(*testingClass);
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            queryFailure(query, QObject::tr("Loading testing classes"))
+            );
+    }
+
     return testingClasses;
 }
 

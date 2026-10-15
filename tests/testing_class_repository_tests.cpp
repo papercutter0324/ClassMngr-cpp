@@ -27,6 +27,7 @@ private slots:
     void rejectsInvalidPersistedTestingClassIdsWithoutMutation();
     void deletesEveryCascadeRowAndPreservesSiblingClass();
     void rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails();
+    void returnsEmptyTestingClassListWhenNoneExist();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
     void rejectsPartialClassTeacherAssignmentsAfterCursorError();
 };
@@ -1297,6 +1298,32 @@ void TestingClassRepositoryTests
         QCOMPARE(assignments->at(0).teacherId, 11);
         QCOMPARE(assignments->at(1).classId, secondClassId);
         QCOMPARE(assignments->at(1).teacherId, -1);
+
+        database.close();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::returnsEmptyTestingClassListWhenNoneExist()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_empty_list");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        TestingClassRepository repository(database);
+        const auto testingClasses = repository.loadTestingClasses();
+        QVERIFY(testingClasses);
+        QCOMPARE(testingClasses->size(), 0);
 
         database.close();
     }
