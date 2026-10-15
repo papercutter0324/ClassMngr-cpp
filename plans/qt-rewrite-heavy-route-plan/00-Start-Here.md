@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F944 and F945 are complete; F946 `CampusRecordRepository::getAllCampuses()` has a reproduced baseline and accepted scope, with implementation next in Batch310. All 13 official Deferred candidates remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F944-F946 are complete; F946 `CampusRecordRepository::getAllCampuses()` completed in source commit `9fc0f7c9`, and Batch311 discovery continues. All 13 official Deferred candidates remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

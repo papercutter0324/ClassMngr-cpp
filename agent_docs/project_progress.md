@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-16 (F946 accepted; implementation next)
+### Current state - 2026-10-16 (F946 complete; Batch311 discovery ongoing)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -227,14 +227,22 @@ permanent indexed-view regression covers the query and public method.
 Independent sequential Debug builds of `ClassMngr` and
 `ClassMngrTestingBlockRepositoryTests` passed; exact CTest #20 passed 1/1.
 Two independent audits found all 13 official Deferred entries unchanged.
-F946's exact-query pre-fix baseline reproduced a valid `A Alpha Campus` row,
-then a terminal cursor error; the unmodified public DataService method
-returned that one-row prefix as success. Its temporary test file was restored
-to hash `5E77045D92B5C24C3C8D0B1C8C543DA2EDEB9C8A37C53BB73C30561962427543`;
-the restored lifecycle target and exact CTest passed. F946 is accepted for a
-contextual post-loop cursor check and a permanent public lifecycle regression.
-Implementation and independent verification are pending. No full suite ran.
-Gates 1/2 remain Partial and Phase 2's formal exit gate is Open.
+F946 completed at source/test commit `9fc0f7c9`. Its exact-query pre-fix
+baseline reproduced a valid `A Alpha Campus` row followed by a terminal cursor
+error, while the unmodified public DataService method returned the one-row
+prefix as success. Independent sequential Debug builds of `ClassMngr` and
+`ClassMngrDataServiceLifecycleTests` passed with
+`/p:TrackFileAccess=false`; exact CTest #24 passed 1/1, and source review plus
+`git diff --check` passed. No full suite ran. Two independent post-F946 audits
+found all 13 official Deferred candidates unchanged and none actionable,
+resolved, superseded, or materially changed.
+
+Batch311 discovery has not accepted another candidate. The proposed Sub Prep
+single-teacher fetch-error path was not reproduced: its exact query failed in
+`exec()` with malformed JSON before `next()` was called, so no production
+change was made. Temporary test edits were restored. Continue source-backed
+candidate discovery. Gates 1/2 remain Partial and Phase 2's formal exit gate is
+Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

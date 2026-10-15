@@ -5884,5 +5884,19 @@ SELECT and requires the public method to fail with both cursor detail and
 context rather than return its prefix. No custom driver or seam. Build
 `ClassMngr` and `ClassMngrDataServiceLifecycleTests` sequentially in the
 standard Debug folder, run only CTest #24, review source, and check the diff.
-No full suite. The 13 official Deferred entries remain unchanged after F945's
-two independent audits; F946 implementation and post-slice audit are pending.
+F946 completed at source commit `9fc0f7c9`. Independent sequential Debug
+builds of `ClassMngr` and `ClassMngrDataServiceLifecycleTests` passed with
+`/p:TrackFileAccess=false`; exact CTest #24 passed 1/1, and source review plus
+`git diff --check` passed. Two independent post-commit audits found all 13
+official Deferred entries unchanged and none actionable, resolved, superseded,
+or materially changed. No full suite ran.
+
+## Phase 2 Sub Prep teacher first-fetch baseline limitation - 2026-10-16
+
+The malformed-JSON probe for the Sub Prep single-teacher query prepared but
+failed during `exec()` with `malformed JSON Unable to fetch row`; `next()` was
+not called. This installed QSQLITE query shape therefore did not reproduce the
+proposed first-fetch error or public partial-success path. Do not claim that
+behavior from source inspection alone or add a custom driver solely to force
+it. The temporary probe was removed and both test-area files were restored to
+their HEAD hashes; no production source changed.

@@ -40461,3 +40461,27 @@ F946 is accepted based on its reproduced Batch310 baseline and implementation
 is next. F945 is complete; its two independent audits found all 13 official
 Deferred entries unchanged. Keep the exact Deferred list unchanged. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F946 complete; Batch311 discovery continues - 2026-10-16
+
+F946 `CampusRecordRepository::getAllCampuses()` is complete in code commit
+`9fc0f7c9`, following acceptance commit `5e020010`. It adds the post-loop
+cursor guard and lifecycle regression. Independent sequential Windows x64
+Debug builds of `ClassMngr` and `ClassMngrDataServiceLifecycleTests` passed in
+`build/windows-x64-debug` with `/p:TrackFileAccess=false`; exact CTest #24
+passed 1/1. Source review and `git diff --check` passed. No full suite ran.
+
+Two independent post-F946 audits reviewed the exact 13 official Deferred
+entries; none was actionable, resolved, superseded, or materially changed.
+All 13 remain unchanged.
+
+Batch311 scans across services, repositories, domain/use cases, typed ports,
+and active feature routes found no candidate accepted for implementation. The
+proposed Sub Prep teacher-fetch candidate was not accepted: its exact single-ID
+query was prepared, but `exec()` failed with `malformed JSON Unable to fetch
+row`; `next()` was not called. The proposed unguarded first-fetch branch and
+incomplete public result therefore were not established. Temporary test edits
+were restored, test-area files match their HEAD clean-filter hashes, and no
+production file changed. Only a direct temporary QtTest probe was built and
+run; the full suite did not run. Source discovery continues. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
