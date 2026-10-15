@@ -252,6 +252,7 @@ private slots:
     void repositoryWriteFailuresAreObservable();
     void coreLookupReadFailuresAreObservable();
     void compoundAndCollectionReadFailuresAreObservable();
+    void speakingEvaluationRejectsLateScoreRowFetchFailure();
     void classInfoRejectsLateRegularScheduleFetchFailure();
     void classInfoRejectsLateIntensiveScheduleFetchFailure();
     void speakingEvaluationRepositoryPreservesWideIds();
@@ -1778,6 +1779,121 @@ void DataServiceLifecycleTests::compoundAndCollectionReadFailuresAreObservable()
         ));
     QVERIFY(failedSetting.error().contains(
         QStringLiteral("setting key 'missing/read-contract'")
+        ));
+}
+
+void DataServiceLifecycleTests::
+speakingEvaluationRejectsLateScoreRowFetchFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("late-speaking-evaluation-fetch.db"))
+        ));
+
+    const Result<int> createdClass =
+        service.createClass(QStringLiteral("Late Speaking Fetch Class"));
+    QVERIFY(createdClass);
+    const int classId = *createdClass;
+
+    QSqlDatabase database = service.databaseSession()->database();
+    QSqlQuery setup(database);
+    QVERIFY(setup.exec(QStringLiteral("DROP TABLE speaking_eval_data")));
+    QVERIFY(setup.exec(R"(
+        CREATE TABLE speaking_evaluation_json_rows (
+            id INTEGER PRIMARY KEY,
+            evaluation_id INTEGER,
+            row_index INTEGER,
+            payload TEXT
+        )
+    )"));
+    QVERIFY(setup.exec(R"(
+        CREATE INDEX speaking_evaluation_json_order
+        ON speaking_evaluation_json_rows (evaluation_id, row_index)
+    )"));
+    QVERIFY(setup.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluations (class_id, evaluation_name) "
+        "VALUES (?, ?)"
+        )));
+    setup.addBindValue(classId);
+    setup.addBindValue(QStringLiteral("Late Fetch"));
+    QVERIFY(setup.exec());
+    const qint64 evaluationId = setup.lastInsertId().toLongLong();
+    QVERIFY(evaluationId > 0);
+
+    QVERIFY(setup.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluation_json_rows "
+        "(evaluation_id, row_index, payload) VALUES (?, ?, ?)"
+        )));
+    setup.addBindValue(evaluationId);
+    setup.addBindValue(0);
+    setup.addBindValue(QStringLiteral(
+        "{\"col_0\":\"valid prefix row\",\"col_1\":\"name\"}"
+        ));
+    QVERIFY(setup.exec());
+    QVERIFY(setup.prepare(QStringLiteral(
+        "INSERT INTO speaking_evaluation_json_rows "
+        "(evaluation_id, row_index, payload) VALUES (?, ?, ?)"
+        )));
+    setup.addBindValue(evaluationId);
+    setup.addBindValue(1);
+    setup.addBindValue(QStringLiteral("{malformed"));
+    QVERIFY(setup.exec());
+
+    QVERIFY(setup.exec(R"(
+        CREATE VIEW speaking_eval_data AS
+        SELECT
+            evaluation_id,
+            row_index,
+            json_extract(payload, '$.col_0') AS col_0,
+            json_extract(payload, '$.col_1') AS col_1,
+            json_extract(payload, '$.col_2') AS col_2,
+            json_extract(payload, '$.col_3') AS col_3,
+            json_extract(payload, '$.col_4') AS col_4,
+            json_extract(payload, '$.col_5') AS col_5,
+            json_extract(payload, '$.col_6') AS col_6,
+            json_extract(payload, '$.col_7') AS col_7,
+            json_extract(payload, '$.col_8') AS col_8,
+            json_extract(payload, '$.col_9') AS col_9,
+            json_extract(payload, '$.col_10') AS col_10
+        FROM speaking_evaluation_json_rows
+    )"));
+
+    QSqlQuery preflight(database);
+    QVERIFY(preflight.prepare(QStringLiteral(
+        "SELECT *, typeof(row_index) AS row_index_storage_type "
+        "FROM speaking_eval_data WHERE evaluation_id=? ORDER BY row_index"
+        )));
+    preflight.addBindValue(evaluationId);
+    QVERIFY(preflight.exec());
+    QVERIFY(preflight.next());
+    QCOMPARE(preflight.value(QStringLiteral("row_index")).toInt(), 0);
+    QCOMPARE(
+        preflight.value(QStringLiteral("col_0")).toString(),
+        QStringLiteral("valid prefix row")
+        );
+    QVERIFY(!preflight.next());
+    QVERIFY(preflight.lastError().isValid());
+    QVERIFY(preflight.lastError().text().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
+        ));
+    preflight.finish();
+
+    const Result<SpeakingEvalRows> failedEvaluation = service.loadSpeakingEval(
+        classId,
+        QStringLiteral("Late Fetch")
+        );
+    QVERIFY(!failedEvaluation);
+    QVERIFY(failedEvaluation.error().contains(
+        QStringLiteral("Loading speaking evaluation rows")
+        ));
+    QVERIFY(failedEvaluation.error().contains(
+        QStringLiteral("class id %1, evaluation 'Late Fetch'").arg(classId)
+        ));
+    QVERIFY(failedEvaluation.error().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive
         ));
 }
 

@@ -457,6 +457,18 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
 
     if (!query.next())
     {
+        if (query.lastError().isValid())
+        {
+            return std::unexpected(
+                SqlQueryUtils::errorFor(
+                    query,
+                    QObject::tr("Loading speaking evaluation"),
+                    {},
+                    identity
+                    ).userMessage()
+                );
+        }
+
         return rows;
     }
 
@@ -511,6 +523,18 @@ Result<SpeakingEvalRows> SpeakingEvalRepository::loadSpeakingEval(
         }
 
         rows.append(row);
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading speaking evaluation rows"),
+                {},
+                identity
+                ).userMessage()
+            );
     }
 
     return rows;
