@@ -3,6 +3,7 @@
 #include "data/repositories/testing_class_repository.h"
 
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QtTest>
@@ -27,6 +28,7 @@ private slots:
     void deletesEveryCascadeRowAndPreservesSiblingClass();
     void rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
+    void rejectsPartialClassTeacherAssignmentsAfterCursorError();
 };
 
 namespace
@@ -1295,6 +1297,93 @@ void TestingClassRepositoryTests
         QCOMPARE(assignments->at(0).teacherId, 11);
         QCOMPARE(assignments->at(1).classId, secondClassId);
         QCOMPARE(assignments->at(1).teacherId, -1);
+
+        database.close();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests
+    ::rejectsPartialClassTeacherAssignmentsAfterCursorError()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_assignment_cursor_error");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+
+        ClassRepository classRepository(database);
+        const int firstClassId =
+            classRepository.createClass(QStringLiteral("Alpha")).value_or(-1);
+        const int secondClassId =
+            classRepository.createClass(QStringLiteral("Beta")).value_or(-1);
+        QVERIFY(firstClassId > 0);
+        QVERIFY(secondClassId > firstClassId);
+
+        QSqlQuery setupQuery(database);
+        QVERIFY(setupQuery.exec(QStringLiteral("DROP TABLE class_info")));
+        QVERIFY(setupQuery.exec(QStringLiteral(R"(
+            CREATE TABLE class_info_json_backing (
+                class_id INTEGER PRIMARY KEY,
+                teacher_json TEXT NOT NULL
+            )
+        )")));
+        QVERIFY(setupQuery.prepare(QStringLiteral(R"(
+            INSERT INTO class_info_json_backing (class_id, teacher_json)
+            VALUES (?, ?), (?, ?)
+        )")));
+        setupQuery.addBindValue(firstClassId);
+        setupQuery.addBindValue(QStringLiteral("{\"teacher_id\":11}"));
+        setupQuery.addBindValue(secondClassId);
+        setupQuery.addBindValue(QStringLiteral("{"));
+        QVERIFY(setupQuery.exec());
+        QVERIFY(setupQuery.exec(QStringLiteral(R"(
+            CREATE VIEW class_info AS
+            SELECT
+                class_id,
+                json_extract(teacher_json, '$.teacher_id') AS teacher_id
+            FROM class_info_json_backing
+        )")));
+        QVERIFY(setupQuery.exec(QStringLiteral(
+            "CREATE INDEX classes_name_id_idx ON classes(name, id)"
+            )));
+
+        QSqlQuery cursorProbe(database);
+        QVERIFY(cursorProbe.exec(QStringLiteral(R"(
+            SELECT
+                c.id AS class_id,
+                ci.teacher_id
+            FROM classes c
+            LEFT JOIN testing_classes tc
+            ON tc.class_id = c.id
+            LEFT JOIN class_info ci
+            ON ci.class_id = c.id
+            WHERE tc.class_id IS NULL
+            ORDER BY c.name, c.id
+        )")));
+        QVERIFY(cursorProbe.next());
+        QCOMPARE(cursorProbe.value(QStringLiteral("class_id")).toInt(), firstClassId);
+        QCOMPARE(cursorProbe.value(QStringLiteral("teacher_id")).toInt(), 11);
+        QVERIFY(!cursorProbe.next());
+        QVERIFY(cursorProbe.lastError().isValid());
+        const QString cursorError = cursorProbe.lastError().text().trimmed();
+        QVERIFY(!cursorError.isEmpty());
+        QVERIFY(cursorError.contains(QStringLiteral("malformed"), Qt::CaseInsensitive));
+
+        ClassInfoRepository repository(database);
+        const auto assignments = repository.loadClassTeacherAssignments();
+        QVERIFY(!assignments);
+        QVERIFY(assignments.error().contains(
+            QStringLiteral("Loading class teacher assignments failed")
+            ));
+        QVERIFY(assignments.error().contains(cursorError));
 
         database.close();
     }

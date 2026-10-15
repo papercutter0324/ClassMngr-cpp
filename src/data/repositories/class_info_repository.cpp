@@ -5922,6 +5922,14 @@ ClassInfoRepository::loadClassTeacherAssignments()
         });
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading class teacher assignments")
+            ).userMessage());
+    }
+
     return assignments;
 }
 
