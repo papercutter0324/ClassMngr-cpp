@@ -5484,3 +5484,11 @@ Immediate transaction that validates subtype/details, checks slot conflicts,
 and writes the assignment. Use an explicit repository failure kind so only a
 confirmed missing parent maps to `NotFound`; keep legacy missing-row messages,
 subtype/details errors, conflicts, and operational failures intact.
+
+## Phase 2 SQLite cursor-error fixture - 2026-10-15
+
+To test a terminal fetch error after at least one row with Qt's SQLite driver,
+an indexed view can stream a covering-index row before evaluating an
+overflowing expression on the next row. Reproduce the behavior against the
+exact production SELECT first; the regression can then assert both the
+intermediate `next()` error and the repository's no-partial-success result.

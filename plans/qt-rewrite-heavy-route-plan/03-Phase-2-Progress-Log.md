@@ -38352,3 +38352,41 @@ direct SQLite linkage is needed.
 Batch 305 remains active with F917-F919 in order. The 13 official Deferred
 entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F917 accepted; post-F917 Deferred audits clear; F918 selected - 2026-10-15
+
+F917, Testing assignment display read, is accepted at source/test commit
+`e3655c1cf87c12b86ac729a54f5a6bd84a993565`. The exact changed paths are
+`src/data/repositories/testing_block_repository.cpp` and
+`tests/testing_block_repository_tests.cpp`. The repository now rejects a
+terminal `QSqlQuery::lastError()` after the display-record loop through the
+existing `queryFailure` path, so accumulated partial records cannot escape as
+success.
+
+The permanent SQLite view fixture runs the production joined SELECT and
+asserts that Monday 09:00 is returned, the next fetch fails with a valid cursor
+error, and the repository returns failure instead of partial records.
+Independent Tester source-reviewed clean EOF (including empty-list) success,
+typed-port mapping of repository failure to `Technical`, and unavailable-path
+`NotFound` behavior. Those clean-EOF/empty and port-classification edge paths
+were not separately injected or asserted. No consumer changes were made.
+
+Forced sequential Debug builds passed, with no warnings observed:
+
+```text
+cmake --build build/windows-x64-debug --config Debug --target ClassMngr -- /m:1 /p:TrackFileAccess=false /p:ForceRebuild=true
+cmake --build build/windows-x64-debug --config Debug --target ClassMngrTestingBlockRepositoryTests -- /m:1 /p:TrackFileAccess=false /p:ForceRebuild=true
+cmake --build build/windows-x64-debug --config Debug --target ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests -- /m:1 /p:TrackFileAccess=false /p:ForceRebuild=true
+ctest --test-dir build/windows-x64-debug -C Debug -I 20,20 --output-on-failure
+ctest --test-dir build/windows-x64-debug -C Debug -I 390,390 --output-on-failure
+```
+
+Exact CTests #20 and #390 passed 1/1 each. No full suite ran.
+
+Two independent post-F917 audits assessed all 13 exact official Deferred
+entries; none became actionable, and all 13 remain deferred and unchanged.
+F918, Class-teacher assignments read, is next with baseline and acceptance
+pending. F919, Intensive slot-state read, remains queued in Batch 305. Since
+F918 is the second-last remaining candidate, read-only next-batch discovery is
+underway; record its candidates only after the discovery reports arrive.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

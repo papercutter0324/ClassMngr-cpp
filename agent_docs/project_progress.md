@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F916 accepted; F917 selected)
+### Current state - 2026-10-15 (F917 accepted; F918 selected)
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 
@@ -71,7 +71,20 @@ F916 is accepted at source/test commit `edfa7abd` (`Phase2 - Preserve Classes li
 
 Two independent post-F916 audits reviewed all 13 exact official Deferred candidates; none became newly actionable and all remain unchanged. F618 remains deferred pending a reproducible large-export driver and matched memory measurement against a current-source packaged Release build; the existing Release executable is stale relative to export changes.
 
-Batch 305 remains active with three candidates, F917-F919. F917 has its baseline and acceptance recorded at F916 source HEAD `edfa7abd`: `TestingBlockRepository::loadTestingAssignmentDisplayRecords()` checks query execution but not terminal cursor errors, so a fetch failure can return partial assignment display rows as success. Baseline forced sequential Debug builds passed for `ClassMngr` and the direct repository and typed-port targets; exact CTests #20 and #390 passed 1/1. A temporary QSQLITE indexed-view probe yielded one row, then a valid error on the next fetch; the old reader returned that partial row as success. The temporary test source was restored byte-for-byte. F917 acceptance adds a permanent focused regression for that fixture, checks the repository returns failure instead of partial success, preserves clean-empty success, ordering, mapping, one-query behavior, typed `Technical` and unavailable-session `NotFound`, and leaves Schedule widget behavior unchanged. No custom driver or direct SQLite linkage is needed. Post-change verification will build `ClassMngr` and both targets and run only #20 and #390. No full suite ran. Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
+F917, Testing assignment display read, is accepted at source/test commit
+`e3655c1cf87c12b86ac729a54f5a6bd84a993565`. Its repository guard rejects a
+terminal cursor error after the row loop; the permanent indexed-view fixture
+proves that a later fetch failure cannot return the earlier row as success.
+Forced sequential Debug builds passed for `ClassMngr` and the direct
+repository and typed-port targets; exact CTests #20 and #390 passed 1/1 each.
+Clean EOF, including empty-list success, and typed `Technical`/unavailable
+`NotFound` propagation were source-reviewed; those edge paths were not
+separately fault-injected. No full suite ran. Two independent audits found
+none of the 13 official Deferred candidates newly actionable. Batch 305 now
+has F918 and F919 remaining; F918 is selected with baseline and acceptance
+pending. Batch 306 read-only discovery is underway because F918 is the
+second-last candidate. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 
