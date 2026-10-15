@@ -598,6 +598,22 @@ Result<QList<CalendarEvent>> CalendarEventRepository::loadCalendarEventsForRepea
             );
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading calendar repeat series events"),
+                {},
+                QObject::tr("repeat series '%1' from %2")
+                    .arg(
+                        normalizedRepeatSeriesId,
+                        startDate.toString(Qt::ISODate)
+                        )
+                ).userMessage()
+            );
+    }
+
     return events;
 }
 

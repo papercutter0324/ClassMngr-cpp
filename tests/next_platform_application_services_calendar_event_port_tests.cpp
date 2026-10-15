@@ -327,6 +327,7 @@ private slots:
     void reportsInvalidRepeatSeriesEditRequestStructurally();
     void reportsUnavailableRepeatSeriesEditSessionStructurally();
     void reportsRepeatSeriesEditReadFailureStructurally();
+    void reportsRepeatSeriesEditTerminalReadFailureBeforePersistence();
     void reportsRepeatSeriesEditSaveFailureStructurally();
     void deletesValidRepeatSeriesSuffix();
     void deletesMissingRepeatSeriesSuffixSuccessfully();
@@ -2919,6 +2920,213 @@ reportsRepeatSeriesEditReadFailureStructurally()
     QVERIFY(
         edited.error().message.find("calendar") != std::string::npos
         || edited.error().message.find("Calendar") != std::string::npos
+        );
+}
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+reportsRepeatSeriesEditTerminalReadFailureBeforePersistence()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    QVERIFY(session->calendarEventRepository());
+    const QSqlDatabase database = session->database();
+
+    QSqlQuery setup(database);
+    QVERIFY2(
+        setup.exec(QStringLiteral("PRAGMA foreign_keys = OFF")),
+        qPrintable(setup.lastError().text())
+        );
+    QVERIFY2(
+        setup.exec(QStringLiteral("DROP TABLE calendar_events")),
+        qPrintable(setup.lastError().text())
+        );
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE TABLE calendar_events_f928_backing (
+            id INTEGER PRIMARY KEY,
+            repeat_series_id TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            title TEXT NOT NULL,
+            payload TEXT NOT NULL
+        )
+    )")), qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE INDEX calendar_events_f928_scan
+        ON calendar_events_f928_backing (
+            repeat_series_id,
+            start_date,
+            start_time,
+            title,
+            id,
+            payload
+        )
+    )")), qPrintable(setup.lastError().text()));
+
+    QSqlQuery insert(database);
+    QVERIFY2(insert.prepare(QStringLiteral(R"(
+        INSERT INTO calendar_events_f928_backing (
+            id,
+            repeat_series_id,
+            start_date,
+            start_time,
+            title,
+            payload
+        ) VALUES (?, ?, ?, ?, ?, ?)
+    )")), qPrintable(insert.lastError().text()));
+    insert.bindValue(0, 1);
+    insert.bindValue(1, QStringLiteral("series-edit"));
+    insert.bindValue(2, QStringLiteral("2026-12-08"));
+    insert.bindValue(3, QStringLiteral("09:00"));
+    insert.bindValue(4, QStringLiteral("Original valid occurrence"));
+    insert.bindValue(5, QStringLiteral(
+        R"({"event_type":"Meeting","time_status":"Timed","all_day":0,"end_date":"2026-12-08","end_time":"10:00"})"
+        ));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    insert.bindValue(0, 2);
+    insert.bindValue(1, QStringLiteral("series-edit"));
+    insert.bindValue(2, QStringLiteral("2026-12-09"));
+    insert.bindValue(3, QStringLiteral("09:00"));
+    insert.bindValue(4, QStringLiteral("Later malformed occurrence"));
+    insert.bindValue(5, QStringLiteral("{"));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE VIEW calendar_events AS
+        SELECT
+            id,
+            title,
+            json_extract(payload, '$.event_type') AS event_type,
+            json_extract(payload, '$.time_status') AS time_status,
+            repeat_series_id,
+            json_extract(payload, '$.all_day') AS all_day,
+            start_date,
+            start_time,
+            json_extract(payload, '$.end_date') AS end_date,
+            json_extract(payload, '$.end_time') AS end_time
+        FROM calendar_events_f928_backing
+        INDEXED BY calendar_events_f928_scan
+    )")), qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE TRIGGER calendar_events_f928_reject_update
+        INSTEAD OF UPDATE ON calendar_events
+        BEGIN
+            SELECT RAISE(ABORT, 'F928_PERSISTENCE_REACHED');
+        END
+    )")), qPrintable(setup.lastError().text()));
+
+    QSqlQuery probe(database);
+    QVERIFY2(probe.prepare(QStringLiteral(R"(
+        SELECT
+            id,
+            title,
+            event_type,
+            time_status,
+            repeat_series_id,
+            all_day,
+            start_date,
+            start_time,
+            end_date,
+            end_time
+        FROM calendar_events
+        WHERE repeat_series_id=?
+        AND start_date >= ?
+        ORDER BY start_date, start_time, title, id
+    )")), qPrintable(probe.lastError().text()));
+    probe.addBindValue(QStringLiteral("series-edit"));
+    probe.addBindValue(QStringLiteral("2026-12-08"));
+    QVERIFY2(probe.exec(), qPrintable(probe.lastError().text()));
+    QVERIFY2(probe.next(), qPrintable(probe.lastError().text()));
+    QCOMPARE(probe.value(QStringLiteral("id")).toLongLong(), qint64(1));
+    QCOMPARE(
+        probe.value(QStringLiteral("title")).toString(),
+        QStringLiteral("Original valid occurrence")
+        );
+    QCOMPARE(
+        probe.value(QStringLiteral("event_type")).toString(),
+        QStringLiteral("Meeting")
+        );
+    QVERIFY(!probe.next());
+    QVERIFY2(
+        probe.lastError().isValid(),
+        "The second production-shaped fetch must fail at the malformed JSON row."
+        );
+    QVERIFY2(
+        probe.lastError().text().contains(
+            QStringLiteral("malformed JSON"),
+            Qt::CaseInsensitive
+            ),
+        qPrintable(probe.lastError().text())
+        );
+
+    ApplicationServicesCalendarEventSeriesEditPort port(services);
+    const auto edited = port.editRepeatSeriesFromDate(
+        validSeriesEditRequest()
+        );
+
+    verifyFailure(edited, ErrorCode::Technical);
+    const QString diagnostic = QString::fromStdString(edited.error().message);
+    QVERIFY2(
+        diagnostic.contains(
+            QStringLiteral("Loading calendar repeat series events"),
+            Qt::CaseInsensitive
+            ),
+        qPrintable(diagnostic)
+        );
+    QVERIFY2(
+        !diagnostic.contains(QStringLiteral("F928_PERSISTENCE_REACHED")),
+        qPrintable(diagnostic)
+        );
+
+    QSqlQuery count(database);
+    QVERIFY2(
+        count.exec(QStringLiteral(
+            "SELECT COUNT(*) FROM calendar_events_f928_backing"
+            )),
+        qPrintable(count.lastError().text())
+        );
+    QVERIFY(count.next());
+    QCOMPARE(count.value(0).toInt(), 2);
+
+    QSqlQuery unchanged(database);
+    QVERIFY2(unchanged.exec(QStringLiteral(R"(
+        SELECT
+            id,
+            repeat_series_id,
+            start_date,
+            start_time,
+            title,
+            payload
+        FROM calendar_events_f928_backing
+        WHERE id = 1
+    )")), qPrintable(unchanged.lastError().text()));
+    QVERIFY(unchanged.next());
+    QCOMPARE(unchanged.value(QStringLiteral("id")).toInt(), 1);
+    QCOMPARE(
+        unchanged.value(QStringLiteral("repeat_series_id")).toString(),
+        QStringLiteral("series-edit")
+        );
+    QCOMPARE(
+        unchanged.value(QStringLiteral("start_date")).toString(),
+        QStringLiteral("2026-12-08")
+        );
+    QCOMPARE(
+        unchanged.value(QStringLiteral("start_time")).toString(),
+        QStringLiteral("09:00")
+        );
+    QCOMPARE(
+        unchanged.value(QStringLiteral("title")).toString(),
+        QStringLiteral("Original valid occurrence")
+        );
+    QCOMPARE(
+        unchanged.value(QStringLiteral("payload")).toString(),
+        QStringLiteral(
+            R"({"event_type":"Meeting","time_status":"Timed","all_day":0,"end_date":"2026-12-08","end_time":"10:00"})"
+            )
         );
 }
 
