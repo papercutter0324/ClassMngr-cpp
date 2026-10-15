@@ -98,6 +98,7 @@ private slots:
     void readsAllFieldsInRepositoryOrderFromTheActiveSession();
     void distinguishesUnavailableSessionFromRepositoryFailureWithoutFallback();
     void rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow();
+    void rejectsTerminalCursorErrorWithoutReturningPartialDirectory();
 };
 
 void NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests::
@@ -226,6 +227,131 @@ rejectsUnrepresentableIdAsTechnicalFailureWithoutChangingStoredRow()
     };
     QVERIFY(!after.next());
     QCOMPARE(storedRowAfter, storedRowBefore);
+}
+
+void NextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests::
+rejectsTerminalCursorErrorWithoutReturningPartialDirectory()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery setup(database);
+    QVERIFY2(setup.exec(QStringLiteral("DROP TABLE native_english_teachers")),
+        qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE TABLE native_english_teachers_json_backing (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            position TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            birthday_json TEXT NOT NULL,
+            nationality TEXT NOT NULL,
+            email TEXT NOT NULL
+        )
+    )")), qPrintable(setup.lastError().text()));
+
+    QSqlQuery insert(database);
+    QVERIFY2(insert.prepare(QStringLiteral(R"(
+        INSERT INTO native_english_teachers_json_backing
+            (id, name, position, phone_number, birthday_json, nationality, email)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    )")), qPrintable(insert.lastError().text()));
+    insert.addBindValue(1);
+    insert.addBindValue(QStringLiteral("Valid Native"));
+    insert.addBindValue(QStringLiteral("Co-ordinator"));
+    insert.addBindValue(QStringLiteral("010-9999-0001"));
+    insert.addBindValue(QStringLiteral(R"({"birthday":"01-02"})"));
+    insert.addBindValue(QStringLiteral("Korea"));
+    insert.addBindValue(QStringLiteral("valid@example.test"));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    insert.bindValue(0, 2);
+    insert.bindValue(1, QStringLiteral("Broken Native"));
+    insert.bindValue(2, QStringLiteral("NET"));
+    insert.bindValue(3, QStringLiteral("010-9999-0002"));
+    insert.bindValue(4, QStringLiteral("{"));
+    insert.bindValue(5, QStringLiteral("Canada"));
+    insert.bindValue(6, QStringLiteral("broken@example.test"));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE INDEX native_english_teachers_cursor_error_order_idx
+        ON native_english_teachers_json_backing (
+            CASE position
+                WHEN 'Co-ordinator' THEN 1
+                WHEN 'Team Leader' THEN 2
+                WHEN 'M3 Song''s' THEN 3
+                WHEN 'M2 Song''s' THEN 4
+                WHEN 'M1 Song''s' THEN 5
+                WHEN 'E6 Song''s' THEN 6
+                WHEN 'E5 Athena' THEN 7
+                WHEN 'NET' THEN 8
+                ELSE 9
+            END,
+            name COLLATE NOCASE,
+            id
+        )
+    )")), qPrintable(setup.lastError().text()));
+    QVERIFY2(setup.exec(QStringLiteral(R"(
+        CREATE VIEW native_english_teachers AS
+        SELECT
+            id,
+            name,
+            position,
+            phone_number,
+            json_extract(birthday_json, '$.birthday') AS birthday,
+            nationality,
+            email
+        FROM native_english_teachers_json_backing
+    )")), qPrintable(setup.lastError().text()));
+
+    QSqlQuery cursorProbe(database);
+    QVERIFY2(cursorProbe.exec(QStringLiteral(R"(
+        SELECT id, name, position, phone_number, birthday, nationality, email
+        FROM native_english_teachers
+        ORDER BY CASE position
+            WHEN 'Co-ordinator' THEN 1
+            WHEN 'Team Leader' THEN 2
+            WHEN 'M3 Song''s' THEN 3
+            WHEN 'M2 Song''s' THEN 4
+            WHEN 'M1 Song''s' THEN 5
+            WHEN 'E6 Song''s' THEN 6
+            WHEN 'E5 Athena' THEN 7
+            WHEN 'NET' THEN 8
+            ELSE 9
+        END, name COLLATE NOCASE, id
+    )")), qPrintable(cursorProbe.lastError().text()));
+    QVERIFY(cursorProbe.next());
+    QCOMPARE(cursorProbe.value(QStringLiteral("id")).toInt(), 1);
+    QCOMPARE(cursorProbe.value(QStringLiteral("name")).toString(),
+        QStringLiteral("Valid Native"));
+    QCOMPARE(cursorProbe.value(QStringLiteral("birthday")).toString(),
+        QStringLiteral("01-02"));
+    QVERIFY(!cursorProbe.next());
+    QVERIFY(cursorProbe.lastError().isValid());
+    const QString cursorError = cursorProbe.lastError().text().trimmed();
+    QVERIFY(!cursorError.isEmpty());
+    QVERIFY(cursorError.contains(QStringLiteral("malformed"), Qt::CaseInsensitive));
+
+    const auto directResult = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(!directResult);
+    QVERIFY(directResult.error().contains(
+        QStringLiteral("Loading Native English Teacher directory")
+        ));
+    QVERIFY(directResult.error().contains(cursorError));
+
+    Platform::ApplicationServicesNativeEnglishTeacherDirectoryReadPort port(
+        &services);
+    const auto portResult = port.readNativeEnglishTeacherDirectory();
+    QVERIFY(!portResult);
+    QCOMPARE(portResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!portResult.error().recoverable);
+    QVERIFY(!portResult.error().message.empty());
 }
 
 QTEST_MAIN(

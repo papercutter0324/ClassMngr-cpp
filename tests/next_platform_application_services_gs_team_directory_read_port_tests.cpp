@@ -164,6 +164,7 @@ class NextPlatformApplicationServicesGsTeamDirectoryReadPortTests final
 private slots:
     void readsMappedRowsInRepositoryOrderFromActiveSession();
     void reportsUnavailableSessionSeparatelyFromRepositoryFailure();
+    void rejectsTerminalCursorFailureWithoutPartialSnapshot();
     void rejectsWidePersistedIdsWithoutChangingStoredRows();
 };
 
@@ -239,6 +240,133 @@ reportsUnavailableSessionSeparatelyFromRepositoryFailure()
     unavailable = port.readGsTeamDirectory();
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+}
+
+void NextPlatformApplicationServicesGsTeamDirectoryReadPortTests::
+rejectsTerminalCursorFailureWithoutPartialSnapshot()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const QSqlDatabase database = services.databaseSession()->database();
+
+    QSqlQuery schema(database);
+    QVERIFY2(schema.exec(QStringLiteral("DROP TABLE gs_team")),
+        qPrintable(schema.lastError().text()));
+    QVERIFY2(schema.exec(QStringLiteral(R"(
+        CREATE TABLE gs_team_cursor_backing (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            korean_name TEXT NOT NULL,
+            position TEXT NOT NULL,
+            phone_number TEXT NOT NULL,
+            birthday_json TEXT NOT NULL
+        )
+    )")), qPrintable(schema.lastError().text()));
+    QVERIFY2(schema.exec(QStringLiteral(R"(
+        CREATE INDEX gs_team_cursor_order_idx
+        ON gs_team_cursor_backing (
+            CASE position
+                WHEN 'Branch Manager' THEN 1
+                WHEN 'M3' THEN 2
+                WHEN 'M2' THEN 3
+                WHEN 'M1' THEN 4
+                WHEN 'C3' THEN 5
+                WHEN 'C2' THEN 6
+                WHEN 'C1' THEN 7
+                ELSE 8
+            END,
+            CASE WHEN name='' THEN korean_name ELSE name END COLLATE NOCASE,
+            id
+        )
+    )")), qPrintable(schema.lastError().text()));
+
+    QSqlQuery insert(database);
+    QVERIFY2(insert.prepare(QStringLiteral(R"(
+        INSERT INTO gs_team_cursor_backing
+            (id, name, korean_name, position, phone_number, birthday_json)
+        VALUES (?, ?, ?, ?, ?, ?)
+    )")), qPrintable(insert.lastError().text()));
+    insert.addBindValue(1);
+    insert.addBindValue(QStringLiteral("Valid GS"));
+    insert.addBindValue(QStringLiteral("Valid Korean"));
+    insert.addBindValue(QStringLiteral("M1"));
+    insert.addBindValue(QStringLiteral("010-2000-0001"));
+    insert.addBindValue(QStringLiteral(R"({"birthday":"01-02"})"));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    insert.bindValue(0, 2);
+    insert.bindValue(1, QStringLiteral("z Malformed GS"));
+    insert.bindValue(2, QStringLiteral("Malformed Korean"));
+    insert.bindValue(3, QStringLiteral("M1"));
+    insert.bindValue(4, QStringLiteral("010-2000-0002"));
+    insert.bindValue(5, QStringLiteral("{"));
+    QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+
+    QVERIFY2(schema.exec(QStringLiteral(R"(
+        CREATE VIEW gs_team AS
+        SELECT
+            id,
+            name,
+            korean_name,
+            position,
+            phone_number,
+            json_extract(birthday_json, '$.birthday') AS birthday
+        FROM gs_team_cursor_backing
+    )")), qPrintable(schema.lastError().text()));
+
+    // Keep this SELECT identical to GsTeamRepository::getAll() so this probe
+    // proves execution succeeds before malformed JSON stops the ordered cursor.
+    QSqlQuery rawQuery(database);
+    QVERIFY2(rawQuery.exec(QStringLiteral(R"(
+        SELECT id, name, korean_name, position, phone_number, birthday
+        FROM gs_team
+        ORDER BY CASE position
+            WHEN 'Branch Manager' THEN 1
+            WHEN 'M3' THEN 2
+            WHEN 'M2' THEN 3
+            WHEN 'M1' THEN 4
+            WHEN 'C3' THEN 5
+            WHEN 'C2' THEN 6
+            WHEN 'C1' THEN 7
+            ELSE 8
+        END,
+        CASE WHEN name='' THEN korean_name ELSE name END COLLATE NOCASE,
+        id
+    )")), qPrintable(rawQuery.lastError().text()));
+    QVERIFY2(rawQuery.next(),
+        "the first production-query row must be the valid GS Team member");
+    QCOMPARE(rawQuery.value(QStringLiteral("name")).toString(),
+        QStringLiteral("Valid GS"));
+    QVERIFY2(!rawQuery.next(),
+        "the malformed birthday JSON must terminate the cursor after one row");
+    const QSqlError rawCursorError = rawQuery.lastError();
+    QVERIFY2(rawCursorError.isValid(),
+        "the terminal cursor error must be valid");
+    QVERIFY2(rawCursorError.text().contains(
+            QStringLiteral("malformed JSON"), Qt::CaseInsensitive),
+        qPrintable(rawCursorError.text()));
+    rawQuery.finish();
+
+    const auto repositoryResult = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(!repositoryResult);
+    QVERIFY(repositoryResult.error().contains(
+        QStringLiteral("Loading GS Team directory failed")));
+    QVERIFY(repositoryResult.error().contains(
+        QStringLiteral("malformed JSON"), Qt::CaseInsensitive));
+
+    Platform::ApplicationServicesGsTeamDirectoryReadPort port(&services);
+    const Application::GsTeamDirectoryReadResult portResult =
+        port.readGsTeamDirectory();
+    QVERIFY(!portResult);
+    QCOMPARE(portResult.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!portResult.error().recoverable);
+    QVERIFY(!portResult.error().message.empty());
+    QVERIFY(portResult.error().message.find("malformed JSON")
+        != std::string::npos);
 }
 
 void NextPlatformApplicationServicesGsTeamDirectoryReadPortTests::

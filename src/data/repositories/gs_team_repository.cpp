@@ -88,6 +88,14 @@ Result<QList<GsTeamMember>> GsTeamRepository::getAll() const
         result.append(member);
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading GS Team directory")
+            ).userMessage());
+    }
+
     return result;
 }
 

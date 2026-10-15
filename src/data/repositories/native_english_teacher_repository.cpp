@@ -95,6 +95,16 @@ Result<QList<NativeEnglishTeacher>> NativeEnglishTeacherRepository::getAll() con
         result.append(teacher);
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(
+                query,
+                QObject::tr("Loading Native English Teacher directory")
+                ).userMessage()
+            );
+    }
+
     return result;
 }
 
