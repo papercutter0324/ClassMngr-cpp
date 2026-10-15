@@ -5883,6 +5883,15 @@ ClassInfoRepository::loadSubPrepRosterOutputScheduleRecords(
         });
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(SqlQueryUtils::errorFor(
+            query,
+            QObject::tr("Loading scoped Sub Prep roster-output schedule"),
+            identity
+            ).userMessage());
+    }
+
     return records;
 }
 
