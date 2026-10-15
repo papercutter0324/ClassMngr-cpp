@@ -119,7 +119,10 @@ Result<TeacherImportSummary> TeacherImportRepository::importTeachers(
     const TeacherImportUseCaseRequest request =
         ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(plan);
     const auto persistence = makeTeacherImportSqlPersistenceAdapter(m_database);
-    const auto applied = TeacherImportUseCase::execute(request, *persistence);
+    const auto applied = TeacherImportUseCase::execute(
+        request,
+        *persistence,
+        ClassMngr::Data::Legacy::Detail::nativeEnglishNameKey);
     if (!applied)
     {
         logRollbackFailure(applied.error());

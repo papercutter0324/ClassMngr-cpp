@@ -5,6 +5,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,33 @@ void require(const bool condition, const char* message)
     {
         throw std::runtime_error(message);
     }
+}
+
+std::u16string nativeEnglishNameKeyForTest(const std::u16string_view value)
+{
+    // This ASCII-only policy exercises the injected app-less contract. The Qt
+    // apply-port integration test covers production simplification and folding.
+    std::u16string key;
+    bool pendingSpace = false;
+    for (const char16_t character : value)
+    {
+        const bool whitespace = character == u' ' || character == u'\t'
+            || character == u'\r' || character == u'\n';
+        if (whitespace)
+        {
+            pendingSpace = !key.empty();
+            continue;
+        }
+        if (pendingSpace)
+        {
+            key.push_back(u' ');
+            pendingSpace = false;
+        }
+        key.push_back(character >= u'A' && character <= u'Z'
+                ? static_cast<char16_t>(character - u'A' + u'a')
+                : character);
+    }
+    return key;
 }
 
 TeacherImportPersistenceFailure failure(
@@ -131,7 +159,7 @@ public:
         };
         state.nativeEnglishTeachers.push_back({
             .profile = profile,
-            .normalizedMatchKey = source.normalizedMatchKey
+            .normalizedMatchKey = nativeEnglishNameKeyForTest(source.name)
         });
         return {};
     }
@@ -282,15 +310,16 @@ TeacherImportKoreanSource koreanSource(
 }
 
 TeacherImportNativeEnglishSource nativeSource(
-    const std::string& validationKey,
-    std::u16string key,
-    std::u16string name
+    std::u16string name,
+    std::u16string diagnosticName = {}
     )
 {
+    if (diagnosticName.empty())
+    {
+        diagnosticName = name;
+    }
     return {
-        .validationKey = validationKey,
-        .normalizedMatchKey = std::move(key),
-        .diagnosticName = name,
+        .diagnosticName = std::move(diagnosticName),
         .name = std::move(name)
     };
 }
@@ -324,14 +353,6 @@ void appendKoreanValidation(
     request.validation.koreanTeacherKeys.push_back(key);
 }
 
-void appendNativeValidation(
-    TeacherImportUseCaseRequest& request,
-    const std::string& key
-    )
-{
-    request.validation.nativeEnglishTeacherKeys.push_back(key);
-}
-
 void appendGsValidation(
     TeacherImportUseCaseRequest& request,
     const std::string& english,
@@ -339,6 +360,15 @@ void appendGsValidation(
     )
 {
     request.validation.gsTeamMemberKeys.push_back({english, korean});
+}
+
+std::expected<TeacherImportUseCaseResult, TeacherImportUseCaseError> runUseCase(
+    const TeacherImportUseCaseRequest& request,
+    TeacherImportPersistencePort& persistence
+    )
+{
+    return TeacherImportUseCase::execute(
+        request, persistence, nativeEnglishNameKeyForTest);
 }
 
 KoreanTeacherImportProfile storedKorean(
@@ -378,13 +408,12 @@ void successfulOrchestrationAcrossNamespaces()
         }
     };
 
-    auto nativeUpdate = nativeSource("alex", u"alex", u"Alex");
+    auto nativeUpdate = nativeSource(u"Alex");
     nativeUpdate.position = u"Team Leader";
-    auto nativeCreate = nativeSource("jamie", u"jamie", u"Jamie");
-    auto nativeUnchanged = nativeSource("robin", u"robin", u"Robin");
+    auto nativeCreate = nativeSource(u"Jamie");
+    auto nativeUnchanged = nativeSource(u"Robin");
     request.nativeEnglishTeachers = {
         nativeUpdate, nativeCreate, nativeUnchanged};
-    request.validation.nativeEnglishTeacherKeys = {"alex", "jamie", "robin"};
 
     auto gsUpdate = gsSource("taylor", "kim", u"taylor", u"김하늘",
                              u"Taylor Updated", u"김하늘");
@@ -444,7 +473,7 @@ void successfulOrchestrationAcrossNamespaces()
                     != persistence.state.koreanTeachers[1].key,
             "new Korean test key unexpectedly matches stored teachers");
 
-    const auto result = TeacherImportUseCase::execute(request, persistence);
+    const auto result = runUseCase(request, persistence);
     require(result.has_value(), "valid cross-namespace plan did not apply");
     require(result->koreanTeachers == TeacherImportCounts{1, 1, 0},
             "Korean create/update counts are incorrect");
@@ -487,13 +516,12 @@ void noMatchCreatesAcrossAllNamespaces()
     TeacherImportUseCaseRequest request = emptyValidRequest();
     request.koreanTeachers = {koreanSource("kim", u"김하늘")};
     request.validation.koreanTeacherKeys = {"kim"};
-    request.nativeEnglishTeachers = {nativeSource("alex", u"alex", u"Alex")};
-    request.validation.nativeEnglishTeacherKeys = {"alex"};
+    request.nativeEnglishTeachers = {nativeSource(u"Alex")};
     request.gsTeamMembers = {gsSource("taylor", "", u"taylor", {}, u"Taylor")};
     request.validation.gsTeamMemberKeys = {{"taylor", ""}};
 
     FakeTeacherImportPersistence persistence;
-    const auto result = TeacherImportUseCase::execute(request, persistence);
+    const auto result = runUseCase(request, persistence);
     require(result.has_value(), "no-match plan did not create records");
     require(result->koreanTeachers == TeacherImportCounts{1, 0, 0}
                 && result->nativeEnglishTeachers == TeacherImportCounts{1, 0, 0}
@@ -512,7 +540,7 @@ void reviewAndPlanRejectionPrecedePersistence()
             .decisions = {{"M1", TeacherImportGroupMode::All, {}}}
         };
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
                         == TeacherImportPlanValidationIssue::ReviewSelectionMismatch,
@@ -530,7 +558,7 @@ void reviewAndPlanRejectionPrecedePersistence()
             .decisions = {{"M1", TeacherImportGroupMode::Selected, {4}}}
         };
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result && result.error().kind == TeacherImportUseCaseErrorKind::InvalidReview,
                 "invalid review index was not rejected");
         require(persistence.beginCount == 0,
@@ -540,17 +568,189 @@ void reviewAndPlanRejectionPrecedePersistence()
     {
         TeacherImportUseCaseRequest request = emptyValidRequest();
         request.nativeEnglishTeachers = {
-            nativeSource("same", u"same", u"Same"),
-            nativeSource("same", u"same", u" same ")};
-        request.validation.nativeEnglishTeacherKeys = {"same", "same"};
+            nativeSource(u"Same"),
+            nativeSource(u" same ")};
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
                         == TeacherImportPlanValidationIssue::DuplicateNativeEnglishTeacherName,
                 "duplicate normalized plan was not rejected");
         require(persistence.beginCount == 0,
                 "invalid normalized plan opened a transaction");
+    }
+}
+
+void nativeEnglishSourceNameOwnsValidationAndMatching()
+{
+    const auto sameProfile = [](
+        const NativeEnglishTeacherImportProfile& left,
+        const NativeEnglishTeacherImportProfile& right
+        )
+    {
+        return left.id == right.id
+            && left.name == right.name
+            && left.position == right.position
+            && left.phoneNumber == right.phoneNumber
+            && left.birthday == right.birthday
+            && left.nationality == right.nationality
+            && left.email == right.email;
+    };
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.nativeEnglishTeachers = {
+            nativeSource({}, u"Original empty-name label")};
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = runUseCase(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::MissingNativeEnglishTeacherName,
+                "missing Native English source name was not rejected");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "missing Native English source name reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.nativeEnglishTeachers = {
+            nativeSource(u" \t", u"Whitespace-only Native name")};
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = runUseCase(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::MissingNativeEnglishTeacherName,
+                "Native English name normalized to empty was not rejected");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "empty normalized Native English name reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.nativeEnglishTeachers = {
+            nativeSource(u"Same"), nativeSource(u" same ")};
+        request.gsTeamMembers = {
+            gsSource("same", "", u"same", {}, u"Same"),
+            gsSource("same", "", u"same", {}, u"Same duplicate")};
+        request.validation.gsTeamMemberKeys = {{"same", ""}, {"same", ""}};
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = runUseCase(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::DuplicateNativeEnglishTeacherName,
+                "GS duplicate preceded Native English duplicate validation");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "duplicate Native English source names reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.nativeEnglishTeachers = {
+            nativeSource(u" Jamie ", u"Original Jamie diagnostic")};
+        request.nativeEnglishTeachers.front().position = u"Lead";
+
+        FakeTeacherImportPersistence persistence;
+        persistence.state.nativeEnglishTeachers = {
+            {
+                .profile = {
+                    .id = 41,
+                    .name = u"Jamie",
+                    .position = u"NET",
+                    .phoneNumber = u"010-1111",
+                    .birthday = u"03-07",
+                    .nationality = u"Canadian",
+                    .email = u"jamie@example.com"
+                },
+                .normalizedMatchKey = u"jamie"
+            },
+            {
+                .profile = {
+                    .id = 42,
+                    .name = u"Alex",
+                    .position = u"NET",
+                    .phoneNumber = u"010-2222",
+                    .birthday = u"04-08",
+                    .nationality = u"American",
+                    .email = u"alex@example.com"
+                },
+                .normalizedMatchKey = u"alex"
+            }
+        };
+        const NativeEnglishTeacherImportProfile originalAlex =
+            persistence.state.nativeEnglishTeachers[1].profile;
+
+        const auto result = runUseCase(request, persistence);
+        require(result.has_value()
+                    && result->nativeEnglishTeachers == TeacherImportCounts{0, 1, 0},
+                "source-name derived key did not produce the unique Jamie match");
+        const NativeEnglishTeacherImportProfile expectedJamie{
+            .id = 41,
+            .name = u" Jamie ",
+            .position = u"Lead",
+            .phoneNumber = u"010-1111",
+            .birthday = u"03-07",
+            .nationality = u"Canadian",
+            .email = u"jamie@example.com"
+        };
+        require(sameProfile(
+                    persistence.state.nativeEnglishTeachers[0].profile,
+                    expectedJamie),
+                "source-name match did not update Jamie's profile fields");
+        require(sameProfile(
+                    persistence.state.nativeEnglishTeachers[1].profile,
+                    originalAlex),
+                "source-name match changed the differently named Alex profile");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        auto newTeacher = nativeSource(u"Jordan");
+        newTeacher.position = u"Teacher";
+        request.nativeEnglishTeachers = {newTeacher};
+
+        FakeTeacherImportPersistence persistence;
+        persistence.state.nativeEnglishTeachers = {
+            {
+                .profile = {
+                    .id = 51,
+                    .name = u"Alex",
+                    .position = u"NET",
+                    .phoneNumber = u"010-3333",
+                    .birthday = u"05-09",
+                    .nationality = u"Australian",
+                    .email = u"alex@example.com"
+                },
+                .normalizedMatchKey = u"alex"
+            }
+        };
+        const NativeEnglishTeacherImportProfile originalAlex =
+            persistence.state.nativeEnglishTeachers.front().profile;
+
+        const auto result = runUseCase(request, persistence);
+        require(result.has_value()
+                    && result->nativeEnglishTeachers == TeacherImportCounts{1, 0, 0},
+                "source name without a stored match did not create a teacher");
+        require(persistence.state.nativeEnglishTeachers.size() == 2,
+                "Native English no-match create changed the stored row count incorrectly");
+        require(sameProfile(
+                    persistence.state.nativeEnglishTeachers[0].profile,
+                    originalAlex),
+                "Native English no-match create changed the differently named Alex profile");
+        const NativeEnglishTeacherImportProfile expectedJordan{
+            .id = 100,
+            .name = u"Jordan",
+            .position = u"Teacher"
+        };
+        require(sameProfile(
+                    persistence.state.nativeEnglishTeachers[1].profile,
+                    expectedJordan),
+                "Native English no-match create did not persist the source profile");
     }
 }
 
@@ -565,7 +765,7 @@ void derivedKoreanIdentitiesAreValidatedBeforePersistence()
         request.validation.koreanTeacherKeys = {"kim-a", "kim-b"};
 
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -581,7 +781,7 @@ void derivedKoreanIdentitiesAreValidatedBeforePersistence()
         request.validation.koreanTeacherKeys = {"nonempty-validation-key"};
 
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -610,7 +810,7 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
         request.validation.koreanTeacherKeys[1] = "other-key";
 
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -628,7 +828,7 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
         };
 
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidReview
                     && result.error().reviewIssue
@@ -643,7 +843,7 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
         request.sourceDateIso = "2023-02-29";
 
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -656,13 +856,12 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
     {
         TeacherImportUseCaseRequest request = duplicateDerivedRequest();
         request.nativeEnglishTeachers = {
-            nativeSource("same", u"same", u"Same"),
-            nativeSource("same", u"same", u"Same duplicate")
+            nativeSource(u"Same"),
+            nativeSource(u"Same duplicate")
         };
-        request.validation.nativeEnglishTeacherKeys = {"same", "same"};
 
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -679,7 +878,7 @@ void sourceDateValidationPrecedesPersistenceAndPreservesIsoDate()
         TeacherImportUseCaseRequest request = emptyValidRequest();
         request.sourceDateIso = "2023-02-29";
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -693,7 +892,7 @@ void sourceDateValidationPrecedesPersistenceAndPreservesIsoDate()
         TeacherImportUseCaseRequest request = emptyValidRequest();
         request.sourceDateIso = "2024-02-29";
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(result.has_value(), "valid leap-day source date was rejected");
         require(persistence.state.latestSourceDateIso == "2024-02-29",
                 "valid leap-day source date was not forwarded unchanged");
@@ -704,7 +903,7 @@ void sourceDateValidationPrecedesPersistenceAndPreservesIsoDate()
         request.sourceDateIso = "2024-02-29";
         request.validation.sourceDateValid = false;
         FakeTeacherImportPersistence persistence;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
                     && result.error().validationIssue
@@ -720,20 +919,22 @@ void ambiguousMatchRollsBackEarlierWrites()
     TeacherImportUseCaseRequest request = emptyValidRequest();
     request.koreanTeachers = {koreanSource("new", u"이서연")};
     request.validation.koreanTeacherKeys = {"new"};
-    request.nativeEnglishTeachers = {nativeSource("jamie", u"jamie", u"Jamie")};
-    request.validation.nativeEnglishTeacherKeys = {"jamie"};
+    request.nativeEnglishTeachers = {
+        nativeSource(u"Jamie", u"Original Jamie diagnostic")};
 
     FakeTeacherImportPersistence persistence;
     persistence.state.nativeEnglishTeachers = {
         {.profile = {.id = 1, .name = u"Jamie"}, .normalizedMatchKey = u"jamie"},
         {.profile = {.id = 2, .name = u" jamie "}, .normalizedMatchKey = u"jamie"}
     };
-    const auto result = TeacherImportUseCase::execute(request, persistence);
+    const auto result = runUseCase(request, persistence);
     require(!result
                 && result.error().kind == TeacherImportUseCaseErrorKind::AmbiguousStoredMatch
                 && result.error().recordNamespace
                     == TeacherImportRecordNamespace::NativeEnglishTeacher,
             "multiple stored matches were not rejected by the use case");
+    require(result.error().matchLabel == u"Original Jamie diagnostic",
+            "Native English ambiguity lost the original diagnostic label");
     require(persistence.state.koreanTeachers.empty()
                 && persistence.state.nativeEnglishTeachers.size() == 2
                 && !persistence.state.latestSourceDateIso,
@@ -751,7 +952,7 @@ void queryWriteAndCommitFailuresRollBack()
     {
         FakeTeacherImportPersistence persistence;
         persistence.failAt = TeacherImportPersistenceOperation::LoadSnapshot;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().kind
                         == TeacherImportUseCaseErrorKind::PersistenceFailure
@@ -770,7 +971,7 @@ void queryWriteAndCommitFailuresRollBack()
         FakeTeacherImportPersistence persistence;
         persistence.failAt = TeacherImportPersistenceOperation::LoadSnapshot;
         persistence.failRollback = true;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result && result.error().rollbackFailure.has_value()
                     && result.error().rollbackFailure->operation
                         == TeacherImportPersistenceOperation::RollbackTransaction,
@@ -782,7 +983,7 @@ void queryWriteAndCommitFailuresRollBack()
     {
         FakeTeacherImportPersistence persistence;
         persistence.failAt = TeacherImportPersistenceOperation::CreateKoreanTeacher;
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().persistenceFailure.operation
                         == TeacherImportPersistenceOperation::CreateKoreanTeacher,
@@ -796,7 +997,7 @@ void queryWriteAndCommitFailuresRollBack()
         FakeTeacherImportPersistence persistence;
         persistence.failAt = TeacherImportPersistenceOperation::CommitTransaction;
         persistence.state.latestSourceDateIso = "2026-01-01";
-        const auto result = TeacherImportUseCase::execute(request, persistence);
+        const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().persistenceFailure.operation
                         == TeacherImportPersistenceOperation::CommitTransaction,
@@ -817,6 +1018,7 @@ int main()
         successfulOrchestrationAcrossNamespaces();
         noMatchCreatesAcrossAllNamespaces();
         reviewAndPlanRejectionPrecedePersistence();
+        nativeEnglishSourceNameOwnsValidationAndMatching();
         derivedKoreanIdentitiesAreValidatedBeforePersistence();
         derivedKoreanIdentityValidationPreservesPrecedence();
         sourceDateValidationPrecedesPersistenceAndPreservesIsoDate();

@@ -48,7 +48,10 @@ public:
             ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(
                 *normalizedPlan);
         const auto imported =
-            Application::TeacherImportUseCase::execute(request, *persistence);
+            Application::TeacherImportUseCase::execute(
+                request,
+                *persistence,
+                ClassMngr::Data::Legacy::Detail::nativeEnglishNameKey);
         if (!imported)
         {
             TeacherImportRepository::logRollbackFailure(imported.error());

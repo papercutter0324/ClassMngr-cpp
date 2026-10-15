@@ -1,6 +1,7 @@
 #include "teacher_import_sql_persistence_adapter.h"
 
 #include "data/database/sql_query_utils.h"
+#include "data/repositories/teacher_import_legacy_plan_adapter.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "features/teacher/import/teacher_import_name_utils.h"
 
@@ -146,8 +147,9 @@ public:
             };
             snapshot.nativeEnglishTeachers.push_back({
                 .profile = profile,
-                .normalizedMatchKey = normalizedName(
-                    QString::fromStdU16String(profile.name)).toStdU16String()
+                .normalizedMatchKey =
+                    ClassMngr::Data::Legacy::Detail::nativeEnglishNameKey(
+                        profile.name)
             });
         }
         if (query.lastError().isValid())

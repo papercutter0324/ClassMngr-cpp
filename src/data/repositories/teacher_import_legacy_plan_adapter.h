@@ -7,6 +7,7 @@
 #include <QString>
 
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace ClassMngr::Data::Legacy
@@ -22,6 +23,14 @@ namespace Detail
 [[nodiscard]] inline QString normalizedName(const QString& value)
 {
     return value.simplified().toCaseFolded();
+}
+
+[[nodiscard]] inline std::u16string nativeEnglishNameKey(
+    const std::u16string_view value
+    )
+{
+    return normalizedName(
+        QString::fromStdU16String(std::u16string(value))).toStdU16String();
 }
 
 [[nodiscard]] inline QString koreanTeacherNameKey(const QString& value)
@@ -78,16 +87,9 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
 
     request.nativeEnglishTeachers.reserve(
         static_cast<std::size_t>(plan.nativeEnglishTeachers.size()));
-    request.validation.nativeEnglishTeacherKeys.reserve(
-        static_cast<std::size_t>(plan.nativeEnglishTeachers.size()));
     for (const NativeEnglishTeacher& teacher : plan.nativeEnglishTeachers)
     {
-        const QString matchKey = Detail::normalizedName(teacher.name);
-        const std::string validationKey = matchKey.toUtf8().toStdString();
-        request.validation.nativeEnglishTeacherKeys.push_back(validationKey);
         request.nativeEnglishTeachers.push_back({
-            .validationKey = validationKey,
-            .normalizedMatchKey = matchKey.toStdU16String(),
             .diagnosticName = teacher.name.toStdU16String(),
             .name = teacher.name.simplified().toStdU16String(),
             .position = Detail::trimmed16(teacher.position),

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <expected>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -43,8 +44,6 @@ struct TeacherImportKoreanSource final
 
 struct TeacherImportNativeEnglishSource final
 {
-    std::string validationKey;
-    std::u16string normalizedMatchKey;
     std::u16string diagnosticName;
     std::u16string name;
     std::u16string position;
@@ -81,18 +80,31 @@ struct TeacherImportReview final
     std::vector<TeacherImportGroupDecision> decisions;
 };
 
+// Only review, Korean, and GS identity data crosses the request-validation
+// boundary. Native English identity is derived from the exact source name by
+// the injected name-key policy below.
+struct TeacherImportUseCaseValidationInput final
+{
+    bool sourceDateValid = false;
+    std::optional<std::vector<std::string>> reviewedKoreanTeacherKeys;
+    std::vector<std::string> koreanTeacherKeys;
+    std::vector<TeacherImportGsTeamNameKeys> gsTeamMemberKeys;
+};
+
 struct TeacherImportUseCaseRequest final
 {
-    // This carries adapter-normalized identity keys and source-date validity.
-    // The use case checks it against these records and owns applying the
-    // validation and review-selection contracts before opening a transaction.
-    TeacherImportPlanValidationInput validation;
+    // The use case checks these Korean and GS keys against the source records
+    // and owns review-selection validation before opening a transaction.
+    TeacherImportUseCaseValidationInput validation;
     std::string sourceDateIso;
     std::vector<TeacherImportKoreanSource> koreanTeachers;
     std::vector<TeacherImportNativeEnglishSource> nativeEnglishTeachers;
     std::vector<TeacherImportGsTeamSource> gsTeamMembers;
     std::optional<TeacherImportReview> review;
 };
+
+using TeacherImportNativeEnglishNameKeyPolicy =
+    std::function<std::u16string(std::u16string_view)>;
 
 struct TeacherImportNativeEnglishStoredRecord final
 {
@@ -299,6 +311,47 @@ namespace Detail
     return TeacherImportPlanValidationIssue::None;
 }
 
+[[nodiscard]] inline std::expected<
+    std::vector<std::u16string>,
+    TeacherImportPlanValidationIssue
+    > deriveNativeEnglishTeacherKeys(
+        const std::vector<TeacherImportNativeEnglishSource>& sources,
+        const TeacherImportNativeEnglishNameKeyPolicy& nameKeyPolicy
+        )
+{
+    std::unordered_set<std::u16string> seenKeys;
+    std::vector<std::u16string> keys;
+    keys.reserve(sources.size());
+    for (const TeacherImportNativeEnglishSource& source : sources)
+    {
+        const std::u16string key = nameKeyPolicy(source.name);
+        if (key.empty())
+        {
+            return std::unexpected(
+                TeacherImportPlanValidationIssue::MissingNativeEnglishTeacherName);
+        }
+        if (!seenKeys.insert(key).second)
+        {
+            return std::unexpected(
+                TeacherImportPlanValidationIssue::DuplicateNativeEnglishTeacherName);
+        }
+        keys.push_back(key);
+    }
+    return keys;
+}
+
+[[nodiscard]] inline TeacherImportPlanValidationInput toPlanValidationInput(
+    const TeacherImportUseCaseValidationInput& input
+    )
+{
+    return {
+        .sourceDateValid = input.sourceDateValid,
+        .reviewedKoreanTeacherKeys = input.reviewedKoreanTeacherKeys,
+        .koreanTeacherKeys = input.koreanTeacherKeys,
+        .gsTeamMemberKeys = input.gsTeamMemberKeys
+    };
+}
+
 [[nodiscard]] inline TeacherImportUseCaseError rollbackAndReturn(
     TeacherImportPersistencePort& port,
     TeacherImportUseCaseError error
@@ -317,8 +370,6 @@ namespace Detail
     )
 {
     if (request.validation.koreanTeacherKeys.size() != request.koreanTeachers.size()
-        || request.validation.nativeEnglishTeacherKeys.size()
-            != request.nativeEnglishTeachers.size()
         || request.validation.gsTeamMemberKeys.size() != request.gsTeamMembers.size())
     {
         return TeacherImportPlanValidationIssue::ReviewSelectionMismatch;
@@ -328,14 +379,6 @@ namespace Detail
     {
         if (request.validation.koreanTeacherKeys[index]
             != request.koreanTeachers[index].validationKey)
-        {
-            return TeacherImportPlanValidationIssue::ReviewSelectionMismatch;
-        }
-    }
-    for (std::size_t index = 0; index < request.nativeEnglishTeachers.size(); ++index)
-    {
-        if (request.validation.nativeEnglishTeacherKeys[index]
-            != request.nativeEnglishTeachers[index].validationKey)
         {
             return TeacherImportPlanValidationIssue::ReviewSelectionMismatch;
         }
@@ -363,10 +406,11 @@ public:
         TeacherImportUseCaseError
         > execute(
             const TeacherImportUseCaseRequest& request,
-            TeacherImportPersistencePort& persistence
+            TeacherImportPersistencePort& persistence,
+            const TeacherImportNativeEnglishNameKeyPolicy& nativeEnglishNameKey
             )
     {
-        TeacherImportPlanValidationInput validation = request.validation;
+        TeacherImportUseCaseValidationInput validation = request.validation;
         validation.reviewedKoreanTeacherKeys.reset();
         const TeacherImportPlanValidationIssue shapeIssue =
             Detail::validateRequestShape(request);
@@ -417,8 +461,8 @@ public:
         // Preserve review, source-date, and supplied Korean-key validation
         // precedence before validating the canonical identity used to match
         // and persist Korean teachers. Other namespaces remain downstream.
-        TeacherImportPlanValidationInput koreanValidation = validation;
-        koreanValidation.nativeEnglishTeacherKeys.clear();
+        TeacherImportPlanValidationInput koreanValidation =
+            Detail::toPlanValidationInput(validation);
         koreanValidation.gsTeamMemberKeys.clear();
         const TeacherImportPlanValidationIssue koreanValidationIssue =
             validateTeacherImportPlan(koreanValidation);
@@ -434,7 +478,20 @@ public:
             return std::unexpected(Detail::validationError(derivedKoreanIssue));
         }
 
-        TeacherImportPlanValidationInput downstreamValidation = validation;
+        if (!nativeEnglishNameKey)
+        {
+            return std::unexpected(Detail::invalidRequestError());
+        }
+        const auto nativeEnglishKeys = Detail::deriveNativeEnglishTeacherKeys(
+            request.nativeEnglishTeachers,
+            nativeEnglishNameKey);
+        if (!nativeEnglishKeys)
+        {
+            return std::unexpected(Detail::validationError(nativeEnglishKeys.error()));
+        }
+
+        TeacherImportPlanValidationInput downstreamValidation =
+            Detail::toPlanValidationInput(validation);
         downstreamValidation.koreanTeacherKeys.clear();
         downstreamValidation.reviewedKoreanTeacherKeys.reset();
         const TeacherImportPlanValidationIssue downstreamValidationIssue =
@@ -542,13 +599,18 @@ public:
             }
         }
 
-        for (const TeacherImportNativeEnglishSource& source : request.nativeEnglishTeachers)
+        for (std::size_t sourceIndex = 0;
+             sourceIndex < request.nativeEnglishTeachers.size();
+             ++sourceIndex)
         {
+            const TeacherImportNativeEnglishSource& source =
+                request.nativeEnglishTeachers[sourceIndex];
+            const std::u16string& sourceKey = nativeEnglishKeys->at(sourceIndex);
             std::vector<const TeacherImportNativeEnglishStoredRecord*> matches;
             for (const TeacherImportNativeEnglishStoredRecord& teacher :
                  existing.nativeEnglishTeachers)
             {
-                if (teacher.normalizedMatchKey == source.normalizedMatchKey)
+                if (teacher.normalizedMatchKey == sourceKey)
                 {
                     matches.push_back(&teacher);
                 }

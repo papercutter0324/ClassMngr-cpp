@@ -98,12 +98,31 @@ appliesAllGroupsAndKeepsNewestDate()
     QCOMPARE(latestSourceDate(services.databaseSession()->database()),
         QStringLiteral("2026-10-01"));
 
+    TeacherImportPlan normalizedNameUpdate;
+    normalizedNameUpdate.sourceDate = QDate(2026, 10, 2);
+    normalizedNameUpdate.nativeEnglishTeachers.append(NativeEnglishTeacher{
+        .name = QStringLiteral("  aLeX   SmItH\t")
+    });
+    const auto updated = port.apply(normalizedNameUpdate);
+    QVERIFY2(updated, qPrintable(updated ? QString() : updated.error()));
+    QCOMPARE(updated->nativeEnglishTeachers.created, 0);
+    QCOMPARE(updated->nativeEnglishTeachers.updated, 1);
+    QCOMPARE(countRows(services.databaseSession()->database(),
+                 QStringLiteral("native_english_teachers")), 1);
+    QSqlQuery normalizedName(services.databaseSession()->database());
+    QVERIFY(normalizedName.exec(QStringLiteral(
+        "SELECT name FROM native_english_teachers")));
+    QVERIFY(normalizedName.next());
+    QCOMPARE(normalizedName.value(0).toString(), QStringLiteral("aLeX SmItH"));
+    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+        QStringLiteral("2026-10-02"));
+
     TeacherImportPlan olderPlan;
     olderPlan.sourceDate = QDate(2025, 9, 1);
     const auto older = port.apply(olderPlan);
     QVERIFY2(older, qPrintable(older ? QString() : older.error()));
     QCOMPARE(latestSourceDate(services.databaseSession()->database()),
-        QStringLiteral("2026-10-01"));
+        QStringLiteral("2026-10-02"));
 }
 
 void NextPlatformApplicationServicesTeacherImportApplyPortTests::
