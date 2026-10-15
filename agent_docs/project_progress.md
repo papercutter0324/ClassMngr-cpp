@@ -152,8 +152,17 @@ suite ran.
 Two independent post-F922 audits reviewed all 13 exact official Deferred
 candidates; none became actionable, resolved, or superseded. Batch306
 (F920-F929) remains active with F923-F929 remaining. F923, Sub Prep print-source
-class-information read, is selected next. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate is Open.
+class-information read, has a verified baseline and defined acceptance at
+source HEAD `1f9dbf15` (the current full documentation HEAD is `d93600c6`).
+Forced sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed;
+exact Debug CTest #310 passed 1/1 before and after the restored temporary
+probe. The probe did not establish a cursor-error row prefix. An independent
+scratch SQLite 3.50.4 query-shape probe failed before its first row, and no
+reasonable deterministic QSQLITE seam was found; the terminal-error branch
+will be independently source-reviewed. Implementation and post-change
+verification remain pending; no full suite ran. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate is Open.
 
 ### Historical state - 2026-10-13 (F754 accepted; F755 selected)
 

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F923 Sub Prep print-source class-information read is selected next in Batch306; Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F923 Sub Prep print-source class-information read has a verified baseline and defined acceptance at source HEAD `1f9dbf15`; implementation and post-change verification remain pending. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 

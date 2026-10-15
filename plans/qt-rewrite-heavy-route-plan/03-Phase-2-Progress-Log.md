@@ -38830,3 +38830,56 @@ none became newly actionable, resolved, or superseded, and all remain
 unchanged. F923, Sub Prep print-source class-information read, is selected next
 in active Batch306, now F923-F929. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F923 baseline captured; acceptance defined - 2026-10-15
+
+The F923 production-source baseline is commit
+`1f9dbf15617adc4e4a988977b5003c509804a576`; full HEAD
+`d93600c62705a6db978d1e8bd55c259d1bd6f84e` adds only the F922 docs closeout.
+`ClassInfoRepository::loadSubPrepPrintSourceClassInfosForScheduleScope()`
+(`src/data/repositories/class_info_repository.cpp:5437-5686`) prepares and
+executes its scoped query, accumulates results in `while (query.next())`, then
+returns without checking terminal `lastError()`. The SELECT has two
+`ROW_NUMBER()` windows and final `(class_id, id)` ordering; the platform port
+maps repository failure to a typed failure.
+
+Baseline forced sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` passed;
+exact Debug CTest #310 passed 1/1 before and after the probe. The temporary
+test edit was restored byte-for-byte (SHA-256
+`3FE51A2DA33F78D3F5AFAEFD92FD98188CE9ABC1A50A7D40ED54AFD6051450A4`). The
+probe exited 1 with empty captured output, so no cursor sequence is claimed.
+Independent scratch SQLite 3.50.4 probes with malformed JSON, both with and
+without the `(class_id, id)` index, failed before the first row and retained a
+temporary B-tree for the outer ordering; the bundled Qt SQLite version may
+differ. A raw SQLite interrupt cannot exercise the repository's local query,
+and no reasonable deterministic QSQLITE seam was found. Thus, terminal-error
+handling must be independently source-reviewed; no direct cursor fault
+injection is claimed. No full suite ran.
+
+Acceptance for F923:
+1. After the result loop, check `query.lastError().isValid()` and return
+   this error before exposing accumulated records:
+
+   ```cpp
+   return std::unexpected(SqlQueryUtils::errorFor(
+       query,
+       QObject::tr("Loading scoped Sub Prep print source information"),
+       identity
+       ).userMessage());
+   ```
+2. Preserve the SQL, selected scope and mode, filtering, ordering, grouping and
+   mapping, teacher validation, bounds and limit sentinel, and clean-empty
+   behavior. Keep the change in the repository read; do not add a production
+   test-only abstraction.
+3. Independently source-review the terminal-error branch because no reasonable
+   deterministic QSQLITE seam exists for this query's cursor failure.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`, then
+   `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` with
+   `/m:1 /p:TrackFileAccess=false /p:ForceRebuild=true`; run only exact Debug
+   CTest #310. No full suite.
+
+Implementation and post-change verification are pending. F923 remains active
+in Batch306 (F923-F929); all 13 official Deferred candidates remain unchanged.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
