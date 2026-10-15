@@ -1227,7 +1227,18 @@ void TestingClassesPage::loadClass(
     int classId
     )
 {
+    struct LoadingStateReset
+    {
+        AutosaveCoordinator* autosave;
+
+        ~LoadingStateReset()
+        {
+            autosave->setLoading(false);
+        }
+    };
+
     m_autosave->setLoading(true);
+    const LoadingStateReset loadingStateReset{m_autosave};
     if (classId <= 0)
     {
         return;

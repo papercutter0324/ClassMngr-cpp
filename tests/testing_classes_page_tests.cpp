@@ -1500,6 +1500,10 @@ testingClassDetailsReadFailureShowsWarningWithoutFallback()
         testingClass(QStringLiteral("Stored Class"))
         );
     QVERIFY(createdClass);
+    const auto recoveryClass = services.dataService()->createTestingClass(
+        testingClass(QStringLiteral("Recovery Class"))
+        );
+    QVERIFY(recoveryClass);
 
     const auto parsedClassId =
         ClassMngr::Next::Domain::ClassId::fromString(
@@ -1518,11 +1522,22 @@ testingClassDetailsReadFailureShowsWarningWithoutFallback()
     DialogServices::setUserPromptServiceForTesting(&prompts);
 
     FixedTestingClassChoicesReadPort choicesReadPort;
-    setSingleTestingClassChoice(
-        choicesReadPort,
-        *createdClass,
-        QStringLiteral("Stored Class")
-        );
+    choicesReadPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({
+            .choices = {{
+                .classId = typedClassId(*createdClass),
+                .name = u"Stored Class",
+                .grade = u"M1",
+                .level = u"Major",
+                .room = u"401"
+            }, {
+                .classId = typedClassId(*recoveryClass),
+                .name = u"Recovery Class",
+                .grade = u"M1",
+                .level = u"Major",
+                .room = u"401"
+            }}
+        });
     TestingClassesPage page(
         &services,
         nullptr,
@@ -1546,6 +1561,41 @@ testingClassDetailsReadFailureShowsWarningWithoutFallback()
         );
     QVERIFY(nameEdit);
     QVERIFY(nameEdit->text() != QStringLiteral("Stored Class"));
+
+    auto* classList = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 2);
+    int recoveryRow = -1;
+    for (int row = 0; row < classList->count(); ++row)
+    {
+        if (
+            classList->item(row)->data(Qt::UserRole).toInt()
+            == *recoveryClass
+            )
+        {
+            recoveryRow = row;
+            break;
+        }
+    }
+    QVERIFY(recoveryRow >= 0);
+    readPort.result = ClassMngr::Next::Application::
+        TestingClassDetailsReadResult::success(testingClassDetails(
+            *recoveryClass,
+            QStringLiteral("Recovery Class")
+            ));
+    classList->setCurrentRow(recoveryRow);
+
+    QCOMPARE(readPort.callCount, 2);
+    QVERIFY(readPort.lastQuery.has_value());
+    QCOMPARE(
+        readPort.lastQuery->classId,
+        typedClassId(*recoveryClass)
+        );
+    QCOMPARE(nameEdit->text(), QStringLiteral("Recovery Class"));
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
 }
 
 void TestingClassesPageTests::
