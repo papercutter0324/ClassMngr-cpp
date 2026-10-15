@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F939 roster output-source row accumulation is next in Batch309 with baseline and acceptance pending; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F939 roster output-source baseline and acceptance are recorded; implementation follows after this acceptance record is committed; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 309)
 
-- F939 - RosterRepository::loadRosterForOutput(): establish baseline and acceptance that row-loop failures cannot emit partial roster columns/cells to the typed Sub Prep output-source port.
+- F939 - RosterRepository::loadRosterForOutput(): after committing the recorded acceptance, prevent terminal row-loop failures from returning partial typed roster columns/cells.
 - F940 - ClassInfoRepository::loadSubPrepClassSummaries(): evaluate terminal loop failures on the live typed Sub Prep schedule-summary route.
 - F941 - Legacy SpeakingEvalRepository::loadSpeakingEval() first-row/score-row failures: confirm scope against the active legacy caller.
 - F942 - TeacherRepository::getAllTeachers(): evaluate partial full-directory results in Schedule Import preview.

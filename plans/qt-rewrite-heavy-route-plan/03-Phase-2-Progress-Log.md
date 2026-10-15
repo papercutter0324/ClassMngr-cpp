@@ -39939,3 +39939,68 @@ No other slices were found. F939 is next; its baseline and acceptance are
 pending. Begin Batch310 discovery when F944, the second-last Batch309 item,
 starts. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F939 baseline and acceptance recorded - 2026-10-15
+
+The baseline source state is commit
+`d31d96a3984b790127bbefe189ad940cfd971c33`, which closed F938 documentation
+without product or test changes. On installed Qt 6.12.0 QSQLITE,
+`RosterRepository::loadRosterForOutput()` at
+`src/data/repositories/roster_repository.cpp:2683` runs bounded `roster_columns`
+and `roster_data` SELECTs with `setForwardOnly`. Against indexed,
+order-compatible temporary backing tables and JSON-backed temporary views,
+`executePrepared()` succeeded for both exact SELECTs, each delivered a valid
+row prefix, and terminal `next()` then exposed malformed-JSON `lastError()`.
+The repository ignored both terminal errors and returned success. Through the
+public typed `ApplicationServicesSubPrepRosterOutputSourcePort::loadSource()`,
+the column query returned success with only `English` and rows `Alex`, `Casey`
+despite failure on the next ordered column metadata entry. The cell query
+returned success with requested columns `English|Korean|Notes` and row
+`cell-prefix||` despite the second cell-fetch failure. The port's existing
+`Technical` repository-failure mapping was therefore bypassed, permitting
+partial typed output. This injected-view fixture establishes behavior, not the
+frequency of these failures in the unmodified production schema.
+
+The focused
+`ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+target built in `build/windows-x64-debug` with `/p:TrackFileAccess=false` and
+its exact CTest passed 1/1 in 2.31 seconds, without build warnings. The
+temporary observation slot was removed and the test file restored byte-for-
+byte (before/after SHA-256
+`F772090EFAD7B6BA373694B081DCCDFAA06A8C18E79D80A31E861DB3EB6F9C8D`; no diff).
+No full suite ran.
+
+Acceptance for implementation:
+
+1. After successful prepared execution and completion of the `columnsQuery`
+   loop, check terminal `lastError()` before `finish()` or using accumulated
+   column metadata. On failure, return the existing contextual SQL read error
+   for bounded roster output columns with class identity. Preserve clean EOF,
+   invalid-column behavior, and existing limits.
+2. After completion of the `valuesQuery` loop, check terminal `lastError()`
+   before returning `Roster`. On failure, return the contextual SQL read error
+   for bounded output values with class identity; do not expose partial cells.
+3. Preserve SQL projection, ordering, bounds, requested-column mapping, sparse
+   and empty roster semantics, validation, and row/cell/text limits. Limit
+   production changes to `RosterRepository::loadRosterForOutput()` and retain
+   the port's existing `Technical` mapping. Add no general seam, custom driver,
+   callback, arbitrary cap, fallback, or unrelated repository change.
+4. Permanently cover both late-fetch cases in the existing typed Sub Prep
+   roster output source-port test file. Use temporary indexed backing tables
+   and JSON views; preflight each exact SELECT to prove `exec()` succeeds, a
+   valid prefix is delivered, and terminal `next()` fails. Through the public
+   typed port, assert contextual `Technical` failure and no partial successful
+   source. Preserve existing normal column/cell, sparse, empty, and bound
+   coverage.
+5. In standard `build/windows-x64-debug`, Debug, sequentially build `ClassMngr`
+   and `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`
+   with `/p:TrackFileAccess=false`; run only CTest
+   `ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests`;
+   source-review both guards and run `git diff --check`. Do not run the full
+   suite.
+
+F940-F945 remain queued in Batch309; begin Batch310 discovery when F944, the
+second-last Batch309 item, starts. All 13 official Deferred entries remain
+unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open. This acceptance record is uncommitted; F939 implementation is gated on
+committing it. No implementation has started.
