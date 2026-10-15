@@ -1,6 +1,7 @@
 #include "data/repositories/intensive_slot_state_repository.h"
 
 #include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QtTest>
 
@@ -11,6 +12,7 @@ class IntensiveSlotStateRepositoryTests : public QObject
 private slots:
     void defaultStateControlsStoredRows();
     void readFailuresAreReturned();
+    void terminalCursorFailuresAreReturnedWithoutPartialStates();
     void writeFailuresAreReturned();
 };
 
@@ -133,6 +135,101 @@ void IntensiveSlotStateRepositoryTests::readFailuresAreReturned()
         QVERIFY(states.error().contains(
             QStringLiteral("Loading intensive slot states")
             ));
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void IntensiveSlotStateRepositoryTests
+    ::terminalCursorFailuresAreReturnedWithoutPartialStates()
+{
+    const QString connectionName =
+        QStringLiteral("intensive_slot_state_repository_cursor_failure_tests");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+
+        QSqlQuery setup(database);
+        QVERIFY(setup.exec(R"(
+            CREATE TABLE intensive_slot_states_json_backing (
+                day TEXT NOT NULL,
+                start_time TEXT NOT NULL,
+                state_json TEXT NOT NULL
+            )
+        )"));
+        QVERIFY(setup.exec(R"(
+            CREATE INDEX intensive_slot_states_json_backing_order
+            ON intensive_slot_states_json_backing (day, start_time)
+        )"));
+        QVERIFY(setup.exec(R"(
+            INSERT INTO intensive_slot_states_json_backing (
+                day, start_time, state_json
+            ) VALUES
+                (
+                    'Monday',
+                    '09:00',
+                    '{"day":"Monday","start_time":"09:00","state":"essay"}'
+                ),
+                ('Monday', '10:00', '{')
+        )"));
+        QVERIFY(setup.exec(R"(
+            CREATE VIEW intensive_slot_states AS
+            SELECT
+                day,
+                start_time,
+                json_extract(state_json, '$.state') AS state
+            FROM intensive_slot_states_json_backing
+            INDEXED BY intensive_slot_states_json_backing_order
+        )"));
+
+        QString cursorDetail;
+        {
+            QSqlQuery productionSelect(database);
+            QVERIFY(productionSelect.exec(QStringLiteral(R"(
+                SELECT
+                    day,
+                    start_time,
+                    state
+                FROM intensive_slot_states
+                ORDER BY day, start_time
+            )")));
+            QVERIFY(productionSelect.next());
+            QCOMPARE(
+                productionSelect.value(QStringLiteral("day")).toString(),
+                QStringLiteral("Monday")
+                );
+            QCOMPARE(
+                productionSelect.value(QStringLiteral("start_time")).toString(),
+                QStringLiteral("09:00")
+                );
+            QCOMPARE(
+                productionSelect.value(QStringLiteral("state")).toString(),
+                QStringLiteral("essay")
+                );
+            QVERIFY(!productionSelect.next());
+
+            const QSqlError cursorError = productionSelect.lastError();
+            QVERIFY(cursorError.isValid());
+            cursorDetail = cursorError.text().trimmed();
+            QVERIFY(!cursorDetail.isEmpty());
+        }
+
+        IntensiveSlotStateRepository repository(database);
+        const Result<QList<IntensiveSlotState>> states =
+            repository.loadIntensiveSlotStates();
+        QVERIFY(!states);
+        QVERIFY(states.error().contains(
+            QStringLiteral("Loading intensive slot states")
+            ));
+        QVERIFY2(
+            states.error().contains(cursorDetail),
+            qPrintable(states.error())
+            );
     }
 
     QSqlDatabase::removeDatabase(connectionName);

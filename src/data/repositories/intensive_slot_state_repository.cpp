@@ -20,6 +20,8 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
     QList<IntensiveSlotState> states;
 
     QSqlQuery query(m_database);
+    const QString action =
+        QObject::tr("Loading intensive slot states");
 
     const auto executed = SqlQueryUtils::execute(
         query,
@@ -31,7 +33,7 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
         FROM intensive_slot_states
         ORDER BY day, start_time
     )"),
-        QObject::tr("Loading intensive slot states")
+        action
         );
     if (!executed)
     {
@@ -52,6 +54,13 @@ IntensiveSlotStateRepository::loadIntensiveSlotStates()
             query.value("state").toString();
 
         states.append(state);
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            SqlQueryUtils::errorFor(query, action).userMessage()
+            );
     }
 
     return states;
