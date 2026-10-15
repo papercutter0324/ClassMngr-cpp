@@ -38287,3 +38287,36 @@ but its origin is not classified. No full suite ran.
 Batch 305 remains active with F916-F919 in order; the 13 official Deferred
 entries remain unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F916 accepted; post-F916 Deferred audits clear; F917 selected - 2026-10-15
+
+F916, Classes list terminal cursor errors, is accepted at source/test commit
+`edfa7abd`. `ClassRepository::getClasses()` now checks terminal
+`query.lastError()` after iteration and returns the existing repository error
+before accumulated partial rows can escape. The Testing-class filter,
+`c.name` ordering without a tie-breaker, supported positive `int` IDs, name
+mapping, clean-empty success, and typed/legacy consumer error propagation are
+preserved.
+
+Forced sequential Debug builds passed for `ClassMngr` and four focused
+targets; exact Debug CTests #21, #228, #230, and #410 each passed 1/1.
+Independent Tester source-reviewed the new guard and shared error
+classifications. Existing tests cover normal behavior and SQL execution
+failure, but no direct terminal cursor-failure seam is available. No full
+suite ran.
+
+Two independent post-F916 audits reviewed all 13 exact official Deferred
+candidates; none became newly actionable, and the list remains unchanged.
+F618 still requires its previously recorded large-export driver and matched
+packaged Release measurement prerequisites.
+
+F917, Testing assignment display read, is selected next: add terminal cursor
+error handling to `TestingBlockRepository::loadTestingAssignmentDisplayRecords()`.
+The typed schedule-assignment port maps repository errors to `Technical`;
+unavailable service remains `NotFound`. `ScheduleWidget::reloadTestingBlocks`
+clears on `NotFound` and otherwise warns and returns. Existing focused target
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`
+and exact CTest #390 cover success, order, mapping, and SQL execution failure,
+but not terminal cursor failure. F917 baseline and acceptance are pending.
+Batch 305 continues with F917-F919 in order. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
