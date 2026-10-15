@@ -5568,3 +5568,11 @@ iteration before returning the snapshot. A matching SQLite order index and an
 exact-query probe can establish that malformed projected JSON fails only
 after a valid first row; then assert both repository failure and typed
 Technical failure without a partial result.
+
+## Phase 2 ordered-query terminal error testability - 2026-10-15
+
+An index lookup does not prove an ordered query can stream rows. Probe the
+exact production SQL: a temporary `ORDER BY` B-tree may evaluate a malformed
+projected value during `exec()`, before the first row. If reaching the later
+fetch error requires SQLite-native callbacks or a custom driver solely for the
+test, prefer source review and existing focused tests over a production seam.

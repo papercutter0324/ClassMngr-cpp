@@ -93,16 +93,19 @@ sequential Debug builds passed for `ClassMngr` and both focused read-port test
 targets after the initial MSBuild CL file-tracking access failure was retried
 with `/p:TrackFileAccess=false`; exact CTests #346 and #341 passed 1/1. No full
 suite ran. Two independent post-F929 audits found all 13 official Deferred
-candidates unchanged. Batch306 is closed and Batch307 is active with F933-F936;
-F933, the Class Analytics roster-name read, is active. Two exact-query
-malformed-JSON view fixtures still hit SQLite's temporary ORDER BY sort during
-`exec()` before a first row, so the old adapter's partial-result outcome is
-unobserved. Independent research found SQLite-native callbacks or a custom
-driver disproportionate; acceptance uses a post-loop source-review gate and
-the existing focused CTest #159 without adding a test seam. The restored CTest
-#159 passed; its standard-folder target build required
-`/p:TrackFileAccess=false` and reported a missing generated dependency for
-`teacher_import_plan_mapper.h`. No implementation has begun. F930-F932 remain
+candidates unchanged. Batch306 is closed and Batch307 is active with F933-F936.
+F933, the Class Analytics roster-name read, is accepted at source commit
+`3318f537`. Its post-loop guard returns the existing Technical SQL failure
+instead of exposing accumulated partial names. Independent source review
+passed; forced sequential Debug builds of `ClassMngr` and the focused port
+target passed with `/p:TrackFileAccess=false`, and exact CTest #159 passed 1/1.
+The terminal-error branch remains source-review-only: two exact-query JSON
+fixtures hit SQLite's temporary ORDER BY sort during `exec()` before a first
+row, and SQLite-native callbacks or a custom driver were judged disproportionate.
+Two independent post-F933 audits again found all 13 official Deferred
+candidates unchanged. F934, co-teacher assignment validation schedule-query
+checks, is next in Batch307; its live typed call path and focused CTest #348
+are mapped, while baseline and acceptance are pending. F930-F932 remain
 omitted because the caller review found no regular in-tree UI path. Gates 1/2
 remain Partial and the formal Phase 2 exit gate is Open.
 

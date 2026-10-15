@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F929, Staff directory full reads, is accepted at source/test commit `1768d46b`; two independent post-F929 audits found all 13 official Deferred entries unchanged; F933, Class Analytics roster-name read terminal cursor check, remains active in Batch307, and its preimplementation row-then-fetch fixtures fail at `exec()` before the first row, so acceptance is gated on independent source review plus focused Debug builds and CTest #159, with no acceptance claimed; the allocation-cap/sparse-representation policy remains separately Deferred. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F933, Class Analytics roster-name read terminal cursor check, is accepted at `3318f537`; all 13 official Deferred entries remain deferred; F934 is next with its acceptance and baseline pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 307)
 
-- F933 - Class Analytics roster-name read terminal cursor check: reject incomplete names after terminal fetch failure; focused CTest #159.
 - F934 - Co-teacher assignment validation schedule-query terminal checks: reject incomplete schedule reads in the live typed validation path.
 - F935 - Shared class-info reader first-row failure and schedule cursor checks: distinguish read failure from clean missing/default and check regular/intensive schedules.
 - F936 - Legacy Class Transfer regular/intensive schedule terminal checks: reject incomplete reads for live import/export consumers; adjacent parent-aware route already checks.

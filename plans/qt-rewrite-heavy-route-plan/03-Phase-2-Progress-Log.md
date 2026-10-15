@@ -39474,3 +39474,61 @@ No full suite ran.
    committed. F934 remains next after F933 closeout. The official 13 Deferred
    entries remain untouched; Gates 1/2 are Partial and the formal Phase 2 exit
    gate is Open.
+
+### F933 accepted; post-F933 Deferred audits clear; F934 next - 2026-10-15
+
+F933, Class Analytics roster-name read terminal cursor check, is accepted at
+source/test commit `3318f537` (`Phase2 - Reject incomplete Class Analytics
+roster reads`). Its preimplementation acceptance/baseline record is docs
+commit `01cb7397`; F933 was activated at `9d4ad2de`. The source change adds
+five lines in
+`src/next/platform/application_services_class_analytics_dashboard_read_port.h`:
+`readRosterNames()` checks `rosterQuery.lastError().isValid()` after the full
+`do/while (rosterQuery.next())` and before success, returning the established
+`sqlFailure<Application::ClassAnalyticsRosterNames>(rosterQuery.lastError().text())`.
+The query, mapping, validation, allocation, and test source are unchanged.
+Independent Tester review verified guard placement/classification and that no
+accumulated prefix can escape.
+
+As recorded in the preceding baseline entry, both exact ordered JSON-view
+fixtures failed at projection `exec()` before a first row; the generated-value
+fixture failed on insert. No direct partial-success baseline was observed, and
+focused tests do not exercise the late-error branch. Temporary test source was
+restored byte-for-byte. Independent research found SQLite-native hooks or a
+custom driver disproportionate for permanent coverage. Sequential standard
+Windows x64 Debug builds passed for `ClassMngr --clean-first` and
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`,
+both with `/p:TrackFileAccess=false`. Successful builds had no compiler
+warnings; Qt translation generation printed untranslated/unfinished string
+counts. Exact Debug CTest #159 passed 1/1; no full suite ran.
+
+Two independent post-F933 audits checked all 13 official Deferred entries;
+none became actionable, resolved, superseded, or newly triggered. F285's
+blank-draft contract remains unresolved; F579/F598 still need elevated matched
+heap captures; F614/F618/F626 still lack requested owner-specific or matched
+Release memory evidence; F629 has no suitable packaged macOS universal Phase 0
+matrix runner exposed in this Windows session (global availability is unknown);
+F707 has no live callsite and F709 no focused malformed-summary seam. Batch197
+teacher reassignment and Dense Speaking policies remain unresolved; Class
+Analytics allocation-cap/sparse representation remains deferred (rows retain
+representability checks while vectors size densely from the maximum row); and
+Sidebar Teacher ID APIs remain `int` based. F933 changes none of these triggers.
+
+F934, co-teacher assignment validation schedule-query terminal checks, is next
+in Batch307 and is a separate production slice, not a Deferred candidate. The
+live typed validation path calls
+`ClassInfoRepository::loadClassCoTeacherAssignmentValidationSnapshotDetailed()`
+through `ApplicationServicesClassCoTeacherAssignmentPort`. Its regular schedule
+loop (`class_info_repository.cpp:1262-1269`) and intensive loop
+(`:1295-1302`) check query execution but lack post-loop `lastError()` checks;
+the class-row first-result path and adjacent conflict query already have error
+guards. Snapshot failure maps to `Technical`, and saving occurs only after both
+schedule conflict checks pass. F934 stays scoped to this typed snapshot path;
+it excludes `loadClassInfoRecord()`, F915's class-information loops, and the
+separate Batch197 parity policy. The focused target is
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`;
+existing Debug CTest #348 covers execution failure after dropping
+`class_times`, not terminal fetch after a prefix. Discovery found no obvious
+fetch-failure fixture. No F934 baseline or acceptance has begun; no build or
+test has run. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
