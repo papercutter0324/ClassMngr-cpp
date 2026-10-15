@@ -94,9 +94,17 @@ targets after the initial MSBuild CL file-tracking access failure was retried
 with `/p:TrackFileAccess=false`; exact CTests #346 and #341 passed 1/1. No full
 suite ran. Two independent post-F929 audits found all 13 official Deferred
 candidates unchanged. Batch306 is closed and Batch307 is active with F933-F936;
-F933, the Class Analytics roster-name read, is next. F930-F932 remain omitted
-because the caller review found no regular in-tree UI path. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate is Open.
+F933, the Class Analytics roster-name read, is active. Two exact-query
+malformed-JSON view fixtures still hit SQLite's temporary ORDER BY sort during
+`exec()` before a first row, so the old adapter's partial-result outcome is
+unobserved. Independent research found SQLite-native callbacks or a custom
+driver disproportionate; acceptance uses a post-loop source-review gate and
+the existing focused CTest #159 without adding a test seam. The restored CTest
+#159 passed; its standard-folder target build required
+`/p:TrackFileAccess=false` and reported a missing generated dependency for
+`teacher_import_plan_mapper.h`. No implementation has begun. F930-F932 remain
+omitted because the caller review found no regular in-tree UI path. Gates 1/2
+remain Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

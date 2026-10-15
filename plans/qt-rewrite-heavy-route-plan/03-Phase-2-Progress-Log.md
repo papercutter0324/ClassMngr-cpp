@@ -39402,3 +39402,75 @@ not check terminal `lastError()` after its `do/while` loop, while adjacent
 separate Deferred item. F933 is discovery only; no implementation or baseline
 has begun. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F933 preimplementation baseline and acceptance — 2026-10-15
+
+F933 is the active first item in Batch307, activated at plan commit
+`9d4ad2de` (`9d4ad2dea0d5e111843d8a123f183d585b669df2`). No F933 production
+change has begun. In
+`src/next/platform/application_services_class_analytics_dashboard_read_port.h`,
+`ApplicationServicesClassAnalyticsDashboardReadPort::readRosterNames()` drains
+`rosterQuery` with a `do/while (rosterQuery.next())` and returns success without
+a terminal `lastError()` check. Adjacent `readEvaluationBatch()` checks
+`rowsQuery.lastError()` after iteration and returns the existing `sqlFailure`.
+The focused test target is
+`ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests`
+in `tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp`
+(standard Debug CTest #159). Existing coverage includes mapping, sparse sizing,
+invalid metadata/indexes/ranges, and execution-time query failure, but not
+post-row terminal cursor failure. App query and UI tests cover the existing
+failure-propagation and empty-state boundary.
+
+**Preimplementation fixture limitation.** Two temporary JSON-view fixtures
+used a valid row 0 and malformed row 1: one with the normal composite ordering
+key `(class_id,row_index,col_index)`, and one with a unique `(class_id,row_index)`
+index and at most one relevant cell per row. Both exact-query plans reported
+`USE TEMP B-TREE FOR ORDER BY`; the production-shaped projection's `exec()`
+failed immediately with `malformed JSON Unable to fetch row`, before any first
+row. A virtual generated-value variant failed at insert. The adapter was never
+called, so a pre-change partial-success runtime result was not observed. The
+test file was restored byte-for-byte (initial and final SHA-256
+`A3BA833A68F308972731D0DC99DFA0B24FD02643DA5EB014145C7819E89D05D8`) with an
+empty source diff. Independent investigation found trace/progress callbacks,
+`sqlite3_interrupt`, native handles, or a custom driver would add
+SQLite-internal linkage, timing, or driver complexity; no permanent production
+seam or brittle fault-injection test is proportionate.
+
+Baseline checks already performed: the initial root Visual Studio build failed
+in MSBuild FileTracker with `UnauthorizedAccessException`. The existing nested
+Ninja target and restored CTest #159 passed during the early probe. A later
+focused target build in standard `build/windows-x64-debug` passed incrementally
+with `/p:TrackFileAccess=false` and emitted an autogen dependency warning for
+missing `src/next/application/teacher_import_plan_mapper.h`. With the source
+restored, standard CTest #159 passed 1/1 using
+`ctest --test-dir build/windows-x64-debug -C Debug -I 159,159 --output-on-failure`.
+No full suite ran.
+
+**Preimplementation acceptance criteria**
+
+1. After the existing roster-query `do/while` exhausts, if
+   `rosterQuery.lastError().isValid()`, return the existing
+   `sqlFailure<Application::ClassAnalyticsRosterNames>(rosterQuery.lastError().text())`
+   before success. Never return accumulated partial names; preserve the adjacent
+   evaluation reader's `sqlFailure` classification and message mapping.
+2. Preserve the production query, first-row handling, clean missing/empty-roster
+   success, exact English/Korean header selection, sparse row sizing,
+   row/column validation, mapping/order, and current Technical/recoverable
+   behavior. Do not change the separate Class Analytics allocation-cap and
+   sparse-representation policy or add arbitrary limits; it remains Deferred.
+3. Do not add a production test seam or brittle permanent fault-injection test:
+   both exact-query fixture attempts fail during `exec()` before the first row,
+   and alternate mechanisms add disproportionate SQLite-internal coupling.
+   After implementation, independently review that the terminal-error guard is
+   after full row iteration and before success, returns `sqlFailure`, and cannot
+   expose the accumulated prefix. Retain the focused port/app/page tests for
+   adjacent read and propagation behavior.
+4. After implementation, sequentially force Debug builds in standard
+   `build/windows-x64-debug` for `ClassMngr` and the focused read-port target;
+   then run only CTest #159 by test name/index. If MSBuild file-tracking access
+   fails, retry with `/p:TrackFileAccess=false`. Run no full suite and record
+   actual warnings and whether builds were incremental or fresh.
+5. Keep F933 active until the source change is independently verified and
+   committed. F934 remains next after F933 closeout. The official 13 Deferred
+   entries remain untouched; Gates 1/2 are Partial and the formal Phase 2 exit
+   gate is Open.

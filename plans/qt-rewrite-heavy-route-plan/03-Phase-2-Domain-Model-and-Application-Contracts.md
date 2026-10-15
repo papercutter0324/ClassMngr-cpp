@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F929, Staff directory full reads, is accepted at source/test commit `1768d46b`; two independent post-F929 audits found all 13 official Deferred entries unchanged; F933, Class Analytics roster-name read terminal cursor check, is active in Batch307 with its focused failure gate open. Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F929, Staff directory full reads, is accepted at source/test commit `1768d46b`; two independent post-F929 audits found all 13 official Deferred entries unchanged; F933, Class Analytics roster-name read terminal cursor check, remains active in Batch307, and its preimplementation row-then-fetch fixtures fail at `exec()` before the first row, so acceptance is gated on independent source review plus focused Debug builds and CTest #159, with no acceptance claimed; the allocation-cap/sparse-representation policy remains separately Deferred. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
