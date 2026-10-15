@@ -5769,3 +5769,40 @@ accepted focused verification is sequential Debug builds of `ClassMngr`,
 `ClassMngrDataServiceLifecycleTests`, followed by exact CTests #22 and #24,
 source review and `git diff --check`; no full suite. Implementation and its
 independent verification remain pending.
+
+## F943 accepted; F944 starts - 2026-10-15
+
+F943 completed at implementation commit `b621d3d4`. The two public calendar
+list methods now report contextual terminal cursor failures. The late-fetch
+probe remained inconclusive, so no runtime partial-result defect is claimed.
+Independent sequential Debug builds of `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`, and
+`ClassMngrDataServiceLifecycleTests` passed; exact CTests #22 and #24 passed
+2/2. Two independent audits reviewed the exact 13 official Deferred entries
+and found none actionable, resolved, superseded, or materially changed.
+
+## F944 baseline and acceptance - 2026-10-16
+
+`TestingClassRepository::loadTestingClasses()` returns accumulated rows without
+a post-loop `lastError()` check. The active Schedule Assignment dialog uses
+the typed `loadTestingClassChoices()` path, which already checks terminal
+errors; no in-tree production caller of the legacy `DataService`/
+`ScheduleService` list forwarders was found. The exact ordered-list
+malformed-JSON probe failed in `exec()` before the first row because SQLite's
+temporary ORDER BY sorter evaluates the malformed row before returning a
+result. The exploratory regression was removed, the test source matched HEAD,
+and the repository target plus exact CTest passed after cleanup. No partial
+list runtime defect is claimed, and no custom seam or permanent late-fetch
+test is accepted.
+
+F944 is accepted narrowly: after the `loadTestingClasses()` row loop, check
+`query.lastError()` and return the contextual `Loading testing classes`
+failure, preserving the API, SQL/order, row mapping and ID validation,
+defaults, and clean-empty success. Leave the guarded typed chooser unchanged.
+Verification is sequential Debug builds of `ClassMngr`,
+`ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrTestingClassesPageCancelFailureParityTests`, followed by only the
+matching CTests, source review, and `git diff --check`. No full suite. F945
+remains queued; Batch310 discovery is underway, with the Campus repository
+lead conditional on a reproducible pre-fix baseline. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.

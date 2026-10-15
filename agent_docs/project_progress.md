@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F943 acceptance complete; implementation active)
+### Current state - 2026-10-16 (F944 acceptance complete; implementation pending)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -203,20 +203,32 @@ superseded, or changed; all remain unchanged. F943 is next in Batch309, with
 F944 still the Batch310 discovery trigger. No full suite ran. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate is Open.
 
-F943 acceptance is recorded and implementation is active. Source review found
-that both `CalendarEventRepository::loadCalendarEventsForDate()` and
-`loadUpcomingCalendarEvents()` return accumulated lists without checking the
-terminal cursor error. They have no in-tree production callsites beyond
-DataService/CalendarService forwarding definitions; the live Calendar Page
-uses the guarded typed range projection. A temporary indexed JSON-view probe
-did not produce observable results, so no runtime reproduction is claimed.
-Its source was restored byte-for-byte (SHA-256
-`1CAA2D00909D16275C8AB4B8603E0BA7266E19E37299A534798C522D135F661C`), and the
-restored Debug repository target and CTest #22 passed 1/1. The accepted scope
-adds contextual terminal-error checks to both legacy list methods while
-preserving their queries and caller-facing behavior; it leaves the typed
-Calendar Page path unchanged. See the Phase 2 progress log for the exact
-acceptance and verification plan.
+F943 completed at implementation commit `b621d3d4`. Both legacy calendar
+list loops now return contextual failures on terminal cursor errors; queries,
+mapping, invalid-input behavior, clean-empty behavior, and the typed Calendar
+Page route remain unchanged. The late-fetch probe remained inconclusive, so no
+runtime partial-result defect is claimed. Three sequential Debug builds and
+exact CTests #22/#24 passed. Two independent audits found all 13 official
+Deferred candidates unchanged.
+
+F944 acceptance covers only `TestingClassRepository::loadTestingClasses()`:
+add a contextual terminal-error check after its row loop while preserving its
+API, query/order, mapping/ID validation, defaults, and clean-empty behavior.
+The live Schedule Assignment chooser uses `loadTestingClassChoices()`, which
+already checks terminal errors; no legacy list caller was found in-tree. An
+exact ordered-query malformed-JSON probe failed during `exec()` because
+SQLite's temporary ORDER BY sort evaluated the malformed row before yielding
+any result. The exploratory test was removed, the test file restored to HEAD,
+and the repository target plus exact CTest passed after cleanup. No runtime
+partial-list defect is claimed and no late-fetch seam or permanent test is
+accepted. Focused sequential Debug builds of `ClassMngr`,
+`ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrTestingClassesPageCancelFailureParityTests`, their exact CTests,
+source review, and `git diff --check` are the accepted verification gates.
+Batch310 discovery has started; the `CampusRecordRepository::getAllCampuses()`
+lead is conditional on a reproducible pre-fix baseline and is not selected.
+F945 remains queued. Gates 1/2 remain Partial and the Phase 2 exit gate is
+Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

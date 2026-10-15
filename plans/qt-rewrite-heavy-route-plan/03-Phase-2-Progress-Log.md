@@ -40246,3 +40246,73 @@ discovery begins when F944, the second-last item, starts. No independent
 post-F943 Deferred audit is recorded; leave all official Deferred entries
 unchanged pending that audit. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### F943 accepted; post-F943 Deferred audits clear; F944 started - 2026-10-15
+
+F943 is complete in implementation commit `b621d3d4`. Both public
+`CalendarEventRepository` list loops now check terminal `lastError()` and
+return contextual `SqlQueryUtils::errorFor()` failures, preserving the date or
+`fromDate`/`limit` identity. The typed CalendarPage range path is unchanged.
+The indexed-view probe remained inconclusive; no late-fetch runtime defect was
+confirmed and no permanent late-fetch test was added.
+
+Independent sequential Debug builds of `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`, and
+`ClassMngrDataServiceLifecycleTests` passed in
+`build/windows-x64-debug` with `/p:TrackFileAccess=false`. Exact CTests #22 and
+#24 passed 2/2; source review and `git diff --check` passed. No full suite ran.
+
+Two independent post-implementation audits reviewed the exact 13 official
+Deferred entries and found none actionable, resolved, superseded, or materially
+changed; all 13 remain unchanged.
+
+F944, `TestingClassRepository::loadTestingClasses()`, has started as the next
+Batch309 slice. Batch310 discovery is underway because F944 is the second-last
+Batch309 item. Its sole source-backed lead,
+`CampusRecordRepository::getAllCampuses()`, has been conditionally reviewed;
+consider it only after a pre-fix exact-query baseline reproduces a late-fetch
+error. That baseline remains unverified, so no Batch310 candidate has been
+selected or added. F945,
+`TestingBlockRepository::loadTestingAssignments()`, remains queued. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F944 baseline and acceptance - 2026-10-16
+
+F944 covers `TestingClassRepository::loadTestingClasses()`, whose row loop has
+no post-loop terminal `lastError()` check. The current Schedule Assignment
+dialog uses the typed `loadTestingClassChoices()` path, which already checks
+terminal query errors; no legacy in-tree production callers were found beyond
+forwarding definitions.
+
+The temporary probe used a valid row followed by malformed JSON with the exact
+ordered query, but did not yield a row followed by a fetch error: SQLite's
+`ORDER BY` temporary B-tree made `cursorProbe.exec()` fail before the first
+row. Partial late-fetch behavior is therefore unconfirmed. The exploratory
+test was removed; the test file matches `HEAD`, and after cleanup the Debug
+`ClassMngrTestingClassRepositoryTests` target rebuilt and its exact CTest
+passed 1/1. This is not evidence of a late-fetch failure.
+
+Acceptance:
+
+1. After the `loadTestingClasses()` row loop, inspect `query.lastError()` and
+   return the existing contextual `queryFailure(query,
+   QObject::tr("Loading testing classes"))` failure.
+2. Preserve the API, SQL and ordering, mapping and ID validation, defaults, and
+   clean-empty success. Leave typed `loadTestingClassChoices()` unchanged.
+3. Do not add a permanent fixture or seam for the unobservable late-fetch
+   branch. Existing repository tests cover normal results and invalid IDs;
+   `ClassMngrTestingClassesPageCancelFailureParityTests` covers clean-empty
+   success.
+4. After implementation, sequentially build `ClassMngr`,
+   `ClassMngrTestingClassRepositoryTests`, and
+   `ClassMngrTestingClassesPageCancelFailureParityTests` in standard
+   `build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`; run only
+   the exact matching CTests, review the source change, and run
+   `git diff --check`. Do not run the full suite.
+
+F944 acceptance is recorded and implementation is next. F945 remains queued
+in Batch309. Batch310 discovery is underway; the `CampusRecordRepository`
+lead is conditionally reviewed but remains unselected until its pre-fix exact-
+query baseline verifies late-fetch behavior. The 13 official Deferred
+candidates remain unchanged. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
