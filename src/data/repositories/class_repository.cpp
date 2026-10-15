@@ -141,6 +141,11 @@ Result<QList<Classroom>> ClassRepository::getClasses()
         classes.append(classroom);
     }
 
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(query.lastError().text());
+    }
+
     return classes;
 }
 
