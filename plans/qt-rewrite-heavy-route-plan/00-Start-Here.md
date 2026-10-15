@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-15
-- Current milestone: F924 is accepted at source/test commit `24a99551`; two independent post-F924 audits found none of the 13 official Deferred candidates newly actionable, resolved, or superseded. F925 Schedule testing-class choices read is selected next in active Batch306 (F925-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F924 is accepted at source/test commit `24a99551`; two independent post-F924 audits found none of the 13 official Deferred candidates newly actionable, resolved, or superseded. F925 Schedule testing-class choices read has a verified baseline and defined acceptance at source HEAD `24a99551`; implementation and post-change verification remain pending in active Batch306 (F925-F929). Gates 1/2 remain Partial and the formal exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

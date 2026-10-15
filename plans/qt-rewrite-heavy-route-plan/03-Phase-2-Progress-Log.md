@@ -38982,3 +38982,48 @@ candidates; none became newly actionable, resolved, or superseded, and all
 remain unchanged. F925, Schedule testing-class choices read, is selected next
 in active Batch306, now F925-F929. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F925 baseline captured; acceptance defined - 2026-10-15
+
+The F925 production-source baseline is commit
+`24a9955147ba04d41a8bca3a154280827b3669c9`; full HEAD
+`b9153906b00b56b59f4b50e18f149b12c5a2d601` adds the F924 docs closeout.
+`TestingClassRepository::loadTestingClassChoices()` in
+`src/data/repositories/testing_class_repository.cpp` executes an ordered
+SELECT, validates and maps rows in its `query.next()` loop, and returns the
+accumulated choices without checking terminal `lastError()`. The existing
+execution-failure path uses `queryFailure` with context “Loading testing
+classes”; the typed port maps repository failure to `Technical`.
+
+The exact SELECT has `ORDER BY`, and SQLite uses a temporary sorter. Malformed-
+JSON indexed-view probes failed at `exec()` before yielding a row under both
+the QSQLITE baseline probe and isolated SQLite planner variants. Therefore no
+row-prefix/fetch-error baseline, partial-choice behavior, or direct terminal-
+branch runtime assertion is claimed. The query offers no reasonable
+deterministic seam; acceptance will rely on source review and focused existing
+regressions without adding a test-only abstraction.
+
+Acceptance for F925:
+1. After the ordered SELECT loop, if `query.lastError().isValid()`, return the
+   repository failure using the existing helper and action context:
+
+   ```cpp
+   return std::unexpected(queryFailure(
+       query,
+       QObject::tr("Loading testing classes")
+       ));
+   ```
+2. Preserve existing execution-failure handling, SELECT and ordering,
+   validation, field mapping, empty and missing-`class_info` success, and typed
+   `Technical` mapping.
+3. Independently source-review the terminal-error branch and use the focused
+   existing regressions; do not introduce a test-only query seam.
+4. After implementation, force sequential Debug builds in
+   `build/windows-x64-debug` for `ClassMngr`,
+   `ClassMngrTestingClassRepositoryTests`, then
+   `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`;
+   run only exact Debug CTests #21 and #391. No full suite.
+
+Implementation and post-change verification are pending. F925 remains active
+in Batch306 (F925-F929); all 13 official Deferred candidates remain unchanged.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
