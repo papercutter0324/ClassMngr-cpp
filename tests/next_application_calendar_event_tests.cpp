@@ -462,6 +462,7 @@ private slots:
     void repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce();
     void repeatSeriesCreateUseCasePropagatesPortFailure();
     void repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort();
+    void repeatSeriesCreateUseCaseRejectsUnicodeWhitespaceIdWithoutCallingPort();
     void seriesDeleteRequestValidationIsCanonicalAndQtFree();
     void repeatSeriesDeleteUseCaseForwardsRequestAndResultOnce();
     void repeatSeriesDeleteUseCasePropagatesPortFailure();
@@ -2856,6 +2857,42 @@ repeatSeriesCreateUseCaseRejectsInvalidPlanWithoutCallingPort()
 }
 
 void NextApplicationCalendarEventTests::
+repeatSeriesCreateUseCaseRejectsUnicodeWhitespaceIdWithoutCallingPort()
+{
+    FakeCalendarEventSeriesCreatePort port;
+    const std::vector<std::string> unicodeWhitespaceIds{
+        "\xC2\xA0",
+        "\xE3\x80\x80"
+    };
+
+    for (const std::string& repeatSeriesId : unicodeWhitespaceIds)
+    {
+        const CalendarEventSeriesCreateResult result =
+            CalendarEventSeriesCreateUseCase::execute(
+                port,
+                validSaveRequest(),
+                repeatSeriesId,
+                CalendarEventRepeatFrequency::Daily,
+                "2026-09-20"
+                );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Calendar repeat-series identifier must be non-blank and "
+                "bounded."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
+    }
+
+    QCOMPARE(port.createCalls, 0);
+    QVERIFY(!port.receivedRequest.has_value());
+}
+
+void NextApplicationCalendarEventTests::
 seriesDeleteRequestValidationIsCanonicalAndQtFree()
 {
     using ValidationResult = decltype(
@@ -3262,24 +3299,34 @@ repeatSeriesEditUseCasePropagatesPortFailure()
 void NextApplicationCalendarEventTests::
 repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort()
 {
-    auto request = validSeriesEditRequest();
-    request.repeatSeriesId = " \t ";
     FakeCalendarEventSeriesEditPort port;
+    const std::vector<std::string> invalidIds{
+        " \t ",
+        "\xC2\xA0",
+        "\xE3\x80\x80"
+    };
 
-    const CalendarEventSeriesEditResult result =
-        CalendarEventSeriesEditUseCase::execute(port, request);
+    for (const std::string& repeatSeriesId : invalidIds)
+    {
+        auto request = validSeriesEditRequest();
+        request.repeatSeriesId = repeatSeriesId;
+        const CalendarEventSeriesEditResult result =
+            CalendarEventSeriesEditUseCase::execute(port, request);
 
-    QVERIFY(!result);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Calendar repeat-series identifier must be non-blank and "
+                "bounded."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
+    }
+
     QCOMPARE(port.editCalls, 0);
     QVERIFY(!port.receivedRequest.has_value());
-    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
-    QCOMPARE(
-        result.error().message,
-        std::string(
-            "Calendar repeat-series identifier must be non-blank and bounded."
-            )
-        );
-    QVERIFY(!result.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::

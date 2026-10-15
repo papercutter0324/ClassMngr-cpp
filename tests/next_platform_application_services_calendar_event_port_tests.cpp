@@ -2189,7 +2189,41 @@ reportsInvalidSeriesCreateRequestStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
     ApplicationServicesCalendarEventSeriesCreatePort port(services);
+
+    QSqlQuery countBefore(session->database());
+    QVERIFY(countBefore.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events"
+        )));
+    QVERIFY(countBefore.next());
+    const int originalRowCount = countBefore.value(0).toInt();
+    QCOMPARE(originalRowCount, 0);
+
+    const std::vector<std::string> unicodeWhitespaceIds{
+        "\xC2\xA0",
+        "\xE3\x80\x80"
+    };
+    for (const std::string& repeatSeriesId : unicodeWhitespaceIds)
+    {
+        const auto result = port.createRepeatSeries(seriesCreateRequest(
+            repeatSeriesId,
+            {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
+            QStringLiteral("Valid title"),
+            QStringLiteral("Meeting"),
+            QStringLiteral("Timed")
+            ));
+        verifyFailure(result, ErrorCode::InvalidInput);
+    }
+
+    QSqlQuery countAfterUnicodeWhitespace(session->database());
+    QVERIFY(countAfterUnicodeWhitespace.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events"
+        )));
+    QVERIFY(countAfterUnicodeWhitespace.next());
+    QCOMPARE(countAfterUnicodeWhitespace.value(0).toInt(), originalRowCount);
 
     auto blankSeries = seriesCreateRequest(
         "series-invalid",
@@ -2841,6 +2875,9 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto invalid = validSeriesEditRequest();
@@ -2849,6 +2886,25 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
         port.editRepeatSeriesFromDate(invalid),
         ErrorCode::InvalidInput
         );
+
+    const std::vector<std::string> unicodeWhitespaceIds{
+        "\xC2\xA0",
+        "\xE3\x80\x80"
+    };
+    for (const std::string& repeatSeriesId : unicodeWhitespaceIds)
+    {
+        invalid = validSeriesEditRequest();
+        invalid.repeatSeriesId = repeatSeriesId;
+        const auto result = port.editRepeatSeriesFromDate(invalid);
+        verifyFailure(result, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Calendar repeat-series identifier must be non-blank and "
+                "bounded."
+                )
+            );
+    }
 
     invalid = validSeriesEditRequest();
     invalid.startDate = "2026-02-30";

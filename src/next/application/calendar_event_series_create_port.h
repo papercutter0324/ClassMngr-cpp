@@ -1,8 +1,8 @@
 #pragma once
 
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/qt_compatible_text.h"
 
-#include <cctype>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -44,20 +44,7 @@ namespace CalendarEventSeriesCreateRequestDetail
     const std::string_view value
     ) noexcept
 {
-    if (value.empty())
-    {
-        return true;
-    }
-
-    for (const unsigned char character : value)
-    {
-        if (std::isspace(character) == 0)
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return isBlankUtf8Text(value);
 }
 
 [[nodiscard]] inline Domain::Result<void> invalid(

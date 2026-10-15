@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/calendar_event_title_validation.h"
+#include "next/application/qt_compatible_text.h"
 
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/operation_result.h"
@@ -61,20 +62,7 @@ namespace CalendarEventSeriesEditRequestDetail
     const std::string_view value
     ) noexcept
 {
-    if (value.empty())
-    {
-        return true;
-    }
-
-    for (const unsigned char character : value)
-    {
-        if (std::isspace(character) == 0)
-        {
-            return false;
-        }
-    }
-
-    return true;
+    return isBlankUtf8Text(value);
 }
 
 [[nodiscard]] inline std::string_view trimAscii(
