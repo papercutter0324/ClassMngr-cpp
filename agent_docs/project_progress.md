@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F927 accepted; F928 selected)
+### Current state - 2026-10-15 (F928 accepted; F929 selected)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -71,8 +71,24 @@ runtime baseline is claimed. Forced sequential Debug builds passed for
 same 32-bit ID expectation against pre-F927 source `dcbf83a05c70c37382b101a96c3fb5703ff2f5bc`,
 so it is recorded as a baseline failure outside F927. No full suite ran.
 Two independent post-F927 reviews found all 13 official Deferred candidates
-unchanged. F928, Calendar repeat-series edit read, is next. Gates 1/2 remain
-Partial and the formal Phase 2 exit gate is Open.
+unchanged. F928 acceptance and the QSQLITE partial-suffix baseline are recorded
+in the Phase 2 log, committed as `0a5cbe52`. The exact query fetched one valid
+event then failed on the next row's malformed JSON; the repository baseline
+returned the one-row suffix as success. F928 is accepted at source/test commit
+`19feb328`; the repository rejects a terminal cursor error, and the permanent
+port regression proves the typed edit reports the loading failure before its
+persistence sentinel. Existing empty and valid suffix behavior remains
+covered. Independent sequential Debug builds of `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` passed; exact
+CTests #22 and #356 passed 1/1. The Executor's initial self-check emitted a
+nonfatal MSB8064 dependency warning for `teacher_import_plan_mapper.h`; the
+independent forced builds completed without warning output. No full suite ran.
+Two independent post-F928 audits found all 13 official Deferred candidates
+unchanged. Batch307 source discovery closed with F933-F936 selected for after
+F929; F930-F932 were omitted because the caller review found no regular
+in-tree UI path. F929, Staff directory full reads, is next in active Batch306.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

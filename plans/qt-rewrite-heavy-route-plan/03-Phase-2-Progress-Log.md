@@ -39267,3 +39267,32 @@ for after Batch306 closes, with no implementation begun. The active plan stays
 on Batch306. The required 13-item Deferred audit remains due after F928
 acceptance. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F928 accepted; post-F928 Deferred audits clear; F929 selected - 2026-10-15
+
+F928, Calendar repeat-series edit read, is accepted at source/test commit
+`19feb328` (`Phase2 - Reject incomplete calendar repeat-series reads`). The
+post-loop `query.lastError()` guard in
+`CalendarEventRepository::loadCalendarEventsForRepeatSeriesFromDate()` returns
+the contextual loading failure rather than accumulated partial events.
+
+The permanent QSQLITE regression exercises the production-shaped query with a
+valid row followed by a malformed-JSON cursor error, then verifies the typed
+edit returns `Technical` with the loading error before the
+`F928_PERSISTENCE_REACHED` persistence trigger. Existing coverage for clean
+empty-suffix no-op and valid suffix parity remains passing; earlier and
+unrelated events remain preserved.
+
+Forced sequential Debug builds passed for `ClassMngr`,
+`ClassMngrCalendarEventRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. Exact Debug
+CTests #22 and #356 passed 1/1; no full suite ran. The Executor's initial
+build emitted a nonfatal MSB8064 dependency warning for
+`teacher_import_plan_mapper.h`; independent forced builds passed without
+warning output, so both build records are retained.
+
+Two independent post-F928 audits found all 13 official Deferred entries
+unchanged. F929, Staff directory full reads, is selected next; Batch306 now
+contains only F929. Batch307 candidates F933-F936 remain next only after F929
+closes Batch306 and are distinct from the official Deferred list. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

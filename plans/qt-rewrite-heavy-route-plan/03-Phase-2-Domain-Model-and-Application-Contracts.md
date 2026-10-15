@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-15
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F927, My Classes teacher display-name batch read, is accepted at source commit `6dc10fa6`; two independent post-F927 audits found none of the 13 official Deferred candidates actionable, resolved, superseded, or newly triggered; F928, Calendar repeat-series edit read, is selected next in active Batch306 (F928-F929). Gates 1/2 remain Partial and the formal exit gate remains Open.
+- Current note: F928, Calendar repeat-series edit read, is accepted at source/test commit `19feb328`; two independent post-F928 audits found all 13 official Deferred entries unchanged; F929, Staff directory full reads, is next in active Batch306. Gates 1/2 remain Partial and the formal exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch (Batch 306)
 
-- F928 - Calendar repeat-series edit read: reject an incomplete event suffix.
 - F929 - Staff directory full reads: reject partial GS Team and Native English snapshots.
 
 #### Deferred candidates

@@ -5550,3 +5550,13 @@ during `exec()`, before a first row could be observed. Treat this as no
 partial-result runtime baseline; retain the valid missing-teacher success
 regression and source-review the terminal `lastError()` guard rather than
 changing repository abstractions solely to force this cursor state.
+
+## Phase 2 repeat-series edit cursor fixture - 2026-10-15
+
+For an ordered repeat-series read, keep the filter/order keys as indexed
+backing columns and project malformed JSON through a non-ordering view field.
+Probe the exact SELECT to confirm it streams one valid event before the later
+fetch fails. In the typed edit test, an `INSTEAD OF UPDATE` trigger with a
+distinct sentinel proves the load error stopped execution before persistence;
+assert the load diagnostic, absence of the sentinel, and unchanged backing
+data.
