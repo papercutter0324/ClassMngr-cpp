@@ -40031,3 +40031,30 @@ unchanged; none is newly actionable, resolved, superseded, or changed. F940,
 baseline and acceptance are pending. F941-F945 remain queued. Begin Batch310
 discovery when F944, the second-last Batch309 item, starts. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F940 already covered; F941 next in Batch309 - 2026-10-15
+
+F940, `ClassInfoRepository::loadSubPrepClassSummaries()`, is closed as already
+covered with no source or test change. Source review confirms the schedule-row
+loop checks terminal errors and clears `studentCounts` on an invalid row or
+roster-cursor error, preserving the documented legacy zero-count fallback.
+This terminal branch is source-reviewed, not runtime-proved: an indexed,
+malformed-JSON-view baseline attempt failed at `probe.exec()` with
+`malformed JSON Unable to fetch row` before yielding a row. No seam or custom
+driver was added.
+
+The existing
+`rosterAggregateFailureKeepsLegacyZeroCountFallback()` test covers query
+execution failure and passed in the exact Debug CTest run. A clean Debug
+focused-target build passed in `build/windows-x64-debug` with
+`/p:TrackFileAccess=false`; CTest
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests` #310
+passed 1/1 in 3.37 seconds. No full suite ran.
+
+F941, legacy `SpeakingEvalRepository::loadSpeakingEval()` failure scope, is
+next with baseline and acceptance pending. F942-F945 remain queued in
+Batch309; begin Batch310 discovery when F944, the second-last item, starts.
+The prior two post-F939 audits found all 13 official Deferred entries
+unchanged; no post-F940 independent audit was run, and this closeout leaves the
+Deferred list unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-15 (F939 accepted; Batch309 active)
+### Current state - 2026-10-15 (F940 covered; Batch309 active)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -163,9 +163,16 @@ passed with `/p:TrackFileAccess=false`; its exact CTest passed 1/1 and
 `git diff --check` passed. The untranslated SQL action labels predated F939 and
 were reused, so no translation-catalog change was needed. Two independent
 post-F939 audits again found all 13 official Deferred entries unchanged and
-none newly actionable, resolved, or superseded. F940 is next in Batch309, with
-F941-F945 queued. Gates 1/2 remain Partial and the formal Phase 2 exit gate is
-Open.
+none newly actionable, resolved, or superseded. F940 is closed as already
+covered: its schedule-summary loop checks terminal `lastError()` before
+returning summaries, while a roster-aggregation failure clears accumulated
+counts and retains the legacy zero-count fallback. The temporary indexed JSON
+view probe could not reach the terminal branch because the exact query failed
+at `exec()` with malformed JSON before yielding a row; that temporary edit was
+restored byte-for-byte. After restoration, the focused Debug target built with
+`/p:TrackFileAccess=false` and exact CTest #310 passed 1/1. No full suite ran.
+F941 is next in Batch309, with F942-F945 queued. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate is Open.
 
 F910 remains accepted at source/test commit `c6cb6c098d34835a5ee49f7bc756a2521a87797d`. Its typed Roster Availability batch carries parent provenance through the column and sparse-cell reads in one read transaction; only a confirmed missing parent yields per-entry recoverable `NotFound`, and orphan data is suppressed. Exact CTests #224 and #319 passed. CTest #118 failed twice in `workflowProjectionMatchesRosterModel`, which exercises a stubbed row-transfer use case outside F910. With no pre-change aggregate baseline, #118 remains unresolved and is not classified as pre-existing. No full suite ran.
 

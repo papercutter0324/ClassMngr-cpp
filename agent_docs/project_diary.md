@@ -5652,3 +5652,13 @@ later malformed-JSON fetch fails; the port must report the contextual
 Technical error rather than expose that prefix. SQL operation labels reused by
 F939 predated the slice, so translation notices alone did not justify expanding
 its source/test scope.
+
+## Phase 2 Sub Prep summary cursor review - 2026-10-15
+
+F940's live schedule-summary query already checks terminal cursor state before
+returning accumulated schedules. Its separate roster-count aggregation keeps a
+documented zero-count fallback and explicitly clears any prefix when row data
+or terminal cursor state is invalid. The malformed-JSON probe failed during
+`exec()` before returning rows, so this installed QSQLITE query shape did not
+provide runtime evidence for the late-fetch branch. Keep that limit explicit
+and rely on source review rather than introducing a test seam or custom driver.
