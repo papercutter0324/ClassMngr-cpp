@@ -548,15 +548,22 @@ void SpeakingEvalBatchExportDialog::exportReports()
         return;
     }
     case SpeakingEvalBatchReportService::Status::Canceled:
-        return;
-    case SpeakingEvalBatchReportService::Status::Failed:
-    case SpeakingEvalBatchReportService::Status::InternalRendererFailed:
-        DialogServices::showWarning(
+    {
+        SpeakingEvalBatchExportDialogPresentation::showOutcomeNotice(
             this,
-            tr("Report Export Failed"),
-            result.message
+            result
             );
         return;
+    }
+    case SpeakingEvalBatchReportService::Status::Failed:
+    case SpeakingEvalBatchReportService::Status::InternalRendererFailed:
+    {
+        SpeakingEvalBatchExportDialogPresentation::showOutcomeNotice(
+            this,
+            result
+            );
+        return;
+    }
     }
 }
 

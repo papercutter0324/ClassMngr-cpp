@@ -1,6 +1,7 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
+#include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_notes_dialog.h"
@@ -107,10 +108,9 @@ public:
 
     ~SpeakingEvalCustomWebsiteUrlRestorer()
     {
-        ClassMngr::Next::Platform::
-            SettingsManagerAiCommentCustomWebsitePort().write(
-                m_originalUrl
-                );
+        const auto restoreResult = ClassMngr::Next::Platform::
+            SettingsManagerAiCommentCustomWebsitePort().save(m_originalUrl);
+        Q_UNUSED(restoreResult);
         SettingsManager::instance().sync();
     }
 
@@ -539,6 +539,10 @@ private slots:
     void reportDateUsesShortMonthsForStandardTemplate();
     void internalRendererCreatesReadablePdf();
     void batchCanKeepIndividualPdfFiles();
+    void postCommitPrintOutcomesRetainCommittedOutput_data();
+    void postCommitPrintOutcomesRetainCommittedOutput();
+    void preCommitCancellationHasNoSavedOutput();
+    void batchExportPresentationSurfacesCommittedOutput();
     void existingBatchArchiveRequiresOverwritePermission();
     void duplicateBatchFileNamesAreRejected();
     void internalPdfMatchesWidgetRendering_data();
@@ -596,6 +600,14 @@ private slots:
     void powerPointBatchCancellationLeavesNoFilesWhenAvailable();
 
 private:
+    enum class PrintOutputKind
+    {
+        PrintOnly,
+        IndividualPdf,
+        ArchiveOnly,
+        ArchiveAndIndividualPdfs
+    };
+
     QTemporaryDir m_settingsRoot;
 };
 
@@ -972,6 +984,321 @@ void SpeakingEvalBatchReportServiceTests::batchCanKeepIndividualPdfFiles()
             pdf.readAll()
             );
     }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    postCommitPrintOutcomesRetainCommittedOutput_data()
+{
+    QTest::addColumn<int>("printStatus");
+    QTest::addColumn<int>("outputKind");
+
+    const int canceled =
+        static_cast<int>(DocumentOutputStatus::Canceled);
+    const int failed =
+        static_cast<int>(DocumentOutputStatus::Failed);
+    using OutputKind = PrintOutputKind;
+    QTest::newRow("canceled-print-only")
+        << canceled << static_cast<int>(OutputKind::PrintOnly);
+    QTest::newRow("failed-print-only")
+        << failed << static_cast<int>(OutputKind::PrintOnly);
+    QTest::newRow("canceled-individual-pdf")
+        << canceled << static_cast<int>(OutputKind::IndividualPdf);
+    QTest::newRow("failed-individual-pdf")
+        << failed << static_cast<int>(OutputKind::IndividualPdf);
+    QTest::newRow("canceled-archive-only")
+        << canceled << static_cast<int>(OutputKind::ArchiveOnly);
+    QTest::newRow("failed-archive-only")
+        << failed << static_cast<int>(OutputKind::ArchiveOnly);
+    QTest::newRow("canceled-archive-and-individual")
+        << canceled << static_cast<int>(OutputKind::ArchiveAndIndividualPdfs);
+    QTest::newRow("failed-archive-and-individual")
+        << failed << static_cast<int>(OutputKind::ArchiveAndIndividualPdfs);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    postCommitPrintOutcomesRetainCommittedOutput()
+{
+    QFETCH(int, printStatus);
+    QFETCH(int, outputKind);
+
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    const PrintOutputKind kind =
+        static_cast<PrintOutputKind>(outputKind);
+    const int reportCount =
+        kind == PrintOutputKind::IndividualPdf ? 1 : 2;
+
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    for (int index = 0; index < reportCount; ++index)
+    {
+        SpeakingEvalReportData report =
+            goldenReportData(SpeakingEvalReportTemplate::Standard);
+        report.englishName =
+            index == 0
+                ? QStringLiteral("First Print Outcome Student")
+                : QStringLiteral("Second Print Outcome Student");
+        reports.append({ report.englishName, report });
+    }
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = reports;
+    request.printReports = true;
+    request.savePdf = kind != PrintOutputKind::PrintOnly;
+    request.keepIndividualPdfFiles =
+        kind == PrintOutputKind::IndividualPdf
+        || kind == PrintOutputKind::ArchiveAndIndividualPdfs;
+    request.outputDirectory = outputDirectory.path();
+
+    int printerCallCount = 0;
+    const QString printError = QStringLiteral("The printer rejected the job.");
+    request.printCallback = [printStatus, printError, &printerCallCount]()
+    {
+        ++printerCallCount;
+        return DocumentOutputResult{
+            static_cast<DocumentOutputStatus>(printStatus),
+            printError,
+            {},
+            {}
+        };
+    };
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    const DocumentOutputStatus expectedStatus =
+        static_cast<DocumentOutputStatus>(printStatus);
+    QCOMPARE(result.status, expectedStatus);
+    QVERIFY(!result.succeeded());
+    QCOMPARE(printerCallCount, 1);
+    if (expectedStatus == DocumentOutputStatus::Failed)
+    {
+        QCOMPARE(result.message, printError);
+    }
+
+    QStringList expectedPdfPaths;
+    QString expectedArchivePath;
+    if (kind == PrintOutputKind::IndividualPdf
+        || kind == PrintOutputKind::ArchiveAndIndividualPdfs)
+    {
+        for (const auto& student : reports)
+        {
+            expectedPdfPaths.append(
+                QDir(outputDirectory.path()).filePath(
+                    SpeakingEvalBatchReportService::safeFileName(
+                        student.report.englishName,
+                        student.report.koreanName
+                        )
+                    )
+                );
+        }
+    }
+    if (kind == PrintOutputKind::ArchiveOnly
+        || kind == PrintOutputKind::ArchiveAndIndividualPdfs)
+    {
+        expectedArchivePath =
+            SpeakingEvalBatchReportService::batchArchivePath(
+                outputDirectory.path()
+                );
+    }
+    if (expectedStatus == DocumentOutputStatus::Canceled
+        && expectedPdfPaths.isEmpty()
+        && expectedArchivePath.isEmpty())
+    {
+        QCOMPARE(result.message, QStringLiteral("Report export was canceled."));
+    }
+    else if (expectedStatus == DocumentOutputStatus::Canceled)
+    {
+        QCOMPARE(
+            result.message,
+            QStringLiteral(
+                "Printing was canceled after the reports were saved."
+                )
+            );
+    }
+    QCOMPARE(result.savedPdfPaths, expectedPdfPaths);
+    QCOMPARE(result.savedArchivePath, expectedArchivePath);
+
+    for (const QString& savedPath : result.savedPdfPaths)
+    {
+        QVERIFY2(QFileInfo::exists(savedPath), qPrintable(savedPath));
+        QVERIFY(
+            !savedPath.contains(
+                QStringLiteral("ClassMngr-speaking-evaluations-")
+                )
+            );
+    }
+    if (!result.savedArchivePath.isEmpty())
+    {
+        QVERIFY(QFileInfo::exists(result.savedArchivePath));
+        QVERIFY(
+            !result.savedArchivePath.contains(
+                QStringLiteral("ClassMngr-speaking-evaluations-")
+                )
+            );
+    }
+}
+
+void SpeakingEvalBatchReportServiceTests::preCommitCancellationHasNoSavedOutput()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData report =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    report.englishName = QStringLiteral("Canceled Before Commit");
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = { { report.englishName, report } };
+    request.savePdf = true;
+    request.printReports = true;
+    request.outputDirectory = outputDirectory.path();
+    request.progressCallback = [](int, int, const QString&)
+    {
+        return false;
+    };
+    int printerCallCount = 0;
+    request.printCallback = [&printerCallCount]()
+    {
+        ++printerCallCount;
+        return DocumentOutputResult{
+            DocumentOutputStatus::Canceled,
+            QStringLiteral("Print callback should not run."),
+            {},
+            {}
+        };
+    };
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+
+    QCOMPARE(result.status, DocumentOutputStatus::Canceled);
+    QVERIFY(!result.succeeded());
+    QVERIFY(result.savedPdfPaths.isEmpty());
+    QVERIFY(result.savedArchivePath.isEmpty());
+    QCOMPARE(result.message, QStringLiteral("Report export was canceled."));
+    QCOMPARE(printerCallCount, 0);
+    QVERIFY(
+        QDir(outputDirectory.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot
+            ).isEmpty()
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    batchExportPresentationSurfacesCommittedOutput()
+{
+    const QString firstPdf = QStringLiteral("C:/Reports/First.pdf");
+    const QString secondPdf = QStringLiteral("C:/Reports/Second.pdf");
+    const QString archive = QStringLiteral("C:/Reports/Reports.zip");
+
+    DocumentOutputResult canceledResult{
+        DocumentOutputStatus::Canceled,
+        QStringLiteral("Printing was canceled after the reports were saved."),
+        { firstPdf, secondPdf },
+        archive
+    };
+    const auto canceledNotice =
+        SpeakingEvalBatchExportDialogPresentation::outcomeNotice(
+            canceledResult
+            );
+    QCOMPARE(
+        canceledNotice.kind,
+        SpeakingEvalBatchExportDialogPresentation::NoticeKind::Information
+        );
+    QCOMPARE(
+        canceledNotice.title,
+        QStringLiteral("Reports Saved, Printing Canceled")
+        );
+    QVERIFY(canceledNotice.message.contains(firstPdf));
+    QVERIFY(canceledNotice.message.contains(secondPdf));
+    QVERIFY(canceledNotice.message.contains(archive));
+
+    FakeUserPromptService promptService;
+    struct ResetPromptService final
+    {
+        ~ResetPromptService()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    };
+    const ResetPromptService resetPromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+    SpeakingEvalBatchExportDialogPresentation::showOutcomeNotice(
+        nullptr,
+        canceledResult
+        );
+    QCOMPARE(promptService.messages.size(), 1);
+    QCOMPARE(
+        promptService.messages.constFirst().severity,
+        PromptSeverity::Information
+        );
+    QCOMPARE(
+        promptService.messages.constFirst().title,
+        QStringLiteral("Reports Saved, Printing Canceled")
+        );
+    QVERIFY(promptService.messages.constFirst().message.contains(firstPdf));
+    QVERIFY(promptService.messages.constFirst().message.contains(archive));
+
+    DocumentOutputResult failedResult{
+        DocumentOutputStatus::Failed,
+        QStringLiteral("The printer rejected the job."),
+        { firstPdf, secondPdf },
+        archive
+    };
+    const auto failedNotice =
+        SpeakingEvalBatchExportDialogPresentation::outcomeNotice(
+            failedResult
+            );
+    QCOMPARE(
+        failedNotice.kind,
+        SpeakingEvalBatchExportDialogPresentation::NoticeKind::Warning
+        );
+    QCOMPARE(failedNotice.title, QStringLiteral("Printing Failed"));
+    QVERIFY(failedNotice.message.contains(failedResult.message));
+    QVERIFY(failedNotice.message.contains(firstPdf));
+    QVERIFY(failedNotice.message.contains(secondPdf));
+    QVERIFY(failedNotice.message.contains(archive));
+    SpeakingEvalBatchExportDialogPresentation::showOutcomeNotice(
+        nullptr,
+        failedResult
+        );
+    QCOMPARE(promptService.messages.size(), 2);
+    QCOMPARE(
+        promptService.messages.constLast().severity,
+        PromptSeverity::Warning
+        );
+    QCOMPARE(
+        promptService.messages.constLast().title,
+        QStringLiteral("Printing Failed")
+        );
+    QVERIFY(
+        promptService.messages.constLast().message.contains(
+            failedResult.message
+            )
+        );
+    QVERIFY(promptService.messages.constLast().message.contains(firstPdf));
+    QVERIFY(promptService.messages.constLast().message.contains(archive));
+
+    DocumentOutputResult plainCancellation{
+        DocumentOutputStatus::Canceled,
+        QStringLiteral("Report export was canceled."),
+        {},
+        {}
+    };
+    const auto quietNotice =
+        SpeakingEvalBatchExportDialogPresentation::outcomeNotice(
+            plainCancellation
+            );
+    QCOMPARE(
+        quietNotice.kind,
+        SpeakingEvalBatchExportDialogPresentation::NoticeKind::None
+        );
+    QVERIFY(quietNotice.message.isEmpty());
+    SpeakingEvalBatchExportDialogPresentation::showOutcomeNotice(
+        nullptr,
+        plainCancellation
+        );
+    QCOMPARE(promptService.messages.size(), 2);
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -4939,7 +5266,9 @@ void SpeakingEvalBatchReportServiceTests::
             "https://custom.example.test/f482/preview?source=phase2"
             );
     providerPreferences.write(PersistedProvider::CustomWebsite);
-    customWebsitePreferences.write(customWebsiteUrl.toStdString());
+    QVERIFY(
+        customWebsitePreferences.save(customWebsiteUrl.toStdString()).hasValue()
+        );
     SettingsManager::instance().sync();
 
     SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;

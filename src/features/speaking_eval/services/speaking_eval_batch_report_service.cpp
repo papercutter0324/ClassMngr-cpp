@@ -42,19 +42,26 @@ Result completed(
     };
 }
 
-Result canceled()
+Result canceled(
+    const QStringList& savedPdfPaths = {},
+    const QString& savedArchivePath = {}
+    )
 {
     return {
         Status::Canceled,
-        QObject::tr("Report export was canceled."),
-        {},
-        {}
+        savedPdfPaths.isEmpty() && savedArchivePath.isEmpty()
+            ? QObject::tr("Report export was canceled.")
+            : QObject::tr("Printing was canceled after the reports were saved."),
+        savedPdfPaths,
+        savedArchivePath
     };
 }
 
 Result failed(
     const QString& message,
-    bool internalRendererFailed = false
+    bool internalRendererFailed = false,
+    const QStringList& savedPdfPaths = {},
+    const QString& savedArchivePath = {}
     )
 {
     return {
@@ -62,8 +69,8 @@ Result failed(
             ? Status::InternalRendererFailed
             : Status::Failed,
         message,
-        {},
-        {}
+        savedPdfPaths,
+        savedArchivePath
     };
 }
 
@@ -705,28 +712,41 @@ Result exportReports(
     {
         const bool printingOneReport =
             request.reports.size() == 1;
-        const PdfPrintService::Result printResult =
-            PdfPrintService::printPdfDocuments(
-                {
-                    request.parent,
-                    stagedPdfPaths,
-                    printingOneReport
-                        ? QObject::tr("Print Speaking Evaluation Report")
-                        : QObject::tr("Print Speaking Evaluation Reports"),
-                    QPageLayout::Portrait,
-                    QPageSize::A4,
-                    true
-                }
-                );
+        const PdfPrintService::Result printResult = request.printCallback
+            ? request.printCallback()
+            : PdfPrintService::printPdfDocuments(
+                  {
+                      request.parent,
+                      stagedPdfPaths,
+                      printingOneReport
+                          ? QObject::tr("Print Speaking Evaluation Report")
+                          : QObject::tr("Print Speaking Evaluation Reports"),
+                      QPageLayout::Portrait,
+                      QPageSize::A4,
+                      true
+                  }
+                  );
+
+        const QStringList savedPdfPaths = savingIndividualPdfFiles
+            ? targetPaths
+            : QStringList();
+        const QString savedArchivePath = creatingBatchArchive
+            ? targetArchivePath
+            : QString();
 
         if (printResult.status == PdfPrintService::Status::Canceled)
         {
-            return canceled();
+            return canceled(savedPdfPaths, savedArchivePath);
         }
 
         if (printResult.status == PdfPrintService::Status::Failed)
         {
-            return failed(printResult.message);
+            return failed(
+                printResult.message,
+                false,
+                savedPdfPaths,
+                savedArchivePath
+                );
         }
     }
 

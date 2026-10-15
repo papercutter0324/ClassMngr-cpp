@@ -46,6 +46,9 @@ struct Request
     QString outputFilePath;
     std::function<bool(int completed, int total, const QString& studentName)>
         progressCallback;
+    // Replaces the printer operation when supplied, allowing deterministic
+    // post-commit print outcomes in service tests.
+    std::function<Result()> printCallback;
 };
 
 [[nodiscard]] QString rendererDisplayName(
