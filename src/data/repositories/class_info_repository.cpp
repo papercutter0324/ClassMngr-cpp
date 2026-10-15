@@ -4308,6 +4308,15 @@ ClassInfoRepository::loadClassesNavigationRecords(
             }
         }
 
+        if (timesQuery.lastError().isValid())
+        {
+            return std::unexpected(SqlQueryUtils::errorFor(
+                timesQuery,
+                action,
+                queryText
+                ).userMessage());
+        }
+
         return {};
     };
 
