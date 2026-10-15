@@ -5900,3 +5900,25 @@ proposed first-fetch error or public partial-success path. Do not claim that
 behavior from source inspection alone or add a custom driver solely to force
 it. The temporary probe was removed and both test-area files were restored to
 their HEAD hashes; no production source changed.
+
+## F947 Co-Teacher persisted identity and F948 subtitle parity - 2026-10-16
+
+F947 closes the Co-Teacher page's malformed stored `teacher_id` mismatch.
+Repository-originated invalid stored identity now maps to nonrecoverable
+Validation in `classFields`, while caller-supplied invalid ClassIds keep the
+early InvalidInput result. The regression pins the exact repository message
+and verifies teacher display remains an independent recoverable NotFound.
+Independent sequential Debug builds of `ClassMngr` and the focused Co-Teacher
+read-port test target passed; CTest #334 passed 1/1. Commits: documentation
+`c2d41335`, code and test `ec6eae8f`. No full suite ran.
+
+Two post-slice audits found the exact 13 official Deferred entries unchanged.
+Batch313 produced no distinct candidate. Batch314 selected F948 for the
+single/batch Selected Class Subtitle paths: both repository loaders reject the
+same malformed persisted teacher ID, but one adapter reports InvalidInput
+and the other Technical. The accepted scope classifies that local shared
+failure as Validation in both paths, preserving separate caller validation,
+missing-parent, SQL/cursor, unassigned, and independent teacher behavior.
+Class Notes and Testing Class are excluded because their accepted routes do
+not establish a global corruption-classification policy. F948 acceptance is
+recorded in the Phase 2 plan; implementation is next.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F947 is accepted for implementation next in Batch312; all 13 official Deferred candidates remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F948 is accepted for implementation next in Batch314; two post-F947 audits found all 13 official Deferred candidates unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch (Batch 312)
+#### Active batch (Batch 314)
 
-- F947 - Co-Teacher page persisted-ID error mapping: classify repository-side malformed stored `teacher_id` as `Validation` while preserving caller-ID behavior and other results.
+- F948 - Selected Class Subtitle stored teacher-ID error parity: classify malformed persisted `teacher_id` as `Validation` in both single and batch subtitle reads while preserving caller-ID behavior and other results.
 
 #### Deferred candidates
 

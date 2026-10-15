@@ -40532,3 +40532,61 @@ Acceptance for implementation:
 F947 is accepted; implementation is next in Batch312. No code implementation
 has begun. All 13 official Deferred entries remain unchanged. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F947 complete; Batch313 shortfall; F948 accepted - 2026-10-16
+
+F947 is complete in documentation commit `c2d41335` and source/test commit
+`ec6eae8f`. `ApplicationServicesClassCoTeacherPageReadPort` now maps a
+repository-originated malformed persisted co-teacher `teacher_id` diagnostic
+to nonrecoverable `Validation`; the caller's invalid `ClassId` remains
+`InvalidInput`. Its regression uses a valid caller ID and nonnumeric stored ID,
+asserts a successful outer snapshot and the exact repository error in
+`classFields`, and verifies the independent recoverable teacher-display
+`NotFound` result.
+
+The independent Tester sequentially built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests` in
+`build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`. Exact CTest
+#334 passed 1/1; source review and `git diff --check` passed. No full suite ran.
+Two post-F947 audits reviewed all 13 official Deferred entries and found none
+newly actionable, resolved, superseded, or changed; all 13 remain unchanged.
+
+Batch313 scans found no distinct candidate accepted for implementation; this
+discovery shortfall is recorded here only. Batch314 scans identified F948 in
+Selected Class Subtitle reads. The single and batch repository loaders reject
+a nonnumeric persisted `class_info.teacher_id` with respective diagnostics
+`Loading class subtitle failed: the database returned an invalid teacher
+identifier.` and `Loading class subtitles failed: the database returned an
+invalid teacher identifier.` Their typed adapters currently map this same
+stored-data condition to `InvalidInput` and `Technical`, respectively.
+Caller-ID validation is separate. Existing port tests do not cover a textual
+stored ID. F805 wide-ID and F895/F899 parent-provenance work are distinct;
+Class Notes is excluded because F891 covers another route and preserves its
+malformed-data behavior, while F887 explicitly retains `Technical` for Testing
+Class. Investigator review supports this narrow single/batch parity slice;
+there is no project-wide malformed-data policy. No F948 pre-fix runtime probe,
+build, or test was run because the source mapping is deterministic.
+
+F948 acceptance for implementation:
+
+1. In both single and batch Selected Class Subtitle adapters, map the
+   repository's malformed persisted teacher-ID diagnostic to nonrecoverable
+   `Validation` in `classFields`, while each outer read remains a successful
+   snapshot. Add DB-backed regressions to the existing single and batch port
+   tests, asserting each exact route diagnostic; the batch case also asserts
+   requested IDs/order and existing independent teacher-component behavior.
+2. Preserve early caller-ID `InvalidInput`; nonpositive stored IDs as
+   unassigned; missing/deleted-parent `NotFound`; SQL/cursor `Technical`; wide
+   IDs; teacher-lookup independence; batch ordering; and `Technical` for all
+   other repository failures.
+3. Sequentially build `ClassMngr`,
+   `ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests`,
+   and
+   `ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests`
+   in `build/windows-x64-debug` Debug with `/p:TrackFileAccess=false`. Run only
+   the two matching Debug CTests, review the source, and run `git diff
+   --check`; do not run the full suite.
+
+F947 is complete and F948 is accepted as next in Batch314. The exact 13
+official Deferred entries remain unchanged after the two post-F947 audits.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

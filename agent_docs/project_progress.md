@@ -5534,3 +5534,25 @@ Testing-Class regression remains the classification boundary. Focused target
 cleanup verification passed 1/1 after elevated FileTracker retries, and the
 temporary test slot was removed before F887 implementation. Gates 1/2 remain
 Partial and the formal exit gate is Open.
+
+## Phase 2 current position - 2026-10-16 (F947 complete; F948 selected)
+
+F947 is complete at acceptance documentation commit `c2d41335` and source/test
+commit `ec6eae8f`. The typed Co-Teacher page port classifies malformed
+persisted teacher IDs as nonrecoverable Validation while retaining the early
+caller ClassId InvalidInput check. Its regression verifies the exact repository
+diagnostic and the independent teacher-display NotFound result. Independent
+sequential Debug builds of `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests`
+passed; exact CTest #334 passed 1/1. No full suite ran.
+
+Post-F947 review found no newly actionable, resolved, superseded, or changed
+item among the 13 official Deferred candidates. Batch313 discovery found no
+distinct candidate. Batch314 selected F948, a local parity fix for malformed
+persisted `class_info.teacher_id` in the single and batch Selected Class
+Subtitle reads, which currently classify the same repository failure as
+InvalidInput and Technical. Acceptance and focused verification are recorded
+in the Phase 2 progress log. Class Notes and Testing Class remain outside this
+local slice because their routes retain separate accepted behavior; no
+project-wide malformed-data classification rule is claimed. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
