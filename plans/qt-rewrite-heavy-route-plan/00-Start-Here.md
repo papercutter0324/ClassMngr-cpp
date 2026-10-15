@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F956 and Batch324 are complete; F957 is the sole active Batch326 roster-transfer Application-contract slice after the workspace/setup scan found no distinct candidate. Two independent audits found all 13 official Deferred entries verbatim unchanged, with none actionable, resolved, or superseded by F957; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F957 and Batch326 are complete; Batch327 found no defensible candidate and F958 is the sole active Batch328 typed schedule-save integrity slice; two post-F957 audits found all 13 official Deferred entries verbatim unchanged, with none actionable, resolved, or superseded; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

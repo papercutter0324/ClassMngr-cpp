@@ -5761,24 +5761,36 @@ names on the single Speaking Evaluation query while preserving recoverable
 InvalidInput semantics, exact padded-name lookup, and batch fallback. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
-### F957 active in Batch326 - 2026-10-16
+### F958 active in Batch328 - 2026-10-16
 
-F956 is complete at source/test commit `2d3bda62`; its focused Schedule View
-projection Debug build and exact CTest passed 1/1. Batch325 closed without an
-actionable candidate. Batch326's workspace/setup scan found no distinct issue;
-its roster-transfer scan selected F957 because a direct use-case caller can
-provide extra cells on the selected source row that projection ignores. The
-current UI preflights the full roster, so this is API-contract hardening, not
-a demonstrated UI defect. F650's final-snapshot checks do not validate the
-selected row after removal. Two independent audits found all 13 official
-Deferred entries unchanged; the Class Analytics allocation item is a broad
-thematic match only.
+F957 is complete at source/test commit `a14de63f`, following acceptance docs
+commit `683bdacc`. The independent Tester rebuilt
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
+`/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
+Two post-commit audits found all 13 official Deferred entries verbatim
+unchanged, with none actionable, resolved, or superseded. Batch326 is closed.
 
-Acceptance: reject only a selected row wider than `sourceRoster.columns`
-after ID and row-removal checks, using the existing nonrecoverable Source
-validation error before remaining-source validation or target read. Preserve
-short rows, other validation/preparation order, F650 checks, atomic save, and
-UI/adapter/repository behavior. Implement an app-less regression, then build
-and run only `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in the
-standard Debug folder. No full suite. Gates 1/2 remain Partial; Phase 2 exit
+Batch327's Qt-free Domain-invariant and general Application-boundary scans
+found no defensible candidate. Batch328's typed read/result and non-class
+command scans also found no other candidate. Its class/teacher/schedule scan
+identified a possible stale schedule-conflict precheck in typed Class Details
+saves. Two independent reviews found regular and intensive conflict reads
+happen before the typed repository opens its `BEGIN IMMEDIATE` transaction;
+the transaction checked only the parent before writing. Separate writable
+sessions can therefore both pass the old-state checks and serialize
+overlapping schedules. This is code-derived and reachable, but not runtime
+reproduced. The UI is synchronous, and collaborative editing is not an
+explicit product guarantee; F958 is narrowly a typed-save integrity guard,
+not a profile-wide concurrency guarantee.
+
+F958 acceptance: after acquiring the typed save's `BEGIN IMMEDIATE` transaction
+and confirming the parent, recheck regular and intensive conflicts before any
+write. Preserve the `Technical` failure classification and diagnostic format
+(`Class schedule conflict: ...`); keep port preflight and static-conflict
+behavior. Leave legacy save paths unchanged. Add deterministic two-session
+stale-precheck regressions for both regular and intensive overlaps, asserting
+the losing save fails and does not mutate its class. Build `ClassMngr` then
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`
+sequentially in standard Debug with `/p:TrackFileAccess=false`; run only the
+matching exact CTest. No full suite. Gates 1/2 remain Partial; Phase 2 exit
 remains Open.

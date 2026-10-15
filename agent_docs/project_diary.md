@@ -6076,18 +6076,26 @@ independent audits confirmed all 13 official Deferred entries remain
 unchanged and none is actionable, resolved, or superseded. Batch325 later
 closed without a candidate.
 
-## F957 selected - 2026-10-16
+## F957 complete; F958 selected - 2026-10-16
 
-Batch326's workspace/setup scan found no distinct candidate. Its roster-transfer
-scan selected an Application-contract hardening change: reject a selected
-source row whose cell count exceeds the declared columns, after ID and row
-removal checks but before validating the remaining source or reading the
-target. This prevents extra cells from being silently omitted by projection
-while preserving invalid-index and empty-row precedence and short-row support.
-Use the existing nonrecoverable Source validation result. Keep all other
-selected-row/content behavior, F650 final-snapshot checks, and atomic save
-contract unchanged. The current Roster UI preflights the full roster, so this
-is not a claim of a live UI defect. Two independent audits confirmed all 13
-official Deferred entries remain verbatim deferred; the Class Analytics
-allocation item is only a broad thematic match. Focused implementation and
-verification are pending.
+F957 completed at code commit `a14de63f`, after acceptance docs commit
+`683bdacc`. The independent Tester rebuilt
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
+`/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
+Two independent post-commit audits found all 13 official Deferred entries
+verbatim unchanged. Batch326 closed; Batch327 found no defensible candidate.
+
+Batch328 also found no candidate in typed read/result or non-class command
+scans. Its class/teacher/schedule scan selected F958: recheck regular and
+intensive schedule conflicts within the typed Class Details save's existing
+`BEGIN IMMEDIATE` transaction before the first write. The pre-transaction
+checks can be stale across separate writable sessions; the concern is
+code-derived and reachable, but not runtime reproduced. This acceptance does
+not claim collaborative editing or a profile-wide concurrency guarantee.
+Preserve Technical classification and the existing diagnostic format
+(`Class schedule conflict: ...`), port preflight, and static-conflict behavior.
+Do not modify legacy save paths. Add deterministic two-session regressions for
+regular and intensive overlaps; build the app and
+focused save-port target sequentially in standard Debug, run only its exact
+CTest, and do not run the full suite. Gates 1/2 remain Partial; Phase 2 exit is
+Open.

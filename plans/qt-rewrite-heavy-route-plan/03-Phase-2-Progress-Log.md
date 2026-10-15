@@ -41083,3 +41083,61 @@ F957 acceptance for implementation:
    Inspect the diff and run `git diff --check`; do not run the full suite.
 
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F957 complete; Batch326 closed; Batch327 shortfall; F958 active in Batch328 - 2026-10-16
+
+F957 is complete at source/test commit
+`a14de63f06c807d683cab61bb36346556529ab23`, following
+acceptance/current-position commit `683bdacce57aaf332c21766d9c4d6a0ea1b16959`.
+Independent Tester rebuilt
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
+`/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
+Two fresh post-commit audits independently confirmed all 13 official Deferred
+entries remain verbatim unchanged; none became actionable, resolved, or
+superseded. Their only relationship to F957 was broad roster-theme proximity to
+Class Analytics, with no material overlap. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open. Batch326 is closed.
+
+Batch327's Qt-free Domain-invariant and general Application-boundary scans
+found no defensible candidate. Batch328's typed read/result-boundary and
+non-class-command scans found no other candidate. Its class/teacher/schedule
+save scan identified a stale schedule-conflict precheck in the typed Class
+Details save route. Two independent investigators confirmed regular and
+intensive conflicts are checked before `saveClassDetailsDetailed()` opens its
+typed `BEGIN IMMEDIATE` transaction, and the transaction writes without
+rechecking. Separate writable sessions can both pass old-state checks and then
+serialize overlapping schedules. This is a code-derived, reachable scenario;
+no runtime reproduction was performed. The normal UI is synchronous; multiple
+application instances can open the same profile, and no application-level
+single-instance or file lock was found. Product collaborative editing is not
+explicitly promised.
+F958 is typed-save integrity hardening for reachable same-profile writers; it
+does not assert collaborative-editing support or a profile-wide guarantee.
+
+F958 acceptance for implementation:
+
+1. In the typed `ClassInfoRepository::saveClassDetailsDetailed` route, after
+   acquiring `BEGIN IMMEDIATE` and confirming the parent, but before the first
+   write, recheck both regular and intensive schedule conflicts for the full
+   `ClassInfo` passed to the transaction.
+2. On conflict, fail before changing either class. Preserve current
+   `Technical` classification and diagnostic format (`Class schedule
+   conflict: ...`). Keep the existing port preflight and static-conflict
+   behavior.
+3. Do not change legacy save transaction/path behavior or claim a profile-wide
+   guarantee.
+4. Add deterministic stale-precheck regressions in
+   `tests/next_platform_application_services_class_details_save_port_tests.cpp`:
+   open two independent sessions on one temporary profile, stage both
+   candidate conflict prechecks successfully before either write, save the
+   first through the typed repository path, then verify the second typed save
+   detects the in-transaction conflict and leaves persisted data unchanged.
+   Cover both regular and intensive overlaps.
+5. Build `ClassMngr` and then
+   `ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`
+   sequentially in `build/windows-x64-debug` Debug with
+   `/p:TrackFileAccess=false`; run only the exact registered CTest
+   `ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`.
+   Inspect the diff and run `git diff --check`; do not run the full suite.
+
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

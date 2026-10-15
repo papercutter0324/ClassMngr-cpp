@@ -5788,28 +5788,29 @@ the two matching Debug CTests. No full suite ran. Existing untracked
 `txt` artifacts remain untouched. Gates 1/2 remain Partial; the formal Phase 2
 exit gate is Open.
 
-## Current continuation - 2026-10-16 (F957 active in Batch326)
+## Current continuation - 2026-10-16 (F958 active in Batch328)
 
-F956 is complete at code commit `2d3bda62`. The focused Schedule View projection
-Debug build and exact CTest passed 1/1; no full suite ran. Batch325 closed
-without an actionable candidate.
+F957 completed at source/test commit `a14de63f` after acceptance docs commit
+`683bdacc`. The independent Tester rebuilt
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests` in standard Debug with
+`/p:TrackFileAccess=false`; exact CTest #170 passed 1/1. No full suite ran.
+Two fresh post-commit audits found all 13 official Deferred entries verbatim
+unchanged. Batch326 is closed; Batch327 found no defensible candidate.
 
-Batch326 selected F957 after the workspace/setup scan found no distinct issue
-and the roster-transfer scan found that extra selected-row cells can be
-ignored during projection for a direct Application caller. The current UI
-preflights the roster, so this is API contract hardening rather than a claimed
-UI-path failure. Two independent audits found all 13 official Deferred entries
-unchanged; the Class Analytics allocation item is thematically related only.
-
-F957 acceptance is limited to rejecting a selected row with more cells than
-the declared source columns after ID and row-removal checks, using the existing
-nonrecoverable Source validation result before remaining-source validation,
-target read, or mapping. Preserve shorter rows, other validation and
-preparation behavior, F650 final-snapshot checks, and atomic dual-snapshot
-save. The app-less regression should prove exact error classification and
-message, zero port calls/save, and immutable input. Next: commit acceptance
-docs, implement in the use case and existing focused test, have the independent
-Tester build `ClassMngrNextApplicationRosterRowTransferUseCaseTests` in
-`build/windows-x64-debug` with `/p:TrackFileAccess=false`, run only its exact
-CTest, then close F957 and begin Batch327 discovery. Keep Gates 1/2 Partial and
-Phase 2 exit Open. Existing unrelated untracked artifacts remain untouched.
+Batch328 found no candidate in its typed read/result or non-class command
+scans. The class/teacher/schedule scan accepted F958: recheck regular and
+intensive conflicts inside the typed Class Details save's existing
+`BEGIN IMMEDIATE` transaction before the first write. Separate writable
+sessions can pass stale prechecks; this is reachable by code inspection but
+was not runtime reproduced, and no collaborative-editing guarantee is claimed.
+Keep the current Technical classification, diagnostic format
+(`Class schedule conflict: ...`), and port preflight; leave legacy save paths
+unchanged. Add deterministic two-session regressions for both conflict types.
+Next, implement the repository transaction guard and
+focused tests, have the independent Tester build `ClassMngr` then
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`
+sequentially in `build/windows-x64-debug` with `/p:TrackFileAccess=false`, and
+run only that exact CTest. Inspect changes and `git diff --check`; no full suite.
+After the source/test commit, make two fresh audits of all 13 official Deferred
+entries and start the next discovery batch. Keep Gates 1/2 Partial and Phase 2
+exit Open. Existing unrelated untracked artifacts remain untouched.
