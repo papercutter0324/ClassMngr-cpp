@@ -89,6 +89,7 @@ class NextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests
 private slots:
     void mapsOneOrderedBatchOfFourClassesAndReadsNamesOnly();
     void returnsSuccessfulEmptySlotsForMissingRosters();
+    void retainsParentAbsencePerEntryAndPreservesSiblingColumns();
     void doesNotApplyOutputColumnLimitToDiscovery();
     void emptyAndInvalidRequestsAvoidSessionAccess();
     void rosterColumnsStatementFailureIsStructured();
@@ -141,15 +142,19 @@ mapsOneOrderedBatchOfFourClassesAndReadsNamesOnly()
         QString::fromStdString(result.error().message)));
     QCOMPARE(result.value().size(), std::size_t(4));
     QCOMPARE(result.value().at(0).classId.value(), std::to_string(zuluId));
-    QVERIFY(result.value().at(0).columns ==
+    QVERIFY(result.value().at(0).columnsResult.hasValue());
+    QVERIFY(result.value().at(0).columnsResult.value() ==
         (std::vector<std::u16string>{u"First", u"Middle", u"Last"}));
     QCOMPARE(result.value().at(1).classId.value(), std::to_string(emptyId));
-    QVERIFY(result.value().at(1).columns.empty());
+    QVERIFY(result.value().at(1).columnsResult.hasValue());
+    QVERIFY(result.value().at(1).columnsResult.value().empty());
     QCOMPARE(result.value().at(2).classId.value(), std::to_string(alphaId));
-    QVERIFY(result.value().at(2).columns ==
+    QVERIFY(result.value().at(2).columnsResult.hasValue());
+    QVERIFY(result.value().at(2).columnsResult.value() ==
         (std::vector<std::u16string>{u"Korean", u"Memo Books"}));
     QCOMPARE(result.value().at(3).classId.value(), std::to_string(betaId));
-    QVERIFY(result.value().at(3).columns ==
+    QVERIFY(result.value().at(3).columnsResult.hasValue());
+    QVERIFY(result.value().at(3).columnsResult.value() ==
         (std::vector<std::u16string>{u"Beta Note"}));
 }
 
@@ -185,9 +190,119 @@ returnsSuccessfulEmptySlotsForMissingRosters()
     QVERIFY(result);
     QCOMPARE(result.value().size(), std::size_t(2));
     QCOMPARE(result.value().at(0).classId.value(), std::to_string(withoutRosterId));
-    QVERIFY(result.value().at(0).columns.empty());
+    QVERIFY(result.value().at(0).columnsResult.hasValue());
+    QVERIFY(result.value().at(0).columnsResult.value().empty());
     QCOMPARE(result.value().at(1).classId.value(), std::to_string(withRosterId));
-    QVERIFY(result.value().at(1).columns == std::vector<std::u16string>{u"Notes"});
+    QVERIFY(result.value().at(1).columnsResult.hasValue());
+    QVERIFY(result.value().at(1).columnsResult.value() ==
+            std::vector<std::u16string>{u"Notes"});
+}
+
+void NextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests::
+retainsParentAbsencePerEntryAndPreservesSiblingColumns()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const int populatedId = createClass(
+        services,
+        QStringLiteral("Populated")
+        );
+    const int presentEmptyId = createClass(
+        services,
+        QStringLiteral("Present Empty")
+        );
+    const int deletedEmptyId = createClass(
+        services,
+        QStringLiteral("Deleted Empty")
+        );
+    const int orphanParentId = createClass(
+        services,
+        QStringLiteral("Deleted With Orphan")
+        );
+    const int siblingId = createClass(
+        services,
+        QStringLiteral("Sibling")
+        );
+    QVERIFY(populatedId > 0);
+    QVERIFY(presentEmptyId > 0);
+    QVERIFY(deletedEmptyId > 0);
+    QVERIFY(orphanParentId > 0);
+    QVERIFY(siblingId > 0);
+    QVERIFY(insertColumns(services.databaseSession()->database(), populatedId, {
+        {QStringLiteral("First"), 0},
+        {QString::fromUtf8("\xED\x95\x99\xEC\x83\x9D"), 1}
+    }));
+    QVERIFY(insertColumns(services.databaseSession()->database(), orphanParentId, {
+        {QStringLiteral("Orphan Secret"), 0}
+    }));
+    QVERIFY(insertColumns(services.databaseSession()->database(), siblingId, {
+        {QStringLiteral("Sibling Note"), 0}
+    }));
+
+    QSqlDatabase database = services.databaseSession()->database();
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(disableForeignKeys.lastError().text()));
+    disableForeignKeys.finish();
+    QSqlQuery deleteParents(database);
+    QVERIFY(deleteParents.prepare(QStringLiteral("DELETE FROM classes WHERE id=?")));
+    deleteParents.addBindValue(deletedEmptyId);
+    QVERIFY2(deleteParents.exec(), qPrintable(deleteParents.lastError().text()));
+    deleteParents.finish();
+    deleteParents.bindValue(0, orphanParentId);
+    QVERIFY2(deleteParents.exec(), qPrintable(deleteParents.lastError().text()));
+    deleteParents.finish();
+    QSqlQuery enableForeignKeys(database);
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")),
+        qPrintable(enableForeignKeys.lastError().text()));
+    enableForeignKeys.finish();
+
+    const int neverPresentId = 987654321;
+    const QList<int> orderedIds{
+        populatedId,
+        presentEmptyId,
+        deletedEmptyId,
+        orphanParentId,
+        neverPresentId,
+        siblingId
+    };
+    const Platform::ApplicationServicesRosterColumnNamesBatchReadPort port(services);
+    const Application::RosterColumnNamesBatchReadQuery readQuery(port);
+    const auto result = readQuery.execute(typedClassIds(orderedIds));
+
+    QVERIFY2(result, result ? "" : qPrintable(
+        QString::fromStdString(result.error().message)));
+    QCOMPARE(result.value().size(), std::size_t(6));
+    for (std::size_t index = 0; index < orderedIds.size(); ++index)
+    {
+        QCOMPARE(
+            result.value().at(index).classId.value(),
+            std::to_string(orderedIds.at(static_cast<qsizetype>(index)))
+            );
+    }
+
+    QVERIFY(result.value().at(0).columnsResult.hasValue());
+    QVERIFY(result.value().at(0).columnsResult.value() ==
+        (std::vector<std::u16string>{u"First", u"\uD559\uC0DD"}));
+    QVERIFY(result.value().at(1).columnsResult.hasValue());
+    QVERIFY(result.value().at(1).columnsResult.value().empty());
+    for (const std::size_t missingIndex : {2U, 3U, 4U})
+    {
+        QVERIFY(!result.value().at(missingIndex).columnsResult.hasValue());
+        QCOMPARE(
+            result.value().at(missingIndex).columnsResult.error().code,
+            Domain::ErrorCode::NotFound
+            );
+        QVERIFY(result.value().at(missingIndex).columnsResult.error().recoverable);
+    }
+    QVERIFY(result.value().at(3).columnsResult.error().message.find(
+                "not found") != std::string::npos);
+    QVERIFY(result.value().at(5).columnsResult.hasValue());
+    QVERIFY(result.value().at(5).columnsResult.value() ==
+        (std::vector<std::u16string>{u"Sibling Note"}));
 }
 
 void NextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests::
@@ -223,9 +338,10 @@ doesNotApplyOutputColumnLimitToDiscovery()
 
     QVERIFY(result);
     QCOMPARE(result.value().size(), std::size_t(1));
-    QCOMPARE(result.value().at(0).columns.size(), std::size_t(129));
-    QCOMPARE(result.value().at(0).columns.front(), std::u16string(u"Column 0"));
-    QCOMPARE(result.value().at(0).columns.back(), std::u16string(u"Column 128"));
+    QVERIFY(result.value().at(0).columnsResult.hasValue());
+    QCOMPARE(result.value().at(0).columnsResult.value().size(), std::size_t(129));
+    QCOMPARE(result.value().at(0).columnsResult.value().front(), std::u16string(u"Column 0"));
+    QCOMPARE(result.value().at(0).columnsResult.value().back(), std::u16string(u"Column 128"));
 }
 
 void NextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests::

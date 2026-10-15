@@ -579,8 +579,14 @@ void RosterPrintDialog::updateExtraInfoColumns()
         {
             RosterTemplatePrintService::RosterClassData& data =
                 rosterClasses[static_cast<qsizetype>(rosterClassIndexes[index])];
-            for (const std::u16string& column :
-                 loadedRosters.value().at(index).columns)
+            const auto& columnsResult =
+                loadedRosters.value().at(index).columnsResult;
+            if (!columnsResult)
+            {
+                continue;
+            }
+
+            for (const std::u16string& column : columnsResult.value())
             {
                 data.roster.columns.append(QString::fromStdU16String(column));
             }

@@ -49,6 +49,13 @@ public:
         QStringList columns;
     };
 
+    struct ParentAwareColumnNamesForClass final
+    {
+        int classId = 0;
+        QStringList columns;
+        bool parentMissing = false;
+    };
+
     struct FullRosterReadRecord final
     {
         int classId = 0;
@@ -170,6 +177,13 @@ public:
     // Classes without roster columns are returned with an empty column list.
     [[nodiscard]] Result<QList<ColumnNamesForClass>>
     loadRosterColumnNamesForClasses(
+        const QList<int>& classIds
+        );
+    // Reads columns through the requested parent class. Confirmed missing
+    // parents are retained as entries with parentMissing set; SQL failures
+    // remain failures of the outer batch result.
+    [[nodiscard]] Result<QList<ParentAwareColumnNamesForClass>>
+    loadRosterColumnNamesForClassesWithParentProvenance(
         const QList<int>& classIds
         );
 

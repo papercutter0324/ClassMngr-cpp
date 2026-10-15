@@ -82,8 +82,10 @@ public:
 
         try
         {
-            const Result<QList<RosterRepository::ColumnNamesForClass>> loaded =
-                repository->loadRosterColumnNamesForClasses(legacyClassIds);
+            const Result<QList<RosterRepository::ParentAwareColumnNamesForClass>> loaded =
+                repository->loadRosterColumnNamesForClassesWithParentProvenance(
+                    legacyClassIds
+                    );
             if (!loaded)
             {
                 return failure(
@@ -104,7 +106,7 @@ public:
             snapshots.reserve(classIds.size());
             for (std::size_t index = 0; index < classIds.size(); ++index)
             {
-                const RosterRepository::ColumnNamesForClass& record =
+                const RosterRepository::ParentAwareColumnNamesForClass& record =
                     loaded->at(static_cast<qsizetype>(index));
                 if (record.classId != legacyClassIds.at(
                         static_cast<qsizetype>(index)))
@@ -115,17 +117,33 @@ public:
                         );
                 }
 
-                Application::RosterColumnNamesReadSnapshot snapshot{
-                    .classId = classIds[index]
-                };
-                snapshot.columns.reserve(
-                    static_cast<std::size_t>(record.columns.size())
-                    );
+                if (record.parentMissing)
+                {
+                    snapshots.push_back({
+                        .classId = classIds[index],
+                        .columnsResult =
+                            Domain::Result<std::vector<std::u16string>>::failure({
+                                .code = Domain::ErrorCode::NotFound,
+                                .message = "The parent class for roster columns was not found.",
+                                .recoverable = true
+                            })
+                    });
+                    continue;
+                }
+
+                std::vector<std::u16string> columns;
+                columns.reserve(static_cast<std::size_t>(record.columns.size()));
                 for (const QString& column : record.columns)
                 {
-                    snapshot.columns.push_back(column.toStdU16String());
+                    columns.push_back(column.toStdU16String());
                 }
-                snapshots.push_back(std::move(snapshot));
+                snapshots.push_back({
+                    .classId = classIds[index],
+                    .columnsResult =
+                        Domain::Result<std::vector<std::u16string>>::success(
+                            std::move(columns)
+                            )
+                });
             }
 
             return Application::RosterColumnNamesBatchReadResult::success(

@@ -54,6 +54,7 @@ private slots:
     void rejectsDuplicateIdsBeforePortCall();
     void preservesStructuredPortFailure();
     void rejectsMismatchedResultCountAndIdentifierOrder();
+    void retainsPerEntryFailureWithItsRequestedIdentity();
 };
 
 void NextApplicationRosterColumnNamesBatchReadQueryTests::
@@ -63,12 +64,34 @@ returnsOrderedClassColumnNamesAndSuccessfulEmptySlots()
     const std::vector<Domain::ClassId> requestedIds{
         classId("42"),
         classId("7"),
-        classId("108")
+        classId("108"),
+        classId("109")
     };
     const std::vector<RosterColumnNamesReadSnapshot> expected{
-        {classId("42"), {u"First", u"Second"}},
-        {classId("7"), {}},
-        {classId("108"), {u"Korean", u"Memo"}}
+        {
+            classId("42"),
+            Domain::Result<std::vector<std::u16string>>::success(
+                {u"First", u"Second"}
+                )
+        },
+        {
+            classId("7"),
+            Domain::Result<std::vector<std::u16string>>::success({})
+        },
+        {
+            classId("108"),
+            Domain::Result<std::vector<std::u16string>>::success(
+                {u"Korean", u"Memo"}
+                )
+        },
+        {
+            classId("109"),
+            Domain::Result<std::vector<std::u16string>>::failure({
+                .code = Domain::ErrorCode::NotFound,
+                .message = "The parent class for roster columns was not found.",
+                .recoverable = true
+            })
+        }
     };
     port.result = RosterColumnNamesBatchReadResult::success(expected);
     const RosterColumnNamesBatchReadQuery query(port);
@@ -79,6 +102,52 @@ returnsOrderedClassColumnNamesAndSuccessfulEmptySlots()
     QCOMPARE(port.callCount, 1);
     QVERIFY(port.lastClassIds == requestedIds);
     QVERIFY(result.value() == expected);
+}
+
+void NextApplicationRosterColumnNamesBatchReadQueryTests::
+retainsPerEntryFailureWithItsRequestedIdentity()
+{
+    RecordingRosterColumnNamesBatchReadPort port;
+    const Domain::OperationError missingParent{
+        .code = Domain::ErrorCode::NotFound,
+        .message = "parent class is absent",
+        .recoverable = true
+    };
+    port.result = RosterColumnNamesBatchReadResult::success({
+        {
+            classId("42"),
+            Domain::Result<std::vector<std::u16string>>::success({u"Keep"})
+        },
+        {
+            classId("7"),
+            Domain::Result<std::vector<std::u16string>>::failure(missingParent)
+        },
+        {
+            classId("108"),
+            Domain::Result<std::vector<std::u16string>>::success({u"Also Keep"})
+        }
+    });
+    const RosterColumnNamesBatchReadQuery query(port);
+
+    const auto result = query.execute({
+        classId("42"),
+        classId("7"),
+        classId("108")
+    });
+
+    QVERIFY(result);
+    QCOMPARE(result.value().size(), std::size_t(3));
+    QCOMPARE(result.value().at(0).classId, classId("42"));
+    QVERIFY(result.value().at(0).columnsResult.hasValue());
+    QCOMPARE(result.value().at(0).columnsResult.value(),
+             (std::vector<std::u16string>{u"Keep"}));
+    QCOMPARE(result.value().at(1).classId, classId("7"));
+    QVERIFY(!result.value().at(1).columnsResult.hasValue());
+    QVERIFY(result.value().at(1).columnsResult.error() == missingParent);
+    QCOMPARE(result.value().at(2).classId, classId("108"));
+    QVERIFY(result.value().at(2).columnsResult.hasValue());
+    QCOMPARE(result.value().at(2).columnsResult.value(),
+             (std::vector<std::u16string>{u"Also Keep"}));
 }
 
 void NextApplicationRosterColumnNamesBatchReadQueryTests::
@@ -171,7 +240,10 @@ rejectsMismatchedResultCountAndIdentifierOrder()
 
     RecordingRosterColumnNamesBatchReadPort shortPort;
     shortPort.result = RosterColumnNamesBatchReadResult::success({
-        {classId("42"), {u"Notes"}}
+        {
+            classId("42"),
+            Domain::Result<std::vector<std::u16string>>::success({u"Notes"})
+        }
     });
     const RosterColumnNamesBatchReadQuery shortQuery(shortPort);
     const auto shortResult = shortQuery.execute(requestedIds);
@@ -180,8 +252,14 @@ rejectsMismatchedResultCountAndIdentifierOrder()
 
     RecordingRosterColumnNamesBatchReadPort reorderedPort;
     reorderedPort.result = RosterColumnNamesBatchReadResult::success({
-        {classId("7"), {u"Notes"}},
-        {classId("42"), {u"Other"}}
+        {
+            classId("7"),
+            Domain::Result<std::vector<std::u16string>>::success({u"Notes"})
+        },
+        {
+            classId("42"),
+            Domain::Result<std::vector<std::u16string>>::success({u"Other"})
+        }
     });
     const RosterColumnNamesBatchReadQuery reorderedQuery(reorderedPort);
     const auto reorderedResult = reorderedQuery.execute(requestedIds);

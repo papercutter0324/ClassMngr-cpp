@@ -1590,6 +1590,161 @@ RosterRepository::loadRosterColumnNamesForClasses(
     return records;
 }
 
+Result<QList<RosterRepository::ParentAwareColumnNamesForClass>>
+RosterRepository::loadRosterColumnNamesForClassesWithParentProvenance(
+    const QList<int>& classIds
+    )
+{
+    if (classIds.isEmpty())
+    {
+        return QList<ParentAwareColumnNamesForClass>{};
+    }
+
+    QList<ParentAwareColumnNamesForClass> records;
+    records.reserve(classIds.size());
+    QList<bool> sawRequest;
+    sawRequest.reserve(classIds.size());
+    QSet<int> seenClassIds;
+    seenClassIds.reserve(classIds.size());
+    QStringList requestedClasses;
+    requestedClasses.reserve(classIds.size());
+
+    for (qsizetype index = 0; index < classIds.size(); ++index)
+    {
+        const int classId = classIds.at(index);
+        if (classId <= 0 || seenClassIds.contains(classId))
+        {
+            return std::unexpected(QObject::tr(
+                "Loading parent-aware roster columns failed: class ids must be positive and unique."
+                ));
+        }
+
+        seenClassIds.insert(classId);
+        records.append({.classId = classId});
+        sawRequest.append(false);
+        requestedClasses.append(
+            QStringLiteral("(%1, %2)")
+                .arg(classId)
+                .arg(index)
+            );
+    }
+
+    const QString queryText = QStringLiteral(R"(
+        WITH requested(class_id, request_order) AS (
+            VALUES %1
+        )
+        SELECT
+            requested.class_id AS class_id,
+            requested.request_order AS request_order,
+            classes.id AS parent_class_id,
+            roster_columns.id AS roster_column_id,
+            roster_columns.name AS name
+        FROM requested
+        LEFT JOIN classes
+            ON classes.id=requested.class_id
+        LEFT JOIN roster_columns
+            ON roster_columns.class_id=classes.id
+        ORDER BY
+            requested.request_order,
+            roster_columns.position,
+            roster_columns.id
+    )").arg(requestedClasses.join(QStringLiteral(", ")));
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    if (!query.prepare(queryText))
+    {
+        return std::unexpected(
+            QObject::tr("Preparing parent-aware roster column batch read failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+
+    const auto loadedColumns = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading parent-aware roster column names"),
+        QObject::tr("%1 classes").arg(classIds.size())
+        );
+    if (!loadedColumns)
+    {
+        return std::unexpected(loadedColumns.error().userMessage());
+    }
+
+    while (query.next())
+    {
+        bool requestOrderValid = false;
+        bool classIdValid = false;
+        const int requestOrder =
+            query.value("request_order").toInt(&requestOrderValid);
+        const int classId = query.value("class_id").toInt(&classIdValid);
+        if (!requestOrderValid
+            || !classIdValid
+            || requestOrder < 0
+            || requestOrder >= classIds.size()
+            || classIds.at(requestOrder) != classId)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading parent-aware roster columns returned an invalid class identity."
+                ));
+        }
+
+        const bool parentMissing =
+            query.value("parent_class_id").isNull();
+        if (!parentMissing)
+        {
+            bool parentClassIdValid = false;
+            const int parentClassId =
+                query.value("parent_class_id").toInt(&parentClassIdValid);
+            if (!parentClassIdValid || parentClassId != classId)
+            {
+                return std::unexpected(QObject::tr(
+                    "Loading parent-aware roster columns returned an invalid parent identity."
+                    ));
+            }
+        }
+
+        const qsizetype recordIndex = requestOrder;
+        if (sawRequest.at(recordIndex)
+            && records[recordIndex].parentMissing != parentMissing)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading parent-aware roster columns returned inconsistent parent records."
+                ));
+        }
+        sawRequest[recordIndex] = true;
+        records[recordIndex].parentMissing = parentMissing;
+
+        if (!parentMissing
+            && !query.value("roster_column_id").isNull()
+            && !query.value("name").isNull())
+        {
+            records[recordIndex].columns.append(
+                query.value("name").toString()
+                );
+        }
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(
+            QObject::tr("Reading parent-aware roster column batch failed: %1")
+                .arg(query.lastError().text())
+            );
+    }
+
+    for (const bool found : sawRequest)
+    {
+        if (!found)
+        {
+            return std::unexpected(QObject::tr(
+                "Loading parent-aware roster columns returned an incomplete class list."
+                ));
+        }
+    }
+
+    return records;
+}
+
 Result<QList<RosterRepository::MyClassesStudentCountReadEntry>>
 RosterRepository::loadMyClassesStudentCountRecords(
     const QList<int>& classIds

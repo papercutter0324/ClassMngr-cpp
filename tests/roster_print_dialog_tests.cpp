@@ -238,6 +238,7 @@ private slots:
     void closedDatabasePreservesExtraInfoControlsAndIsSilent();
     void extraInfoColumnUnionKeepsScopeOrderAndFiltersNames();
     void emptyRosterDoesNotDiscardOtherClassesExtraColumns();
+    void skipsOrphanColumnsAndMergesValidSiblingColumns();
     void failedRosterReadProvidesNoExtraInfoColumns();
     void classListReadFailurePreservesRenderedExtraInfoControls();
 };
@@ -995,6 +996,98 @@ emptyRosterDoesNotDiscardOtherClassesExtraColumns()
     QCOMPARE(extraColumnLabelsFor(dialog), QStringList({
         QStringLiteral("Beta Notes")
     }));
+}
+
+void RosterPrintDialogTests::
+skipsOrphanColumnsAndMergesValidSiblingColumns()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int deletedClassId = 0;
+    int siblingClassId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Deleted Class"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Theseus"),
+                 -1,
+                 {},
+                 &deletedClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Valid Sibling"),
+                 QStringLiteral("E5"),
+                 QStringLiteral("Apollo"),
+                 -1,
+                 {},
+                 &siblingClassId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.saveRoster(
+                 deletedClassId,
+                 {QStringLiteral("Orphan Secret")},
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.saveRoster(
+                 siblingClassId,
+                 {QStringLiteral("Sibling Notes")},
+                 &error
+                 ), qPrintable(error));
+
+    RosterPrintDialog dialog(
+        &fixture.services,
+        deletedClassId,
+        RosterTemplatePrintService::Scope::SelectedClasses,
+        RosterPrintDialog::Action::Print
+        );
+    QListWidget* const classList = classListFor(dialog);
+    QVERIFY(classList);
+    QCOMPARE(classList->count(), 2);
+    for (int index = 0; index < classList->count(); ++index)
+    {
+        QListWidgetItem* const item = classList->item(index);
+        const int itemClassId = item->data(Qt::UserRole).toInt();
+        QVERIFY(itemClassId == deletedClassId || itemClassId == siblingClassId);
+        item->setCheckState(Qt::Checked);
+    }
+
+    QSqlDatabase database = fixture.services.databaseSession()->database();
+    QSqlQuery disableForeignKeys(database);
+    QVERIFY2(disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF")),
+        qPrintable(disableForeignKeys.lastError().text()));
+    disableForeignKeys.finish();
+    QSqlQuery deleteClass(database);
+    QVERIFY(deleteClass.prepare(QStringLiteral("DELETE FROM classes WHERE id=?")));
+    deleteClass.addBindValue(deletedClassId);
+    QVERIFY2(deleteClass.exec(), qPrintable(deleteClass.lastError().text()));
+    deleteClass.finish();
+    QSqlQuery enableForeignKeys(database);
+    QVERIFY2(enableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=ON")),
+        qPrintable(enableForeignKeys.lastError().text()));
+    enableForeignKeys.finish();
+
+    auto* const templateCombo = dialog.findChild<QComboBox*>(
+        QStringLiteral("templateCombo")
+        );
+    QVERIFY(templateCombo);
+    const int extraInfoIndex = templateCombo->findData(
+        static_cast<int>(
+            RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo
+            )
+        );
+    QVERIFY(extraInfoIndex >= 0);
+    templateCombo->setCurrentIndex(extraInfoIndex);
+
+    QCOMPARE(
+        extraColumnLabelsFor(dialog),
+        QStringList({QStringLiteral("Sibling Notes")})
+        );
+    QVERIFY(!extraColumnCheckBoxFor(
+        dialog,
+        QStringLiteral("Orphan Secret")
+        ));
 }
 
 void RosterPrintDialogTests::failedRosterReadProvidesNoExtraInfoColumns()
