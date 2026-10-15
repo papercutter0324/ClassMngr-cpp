@@ -811,6 +811,8 @@ void ClassDetailsPage::loadClass(
 {
     const int scrollPosition = m_pageBody->verticalScrollBar()->value();
     m_autosave->setLoading(true);
+    m_classFieldsAvailable = false;
+    updateActions();
 
     refresh();
 
@@ -897,6 +899,12 @@ void ClassDetailsPage::applyDisplaySnapshot(int scrollPosition)
         displaySchedule(fields.intensiveSchedule)
         );
 
+    m_classFieldsAvailable = m_classroom.id >= 0
+        && m_displaySnapshot
+        && m_displaySnapshot->classId.value()
+               == std::to_string(m_classroom.id)
+        && m_displaySnapshot->classFields;
+
     refreshScheduleValidationBindings();
     m_validationBinder->clear();
 
@@ -927,6 +935,7 @@ void ClassDetailsPage::clearDatabaseState()
     m_autosave->setLoading(true);
 
     m_classroom = {};
+    m_classFieldsAvailable = false;
     m_displaySnapshot.reset();
     m_detailsSection->loadInfo({}, {}, {}, {}, {}, {}, 0);
     m_scheduleSection->loadSchedules(
@@ -1030,7 +1039,9 @@ void ClassDetailsPage::setSaveMode(
 
 void ClassDetailsPage::updateActions()
 {
-    m_autosave->setSaveAvailable(m_classroom.id >= 0);
+    m_autosave->setSaveAvailable(
+        m_classroom.id >= 0 && m_classFieldsAvailable
+        );
     m_autosave->setSaveMode(m_autosave->saveMode());
 }
 
@@ -1120,6 +1131,11 @@ bool ClassDetailsPage::saveClassInfoInternal(
     if (m_classroom.id < 0)
     {
         return true;
+    }
+
+    if (!m_classFieldsAvailable)
+    {
+        return false;
     }
 
     ClassInfo info = classInfoFromForm();

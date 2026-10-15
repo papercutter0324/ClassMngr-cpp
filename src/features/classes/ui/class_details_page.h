@@ -114,6 +114,8 @@ private:
         > m_displaySnapshot;
 
     bool m_embedded{false};
+    // Tracks the source of the editable values currently shown in the form.
+    bool m_classFieldsAvailable{false};
     AutosaveCoordinator* m_autosave{nullptr};
     FormValidationBinder* m_validationBinder{nullptr};
 

@@ -2,8 +2,11 @@
 #include "data/database/database_session.h"
 #include "app/services/feature_services.h"
 #include "features/classes/ui/class_details_page.h"
+#include "next/application/class_details_schedule_conflict_query.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/class_details_page_read_port.h"
+#include "next/application/class_details_validation_context_query.h"
+#include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 #include "ui/shared/widgets/sections/class_details_section.h"
 #include "ui/shared/widgets/sections/class_schedule_section.h"
@@ -11,6 +14,7 @@
 
 #include <QComboBox>
 #include <QLineEdit>
+#include <QPushButton>
 #include <QTemporaryDir>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -103,6 +107,74 @@ public:
     mutable std::optional<Application::ClassDetailsSaveRequest> lastRequest;
 };
 
+class FakeValidationContextPort final
+    : public Application::ClassDetailsValidationContextPort
+{
+public:
+    [[nodiscard]] Application::ClassDetailsValidationContextPortResult
+    loadClassDetailsValidationContext(
+        const Domain::ClassId& id
+        ) const override
+    {
+        ++callCount;
+        return Application::ClassDetailsValidationContextPortResult::success({
+            .matchedClassId = id,
+            .teacherId = 1
+        });
+    }
+
+    mutable int callCount = 0;
+};
+
+class FakeScheduleConflictPort final
+    : public Application::ClassDetailsScheduleConflictPort
+{
+public:
+    [[nodiscard]] Application::ClassDetailsScheduleConflictResult
+    classDetailsScheduleConflicts(
+        const Application::ClassDetailsScheduleConflictRequest& request
+        ) const override
+    {
+        ++callCount;
+        requests.push_back(request);
+        return Application::ClassDetailsScheduleConflictResult::success({});
+    }
+
+    mutable int callCount = 0;
+    mutable std::vector<Application::ClassDetailsScheduleConflictRequest>
+        requests;
+};
+
+Application::ClassDetailsPageReadResult failedPageRead()
+{
+    return Application::ClassDetailsPageReadResult::failure({
+        .code = Domain::ErrorCode::Technical,
+        .message = "class details unavailable",
+        .recoverable = true
+    });
+}
+
+Application::ClassDetailsPageReadSnapshot failedClassFieldsSnapshot(
+    const int id,
+    const int studentCount = 0
+    )
+{
+    return {
+        classId(id),
+        Domain::Result<Application::ClassDetailsPageFields>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "class information unavailable",
+            .recoverable = true
+        }),
+        Domain::Result<std::string>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "teacher unavailable",
+            .recoverable = true
+        }),
+        Domain::Result<int>::success(studentCount)
+    };
+}
+
 Application::ClassDetailsPageFields firstFields()
 {
     Application::ClassDetailsPageFields fields;
@@ -138,6 +210,11 @@ private slots:
     void loadRetranslateDiscardAndClearUseSnapshot();
     void independentFailuresUseThePageFallbacks();
     void successfulSaveRefreshesTeacherAndKeepsSavedFields();
+    void failedReadsKeepFallbackFormUnavailableForAllSaveRoutes();
+    void failedClassSwitchAndReloadInvalidateAvailability();
+    void clearAndRestoreRequireSuccessfulClassFields();
+    void retranslationPreservesAvailabilityOfVisibleControls();
+    void successfulClassFieldsSaveDespiteTeacherAndRosterFailures();
 };
 
 void ClassDetailsPageDisplayTests::loadRetranslateDiscardAndClearUseSnapshot()
@@ -346,6 +423,331 @@ void ClassDetailsPageDisplayTests::successfulSaveRefreshesTeacherAndKeepsSavedFi
     QVERIFY(!header->subtitle().contains(QStringLiteral("Teacher One")));
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(readPort.requests.size(), std::size_t(2));
+}
+
+void ClassDetailsPageDisplayTests::
+failedReadsKeepFallbackFormUnavailableForAllSaveRoutes()
+{
+    for (const bool nestedFailure : {false, true})
+    {
+        ApplicationServices services;
+        FakeReadPort readPort;
+        readPort.result = nestedFailure
+            ? Application::ClassDetailsPageReadResult::success(
+                  failedClassFieldsSnapshot(73, 9)
+                  )
+            : failedPageRead();
+        FakeSavePort savePort;
+        FakeValidationContextPort contextPort;
+        FakeScheduleConflictPort conflictPort;
+        ClassDetailsPage page(
+            &services,
+            false,
+            nullptr,
+            &savePort,
+            &readPort,
+            &conflictPort,
+            &contextPort
+            );
+        page.setSaveMode(SaveMode::Manual);
+        page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+
+        auto* details = page.findChild<ClassDetailsSection*>();
+        auto* schedule = page.findChild<ClassScheduleSection*>();
+        auto* countEdit = studentCountEdit(page);
+        auto* saveButton = page.findChild<QPushButton*>(
+            QStringLiteral("classInfoSaveButton")
+            );
+        auto* autosave = page.findChild<AutosaveCoordinator*>();
+        QVERIFY(details && schedule && countEdit && saveButton && autosave);
+        QVERIFY(details->grade().isEmpty());
+        QVERIFY(details->level().isEmpty());
+        QCOMPARE(details->classColor(), QStringLiteral("#FFFFFF"));
+        QCOMPARE(details->fontColor(), QStringLiteral("#000000"));
+        QVERIFY(schedule->regularRows().isEmpty());
+        QCOMPARE(countEdit->text(), nestedFailure
+                ? QStringLiteral("9")
+                : QStringLiteral("0"));
+
+        details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+        QVERIFY(page.hasUnsavedChanges());
+        QVERIFY(!saveButton->isEnabled());
+        QVERIFY(details->level().isEmpty());
+        QCOMPARE(details->classColor(), QStringLiteral("#FFFFFF"));
+        QCOMPARE(countEdit->text(), nestedFailure
+                ? QStringLiteral("9")
+                : QStringLiteral("0"));
+
+        QTest::mouseClick(saveButton, Qt::LeftButton);
+        page.saveData();
+        QVERIFY(!page.saveChanges());
+        page.setSaveMode(SaveMode::Automatic);
+        autosave->requestSave(false);
+
+        QCOMPARE(contextPort.callCount, 0);
+        QCOMPARE(conflictPort.callCount, 0);
+        QCOMPARE(savePort.callCount, 0);
+        QVERIFY(page.hasUnsavedChanges());
+        QVERIFY(!saveButton->isEnabled());
+    }
+}
+
+void ClassDetailsPageDisplayTests::
+failedClassSwitchAndReloadInvalidateAvailability()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.responses = {
+        Application::ClassDetailsPageReadResult::success(
+            makeSnapshot(42, firstFields(), "Teacher", 18)
+            ),
+        failedPageRead(),
+        Application::ClassDetailsPageReadResult::success(
+            failedClassFieldsSnapshot(73, 4)
+            )
+    };
+    FakeSavePort savePort;
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        &readPort,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Loaded"), 42));
+
+    auto* details = page.findChild<ClassDetailsSection*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(details && saveButton);
+    details->gradeEditor()->setCurrentText(QStringLiteral("E5"));
+    details->levelEditor()->setCurrentText(QStringLiteral("Artemis"));
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Explorer 2")
+        );
+    details->essayBookEditor()->setCurrentText(QStringLiteral("5A"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+
+    page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+    QVERIFY(details->grade().isEmpty());
+    details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QCOMPARE(contextPort.callCount, 0);
+    QCOMPARE(conflictPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+
+    page.loadClass(Classroom(QStringLiteral("Selected Fallback"), 73));
+    QVERIFY(details->grade().isEmpty());
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("4"));
+    details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    page.saveData();
+    QCOMPARE(contextPort.callCount, 0);
+    QCOMPARE(conflictPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+}
+
+void ClassDetailsPageDisplayTests::
+clearAndRestoreRequireSuccessfulClassFields()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.result = Application::ClassDetailsPageReadResult::success(
+        makeSnapshot(42, firstFields(), "Teacher", 18)
+        );
+    FakeSavePort savePort;
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        &readPort,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Loaded"), 42));
+
+    auto* details = page.findChild<ClassDetailsSection*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(details && saveButton);
+    page.clearDatabaseState();
+    QVERIFY(details->grade().isEmpty());
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("0"));
+    details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    page.saveData();
+    QCOMPARE(contextPort.callCount, 0);
+    QCOMPARE(conflictPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+
+    const ClassDetailsPageRestorationState failedState(
+        Classroom(QStringLiteral("Restored Fallback"), 73),
+        failedClassFieldsSnapshot(73, 7),
+        0
+        );
+    page.restoreFromState(failedState);
+    QVERIFY(details->grade().isEmpty());
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("7"));
+    details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(contextPort.callCount, 0);
+    QCOMPARE(conflictPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+}
+
+void ClassDetailsPageDisplayTests::
+retranslationPreservesAvailabilityOfVisibleControls()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.responses = {
+        Application::ClassDetailsPageReadResult::success(
+            failedClassFieldsSnapshot(73, 9)
+            ),
+        Application::ClassDetailsPageReadResult::success(
+            makeSnapshot(73, firstFields(), "Teacher", 21)
+            ),
+        Application::ClassDetailsPageReadResult::success(
+            makeSnapshot(73, firstFields(), "Teacher", 18)
+            ),
+        failedPageRead()
+    };
+    FakeSavePort savePort;
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        &readPort,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Selected"), 73));
+
+    auto* details = page.findChild<ClassDetailsSection*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(details && saveButton);
+    page.retranslateUi();
+    QVERIFY(details->grade().isEmpty());
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("9"));
+    details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    page.saveData();
+    QCOMPARE(contextPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+
+    page.loadClass(Classroom(QStringLiteral("Selected"), 73));
+    QCOMPARE(details->grade(), QStringLiteral("E4"));
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("18"));
+    page.retranslateUi();
+    QCOMPARE(details->grade(), QStringLiteral("E4"));
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("18"));
+    details->gradeEditor()->setCurrentText(QStringLiteral("E5"));
+    details->levelEditor()->setCurrentText(QStringLiteral("Artemis"));
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Explorer 2")
+        );
+    details->essayBookEditor()->setCurrentText(QStringLiteral("5A"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(contextPort.callCount, 1);
+    QCOMPARE(conflictPort.callCount, 2);
+    QCOMPARE(savePort.callCount, 1);
+
+    details->gradeEditor()->setCurrentText(QStringLiteral("E4"));
+    details->levelEditor()->setCurrentText(QStringLiteral("Theseus"));
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Explorer 1")
+        );
+    details->essayBookEditor()->setCurrentText(QStringLiteral("4A"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(contextPort.callCount, 2);
+    QCOMPARE(conflictPort.callCount, 4);
+    QCOMPARE(savePort.callCount, 2);
+}
+
+void ClassDetailsPageDisplayTests::
+successfulClassFieldsSaveDespiteTeacherAndRosterFailures()
+{
+    ApplicationServices services;
+    FakeReadPort readPort;
+    readPort.result = Application::ClassDetailsPageReadResult::success({
+        classId(73),
+        Domain::Result<Application::ClassDetailsPageFields>::success(
+            firstFields()
+            ),
+        Domain::Result<std::string>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "teacher unavailable",
+            .recoverable = true
+        }),
+        Domain::Result<int>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "roster unavailable",
+            .recoverable = true
+        })
+    });
+    FakeSavePort savePort;
+    FakeValidationContextPort contextPort;
+    FakeScheduleConflictPort conflictPort;
+    ClassDetailsPage page(
+        &services,
+        false,
+        nullptr,
+        &savePort,
+        &readPort,
+        &conflictPort,
+        &contextPort
+        );
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(QStringLiteral("Selected"), 73));
+
+    auto* details = page.findChild<ClassDetailsSection*>();
+    auto* saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("classInfoSaveButton")
+        );
+    QVERIFY(details && saveButton);
+    QCOMPARE(details->grade(), QStringLiteral("E4"));
+    QCOMPARE(studentCountEdit(page)->text(), QStringLiteral("0"));
+    details->gradeEditor()->setCurrentText(QStringLiteral("E5"));
+    details->levelEditor()->setCurrentText(QStringLiteral("Artemis"));
+    details->readingBookEditor()->setCurrentText(
+        QStringLiteral("Reading Explorer 2")
+        );
+    details->essayBookEditor()->setCurrentText(QStringLiteral("5A"));
+
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(contextPort.callCount, 1);
+    QCOMPARE(conflictPort.callCount, 2);
+    QCOMPARE(savePort.callCount, 1);
 }
 
 QTEST_MAIN(ClassDetailsPageDisplayTests)
