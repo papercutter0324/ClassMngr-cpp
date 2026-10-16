@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F991 is complete and Batch360 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial and the exit gate is Open, while F985's `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved pending diagnosis because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget` and no pre-F985 baseline establishes when it began.
+- Current note: F991 is complete and F992 is active in Batch360 after the F985 diagnosis; the old `"01"` integration expectation conflicts with F851 canonical-ID validation, while all 13 Deferred entries remain unchanged pending post-F992 audits, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch360 (underway)
-  - Investigator: diagnose F985's unresolved `typedApplyPreservesExactTargetIdsThroughStateValidation` failure by tracing its commit/test through `applyTyped` validation order; distinguish evidence from inference.
-  - Domain: scan arithmetic/boundary behavior in `SpeakingEvaluationGrade`, `ScheduleTime`, and Course rules; exclude F990/F991, view lifetimes, dates/calendar timing, and broad factory/enum scans.
+- Batch360 (F985 diagnosis complete; F992 active)
+  - F992 - Update Schedule Import integration expectations for F851 canonical-ID rejections; assert original target preservation and unchanged persisted-database snapshots.
 
 ## Objective
 

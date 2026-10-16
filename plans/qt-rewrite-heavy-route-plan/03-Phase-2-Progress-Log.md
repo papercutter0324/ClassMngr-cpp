@@ -42808,3 +42808,31 @@ verified facts from inference; the Domain scan covers arithmetic and boundary
 behavior in `SpeakingEvaluationGrade`, `ScheduleTime`, and Course
 rules, excluding F990/F991, view lifetimes, dates/calendar timing, and broad
 factory/enum scans.
+
+### F985 diagnosis complete; F992 selected in Batch360 - 2026-10-16
+
+The existing Schedule Import integration test
+`typedApplyPreservesExactTargetIdsThroughStateValidation` expects
+TeacherId/ClassId `"01"` to reach persistence state validation. Accepted F851
+canonical-ID validation rejects those targets earlier as
+`InvalidExistingTeacherTarget` and `InvalidExistingClassTarget`. F985 changed
+matching/preview only; no pre-F985 test run establishes when the failure
+began, so do not attribute it to F985. This is delayed test maintenance tied
+to F851 production validation, not an unrelated test-only slice. Production
+validation must not be weakened.
+
+F992 acceptance matrix, recorded before implementation:
+
+| Area | Acceptance |
+| --- | --- |
+| Existing contract | Retain canonical `"1"` success. For noncanonical IDs, preserve F851 structured canonical-ID rejection; do not weaken production validation. |
+| Teacher target | For TeacherId `"01"`, assert `InvalidExistingTeacherTarget`, preservation of the original `"01"` target value, and an identical persisted-database snapshot. |
+| Class target | For ClassId `"01"`, assert `InvalidExistingClassTarget`, preservation of the original `"01"` target value, and an identical persisted-database snapshot. |
+| Stale-state coverage | Preserve canonical-but-stale teacher/class state-validation and no-mutation coverage through the existing `typedApplyRejectsStaleSelectedClassBeforeWrites` test. |
+| Focused verification | In the existing `build/windows-x64-debug-ninja` MSVC Debug tree, build `ClassMngr` and `ClassMngrScheduleImportTests`, run exact CTest `ClassMngrScheduleImportTests`, and run scoped `git diff --check`. Do not run the full suite. |
+
+F992 is active in Batch360; implementation and focused verification are not
+yet recorded. All 13 official Deferred entries remain unchanged pending the
+post-slice audits. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open. Do not close Batch360 or start Batch361 until the F992 source
+slice and post-slice audits are accepted.
