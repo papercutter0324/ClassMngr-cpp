@@ -41674,6 +41674,82 @@ F967 acceptance for implementation:
    `ClassMngrStaffDirectoryNativeEnglishSaveTests`; run only their exact
    generated focused CTest registrations. Do not run the full suite.
 
-F967 is the sole active accepted slice. Do not add either Batch337 lead to the
-official Deferred list. All 13 official Deferred entries remain unresolved;
-Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+F967 was the sole active accepted slice at its acceptance checkpoint. Do not
+add either Batch337 lead to the official Deferred list. All 13 official
+Deferred entries remain unresolved; Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
+
+### F967 complete; Batch338 shortfall; Batch339 discovery underway - 2026-10-16
+
+F967 was implemented at source/test commit
+`092a7268c956b7792bdeb3c898014562aad22d7b`, following acceptance checkpoint
+`9a700537cb5fc152770e7267a43f00d47734ba9f`. Independent verification in
+`build/windows-x64-debug` built `ClassMngr` and the targets
+`ClassMngrStaffDirectoryNativeEnglishSaveTests`,
+`ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`, and
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests`.
+The exact focused CTest registrations
+`ClassMngrStaffDirectoryNativeEnglishSaveParityTests`,
+`ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`, and
+`ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests`
+passed 3/3. An ordinary build attempt hit MSBuild FileTracker `E_ACCESSDENIED`;
+the reviewed elevated build route succeeded, with `/p:TrackFileAccess=false`
+on the focused build. `git diff --check` was clean. No full suite ran.
+
+Two independent complete post-F967 audits found all 13 official Deferred
+entries unchanged; none was newly actionable, resolved, or superseded, and
+F967 changed none of their triggers.
+
+Batch338's three discovery lanes found no supported slice in feature-page
+workflows, Qt-free Application writes, or read/projection/platform adapters.
+The roster-transfer adapter contract is intentional; other near misses were
+the Campus Directory fallback and Calendar Delete invalid-ID behavior, which
+the adapter already rejects.
+
+No other slices were found.
+
+Batch339 discovery is underway across new areas; no candidate has been
+accepted yet.
+
+### Batch339 closed; F968 and F969 accepted in order - 2026-10-16
+
+Batch339's three independent discovery lanes produced two independently
+reviewed Application read-query candidates; the feature-page lane found no
+candidate. F968 is selected first, followed by F969. Neither candidate is an
+official Deferred entry; do not add either to that list.
+
+No other slices were found.
+
+F968 acceptance for implementation:
+
+1. In `CalendarEventByIdQueryUseCase`, compare a successful returned
+   `CalendarEventSummary.id` with the parsed request ID. A mismatch returns
+   nonrecoverable `Validation`, matching `ClassByIdReadQuery` behavior.
+2. Preserve matching-result success, port-error propagation, invalid-request
+   rejection without a port call, and the platform adapter's identity guard.
+3. Cover the behavior in
+   `tests/next_application_calendar_event_tests.cpp`.
+4. Build `ClassMngr` and `ClassMngrNextApplicationCalendarEventTests`; run only
+   the exact `ClassMngrNextApplicationCalendarEventTests` CTest. Do not run the
+   full suite.
+
+F969 acceptance for implementation, selected second:
+
+1. Validate `TestingClassDetailsReadQuery`'s class ID with the canonical
+   positive-decimal policy before calling the port. Return recoverable
+   `InvalidInput` with the same message as the sibling Testing Class
+   update/delete queries.
+2. Preserve the typed response-identity check, success and error propagation,
+   and platform adapter guard. Replace the current `class-42` application
+   fixture with a valid numeric ID and add invalid-ID cases that assert no port
+   call.
+3. Cover the behavior in
+   `tests/next_application_testing_class_details_read_query_tests.cpp`.
+4. Build `ClassMngr` and
+   `ClassMngrNextApplicationTestingClassDetailsReadQueryTests`; run only the
+   exact `ClassMngrNextApplicationTestingClassDetailsReadQueryTests` CTest. Do
+   not run the full suite.
+
+F968 is the active accepted slice and F969 is next. All 13 official Deferred
+entries remain unresolved; Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.

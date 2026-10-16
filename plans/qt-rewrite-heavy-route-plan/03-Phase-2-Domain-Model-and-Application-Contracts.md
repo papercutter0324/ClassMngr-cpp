@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F966 is complete and F967 is accepted as the sole active slice: derive Native English Teacher Directory save identity from raw names through an injected Qt-free policy; Blank-draft Sidebar Add remains deferred under F285, all 13 official Deferred entries remain unresolved, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F967 is complete; F968 is active and F969 is next in Batch339; all 13 official Deferred entries remain unresolved, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F967 - Native English Teacher Directory save identity: derive normalized-name validation keys from raw names through an injected Qt-free policy.
+- F968 - Calendar Event by ID read identity: reject a successful port result whose event ID differs from the parsed request ID.
+- F969 - Testing Class Details read ID: validate the canonical positive decimal class ID before calling the port.
 
 ## Objective
 
