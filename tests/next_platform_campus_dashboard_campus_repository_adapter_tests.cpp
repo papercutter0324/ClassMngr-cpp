@@ -5,6 +5,7 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <array>
 #include <string>
 
 using namespace ClassMngr::Next;
@@ -150,6 +151,8 @@ private slots:
     void savesStandaloneMainImageWithoutMapPaths();
     void rejectsReservedCreateIdentityBeforeWritingDefaultFile();
     void rejectsReservedUpdateNameWithoutChangingExistingFile();
+    void rejectsInvalidJsonBeforeCreateOrUpdateWrites();
+    void acceptsValidEmptyJsonRootsForCreateAndUpdate();
     void createCollisionPreservesExistingNormalizedDestination();
     void createThenUpdateRetainsTheCreatedId();
     void mapsCreateRepositoryFailureToTechnicalWithExactMessage();
@@ -235,6 +238,8 @@ rejectsReservedCreateIdentityBeforeWritingDefaultFile()
     const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
         snapshotFromCampusInfo(source);
     QVERIFY(snapshot.has_value());
+    auto invalidJsonSnapshot = snapshot.value();
+    invalidJsonSnapshot.directionsAddressEnJson = "{malformed";
 
     const CampusJsonRepository repository(m_directory.path());
     const QString reservedPath = repository.filePathForCampusId(
@@ -245,7 +250,7 @@ rejectsReservedCreateIdentityBeforeWritingDefaultFile()
     const Domain::Result<void> created =
         Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
             .saveCampus(
-                snapshot.value(),
+                invalidJsonSnapshot,
                 Application::CampusDashboardCampusSaveIntent::Create
                 );
 
@@ -282,11 +287,13 @@ rejectsReservedUpdateNameWithoutChangingExistingFile()
     const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
         snapshotFromCampusInfo(existing);
     QVERIFY(snapshot.has_value());
+    auto invalidJsonSnapshot = snapshot.value();
+    invalidJsonSnapshot.housingLocationsJson = "{}";
 
     const Domain::Result<void> updated =
         Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
             .saveCampus(
-                snapshot.value(),
+                invalidJsonSnapshot,
                 Application::CampusDashboardCampusSaveIntent::Update
                 );
 
@@ -304,6 +311,253 @@ rejectsReservedUpdateNameWithoutChangingExistingFile()
     const auto stillAlpha = repository.loadCampus(QStringLiteral("alpha"));
     QVERIFY(stillAlpha.has_value());
     QCOMPARE(stillAlpha->campusName, QStringLiteral("Alpha"));
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+rejectsInvalidJsonBeforeCreateOrUpdateWrites()
+{
+    enum class JsonField
+    {
+        DirectionsEn,
+        DirectionsKr,
+        HousingLocations
+    };
+    struct InvalidJsonCase
+    {
+        JsonField field;
+        const char* value;
+        const char* expectedMessage;
+    };
+    const std::array invalidCases{
+        InvalidJsonCase{
+            JsonField::DirectionsEn,
+            "{malformed",
+            "directionsAddressEnJson must be a valid JSON object."
+        },
+        InvalidJsonCase{
+            JsonField::DirectionsEn,
+            "[]",
+            "directionsAddressEnJson must be a valid JSON object."
+        },
+        InvalidJsonCase{
+            JsonField::DirectionsKr,
+            "{malformed",
+            "directionsAddressKrJson must be a valid JSON object."
+        },
+        InvalidJsonCase{
+            JsonField::DirectionsKr,
+            "[]",
+            "directionsAddressKrJson must be a valid JSON object."
+        },
+        InvalidJsonCase{
+            JsonField::HousingLocations,
+            "[malformed",
+            "housingLocationsJson must be a valid JSON array."
+        },
+        InvalidJsonCase{
+            JsonField::HousingLocations,
+            "{}",
+            "housingLocationsJson must be a valid JSON array."
+        }
+    };
+    const auto setInvalidJson = [](
+        Application::CampusDashboardCampusSnapshot& snapshot,
+        const InvalidJsonCase& invalidCase
+        )
+    {
+        switch (invalidCase.field)
+        {
+        case JsonField::DirectionsEn:
+            snapshot.directionsAddressEnJson = invalidCase.value;
+            break;
+        case JsonField::DirectionsKr:
+            snapshot.directionsAddressKrJson = invalidCase.value;
+            break;
+        case JsonField::HousingLocations:
+            snapshot.housingLocationsJson = invalidCase.value;
+            break;
+        }
+    };
+
+    CampusJsonRepository repository(m_directory.path());
+    Platform::CampusDashboardCampusRepositoryAdapter adapter(
+        m_directory.path()
+        );
+
+    CampusInfo createSource = representativeCampus();
+    createSource.id = QStringLiteral("invalid_json_create");
+    createSource.campusName = QStringLiteral("Invalid JSON Create");
+    const auto createSnapshot =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(createSource);
+    QVERIFY(createSnapshot.has_value());
+    const QString createPath = repository.filePathForCampusId(
+        createSource.id
+        );
+    QVERIFY(!QFile::exists(createPath));
+
+    for (const InvalidJsonCase& invalidCase : invalidCases)
+    {
+        auto candidate = createSnapshot.value();
+        setInvalidJson(candidate, invalidCase);
+        const Domain::Result<void> created = adapter.saveCampus(
+            candidate,
+            Application::CampusDashboardCampusSaveIntent::Create
+            );
+        QVERIFY2(!created, invalidCase.expectedMessage);
+        QCOMPARE(created.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            created.error().message,
+            std::string(invalidCase.expectedMessage)
+            );
+        QVERIFY(!created.error().recoverable);
+        QVERIFY(!QFile::exists(createPath));
+    }
+
+    CampusInfo updateSource = representativeCampus();
+    updateSource.id = QStringLiteral("invalid_json_update");
+    updateSource.campusName = QStringLiteral("Invalid JSON Update");
+    const Status seeded = repository.saveCampus(updateSource);
+    QVERIFY(seeded);
+
+    QFile originalFile(repository.filePathForCampusId(updateSource.id));
+    QVERIFY(originalFile.open(QIODevice::ReadOnly));
+    const QByteArray originalBytes = originalFile.readAll();
+    originalFile.close();
+
+    const auto updateSnapshot =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(updateSource);
+    QVERIFY(updateSnapshot.has_value());
+    const QString updatePath = repository.filePathForCampusId(
+        updateSource.id
+        );
+
+    for (const InvalidJsonCase& invalidCase : invalidCases)
+    {
+        auto candidate = updateSnapshot.value();
+        setInvalidJson(candidate, invalidCase);
+        const Domain::Result<void> updated = adapter.saveCampus(
+            candidate,
+            Application::CampusDashboardCampusSaveIntent::Update
+            );
+        QVERIFY2(!updated, invalidCase.expectedMessage);
+        QCOMPARE(updated.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            updated.error().message,
+            std::string(invalidCase.expectedMessage)
+            );
+        QVERIFY(!updated.error().recoverable);
+
+        QFile unchangedFile(updatePath);
+        QVERIFY(unchangedFile.open(QIODevice::ReadOnly));
+        QCOMPARE(unchangedFile.readAll(), originalBytes);
+    }
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+acceptsValidEmptyJsonRootsForCreateAndUpdate()
+{
+    CampusJsonRepository repository(m_directory.path());
+    Platform::CampusDashboardCampusRepositoryAdapter adapter(
+        m_directory.path()
+        );
+
+    CampusInfo createSource = representativeCampus();
+    createSource.id = QStringLiteral("empty_json_create");
+    createSource.campusName = QStringLiteral("Empty JSON Create");
+    const auto createSnapshot =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(createSource);
+    QVERIFY(createSnapshot.has_value());
+    auto emptyCreateSnapshot = createSnapshot.value();
+    emptyCreateSnapshot.directionsAddressEnJson = "{}";
+    emptyCreateSnapshot.directionsAddressKrJson = "{}";
+    emptyCreateSnapshot.housingLocationsJson = "[]";
+
+    QTemporaryDir createBaselineDirectory;
+    QVERIFY(createBaselineDirectory.isValid());
+    CampusJsonRepository createBaselineRepository(
+        createBaselineDirectory.path()
+        );
+    const CampusInfo expectedCreateInput =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            campusInfoFromSnapshot(emptyCreateSnapshot);
+    const auto baselineCreated =
+        createBaselineRepository.createCampus(expectedCreateInput);
+    QVERIFY(baselineCreated.has_value());
+    const auto expectedCreatedCampus =
+        createBaselineRepository.loadCampus(createSource.id);
+    QVERIFY(expectedCreatedCampus.has_value());
+
+    const Domain::Result<void> created = adapter.saveCampus(
+        emptyCreateSnapshot,
+        Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QVERIFY(created);
+    const auto createdCampus = repository.loadCampus(createSource.id);
+    QVERIFY(createdCampus.has_value());
+    QVERIFY(
+        createdCampus->directionsAddressEn
+        == expectedCreatedCampus->directionsAddressEn
+        );
+    QVERIFY(
+        createdCampus->directionsAddressKr
+        == expectedCreatedCampus->directionsAddressKr
+        );
+    QVERIFY(createdCampus->housingLocations.isEmpty());
+    QVERIFY(QFile::exists(repository.filePathForCampusId(createSource.id)));
+
+    CampusInfo updateSource = representativeCampus();
+    updateSource.id = QStringLiteral("empty_json_update");
+    updateSource.campusName = QStringLiteral("Empty JSON Update");
+    QVERIFY(repository.saveCampus(updateSource));
+
+    QTemporaryDir updateBaselineDirectory;
+    QVERIFY(updateBaselineDirectory.isValid());
+    CampusJsonRepository updateBaselineRepository(
+        updateBaselineDirectory.path()
+        );
+    QVERIFY(updateBaselineRepository.saveCampus(updateSource));
+
+    const auto updateSnapshot =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            snapshotFromCampusInfo(updateSource);
+    QVERIFY(updateSnapshot.has_value());
+    auto emptyUpdateSnapshot = updateSnapshot.value();
+    emptyUpdateSnapshot.campusName = "Updated Empty JSON Campus";
+    emptyUpdateSnapshot.directionsAddressEnJson = "{}";
+    emptyUpdateSnapshot.directionsAddressKrJson = "{}";
+    emptyUpdateSnapshot.housingLocationsJson = "[]";
+
+    const CampusInfo expectedUpdateInput =
+        Platform::CampusDashboardCampusRepositoryAdapter::
+            campusInfoFromSnapshot(emptyUpdateSnapshot);
+    QVERIFY(updateBaselineRepository.saveCampus(expectedUpdateInput));
+    const auto expectedUpdatedCampus =
+        updateBaselineRepository.loadCampus(updateSource.id);
+    QVERIFY(expectedUpdatedCampus.has_value());
+
+    const Domain::Result<void> updated = adapter.saveCampus(
+        emptyUpdateSnapshot,
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QVERIFY(updated);
+    const auto updatedCampus = repository.loadCampus(updateSource.id);
+    QVERIFY(updatedCampus.has_value());
+    QVERIFY(
+        updatedCampus->directionsAddressEn
+        == expectedUpdatedCampus->directionsAddressEn
+        );
+    QVERIFY(
+        updatedCampus->directionsAddressKr
+        == expectedUpdatedCampus->directionsAddressKr
+        );
+    QVERIFY(updatedCampus->housingLocations.isEmpty());
+    QCOMPARE(
+        updatedCampus->campusName,
+        QStringLiteral("Updated Empty JSON Campus")
+        );
 }
 
 void CampusDashboardCampusRepositoryAdapterTests::

@@ -60,6 +60,13 @@ public:
                 );
         }
 
+        const Domain::Result<void> jsonValidation =
+            validateSnapshotJson(snapshot);
+        if (!jsonValidation)
+        {
+            return jsonValidation;
+        }
+
         const CampusInfo campus = campusInfoFromSnapshot(snapshot);
         if (intent == Application::CampusDashboardCampusSaveIntent::Create)
         {
@@ -180,6 +187,73 @@ public:
     }
 
 private:
+    [[nodiscard]] static Domain::Result<void> validateSnapshotJson(
+        const Application::CampusDashboardCampusSnapshot& snapshot
+        )
+    {
+        if (!isJsonObject(snapshot.directionsAddressEnJson))
+        {
+            return invalidJsonRoot(
+                "directionsAddressEnJson",
+                "object"
+                );
+        }
+        if (!isJsonObject(snapshot.directionsAddressKrJson))
+        {
+            return invalidJsonRoot(
+                "directionsAddressKrJson",
+                "object"
+                );
+        }
+        if (!isJsonArray(snapshot.housingLocationsJson))
+        {
+            return invalidJsonRoot(
+                "housingLocationsJson",
+                "array"
+                );
+        }
+
+        return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] static bool isJsonObject(const std::string& json)
+    {
+        QJsonParseError parseError;
+        const QJsonDocument document = QJsonDocument::fromJson(
+            QByteArray::fromStdString(json),
+            &parseError
+            );
+        return parseError.error == QJsonParseError::NoError
+            && document.isObject();
+    }
+
+    [[nodiscard]] static bool isJsonArray(const std::string& json)
+    {
+        QJsonParseError parseError;
+        const QJsonDocument document = QJsonDocument::fromJson(
+            QByteArray::fromStdString(json),
+            &parseError
+            );
+        return parseError.error == QJsonParseError::NoError
+            && document.isArray();
+    }
+
+    [[nodiscard]] static Domain::Result<void> invalidJsonRoot(
+        const char* fieldName,
+        const char* expectedRoot
+        )
+    {
+        std::string message(fieldName);
+        message += " must be a valid JSON ";
+        message += expectedRoot;
+        message += ".";
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = std::move(message),
+            .recoverable = false
+        });
+    }
+
     [[nodiscard]] static std::string utf8(const QString& value)
     {
         const QByteArray bytes = value.toUtf8();
