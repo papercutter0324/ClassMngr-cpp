@@ -63,9 +63,8 @@ speakingEvaluationGradeFromLabel(std::string_view label)
     return std::nullopt;
 }
 
-[[nodiscard]] constexpr std::string_view speakingEvaluationGradeLabel(
-    SpeakingEvaluationGrade grade
-    )
+[[nodiscard]] constexpr std::optional<std::string_view>
+speakingEvaluationGradeLabel(SpeakingEvaluationGrade grade)
 {
     switch (grade)
     {
@@ -80,7 +79,7 @@ speakingEvaluationGradeFromLabel(std::string_view label)
     case SpeakingEvaluationGrade::APlus:
         return "A+";
     }
-    return {};
+    return std::nullopt;
 }
 
 [[nodiscard]] constexpr std::optional<SpeakingEvaluationGrade>

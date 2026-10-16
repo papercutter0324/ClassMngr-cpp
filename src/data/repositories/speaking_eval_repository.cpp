@@ -1115,12 +1115,19 @@ Result<QList<SpeakingEvalScore>> SpeakingEvalRepository::buildRosterScoreImport(
                 );
         if (overallGrade)
         {
-            const std::string_view label =
+            const auto label =
                 NextDomain::speakingEvaluationGradeLabel(*overallGrade);
-            finalGrade = QString::fromLatin1(
-                label.data(),
-                static_cast<qsizetype>(label.size())
-                );
+            if (label)
+            {
+                finalGrade = QString::fromLatin1(
+                    label->data(),
+                    static_cast<qsizetype>(label->size())
+                    );
+            }
+            else
+            {
+                finalGrade = QStringLiteral("N/A");
+            }
         }
 
         scores.append(

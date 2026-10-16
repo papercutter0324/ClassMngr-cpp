@@ -267,10 +267,15 @@ QString SpeakingEvalReportWidget::overallGrade() const
         return QStringLiteral("N/A");
     }
 
-    const std::string_view label =
+    const auto label =
         NextDomain::speakingEvaluationGradeLabel(*overallGrade);
+    if (!label)
+    {
+        return QStringLiteral("N/A");
+    }
+
     return QString::fromLatin1(
-        label.data(),
-        static_cast<qsizetype>(label.size())
+        label->data(),
+        static_cast<qsizetype>(label->size())
         );
 }

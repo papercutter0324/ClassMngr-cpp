@@ -45,6 +45,7 @@ private slots:
     void coursesRejectInvalidNamesAndCrossGradePairs();
     void courseGradeBandsClassifyGradeWithoutLevelValidation();
     void speakingEvaluationGradesParseExactSupportedLabels();
+    void speakingEvaluationGradeLabelsRejectUnknownValues();
     void speakingEvaluationGradesAggregateAllSixComponents();
     void speakingEvaluationGradeAggregationRejectsInvalidOrMissingScores();
     void speakingEvaluationGradeAggregationClampsToSupportedRange();
@@ -692,7 +693,9 @@ void NextDomainContractTests::
         const auto parsed = speakingEvaluationGradeFromLabel(gradeCase.label);
         QVERIFY(parsed.has_value());
         QVERIFY(*parsed == gradeCase.grade);
-        QVERIFY(speakingEvaluationGradeLabel(*parsed) == gradeCase.label);
+        const auto label = speakingEvaluationGradeLabel(*parsed);
+        QVERIFY(label.has_value());
+        QVERIFY(*label == gradeCase.label);
         QVERIFY(
             speakingEvaluationGradeFromValue(gradeCase.value)
             == gradeCase.grade
@@ -707,6 +710,21 @@ void NextDomainContractTests::
     }
     QVERIFY(!speakingEvaluationGradeFromValue(0).has_value());
     QVERIFY(!speakingEvaluationGradeFromValue(6).has_value());
+}
+
+void NextDomainContractTests::
+    speakingEvaluationGradeLabelsRejectUnknownValues()
+{
+    QVERIFY(
+        !speakingEvaluationGradeLabel(
+            static_cast<SpeakingEvaluationGrade>(0)
+            ).has_value()
+        );
+    QVERIFY(
+        !speakingEvaluationGradeLabel(
+            static_cast<SpeakingEvaluationGrade>(6)
+            ).has_value()
+        );
 }
 
 void NextDomainContractTests::

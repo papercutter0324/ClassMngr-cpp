@@ -90,9 +90,16 @@ public:
                     );
             if (overallGrade)
             {
-                const std::string_view label =
+                const auto label =
                     Domain::speakingEvaluationGradeLabel(*overallGrade);
-                finalGrade.assign(label.begin(), label.end());
+                if (label)
+                {
+                    finalGrade.assign(label->begin(), label->end());
+                }
+                else
+                {
+                    finalGrade = u"N/A";
+                }
             }
 
             scores.push_back({
