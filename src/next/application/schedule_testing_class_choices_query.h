@@ -1,9 +1,12 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
 #include <string>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -63,7 +66,43 @@ public:
         const ScheduleTestingClassChoicesReadPort& port
         )
     {
-        return port.readTestingClassChoices(query);
+        ScheduleTestingClassChoicesReadResult source =
+            port.readTestingClassChoices(query);
+        if (!source)
+        {
+            return ScheduleTestingClassChoicesReadResult::failure(
+                source.error()
+                );
+        }
+
+        auto snapshot = std::move(source.value());
+        std::unordered_set<std::string> classIds;
+        for (const ScheduleTestingClassChoice& choice : snapshot.choices)
+        {
+            if (!isCanonicalPositiveDecimalId(choice.classId.value()))
+            {
+                return ScheduleTestingClassChoicesReadResult::failure({
+                    .code = Domain::ErrorCode::Validation,
+                    .message =
+                        "Testing class choices contain an invalid class identifier.",
+                    .recoverable = false
+                });
+            }
+
+            if (!classIds.insert(choice.classId.value()).second)
+            {
+                return ScheduleTestingClassChoicesReadResult::failure({
+                    .code = Domain::ErrorCode::Validation,
+                    .message =
+                        "Testing class choices contain a duplicate class identifier.",
+                    .recoverable = false
+                });
+            }
+        }
+
+        return ScheduleTestingClassChoicesReadResult::success(
+            std::move(snapshot)
+            );
     }
 };
 

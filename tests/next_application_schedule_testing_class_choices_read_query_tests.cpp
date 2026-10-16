@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -51,8 +52,11 @@ class NextApplicationScheduleTestingClassChoicesReadQueryTests final
 
 private slots:
     void preservesOrderedChoicesAndEveryDisplayField();
+    void preservesLargestValidCanonicalPositiveIntClassIdentifier();
     void preservesAnEmptySuccessfulSnapshot();
     void propagatesStructuredReadFailures();
+    void rejectsMalformedClassIdentifiers();
+    void rejectsDuplicateClassIdentifiers();
 };
 
 void NextApplicationScheduleTestingClassChoicesReadQueryTests::
@@ -109,6 +113,39 @@ preservesOrderedChoicesAndEveryDisplayField()
 }
 
 void NextApplicationScheduleTestingClassChoicesReadQueryTests::
+preservesLargestValidCanonicalPositiveIntClassIdentifier()
+{
+    RecordingScheduleTestingClassChoicesReadPort port;
+    const std::string largestIntClassId = "2147483647";
+    port.result =
+        Application::ScheduleTestingClassChoicesReadResult::success({
+            .choices = {
+                {
+                    .classId = classId(largestIntClassId),
+                    .name = u"Boundary Class",
+                    .grade = u"M2",
+                    .level = u"Mixed (High)",
+                    .room = u"Library"
+                }
+            }
+        });
+
+    const auto result =
+        Application::ScheduleTestingClassChoicesReadQueryHandler::execute(
+            {},
+            port
+            );
+
+    QVERIFY(result);
+    QCOMPARE(port.callCount, 1);
+    QCOMPARE(result.value().choices.size(), std::size_t(1));
+    QCOMPARE(
+        result.value().choices[0].classId.value(),
+        largestIntClassId
+        );
+}
+
+void NextApplicationScheduleTestingClassChoicesReadQueryTests::
 preservesAnEmptySuccessfulSnapshot()
 {
     RecordingScheduleTestingClassChoicesReadPort port;
@@ -145,6 +182,82 @@ propagatesStructuredReadFailures()
 
     QVERIFY(!result);
     QVERIFY(result.error() == readError);
+    QCOMPARE(port.callCount, 1);
+}
+
+void NextApplicationScheduleTestingClassChoicesReadQueryTests::
+rejectsMalformedClassIdentifiers()
+{
+    const std::vector<std::string> invalidIds = {
+        "0",
+        "07",
+        "abc",
+        "-1",
+        "2147483648"
+    };
+
+    for (const std::string& invalidId : invalidIds)
+    {
+        RecordingScheduleTestingClassChoicesReadPort port;
+        port.result =
+            Application::ScheduleTestingClassChoicesReadResult::success({
+                .choices = {
+                    {
+                        .classId = classId(invalidId),
+                        .name = u"Invalid",
+                        .grade = u"E5",
+                        .level = u"Lower",
+                        .room = u"Room 204"
+                    }
+                }
+            });
+
+        const auto result =
+            Application::ScheduleTestingClassChoicesReadQueryHandler::execute(
+                {},
+                port
+                );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, 1);
+    }
+}
+
+void NextApplicationScheduleTestingClassChoicesReadQueryTests::
+rejectsDuplicateClassIdentifiers()
+{
+    RecordingScheduleTestingClassChoicesReadPort port;
+    port.result =
+        Application::ScheduleTestingClassChoicesReadResult::success({
+            .choices = {
+                {
+                    .classId = classId("42"),
+                    .name = u"Writing Lab",
+                    .grade = u"M2",
+                    .level = u"Mixed (High)",
+                    .room = u"Library"
+                },
+                {
+                    .classId = classId("42"),
+                    .name = u"Oral Review",
+                    .grade = u"E5",
+                    .level = u"Lower",
+                    .room = u"Room 204"
+                }
+            }
+        });
+
+    const auto result =
+        Application::ScheduleTestingClassChoicesReadQueryHandler::execute(
+            {},
+            port
+            );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
     QCOMPARE(port.callCount, 1);
 }
 
