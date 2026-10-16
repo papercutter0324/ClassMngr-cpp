@@ -364,6 +364,7 @@ private slots:
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
     void typedPreviewQueryNormalizesAndReturnsTypedCandidates();
+    void typedPreviewMatchesKoreanOnlyTeacherName();
     void previewPreservesQtNameAndCourseNormalization();
     void previewBatchesDestinationClassInfoInClassOrder();
     void previewUsesConditionalAssignedTeacherNames();
@@ -1613,6 +1614,76 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
         .contains(QStringLiteral("Loading regular classes navigation schedules failed")));
 }
 
+void ClassTransferTests::typedPreviewMatchesKoreanOnlyTeacherName()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher localTeacher = completeTeacher(QStringLiteral("Different English"));
+    localTeacher.teacherKr = QStringLiteral("김 민수");
+    const int destinationTeacherId = createdTeacherId(service, localTeacher);
+    const int destinationClassId = addCompleteClass(
+        service,
+        destinationTeacherId,
+        QStringLiteral("Matched Destination"),
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral("Tuesday"),
+        QStringLiteral("Destination Student")
+        );
+    QVERIFY(destinationTeacherId > 0);
+    QVERIFY(destinationClassId > 0);
+
+    ClassTransferPackage package;
+    ClassTransferTeacher sourceTeacher;
+    sourceTeacher.key = QStringLiteral("korean-only-source");
+    sourceTeacher.teacher.teacherEn.clear();
+    sourceTeacher.teacher.teacherKr = QStringLiteral("  김\t민수  ");
+    package.teachers.append(sourceTeacher);
+
+    ClassTransferClass sourceClass;
+    sourceClass.key = QStringLiteral("korean-only-class");
+    sourceClass.teacherKey = sourceTeacher.key;
+    sourceClass.info.classGrade = QStringLiteral(" E4\t");
+    sourceClass.info.classLevel = QStringLiteral(" PERSEUS  ");
+    package.classes.append(sourceClass);
+
+    const auto request =
+        ClassMngr::Next::Platform::classTransferPreviewRequest(package);
+    QCOMPARE(request.teachers.size(), std::size_t{1});
+    QVERIFY(request.teachers.front().names.english.empty());
+    QCOMPARE(request.teachers.front().names.korean,
+        QString(sourceTeacher.teacher.teacherKr).simplified()
+            .toCaseFolded().toStdString());
+
+    DatabaseSession* const session = service.databaseSession();
+    QVERIFY(session);
+    ClassTransferRepository* const repository =
+        session->classTransferRepository();
+    QVERIFY(repository);
+    const auto result = ClassMngr::Next::Application::
+        ClassTransferPreviewQuery(*repository).execute(request);
+    QVERIFY(result.hasValue());
+    QCOMPARE(result.value().teachers.size(), std::size_t{1});
+    QCOMPARE(result.value().teachers.front().teacherKey,
+        std::string("korean-only-source"));
+    QCOMPARE(result.value().teachers.front().matchingTeacherIds,
+        std::vector<ClassMngr::Next::Domain::TeacherId>{
+            *ClassMngr::Next::Domain::TeacherId::fromString(
+                std::to_string(destinationTeacherId))
+        });
+    QCOMPARE(result.value().classes.size(), std::size_t{1});
+    QCOMPARE(result.value().classes.front().packageClassIndex, 0);
+    QCOMPARE(result.value().classes.front().matchingClassIds,
+        std::vector<ClassMngr::Next::Domain::ClassId>{
+            *ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(destinationClassId))
+        });
+}
+
 void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()
 {
     QTemporaryDir directory;
@@ -2822,6 +2893,23 @@ void ClassTransferTests::previewUsesConditionalAssignedTeacherNames()
     QVERIFY(!missingTeacherPreview.has_value());
     QVERIFY(missingTeacherPreview.error().contains(QStringLiteral(
         "Loading teacher failed for teacher id 999999")));
+
+    DatabaseSession* const session = service.databaseSession();
+    QVERIFY(session);
+    ClassTransferRepository* const repository =
+        session->classTransferRepository();
+    QVERIFY(repository);
+    const auto request =
+        ClassMngr::Next::Platform::classTransferPreviewRequest(*package);
+    const auto typedFailure = ClassMngr::Next::Application::
+        ClassTransferPreviewQuery(*repository).execute(request);
+    QVERIFY(!typedFailure.hasValue());
+    QCOMPARE(typedFailure.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromUtf8(typedFailure.error().message.data(),
+            static_cast<qsizetype>(typedFailure.error().message.size()))
+        .contains(QStringLiteral(
+            "Loading teacher failed for teacher id 999999")));
 }
 
 void ClassTransferTests::

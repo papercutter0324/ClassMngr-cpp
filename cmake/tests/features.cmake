@@ -70,6 +70,7 @@ qt_add_executable(ClassMngrClassTransferTests
         NAME ClassTransferPreviewAdapterRegressionTests
         COMMAND ClassMngrClassTransferTests
             typedPreviewQueryNormalizesAndReturnsTypedCandidates
+            typedPreviewMatchesKoreanOnlyTeacherName
             previewUsesConditionalAssignedTeacherNames
             previewSkipsClassInfoBatchWhenThereAreNoDestinations
     )
