@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F991 is complete at `96902eec6257a95c05d272b2780d738ca374390c`; F992 is active in Batch360 after diagnosing the Schedule Import rejection as F851 canonical-ID validation, not evidence that F985 caused it. All 13 official Deferred entries remain unchanged pending post-F992 audits; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F992 is complete and Batch362 discovery is underway; its Schedule Import test correction follows F851 canonical-ID validation, and the F985 failure was not shown to have begun with F985. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

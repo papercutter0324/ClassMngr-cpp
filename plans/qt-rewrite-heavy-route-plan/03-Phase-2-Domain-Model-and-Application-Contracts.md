@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F991 is complete and F992 is active in Batch360 after the F985 diagnosis; the old `"01"` integration expectation conflicts with F851 canonical-ID validation, while all 13 Deferred entries remain unchanged pending post-F992 audits, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F992 is complete and Batch362 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch360 (F985 diagnosis complete; F992 active)
-  - F992 - Update Schedule Import integration expectations for F851 canonical-ID rejections; assert original target preservation and unchanged persisted-database snapshots.
+- Batch362 (underway)
+  - Application: inspect Speaking Evaluation AI batch eligibility, accepted-comment/review policy, and current callsites/tests.
+  - Application: inspect Automatic Update startup eligibility, preference interpretation, skipped-version policy, and current Next callsites/tests.
 
 ## Objective
 

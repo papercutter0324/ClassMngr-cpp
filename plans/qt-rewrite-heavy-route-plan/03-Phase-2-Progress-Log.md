@@ -42836,3 +42836,47 @@ yet recorded. All 13 official Deferred entries remain unchanged pending the
 post-slice audits. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open. Do not close Batch360 or start Batch361 until the F992 source
 slice and post-slice audits are accepted.
+
+### F992 complete; Batch360 closed - 2026-10-16
+
+F992 was implemented at source/test commit
+`1934a55a5abb12539857e400bf4f7a72043b8287`. Its acceptance matrix was
+recorded before implementation at documentation commit
+`fc643308a9715d938e5115dd40759a8237f3323e`. The Schedule Import regression
+now retains canonical `"1"` success and checks that TeacherId/ClassId
+`"01"` return `InvalidExistingTeacherTarget`/`InvalidExistingClassTarget`,
+preserve each original target value, and leave the persisted-database snapshot
+unchanged. Existing canonical-but-stale state-validation and no-mutation
+coverage remains in `typedApplyRejectsStaleSelectedClassBeforeWrites`.
+
+The F985 runtime failure was not shown to have been caused by F985: F985
+changed matching/preview only, and no pre-F985 test run establishes when the
+failure began. The correction addresses the earlier F851 canonical-ID
+validation contract.
+
+The executor incrementally built `ClassMngr` and
+`ClassMngrScheduleImportTests` in the existing
+`build/windows-x64-debug-ninja` MSVC tree. The independent Tester verified
+the focused targets; exact CTest `ClassMngrScheduleImportTests` passed
+1/1. `git show --check HEAD` and `git diff --check` passed. No full
+suite ran.
+
+Two independent post-F992 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. Preserve the Deferred list
+unchanged. Batch360's Domain arithmetic/boundary scan found no candidate in
+its nonexcluded types. No other slices were found. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
+
+### Batch361 closed; Batch362 discovery underway - 2026-10-16
+
+Batch361 was a discovery shortfall. The Domain scan found no candidate in
+the nonexcluded types. The Sub Prep summary, detail, and print-source
+contracts matched their current tests and callsites; no eligible defect was
+found. No other slices were found.
+
+Batch362 has started in two read-only lanes: Speaking Evaluation AI batch
+eligibility, accepted-comment/review policy, and current callsites/tests; and
+Automatic Update startup eligibility, preference interpretation,
+skipped-version policy, and current Next callsites/tests. All 13 official
+Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
