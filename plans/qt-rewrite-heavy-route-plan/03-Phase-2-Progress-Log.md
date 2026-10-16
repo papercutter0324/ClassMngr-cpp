@@ -44310,3 +44310,28 @@ post-F1031 audit is current: all 13 official Deferred entries remain unchanged;
 repeat both independent audits after F1032 implementation. Gates 1/2 remain
 Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation. F1032 is accepted and pending implementation.
+
+### F1032 complete; post-F1032 Deferred audits clear; Batch409 closed - 2026-10-17
+
+F1032 completes at source commit
+`742299288e8d6785ec8b6bc630a1bc2e6ef4ba5f`. Class Details Save, Class Notes
+Save, and Co-Teacher Assignment now report unavailable-session results as
+recoverable `NotFound`, while missing-entity failures remain nonrecoverable
+with their diagnostics and Details Validation Context fallback is unchanged.
+The typed Class Details diagnostic remains
+`Saving class information failed: parent class id 100001 was not found.`
+
+The executor rebuilt the changed translation units. An initial normal build
+hit Visual Studio FileTracker `E_ACCESSDENIED`; an elevated retry succeeded.
+The independent Tester verified the final six-file diff and passed the three
+focused Debug CTests (3/3):
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`.
+No full suite ran.
+
+Two independent post-F1032 audits checked exactly the 13 official Deferred
+entries. All remain unchanged, unresolved, and non-actionable; no trigger
+resolved or rationale changed. Batch409 is closed. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation. Batch410 Heavy discovery is underway.

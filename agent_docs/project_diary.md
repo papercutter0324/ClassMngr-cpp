@@ -6639,3 +6639,23 @@ results recoverable. Preserve missing-entity `NotFound` results and their
 diagnostics, and keep the Details Validation Context query's recoverable
 missing-context fallback unchanged. Gates 1/2 remain Partial, F1007 awaits
 policy reconciliation, and Phase 2 remains open.
+
+## F1032 closeout - 2026-10-17
+
+F1032 completed at source commit `74229928`. Class Details Save, Class Notes
+Save, and Co-Teacher Assignment now mark unavailable-session `NotFound`
+recoverable. Their missing-entity results remain nonrecoverable with their
+existing diagnostics; the Details Validation Context query fallback did not
+change. The Class Details Save regression asserts its typed parent-missing
+diagnostic directly.
+
+The independent Tester reviewed the six-file diff and built `ClassMngr` plus
+the Class Details Save, Class Notes Save, and Co-Teacher Assignment port test
+targets in the reused Debug tree. The matching three CTests passed 3/3. The
+Executor rebuilt changed test sources; the Tester reused those outputs after
+an elevated Visual Studio FileTracker retry. No full suite ran.
+
+Two independent post-commit audits checked the exact 13 official Deferred
+entries. All remain unchanged and unresolved; none became actionable,
+resolved, or superseded. Batch410 discovery is underway. Gates 1/2 remain
+Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.

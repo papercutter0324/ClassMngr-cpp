@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1032 is accepted in Batch409 pending implementation, with latest source F1031 at `d5bcff97b9c0b444e4eaa14ac55765cd633306ee`; post-F1031 audits found all 13 official Deferred entries unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1032 is complete at source commit `742299288e8d6785ec8b6bc630a1bc2e6ef4ba5f`; all 13 exact official Deferred entries remain unchanged, Batch409 is closed, and Batch410 Heavy discovery is underway; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch409
+#### Active batch — Batch410
 
-- F1032 - Class write unavailable-session recoverability — mark unavailable-session NotFound results recoverable in Details Save, Class Notes Save, and Co-Teacher Assignment.
+- Heavy-route discovery is underway; no candidate has been selected yet.
 
 #### Deferred candidates
 

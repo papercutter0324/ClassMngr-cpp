@@ -6031,7 +6031,7 @@ UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-17 (F1031 complete; F1032 accepted; Batch409 active)
+## Current continuation - 2026-10-17 (F1032 complete; Batch410 discovering)
 
 Batch402–404 found no eligible source slice. Batch405 found an inconsistent
 `FeatureService` contract: some operations fall back to a separate legacy
@@ -6064,12 +6064,15 @@ post-commit audits checked the exact 13 official Deferred entries; all remain
 unchanged and unresolved.
 
 Batch409 identified F1032: Class Details Save, Class Notes Save, and
-Co-Teacher Assignment classify unavailable-session `NotFound` as
-nonrecoverable while sibling class mutation ports mark it recoverable. This is
-a public result-metadata contract issue; current pages do not branch on the
-flag. F1032 is accepted before implementation: change only those three
-unavailable-session results and preserve missing-entity behavior, including
-the separate details-validation-context fallback contract. Repeat the
-independent audit of all 13 official Deferred entries after implementation.
-Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
-the Phase 2 exit gate remains Open.
+Co-Teacher Assignment classified unavailable-session `NotFound` as
+nonrecoverable while sibling class mutation ports marked it recoverable. This
+public result-metadata issue did not establish a current UI defect. F1032 is
+complete at source commit `74229928`; only those three unavailable-session
+results changed, and missing-entity behavior and the Details Validation
+Context fallback remain intact. The independent Debug build and three focused
+CTests passed 3/3 after an elevated Visual Studio FileTracker retry; no full
+suite ran. Two independent post-commit audits found all 13 official Deferred
+entries unchanged and unresolved. Batch410 Heavy discovery is underway in
+remaining Application workflows and non-Class platform boundaries. Gates 1/2
+remain Partial, F1007 remains pending policy reconciliation, and the Phase 2
+exit gate remains Open.
