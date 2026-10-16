@@ -357,6 +357,7 @@ private slots:
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
     void summaryScopeFiltersPreviewDaysAndKeepsFirstSeenOrder();
     void scheduleDisplayModeRefreshesClassInformationInPlace();
+    void scheduleDisplayModeRefreshFallsBackToFirstVisibleClass();
     void pageDeactivationReleasesClassInformationForTheNextEntry();
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void savedCampusSelectionUsesTypedRead();
@@ -929,6 +930,8 @@ void SubPrepPageTests
 void SubPrepPageTests
     ::summaryScopeFiltersPreviewDaysAndKeepsFirstSeenOrder()
 {
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+
     ApplicationServices services;
     SubPrepPageHarness harness(&services);
     activatePage(harness.page);
@@ -950,7 +953,7 @@ void SubPrepPageTests
     ScheduleCellView tuesdayCell;
     tuesdayCell.day = QStringLiteral("Tuesday");
     ScheduleEntry entry;
-    entry.classId = 42;
+    entry.classId = 43;
     tuesdayCell.entries.append(entry);
     row.cells.append(tuesdayCell);
     preview.rows.append(row);
@@ -974,6 +977,8 @@ void SubPrepPageTests
         static_cast<int>(selectedDays[1]),
         static_cast<int>(SubPrepWeekday::Monday)
         );
+    QCOMPARE(harness.page.runtimeMetrics().selectedClassId, 43);
+    QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("43"));
 }
 
 void SubPrepPageTests
@@ -1020,8 +1025,72 @@ void SubPrepPageTests
 }
 
 void SubPrepPageTests
+    ::scheduleDisplayModeRefreshFallsBackToFirstVisibleClass()
+{
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+    QCOMPARE(page.runtimeMetrics().selectedClassId, 42);
+    QCOMPARE(harness.detailsReadPort.loadCount, 1);
+
+    auto* const schedule = page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    QVERIFY(schedule);
+
+    ScheduleViewModel preview;
+    preview.days = {QStringLiteral("Thursday")};
+    ScheduleRowView row;
+    ScheduleCellView cell;
+    cell.day = QStringLiteral("Thursday");
+    ScheduleEntry entry;
+    entry.classId = 43;
+    cell.entries.append(entry);
+    row.cells.append(cell);
+    preview.rows.append(row);
+    schedule->setPreviewModel(preview);
+
+    QVERIFY(QMetaObject::invokeMethod(
+        schedule,
+        "setDisplayMode",
+        Qt::DirectConnection,
+        Q_ARG(int, static_cast<int>(ScheduleDisplayMode::Intensive))
+        ));
+
+    QCOMPARE(
+        harness.summaryReadPort.lastRequest.mode,
+        ScheduleViewMode::Intensive
+        );
+    QCOMPARE(harness.summaryReadPort.lastRequest.visibleClassIds.size(),
+             std::size_t(1));
+    QCOMPARE(
+        harness.summaryReadPort.lastRequest.visibleClassIds.front().value(),
+        std::string("43")
+        );
+    QCOMPARE(page.runtimeMetrics().classInformationVisibleClassCount, 1);
+    QCOMPARE(page.runtimeMetrics().selectedClassId, 43);
+    QCOMPARE(harness.detailsReadPort.loadCount, 2);
+    QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("43"));
+
+    auto* const classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
+    QVERIFY(classTabs);
+    QCOMPARE(classTabs->model()->rowCount(), 1);
+    QCOMPARE(
+        classTabs->model()->classIdAt(classTabs->currentRow())->value(),
+        std::string("43")
+        );
+}
+
+void SubPrepPageTests
     ::pageDeactivationReleasesClassInformationForTheNextEntry()
 {
+    ScheduleWidgetTestStubs::setIncludeAdditionalClass(true);
+
     ApplicationServices services;
     SubPrepPageHarness harness(&services);
     SubPrepPage& page = harness.page;
@@ -1056,22 +1125,36 @@ void SubPrepPageTests
         page.findChild<QWidget*>(QStringLiteral("subPrepClassDetails"));
     QVERIFY(gradeTabs);
     QVERIFY(classTabs);
-    QCOMPARE(gradeTabs->count(), 1);
+    QCOMPARE(gradeTabs->count(), 2);
     QVERIFY(detailsCard);
     QVERIFY(details);
     QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(details->property("classId").toInt(), 42);
     QCOMPARE(harness.detailsReadPort.loadCount, 1);
 
+    int secondGradeIndex = -1;
+    for (int index = 0; index < gradeTabs->count(); ++index)
+    {
+        if (gradeTabs->tabText(index) == QStringLiteral("E5"))
+        {
+            secondGradeIndex = index;
+            break;
+        }
+    }
+    QVERIFY(secondGradeIndex >= 0);
+    gradeTabs->setCurrentIndex(secondGradeIndex);
+    QCOMPARE(details->property("classId").toInt(), 43);
+    QCOMPARE(harness.detailsReadPort.loadCount, 2);
+
     page.deactivate();
 
     QVERIFY(page.needsRefresh());
     QVERIFY(gradeTabs->isHidden());
-    QCOMPARE(gradeTabs->count(), 1);
+    QCOMPARE(gradeTabs->count(), 2);
     QCOMPARE(classTabs->model()->rowCount(), 0);
     QVERIFY(detailsCard->isHidden());
     QCOMPARE(details->property("classId").toInt(), -1);
-    QCOMPARE(harness.detailsReadPort.loadCount, 1);
+    QCOMPARE(harness.detailsReadPort.loadCount, 2);
     QCOMPARE(page.scheduleWidgetRuntimeMetrics().modelEntryCount, 0);
     QCOMPARE(page.scheduleWidgetRuntimeMetrics().tableItemCount, 0);
     QCOMPARE(notes->toPlainText(), unsavedNotes);
@@ -1090,10 +1173,11 @@ void SubPrepPageTests
         scheduleMetricsBeforeLeave.tableItemCount
         );
     QVERIFY(!gradeTabs->isHidden());
-    QCOMPARE(gradeTabs->count(), 1);
+    QCOMPARE(gradeTabs->count(), 2);
     QCOMPARE(classTabs->model()->rowCount(), 1);
     QCOMPARE(details->property("classId").toInt(), 42);
-    QCOMPARE(harness.detailsReadPort.loadCount, 2);
+    QCOMPARE(harness.detailsReadPort.loadCount, 3);
+    QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("42"));
     QCOMPARE(notes->toPlainText(), unsavedNotes);
     QVERIFY(page.hasUnsavedChanges());
 }

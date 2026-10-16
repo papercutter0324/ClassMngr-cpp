@@ -222,6 +222,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_roster_output_source_query.h
     src/next/application/sub_prep_class_details_query.h
     src/next/application/sub_prep_class_information_state.h
+    src/next/application/sub_prep_class_information_selection_policy.h
     src/next/application/class_transfer_package.h
     src/next/application/class_transfer_export_query.h
     src/next/application/class_transfer_projection.h

@@ -3,6 +3,7 @@
 #include "core/startup_profiler.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "next/application/sub_prep_class_details_query.h"
+#include "next/application/sub_prep_class_information_selection_policy.h"
 #include "next/application/sub_prep_class_information_state.h"
 #include "next/application/sub_prep_print_source_query.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
@@ -22,6 +23,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace Application = ClassMngr::Next::Application;
 namespace Domain = ClassMngr::Next::Domain;
@@ -225,6 +227,23 @@ Application::SubPrepScheduleScopeRequest scheduleScopeRequest(
         ? Application::ScheduleViewMode::Intensive
         : Application::ScheduleViewMode::Regular;
     return request;
+}
+
+std::vector<Domain::ClassId> visibleClassIdsInRowOrder(
+    const SubPrepClassInformationListModel& model
+    )
+{
+    std::vector<Domain::ClassId> visibleClassIds;
+    visibleClassIds.reserve(static_cast<std::size_t>(model.rowCount()));
+    for (int row = 0; row < model.rowCount(); ++row)
+    {
+        const auto classId = model.classIdAt(row);
+        if (classId.has_value())
+        {
+            visibleClassIds.push_back(*classId);
+        }
+    }
+    return visibleClassIds;
 }
 
 int legacyIntegerId(
@@ -564,15 +583,8 @@ void SubPrepPage::rebuildClassInformation()
         runtimeMetricsDetail(runtimeMetrics())
         );
 
-    const bool hasSummaries = !summaries.empty();
     std::optional<Domain::ClassId> selectedClassId =
         m_classInformationState->selectedClassId();
-    if (!selectedClassId.has_value() && hasSummaries)
-    {
-        selectedClassId =
-            m_classInformationModel->classIdAt(0);
-    }
-
     m_classInformationTabSelector->setCurrentRow(-1);
     if (selectedClassId.has_value())
     {
@@ -594,12 +606,20 @@ void SubPrepPage::rebuildClassInformation()
                 m_classInformationGradeTabs->setCurrentIndex(gradeIndex);
             }
             m_classInformationModel->setCurrentGrade(selectedGrade);
-            const int row =
-                m_classInformationModel->rowForClassId(*selectedClassId);
-            if (row >= 0)
-            {
-                m_classInformationTabSelector->setCurrentRow(row);
-            }
+        }
+    }
+
+    selectedClassId = Application::selectSubPrepClassInformationId(
+        selectedClassId,
+        visibleClassIdsInRowOrder(*m_classInformationModel)
+        );
+    if (selectedClassId.has_value())
+    {
+        const int row =
+            m_classInformationModel->rowForClassId(*selectedClassId);
+        if (row >= 0)
+        {
+            m_classInformationTabSelector->setCurrentRow(row);
         }
     }
 
@@ -642,36 +662,19 @@ void SubPrepPage::handleClassInformationGradeChanged(int index)
     m_updatingClassInformation = true;
     m_classInformationModel->setCurrentGrade(grade);
 
-    int selectedRow = -1;
-    if (m_classInformationState->selectedClassId().has_value())
-    {
-        const auto currentClass =
-            m_classInformationModel->projection().findClass(
-                *m_classInformationState->selectedClassId()
-                );
-        if (
-            currentClass.has_value()
-            && fromUtf8(currentClass->grade) == grade
-            )
-        {
-            selectedRow =
-                m_classInformationModel->rowForClassId(
-                    currentClass->id
-                    );
-        }
-    }
-    if (selectedRow < 0 && m_classInformationModel->rowCount() > 0)
-    {
-        selectedRow = 0;
-    }
+    const std::optional<Domain::ClassId> selectedClassId =
+        Application::selectSubPrepClassInformationId(
+            m_classInformationState->selectedClassId(),
+            visibleClassIdsInRowOrder(*m_classInformationModel)
+            );
+    const int selectedRow = selectedClassId.has_value()
+        ? m_classInformationModel->rowForClassId(*selectedClassId)
+        : -1;
 
     m_classInformationTabSelector->setCurrentRow(-1);
-    std::optional<Domain::ClassId> selectedClassId;
     if (selectedRow >= 0)
     {
         m_classInformationTabSelector->setCurrentRow(selectedRow);
-        selectedClassId =
-            m_classInformationModel->classIdAt(selectedRow);
     }
     m_updatingClassInformation = false;
 

@@ -1369,6 +1369,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepSelectedClassIdsTests
 )
 
+# Keep Sub Prep class-information selection independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+    tests/next_application_sub_prep_class_information_selection_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+    COMMAND ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+)
+
 # Keep Sub Prep meeting-time grouping independent of Qt.
 add_executable(
     ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests
