@@ -207,10 +207,12 @@ private:
     [[nodiscard]] static Application::TestingClassDetailsUpdateResult
     unavailableFailure()
     {
-        return failure(
-            Domain::ErrorCode::NotFound,
-            "The active database session for testing classes is unavailable."
-            );
+        return Application::TestingClassDetailsUpdateResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message =
+                "The active database session for testing classes is unavailable.",
+            .recoverable = true
+        });
     }
 
     ApplicationServices* m_services = nullptr;

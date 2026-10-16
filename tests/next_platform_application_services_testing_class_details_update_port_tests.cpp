@@ -259,6 +259,7 @@ reportsUnavailableSessionsAsNotFound()
             );
     QVERIFY(!nullResult);
     QCOMPARE(nullResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(nullResult.error().recoverable);
 
     ApplicationServices unopenedServices;
     Platform::ApplicationServicesTestingClassDetailsUpdatePort unopenedPort(
@@ -271,6 +272,7 @@ reportsUnavailableSessionsAsNotFound()
             );
     QVERIFY(!unopenedResult);
     QCOMPARE(unopenedResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(unopenedResult.error().recoverable);
 
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -287,6 +289,7 @@ reportsUnavailableSessionsAsNotFound()
             );
     QVERIFY(!closedResult);
     QCOMPARE(closedResult.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(closedResult.error().recoverable);
 }
 
 void NextPlatformApplicationServicesTestingClassDetailsUpdatePortTests::
@@ -362,6 +365,12 @@ reportsDeletedParentAsNotFoundAndKeepsLegacyDiagnostic()
     QVERIFY(!typedResult);
     QCOMPARE(typedResult.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(!typedResult.error().recoverable);
+    QCOMPARE(
+        QString::fromStdString(typedResult.error().message),
+        QStringLiteral(
+            "The testing class parent class was not found for class id %1."
+            ).arg(*createdClass)
+        );
 
     QSqlQuery remainingRows(services.databaseSession()->database());
     QVERIFY2(remainingRows.prepare(QStringLiteral(R"(
