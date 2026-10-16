@@ -166,6 +166,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/speaking_evaluation_ai_batch_eligibility.h
     src/next/application/speaking_evaluation_ai_comment_prompt.h
     src/next/application/speaking_evaluation_report_content.h
+    src/next/application/speaking_evaluation_schedule_label_projection.h
     src/next/application/speaking_evaluation_ai_batch_comment_quality.h
     src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h
     src/next/application/speaking_evaluation_private_notes_split.h

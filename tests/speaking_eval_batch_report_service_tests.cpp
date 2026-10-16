@@ -534,6 +534,7 @@ private slots:
     void speakingEvalModelDuplicateValidationPreservesRowsAndIncompleteNames();
     void safeFileNameUsesStudentNamesAndRemovesReservedCharacters();
     void defaultOutputDirectoryIncludesClassScheduleAndEvaluation();
+    void defaultOutputDirectoryProjectsMixedStartTimes();
     void defaultOutputDirectoryNormalizesClassScheduleTime_data();
     void defaultOutputDirectoryNormalizesClassScheduleTime();
     void batchArchivePathUsesOutputFolderName();
@@ -694,6 +695,31 @@ void SpeakingEvalBatchReportServiceTests::defaultOutputDirectoryIncludesClassSch
             ),
         QDir::cleanPath(
             QStringLiteral("C:/Documents/DYB/SpeakingEvals/E5 Zeus (MW - 4pm)/Winter")
+            )
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+defaultOutputDirectoryProjectsMixedStartTimes()
+{
+    ClassInfo classInfo;
+    classInfo.classGrade = QStringLiteral("E5");
+    classInfo.classLevel = QStringLiteral("Zeus");
+    classInfo.classTimes = {
+        { QStringLiteral("Monday"), QStringLiteral("4:07 PM"), QStringLiteral("4:50 PM") },
+        { QStringLiteral("Wednesday"), QStringLiteral("5:07 PM"), QStringLiteral("5:50 PM") }
+    };
+
+    QCOMPARE(
+        SpeakingEvalBatchReportService::defaultOutputDirectory(
+            classInfo,
+            QStringLiteral("Winter"),
+            QStringLiteral("C:/Documents")
+            ),
+        QDir::cleanPath(
+            QStringLiteral(
+                "C:/Documents/DYB/SpeakingEvals/E5 Zeus (M - 4-07pm, W - 5-07pm)/Winter"
+                )
             )
         );
 }

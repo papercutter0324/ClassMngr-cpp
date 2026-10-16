@@ -374,10 +374,28 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
             aiPromptPreviewCopiesAnAnonymousPrompt
     )
+    add_test(
+        NAME SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            defaultOutputDirectoryIncludesClassScheduleAndEvaluation
+    )
+    add_test(
+        NAME SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            defaultOutputDirectoryProjectsMixedStartTimes
+    )
+    add_test(
+        NAME SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            defaultOutputDirectoryNormalizesClassScheduleTime
+    )
     set_tests_properties(
         SpeakingEvalAiBatchResponseParser
         SpeakingEvalAiBatchPromptUiParity
         SpeakingEvalAiSinglePromptUiParity
+        SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation
+        SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes
+        SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime
         PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
@@ -544,6 +562,9 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
             ClassMngrSpeakingEvalReportWidgetTests
             ClassMngrSpeakingEvalBatchReportServiceTests
+            SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation
+            SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes
+            SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime
             ClassMngrStartupPerformanceTests
             PROPERTIES
             ENVIRONMENT_MODIFICATION

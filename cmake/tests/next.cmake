@@ -683,6 +683,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationReportContentTests
 )
 
+# Keep speaking-evaluation schedule-label grouping independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+    tests/next_application_speaking_evaluation_schedule_label_projection_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+)
+
 # Keep speaking-evaluation AI batch comment quality independent of Qt.
 add_executable(
     ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests

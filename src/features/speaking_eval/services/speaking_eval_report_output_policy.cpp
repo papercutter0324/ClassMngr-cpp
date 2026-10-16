@@ -2,6 +2,7 @@
 
 #include "core/utils/file_name_utils.h"
 #include "domain/rules/schedule_value_parser.h"
+#include "next/application/speaking_evaluation_schedule_label_projection.h"
 
 #include <QDir>
 #include <QObject>
@@ -10,6 +11,8 @@
 #include <QTime>
 
 #include <array>
+#include <cstddef>
+#include <vector>
 
 namespace
 {
@@ -80,28 +83,23 @@ QString SpeakingEvalReportOutputPolicy::defaultDirectory(
         className = QObject::tr("Speaking Evaluation");
     }
 
-    QStringList days;
+    std::vector<ClassMngr::Next::Application::SpeakingEvaluationScheduleLabel>
+        scheduleLabels;
+    scheduleLabels.reserve(
+        static_cast<std::size_t>(classInfo.classTimes.size())
+        );
     for (const ClassTime& classTime : classInfo.classTimes)
     {
-        const QString day = shortDay(classTime.day);
-        if (!day.isEmpty() && !days.contains(day))
-        {
-            days.append(day);
-        }
+        scheduleLabels.push_back({
+            shortDay(classTime.day).toStdU16String(),
+            shortTime(classTime.startTime).toStdU16String()
+        });
     }
-    QString schedule;
-    if (!classInfo.classTimes.isEmpty())
-    {
-        const QString time = shortTime(classInfo.classTimes.first().startTime);
-        if (!days.isEmpty() && !time.isEmpty())
-        {
-            schedule = QStringLiteral("%1 - %2").arg(days.join(QString()), time);
-        }
-        else
-        {
-            schedule = !days.isEmpty() ? days.join(QString()) : time;
-        }
-    }
+    const QString schedule = QString::fromStdU16String(
+        ClassMngr::Next::Application::projectSpeakingEvaluationScheduleLabel(
+            scheduleLabels
+            )
+        );
     if (!schedule.trimmed().isEmpty())
     {
         className += QStringLiteral(" (%1)").arg(schedule);
