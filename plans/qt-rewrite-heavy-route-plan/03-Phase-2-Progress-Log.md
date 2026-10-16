@@ -42517,9 +42517,60 @@ Existing focused coverage combines an unknown action with a nonempty invalid
 weekday but does not cover empty required fields.
 
 F989 acceptance: validate the mutation action before required fields; for an
-unknown action with empty day and start time, return
+unknown action with an empty day, return
 `Testing assignment action is invalid.` and make zero port calls. Preserve
 behavior for declared mutations. The exact focused CTest is
 `NextApplicationScheduleTestingAssignmentSaveUseCase`. This candidate does not
 overlap the 13 official Deferred entries. No other slices were found. F989 is
 active; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F989 complete; Batch351 discovery underway - 2026-10-16
+
+F989 was implemented at source/test commit
+`fe414747f02c4e50d07ed20313c2cebecf1d7de4` in
+`src/next/application/schedule_testing_assignment_save.h` and
+`tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp`.
+Unknown `ScheduleTestingAssignmentMutation` values now return
+`Testing assignment action is invalid.` before empty required-field
+validation. The regression uses unknown value 99 with empty day and asserts the
+error, `InvalidInput`, and zero port calls.
+
+The independent Tester incrementally built
+`ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests` in the
+existing `build/windows-x64-debug-ninja` directory with the MSVC environment;
+the exact `NextApplicationScheduleTestingAssignmentSaveUseCase` CTest passed
+(1/1), and `git diff --check` passed. No full suite ran.
+
+Two independent post-F989 audits reviewed all 13 official Deferred entries;
+none was resolved, superseded, trigger-changed, or actionable. Preserve the
+Deferred list unchanged. Batch351 Domain and Application discovery is
+underway; no candidate has been accepted yet.
+
+The F985 `ClassMngrScheduleImportTests` registration still fails at
+`typedApplyPreservesExactTargetIdsThroughStateValidation`. The test expects a
+state-validation failure when reusing TeacherId `"01"`, but current request
+validation rejects that noncanonical ID first as `InvalidExistingTeacherTarget`.
+The method, assertion, and apply-validation path existed unchanged in F985's
+parent; F985 changed `matchingInput()` and `preview()` and added only the
+unknown-kind preview test. The nearby stale canonical teacher case and class
+`"01"` case exercise distinct checks. No pre-F985 test run exists, so the
+failure is not established as pre-existing. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.
+
+### Batch351 closed; Batch352 discovery underway - 2026-10-16
+
+Neither the Domain nor Application lane found an actionable candidate. The
+Domain scan confirmed `ScheduleTime` and course weekly-day rules are already
+covered. The apparent Schedule Import self-overlap lead is not a defect:
+valid imports reject repeated weekdays, while legacy Class Details
+intentionally reports self-overlap, covered by
+`repositoryOwnsSelfOverlapAndBoundaryBehavior`. The Application scan found
+missing-document navigation's silent/no-viewer behavior specified by parity
+tests; other examined fallback and failure paths are covered or have no
+production callsite. No other slices were found.
+
+Batch352 boundary review is underway. CMake/source-boundary Explorers are
+checking the Phase 2 rule against DataService, MainWindow, PageManager, and
+widget dependencies. No candidate has been accepted. The 13 official Deferred
+entries remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

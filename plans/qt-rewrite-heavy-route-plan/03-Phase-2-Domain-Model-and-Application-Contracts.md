@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F988 is complete and F989 is active after Batch350 closed; the F985 focused Schedule Import registration failure remains unresolved without a pre-F985 baseline, all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F989 is complete, Batch351 closed without a candidate, and Batch352 discovery is underway; the F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, with no pre-F985 baseline; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F989 - Active: validate unknown Schedule Testing Assignment mutation actions before required-field validation, report the invalid action, reject without port calls, and preserve declared mutation behavior.
+No accepted slice is active; Batch352 discovery is underway.
 
 ## Objective
 
