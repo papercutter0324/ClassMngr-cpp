@@ -5,6 +5,7 @@
 #include "app/services/feature_services.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/application/schedule_testing_class_choices_query.h"
+#include "next/application/testing_classes_ordering_policy.h"
 #include "next/platform/application_services_schedule_testing_class_choices_read_port.h"
 #include "next/application/testing_class_details_read_query.h"
 #include "next/platform/application_services_testing_class_details_read_port.h"
@@ -30,10 +31,11 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 #include "ui/shared/pages/page_header.h"
 
-#include <algorithm>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <QColor>
 #include <QComboBox>
@@ -1228,51 +1230,37 @@ void TestingClassesPage::rebuildClassList(
         testingClasses.push_back(std::move(testingClass));
     }
 
-    std::sort(
-        testingClasses.begin(),
-        testingClasses.end(),
-        [](const TestingClass& left, const TestingClass& right)
-        {
-            const int leftGrade =
-                gradeOrder(left.grade);
-            const int rightGrade =
-                gradeOrder(right.grade);
-            if (leftGrade != rightGrade)
-            {
-                return leftGrade < rightGrade;
-            }
-            const int leftLevel =
-                levelOrder(
-                    left.grade,
-                    left.level
-                    );
-            const int rightLevel =
-                levelOrder(
-                    right.grade,
-                    right.level
-                    );
-            if (leftLevel != rightLevel)
-            {
-                return leftLevel < rightLevel;
-            }
-            const int levelComparison =
-                QString::localeAwareCompare(
-                    left.level,
-                    right.level
-                    );
-            if (levelComparison != 0)
-            {
-                return levelComparison < 0;
-            }
-            return QString::localeAwareCompare(
-                left.name,
-                right.name
-                ) < 0;
-        }
+    std::vector<ClassMngr::Next::Application::
+        TestingClassesOrderingFact> orderingFacts;
+    orderingFacts.reserve(
+        static_cast<std::size_t>(testingClasses.size())
         );
-
     for (const TestingClass& testingClass : std::as_const(testingClasses))
     {
+        orderingFacts.push_back({
+            .gradeRank = gradeOrder(testingClass.grade),
+            .levelRank = levelOrder(testingClass.grade, testingClass.level),
+            .levelText = testingClass.level.toStdU16String(),
+            .className = testingClass.name.toStdU16String()
+        });
+    }
+
+    const auto rowOrder =
+        ClassMngr::Next::Application::orderTestingClassesRows(
+            orderingFacts,
+            [](const std::u16string_view left, const std::u16string_view right)
+            {
+                return QString::localeAwareCompare(
+                    QString::fromStdU16String(std::u16string(left)),
+                    QString::fromStdU16String(std::u16string(right))
+                    );
+            }
+            );
+
+    for (const std::size_t rowIndex : rowOrder)
+    {
+        const TestingClass& testingClass =
+            testingClasses.at(static_cast<qsizetype>(rowIndex));
         auto* item =
             new QListWidgetItem(
                 classListLabel(testingClass),

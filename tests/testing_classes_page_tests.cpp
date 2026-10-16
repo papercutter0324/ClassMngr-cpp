@@ -533,6 +533,7 @@ private slots:
     void outputAvailabilityFollowsRosterTabAndLoadedClass();
     void testingClassesUsesNarrowNonCollapsibleNavigation();
     void testingClassChoicesQueryMapsActiveSessionAndPreferredSelection();
+    void testingClassOrderingUsesRanksLocaleTextAndPreservesSelection();
     void unavailableTestingClassChoicesQueryIsSilentAndEmpty();
     void testingClassChoicesQueryFailureShowsExactWarning();
     void testingTeacherChoicesPopulateOrderedTrimmedChoicesAndRestoreSelection();
@@ -1045,6 +1046,153 @@ testingClassChoicesQueryMapsActiveSessionAndPreferredSelection()
         list->currentItem()->data(Qt::UserRole).toInt(),
         *alphaMajorId
         );
+}
+
+void TestingClassesPageTests::
+testingClassOrderingUsesRanksLocaleTextAndPreservesSelection()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    TestingClassRepository* const repository =
+        session->testingClassRepository();
+    QVERIFY(repository);
+    TestingClass preferredClass = testingClass(QStringLiteral("Zulu"));
+    preferredClass.grade = QStringLiteral("M1");
+    preferredClass.level = QStringLiteral("Major");
+    preferredClass.room = QStringLiteral("Room 001");
+    preferredClass.teacherId = -1;
+    const auto createdPreferredClassId =
+        repository->createTestingClass(preferredClass);
+    QVERIFY(createdPreferredClassId);
+    const int preferredClassId = *createdPreferredClassId;
+    preferredClass.classId = preferredClassId;
+    ScheduleWidgetTestStubs::setTestingClass(preferredClass);
+
+    using Choice = ClassMngr::Next::Application::ScheduleTestingClassChoice;
+    std::vector<Choice> choices{
+        {
+            .classId = typedClassId(102),
+            .name = u"M2 class",
+            .grade = u"M2",
+            .level = u"Major",
+            .room = u"Room 001"
+        },
+        {
+            .classId = typedClassId(preferredClassId),
+            .name = u"Zulu",
+            .grade = u"M1",
+            .level = u"Major",
+            .room = u"Room 001"
+        },
+        {
+            .classId = typedClassId(103),
+            .name = u"Song level",
+            .grade = u"M1",
+            .level = u"Song's",
+            .room = u"Room 999"
+        },
+        {
+            .classId = typedClassId(105),
+            .name = u"Alpha",
+            .grade = u"M1",
+            .level = u"Major",
+            .room = u"Room 999"
+        },
+        {
+            .classId = typedClassId(106),
+            .name = u"Unknown Zeta",
+            .grade = u"M1",
+            .level = u"Zeta",
+            .room = u"Room A"
+        },
+        {
+            .classId = typedClassId(107),
+            .name = u"Unknown Alpha",
+            .grade = u"M1",
+            .level = u"Alpha",
+            .room = u"Room Z"
+        },
+        {
+            .classId = typedClassId(108),
+            .name = u"Beta",
+            .grade = u"M1",
+            .level = u"Major",
+            .room = u"Room 000"
+        }
+    };
+
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    const auto setChoices = [&choicesReadPort](
+                                const std::vector<Choice>& currentChoices
+                            )
+    {
+        choicesReadPort.result = ClassMngr::Next::Application::
+            ScheduleTestingClassChoicesReadResult::success({
+                .choices = currentChoices
+            });
+    };
+    setChoices(choices);
+
+    FixedTestingClassDetailsReadPort detailsReadPort;
+    detailsReadPort.result = ClassMngr::Next::Application::
+        TestingClassDetailsReadResult::success(testingClassDetails(
+            preferredClassId,
+            QStringLiteral("Zulu")
+            ));
+
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &choicesReadPort,
+        &detailsReadPort
+        );
+    page.openTestingClass(preferredClassId);
+    page.refresh();
+
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    QVERIFY(list);
+    QCOMPARE(list->count(), 7);
+
+    const std::vector<int> expectedClassIds{
+        103, // configured M1 level rank precedes Major
+        105, // locale-aware class name, independent of room and class ID
+        108,
+        preferredClassId,
+        107, // unknown levels share rank 1000, then compare by locale text
+        106,
+        102  // configured grade rank places M2 after M1
+    };
+    for (int row = 0; row < list->count(); ++row)
+    {
+        QCOMPARE(
+            list->item(row)->data(Qt::UserRole).toInt(),
+            expectedClassIds.at(static_cast<std::size_t>(row))
+            );
+    }
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), preferredClassId);
+
+    std::reverse(choices.begin(), choices.end());
+    setChoices(choices);
+    page.refresh();
+
+    QCOMPARE(list->count(), static_cast<int>(expectedClassIds.size()));
+    for (int row = 0; row < list->count(); ++row)
+    {
+        QCOMPARE(
+            list->item(row)->data(Qt::UserRole).toInt(),
+            expectedClassIds.at(static_cast<std::size_t>(row))
+            );
+    }
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), preferredClassId);
 }
 
 void TestingClassesPageTests::
