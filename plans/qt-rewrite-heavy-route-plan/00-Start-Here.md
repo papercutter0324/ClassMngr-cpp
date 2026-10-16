@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F978 is complete, F979 is active, and F980 follows; Batch344 accepted F981-F982 for the next batch. Two post-F978 audits found all 13 official Deferred entries unchanged and none actionable, resolved, or superseded. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F979 is complete and F980 is active; Batch344's F981-F982 remain queued after Batch343. Two post-F979 audits found all 13 official Deferred entries unchanged and none actionable, resolved, or superseded. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

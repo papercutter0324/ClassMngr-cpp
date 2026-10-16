@@ -42234,3 +42234,25 @@ No other slices were found. F979 and F980 remain the active batch, in that
 order; F981 and F982 are queued after F980. Both discovery lanes reported no
 changes to the 13 official Deferred triggers after F978. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### F979 complete; F980 active - 2026-10-16
+
+F979 was implemented at source/test commit
+`0d9aa2c124c67b6f71a6c3b11fe57cde0756439c`. It changed only
+`src/next/application/class_details_schedule_conflict_query.h` and
+`tests/next_application_class_details_schedule_conflict_query_tests.cpp`.
+The query rejects unknown schedule-conflict modes before calling the port,
+using the existing request-style `InvalidInput` result.
+
+The main agent reviewed the diff. The designated
+`build/windows-x64-debug` Visual Studio attempt failed before compilation with
+FileTracker `E_ACCESSDENIED`; inspection found prior-run diagnostic/database
+data in the directory, so it was not emptied. Independent verification used
+the existing shared `build/windows-x64-debug-ninja` fallback, built
+`ClassMngr` and `ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests`,
+and passed the exact CTest (1/1). `git diff --check` passed; no full suite ran.
+
+Two independent post-F979 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, or superseded. F980
+is now active. Batch344's F981-F982 remain queued after Batch343. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

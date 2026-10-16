@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F979 is active and F980 follows; Batch344 accepted F981-F982 for the next batch, two post-F978 audits found all 13 official Deferred entries unchanged, and Gates 1/2 remain Partial with the formal Phase 2 exit gate Open.
+- Current note: F980 is active; Batch344's F981-F982 remain queued after Batch343, two post-F979 audits found all 13 official Deferred entries unchanged, and Gates 1/2 remain Partial with the formal Phase 2 exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F979 — Active: reject unknown schedule-conflict modes before the port call; use the existing request-style `InvalidInput` result.
-- F980 — Queued: reject invalid Schedule Testing Assignment class IDs while preserving `-1` as unassigned and positive IDs.
+- F980 — Active: reject invalid Schedule Testing Assignment class IDs while preserving `-1` as unassigned and positive IDs.
 
 ## Objective
 
