@@ -4,6 +4,7 @@
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
 #include "domain/rules/schedule_value_parser.h"
+#include "next/application/sub_prep_meeting_time_grouping_policy.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/domain/teacher_display_name.h"
 
@@ -121,6 +122,8 @@ public:
             legacyDays.reserve(
                 static_cast<qsizetype>(request.selectedDays.size())
                 );
+            std::vector<Application::SubPrepWeekday> typedSelectedDays;
+            typedSelectedDays.reserve(request.selectedDays.size());
             std::unordered_set<Application::SubPrepWeekday> seenDays;
             for (const Application::SubPrepWeekday day : request.selectedDays)
             {
@@ -140,6 +143,7 @@ public:
                         );
                 }
                 legacyDays.append(*label);
+                typedSelectedDays.push_back(day);
             }
             const QStringList allLegacyDays{
                 QStringLiteral("Monday"),
@@ -395,7 +399,7 @@ public:
                     Application::kClassSummaryMaxDisplayLabelLength
                     );
                 const auto meetingText = requiredUtf8(
-                    formatMeetingTimes(record.meetings, legacyDays),
+                    formatMeetingTimes(record.meetings, typedSelectedDays),
                     Application::kClassSummaryMaxMeetingTextLength
                     );
                 const auto navigationLabel = requiredUtf8(
@@ -506,20 +510,6 @@ private:
     }
 
 private:
-    struct Meeting final
-    {
-        QString day;
-        QTime time;
-        int dayOrder = 0;
-    };
-
-    struct TimeGroup final
-    {
-        QTime time;
-        QStringList days;
-        int firstDayOrder = 0;
-    };
-
     [[nodiscard]] static std::optional<int> legacyId(
         const std::string& value
         )
@@ -587,6 +577,19 @@ private:
             return std::nullopt;
         }
         return static_cast<int>(parsed->value);
+    }
+
+    [[nodiscard]] static std::optional<Application::SubPrepWeekday>
+    typedWeekday(const QString& day)
+    {
+        const auto order = weekdayOrder(day);
+        if (!order)
+        {
+            return std::nullopt;
+        }
+        // ScheduleValueParser numbers Monday as zero; the typed Application
+        // weekday values intentionally start at one.
+        return static_cast<Application::SubPrepWeekday>(*order + 1);
     }
 
     [[nodiscard]] static QTime parseTime(const QString& value)
@@ -907,15 +910,15 @@ private:
 
     [[nodiscard]] static QString formatMeetingTimes(
         const QList<SubPrepScheduleMeetingRecord>& source,
-        const QStringList& selectedDays
+        const std::vector<Application::SubPrepWeekday>& selectedDays
         )
     {
-        std::vector<Meeting> meetings;
+        std::vector<Application::SubPrepMeetingTimeFact> meetings;
         meetings.reserve(static_cast<std::size_t>(source.size()));
         for (const SubPrepScheduleMeetingRecord& record : source)
         {
-            const auto order = weekdayOrder(record.day);
-            if (!order || !selectedDays.contains(record.day))
+            const auto weekday = typedWeekday(record.day);
+            if (!weekday)
             {
                 continue;
             }
@@ -925,73 +928,37 @@ private:
             {
                 continue;
             }
-            meetings.push_back({record.day, time, *order});
+            meetings.push_back({
+                *weekday,
+                ((time.hour() * 60) + time.minute()) * 60 + time.second()
+            });
         }
 
-        std::sort(
-            meetings.begin(),
-            meetings.end(),
-            [](const Meeting& left, const Meeting& right)
-            {
-                if (left.dayOrder != right.dayOrder)
-                {
-                    return left.dayOrder < right.dayOrder;
-                }
-                return left.time < right.time;
-            }
-            );
-
-        std::vector<TimeGroup> groups;
-        groups.reserve(meetings.size());
-        for (const Meeting& meeting : meetings)
-        {
-            const auto group = std::find_if(
-                groups.begin(),
-                groups.end(),
-                [&meeting](const TimeGroup& candidate)
-                {
-                    return candidate.time == meeting.time;
-                }
+        const std::vector<Application::SubPrepMeetingTimeGroup> groups =
+            Application::groupSelectedSubPrepMeetingTimes(
+                meetings,
+                selectedDays
                 );
-            if (group == groups.end())
-            {
-                groups.push_back({
-                    meeting.time,
-                    {meeting.day},
-                    meeting.dayOrder
-                });
-            }
-            else if (!group->days.contains(meeting.day))
-            {
-                group->days.append(meeting.day);
-            }
-        }
-
-        std::sort(
-            groups.begin(),
-            groups.end(),
-            [](const TimeGroup& left, const TimeGroup& right)
-            {
-                if (left.firstDayOrder != right.firstDayOrder)
-                {
-                    return left.firstDayOrder < right.firstDayOrder;
-                }
-                return left.time < right.time;
-            }
-            );
 
         QStringList labels;
         labels.reserve(static_cast<qsizetype>(groups.size()));
-        for (const TimeGroup& group : groups)
+        for (const Application::SubPrepMeetingTimeGroup& group : groups)
         {
             QStringList days;
-            days.reserve(group.days.size());
-            for (const QString& day : group.days)
+            days.reserve(static_cast<qsizetype>(group.weekdays.size()));
+            for (const Application::SubPrepWeekday day : group.weekdays)
             {
-                days.append(dayAbbreviation(day));
+                const auto label = weekdayLabel(day);
+                if (label)
+                {
+                    days.append(dayAbbreviation(*label));
+                }
             }
+            const QTime time = QTime::fromMSecsSinceStartOfDay(
+                group.secondsOfDay * 1000
+                );
             labels.append(QStringLiteral("%1 %2")
-                .arg(days.join(QString()), compactTime(group.time)));
+                .arg(days.join(QString()), compactTime(time)));
         }
         return labels.isEmpty()
             ? QStringLiteral("N/A")
