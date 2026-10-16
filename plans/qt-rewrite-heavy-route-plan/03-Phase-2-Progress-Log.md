@@ -42900,3 +42900,34 @@ Roster local row/column mutation plus save-preparation policies with reachable
 callers/tests, excluding accepted Roster Save ID validation, Roster Row
 Transfer F774/F957, and Sub Prep/print-source scans. Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+### F993 selected in Batch363 - 2026-10-16
+
+The Schedule Testing layout-clear lane was a discovery shortfall: no reachable gap was found. The Roster
+scan identified a production-reachable custom-column length mismatch,
+confirmed independently by two Investigators. `admitRosterCustomColumnName` and
+`appendRosterCustomColumn` accept normalized names of any length. The live
+`RosterModel::canAddColumn`/Add Column path appends the column, marks the
+model dirty, and schedules autosave; `prepareRosterSaveText`/`RosterSave`
+then enforces 64 UTF-16 code units and stops autosave or explicit save. By
+this code path, an overlength addition leaves the roster unsavable until
+corrected or removed, and removal can discard its values. This is a
+code-derived behavior diagnosis; no runtime reproduction was run.
+
+F993 acceptance matrix, recorded before implementation:
+
+| Area | Acceptance |
+| --- | --- |
+| Shared limit | Define `RosterMaximumColumnNameLength` as 64 UTF-16 code units in the existing `roster_custom_column_name_policy.h` and use it in admission and `roster_save_preparation.h`. Retain `RosterSaveMaximumColumnNameLength` as an alias if useful; create no header and do not edit legacy `RosterValidator`. Keep save validation as defense in depth. |
+| Policy and append | Measure normalized names in UTF-16 units. Evaluate the new `TooLong` result after the existing Empty, Duplicate, and RequiredColumn rejection checks. `appendRosterCustomColumn` returns the typed error without changing its input. |
+| Model behavior | `RosterModel::canAddColumn` maps TooLong to a maximum-length message sourced in `RosterModel::tr(...)` and rejects before model mutation. |
+| Localization | Translate the same placeholder-bearing source string in `resources/assets/translations/ClassMngr_en_AU.ts`, `resources/assets/translations/ClassMngr_en_CA.ts`, `resources/assets/translations/ClassMngr_en_GB.ts`, `resources/assets/translations/ClassMngr_en_US.ts`, and `resources/assets/translations/ClassMngr_ko_KR.ts`. |
+| Production Add Column caller | Preserve the inspected ordering: `canAddColumn`, early return on rejection, insert, then `scheduleAutosave` only on success. This is code-path acceptance, not an autosave test. |
+| Boundary and policy tests | In existing app-less policy/append tests, cover 64 accepted/65 rejected UTF-16 units, 32 supplementary characters (64 units) accepted, a normalized 65-unit name rejected, whitespace normalization, existing rejection precedence, and unchanged input snapshots. Keep the existing save-use-case 64/65 coverage. |
+| UI-model regression | In `tests/roster_model_tests.cpp`, cover the returned localized `tr(...)` reason and unchanged columns, rows, and dirty state for an overlength custom column; no language-switch integration test is required. |
+| Focused verification | In `build/windows-x64-debug-ninja` with MSVC, build `ClassMngr`, `ClassMngrNextApplicationRosterCustomColumnNamePolicyTests`, `ClassMngrNextApplicationRosterCustomColumnAppendTests`, `ClassMngrNextApplicationRosterSaveUseCaseTests`, and `ClassMngrRosterModelTests`. Run those exact CTest registrations and scoped `git diff --check`; do not run the full suite. |
+
+No CMake update is expected if only existing headers change. All 13 official
+Deferred entries remain unchanged after the post-F992 audits; the post-F993
+audit is pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
