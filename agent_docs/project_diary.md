@@ -6608,3 +6608,34 @@ projections preserve row counts and order with existing coverage. No files or
 tests changed. The post-F1030 audits still find all 13 official Deferred
 entries unchanged. Batch408 discovery is underway; Gates 1/2 remain Partial,
 F1007 awaits policy reconciliation, and Phase 2 remains open.
+
+## F1031 closeout - 2026-10-17
+
+F1031 completed at source commit `d5bcff97`. Testing Classes details update
+now returns recoverable `NotFound` for an unavailable session. Its focused
+test also asserts that a deleted parent remains nonrecoverable and preserves
+the typed detailed-repository diagnostic; this message differs from the
+separate legacy update message, so the change leaves both boundaries intact.
+The independent Debug build and
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`
+passed; CTest passed 1/1 after an elevated retry for Visual Studio FileTracker
+access denial. No full suite ran.
+
+Two independent post-commit reviews checked the exact 13 official Deferred
+entries. All remain unchanged and unresolved; no entry became actionable,
+resolved, or superseded. The memory and WPR items still lack their required
+matched evidence, the macOS Phase 0 runner is not exposed in this Windows
+session, and the product-policy, callsite, and injection-seam triggers remain
+unmet.
+
+## F1032 accepted - 2026-10-17
+
+Batch409 found that the Class Details Save, Class Notes Save, and Co-Teacher
+Assignment adapters classify an unavailable session as nonrecoverable
+`NotFound`, unlike adjacent class create/delete results and F1031. The public
+result metadata is observable, though current feature pages do not branch on
+the recoverability flag. Accept F1032 to mark only these unavailable-session
+results recoverable. Preserve missing-entity `NotFound` results and their
+diagnostics, and keep the Details Validation Context query's recoverable
+missing-context fallback unchanged. Gates 1/2 remain Partial, F1007 awaits
+policy reconciliation, and Phase 2 remains open.

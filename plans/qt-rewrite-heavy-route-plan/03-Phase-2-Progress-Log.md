@@ -44244,3 +44244,69 @@ or superseded; repeat the independent audits after F1031 implementation.
 Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007
 remains pending policy reconciliation. F1031 is accepted and pending
 implementation.
+
+### F1031 complete; post-F1031 Deferred audits clear - 2026-10-17
+
+F1031 completes at source commit
+`d5bcff97b9c0b444e4eaa14ac55765cd633306ee`. Testing Classes details-update
+now reports unavailable-session `NotFound` as recoverable. Its regression
+asserts that flag and preserves deleted-parent `NotFound` as nonrecoverable
+with the exact typed detailed-repository diagnostic.
+
+The independent Tester passed the scoped Debug build and CTest
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`
+(1/1) after an elevated retry for Visual Studio FileTracker access denial. No
+full suite ran.
+
+Two independent post-F1031 audits checked exactly the 13 official Deferred
+entries. All remain unchanged, unresolved, and non-actionable; no trigger
+resolved or rationale changed. Current blockers remain the medium-integrity
+non-Administrator token and lack of matching WPR evidence, no suitable macOS
+Phase 0 runner exposed in this Windows session, no owner-specific retained-
+memory evidence, no live Sidebar helper callsite, no Calendar projection
+injection seam, and unresolved blank-draft, teacher-reassignment, analytics
+row-limit, and dense-speaking-row-limit policies. F1031 is complete; Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.
+
+### Batch409 discovery and F1032 accepted before implementation - 2026-10-17
+
+Two independent reviews confirmed a public result-contract mismatch:
+Class Details Save, Class Notes Save, and Co-Teacher Assignment map
+unavailable/closed sessions to nonrecoverable `NotFound`, while sibling Class
+Create/Delete and F1031 Testing Classes update report unavailable sessions as
+recoverable. The public `OperationError::recoverable` flag passes through the
+use cases, but current pages do not branch on it; this does not establish a
+current UI defect. Preserve nonrecoverable missing-parent/entity errors and
+their diagnostics in all three mutations. Class Details Save already has this
+test; add explicit preservation assertions for Notes and Co-Teacher if absent.
+Details Validation Context is an intentional query/fallback contract whose
+missing-context result remains recoverable and is outside this change.
+
+Accept F1032: change only unavailable-session results in these three class
+mutation adapters to `NotFound` with `recoverable == true`. Preserve missing-
+entity errors and diagnostics, validation precedence, success behavior, all
+other mappings, Details Validation Context fallback semantics, and UI behavior.
+Extend each adapter test to assert unavailable-session recoverability and
+retain or add explicit missing-entity nonrecoverability assertions.
+
+Affected source and test files:
+
+- `src/next/platform/application_services_class_details_save_port.h`
+- `tests/next_platform_application_services_class_details_save_port_tests.cpp`
+- `src/next/platform/application_services_class_notes_save_port.h`
+- `tests/next_platform_application_services_class_notes_save_port_tests.cpp`
+- `src/next/platform/application_services_class_co_teacher_assignment_port.h`
+- `tests/next_platform_application_services_class_co_teacher_assignment_port_tests.cpp`
+
+Build `ClassMngr` and the three test targets
+`ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests`, and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests`
+in the existing `build/windows-x64-debug` Debug tree. Run only matching CTests
+with those exact names; no full suite. F1031 at
+`d5bcff97b9c0b444e4eaa14ac55765cd633306ee` is the latest source commit. The
+post-F1031 audit is current: all 13 official Deferred entries remain unchanged;
+repeat both independent audits after F1032 implementation. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation. F1032 is accepted and pending implementation.

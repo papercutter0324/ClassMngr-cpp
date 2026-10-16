@@ -6031,7 +6031,7 @@ UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-17 (F1031 accepted; Batch408 active)
+## Current continuation - 2026-10-17 (F1031 complete; F1032 accepted; Batch409 active)
 
 Batch402–404 found no eligible source slice. Batch405 found an inconsistent
 `FeatureService` contract: some operations fall back to a separate legacy
@@ -6053,14 +6053,23 @@ snapshot mutation, malformed-byte preservation, and the exact length limit.
 No full suite ran. Two independent audits again found all 13 official
 Deferred entries unchanged. Batch407 found no production slice: the stateful
 Application transitions and read projections preserve their contracts with
-existing focused coverage. No files or tests changed. Batch408 Heavy-route
-discovery identified an Application result inconsistency. The Testing Classes
-details-update adapter marks an unavailable-session `NotFound` nonrecoverable,
-unlike the corresponding read/create/delete adapters; the page caller checks
-only the error code, so this is a public result-metadata contract issue, not a
-current page defect. F1031 is accepted before implementation: make only that
-unavailable-session update result recoverable, preserving nonrecoverable
-deleted-parent `NotFound` and its diagnostic. Repeat the independent audit of
-all 13 official Deferred entries after implementation. Gates 1/2 remain
-Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit
-gate remains Open.
+existing focused coverage. No files or tests changed.
+
+F1031 completed at source commit `d5bcff97`. Testing Classes details update
+now marks unavailable-session `NotFound` recoverable while preserving the
+typed deleted-parent result as nonrecoverable with its detailed-repository
+diagnostic. The independent Debug build and focused CTest passed 1/1 after an
+elevated Visual Studio FileTracker retry; no full suite ran. Two independent
+post-commit audits checked the exact 13 official Deferred entries; all remain
+unchanged and unresolved.
+
+Batch409 identified F1032: Class Details Save, Class Notes Save, and
+Co-Teacher Assignment classify unavailable-session `NotFound` as
+nonrecoverable while sibling class mutation ports mark it recoverable. This is
+a public result-metadata contract issue; current pages do not branch on the
+flag. F1032 is accepted before implementation: change only those three
+unavailable-session results and preserve missing-entity behavior, including
+the separate details-validation-context fallback contract. Repeat the
+independent audit of all 13 official Deferred entries after implementation.
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+the Phase 2 exit gate remains Open.
