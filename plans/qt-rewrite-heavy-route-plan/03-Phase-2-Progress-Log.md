@@ -43419,3 +43419,34 @@ F1001 is accepted before implementation. Its acceptance criteria are:
 | Edge ownership | Keep translated combined selector names and current-date/`QDate` formatting at the UI adapter. Preserve projected grade for the existing AI eligibility/prompt flow (`src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp:156,714`; `src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp:811`); keep AI policy unchanged. Keep signature retrieval and image bytes, conversion to `SpeakingEvalReportData`, batch service, PDF/print/PowerPoint, painter, and assets at feature/platform edges. Add no worker integration or thread-safety claim. |
 | Tests | App-less focused tests cover both-blank filtering, whitespace-only names including a non-ASCII space, original indices, both template cases and fallback, grade mapping, class label with whitespace/case variants around grade and level, all report fields, short/missing columns, and order. A UI adapter regression uses unsaved current model rows and checks current output DTO, signature, and date path. Retain downstream rendering checks. |
 | Focused verification | Build affected targets in standard Windows x64 Debug and run only exact focused CTests; do not run the full suite. |
+
+### F1001 complete; post-F1001 Deferred audit clear; Batch379 discovery complete; F1002 accepted - 2026-10-16
+
+F1001 source commit `99211606d70ab827e380d27d6e89d97d84aec4fe` (`Phase2 - Add speaking evaluation report projection`) follows acceptance checkpoint `5365f49e`. The Qt-free Application projection consumes its owning request by value; the UI adapter passes it with `std::move`. The projection moves retained raw name, comment, note, score, and teacher values into its owning result and releases consumed row storage. It adds no row cap; no measured memory impact is claimed.
+
+Independent scope review found no material boundary gap. The independent Tester incrementally built `ClassMngr`, `ClassMngrNextApplicationSpeakingEvaluationReportContentTests`, `ClassMngrSpeakingEvalBatchReportServiceTests`, `ClassMngrSpeakingEvalReportWidgetTests`, and `ClassMngrSpeakingEvalWidgetlessPdfTests` in the reused configured `build/windows-x64-debug` tree (Visual Studio 18 2026, x64, Debug); no fresh build was performed. The initial sandboxed build failed with FileTracker `E_ACCESSDENIED`; the elevated retry passed. The exact CTest command was:
+
+`ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(ClassMngrNextApplicationSpeakingEvaluationReportContentTests|ClassMngrSpeakingEvalReportProjectionAdapterTests|ClassMngrSpeakingEvalReportWidgetTests|ClassMngrSpeakingEvalInternalPdfParityTests|ClassMngrSpeakingEvalWidgetlessPdfTests)$"`
+
+All five selected tests passed. `git diff --check` passed with existing LF-to-CRLF warnings; no full suite ran.
+
+Two independent post-F1001 audits reviewed all 13 official Deferred entries; none became actionable, resolved, or superseded. Dense Speaking Evaluation row-limit is the only materially adjacent item and remains deferred because product policy is unresolved and no material memory evidence was measured. Keep the no-cap rule and all 13 plan entries unchanged.
+
+Batch379 discovery used three independent Explorers and two Investigators. They found two candidates and no other defensible slice. F1002, Sub Prep package request preflight, was selected first because a narrower shared preflight can preserve distinct UI/service messages and filesystem gates. F1003, Speaking Evaluation AI prompt policy, remains the second candidate: its stronger semantic risk requires later bounded parity analysis of Qt Unicode case-insensitive name redaction before acceptance.
+
+F1002 is accepted for implementation. Acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Contract and routing | Add a Qt-free Next Application typed validation request/result for shared Sub Prep package-generation preflight. Route both `SubPrepPrintDialog` eligibility/validation and `SubPrepPackageService::generate()` through it. Preserve first-failure behavior and diagnostics. Shared policy covers action/output selection, valid selected-date presence, class-ID presence, and folder-only target/name requirements. |
+| UI/service parity | Keep translated feedback mapped at the UI/service adapters. Preserve the dialog's three empty-date message variants, action messages, accept-state behavior, existing non-directory-root warning, date normalization, class/day/source selection, and target message. |
+| Filesystem and output edges | Keep filesystem target-type checks, `mkpath`, path containment, staging/replacement, output/printing, and source selection at existing edges. Invalid generation requests must fail before filesystem side effects. |
+| Regression coverage | App-less precedence/input tests plus focused dialog/service regressions; retain existing package tree, replacement, and weekday-source coverage. |
+| Focused verification | Build affected targets in standard `build/windows-x64-debug` and run only exact focused CTests; no full suite. |
+
+Batch379 candidates:
+
+- F1002: Sub Prep package request preflight - implement the shared Qt-free preflight contract and route dialog/generator through it while preserving caller diagnostics and filesystem responsibilities.
+- F1003: Speaking Evaluation AI prompt policy - after F1002, bound an Application prompt-builder contract for single/batch construction while preserving exact prompt, privacy, and voice behavior; first resolve Qt Unicode case-insensitive name-redaction parity. F1003 is a candidate, not accepted.
+
+No other slices were found.
