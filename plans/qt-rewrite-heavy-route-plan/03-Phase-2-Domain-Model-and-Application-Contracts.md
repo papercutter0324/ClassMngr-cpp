@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1021, Speaking Evaluation grade/average alignment, is complete at source commit `4d13f0e04903d751168936376d65d0258c44d937` with range-comment follow-up `5a86ee39d7b8b8b7f3e35b3c7968e3fff989a7a4`; F1022, Sub Prep print grouping/order, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1023, the shared derived `BirthdayMonthDay` domain value, is accepted under Batch390 with raw birthday persistence and existing parser normalization boundaries preserved; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch389
-  - F1022 - Sub Prep print grouping/order: order prepared teacher/class facts through index policy while preserving model filtering, labels, renderer behavior, and PDF pagination.
+- Batch390
+  - F1023 - Shared derived `BirthdayMonthDay` value: add a typed month/day value after existing Application parsers while preserving raw birthday storage and parser-specific normalization.
 
 ## Objective
 

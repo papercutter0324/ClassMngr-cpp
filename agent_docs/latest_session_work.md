@@ -5895,3 +5895,27 @@ feature layer. Focus verification on policy ordering, model integration,
 mapper behavior, and PDF order/color/page-break behavior. F1022 is the final
 remaining Batch389 slice. Gates 1/2 remain Partial and Phase 2 exit remains
 Open.
+
+## Current continuation - 2026-10-17 (F1022 complete; F1023 accepted)
+
+F1022 completed at source commit
+`fd793132da5860714be6801c956ea167f168c20d`. The Qt-free policy orders prepared
+Sub Prep teacher/class facts. Feature filtering, schedule parsing, labels,
+meeting formatting, exact-time grouping, and PDF rendering remain in place.
+Five focused policy, model, mapper, PDF, and source-query CTest registrations
+passed 5/5 in Debug Ninja/MSVC/Qt 6.12.0; the updated model and mapper targets
+built successfully. No full suite ran. Two independent post-commit audits
+found all 13 official Deferred entries unchanged, including F614's missing
+owner-specific memory measurement and F707's missing live Sidebar callsite.
+
+F1023, shared `BirthdayMonthDay` domain value, is accepted and implementation
+is pending. The new Qt-free value will represent a valid month/day checked
+against leap year 2000 and replace the upcoming-birthday scheduler's untyped
+pair. Save and schedule parsers retain their distinct trimming and shape
+rules. Keep stored, draft, and read birthday text unchanged; preserve blank
+validation, invalid-date omission, sort/week buckets, and February 29's
+February 28 non-leap-year occurrence. Focus on the domain-contract, upcoming
+schedule, Native English save, and GS Team save tests only. Batch389 is closed;
+Batch390 is active. Gates 1/2 remain Partial and Phase 2 exit remains Open.
+Preserve unrelated untracked `%SystemDrive%/`, `Testing/`,
+`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.

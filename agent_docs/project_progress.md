@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-16 (F957 active in Batch326)
+### Current state - 2026-10-17 (F1022 complete; F1023 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -5944,3 +5944,28 @@ order, is accepted next: order prepared teacher/class facts through a Qt-free
 index policy while the feature retains filters, parsing, labels, meeting
 formatting, and PDF rendering. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+F1022 completed at source commit `fd793132da5860714be6801c956ea167f168c20d`.
+The policy orders prepared Sub Prep teacher/class facts while existing feature
+filters, labels, schedule parsing, meeting formatting, and PDF rendering stay
+at their boundaries. The independent Tester built the affected model and
+mapper targets; the five focused policy, model, mapper, PDF, and source-query
+CTest registrations passed 5/5. No full suite ran. Two independent post-commit
+audits reviewed the 13 official Deferred entries; none became actionable,
+resolved, or superseded. F614 remains deferred because F1022's temporary
+ordering buffers do not supply owner-specific memory measurements; F707 remains
+deferred because the Sub Prep locale comparator does not establish a live
+Sidebar helper callsite. Keep all 13 entries and rationales unchanged.
+
+F1023, shared `BirthdayMonthDay` domain value, is accepted and implementation
+is pending. Add an immutable Qt-free month/day value valid against leap year
+2000 and use it in both save validation and upcoming-birthday scheduling after
+each Application parser applies its existing input rules. Save validation
+retains Qt-compatible Unicode trimming and exact ASCII `MM-dd`; the schedule
+retains ASCII-only trimming, invalid-date omission, and February 29 mapping to
+February 28 in non-leap years. Keep stored, draft, and read birthday strings
+unchanged; do not migrate `TeacherProfileFields` or persistence. Focused
+verification covers the domain contract, schedule use case, and Native English
+and GS Team save policies. Batch390 begins with F1023. All 13 official Deferred
+entries remain unchanged; Gates 1/2 are Partial and the formal Phase 2 exit
+gate remains Open.

@@ -6384,3 +6384,29 @@ first-class section colors, and pagination in the feature layer. Cover ordered
 groups and rows, unknown ranks/meetings, mode/day filtering, duplicate label
 details, and relevant PDF color/page-break behavior. Keep typed-source order
 and validation unchanged. Gates 1/2 remain Partial; Phase 2 exit remains Open.
+
+## F1022 closeout and F1023 acceptance - 2026-10-17
+
+F1022 completed at source commit
+`fd793132da5860714be6801c956ea167f168c20d`. The policy orders prepared Sub
+Prep teacher/class facts while filtering, schedule parsing, labels, meeting
+formatting, exact-time grouping, and PDF rendering remain in the feature. The
+independent Tester built the affected model and mapper targets; the policy,
+model, mapper, PDF, and source-query CTest registrations passed 5/5. No full
+suite ran. Two independent post-commit audits found all 13 official Deferred
+entries unchanged. F614 remains blocked on owner-specific memory measurement;
+F707 still lacks a live Sidebar helper callsite. Keep all Deferred entries and
+their rationales unchanged.
+
+Accept F1023 as a shared Qt-free `BirthdayMonthDay` value created from valid
+month/day components checked against leap year 2000. Replace the scheduler's
+untyped pair and share this value with the save-validation path, while each
+Application parser retains its own trimming and syntax behavior: Qt-compatible
+Unicode trimming with exact ASCII `MM-dd` for save validation, ASCII-only trim
+for upcoming scheduling. Preserve raw stored/draft/read birthday strings,
+February 29 scheduling in non-leap years, sorting, week bucketing, and
+first-invalid-row behavior. Add value semantics and boundary coverage, then
+build and run only the domain-contract, upcoming-schedule, Native English
+save, and GS Team save CTests. No database, UI, or profile-field migration is
+part of the slice. Batch389 is closed; Batch390 starts with F1023. Gates 1/2
+remain Partial and Phase 2 exit remains Open.

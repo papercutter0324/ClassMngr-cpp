@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1018, Teacher Info preferred-name load/edit precedence, is complete at source commit `a6a69b4fcc420acab7160da1cf9c28112c457513`; F1020, Testing Classes list ordering, is accepted under Batch389. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1022, Sub Prep print grouping/order, is complete at source commit `fd793132da5860714be6801c956ea167f168c20d`; F1023, the shared derived `BirthdayMonthDay` domain value, is accepted under Batch390. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

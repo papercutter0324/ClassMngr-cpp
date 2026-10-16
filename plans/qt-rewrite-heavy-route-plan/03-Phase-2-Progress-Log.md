@@ -43819,6 +43819,26 @@ F1022 acceptance criteria:
 | Ordering policy | Policy returns source-array indexes. Preserve the teacher and per-teacher class tuple priorities above, with prepared ranks and an injected locale comparator. |
 | Model/source boundary | Keep positive/valid ID checks, visible-row filtering, assigned/present-teacher filtering, first-duplicate-class-ID selection, typed source validation, and source order at their current model/source boundaries. Keep rank calculation, `ScheduleValueParser`, selected-mode/visible-day projection, and exact-time grouping in the feature model. |
 | Display and renderer parity | Preserve teacher/class labels, meeting labels, duplicate display-label collapse, and renderer/PDF construction. The first ordered class controls section color and group order affects pagination; protect ordering, first-class style, and page-break integrity in focused model/PDF coverage. |
-| Focused verification | Use `ClassMngrSubPrepClassInformationModelTests`, `ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPrintPdfTests`, and `NextApplicationSubPrepPrintSourceQuery` as scoped by implementation. No implementation or verification is claimed for this accepted slice. |
+| Focused verification | Use `ClassMngrSubPrepClassInformationModelTests`, `ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPrintPdfTests`, and `NextApplicationSubPrepPrintSourceQuery` as scoped by implementation. At acceptance, implementation and verification had not yet been performed. |
 
-F1022 is accepted, not yet implemented or verified. Batch389 now retains F1022 as its remaining candidate.
+### F1022 complete; post-F1022 Deferred audits clear; F1023 accepted - 2026-10-17
+
+F1022 source commit `fd793132da5860714be6801c956ea167f168c20d` completes Sub Prep print grouping/order. The Qt-free policy orders prepared teacher and class facts by source-array indexes. The model retains ID validation, filtering, configured ranks, schedule parsing/projection, labels, and exact-time grouping; the renderer retains PDF construction and pagination behavior.
+
+The independent Tester built the updated Sub Prep model and mapper targets in Debug Ninja/MSVC with Qt 6.12. All five focused CTest registrations passed: `ClassMngrNextApplicationSubPrepPrintOrderPolicyTests`, `ClassMngrSubPrepClassInformationModelTests`, `ClassMngrSubPrepPrintSourceMapperTests`, `ClassMngrSubPrepPrintPdfTests`, and `ClassMngrNextApplicationSubPrepPrintSourceQueryTests`. Coverage includes selected-day/mode projection, unknown configured ranks, model-produced PDF ordering and first-class color, and keeping teacher sections together across pages. No full suite ran.
+
+Two independent post-commit audits reviewed all 13 official Deferred entries; none became actionable, resolved, or superseded. Preserve all 13 and their existing rationales. In particular, Sub Prep fact preparation does not provide owner-specific memory evidence for F614, and reusing `QString::localeAwareCompare` does not establish a live Sidebar callsite for F707. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation. Batch389 is closed.
+
+For Batch390, select F1023, a shared derived `BirthdayMonthDay` domain value, because it adds an explicit domain value without changing the persisted text contract. Do not replace or migrate the raw birthday field; the Campus map URL idea is not selected because that boundary already performs feature-level URL preparation and handling.
+
+F1023 is accepted before implementation. Add immutable `Domain::BirthdayMonthDay` construction from validated month/day components, using leap year 2000 so February 29 is representable. Existing Application text parsers retain their current normalization and shape rules: save validation uses Qt-compatible Unicode trimming and `MM-dd` parsing, while upcoming-schedule parsing uses ASCII trimming. After parsing, use the typed value while preserving raw `TeacherProfileFields::birthday`, storage/read/draft semantics, formatting, and February 29 occurrence mapping to February 28 in non-leap years. Make no UI or database migration.
+
+F1023 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Domain value | App-less contract accepts valid month/day values including February 29 and rejects invalid dates. |
+| Save validation | Preserve Qt-compatible Unicode trim and `MM-dd` shape rules; return/use the typed value after parsing and retain save behavior. |
+| Upcoming schedule | Preserve ASCII trim, invalid-value omission, sorting/bucketing, and February 29 occurrence behavior while using the typed value after parsing. |
+| Persistence and presentation | Keep `TeacherProfileFields::birthday` raw text and preserve storage, read/draft semantics, formatting, and UI behavior; no schema or database migration. |
+| Focused verification | Build `ClassMngr` and four affected targets covering the domain contract, upcoming schedule, Native English save, and GS Team save; run exact focused CTests only. No full suite. |
