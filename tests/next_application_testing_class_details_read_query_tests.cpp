@@ -64,6 +64,7 @@ class NextApplicationTestingClassDetailsReadQueryTests final
 
 private slots:
     void forwardsTypedQueryOnceAndPreservesEverySnapshotField();
+    void rejectsNonCanonicalClassIdsBeforeCallingPort();
     void propagatesStructuredReadFailureOnce();
     void rejectsSnapshotForADifferentClass();
 };
@@ -73,10 +74,10 @@ forwardsTypedQueryOnceAndPreservesEverySnapshotField()
 {
     RecordingTestingClassDetailsReadPort port;
     const Application::TestingClassDetailsReadQuery query{
-        .classId = classId("class-42")
+        .classId = classId("42")
     };
     const Application::TestingClassDetailsSnapshot expected{
-        .classId = classId("class-42"),
+        .classId = classId("42"),
         .name = u"Writing Lab \uC2E4\uD5D8",
         .grade = u"M2",
         .level = u"Mixed (High)",
@@ -99,9 +100,9 @@ forwardsTypedQueryOnceAndPreservesEverySnapshotField()
     QCOMPARE(port.callCount, 1);
     QVERIFY(port.lastQuery.has_value());
     QVERIFY(port.lastQuery.value() == query);
-    QCOMPARE(port.lastQuery->classId, classId("class-42"));
+    QCOMPARE(port.lastQuery->classId, classId("42"));
     QVERIFY(result.value() == expected);
-    QCOMPARE(result.value().classId, classId("class-42"));
+    QCOMPARE(result.value().classId, classId("42"));
     QCOMPARE(result.value().name, std::u16string(u"Writing Lab \uC2E4\uD5D8"));
     QCOMPARE(result.value().grade, std::u16string(u"M2"));
     QCOMPARE(result.value().level, std::u16string(u"Mixed (High)"));
@@ -114,6 +115,36 @@ forwardsTypedQueryOnceAndPreservesEverySnapshotField()
         result.value().notes,
         std::u16string(u"Keep the original notes \uB4F1\uB85D")
         );
+}
+
+void NextApplicationTestingClassDetailsReadQueryTests::
+rejectsNonCanonicalClassIdsBeforeCallingPort()
+{
+    for (const std::string value : {"0", "042", "-1", "42x"})
+    {
+        RecordingTestingClassDetailsReadPort port;
+        const Application::TestingClassDetailsReadQuery query{
+            .classId = classId(value)
+        };
+
+        const auto result =
+            Application::TestingClassDetailsReadQueryHandler::execute(
+                query,
+                port
+                );
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Testing class ID must be a canonical positive integer."
+                )
+            );
+        QVERIFY(result.error().recoverable);
+        QCOMPARE(port.callCount, 0);
+        QVERIFY(!port.lastQuery.has_value());
+    }
 }
 
 void NextApplicationTestingClassDetailsReadQueryTests::

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -59,6 +60,16 @@ public:
         const TestingClassDetailsReadPort& port
         )
     {
+        if (!isCanonicalPositiveDecimalId(query.classId.value()))
+        {
+            return TestingClassDetailsReadResult::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message =
+                    "Testing class ID must be a canonical positive integer.",
+                .recoverable = true
+            });
+        }
+
         auto loaded = port.readTestingClassDetails(query);
         if (!loaded)
         {
