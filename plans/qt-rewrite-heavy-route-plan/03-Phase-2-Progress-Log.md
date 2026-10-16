@@ -42982,3 +42982,40 @@ F994 acceptance matrix, recorded before implementation:
 All 13 official Deferred entries remain unchanged after the post-F993 audits;
 the post-F994 audit is pending. Gates 1/2 remain Partial and the formal Phase
 2 exit gate remains Open.
+
+### F994 complete; Batch364 closed - 2026-10-16
+
+F994 was implemented at source/test commit `fcf321e6`. My Classes preserves
+`Domain::Result<int>` semantics: a missing or failed student count renders
+localized Unavailable, while a successful zero remains `0`; class and tab
+details remain available. The commit updates the page content, five tracked
+translation catalogs, and the existing page regression. The exact CTest
+registration is `ClassMngrMyClassesPageTests` (corrected at documentation
+commit `c6f793bb`). The executor incrementally built `ClassMngr` and
+`ClassMngrMyClassesPageTests` in `build/windows-x64-debug-ninja` (MSVC Debug);
+the exact CTest passed 1/1 and `git diff --check` passed. The independent
+Tester built the same targets (Ninja reported no work) and independently ran
+the exact CTest, which passed 1/1. All five locale catalogs were checked. No
+full suite ran.
+
+Two independent post-F994 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. Preserve the Deferred list
+unchanged. Batch364 is closed. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
+
+### Batch365 closed; Batch366 discovery underway - 2026-10-16
+
+Batch365's Recent Workspace History scan was a discovery shortfall. The
+contract caps current-record mutations at 10; the previous application
+implementation capped updates since the feature's origin (`2b772da2`). Legacy
+load, menu, and prune paths preserve oversized stored values, but no
+repository-era normal write path or external/imported source containing more
+than 10 records was established. Investigators agreed this is a conditional
+settings-state case, not a demonstrated product defect. Do not accept a source
+slice without evidence of an oversized source or an explicit global-load
+contract.
+
+Batch366 has started in two lanes: Next Application non-class write commands
+and typed mutation ports; and non-class read models, projections, page-state
+mapping, and read adapters. All 13 official Deferred entries remain unchanged.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

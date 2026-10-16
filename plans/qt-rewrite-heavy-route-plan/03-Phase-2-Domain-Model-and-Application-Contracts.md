@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F993 is complete and F994 is active in Batch364; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F994 and Batch364 are closed and Batch366 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch364 (F994 active)
-  - F994 - Preserve failed/missing student-count state in My Classes by rendering localized Unavailable while retaining successful zero behavior.
+- Batch366 (discovery underway)
+  - Next Application non-class write commands and typed mutation ports - identify reachable contract gaps and production callers.
+  - Non-class read models, projections, page-state mapping, and read adapters - identify reachable contract gaps and production callers.
 
 ## Objective
 
