@@ -1462,6 +1462,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
 )
 
+# Keep Sub Prep navigation-order reduction independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+    tests/next_application_sub_prep_navigation_schedule_order_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+    COMMAND ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationSubPrepScheduleSummaryQuery
     SOURCES

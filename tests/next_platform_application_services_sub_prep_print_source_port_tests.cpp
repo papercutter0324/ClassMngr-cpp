@@ -3078,7 +3078,19 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
         QStringLiteral("#000000"),
         {}
         );
+    const int classWithSecondPrecisionStart = createClass(
+        services,
+        QStringLiteral("Second precision start"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {}
+        );
     QVERIFY(classWithAllWeekdays > 0);
+    QVERIFY(classWithSecondPrecisionStart > 0);
 
     const QString canonicalWeekdays[] = {
         QStringLiteral("Monday"),
@@ -3099,10 +3111,20 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
             QStringLiteral("09:15")
             ));
     }
+    QVERIFY(insertScheduleMeeting(
+        services,
+        QStringLiteral("class_times"),
+        classWithSecondPrecisionStart,
+        QStringLiteral("Monday"),
+        QStringLiteral("09:30:59")
+        ));
 
     ApplicationServicesSubPrepScheduleSummaryPort port(services);
     const auto result = port.loadSummaries(summaryRequestFor(
-        {classId(classWithAllWeekdays)},
+        {
+            classId(classWithAllWeekdays),
+            classId(classWithSecondPrecisionStart)
+        },
         {
             SubPrepWeekday::Monday,
             SubPrepWeekday::Tuesday,
@@ -3116,7 +3138,7 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
         ));
 
     QVERIFY(result);
-    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    QCOMPARE(result.value().classes.size(), std::size_t(2));
     const auto& summary = result.value().classes.front();
     QCOMPARE(summary.id, classId(classWithAllWeekdays));
     QCOMPARE(
@@ -3129,6 +3151,17 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
         );
     QCOMPARE(summary.navigationFirstDayOrder, 0);
     QCOMPARE(summary.navigationFirstTimeOrder, 9 * 60 + 15);
+
+    const auto& secondPrecisionSummary = result.value().classes.back();
+    QCOMPARE(secondPrecisionSummary.id, classId(classWithSecondPrecisionStart));
+    QCOMPARE(
+        secondPrecisionSummary.navigationLabel,
+        utf8(QStringLiteral("Perseus \u2022 M 9:30"))
+        );
+    QVERIFY2(
+        secondPrecisionSummary.navigationFirstTimeOrder == 570,
+        "Raw 09:30:59 is mapped to minute 570 before Application order reduction."
+        );
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

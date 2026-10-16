@@ -6,6 +6,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "next/application/sub_prep_meeting_time_grouping_policy.h"
 #include "next/application/sub_prep_navigation_metadata_policy.h"
+#include "next/application/sub_prep_navigation_schedule_order_policy.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/domain/teacher_display_name.h"
 
@@ -829,41 +830,32 @@ private:
         const QList<SubPrepScheduleMeetingRecord>& meetings
         )
     {
-        int firstDayOrder = Application::kClassSummaryUnknownNavigationOrder;
+        std::vector<Application::SubPrepNavigationScheduleOrderFact> facts;
+        facts.reserve(static_cast<std::size_t>(meetings.size()));
         for (const SubPrepScheduleMeetingRecord& meeting : meetings)
         {
-            const int dayOrder = weekdayOrder(meeting.day).value_or(
-                Application::kClassSummaryUnknownNavigationOrder
-                );
-            firstDayOrder = std::min(firstDayOrder, dayOrder);
-        }
-
-        int firstTimeOrder = Application::kClassSummaryUnknownNavigationOrder;
-        if (firstDayOrder != Application::kClassSummaryUnknownNavigationOrder)
-        {
-            for (const SubPrepScheduleMeetingRecord& meeting : meetings)
+            const std::optional<int> dayOrder = weekdayOrder(meeting.day);
+            if (!dayOrder)
             {
-                if (weekdayOrder(meeting.day).value_or(
-                        Application::kClassSummaryUnknownNavigationOrder
-                        ) != firstDayOrder)
-                {
-                    continue;
-                }
-                const QTime time = parseTime(meeting.startTime);
-                if (time.isValid())
-                {
-                    firstTimeOrder = std::min(
-                        firstTimeOrder,
-                        (time.hour() * 60) + time.minute()
-                        );
-                }
+                continue;
             }
+
+            std::optional<std::int32_t> startMinute;
+            const QTime time = parseTime(meeting.startTime);
+            if (time.isValid())
+            {
+                startMinute = static_cast<std::int32_t>(
+                    (time.hour() * 60) + time.minute()
+                    );
+            }
+
+            facts.push_back({
+                static_cast<std::int32_t>(*dayOrder),
+                startMinute
+            });
         }
 
-        return {
-            static_cast<std::int32_t>(firstDayOrder),
-            static_cast<std::int32_t>(firstTimeOrder)
-        };
+        return Application::calculateSubPrepNavigationScheduleOrder(facts);
     }
 
     [[nodiscard]] static QString dayAbbreviation(const QString& day)
