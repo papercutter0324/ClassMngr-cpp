@@ -6239,3 +6239,28 @@ over those prepared facts while the model injects `QString::localeAwareCompare`.
 The resulting model order continues to drive F1014's first-visible fallback.
 This corrects the earlier batch note that described the level rank as
 adapter-supplied.
+
+## F1017 closeout and F1018 selection - 2026-10-17
+
+F1017 completed at source commit
+`bd94f54422fa7053a94bf5799471aef6e6f203db`. The new Qt-free Application
+policy orders prepared Sub Prep row facts by configured-level rank,
+navigation day/minute, base label through the feature-injected
+`QString::localeAwareCompare`, and class ID. Numeric unknown time 1000 retains
+its literal position before valid minute 1020. The model keeps filtering,
+rank and label construction; F1014's page policy still retains a visible
+selection or selects the first sorted row after the previous selection
+disappears. Focused Debug builds passed for `ClassMngr`, the policy target,
+and the model/page targets; all three exact CTest selectors passed. FileTracker
+required an elevated retry after `/p:TrackFileAccess=false` retries. Configure
+reported optional missing Vulkan headers; build output included MSB8064 and
+duplicate-symbol/`/FORCE` page-link notices. No full suite ran.
+
+Two independent audits found no actionable, resolved, or superseded item
+among the 13 official Deferred entries. F1017's regression verifies only
+in-place selection fallback and detail loading, not memory attribution or a
+PageManager eviction/recreation contract; F626 remains deferred. Accept F1018,
+Teacher Info preferred-name load/edit precedence, next. Its boundary is a
+Qt-free selector over the already ordered candidate choices and stored/current
+names, while candidate construction and UI prompting remain at existing
+boundaries.

@@ -43754,3 +43754,24 @@ F1017 acceptance criteria:
 | Focused verification | Build `ClassMngr`, the new app-less policy target (for example, `ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`), `ClassMngrSubPrepClassInformationListModelTests`, `ClassMngrSubPrepPageTests`, and the selection-policy target as needed. Run only exact focused CTests/selectors. No full suite. |
 
 F1017 is accepted, not yet implemented or verified. Batch389 now retains F1018-F1022 as the active candidates.
+
+### F1017 complete; post-F1017 Deferred audits clear; F1018 accepted - 2026-10-17
+
+F1017 source commit `bd94f54422fa7053a94bf5799471aef6e6f203db` completes Sub Prep visible class ordering. The model retains configured-level rank, base-label construction, filtering, and the injected `QString::localeAwareCompare`; the Qt-free policy sorts the prepared tuple. Numeric sentinels compare literally, so unknown 1000 precedes valid time 1020. The page regression covers input rows `[43,44]`, sorted rows `[44,43]`, disappearance of selection 42, and loading class 44 details.
+
+Serial Debug builds passed for `ClassMngr`, the Qt-free ordering policy, model tests, and page tests. Three exact CTest selectors passed 3/3. Configure reported optional missing Vulkan headers; MSB8064 reported missing generated dependency `teacher_import_plan_mapper.h`; the page-test link emitted duplicate-symbol and `/FORCE` notices. FileTracker denied non-elevated build access; elevated retries used `/p:TrackFileAccess=false`. No full suite ran.
+
+Two independent audits after F1017 reviewed all 13 official Deferred entries; none became actionable, resolved, or superseded. F1017 adds only in-place sorted-selection fallback and detail-load evidence, not owner-specific memory attribution or a safe PageManager eviction/recreation contract. Keep all 13 Deferred entries unchanged, including F626's existing rationale. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+F1018, Teacher Info preferred-name load/edit precedence, is accepted as the next bounded Batch389 slice. `Teacher::preferredNameChoices()` supplies trimmed, nonblank, deduplicated choices in English-then-preferred-spelling order. Add a Qt-free Application policy receiving those ordered choices, the stored name, current combo selection, and Load or Edit context; return an optional selected index. Load selects an exact case-sensitive stored match or the first choice. Edit selects an exact current match, then an exact stored match, then the first choice. Empty choices return no selection. Candidate construction, normalization/order, combo enablement, prompt eligibility for adding a second distinct option, translated prompt, and dialog acceptance/cancel remain UI-owned. Do not change shared teacher contracts.
+
+F1018 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less tests cover exact stored/current precedence, each invalid-preference fallback, empty choices, and exact case-sensitive matching. |
+| UI parity | Retain `preferredNameListsAvailableNameChoices` and `promptsWhenSecondPreferredNameChoiceIsAdded`; add edit-precedence coverage and verify cancel preserves the preselected value. |
+| Boundary and scope | Keep choice construction, normalization/order, and combo enablement at existing boundaries; keep prompt eligibility, translation, and dialog behavior in the UI. Do not change shared teacher contracts. |
+| Focused verification | Serially build `ClassMngr`, the new app-less policy target, `ClassMngrTeacherInfoPageTests`, and `TeacherInfoPagePersistenceParity` if needed; run only exact focused CTests/selectors. No full suite. |
+
+F1018 is accepted, not yet implemented or verified. Batch389 retains F1019-F1022 as the remaining active candidates.

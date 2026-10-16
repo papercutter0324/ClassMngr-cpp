@@ -5892,16 +5892,29 @@ both test targets after FileTracker required an elevated
 headers, and the build reported MSB8064 for an existing generated dependency
 on `teacher_import_plan_mapper.h`. No full suite ran.
 
-Two independent post-F1016 audits reviewed all 13 official Deferred entries;
-none became actionable, resolved, or superseded. F626's current rationale
-already accounts for retained-page release/re-entry evidence while retaining
-the missing owner-specific Release memory evidence and safe eviction contract.
-F1017, Sub Prep visible-row ordering, is accepted next under Batch389.
-Application will order prepared facts by feature-computed level rank,
-projected navigation day/minute, feature-built base label, and class ID, with
-the feature injecting its `QString::localeAwareCompare` callback. Preserve
-numeric unknown sentinels (1000 compares before 1020) and the F1014 fallback:
-retain a still-visible selection, otherwise select/load the first sorted row.
-The earlier active-batch wording incorrectly called the rank adapter-supplied;
-it is computed in the Qt model. Gates 1/2 remain Partial and the formal Phase
-2 exit gate remains Open.
+F1017, Sub Prep visible-row ordering, is complete at source commit
+`bd94f54422fa7053a94bf5799471aef6e6f203db`. Application now orders prepared
+facts by feature-computed level rank, projected navigation day/minute,
+feature-built base label, and class ID through an injected Qt locale
+comparator. Numeric unknown sentinels remain literal (1000 sorts before 1020).
+The model keeps rank calculation, label construction, locale comparison, and
+filtering; the page still retains a visible selection or selects/loads the
+first sorted row after it disappears. Serial Debug builds passed for
+`ClassMngr`, the policy target, and the model/page targets. The exact three
+focused CTest selectors passed 3/3. FileTracker required elevated workspace
+access after `/p:TrackFileAccess=false` retries. Configure reported optional
+missing Vulkan headers; build output included MSB8064 for an existing
+generated dependency and duplicate-symbol/`/FORCE` notices on the page-test
+link. No full suite ran.
+
+Two independent post-F1017 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. The F1017 page regression
+adds only in-place sorted-selection fallback/detail-load evidence; it provides
+no memory attribution or PageManager eviction/recreation contract. F626 and
+the other 12 entries remain deferred. F1018, Teacher Info preferred-name
+load/edit precedence, is accepted next under Batch389. Its Qt-free policy
+selects from the existing ordered choices: on load prefer stored then first;
+on edit prefer current then stored then first; return no selection when empty.
+Keep choice construction, normalization, prompt eligibility, and dialog
+behavior in their existing Domain/UI boundaries. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.
