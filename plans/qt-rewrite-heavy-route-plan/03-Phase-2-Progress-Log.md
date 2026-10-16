@@ -42387,3 +42387,91 @@ fallback from misclassifying them as `KoreanTeacher`. F987 makes an unknown
 callers while preserving declared labels and the roster `N/A` behavior.
 F986 and F987 are queued after Batch346; F985 remains the only active-batch
 entry. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F985 source committed with unresolved focused registration; F986 active - 2026-10-16
+
+F985 was implemented at source/test commit
+`076883162eeab8dd83cc76b9765b99b16200230f`. It changes Schedule Import
+matching projection, repository, and review-dialog handling, with corresponding
+tests, to reject unknown matching kinds while preserving `Normal` and
+`Intensive`.
+
+The Tester built `ClassMngr` and three focused test targets using the existing
+shared Ninja fallback. The exact projection and review-dialog CTest
+registrations passed. The exact `ClassMngrScheduleImportTests` registration had
+one failure: `typedApplyPreservesExactTargetIdsThroughStateValidation` at
+`tests/schedule_import_tests.cpp:6980` expected
+`stateValidationError.has_value()` but got false. The new
+`previewRejectsUnknownKindBeforeReadingInventory` test passed in isolation;
+running the failing QtTest function directly reproduced the failure. F985's
+diff changes only `matchingInput()` and `preview()`, not `applyTyped`; no
+pre-F985 baseline rerun was made, so the failure is not established as
+pre-existing. These focused results do not establish a full-suite pass.
+
+### Batch348 discovery - 2026-10-16
+
+Batch348 discovery began when F986 started as the second-last Batch347
+candidate. The Domain lane found no concrete actionable slice. Its nearest lead,
+positivity invariants for int-backed `NativeEnglishTeacherId` and
+`GsTeamMemberId`, is already validated at current application boundaries and
+covered by focused tests; a broader Domain change is speculative and overlaps
+F976. This is a discovery shortfall, not a new Domain candidate.
+
+The Application lane accepted F988: Class Transfer must report unknown teacher
+or class resolution actions even when the corresponding teacher key or class
+index is empty or unknown. The current projection checks key/index/candidate
+before validating the action. Acceptance is to preflight each action enum
+independently of key/index lookup, preserve declared actions and established
+issue ordering as appropriate, reject without port calls, and add combined-
+invalid regressions. Bad keys and indices are already rejected, so this is
+diagnostic completeness rather than unsafe-acceptance remediation. F988 is
+queued after active F987.
+
+### F986 complete; F987 active - 2026-10-16
+
+F986 was implemented at source/test commit
+`4674d042623da8b4ff59d0113670e5ff6472e15c` in
+`src/next/application/upcoming_birthday_schedule_use_case.h` and
+`tests/next_application_upcoming_birthday_schedule_use_case_tests.cpp`.
+Candidates with an unknown `UpcomingBirthdayStaffGroup` are omitted; candidates
+in declared groups remain represented.
+
+The Tester built `ClassMngr` and
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests` in
+`build/windows-x64-debug-ninja`; the exact CTest passed (1/1), and
+`git diff --check` passed. No full suite ran.
+
+Two independent post-F986 audits reviewed all 13 official Deferred entries.
+None was resolved, superseded, or became actionable; preserve the list unchanged.
+F987 is active: make `speakingEvaluationGradeLabel()` return an explicit
+optional for unknown grades, adapt callers, and preserve all five declared
+labels and roster `N/A` behavior. No F987 implementation or verification
+evidence is available yet. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
+
+### F987 complete; F988 active - 2026-10-16
+
+F987 was implemented at source/test commit
+`9d05fed95483e48dbf2c8d24603a6aa9586929f7` in six source/test files. The
+speaking-evaluation grade-label API now returns `optional<string_view>`:
+unknown grades return `nullopt`, all five declared labels remain, and callers
+preserve the roster `N/A` behavior. Tests cover unknown values 0 and 6.
+
+Independent verification built `ClassMngr` and four focused targets:
+`ClassMngrNextDomainContractTests`,
+`ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests`,
+`ClassMngrSpeakingEvalReportWidgetTests`, and
+`ClassMngrRosterEditorWidgetImportTests`. The exact four CTest registrations
+passed (4/4), and `git diff --check` passed. Verification used the existing
+shared Ninja fallback after the standard Visual Studio build hit FileTracker
+`E_ACCESSDENIED`; an initial build attempt lacked the MSVC standard-library
+include environment, and the retry after `VsDevCmd.bat` passed. No full suite
+ran.
+
+Two independent post-F987 audits reviewed all 13 official Deferred entries.
+None was resolved, superseded, or made actionable; preserve the list unchanged.
+F988 is active: preflight unknown Class Transfer teacher/class resolution
+actions even when the corresponding key or index is empty or unknown, preserve
+declared behavior and established issue ordering, reject without port calls,
+and cover combined-invalid regressions. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
