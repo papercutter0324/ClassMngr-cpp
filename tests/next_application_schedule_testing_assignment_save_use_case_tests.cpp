@@ -301,7 +301,7 @@ rejectsInvalidMutationFieldsWithoutCallingPort()
     request = validPlainRequest();
     request.mutation =
         static_cast<Application::ScheduleTestingAssignmentMutation>(99);
-    request.day = u"Funday";
+    request.day.clear();
     result = executeSave(
         request,
         port

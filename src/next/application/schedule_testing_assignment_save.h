@@ -35,6 +35,14 @@ struct ScheduleTestingAssignmentSaveRequest final
         WeekdayCaseInsensitiveEquals&& weekdayCaseInsensitiveEquals
         ) const
     {
+        if (mutation != ScheduleTestingAssignmentMutation::RemoveAssignment
+            && mutation != ScheduleTestingAssignmentMutation::SavePlainTesting
+            && mutation
+                != ScheduleTestingAssignmentMutation::AssignTestingClass)
+        {
+            return invalidInput("Testing assignment action is invalid.");
+        }
+
         if (day.empty() || startTime.empty())
         {
             return invalidInput(
@@ -60,14 +68,6 @@ struct ScheduleTestingAssignmentSaveRequest final
                 return invalidInput("A valid testing class is required.");
             }
             break;
-        }
-
-        if (mutation != ScheduleTestingAssignmentMutation::RemoveAssignment
-            && mutation != ScheduleTestingAssignmentMutation::SavePlainTesting
-            && mutation
-                != ScheduleTestingAssignmentMutation::AssignTestingClass)
-        {
-            return invalidInput("Testing assignment action is invalid.");
         }
 
         const std::u16string trimmedDay = trimQtWhitespace(day);
