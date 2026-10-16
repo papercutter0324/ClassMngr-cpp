@@ -43019,3 +43019,79 @@ Batch366 has started in two lanes: Next Application non-class write commands
 and typed mutation ports; and non-class read models, projections, page-state
 mapping, and read adapters. All 13 official Deferred entries remain unchanged.
 Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### Batch366 closed; Batch367 discovery underway - 2026-10-16
+
+Batch366's Document Catalog projection-failure concern was a discovery
+shortfall. Two independent Investigators confirmed a conditional
+error-to-empty/retranslation-state loss path, but it is not demonstrated in
+the default shipped configuration. Current embedded labels reach at most 36
+UTF-8 bytes against the 256-byte bound. The resource-pack updater is disabled
+and has no production caller; its UI says Coming soon. Parser/adapter
+divergence is possible for an upgraded pack, so this remains a latent path. No
+source slice was accepted and these scans triggered no official Deferred
+change; preserve all 13 entries unchanged.
+
+Batch367 has started in two lanes: generic Next import/report job lifecycle
+state machines and their production callsites; and non-class, non-calendar
+preferences for current campus, academic calendar, personal display/signature,
+custom color palette, and dialog geometry, traced to live UI callsites. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### Batch367 closed; Batch368 discovery underway - 2026-10-16
+
+Batch367 was a discovery shortfall. The ImportJobCoordinator,
+ReportJobCoordinator, and worker lifecycle contracts have no production
+construction or callers; existing tests and progress-log entries cover them.
+Queue-full terminal-event state remains API-only/orphaned, not a demonstrated
+runtime path.
+
+Preference write-failure handling is covered by F658/F670/F671/F673, and
+neighboring current contracts match. Geometry persistence is the only gap:
+its write is void/best-effort and can lose recoverable display placement, but
+there is no failure-feedback acceptance contract and the typed seam was
+intentionally limited to round-trip behavior. Two Investigators agreed to
+defer geometry signaling unless acceptance changes. No source slice or Phase
+2 source change was accepted, and neither scan triggered an official Deferred
+change; preserve all 13 entries unchanged.
+
+Batch368 has started in two lanes: live Initial Setup lifecycle, cancel/retry,
+and teacher-choice reads; and GS Team, Native English, Korean teacher, and
+birthday-directory read projections/page state, excluding save-policy
+coverage F953/F961/F967. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
+
+### Batch368 and Batch369 closed; Batch370 discovery underway - 2026-10-16
+
+Batch368 was a discovery shortfall. `InitialSetupLifecycle::cancel()` retains
+its pending ticket if workspace close fails, but ordinary setup actions do not
+dirty coordinator `WorkspaceState`: no production `markDirty()` caller was
+found, setup creates a clean workspace, and concrete database close normally
+clears session/path. The failure is fake-port defensive coverage, not a
+supported reachable setup flow. A forced `FileController` close failure
+silently leaves the setup profile open, but does not establish a normal-path
+slice. Teacher-directory projection found no gap; F976/F159/F160/F315 cover
+identity, staff directory, and birthday ordering/empty/error cases.
+
+Batch369 also selected no source slice. Class Analytics intentionally maps
+failed dashboard queries and successful empty results to one message, as
+accepted by F299 and left as a policy question in Batch276; F994's My Classes
+distinction is page-specific. Calendar event activation silently returns on
+typed lookup errors per baseline F107; F647 added Missing/Technical typing
+without changing that route, and Technical feedback still needs UX policy.
+The existing ScheduleWidget pattern is precedent, not an acceptance
+requirement. Remaining My Classes fallbacks, Classes grade-read fallback, and
+Calendar recurring-edit behavior match current tests or prior acceptance.
+
+No B368/B369 source slice was accepted, neither discovery changed the 13
+official Deferred entries, and no production code changed after F994. The
+post-F994 independent audit remains the latest audit of all 13 entries.
+Batch370 is underway in two read-only lanes: live Next Application read/query
+consumers in Sub Prep, Rosters, Speaking Evaluation, and Campus (excluding
+B368/B369 topics, Document Catalog, recent history, generic jobs/preferences,
+and prior teacher/My Classes/Classes/Calendar/Analytics scopes); and reachable
+Next Application commands/mutation flows (excluding B366 broad non-class
+writes, Setup/teacher work, F993 roster custom-column policy, F994, and
+F953/F961/F967). No B370 candidate is selected yet. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and all 13 Deferred entries remain
+unchanged.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F994 and Batch364 are closed and Batch366 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F994 at `fcf321e6` remains the latest source slice; Batches364-369 are closed and Batch370 discovery is underway, with all 13 Deferred entries unchanged, Gates 1/2 Partial, and the exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch366 (discovery underway)
-  - Next Application non-class write commands and typed mutation ports - identify reachable contract gaps and production callers.
-  - Non-class read models, projections, page-state mapping, and read adapters - identify reachable contract gaps and production callers.
+- Batch370 (discovery underway)
+  - Live Next Application read/query consumers in Sub Prep, Rosters, Speaking Evaluation, and Campus - inspect production callsites, excluding B368/B369 topics, Document Catalog, recent history, generic jobs/preferences, and prior teacher/My Classes/Classes/Calendar/Analytics scopes.
+  - Reachable Next Application commands and mutation flows - inspect live paths, excluding B366 broad non-class writes, Setup/teacher work, F993 roster custom-column policy, F994, and F953/F961/F967.
 
 ## Objective
 
