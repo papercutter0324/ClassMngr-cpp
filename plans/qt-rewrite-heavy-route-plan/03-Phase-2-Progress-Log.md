@@ -44637,3 +44637,22 @@ No other slices were found.
 
 Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007
 remains pending policy reconciliation. Batch420 discovery is in progress.
+
+### Batch420 discovery shortfall - 2026-10-17
+
+The independent Teacher Info, Class Details, and Class Notes scan found no
+supported issue: failed edits remain dirty, with visible warnings and tests.
+Sub Prep evidence supports allowing a failure in the other schedule mode
+without blocking the selected mode. Behavior when the applicable selected
+mode fails remains undefined and can change navigation labels, order, or
+default selection. The current port hides these secondary failures, and no
+deterministic focused injection seam exists. A best-effort fallback or
+propagation policy must be decided before a slice; this is a policy question,
+not a supported defect or official Deferred item. Batch420 accepted no slice;
+all 13 official Deferred entries remain unchanged and unresolved, and F1038
+is not actionable against them.
+
+No other slices were found.
+
+Batch421 discovery is in progress. Gates 1/2 remain Partial, the Phase 2 exit
+gate remains Open, and F1007 remains pending policy reconciliation.
