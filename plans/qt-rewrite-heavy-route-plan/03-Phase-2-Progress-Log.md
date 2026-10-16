@@ -42622,9 +42622,32 @@ explicit and tested, and Calendar Event Delete typed-ID forwarding was F103.
 Neither lane found a concrete change to an official Deferred trigger. No
 other slices were found.
 
-Batch355 discovery is underway in two read-only lanes: Domain public
-construction/mutation paths that could bypass stated value-object invariants,
-and Application stale-result/token handling in async coordinators or
-workflows, excluding the Batch353 document-content lifecycle. The 13 official
-Deferred entries remain unchanged; Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+Batch355 discovery ran two read-only lanes. The Application scan found no
+candidate: `ImportJobCoordinator` and `ReportJobCoordinator` drop old-generation
+events, and tests cover cancellation races and completion. The Domain scan
+selected F990: implicit move operations on `StudentNamePair` can leave a
+readable source without its factory-established two-nonempty-components
+invariant. No direct official Deferred trigger changed. No other slices were
+found.
+
+### F990 selected; acceptance defined - 2026-10-16
+
+F990 makes `StudentNamePair` rvalue construction and assignment preserve the
+source value. In `src/next/domain/student_name_pair.h`, explicitly default
+public copy construction and copy assignment so implicit move operations are
+suppressed and rvalues copy. Preserve factory rejection of empty components,
+exact UTF-16 components, accessors, equality and ordering, and keep the type
+free of Qt dependencies. No CMake or ownership change is expected.
+
+In `tests/next_domain_contract_tests.cpp`, add focused move-construction and
+move-assignment-from-`std::move` cases. Snapshot source values and assert both
+source and destination remain equal to their snapshots; do not assume a
+particular `std::u16string` moved-from representation. Preserve existing
+factory and contract coverage.
+
+Build `ClassMngr` and `ClassMngrNextDomainContractTests` in the existing
+`build/windows-x64-debug-ninja` directory with the MSVC environment. Confirm
+the exact CTest registration `NextDomainContract` occurs once and run only
+that registration. Do not run the full suite. F990 does not overlap the 13
+official Deferred candidates; preserve that list. Gates 1/2 remain Partial and
+the formal Phase 2 exit gate remains Open.
