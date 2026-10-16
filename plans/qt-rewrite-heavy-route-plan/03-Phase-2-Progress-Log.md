@@ -42702,3 +42702,24 @@ Platform, and OS boundary checks, excluding Batch352's DataService,
 MainWindow, PageManager, and widget checks. F990 remains complete; all 13
 official Deferred entries remain unchanged. Gates 1/2 remain Partial and the
 formal Phase 2 exit gate remains Open.
+
+### Batch357 closed; Batch358 discovery underway - 2026-10-16
+
+Batch357 was a discovery shortfall. The Domain scan found no upward dependency
+on Application, Platform, Persistence, or Qt. The Application scan found no
+direct Qt, Platform, or OS boundary defect. Its only lead was deliberate reuse
+of the standard-library-only, inline Domain `ScheduleKeyRules` from Next
+Application. Historical F638, F641, F724, F725, and F741 work records this
+reuse; the current plan does not prohibit it. The source manifest/include
+visibility gap is evidence about the boundary, not a demonstrated violation.
+No slice was selected; no other slices were found.
+
+Batch358 discovery has started in two read-only lanes: Next Domain value
+semantics and invariants, excluding `StudentNamePair`/F990; and synchronous
+Next Application failure/output-state contracts, excluding port-order and
+request-validation, async cancellation/stale-generation, and multi-step
+partial-success scans. All 13 official Deferred entries remain unchanged.
+F985 remains unresolved: reused TeacherId `"01"` is first rejected as
+`InvalidExistingTeacherTarget`, and no pre-F985 baseline establishes when the
+failure began. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
