@@ -14,6 +14,8 @@ enum class ScheduleImportStateValidationErrorCode
 {
     InvalidStateKind,
     InvalidIntensiveMode,
+    InvalidTeacherAction,
+    InvalidClassAction,
     SelectedTeacherUnavailable,
     InvalidTeacherTarget,
     MissingTeacherRoom,
@@ -57,6 +59,29 @@ validateScheduleImportStateEnums(
         return ScheduleImportStateValidationError{
             ScheduleImportStateValidationErrorCode::InvalidIntensiveMode
         };
+    }
+    for (const auto& resolution : request.teacherResolutions)
+    {
+        if (resolution.action != ScheduleImportStateTeacherAction::Reuse
+            && resolution.action != ScheduleImportStateTeacherAction::UpdateRoom
+            && resolution.action != ScheduleImportStateTeacherAction::Create
+            && resolution.action != ScheduleImportStateTeacherAction::Skip)
+        {
+            return ScheduleImportStateValidationError{
+                ScheduleImportStateValidationErrorCode::InvalidTeacherAction
+            };
+        }
+    }
+    for (const auto& resolution : request.classResolutions)
+    {
+        if (resolution.action != ScheduleImportStateClassAction::UpdateExisting
+            && resolution.action != ScheduleImportStateClassAction::CreateNew
+            && resolution.action != ScheduleImportStateClassAction::Skip)
+        {
+            return ScheduleImportStateValidationError{
+                ScheduleImportStateValidationErrorCode::InvalidClassAction
+            };
+        }
     }
     return std::nullopt;
 }

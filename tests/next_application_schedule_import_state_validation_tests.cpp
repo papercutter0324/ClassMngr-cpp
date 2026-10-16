@@ -159,6 +159,8 @@ private slots:
     void rejectsOutOfRangeCandidateIndexesForCreateAndUpdate();
     void rejectsUnknownStateKindBeforeProjectionConsumption();
     void rejectsUnknownIntensiveModeBeforeProjectionConsumption();
+    void rejectsUnknownTeacherActionBeforeActionValidation();
+    void rejectsUnknownClassActionBeforeIndexAndProjectionHandling();
     void acceptsReplaceModeForNormalState();
     void rejectsInvalidProjectedTimes();
     void rejectsOverlapsAndAllowsAdjacentTimes();
@@ -296,6 +298,16 @@ requiresSelectedTeacherAndAllowsAbsentActionTarget()
     request.existingTeachers = {{teacherId(7), "teacher-a"}};
     request.teacherResolutions = {
         {"teacher-a", ScheduleImportStateTeacherAction::Reuse, teacherId(7), true}
+    };
+    QVERIFY(!errorCode(request).has_value());
+
+    request.teacherResolutions = {
+        {
+            "teacher-a",
+            ScheduleImportStateTeacherAction::UpdateRoom,
+            teacherId(7),
+            true
+        }
     };
     QVERIFY(!errorCode(request).has_value());
 
@@ -543,6 +555,62 @@ rejectsUnknownIntensiveModeBeforeProjectionConsumption()
     QCOMPARE(
         suppliedProjectionError->code,
         ScheduleImportStateValidationErrorCode::InvalidIntensiveMode
+        );
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rejectsUnknownTeacherActionBeforeActionValidation()
+{
+    ScheduleImportStateValidationRequest request;
+    request.teacherResolutions = {
+        {
+            "teacher-a",
+            static_cast<ScheduleImportStateTeacherAction>(99),
+            teacherId(7),
+            false
+        }
+    };
+
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::InvalidTeacherAction
+        }
+        );
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rejectsUnknownClassActionBeforeIndexAndProjectionHandling()
+{
+    ScheduleImportStateValidationRequest request;
+    request.classResolutions = {
+        {
+            7,
+            static_cast<ScheduleImportStateClassAction>(99),
+            std::nullopt
+        }
+    };
+
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::InvalidClassAction
+        }
+        );
+
+    const ScheduleImportStateProjectedSchedule invalidProjection{
+        ScheduleImportStateCandidateIndex{0},
+        "Invalid projection",
+        {time(7, 16 * 60, 17 * 60, "Funday")}
+    };
+    const auto suppliedProjectionError = validateScheduleImportState(
+        request,
+        std::vector<ScheduleImportStateProjectedSchedule>{invalidProjection}
+        );
+    QVERIFY(suppliedProjectionError.has_value());
+    QCOMPARE(
+        suppliedProjectionError->code,
+        ScheduleImportStateValidationErrorCode::InvalidClassAction
         );
 }
 
