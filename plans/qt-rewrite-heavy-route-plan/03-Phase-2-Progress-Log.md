@@ -42042,3 +42042,37 @@ F975 acceptance for implementation:
 4. Build `ClassMngr` and
    `ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests`; run
    only the exact CTest registration with that name. Do not run the full suite.
+
+### F975 complete; F976 active - 2026-10-16
+
+F975 was implemented at source/test commit
+`bd51071f521f34b1a62f2c45d657b0780d3d436e`. The commit changed only
+`src/next/application/class_co_teacher_teacher_choices_read_query.h` and
+`tests/next_application_class_co_teacher_teacher_choices_read_query_tests.cpp`.
+Successful choice snapshots now reject duplicate canonical positive 64-bit
+teacher IDs with nonrecoverable `Validation`, while preserving wide IDs,
+ordering, every field, and exact port errors.
+
+The Executor and independent Tester built `ClassMngr` and
+`ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests`; the exact
+focused CTest passed (1/1), and `git diff --check` passed. No full suite ran.
+
+Two independent post-F975 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, superseded, or
+materially changed, and F975 affected none of their triggers. F976 is now
+active, with F977 queued. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
+
+F976 acceptance for implementation:
+
+1. In both `GsTeamDirectoryReadQuery` and
+   `NativeEnglishTeacherDirectoryReadQuery`, reject successful snapshots with
+   any `id.value() <= 0` or duplicate row ID as nonrecoverable `Validation`.
+2. Preserve valid row order and all fields, empty successful snapshots, and
+   exact port-error propagation.
+3. Add zero/negative ID, duplicate-ID, and empty-success cases to both focused
+   query suites.
+4. Build `ClassMngr`,
+   `ClassMngrNextApplicationGsTeamDirectoryReadQueryTests`, and
+   `ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests`; run
+   only those exact two CTests. Do not run the full suite.
