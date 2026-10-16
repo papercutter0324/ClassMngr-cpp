@@ -240,6 +240,7 @@ private slots:
     void boundedRosterOutputLoadsOnlyRequestedColumnsAndEnforcesLimits();
     void featureServicesExposeNarrowOperations();
     void settingsServiceDoesNotFallBackFromClosedSession();
+    void teacherServiceDoesNotFallBackFromClosedSession();
     void calendarServiceDoesNotFallBackFromClosedSession();
     void classNotesServiceDoesNotFallBackFromClosedSession();
     void subPrepOutputReadsDoNotFallBackFromClosedSession();
@@ -2981,6 +2982,66 @@ settingsServiceDoesNotFallBackFromClosedSession()
         legacyOnly.load(batchWriteKey)->toString(),
         QStringLiteral("legacy batch")
     );
+}
+
+void DataServiceLifecycleTests::
+teacherServiceDoesNotFallBackFromClosedSession()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    DataService legacyDataService;
+    QVERIFY(legacyDataService.openDatabase(
+        directory.filePath(QStringLiteral("legacy-teachers.db"))
+        ).has_value());
+
+    Teacher seededTeacher;
+    seededTeacher.teacherEn = QStringLiteral("Legacy Teacher");
+    const Result<int> seededTeacherId =
+        legacyDataService.createTeacher(seededTeacher);
+    QVERIFY(seededTeacherId);
+
+    DatabaseSession closedSession;
+    QVERIFY(!closedSession.isOpen());
+    QVERIFY(closedSession.teacherRepository() == nullptr);
+
+    TeacherService sessionBound(&closedSession, &legacyDataService);
+    TeacherService legacyOnly(&legacyDataService);
+    QVERIFY(!sessionBound.isAvailable());
+    QVERIFY(legacyOnly.isAvailable());
+
+    QVERIFY(!sessionBound.teachers());
+
+    Teacher rejectedUpdate = seededTeacher;
+    rejectedUpdate.id = *seededTeacherId;
+    rejectedUpdate.teacherEn = QStringLiteral("Wrong Update");
+    QVERIFY(!sessionBound.update(rejectedUpdate));
+
+    const Result<Teacher> retainedLegacyTeacher =
+        legacyDataService.getTeacher(*seededTeacherId);
+    QVERIFY(retainedLegacyTeacher);
+    QCOMPARE(
+        retainedLegacyTeacher->teacherEn,
+        QStringLiteral("Legacy Teacher")
+        );
+
+    const Result<QList<Teacher>> legacyTeachers = legacyOnly.teachers();
+    QVERIFY(legacyTeachers);
+    QCOMPARE(legacyTeachers->size(), 1);
+    QCOMPARE(legacyTeachers->first().teacherEn,
+             QStringLiteral("Legacy Teacher"));
+
+    Teacher legacyUpdate = *retainedLegacyTeacher;
+    legacyUpdate.teacherEn = QStringLiteral("Updated Teacher");
+    QVERIFY(legacyOnly.update(legacyUpdate));
+
+    const Result<Teacher> updatedLegacyTeacher =
+        legacyOnly.teacher(*seededTeacherId);
+    QVERIFY(updatedLegacyTeacher);
+    QCOMPARE(
+        updatedLegacyTeacher->teacherEn,
+        QStringLiteral("Updated Teacher")
+        );
 }
 
 void DataServiceLifecycleTests::

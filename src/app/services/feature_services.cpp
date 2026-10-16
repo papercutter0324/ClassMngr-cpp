@@ -141,7 +141,7 @@ DatabaseSession* FeatureService::session() const
 
 DataService* FeatureService::dataService() const
 {
-    return m_legacyDataService;
+    return m_session ? nullptr : m_legacyDataService;
 }
 
 Status SettingsService::save(
