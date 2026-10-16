@@ -2,7 +2,7 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `qt-phase2-resume-20261014`; Heavy route; resumed 2026-10-14.
+- Deployment: `phase2_resume_20260929`; Heavy route; resumed 2026-10-17.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,
@@ -5944,3 +5944,24 @@ only `NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`,
 closed; Batch391 is active. Gates 1/2 remain Partial and Phase 2 exit remains
 Open. Preserve unrelated untracked `%SystemDrive%/`, `Testing/`,
 `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
+
+## Current continuation - 2026-10-17 (F1024 complete; F1025 accepted)
+
+F1024 completed at source commit
+`80088444bfcce485a451198527df2316b9ecdd06`. The Application occurrence date
+is now `Domain::GregorianDate`; invalid reference dates remain empty schedules,
+and the feature adapter preserves `QDate` and display behavior. The three exact
+focused CTests passed, as did direct QtTest selectors for invalid reference
+dates, maximum date/Feb 29 fallback, rollover, and week bucketing. No full
+suite ran. Two independent post-commit audits found all 13 official Deferred
+entries unchanged.
+
+Batch391 is closed. Batch392 discovery selected F1025, a shared Qt-free
+Class Analytics ranking-order policy over integer-thousandth score keys, with
+each consumer retaining its existing English-name comparator. Preserve score
+production, aggregation, criterion strongest/focus selection, labels, and
+presentation. The app-less policy will return source indexes, sort higher
+scores first, and use the supplied comparator only on ties; exact score/name
+ties receive no new stability guarantee. The next action is implement F1025,
+verify its policy and both consumer paths with focused checks, then commit the
+slice. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.

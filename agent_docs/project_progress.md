@@ -53,7 +53,27 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-17 (F1023 complete; F1024 accepted)
+### Current checkpoint - 2026-10-17 (F1024 complete; F1025 accepted)
+
+F1024 completed at source commit `80088444bfcce485a451198527df2316b9ecdd06`.
+Upcoming birthday occurrences now carry `Domain::GregorianDate`; raw reference
+date validation, occurrence ordering, week buckets, year limits, leap-day
+fallback, and feature display behavior remain intact. Three exact focused CTests
+passed and four direct QtTest selectors exited successfully; no full suite ran.
+Two independent post-commit audits found all 13 official Deferred candidates
+unchanged.
+
+Batch391 is closed. Batch392 discovery selected F1025, a Qt-free Class Analytics
+ranking-order policy shared by the feature `SpeakingAnalytics` and the Next
+Application dashboard query. Compare prepared integer-thousandth scores in
+descending order and use each consumer's existing English-name comparator only
+for ties. Keep score production, aggregation, criterion strongest/focus logic,
+labels, and presentation in their current owners; do not promise stable order
+for exact score/name ties. The next milestone is F1025 implementation, focused
+verification, and source commit. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation.
+
+### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;

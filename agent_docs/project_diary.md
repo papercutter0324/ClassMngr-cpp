@@ -6445,3 +6445,13 @@ invalid reference years 0/10000 and February 29 at year 9999. Verify only
 `UpcomingBirthdaysLocaleAwareOrderingTests`, and the existing focused
 `UpcomingBirthdaysLeapDayFallbackBehavior` CTest. Gates 1/2 remain Partial;
 Phase 2 exit remains Open.
+
+## Shared Class Analytics ranking policy - 2026-10-17
+
+- When two consumers sort the same rounded scores, compare the canonical
+  integer score key and keep each consumer's locale-aware name comparison at
+  its boundary. The parity argument depends on the verified input range and
+  rounding grid; do not generalize fuzzy/exact comparison equivalence to
+  arbitrary floating-point inputs.
+- Do not add a tertiary key or stable-order promise when the existing
+  `std::sort` paths define order only by score and name.

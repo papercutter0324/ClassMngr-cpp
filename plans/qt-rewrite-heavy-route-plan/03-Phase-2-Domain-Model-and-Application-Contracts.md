@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1024, typed upcoming birthday occurrence dates, is accepted under Batch391 while preserving raw reference inputs and existing feature date/display behavior; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: Batch392 is closed with F1025, shared Class Analytics student ranking order, accepted pending implementation; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -111,11 +111,6 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Add/post-create wide-ID transition - deferred under F285: blank-draft
   Add is rejected before persistence, so revisit create-path identity propagation
   only after the draft-creation contract is clarified.
-
-#### Active batch
-
-- Batch391
-  - F1024 - Typed upcoming birthday occurrence dates: expose `Domain::GregorianDate` after validated reference-date handling while preserving ordering, bounds, and feature display behavior.
 
 ## Objective
 

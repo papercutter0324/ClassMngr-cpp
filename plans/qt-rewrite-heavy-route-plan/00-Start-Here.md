@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1023, the shared derived `BirthdayMonthDay` domain value, is complete at source commit `5cb82bf04591608a6f9f8db5cff88dbbbcaf1baf`; F1024, typed upcoming birthday occurrence dates, is accepted under Batch391. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1024, typed upcoming birthday occurrence dates, is complete at source commit `80088444bfcce485a451198527df2316b9ecdd06`; F1025, shared Class Analytics student ranking order, is accepted under closed Batch392 pending implementation. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
