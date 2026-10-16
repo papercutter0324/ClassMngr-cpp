@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F976 is complete, F977 is active, and Batch343 discovery is underway; two post-F976 audits found all 13 official Deferred entries unchanged and none actionable, resolved, or superseded. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F976 is complete, F977 is active, and Batch343 discovery is closed with F978-F980 queued after F977; two post-F976 audits found all 13 official Deferred entries unchanged and none actionable, resolved, or superseded. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

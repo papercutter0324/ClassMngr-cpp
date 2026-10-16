@@ -42112,3 +42112,58 @@ F977 acceptance for implementation:
 3. Build `ClassMngr` and
    `ClassMngrNextApplicationTeacherProfileEditTests`; run only the exact CTest
    `ClassMngrNextApplicationTeacherProfileEditTests`. Do not run the full suite.
+
+### Batch343 closed; F978-F980 accepted in order - 2026-10-16
+
+Two independent discovery lanes covered Application contracts and Domain/state
+rules. The Domain lane selected F978, rejecting unknown cast grade-band or
+level-category values in `Course::weeklyMeetingDayRuleFor()` as no rule while
+preserving declared values; and F979, rejecting unknown schedule-conflict modes
+in `ClassDetailsScheduleConflictQuery::execute()` before the port call with the
+existing request-style `InvalidInput`. The Application lane selected F980:
+successful Schedule Testing Assignment rows may use class ID `-1` for
+unassigned or a positive ID, and must reject zero or values below `-1` with
+nonrecoverable `Validation` while preserving order, display fields, absent
+metadata, empty success, and port errors.
+
+A malformed optional TeacherId in TestingClassDetails was not selected because
+the existing test preserves opaque `teacher-17` and the intended UI/downstream
+contract is unclear. Duplicate TestingTeacherChoices IDs were not selected
+because repository source may already guarantee unique rows and confidence was
+low. Discovery ran no tests.
+
+No other slices were found.
+
+F978 acceptance for implementation:
+
+1. Make `Course::weeklyMeetingDayRuleFor()` return `nullopt` for unknown cast
+   `CourseGradeBand` or `CourseLevelCategory` values, preserving behavior for
+   every declared value.
+2. Cover unknown grade and level values and valid declared cases.
+3. Build `ClassMngr` and `ClassMngrNextDomainContractTests`; run only the exact
+   `ClassMngrNextDomainContractTests` CTest. Do not run the full suite.
+
+F979 acceptance for implementation:
+
+1. In `ClassDetailsScheduleConflictQuery::execute()`, reject modes other than
+   Regular or Intensive before calling the port, using the existing request-
+   style `InvalidInput` result.
+2. Cover an invalid cast, zero port calls, valid requests, and exact port-error
+   propagation.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests`; run only
+   the exact CTest with that name. Do not run the full suite.
+
+F980 acceptance for implementation:
+
+1. Validate successful Schedule Testing Assignment query rows so class ID `-1`
+   means unassigned, positive IDs remain valid, and zero or values below `-1`
+   return nonrecoverable `Validation`.
+2. Preserve row order and display fields, absent valid metadata, empty success,
+   and exact port-error propagation.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`; run only
+   the exact CTest with that name. Do not run the full suite.
+
+F977 remains the active slice; F978-F980 are queued in this order. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

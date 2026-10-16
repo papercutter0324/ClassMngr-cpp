@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F977 is active and Batch343 discovery is underway with no candidate selected; two post-F976 audits found all 13 official Deferred entries unchanged, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F977 is active; Batch343 is closed with F978-F980 queued after F977, while two post-F976 audits found all 13 official Deferred entries unchanged. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
