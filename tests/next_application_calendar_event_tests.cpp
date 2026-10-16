@@ -422,6 +422,7 @@ private slots:
     void optionalReferencesAndMetadataAreRetained();
     void emptyProjectionAndMissingLookupAreExplicit();
     void calendarEventByIdQueryUseCaseForwardsIdAndResultOnce();
+    void calendarEventByIdQueryUseCaseRejectsMismatchedReturnedId();
     void calendarEventByIdQueryUseCasePropagatesPortFailure();
     void calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort();
     void orderingAndSafeValueLookupsAreDeterministic();
@@ -792,6 +793,30 @@ calendarEventByIdQueryUseCaseForwardsIdAndResultOnce()
 }
 
 void NextApplicationCalendarEventTests::
+calendarEventByIdQueryUseCaseRejectsMismatchedReturnedId()
+{
+    const CalendarEventByIdQueryRequest request{"requested-event"};
+    FakeCalendarEventByIdQueryPort port;
+    port.response = CalendarEventByIdQueryResult::success(
+        calendarEventSummary("returned-event")
+        );
+
+    const CalendarEventByIdQueryResult result =
+        CalendarEventByIdQueryUseCase::execute(port, request);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Validation);
+    QCOMPARE(
+        result.error().message,
+        std::string("Calendar event lookup returned a different event identifier.")
+        );
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.loadCalls, 1);
+    QVERIFY(port.receivedEventId.has_value());
+    QCOMPARE(port.receivedEventId->value(), std::string("requested-event"));
+}
+
+void NextApplicationCalendarEventTests::
 calendarEventByIdQueryUseCasePropagatesPortFailure()
 {
     const CalendarEventByIdQueryRequest request{"missing-event"};
@@ -849,6 +874,9 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
     const CalendarEventByIdQueryRequest exactLimitRequest{
         std::string(kCalendarEventByIdQueryMaxIdentifierLength, 'x')
     };
+    port.response = CalendarEventByIdQueryResult::success(
+        calendarEventSummary(exactLimitRequest.eventId)
+        );
     const CalendarEventByIdQueryResult exactLimitResult =
         CalendarEventByIdQueryUseCase::execute(port, exactLimitRequest);
 
@@ -865,6 +893,9 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
     const CalendarEventByIdQueryRequest malformedUtf8Request{
         std::string("\xFF", 1)
     };
+    port.response = CalendarEventByIdQueryResult::success(
+        calendarEventSummary(malformedUtf8Request.eventId)
+        );
     const CalendarEventByIdQueryResult malformedUtf8Result =
         CalendarEventByIdQueryUseCase::execute(port, malformedUtf8Request);
 

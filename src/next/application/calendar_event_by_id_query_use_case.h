@@ -32,7 +32,23 @@ public:
                 );
         }
 
-        return queryPort.loadEventById(*eventId);
+        CalendarEventByIdQueryResult result =
+            queryPort.loadEventById(*eventId);
+        if (!result)
+        {
+            return CalendarEventByIdQueryResult::failure(result.error());
+        }
+
+        if (result.value().id != *eventId)
+        {
+            return CalendarEventByIdQueryResult::failure({
+                .code = Domain::ErrorCode::Validation,
+                .message = "Calendar event lookup returned a different event identifier.",
+                .recoverable = false
+            });
+        }
+
+        return result;
     }
 };
 
