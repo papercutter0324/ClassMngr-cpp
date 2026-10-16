@@ -295,6 +295,7 @@ private slots:
     void rejectsNoncanonicalClassIdAliasesBeforeReading();
     void maximumClassScopeFitsSqliteBindLimits();
     void ordersAllCanonicalWeekdaysInSummariesAndNavigation();
+    void regularAllWeekNavigationMetadataWinsOverIntensiveSummary();
     void parsesRawScheduleTimesAndKeepsMalformedNavigationFallback();
     void perClassMeetingOverflowSurfacesValidation();
     void aggregateMeetingOverflowSurfacesValidation();
@@ -3128,6 +3129,57 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
         );
     QCOMPARE(summary.navigationFirstDayOrder, 0);
     QCOMPARE(summary.navigationFirstTimeOrder, 9 * 60 + 15);
+}
+
+void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::
+regularAllWeekNavigationMetadataWinsOverIntensiveSummary()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+
+    const int teacher = createTeacher(
+        services,
+        QStringLiteral("English Name"),
+        QStringLiteral("Preferred Name"),
+        QStringLiteral("regular-navigation-precedence")
+        );
+    QVERIFY(teacher > 0);
+    const int selectedClass = createClass(
+        services,
+        QStringLiteral("Intensive selected-day summary"),
+        teacher,
+        QStringLiteral("E4"),
+        QStringLiteral("Perseus"),
+        QStringLiteral(""),
+        QStringLiteral("#FFFFFF"),
+        QStringLiteral("#000000"),
+        {
+            {QStringLiteral("Monday"), QStringLiteral("9:00 AM"), QStringLiteral("9:45 AM")}
+        },
+        {
+            {QStringLiteral("Wednesday"), QStringLiteral("2:00 PM"), QStringLiteral("2:45 PM")}
+        }
+        );
+    QVERIFY(selectedClass > 0);
+
+    ApplicationServicesSubPrepScheduleSummaryPort port(services);
+    const auto result = port.loadSummaries(summaryRequestFor(
+        {classId(selectedClass)},
+        {SubPrepWeekday::Wednesday},
+        ScheduleViewMode::Intensive
+        ));
+
+    QVERIFY(result);
+    QCOMPARE(result.value().classes.size(), std::size_t(1));
+    const auto& summary = result.value().classes.front();
+    QCOMPARE(summary.meetingText, std::string("Wed 2pm"));
+    QCOMPARE(
+        summary.navigationLabel,
+        utf8(QStringLiteral("Perseus \u2022 M 9:00"))
+        );
+    QCOMPARE(summary.navigationTeacherLabel, std::string("English Name"));
+    QCOMPARE(summary.navigationFirstDayOrder, 0);
+    QCOMPARE(summary.navigationFirstTimeOrder, 9 * 60);
 }
 
 void NextPlatformApplicationServicesSubPrepPrintSourcePortTests::

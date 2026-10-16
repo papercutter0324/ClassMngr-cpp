@@ -5,6 +5,7 @@
 #include "data/repositories/class_info_repository.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "next/application/sub_prep_meeting_time_grouping_policy.h"
+#include "next/application/sub_prep_navigation_metadata_policy.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/domain/teacher_display_name.h"
 
@@ -260,7 +261,7 @@ public:
             }
 
             std::unordered_map<int, NavigationMetadata>
-                preferredNavigationByClassId;
+                regularNavigationByClassId;
             const ::Result<QList<SubPrepClassSummaryRecord>> regularRecords =
                 repository->loadSubPrepClassSummaries(
                     legacyClassIds,
@@ -275,7 +276,7 @@ public:
                     );
             if (regularRecords)
             {
-                preferredNavigationByClassId.reserve(
+                regularNavigationByClassId.reserve(
                     static_cast<std::size_t>(regularRecords->size())
                     );
                 for (const SubPrepClassSummaryRecord& record
@@ -283,7 +284,7 @@ public:
                 {
                     if (record.classId <= 0 || record.teacherId <= 0
                         || !requestedLegacyIds.contains(record.classId)
-                        || !preferredNavigationByClassId.emplace(
+                        || !regularNavigationByClassId.emplace(
                                record.classId,
                                navigationMetadataFor(
                                    record,
@@ -304,13 +305,15 @@ public:
                 && std::any_of(
                     recordsByClassId.cbegin(),
                     recordsByClassId.cend(),
-                    [&preferredNavigationByClassId](const auto& entry)
+                    [&regularNavigationByClassId](const auto& entry)
                     {
-                        return !preferredNavigationByClassId.contains(
+                        return !regularNavigationByClassId.contains(
                             entry.first
                             );
                     }
                     );
+            std::unordered_map<int, NavigationMetadata>
+                intensiveNavigationByClassId;
             if (needsIntensiveNavigation)
             {
                 const ::Result<QList<SubPrepClassSummaryRecord>> intensiveRecords =
@@ -327,9 +330,8 @@ public:
                         );
                 if (intensiveRecords)
                 {
-                    preferredNavigationByClassId.reserve(
-                        preferredNavigationByClassId.size()
-                        + static_cast<std::size_t>(intensiveRecords->size())
+                    intensiveNavigationByClassId.reserve(
+                        static_cast<std::size_t>(intensiveRecords->size())
                         );
                     for (const SubPrepClassSummaryRecord& record
                          : intensiveRecords.value())
@@ -343,10 +345,7 @@ public:
                                 );
                         }
 
-                        // Regular schedules take precedence for legacy tab
-                        // labels. Intensive is only a fallback for classes
-                        // that have no regular schedule of their own.
-                        preferredNavigationByClassId.try_emplace(
+                        intensiveNavigationByClassId.try_emplace(
                             record.classId,
                             navigationMetadataFor(
                                 record,
@@ -378,12 +377,25 @@ public:
 
                 const SubPrepClassSummaryRecord& record =
                     *recordEntry->second;
-                const auto navigationEntry =
-                    preferredNavigationByClassId.find(legacyClassId);
-                const NavigationMetadata navigation =
-                    navigationEntry != preferredNavigationByClassId.end()
-                    ? navigationEntry->second
-                    : navigationMetadataFor(record, request.mode);
+                const NavigationMetadata selectedModeNavigation =
+                    navigationMetadataFor(record, request.mode);
+                const auto regularNavigationEntry =
+                    regularNavigationByClassId.find(legacyClassId);
+                const auto intensiveNavigationEntry =
+                    intensiveNavigationByClassId.find(legacyClassId);
+                const NavigationMetadata& navigation =
+                    Application::selectSubPrepNavigationMetadata(
+                        request.mode,
+                        regularNavigationEntry
+                                != regularNavigationByClassId.end()
+                            ? &regularNavigationEntry->second
+                            : nullptr,
+                        intensiveNavigationEntry
+                                != intensiveNavigationByClassId.end()
+                            ? &intensiveNavigationEntry->second
+                            : nullptr,
+                        selectedModeNavigation
+                        );
                 const Domain::ClassId& requestedClassId =
                     request.visibleClassIds[requestIndex];
                 const auto gradeText = requiredUtf8(

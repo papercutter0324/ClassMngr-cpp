@@ -1400,6 +1400,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests
 )
 
+# Keep Sub Prep navigation-metadata precedence independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+    tests/next_application_sub_prep_navigation_metadata_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+    COMMAND ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationSubPrepScheduleSummaryQuery
     SOURCES
