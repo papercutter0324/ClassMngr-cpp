@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1004 is complete at source commit `1a2386a889badc37c1922652c4c79f65b0d2f46c` and F1005 is accepted from Batch380 before implementation; Batch381 is active, and two post-F1004 audits confirm all 13 official Deferred entries remain deferred with original blockers and none is actionable, resolved, or superseded; Gates 1/2 remain Partial and the Phase 2 exit gate is Open.
+- Current note: F1005 is complete at source commit `4b1d2b6908ea9dd0869b0550e683fd61aa9192b9` and F1006 is accepted before implementation; Batch381 retains F1007 and F1008, and two post-F1005 audits confirm all 13 official Deferred entries remain deferred with original blockers and none is actionable, resolved, or superseded; Gates 1/2 remain Partial and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,7 +115,6 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch381
-  - F1006 - Schedule slot default/toggle policy: strongest unaccepted candidate; define only the bounded default/toggle rules, keeping parsing/canonicality at the feature edge and Testing-mode mapping.
   - F1007 - Shared student-name edit validation: unaccepted; reconcile Roster and Speaking Evaluation issue sets and normalization before defining the shared contract.
   - F1008 - Upcoming-birthday ordering: unaccepted; preserve feature-edge `QString::localeAwareCompare` ordering semantics if reconsidered.
 
