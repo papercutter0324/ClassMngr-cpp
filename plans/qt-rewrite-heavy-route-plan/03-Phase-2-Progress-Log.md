@@ -43328,3 +43328,22 @@ F998 is accepted for implementation, not completed. Its acceptance criteria are:
 | Focused verification | Build affected targets and run only exact focused CTests; no full suite. |
 
 Two independent audits of exactly the 13 official Deferred entries found none actionable, resolved, or superseded; the list remains unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+### F998 complete; F999 accepted for implementation - 2026-10-16
+
+F998 source commits `6ff06fbf` and `2e79403f` add the repeatable Qt-free manual update-check contract/use case and policy-aware Platform adapter, route dialog open/refresh/retry and terminal presentation through that boundary, and preserve F997 startup. The second commit retains cached update details and release notes during stale refresh and adds stale-open/IfStale, no-cache loading, and same-version “You're Up to Date” assertions. The executor build passed; an independent Tester reran the focused Debug build at `HEAD 2e79403f` and the exact six CTests passed 6/6. `git diff --check` passed; no full suite ran.
+
+Two independent audits after F997 reviewed exactly the 13 official Deferred entries and found none actionable, resolved, or superseded. F998 changed update-check paths and did not overlap those candidates. All 13 entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open.
+
+B376 discovery by one Explorer and two independent Investigators selected live Class Transfer preview as the strongest bounded slice. `SidebarController::importClasses()` still calls `ClassService::previewImport()`, which returns a Qt-bearing `ClassImportPreview` consumed by `ClassImportDialog`; apply already uses `ClassTransferApplyUseCase`. The matching policy `matchClassTransferCandidates()` is Qt-free and tested. A preview-only Application query/read port and Platform/repository adapter can reuse it; keep JSON decoding/codec and apply/write unchanged. Existing seams are `tests/next_application_class_transfer_tests.cpp`, `tests/class_transfer_tests.cpp`, and `tests/mainwindow_close_file_parity_tests.cpp`. Report-job integration remains unselected pending worker-safety/thread-ownership extraction and is not an official Deferred entry.
+
+F999 is accepted, not implemented. Acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope | Add a Qt-free Next Application Class Transfer preview query/request/result and read port, a Platform/repository adapter, and route the live sidebar preview/controller/dialog through it. Keep JSON decoding/codec and existing apply/write use case/path unchanged. |
+| Matching parity | Reuse `matchClassTransferCandidates`; preserve current `QString::simplified().toCaseFolded()` normalization at the adapter boundary, source and destination ordering, teacher English/Korean rules, grade/level matching, unassigned-teacher fallback, incomplete-source handling, and conditional teacher-profile reads. |
+| Typed result and ownership | Return bounded value data using typed `Domain::TeacherId`/`ClassId` plus source teacher keys/package class indices, with no Qt types in Application. Dialog translates only at the widget boundary and builds the same validated apply choices. |
+| Errors and apply safety | Destination read/lookup failures become structured Application errors and retain the existing warning-before-dialog behavior; preview error never opens the review dialog or invokes apply. Existing apply use case still recomputes/revalidates choices against current matches and performs all writes; stale/invalid choices remain rejected with no unintended writes. |
+| Regression coverage | App-less fake-port tests cover query assembly/order/typed result/failure. Adapter tests preserve normalization, conditional reads, empty-destination skip, and read failures. Extend live sidebar/dialog parity with a matched teacher/class preview then accepted apply, and retain no-match Create behavior. No new work in JSON codec or apply path. |
+| Focused verification | Build affected targets and run only exact focused CTests; do not run full suite. |
