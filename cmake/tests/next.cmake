@@ -32,6 +32,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
 )
 
+# Academic year schedule validation remains independent of Qt and the feature layer.
+add_executable(
+    ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+    tests/next_application_academic_year_schedule_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+    COMMAND ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+)
+
 # Schedule slot policy remains independent of Qt and the feature layer.
 add_executable(
     ClassMngrNextApplicationScheduleSlotPolicyTests

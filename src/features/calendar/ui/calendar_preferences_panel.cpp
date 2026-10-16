@@ -6,6 +6,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "features/calendar/calendar_event_import_service.h"
+#include "next/application/academic_year_schedule_policy.h"
 #include "next/application/calendar_event_delete_all_use_case.h"
 #include "next/platform/application_services_calendar_event_delete_all_port.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
@@ -31,7 +32,6 @@ namespace
 constexpr int DateFieldWidth = 138;
 constexpr int WeekFieldWidth = 86;
 constexpr int SchoolColumnSpacing = 32;
-constexpr int MaximumTermWeeks = 53;
 const QDate EmptyDate(1900, 1, 1);
 
 SchoolLevel schoolLevel(int index)
@@ -106,7 +106,12 @@ void CalendarPreferencesPanel::saveTermSchedules()
                     .termStart(AcademicTerm::Fall)
                     .daysTo(m_schedules[school].winterStart);
 
-            if (days < 7 || days % 7 != 0 || days / 7 > MaximumTermWeeks)
+            if (
+                days < 7
+                || days % 7 != 0
+                || days / 7
+                    > ClassMngr::Next::Application::MaximumTermWeeks
+                )
             {
                 DialogServices::showWarning(
                     this,
@@ -468,7 +473,10 @@ QWidget* CalendarPreferencesPanel::buildTermSchedulesSection()
             m_dateEdits[school][term] = dateEdit;
 
             auto* weekEdit = new QSpinBox(section);
-            weekEdit->setRange(0, MaximumTermWeeks);
+            weekEdit->setRange(
+                0,
+                ClassMngr::Next::Application::MaximumTermWeeks
+                );
             weekEdit->setSpecialValueText(QString());
             weekEdit->setFixedWidth(WeekFieldWidth);
             weekEdit->setAlignment(Qt::AlignCenter);
@@ -816,7 +824,11 @@ void CalendarPreferencesPanel::commitDate(int schoolIndex, int termIndex)
         const int days = previousStart.daysTo(edited);
         const int weeks = days / 7;
 
-        if (days <= 0 || days % 7 != 0 || weeks > MaximumTermWeeks)
+        if (
+            days <= 0
+            || days % 7 != 0
+            || weeks > ClassMngr::Next::Application::MaximumTermWeeks
+            )
         {
             DialogServices::showWarning(
                 this,

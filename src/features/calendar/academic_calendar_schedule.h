@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/application/academic_year_schedule_policy.h"
+
 #include <QDate>
 #include <QJsonObject>
 #include <QMap>
@@ -20,7 +22,9 @@ enum class AcademicTerm
     Fall
 };
 
-inline constexpr int AcademicTermCount = 4;
+inline constexpr int AcademicTermCount = static_cast<int>(
+    ClassMngr::Next::Application::AcademicYearScheduleTermCount
+    );
 
 struct AcademicYearSchedule
 {
@@ -45,7 +49,8 @@ struct AcademicTermPosition
 class AcademicCalendarSchedule
 {
 public:
-    static constexpr int FirstTermYear = 2026;
+    static constexpr int FirstTermYear =
+        ClassMngr::Next::Application::FirstTermYear;
 
     [[nodiscard]] static QDate initialWinterStart();
     [[nodiscard]] static std::array<int, AcademicTermCount> defaultWeeks(

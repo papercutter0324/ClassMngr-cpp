@@ -130,6 +130,7 @@ class AcademicCalendarTests : public QObject
 
 private slots:
     void defaultBoundariesMatchSchoolSchedules();
+    void scheduleValidityUsesApplicationPolicy();
     void termLookupResetsWeeksAtBoundaries();
     void providerFormatsCompactAndDualTitles();
     void providerBuildsLocaleAlignedWeekRows();
@@ -163,6 +164,39 @@ void AcademicCalendarTests::defaultBoundariesMatchSchoolSchedules()
     QCOMPARE(middle.termStart(AcademicTerm::Summer), QDate(2026, 7, 27));
     QCOMPARE(middle.termStart(AcademicTerm::Fall), QDate(2026, 8, 24));
     QCOMPARE(middle.endDate(), QDate(2026, 12, 28));
+}
+
+void AcademicCalendarTests::scheduleValidityUsesApplicationPolicy()
+{
+    QCOMPARE(
+        AcademicCalendarSchedule::FirstTermYear,
+        ClassMngr::Next::Application::FirstTermYear
+        );
+
+    AcademicYearSchedule schedule{
+        2026,
+        QDate(2025, 12, 29),
+        {1, 53, 1, 53}
+    };
+    QVERIFY(schedule.isValid());
+
+    schedule.termYear = 2025;
+    QVERIFY(!schedule.isValid());
+
+    schedule.termYear = 2026;
+    schedule.winterStart = {};
+    QVERIFY(!schedule.isValid());
+
+    schedule.winterStart = QDate(2025, 12, 30);
+    QVERIFY(!schedule.isValid());
+
+    schedule.winterStart = QDate(2025, 12, 29);
+    schedule.weeks[0] = 0;
+    QVERIFY(!schedule.isValid());
+
+    schedule.weeks[0] = 1;
+    schedule.weeks[1] = 54;
+    QVERIFY(!schedule.isValid());
 }
 
 void AcademicCalendarTests::termLookupResetsWeeksAtBoundaries()
@@ -599,6 +633,18 @@ void AcademicCalendarTests::jsonRoundTripAndMalformedFallback()
     elementary.weeks[2] = 12;
     source.setYearSchedules(2026, elementary, middle);
 
+    const QJsonArray serializedWeeks =
+        source.toJson()
+            .value(QStringLiteral("profiles"))
+            .toObject()
+            .value(QStringLiteral("elementary"))
+            .toObject()
+            .value(QStringLiteral("2026"))
+            .toObject()
+            .value(QStringLiteral("weeks"))
+            .toArray();
+    QCOMPARE(serializedWeeks.size(), AcademicTermCount);
+
     AcademicCalendarSchedule restored;
     QVERIFY(restored.fromJson(source.toJson()));
     QCOMPARE(
@@ -606,25 +652,40 @@ void AcademicCalendarTests::jsonRoundTripAndMalformedFallback()
         12
         );
 
-    QJsonObject malformed = source.toJson();
-    QJsonObject profiles = malformed.value(QStringLiteral("profiles")).toObject();
-    QJsonObject elementaryProfile =
-        profiles.value(QStringLiteral("elementary")).toObject();
-    QJsonObject year =
-        elementaryProfile.value(QStringLiteral("2026")).toObject();
-    year.insert(
-        QStringLiteral("weeks"),
-        QJsonArray{11, 0, 11, 11}
-        );
-    elementaryProfile.insert(QStringLiteral("2026"), year);
-    profiles.insert(QStringLiteral("elementary"), elementaryProfile);
-    malformed.insert(QStringLiteral("profiles"), profiles);
+    const auto withElementaryWeeks = [&source](const QJsonArray& weeks)
+    {
+        QJsonObject root = source.toJson();
+        QJsonObject profiles =
+            root.value(QStringLiteral("profiles")).toObject();
+        QJsonObject elementaryProfile =
+            profiles.value(QStringLiteral("elementary")).toObject();
+        QJsonObject year =
+            elementaryProfile.value(QStringLiteral("2026")).toObject();
+        year.insert(QStringLiteral("weeks"), weeks);
+        elementaryProfile.insert(QStringLiteral("2026"), year);
+        profiles.insert(QStringLiteral("elementary"), elementaryProfile);
+        root.insert(QStringLiteral("profiles"), profiles);
+        return root;
+    };
 
-    QVERIFY(!restored.fromJson(malformed));
+    QVERIFY(!restored.fromJson(withElementaryWeeks(
+        QJsonArray{11, 0, 11, 11}
+        )));
+    QVERIFY(!restored.hasSavedSchedules());
     QCOMPARE(
         restored.yearSchedule(SchoolLevel::Elementary, 2026).weeks[1],
         19
         );
+
+    QVERIFY(!restored.fromJson(withElementaryWeeks(
+        QJsonArray{11, 19, 11}
+        )));
+    QVERIFY(!restored.hasSavedSchedules());
+
+    QVERIFY(!restored.fromJson(withElementaryWeeks(
+        QJsonArray{11, 19, 11, 11, 1}
+        )));
+    QVERIFY(!restored.hasSavedSchedules());
 }
 
 QTEST_APPLESS_MAIN(AcademicCalendarTests)

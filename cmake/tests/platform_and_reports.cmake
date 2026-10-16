@@ -16,6 +16,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrAcademicCalendarTests
         PRIVATE
+            ClassMngrNext::Application
             Qt6::Core
             Qt6::Gui
             Qt6::Sql
@@ -26,6 +27,30 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         NAME ClassMngrAcademicCalendarTests
         COMMAND ClassMngrAcademicCalendarTests
     )
+
+    add_test(
+        NAME AcademicCalendarScheduleValidityPolicy
+        COMMAND ClassMngrAcademicCalendarTests
+            scheduleValidityUsesApplicationPolicy
+    )
+    add_test(
+        NAME AcademicCalendarJsonRoundTripAndMalformedFallback
+        COMMAND ClassMngrAcademicCalendarTests
+            jsonRoundTripAndMalformedFallback
+    )
+    set_tests_properties(
+        AcademicCalendarScheduleValidityPolicy
+        AcademicCalendarJsonRoundTripAndMalformedFallback
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+    if(WIN32)
+        set_tests_properties(
+            AcademicCalendarScheduleValidityPolicy
+            AcademicCalendarJsonRoundTripAndMalformedFallback
+            PROPERTIES ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
 
     qt_add_executable(ClassMngrCampusMapTests
         tests/campus_map_tests.cpp
@@ -577,6 +602,8 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ClassMngrRosterTemplatePrintServiceTests
             ClassMngrLanguageServiceTests
             ClassMngrAcademicCalendarTests
+            AcademicCalendarScheduleValidityPolicy
+            AcademicCalendarJsonRoundTripAndMalformedFallback
             ClassMngrCampusMapTests
             ClassMngrSpeakingEvalReportWidgetTests
             ClassMngrSpeakingEvalBatchReportServiceTests

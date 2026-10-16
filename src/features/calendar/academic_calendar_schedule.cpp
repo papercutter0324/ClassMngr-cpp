@@ -1,14 +1,13 @@
 #include "academic_calendar_schedule.h"
 
+#include "next/application/academic_year_schedule_policy.h"
+
 #include <QJsonArray>
 #include <QJsonValue>
-
-#include <algorithm>
 
 namespace
 {
 constexpr int DaysPerWeek = 7;
-constexpr int MaximumTermWeeks = 53;
 
 int termIndex(AcademicTerm term)
 {
@@ -55,12 +54,7 @@ bool scheduleFromJson(
     const QJsonArray weeks =
         object.value(QStringLiteral("weeks")).toArray();
 
-    if (
-        termYear < AcademicCalendarSchedule::FirstTermYear
-        || !winterStart.isValid()
-        || winterStart.dayOfWeek() != Qt::Monday
-        || weeks.size() != AcademicTermCount
-        )
+    if (weeks.size() != AcademicTermCount)
     {
         return false;
     }
@@ -72,12 +66,16 @@ bool scheduleFromJson(
     for (int index = 0; index < AcademicTermCount; ++index)
     {
         const int count = weeks.at(index).toInt();
-        if (count < 1 || count > MaximumTermWeeks)
-        {
-            return false;
-        }
-
         parsed.weeks[index] = count;
+    }
+
+    if (!ClassMngr::Next::Application::isAcademicYearScheduleValid(
+            termYear,
+            winterStart.isValid() && winterStart.dayOfWeek() == Qt::Monday,
+            parsed.weeks
+            ))
+    {
+        return false;
     }
 
     *schedule = parsed;
@@ -145,21 +143,10 @@ QJsonObject profileToJson(
 
 bool AcademicYearSchedule::isValid() const
 {
-    if (
-        termYear < AcademicCalendarSchedule::FirstTermYear
-        || !winterStart.isValid()
-        || winterStart.dayOfWeek() != Qt::Monday
-        )
-    {
-        return false;
-    }
-
-    return std::ranges::all_of(
-        weeks,
-        [](int count)
-        {
-            return count >= 1 && count <= MaximumTermWeeks;
-        }
+    return ClassMngr::Next::Application::isAcademicYearScheduleValid(
+        termYear,
+        winterStart.isValid() && winterStart.dayOfWeek() == Qt::Monday,
+        weeks
         );
 }
 
@@ -373,7 +360,7 @@ void AcademicCalendarSchedule::setYearSchedules(
                 if (
                     days <= 0
                     || days % DaysPerWeek != 0
-                    || weeks > MaximumTermWeeks
+                    || weeks > ClassMngr::Next::Application::MaximumTermWeeks
                     )
                 {
                     return false;
