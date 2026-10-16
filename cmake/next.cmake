@@ -149,6 +149,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/student_korean_name_suffix_suggestion.h
     src/next/application/roster_read_query.h
     src/next/application/class_analytics_dashboard_read_port.h
+    src/next/application/class_analytics_numeric_policy.h
     src/next/application/class_analytics_dashboard_read_query.h
     src/next/application/roster_print_class_info_read_snapshot.h
     src/next/application/roster_print_class_info_read_port.h

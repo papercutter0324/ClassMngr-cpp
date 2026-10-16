@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_analytics_dashboard_read_port.h"
+#include "next/application/class_analytics_numeric_policy.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/speaking_evaluation_grade.h"
 
@@ -147,15 +148,12 @@ namespace ClassAnalyticsDashboardReadDetail
 
 [[nodiscard]] inline double roundTo3(const double value) noexcept
 {
-    return std::floor(value * 1000.0 + 0.5) / 1000.0;
+    return ClassAnalyticsNumericPolicy::roundTo3(value);
 }
 
 [[nodiscard]] inline int roundAverageToGrade(const double average) noexcept
 {
-    if (average <= 0.0) return 0;
-    if (average >= 5.0) return 5;
-    const int whole = static_cast<int>(std::floor(average));
-    return whole + (average - static_cast<double>(whole) >= 0.4 ? 1 : 0);
+    return ClassAnalyticsNumericPolicy::roundAverageToGrade(average);
 }
 
 [[nodiscard]] inline std::u16string numberToGrade(const int value)

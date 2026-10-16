@@ -1,6 +1,7 @@
 #include "features/classes/services/speaking_analytics.h"
 
 #include "core/utils/student_name_utils.h"
+#include "next/application/class_analytics_numeric_policy.h"
 #include "next/application/evaluation_default_selection.h"
 
 #include <QHash>
@@ -84,7 +85,8 @@ QStringList evaluationNames()
 
 double roundTo3(double value)
 {
-    return qRound(value * 1000.0) / 1000.0;
+    return ClassMngr::Next::Application::ClassAnalyticsNumericPolicy::roundTo3(
+        value);
 }
 
 QString formatAverage(double average)
@@ -126,13 +128,8 @@ QString numberToGrade(int number)
 
 int roundAverageToGrade(double average)
 {
-    if (average <= 0.0)
-        return 0;
-    if (average >= 5.0)
-        return 5;
-
-    const int whole = static_cast<int>(qFloor(average));
-    return whole + (average - whole >= 0.4 ? 1 : 0);
+    return ClassMngr::Next::Application::ClassAnalyticsNumericPolicy::
+        roundAverageToGrade(average);
 }
 
 QList<int> strongestIndices(const QList<double>& averages3)

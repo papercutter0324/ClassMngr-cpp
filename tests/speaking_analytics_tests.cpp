@@ -43,6 +43,7 @@ class SpeakingAnalyticsTests
 private slots:
     void gradeNumberRoundTrip();
     void roundingRule();
+    void roundedClassAverageAtGradeBoundaryAdvances();
     void strongestAndFocusTies();
     void computeFullMatrix();
     void computePartialCriterion();
@@ -76,22 +77,58 @@ void SpeakingAnalyticsTests::gradeNumberRoundTrip()
 
 void SpeakingAnalyticsTests::roundingRule()
 {
-    // Mirrors the repository's (int)avg + (frac >= 0.4) rule.
+    // Grade boundaries use the average rounded half-up to three decimals.
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(2.39), 2);
+    QCOMPARE(SpeakingAnalytics::roundAverageToGrade(2.399), 2);
+    QCOMPARE(SpeakingAnalytics::roundAverageToGrade(2.400), 3);
+    QCOMPARE(SpeakingAnalytics::numberToGrade(
+                 SpeakingAnalytics::roundAverageToGrade(2.400)),
+             QStringLiteral("B+"));
+    QCOMPARE(SpeakingAnalytics::roundAverageToGrade(2.3995), 3);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(2.6), 3);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(3.6), 4);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(3.39), 3);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(4.9), 5);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(1.1), 1);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(0.0), 0);
+    QCOMPARE(SpeakingAnalytics::roundAverageToGrade(-1.0), 0);
     QCOMPARE(SpeakingAnalytics::roundAverageToGrade(5.5), 5);
+    QCOMPARE(SpeakingAnalytics::roundAverageToGrade(6.0), 5);
 
+    QCOMPARE(SpeakingAnalytics::roundTo3(0.0), 0.0);
+    QCOMPARE(SpeakingAnalytics::roundTo3(5.0), 5.0);
+    QCOMPARE(SpeakingAnalytics::roundTo3(2.3995), 2.4);
+    QCOMPARE(SpeakingAnalytics::roundTo3(1.2345), 1.235);
     QCOMPARE(SpeakingAnalytics::roundTo3(2.0), 2.0);
     QCOMPARE(SpeakingAnalytics::roundTo3(3.833333), 3.833);
     QCOMPARE(SpeakingAnalytics::roundTo3(3.5), 3.5);
     QCOMPARE(SpeakingAnalytics::formatAverage(3.833), QStringLiteral("3.8"));
     QCOMPARE(SpeakingAnalytics::formatAverage(2.0), QStringLiteral("2.0"));
     QCOMPARE(SpeakingAnalytics::formatAverage(3.5), QStringLiteral("3.5"));
+}
+
+void SpeakingAnalyticsTests::roundedClassAverageAtGradeBoundaryAdvances()
+{
+    SpeakingEvalRows matrix;
+    const QStringList grades{
+        QStringLiteral("C"),
+        QStringLiteral("B"),
+        QStringLiteral("B"),
+        QStringLiteral("B+"),
+        QStringLiteral("A")
+    };
+    for (qsizetype index = 0; index < grades.size(); ++index)
+    {
+        const QString& grade = grades.at(index);
+        matrix.append(makeRow(
+            QStringLiteral("Student %1").arg(static_cast<int>(index)),
+            QString(), grade, grade, grade, grade, grade, grade));
+    }
+
+    const auto snapshot = SpeakingAnalytics::compute(
+        { matrix }, static_cast<int>(grades.size()));
+    QCOMPARE(snapshot.classAverage3, 2.4);
+    QCOMPARE(snapshot.classAverageLetter, QStringLiteral("B+"));
 }
 
 

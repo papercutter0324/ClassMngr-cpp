@@ -376,10 +376,48 @@ void maximumClassIdForwardsUnchangedToBothReads()
     assert(port.evaluationBatchReadCount == 1);
 }
 
+void numericPolicyBoundaries()
+{
+    using ClassAnalyticsDashboardReadDetail::roundAverageToGrade;
+    using ClassAnalyticsDashboardReadDetail::roundTo3;
+
+    assert(roundTo3(0.0) == 0.0);
+    assert(roundTo3(5.0) == 5.0);
+    assert(roundTo3(2.3995) == 2.4);
+    assert(roundTo3(1.2345) == 1.235);
+    assert(roundAverageToGrade(2.399) == 2);
+    assert(roundAverageToGrade(2.400) == 3);
+    assert(roundAverageToGrade(2.3995) == 3);
+    assert(roundAverageToGrade(-1.0) == 0);
+    assert(roundAverageToGrade(6.0) == 5);
+    assert(ClassAnalyticsDashboardReadDetail::numberToGrade(
+        roundAverageToGrade(2.400)) == u"B+");
+}
+
+void roundedClassAverageAtGradeBoundaryAdvances()
+{
+    FakeReadPort port;
+    port.evaluations[0] = {
+        row(u"C", u"", u"C"),
+        row(u"B one", u"", u"B"),
+        row(u"B two", u"", u"B"),
+        row(u"B plus", u"", u"B+"),
+        row(u"A", u"", u"A")
+    };
+    const TestNameSemantics names;
+
+    const auto result = run(port, names, u"Winter");
+    assert(result);
+    assert(result.value().selectedSnapshot.classAverage3 == 2.4);
+    assert(result.value().selectedSnapshot.classAverageLetter == u"B+");
+}
+
 } // namespace
 
 int main()
 {
+    numericPolicyBoundaries();
+    roundedClassAverageAtGradeBoundaryAdvances();
     canonicalOrderLatestClassShapeAndYtd();
     currentRosterUsesNormalizedEnglishAndKoreanIdentities();
     duplicateRowsConsolidateAndRankingTiesUseNamePort();
