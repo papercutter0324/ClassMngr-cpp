@@ -1,8 +1,9 @@
 #include "speaking_eval_ai_batch_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include "features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h"
 #include "domain/models/speaking_evaluation.h"
-#include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
+#include "next/application/speaking_evaluation_ai_comment_prompt.h"
 #include "next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h"
 #include "next/application/speaking_evaluation_ai_batch_comment_quality.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
@@ -10,6 +11,7 @@
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
+#include "next/platform/speaking_evaluation_qt_text_match_port.h"
 #include "ui/shared/state/ai_comment_options.h"
 #include "ui/shared/qt_text_adapter.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -155,17 +157,15 @@ QString unavailableReason(
                     || !report.report.koreanName.trimmed().isEmpty(),
                 .grade = report.report.grade,
                 .hasDidWellItem =
-                    !speakingEvalAiObservationItems(
-                        Ui::QtTextAdapter::fromUtf16String(
+                    !ClassMngr::Next::Application::
+                        speakingEvaluationAiObservationItems(
                             notes.didWell
-                            )
-                        ).isEmpty(),
+                            ).empty(),
                 .hasNeedsImprovementItem =
-                    !speakingEvalAiObservationItems(
-                        Ui::QtTextAdapter::fromUtf16String(
+                    !ClassMngr::Next::Application::
+                        speakingEvaluationAiObservationItems(
                             notes.needsImprovement
-                            )
-                        ).isEmpty()
+                            ).empty()
             });
 
     using ClassMngr::Next::Application::
@@ -661,16 +661,19 @@ void SpeakingEvalAiBatchDialog::updateCreatePromptButton()
 
 void SpeakingEvalAiBatchDialog::createPrompt()
 {
-    SpeakingEvalAiBatchPromptInput input;
-    input.voice = preferredVoice();
+    ClassMngr::Next::Application::
+        SpeakingEvaluationAiBatchCommentPromptRequest input;
+    input.voice = preferredVoice() == AiCommentVoice::ThirdPerson
+        ? ClassMngr::Next::Application::AiCommentVoice::ThirdPerson
+        : ClassMngr::Next::Application::AiCommentVoice::DirectToStudent;
 
     for (const auto& report : m_reports)
     {
-        input.additionalNamesToRedact.append(
-            report.report.englishName
+        input.additionalNamesToRedact.push_back(
+            Ui::QtTextAdapter::toUtf16String(report.report.englishName)
             );
-        input.additionalNamesToRedact.append(
-            report.report.koreanName
+        input.additionalNamesToRedact.push_back(
+            Ui::QtTextAdapter::toUtf16String(report.report.koreanName)
             );
     }
 
@@ -708,25 +711,27 @@ void SpeakingEvalAiBatchDialog::createPrompt()
                         report.report.notes
                         )
                     );
-        input.students.append(
+        input.students.push_back(
             {
-                item->data(StudentIdRole).toString(),
-                report.report.grade,
-                report.report.englishName,
-                report.report.koreanName,
-                Ui::QtTextAdapter::fromUtf16String(
-                    notes.didWell
+                Ui::QtTextAdapter::toUtf16String(
+                    item->data(StudentIdRole).toString()
                     ),
-                Ui::QtTextAdapter::fromUtf16String(
-                    notes.needsImprovement
-                    )
+                report.report.grade,
+                Ui::QtTextAdapter::toUtf16String(report.report.englishName),
+                Ui::QtTextAdapter::toUtf16String(report.report.koreanName),
+                notes.didWell,
+                notes.needsImprovement
             }
             );
         m_selectedReportIndexes.append(reportIndex);
     }
 
-    const QString prompt =
-        buildSpeakingEvalAiBatchCommentPrompt(input);
+    const ClassMngr::Next::Platform::SpeakingEvaluationQtTextMatchPort
+        textMatcher;
+    const auto result =
+        ClassMngr::Next::Application::
+            buildSpeakingEvaluationAiBatchCommentPrompt(input, textMatcher);
+    const QString prompt = Ui::QtTextAdapter::fromUtf16String(result.prompt);
     m_promptEdit->setPlainText(prompt);
     const bool ready =
         !prompt.isEmpty();

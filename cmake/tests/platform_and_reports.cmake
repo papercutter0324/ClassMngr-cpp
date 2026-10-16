@@ -263,7 +263,8 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/core/settingsmanager.cpp
         src/core/updater/version.cpp
         src/core/zip_archive_writer.cpp
-        src/features/speaking_eval/services/speaking_eval_ai_prompt.cpp
+        src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.cpp
+        src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.cpp
         src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.h
@@ -356,6 +357,28 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     add_test(
         NAME ClassMngrSpeakingEvalBatchReportServiceTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+    )
+
+    add_test(
+        NAME SpeakingEvalAiBatchResponseParser
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            aiBatchResponseParserHandlesPartialAndMalformedBlocks
+    )
+    add_test(
+        NAME SpeakingEvalAiBatchPromptUiParity
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank
+    )
+    add_test(
+        NAME SpeakingEvalAiSinglePromptUiParity
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            aiPromptPreviewCopiesAnAnonymousPrompt
+    )
+    set_tests_properties(
+        SpeakingEvalAiBatchResponseParser
+        SpeakingEvalAiBatchPromptUiParity
+        SpeakingEvalAiSinglePromptUiParity
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     add_test(

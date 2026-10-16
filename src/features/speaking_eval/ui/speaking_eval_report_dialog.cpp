@@ -1,15 +1,17 @@
 #include "speaking_eval_report_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
+#include "next/application/speaking_evaluation_ai_comment_prompt.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/application/speaking_evaluation_report_content.h"
+#include "next/platform/speaking_evaluation_qt_text_match_port.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/state/ai_comment_options.h"
+#include "ui/shared/qt_text_adapter.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -746,19 +748,32 @@ QString SpeakingEvalReportDialog::currentAiPrompt() const
         return {};
     }
 
-    SpeakingEvalAiPromptInput input;
+    ClassMngr::Next::Application::SpeakingEvaluationAiCommentPromptRequest
+        input;
     input.grade = report->report.grade;
-    input.englishName =
-        report->report.englishName;
-    input.koreanName =
-        report->report.koreanName;
-    input.didWell =
-        m_notesFields->didWellNotes();
-    input.needsImprovement =
-        m_notesFields->needsImprovementNotes();
-    input.voice =
-        preferredAiCommentVoice();
-    return buildSpeakingEvalAiCommentPrompt(input);
+    input.englishName = Ui::QtTextAdapter::toUtf16String(
+        report->report.englishName
+        );
+    input.koreanName = Ui::QtTextAdapter::toUtf16String(
+        report->report.koreanName
+        );
+    input.didWell = Ui::QtTextAdapter::toUtf16String(
+        m_notesFields->didWellNotes()
+        );
+    input.needsImprovement = Ui::QtTextAdapter::toUtf16String(
+        m_notesFields->needsImprovementNotes()
+        );
+    input.voice = preferredAiCommentVoice() == AiCommentVoice::ThirdPerson
+        ? ClassMngr::Next::Application::AiCommentVoice::ThirdPerson
+        : ClassMngr::Next::Application::AiCommentVoice::DirectToStudent;
+    const ClassMngr::Next::Platform::SpeakingEvaluationQtTextMatchPort
+        textMatcher;
+    const auto result =
+        ClassMngr::Next::Application::buildSpeakingEvaluationAiCommentPrompt(
+            input,
+            textMatcher
+            );
+    return Ui::QtTextAdapter::fromUtf16String(result.prompt);
 }
 
 QString SpeakingEvalReportDialog::aiPromptUnavailableReason() const
@@ -781,14 +796,20 @@ QString SpeakingEvalReportDialog::aiPromptUnavailableReason() const
                 .grade = report->report.grade,
                 .hasDidWellItem =
                     m_notesFields
-                    && !speakingEvalAiObservationItems(
-                        m_notesFields->didWellNotes()
-                        ).isEmpty(),
+                    && !ClassMngr::Next::Application::
+                        speakingEvaluationAiObservationItems(
+                            Ui::QtTextAdapter::toUtf16String(
+                                m_notesFields->didWellNotes()
+                                )
+                            ).empty(),
                 .hasNeedsImprovementItem =
                     m_notesFields
-                    && !speakingEvalAiObservationItems(
-                        m_notesFields->needsImprovementNotes()
-                        ).isEmpty()
+                    && !ClassMngr::Next::Application::
+                        speakingEvaluationAiObservationItems(
+                            Ui::QtTextAdapter::toUtf16String(
+                                m_notesFields->needsImprovementNotes()
+                                )
+                            ).empty()
             });
 
     switch (reason)

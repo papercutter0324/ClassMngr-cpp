@@ -164,10 +164,12 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/speaking_evaluation_roster_names_read_query.h
     src/next/application/speaking_evaluation_roster_score_row_assignments.h
     src/next/application/speaking_evaluation_ai_batch_eligibility.h
+    src/next/application/speaking_evaluation_ai_comment_prompt.h
     src/next/application/speaking_evaluation_report_content.h
     src/next/application/speaking_evaluation_ai_batch_comment_quality.h
     src/next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h
     src/next/application/speaking_evaluation_private_notes_split.h
+    src/next/application/speaking_evaluation_text_match_port.h
     src/next/application/speaking_evaluation_roster_score_import_use_case.h
     src/next/application/speaking_evaluation_roster_score_import_batch_use_case.h
     src/next/application/speaking_evaluation_save_use_case.h
@@ -437,6 +439,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_speaking_evaluation_roster_names_read_port.h
     src/next/platform/application_services_speaking_evaluation_batch_read_port.h
     src/next/platform/application_services_speaking_evaluation_save_port.h
+    src/next/platform/speaking_evaluation_qt_text_match_port.h
     src/next/platform/application_services_class_details_page_read_port.h
     src/next/platform/application_services_my_classes_class_information_batch_read_port.h
     src/next/platform/application_services_my_classes_class_summary_batch_read_port.h
