@@ -44025,3 +44025,22 @@ are unchanged.
 No other slices were found.
 
 Resume with fresh Heavy-route discovery.
+
+### Batch403 discovery shortfall - 2026-10-17
+
+Two independent Heavy-route scans found no actionable production candidate.
+The first inspected remaining Next save, create, delete, and transfer paths;
+reviewed persistence was transactional or single-statement and had failure
+coverage. The second found CalendarEventProjectionQuery as the only direct
+feature database open; it implements the typed CalendarEventQueryPort, has
+focused coverage, and showed no parity issue.
+
+No source or test files changed and no tests ran. F1028 remains the latest
+source commit (`40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`); the post-F1028
+audits still find all 13 official Deferred entries unchanged. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit
+gate remains Open.
+
+No other slices were found.
+
+Batch404 Heavy-route discovery is underway.

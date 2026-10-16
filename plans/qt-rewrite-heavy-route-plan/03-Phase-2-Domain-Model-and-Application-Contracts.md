@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1028 is complete at source commit `40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`; Batch402's two static scans found no candidate, so resume Heavy-route discovery; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1028 is complete at source commit `40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`; Batch403 found no candidate and Batch404 Heavy-route discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
