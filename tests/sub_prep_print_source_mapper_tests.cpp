@@ -91,6 +91,7 @@ private slots:
     void mapsBoundedSourceIntoExistingPrintModel();
     void preservesTeacherDisplayNameFallbackOrder();
     void mapsSelectedModeIntoTheRendererModel();
+    void mapsSelectedDaysAndModeIntoOrderedDetails();
     void rejectsIdentifiersTheLegacyRendererCannotRepresent();
 };
 
@@ -215,6 +216,77 @@ void SubPrepPrintSourceMapperTests::mapsSelectedModeIntoTheRendererModel()
         QStringLiteral("Mon 4pm")
         );
     QVERIFY(mapped.value().first().classes.first().info.classTimes.isEmpty());
+}
+
+void SubPrepPrintSourceMapperTests::mapsSelectedDaysAndModeIntoOrderedDetails()
+{
+    Application::SubPrepPrintSourceRequest request = requestFor(
+        "17",
+        Application::ScheduleViewMode::Intensive
+        );
+    request.selectedClassIds.push_back(*Domain::ClassId::fromString("18"));
+    request.selectedDays = {
+        Application::SubPrepWeekday::Monday,
+        Application::SubPrepWeekday::Wednesday
+    };
+
+    FakePrintSourceReadPort port;
+    port.input.teachers = {teacherFor()};
+
+    auto laterClass = classFor("17");
+    laterClass.level = "Odysseus";
+    laterClass.classNotes = "Later class details";
+    laterClass.classColor = "#111111";
+    laterClass.meetings = {
+        {
+            .weekday = Application::SubPrepWeekday::Wednesday,
+            .startTime = "4:00 PM",
+            .endTime = "4:50 PM"
+        }
+    };
+
+    auto firstClass = classFor("18");
+    firstClass.level = "Odysseus";
+    firstClass.classNotes = "First class details";
+    firstClass.classColor = "#123456";
+    firstClass.fontColor = "#ABCDEF";
+    firstClass.meetings = {
+        {
+            .weekday = Application::SubPrepWeekday::Monday,
+            .startTime = "not a time",
+            .endTime = "not a time"
+        },
+        {
+            .weekday = Application::SubPrepWeekday::Wednesday,
+            .startTime = "10:00 AM",
+            .endTime = "10:50 AM"
+        }
+    };
+    port.input.classes = {laterClass, firstClass};
+
+    const auto source = Application::SubPrepPrintSourceQuery(port).execute(request);
+    QVERIFY(source);
+    const auto mapped = SubPrepPrintSourceMapper::toClassInformation(
+        source.value(),
+        request
+        );
+    QVERIFY(mapped);
+    QCOMPARE(mapped.value().size(), 1);
+
+    const SubPrepClassInformation::TeacherGroup& group = mapped.value().first();
+    QCOMPARE(group.classes.size(), 2);
+    QCOMPARE(group.classes.at(0).classId, 18);
+    QCOMPARE(group.classes.at(0).classLabel, QStringLiteral("E4 Odysseus"));
+    QCOMPARE(group.classes.at(0).timeText, QStringLiteral("Wed 10am"));
+    QCOMPARE(group.classes.at(0).info.notes, QStringLiteral("First class details"));
+    QCOMPARE(group.classes.at(0).info.classColor, QStringLiteral("#123456"));
+    QCOMPARE(group.classes.at(0).info.fontColor, QStringLiteral("#ABCDEF"));
+    QCOMPARE(group.classes.at(1).classId, 17);
+    QCOMPARE(group.classes.at(1).timeText, QStringLiteral("Wed 4pm"));
+    QCOMPARE(group.classes.at(1).info.notes, QStringLiteral("Later class details"));
+    QCOMPARE(group.classListText, QStringLiteral("E4 Odysseus"));
+    QVERIFY(group.classes.at(0).info.classTimes.isEmpty());
+    QVERIFY(group.classes.at(0).info.intensiveTimes.size() == 2);
 }
 
 void SubPrepPrintSourceMapperTests::

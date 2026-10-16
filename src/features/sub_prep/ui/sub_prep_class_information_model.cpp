@@ -1,11 +1,13 @@
 #include "sub_prep_class_information_model.h"
 
-#include "core/utils/sidebar_node_naming.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
+#include "next/application/sub_prep_print_order_policy.h"
 
 #include <algorithm>
 #include <limits>
+#include <utility>
+#include <vector>
 
 #include <QHash>
 #include <QCoreApplication>
@@ -13,6 +15,8 @@
 
 namespace
 {
+namespace PrintOrder = ClassMngr::Next::Application;
+
 constexpr int UnknownOrder =
     std::numeric_limits<int>::max();
 
@@ -371,9 +375,12 @@ SubPrepClassInformation::build(
     const BuildOptions& options
     )
 {
-    QHash<int, QList<ClassDetails>> classesByTeacher;
     QHash<int, Teacher> teachersById;
     QSet<int> processedClassIds;
+    QList<ClassDetails> classes;
+    std::vector<PrintOrder::SubPrepPrintClassOrderFact> classOrderFacts;
+    classes.reserve(sourceClasses.size());
+    classOrderFacts.reserve(static_cast<std::size_t>(sourceClasses.size()));
 
     for (const SourceClass& source : sourceClasses)
     {
@@ -415,83 +422,91 @@ SubPrepClassInformation::build(
                 options.visibleDays
                 );
 
-        classesByTeacher[teacherId].append(details);
+        const auto meetingOrder =
+            firstMeetingOrder(
+                selectedTimes,
+                options.visibleDays
+                );
+
+        classes.append(std::move(details));
+        classOrderFacts.push_back(
+            {
+                teacherId,
+                gradeOrder(source.info.classGrade),
+                levelOrder(source.info),
+                meetingOrder.first,
+                meetingOrder.second,
+                classId
+            }
+            );
     }
 
     QList<Teacher> teachers =
         teachersById.values();
 
-    std::sort(
-        teachers.begin(),
-        teachers.end(),
-        SidebarNodeNaming::teacherDisplayLessThan
-        );
-
-    QList<TeacherGroup> groups;
+    std::vector<PrintOrder::SubPrepPrintTeacherOrderFact> teacherOrderFacts;
+    QList<QString> trimmedEnglishNames;
+    QList<QString> trimmedKoreanNames;
+    teacherOrderFacts.reserve(static_cast<std::size_t>(teachers.size()));
+    trimmedEnglishNames.reserve(teachers.size());
+    trimmedKoreanNames.reserve(teachers.size());
 
     for (const Teacher& teacher : teachers)
     {
-        QList<ClassDetails> classes =
-            classesByTeacher.value(teacher.id);
-
-        std::sort(
-            classes.begin(),
-            classes.end(),
-            [&options](const ClassDetails& left, const ClassDetails& right)
+        const QString englishName =
+            teacher.teacherEn.trimmed();
+        teacherOrderFacts.push_back(
             {
-                const int leftGrade =
-                    gradeOrder(left.info.classGrade);
-                const int rightGrade =
-                    gradeOrder(right.info.classGrade);
-
-                if (leftGrade != rightGrade)
-                {
-                    return leftGrade < rightGrade;
-                }
-
-                const int leftLevel =
-                    levelOrder(left.info);
-                const int rightLevel =
-                    levelOrder(right.info);
-
-                if (leftLevel != rightLevel)
-                {
-                    return leftLevel < rightLevel;
-                }
-
-                const QList<ClassTime>& leftTimes =
-                    options.useIntensive
-                        ? left.info.intensiveTimes
-                        : left.info.classTimes;
-                const QList<ClassTime>& rightTimes =
-                    options.useIntensive
-                        ? right.info.intensiveTimes
-                        : right.info.classTimes;
-
-                const auto leftMeeting =
-                    firstMeetingOrder(
-                        leftTimes,
-                        options.visibleDays
-                        );
-                const auto rightMeeting =
-                    firstMeetingOrder(
-                        rightTimes,
-                        options.visibleDays
-                        );
-
-                if (leftMeeting != rightMeeting)
-                {
-                    return leftMeeting < rightMeeting;
-                }
-
-                return left.classId < right.classId;
+                teacher.id,
+                !englishName.isEmpty()
             }
             );
+        trimmedEnglishNames.append(englishName);
+        trimmedKoreanNames.append(teacher.teacherKr.trimmed());
+    }
+
+    const std::vector<PrintOrder::SubPrepPrintGroupOrder> groupOrder =
+        PrintOrder::orderSubPrepPrintGroups(
+            teacherOrderFacts,
+            classOrderFacts,
+            [&trimmedEnglishNames, &trimmedKoreanNames](
+                const std::size_t leftIndex,
+                const std::size_t rightIndex,
+                const PrintOrder::SubPrepPrintTeacherNameField field
+            )
+            {
+                const QList<QString>& names =
+                    field == PrintOrder::SubPrepPrintTeacherNameField::English
+                        ? trimmedEnglishNames
+                        : trimmedKoreanNames;
+                return QString::localeAwareCompare(
+                    names.at(static_cast<qsizetype>(leftIndex)),
+                    names.at(static_cast<qsizetype>(rightIndex))
+                    );
+            }
+            );
+
+    QList<TeacherGroup> groups;
+
+    for (const PrintOrder::SubPrepPrintGroupOrder& orderedGroup : groupOrder)
+    {
+        const Teacher& teacher =
+            teachers.at(static_cast<qsizetype>(orderedGroup.teacherIndex));
+        QList<ClassDetails> orderedClasses;
+        orderedClasses.reserve(
+            static_cast<qsizetype>(orderedGroup.classIndexes.size())
+            );
+        for (const std::size_t classIndex : orderedGroup.classIndexes)
+        {
+            orderedClasses.append(
+                classes.at(static_cast<qsizetype>(classIndex))
+                );
+        }
 
         QStringList classLabels;
         QSet<QString> seenClassLabels;
 
-        for (const ClassDetails& details : classes)
+        for (const ClassDetails& details : orderedClasses)
         {
             if (seenClassLabels.contains(details.classLabel))
             {
@@ -507,7 +522,7 @@ SubPrepClassInformation::build(
         group.displayName = teacherName(teacher);
         group.classListText =
             classLabels.join(QStringLiteral(" / "));
-        group.classes = classes;
+        group.classes = std::move(orderedClasses);
 
         groups.append(group);
     }

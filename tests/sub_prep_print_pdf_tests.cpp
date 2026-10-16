@@ -531,6 +531,7 @@ class SubPrepPrintPdfTests : public QObject
 
 private slots:
     void documentModelBorrowsClassInformationForSynchronousRender();
+    void modelProducedGroupsControlPdfOrderAndFirstClassColor();
     void generatedPdfUsesA4PortraitWithNarrowMargins();
     void rendersEssayScheduleSlots();
     void rendersTestingScheduleSlots();
@@ -562,6 +563,193 @@ documentModelBorrowsClassInformationForSynchronousRender()
     QCOMPARE(
         document.classInformation.get().first().displayName,
         QStringLiteral("Susan")
+        );
+}
+
+void SubPrepPrintPdfTests::
+modelProducedGroupsControlPdfOrderAndFirstClassColor()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    Teacher alice;
+    alice.id = 10;
+    alice.teacherEn = QStringLiteral("Alice");
+    alice.preferredName = QStringLiteral("Alice");
+
+    Teacher bob;
+    bob.id = 20;
+    bob.teacherEn = QStringLiteral("Bob");
+    bob.preferredName = QStringLiteral("Bob");
+
+    const auto sourceClass = [](
+                                const int classId,
+                                const Teacher& teacher,
+                                const QString& grade,
+                                const QString& level,
+                                const QString& startTime,
+                                const QString& classColor,
+                                const QString& notes
+                            )
+    {
+        SubPrepClassInformation::SourceClass source;
+        source.classroom.id = classId;
+        source.info.classId = classId;
+        source.info.teacherId = teacher.id;
+        source.info.classGrade = grade;
+        source.info.classLevel = level;
+        source.info.classColor = classColor;
+        source.info.fontColor = QStringLiteral("#FFFFFF");
+        source.info.notes = notes;
+        source.info.classTimes.append(
+            {
+                .day = QStringLiteral("Monday"),
+                .startTime = startTime,
+                .endTime = QStringLiteral("5:50 PM")
+            }
+            );
+        source.teacher = teacher;
+        source.studentCount = classId;
+        return source;
+    };
+
+    const QString accent = QStringLiteral("#d05a7a");
+    const auto groups = SubPrepClassInformation::build(
+        {
+            sourceClass(
+                80,
+                bob,
+                QStringLiteral("E4"),
+                QStringLiteral("Theseus"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("#357ABD"),
+                QStringLiteral("Bob's class")
+                ),
+            sourceClass(
+                9,
+                alice,
+                QStringLiteral("E4"),
+                QStringLiteral("Hercules"),
+                QStringLiteral("4:00 PM"),
+                QStringLiteral("#111111"),
+                QStringLiteral("Later level")
+                ),
+            sourceClass(
+                5,
+                alice,
+                QStringLiteral("E5"),
+                QStringLiteral("Apollo"),
+                QStringLiteral("3:00 PM"),
+                QStringLiteral("#222222"),
+                QStringLiteral("Later grade")
+                ),
+            sourceClass(
+                3,
+                alice,
+                QStringLiteral("E4"),
+                QStringLiteral("Theseus"),
+                QStringLiteral("5:00:55"),
+                QStringLiteral("#999999"),
+                QStringLiteral("Second sorted Alice class")
+                ),
+            sourceClass(
+                2,
+                alice,
+                QStringLiteral("E4"),
+                QStringLiteral("Theseus"),
+                QStringLiteral("5:00:01"),
+                accent,
+                QStringLiteral("First sorted Alice class")
+                )
+        },
+        {
+            .visibleClassIds = {2, 3, 5, 9, 80},
+            .visibleDays = {QStringLiteral("Monday")}
+        }
+        );
+
+    QCOMPARE(groups.size(), 2);
+    QCOMPARE(groups.at(0).teacher.id, 10);
+    QCOMPARE(groups.at(0).classes.size(), 4);
+    QCOMPARE(groups.at(0).classes.at(0).classId, 2);
+    QCOMPARE(groups.at(0).classes.at(0).info.classColor, accent);
+    QCOMPARE(groups.at(0).classes.at(1).classId, 3);
+    QCOMPARE(groups.at(0).classes.at(2).classId, 9);
+    QCOMPARE(groups.at(0).classes.at(3).classId, 5);
+    QCOMPARE(groups.at(1).teacher.id, 20);
+
+    SubPrepPrintService::Request request = sampleRequest();
+    request.schedule.rows.clear();
+    request.classInformation = groups;
+    const QString path = temporaryDirectory.filePath(
+        QStringLiteral("Policy Ordered Sub Prep.pdf")
+        );
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+    const QString allText = documentText(document);
+    const int aliceIndex = allText.indexOf(QStringLiteral("Alice"));
+    const int bobIndex = allText.indexOf(QStringLiteral("Bob"));
+    const int theseusIndex = allText.indexOf(QStringLiteral("E4 Theseus"));
+    const int herculesIndex = allText.indexOf(QStringLiteral("E4 Hercules"));
+    const int apolloIndex = allText.indexOf(QStringLiteral("E5 Apollo"));
+    const int firstClassNoteIndex = allText.indexOf(
+        QStringLiteral("First sorted Alice class")
+        );
+    const int secondClassNoteIndex = allText.indexOf(
+        QStringLiteral("Second sorted Alice class")
+        );
+    QVERIFY(aliceIndex >= 0);
+    QVERIFY(bobIndex > aliceIndex);
+    QVERIFY(theseusIndex >= 0);
+    QVERIFY(herculesIndex > theseusIndex);
+    QVERIFY(apolloIndex > herculesIndex);
+    QVERIFY(firstClassNoteIndex >= 0);
+    QVERIFY(secondClassNoteIndex > firstClassNoteIndex);
+
+    int alicePage = -1;
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        if (pageText(document, pageIndex).contains(QStringLiteral("Alice")))
+        {
+            alicePage = pageIndex;
+            break;
+        }
+    }
+    QVERIFY(alicePage >= 0);
+
+    const QImage image = renderPage(document, alicePage);
+    QVERIFY(!image.isNull());
+    const int marginPixels = qRound(MarginInches * RenderDpi);
+    constexpr int BorderSearchWidth = 24;
+    const QRect leftBorderArea(
+        marginPixels - 4,
+        marginPixels,
+        BorderSearchWidth,
+        image.height() - (2 * marginPixels)
+        );
+    const QRect rightBorderArea(
+        image.width() - marginPixels - BorderSearchWidth + 4,
+        marginPixels,
+        BorderSearchWidth,
+        image.height() - (2 * marginPixels)
+        );
+    const int accentRun = std::max(
+        longestVerticalColorRun(image, leftBorderArea, QColor(accent)),
+        longestVerticalColorRun(image, rightBorderArea, QColor(accent))
+        );
+    QVERIFY2(
+        accentRun >= qRound(RenderDpi * 0.5),
+        qPrintable(
+            QStringLiteral(
+                "The first policy-ordered class should color its teacher section; "
+                "the longest detected edge was %1 px."
+                )
+                .arg(accentRun)
+            )
         );
 }
 

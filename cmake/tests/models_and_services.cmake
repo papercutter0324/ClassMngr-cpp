@@ -136,11 +136,15 @@ qt_add_executable(ClassMngrBasePageTests
     qt_add_executable(ClassMngrSubPrepPrintPdfTests
         tests/sub_prep_print_pdf_tests.cpp
         src/core/fontmanager.cpp
+        src/domain/models/classroom.cpp
+        src/domain/rules/schedule_value_parser.cpp
+        src/features/classes/config/class_info_config.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
         src/features/sub_prep/services/sub_prep_document_model.cpp
         src/features/sub_prep/services/sub_prep_pdf_renderer.cpp
         src/features/sub_prep/services/sub_prep_print_service.cpp
+        src/features/sub_prep/ui/sub_prep_class_information_model.cpp
     )
 
     target_compile_features(ClassMngrSubPrepPrintPdfTests
