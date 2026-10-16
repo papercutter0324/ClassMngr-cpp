@@ -9,9 +9,15 @@
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+using ClassMngr::Next::Domain::GregorianDate;
 
 namespace
 {
+
+GregorianDate gregorianDate(const int year, const int month, const int day)
+{
+    return GregorianDate::fromComponents(year, month, day).value();
+}
 
 int compareUtf16(
     const std::u16string_view left,
@@ -85,19 +91,19 @@ bucketsTodayThisWeekAndNextWeekThroughSunday()
             );
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
-    QVERIFY((schedule.today.front().date == UpcomingBirthdayDate{2026, 8, 18}));
+    QVERIFY((schedule.today.front().date == gregorianDate(2026, 8, 18)));
     QCOMPARE(schedule.today.front().displayName, std::u16string(u"Today"));
 
     QCOMPARE(schedule.thisWeek.size(), std::size_t{1});
-    QVERIFY((schedule.thisWeek.front().date == UpcomingBirthdayDate{2026, 8, 23}));
+    QVERIFY((schedule.thisWeek.front().date == gregorianDate(2026, 8, 23)));
     QCOMPARE(
         schedule.thisWeek.front().displayName,
         std::u16string(u"This week Sunday")
         );
 
     QCOMPARE(schedule.nextWeek.size(), std::size_t{2});
-    QVERIFY((schedule.nextWeek[0].date == UpcomingBirthdayDate{2026, 8, 24}));
-    QVERIFY((schedule.nextWeek[1].date == UpcomingBirthdayDate{2026, 8, 30}));
+    QVERIFY((schedule.nextWeek[0].date == gregorianDate(2026, 8, 24)));
+    QVERIFY((schedule.nextWeek[1].date == gregorianDate(2026, 8, 30)));
     QVERIFY(schedule.nextWeek[1].group == UpcomingBirthdayStaffGroup::KoreanTeacher);
 }
 
@@ -116,10 +122,10 @@ selectsOccurrencesAcrossCalendarYearRollover()
             );
 
     QCOMPARE(schedule.thisWeek.size(), std::size_t{1});
-    QVERIFY((schedule.thisWeek.front().date == UpcomingBirthdayDate{2027, 1, 3}));
+    QVERIFY((schedule.thisWeek.front().date == gregorianDate(2027, 1, 3)));
     QCOMPARE(schedule.nextWeek.size(), std::size_t{2});
-    QVERIFY((schedule.nextWeek[0].date == UpcomingBirthdayDate{2027, 1, 4}));
-    QVERIFY((schedule.nextWeek[1].date == UpcomingBirthdayDate{2027, 1, 10}));
+    QVERIFY((schedule.nextWeek[0].date == gregorianDate(2027, 1, 4)));
+    QVERIFY((schedule.nextWeek[1].date == gregorianDate(2027, 1, 10)));
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
@@ -132,7 +138,7 @@ mapsLeapDayToFebruaryTwentyEighthInNonLeapYear()
             );
 
     QCOMPARE(schedule.thisWeek.size(), std::size_t{1});
-    QVERIFY((schedule.thisWeek.front().date == UpcomingBirthdayDate{2027, 2, 28}));
+    QVERIFY((schedule.thisWeek.front().date == gregorianDate(2027, 2, 28)));
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
@@ -271,9 +277,9 @@ sortsEveryBucketByDateNameGroupAndPosition()
     QCOMPARE(schedule.thisWeek[2].position, std::u16string(u"Z"));
     QVERIFY(schedule.thisWeek[3].group == UpcomingBirthdayStaffGroup::GsTeam);
     QCOMPARE(schedule.thisWeek[4].displayName, std::u16string(u"Zulu"));
-    QVERIFY((schedule.thisWeek[4].date == UpcomingBirthdayDate{2026, 8, 19}));
+    QVERIFY((schedule.thisWeek[4].date == gregorianDate(2026, 8, 19)));
     QCOMPARE(schedule.thisWeek[5].displayName, std::u16string(u"A later date"));
-    QVERIFY((schedule.thisWeek[5].date == UpcomingBirthdayDate{2026, 8, 20}));
+    QVERIFY((schedule.thisWeek[5].date == gregorianDate(2026, 8, 20)));
 
     QCOMPARE(schedule.nextWeek.size(), std::size_t{2});
     QCOMPARE(schedule.nextWeek[0].displayName, std::u16string(u"A next week"));
@@ -295,11 +301,11 @@ capsRangesAtMaximumDate()
             );
 
     QCOMPARE(partialNextWeek.today.size(), std::size_t{1});
-    QVERIFY((partialNextWeek.today.front().date == UpcomingBirthdayDate{9999, 12, 20}));
+    QVERIFY((partialNextWeek.today.front().date == gregorianDate(9999, 12, 20)));
     QCOMPARE(partialNextWeek.thisWeek.size(), std::size_t{1});
-    QVERIFY((partialNextWeek.thisWeek.front().date == UpcomingBirthdayDate{9999, 12, 26}));
+    QVERIFY((partialNextWeek.thisWeek.front().date == gregorianDate(9999, 12, 26)));
     QCOMPARE(partialNextWeek.nextWeek.size(), std::size_t{1});
-    QVERIFY((partialNextWeek.nextWeek.front().date == UpcomingBirthdayDate{9999, 12, 31}));
+    QVERIFY((partialNextWeek.nextWeek.front().date == gregorianDate(9999, 12, 31)));
 
     const UpcomingBirthdaySchedule partialCurrentWeek =
         buildSchedule(
@@ -313,20 +319,27 @@ capsRangesAtMaximumDate()
 
     QCOMPARE(partialCurrentWeek.today.size(), std::size_t{1});
     QCOMPARE(partialCurrentWeek.thisWeek.size(), std::size_t{1});
-    QVERIFY((partialCurrentWeek.thisWeek.front().date == UpcomingBirthdayDate{9999, 12, 31}));
+    QVERIFY((partialCurrentWeek.thisWeek.front().date == gregorianDate(9999, 12, 31)));
     QVERIFY(partialCurrentWeek.nextWeek.empty());
+
+    const UpcomingBirthdaySchedule maxYearLeapDay = buildSchedule(
+        {birthday("02-29", u"Leap Day")},
+        {9999, 2, 22}
+        );
+    QCOMPARE(maxYearLeapDay.thisWeek.size(), std::size_t{1});
+    QVERIFY((maxYearLeapDay.thisWeek.front().date == gregorianDate(9999, 2, 28)));
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 invalidReferenceDateReturnsEmptySchedule()
 {
-    const UpcomingBirthdaySchedule schedule =
-        buildSchedule(
-            {birthday("08-18", u"Valid birthday")},
-            {2026, 2, 29}
-            );
+    const std::vector<UpcomingBirthdayCandidate> candidates{
+        birthday("08-18", u"Valid birthday")
+    };
 
-    QVERIFY(schedule.isEmpty());
+    QVERIFY(buildSchedule(candidates, {0, 8, 18}).isEmpty());
+    QVERIFY(buildSchedule(candidates, {10000, 8, 18}).isEmpty());
+    QVERIFY(buildSchedule(candidates, {2026, 2, 29}).isEmpty());
 }
 
 QTEST_APPLESS_MAIN(NextApplicationUpcomingBirthdayScheduleUseCaseTests)

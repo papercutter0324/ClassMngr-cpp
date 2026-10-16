@@ -68,9 +68,9 @@ UpcomingBirthday convertOccurrence(
 {
     return {
         QDate(
-            occurrence.date.year,
-            occurrence.date.month,
-            occurrence.date.day
+            occurrence.date.year(),
+            occurrence.date.month(),
+            occurrence.date.day()
             ),
         QString::fromUtf16(
             occurrence.displayName.data(),

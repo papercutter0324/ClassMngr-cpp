@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <optional>
@@ -44,7 +45,7 @@ struct UpcomingBirthdayCandidate final
 
 struct UpcomingBirthdayOccurrence final
 {
-    UpcomingBirthdayDate date;
+    Domain::GregorianDate date;
     std::u16string displayName;
     std::u16string position;
     UpcomingBirthdayStaffGroup group = UpcomingBirthdayStaffGroup::KoreanTeacher;
@@ -133,8 +134,16 @@ public:
                 continue;
             }
 
+            const std::optional<Domain::GregorianDate> occurrenceDate =
+                fromSysDays(*occurrence);
+            if (!occurrenceDate)
+            {
+                assert(occurrenceDate.has_value());
+                return {};
+            }
+
             UpcomingBirthdayOccurrence entry{
-                .date = fromSysDays(*occurrence),
+                .date = *occurrenceDate,
                 .displayName = candidate.displayName,
                 .position = candidate.position,
                 .group = candidate.group
@@ -182,17 +191,17 @@ private:
                 const UpcomingBirthdayOccurrence& right
                 )
             {
-                if (left.date.year != right.date.year)
+                if (left.date.year() != right.date.year())
                 {
-                    return left.date.year < right.date.year;
+                    return left.date.year() < right.date.year();
                 }
-                if (left.date.month != right.date.month)
+                if (left.date.month() != right.date.month())
                 {
-                    return left.date.month < right.date.month;
+                    return left.date.month() < right.date.month();
                 }
-                if (left.date.day != right.date.day)
+                if (left.date.day() != right.date.day())
                 {
-                    return left.date.day < right.date.day;
+                    return left.date.day() < right.date.day();
                 }
 
                 const int nameComparison = compareText(
@@ -259,16 +268,16 @@ private:
         return sys_days{value};
     }
 
-    [[nodiscard]] static UpcomingBirthdayDate fromSysDays(
+    [[nodiscard]] static std::optional<Domain::GregorianDate> fromSysDays(
         const SysDays& value
         )
     {
         const std::chrono::year_month_day date{value};
-        return {
+        return Domain::GregorianDate::fromComponents(
             static_cast<int>(date.year()),
             static_cast<int>(static_cast<unsigned>(date.month())),
             static_cast<int>(static_cast<unsigned>(date.day()))
-        };
+            );
     }
 
     [[nodiscard]] static std::optional<Domain::BirthdayMonthDay> parseBirthday(
