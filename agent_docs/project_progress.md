@@ -6030,3 +6030,20 @@ unchanged. Batch401 found no eligible slice in direct legacy facade/repository
 UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
+
+## Current continuation - 2026-10-17 (F1029 complete; Batch406 discovering)
+
+Batch402–404 found no eligible source slice. Batch405 found an inconsistent
+`FeatureService` contract: some operations fall back to a separate legacy
+`DataService` even when a bound session makes `isAvailable()` false. Two
+independent reviews confirmed the public API path and supported accepting one
+session-authority policy without claiming a current UI misrouting bug.
+
+F1029 completed at source commit `c49c0739`. A non-null bound session is
+authoritative across descendant operations; unavailable repositories fail
+without legacy fallback, while DataService-only construction remains intact.
+The focused lifecycle CTest passed 1/1 in the standard Debug tree; no full
+suite ran. Two independent audits found all 13 official Deferred entries
+unchanged. Batch406 Heavy-route discovery is underway. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit
+gate remains Open.

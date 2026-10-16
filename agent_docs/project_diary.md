@@ -6520,3 +6520,38 @@ unchanged. Batch401 found no eligible slice in the direct legacy-facade/UI
 boundary or Application import-use-case scans. Continue discovery in Batch402;
 Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2
 remains open.
+
+## F1029 accepted - 2026-10-17
+
+Batch402 through Batch404 found no eligible source slice. Batch405's
+independent reviews identified a mismatch in the public `FeatureService`
+contract: some operations use a separate legacy `DataService` when a bound
+session is unavailable, despite `isAvailable()` reporting the session state.
+Existing lifecycle tests already establish fail-closed behavior for several
+services under that hybrid construction, while normal `ApplicationServices`
+wiring does not expose a current UI failure.
+
+Accept F1029 to make any non-null bound session authoritative across all
+descendant operations. Missing repositories must fail without using a separate
+`DataService`; DataService-only construction and behavior remain unchanged.
+Cover a failing TeacherService read and mutation with an open legacy database,
+assert no legacy mutation, and retain legacy-only operation. The acceptance is
+in plan commit `0a21e8a9`; implementation and focused lifecycle verification
+are underway. All 13 official Deferred entries remain unchanged; Gates 1/2 are
+Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.
+
+## F1029 closeout - 2026-10-17
+
+F1029 completed at source commit `c49c0739`. The shared FeatureService fallback
+accessor now returns no legacy service when a session is bound. Its lifecycle
+regression covers a closed session beside a separate open legacy database,
+failed TeacherService read and update, unchanged legacy data, and continued
+legacy-only operation. The implementer and independent Tester built the
+standard Debug targets; `ClassMngrDataServiceLifecycleTests` passed 1/1. The
+independent build found the objects already current after an elevated retry
+for Visual Studio FileTracker access. No full suite ran.
+
+Two independent post-commit audits found all 13 official Deferred entries
+unchanged; none is actionable, resolved, or superseded. Batch406 Heavy-route
+discovery is underway. Gates 1/2 remain Partial, F1007 awaits policy
+reconciliation, and Phase 2 remains open.

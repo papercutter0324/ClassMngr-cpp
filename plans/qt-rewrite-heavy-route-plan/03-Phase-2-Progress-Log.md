@@ -44102,3 +44102,27 @@ The exact 13 official Deferred entries remain unchanged under the post-F1028
 audits; repeat the independent audits after F1029 implementation. Gates 1/2
 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
 policy reconciliation. F1029 is accepted and pending implementation.
+
+### F1029 complete; post-F1029 Deferred audits clear; Batch405 closed - 2026-10-17
+
+F1029 completes at source commit
+`c49c0739264406493970fe5f7368c6dbb1ddfd86`. `FeatureService::dataService()` now
+suppresses legacy fallback whenever a bound session exists, making that session
+authoritative across descendant operations. The lifecycle regression covers a
+closed bound session alongside a distinct open legacy database: TeacherService
+read and update fail without mutating legacy rows, while legacy-only
+construction still reads and updates successfully. This documents the public
+core contract and does not claim a current UI bug.
+
+The implementer built `ClassMngr` and `ClassMngrDataServiceLifecycleTests` in
+the reused `build/windows-x64-debug` folder; focused CTest
+`ClassMngrDataServiceLifecycleTests` passed 1/1. The independent Tester
+confirmed PASS at the same revision; target objects were already current, and
+the check succeeded after an elevated retry for Visual Studio FileTracker
+`E_ACCESSDENIED`. No full suite ran.
+
+Two independent post-commit audits checked exactly the 13 official Deferred
+entries; all remain unchanged, with none actionable, resolved, or superseded.
+Batch405 is closed. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation. Batch406 Heavy discovery
+is underway.
