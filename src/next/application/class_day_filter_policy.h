@@ -43,6 +43,14 @@ struct ClassDayScheduleDays final
     const ClassDayScheduleDays& schedule
     ) noexcept
 {
+    if ((filter.scheduleSource != ClassDayScheduleSource::Regular
+         && filter.scheduleSource != ClassDayScheduleSource::Intensive)
+        || (filter.visibilityScope != ClassDayVisibilityScope::AllClasses
+            && filter.visibilityScope != ClassDayVisibilityScope::ActiveSchedule))
+    {
+        return false;
+    }
+
     const std::vector<std::string>& selectedScheduleDays =
         filter.scheduleSource == ClassDayScheduleSource::Intensive
         ? schedule.intensiveDayKeys

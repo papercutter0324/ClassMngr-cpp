@@ -120,6 +120,24 @@ int main()
         return EXIT_FAILURE;
     }
 
+    ClassDayFilterPolicy unknownScheduleSource = allClasses;
+    unknownScheduleSource.selectedDayKeys = {"monday"};
+    unknownScheduleSource.scheduleSource =
+        static_cast<ClassDayScheduleSource>(2);
+    if (classDayFilterMatches(unknownScheduleSource, regularMonday))
+    {
+        return EXIT_FAILURE;
+    }
+
+    ClassDayFilterPolicy unknownVisibilityScope = allClasses;
+    unknownVisibilityScope.selectedDayKeys = {"monday"};
+    unknownVisibilityScope.visibilityScope =
+        static_cast<ClassDayVisibilityScope>(2);
+    if (classDayFilterMatches(unknownVisibilityScope, regularMonday))
+    {
+        return EXIT_FAILURE;
+    }
+
     ClassDayFilterPolicy unknownDay = allClasses;
     unknownDay.selectedDayKeys = {"holiday"};
     if (classDayFilterMatches(unknownDay, regularMonday)
