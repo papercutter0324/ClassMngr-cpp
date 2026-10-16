@@ -42683,3 +42683,22 @@ F990 and generic primitive factories; and Application structured-failure and
 partial-success propagation in multi-step use cases, excluding recent
 validation-order, async coordinator, document-session, and Schedule Import
 work. No Batch356 slice has been accepted yet.
+
+### Batch356 closed - 2026-10-16
+
+The Domain scan found no demonstrated cross-field invariant gap in the
+remaining records: `TeacherProfile`, `TeacherProfileFields`, `ScheduleEntry`,
+catalog-only `Course`, and the remaining conversion values. The Application
+scan found `TeacherProfileEditUseCase`, `TeacherImportUseCase`,
+`InitialSetupLifecycle`, and Calendar import propagate failure and
+partial-success state as specified and tested. Neither lane found a direct
+Deferred trigger change. No other slices were found.
+
+### Batch357 discovery underway - 2026-10-16
+
+Batch357 has two read-only lanes: Domain dependency direction to check for
+Application, Platform, Persistence, or Qt dependencies; and Application Qt,
+Platform, and OS boundary checks, excluding Batch352's DataService,
+MainWindow, PageManager, and widget checks. F990 remains complete; all 13
+official Deferred entries remain unchanged. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.

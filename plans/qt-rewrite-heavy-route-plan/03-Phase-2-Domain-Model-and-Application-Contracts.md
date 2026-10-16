@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F990 is complete and Batch356 discovery is underway; the F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, with no pre-F985 baseline; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F990 is complete, Batch356 closed without a candidate, and Batch357 discovery is underway; the F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, with no pre-F985 baseline; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-No accepted slice is active; Batch356 discovery is underway in two read-only lanes: Domain cross-field construction/conversion invariants in remaining Domain records (excluding F990 and generic primitive factories), and Application structured-failure and partial-success propagation in multi-step use cases (excluding recent validation-order, async coordinator, document-session, and Schedule Import work).
+No accepted slice is active; Batch357 discovery is underway in two read-only lanes: Domain dependency direction for Application/Platform/Persistence/Qt dependencies, and Application Qt/Platform/OS boundaries, excluding Batch352 DataService/MainWindow/PageManager/widget checks.
 
 ## Objective
 
