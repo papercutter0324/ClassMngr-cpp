@@ -6142,3 +6142,23 @@ labels at the Platform edge. Navigation metadata is a separate full-week
 selection rule: regular wins whenever its record exists; intensive is a
 fallback only for Intensive mode, followed by the selected-mode record. Do not
 merge navigation metadata with selected-day meeting text.
+
+## F1013 closeout and F1014 selection - 2026-10-16
+
+F1013 completed at source commit `fa63e499ab87bdb15763369d46b650ed6e972d44`.
+The app-less policy selects one whole navigation metadata value by record
+presence: Regular first, then Intensive only for Intensive requests, then the
+selected-mode summary. Platform reads, formatting, parsing, selected-day
+`meetingText`, and selected-mode teacher label remain at the adapter. The
+focused app-less test and both named platform slots passed after three serial
+Debug builds; no full suite ran. Two independent audits found no change to the
+13 official Deferred entries.
+
+Batch387 compared first-visible class-selection fallback with extracting the
+class-information row ordering tuple. F1014 selects the former because it
+extends the existing Application selection-state contract with a narrow rule:
+retain the current class if it is among the ordered visible IDs, else use the
+first supplied ID or no selection for an empty list. The list model must
+continue to own grade filtering, row ordering, locale comparison, and label
+construction; deriving fallback from summary projection order could change the
+selected class.

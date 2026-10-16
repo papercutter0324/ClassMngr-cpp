@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1012 is complete at source commit `e57a3c816ca3b88fcd31a6401ba3f9dd0649b5ae`; F1013, regular-before-intensive navigation metadata precedence, is accepted under Batch386. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate remains Open.
+- Current note: F1013 is complete at source commit `fa63e499ab87bdb15763369d46b650ed6e972d44`; F1014, Sub Prep class-information selection fallback, is accepted under Batch387. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch386
-  - F1013 - Sub Prep navigation metadata precedence: select regular all-week metadata before intensive metadata, with atomic selected-source fields and existing selected-mode fallback.
+- Batch387
+  - F1014 - Sub Prep class-information selection fallback: preserve a visible selection or choose the first currently visible class in supplied row order.
 
 ## Objective
 

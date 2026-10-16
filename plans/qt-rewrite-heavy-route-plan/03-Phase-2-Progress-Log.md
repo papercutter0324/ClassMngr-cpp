@@ -43670,3 +43670,24 @@ F1013 acceptance criteria:
 | Platform parity | Add/retain an Intensive fixture where selected-day `meetingText` differs from Regular all-week navigation metadata; assert label and day/time order all come from the Regular candidate. Retain the existing Intensive fallback test. Keep `navigationTeacherLabel` selected-mode-owned. |
 | Feature boundary | Keep reads, navigation text/order formatting and translations, malformed-time behavior, and selected-day `meetingText` in Platform. Preserve the conditional Intensive full-week read optimization and current errors. |
 | Focused verification | Serially build `ClassMngr`, the app-less policy target, and `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`; run only exact policy and named adapter tests. No full suite. |
+
+### F1013 complete; post-F1013 Deferred audits clear; Batch386 closed; Batch387 discovery complete; F1014 accepted - 2026-10-16
+
+F1013 source commit `fa63e499ab87bdb15763369d46b650ed6e972d44` completes Sub Prep regular-before-intensive navigation metadata precedence. The Qt-free Application policy chooses one metadata source atomically from request mode and available all-week records; Regular wins when present, then Intensive for an Intensive request, otherwise the selected-mode summary is used. The selected-mode teacher label, repository reads, formatting, malformed-time behavior, selected-day `meetingText`, conditional Intensive read, and existing errors remain at their established boundaries.
+
+The final independent focused verification passed serial Debug builds of `ClassMngr`, `ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests`, and `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`, each with `/p:TrackFileAccess=false`. The exact app-less CTest passed 1/1. Platform slots `regularAllWeekNavigationMetadataWinsOverIntensiveSummary` and `selectsModeAndOmitsUnusableOrOutOfScopeClasses` each passed 3 QtTest cases with 0 failures. `git diff --check` exited 0. Normal Visual Studio FileTracker access was denied before the retries; configure reported only an optional missing Vulkan include warning. No full suite ran.
+
+Two independent post-F1013 audits reviewed all 13 official Deferred candidates; none is actionable, resolved, or superseded. Keep the official list unchanged. F614 still needs larger-fixture or owner-specific memory evidence, and F709 still lacks a Calendar Page injection seam. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation. Batch386 is closed.
+
+Batch387 discovery used two Explorers and two Investigators. It selected Sub Prep class-information selection fallback: `SubPrepClassInformationState` retains a selected class when it remains visible and clears it when removed, while page fallback currently chooses the first visible row when selection is absent, including grade change and re-entry after deactivation. Visible row order comes from the class-information list model and must be preserved as supplied, rather than reconstructed from summary projection order.
+
+F1014, Sub Prep class-information selection fallback, is accepted before implementation. Add a Qt-free Application policy that receives an optional selected `Domain::ClassId` and the ordered visible class IDs. Keep the selected ID when it remains present; otherwise return the first supplied visible ID, or no selection when the list is empty. Use it at the existing class-information fallback points after successful summary/mode refresh, grade change, and activation after deactivation. Preserve model/page-owned filtering, sorting, grade selection, label generation, detail reads, refresh failures, and successful detail clearing; do not infer fallback order from summary projection rows.
+
+F1014 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less tests cover retained selection including a non-first row, missing selection falling back to the first supplied ID, and empty input returning no selection. |
+| Page behavior | Focus fallback coverage on mode/grade/deactivation paths while retaining existing mode-refresh selection and class-detail semantics. Existing anchors include `gradeAndLevelTabsSelectOneClassAndPreserveSelection`, `scheduleDisplayModeRefreshesClassInformationInPlace`, and `pageDeactivationReleasesClassInformationForTheNextEntry`. |
+| Ownership and order | Keep filtering, sorting, grade choice, and labels in the page/model; pass visible IDs in current row order and do not derive fallback from summary projection order. Preserve existing detail-read and refresh-failure behavior. |
+| Focused verification | Serially build `ClassMngr`, the new policy target, `ClassMngrNextApplicationSubPrepClassInformationStateTests`, and `ClassMngrSubPrepPageTests`; run only exact app-less and named page selectors. No full suite. |

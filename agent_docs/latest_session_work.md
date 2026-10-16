@@ -5815,7 +5815,7 @@ The acceptance checkpoint is being committed before source changes. Gates 1/2
 remain Partial and Phase 2 exit remains Open. Existing unrelated untracked
 artifacts remain untouched.
 
-## Current continuation - 2026-10-16 (F1012 complete; F1013 accepted)
+## Current continuation - 2026-10-16 (F1013 complete; F1014 accepted)
 
 F1011 source/test commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9` adds
 64-bit academic-calendar winter-continuity validation. The helper checks the
@@ -5835,10 +5835,20 @@ targets built serially; FileTracker retries required elevated
 `/p:TrackFileAccess=false`. Configure warned that optional Vulkan headers were
 unavailable; generation succeeded. No full suite ran.
 
-Two post-F1012 audits found all 13 official Deferred entries unchanged.
-Batch385 is closed. Batch386 rejected moving page-owned Sub Prep content
-defaults into Application and accepted F1013, a pure selection policy for
-regular-over-intensive navigation metadata with selected-mode fallback. The
-next action is the separate F1012 closeout/F1013 acceptance-docs checkpoint;
-after it lands, begin F1013 implementation. Unrelated untracked artifacts
-remain untouched.
+F1013 source commit `fa63e499ab87bdb15763369d46b650ed6e972d44` adds a Qt-free
+policy that selects Regular, conditional Intensive, or selected-mode
+navigation metadata atomically. The Platform adapter retains all reads and
+formatting, selected-day meeting text, and selected-mode teacher label. Serial
+Debug builds passed for `ClassMngr`, the policy test target, and the platform
+target. The exact app-less CTest passed 1/1; the precedence and existing
+Intensive fallback slots each passed 3/3. FileTracker required
+`/p:TrackFileAccess=false`; optional missing Vulkan headers were a configure
+warning. No full suite ran.
+
+Two post-F1013 audits found all 13 official Deferred entries unchanged.
+Batch386 is closed. Batch387 discovery selected F1014: preserve a current
+Sub Prep class while it remains in the ordered visible IDs; otherwise use the
+first caller-supplied ID, or none for an empty list. Keep row ordering and
+grade filtering at the model/page edge. The next action is the F1013
+closeout/F1014 acceptance-doc checkpoint; after it lands, begin F1014
+implementation. Unrelated untracked artifacts remain untouched.

@@ -5807,7 +5807,7 @@ keys.
 F959 is the sole active slice. No source changes have been made for it yet.
 Gates 1/2 remain Partial; the formal Phase 2 exit gate remains Open.
 
-## Current Position - 2026-10-16 (F1012 complete; F1013 accepted)
+## Current Position - 2026-10-16 (F1013 complete; F1014 accepted)
 
 F1011, academic-year winter continuity, is complete at source/test commit
 `7acb5c5e5da5a88f29510a6315bc722e16d765d9`. Its Qt-free policy accepts the
@@ -5831,10 +5831,23 @@ the two named adapter slots. Normal MSBuild hit FileTracker denial and
 elevated retries with `/p:TrackFileAccess=false` passed. Configure reported an
 optional missing `Vulkan_INCLUDE_DIR`; generation succeeded. No full suite ran.
 
-Two independent post-F1012 audits found all 13 official Phase 2 Deferred
-entries unchanged and none newly actionable, resolved, or superseded. Batch385
-is closed. Batch386 discovery rejected moving the established Sub Prep
-missing-value defaults out of the page and selected F1013: a Qt-free
-Application policy for choosing regular, intensive, or selected-mode Sub Prep
-navigation metadata. F1013 is accepted before implementation. Gates 1/2
-remain Partial and the formal Phase 2 exit gate remains Open.
+F1013, Sub Prep regular-before-intensive navigation metadata, is complete at
+source commit `fa63e499ab87bdb15763369d46b650ed6e972d44`. The Qt-free
+Application policy selects one complete metadata value; the Platform adapter
+retains schedule reads, conditional Intensive reads, parsing, formatting,
+selected-day `meetingText`, and selected-mode `navigationTeacherLabel`.
+Serial Debug builds passed for `ClassMngr`, the app-less policy target, and
+the platform target. The exact app-less CTest passed 1/1; the named platform
+precedence and existing Intensive fallback slots each passed 3/3. The
+independent Tester retried builds with `/p:TrackFileAccess=false` after
+FileTracker denied ordinary access. Configure completed with an optional
+missing Vulkan include warning. `git diff --check` passed; no full suite ran.
+
+Two independent post-F1013 audits found all 13 official Deferred entries
+unchanged, with none newly actionable, resolved, or superseded. Batch386 is
+closed. Batch387 discovery compared visible-row ordering with first-visible
+class-selection fallback. F1014 is accepted before implementation: select the
+current Sub Prep class if it remains in the caller-supplied ordered visible
+IDs; otherwise select the first ID, or no class for an empty list. Preserve
+model/page ownership of filtering, sorting, grade choice, and labels. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
