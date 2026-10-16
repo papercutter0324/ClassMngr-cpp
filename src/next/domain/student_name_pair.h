@@ -15,6 +15,9 @@ namespace ClassMngr::Next::Domain
 class StudentNamePair final
 {
 public:
+    StudentNamePair(const StudentNamePair&) = default;
+    StudentNamePair& operator=(const StudentNamePair&) = default;
+
     [[nodiscard]] static std::optional<StudentNamePair> fromNames(
         const std::u16string_view englishName,
         const std::u16string_view koreanName

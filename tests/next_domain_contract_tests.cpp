@@ -57,6 +57,7 @@ private slots:
     void koreanTeacherKeysExposeEmptyAndValueSemantics();
     void studentNamePairsRequireBothNames();
     void studentNamePairsCompareExactUtf16PartsAndOrder();
+    void studentNamePairsPreserveValuesAcrossRvalueOperations();
     void duplicateStudentNamePairGroupsAreExactAndDeterministic();
     void studentNamePairsKeepPartsDistinctAcrossDelimiter();
     void teacherDisplayNamesSelectPreferredAndEnglishNames();
@@ -1142,6 +1143,40 @@ void NextDomainContractTests::studentNamePairsCompareExactUtf16PartsAndOrder()
     QCOMPARE(ordered.size(), std::size_t{3});
     QVERIFY(ordered.begin()->first == *first);
     QVERIFY(ordered.rbegin()->first == *differentCase);
+}
+
+void NextDomainContractTests::
+studentNamePairsPreserveValuesAcrossRvalueOperations()
+{
+    const auto constructionValue = StudentNamePair::fromNames(
+        u"Construction source",
+        u"\uad6c\uc131 \uc18c\uc2a4"
+        );
+    QVERIFY(constructionValue.has_value());
+
+    StudentNamePair constructionSource = *constructionValue;
+    const StudentNamePair constructionSnapshot = constructionSource;
+    const StudentNamePair constructed(std::move(constructionSource));
+    QVERIFY(constructionSource == constructionSnapshot);
+    QVERIFY(constructed == constructionSnapshot);
+
+    const auto assignmentValue = StudentNamePair::fromNames(
+        u"Assignment source",
+        u"\ub300\uc785 \uc18c\uc2a4"
+        );
+    const auto initialDestinationValue = StudentNamePair::fromNames(
+        u"Initial destination",
+        u"\ucd08\uae30 \ub300\uc0c1"
+        );
+    QVERIFY(assignmentValue.has_value());
+    QVERIFY(initialDestinationValue.has_value());
+
+    StudentNamePair assignmentSource = *assignmentValue;
+    const StudentNamePair assignmentSnapshot = assignmentSource;
+    StudentNamePair assignmentDestination = *initialDestinationValue;
+    assignmentDestination = std::move(assignmentSource);
+    QVERIFY(assignmentSource == assignmentSnapshot);
+    QVERIFY(assignmentDestination == assignmentSnapshot);
 }
 
 void NextDomainContractTests::
