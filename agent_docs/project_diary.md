@@ -6555,3 +6555,23 @@ Two independent post-commit audits found all 13 official Deferred entries
 unchanged; none is actionable, resolved, or superseded. Batch406 Heavy-route
 discovery is underway. Gates 1/2 remain Partial, F1007 awaits policy
 reconciliation, and Phase 2 remains open.
+
+## F1030 accepted - 2026-10-17
+
+Batch406 found a mismatch between public Application boundaries: the document
+catalog rejects Unicode whitespace-only content references, while
+`DocumentContentSession::request` checks UTF-8 bytes with `std::isspace` and
+accepts NBSP-only or ideographic-space-only text. The request then occupies
+the session in `Requested`. Normal catalog rows do not expose this input, but
+the public session API and direct viewer descriptor can reach the boundary.
+An independent review confirmed a whitespace-only request can block a later
+request until release.
+
+Accept F1030 to use the existing Qt-compatible UTF-8 blankness helper in the
+session reference validator. Extend the existing invalid-reference lifecycle
+test for U+00A0 and U+3000, verifying nonrecoverable InvalidInput and no
+snapshot mutation. Preserve ASCII and empty rejection, the 4096-byte limit,
+exact-limit acceptance, byte-preserving nonblank references, and malformed
+UTF-8-as-nonblank behavior. The 13 official Deferred entries remain unchanged
+under the post-F1029 audit; Gates 1/2 remain Partial, F1007 awaits policy
+reconciliation, and Phase 2 remains open.

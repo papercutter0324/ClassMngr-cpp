@@ -44126,3 +44126,41 @@ entries; all remain unchanged, with none actionable, resolved, or superseded.
 Batch405 is closed. Gates 1/2 remain Partial, the Phase 2 exit gate remains
 Open, and F1007 remains pending policy reconciliation. Batch406 Heavy discovery
 is underway.
+
+### Batch406 discovery and F1030 accepted before implementation - 2026-10-17
+
+Batch406 angle B found no UI command mismatch: Class Notes, Co-Teacher, Staff
+Directory, Roster Transfer, and setup paths retain edits or dirty state on
+failure, with existing tests covering those outcomes. Angle A found that the
+public `DocumentContentSession::request` accepts UTF-8 NBSP-only (U+00A0) and
+U+3000-only references because `isValidReference` checks bytes with
+`std::isspace`; the session then enters Requested. In contrast,
+`DocumentCatalogProjection` uses `Application::isBlankUtf8Text` and rejects
+both, with catalog tests covering them while content-session tests currently
+cover only ASCII whitespace. No normal catalog-produced reference consists
+only of whitespace, but the public session API and direct PdfViewer descriptor
+route make this boundary observable. Independent Investigator and Explorer
+reviews confirmed actionability.
+
+No other slices were found.
+
+Accept F1030 before implementation. Make `DocumentContentSession` reference
+blankness match `Application::isBlankUtf8Text`, reusing the existing
+Qt-compatible UTF-8 whitespace helper. Extend the existing
+`invalidReferencesDoNotMutateState` regression for U+00A0-only and U+3000-only
+references: each returns nonrecoverable `InvalidInput` and leaves the session
+snapshot unchanged.
+
+F1030 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Blank references | Reject empty, ASCII whitespace-only, U+00A0-only, and U+3000-only references as nonrecoverable `InvalidInput`, without changing the session snapshot. |
+| Preserved reference behavior | Keep the 4096-byte boundary and exact-limit acceptance, preserve nonblank reference bytes, and retain malformed-UTF-8-as-nonblank behavior and existing session transitions. |
+| Scope | Keep catalog and UI behavior unchanged; this public-API boundary does not establish a normal catalog-produced whitespace-only reference or a current UI defect. |
+| Focused verification | Build `ClassMngr`, `ClassMngrNextApplicationDocumentContentTests`, and `ClassMngrNextApplicationDocumentCatalogTests`; run only CTests `NextApplicationDocumentContent` and `NextApplicationDocumentCatalog`. No full suite. |
+
+The exact 13 official Deferred entries remain unchanged under the post-F1029
+audits; repeat both independent audits after F1030 implementation. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation. F1030 is accepted and pending implementation.

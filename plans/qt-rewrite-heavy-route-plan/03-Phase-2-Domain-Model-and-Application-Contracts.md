@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1029 is complete at source commit `c49c0739264406493970fe5f7368c6dbb1ddfd86` and Batch406 Heavy discovery is underway; the 13 Deferred entries remain unchanged, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1030 is accepted and pending implementation after Batch406 found one candidate; the 13 Deferred entries remain unchanged under post-F1029 audits, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -67,6 +67,10 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and remove its candidate from this plan in the same edit. Replace the active batch in place; do not append snapshots or carry-forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
+
+#### Active batch — Batch406
+
+- F1030 — Align document-content blank-reference validation with the shared UTF-8 whitespace rule.
 
 #### Deferred candidates
 

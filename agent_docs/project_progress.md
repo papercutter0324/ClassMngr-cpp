@@ -6031,7 +6031,7 @@ UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-17 (F1029 complete; Batch406 discovering)
+## Current continuation - 2026-10-17 (F1030 accepted; implementation pending)
 
 Batch402–404 found no eligible source slice. Batch405 found an inconsistent
 `FeatureService` contract: some operations fall back to a separate legacy
@@ -6044,6 +6044,13 @@ authoritative across descendant operations; unavailable repositories fail
 without legacy fallback, while DataService-only construction remains intact.
 The focused lifecycle CTest passed 1/1 in the standard Debug tree; no full
 suite ran. Two independent audits found all 13 official Deferred entries
-unchanged. Batch406 Heavy-route discovery is underway. Gates 1/2 remain
-Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit
-gate remains Open.
+unchanged.
+
+Batch406 found that `DocumentContentSession::request` accepts valid UTF-8
+references made only of NBSP or ideographic space, while the catalog rejects
+those values with the shared Qt-compatible whitespace rule. F1030 is accepted
+to align that Application boundary and test state preservation for both code
+points, retaining length limits, nonblank bytes, and malformed UTF-8 behavior.
+Implementation is pending. The 13 official Deferred entries remain unchanged;
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+the Phase 2 exit gate remains Open.
