@@ -43309,3 +43309,22 @@ F997 acceptance criteria:
 
 F997 is the sole B373 candidate; no other slices were found. All 13 official
 Deferred entries remain unchanged.
+
+### F997 complete; F998 accepted for implementation - 2026-10-16
+
+F997 source commit `c644ae8c` adds the Qt-free asynchronous startup update-check Application contract, Platform `UpdateService` adapter, typed failure categories, and live automatic-startup routing. The incremental Windows x64 Debug build succeeded for `ClassMngr`, `ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`, `ClassMngrUpdateControllerAutomaticStartupTests`, `ClassMngrUpdaterTests`, and `ClassMngrMainWindowCheckForUpdatesActionParityTests`. The exact focused CTest regex passed 4/4; an independent Tester reran it and also passed 4/4. `git diff --check` passed; no full suite ran.
+
+B374/B375 discovery selected Manual Check for Updates as the next slice. The dialog displays cached results, uses IfStale on open and Force on retry, observes service success/failure, and may be opened during a startup check. Its service `bool` conflates busy, fresh-cache skip, and configuration failure. Two independent B375 Investigators recommend a repeatable manual-check Application boundary separate from F997's forced, eligibility-gated, one-shot startup check. No report-job integration is selected: no current export mode can safely pass unchanged to `QtReportJobWorker`; internal PDF constructs a `QWidget`, printing opens UI, and other modes have shared-state/progress concerns. Widgetless renderer extraction remains future work. This was a candidate scan, not an official Deferred entry.
+
+F998 is accepted for implementation, not completed. Its acceptance criteria are:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope | Add a Qt-free repeatable manual update-check Application contract/use case, a policy-aware Platform adapter, and migrate manual open/refresh/retry and terminal presentation observation behind those contracts. Keep F997 startup use case, eligibility, one-shot behavior, network backend, download/install, skip-version/prompt policies unchanged. |
+| Policies and cache | Opening the dialog continues to show the cached result; dispatch IfStale only when the cache is stale; fresh cache causes no request. Retry always dispatches Force, including with a fresh cache. Represent fresh-skip and busy distinctly from dispatch/configuration failure; do not infer disposition from UpdateService's ambiguous bool alone. |
+| Async result/lifecycle | Keep Application Qt-free. Deliver typed result/error and exactly one terminal completion for async and synchronous configuration/dispatch failures; preserve callback/controller/dialog lifetime safety. The dialog can observe a result from a concurrent startup request without taking ownership or canceling it. |
+| UI parity | Preserve loading, cached-result, success/no-update, visible manual errors, retry, and concurrent-startup observation. Manual signal/result presentation should have one authoritative application/platform path, avoiding duplicate competing state updates. |
+| Regression coverage | App-less use-case/port tests cover IfStale/Force, fresh skip, busy, sync failure, async success/failure, repeatability, exactly-once semantics. Focused adapter/dialog/controller tests cover open with fresh/stale cache, retry, concurrent startup result observation, manual QAction handoff, and unchanged startup eligibility/forced check/one-shot/silent failure. |
+| Focused verification | Build affected targets and run only exact focused CTests; no full suite. |
+
+Two independent audits of exactly the 13 official Deferred entries found none actionable, resolved, or superseded; the list remains unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.

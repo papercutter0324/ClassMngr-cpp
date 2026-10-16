@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F996 completed at source commit `88f4bd35` with the focused CTest failing 13/14 on Schedule Import's missing expected resolution and no proven pre-F996 baseline; F997 is accepted for implementation, all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F997 completed at source commit `c644ae8c`, and F998 is accepted for implementation; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch373 (F997 accepted; next implementation slice)
-  - F997 - Qt-free asynchronous startup update-check use case: define and integrate the startup-check result/error contract while preserving F215/F216 eligibility/skipped-version policies and current networking/dialog owners; keep the manual QAction/dialog path unchanged per F215/F456.
-No other slices were found.
+- Batch375 (F998 accepted; next implementation slice)
+  - F998 - Repeatable manual update check: add a Qt-free Application contract and policy-aware Platform adapter, then migrate dialog open/retry/result observation while preserving F997 startup semantics.
+No other slice is accepted for this batch; report-job integration remains future work pending renderer/thread-ownership extraction.
 
 ## Objective
 

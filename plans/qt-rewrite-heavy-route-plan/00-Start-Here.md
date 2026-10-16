@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F996 completed at source commit `88f4bd35`; its focused CTest failed 13/14 on Schedule Import's missing expected resolution, with no proven pre-F996 baseline. F997 is accepted for implementation; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F997 completed at source commit `c644ae8c`; its focused CTests passed 4/4, and two audits left all 13 official Deferred entries unchanged. F998 is accepted for implementation; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
