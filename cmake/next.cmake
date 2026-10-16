@@ -102,6 +102,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/initial_setup_teacher_choices_read_snapshot.h
     src/next/application/initial_setup_teacher_choices_read_port.h
     src/next/application/initial_setup_teacher_choices_read_query.h
+    src/next/application/initial_setup_teacher_identity_validation.h
     src/next/application/class_teacher_assignments_read_snapshot.h
     src/next/application/class_teacher_assignments_read_port.h
     src/next/application/class_teacher_assignments_read_query.h

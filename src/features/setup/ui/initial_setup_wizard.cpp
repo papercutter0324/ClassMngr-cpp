@@ -11,6 +11,7 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
+#include "next/application/initial_setup_teacher_identity_validation.h"
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/teacher_create_use_case.h"
@@ -840,23 +841,29 @@ private:
 
     bool saveCurrentTeacher(bool addingAnother)
     {
-        const int namesEntered =
-            !m_englishName->text().trimmed().isEmpty()
-            + !m_koreanName->text().trimmed().isEmpty()
-            + !m_spelling->text().trimmed().isEmpty();
+        const QString englishName = m_englishName->text().trimmed();
+        const QString koreanName = m_koreanName->text().trimmed();
+        const QString preferredSpelling = m_spelling->text().trimmed();
+        const auto identityRequirements =
+            ClassMngr::Next::Application::
+                initialSetupTeacherIdentityRequirements(
+                    !englishName.isEmpty(),
+                    !koreanName.isEmpty(),
+                    !preferredSpelling.isEmpty()
+                    );
 
-        if (namesEntered < 2)
+        if (!identityRequirements.complete)
         {
             QStringList missingNames;
-            if (m_englishName->text().trimmed().isEmpty())
+            if (identityRequirements.englishNameMissing)
             {
                 missingNames.append(tr("English Name"));
             }
-            if (m_koreanName->text().trimmed().isEmpty())
+            if (identityRequirements.koreanNameMissing)
             {
                 missingNames.append(tr("Korean Name"));
             }
-            if (m_spelling->text().trimmed().isEmpty())
+            if (identityRequirements.preferredSpellingMissing)
             {
                 missingNames.append(tr("Preferred Spelling"));
             }
@@ -865,7 +872,9 @@ private:
                 this,
                 tr("Teacher Information"),
                 tr("Complete at least %1 of the following fields before continuing:\n\n- %2")
-                    .arg(2 - namesEntered)
+                    .arg(static_cast<int>(
+                        identityRequirements.additionalFieldsRequired
+                        ))
                     .arg(missingNames.join(QStringLiteral("\n- "))));
             return false;
         }
@@ -877,9 +886,9 @@ private:
         }
 
         Teacher teacher;
-        teacher.teacherEn = m_englishName->text().trimmed();
-        teacher.teacherKr = m_koreanName->text().trimmed();
-        teacher.preferredRomanization = m_spelling->text().trimmed();
+        teacher.teacherEn = englishName;
+        teacher.teacherKr = koreanName;
+        teacher.preferredRomanization = preferredSpelling;
         teacher.preferredName = m_preferredName->currentText().trimmed();
         if (teacher.preferredName.isEmpty())
         {

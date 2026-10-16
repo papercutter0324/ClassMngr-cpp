@@ -963,6 +963,37 @@ add_test(
     COMMAND ClassMngrNextApplicationClassDayFilterPolicyTests
 )
 
+# Keep Initial Setup's two-of-three identity threshold independent of Qt.
+add_executable(
+    ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+    tests/next_application_initial_setup_teacher_identity_validation_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+    COMMAND ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+)
+
 # Keep automatic-update startup eligibility app-less and Qt-free.
 add_executable(
     ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
