@@ -42723,3 +42723,31 @@ F985 remains unresolved: reused TeacherId `"01"` is first rejected as
 `InvalidExistingTeacherTarget`, and no pre-F985 baseline establishes when the
 failure began. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### Batch358 closed; F991 selected - 2026-10-16
+
+The Domain lane selected F991 in `TypedId<Tag>` (`src/next/domain/domain_types.h`).
+Its factory rejects empty values and private construction protects the
+invariant, but implicit move construction or assignment can leave the source
+string in an unspecified state, potentially empty and invalidating that ID.
+The shared template backs all seven typed-ID aliases. The Application lane was
+a scoped shortfall: checks of Speaking Evaluation queries,
+`CalendarEventByIdQueryUseCase`, and `SubPrepCalendarEventIntervalsQuery`
+found existing error propagation, identity validation, and error-category
+coverage. Previously excluded port-order/request-validation, asynchronous
+cancellation/stale-generation, and multi-step partial-success scans were not
+repeated. No other slices were found.
+
+F991 acceptance matrix, recorded before implementation:
+
+| Area | Acceptance |
+| --- | --- |
+| Production contract | In `src/next/domain/domain_types.h`, explicitly default public copy construction and copy assignment for `TypedId<Tag>`. These declarations suppress implicit moves so rvalues copy; preserve the source and destination values. Keep private construction and factory rejection of empty IDs. |
+| Regression coverage | In the existing `tests/next_domain_contract_tests.cpp`, cover rvalue construction and assignment using `std::move`; snapshot the source before each operation and assert both source and destination retain the snapshot value. Preserve existing empty-factory rejection and typed-alias distinction coverage; do not assert a particular moved-from string representation. |
+| Focused verification | With the MSVC environment, build `ClassMngr` and `ClassMngrNextDomainContractTests` in the existing `build/windows-x64-debug-ninja` directory. Run the exact CTest registration `ClassMngrNextDomainContractTests` once and run scoped `git diff --check`. Do not run the full suite. |
+
+No implementation has started. All 13 official Deferred entries remain
+unchanged. F985 remains unresolved: reused TeacherId `"01"` is first rejected
+as `InvalidExistingTeacherTarget`, and no pre-F985 baseline establishes when
+the failure began. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
