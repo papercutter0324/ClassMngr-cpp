@@ -961,21 +961,88 @@ void TestingClassesPage::buildUi()
         m_classList,
         &QListWidget::currentItemChanged,
         this,
-        [this](QListWidgetItem* current, QListWidgetItem* previous)
+        [this](QListWidgetItem* current, QListWidgetItem*)
         {
             if (m_autosave->isLoading() || !current)
             {
                 return;
             }
+
+            const int requestedClassId =
+                current->data(Qt::UserRole).toInt();
+            const int previousClassId = m_currentClassId;
+            const QString requestedClassLabel = current->text();
+
+            const auto findClassRow = [this](const int classId)
+            {
+                for (int row = 0; row < m_classList->count(); ++row)
+                {
+                    if (
+                        m_classList->item(row)
+                            ->data(Qt::UserRole)
+                            .toInt() == classId
+                        )
+                    {
+                        return row;
+                    }
+                }
+                return -1;
+            };
+
+            const auto selectClassRow =
+                [this, &findClassRow](const int classId)
+            {
+                const int row = findClassRow(classId);
+                if (row < 0)
+                {
+                    return false;
+                }
+
+                const QSignalBlocker blocker(m_classList);
+                m_classList->setCurrentRow(row);
+                return true;
+            };
+
             if (hasUnsavedChanges() && !saveChanges())
             {
-                const QSignalBlocker blocker(m_classList);
-                m_classList->setCurrentItem(previous);
+                if (previousClassId > 0)
+                {
+                    selectClassRow(previousClassId);
+                }
+                else
+                {
+                    const QSignalBlocker blocker(m_classList);
+                    m_classList->setCurrentItem(nullptr);
+                }
                 return;
             }
-            loadClass(
-                current->data(Qt::UserRole).toInt()
-                );
+
+            loadClass(requestedClassId);
+            if (m_currentClassId == requestedClassId)
+            {
+                int row = findClassRow(requestedClassId);
+                if (row < 0)
+                {
+                    auto* item = new QListWidgetItem(
+                        requestedClassLabel,
+                        m_classList
+                        );
+                    item->setData(Qt::UserRole, requestedClassId);
+                    row = m_classList->row(item);
+                }
+
+                const QSignalBlocker blocker(m_classList);
+                m_classList->setCurrentRow(row);
+                return;
+            }
+
+            if (previousClassId > 0)
+            {
+                if (!selectClassRow(previousClassId))
+                {
+                    beginNewClass({}, {}, false);
+                }
+            }
         }
         );
     updateLevelOptions();

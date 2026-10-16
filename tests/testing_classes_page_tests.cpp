@@ -44,8 +44,10 @@
 #include <QUuid>
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace ScheduleWidgetTestStubs
 {
@@ -147,12 +149,20 @@ public:
     {
         ++callCount;
         lastQuery = query;
+        if (callCount <= static_cast<int>(resultsByCall.size()))
+        {
+            return resultsByCall.at(
+                static_cast<std::size_t>(callCount - 1)
+                );
+        }
         return result;
     }
 
     mutable int callCount = 0;
     mutable std::optional<ClassMngr::Next::Application::
         ScheduleTestingClassChoicesReadQuery> lastQuery;
+    std::vector<ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult> resultsByCall;
     ClassMngr::Next::Application::ScheduleTestingClassChoicesReadResult
         result = ClassMngr::Next::Application::
             ScheduleTestingClassChoicesReadResult::success({});
@@ -170,12 +180,22 @@ public:
     {
         ++callCount;
         lastQuery = query;
+        requestedClassIds.push_back(query.classId.value());
+        if (callCount <= static_cast<int>(resultsByCall.size()))
+        {
+            return resultsByCall.at(
+                static_cast<std::size_t>(callCount - 1)
+                );
+        }
         return result;
     }
 
     mutable int callCount = 0;
+    mutable std::vector<std::string> requestedClassIds;
     mutable std::optional<ClassMngr::Next::Application::
         TestingClassDetailsReadQuery> lastQuery;
+    std::vector<ClassMngr::Next::Application::
+        TestingClassDetailsReadResult> resultsByCall;
     ClassMngr::Next::Application::TestingClassDetailsReadResult result =
         ClassMngr::Next::Application::TestingClassDetailsReadResult::
             failure({
@@ -321,6 +341,127 @@ void setSingleTestingClassChoice(
         });
 }
 
+void setTestingClassChoices(
+    FixedTestingClassChoicesReadPort& readPort,
+    const int firstClassId,
+    const QString& firstName,
+    const int secondClassId,
+    const QString& secondName
+    )
+{
+    readPort.result = ClassMngr::Next::Application::
+        ScheduleTestingClassChoicesReadResult::success({
+            .choices = {{
+                .classId = typedClassId(firstClassId),
+                .name = firstName.toStdU16String(),
+                .grade = u"M1",
+                .level = u"Major",
+                .room = u"401"
+            }, {
+                .classId = typedClassId(secondClassId),
+                .name = secondName.toStdU16String(),
+                .grade = u"M1",
+                .level = u"Major",
+                .room = u"401"
+            }}
+        });
+}
+
+int testingClassRow(
+    const QListWidget* list,
+    const int classId
+    )
+{
+    if (!list)
+    {
+        return -1;
+    }
+
+    for (int row = 0; row < list->count(); ++row)
+    {
+        if (list->item(row)->data(Qt::UserRole).toInt() == classId)
+        {
+            return row;
+        }
+    }
+    return -1;
+}
+
+struct TestingClassSelectionFixture
+{
+    QTemporaryDir directory;
+    ApplicationServices services;
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    FixedTestingClassDetailsReadPort readPort;
+    RecordingTestingClassDetailsUpdatePort updatePort;
+    RecordingTestingClassCreatePort createPort;
+    RecordingTestingClassDeletePort deletePort;
+    int firstClassId = -1;
+    int secondClassId = -1;
+    std::unique_ptr<TestingClassesPage> page;
+
+    bool createClasses()
+    {
+        if (!directory.isValid())
+        {
+            return false;
+        }
+        if (!services.openDatabase(databasePath(directory)))
+        {
+            return false;
+        }
+        auto* repository = services.databaseSession()
+            ->testingClassRepository();
+        if (!repository)
+        {
+            return false;
+        }
+
+        TestingClass first = testingClass(QStringLiteral("Alpha A"));
+        first.teacherId = -1;
+        const auto firstId = repository->createTestingClass(first);
+        if (!firstId)
+        {
+            return false;
+        }
+        firstClassId = *firstId;
+
+        TestingClass second = testingClass(QStringLiteral("Beta B"));
+        second.teacherId = -1;
+        const auto secondId = repository->createTestingClass(second);
+        if (!secondId)
+        {
+            return false;
+        }
+        secondClassId = *secondId;
+
+        setTestingClassChoices(
+            choicesReadPort,
+            firstClassId,
+            QStringLiteral("Alpha A"),
+            secondClassId,
+            QStringLiteral("Beta B")
+            );
+        return true;
+    }
+
+    void openFirstClass()
+    {
+        page = std::make_unique<TestingClassesPage>(
+            &services,
+            nullptr,
+            &choicesReadPort,
+            &readPort,
+            nullptr,
+            &updatePort,
+            &createPort,
+            &deletePort
+            );
+        page->openTestingClass(firstClassId);
+        page->refresh();
+    }
+};
+
 Roster rosterWithEvaluation()
 {
     Roster roster;
@@ -402,6 +543,11 @@ private slots:
     void unavailableTestingClassDetailsReadIsSilent();
     void missingTestingClassDetailsShowsWarning();
     void testingClassDetailsReadFailureShowsWarningWithoutFallback();
+    void cleanTestingClassSelectionFailureRestoresActiveClass();
+    void dirtyTestingClassSelectionLoadsRequestedClassAfterSave();
+    void dirtyTestingClassSelectionFailureRestoresSavedClass();
+    void dirtyTestingClassSelectionFailureWithoutPriorRowClearsTarget();
+    void dirtyTestingClassSelectionSaveFailureKeepsDraftAndSkipsRead();
     void existingTestingClassUpdateRetainsSelectionAndRefreshesList();
     void wideTeacherSelectionSurvivesRefreshUpdateAndCreate();
     void testingClassDetailsUpdateFailureRetainsDraftAndShowsWarning();
@@ -1437,8 +1583,13 @@ void TestingClassesPageTests::unavailableTestingClassDetailsReadIsSilent()
     auto* nameEdit = page.findChild<QLineEdit*>(
         QStringLiteral("testingClassNameEdit")
         );
+    auto* deleteButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
     QVERIFY(nameEdit);
+    QVERIFY(deleteButton);
     QVERIFY(nameEdit->text() != QStringLiteral("Stored Class"));
+    QVERIFY(!deleteButton->isEnabled());
 }
 
 void TestingClassesPageTests::missingTestingClassDetailsShowsWarning()
@@ -1559,8 +1710,13 @@ testingClassDetailsReadFailureShowsWarningWithoutFallback()
     auto* nameEdit = page.findChild<QLineEdit*>(
         QStringLiteral("testingClassNameEdit")
         );
+    auto* deleteButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
     QVERIFY(nameEdit);
+    QVERIFY(deleteButton);
     QVERIFY(nameEdit->text() != QStringLiteral("Stored Class"));
+    QVERIFY(!deleteButton->isEnabled());
 
     auto* classList = page.findChild<QListWidget*>(
         QStringLiteral("testingClassesList")
@@ -1596,6 +1752,379 @@ testingClassDetailsReadFailureShowsWarningWithoutFallback()
     QCOMPARE(nameEdit->text(), QStringLiteral("Recovery Class"));
     QVERIFY(!page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 1);
+}
+
+void TestingClassesPageTests::
+cleanTestingClassSelectionFailureRestoresActiveClass()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected Beta details read failure",
+            .recoverable = false
+        }),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.secondClassId,
+                QStringLiteral("Beta B")
+                )
+            )
+    };
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QCOMPARE(fixture.readPort.callCount, 1);
+    QCOMPARE(testingClassRow(list, fixture.firstClassId), list->currentRow());
+
+    const int secondRow = testingClassRow(list, fixture.secondClassId);
+    QVERIFY(secondRow >= 0);
+    list->setCurrentRow(secondRow);
+
+    QCOMPARE(fixture.readPort.callCount, 2);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(1),
+        std::to_string(fixture.secondClassId)
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(testingClassRow(list, fixture.firstClassId), list->currentRow());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Alpha A"));
+    QVERIFY(!fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected Beta details read failure")
+        );
+
+    nameEdit->setText(QStringLiteral("Mutation still targets A"));
+    QVERIFY(fixture.page->saveChanges());
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+
+    const int retryRow = testingClassRow(list, fixture.secondClassId);
+    QVERIFY(retryRow >= 0);
+    list->setCurrentRow(retryRow);
+    QCOMPARE(fixture.readPort.callCount, 3);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(2),
+        std::to_string(fixture.secondClassId)
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(testingClassRow(list, fixture.secondClassId), list->currentRow());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Beta B"));
+}
+
+void TestingClassesPageTests::
+dirtyTestingClassSelectionLoadsRequestedClassAfterSave()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.secondClassId,
+                QStringLiteral("Beta B")
+                )
+            )
+    };
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    nameEdit->setText(QStringLiteral("Saved Alpha A"));
+    QVERIFY(fixture.page->hasUnsavedChanges());
+
+    const int secondRow = testingClassRow(list, fixture.secondClassId);
+    QVERIFY(secondRow >= 0);
+    list->setCurrentRow(secondRow);
+
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+    QCOMPARE(fixture.readPort.callCount, 2);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(1),
+        std::to_string(fixture.secondClassId)
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(testingClassRow(list, fixture.secondClassId), list->currentRow());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Beta B"));
+    QVERIFY(!fixture.page->hasUnsavedChanges());
+
+    nameEdit->setText(QStringLiteral("Mutation targets B"));
+    QVERIFY(fixture.page->saveChanges());
+    QCOMPARE(fixture.updatePort.callCount, 2);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.secondClassId)
+        );
+}
+
+void TestingClassesPageTests::
+dirtyTestingClassSelectionFailureRestoresSavedClass()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected Beta details read failure",
+            .recoverable = false
+        })
+    };
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    nameEdit->setText(QStringLiteral("Saved Alpha A"));
+    QVERIFY(fixture.page->hasUnsavedChanges());
+
+    const int secondRow = testingClassRow(list, fixture.secondClassId);
+    QVERIFY(secondRow >= 0);
+    list->setCurrentRow(secondRow);
+
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+    QCOMPARE(fixture.readPort.callCount, 2);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(1),
+        std::to_string(fixture.secondClassId)
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(testingClassRow(list, fixture.firstClassId), list->currentRow());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Saved Alpha A"));
+    QVERIFY(!fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected Beta details read failure")
+        );
+
+    nameEdit->setText(QStringLiteral("Mutation still targets A"));
+    QVERIFY(fixture.page->saveChanges());
+    QCOMPARE(fixture.updatePort.callCount, 2);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+}
+
+void TestingClassesPageTests::
+dirtyTestingClassSelectionFailureWithoutPriorRowClearsTarget()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+    fixture.createPort.failuresRemaining = 1;
+    const auto initialChoices = fixture.choicesReadPort.result;
+    setSingleTestingClassChoice(
+        fixture.choicesReadPort,
+        fixture.secondClassId,
+        QStringLiteral("Beta B")
+        );
+    fixture.choicesReadPort.resultsByCall = {
+        initialChoices,
+        fixture.choicesReadPort.result
+    };
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected Beta details read failure",
+            .recoverable = false
+        })
+    };
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* gradeCombo = fixture.page->findChild<QComboBox*>(
+        QStringLiteral("testingClassGradeCombo")
+        );
+    auto* levelCombo = fixture.page->findChild<QComboBox*>(
+        QStringLiteral("testingClassLevelCombo")
+        );
+    auto* roomEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassRoomEdit")
+        );
+    auto* deleteButton = fixture.page->findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QVERIFY(gradeCombo);
+    QVERIFY(levelCombo);
+    QVERIFY(roomEdit);
+    QVERIFY(deleteButton);
+    nameEdit->setText(QStringLiteral("Saved Alpha A"));
+
+    const int secondRow = testingClassRow(list, fixture.secondClassId);
+    QVERIFY(secondRow >= 0);
+    list->setCurrentRow(secondRow);
+
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+    QCOMPARE(fixture.choicesReadPort.callCount, 2);
+    QCOMPARE(fixture.readPort.callCount, 2);
+    QVERIFY(!list->currentItem());
+    QVERIFY(!deleteButton->isEnabled());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Testing Class"));
+    QVERIFY(!fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+
+    deleteButton->click();
+    QCOMPARE(fixture.deletePort.callCount, 0);
+
+    nameEdit->setText(QStringLiteral("New draft after target clear"));
+    gradeCombo->setCurrentText(QStringLiteral("M1"));
+    levelCombo->setCurrentText(QStringLiteral("Major"));
+    roomEdit->setText(QStringLiteral("401"));
+    QVERIFY(fixture.page->hasUnsavedChanges());
+    QVERIFY(!fixture.page->saveChanges());
+    QCOMPARE(fixture.createPort.callCount, 1);
+    QVERIFY(fixture.createPort.lastRequest.has_value());
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+    QCOMPARE(fixture.deletePort.callCount, 0);
+    QVERIFY(fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        prompts.messages.constLast().message,
+        QStringLiteral("injected testing class create failure")
+        );
+}
+
+void TestingClassesPageTests::
+dirtyTestingClassSelectionSaveFailureKeepsDraftAndSkipsRead()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            )
+    };
+    fixture.updatePort.result =
+        ClassMngr::Next::Application::TestingClassDetailsUpdateResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected Alpha save failure",
+            .recoverable = false
+        });
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    nameEdit->setText(QStringLiteral("Draft Must Remain"));
+    QVERIFY(fixture.page->hasUnsavedChanges());
+
+    const int secondRow = testingClassRow(list, fixture.secondClassId);
+    QVERIFY(secondRow >= 0);
+    list->setCurrentRow(secondRow);
+
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+    QCOMPARE(fixture.readPort.callCount, 1);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(0),
+        std::to_string(fixture.firstClassId)
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(testingClassRow(list, fixture.firstClassId), list->currentRow());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Draft Must Remain"));
+    QVERIFY(fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected Alpha save failure")
+        );
 }
 
 void TestingClassesPageTests::
