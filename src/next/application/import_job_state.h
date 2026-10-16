@@ -150,13 +150,30 @@ public:
                 );
         }
 
+        if (!m_snapshot.cancellationRequested())
+        {
+            return Domain::Result<void>::failure(
+                conflict(
+                    "Import cancellation cannot be acknowledged before it is requested."
+                    )
+                );
+        }
+
         m_snapshot.m_phase = ImportJobPhase::Canceled;
         return Domain::Result<void>::success();
     }
 
     [[nodiscard]] Domain::Result<void> cancel()
     {
-        return acknowledgeCancellation();
+        if (!isRunning())
+        {
+            return Domain::Result<void>::failure(
+                conflict("Import can only be canceled while running.")
+                );
+        }
+
+        m_snapshot.m_phase = ImportJobPhase::Canceled;
+        return Domain::Result<void>::success();
     }
 
     [[nodiscard]] Domain::Result<void> complete()

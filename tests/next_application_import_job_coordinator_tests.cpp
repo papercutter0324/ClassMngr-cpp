@@ -115,6 +115,7 @@ private slots:
     void fifoEventsApplyInPostedOrder();
     void progressAndCompletionMapToState();
     void cancellationRequestForwardsAndAcknowledgementCancels();
+    void unsolicitedAcknowledgementLeavesRunningSnapshotUnchanged();
     void cancellationFailurePreservesRequestedRunningState();
     void cancellationExceptionsPreserveRequestedRunningState();
     void completionWinsBeforeCancellationAcknowledgement();
@@ -217,6 +218,24 @@ void NextApplicationImportJobCoordinatorTests::cancellationRequestForwardsAndAck
     QCOMPARE(coordinator.snapshot().phase(), ImportJobPhase::Running);
     QVERIFY(coordinator.pump());
     QCOMPARE(coordinator.snapshot().phase(), ImportJobPhase::Canceled);
+}
+
+void NextApplicationImportJobCoordinatorTests::unsolicitedAcknowledgementLeavesRunningSnapshotUnchanged()
+{
+    RecordingWorker worker;
+    ImportJobCoordinator coordinator(worker);
+    const auto start = coordinator.startJob(4);
+    QVERIFY(start);
+    const ImportJobSnapshot before = coordinator.snapshot();
+
+    QVERIFY(worker.post(ImportJobEvent::cancellationAcknowledged(start.value())));
+    const auto pump = coordinator.pump();
+    QVERIFY(pump);
+    QCOMPARE(pump.value(), std::size_t{1});
+
+    QCOMPARE(coordinator.snapshot(), before);
+    QCOMPARE(coordinator.snapshot().phase(), ImportJobPhase::Running);
+    QVERIFY(!coordinator.snapshot().cancellationRequested());
 }
 
 void NextApplicationImportJobCoordinatorTests::cancellationFailurePreservesRequestedRunningState()

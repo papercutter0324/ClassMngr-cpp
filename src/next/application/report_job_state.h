@@ -166,15 +166,33 @@ public:
                 );
         }
 
+        if (!m_snapshot.cancellationRequested())
+        {
+            return Domain::Result<void>::failure(
+                conflict(
+                    "Report cancellation cannot be acknowledged before it is requested."
+                    )
+                );
+        }
+
         m_snapshot.m_phase = ReportJobPhase::Canceled;
         m_snapshot.m_outputReference.reset();
         return Domain::Result<void>::success();
     }
 
-    // Convenience event equivalent to acknowledgeCancellation().
+    // Direct cancellation event, independent of worker acknowledgement.
     [[nodiscard]] Domain::Result<void> cancel()
     {
-        return acknowledgeCancellation();
+        if (!isRunning())
+        {
+            return Domain::Result<void>::failure(
+                conflict("Report can only be canceled while running.")
+                );
+        }
+
+        m_snapshot.m_phase = ReportJobPhase::Canceled;
+        m_snapshot.m_outputReference.reset();
+        return Domain::Result<void>::success();
     }
 
     [[nodiscard]] Domain::Result<void> complete(

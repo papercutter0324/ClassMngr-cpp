@@ -135,6 +135,7 @@ private slots:
     void progressAndCompletionCarryOutputReference();
     void invalidOutputAndIncompleteCompletionDoNotClaimSuccess();
     void cancellationRequestForwardsAndAcknowledgementCancels();
+    void unsolicitedAcknowledgementLeavesRunningSnapshotUnchanged();
     void cancellationFailurePreservesRequestedRunningState();
     void cancellationExceptionsPreserveRequestedRunningState();
     void completionWinsBeforeCancellationAcknowledgement();
@@ -306,6 +307,25 @@ void NextApplicationReportJobCoordinatorTests::cancellationRequestForwardsAndAck
     QVERIFY(coordinator.pump());
     QCOMPARE(coordinator.snapshot().phase(), ReportJobPhase::Canceled);
     QVERIFY(coordinator.snapshot().cancellationRequested());
+}
+
+void NextApplicationReportJobCoordinatorTests::unsolicitedAcknowledgementLeavesRunningSnapshotUnchanged()
+{
+    RecordingWorker worker;
+    ReportJobCoordinator coordinator(worker);
+    const auto start = coordinator.startJob(4);
+    QVERIFY(start);
+    const ReportJobSnapshot before = coordinator.snapshot();
+
+    QVERIFY(worker.post(ReportJobEvent::cancellationAcknowledged(start.value())));
+    const auto pump = coordinator.pump();
+    QVERIFY(pump);
+    QCOMPARE(pump.value(), std::size_t{1});
+
+    QCOMPARE(coordinator.snapshot(), before);
+    QCOMPARE(coordinator.snapshot().phase(), ReportJobPhase::Running);
+    QVERIFY(!coordinator.snapshot().cancellationRequested());
+    QVERIFY(!coordinator.snapshot().outputReference().has_value());
 }
 
 void NextApplicationReportJobCoordinatorTests::cancellationFailurePreservesRequestedRunningState()

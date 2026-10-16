@@ -18,6 +18,7 @@ private slots:
     void invalidProgressDoesNotMutateState();
     void duplicateStartReturnsRecoverableConflict();
     void cancellationRequestIsIdempotent();
+    void unsolicitedAcknowledgementReturnsRecoverableConflictWithoutMutation();
     void acknowledgementTransitionsToCanceled();
     void directCancelTransitionsToCanceled();
     void completeRequiresAllProgressAndSucceeds();
@@ -104,6 +105,21 @@ void NextApplicationImportJobTests::cancellationRequestIsIdempotent()
     QCOMPARE(state.snapshot(), requested);
 }
 
+void NextApplicationImportJobTests::unsolicitedAcknowledgementReturnsRecoverableConflictWithoutMutation()
+{
+    ImportJobState state;
+    QVERIFY(state.start(4));
+    QVERIFY(state.reportProgress(2));
+    const ImportJobSnapshot before = state.snapshot();
+
+    const auto result = state.acknowledgeCancellation();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Conflict);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(state.snapshot() == before);
+}
+
 void NextApplicationImportJobTests::acknowledgementTransitionsToCanceled()
 {
     ImportJobState state;
@@ -131,7 +147,17 @@ void NextApplicationImportJobTests::directCancelTransitionsToCanceled()
     QVERIFY(state.start(1));
 
     QVERIFY(state.cancel());
-    QCOMPARE(state.snapshot().phase(), ImportJobPhase::Canceled);
+    const ImportJobSnapshot canceled = state.snapshot();
+    QCOMPARE(canceled.phase(), ImportJobPhase::Canceled);
+    QVERIFY(!canceled.cancellationRequested());
+
+    ImportJobState requestedState;
+    QVERIFY(requestedState.start(1));
+    QVERIFY(requestedState.requestCancellation());
+    QVERIFY(requestedState.cancel());
+    const ImportJobSnapshot requestedCanceled = requestedState.snapshot();
+    QCOMPARE(requestedCanceled.phase(), ImportJobPhase::Canceled);
+    QVERIFY(requestedCanceled.cancellationRequested());
 }
 
 void NextApplicationImportJobTests::completeRequiresAllProgressAndSucceeds()

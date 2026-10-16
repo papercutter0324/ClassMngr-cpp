@@ -20,7 +20,9 @@ private slots:
     void invalidProgressDoesNotMutateState();
     void duplicateStartReturnsRecoverableConflict();
     void cancellationRequestIsIdempotent();
+    void unsolicitedAcknowledgementReturnsRecoverableConflictWithoutMutation();
     void acknowledgementTransitionsToCanceled();
+    void directCancelTransitionsToCanceled();
     void completeRequiresAllProgressAndValidOutput();
     void invalidOutputReferencesDoNotMutateState();
     void zeroUnitJobCompletesWithOutputReference();
@@ -109,6 +111,21 @@ void NextApplicationReportJobTests::cancellationRequestIsIdempotent()
     QCOMPARE(state.snapshot(), requested);
 }
 
+void NextApplicationReportJobTests::unsolicitedAcknowledgementReturnsRecoverableConflictWithoutMutation()
+{
+    ReportJobState state;
+    QVERIFY(state.start(4));
+    QVERIFY(state.reportProgress(2));
+    const ReportJobSnapshot before = state.snapshot();
+
+    const auto result = state.acknowledgeCancellation();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::Conflict);
+    QVERIFY(result.error().recoverable);
+    QVERIFY(state.snapshot() == before);
+}
+
 void NextApplicationReportJobTests::acknowledgementTransitionsToCanceled()
 {
     ReportJobState state;
@@ -129,6 +146,27 @@ void NextApplicationReportJobTests::acknowledgementTransitionsToCanceled()
     QVERIFY(!duplicate);
     QCOMPARE(duplicate.error().code, ErrorCode::Conflict);
     QVERIFY(state.snapshot() == canceled);
+}
+
+void NextApplicationReportJobTests::directCancelTransitionsToCanceled()
+{
+    ReportJobState state;
+    QVERIFY(state.start(1));
+
+    QVERIFY(state.cancel());
+    const ReportJobSnapshot canceled = state.snapshot();
+    QCOMPARE(canceled.phase(), ReportJobPhase::Canceled);
+    QVERIFY(!canceled.cancellationRequested());
+    QVERIFY(!canceled.outputReference().has_value());
+
+    ReportJobState requestedState;
+    QVERIFY(requestedState.start(1));
+    QVERIFY(requestedState.requestCancellation());
+    QVERIFY(requestedState.cancel());
+    const ReportJobSnapshot requestedCanceled = requestedState.snapshot();
+    QCOMPARE(requestedCanceled.phase(), ReportJobPhase::Canceled);
+    QVERIFY(requestedCanceled.cancellationRequested());
+    QVERIFY(!requestedCanceled.outputReference().has_value());
 }
 
 void NextApplicationReportJobTests::completeRequiresAllProgressAndValidOutput()
