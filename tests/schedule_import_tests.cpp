@@ -77,7 +77,7 @@ private slots:
     void applyBatchReadFailureRollsBackBeforeWrites();
     void applyTeacherReadFailureRollsBackBeforeWrites();
     void typedApplyRejectsStaleSelectedClassBeforeWrites();
-    void typedApplyPreservesExactTargetIdsThroughStateValidation();
+    void typedApplyRejectsNoncanonicalTargetsBeforeStateValidation();
     void typedApplyPreservesWideTeacherIdAndLowTeacherAssociation();
     void typedApplyAcceptsLegacyDisplayTimes_data();
     void typedApplyAcceptsLegacyDisplayTimes();
@@ -6902,7 +6902,7 @@ void ScheduleImportTests::typedApplyRejectsStaleSelectedClassBeforeWrites()
     QSqlDatabase::removeDatabase(connectionName);
 }
 
-void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidation()
+void ScheduleImportTests::typedApplyRejectsNoncanonicalTargetsBeforeStateValidation()
 {
     const QString connectionName =
         QStringLiteral("schedule-import-typed-exact-target-ids-%1")
@@ -6977,18 +6977,24 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
         const auto noncanonicalTeacherResult =
             repository.applyTyped(noncanonicalTeacherTarget);
         QVERIFY(!noncanonicalTeacherResult.has_value());
-        QVERIFY(noncanonicalTeacherResult.error().stateValidationError.has_value());
+        QVERIFY(noncanonicalTeacherResult.error().teacherTargetIssue.has_value());
         QCOMPARE(
-            noncanonicalTeacherResult.error().stateValidationError->code,
+            noncanonicalTeacherResult.error().teacherTargetIssue->code,
             ClassMngr::Next::Application::
-                ScheduleImportStateValidationErrorCode::SelectedTeacherUnavailable
+                ScheduleImportApplyTeacherTargetIssueCode::
+                    InvalidExistingTeacherTarget
             );
-        QVERIFY2(
-            typedApplyFailureMessage(noncanonicalTeacherResult).contains(
-                QStringLiteral("selected Korean teacher is no longer available"),
-                Qt::CaseInsensitive),
-            qPrintable(typedApplyFailureMessage(noncanonicalTeacherResult))
+        QVERIFY(
+            noncanonicalTeacherResult.error()
+                .teacherTargetIssue->targetTeacherId.has_value()
             );
+        QCOMPARE(
+            noncanonicalTeacherResult.error()
+                .teacherTargetIssue->targetTeacherId->value(),
+            std::string("01")
+            );
+        QVERIFY(!noncanonicalTeacherResult.error().policyIssue.has_value());
+        QVERIFY(!noncanonicalTeacherResult.error().stateValidationError.has_value());
         QCOMPARE(
             persistedScheduleImportSnapshot(database, true),
             beforeTeacherRejection
@@ -7011,18 +7017,34 @@ void ScheduleImportTests::typedApplyPreservesExactTargetIdsThroughStateValidatio
         const auto noncanonicalClassResult =
             repository.applyTyped(noncanonicalClassTarget);
         QVERIFY(!noncanonicalClassResult.has_value());
-        QVERIFY(noncanonicalClassResult.error().stateValidationError.has_value());
+        QVERIFY(noncanonicalClassResult.error().policyIssue.has_value());
         QCOMPARE(
-            noncanonicalClassResult.error().stateValidationError->code,
+            noncanonicalClassResult.error().policyIssue->code,
             ClassMngr::Next::Application::
-                ScheduleImportStateValidationErrorCode::SelectedClassUnavailable
+                ScheduleImportPlanEligibilityIssueCode::InvalidReviewDecision
             );
-        QVERIFY2(
-            typedApplyFailureMessage(noncanonicalClassResult).contains(
-                QStringLiteral("selected class is no longer available"),
-                Qt::CaseInsensitive),
-            qPrintable(typedApplyFailureMessage(noncanonicalClassResult))
+        QVERIFY(
+            noncanonicalClassResult.error()
+                .policyIssue->reviewDecisionIssue.has_value()
             );
+        QCOMPARE(
+            noncanonicalClassResult.error()
+                .policyIssue->reviewDecisionIssue->code,
+            ClassMngr::Next::Application::
+                ScheduleImportReviewDecisionIssueCode::
+                    InvalidExistingClassTarget
+            );
+        QVERIFY(
+            noncanonicalClassResult.error()
+                .policyIssue->reviewDecisionIssue->targetClassId.has_value()
+            );
+        QCOMPARE(
+            noncanonicalClassResult.error()
+                .policyIssue->reviewDecisionIssue->targetClassId->value(),
+            std::string("01")
+            );
+        QVERIFY(!noncanonicalClassResult.error().teacherTargetIssue.has_value());
+        QVERIFY(!noncanonicalClassResult.error().stateValidationError.has_value());
         QCOMPARE(
             persistedScheduleImportSnapshot(database, true),
             beforeClassRejection
