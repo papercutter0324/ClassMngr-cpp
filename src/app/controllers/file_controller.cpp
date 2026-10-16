@@ -646,12 +646,34 @@ void FileController::showInitialSetupCancelWarning(
             result.originalBackup.value().data(),
             static_cast<qsizetype>(result.originalBackup.value().size())
             );
-        DialogServices::showWarning(
-            m_window,
-            tr("Initial Setup"),
-            tr("The original Teacher Profile could not be restored:\n%1")
-                .arg(backupPath)
-            );
+        if (!result.incompleteRecovery.empty())
+        {
+            const QString incompleteRecoveryPath = QString::fromUtf8(
+                result.incompleteRecovery.value().data(),
+                static_cast<qsizetype>(
+                    result.incompleteRecovery.value().size()
+                    )
+                );
+            DialogServices::showWarning(
+                m_window,
+                tr("Initial Setup"),
+                tr(
+                    "The original Teacher Profile could not be restored."
+                    "\n\nOriginal backup path:\n%1"
+                    "\n\nIncomplete Teacher Profile recovery path:\n%2"
+                    )
+                    .arg(backupPath, incompleteRecoveryPath)
+                );
+        }
+        else
+        {
+            DialogServices::showWarning(
+                m_window,
+                tr("Initial Setup"),
+                tr("The original Teacher Profile could not be restored:\n%1")
+                    .arg(backupPath)
+                );
+        }
     }
 }
 

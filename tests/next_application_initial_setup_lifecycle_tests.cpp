@@ -410,6 +410,41 @@ bool failedIncompleteRemovalLeavesRecoverableProfile()
         && require(!lifecycle.hasPendingSetup(), "remove failure retained setup ticket");
 }
 
+bool failedInitialIncompleteMoveDoesNotReportRecoveryPath()
+{
+    FakeInitialSetupPort port;
+    port.files["profile.tps"] = "original";
+    InitialSetupLifecycle lifecycle(port);
+    const auto started = lifecycle.begin(WorkspaceLocation("profile.tps"));
+    if (!require(started.started(), "setup did not start before initial move failure test"))
+    {
+        return false;
+    }
+
+    port.failMoveCalls.insert(2);
+    const auto canceled = lifecycle.cancel();
+    return require(
+        canceled.status == InitialSetupCancelStatus::OriginalProfileRestoreFailed,
+        "failed initial incomplete move did not report restore failure"
+        )
+        && require(
+            canceled.originalBackup == WorkspaceLocation("profile.tps.recovery-1"),
+            "failed initial incomplete move lost original backup path"
+            )
+        && require(
+            canceled.incompleteRecovery.empty(),
+            "failed initial incomplete move reported a stale recovery path"
+            )
+        && require(
+            port.files.at("profile.tps.recovery-1") == "original",
+            "failed initial incomplete move lost the original backup"
+            )
+        && require(
+            port.files.at("profile.tps") == "new setup profile",
+            "failed initial incomplete move lost the setup profile"
+            );
+}
+
 bool restoreFailureKeepsOriginalBackupAndIncompleteProfile()
 {
     FakeInitialSetupPort port;
@@ -430,6 +465,10 @@ bool restoreFailureKeepsOriginalBackupAndIncompleteProfile()
         && require(
             canceled.originalBackup == WorkspaceLocation("profile.tps.recovery-1"),
             "restore failure did not report original backup location"
+            )
+        && require(
+            canceled.incompleteRecovery.empty(),
+            "successful move-back reported a stale incomplete recovery path"
             )
         && require(
             port.files.at("profile.tps.recovery-1") == "original",
@@ -461,12 +500,24 @@ bool failedRestoreAndFailedPutBackKeepBothRecoveryFiles()
         "double move failure did not report original restore failure"
         )
         && require(
+            canceled.originalBackup == WorkspaceLocation("profile.tps.recovery-1"),
+            "double move failure did not report original backup path"
+            )
+        && require(
+            canceled.incompleteRecovery == WorkspaceLocation("profile.tps.recovery-2"),
+            "double move failure did not report retained incomplete recovery path"
+            )
+        && require(
             port.files.at("profile.tps.recovery-1") == "original",
             "double move failure lost original backup"
             )
         && require(
             port.files.at("profile.tps.recovery-2") == "new setup profile",
             "double move failure lost incomplete recovery file"
+            )
+        && require(
+            !port.files.contains("profile.tps"),
+            "double move failure unexpectedly restored the incomplete profile"
             );
 }
 
@@ -526,6 +577,7 @@ int main()
         && createFailureRestoresExistingProfileAndRemovesIncompleteCopy()
         && failedCancelCloseRetainsTicketForRetry()
         && failedIncompleteRemovalLeavesRecoverableProfile()
+        && failedInitialIncompleteMoveDoesNotReportRecoveryPath()
         && restoreFailureKeepsOriginalBackupAndIncompleteProfile()
         && failedRestoreAndFailedPutBackKeepBothRecoveryFiles()
         && finishRemovalFailureLeavesBackupAndClearsTicket()

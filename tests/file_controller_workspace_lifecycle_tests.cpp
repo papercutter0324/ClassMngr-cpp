@@ -6,6 +6,7 @@
 #include "data/database/database_schema_manager.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/application/initial_setup_lifecycle.h"
 #include "next/application/workspace_creation_lifecycle.h"
 #include "next/platform/settings_manager_last_database_directory_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
@@ -27,8 +28,26 @@
 #include <QtTest/QtTest>
 
 #include <cstddef>
+#include <memory>
+#include <set>
 #include <string>
 #include <utility>
+
+struct FileControllerWorkspaceLifecycleTestAccess final
+{
+    [[nodiscard]] static ClassMngr::Next::Application::InitialSetupBeginResult
+    beginInitialSetup(
+        FileController& controller,
+        ClassMngr::Next::Application::InitialSetupLifecyclePort& port,
+        ClassMngr::Next::Application::WorkspaceLocation profile
+        )
+    {
+        controller.m_initialSetupLifecycle = std::make_unique<
+            ClassMngr::Next::Application::InitialSetupLifecycle
+            >(port);
+        return controller.m_initialSetupLifecycle->begin(std::move(profile));
+    }
+};
 
 namespace
 {
@@ -45,6 +64,144 @@ bool writeFile(
 
     return file.write(contents) == contents.size();
 }
+
+ClassMngr::Next::Application::WorkspaceLocation workspaceLocation(
+    const QString& path
+    )
+{
+    const QByteArray encoded = path.toUtf8();
+    return ClassMngr::Next::Application::WorkspaceLocation(
+        std::string(
+            encoded.constData(),
+            static_cast<std::size_t>(encoded.size())
+            )
+        );
+}
+
+QString qtPath(
+    const ClassMngr::Next::Application::WorkspaceLocation& location
+    )
+{
+    return QString::fromUtf8(
+        location.value().data(),
+        static_cast<qsizetype>(location.value().size())
+        );
+}
+
+class ScriptedInitialSetupLifecyclePort final
+    : public ClassMngr::Next::Application::InitialSetupLifecyclePort
+{
+public:
+    ScriptedInitialSetupLifecyclePort(
+        QString originalBackup,
+        QString incompleteRecovery
+        )
+        : originalBackupPath(std::move(originalBackup)),
+          incompleteRecoveryPath(std::move(incompleteRecovery))
+    {
+    }
+
+    [[nodiscard]] bool hasActiveWorkspace() const override
+    {
+        return active;
+    }
+
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void>
+    closeActiveWorkspace() override
+    {
+        active = false;
+        return ClassMngr::Next::Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] bool profileExists(
+        const ClassMngr::Next::Application::WorkspaceLocation& location
+        ) const override
+    {
+        return QFileInfo::exists(qtPath(location));
+    }
+
+    [[nodiscard]] ClassMngr::Next::Application::WorkspaceLocation
+    recoveryLocationFor(
+        const ClassMngr::Next::Application::WorkspaceLocation& profile
+        ) override
+    {
+        Q_UNUSED(profile);
+        ++recoveryPathCount;
+        return workspaceLocation(
+            recoveryPathCount == 1
+                ? originalBackupPath
+                : incompleteRecoveryPath
+            );
+    }
+
+    [[nodiscard]] bool moveProfile(
+        const ClassMngr::Next::Application::WorkspaceLocation& source,
+        const ClassMngr::Next::Application::WorkspaceLocation& destination
+        ) override
+    {
+        ++moveCalls;
+        const QString sourcePath = qtPath(source);
+        const QString destinationPath = qtPath(destination);
+        if (
+            failMoveCalls.contains(moveCalls)
+            || QFileInfo::exists(destinationPath)
+            || !QFileInfo::exists(sourcePath)
+            )
+        {
+            return false;
+        }
+        return QFile::rename(sourcePath, destinationPath);
+    }
+
+    [[nodiscard]] bool removeProfile(
+        const ClassMngr::Next::Application::WorkspaceLocation& location
+        ) override
+    {
+        return QFile::remove(qtPath(location));
+    }
+
+    [[nodiscard]] ClassMngr::Next::Domain::Result<
+        ClassMngr::Next::Application::WorkspaceSession
+        > createWorkspace(
+            const ClassMngr::Next::Application::CreateWorkspaceRequest& request
+            ) override
+    {
+        if (!writeFile(qtPath(request.location), incompleteProfileContents))
+        {
+            return ClassMngr::Next::Domain::Result<
+                ClassMngr::Next::Application::WorkspaceSession
+                >::failure(
+                    ClassMngr::Next::Domain::OperationError{
+                        .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                        .message = "Unable to create the scripted setup profile.",
+                        .recoverable = true
+                    }
+                    );
+        }
+
+        active = true;
+        return ClassMngr::Next::Domain::Result<
+            ClassMngr::Next::Application::WorkspaceSession
+            >::success(
+                ClassMngr::Next::Application::WorkspaceSession(
+                    *ClassMngr::Next::Domain::WorkspaceId::fromString(
+                        "scripted-initial-setup"
+                        ),
+                    request.location
+                    )
+                );
+    }
+
+    QString originalBackupPath;
+    QString incompleteRecoveryPath;
+    QByteArray incompleteProfileContents = QByteArrayLiteral(
+        "incomplete setup profile"
+        );
+    std::set<int> failMoveCalls{3, 4};
+    bool active = false;
+    int moveCalls = 0;
+    int recoveryPathCount = 0;
+};
 
 class FailingWorkspaceCreationPort final
     : public ClassMngr::Next::Application::WorkspaceCreationLifecyclePort
@@ -396,6 +553,7 @@ private slots:
     void initialSetupWithoutBackupUpdatesRecentOnlyOnFinish();
     void initialSetupCreateFailureWarnsAfterRestoringOriginal();
     void initialSetupRestoreFailureWarnsWithOriginalBackupPath();
+    void initialSetupRestoreAndMoveBackFailureWarnsWithBothRecoveryPaths();
     void createErrorUsesStructuredUtf8Message();
     void successfulStartupLoadPersistsNormalizedPath();
     void failedReplacementOpenPreservesActiveWorkspaceAndUiState();
@@ -1620,6 +1778,65 @@ initialSetupRestoreFailureWarnsWithOriginalBackupPath()
             "The original Teacher Profile could not be restored:\n%1"
             ).arg(backupPath)
         );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+initialSetupRestoreAndMoveBackFailureWarnsWithBothRecoveryPaths()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("restore-and-moveback-warning-target.tps")
+        );
+    const QString backupPath = workspaceRoot.filePath(
+        QStringLiteral(".restore-and-moveback-warning-target.original.backup")
+        );
+    const QString incompleteRecoveryPath = workspaceRoot.filePath(
+        QStringLiteral(".restore-and-moveback-warning-target.incomplete.recovery")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("original profile");
+    const QByteArray incompleteContents = QByteArrayLiteral(
+        "incomplete setup profile"
+        );
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    ScriptedInitialSetupLifecyclePort port(
+        backupPath,
+        incompleteRecoveryPath
+        );
+    FileController controller(&services, nullptr);
+    const auto started =
+        FileControllerWorkspaceLifecycleTestAccess::beginInitialSetup(
+            controller,
+            port,
+            workspaceLocation(targetPath)
+            );
+
+    QVERIFY(started.started());
+    QCOMPARE(readFile(backupPath), originalContents);
+    QCOMPARE(readFile(targetPath), incompleteContents);
+
+    controller.cancelInitialSetup();
+
+    QVERIFY(!QFileInfo::exists(targetPath));
+    QCOMPARE(readFile(backupPath), originalContents);
+    QCOMPARE(readFile(incompleteRecoveryPath), incompleteContents);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Initial Setup"));
+    QVERIFY(warning.message.contains(
+        QStringLiteral("Original backup path:\n%1").arg(backupPath)
+        ));
+    QVERIFY(warning.message.contains(
+        QStringLiteral(
+            "Incomplete Teacher Profile recovery path:\n%1"
+            ).arg(incompleteRecoveryPath)
+        ));
 }
 
 void FileControllerWorkspaceLifecycleTests::createErrorUsesStructuredUtf8Message()

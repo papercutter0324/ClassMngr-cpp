@@ -239,6 +239,10 @@ public:
             movedIncompleteProfile =
                 !result.incompleteRecovery.empty()
                 && m_port.moveProfile(m_profile, result.incompleteRecovery);
+            if (!movedIncompleteProfile)
+            {
+                result.incompleteRecovery = {};
+            }
         }
 
         if (
@@ -246,15 +250,16 @@ public:
             || !m_port.moveProfile(m_originalBackup, m_profile)
             )
         {
-            if (
-                movedIncompleteProfile
-                && !result.incompleteRecovery.empty()
-                && m_port.profileExists(result.incompleteRecovery)
-                && !m_port.moveProfile(result.incompleteRecovery, m_profile)
-                )
+            if (movedIncompleteProfile && !result.incompleteRecovery.empty())
             {
-                // Keep the incomplete profile at its recovery path if putting
-                // it back fails. The original remains at originalBackup.
+                if (
+                    !m_port.profileExists(result.incompleteRecovery)
+                    || m_port.moveProfile(result.incompleteRecovery, m_profile)
+                    || !m_port.profileExists(result.incompleteRecovery)
+                    )
+                {
+                    result.incompleteRecovery = {};
+                }
             }
 
             result.status =

@@ -78,6 +78,8 @@ public slots:
     void autosave();
 
 private:
+    friend struct FileControllerWorkspaceLifecycleTestAccess;
+
     void newFile();
     void openFile();
 
