@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F968 and F969 are complete; F970 is active and F971 is next in Batch340; all 13 official Deferred entries remain unresolved, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F970 is complete and F971 is active from Batch340; two post-F970 audits found all 13 official Deferred entries unchanged, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F970 - Document catalog hierarchy validation: reject duplicate folder paths and malformed parent hierarchies before projection succeeds.
 - F971 - Import and Report cancellation acknowledgement: reject unsolicited acknowledgements unless cancellation was requested.
 
 ## Objective

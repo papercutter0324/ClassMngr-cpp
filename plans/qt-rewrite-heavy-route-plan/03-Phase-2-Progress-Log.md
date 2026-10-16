@@ -41830,6 +41830,17 @@ F971 acceptance for implementation, selected second:
    `ClassMngrNextApplicationReportJobCoordinatorTests`; run only those four
    exact CTest registrations. Do not run the full suite.
 
-F970 is the active accepted slice and F971 is next. All 13 official Deferred
-entries remain unresolved; Gates 1/2 remain Partial and the formal Phase 2
-exit gate remains Open.
+F970 was implemented at source/test commit
+`02ebc5c6be2df699212867304e260637975fba6d` (`Phase2 - Validate document
+catalog hierarchy`). Independent verification freshly built `ClassMngr` and
+`ClassMngrNextApplicationDocumentCatalogTests`, then passed the exact CTest
+registration `ClassMngrNextApplicationDocumentCatalogTests` (1/1), covering
+duplicate folder paths, unresolved parents, cycles, valid nested folders in
+arbitrary order, and over-limit and exact-maximum folder/document path bounds.
+`git diff --check` passed; no full suite ran.
+
+Two independent post-F970 audits found all 13 official Deferred entries
+unchanged; none became newly actionable, resolved, superseded, or materially
+changed, and F970 changed none of their triggers. F971 is now the active
+accepted slice. All 13 entries remain unresolved; Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
