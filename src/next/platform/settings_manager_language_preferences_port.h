@@ -121,6 +121,26 @@ public:
         SettingsManager::instance().remove(key());
     }
 
+    [[nodiscard]] std::function<Domain::Result<void>()> restorePoint() const override
+    {
+        const auto previous = SettingsManager::instance().languagePreferenceValue();
+        return [previous, synchronize = m_synchronize]()
+        {
+            const auto status = SettingsManager::instance().writeLanguagePreferenceValue(
+                previous, synchronize);
+            if (status != QSettings::NoError)
+            {
+                return Domain::Result<void>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = std::string("Unable to restore Language preference: QSettings ")
+                        + (status == QSettings::AccessError ? "AccessError." : "FormatError."),
+                    .recoverable = true
+                });
+            }
+            return Domain::Result<void>::success();
+        };
+    }
+
 private:
     SettingsManager::LanguagePreferenceSync m_synchronize;
 

@@ -7,20 +7,32 @@
 #include <QStringList>
 
 LanguageService::LanguageService(
-    QObject* parent
+    QObject* parent,
+    TranslationOperations operations
     )
     : QObject(parent)
+    , m_operations(std::move(operations))
 {
 }
 
-bool LanguageService::setLanguage(
-    Language language
-    )
+LanguageService::~LanguageService()
 {
     removeCurrentTranslator();
+}
 
-    m_language =
-        language;
+std::unique_ptr<LanguageService::PreparedLanguage> LanguageService::prepareLanguage(
+    const Language language
+    ) const
+{
+    if (language != Language::SystemDefault && language != Language::English
+        && language != Language::Korean)
+    {
+        return {};
+    }
+
+    auto prepared = std::make_unique<PreparedLanguage>();
+    prepared->language = language;
+    prepared->translator = std::make_unique<QTranslator>();
 
     for (const QString& localeName : candidateLocalesFor(language))
     {
@@ -31,28 +43,60 @@ bool LanguageService::setLanguage(
                     localeName
                     );
 
-        if (!m_translator.load(resourcePath))
+        const bool loaded = m_operations.load
+            ? m_operations.load(*prepared->translator, resourcePath)
+            : prepared->translator->load(resourcePath);
+        if (!loaded)
         {
             continue;
         }
 
-        if (qApp)
-        {
-            qApp->installTranslator(
-                &m_translator
-                );
-            m_translatorInstalled = true;
-        }
-
-        m_loadedLocaleName =
-            localeName;
-
-        return true;
+        prepared->locale = localeName;
+        return prepared;
     }
 
-    m_loadedLocaleName.clear();
+    if (language != Language::SystemDefault)
+    {
+        return {};
+    }
+    prepared->translator.reset();
+    return prepared;
+}
 
-    return language == Language::SystemDefault;
+bool LanguageService::applyPreparedLanguage(
+    std::unique_ptr<PreparedLanguage> prepared
+    )
+{
+    if (!prepared)
+    {
+        return false;
+    }
+
+    bool installed = false;
+    if (prepared->translator && qApp)
+    {
+        installed = m_operations.install
+            ? m_operations.install(prepared->translator.get())
+            : qApp->installTranslator(prepared->translator.get());
+        if (!installed)
+        {
+            return false;
+        }
+    }
+
+    // Keep the old translator alive and installed until its replacement is
+    // installed successfully. A failed request cannot disturb the live locale.
+    removeCurrentTranslator();
+    m_translator = std::move(prepared->translator);
+    m_translatorInstalled = installed;
+    m_language = prepared->language;
+    m_loadedLocaleName = std::move(prepared->locale);
+    return true;
+}
+
+bool LanguageService::setLanguage(const Language language)
+{
+    return applyPreparedLanguage(prepareLanguage(language));
 }
 
 Language LanguageService::currentLanguage() const
@@ -158,7 +202,7 @@ void LanguageService::removeCurrentTranslator()
     }
 
     qApp->removeTranslator(
-        &m_translator
+        m_translator.get()
         );
 
     m_translatorInstalled = false;

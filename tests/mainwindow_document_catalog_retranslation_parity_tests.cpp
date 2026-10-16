@@ -302,7 +302,18 @@ void MainWindowDocumentCatalogRetranslationParityTests::initTestCase()
 void MainWindowDocumentCatalogRetranslationParityTests::
     languageActionsPreserveDocumentSidebarExpansion()
 {
-    LanguageService languageService;
+    bool failLoad = false;
+    bool failInstall = false;
+    LanguageService languageService(nullptr, {
+        .load = [&](QTranslator& translator, const QString& path)
+        {
+            return !failLoad && translator.load(path);
+        },
+        .install = [&](QTranslator* translator)
+        {
+            return !failInstall && qApp->installTranslator(translator);
+        }
+    });
     QVERIFY(languageService.setLanguage(Language::English));
     QCOMPARE(languageService.loadedLocaleName(), QStringLiteral("en_US"));
 
@@ -494,6 +505,38 @@ void MainWindowDocumentCatalogRetranslationParityTests::
 
     injectAccessError = false;
 
+    for (const bool loadingFailure : {true, false})
+    {
+        failLoad = loadingFailure;
+        failInstall = !loadingFailure;
+        koreanAction->trigger();
+        QApplication::processEvents();
+
+        QCOMPARE(synchronizationAttempts, loadingFailure ? 1 : 3);
+        QCOMPARE(diagnosticCount, loadingFailure ? 2 : 3);
+        QCOMPARE(lastDiagnostic.code, ClassMngr::Next::Domain::ErrorCode::Technical);
+        QVERIFY(lastDiagnostic.message.find(loadingFailure ? "load" : "install")
+            != std::string::npos);
+        QCOMPARE(actions.languageState->current(), Language::English);
+        QVERIFY(englishAction->isChecked());
+        QVERIFY(!koreanAction->isChecked());
+        QCOMPARE(languagePreferences->read(),
+            ClassMngr::Next::Application::LanguagePreference::English);
+        QCOMPARE(SettingsManager::instance().get(QStringLiteral("options/language")).toInt(), 1);
+        QCOMPARE(languageService.currentLanguage(), Language::English);
+        QCOMPARE(languageService.loadedLocaleName(), QStringLiteral("en_US"));
+        QCOMPARE(QApplication::font(), englishFontBeforeFailure);
+        QCOMPARE(documents->text(0), englishDocumentsTitleBeforeFailure);
+        QCOMPARE(guides->text(0), englishGuidesTitleBeforeFailure);
+        QCOMPARE(QCoreApplication::translate("ActionRegistry", "System Default"),
+            QStringLiteral("System Default"));
+        QCOMPARE(sidebar->selectedKeys(), selectedKeys);
+        QCOMPARE(sidebar->expandedItemKeyPaths(), expandedKeyPaths);
+        QCOMPARE(routeEvents.count(), 0);
+    }
+    failLoad = false;
+    failInstall = false;
+
     QVERIFY(pages->pdfViewerPage() == nullptr);
     QVERIFY(!pages->isPageInstantiated(PageType::PdfViewer));
     QVERIFY(
@@ -506,8 +549,8 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QApplication::processEvents();
     SettingsManager::instance().sync();
 
-    QCOMPARE(synchronizationAttempts, 2);
-    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(synchronizationAttempts, 4);
+    QCOMPARE(diagnosticCount, 3);
     QCOMPARE(actions.languageState->current(), Language::Korean);
     QVERIFY(koreanAction->isChecked());
     QVERIFY(!englishAction->isChecked());
@@ -558,8 +601,8 @@ void MainWindowDocumentCatalogRetranslationParityTests::
     QApplication::processEvents();
     SettingsManager::instance().sync();
 
-    QCOMPARE(synchronizationAttempts, 3);
-    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(synchronizationAttempts, 5);
+    QCOMPARE(diagnosticCount, 3);
     QCOMPARE(actions.languageState->current(), Language::English);
     QVERIFY(englishAction->isChecked());
     QVERIFY(!koreanAction->isChecked());

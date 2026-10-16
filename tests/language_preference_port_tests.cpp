@@ -100,6 +100,8 @@ private slots:
     void actionWritesCanonicalLanguageValuesAndKeepsOtherOptionWrites();
     void invalidOrFailedChangesPreserveTypedState();
     void failedActionRollsBackAndProgrammaticFailureReportsBeforeRetry();
+    void failedApplyPreservesActionAndPresentation_data();
+    void failedApplyPreservesActionAndPresentation();
 };
 
 void LanguagePreferencePortTests::portMapsEveryTypedPreferenceToTheLegacyService()
@@ -383,6 +385,145 @@ failedActionRollsBackAndProgrammaticFailureReportsBeforeRetry()
     QCOMPARE(settings.get(languageKey).toInt(), 5);
     QCOMPARE(preferences->read(), LanguagePreference::Korean);
     QCOMPARE(settings.get(unrelatedKey).toInt(), 53);
+}
+
+void LanguagePreferencePortTests::failedApplyPreservesActionAndPresentation_data()
+{
+    QTest::addColumn<QVariant>("priorSetting");
+    QTest::addColumn<bool>("loadFailure");
+    QTest::addColumn<bool>("rollbackFailure");
+    QTest::addColumn<bool>("hasSetting");
+    QTest::newRow("load") << QVariant(5) << true << false << true;
+    QTest::newRow("install") << QVariant(5) << false << false << true;
+    QTest::newRow("install-absent-setting") << QVariant() << false << false << false;
+    QTest::newRow("install-invalid-setting") << QVariant(QStringLiteral("invalid")) << false << false << true;
+    QTest::newRow("install-invalid-variant") << QVariant() << false << false << true;
+    QTest::newRow("install-rollback-failure") << QVariant(5) << false << true << true;
+}
+
+void LanguagePreferencePortTests::failedApplyPreservesActionAndPresentation()
+{
+    QFETCH(QVariant, priorSetting);
+    QFETCH(bool, loadFailure);
+    QFETCH(bool, rollbackFailure);
+    QFETCH(bool, hasSetting);
+    auto& settings = SettingsManager::instance();
+    const QString key = languageSettingsKey();
+    const QString unrelatedKey = QStringLiteral("options/unrelatedLanguageApplyTest");
+    ScopedLanguageTestSettingsRestore restoreSettings(settings, key, unrelatedKey);
+    QVERIFY(settings.writeLanguagePreferenceValue(
+        hasSetting ? std::optional<QVariant>(priorSetting) : std::nullopt) == QSettings::NoError);
+    settings.set(unrelatedKey, 79);
+
+    bool failLoad = false;
+    bool failInstall = false;
+    bool installedAfterPersistence = false;
+    int installAttempts = 0;
+    LanguageService service(nullptr, {
+        .load = [&](QTranslator& translator, const QString& path)
+        {
+            return !failLoad && translator.load(path);
+        },
+        .install = [&](QTranslator* translator)
+        {
+            ++installAttempts;
+            // QAction must persist before the visible language transition.
+            if (failInstall)
+            {
+                installedAfterPersistence = settings.get(key).toInt() == 1;
+                return false;
+            }
+            return qApp->installTranslator(translator);
+        }
+    });
+    QVERIFY(service.setLanguage(Language::Korean));
+    FontManager::applyGlobalFont(*qApp, service.loadedLocaleName());
+    const QFont priorFont = qApp->font();
+    const QString priorTranslation = QCoreApplication::translate("MenuBuilder", "Documents");
+    QVERIFY(priorTranslation != QStringLiteral("Documents"));
+
+    int writes = 0;
+    const auto preferences = std::make_shared<SettingsManagerLanguagePreferencesPort>(
+        [&](QSettings& store)
+        {
+            ++writes;
+            if (rollbackFailure && writes == 2)
+                return QSettings::AccessError;
+            store.sync();
+            return store.status();
+        });
+    int diagnostics = 0;
+    OperationError lastDiagnostic;
+    ActionRegistry actions;
+    actions.createActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, preferences,
+        [&](const OperationError& error) { ++diagnostics; lastDiagnostic = error; });
+    int changed = 0;
+    actions.languageState->onChanged = [&](Language) { ++changed; };
+    LanguageController controller(service, nullptr);
+    controller.connectActions(actions);
+    const auto priorOption = actions.languageState->current();
+    const auto priorPreferences = controller.preferencesSnapshot();
+    QAction* const previousAction = actions.languageState->action(priorOption);
+    QAction* const requestedAction = actions.languageState->action(Language::English);
+    QVERIFY(previousAction);
+    QVERIFY(requestedAction);
+    QCOMPARE(writes, 0);
+    failLoad = loadFailure;
+    failInstall = !loadFailure;
+    requestedAction->trigger();
+
+    QCOMPARE(diagnostics, 1);
+    QCOMPARE(lastDiagnostic.code, ErrorCode::Technical);
+    QVERIFY(lastDiagnostic.message.find(loadFailure ? "load" : "install") != std::string::npos);
+    QCOMPARE(writes, loadFailure ? 0 : 2);
+    QCOMPARE(installAttempts, loadFailure ? 1 : 2);
+    if (!loadFailure)
+        QVERIFY(installedAfterPersistence);
+    QCOMPARE(changed, 0);
+    QCOMPARE(actions.languageState->current(), priorOption);
+    QVERIFY(previousAction->isChecked());
+    QVERIFY(!requestedAction->isChecked());
+    QVERIFY(controller.preferencesSnapshot() == priorPreferences);
+    QCOMPARE(service.currentLanguage(), Language::Korean);
+    QCOMPARE(service.loadedLocaleName(), QStringLiteral("ko_KR"));
+    QCOMPARE(qApp->font(), priorFont);
+    QCOMPARE(QCoreApplication::translate("MenuBuilder", "Documents"), priorTranslation);
+    QCOMPARE(settings.get(unrelatedKey).toInt(), 79);
+    if (rollbackFailure)
+    {
+        QVERIFY(lastDiagnostic.message.find("restore") != std::string::npos);
+        QVERIFY(lastDiagnostic.message.find("AccessError") != std::string::npos);
+        QCOMPARE(settings.get(key).toInt(), 1);
+    }
+    else
+    {
+        QCOMPARE(settings.get(key), priorSetting);
+        QCOMPARE(settings.languagePreferenceValue().has_value(), hasSetting);
+    }
+
+    failLoad = false;
+    failInstall = false;
+    requestedAction->trigger();
+    QCOMPARE(diagnostics, 1);
+    QCOMPARE(changed, 1);
+    QCOMPARE(writes, loadFailure ? 1 : 3);
+    QCOMPARE(settings.get(key).toInt(), 1);
+    QCOMPARE(actions.languageState->current(), Language::English);
+    QVERIFY(requestedAction->isChecked());
+    QCOMPARE(controller.preferencesSnapshot().languagePreference(), LanguagePreference::English);
+    QCOMPARE(service.currentLanguage(), Language::English);
+    QCOMPARE(QCoreApplication::translate("MenuBuilder", "Documents"), QStringLiteral("Documents"));
+
+    // Programmatic commits retain their legacy order and commit/callback
+    // behavior even when applying their presentation fails.
+    failLoad = true;
+    actions.languageState->set(Language::Korean);
+    QCOMPARE(changed, 2);
+    QCOMPARE(diagnostics, 1);
+    QCOMPARE(actions.languageState->current(), Language::Korean);
+    QCOMPARE(settings.get(key).toInt(), 5);
+    QCOMPARE(controller.preferencesSnapshot().languagePreference(), LanguagePreference::English);
+    QCOMPARE(service.currentLanguage(), Language::English);
 }
 
 QTEST_MAIN(LanguagePreferencePortTests)

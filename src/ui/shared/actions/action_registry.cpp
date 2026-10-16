@@ -1216,7 +1216,7 @@ void ActionRegistry::createOptionActions(
         }
     };
     const auto connectLanguageAction =
-        [this, writeLanguagePreference, languagePreferenceErrorHandler,
+        [this, languagePreferencesPort, writeLanguagePreference, languagePreferenceErrorHandler,
             skipLanguagePersistForActionCommit, restoreLanguageAction](
             QAction* action,
             const ::Language language
@@ -1226,7 +1226,7 @@ void ActionRegistry::createOptionActions(
                 action,
                 &QAction::triggered,
                 this,
-                [this, action, writeLanguagePreference,
+                [this, action, languagePreferencesPort, writeLanguagePreference,
                     languagePreferenceErrorHandler,
                     skipLanguagePersistForActionCommit,
                     restoreLanguageAction, language]()
@@ -1248,16 +1248,48 @@ void ActionRegistry::createOptionActions(
 
                     const ::Language previousLanguage =
                         languageState->current();
-                    const auto saved = writeLanguagePreference(language);
-                    if (!saved)
+                    const auto reportFailure = [&](
+                        const ClassMngr::Next::Domain::OperationError& error)
                     {
                         restoreLanguageAction(previousLanguage);
                         action->setChecked(false);
                         if (languagePreferenceErrorHandler)
                         {
-                            languagePreferenceErrorHandler(saved.error());
+                            languagePreferenceErrorHandler(error);
                         }
+                    };
+                    if (prepareLanguageAction)
+                    {
+                        const auto prepared = prepareLanguageAction(language);
+                        if (!prepared)
+                        {
+                            reportFailure(prepared.error());
+                            return;
+                        }
+                    }
+
+                    const auto restorePreference = languagePreferencesPort->restorePoint();
+                    const auto saved = writeLanguagePreference(language);
+                    if (!saved)
+                    {
+                        reportFailure(saved.error());
                         return;
+                    }
+
+                    if (applyLanguageAction)
+                    {
+                        const auto applied = applyLanguageAction();
+                        if (!applied)
+                        {
+                            auto error = applied.error();
+                            const auto restored = restorePreference();
+                            if (!restored)
+                            {
+                                error.message += " " + restored.error().message;
+                            }
+                            reportFailure(error);
+                            return;
+                        }
                     }
 
                     *skipLanguagePersistForActionCommit = true;

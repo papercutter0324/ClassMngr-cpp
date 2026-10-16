@@ -107,6 +107,10 @@ public:
     OptionState<SaveMode>* saveModeState = nullptr;
     OptionState<Theme>* themeState = nullptr;
     OptionState<Language>* languageState = nullptr;
+    // QAction requests stage presentation before persistence, then apply it
+    // before committing OptionState. Programmatic set keeps its own callbacks.
+    std::function<ClassMngr::Next::Domain::Result<void>(Language)> prepareLanguageAction;
+    std::function<ClassMngr::Next::Domain::Result<void>()> applyLanguageAction;
     OptionState<FontSize>* fontSizeState = nullptr;
     OptionState<DocumentPageSpacing>* documentPageSpacingState = nullptr;
     OptionState<DocumentViewerBackground>* documentViewerBackgroundState = nullptr;

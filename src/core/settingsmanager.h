@@ -240,6 +240,13 @@ public:
         const LanguagePreferenceSync& synchronize = {}
         );
 
+    // nullopt means no key; an engaged invalid QVariant is a stored value.
+    [[nodiscard]] std::optional<QVariant> languagePreferenceValue() const;
+    [[nodiscard]] QSettings::Status writeLanguagePreferenceValue(
+        const std::optional<QVariant>& language,
+        const LanguagePreferenceSync& synchronize = {}
+        );
+
     // An empty callback uses QSettings::sync/status. The preference-specific
     // writer reports failure and restores the previous key before returning.
     using DocumentViewerBackgroundPreferenceSync =

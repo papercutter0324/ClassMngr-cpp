@@ -36,6 +36,20 @@ public:
         const Application::LanguagePreference preference
         ) const
     {
+        auto prepared = prepare(preference);
+        if (!prepared)
+        {
+            return Domain::Result<void>::failure(prepared.error());
+        }
+        return applyPrepared(std::move(prepared.value()));
+    }
+
+    using PreparedLanguage = std::unique_ptr<LanguageService::PreparedLanguage>;
+
+    [[nodiscard]] Domain::Result<PreparedLanguage> prepare(
+        const Application::LanguagePreference preference
+        ) const
+    {
         Language language;
         switch (preference)
         {
@@ -52,7 +66,7 @@ public:
             break;
 
         default:
-            return Domain::Result<void>::failure({
+            return Domain::Result<PreparedLanguage>::failure({
                 .code = Domain::ErrorCode::InvalidInput,
                 .message =
                     "Language preference must be SystemDefault, English, or Korean.",
@@ -60,9 +74,10 @@ public:
             });
         }
 
-        if (!m_languageService.setLanguage(language))
+        auto prepared = m_languageService.prepareLanguage(language);
+        if (!prepared)
         {
-            return Domain::Result<void>::failure({
+            return Domain::Result<PreparedLanguage>::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message =
                     "Language service could not load the requested locale.",
@@ -70,12 +85,30 @@ public:
             });
         }
 
+        return Domain::Result<PreparedLanguage>::success(std::move(prepared));
+    }
+
+    [[nodiscard]] Domain::Result<void> applyPrepared(PreparedLanguage prepared) const
+    {
+        if (!m_languageService.applyPreparedLanguage(std::move(prepared)))
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "Language service could not install the requested locale.",
+                .recoverable = false
+            });
+        }
         return Domain::Result<void>::success();
     }
 
     [[nodiscard]] QString loadedLocaleName() const
     {
         return m_languageService.loadedLocaleName();
+    }
+
+    [[nodiscard]] Language currentLanguage() const
+    {
+        return m_languageService.currentLanguage();
     }
 
 private:

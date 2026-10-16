@@ -472,15 +472,36 @@ QSettings::Status SettingsManager::writeLanguagePreference(
     const LanguagePreferenceSync& synchronize
     )
 {
+    return writeLanguagePreferenceValue(QVariant(language), synchronize);
+}
+
+std::optional<QVariant> SettingsManager::languagePreferenceValue() const
+{
+    if (!m_settings->contains(Keys::LANGUAGE_PREFERENCE))
+    {
+        return std::nullopt;
+    }
+    return m_settings->value(Keys::LANGUAGE_PREFERENCE);
+}
+
+QSettings::Status SettingsManager::writeLanguagePreferenceValue(
+    const std::optional<QVariant>& language,
+    const LanguagePreferenceSync& synchronize
+    )
+{
     const bool hadPreviousLanguage =
         m_settings->contains(Keys::LANGUAGE_PREFERENCE);
     const QVariant previousLanguage =
         m_settings->value(Keys::LANGUAGE_PREFERENCE);
 
-    m_settings->setValue(
-        Keys::LANGUAGE_PREFERENCE,
-        language
-        );
+    if (language)
+    {
+        m_settings->setValue(Keys::LANGUAGE_PREFERENCE, *language);
+    }
+    else
+    {
+        m_settings->remove(Keys::LANGUAGE_PREFERENCE);
+    }
 
     QSettings::Status status = QSettings::NoError;
     if (synchronize)

@@ -32,6 +32,39 @@ void LanguageController::connectActions(
     const auto previousLanguageHandler =
         actions.languageState->onChanged;
 
+    actions.prepareLanguageAction = [this](const Language language)
+    {
+        m_preparedLanguage.reset();
+        const auto preference = languagePreferenceFor(language);
+        if (!preference)
+        {
+            return ClassMngr::Next::Domain::Result<void>::failure({
+                .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                .message = "Language selection is invalid.",
+                .recoverable = false
+            });
+        }
+        auto prepared = m_languagePreferencePort.prepare(*preference);
+        if (!prepared)
+        {
+            return ClassMngr::Next::Domain::Result<void>::failure(prepared.error());
+        }
+        m_preparedLanguage = std::move(prepared.value());
+        return ClassMngr::Next::Domain::Result<void>::success();
+    };
+    actions.applyLanguageAction = [this]()
+    {
+        const auto result = m_languagePreferencePort.applyPrepared(
+            std::move(m_preparedLanguage));
+        if (result)
+        {
+            // The action commits OptionState next, which delivers the ordinary
+            // onChanged notification without loading/installing a second time.
+            m_appliedActionLanguage = m_languagePreferencePort.currentLanguage();
+        }
+        return result;
+    };
+
     actions.languageState->onChanged =
         [this, previousLanguageHandler](Language language)
     {
@@ -46,7 +79,13 @@ void LanguageController::connectActions(
             return;
         }
 
-        if (!changeLanguage(*preference))
+        const bool appliedByAction = m_appliedActionLanguage == language;
+        m_appliedActionLanguage.reset();
+        if (appliedByAction)
+        {
+            (void) m_preferencesState.setLanguagePreference(*preference);
+        }
+        else if (!changeLanguage(*preference))
         {
             return;
         }

@@ -7,14 +7,36 @@
 #include <QStringList>
 #include <QTranslator>
 
+#include <functional>
+#include <memory>
+
 class LanguageService : public QObject
 {
     Q_OBJECT
 
 public:
+    struct TranslationOperations
+    {
+        std::function<bool(QTranslator&, const QString&)> load;
+        std::function<bool(QTranslator*)> install;
+    };
+
+    class PreparedLanguage
+    {
+        friend class LanguageService;
+        Language language = Language::SystemDefault;
+        QString locale;
+        std::unique_ptr<QTranslator> translator;
+    };
+
     explicit LanguageService(
-        QObject* parent = nullptr
+        QObject* parent = nullptr,
+        TranslationOperations operations = {}
         );
+    ~LanguageService() override;
+
+    [[nodiscard]] std::unique_ptr<PreparedLanguage> prepareLanguage(Language language) const;
+    [[nodiscard]] bool applyPreparedLanguage(std::unique_ptr<PreparedLanguage> prepared);
 
     bool setLanguage(
         Language language
@@ -38,7 +60,8 @@ private:
     void removeCurrentTranslator();
 
 private:
-    QTranslator m_translator;
+    TranslationOperations m_operations;
+    std::unique_ptr<QTranslator> m_translator;
     Language m_language = Language::SystemDefault;
     QString m_loadedLocaleName;
     bool m_translatorInstalled = false;

@@ -42,4 +42,6 @@ private:
     ClassMngr::Next::Platform::LanguagePreferencePort m_languagePreferencePort;
     ClassMngr::Next::Application::UserPreferencesState m_preferencesState;
     MainWindow* m_window = nullptr;
+    ClassMngr::Next::Platform::LanguagePreferencePort::PreparedLanguage m_preparedLanguage;
+    std::optional<Language> m_appliedActionLanguage;
 };
