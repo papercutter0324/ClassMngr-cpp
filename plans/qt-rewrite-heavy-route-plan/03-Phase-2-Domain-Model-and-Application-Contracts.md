@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F991 is active with acceptance criteria recorded before implementation; the F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, with no pre-F985 baseline; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F991 is complete and Batch360 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial and the exit gate is Open, while F985's `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved pending diagnosis because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget` and no pre-F985 baseline establishes when it began.
 
 ### Slice discovery batches
 
@@ -114,7 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F991 - Preserve `TypedId<Tag>` rvalue invariants by explicitly defaulting public copy operations.
+- Batch360 (underway)
+  - Investigator: diagnose F985's unresolved `typedApplyPreservesExactTargetIdsThroughStateValidation` failure by tracing its commit/test through `applyTyped` validation order; distinguish evidence from inference.
+  - Domain: scan arithmetic/boundary behavior in `SpeakingEvaluationGrade`, `ScheduleTime`, and Course rules; exclude F990/F991, view lifetimes, dates/calendar timing, and broad factory/enum scans.
 
 ## Objective
 

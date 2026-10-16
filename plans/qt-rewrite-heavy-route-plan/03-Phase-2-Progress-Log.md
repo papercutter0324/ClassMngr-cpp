@@ -42751,3 +42751,60 @@ unchanged. F985 remains unresolved: reused TeacherId `"01"` is first rejected
 as `InvalidExistingTeacherTarget`, and no pre-F985 baseline establishes when
 the failure began. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### F991 complete; Batch359 discovery underway - 2026-10-16
+
+F991 was implemented at source/test commit
+`96902eec6257a95c05d272b2780d738ca374390c`. `TypedId<Tag>` now explicitly
+defaults public copy construction and copy assignment, suppressing implicit
+moves so rvalue construction and assignment preserve the source value. The
+focused regression is in `tests/next_domain_contract_tests.cpp`.
+
+The executor built `ClassMngr` and `ClassMngrNextDomainContractTests` in
+`build/windows-x64-debug-ninja` with MSVC. The independent Tester reran both
+targets (Ninja reported no work to do); the exact anchored CTest
+`ClassMngrNextDomainContractTests` passed 1/1 (#190). `git diff --check` and
+`git show --check HEAD` passed. No full suite ran.
+
+Two independent post-F991 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. Preserve the list unchanged.
+The Sidebar wide-ID transition remains blocked by F285's blank-draft creation
+contract and later `int` conversion; F991 changes source preservation only.
+F985 remains unresolved: reused TeacherId `"01"` is rejected first as
+`InvalidExistingTeacherTarget`, and no pre-F985 baseline establishes when the
+failure began. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
+
+Batch359 discovery is underway in two lanes: Domain retained borrowed-view
+lifetime safety, excluding F990/F991 and static catalog cases already shown
+safe; and Application read-model/projection ownership plus backing lifetimes
+of returned snapshots, excluding Batch355 async generation, Batch356 partial
+success, Batch358 failure/error categories, and deferred Class Analytics
+allocation-cap work.
+
+### Batch359 closed; Batch360 discovery underway - 2026-10-16
+
+Batch359 was a discovery shortfall. The Domain scan found no unsafe retained
+views: Course's private constructor stores views only from the inline
+static-constexpr literal-backed catalog, while CalendarEventTiming and the
+other view-taking Domain APIs copy their inputs. The Application scan found
+owning snapshot payloads in Roster, Schedule Import State, and Classes
+Navigation; `Result<Value>` stores values by value. The only persistent
+`string_view` found was the transient `SkippedUpdateVersionPolicyInput`;
+no borrowed port data escaped. No candidate was selected.
+
+F991 completion, its focused regression and CTest results, and the two-audit
+review of all 13 official Deferred entries are recorded in the preceding
+entry. The Deferred list remains unchanged; Sidebar wide-ID remains blocked
+by F285's blank-draft creation contract and the later `int` conversion.
+F985 remains unresolved pending diagnosis: reused TeacherId `"01"` is
+rejected first as `InvalidExistingTeacherTarget`, and no pre-F985 baseline
+establishes when the failure began. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
+
+Batch360 has started in two read-only lanes: an Investigator will trace the
+F985 commit and test through `applyTyped` validation order, separating
+verified facts from inference; the Domain scan covers arithmetic and boundary
+behavior in `SpeakingEvaluationGrade`, `ScheduleTime`, and Course
+rules, excluding F990/F991, view lifetimes, dates/calendar timing, and broad
+factory/enum scans.

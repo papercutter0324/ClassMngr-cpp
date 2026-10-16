@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F991 is selected with acceptance criteria recorded before implementation. The 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. The F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved: reusing TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`; no pre-F985 run establishes when the failure began. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F991 is complete at `96902eec6257a95c05d272b2780d738ca374390c`, and Batch360 discovery is underway; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open. F985's `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved pending diagnosis: reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, and no pre-F985 run establishes when the failure began. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
