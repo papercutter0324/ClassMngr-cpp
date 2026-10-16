@@ -41844,3 +41844,25 @@ unchanged; none became newly actionable, resolved, superseded, or materially
 changed, and F970 changed none of their triggers. F971 is now the active
 accepted slice. All 13 entries remain unresolved; Gates 1/2 remain Partial
 and the formal Phase 2 exit gate remains Open.
+
+### F971 complete; Batch340 closed; Batch341 discovery underway - 2026-10-16
+
+F971 was implemented at source/test commit
+`dfab37438302736a96a25143b544978074a9a20a` (`Phase2 - Require cancellation
+requests before acknowledgement`). Independent verification used a fresh Ninja
+build and built `ClassMngr` plus `ClassMngrNextApplicationImportJobTests`,
+`ClassMngrNextApplicationImportJobCoordinatorTests`,
+`ClassMngrNextApplicationReportJobTests`, and
+`ClassMngrNextApplicationReportJobCoordinatorTests`; those four exact CTest
+registrations passed (4/4). Coverage confirmed unsolicited acknowledgements
+conflict without mutation, requested acknowledgements, direct cancellation
+with and without a request, flag/output behavior, terminal cases, and
+current-generation coordinator snapshots. No production coordinator changes
+were needed. `git diff --check` passed; no full suite ran.
+
+Two independent post-F971 audits found all 13 official Deferred entries
+unchanged; none became actionable, resolved, superseded, or materially changed,
+and F971 changed none of their triggers. Batch341 discovery has started. One
+state-machine lane found no candidate; two independent lanes remain in progress,
+so no slice has been selected. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
