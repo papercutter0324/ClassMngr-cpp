@@ -28,6 +28,15 @@ static_assert(
         Domain::KoreanTeacherKey
         >
     );
+static_assert(
+    std::is_same_v<
+        decltype(projectScheduleImportMatching(ScheduleImportMatchingInput{})),
+        std::expected<
+            ScheduleImportMatchingProjection,
+            ScheduleImportMatchingFailure
+            >
+        >
+    );
 
 namespace
 {
@@ -80,12 +89,41 @@ class ScheduleImportMatchingProjectionTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void rejectsUnknownKindWithoutReturningProjection();
     void ranksEveryMatchCategoryAndKeepsStableTies();
     void reportsNoMatchAndInitiallyAbsentInventory();
     void excludesNonpositiveClassIdsFromMatchesAndSuggestions();
     void preservesNormalAndIntensiveFallbackSemantics();
     void preservesEmptyTeacherKeyMatchingSemantics();
 };
+
+void ScheduleImportMatchingProjectionTests::
+rejectsUnknownKindWithoutReturningProjection()
+{
+    for (const int kind : {-1, 255})
+    {
+        ScheduleImportMatchingInput input;
+        input.kind = static_cast<ScheduleImportMatchingKind>(kind);
+        const auto empty = projectScheduleImportMatching(input);
+        QVERIFY(!empty.has_value());
+        QCOMPARE(
+            empty.error().code,
+            ScheduleImportMatchingErrorCode::InvalidKind
+            );
+
+        input.candidates = {candidate()};
+        input.teachers = {{teacherIdentity(1), candidate().teacherName}};
+        input.classes = {
+            matchingClass(43, 1, u"416", {{"Tuesday"}})
+        };
+        const auto populated = projectScheduleImportMatching(input);
+        QVERIFY(!populated.has_value());
+        QCOMPARE(
+            populated.error().code,
+            ScheduleImportMatchingErrorCode::InvalidKind
+            );
+    }
+}
 
 void ScheduleImportMatchingProjectionTests::
 ranksEveryMatchCategoryAndKeepsStableTies()
@@ -108,8 +146,9 @@ ranksEveryMatchCategoryAndKeepsStableTies()
         matchingClass(97, 2, u"417", {}, {{"Thursday"}})
     };
 
-    const ScheduleImportMatchingProjection projection =
-        projectScheduleImportMatching(input);
+    const auto outcome = projectScheduleImportMatching(input);
+    QVERIFY(outcome.has_value());
+    const ScheduleImportMatchingProjection& projection = *outcome;
 
     QCOMPARE(projection.kind, ScheduleImportMatchingKind::Intensive);
     QCOMPARE(projection.teachers.size(), std::size_t{1});
@@ -178,8 +217,9 @@ reportsNoMatchAndInitiallyAbsentInventory()
     };
     input.classes[0].gradeMatchKey = u"m1";
 
-    const ScheduleImportMatchingProjection projection =
-        projectScheduleImportMatching(input);
+    const auto outcome = projectScheduleImportMatching(input);
+    QVERIFY(outcome.has_value());
+    const ScheduleImportMatchingProjection& projection = *outcome;
 
     QCOMPARE(projection.classes.size(), std::size_t{1});
     QVERIFY(projection.classes[0].matchingClassIds.empty());
@@ -213,8 +253,9 @@ excludesNonpositiveClassIdsFromMatchesAndSuggestions()
         matchingClass(-7, 1, u"416", {{"Tuesday"}})
     };
 
-    const ScheduleImportMatchingProjection projection =
-        projectScheduleImportMatching(input);
+    const auto outcome = projectScheduleImportMatching(input);
+    QVERIFY(outcome.has_value());
+    const ScheduleImportMatchingProjection& projection = *outcome;
 
     QCOMPARE(projection.classes.size(), std::size_t{1});
     QVERIFY(projection.classes[0].matchingClassIds.empty());
@@ -243,8 +284,10 @@ preservesNormalAndIntensiveFallbackSemantics()
         matchingClass(43, 1, u"416", {{"Tuesday"}})
     };
 
-    const ScheduleImportMatchingProjection normal =
-        projectScheduleImportMatching(input);
+    const auto normalOutcome = projectScheduleImportMatching(input);
+    QVERIFY(normalOutcome.has_value());
+    const ScheduleImportMatchingProjection& normal = *normalOutcome;
+    QCOMPARE(normal.kind, ScheduleImportMatchingKind::Normal);
     QVERIFY(
         normal.classes[0].matchingClassIds
         == (std::vector<Domain::ClassId>{classIdentity(43)})
@@ -257,8 +300,10 @@ preservesNormalAndIntensiveFallbackSemantics()
         );
 
     input.kind = ScheduleImportMatchingKind::Intensive;
-    const ScheduleImportMatchingProjection intensive =
-        projectScheduleImportMatching(input);
+    const auto intensiveOutcome = projectScheduleImportMatching(input);
+    QVERIFY(intensiveOutcome.has_value());
+    const ScheduleImportMatchingProjection& intensive = *intensiveOutcome;
+    QCOMPARE(intensive.kind, ScheduleImportMatchingKind::Intensive);
     QVERIFY(
         intensive.classes[0].matchingClassIds
         == (std::vector<Domain::ClassId>{classIdentity(43)})
@@ -272,6 +317,33 @@ preservesNormalAndIntensiveFallbackSemantics()
     QCOMPARE(
         intensive.classes[0].explanation,
         ScheduleImportMatchingExplanation::PossibleWithOtherHours
+        );
+
+    input.classes = {
+        matchingClass(43, 1, u"416", {}, {{"Tuesday"}})
+    };
+    input.kind = ScheduleImportMatchingKind::Normal;
+    const auto normalFallback = projectScheduleImportMatching(input);
+    QVERIFY(normalFallback.has_value());
+    QVERIFY(normalFallback->classes[0].suggestedClassId == classIdentity(43));
+    QVERIFY(!normalFallback->classes[0].exactMatch);
+    QCOMPARE(
+        normalFallback->classes[0].confidence,
+        ScheduleImportMatchingConfidence::Possible
+        );
+    QCOMPARE(
+        normalFallback->classes[0].explanation,
+        ScheduleImportMatchingExplanation::PossibleWithOtherHours
+        );
+
+    input.kind = ScheduleImportMatchingKind::Intensive;
+    const auto intensiveTarget = projectScheduleImportMatching(input);
+    QVERIFY(intensiveTarget.has_value());
+    QVERIFY(intensiveTarget->classes[0].suggestedClassId == classIdentity(43));
+    QVERIFY(intensiveTarget->classes[0].exactMatch);
+    QCOMPARE(
+        intensiveTarget->classes[0].confidence,
+        ScheduleImportMatchingConfidence::Confident
         );
 }
 
@@ -292,8 +364,9 @@ preservesEmptyTeacherKeyMatchingSemantics()
         matchingClass(15, 0, u"416", {{"Tuesday"}})
     };
 
-    const ScheduleImportMatchingProjection projection =
-        projectScheduleImportMatching(input);
+    const auto outcome = projectScheduleImportMatching(input);
+    QVERIFY(outcome.has_value());
+    const ScheduleImportMatchingProjection& projection = *outcome;
 
     QVERIFY(
         projection.teachers[0].teacherKey

@@ -263,14 +263,12 @@ std::vector<ImportMatching::ScheduleImportMatchingTime> matchingTimes(
 
 ImportMatching::ScheduleImportMatchingInput scheduleImportMatchingInput(
     const ScheduleImportUserBlock& user,
-    const ScheduleImportKind kind,
+    const ImportMatching::ScheduleImportMatchingKind kind,
     const ImportState::ScheduleImportStateSnapshot& snapshot
     )
 {
     ImportMatching::ScheduleImportMatchingInput result;
-    result.kind = kind == ScheduleImportKind::Intensive
-        ? ImportMatching::ScheduleImportMatchingKind::Intensive
-        : ImportMatching::ScheduleImportMatchingKind::Normal;
+    result.kind = kind;
     result.candidates.reserve(static_cast<std::size_t>(user.classes.size()));
     for (const ScheduleImportClassCandidate& candidate : user.classes)
     {
@@ -945,6 +943,24 @@ bool ScheduleImportReviewDialog::prepare()
         return true;
     }
 
+    ImportMatching::ScheduleImportMatchingKind matchingKind;
+    switch (m_request.kind)
+    {
+    case ScheduleImportKind::Normal:
+        matchingKind = ImportMatching::ScheduleImportMatchingKind::Normal;
+        break;
+    case ScheduleImportKind::Intensive:
+        matchingKind = ImportMatching::ScheduleImportMatchingKind::Intensive;
+        break;
+    default:
+        DialogServices::showWarning(
+            this,
+            tr("Review Schedule Import"),
+            tr("The schedule import kind is invalid.")
+            );
+        return false;
+    }
+
     ClassMngr::Next::Platform::
         ApplicationServicesScheduleImportStateSnapshotPort snapshotPort(
             m_services
@@ -974,18 +990,27 @@ bool ScheduleImportReviewDialog::prepare()
     }
     m_resolutionStateSnapshot = std::move(*stateSnapshot);
 
-    const ImportMatching::ScheduleImportMatchingProjection matchingProjection =
+    const auto matchingProjection =
         ImportMatching::projectScheduleImportMatching(
             scheduleImportMatchingInput(
                 m_request.user,
-                m_request.kind,
+                matchingKind,
                 m_resolutionStateSnapshot
                 )
             );
+    if (!matchingProjection)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Review Schedule Import"),
+            tr("The schedule import kind is invalid.")
+            );
+        return false;
+    }
     m_preview = scheduleImportPreview(
         m_request.user,
         m_request.kind,
-        matchingProjection
+        *matchingProjection
         );
     m_intensiveModeSection->setVisible(
         m_request.kind == ScheduleImportKind::Intensive

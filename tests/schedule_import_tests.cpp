@@ -50,6 +50,7 @@ private slots:
     void partitionsRepeatedCourseIntoValidClasses();
     void filtersClassOptionsByGradeAndDayGroup();
     void ranksTeacherAndClassMatches();
+    void previewRejectsUnknownKindBeforeReadingInventory();
     void previewsAndAppliesBaselineGeneratedWorkbookAgainstSeededDatabase();
     void previewsAndAppliesBaselineGeneratedIntensiveWorkbookAgainstSeededDatabase();
     void previewsAndAppliesCheckedInWorkbookAgainstSeededDatabase();
@@ -2022,6 +2023,39 @@ void ScheduleImportTests::filtersClassOptionsByGradeAndDayGroup()
             ScheduleImportKind::Normal
             )
         );
+}
+
+void ScheduleImportTests::previewRejectsUnknownKindBeforeReadingInventory()
+{
+    const QString connectionName =
+        QStringLiteral("schedule-import-invalid-kind-%1")
+            .arg(QUuid::createUuid().toString());
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        // No schema: an inventory read would fail with a database error.
+        ScheduleImportRepository repository(database);
+        ScheduleImportUserBlock user;
+        user.classes.append(ScheduleImportClassCandidate{});
+        for (const int kind : {-1, 255})
+        {
+            const auto result = repository.preview(
+                user,
+                static_cast<ScheduleImportKind>(kind)
+                );
+            QVERIFY(!result.has_value());
+            QCOMPARE(
+                result.error(),
+                QStringLiteral("The schedule import kind is invalid.")
+                );
+        }
+        database.close();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 void ScheduleImportTests::ranksTeacherAndClassMatches()

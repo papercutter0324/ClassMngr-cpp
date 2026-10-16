@@ -125,6 +125,7 @@ private slots:
     void resolutionBuilderRetainsAdditionalEligibleTargets();
     void resolutionBuilderBoundsRowsAndRestoresDecisions();
     void reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback();
+    void reviewPrepareRejectsUnknownKindBeforeLoadingSnapshot();
     void reviewPrepareClosedSessionUsesSnapshotWarning();
     void reviewRefreshUsesFreshTypedStateSnapshot();
     void reviewSnapshotFailureStaysInvalidWithoutLegacyFallback();
@@ -3689,6 +3690,47 @@ resolutionBuilderBoundsRowsAndRestoresDecisions()
         static_cast<int>(ScheduleImportClassAction::Skip)
         );
     ScheduleImportResolutionControls::clearRealizedControls(&state);
+}
+
+void ScheduleImportDialogTests::
+reviewPrepareRejectsUnknownKindBeforeLoadingSnapshot()
+{
+    // The kind failure must take precedence over a snapshot read failure.
+    ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
+    ApplicationServices services;
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    for (const int kind : {-1, 255})
+    {
+        ScheduleImportReviewRequest request;
+        request.kind = static_cast<ScheduleImportKind>(kind);
+        request.user.name = QStringLiteral("Alice");
+        request.user.classes.append(ScheduleImportClassCandidate{});
+        ScheduleImportReviewDialog review(&services, request);
+        QVERIFY(!review.prepare());
+        QCOMPARE(
+            review.findChildren<QComboBox*>(
+                QRegularExpression(QStringLiteral("^scheduleImportTeacherAction_"))
+                ).size(),
+            0
+            );
+        QCOMPARE(
+            review.findChildren<QComboBox*>(
+                QRegularExpression(QStringLiteral("^scheduleImportClassAction_"))
+                ).size(),
+            0
+            );
+    }
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
+    QCOMPARE(prompts.messages.size(), 2);
+    for (const PromptRequest& message : prompts.messages)
+    {
+        QCOMPARE(message.title, QStringLiteral("Review Schedule Import"));
+        QCOMPARE(
+            message.message,
+            QStringLiteral("The schedule import kind is invalid.")
+            );
+    }
 }
 
 void ScheduleImportDialogTests::

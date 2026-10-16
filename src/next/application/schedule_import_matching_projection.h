@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <expected>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -18,6 +19,21 @@ enum class ScheduleImportMatchingKind
 {
     Normal,
     Intensive
+};
+
+enum class ScheduleImportMatchingErrorCode
+{
+    InvalidKind
+};
+
+struct ScheduleImportMatchingFailure final
+{
+    ScheduleImportMatchingErrorCode code;
+
+    friend bool operator==(
+        const ScheduleImportMatchingFailure&,
+        const ScheduleImportMatchingFailure&
+        ) = default;
 };
 
 enum class ScheduleImportMatchingConfidence
@@ -330,12 +346,26 @@ inline void appendUnique(std::vector<T>& values, const T& value)
 
 } // namespace ScheduleImportMatchingProjectionDetail
 
-[[nodiscard]] inline ScheduleImportMatchingProjection
+[[nodiscard]] inline std::expected<
+    ScheduleImportMatchingProjection,
+    ScheduleImportMatchingFailure
+    >
 projectScheduleImportMatching(
     const ScheduleImportMatchingInput& input
     )
 {
     using namespace ScheduleImportMatchingProjectionDetail;
+
+    switch (input.kind)
+    {
+    case ScheduleImportMatchingKind::Normal:
+    case ScheduleImportMatchingKind::Intensive:
+        break;
+    default:
+        return std::unexpected(ScheduleImportMatchingFailure{
+            ScheduleImportMatchingErrorCode::InvalidKind
+        });
+    }
 
     ScheduleImportMatchingProjection result;
     result.kind = input.kind;

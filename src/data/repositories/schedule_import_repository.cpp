@@ -307,16 +307,14 @@ std::optional<int> legacyId(const Id& id)
 
 ScheduleImportMatchingInput matchingInput(
     const ScheduleImportUserBlock& user,
-    const ScheduleImportKind kind,
+    const ScheduleImportMatchingKind kind,
     const QList<Teacher>& teachers,
     const QList<Classroom>& classrooms,
     const QHash<int, ClassInfo>& classInfo
     )
 {
     ScheduleImportMatchingInput result;
-    result.kind = kind == ScheduleImportKind::Intensive
-        ? ScheduleImportMatchingKind::Intensive
-        : ScheduleImportMatchingKind::Normal;
+    result.kind = kind;
     result.candidates.reserve(static_cast<std::size_t>(user.classes.size()));
     for (const ScheduleImportClassCandidate& candidate : user.classes)
     {
@@ -934,6 +932,21 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
     ScheduleImportKind kind
     )
 {
+    ScheduleImportMatchingKind matchingKind;
+    switch (kind)
+    {
+    case ScheduleImportKind::Normal:
+        matchingKind = ScheduleImportMatchingKind::Normal;
+        break;
+    case ScheduleImportKind::Intensive:
+        matchingKind = ScheduleImportMatchingKind::Intensive;
+        break;
+    default:
+        return std::unexpected(
+            QObject::tr("The schedule import kind is invalid.")
+            );
+    }
+
     if (!m_database.isOpen())
     {
         return std::unexpected(
@@ -971,16 +984,23 @@ Result<ScheduleImportPreview> ScheduleImportRepository::preview(
         classInfo.insert(classroom.id, *info);
     }
 
-    const ScheduleImportMatchingProjection projection =
+    const auto matchingProjection =
         projectScheduleImportMatching(
             matchingInput(
                 user,
-                kind,
+                matchingKind,
                 *teachers,
                 *classrooms,
                 classInfo
                 )
             );
+    if (!matchingProjection)
+    {
+        return std::unexpected(
+            QObject::tr("The schedule import kind is invalid.")
+            );
+    }
+    const ScheduleImportMatchingProjection& projection = *matchingProjection;
 
     ScheduleImportPreview result;
     result.kind = kind;
