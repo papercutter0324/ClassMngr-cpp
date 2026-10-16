@@ -43373,3 +43373,49 @@ F1000 acceptance criteria:
 | Focused verification | Build affected Windows x64 Debug targets and run only exact focused CTests; do not run the full suite. |
 
 PDF Save As for one report is the narrowest later worker candidate, but worker handoff remains future work pending stable resource ownership, UI-owner event pumping, bounded progress, and safe cancellation/commit semantics. Printing UI remains outside any worker path. The 13 official Deferred entries remain unchanged. The F999 baseline failure and post-F999 audit status above remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open.
+
+### F1000 complete; post-F1000 Deferred audit clear; B378 discovery complete; F1001 accepted - 2026-10-16
+
+F1000 source commit `e371f9f4b2abc70c30a601e178aba03dcaba9c0d` (`Phase2 -
+Extract widgetless report painter`) follows acceptance commit 8001eb22. The
+independent Tester rebuilt `ClassMngr`,
+`ClassMngrSpeakingEvalReportWidgetTests`,
+`ClassMngrSpeakingEvalBatchReportServiceTests`, and
+`ClassMngrSpeakingEvalWidgetlessPdfTests` in the required existing
+`build/windows-x64-debug` folder (Visual Studio 18 2026, x64 Debug). The initial
+sandboxed MSBuild build hit FileTracker `E_ACCESSDENIED`; disabling tracking did
+not resolve it, while the same build passed with elevated access. The exact
+CTest regex
+`^ClassMngrSpeakingEval(ReportWidgetTests|InternalPdfParityTests|WidgetlessPdfTests)$`
+passed 3/3. No full suite ran.
+
+Two independent post-F1000 audits reviewed exactly the 13 official Deferred
+entries; none became actionable, resolved, or superseded. Keep all 13 unchanged.
+Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+Work package 2.3 includes generating reports. B378 discovery found no other
+clear live Application boundary outside Speaking Evaluation report/export. Two
+independent reviews support F1001 as a distinct bounded Application
+report-content contract, not additional painting or worker integration; no
+official Deferred entry is replaced or cleared. `SpeakingEvalReportData` remains
+Qt/UI-shaped. `buildSpeakingEvalStudentReports` and `reportDataForRow` in
+`src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp:282-392` own
+report inclusion/projection; live callers in
+`src/features/speaking_eval/ui/speaking_eval_page_actions.cpp:323-327,391-394,466-470`
+pass current `m_model->rows()`. The persisted-data read query is a different
+contract. Existing source-row filter coverage is
+`tests/speaking_eval_batch_report_service_tests.cpp:1691-1711`, and date-format
+coverage is `tests/speaking_eval_batch_report_service_tests.cpp:817-851`. No Next
+Application report-content projection exists; add an app-less Application test
+target and a focused adapter regression to the existing report-service test,
+retaining downstream rendering checks.
+
+F1001 is accepted before implementation. Its acceptance criteria are:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope | Add a Qt-free Next Application report-content projection contract/use case fed by current in-memory evaluation rows and explicit class/report values. Return typed eligible records with original source-row index, raw report fields, class label, grade, and Application-owned template classification; route the shared builder and all live callers through it. Do not query persistence or replace unsaved rows. |
+| Behavior | The Qt-free Application owns blank-row classification and class/template/grade normalization using current `QString::trimmed()` whitespace semantics. Filter only rows whose English and Korean names are both blank after trimming; preserve original source-row indices, source order, raw report values, empty defaults for missing columns, class label from trimmed grade/level, case-insensitive E5/Athena and E6/Song's template rules after trimming, E4-E6 grade mapping (otherwise 0), and all six fixed score mappings. Do not add a report row-count cap. |
+| Edge ownership | Keep translated combined selector names and current-date/`QDate` formatting at the UI adapter. Preserve projected grade for the existing AI eligibility/prompt flow (`src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp:156,714`; `src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp:811`); keep AI policy unchanged. Keep signature retrieval and image bytes, conversion to `SpeakingEvalReportData`, batch service, PDF/print/PowerPoint, painter, and assets at feature/platform edges. Add no worker integration or thread-safety claim. |
+| Tests | App-less focused tests cover both-blank filtering, whitespace-only names including a non-ASCII space, original indices, both template cases and fallback, grade mapping, class label with whitespace/case variants around grade and level, all report fields, short/missing columns, and order. A UI adapter regression uses unsaved current model rows and checks current output DTO, signature, and date path. Retain downstream rendering checks. |
+| Focused verification | Build affected targets in standard Windows x64 Debug and run only exact focused CTests; do not run the full suite. |

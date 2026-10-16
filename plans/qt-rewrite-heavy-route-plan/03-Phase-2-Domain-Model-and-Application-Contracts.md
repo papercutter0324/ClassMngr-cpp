@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1000 is accepted but not implemented after B377 found a bounded synchronous widgetless Speaking Evaluation report-painter extraction; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F1000 is complete and F1001 is accepted for a Qt-free Application report-content projection; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch377 (F1000 accepted; next implementation slice)
-  - F1000: synchronous widgetless Speaking Evaluation report-painter extraction; see the latest progress-log entry for evidence and criteria.
+- Batch378 (F1001 accepted; next implementation slice)
+  - F1001: add the Qt-free Application report-content projection and route live report generation through it; see the progress log for acceptance criteria.
 
 ## Objective
 
