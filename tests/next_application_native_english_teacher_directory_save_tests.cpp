@@ -141,6 +141,22 @@ preservesQtBirthdayParsingBehavior()
             QStringLiteral("yyyy-MM-dd")
             ).isValid();
         QCOMPARE(Application::isValidMonthDayBirthday(birthday), qtAccepts);
+        const auto parsed = Application::parseMonthDayBirthday(birthday);
+        QCOMPARE(parsed.has_value(), qtAccepts);
+        if (qtAccepts)
+        {
+            QVERIFY(parsed.has_value());
+            QCOMPARE(
+                parsed->month(),
+                (trimmed[0].unicode() - u'0') * 10
+                    + (trimmed[1].unicode() - u'0')
+                );
+            QCOMPARE(
+                parsed->day(),
+                (trimmed[3].unicode() - u'0') * 10
+                    + (trimmed[4].unicode() - u'0')
+                );
+        }
     }
 }
 

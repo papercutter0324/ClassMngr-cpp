@@ -60,6 +60,7 @@ private slots:
     void selectsOccurrencesAcrossCalendarYearRollover();
     void mapsLeapDayToFebruaryTwentyEighthInNonLeapYear();
     void omitsInvalidBirthdaysAndBlankNames();
+    void trimsOnlyAsciiWhitespaceAtBirthdayEdges();
     void omitsCandidatesWithUnknownStaffGroups();
     void preservesEveryDeclaredStaffGroup();
     void preservesNonAsciiUtf16DisplayName();
@@ -153,6 +154,23 @@ omitsInvalidBirthdaysAndBlankNames()
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
     QCOMPARE(schedule.today.front().displayName, std::u16string(u"Visible"));
+}
+
+void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
+trimsOnlyAsciiWhitespaceAtBirthdayEdges()
+{
+    const UpcomingBirthdaySchedule schedule =
+        buildSchedule(
+            {
+                birthday("\t\n\v" "08-18" "\f\r ", u"ASCII whitespace"),
+                birthday("\xC2\xA0" "08-18", u"Unicode prefix space"),
+                birthday("08-18" "\xC2\xA0", u"Unicode suffix space")
+            },
+            {2026, 8, 18}
+            );
+
+    QCOMPARE(schedule.today.size(), std::size_t{1});
+    QCOMPARE(schedule.today.front().displayName, std::u16string(u"ASCII whitespace"));
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::

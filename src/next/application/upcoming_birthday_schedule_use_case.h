@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "next/domain/birthday_month_day.h"
 #include "qt_compatible_text.h"
 
 namespace ClassMngr::Next::Application
@@ -114,7 +115,7 @@ public:
                 continue;
             }
 
-            const std::optional<std::pair<int, int>> birthday =
+            const std::optional<Domain::BirthdayMonthDay> birthday =
                 parseBirthday(candidate.birthdayMonthDay);
             if (!birthday)
             {
@@ -122,8 +123,8 @@ public:
             }
 
             const std::optional<sys_days> occurrence = nextOccurrence(
-                birthday->first,
-                birthday->second,
+                birthday->month(),
+                birthday->day(),
                 *reference,
                 nextWeekEnd
                 );
@@ -270,7 +271,7 @@ private:
         };
     }
 
-    [[nodiscard]] static std::optional<std::pair<int, int>> parseBirthday(
+    [[nodiscard]] static std::optional<Domain::BirthdayMonthDay> parseBirthday(
         std::string_view value
         )
     {
@@ -297,17 +298,7 @@ private:
 
         const int monthValue = (value[0] - '0') * 10 + (value[1] - '0');
         const int dayValue = (value[3] - '0') * 10 + (value[4] - '0');
-        const std::chrono::year_month_day date{
-            std::chrono::year{2000},
-            std::chrono::month{static_cast<unsigned>(monthValue)},
-            std::chrono::day{static_cast<unsigned>(dayValue)}
-        };
-        if (!date.ok())
-        {
-            return std::nullopt;
-        }
-
-        return std::pair{monthValue, dayValue};
+        return Domain::BirthdayMonthDay::fromComponents(monthValue, dayValue);
     }
 
     [[nodiscard]] static bool isAsciiWhitespace(const char value) noexcept

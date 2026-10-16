@@ -1,8 +1,9 @@
 #pragma once
 
 #include "next/application/qt_compatible_text.h"
-#include "next/domain/gregorian_date.h"
+#include "next/domain/birthday_month_day.h"
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -16,14 +17,15 @@ namespace ClassMngr::Next::Application
     return trimQtWhitespace(birthday).empty();
 }
 
-[[nodiscard]] inline bool isValidMonthDayBirthday(
+[[nodiscard]] inline std::optional<Domain::BirthdayMonthDay>
+parseMonthDayBirthday(
     const std::u16string_view birthday
     )
 {
     const std::u16string normalized = trimQtWhitespace(birthday);
     if (normalized.size() != 5 || normalized[2] != u'-')
     {
-        return false;
+        return std::nullopt;
     }
 
     const auto parseTwoDigits = [&normalized](const std::size_t offset)
@@ -40,13 +42,15 @@ namespace ClassMngr::Next::Application
 
     const int month = parseTwoDigits(0);
     const int day = parseTwoDigits(3);
-    if (month < 1 || month > 12 || day < 1)
-    {
-        return false;
-    }
-
     // The former UI check parsed the month and day in leap year 2000.
-    return Domain::GregorianDate::fromComponents(2000, month, day).has_value();
+    return Domain::BirthdayMonthDay::fromComponents(month, day);
+}
+
+[[nodiscard]] inline bool isValidMonthDayBirthday(
+    const std::u16string_view birthday
+    )
+{
+    return parseMonthDayBirthday(birthday).has_value();
 }
 
 } // namespace ClassMngr::Next::Application

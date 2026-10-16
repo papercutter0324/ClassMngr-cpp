@@ -1,5 +1,6 @@
-#include "next/domain/course.h"
+#include "next/domain/birthday_month_day.h"
 #include "next/domain/calendar_event_timing.h"
+#include "next/domain/course.h"
 #include "next/domain/document_content_reference.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
@@ -31,6 +32,7 @@ private slots:
     void typedIdentifiersRejectEmptyValues();
     void typedIdentifiersRemainDistinct();
     void documentContentReferencesHaveValueSemantics();
+    void birthdayMonthDaysValidateAgainstLeapYear2000();
     void resultCarriesValueOrStructuredError();
     void scheduleTimesAcceptWeekdayAndMinuteBoundaries();
     void scheduleTimesRejectInvalidDaysAndIntervals();
@@ -131,6 +133,32 @@ void NextDomainContractTests::documentContentReferencesHaveValueSemantics()
     DocumentContentReference assigned;
     assigned = explicitValue;
     QVERIFY(assigned == explicitValue);
+}
+
+void NextDomainContractTests::birthdayMonthDaysValidateAgainstLeapYear2000()
+{
+    static_assert(!std::is_default_constructible_v<BirthdayMonthDay>);
+    static_assert(std::is_copy_constructible_v<BirthdayMonthDay>);
+    static_assert(!std::is_copy_assignable_v<BirthdayMonthDay>);
+
+    const auto leapDay = BirthdayMonthDay::fromComponents(2, 29);
+    QVERIFY(leapDay.has_value());
+    QCOMPARE(leapDay->month(), 2);
+    QCOMPARE(leapDay->day(), 29);
+
+    const auto equalLeapDay = BirthdayMonthDay::fromComponents(2, 29);
+    const auto firstDayOfYear = BirthdayMonthDay::fromComponents(1, 1);
+    QVERIFY(equalLeapDay.has_value());
+    QVERIFY(firstDayOfYear.has_value());
+    QVERIFY(*leapDay == *equalLeapDay);
+    QVERIFY(*leapDay != *firstDayOfYear);
+
+    QVERIFY(BirthdayMonthDay::fromComponents(12, 31).has_value());
+    QVERIFY(!BirthdayMonthDay::fromComponents(0, 1).has_value());
+    QVERIFY(!BirthdayMonthDay::fromComponents(13, 1).has_value());
+    QVERIFY(!BirthdayMonthDay::fromComponents(2, 0).has_value());
+    QVERIFY(!BirthdayMonthDay::fromComponents(2, 30).has_value());
+    QVERIFY(!BirthdayMonthDay::fromComponents(4, 31).has_value());
 }
 
 void NextDomainContractTests::resultCarriesValueOrStructuredError()
