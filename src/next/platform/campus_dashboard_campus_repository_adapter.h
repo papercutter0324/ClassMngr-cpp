@@ -1,6 +1,7 @@
 #pragma once
 
 #include "features/campus/data/campus_json_repository.h"
+#include "next/application/campus_dashboard_campus_identity_save_policy.h"
 #include "next/application/campus_dashboard_campus_save_port.h"
 
 #include <QByteArray>
@@ -47,6 +48,18 @@ public:
         Application::CampusDashboardCampusSaveIntent intent
         ) const override
     {
+        const Domain::Result<void> identityValidation =
+            Application::CampusDashboardCampusIdentitySavePolicy::validate(
+                snapshot,
+                intent
+                );
+        if (!identityValidation)
+        {
+            return Domain::Result<void>::failure(
+                identityValidation.error()
+                );
+        }
+
         const CampusInfo campus = campusInfoFromSnapshot(snapshot);
         if (intent == Application::CampusDashboardCampusSaveIntent::Create)
         {

@@ -5,6 +5,8 @@
 #include <QTemporaryDir>
 #include <QtTest>
 
+#include <string>
+
 using namespace ClassMngr::Next;
 
 namespace
@@ -146,6 +148,8 @@ private slots:
     void init();
     void savesAndReloadsEveryCampusField();
     void savesStandaloneMainImageWithoutMapPaths();
+    void rejectsReservedCreateIdentityBeforeWritingDefaultFile();
+    void rejectsReservedUpdateNameWithoutChangingExistingFile();
     void createCollisionPreservesExistingNormalizedDestination();
     void createThenUpdateRetainsTheCreatedId();
     void mapsCreateRepositoryFailureToTechnicalWithExactMessage();
@@ -220,6 +224,86 @@ savesStandaloneMainImageWithoutMapPaths()
     compareSnapshots(actual.value(), expected.value());
     QCOMPARE(actual->imageMain, std::string("standalone-campus-cover.png"));
     QVERIFY(actual->mapImagePaths.empty());
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+rejectsReservedCreateIdentityBeforeWritingDefaultFile()
+{
+    CampusInfo source = representativeCampus();
+    source.id = QStringLiteral("default");
+    source.campusName = QStringLiteral("Default");
+    const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
+        snapshotFromCampusInfo(source);
+    QVERIFY(snapshot.has_value());
+
+    const CampusJsonRepository repository(m_directory.path());
+    const QString reservedPath = repository.filePathForCampusId(
+        QStringLiteral("default")
+        );
+    QVERIFY(!QFile::exists(reservedPath));
+
+    const Domain::Result<void> created =
+        Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
+            .saveCampus(
+                snapshot.value(),
+                Application::CampusDashboardCampusSaveIntent::Create
+                );
+
+    QVERIFY(!created);
+    QCOMPARE(created.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!created.error().recoverable);
+    QVERIFY(
+        created.error().message.find("Choose a different campus name")
+        != std::string::npos
+        );
+    QVERIFY(!QFile::exists(reservedPath));
+    QVERIFY(!repository.loadCampus(QStringLiteral("default")).has_value());
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+rejectsReservedUpdateNameWithoutChangingExistingFile()
+{
+    CampusInfo existing = representativeCampus();
+    existing.id = QStringLiteral("alpha");
+    existing.campusName = QStringLiteral("Alpha");
+    CampusJsonRepository repository(m_directory.path());
+    const Status seeded = repository.saveCampus(existing);
+    QVERIFY(seeded);
+
+    const QString existingPath = repository.filePathForCampusId(
+        QStringLiteral("alpha")
+        );
+    QFile originalFile(existingPath);
+    QVERIFY(originalFile.open(QIODevice::ReadOnly));
+    const QByteArray before = originalFile.readAll();
+    originalFile.close();
+
+    existing.campusName = QStringLiteral("Default");
+    const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
+        snapshotFromCampusInfo(existing);
+    QVERIFY(snapshot.has_value());
+
+    const Domain::Result<void> updated =
+        Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
+            .saveCampus(
+                snapshot.value(),
+                Application::CampusDashboardCampusSaveIntent::Update
+                );
+
+    QVERIFY(!updated);
+    QCOMPARE(updated.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!updated.error().recoverable);
+    QVERIFY(
+        updated.error().message.find("Choose a different campus name")
+        != std::string::npos
+        );
+
+    QFile unchangedFile(existingPath);
+    QVERIFY(unchangedFile.open(QIODevice::ReadOnly));
+    QCOMPARE(unchangedFile.readAll(), before);
+    const auto stillAlpha = repository.loadCampus(QStringLiteral("alpha"));
+    QVERIFY(stillAlpha.has_value());
+    QCOMPARE(stillAlpha->campusName, QStringLiteral("Alpha"));
 }
 
 void CampusDashboardCampusRepositoryAdapterTests::
