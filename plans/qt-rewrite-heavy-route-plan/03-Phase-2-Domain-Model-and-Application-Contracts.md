@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1010 is complete at source commit `60238998911a4ba6ee13d2e4c4a364b953f7fcb1`; F1011, Academic-year winter-edit continuity, is accepted before implementation. Two post-F1010 audits found all 13 official Deferred entries unchanged; F1007 remains pending reconciliation, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F1011 is complete at source commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9`; F1012, Sub Prep selected-day meeting grouping, is accepted under Batch385, with all 13 official Deferred entries unchanged and Gates 1/2 Partial while the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch384
-  - F1011 - Academic-year winter-edit continuity: accepted before implementation; centralize positive whole-week span validation and preserve two-profile all-or-nothing updates.
+- Batch385
+  - F1012 - Sub Prep selected-day meeting grouping: accepted before implementation; move only summary `meetingText` filtering, grouping, and ordering into Qt-free Application while retaining platform parsing/formatting and separate legacy/navigation behavior.
 
 ## Objective
 

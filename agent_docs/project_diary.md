@@ -6125,3 +6125,11 @@ no separate platform test is required because the adapter mapping and
 repository duplicate behavior already have coverage. The F959 acceptance
 checkpoint is being recorded before implementation. All 13 official Deferred
 entries remain unchanged. Gates 1/2 remain Partial; Phase 2 exit remains Open.
+
+## Calendar day-span policy width - 2026-10-16
+
+When deriving bounded week counts from `QDate::daysTo()`, preserve its full
+64-bit result through both the distance and quotient checks. Check the
+53-week bound before narrowing to the schedule's `int` field; a large aligned
+span can otherwise wrap into a small valid count. Keep an app-less regression
+whose aligned input would narrow to a valid week count in 32-bit arithmetic.

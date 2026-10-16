@@ -43628,3 +43628,24 @@ F1011 acceptance criteria:
 | Focused verification | Add exact selectors for the app-less policy, Academic Calendar atomicity case, and affected Preferences UI methods. Build the app-less target, `ClassMngr`, `ClassMngrAcademicCalendarTests`, and `ClassMngrCalendarPreferencesRestoreDefaultsTests` serially in standard `build/windows-x64-debug`; run only focused selectors, preserving whole-target registrations, offscreen and Windows Qt PATH. No full suite. |
 
 F1007 remains pending policy reconciliation. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+### F1011 complete; post-F1011 Deferred audits clear; Batch384 closed; Batch385 discovery complete; F1012 accepted - 2026-10-16
+
+F1011 source commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9` completes Academic-year winter-edit continuity. The Qt-free helper accepts the resolved day span as `std::int64_t`, validates positivity and whole-week alignment, checks the 64-bit quotient against the 53-week cap before narrowing, and returns the week count; a large aligned-span regression covers this bound. Calendar schedule updates validate both profiles before mutation; preference save and date-edit paths pass `QDate::daysTo()` results through without int narrowing while retaining date arithmetic, messages, and save/confirmation order at the feature edge.
+
+The independent Tester passed configure/ownership validation for 1,506 handwritten sources and serial Debug builds of `ClassMngrNextApplicationAcademicYearSchedulePolicyTests`, `ClassMngr`, `ClassMngrAcademicCalendarTests`, and `ClassMngrCalendarPreferencesRestoreDefaultsTests`. The four exact F1011 selectors passed 4/4, and `git diff --check` passed. Every normal build first encountered the known Visual Studio FileTracker access denial, then passed with `/p:TrackFileAccess=false`. The preferences target emitted nonfatal MSB8064 for missing generated dependency `src/next/application/teacher_import_plan_mapper.h`. Verification was focused; no full suite ran.
+
+Two independent post-commit audits found all 13 official Deferred candidates unchanged; none is actionable, resolved, or superseded. Keep the list unchanged. Batch384 is closed. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open; F1007 remains pending policy reconciliation.
+
+Two independent Batch385 Explorers selected Sub Prep meeting grouping as the strongest bounded Application-contract candidate and narrowed it to the platform summary `meetingText` path because the legacy feature and navigation paths have different semantics.
+
+F1012, Sub Prep selected-day meeting grouping, is accepted before implementation. Add a Qt-free Application grouping policy for the selected-day `meetingText` path in `ApplicationServicesSubPrepScheduleSummaryPort` only. Consume resolved canonical `SubPrepWeekday`/seconds-of-day facts plus selected weekdays and return ordered groups of exact time and unique days. Retain only exact canonical weekdays in selected-day scope; existing platform parsing continues to drop malformed raw weekdays and times. Group by full seconds-of-day, deduplicate days within each group, order days Monday-Sunday, and order groups by first weekday then exact time. Keep raw `ScheduleValueParser`/`QTime` parsing, translated weekday abbreviations, compact-time/text/`N/A` formatting in the platform adapter. Leave the legacy feature model's separate parsing/weekday fallback unchanged. Do not change `navigationScheduleText`, `navigationScheduleOrder`, or navigation malformed-time fallback.
+
+F1012 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less coverage for selected-day filtering, reverse-input canonical order, same-time cross-day grouping, same-day deduplication, empty results, and distinct times differing only by seconds. |
+| Platform parity and scope | Preserve raw malformed weekday/time dropping through existing platform parsing and keep all parsing, translated abbreviations, and compact-time/text/`N/A` formatting in the adapter. Leave legacy parsing/weekday fallback, `navigationScheduleText`, `navigationScheduleOrder`, and navigation malformed-time fallback unchanged. |
+| Adapter regressions | Retain `ordersAllCanonicalWeekdaysInSummariesAndNavigation` and `parsesRawScheduleTimesAndKeepsMalformedNavigationFallback` in `ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`. |
+| Focused verification | Build `ClassMngr`, the app-less policy target, and affected platform targets serially in standard `build/windows-x64-debug`; run only focused app-less and named adapter checks. No full suite. |

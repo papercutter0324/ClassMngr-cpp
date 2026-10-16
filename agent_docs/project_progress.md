@@ -5806,3 +5806,26 @@ keys.
 
 F959 is the sole active slice. No source changes have been made for it yet.
 Gates 1/2 remain Partial; the formal Phase 2 exit gate remains Open.
+
+## Current Position - 2026-10-16 (F1011 complete; F1012 accepted)
+
+F1011, academic-year winter continuity, is complete at source/test commit
+`7acb5c5e5da5a88f29510a6315bc722e16d765d9`. Its Qt-free policy accepts the
+full 64-bit resolved day span, checks the 53-week limit before narrowing, and
+is used by the calendar schedule and Preferences paths. Both profile spans
+are validated before schedule mutation. The independent Tester built the
+four required Debug targets serially and passed all four exact F1011 selectors.
+VS FileTracker denied each ordinary build attempt; retries with
+`/p:TrackFileAccess=false` passed. The Preferences target emitted a nonfatal
+MSB8064 generated-dependency warning for
+`src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
+
+Two independent post-commit audits found all 13 official Phase 2 Deferred
+entries unchanged and none newly actionable, resolved, or superseded.
+Batch384 is closed. Batch385 selected F1012, a Qt-free Application grouping
+policy for the selected-day Sub Prep summary `meetingText` path. F1012 is
+accepted before implementation; the policy will consume resolved weekday and
+seconds-of-day values, while raw parsing, labels, text formatting, legacy
+feature behavior, and the separate navigation pipeline remain at their
+existing boundaries. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.

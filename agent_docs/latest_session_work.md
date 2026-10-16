@@ -5814,3 +5814,26 @@ with the same Hangul-only identity and assert rejection before persistence.
 The acceptance checkpoint is being committed before source changes. Gates 1/2
 remain Partial and Phase 2 exit remains Open. Existing unrelated untracked
 artifacts remain untouched.
+
+## Current continuation - 2026-10-16 (F1011 complete; F1012 accepted)
+
+F1011 source/test commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9` adds
+64-bit whole-week continuity validation for academic-calendar winter spans.
+The helper checks the 64-bit quotient against 53 before converting to `int`;
+calendar updates validate both school profiles before mutating schedule maps.
+Focused independent verification passed all four exact selectors and built
+the app-less policy, application, calendar, and Preferences targets serially.
+Ordinary MSBuild attempts hit the known FileTracker access denial and passed
+with `/p:TrackFileAccess=false`; Preferences emitted a nonfatal MSB8064 warning
+for missing generated dependency `src/next/application/teacher_import_plan_mapper.h`.
+No full suite ran. Two post-commit audits found all 13 official Deferred
+entries unchanged.
+
+Batch384 is closed. Batch385 selected F1012 after two independent discovery
+reviews. F1012 is accepted before implementation: extract only the selected-day
+`meetingText` grouping/order into a Qt-free Application policy using canonical
+weekday and seconds-of-day values. Retain platform parsing, translations,
+compact text, legacy feature fallback, and navigation grouping/formatting.
+The acceptance-docs checkpoint is committed separately before F1012
+implementation. Proceed to the F1012 Executor after that checkpoint lands.
+Existing unrelated untracked artifacts remain untouched.
