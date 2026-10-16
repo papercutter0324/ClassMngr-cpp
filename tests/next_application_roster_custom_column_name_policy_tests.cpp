@@ -6,6 +6,7 @@
 #include <vector>
 
 using ClassMngr::Next::Application::RosterCustomColumnNameRejection;
+using ClassMngr::Next::Application::RosterMaximumColumnNameLength;
 using ClassMngr::Next::Application::admitRosterCustomColumnName;
 using ClassMngr::Next::Application::normalizeRosterCustomColumnName;
 
@@ -109,6 +110,89 @@ bool acceptsUniqueNormalizedName()
         && result.normalizedName == u"Parent Contact";
 }
 
+std::u16string repeated(const std::u16string_view value, const std::size_t count)
+{
+    std::u16string result;
+    for (std::size_t index = 0; index < count; ++index)
+    {
+        result.append(value);
+    }
+    return result;
+}
+
+bool admitsExactlyTheSaveableNormalizedLength()
+{
+    const std::u16string exactLength(RosterMaximumColumnNameLength, u'x');
+    const auto result = admitRosterCustomColumnName(
+        u"  " + exactLength + u"  ",
+        {},
+        {},
+        asciiCaseInsensitiveEquals
+        );
+    return result.accepted()
+        && result.normalizedName == exactLength;
+}
+
+bool rejectsNamesBeyondTheSaveableNormalizedLength()
+{
+    const std::u16string tooLong(RosterMaximumColumnNameLength + 1, u'x');
+    const auto direct = admitRosterCustomColumnName(
+        tooLong,
+        {},
+        {},
+        asciiCaseInsensitiveEquals
+        );
+    const auto normalized = admitRosterCustomColumnName(
+        std::u16string(RosterMaximumColumnNameLength, u'x') + u"\t  x",
+        {},
+        {},
+        asciiCaseInsensitiveEquals
+        );
+    const auto duplicate = admitRosterCustomColumnName(
+        tooLong,
+        {tooLong},
+        {},
+        asciiCaseInsensitiveEquals
+        );
+    const auto required = admitRosterCustomColumnName(
+        tooLong,
+        {},
+        {tooLong},
+        asciiCaseInsensitiveEquals
+        );
+
+    return !direct.accepted()
+        && direct.normalizedName == tooLong
+        && direct.rejection == RosterCustomColumnNameRejection::TooLong
+        && !normalized.accepted()
+        && normalized.normalizedName
+            == std::u16string(RosterMaximumColumnNameLength, u'x') + u" x"
+        && normalized.rejection == RosterCustomColumnNameRejection::TooLong
+        && duplicate.rejection == RosterCustomColumnNameRejection::Duplicate
+        && required.rejection == RosterCustomColumnNameRejection::RequiredColumn;
+}
+
+bool countsSupplementaryCharactersAsUtf16CodeUnits()
+{
+    const std::u16string exactLength = repeated(u"\U0001F600", 32);
+    const std::u16string tooLong = exactLength + u"x";
+    const auto accepted = admitRosterCustomColumnName(
+        exactLength,
+        {},
+        {},
+        asciiCaseInsensitiveEquals
+        );
+    const auto rejected = admitRosterCustomColumnName(
+        tooLong,
+        {},
+        {},
+        asciiCaseInsensitiveEquals
+        );
+    return exactLength.size() == RosterMaximumColumnNameLength
+        && accepted.accepted()
+        && rejected.rejection == RosterCustomColumnNameRejection::TooLong;
+}
+
 } // namespace
 
 int main()
@@ -136,6 +220,21 @@ int main()
     if (!acceptsUniqueNormalizedName())
     {
         std::fprintf(stderr, "A unique normalized name was not accepted.\n");
+        return EXIT_FAILURE;
+    }
+    if (!admitsExactlyTheSaveableNormalizedLength())
+    {
+        std::fprintf(stderr, "A normalized 64-unit name was not admitted.\n");
+        return EXIT_FAILURE;
+    }
+    if (!rejectsNamesBeyondTheSaveableNormalizedLength())
+    {
+        std::fprintf(stderr, "A normalized overlength name was not rejected correctly.\n");
+        return EXIT_FAILURE;
+    }
+    if (!countsSupplementaryCharactersAsUtf16CodeUnits())
+    {
+        std::fprintf(stderr, "Supplementary characters did not count as UTF-16 units.\n");
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

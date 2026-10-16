@@ -10,6 +10,7 @@
 using ClassMngr::Next::Application::RosterCustomColumnAppendError;
 using ClassMngr::Next::Application::RosterCustomColumnAppendResult;
 using ClassMngr::Next::Application::RosterCustomColumnNameRejection;
+using ClassMngr::Next::Application::RosterMaximumColumnNameLength;
 using ClassMngr::Next::Application::RosterSnapshot;
 using ClassMngr::Next::Application::appendRosterCustomColumn;
 
@@ -103,12 +104,14 @@ bool rejectedNamesReturnTypedErrorsWithoutChangingTheInput()
         .columnWidths = {211, 143, 242},
         .rows = {{u"Amy", u"\uAE40\uBBFC\uC9C0", u"Note"}}
     };
+    const std::u16string tooLong(RosterMaximumColumnNameLength + 1, u'x');
     const std::vector<std::pair<
         std::u16string_view,
         RosterCustomColumnNameRejection>> rejectedNames{
         {u" \t\u00a0 ", RosterCustomColumnNameRejection::Empty},
         {u" review ", RosterCustomColumnNameRejection::Duplicate},
-        {u"Korean", RosterCustomColumnNameRejection::RequiredColumn}
+        {u"Korean", RosterCustomColumnNameRejection::RequiredColumn},
+        {tooLong, RosterCustomColumnNameRejection::TooLong}
     };
 
     for (const auto& [name, expected] : rejectedNames)

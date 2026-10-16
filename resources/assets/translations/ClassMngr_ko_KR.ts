@@ -5741,6 +5741,11 @@ Rm: %1</source>
         <translation>필수 명단 열이 이미 있습니다.</translation>
     </message>
     <message>
+        <location line="+3"/>
+        <source>Column name cannot exceed %1 UTF-16 code units.</source>
+        <translation>열 이름은 UTF-16 코드 단위 %1개를 초과할 수 없습니다.</translation>
+    </message>
+    <message>
         <location line="+57"/>
         <source>Select a custom column to remove.</source>
         <translation>제거할 사용자 지정 열을 선택하세요.</translation>

@@ -2,6 +2,7 @@
 
 #include "next/application/qt_compatible_text.h"
 
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string>
@@ -12,11 +13,14 @@
 namespace ClassMngr::Next::Application
 {
 
+inline constexpr std::size_t RosterMaximumColumnNameLength = 64;
+
 enum class RosterCustomColumnNameRejection
 {
     Empty,
     Duplicate,
-    RequiredColumn
+    RequiredColumn,
+    TooLong
 };
 
 struct RosterCustomColumnNameAdmission final
@@ -141,6 +145,14 @@ admitRosterCustomColumnName(
                 .rejection = RosterCustomColumnNameRejection::RequiredColumn
             };
         }
+    }
+
+    if (normalized.size() > RosterMaximumColumnNameLength)
+    {
+        return {
+            .normalizedName = std::move(normalized),
+            .rejection = RosterCustomColumnNameRejection::TooLong
+        };
     }
 
     return {

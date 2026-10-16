@@ -5726,6 +5726,11 @@ Rm: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location line="+3"/>
+        <source>Column name cannot exceed %1 UTF-16 code units.</source>
+        <translation>Column name cannot exceed %1 UTF-16 code units.</translation>
+    </message>
+    <message>
         <location line="+57"/>
         <source>Select a custom column to remove.</source>
         <translation type="unfinished"></translation>

@@ -173,6 +173,12 @@ bool RosterModel::canAddColumn(
             case RosterCustomColumnNameRejection::RequiredColumn:
                 *reason = tr("Required roster columns already exist.");
                 break;
+            case RosterCustomColumnNameRejection::TooLong:
+                *reason = tr("Column name cannot exceed %1 UTF-16 code units.")
+                    .arg(static_cast<qulonglong>(
+                        ClassMngr::Next::Application::RosterMaximumColumnNameLength
+                        ));
+                break;
             }
         }
 

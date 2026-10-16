@@ -55,7 +55,8 @@ struct RosterSavePreparation final
 };
 
 inline constexpr std::size_t RosterSaveMaximumRows = RosterModeledRowCount;
-inline constexpr std::size_t RosterSaveMaximumColumnNameLength = 64;
+inline constexpr std::size_t RosterSaveMaximumColumnNameLength =
+    RosterMaximumColumnNameLength;
 inline constexpr std::size_t RosterSaveMaximumCellLength = 10000;
 inline constexpr std::array<std::u16string_view, 6> RosterSaveRequiredColumns{
     u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"

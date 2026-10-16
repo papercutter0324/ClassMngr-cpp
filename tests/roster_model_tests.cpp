@@ -38,6 +38,7 @@ private slots:
     void insertTransferredRowRejectionKeepsModelState();
     void transferApplicationNameNormalizationMatchesLegacyQt();
     void customColumnAdmissionMatchesLegacyQtNamingRules();
+    void customColumnAdmissionRejectsUnsavableNamesWithoutMutation();
     void customColumnWhitespaceNormalizationMatchesQString();
     void insertCustomColumnPreservesRowsSignalsAndDirtyState();
     void customColumnRemovalPreservesRulesAndRejectionMessages();
@@ -1180,6 +1181,48 @@ void RosterModelTests::customColumnAdmissionMatchesLegacyQtNamingRules()
         QCOMPARE(model.toRoster().rows, originalRoster.rows);
         QVERIFY(!model.isDirty());
     }
+}
+
+void RosterModelTests::customColumnAdmissionRejectsUnsavableNamesWithoutMutation()
+{
+    using ClassMngr::Next::Application::RosterMaximumColumnNameLength;
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columns.append(QStringLiteral("Review"));
+    roster.rows = {studentRow(
+        QStringLiteral("Amy"),
+        QStringLiteral("\uAE40\uBBFC\uC9C0"),
+        QStringLiteral("A"),
+        QStringLiteral("Keep this note")
+        )};
+
+    RosterModel model;
+    model.setRoster(roster);
+    const QStringList originalColumns = model.columnNames();
+    const QList<QStringList> originalRows = model.toRoster().rows;
+    const QString acceptedName(
+        static_cast<qsizetype>(RosterMaximumColumnNameLength),
+        QLatin1Char('x')
+        );
+    const QString rejectedName(
+        static_cast<qsizetype>(RosterMaximumColumnNameLength + 1),
+        QLatin1Char('x')
+        );
+
+    QVERIFY(model.canAddColumn(acceptedName));
+
+    QString reason;
+    QVERIFY(!model.canAddColumn(rejectedName, &reason));
+    QCOMPARE(
+        reason,
+        QStringLiteral("Column name cannot exceed %1 UTF-16 code units.")
+            .arg(static_cast<qulonglong>(RosterMaximumColumnNameLength))
+        );
+    QVERIFY(!model.insertCustomColumn(rejectedName));
+    QCOMPARE(model.columnNames(), originalColumns);
+    QCOMPARE(model.toRoster().rows, originalRows);
+    QVERIFY(!model.isDirty());
 }
 
 void RosterModelTests::customColumnWhitespaceNormalizationMatchesQString()
