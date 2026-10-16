@@ -93,7 +93,8 @@ enum class CalendarEventTimingIssue
     AllDayRequiresTimedStatusAndNoTimes,
     TimedRequiresBothTimes,
     EndTimeMustFollowStartTime,
-    NonTimedStatusRequiresNoTimes
+    NonTimedStatusRequiresNoTimes,
+    InvalidTimeStatus
 };
 
 // A value describing one calendar event's date and time range. Date and time
@@ -149,6 +150,16 @@ public:
             || (hasEndTime && !isCanonicalTime(*m_endTime)))
         {
             return CalendarEventTimingIssue::InvalidTime;
+        }
+
+        switch (m_timeStatus)
+        {
+        case CalendarEventTimeStatus::Timed:
+        case CalendarEventTimeStatus::Unknown:
+        case CalendarEventTimeStatus::Unconfirmed:
+            break;
+        default:
+            return CalendarEventTimingIssue::InvalidTimeStatus;
         }
 
         if (m_allDay)

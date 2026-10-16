@@ -139,6 +139,8 @@ namespace CalendarEventSaveRequestDetail
         return "Calendar event start and end times must be both absent or both present.";
     case Domain::CalendarEventTimingIssue::InvalidTime:
         return "Calendar event times must be valid canonical 24-hour times.";
+    case Domain::CalendarEventTimingIssue::InvalidTimeStatus:
+        return "Calendar event time status must be Timed, Unknown, or Unconfirmed.";
     case Domain::CalendarEventTimingIssue::
         AllDayRequiresTimedStatusAndNoTimes:
         return "All-day calendar events require Timed status and no times.";

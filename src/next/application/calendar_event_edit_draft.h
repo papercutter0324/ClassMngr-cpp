@@ -139,6 +139,8 @@ namespace CalendarEventEditDraftDetail
         return "Calendar event draft start and end times must be both absent or both present.";
     case Domain::CalendarEventTimingIssue::InvalidTime:
         return "Calendar event draft times must be valid canonical 24-hour times.";
+    case Domain::CalendarEventTimingIssue::InvalidTimeStatus:
+        return "Calendar event draft time status must be Timed, Unknown, or Unconfirmed.";
     case Domain::CalendarEventTimingIssue::
         AllDayRequiresTimedStatusAndNoTimes:
         return "All-day calendar event drafts require Timed status and no times.";

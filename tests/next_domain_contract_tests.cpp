@@ -455,6 +455,32 @@ calendarEventTimingsEnforceTimeAndStatusPolicy()
         == CalendarEventTimingIssue::TimedRequiresBothTimes
         );
 
+    const CalendarEventTiming invalidTimeStatus(
+        "2026-09-20",
+        "2026-09-20",
+        std::nullopt,
+        std::nullopt,
+        false,
+        static_cast<CalendarEventTimeStatus>(99)
+        );
+    QVERIFY(
+        invalidTimeStatus.validate()
+        == CalendarEventTimingIssue::InvalidTimeStatus
+        );
+
+    const CalendarEventTiming invalidAllDayTimeStatus(
+        "2026-09-20",
+        "2026-09-20",
+        std::nullopt,
+        std::nullopt,
+        true,
+        static_cast<CalendarEventTimeStatus>(99)
+        );
+    QVERIFY(
+        invalidAllDayTimeStatus.validate()
+        == CalendarEventTimingIssue::InvalidTimeStatus
+        );
+
     for (const CalendarEventTimeStatus status : {
              CalendarEventTimeStatus::Unknown,
              CalendarEventTimeStatus::Unconfirmed

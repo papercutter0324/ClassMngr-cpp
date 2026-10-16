@@ -1501,6 +1501,25 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         "Calendar event start and end times must be both absent or both present."
         );
 
+    auto saveInvalidTimeStatus = validSaveRequest();
+    saveInvalidTimeStatus.timeStatus = "Pending";
+    saveInvalidTimeStatus.startTime.reset();
+    saveInvalidTimeStatus.endTime.reset();
+    verifyInvalidValidation(
+        saveInvalidTimeStatus.validate(),
+        "Calendar event text fields must be non-blank and bounded."
+        );
+    QCOMPARE(
+        std::string(
+            CalendarEventSaveRequestDetail::calendarEventTimingIssueMessage(
+                CalendarEventTimingIssue::InvalidTimeStatus
+                )
+            ),
+        std::string(
+            "Calendar event time status must be Timed, Unknown, or Unconfirmed."
+            )
+        );
+
     using DraftCase = std::pair<CalendarEventEditDraft, std::string_view>;
     std::vector<DraftCase> draftCases;
     const auto addDraftCase = [&draftCases](
@@ -1589,6 +1608,25 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
     verifyInvalidValidation(
         draftPairPrecedence.validate(),
         "Calendar event draft start and end times must be both absent or both present."
+        );
+
+    auto draftInvalidTimeStatus = validEditDraft();
+    draftInvalidTimeStatus.timeStatus = "Pending";
+    draftInvalidTimeStatus.startTime.reset();
+    draftInvalidTimeStatus.endTime.reset();
+    verifyInvalidValidation(
+        draftInvalidTimeStatus.validate(),
+        "Calendar event draft text fields must be non-blank and bounded."
+        );
+    QCOMPARE(
+        std::string(
+            CalendarEventEditDraftDetail::calendarEventTimingIssueMessage(
+                CalendarEventTimingIssue::InvalidTimeStatus
+                )
+            ),
+        std::string(
+            "Calendar event draft time status must be Timed, Unknown, or Unconfirmed."
+            )
         );
 
     using SeriesCase = std::pair<
@@ -1688,6 +1726,26 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
     verifyInvalidValidation(
         seriesPairPrecedence.validate(),
         "Calendar repeat-series edit times must be both absent or both present."
+        );
+
+    auto seriesInvalidTimeStatus = validSeriesEditRequest();
+    seriesInvalidTimeStatus.timeStatus = "Pending";
+    seriesInvalidTimeStatus.startTime.reset();
+    seriesInvalidTimeStatus.endTime.reset();
+    verifyInvalidValidation(
+        seriesInvalidTimeStatus.validate(),
+        "Calendar repeat-series edit text fields must be non-blank and bounded."
+        );
+    QCOMPARE(
+        std::string(
+            CalendarEventSeriesEditRequestDetail::
+                calendarEventTimingIssueMessage(
+                    CalendarEventTimingIssue::InvalidTimeStatus
+                    )
+            ),
+        std::string(
+            "Calendar repeat-series edit time status must be Timed, Unknown, or Unconfirmed."
+            )
         );
 }
 

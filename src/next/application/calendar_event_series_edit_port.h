@@ -123,6 +123,8 @@ namespace CalendarEventSeriesEditRequestDetail
         return "Calendar repeat-series edit times must be both absent or both present.";
     case Domain::CalendarEventTimingIssue::InvalidTime:
         return "Calendar repeat-series edit times must be valid canonical 24-hour times.";
+    case Domain::CalendarEventTimingIssue::InvalidTimeStatus:
+        return "Calendar repeat-series edit time status must be Timed, Unknown, or Unconfirmed.";
     case Domain::CalendarEventTimingIssue::
         AllDayRequiresTimedStatusAndNoTimes:
         return "All-day repeat-series edits require Timed status and no times.";
