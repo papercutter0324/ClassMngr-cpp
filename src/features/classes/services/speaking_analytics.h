@@ -76,6 +76,7 @@ struct YearToDatePoint
 // Canonical stored evaluation names. An empty selection means all evaluations.
 [[nodiscard]] QStringList evaluationNames();
 
+// Numeric averages are finite values in the five-point score domain [0, 5].
 [[nodiscard]] double roundTo3(double value);
 [[nodiscard]] QString formatAverage(double average);
 [[nodiscard]] int gradeToNumber(const QString& grade);
