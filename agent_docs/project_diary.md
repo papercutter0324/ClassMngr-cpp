@@ -6504,3 +6504,19 @@ can rename a normal ID to that display name. Reject these saves before mutation
 with typed invalid-input feedback, preserve the current draft on failure, and
 retain F951's normalized-path conflict and ordinary rename contracts. Keep the
 Phase 2 Deferred list and gates unchanged.
+
+## F1028 closeout and Batch401 shortfall - 2026-10-17
+
+F1028 completed at source commit `40cfa3f7`. The Campus Dashboard now rejects
+the repository's reserved `default` identity at the Qt-free Application
+boundary before Create or Update mutates storage. The independent Tester
+reviewed the committed change and reported all three focused Debug CTests
+passing; no full suite ran. The successful target build was incremental, with
+the relevant C++ objects already current, after an elevated retry for Visual
+Studio FileTracker access.
+
+Two independent post-commit reviews found all 13 official Deferred entries
+unchanged. Batch401 found no eligible slice in the direct legacy-facade/UI
+boundary or Application import-use-case scans. Continue discovery in Batch402;
+Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2
+remains open.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1028, rejecting the reserved Default campus identity before repository mutation, is accepted before implementation; Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1028 is complete at source commit `40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`; Batch401 found no actionable slice, so resume with fresh Heavy-route discovery; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -111,11 +111,6 @@ Treat this plan as an operational summary, not a history:
 - Sidebar Add/post-create wide-ID transition - deferred under F285: blank-draft
   Add is rejected before persistence, so revisit create-path identity propagation
   only after the draft-creation contract is clarified.
-
-#### Active candidate
-
-- F1028 - Reject the reserved Default campus identity in the Qt-free
-  Application boundary before the repository adapter mutates storage.
 
 ## Objective
 

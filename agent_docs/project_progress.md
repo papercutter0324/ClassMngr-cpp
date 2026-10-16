@@ -6015,3 +6015,18 @@ verification covers the domain contract, schedule use case, and Native English
 and GS Team save policies. Batch390 begins with F1023. All 13 official Deferred
 entries remain unchanged; Gates 1/2 are Partial and the formal Phase 2 exit
 gate remains Open.
+
+## Current continuation - 2026-10-17 (F1028 complete; Batch402 discovering)
+
+F1028 completed at source commit `40cfa3f7`; its acceptance and documentation
+are committed at `851574d9`. The Campus Dashboard rejects reserved `default`
+IDs or `Default` display names before persistence. The independent Tester
+reviewed the committed behavior and reported all three focused Debug CTests
+passing. The targets linked incrementally; the relevant C++ objects were
+already current, and no full suite ran.
+
+Two independent post-commit audits found all 13 official Deferred candidates
+unchanged. Batch401 found no eligible slice in direct legacy facade/repository
+UI paths or the remaining Application import use cases. Batch402 discovery is
+underway. Gates 1/2 remain Partial, F1007 remains pending policy
+reconciliation, and the Phase 2 exit gate remains Open.

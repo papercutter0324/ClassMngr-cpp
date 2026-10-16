@@ -43978,6 +43978,32 @@ F1028 acceptance criteria:
 | Preserved behavior | Ordinary create/update succeeds, F951 occupied-path collisions remain `Conflict`, and repository list/load behavior is unchanged. |
 | Focused verification | Build affected `ClassMngr`, Application policy tests if introduced, `ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and `ClassMngrCampusDashboardPageTests`; run the focused tests only. No full suite. |
 
-F1028 is accepted in Batch400 and remains pending implementation, build, and
-tests. The 13 Deferred entries, Gates 1/2, Phase 2 exit gate, and F1007 status
-remain unchanged.
+### F1028 complete; post-F1028 Deferred audits clear; Batch401 shortfall - 2026-10-17
+
+F1028 completes the reserved `Default` campus identity save guard at source
+commit `40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`. The Qt-free Application
+policy rejects reserved IDs and names before repository mutation; Create and
+Update retain the dirty draft and show an error, while ordinary saves,
+F951's occupied-path conflict, and repository read behavior remain unchanged.
+
+The independent Tester reviewed the committed diff and behavior. In the reused
+`build/windows-x64-debug` folder, the incremental Debug build covered
+`ClassMngr` and the policy, Campus repository adapter, and Campus Dashboard
+page test targets; changed C++ objects were already current. The build passed
+after an elevated retry for Visual Studio FileTracker `E_ACCESSDENIED`. The
+focused CTests
+`ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests`,
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and
+`ClassMngrCampusDashboardPageTests` passed 3/3. No full suite ran.
+
+Two independent post-commit audits reviewed the exact 13 official Deferred
+entries; all remain unchanged, with none actionable, resolved, or superseded.
+Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
+pending policy reconciliation.
+
+Batch401's independent legacy-boundary scan found no distinct mismatch in
+direct DataService or repository UI paths; remaining paths use typed
+boundaries. The complementary Application use-case scan found no actionable
+mismatch; Schedule Import Apply and Teacher Import validation/rollback matched
+existing coverage. No other slices were found. Resume with fresh Heavy-route
+discovery.
