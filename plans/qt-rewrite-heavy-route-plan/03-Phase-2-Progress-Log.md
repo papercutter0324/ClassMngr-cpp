@@ -41753,3 +41753,83 @@ F969 acceptance for implementation, selected second:
 F968 is the active accepted slice and F969 is next. All 13 official Deferred
 entries remain unresolved; Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### F968 and F969 complete; Batch339 closed; Batch340 discovery underway - 2026-10-16
+
+F968 was implemented at source commit
+`fcca9e5619ae56f6e63b54756ee72685b668e51c`. The Executor and independent
+Tester built the focused `ClassMngrNextApplicationCalendarEventTests` target
+and passed its exact CTest registration `ClassMngrNextApplicationCalendarEventTests`
+1/1. `git diff --check` was clean; no full suite ran. Two independent
+post-F968 audits found all 13 official Deferred entries unchanged; F968 did
+not affect F709.
+
+F969 was implemented at source commit
+`64f284ea4797d2788314923113c7509fb42de325`. The Executor and independent
+Tester built the focused
+`ClassMngrNextApplicationTestingClassDetailsReadQueryTests` target and passed
+its exact CTest registration
+`ClassMngrNextApplicationTestingClassDetailsReadQueryTests` 1/1.
+`git diff --check` was clean; no full suite ran. Two complete post-F969 audits
+found all 13 official Deferred entries unchanged, with none actionable,
+resolved, or superseded; F969 changed none of their triggers.
+
+Batch340 discovery is underway across fresh areas. No slice has been accepted
+yet. All 13 official Deferred entries remain unresolved; Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
+
+### Batch340 discovery complete; F970 and F971 accepted in order - 2026-10-16
+
+Batch340's feature-workflow lane found that `DocumentCatalogProjection`
+accepts duplicate folder paths. Independent review confirmed that duplicates
+can create a recursive sidebar cycle and that unresolved parents or
+disconnected cycles hide folders. The legacy loader filters these shapes, so
+F970 addresses the projection contract for independent producers, not a bug in
+the current loader. The Application-contract lane found that unsolicited
+current-generation cancellation acknowledgements can cancel Import and Report
+jobs. Independent review confirmed the shared state-machine gap in
+`ImportJobState` and `ReportJobState`: workers should acknowledge only after a
+cancellation request, while explicit `cancel()` remains direct. No production
+coordinator construction was found, so F971 is scoped to state-machine
+contract correctness. The adapter/projection scan found no additional
+candidate. F970 is selected first, followed by F971; neither is an official
+Deferred entry.
+
+No other slices were found.
+
+F970 acceptance for implementation:
+
+1. Reject duplicate folder paths and malformed hierarchy (unresolved parent,
+   parent cycle, or disconnected/non-rooted chain) before a successful
+   `DocumentCatalogProjection` is returned, so recursive sidebar traversal is
+   finite and complete.
+2. Preserve existing path bounds, folder IDs and ordering, document-folder
+   IDs, and metadata. Do not change the legacy loader or sidebar.
+3. Cover duplicate paths, unresolved parents, cyclic/disconnected chains, and
+   valid nested folders in
+   `tests/next_application_document_catalog_tests.cpp`.
+4. Build `ClassMngr` and `ClassMngrNextApplicationDocumentCatalogTests`; run
+   only the exact `ClassMngrNextApplicationDocumentCatalogTests` CTest. Do not
+   run the full suite.
+
+F971 acceptance for implementation, selected second:
+
+1. In both `ImportJobState` and `ReportJobState`, require a running job and a
+   previously recorded cancellation request before `acknowledgeCancellation`
+   succeeds. An unsolicited acknowledgement returns recoverable `Conflict`
+   without changing the snapshot.
+2. Preserve direct `cancel()` without a prior request, existing cancellation
+   flag and output-reference behavior, normal requested acknowledgement, and
+   terminal-state behavior. Add state tests plus current-generation
+   coordinator-event tests for Import and Report; do not broaden `pump()` error
+   reporting.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationImportJobTests`,
+   `ClassMngrNextApplicationImportJobCoordinatorTests`,
+   `ClassMngrNextApplicationReportJobTests`, and
+   `ClassMngrNextApplicationReportJobCoordinatorTests`; run only those four
+   exact CTest registrations. Do not run the full suite.
+
+F970 is the active accepted slice and F971 is next. All 13 official Deferred
+entries remain unresolved; Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
