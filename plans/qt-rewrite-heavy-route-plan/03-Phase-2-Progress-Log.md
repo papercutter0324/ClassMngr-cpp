@@ -43906,3 +43906,19 @@ F1026 acceptance criteria:
 | Focused verification | Run the policy test, `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and `ClassMngrSpeakingAnalyticsTests`; no full suite. |
 
 F1026 is accepted in Batch393 and remains pending implementation, build, and tests. The 13 Deferred entries, Gates 1/2, Phase 2 exit gate, and F1007 status remain unchanged.
+
+### F1026 complete; post-F1026 Deferred audits clear; F1027 accepted - 2026-10-17
+
+F1026 completes the shared Class Analytics strongest/focus criterion policy at source commit `41c38975`. It skips missing criteria, keeps all maximum/minimum ties in criterion order, and preserves the strict `<1e-9` comparison, with averaging, rounding, labels, and presentation left at the consumers.
+
+The focused Debug build covered `ClassMngr` and the policy, dashboard-query, and Speaking Analytics test targets. After adding a regression that confirms an exact `1e-9` difference is excluded by strict `<1e-9`, `ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests`, `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and `ClassMngrSpeakingAnalyticsTests` passed 3/3. The first CTest command omitted `--build-config Debug` and reported the registrations Not Run; the exact tests were rerun with Debug selected and passed. No full suite ran.
+
+Two independent final-state audits reviewed the exact 13 official Deferred entries: none became actionable, resolved, or superseded, and all remain unchanged. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+Batch395 found no eligible production mismatch. The parity scan found malformed timed Calendar range rows already covered by tests and Class Tab ordering already using the shared policy. The Application scan found `ClassDetailsPageQuery` accepts noncanonical nonblank IDs, but the live page supplies positive integer IDs and its adapter and sibling queries reject noncanonical IDs. Calendar request/projection, teacher import and birthday, class/roster transfers, schedule import, and campus metadata revealed no actionable candidate.
+
+Batch396's two Domain scans found no production candidate: staff-ID value constructors accept any integer, but live save policies reject nonpositive IDs; `ScheduleEntry` has no live caller; `StudentNamePair` callers trim first; and `ScheduleTime`/`GregorianDate` use validated construction.
+
+Batch397's broad workflow scan found no changed-state mismatch; prior B368/B371/B373 findings for workspace/save, restore, update, and document handoff remain applicable. Its companion identified F1027: normal New Teacher Profile creation removes a selected existing `.tps` target before `WorkspaceCoordinator` creation, where reachable SQLite open or schema failures can leave the prior file deleted. B371 had explicitly excluded the `createWorkspace` contract and Initial Setup cancellation, so this is a distinct normal-create failure path, not a reopened B371 issue. Existing tests cover successful replacement only; a directory at `<target>-journal` provides a reachable failure injection, and `InitialSetupLifecycle` has an analogous sibling-backup rollback pattern.
+
+F1027 is accepted before implementation. Preserve successful replacement behavior when creating over an existing `.tps` file. If a reachable coordinator failure occurs, restore the original target contents, leave no workspace active, and report failure. Clean up partial replacement state; if restoration cannot complete, preserve a sibling recovery copy and report it. Keep all 13 official Deferred entries unchanged.

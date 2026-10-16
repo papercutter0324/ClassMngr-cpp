@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1025 complete; F1026 accepted)
+### Current checkpoint - 2026-10-17 (F1026 complete; F1027 accepted)
 
 F1024 completed at source commit `80088444bfcce485a451198527df2316b9ecdd06`.
 Upcoming birthday occurrences now carry `Domain::GregorianDate`; raw reference
@@ -72,14 +72,25 @@ remain at their existing boundaries. Focused Debug builds and the ranking
 policy, Next query, and Speaking Analytics CTests passed; a corrected feature
 tie test passed its focused CTest. No full suite ran.
 
-Two independent final-state audits found all 13 official Deferred candidates
-unchanged. Batch392 is closed. Batch393 selected F1026, the shared Qt-free
-Class Analytics strongest/focus criterion selection policy. Implementation is
-underway; independent focused verification and the source commit are pending.
-Preserve missing-data filtering, all maximum/minimum ties in criterion order,
-and current tie semantics; keep aggregation, rounding, names, labels, and
-presentation in each consumer. Gates 1/2 remain Partial, the Phase 2 exit gate
-remains Open, and F1007 remains pending policy reconciliation.
+F1026 completed at source commit `41c38975`. The shared Qt-free Class Analytics
+criterion-extrema policy preserves missing-data filtering, all maximum/minimum
+ties in criterion order, and strict `<1e-9` tie semantics. Consumers retain
+aggregation, rounding, names, labels, and presentation. The standard Debug
+build and three exact focused CTests passed 3/3 after the exact-tolerance
+boundary case was added. The first CTest invocation lacked `--build-config
+Debug` and was rerun with the correct configuration; no full suite ran.
+
+Two independent post-F1026 reviews checked the Phase 2 plan's exact 13
+Deferred entries: none is actionable, resolved, or superseded. Batches 395 and
+396 found no production candidate. Batch397 accepted F1027 after confirming
+normal New Teacher Profile creation deletes an existing `.tps` before the
+workspace coordinator can fail opening or initializing the replacement.
+F1027 is underway: retain successful replacement behavior, restore the old
+target on a reachable creation failure, leave no workspace open, and report a
+recovery path if rollback cannot restore it. The focused FileController test
+uses a blocking `<target>-journal` path to reach SQLite open failure. Gates
+1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
+pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

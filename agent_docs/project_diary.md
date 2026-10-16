@@ -6459,3 +6459,29 @@ Phase 2 exit remains Open.
   projection change. The final policy sorts each source range in place and
   avoids score-key, index, and duplicate-rank arrays; this does not resolve
   the separate deferred roster-materialization question.
+
+## F1026 closeout and F1027 acceptance - 2026-10-17
+
+F1026 is committed as `41c38975`. Its focused Debug build and exact policy,
+Next dashboard-query, and Speaking Analytics CTests passed 3/3 after adding
+coverage for the exact `<1e-9` boundary. Record the initial missing Debug test
+configuration and corrected rerun accurately; no full suite ran.
+
+Two independent audits reviewed all 13 entries in the Phase 2 plan's official
+Deferred list after F1026. None became actionable, resolved, or superseded.
+Class Analytics roster-cap/sparse-representation remains deferred because
+F1026 changes criterion selection, not roster materialization, and supplies no
+measurement or product cap policy. Batch395 and Batch396 discovery shortfalls
+also produced no slice. Batch397 compared workspace lifecycle, setup, update,
+and document handoff against earlier reviews; its independent workspace lane
+found a distinct normal-create failure-atomicity gap. Batch371 had explicitly
+excluded the normal create-workspace failure contract.
+
+Accept F1027 to preserve an existing selected `.tps` when normal New Teacher
+Profile creation fails after SQLite open or schema initialization. Keep
+successful replacement, current-file selection, and no-database failure state
+as today. Exercise a reachable open failure with a blocking `<target>-journal`
+directory; assert original bytes return at the selected path, the controller
+has no open workspace, and failure is reported. If rollback cannot restore the
+target, retain and disclose the recovery copy. Keep Initial Setup behavior
+unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.

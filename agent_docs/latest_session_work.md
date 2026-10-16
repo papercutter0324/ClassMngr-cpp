@@ -3,6 +3,10 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_resume_20260929`; Heavy route; resumed 2026-10-17.
+- Current checkpoint: F1026 is complete at source commit `41c38975`;
+  F1027 normal New Teacher Profile replacement failure atomicity is accepted
+  and implementation is underway. Two independent reviews found none of the
+  13 official Phase 2 Deferred entries actionable after F1026.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,
@@ -5978,3 +5982,26 @@ verify, and commit F1026, then select and begin the following Phase 2 slice.
 Gates 1/2 remain Partial and Phase 2 exit remains Open. Preserve unrelated
 untracked `%SystemDrive%/`, `Testing/`,
 `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
+
+## Current continuation - 2026-10-17 (F1026 complete; F1027 accepted)
+
+F1026 completed at source commit `41c38975`. Its Qt-free Class Analytics
+criterion-extrema policy preserves missing-data filtering, all strongest/focus
+ties in criterion order, and the current strict `<1e-9` tie rule. The independent
+Tester rebuilt the affected Debug targets and passed the exact policy, Next
+dashboard-query, and Speaking Analytics CTests 3/3 after the exact boundary
+case was added. The first invocation omitted `--build-config Debug` and was
+rerun with the correct configuration. No full suite ran.
+
+Two independent audits of the Phase 2 plan's exact 13 Deferred entries found
+none actionable, resolved, or superseded. Batch395 found no demonstrated
+Application/feature mismatch; Batch396 found no reachable Domain invariant
+gap. Batch397 checked workspace, setup, update, and document workflows against
+prior findings and accepted F1027. The normal “New Teacher Profile” path
+removes an existing target before coordinator creation, but a reachable
+SQLite open/schema failure leaves the old profile lost. Preserve successful
+replacement behavior; on a reachable creation failure restore the selected
+target byte-for-byte, leave no workspace active, and report failure. If
+restoration itself fails, retain a recovery copy and disclose its path. The
+focused failure setup uses a directory at `<target>-journal`. F1027
+implementation is underway; the Phase 2 exit gate remains Open.

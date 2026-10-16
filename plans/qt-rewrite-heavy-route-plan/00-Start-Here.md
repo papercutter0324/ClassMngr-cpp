@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1025, shared Class Analytics student ranking order, is complete at source commits `5dfd3b85e7e0eee64ff791cbf1cbd6954f381c5b` and corrective `53d516b2783f33f5e6951b80ce5067cc20c98410`; F1026, shared strongest/focus criterion selection, is accepted in Batch393 and implementation is underway, with focused verification and source commit pending. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1026, shared strongest/focus criterion selection, is complete at source commit `41c38975`; focused Debug verification passed its three exact CTests after adding a regression that confirms an exact `1e-9` difference is excluded by the strict `<1e-9` comparison. F1027, preserving an existing `.tps` file when normal New Teacher Profile creation fails, is accepted before implementation. All 13 official Deferred entries remain unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
