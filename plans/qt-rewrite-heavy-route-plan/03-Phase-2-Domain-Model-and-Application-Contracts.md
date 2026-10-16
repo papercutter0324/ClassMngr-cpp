@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F994 at source commit `fcf321e6` remains the latest source slice; Batches364-371 are closed and B372 discovery is underway, all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F994 remains the latest source slice; F995 is accepted for implementation, F996 is the remaining B372 candidate, and B373 discovery has started; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,8 +115,10 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch372 (discovery underway)
-  - Testing Classes normal list, details, create, edit, delete, and selection flows, including app-contract mapping.
-  - Normal Schedule page reads, slot states, edits, and page state, excluding Schedule Import and Calendar.
+  - F996 - Schedule sibling-page invalidation after direct writes: add parity coverage at the MainWindow handoff seam, then notify after successful slot-toggle, testing-assignment, and Schedule Editor writes so MainWindow marks only the sibling SchedulePage stale while preserving existing invalidations.
+- Batch373 (discovery underway)
+  - Document content/viewer lifecycle and report/substitute output-source contracts, excluding F614/F618/F626.
+  - Backup/recovery and application-update use-case boundaries and live callers.
 
 ## Objective
 

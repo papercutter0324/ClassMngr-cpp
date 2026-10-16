@@ -43155,3 +43155,36 @@ underway in two read-only lanes: Testing Classes normal list/details/create/
 edit/delete/selection flows and app-contract mapping; and normal Schedule page
 reads, slot states, edits, and page state, excluding Schedule Import and
 Calendar.
+
+### F995 accepted for implementation; Batch372 continues; Batch373 discovery underway - 2026-10-16
+
+F995 is accepted for implementation from Batch372's Testing Classes selection
+flow. In `src/features/classes/ui/testing_classes_page.cpp:960-979`,
+`currentItemChanged` can call `saveChanges()` and then dereference the previous
+`QListWidgetItem`; successful save rebuilds the list (`466-481`), whose clear
+(`1098-1104`) deletes that item. A failed `loadClass(B)` returns without
+updating the active editor/ID (`1226-1287`); success stores the ID at `1324`,
+and Delete targets it at `1554-1597`. Two independent Investigators confirmed
+the paths are reachable through ordinary selection. The existing
+`testingClassDetailsReadFailureShowsWarningWithoutFallback` starts with no
+loaded A, so it does not cover A-to-B failure. This is source evidence, not a
+runtime reproduction. The Testing Classes candidate is removed from active
+discovery; F996 is the remaining B372 candidate.
+
+F995 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope and identity | Change only the Testing Classes page and its existing focused test file, with regression tests limited to the production change; capture the requested stable class ID before any dirty save or list rebuild. No app-contract, repository, CMake, or unrelated-page changes. |
+| Dirty save failure | For dirty A-to-B selection, restore A selection, retain A's draft, and do not read B. |
+| Successful save and B read | After saving A, successful B read leaves B both visibly selected and the active editor/mutation target. |
+| B read failure with A loaded | Restore A selection, editor, and target; preserve the current warning and retry behavior. If A's row cannot be restored, clear selection and active mutation target together so update/delete cannot target a class different from the displayed selection. |
+| Initial no-active behavior | Preserve F912's warning, no-fallback and retry behavior, and disabled destructive actions. |
+| Regression coverage | Exercise actual `QListWidget` transitions for clean A-to-B read failure, dirty A-to-B successful save with B read success and failure, and failed save retaining A without a B read; assert update/delete target consistency where applicable. Keep failed choices-list refresh outside this slice. |
+
+Batch373 discovery has started in two lanes: (1) Document content/viewer
+lifecycle and report/substitute output-source contracts, excluding memory
+candidates F614/F618/F626; and (2) backup/recovery and application-update
+use-case boundaries and live callers. No implementation or verification
+outcome is claimed for F995. All 13 official Deferred entries remain unchanged;
+Gates 1/2 are Partial and the Phase 2 exit gate is Open.
