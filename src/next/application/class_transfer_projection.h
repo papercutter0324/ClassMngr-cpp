@@ -1077,6 +1077,14 @@ validateClassTransferReviewDecisions(
     std::map<Domain::ClassId, std::vector<int>> classTargetClaimants;
     for (const auto& resolution : request.classResolutions)
     {
+        const bool actionIsValid = validClassAction(resolution.action);
+        if (!actionIsValid)
+        {
+            result.issues.push_back(
+                Issue{IssueCode::InvalidClassAction,
+                      resolution.packageClassIndex}
+                );
+        }
         if (resolution.packageClassIndex < 0)
         {
             result.issues.push_back(
@@ -1105,12 +1113,8 @@ validateClassTransferReviewDecisions(
         }
         classResolutions.emplace(resolution.packageClassIndex, &resolution);
 
-        if (!validClassAction(resolution.action))
+        if (!actionIsValid)
         {
-            result.issues.push_back(
-                Issue{IssueCode::InvalidClassAction,
-                      resolution.packageClassIndex}
-                );
             continue;
         }
 
@@ -1173,6 +1177,15 @@ validateClassTransferReviewDecisions(
         teacherReplacementClaimants;
     for (const auto& resolution : request.teacherResolutions)
     {
+        const bool actionIsValid = validTeacherAction(resolution.action);
+        if (!actionIsValid)
+        {
+            result.issues.push_back(
+                Issue{IssueCode::InvalidTeacherAction,
+                      -1,
+                      resolution.teacherKey}
+                );
+        }
         if (resolution.teacherKey.empty())
         {
             result.issues.push_back(Issue{IssueCode::EmptyTeacherKey});
@@ -1199,13 +1212,8 @@ validateClassTransferReviewDecisions(
         }
         teacherResolutions.emplace(resolution.teacherKey, &resolution);
 
-        if (!validTeacherAction(resolution.action))
+        if (!actionIsValid)
         {
-            result.issues.push_back(
-                Issue{IssueCode::InvalidTeacherAction,
-                      -1,
-                      resolution.teacherKey}
-                );
             continue;
         }
 
