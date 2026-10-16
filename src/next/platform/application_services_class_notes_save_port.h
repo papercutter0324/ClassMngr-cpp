@@ -233,10 +233,11 @@ private:
 
     [[nodiscard]] static Application::ClassNotesSaveResult unavailableFailure()
     {
-        return failure(
-            Domain::ErrorCode::NotFound,
-            "The class service is unavailable."
-            );
+        return Application::ClassNotesSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The class service is unavailable.",
+            .recoverable = true
+        });
     }
 
     ApplicationServices* m_services = nullptr;

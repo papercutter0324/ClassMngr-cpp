@@ -225,6 +225,7 @@ mapsUnavailableAndClosedSession()
             );
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(unavailable.error().recoverable);
     QVERIFY(fromUtf8(unavailable.error().message).contains(
         QStringLiteral("unavailable")
         ));
@@ -244,6 +245,7 @@ mapsUnavailableAndClosedSession()
             );
     QVERIFY(!closed);
     QCOMPARE(closed.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(closed.error().recoverable);
     QVERIFY(fromUtf8(closed.error().message).contains(
         QStringLiteral("unavailable")
         ));
@@ -368,6 +370,7 @@ unknownPositiveClassIdReturnsNotFoundAndPreservesLegacyDiagnostic()
             );
     QVERIFY(!typedSave);
     QCOMPARE(typedSave.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!typedSave.error().recoverable);
     QCOMPARE(
         fromUtf8(typedSave.error().message),
         QStringLiteral(

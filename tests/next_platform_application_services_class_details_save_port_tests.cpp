@@ -711,6 +711,7 @@ unavailableSessionReturnsStructuredFailure()
         Application::ClassDetailsSaveUseCase::execute(request, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
     QVERIFY(QString::fromStdString(result.error().message).contains(
         QStringLiteral("unavailable")
         ));
@@ -732,6 +733,12 @@ missingParentReturnsNotFoundBeforeDetailAndConflictReads()
     QVERIFY(!emptyScheduleResult);
     QCOMPARE(emptyScheduleResult.error().code, Domain::ErrorCode::NotFound);
     QVERIFY(!emptyScheduleResult.error().recoverable);
+    QCOMPARE(
+        emptyScheduleResult.error().message,
+        std::string(
+            "Saving class information failed: parent class id 100001 was not found."
+            )
+        );
 
     request.regularTimes = std::vector<Domain::ScheduleTime>{
         scheduleTime(0, 9 * 60, 9 * 60 + 50)

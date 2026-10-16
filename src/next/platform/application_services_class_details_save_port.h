@@ -406,10 +406,11 @@ private:
 
     [[nodiscard]] static Domain::Result<void> unavailableFailure()
     {
-        return failure(
-            Domain::ErrorCode::NotFound,
-            "The class service is unavailable."
-            );
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The class service is unavailable.",
+            .recoverable = true
+        });
     }
 
     ApplicationServices* m_services = nullptr;

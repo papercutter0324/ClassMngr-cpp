@@ -584,6 +584,7 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
             );
     QVERIFY(!unknownClass);
     QCOMPARE(unknownClass.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(!unknownClass.error().recoverable);
     QVERIFY(QString::fromStdString(unknownClass.error().message).contains(
         QStringLiteral("class not found")
         ));
@@ -1570,6 +1571,7 @@ unavailableSessionReturnsStructuredFailure()
         );
     QVERIFY(!unavailable);
     QCOMPARE(unavailable.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(unavailable.error().recoverable);
     QVERIFY(QString::fromStdString(unavailable.error().message).contains(
         QStringLiteral("unavailable")
         ));
@@ -1587,6 +1589,7 @@ unavailableSessionReturnsStructuredFailure()
         );
     QVERIFY(!closed);
     QCOMPARE(closed.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(closed.error().recoverable);
     QVERIFY(QString::fromStdString(closed.error().message).contains(
         QStringLiteral("unavailable")
         ));
