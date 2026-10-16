@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1030 is accepted and pending implementation after Batch406 found one candidate; the 13 Deferred entries remain unchanged under post-F1029 audits, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1030 is complete at source commit `e2c5e65eca8c566fbb25a8553aa9993e0252236a`; post-F1030 audits found all 13 Deferred entries unchanged, Batch407 Heavy discovery is underway, Gates 1/2 are Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch406
+#### Active batch — Batch407
 
-- F1030 — Align document-content blank-reference validation with the shared UTF-8 whitespace rule.
+- Heavy-route discovery is underway; no candidate has been selected yet.
 
 #### Deferred candidates
 

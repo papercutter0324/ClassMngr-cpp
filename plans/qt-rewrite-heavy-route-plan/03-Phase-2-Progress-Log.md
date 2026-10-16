@@ -44158,9 +44158,39 @@ F1030 acceptance criteria:
 | Blank references | Reject empty, ASCII whitespace-only, U+00A0-only, and U+3000-only references as nonrecoverable `InvalidInput`, without changing the session snapshot. |
 | Preserved reference behavior | Keep the 4096-byte boundary and exact-limit acceptance, preserve nonblank reference bytes, and retain malformed-UTF-8-as-nonblank behavior and existing session transitions. |
 | Scope | Keep catalog and UI behavior unchanged; this public-API boundary does not establish a normal catalog-produced whitespace-only reference or a current UI defect. |
-| Focused verification | Build `ClassMngr`, `ClassMngrNextApplicationDocumentContentTests`, and `ClassMngrNextApplicationDocumentCatalogTests`; run only CTests `NextApplicationDocumentContent` and `NextApplicationDocumentCatalog`. No full suite. |
+| Focused verification | Build `ClassMngr`, `ClassMngrNextApplicationDocumentContentTests`, and `ClassMngrNextApplicationDocumentCatalogTests`; run only CTests `ClassMngrNextApplicationDocumentContentTests` and `ClassMngrNextApplicationDocumentCatalogTests`. No full suite. |
 
 The exact 13 official Deferred entries remain unchanged under the post-F1029
 audits; repeat both independent audits after F1030 implementation. Gates 1/2
 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
 policy reconciliation. F1030 is accepted and pending implementation.
+
+### F1030 complete; post-F1030 Deferred audits clear; Batch406 closed - 2026-10-17
+
+F1030 completes at source commit
+`e2c5e65eca8c566fbb25a8553aa9993e0252236a`. `DocumentContentSession::isValidReference`
+now uses `isBlankUtf8Text`, matching document-catalog UTF-8 whitespace
+validation. The content-session regression rejects NBSP-only and U+3000-only
+references with nonrecoverable `InvalidInput` and an unchanged snapshot, while
+malformed UTF-8 remains accepted byte-for-byte; existing empty, ASCII
+whitespace, size-boundary, and session-transition coverage remains.
+
+The implementer built `ClassMngr` and both document test targets in the reused
+`build/windows-x64-debug` Visual Studio x64 Debug tree and recompiled the
+content/catalog test translation units. Focused CTests
+`ClassMngrNextApplicationDocumentContentTests` and
+`ClassMngrNextApplicationDocumentCatalogTests` passed 2/2. The independent
+Tester confirmed both exact CTests passed 2/2; its test objects were already
+up to date, and `ClassMngr` ran AUTOMOC/QML. An elevated retry was required
+after the sandbox build hit Visual Studio FileTracker `E_ACCESSDENIED`. The
+build emitted the existing MSB8064 missing `teacher_import_plan_mapper.h`
+dependency warning. No full suite ran. Empty and ASCII whitespace cases assert
+`InvalidInput` and no mutation but do not directly assert
+`recoverable == false`; the implementation uses the same nonrecoverable
+`invalidInput` helper as the Unicode cases, which explicitly assert it.
+
+Two independent post-commit audits checked exactly the 13 official Deferred
+entries; all remain unchanged, with none actionable, resolved, or superseded.
+Batch406 is closed. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation. Batch407 Heavy
+discovery is underway.

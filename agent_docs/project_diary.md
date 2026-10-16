@@ -6575,3 +6575,24 @@ exact-limit acceptance, byte-preserving nonblank references, and malformed
 UTF-8-as-nonblank behavior. The 13 official Deferred entries remain unchanged
 under the post-F1029 audit; Gates 1/2 remain Partial, F1007 awaits policy
 reconciliation, and Phase 2 remains open.
+
+## F1030 closeout - 2026-10-17
+
+F1030 completed at source commit `e2c5e65e`. `DocumentContentSession` now
+uses the shared Qt-compatible UTF-8 blankness helper, aligning the public
+request boundary with document catalog projection. The focused CTests
+`ClassMngrNextApplicationDocumentContentTests` and
+`ClassMngrNextApplicationDocumentCatalogTests` passed 2/2. The independent
+Tester confirmed the Debug targets; test objects were already current in its
+build. No full suite ran. The implementer recompiled the content and catalog
+test translation units. Build required an elevated retry after Visual Studio
+FileTracker access denial and emitted the existing MSB8064 missing
+`teacher_import_plan_mapper.h` dependency warning.
+
+Two independent post-commit audits found all 13 official Deferred entries
+unchanged; none became actionable, resolved, or superseded. The independent
+Tester noted that existing empty/ASCII invalid-reference assertions do not
+explicitly check recoverability, though all invalid cases use the shared
+nonrecoverable `invalidInput` helper; the new Unicode cases assert it. Batch407
+Heavy-route discovery is underway. Gates 1/2 remain Partial, F1007 awaits
+policy reconciliation, and Phase 2 remains open.

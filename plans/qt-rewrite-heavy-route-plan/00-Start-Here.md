@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1029 is complete at source commit `c49c0739264406493970fe5f7368c6dbb1ddfd86`, and F1030 is accepted and pending implementation to align document-content blank-reference validation with the shared UTF-8 whitespace rule; post-F1029 audits found all 13 official Deferred entries unchanged. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1030 is complete at source commit `e2c5e65eca8c566fbb25a8553aa9993e0252236a`; post-F1030 audits found all 13 official Deferred entries unchanged, and Batch407 Heavy discovery is underway. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
