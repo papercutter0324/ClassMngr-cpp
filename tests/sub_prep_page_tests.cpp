@@ -96,15 +96,21 @@ public:
         {
             const Domain::ClassId& id = request.visibleClassIds[index];
             const int legacyId = std::stoi(id.value());
+            if (sortedFallbackFixture
+                && excludeSortedFallbackSelection
+                && legacyId == 42)
+            {
+                continue;
+            }
             const bool secondClass = legacyId == 43;
             const bool fridayClass = legacyId == 44;
             const int teacher = fridayClass ? 9 : secondClass ? 8 : 7;
-            const std::string grade = fridayClass
-                ? "E6"
-                : secondClass ? "E5" : "E4";
-            const std::string level = fridayClass
-                ? "Apollo"
-                : secondClass ? "Athena" : "Hercules";
+            const std::string grade = sortedFallbackFixture
+                ? "E4"
+                : fridayClass ? "E6" : secondClass ? "E5" : "E4";
+            const std::string level = sortedFallbackFixture
+                ? fridayClass ? "Theseus" : "Hercules"
+                : fridayClass ? "Apollo" : secondClass ? "Athena" : "Hercules";
             if (includedTeachers.insert(teacher).second)
             {
                 input.teachers.push_back({
@@ -116,7 +122,7 @@ public:
                     .notes = {}
                 });
             }
-            input.classes.push_back({
+            ClassSummary classSummary{
                 .id = id,
                 .teacherId = typedTeacherId(teacher),
                 .grade = grade,
@@ -126,8 +132,17 @@ public:
                     ? "Fri 6pm"
                     : secondClass ? "Thurs 5pm" : "Tues 4pm",
                 .studentCount = 9,
-                .order = static_cast<std::int32_t>(index)
-            });
+                .order = sortedFallbackFixture
+                    ? legacyId == 43 ? 0 : legacyId == 42 ? 1 : 2
+                    : static_cast<std::int32_t>(index),
+                .navigationFirstDayOrder = sortedFallbackFixture
+                    ? fridayClass ? 6 : 0
+                    : kClassSummaryUnknownNavigationOrder,
+                .navigationFirstTimeOrder = sortedFallbackFixture
+                    ? fridayClass ? 1'100 : 500
+                    : kClassSummaryUnknownNavigationOrder
+            };
+            input.classes.push_back(std::move(classSummary));
         }
 
         return SubPrepScheduleSummaryReadResult::success(
@@ -136,6 +151,8 @@ public:
     }
 
     SubPrepScheduleScopeRequest lastRequest;
+    bool sortedFallbackFixture = false;
+    bool excludeSortedFallbackSelection = false;
 };
 
 class SubPrepTestDetailsReadPort final
@@ -149,20 +166,28 @@ public:
         ++loadCount;
         loadedClassIds.push_back(classId.value());
         const bool secondClass = classId.value() == "43";
-        const int teacher = secondClass ? 8 : 7;
+        const bool thirdClass = classId.value() == "44";
+        const int teacher = thirdClass ? 9 : secondClass ? 8 : 7;
         return SubPrepClassDetailsReadResult::success({
             .classId = classId,
             .teacherId = typedTeacherId(teacher),
             .classNotes = secondClass
                 ? "Review the vocabulary list."
+                : thirdClass ? "Read chapter four."
                 : "Read chapter three.",
-            .teacherDisplayName = secondClass ? "Thomas" : "Susan",
+            .teacherDisplayName = thirdClass
+                ? "Morgan"
+                : secondClass ? "Thomas" : "Susan",
             .teacherFacilities = {
-                .room = secondClass ? "512" : "413",
-                .wifiName = secondClass ? "Thomas WiFi" : "Susan WiFi",
+                .room = thirdClass ? "614" : secondClass ? "512" : "413",
+                .wifiName = thirdClass
+                    ? "Morgan WiFi"
+                    : secondClass ? "Thomas WiFi" : "Susan WiFi",
                 .wifiPassword = "wifi secret",
                 .internetType = "WiFi",
-                .zoomId = secondClass ? "thomas.zoom" : "susan.zoom",
+                .zoomId = thirdClass
+                    ? "morgan.zoom"
+                    : secondClass ? "thomas.zoom" : "susan.zoom",
                 .zoomPassword = "zoom secret",
                 .projectionType = "HDMI"
             },
@@ -355,6 +380,7 @@ private slots:
     void sectionsAppearInRequestedOrderAndUseExpectedEditability();
     void headerKeyboardOpensUntargeted();
     void gradeAndLevelTabsSelectOneClassAndPreserveSelection();
+    void removedSelectionFallsBackToSortedFirstClassAndLoadsItsDetails();
     void summaryScopeFiltersPreviewDaysAndKeepsFirstSeenOrder();
     void scheduleDisplayModeRefreshesClassInformationInPlace();
     void scheduleDisplayModeRefreshFallsBackToFirstVisibleClass();
@@ -925,6 +951,82 @@ void SubPrepPageTests
             ),
         detailsCard
         );
+}
+
+void SubPrepPageTests
+    ::removedSelectionFallsBackToSortedFirstClassAndLoadsItsDetails()
+{
+    ApplicationServices services;
+    SubPrepPageHarness harness(&services);
+    harness.summaryReadPort.sortedFallbackFixture = true;
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+
+    auto* scheduleWidget = page.findChild<ScheduleWidget*>(
+        QStringLiteral("subPrepScheduleWidget")
+        );
+    QVERIFY(scheduleWidget);
+    ScheduleViewModel fallbackSchedule;
+    fallbackSchedule.days = {QStringLiteral("Monday")};
+    ScheduleRowView fallbackRow;
+    ScheduleCellView mondayCell;
+    mondayCell.day = QStringLiteral("Monday");
+    for (const int classId : {43, 42, 44})
+    {
+        ScheduleEntry entry;
+        entry.classId = classId;
+        mondayCell.entries.append(entry);
+    }
+    fallbackRow.cells.append(mondayCell);
+    fallbackSchedule.rows.append(fallbackRow);
+    scheduleWidget->setPreviewModel(fallbackSchedule);
+    page.refresh();
+
+    auto* classTabs = page.findChild<SubPrepClassInformationTabSelector*>(
+        QStringLiteral("subPrepClassTabStrip")
+        );
+    QVERIFY(classTabs);
+    QVERIFY(classTabs->model());
+    QCOMPARE(classTabs->model()->rowCount(), 3);
+    QCOMPARE(classTabs->model()->classIdAt(0)->value(), std::string("44"));
+    QCOMPARE(classTabs->model()->classIdAt(classTabs->currentRow())->value(),
+             std::string("42"));
+
+    auto* classDetails = page.findChild<QWidget*>(
+        QStringLiteral("subPrepClassDetails")
+        );
+    QVERIFY(classDetails);
+    QCOMPARE(classDetails->property("classId").toInt(), 42);
+
+    // The read source retains input order 43, 44 after class 42 disappears.
+    // Configured-level ordering places 44 first, even though its schedule day
+    // is later, so F1014 should select row zero from this sorted projection.
+    harness.summaryReadPort.excludeSortedFallbackSelection = true;
+    page.refresh();
+
+    QCOMPARE(classTabs->model()->rowCount(), 2);
+    const auto& inputRows = classTabs->model()->projection().classes();
+    QCOMPARE(inputRows.size(), std::size_t(2));
+    QCOMPARE(inputRows[0].id.value(), std::string("43"));
+    QCOMPARE(inputRows[1].id.value(), std::string("44"));
+    QCOMPARE(classTabs->model()->classIdAt(0)->value(), std::string("44"));
+    QCOMPARE(classTabs->model()->classIdAt(1)->value(), std::string("43"));
+    QCOMPARE(classTabs->model()->classIdAt(classTabs->currentRow())->value(),
+             std::string("44"));
+    QCOMPARE(classDetails->property("classId").toInt(), 44);
+    QCOMPARE(harness.detailsReadPort.loadedClassIds.back(), std::string("44"));
+
+    QTextEdit* classNotes = nullptr;
+    for (QTextEdit* textEdit : page.findChildren<QTextEdit*>())
+    {
+        if (textEdit->property("classId").toInt() == 44)
+        {
+            classNotes = textEdit;
+            break;
+        }
+    }
+    QVERIFY(classNotes);
+    QCOMPARE(classNotes->toPlainText(), QStringLiteral("Read chapter four."));
 }
 
 void SubPrepPageTests

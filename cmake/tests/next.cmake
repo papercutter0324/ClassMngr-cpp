@@ -1524,6 +1524,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
 )
 
+# Keep Sub Prep visible-class ordering independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+    tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+    COMMAND ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationSubPrepScheduleSummaryQuery
     SOURCES

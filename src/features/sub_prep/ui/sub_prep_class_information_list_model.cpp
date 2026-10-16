@@ -1,6 +1,7 @@
 #include "sub_prep_class_information_list_model.h"
 
 #include "features/classes/config/class_info_config.h"
+#include "next/application/sub_prep_visible_class_ordering_policy.h"
 #include "ui/shared/widgets/navigation_pill_style.h"
 
 #include <QApplication>
@@ -17,6 +18,7 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace
@@ -24,7 +26,7 @@ namespace
 constexpr int UnknownOrder = 1'000;
 
 QString fromUtf8(
-    const std::string& value
+    const std::string_view value
     )
 {
     return QString::fromUtf8(
@@ -290,60 +292,65 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
 {
     m_visibleRows.clear();
     const auto& summaries = m_projection.classes();
+    std::vector<std::size_t> filteredRows;
     for (std::size_t index = 0; index < summaries.size(); ++index)
     {
         if (fromUtf8(summaries[index].grade).trimmed() == m_currentGrade)
         {
-            m_visibleRows.push_back(index);
+            filteredRows.push_back(index);
         }
     }
 
-    std::stable_sort(
-        m_visibleRows.begin(),
-        m_visibleRows.end(),
-        [&summaries](std::size_t leftIndex, std::size_t rightIndex)
-        {
-            const auto& left = summaries[leftIndex];
-            const auto& right = summaries[rightIndex];
-            const QString grade = fromUtf8(left.grade).trimmed();
-            const int leftLevel = levelOrder(grade, fromUtf8(left.level).trimmed());
-            const int rightLevel = levelOrder(grade, fromUtf8(right.level).trimmed());
-            if (leftLevel != rightLevel)
-            {
-                return leftLevel < rightLevel;
-            }
-            if (left.navigationFirstDayOrder
-                != right.navigationFirstDayOrder)
-            {
-                return left.navigationFirstDayOrder
-                    < right.navigationFirstDayOrder;
-            }
-            if (left.navigationFirstTimeOrder
-                != right.navigationFirstTimeOrder)
-            {
-                return left.navigationFirstTimeOrder
-                    < right.navigationFirstTimeOrder;
-            }
-
-            const int labelComparison = QString::localeAwareCompare(
-                baseClassLabel(left),
-                baseClassLabel(right)
-                );
-            if (labelComparison != 0)
-            {
-                return labelComparison < 0;
-            }
-            return left.id < right.id;
-        }
-        );
-
-    QStringList baseLabels;
-    baseLabels.reserve(static_cast<qsizetype>(m_visibleRows.size()));
-    QHash<QString, int> counts;
-    for (const std::size_t index : m_visibleRows)
+    std::vector<
+        ClassMngr::Next::Application::SubPrepVisibleClassOrderingFact
+        > orderingFacts;
+    orderingFacts.reserve(filteredRows.size());
+    QStringList unsortedBaseLabels;
+    unsortedBaseLabels.reserve(static_cast<qsizetype>(filteredRows.size()));
+    for (const std::size_t index : filteredRows)
     {
-        const QString label = baseClassLabel(summaries[index]);
-        baseLabels.append(label);
+        const auto& summary = summaries[index];
+        const QString grade = fromUtf8(summary.grade).trimmed();
+        const QString baseLabel = baseClassLabel(summary);
+        orderingFacts.push_back({
+            .configuredLevelOrder = levelOrder(
+                grade,
+                fromUtf8(summary.level).trimmed()
+                ),
+            .navigationFirstDayOrder = summary.navigationFirstDayOrder,
+            .navigationFirstTimeOrder = summary.navigationFirstTimeOrder,
+            .baseLabel = baseLabel.toUtf8().toStdString(),
+            .classId = summary.id.value()
+        });
+        unsortedBaseLabels.append(baseLabel);
+    }
+
+    const std::vector<std::size_t> orderedFactIndexes =
+        ClassMngr::Next::Application::orderSubPrepVisibleClassRows(
+            orderingFacts,
+            [](const std::string_view left, const std::string_view right)
+            {
+                return QString::localeAwareCompare(
+                    fromUtf8(left),
+                    fromUtf8(right)
+                    );
+            }
+            );
+
+    m_visibleRows.reserve(orderedFactIndexes.size());
+    QStringList baseLabels;
+    baseLabels.reserve(static_cast<qsizetype>(orderedFactIndexes.size()));
+    for (const std::size_t factIndex : orderedFactIndexes)
+    {
+        m_visibleRows.push_back(filteredRows[factIndex]);
+        baseLabels.append(
+            unsortedBaseLabels.at(static_cast<qsizetype>(factIndex))
+            );
+    }
+
+    QHash<QString, int> counts;
+    for (const QString& label : baseLabels)
+    {
         ++counts[label];
     }
 
