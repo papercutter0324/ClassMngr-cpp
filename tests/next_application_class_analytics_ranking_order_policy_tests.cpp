@@ -6,34 +6,59 @@
 #include <vector>
 
 using ClassMngr::Next::Application::ClassAnalyticsRankingOrderPolicy::
-    orderByScoreThenName;
+    sortByScoreThenName;
+
+namespace
+{
+
+struct RankingEntry final
+{
+    int preparedScoreKey = 0;
+    std::string englishName;
+};
+
+} // namespace
 
 int main()
 {
-    // Source 3 beats source 1 by one thousandth, despite its later name.
-    // The equal-score pair at 3000 uses the supplied name comparator.
-    const std::vector<int> scoreKeys{ 3000, 4999, 3000, 5000 };
-    const std::vector<std::string> names{ "Zoe", "Amy", "Bea", "Zed" };
+    // The 5000 score beats 4999 despite its later name. The tie at 3000 uses
+    // the supplied comparator to put Bea before Zoe.
+    std::vector<RankingEntry> rankings{
+        { 3000, "Zoe" }, { 4999, "Amy" }, { 3000, "Bea" }, { 5000, "Zed" }
+    };
     bool comparedDifferentScores = false;
     int nameComparisonCount = 0;
-    const std::vector<std::size_t> order = orderByScoreThenName(
-        scoreKeys,
-        [&](const std::size_t left, const std::size_t right)
+    sortByScoreThenName(
+        rankings.begin(), rankings.end(),
+        [](const RankingEntry& rank) { return rank.preparedScoreKey; },
+        [&](const RankingEntry& left, const RankingEntry& right)
         {
-            if (scoreKeys[left] != scoreKeys[right])
+            if (left.preparedScoreKey != right.preparedScoreKey)
             {
                 comparedDifferentScores = true;
             }
             ++nameComparisonCount;
-            if (names[left] < names[right]) return -1;
-            if (names[left] > names[right]) return 1;
+            if (left.englishName < right.englishName) return -1;
+            if (left.englishName > right.englishName) return 1;
             return 0;
         });
 
-    const std::vector<std::size_t> expected{ 3, 1, 2, 0 };
-    if (order != expected || comparedDifferentScores || nameComparisonCount == 0)
+    const std::vector<RankingEntry> expected{
+        { 5000, "Zed" }, { 4999, "Amy" }, { 3000, "Bea" }, { 3000, "Zoe" }
+    };
+    if (rankings.size() != expected.size()
+        || comparedDifferentScores
+        || nameComparisonCount == 0)
     {
         return EXIT_FAILURE;
+    }
+    for (std::size_t index = 0; index < expected.size(); ++index)
+    {
+        if (rankings[index].preparedScoreKey != expected[index].preparedScoreKey
+            || rankings[index].englishName != expected[index].englishName)
+        {
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;

@@ -10,9 +10,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cstddef>
-#include <utility>
-#include <vector>
 
 namespace SpeakingAnalytics
 {
@@ -333,36 +330,20 @@ Snapshot compute(
         }
     }
 
-    std::vector<int> rankingScoreKeys;
-    rankingScoreKeys.reserve(static_cast<std::size_t>(snapshot.rankings.size()));
-    for (const StudentRank& rank : snapshot.rankings)
-    {
-        rankingScoreKeys.push_back(
-            ClassMngr::Next::Application::ClassAnalyticsNumericPolicy::
-                roundToThousandths(rank.overall3));
-    }
-    const std::vector<std::size_t> rankingOrder =
-        ClassMngr::Next::Application::ClassAnalyticsRankingOrderPolicy::
-            orderByScoreThenName(
-                rankingScoreKeys,
-                [&rankings = snapshot.rankings](
-                    const std::size_t left,
-                    const std::size_t right
-                    )
-                {
-                    return rankings.at(static_cast<qsizetype>(left))
-                        .englishName.localeAwareCompare(
-                            rankings.at(static_cast<qsizetype>(right))
-                                .englishName);
-                });
-    QList<StudentRank> orderedRankings;
-    orderedRankings.reserve(snapshot.rankings.size());
-    for (const std::size_t sourceIndex : rankingOrder)
-    {
-        orderedRankings.append(std::move(
-            snapshot.rankings[static_cast<qsizetype>(sourceIndex)]));
-    }
-    snapshot.rankings = std::move(orderedRankings);
+    ClassMngr::Next::Application::ClassAnalyticsRankingOrderPolicy::
+        sortByScoreThenName(
+            snapshot.rankings.begin(), snapshot.rankings.end(),
+            [](const StudentRank& rank)
+            {
+                return ClassMngr::Next::Application::
+                    ClassAnalyticsNumericPolicy::roundToThousandths(
+                        rank.overall3);
+            },
+            [](const StudentRank& left, const StudentRank& right)
+            {
+                return left.englishName.localeAwareCompare(
+                    right.englishName);
+            });
 
     return snapshot;
 }

@@ -412,33 +412,19 @@ namespace ClassAnalyticsDashboardReadDetail
         }
     }
 
-    std::vector<int> rankingScoreKeys;
-    rankingScoreKeys.reserve(snapshot.rankings.size());
-    for (const ClassAnalyticsStudentRank& rank : snapshot.rankings)
-    {
-        rankingScoreKeys.push_back(
-            ClassAnalyticsNumericPolicy::roundToThousandths(rank.overall3));
-    }
-    const std::vector<std::size_t> rankingOrder =
-        ClassAnalyticsRankingOrderPolicy::orderByScoreThenName(
-            rankingScoreKeys,
-            [&names, &rankings = snapshot.rankings](
-                const std::size_t left,
-                const std::size_t right
-                )
-            {
-                return names.compareEnglishNames(
-                    rankings[left].englishName,
-                    rankings[right].englishName);
-            });
-    std::vector<ClassAnalyticsStudentRank> orderedRankings;
-    orderedRankings.reserve(snapshot.rankings.size());
-    for (const std::size_t sourceIndex : rankingOrder)
-    {
-        orderedRankings.push_back(
-            std::move(snapshot.rankings[sourceIndex]));
-    }
-    snapshot.rankings = std::move(orderedRankings);
+    ClassAnalyticsRankingOrderPolicy::sortByScoreThenName(
+        snapshot.rankings.begin(), snapshot.rankings.end(),
+        [](const ClassAnalyticsStudentRank& rank)
+        {
+            return ClassAnalyticsNumericPolicy::roundToThousandths(
+                rank.overall3);
+        },
+        [&names](const ClassAnalyticsStudentRank& left,
+                 const ClassAnalyticsStudentRank& right)
+        {
+            return names.compareEnglishNames(left.englishName,
+                                             right.englishName);
+        });
     return snapshot;
 }
 
