@@ -4,6 +4,7 @@
 #include "features/speaking_eval/services/speaking_eval_ai_prompt.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
+#include "next/application/speaking_evaluation_report_content.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -29,6 +30,8 @@
 
 #include <array>
 #include <string>
+#include <utility>
+#include <vector>
 
 QString speakingEvalReportDate(
     const QDate& date,
@@ -49,6 +52,8 @@ QString speakingEvalReportDate(
 
 namespace
 {
+
+namespace Application = ClassMngr::Next::Application;
 
 AiCommentProvider preferredAiCommentProvider()
 {
@@ -225,145 +230,14 @@ public:
     }
 };
 
-QString classLabel(
-    const ClassInfo& info
-    )
+QString fromApplicationString(const std::u16string& value)
 {
-    QStringList parts;
-
-    if (!info.classGrade.trimmed().isEmpty())
-    {
-        parts.append(info.classGrade.trimmed());
-    }
-
-    if (!info.classLevel.trimmed().isEmpty())
-    {
-        parts.append(info.classLevel.trimmed());
-    }
-
-    return parts.join(QLatin1Char(' '));
+    return QString::fromStdU16String(value);
 }
 
-SpeakingEvalReportTemplate reportTemplateForClass(
-    const ClassInfo& info
-    )
+std::u16string toApplicationString(const QString& value)
 {
-    const QString grade =
-        info.classGrade.trimmed();
-    const QString level =
-        info.classLevel.trimmed();
-
-    const bool usesAdvancedTemplate = (
-               grade.compare(
-                   QStringLiteral("E5"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               && level.compare(
-                   QStringLiteral("Athena"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               )
-        || (
-               grade.compare(
-                   QStringLiteral("E6"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               && level.compare(
-                   QStringLiteral("Song's"),
-                   Qt::CaseInsensitive
-                   ) == 0
-               );
-
-    return usesAdvancedTemplate
-        ? SpeakingEvalReportTemplate::Advanced
-        : SpeakingEvalReportTemplate::Standard;
-}
-
-QString studentDisplayName(
-    const SpeakingEvalRows& rows,
-    int row
-    )
-{
-    if (row < 0 || row >= rows.size())
-    {
-        return {};
-    }
-
-    const QString englishName =
-        rows[row].value(
-            SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-            ).trimmed();
-    const QString koreanName =
-        rows[row].value(
-            SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-            ).trimmed();
-
-    if (englishName.isEmpty())
-    {
-        return koreanName;
-    }
-    if (koreanName.isEmpty())
-    {
-        return englishName;
-    }
-
-    return QObject::tr("%1 (%2)").arg(englishName, koreanName);
-}
-
-SpeakingEvalReportData reportDataForRow(
-    const SpeakingEvalRows& rows,
-    const ClassInfo& classInfo,
-    int row
-    )
-{
-    SpeakingEvalReportData data;
-    if (row < 0 || row >= rows.size())
-    {
-        return data;
-    }
-
-    const QStringList& values = rows[row];
-    data.englishName = values.value(
-        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)
-        );
-    data.koreanName = values.value(
-        SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)
-        );
-    data.classLabel = classLabel(classInfo);
-    data.nativeTeacher = classInfo.teacherEn;
-    data.koreanTeacher = classInfo.teacherKr;
-    data.comments = values.value(
-        SpeakingEval::toInt(SpeakingEvalColumn::Comments)
-        );
-    data.notes = values.value(
-        SpeakingEval::toInt(SpeakingEvalColumn::Notes)
-        );
-    data.grade =
-        speakingEvalElementaryGrade(
-            classInfo.classGrade
-            );
-    data.reportTemplate = reportTemplateForClass(classInfo);
-    data.date = speakingEvalReportDate(
-        QDate::currentDate(),
-        data.reportTemplate
-        );
-
-    const std::array<SpeakingEvalColumn, 6> scoreColumns{
-        SpeakingEvalColumn::Grammar,
-        SpeakingEvalColumn::Pronunciation,
-        SpeakingEvalColumn::Fluency,
-        SpeakingEvalColumn::Manner,
-        SpeakingEvalColumn::Content,
-        SpeakingEvalColumn::OverallEffort
-    };
-    for (int index = 0; index < scoreColumns.size(); ++index)
-    {
-        data.scores[index] = values.value(
-            SpeakingEval::toInt(scoreColumns[index])
-            );
-    }
-
-    return data;
+    return value.toStdU16String();
 }
 
 } // namespace
@@ -375,19 +249,84 @@ buildSpeakingEvalStudentReports(
     const QByteArray& signatureImage
     )
 {
-    QList<SpeakingEvalBatchReportService::StudentReport> reports;
-    for (int row = 0; row < rows.size(); ++row)
+    Application::SpeakingEvaluationReportContentRequest request;
+    request.rows.reserve(static_cast<std::size_t>(rows.size()));
+    for (const QStringList& row : rows)
     {
-        const QString displayName = studentDisplayName(rows, row);
-        if (displayName.isEmpty())
+        std::vector<std::u16string> values;
+        values.reserve(static_cast<std::size_t>(row.size()));
+        for (const QString& value : row)
         {
-            continue;
+            values.push_back(toApplicationString(value));
+        }
+        request.rows.push_back(std::move(values));
+    }
+    request.classValues = {
+        .grade = toApplicationString(classInfo.classGrade),
+        .level = toApplicationString(classInfo.classLevel),
+        .nativeTeacher = toApplicationString(classInfo.teacherEn),
+        .koreanTeacher = toApplicationString(classInfo.teacherKr)
+    };
+
+    const Application::SpeakingEvaluationReportContent projected =
+        Application::projectSpeakingEvaluationReportContent(
+            std::move(request)
+            );
+
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    for (const Application::SpeakingEvaluationReportStudentContent& student :
+         projected.students)
+    {
+        const QString englishName =
+            fromApplicationString(student.displayEnglishName);
+        const QString koreanName =
+            fromApplicationString(student.displayKoreanName);
+        QString displayName;
+        if (englishName.isEmpty())
+        {
+            displayName = koreanName;
+        }
+        else if (koreanName.isEmpty())
+        {
+            displayName = englishName;
+        }
+        else
+        {
+            displayName = QObject::tr("%1 (%2)").arg(englishName, koreanName);
         }
 
-        SpeakingEvalReportData report =
-            reportDataForRow(rows, classInfo, row);
+        SpeakingEvalReportData report;
+        report.englishName = fromApplicationString(student.englishName);
+        report.koreanName = fromApplicationString(student.koreanName);
+        report.classLabel = fromApplicationString(projected.classLabel);
+        report.nativeTeacher = fromApplicationString(projected.nativeTeacher);
+        report.koreanTeacher = fromApplicationString(projected.koreanTeacher);
+        report.comments = fromApplicationString(student.comments);
+        report.notes = fromApplicationString(student.notes);
+        report.grade = projected.grade;
+        report.reportTemplate =
+            projected.reportTemplate
+                    == Application::SpeakingEvaluationReportTemplate::Advanced
+                ? SpeakingEvalReportTemplate::Advanced
+                : SpeakingEvalReportTemplate::Standard;
+        report.date = speakingEvalReportDate(
+            QDate::currentDate(),
+            report.reportTemplate
+            );
+        for (std::size_t scoreIndex = 0;
+             scoreIndex < student.scores.size();
+             ++scoreIndex)
+        {
+            report.scores[scoreIndex] = fromApplicationString(
+                student.scores[scoreIndex]
+                );
+        }
         report.signatureImage = signatureImage;
-        reports.append({ displayName, report, row });
+        reports.append({
+            displayName,
+            report,
+            static_cast<int>(student.sourceRow)
+        });
     }
     return reports;
 }

@@ -9,6 +9,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "domain/models/speaking_evaluation.h"
+#include "domain/models/class_info.h"
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
 #include "fakes/fake_user_prompt_service.h"
@@ -551,6 +552,7 @@ private slots:
     void overwriteExistingReportWhenAllowed();
     void previewDialogOffersActionsForTheSelectedReport();
     void selectedSourceRowMapsToItsFilteredReport();
+    void reportContentProjectionUsesUnsavedRowsAndKeepsDtoContext();
     void previewDialogOnlyScrollsTheReport();
     void privateNotesAreSplitAndSaved();
     void privateNotesAutomaticallyContinueBullets();
@@ -1708,6 +1710,81 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(reports.size(), 3);
     QCOMPARE(speakingEvalReportIndexForSourceRow(reports, 2), 1);
     QCOMPARE(speakingEvalReportIndexForSourceRow(reports, 1), -1);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    reportContentProjectionUsesUnsavedRowsAndKeepsDtoContext()
+{
+    SpeakingEvalRows sourceRows = SpeakingEval::emptyRows();
+    sourceRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Saved Student");
+    sourceRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\xA7\x80");
+    sourceRows[0][SpeakingEval::toInt(SpeakingEvalColumn::Grammar)] =
+        QStringLiteral("A+");
+    sourceRows[0][SpeakingEval::toInt(SpeakingEvalColumn::Comments)] =
+        QStringLiteral("Saved comment");
+    sourceRows[0][SpeakingEval::toInt(SpeakingEvalColumn::Notes)] =
+        QStringLiteral("Saved notes");
+
+    SpeakingEvalModel model;
+    model.loadData(sourceRows);
+    QVERIFY(model.setData(
+        model.index(0, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+        QStringLiteral("Unsaved Student"),
+        Qt::EditRole
+        ));
+    QVERIFY(model.setData(
+        model.index(0, SpeakingEval::toInt(SpeakingEvalColumn::Comments)),
+        QStringLiteral("Unsaved comment"),
+        Qt::EditRole
+        ));
+    QVERIFY(model.isDirty());
+
+    ClassInfo classInfo;
+    classInfo.classGrade = QStringLiteral(" E5 ");
+    classInfo.classLevel = QStringLiteral(" athena ");
+    classInfo.teacherEn = QStringLiteral("Native Teacher");
+    classInfo.teacherKr = QStringLiteral("Korean Teacher");
+    const QByteArray signatureImage("\0signature\x01", 11);
+
+    const auto reports = buildSpeakingEvalStudentReports(
+        model.rows(),
+        classInfo,
+        signatureImage
+        );
+
+    QCOMPARE(reports.size(), 1);
+    QCOMPARE(reports.front().sourceRow, 0);
+    QCOMPARE(
+        reports.front().displayName,
+        QObject::tr("%1 (%2)").arg(
+            QStringLiteral("Unsaved Student"),
+            QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\xA7\x80")
+            )
+        );
+    const SpeakingEvalReportData& report = reports.front().report;
+    QCOMPARE(report.englishName, QStringLiteral("Unsaved Student"));
+    QCOMPARE(
+        report.koreanName,
+        QString::fromUtf8("\xEA\xB9\x80\xEB\xAF\xBC\xEC\xA7\x80")
+        );
+    QCOMPARE(report.classLabel, QStringLiteral("E5 athena"));
+    QCOMPARE(report.nativeTeacher, QStringLiteral("Native Teacher"));
+    QCOMPARE(report.koreanTeacher, QStringLiteral("Korean Teacher"));
+    QCOMPARE(report.comments, QStringLiteral("Unsaved comment"));
+    QCOMPARE(report.notes, QStringLiteral("Saved notes"));
+    QCOMPARE(report.grade, 5);
+    QCOMPARE(report.reportTemplate, SpeakingEvalReportTemplate::Advanced);
+    QCOMPARE(
+        report.date,
+        speakingEvalReportDate(
+            QDate::currentDate(),
+            SpeakingEvalReportTemplate::Advanced
+            )
+        );
+    QCOMPARE(report.signatureImage, signatureImage);
+    QCOMPARE(report.scores[0], QStringLiteral("A+"));
 }
 
 void SpeakingEvalBatchReportServiceTests::

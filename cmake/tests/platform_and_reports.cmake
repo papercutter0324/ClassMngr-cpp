@@ -359,6 +359,21 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     )
 
     add_test(
+        NAME ClassMngrSpeakingEvalReportProjectionAdapterTests
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            reportContentProjectionUsesUnsavedRowsAndKeepsDtoContext
+    )
+    set_tests_properties(ClassMngrSpeakingEvalReportProjectionAdapterTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+    if(WIN32)
+        set_tests_properties(ClassMngrSpeakingEvalReportProjectionAdapterTests
+            PROPERTIES ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
+
+    add_test(
         NAME ClassMngrSpeakingEvalInternalPdfParityTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests internalPdfMatchesWidgetRendering
     )

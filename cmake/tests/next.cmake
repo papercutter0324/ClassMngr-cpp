@@ -612,6 +612,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
 )
 
+# Keep speaking-evaluation report content policy independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+    tests/next_application_speaking_evaluation_report_content_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+)
+
 # Keep speaking-evaluation AI batch comment quality independent of Qt.
 add_executable(
     ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
