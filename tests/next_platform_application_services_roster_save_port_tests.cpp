@@ -158,6 +158,7 @@ missingParentClassReturnsNotFoundWithoutWrites()
             );
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+        QVERIFY(!result.error().recoverable);
         QVERIFY(!result.error().message.empty());
 
         QSqlQuery counts(services.databaseSession()->database());
@@ -378,9 +379,8 @@ closedSessionReturnsFailureWithoutDataServiceFallback()
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
-    QVERIFY(QString::fromStdString(result.error().message).contains(
-        QStringLiteral("unavailable")
-        ));
+    QCOMPARE(result.error().message, std::string("The roster service is unavailable."));
+    QVERIFY(result.error().recoverable);
 }
 
 

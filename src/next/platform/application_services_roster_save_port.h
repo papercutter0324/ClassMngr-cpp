@@ -215,10 +215,11 @@ private:
 
     [[nodiscard]] static Domain::Result<void> unavailableFailure()
     {
-        return failure(
-            Domain::ErrorCode::NotFound,
-            "The roster service is unavailable."
-            );
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The roster service is unavailable.",
+            .recoverable = true
+        });
     }
 
     ApplicationServices* m_services = nullptr;
