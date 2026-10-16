@@ -3,7 +3,9 @@
 #include "core/updater/github_release.h"
 #include "core/updater/update_configuration.h"
 #include "core/updater/update_service.h"
+#include "next/application/startup_update_check_use_case.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "next/platform/update_service_manual_check_port.h"
 #include "next/platform/update_service_startup_check_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -307,6 +309,8 @@ private slots:
     void bridgeMapsFailures_data();
     void bridgeMapsFailures();
     void bridgeAndControllerDestructionSuppressDelivery();
+    void manualAdapterDistinguishesFreshBusyForceAndFailure();
+    void manualDialogObservesConcurrentStartupResult();
     void startupSuccessEffectsOccurOnceAndManualChecksStillWork_data();
     void startupSuccessEffectsOccurOnceAndManualChecksStillWork();
 
@@ -1092,6 +1096,96 @@ void UpdateControllerAutomaticStartupTests::bridgeAndControllerDestructionSuppre
     controller.setStartupComplete();
     controller.startAutomaticCheck();
     QVERIFY(!controller.hasVisibleDialog());
+}
+
+void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyForceAndFailure()
+{
+    using namespace ClassMngr::Next::Application;
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+
+    UpdateService service(configurationFor(server.url()));
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort port(&service);
+    int completions = 0;
+    int busyCompletions = 0;
+    QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
+        [&](ManualUpdateCheckOutcome outcome)
+        {
+            ++completions;
+            QVERIFY(std::holds_alternative<ManualUpdateCheckResult>(outcome));
+        }), ManualUpdateCheckDispatch::Started);
+    QCOMPARE(port.check(ManualUpdateCheckPolicy::Force,
+        [&](ManualUpdateCheckOutcome) { ++busyCompletions; }),
+        ManualUpdateCheckDispatch::Busy);
+    QCOMPARE(busyCompletions, 0);
+    QTRY_COMPARE(completions, 1);
+    QVERIFY(port.snapshot().resultFresh);
+    QVERIFY(port.snapshot().cachedResult.has_value());
+
+    QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
+        [&](ManualUpdateCheckOutcome) { ++busyCompletions; }),
+        ManualUpdateCheckDispatch::FreshCache);
+    QCOMPARE(server.requestCount(), 1);
+    QCOMPARE(busyCompletions, 0);
+
+    QCOMPARE(port.check(ManualUpdateCheckPolicy::Force,
+        [&](ManualUpdateCheckOutcome outcome)
+        {
+            ++completions;
+            QVERIFY(std::holds_alternative<ManualUpdateCheckResult>(outcome));
+        }), ManualUpdateCheckDispatch::Started);
+    QTRY_COMPARE(completions, 2);
+    QCOMPARE(server.requestCount(), 2);
+
+    UpdateService unconfigured(UpdateConfiguration{});
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort failedPort(&unconfigured);
+    int failures = 0;
+    std::optional<ManualUpdateCheckError> error;
+    QCOMPARE(failedPort.check(ManualUpdateCheckPolicy::Force,
+        [&](ManualUpdateCheckOutcome outcome)
+        {
+            ++failures;
+            if (const auto* value = std::get_if<ManualUpdateCheckError>(&outcome))
+            {
+                error = *value;
+            }
+        }), ManualUpdateCheckDispatch::Failed);
+    QCOMPARE(failures, 1);
+    QVERIFY(error.has_value());
+    QCOMPARE(error->code, ManualUpdateCheckErrorCode::Configuration);
+}
+
+void UpdateControllerAutomaticStartupTests::manualDialogObservesConcurrentStartupResult()
+{
+    using namespace ClassMngr::Next::Application;
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+
+    UpdateService service(configurationFor(server.url()));
+    ClassMngr::Next::Platform::UpdateServiceStartupCheckPort startupPort(&service);
+    StartupUpdateCheckUseCase startupUseCase(startupPort);
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
+    UpdateDialog dialog(manualPort, true);
+
+    QCOMPARE(startupUseCase.start({
+        .startupComplete = true,
+        .checkOnStartup = true,
+        .preferences = {.automaticChecksEnabled = true},
+        .hasReleasesApiUrl = true
+    }, {}), StartupUpdateCheckDisposition::Started);
+    QVERIFY(service.isBusy());
+    dialog.refreshForOpen();
+    QVERIFY(service.isBusy());
+    QTRY_VERIFY(service.hasResult());
+    QTRY_COMPARE(server.requestCount(), 1);
+
+    QLabel* const title = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateTitle"));
+    QVERIFY(title);
+    QTRY_COMPARE(title->text(), QStringLiteral("Update Available"));
+    QCOMPARE(server.requestCount(), 1);
 }
 
 void UpdateControllerAutomaticStartupTests::startupSuccessEffectsOccurOnceAndManualChecksStillWork_data()

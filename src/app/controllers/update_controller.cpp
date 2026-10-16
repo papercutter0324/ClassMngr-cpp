@@ -9,6 +9,7 @@
 #include "next/application/skipped_update_version_policy.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "next/platform/update_service_manual_check_port.h"
 #include "next/platform/update_service_startup_check_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
@@ -344,6 +345,11 @@ bool UpdateController::hasVisibleDialog() const
 
 void UpdateController::showManualUpdateDialog()
 {
+    if (!m_service)
+    {
+        return;
+    }
+
     runStartupMaintenance();
 
     UpdateDialog* dialog =
@@ -357,6 +363,11 @@ void UpdateController::showManualUpdateDialog()
 
 void UpdateController::showAutomaticUpdateDialog()
 {
+    if (!m_service)
+    {
+        return;
+    }
+
     UpdateDialog* dialog =
         ensureDialog(true);
 
@@ -370,6 +381,11 @@ UpdateDialog* UpdateController::ensureDialog(
     bool automaticPrompt
     )
 {
+    if (!m_service)
+    {
+        return nullptr;
+    }
+
     const auto skipped =
         m_skippedUpdateVersionPreferencesPort->read().skippedVersion;
     const QString skippedText = skipped.has_value()
@@ -392,13 +408,16 @@ UpdateDialog* UpdateController::ensureDialog(
         return m_dialog;
     }
 
+    auto* manualUpdateCheckPort = new
+        ClassMngr::Next::Platform::UpdateServiceManualCheckPort(m_service);
     auto* dialog =
         new UpdateDialog(
-            m_service,
+            *manualUpdateCheckPort,
             m_startupComplete,
             m_startupComplete ? m_window.data() : nullptr,
             skippedText
             );
+    manualUpdateCheckPort->setParent(dialog);
 
     dialog->setAttribute(
         Qt::WA_DeleteOnClose

@@ -829,6 +829,37 @@ add_test(
     COMMAND ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
 )
 
+# Keep repeatable manual update-check policy and completion app-less and Qt-free.
+add_executable(
+    ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+    tests/next_application_manual_update_check_use_case_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+    COMMAND ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+)
+
 # Keep skipped-update version decisions independent of Qt and the runtime.
 add_executable(
     ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
@@ -906,6 +937,7 @@ classmngr_add_qt_test(
     SOURCES
         tests/update_controller_automatic_startup_tests.cpp
     LIBRARIES
+        ClassMngrNext::Platform
         Qt6::Test
     OFFSCREEN
     ENVIRONMENT

@@ -2,6 +2,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/updater/update_installer.h"
+#include "next/application/manual_update_check_use_case.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCloseEvent>
@@ -12,32 +13,80 @@
 #include <QLabel>
 #include <QLocale>
 #include <QProgressBar>
+#include <QPointer>
 #include <QPushButton>
 #include <QTimer>
 #include <QtGlobal>
 #include <QVBoxLayout>
 
+#include <type_traits>
+
+namespace
+{
+
+UpdateCheckResult toPresentationResult(
+    const ClassMngr::Next::Application::ManualUpdateCheckResult& result
+    )
+{
+    return {
+        .currentVersion = Version(
+            result.currentVersion.major,
+            result.currentVersion.minor,
+            result.currentVersion.patch
+            ),
+        .latestVersion = Version(
+            result.latestVersion.major,
+            result.latestVersion.minor,
+            result.latestVersion.patch
+            ),
+        .artifact = {
+            .platformKey = QString::fromStdString(result.artifact.platformKey),
+            .url = QUrl::fromEncoded(QByteArray::fromStdString(result.artifact.url)),
+            .fileName = QString::fromStdString(result.artifact.fileName),
+            .sha256 = QString::fromStdString(result.artifact.sha256),
+            .sizeBytes = result.artifact.sizeBytes
+        },
+        .releaseDate = QDate::fromString(
+            QString::fromStdString(result.releaseDateIso), Qt::ISODate
+            ),
+        .releaseUrl = QUrl::fromEncoded(QByteArray::fromStdString(result.releaseUrl)),
+        .checkedAtUtc = QDateTime::fromMSecsSinceEpoch(
+            result.checkedAtUtcMilliseconds, Qt::UTC
+            ),
+        .updateAvailable = result.updateAvailable
+    };
+}
+
+} // namespace
+
 UpdateDialog::UpdateDialog(
-    UpdateService* service,
+    ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
     bool startupComplete,
     QWidget* parent,
     const QString& skippedVersion
     )
     : DialogShell(QStringLiteral("update"), parent)
-    , m_service(service)
     , m_downloader(new UpdateDownloader(this))
     , m_startupComplete(startupComplete)
     , m_skippedVersion(skippedVersion.trimmed())
 {
-    Q_ASSERT(m_service);
-    if (!m_service)
-    {
-        qFatal("UpdateDialog requires a valid UpdateService pointer.");
-    }
-
     buildUi();
     connectSignals();
     showInitialState();
+
+    m_manualUpdateCheckUseCase = std::make_unique<
+        ClassMngr::Next::Application::ManualUpdateCheckUseCase
+        >(manualUpdateCheckPort);
+    const QPointer<UpdateDialog> guard(this);
+    m_manualUpdateCheckUseCase->setObserver([guard](
+        ClassMngr::Next::Application::ManualUpdateCheckEvent event
+        ) mutable
+        {
+            if (guard)
+            {
+                guard->handleManualCheckEvent(std::move(event));
+            }
+        });
 }
 
 void UpdateDialog::setSkippedVersion(
@@ -95,24 +144,9 @@ void UpdateDialog::showSkippedVersionClearFailure(
 
 void UpdateDialog::refreshForOpen()
 {
-    if (m_service->isBusy())
+    if (m_manualUpdateCheckUseCase)
     {
-        handleCheckStarted();
-        return;
-    }
-
-    if (m_service->hasResult())
-    {
-        showResult(
-            *m_service->lastResult()
-            );
-    }
-
-    if (!m_service->isResultFresh())
-    {
-        m_service->checkForUpdates(
-            UpdateService::CheckPolicy::IfStale
-            );
+        (void)m_manualUpdateCheckUseCase->open();
     }
 }
 
@@ -151,8 +185,6 @@ void UpdateDialog::closeEvent(
 
 void UpdateDialog::handleCheckStarted()
 {
-    m_lastRefreshError.clear();
-
     m_notesLabel->clear();
     m_notesLabel->setVisible(false);
     clearProgressText();
@@ -184,7 +216,6 @@ void UpdateDialog::handleCheckSucceeded(
     const UpdateCheckResult& result
     )
 {
-    m_lastRefreshError.clear();
     showResult(result);
 }
 
@@ -192,16 +223,43 @@ void UpdateDialog::handleCheckFailed(
     const QString& message
     )
 {
-    m_lastRefreshError =
-        message;
     showFailure(message);
+}
+
+void UpdateDialog::handleManualCheckEvent(
+    ClassMngr::Next::Application::ManualUpdateCheckEvent event
+    )
+{
+    std::visit([this](auto value)
+    {
+        using Value = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<
+            Value,
+            ClassMngr::Next::Application::ManualUpdateCheckStarted
+            >)
+        {
+            handleCheckStarted();
+        }
+        else if constexpr (std::is_same_v<
+            Value,
+            ClassMngr::Next::Application::ManualUpdateCheckResult
+            >)
+        {
+            handleCheckSucceeded(toPresentationResult(value));
+        }
+        else
+        {
+            handleCheckFailed(QString::fromStdString(value.message));
+        }
+    }, std::move(event));
 }
 
 void UpdateDialog::forceCheck()
 {
-    m_service->checkForUpdates(
-        UpdateService::CheckPolicy::Force
-        );
+    if (m_manualUpdateCheckUseCase)
+    {
+        (void)m_manualUpdateCheckUseCase->retry();
+    }
 }
 
 void UpdateDialog::handlePrimaryAction()
@@ -632,25 +690,6 @@ void UpdateDialog::buildUi()
 void UpdateDialog::connectSignals()
 {
     connect(
-        m_service,
-        &UpdateService::checkStarted,
-        this,
-        &UpdateDialog::handleCheckStarted
-        );
-    connect(
-        m_service,
-        &UpdateService::checkSucceeded,
-        this,
-        &UpdateDialog::handleCheckSucceeded
-        );
-    connect(
-        m_service,
-        &UpdateService::checkFailed,
-        this,
-        &UpdateDialog::handleCheckFailed
-        );
-
-    connect(
         m_downloader,
         &UpdateDownloader::downloadPreparing,
         this,
@@ -978,11 +1017,9 @@ void UpdateDialog::showFailure(
     m_progressBar->setVisible(false);
     clearProgressText();
 
-    if (m_service->hasResult())
+    if (m_hasResult)
     {
-        showResult(
-            *m_service->lastResult()
-            );
+        showResult(m_result);
         m_statusIndicator->setText(
             QStringLiteral("!")
             );

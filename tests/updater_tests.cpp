@@ -4,6 +4,7 @@
 #include "core/updater/update_service.h"
 #include "core/updater/update_signature_verifier.h"
 #include "core/updater/version.h"
+#include "next/platform/update_service_manual_check_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
 #include <QCoreApplication>
@@ -435,6 +436,10 @@ private slots:
     void freshnessBoundaryIsExactlySixHours();
     void serviceCachesSuccessfulResultAndSkipsFreshCheck();
     void dialogShowsDisabledResourcePackSection();
+    void dialogOpenWithoutCacheStartsIfStaleCheck();
+    void dialogShowsInvalidResponseFailure();
+    void dialogShowsNetworkFailure();
+    void dialogRetryForcesCheckWithFreshCache();
     void dialogShowsDownloadActionForAvailableUpdate();
     void dialogShowsSkipAndUnskipActions();
     void dialogUsesConsistentProgramStatusLayout();
@@ -707,9 +712,10 @@ void UpdaterTests::dialogShowsDisabledResourcePackSection()
     configuration.releasesApiUrl =
         QUrl(QStringLiteral("https://example.com/releases"));
     UpdateService service(configuration);
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualCheckPort(&service);
 
     UpdateDialog dialog(
-        &service,
+        manualCheckPort,
         true
         );
 
@@ -725,6 +731,126 @@ void UpdaterTests::dialogShowsDisabledResourcePackSection()
             QStringLiteral("updateCheckButton")
             )
         );
+}
+
+void UpdaterTests::dialogOpenWithoutCacheStartsIfStaleCheck()
+{
+    QJsonArray releases;
+    releases.append(releaseObject(
+        QStringLiteral("2.0.0"),
+        GitHubRelease::currentPlatformKeys().first()
+        ));
+    HttpServer server(releasesJson(releases));
+    QVERIFY(server.listen());
+
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl = server.url();
+    UpdateService service(configuration);
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
+    UpdateDialog dialog(manualPort, true);
+
+    QVERIFY(!service.hasResult());
+    dialog.refreshForOpen();
+    QVERIFY(service.isBusy());
+    QTRY_VERIFY(service.hasResult());
+    QTRY_COMPARE(server.requestCount(), 1);
+
+    QLabel* const title = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateTitle"));
+    QVERIFY(title);
+    QCOMPARE(title->text(), QStringLiteral("Update Available"));
+}
+
+void UpdaterTests::dialogShowsInvalidResponseFailure()
+{
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    HttpServer server(QByteArrayLiteral("{bad json"));
+    QVERIFY(server.listen());
+
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl = server.url();
+    UpdateService service(configuration);
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
+    UpdateDialog dialog(manualPort, true);
+    QSignalSpy failedSpy(&service, &UpdateService::checkFailed);
+
+    dialog.refreshForOpen();
+    QTRY_COMPARE(failedSpy.count(), 1);
+
+    QLabel* const title = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateTitle"));
+    QLabel* const details = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateDetails"));
+    QVERIFY(title);
+    QVERIFY(details);
+    QCOMPARE(title->text(), QStringLiteral("Update Check Failed"));
+    QCOMPARE(details->text(), failedSpy.first().first().toString());
+}
+
+void UpdaterTests::dialogShowsNetworkFailure()
+{
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    QTcpServer closedPort;
+    QVERIFY(closedPort.listen(QHostAddress::LocalHost, 0));
+    const QUrl unavailableUrl(
+        QStringLiteral("http://127.0.0.1:%1/releases")
+            .arg(closedPort.serverPort())
+        );
+    closedPort.close();
+
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl = unavailableUrl;
+    UpdateService service(configuration);
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
+    UpdateDialog dialog(manualPort, true);
+    QSignalSpy failedSpy(&service, &UpdateService::checkFailed);
+
+    dialog.refreshForOpen();
+    QTRY_COMPARE(failedSpy.count(), 1);
+
+    QLabel* const title = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateTitle"));
+    QLabel* const details = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateDetails"));
+    QVERIFY(title);
+    QVERIFY(details);
+    QCOMPARE(title->text(), QStringLiteral("Update Check Failed"));
+    QVERIFY(details->text().startsWith(
+        QStringLiteral("Unable to check GitHub releases:")));
+}
+
+void UpdaterTests::dialogRetryForcesCheckWithFreshCache()
+{
+    QJsonArray releases;
+    releases.append(releaseObject(
+        QStringLiteral("1.0.0"),
+        GitHubRelease::currentPlatformKeys().first()
+        ));
+    HttpServer server(releasesJson(releases));
+    QVERIFY(server.listen());
+
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    UpdateConfiguration configuration;
+    configuration.releasesApiUrl = server.url();
+    UpdateService service(configuration);
+    QSignalSpy succeededSpy(&service, &UpdateService::checkSucceeded);
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QVERIFY(succeededSpy.wait(5000));
+
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
+    UpdateDialog dialog(manualPort, true);
+    dialog.refreshForOpen();
+    QCOMPARE(server.requestCount(), 1);
+
+    QPushButton* const checkButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("updateCheckButton"));
+    QVERIFY(checkButton);
+    QVERIFY(!checkButton->isHidden());
+    QVERIFY(checkButton->isEnabled());
+    checkButton->click();
+    QTRY_COMPARE(succeededSpy.count(), 2);
+    QCOMPARE(server.requestCount(), 2);
 }
 
 void UpdaterTests::dialogShowsDownloadActionForAvailableUpdate()
@@ -762,11 +888,14 @@ void UpdaterTests::dialogShowsDownloadActionForAvailableUpdate()
         );
     QVERIFY(succeededSpy.wait(5000));
 
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualCheckPort(&service);
     UpdateDialog dialog(
-        &service,
+        manualCheckPort,
         true
         );
+    QCOMPARE(server.requestCount(), 1);
     dialog.refreshForOpen();
+    QCOMPARE(server.requestCount(), 1); // Opening with a fresh result skips dispatch.
 
     QPushButton* primaryButton =
         dialog.findChild<QPushButton*>(
@@ -813,8 +942,9 @@ void UpdaterTests::dialogShowsSkipAndUnskipActions()
     QVERIFY(service.checkForUpdates());
     QVERIFY(succeededSpy.wait(5000));
 
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort availableManualPort(&service);
     UpdateDialog availableDialog(
-        &service,
+        availableManualPort,
         true
         );
     availableDialog.refreshForOpen();
@@ -839,8 +969,9 @@ void UpdaterTests::dialogShowsSkipAndUnskipActions()
         QStringLiteral("9.9.9")
         );
 
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort skippedManualPort(&service);
     UpdateDialog skippedDialog(
-        &service,
+        skippedManualPort,
         true,
         nullptr,
         QStringLiteral("9.9.9")
@@ -920,8 +1051,9 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
         );
     QVERIFY(currentSucceededSpy.wait(5000));
 
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort currentManualPort(&currentService);
     UpdateDialog currentDialog(
-        &currentService,
+        currentManualPort,
         true
         );
     currentDialog.refreshForOpen();
@@ -972,8 +1104,9 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
         );
     QVERIFY(availableSucceededSpy.wait(5000));
 
+    ClassMngr::Next::Platform::UpdateServiceManualCheckPort availableManualPort(&availableService);
     UpdateDialog availableDialog(
-        &availableService,
+        availableManualPort,
         true
         );
     availableDialog.refreshForOpen();

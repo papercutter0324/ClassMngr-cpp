@@ -2,7 +2,11 @@
 
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
+#include "next/application/manual_update_check.h"
+#include "next/application/manual_update_check_use_case.h"
 #include "ui/shared/dialogs/dialog_shell.h"
+
+#include <memory>
 
 class QCloseEvent;
 class QFrame;
@@ -16,7 +20,7 @@ class UpdateDialog : public DialogShell
 
 public:
     explicit UpdateDialog(
-        UpdateService* service,
+        ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
         bool startupComplete,
         QWidget* parent = nullptr,
         const QString& skippedVersion = QString()
@@ -108,6 +112,9 @@ private:
 
     void buildUi();
     void connectSignals();
+    void handleManualCheckEvent(
+        ClassMngr::Next::Application::ManualUpdateCheckEvent event
+        );
     void showInitialState();
     void showResult(
         const UpdateCheckResult& result
@@ -153,8 +160,10 @@ private:
     void installOrRevealUpdate();
 
 private:
-    UpdateService* m_service = nullptr;
     UpdateDownloader* m_downloader = nullptr;
+    std::unique_ptr<
+        ClassMngr::Next::Application::ManualUpdateCheckUseCase
+        > m_manualUpdateCheckUseCase;
 
     QFrame* m_programFrame = nullptr;
     QLabel* m_statusIndicator = nullptr;
@@ -170,7 +179,6 @@ private:
 
     UpdateCheckResult m_result;
     QString m_downloadedFilePath;
-    QString m_lastRefreshError;
     QString m_skippedVersion;
     PrimaryAction m_primaryAction = PrimaryAction::None;
     SecondaryAction m_secondaryAction = SecondaryAction::None;
