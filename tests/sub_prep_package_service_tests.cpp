@@ -857,6 +857,7 @@ private slots:
     void acceptsWideTeacherIdAndUsesPreferredDisplayName();
     void dailyPackageUsesDailyRosterTemplate();
     void perClassPackagePlacesRosterInsideClassFolder();
+    void classIdsForDaysProjectsScheduleOrderAndAllEntryKinds();
     void intensiveScheduleControlsSelectedDayFiltering();
     void printOnlyUsesPacketOrderAndReportsCancellation();
     void rosterSourceFailuresDoNotCommitPartialPackages();
@@ -1157,6 +1158,74 @@ void SubPrepPackageServiceTests
             QDir(classFolders.first()).filePath(QStringLiteral("Roster.pdf"))
             )
         ));
+}
+
+void SubPrepPackageServiceTests
+    ::classIdsForDaysProjectsScheduleOrderAndAllEntryKinds()
+{
+    ScheduleViewModel schedule;
+    ScheduleRowView firstRow;
+    ScheduleCellView monday;
+    monday.day = QStringLiteral("Monday");
+    monday.entries = {
+        ScheduleEntry{
+            .classId = 4,
+            .kind = ScheduleEntryKind::RegularClass
+        },
+        ScheduleEntry{
+            .classId = 8,
+            .kind = ScheduleEntryKind::TestingClass
+        },
+        ScheduleEntry{
+            .classId = 4,
+            .kind = ScheduleEntryKind::RegularClass
+        }
+    };
+    ScheduleCellView wednesday;
+    wednesday.day = QStringLiteral("Wednesday");
+    wednesday.entries = {
+        ScheduleEntry{
+            .classId = 9,
+            .kind = ScheduleEntryKind::RegularClass
+        }
+    };
+    ScheduleCellView nonCanonicalMonday;
+    nonCanonicalMonday.day = QStringLiteral(" Monday");
+    nonCanonicalMonday.entries = {
+        ScheduleEntry{
+            .classId = 77,
+            .kind = ScheduleEntryKind::TestingClass
+        }
+    };
+    firstRow.cells = {monday, wednesday, nonCanonicalMonday};
+
+    ScheduleRowView secondRow;
+    ScheduleCellView laterMonday;
+    laterMonday.day = QStringLiteral("Monday");
+    laterMonday.entries = {
+        ScheduleEntry{
+            .classId = 8,
+            .kind = ScheduleEntryKind::TestingClass
+        },
+        ScheduleEntry{
+            .classId = -1,
+            .kind = ScheduleEntryKind::RegularClass
+        },
+        ScheduleEntry{
+            .classId = 12,
+            .kind = ScheduleEntryKind::RegularClass
+        }
+    };
+    secondRow.cells = {laterMonday};
+    schedule.rows = {firstRow, secondRow};
+
+    QCOMPARE(
+        SubPrepPackageService::classIdsForDays(
+            schedule,
+            {QStringLiteral("Wednesday"), QStringLiteral("Monday")}
+            ),
+        (QList<int>{4, 8, 9, 12})
+        );
 }
 
 void SubPrepPackageServiceTests

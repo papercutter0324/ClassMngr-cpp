@@ -1231,6 +1231,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepPackageRequestValidationTests
 )
 
+# Keep Sub Prep selected-class projection independent of Qt.
+add_executable(
+    ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+    tests/next_application_sub_prep_selected_class_ids_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+    COMMAND ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationSubPrepScheduleSummaryQuery
     SOURCES

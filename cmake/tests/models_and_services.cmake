@@ -216,7 +216,15 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrSubPrepPackageServiceTests
     )
 
-    set_tests_properties(ClassMngrSubPrepPackageServiceTests
+    add_test(
+        NAME SubPrepPackageServiceClassIdsForDaysProjection
+        COMMAND ClassMngrSubPrepPackageServiceTests
+            classIdsForDaysProjectsScheduleOrderAndAllEntryKinds
+    )
+
+    set_tests_properties(
+        ClassMngrSubPrepPackageServiceTests
+        SubPrepPackageServiceClassIdsForDaysProjection
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"

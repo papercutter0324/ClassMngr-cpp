@@ -210,6 +210,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_schedule_summary_query.h
     src/next/application/sub_prep_selected_days_validation.h
     src/next/application/sub_prep_package_request_validation.h
+    src/next/application/sub_prep_selected_class_ids.h
     src/next/application/sub_prep_source_validation.h
     src/next/application/sub_prep_weekday.h
     src/next/application/sub_prep_campus_directory_query_port.h

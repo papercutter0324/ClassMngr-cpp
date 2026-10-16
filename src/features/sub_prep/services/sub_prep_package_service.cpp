@@ -5,6 +5,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "next/application/sub_prep_package_request_validation.h"
+#include "next/application/sub_prep_selected_class_ids.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QByteArray>
@@ -943,27 +944,82 @@ QList<int> classIdsForDays(
     const QStringList& selectedDays
     )
 {
-    QList<int> ids;
+    using namespace ClassMngr::Next::Application;
+
+    const auto toUtf16CodeUnits = [](const QString& value)
+    {
+        std::u16string codeUnits;
+        codeUnits.reserve(static_cast<std::size_t>(value.size()));
+        for (qsizetype index = 0; index < value.size(); ++index)
+        {
+            codeUnits.push_back(
+                static_cast<char16_t>(value.at(index).unicode())
+                );
+        }
+        return codeUnits;
+    };
+    const auto applicationEntryKind = [](const ScheduleEntryKind kind)
+    {
+        switch (kind)
+        {
+        case ScheduleEntryKind::RegularClass:
+            return SubPrepSelectedClassScheduleEntryKind::RegularClass;
+        case ScheduleEntryKind::TestingClass:
+            return SubPrepSelectedClassScheduleEntryKind::TestingClass;
+        }
+
+        return SubPrepSelectedClassScheduleEntryKind::RegularClass;
+    };
+
+    std::vector<std::u16string> selectedDayCodeUnits;
+    selectedDayCodeUnits.reserve(
+        static_cast<std::size_t>(selectedDays.size())
+        );
+    for (const QString& selectedDay : selectedDays)
+    {
+        selectedDayCodeUnits.push_back(toUtf16CodeUnits(selectedDay));
+    }
+
+    std::vector<SubPrepSelectedClassScheduleRow> scheduleRows;
+    scheduleRows.reserve(static_cast<std::size_t>(schedule.rows.size()));
 
     for (const ScheduleRowView& row : schedule.rows)
     {
+        SubPrepSelectedClassScheduleRow applicationRow;
+        applicationRow.cells.reserve(
+            static_cast<std::size_t>(row.cells.size())
+            );
         for (const ScheduleCellView& cell : row.cells)
         {
-            if (!selectedDays.contains(cell.day))
-            {
-                continue;
-            }
-
+            SubPrepSelectedClassScheduleCell applicationCell;
+            applicationCell.day = toUtf16CodeUnits(cell.day);
+            applicationCell.entries.reserve(
+                static_cast<std::size_t>(cell.entries.size())
+                );
             for (const ScheduleEntry& entry : cell.entries)
             {
-                if (entry.classId > 0 && !ids.contains(entry.classId))
-                {
-                    ids.append(entry.classId);
-                }
+                applicationCell.entries.push_back(
+                    {
+                        .classId = entry.classId,
+                        .kind = applicationEntryKind(entry.kind)
+                    }
+                    );
             }
+            applicationRow.cells.push_back(std::move(applicationCell));
         }
+        scheduleRows.push_back(std::move(applicationRow));
     }
 
+    const std::vector<int> projectedIds = projectSubPrepSelectedClassIds(
+        selectedDayCodeUnits,
+        scheduleRows
+        );
+    QList<int> ids;
+    ids.reserve(static_cast<qsizetype>(projectedIds.size()));
+    for (const int id : projectedIds)
+    {
+        ids.append(id);
+    }
     return ids;
 }
 
