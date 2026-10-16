@@ -248,6 +248,13 @@ void SchedulePage::buildUi()
 
     connect(
         m_scheduleWidget,
+        &ScheduleWidget::scheduleDataChanged,
+        this,
+        &SchedulePage::scheduleDataChanged
+        );
+
+    connect(
+        m_scheduleWidget,
         &ScheduleWidget::scheduleImportRequested,
         this,
         &SchedulePage::scheduleImportRequested

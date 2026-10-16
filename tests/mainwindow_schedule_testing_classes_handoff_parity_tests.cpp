@@ -269,6 +269,144 @@ bool showTestingMode(ScheduleWidget* widget)
     return testingClassesButton && !testingClassesButton->isHidden();
 }
 
+bool clickScheduleCellCommand(
+    ScheduleWidget& widget,
+    const ScheduleCellCommand command,
+    ScheduleCellHit* clickedHit = nullptr
+    )
+{
+    QTableWidget* const table = widget.findChild<QTableWidget*>(
+        QStringLiteral("scheduleTable")
+        );
+    if (!table)
+    {
+        return false;
+    }
+
+    const ScheduleViewModel& model = widget.scheduleModel();
+    for (qsizetype row = 0; row < model.rows.size(); ++row)
+    {
+        for (qsizetype dayIndex = 0;
+             dayIndex < model.days.size();
+             ++dayIndex)
+        {
+            const ScheduleCellHit hit = ScheduleCellHitTest::hit(
+                &model.rows.at(row).cells.at(dayIndex)
+                );
+            if (hit.command != command)
+            {
+                continue;
+            }
+
+            const QModelIndex cellIndex = table->model()->index(
+                static_cast<int>(row),
+                static_cast<int>(dayIndex) + 1
+                );
+            table->scrollTo(cellIndex);
+            QApplication::processEvents();
+            const QRect cellRect = table->visualRect(cellIndex);
+            if (!cellRect.isValid())
+            {
+                return false;
+            }
+
+            if (clickedHit)
+            {
+                *clickedHit = hit;
+            }
+            QTest::mouseClick(
+                table->viewport(),
+                Qt::LeftButton,
+                Qt::NoModifier,
+                cellRect.center()
+                );
+            QApplication::processEvents();
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool scheduleCellHasState(
+    const ScheduleWidget& widget,
+    const QString& day,
+    const QString& timeLabel,
+    const QString& state,
+    const QString& testingRoom = QString()
+    )
+{
+    const ScheduleViewModel& model = widget.scheduleModel();
+    for (const ScheduleRowView& row : model.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            if (cell.day == day && cell.timeLabel == timeLabel)
+            {
+                return cell.slotState == state
+                    && cell.testingRoom == testingRoom;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool findScheduleCellWithCommand(
+    const ScheduleWidget& widget,
+    const ScheduleCellCommand command,
+    QString* day,
+    QString* timeLabel
+    )
+{
+    if (!day || !timeLabel)
+    {
+        return false;
+    }
+
+    const ScheduleViewModel& model = widget.scheduleModel();
+    for (const ScheduleRowView& row : model.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            if (ScheduleCellHitTest::hit(&cell).command == command)
+            {
+                *day = cell.day;
+                *timeLabel = cell.timeLabel;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool scheduleModelContainsClassDetails(
+    const ScheduleViewModel& model,
+    const int classId,
+    const QString& grade,
+    const QString& level
+    )
+{
+    for (const ScheduleRowView& row : model.rows)
+    {
+        for (const ScheduleCellView& cell : row.cells)
+        {
+            for (const ScheduleEntry& entry : cell.entries)
+            {
+                if (entry.classId == classId
+                    && entry.classGrade == grade
+                    && entry.classLevel == level)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 QTreeWidgetItem* findChildItemByKey(
     QTreeWidgetItem* parent,
     const QString& key
@@ -824,6 +962,8 @@ private slots:
     void deleteClassActionSelectsTargetAndKeepsSiblingDetails();
     void workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow();
     void testingClassRenameMarksAndRefreshesBothSchedulePages();
+    void directScheduleWritesInvalidateOnlySibling_data();
+    void directScheduleWritesInvalidateOnlySibling();
     void workspaceScheduleDisplayModeUpdatesLoadedClassesPage();
 
 private:
@@ -2374,6 +2514,16 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
     QVERIFY(workspace->schedulePage());
     scheduleWidget->refreshSchedule();
 
+    pages->showPage(PageType::Schedule);
+    SchedulePage* const standaloneSchedule = pages->schedulePage();
+    QVERIFY(standaloneSchedule);
+    pages->showPage(PageType::MyWorkspace);
+    workspace->openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+    standaloneSchedule->markStale();
+    standaloneSchedule->activate();
+    QVERIFY(!standaloneSchedule->needsRefresh());
+
     QSqlQuery failClassInfoUpdate(activeSession->database());
     const QString createClassInfoFailureTrigger =
         QStringLiteral(
@@ -2388,6 +2538,11 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
 
     QSignalSpy failedSaveSpy(schedulePage, &SchedulePage::classInfoSaved);
     QVERIFY(failedSaveSpy.isValid());
+    QSignalSpy failedScheduleDataChangedSpy(
+        schedulePage,
+        &SchedulePage::scheduleDataChanged
+        );
+    QVERIFY(failedScheduleDataChangedSpy.isValid());
     bool failedSaveKeptEditorOpen = false;
     QVERIFY(!interactWithScheduleEntryCell(
         *scheduleWidget,
@@ -2430,6 +2585,8 @@ workspaceScheduleEditorSaveRefreshesClassActionsThroughMainWindow()
         ));
     QVERIFY(failedSaveKeptEditorOpen);
     QCOMPARE(failedSaveSpy.size(), 0);
+    QCOMPARE(failedScheduleDataChangedSpy.size(), 0);
+    QVERIFY(!standaloneSchedule->needsRefresh());
     QVERIFY(!classesPage->needsRefresh());
 
     QSqlQuery dropClassInfoFailureTrigger(activeSession->database());
@@ -2667,6 +2824,358 @@ testingClassRenameMarksAndRefreshesBothSchedulePages()
     QVERIFY(!scheduleModelContainsEntryName(
         workspaceUpdatedModel,
         originalName
+        ));
+
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->databaseSession(), activeSession);
+    QCOMPARE(services->currentDatabasePath(), activePath);
+    assertNoPromptRequests(fixture.prompts);
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+directScheduleWritesInvalidateOnlySibling_data()
+{
+    QTest::addColumn<bool>("sourceIsWorkspace");
+
+    QTest::newRow("standalone schedule origin") << false;
+    QTest::newRow("My Workspace schedule origin") << true;
+}
+
+void MainWindowScheduleTestingClassesHandoffParityTests::
+directScheduleWritesInvalidateOnlySibling()
+{
+    QFETCH(bool, sourceIsWorkspace);
+
+    MainWindowFixture fixture;
+    QString setupError;
+    QVERIFY2(fixture.initialize(&setupError), qPrintable(setupError));
+
+    MainWindow* const window = fixture.window.get();
+    ApplicationServices* const services = window->services();
+    PageManager* const pages = window->pageManager();
+    QVERIFY(services);
+    QVERIFY(pages);
+    auto* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+    const QString activePath = services->currentDatabasePath();
+
+    int classId = -1;
+    QString seedError;
+    QVERIFY2(
+        seedClassWithSchedule(
+            *services,
+            QStringLiteral("F996 Direct Schedule Write"),
+            &classId,
+            &seedError
+            ),
+        qPrintable(seedError)
+        );
+    QVERIFY(classId > 0);
+    const auto seededInfo = services->classService()->classInfo(classId);
+    QVERIFY(seededInfo);
+    ClassInfo classInfo = seededInfo.value();
+    classInfo.classGrade = QStringLiteral("M2");
+    classInfo.classLevel = QStringLiteral("Major");
+    classInfo.essayBook = QStringLiteral("N/A");
+    const Status savedSeedInfo =
+        services->classService()->saveClassInfo(classInfo);
+    if (!savedSeedInfo)
+    {
+        QFAIL(qPrintable(savedSeedInfo.error()));
+    }
+
+    pages->showPage(PageType::Schedule);
+    QApplication::processEvents();
+    SchedulePage* const standaloneSchedule = pages->schedulePage();
+    QVERIFY(standaloneSchedule);
+
+    pages->showPage(PageType::MyWorkspace);
+    QApplication::processEvents();
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+    workspace->openTab(WorkspaceTab::Schedule);
+    QApplication::processEvents();
+    SchedulePage* const workspaceSchedule = workspace->schedulePage();
+    QVERIFY(workspaceSchedule);
+    QVERIFY(standaloneSchedule != workspaceSchedule);
+
+    SchedulePage* const sourcePage = sourceIsWorkspace
+        ? workspaceSchedule
+        : standaloneSchedule;
+    SchedulePage* const siblingPage = sourceIsWorkspace
+        ? standaloneSchedule
+        : workspaceSchedule;
+    ScheduleWidget* const sourceWidget =
+        sourcePage->findChild<ScheduleWidget*>();
+    ScheduleWidget* const siblingWidget =
+        siblingPage->findChild<ScheduleWidget*>();
+    QVERIFY(sourceWidget);
+    QVERIFY(siblingWidget);
+
+    const auto activateSource = [&]()
+    {
+        if (sourceIsWorkspace)
+        {
+            pages->showPage(PageType::MyWorkspace);
+            workspace->openTab(WorkspaceTab::Schedule);
+        }
+        else
+        {
+            pages->showPage(PageType::Schedule);
+        }
+        QApplication::processEvents();
+    };
+    const auto activateSibling = [&]()
+    {
+        if (sourceIsWorkspace)
+        {
+            pages->showPage(PageType::Schedule);
+        }
+        else
+        {
+            pages->showPage(PageType::MyWorkspace);
+            workspace->openTab(WorkspaceTab::Schedule);
+        }
+        QApplication::processEvents();
+    };
+    const auto refreshHiddenSiblingForBaseline = [&]()
+    {
+        siblingPage->markStale();
+        siblingPage->activate();
+        QApplication::processEvents();
+        return !siblingPage->needsRefresh();
+    };
+
+    activateSource();
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(refreshHiddenSiblingForBaseline());
+    QVERIFY(!siblingPage->needsRefresh());
+    QSignalSpy scheduleDataChangedSpy(
+        sourcePage,
+        &SchedulePage::scheduleDataChanged
+        );
+    QVERIFY(scheduleDataChangedSpy.isValid());
+
+    QPushButton* const intensiveModeButton =
+        sourceWidget->findChild<QPushButton*>(
+            QStringLiteral("scheduleIntensiveModeButton")
+            );
+    QVERIFY(intensiveModeButton);
+    intensiveModeButton->click();
+    QApplication::processEvents();
+    QCOMPARE(
+        sourceWidget->displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+    QVERIFY(refreshHiddenSiblingForBaseline());
+    QCOMPARE(
+        siblingWidget->displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+
+    ScheduleCellHit toggledSlot;
+    QVERIFY(clickScheduleCellCommand(
+        *sourceWidget,
+        ScheduleCellCommand::ToggleSlot,
+        &toggledSlot
+        ));
+    QVERIFY(!toggledSlot.day.isEmpty());
+    QVERIFY(!toggledSlot.timeLabel.isEmpty());
+    QVERIFY(scheduleCellHasState(
+        *sourceWidget,
+        toggledSlot.day,
+        toggledSlot.timeLabel,
+        toggledSlot.nextState
+        ));
+    QCOMPARE(scheduleDataChangedSpy.size(), 1);
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(siblingPage->needsRefresh());
+
+    activateSibling();
+    QVERIFY(!siblingPage->needsRefresh());
+    QCOMPARE(
+        siblingWidget->displayState().displayMode,
+        ScheduleDisplayMode::Intensive
+        );
+    QVERIFY(scheduleCellHasState(
+        *siblingWidget,
+        toggledSlot.day,
+        toggledSlot.timeLabel,
+        toggledSlot.nextState
+        ));
+    activateSource();
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(scheduleCellHasState(
+        *sourceWidget,
+        toggledSlot.day,
+        toggledSlot.timeLabel,
+        toggledSlot.nextState
+        ));
+
+    QVERIFY(showTestingMode(sourceWidget));
+    QVERIFY(refreshHiddenSiblingForBaseline());
+    QCOMPARE(
+        siblingWidget->displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+
+    QString assignmentDay;
+    QString assignmentTime;
+    const QString room = QStringLiteral("F996 Assignment Room");
+    QVERIFY(findScheduleCellWithCommand(
+        *sourceWidget,
+        ScheduleCellCommand::EditTestingAssignment,
+        &assignmentDay,
+        &assignmentTime
+        ));
+    QVERIFY(interactWithTestingAssignmentCell(
+        *sourceWidget,
+        assignmentDay,
+        assignmentTime,
+        [&room](TestingAssignmentDialog* dialog)
+        {
+            if (!dialog)
+            {
+                return false;
+            }
+
+            QLineEdit* const roomEdit = dialog->findChild<QLineEdit*>(
+                QStringLiteral("testingAssignmentRoomEdit")
+                );
+            QDialogButtonBox* const buttons =
+                dialog->findChild<QDialogButtonBox*>();
+            QPushButton* const saveButton = buttons
+                ? buttons->button(QDialogButtonBox::Save)
+                : nullptr;
+            if (!roomEdit || !saveButton)
+            {
+                return false;
+            }
+
+            roomEdit->setText(room);
+            QTest::mouseClick(saveButton, Qt::LeftButton);
+            return !dialog->isVisible();
+        }
+        ));
+    QVERIFY(scheduleCellHasState(
+        *sourceWidget,
+        assignmentDay,
+        assignmentTime,
+        scheduleTestingSlotState(),
+        room
+        ));
+    QCOMPARE(scheduleDataChangedSpy.size(), 2);
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(siblingPage->needsRefresh());
+
+    activateSibling();
+    QVERIFY(!siblingPage->needsRefresh());
+    QCOMPARE(
+        siblingWidget->displayState().displayMode,
+        ScheduleDisplayMode::Testing
+        );
+    QVERIFY(scheduleCellHasState(
+        *siblingWidget,
+        assignmentDay,
+        assignmentTime,
+        scheduleTestingSlotState(),
+        room
+        ));
+    activateSource();
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(scheduleCellHasState(
+        *sourceWidget,
+        assignmentDay,
+        assignmentTime,
+        scheduleTestingSlotState(),
+        room
+        ));
+
+    QPushButton* const regularModeButton =
+        sourceWidget->findChild<QPushButton*>(
+            QStringLiteral("scheduleRegularModeButton")
+            );
+    QVERIFY(regularModeButton);
+    regularModeButton->click();
+    QApplication::processEvents();
+    QCOMPARE(
+        sourceWidget->displayState().displayMode,
+        ScheduleDisplayMode::Regular
+        );
+    QVERIFY(refreshHiddenSiblingForBaseline());
+    QCOMPARE(
+        siblingWidget->displayState().displayMode,
+        ScheduleDisplayMode::Regular
+        );
+
+    QVERIFY(interactWithScheduleEntryCell(
+        *sourceWidget,
+        classId,
+        [](ScheduleEditorDialog* dialog)
+        {
+            if (!dialog)
+            {
+                return false;
+            }
+
+            const QList<QComboBox*> combos =
+                dialog->findChildren<QComboBox*>();
+            QPushButton* saveButton = nullptr;
+            for (QPushButton* button : dialog->findChildren<QPushButton*>())
+            {
+                if (button->text() == QStringLiteral("Save"))
+                {
+                    saveButton = button;
+                    break;
+                }
+            }
+            if (combos.size() != 2 || !saveButton)
+            {
+                return false;
+            }
+
+            if (combos.at(0)->currentText() != QStringLiteral("M2")
+                || combos.at(1)->currentText() != QStringLiteral("Major"))
+            {
+                return false;
+            }
+
+            combos.at(0)->setCurrentText(QStringLiteral("E4"));
+            combos.at(1)->setCurrentText(QStringLiteral("Theseus"));
+            QTest::mouseClick(saveButton, Qt::LeftButton);
+            return !dialog->isVisible();
+        }
+        ));
+    QVERIFY(scheduleModelContainsClassDetails(
+        sourceWidget->scheduleModel(),
+        classId,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus")
+        ));
+    QCOMPARE(scheduleDataChangedSpy.size(), 3);
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(siblingPage->needsRefresh());
+
+    const auto persistedInfo = services->classService()->classInfo(classId);
+    QVERIFY(persistedInfo);
+    QCOMPARE(persistedInfo->classGrade, QStringLiteral("E4"));
+    QCOMPARE(persistedInfo->classLevel, QStringLiteral("Theseus"));
+
+    activateSibling();
+    QVERIFY(!siblingPage->needsRefresh());
+    QVERIFY(scheduleModelContainsClassDetails(
+        siblingWidget->scheduleModel(),
+        classId,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus")
+        ));
+    activateSource();
+    QVERIFY(!sourcePage->needsRefresh());
+    QVERIFY(scheduleModelContainsClassDetails(
+        sourceWidget->scheduleModel(),
+        classId,
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus")
         ));
 
     QVERIFY(services->hasOpenDatabase());

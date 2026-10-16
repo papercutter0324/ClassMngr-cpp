@@ -42,6 +42,7 @@ signals:
     void classInfoSaved(
         int classId
         );
+    void scheduleDataChanged();
     void scheduleImportRequested();
     void testingClassesRequested(
         int classId,

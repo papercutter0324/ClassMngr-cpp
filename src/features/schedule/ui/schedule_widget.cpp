@@ -489,6 +489,7 @@ void ScheduleWidget::onCellClicked(
     {
         ClassMngr::Next::Platform::
             ApplicationServicesScheduleSlotStateSavePort port(m_services);
+        bool savedSuccessfully = false;
 
         if (port.isAvailable())
         {
@@ -523,8 +524,14 @@ void ScheduleWidget::onCellClicked(
                     );
                 return;
             }
+
+            savedSuccessfully = true;
         }
         loadSchedule();
+        if (savedSuccessfully)
+        {
+            emit scheduleDataChanged();
+        }
         return;
     }
 
@@ -542,6 +549,7 @@ void ScheduleWidget::onCellClicked(
         {
             loadSchedule();
             emit classInfoSaved(savedClassId);
+            emit scheduleDataChanged();
         }
         );
 
@@ -666,6 +674,7 @@ void ScheduleWidget::editTestingAssignment(
     }
 
     loadSchedule();
+    emit scheduleDataChanged();
 }
 
 void ScheduleWidget::printSchedule()

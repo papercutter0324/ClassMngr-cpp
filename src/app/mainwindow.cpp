@@ -1132,6 +1132,27 @@ void MainWindow::connectSignals()
 
             connect(
                 page,
+                &SchedulePage::scheduleDataChanged,
+                this,
+                [this, page, personalSchedule]()
+                {
+                    if (!m_pages)
+                    {
+                        return;
+                    }
+
+                    SchedulePage* const sibling = personalSchedule
+                        ? m_pages->schedulePage()
+                        : m_pages->mySchedulePage();
+                    if (sibling && sibling != page)
+                    {
+                        sibling->markStale();
+                    }
+                }
+                );
+
+            connect(
+                page,
                 &SchedulePage::scheduleImportRequested,
                 this,
                 [this, page]()
