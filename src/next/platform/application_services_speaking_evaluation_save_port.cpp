@@ -107,10 +107,11 @@ Domain::Result<void> failure(
 
 Domain::Result<void> unavailableFailure()
 {
-    return failure(
-        Domain::ErrorCode::NotFound,
-        "The speaking evaluation service is unavailable."
-        );
+    return Domain::Result<void>::failure({
+        .code = Domain::ErrorCode::NotFound,
+        .message = "The speaking evaluation service is unavailable.",
+        .recoverable = true
+    });
 }
 
 } // namespace

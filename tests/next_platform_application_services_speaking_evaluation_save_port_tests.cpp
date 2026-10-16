@@ -114,9 +114,11 @@ private slots:
     void questionableKoreanNameFlagMatchesLegacySeverityAndSaveDecision();
     void repositoryWriteFailureMapsTechnicalAndRollsBack();
     void missingParentMapsNotFoundWithoutCreatingEvaluationRows();
+    void noncanonicalTypedClassIdIsNonrecoverableInvalidInput();
     void legacyMissingParentPreservesForeignKeyDiagnostic();
     void rejectsRealRowIndexBeforeNarrowingAndRollsBack();
     void forwardsQuestionableKoreanNameDecision();
+    void nullServicesPointerFailsRecoverably();
     void closedSessionFailsWithoutDataServiceFallback();
 };
 
@@ -551,6 +553,12 @@ missingParentMapsNotFoundWithoutCreatingEvaluationRows()
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral(
+            "Saving speaking evaluation failed: parent class id 100001 was not found."
+            )
+        );
     QVERIFY(!result.error().recoverable);
 
     DatabaseSession* const session = services.databaseSession();
@@ -582,6 +590,28 @@ missingParentMapsNotFoundWithoutCreatingEvaluationRows()
     QVERIFY(query.exec());
     QVERIFY(query.next());
     QCOMPARE(query.value(0).toInt(), 0);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+noncanonicalTypedClassIdIsNonrecoverableInvalidInput()
+{
+    const auto noncanonicalId = Domain::ClassId::fromString("00042");
+    QVERIFY(noncanonicalId);
+
+    Application::SpeakingEvaluationSaveRequest saveRequest = request(42);
+    saveRequest.classId = *noncanonicalId;
+
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(
+        static_cast<ApplicationServices*>(nullptr)
+        );
+    const auto result = port.saveEvaluation(saveRequest);
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral("Class ID must be a canonical positive integer.")
+        );
+    QVERIFY(!result.error().recoverable);
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
@@ -829,6 +859,25 @@ forwardsQuestionableKoreanNameDecision()
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+nullServicesPointerFailsRecoverably()
+{
+    ApplicationServices* const services = nullptr;
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+
+    const auto result = Application::SpeakingEvaluationSaveUseCase::execute(
+        request(100001),
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral("The speaking evaluation service is unavailable.")
+        );
+    QVERIFY(result.error().recoverable);
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
 closedSessionFailsWithoutDataServiceFallback()
 {
     QTemporaryDir directory;
@@ -840,21 +889,29 @@ closedSessionFailsWithoutDataServiceFallback()
         );
     QVERIFY(createdClass);
 
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+
     services.closeDatabase();
     QVERIFY(!services.hasOpenDatabase());
+    QCOMPARE(services.databaseSession(), session);
+    QVERIFY(!session->isOpen());
     QVERIFY(services.dataService());
     QVERIFY(!services.dataService()->isOpen());
 
-    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
     const auto result = Application::SpeakingEvaluationSaveUseCase::execute(
         request(*createdClass),
         port
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
-    QVERIFY(QString::fromStdString(result.error().message).contains(
-        QStringLiteral("unavailable")
-        ));
+    QCOMPARE(
+        QString::fromStdString(result.error().message),
+        QStringLiteral("The speaking evaluation service is unavailable.")
+        );
+    QVERIFY(result.error().recoverable);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSpeakingEvaluationSavePortTests)
