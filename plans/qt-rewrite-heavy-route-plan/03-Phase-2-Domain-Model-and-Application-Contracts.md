@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F989 is complete, Batch353 closed without a candidate, and Batch354 discovery is underway; the F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, with no pre-F985 baseline; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F989 is complete, Batch354 closed without a candidate, and Batch355 discovery is underway; the F985 `typedApplyPreservesExactTargetIdsThroughStateValidation` failure remains unresolved because reused TeacherId `"01"` is rejected first as `InvalidExistingTeacherTarget`, with no pre-F985 baseline; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-No accepted slice is active; Batch354 discovery is underway in two read-only lanes: Domain contract/value-object invariants and Application use-case validation/port-ordering.
+No accepted slice is active; Batch355 discovery is underway in two read-only lanes: Domain public construction/mutation paths that could bypass stated value-object invariants, and Application stale-result/token handling in async coordinators or workflows, excluding Batch353 document-content lifecycle.
 
 ## Objective
 

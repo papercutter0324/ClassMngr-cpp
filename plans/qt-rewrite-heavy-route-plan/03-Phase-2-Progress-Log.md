@@ -42609,3 +42609,22 @@ Batch354 discovery is underway in two read-only lanes: Domain
 contract/value-object invariants and Application use-case validation/port-
 ordering. The 13 official Deferred entries remain unchanged; Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### Batch354 closed; Batch355 discovery underway - 2026-10-16
+
+The Domain scan found no demonstrated contract gap in covered IDs,
+`ScheduleTime`, the Course weekly-day rule, `GregorianDate`, or
+`CalendarEventTiming`. Nonpositive `NativeEnglishTeacherId` and
+`GsTeamMemberId` overlap F976 and are checked at current Application
+boundaries. The Application scan found no validation-order or port-call gap:
+Class Details queries prevalidate, Teacher Create's preflight order is
+explicit and tested, and Calendar Event Delete typed-ID forwarding was F103.
+Neither lane found a concrete change to an official Deferred trigger. No
+other slices were found.
+
+Batch355 discovery is underway in two read-only lanes: Domain public
+construction/mutation paths that could bypass stated value-object invariants,
+and Application stale-result/token handling in async coordinators or
+workflows, excluding the Batch353 document-content lifecycle. The 13 official
+Deferred entries remain unchanged; Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
