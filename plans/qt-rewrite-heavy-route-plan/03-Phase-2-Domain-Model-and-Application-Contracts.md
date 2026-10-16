@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1001 is complete; F1002 is accepted for Batch379 and F1003 remains queued, with all 13 official Deferred entries unchanged, Gates 1/2 Partial, and the Phase 2 exit gate Open.
+- Current note: F1002 is complete at source commit `944cff4a537a19eb8726225d8495f749d8187fed` and F1003 is accepted for Batch379; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,8 +115,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch379
-  - F1002: Sub Prep package request preflight - implement the shared Qt-free preflight contract and route dialog/generator through it while preserving caller diagnostics and filesystem responsibilities.
-  - F1003: Speaking Evaluation AI prompt policy - after F1002, bound an Application prompt-builder contract while preserving prompt/privacy/voice behavior and resolving Qt Unicode case-insensitive name-redaction parity first.
+  - F1003: Speaking Evaluation AI prompt policy - implement the Qt-free Application prompt policy for single and batch callers with a Platform text matcher that preserves Qt Unicode case-insensitive behavior.
 
 No other slices were found.
 
