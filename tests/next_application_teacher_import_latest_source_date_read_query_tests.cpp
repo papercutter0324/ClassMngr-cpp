@@ -36,6 +36,7 @@ class NextApplicationTeacherImportLatestSourceDateReadQueryTests final
 private slots:
     void returnsOptionalCanonicalDateAndReadsPortOnce();
     void preservesAbsentDateAndReadFailure();
+    void rejectsMalformedAndImpossibleDates();
 };
 
 void NextApplicationTeacherImportLatestSourceDateReadQueryTests::
@@ -77,6 +78,31 @@ preservesAbsentDateAndReadFailure()
     QVERIFY(!result);
     QVERIFY(result.error() == expectedError);
     QCOMPARE(port.callCount, 2);
+}
+
+void NextApplicationTeacherImportLatestSourceDateReadQueryTests::
+rejectsMalformedAndImpossibleDates()
+{
+    RecordingReadPort port;
+    const TeacherImportLatestSourceDateReadQuery query(port);
+
+    const std::string invalidDates[] = {
+        "2026-2-01",
+        "2026-02-30"
+    };
+    int expectedCallCount = 0;
+    for (const std::string& invalidDate : invalidDates)
+    {
+        port.result = TeacherImportLatestSourceDateReadResult::success(
+            invalidDate);
+
+        const TeacherImportLatestSourceDateReadResult result = query.execute();
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, ++expectedCallCount);
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationTeacherImportLatestSourceDateReadQueryTests)
