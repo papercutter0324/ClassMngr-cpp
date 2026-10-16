@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F973 is the active accepted slice; all 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F973 is complete and Batch342 discovery is next; two post-F973 audits found all 13 official Deferred entries unchanged, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch341 is closed; F973 is active — validate Schedule Testing Class choice IDs and uniqueness in the Application query result contract.
+- Batch342 discovery is next; no candidates have been selected.
 
 ## Objective
 

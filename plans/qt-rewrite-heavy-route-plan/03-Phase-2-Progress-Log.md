@@ -41941,3 +41941,26 @@ normalization into invalid `QTime` values nor the Calendar Page summary
 injection seam. F973 is now the active accepted slice; its acceptance criteria
 above remain in force. Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### F973 complete; Batch342 discovery next - 2026-10-16
+
+F973 was implemented at source/test commit
+`b01532664b1d3bc8c8bfdc51b96fc8f6b0a06ddb` (`Phase2 - Validate Schedule
+Testing Class choice IDs`). The commit changed only
+`src/next/application/schedule_testing_class_choices_query.h` and
+`tests/next_application_schedule_testing_class_choices_read_query_tests.cpp`.
+Successful query results now reject malformed, nonpositive, noncanonical,
+out-of-`int`-range, and duplicate class IDs with nonrecoverable `Validation`,
+while preserving valid order and fields, empty success, and exact port-error
+propagation.
+
+Independent verification built `ClassMngr` and
+`ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`; the exact
+focused CTest registration passed (1/1), and `git diff --check` passed. No full
+suite ran.
+
+Two independent post-F973 audits reviewed all 13 official Deferred entries;
+all remain unchanged, and none became actionable, resolved, superseded, or
+materially changed. F973 affected none of their triggers. Batch342 discovery is
+next and has not started; no candidates have been selected. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
