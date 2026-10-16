@@ -3,6 +3,7 @@
 
 #include "core/application_services.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
+#include "next/application/sub_prep_package_request_validation.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
@@ -674,15 +675,41 @@ void SubPrepPrintDialog::updateAcceptEnabled()
 {
     QString error;
 
-    if (!createFolder() && !printPaperCopies())
+    const QList<QDate> selectedDateValues = selectedDates();
+    const QString currentTargetRoot = targetRoot();
+    const QString currentUserName = userName();
+    const auto preflight =
+        ClassMngr::Next::Application::validateSubPrepPackageRequest(
+            {
+                .createFolder = createFolder(),
+                .printPaperCopies = printPaperCopies(),
+                .hasValidSelectedDate = std::any_of(
+                    selectedDateValues.cbegin(),
+                    selectedDateValues.cend(),
+                    [](const QDate& date)
+                    {
+                        return date.isValid();
+                    }
+                    ),
+                .hasSelectedClassIds = !selectedClassIds().isEmpty(),
+                .hasNonEmptyTargetRoot =
+                    !currentTargetRoot.trimmed().isEmpty(),
+                .hasNonEmptyUserName =
+                    !currentUserName.trimmed().isEmpty()
+            }
+            );
+
+    using Reason = ClassMngr::Next::Application::
+        SubPrepPackageRequestValidationReason;
+    switch (preflight.reason)
     {
+    case Reason::NoOutputAction:
         error = tr(
             "Select Create Folder and/or Print Paper Copies to continue."
             );
-    }
-    else if (selectedDates().isEmpty())
-    {
-        if (createFolder() && userName().trimmed().isEmpty())
+        break;
+    case Reason::NoValidSelectedDate:
+        if (createFolder() && currentUserName.trimmed().isEmpty())
         {
             error = tr(
                 "Select days and enter your name to preview the output folder."
@@ -696,26 +723,26 @@ void SubPrepPrintDialog::updateAcceptEnabled()
         {
             error = tr("Select at least one day to include.");
         }
-    }
-    else if (selectedClassIds().isEmpty())
-    {
+        break;
+    case Reason::NoSelectedClassIds:
         error = tr("No classes meet on the selected days.");
-    }
-    else if (createFolder() && targetRoot().trimmed().isEmpty())
-    {
+        break;
+    case Reason::MissingTargetRoot:
         error = tr("Choose a target folder.");
-    }
-    else if (createFolder() && userName().trimmed().isEmpty())
-    {
+        break;
+    case Reason::MissingUserName:
         error = tr("Enter your name for the Sub Prep folder.");
-    }
-    else if (
-        createFolder()
-        && QFileInfo(targetRoot()).exists()
-        && !QFileInfo(targetRoot()).isDir()
-        )
-    {
-        error = tr("The target path is not a folder.");
+        break;
+    case Reason::None:
+        if (
+            createFolder()
+            && QFileInfo(currentTargetRoot).exists()
+            && !QFileInfo(currentTargetRoot).isDir()
+            )
+        {
+            error = tr("The target path is not a folder.");
+        }
+        break;
     }
 
     m_validationLabel->setText(error);

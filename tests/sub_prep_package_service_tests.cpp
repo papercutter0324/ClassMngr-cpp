@@ -852,6 +852,7 @@ class SubPrepPackageServiceTests : public QObject
 
 private slots:
     void init();
+    void rejectsInvalidPackagePreflightBeforeFilesystemEffects();
     void byDayPackageCreatesExpectedTreeAndReplacesTransactionally();
     void acceptsWideTeacherIdAndUsesPreferredDisplayName();
     void dailyPackageUsesDailyRosterTemplate();
@@ -865,6 +866,74 @@ private slots:
 void SubPrepPackageServiceTests::init()
 {
     resetData();
+}
+
+void SubPrepPackageServiceTests
+    ::rejectsInvalidPackagePreflightBeforeFilesystemEffects()
+{
+    QTemporaryDir temporaryRoot;
+    QVERIFY(temporaryRoot.isValid());
+
+    const QString targetPath =
+        QDir(temporaryRoot.path()).filePath(QStringLiteral("package-root"));
+    const auto failsBeforeFilesystemEffects =
+        [&targetPath](
+            SubPrepPackageService::Request request,
+            const QString& expectedMessage
+            )
+    {
+        const SubPrepPackageService::Result result =
+            SubPrepPackageService::generate(std::move(request));
+        return result.status == SubPrepPackageService::Status::Failed
+            && result.message == expectedMessage
+            && !QFileInfo::exists(targetPath)
+            && g_rosterOutputSourceReadPort.loadCount == 0;
+    };
+
+    auto request = packageRequest(targetPath, QStringLiteral("Jamie"));
+    request.createFolder = false;
+    request.printPaperCopies = false;
+    request.selectedDates = {QDate()};
+    request.selectedClassIds.clear();
+    request.targetRoot.clear();
+    request.userName.clear();
+    QVERIFY(failsBeforeFilesystemEffects(
+        request,
+        QStringLiteral("Choose a folder or paper-copy action.")
+        ));
+
+    request = packageRequest(targetPath, QStringLiteral("Jamie"));
+    request.selectedDates = {QDate()};
+    request.selectedClassIds.clear();
+    request.userName.clear();
+    QVERIFY(failsBeforeFilesystemEffects(
+        request,
+        QStringLiteral("Select at least one day to include.")
+        ));
+
+    request = packageRequest(targetPath, QStringLiteral("Jamie"));
+    request.selectedClassIds.clear();
+    request.targetRoot.clear();
+    request.userName.clear();
+    QVERIFY(failsBeforeFilesystemEffects(
+        request,
+        QStringLiteral("No classes meet on the selected days.")
+        ));
+
+    request = packageRequest(targetPath, QStringLiteral("Jamie"));
+    request.targetRoot = QStringLiteral(" \t ");
+    request.userName.clear();
+    QVERIFY(failsBeforeFilesystemEffects(
+        request,
+        QStringLiteral("Choose a target folder.")
+        ));
+
+    request = packageRequest(targetPath, QStringLiteral("Jamie"));
+    request.userName = QStringLiteral(" \t ");
+    QVERIFY(failsBeforeFilesystemEffects(
+        request,
+        QStringLiteral("Enter your name for the Sub Prep folder.")
+        ));
 }
 
 void SubPrepPackageServiceTests

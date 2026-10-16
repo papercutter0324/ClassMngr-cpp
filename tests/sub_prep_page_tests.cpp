@@ -28,6 +28,7 @@
 #include <QDialog>
 #include <QDateEdit>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QMetaObject>
@@ -368,6 +369,7 @@ private slots:
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
     void printDialogCalendarReadUsesTwoYearWindowAndFallsBackOnFailure();
+    void printDialogPreflightPreservesMessagesAndAcceptanceGating();
     void generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog();
     void packageFolderNamesCoverDateRangesAndUnsafeCharacters();
     void printDialogRequiresAndSavesMissingUserName();
@@ -3758,6 +3760,175 @@ void SubPrepPageTests
             ),
         QStringLiteral("E4 - Susan. 4.00")
         );
+}
+
+void SubPrepPageTests
+    ::printDialogPreflightPreservesMessagesAndAcceptanceGating()
+{
+    QTemporaryDir targetRoot;
+    QVERIFY(targetRoot.isValid());
+
+    ScheduleViewModel schedule;
+    ScheduleRowView row;
+    ScheduleCellView cell;
+    cell.day = QStringLiteral("Tuesday");
+    ScheduleEntry entry;
+    entry.classId = 42;
+    cell.entries.append(entry);
+    row.cells.append(cell);
+    schedule.rows.append(row);
+
+    SubPrepPrintDialog dialog(
+        nullptr,
+        schedule,
+        {},
+        QDate(2026, 7, 13)
+        );
+    auto* nameEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepUserNameEdit")
+        );
+    auto* targetEdit = dialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepTargetFolderEdit")
+        );
+    auto* okButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("subPrepGenerateOkButton")
+        );
+    auto* createFolderCheck = dialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepCreateFolderCheckBox")
+        );
+    auto* printPaperCheck = dialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepPrintPaperCopiesCheckBox")
+        );
+    auto* tuesdayCheck = dialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepPrintTuesdayCheckBox")
+        );
+    auto* validationLabel = dialog.findChild<QLabel*>(
+        QStringLiteral("subPrepGenerationValidationLabel")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(targetEdit);
+    QVERIFY(okButton);
+    QVERIFY(createFolderCheck);
+    QVERIFY(printPaperCheck);
+    QVERIFY(tuesdayCheck);
+    QVERIFY(validationLabel);
+
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral(
+            "Select days and enter your name to preview the output folder."
+            )
+        );
+    QVERIFY(!okButton->isEnabled());
+
+    nameEdit->setText(QStringLiteral("Jamie"));
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral("Select days to preview the output folder.")
+        );
+    QVERIFY(!okButton->isEnabled());
+
+    targetEdit->setText(targetRoot.path());
+    tuesdayCheck->setChecked(true);
+    QVERIFY(validationLabel->text().isEmpty());
+    QVERIFY(okButton->isEnabled());
+
+    createFolderCheck->setChecked(false);
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral(
+            "Select Create Folder and/or Print Paper Copies to continue."
+            )
+        );
+    QVERIFY(!okButton->isEnabled());
+
+    printPaperCheck->setChecked(true);
+    QVERIFY(validationLabel->text().isEmpty());
+    QVERIFY(okButton->isEnabled());
+
+    tuesdayCheck->setChecked(false);
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral("Select at least one day to include.")
+        );
+    QVERIFY(!okButton->isEnabled());
+
+    tuesdayCheck->setChecked(true);
+    printPaperCheck->setChecked(false);
+    createFolderCheck->setChecked(true);
+    QVERIFY(validationLabel->text().isEmpty());
+    QVERIFY(okButton->isEnabled());
+
+    targetEdit->clear();
+    QCOMPARE(validationLabel->text(), QStringLiteral("Choose a target folder."));
+    QVERIFY(!okButton->isEnabled());
+
+    targetEdit->setText(targetRoot.path());
+    nameEdit->clear();
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral("Enter your name for the Sub Prep folder.")
+        );
+    QVERIFY(!okButton->isEnabled());
+
+    nameEdit->setText(QStringLiteral("Jamie"));
+    QFile notAFolder(
+        QDir(targetRoot.path()).filePath(QStringLiteral("not-a-folder"))
+        );
+    QVERIFY(notAFolder.open(QIODevice::WriteOnly));
+    notAFolder.close();
+    targetEdit->setText(notAFolder.fileName());
+    QCOMPARE(
+        validationLabel->text(),
+        QStringLiteral("The target path is not a folder.")
+        );
+    QVERIFY(!okButton->isEnabled());
+
+    targetEdit->setText(targetRoot.path());
+    QVERIFY(validationLabel->text().isEmpty());
+    QVERIFY(okButton->isEnabled());
+
+    ScheduleViewModel noClassSchedule;
+    ScheduleRowView noClassRow;
+    ScheduleCellView noClassCell;
+    noClassCell.day = QStringLiteral("Tuesday");
+    noClassRow.cells.append(noClassCell);
+    noClassSchedule.rows.append(noClassRow);
+    SubPrepPrintDialog noClassDialog(
+        nullptr,
+        noClassSchedule,
+        {},
+        QDate(2026, 7, 13)
+        );
+    auto* noClassNameEdit = noClassDialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepUserNameEdit")
+        );
+    auto* noClassTargetEdit = noClassDialog.findChild<QLineEdit*>(
+        QStringLiteral("subPrepTargetFolderEdit")
+        );
+    auto* noClassOkButton = noClassDialog.findChild<QPushButton*>(
+        QStringLiteral("subPrepGenerateOkButton")
+        );
+    auto* noClassTuesdayCheck = noClassDialog.findChild<QCheckBox*>(
+        QStringLiteral("subPrepPrintTuesdayCheckBox")
+        );
+    auto* noClassValidationLabel = noClassDialog.findChild<QLabel*>(
+        QStringLiteral("subPrepGenerationValidationLabel")
+        );
+    QVERIFY(noClassNameEdit);
+    QVERIFY(noClassTargetEdit);
+    QVERIFY(noClassOkButton);
+    QVERIFY(noClassTuesdayCheck);
+    QVERIFY(noClassValidationLabel);
+
+    noClassNameEdit->setText(QStringLiteral("Jamie"));
+    noClassTargetEdit->setText(targetRoot.path());
+    noClassTuesdayCheck->setChecked(true);
+    QCOMPARE(
+        noClassValidationLabel->text(),
+        QStringLiteral("No classes meet on the selected days.")
+        );
+    QVERIFY(!noClassOkButton->isEnabled());
 }
 
 void SubPrepPageTests::printDialogRequiresAndSavesMissingUserName()

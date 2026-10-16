@@ -4,6 +4,7 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
+#include "next/application/sub_prep_package_request_validation.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QByteArray>
@@ -105,6 +106,33 @@ Result failed(
             ? QObject::tr("Sub Prep package generation failed.")
             : message
     };
+}
+
+QString preflightFailureMessage(
+    const ClassMngr::Next::Application::
+        SubPrepPackageRequestValidationReason reason
+    )
+{
+    using Reason = ClassMngr::Next::Application::
+        SubPrepPackageRequestValidationReason;
+
+    switch (reason)
+    {
+    case Reason::NoOutputAction:
+        return QObject::tr("Choose a folder or paper-copy action.");
+    case Reason::NoValidSelectedDate:
+        return QObject::tr("Select at least one day to include.");
+    case Reason::NoSelectedClassIds:
+        return QObject::tr("No classes meet on the selected days.");
+    case Reason::MissingTargetRoot:
+        return QObject::tr("Choose a target folder.");
+    case Reason::MissingUserName:
+        return QObject::tr("Enter your name for the Sub Prep folder.");
+    case Reason::None:
+        return {};
+    }
+
+    return {};
 }
 
 QList<QDate> normalizedDates(
@@ -943,17 +971,22 @@ Result generate(
     Request request
     )
 {
-    if (!request.createFolder && !request.printPaperCopies)
+    const auto preflight =
+        ClassMngr::Next::Application::validateSubPrepPackageRequest(
+            {
+                .createFolder = request.createFolder,
+                .printPaperCopies = request.printPaperCopies,
+                .hasValidSelectedDate =
+                    !normalizedDates(request.selectedDates).isEmpty(),
+                .hasSelectedClassIds = !request.selectedClassIds.empty(),
+                .hasNonEmptyTargetRoot =
+                    !request.targetRoot.trimmed().isEmpty(),
+                .hasNonEmptyUserName = !request.userName.trimmed().isEmpty()
+            }
+            );
+    if (!preflight.isValid())
     {
-        return failed(QObject::tr("Choose a folder or paper-copy action."));
-    }
-    if (normalizedDates(request.selectedDates).isEmpty())
-    {
-        return failed(QObject::tr("Select at least one day to include."));
-    }
-    if (request.selectedClassIds.empty())
-    {
-        return failed(QObject::tr("No classes meet on the selected days."));
+        return failed(preflightFailureMessage(preflight.reason));
     }
 
     QString packageDirectory;
