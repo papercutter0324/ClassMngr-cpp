@@ -6878,3 +6878,52 @@ Two independent post-implementation audits checked all 13 official Deferred
 entries and found none changed, actionable, resolved, or superseded. Batch419
 is closed. Batch420 discovery is the continuation point; Gates 1/2 remain
 Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.
+
+## Batch421 and F1039 closeout - 2026-10-17
+
+Batch421 rejected Workspace Save's ignored `QSqlDatabase::commit()` result.
+The review found no production transaction spanning Save, and treating every
+false return as failure would conflate an ordinary no-active-transaction save
+with an unsuccessful pending commit. This was the same unresolved ownership
+contract identified in Batch371. The candidate does not match an official
+Deferred entry.
+
+Accept and complete F1039 under F680's unqualified language QAction failure
+invariant. `LanguageService` now loads a replacement translator separately and
+only replaces the active translator after installation succeeds. The QAction
+path stages locale loading before persistence, persists before installation,
+and commits action/typed state after application. If installation fails, the
+exact prior raw setting is restored; if that restoration also fails, one
+diagnostic reports both failures while the old visible language/action state
+remains active. Programmatic `OptionState::set()` retains its previous order,
+commit, and callback behavior.
+
+Source commit: `2a66e3f2`. The implementation extends the existing
+LanguageService, LanguagePreferencePort, and MainWindow document-catalog parity
+targets. Deterministic coverage includes load and install failure; absent,
+invalid, and valid raw-setting restoration; rollback failure; one diagnostic;
+active translator, font, and translated UI preservation; successful retry;
+and unchanged programmatic state behavior. The executor built `ClassMngr` plus
+the three targets and passed their exact CTests 3/3. Independent verification
+rebuilt the same targets using Debug Ninja/MSVC and passed 3/3. No full suite
+ran.
+
+The independent post-F1039 audit confirmed all 13 official Deferred entries
+remain unresolved and unchanged. F579/F598 future memory captures should use a
+build including F1039, but remain blocked on elevated capture access. Batch421
+is closed; Batch422 discovery is active. Gates 1/2 remain Partial, F1007
+remains pending policy reconciliation, and Phase 2 remains open.
+
+## Batch422 discovery shortfall - 2026-10-17
+
+Three independent read-only scans found no eligible source slice. The
+Schedule Testing Assignment read/save recoverability mismatch is explicitly
+covered by closed-session save tests, and slot-state read/save mappings agree.
+Non-language preference actions already persist before committing state or
+restore selection on failure. The PowerPoint notice is a documented macOS
+legacy void write with unobservable persistence failure. Reviewed application
+use cases either propagate failures or preserve explicit tested behavior;
+F971 specifically excludes broader ImportJob pump error reporting. No
+official Deferred item changed. Batch422 is closed as a discovery shortfall;
+Batch423 discovery is the continuation point. Gates 1/2 remain Partial, F1007
+remains pending policy reconciliation, and Phase 2 remains open.

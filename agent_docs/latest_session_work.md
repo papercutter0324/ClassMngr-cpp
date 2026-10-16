@@ -3,13 +3,22 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1027 is complete at source commit `95fd9e97`;
-  `ClassMngrFileControllerWorkspaceLifecycleTests` passed 1/1 in the standard
-  Debug tree. Two independent post-commit audits found none of the 13 official
-  Phase 2 Deferred entries actionable. Batches 398/399 found no candidate;
-  Batch400 accepted F1028 for rejecting the reserved Campus Dashboard
-  `Default` identity before it can be saved and hidden from list-based reads.
-  The F1028 source slice is pending.
+- Current checkpoint: F1039 is complete at source commit `2a66e3f2`; its
+  acceptance record is `e5315ebc`. The language QAction path stages locale
+  loading, persists before installing the prepared translator, and commits
+  action/typed state only after success. Load/install failures preserve the
+  previous translator, selection, font, and translated UI; failed installation
+  restores the prior raw setting and reports one diagnostic, including any
+  rollback error. Programmatic `OptionState::set()` behavior remains unchanged.
+  `ClassMngr` and the three existing focused targets built successfully, and
+  their CTests passed 3/3 in both executor and independent verification. No
+  full suite ran. A post-commit audit found all 13 official Deferred entries
+  unchanged. Batch422's three independent scans found no eligible slice: the
+  apparent adapter mismatch conflicts with explicit tests, preference actions
+  already restore state, and reviewed use cases have accepted behavior/tests.
+  Batch422 is closed as a discovery shortfall; Batch423 discovery is active.
+  Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+  Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

@@ -6267,3 +6267,42 @@ entries. All remain unchanged and unresolved, with none actionable, resolved,
 or superseded. Batch419 is closed with no other supported slice found.
 Batch420 discovery is in progress. Gates 1/2 remain Partial, F1007 awaits
 policy reconciliation, and Phase 2 remains open.
+
+Batch421 rejected the Workspace Save commit-result lead: no production
+transaction spans Save, and the legacy `commit()` result cannot distinguish an
+ordinary no-transaction save from a failed pending commit. This repeats the
+Batch371 conclusion; no official Deferred entry changed.
+
+F1039 is complete at source commit `2a66e3f2`. `LanguageService` stages a
+separate translator and retains the prior active translator and service state
+when locale load or installation fails. Language QAction flow stages the
+locale, writes the preference, applies the prepared translator, and then
+commits the checked action and `OptionState`. Install failure restores the
+exact prior raw setting, including absence or an invalid variant; failure of
+that rollback is surfaced with the apply error in one diagnostic. Programmatic
+`OptionState::set()` retains its existing commit and callback behavior.
+
+The implementation added deterministic load/install failure, exact restore,
+rollback-failure, presentation preservation, and retry coverage to the
+existing LanguageService, LanguagePreferencePort, and MainWindow document
+catalog parity targets. The executor built `ClassMngr` and all three targets;
+the exact three CTests passed 3/3. Independent verification repeated the
+focused build under Debug Ninja/MSVC and passed 3/3. `git diff --check` passed;
+no full suite ran.
+
+An independent post-F1039 audit checked the exact 13 official Deferred
+entries. None is newly actionable, resolved, or superseded. F579 and F598
+remain blocked on elevated capture access; future captures should use a build
+including F1039's translator lifetime changes. Batch421 is closed and Batch422
+discovery is active. Gates 1/2 remain Partial, F1007 awaits policy
+reconciliation, and the Phase 2 exit gate remains Open.
+
+Batch422 used three independent scans and found no eligible slice. The
+Schedule Testing Assignment recoverability mismatch is explicitly locked by
+closed-session save tests; other slot-state mappings agree. Non-language
+preference actions already persist before state or restore selection, while
+the PowerPoint notice remains a documented macOS legacy void write. The
+application-use-case scan found failure propagation or explicit tested
+contracts, including F971's limit on ImportJob pump error reporting. Batch422
+is closed as a discovery shortfall; Batch423 discovery is active. Gates 1/2
+remain Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.

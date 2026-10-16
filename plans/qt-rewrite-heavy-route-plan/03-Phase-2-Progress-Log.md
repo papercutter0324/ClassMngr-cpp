@@ -44688,3 +44688,53 @@ Add no CMake target. F1039 is accepted in Batch421 and pending implementation;
 all 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial,
 the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation.
+
+### F1039 complete; post-F1039 Deferred audits clear; Batch421 closed - 2026-10-17
+
+F1039 completes at source commit `2a66e3f2`. Locale loading is staged before
+persistence; translator installation follows the successful preference write,
+and action/typed state commits only after installation. The QAction failure
+path preserves the prior live language state and restores the exact prior
+setting (including present, absent, and invalid values) when installation
+fails. Tests cover load/install failure, rollback failure with one combined
+diagnostic, successful retry, preservation of UI, font, and translator state,
+and unchanged programmatic `OptionState::set()` behavior.
+If rollback storage itself fails, the requested setting can remain persisted
+while the live language and selection remain old; the combined diagnostic
+reports both errors.
+
+The incremental build of `ClassMngr`,
+`ClassMngrLanguageServiceTests`,
+`ClassMngrLanguagePreferencePortTests`, and
+`ClassMngrMainWindowDocumentCatalogRetranslationParityTests` passed. Their
+three focused CTests passed 3/3. Independent review also passed through a
+Ninja build under the Visual Studio developer environment. No full suite was
+run.
+
+Two independent post-F1039 audits reviewed exactly the 13 official Deferred
+entries; all remain unchanged and unresolved. The F579 and F598 follow-up
+captures should use a build that includes F1039. Batch421 is closed. Batch422
+discovery is active. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation.
+
+### Batch422 discovery shortfall - 2026-10-17
+
+Three independent lanes found no eligible slice. The v2 adapter scan found
+Schedule Testing Assignment read/save recoverability differences, but
+closed-session save tests explicitly require nonrecoverability; slot-state
+read/save mappings align, and widget preflight exists. The non-language
+preference QAction scan found persist-before-state transitions or checked
+selection rollback/onBeforeCommit handling, covered by SaveMode, FontSize,
+automatic update, AI provider/voice, custom website, and Sidebar tests. The
+PowerPoint notice uses a macOS void legacy write whose failure is explicitly
+unobservable in the historical log, so it is excluded. The application-error
+scan found failure propagation or explicit tested contracts for ImportJob
+cancellation, StartupUpdateCheck, ClassDetails fallback, TeacherProfileEdit,
+and WorkspaceCoordinator; F971 says not to broaden pump error reporting.
+
+No other slices were found.
+
+These findings do not change the 13 official Deferred entries; the
+post-F1039 audit remains current. Batch422 is closed. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation. Batch423 discovery is active.
