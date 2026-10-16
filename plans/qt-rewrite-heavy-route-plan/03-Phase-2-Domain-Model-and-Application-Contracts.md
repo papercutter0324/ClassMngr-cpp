@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1020, Testing Classes list ordering, is complete at source commit `6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848`; F1019, Class Tab navigation sorting, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1019, Class Tab navigation sorting, is complete at source commit `85849c85574b1478c15ab8b3b8c9e281e93401a`; F1021, Speaking Evaluation grade/average alignment, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,8 +115,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch389
-  - F1019 - Class Tab navigation sort: extract prepared-fact tuple ordering while preserving schedule parsing/source semantics, literal sentinels, and page selection behavior.
-  - F1021 - Speaking Evaluation grade/average alignment: reconcile `qRound` with floor-based rounding before extraction.
+  - F1021 - Speaking Evaluation grade/average alignment: unify average rounding and grade conversion with integer-thousandth threshold behavior at 2.400.
   - F1022 - Sub Prep print grouping/order: group and order typed print-source values while preserving localized labels/rendering; review output-parity risk.
 
 ## Objective

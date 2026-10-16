@@ -5922,14 +5922,17 @@ notices. No full suite ran.
 Two independent post-F1018 audits reviewed all 13 official Deferred entries;
 none became actionable, resolved, superseded, or needed rationale changes.
 F1020, Testing Classes list ordering, is complete at source commit
-`6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848`. The Qt-free policy orders prepared
-grade/level ranks and text with the page-injected comparator; the page retains
-rank resolution, locale comparison, and class-ID selection. Its app-less CTest
-passed 1/1, and the named page QtTest passed 3/3. Two independent post-commit
-audits found all 13 official Deferred entries unchanged. F1019, shared Class
-Tab navigation ordering, is accepted next: keep parsing, regular/intensive
-source precedence, and base-label construction in the shared model while the
-Qt-free policy orders prepared facts. Preserve unknown-weekday plus valid-time
-behavior, literal sentinel 1000 collision, seconds truncation, selection
-restoration, and first-tab default selection. Gates 1/2 remain Partial and the
-formal Phase 2 exit gate remains Open.
+`6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848`. Its app-less CTest passed 1/1 and
+the named page QtTest passed 3/3. F1019, shared Class Tab navigation ordering,
+is complete at source commit `85849c85574b1478c15ab8b3b8c9e281e93401a`. The
+Qt-free policy compares prepared facts; the shared model retains schedule
+parsing, ordering-source selection, labels, locale comparison, and page
+selection behavior. All 13 focused model methods passed (QtTest 15/15 including
+setup/cleanup), policy CTest passed 1/1, and two page selectors passed (QtTest
+4/4 including setup/cleanup). Two independent post-commit audits found all 13
+official Deferred entries unchanged. F1021 is accepted next: unify average
+rounding and grade conversion over analytics averages from canonical scores
+1–5. Compute grade from the rounded thousandths so exact 2.400 advances at the
+existing >=0.4 boundary; preserve locale formatting and analytics aggregation.
+F1022 remains the next Batch389 candidate after F1021. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.

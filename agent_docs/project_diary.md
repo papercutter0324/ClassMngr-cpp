@@ -6314,3 +6314,37 @@ nonempty regular-list precedence, selection restoration, and first-tab
 fallback behavior. The focused slice should cover these contracts and must not
 change unrelated Deferred entries. Gates 1/2 remain Partial; Phase 2 exit
 remains Open.
+
+## F1019 closeout and F1021 acceptance - 2026-10-17
+
+F1019 completed at source commit
+`85849c85574b1478c15ab8b3b8c9e281e93401a`. The Qt-free policy compares
+prepared Class Tab rank, schedule, label, and ID facts; the model retains
+parsing, locale comparison, and source/label behavior. Nonempty Regular rows
+provide ordering facts, while the existing label builder may still display
+Intensive when Regular has no displayable time. Unknown weekday with a valid
+time and the 1000/16:40 collision, malformed Regular input, seconds handling,
+label behavior, default selection, and selected-ID restoration have focused
+coverage. All 13 selected model methods passed (QtTest 15/15 including setup
+and cleanup), policy CTest passed 1/1, and two page selectors passed (QtTest
+4/4 including setup and cleanup). Independent source review confirmed exact
+ties remain unordered by `std::sort`; the policy treats identical facts as
+equivalent in both comparator directions. Two independent post-commit audits
+found all 13 official Deferred entries unchanged and needing no rationale
+updates. FileTracker required elevated workspace access during initial build;
+optional Vulkan-header, long object-path, and existing page-test warnings were
+nonfatal. No full suite ran.
+
+Accept F1021 next as a Qt-free policy shared by the feature analytics service
+and Application class analytics query. Canonical score inputs map to 1–5, so
+produced averages are in [1,5]; average rounding remains positive half-up to
+three decimals. Grade conversion operates on the rounded thousandths and
+advances when the fractional thousandths are at least 400, preserving clamps
+at 0 and 5. This fixes the floating-point boundary where 2.400 currently
+subtracts to approximately 0.3999999999999999 and remains grade 2 despite the
+existing >=0.4 rule. Pin 2.399 versus 2.400, the 2.3995 half-thousandth, and
+score bounds; preserve aggregation, canonical mappings, YTD eligibility, and
+feature-owned `QLocale` formatting. F1022, Sub Prep print grouping and order,
+remains the next candidate after F1021 because it crosses source mapping,
+locale ordering, schedule parsing, and PDF rendering. Gates 1/2 remain Partial;
+Phase 2 exit remains Open.

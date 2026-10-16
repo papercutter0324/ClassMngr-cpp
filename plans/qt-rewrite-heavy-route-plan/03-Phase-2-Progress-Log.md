@@ -43794,15 +43794,23 @@ The independent Tester built `ClassMngr`, the app-less policy target, and the pa
 
 Two independent post-commit audits found no official Deferred candidate actionable, resolved, or superseded, and no rationale changes are needed. Preserve all 13 official Deferred entries. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
 
-F1019, Class Tab navigation sorting, is accepted as the next Batch389 slice. Extract ordering from `src/features/classes/models/class_tab_navigation_model.cpp` into a Qt-free policy over prepared grade rank, level rank, earliest recognized weekday rank, earliest start-minute rank, base label, and numeric class ID, with an injected label comparator. Keep schedule parsing through `ScheduleValueParser`, regular-list precedence over Intensive when Regular is nonempty, schedule source/fallback semantics, and base-label construction at the existing Qt/model boundary. Do not reuse F1015 Sub Prep reduction: unknown weekday with valid time preserves day 1000 while using its valid time, and literal 1000 may collide with a valid 16:40 rank. Preserve the current `std::sort` behavior; it establishes no special order for exact ties.
+### F1019 complete; post-F1019 Deferred audits clear; F1021 accepted - 2026-10-17
 
-F1019 acceptance criteria:
+F1019 source commit `85849c85574b1478c15ab8b3b8c9e281e93401a` completes Class Tab navigation sorting. The Qt-free policy compares the prepared tuple of grade rank, level rank, earliest recognized weekday rank, earliest start-minute rank, base label through an injected comparator, and numeric class ID. The policy owns tuple comparison only; parsing, locale comparison, schedule source rules, label fallback, and selection behavior remain at their existing model/page boundaries. Nonempty Regular rows supply ordering facts, while the existing label builder may still display Intensive when Regular rows produce no display text. Unknown weekday with valid time retains day sentinel 1000 and the valid minute; 1000 also collides with valid 16:40. Equal facts compare false in both directions, with no new stable tie order.
+
+Four targets built in Debug with Ninja, MSVC, and Qt 6.12. Thirteen selected model methods passed (QtTest 15/15 including setup and cleanup); the policy CTest passed 1/1 with five internal checks; two page selectors passed (QtTest 4/4 including setup and cleanup). A focused label expectation typo was corrected before the final pass.
+
+Two independent post-commit audits found all 13 official Deferred entries unchanged, with no rationale updates needed. Preserve the complete list. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+F1021, Speaking Evaluation grade/average alignment, is accepted as the next Batch389 slice. Add a Qt-free shared numeric policy for three-decimal average rounding and grade conversion used by feature `SpeakingAnalytics` and the Application class analytics query. Both compute paths map canonical grades to 1–5 and average only valid positive scores, so computed averages are in [1,5]. Scope the policy to finite analytics averages in [1,5]. `roundAverageToGrade` receives the average after three-decimal rounding. Round these averages to three decimals using positive half-up behavior; derive grade from integer thousandths, advancing when fractional thousandths are at least 400. Preserve grade clamps at 0 and 5. This intentionally makes exact 2.400 advance to grade 3/B+, correcting the current double-subtraction result of 2.3999999999999999 that leaves grade 2/B under the existing >=0.4 contract. The legacy public helper has no documented range, but repository production callers pass analytics averages only.
+
+F1021 acceptance criteria:
 
 | Area | Acceptance |
 | --- | --- |
-| Application policy | Focus model tests on tuple priority, injected locale comparator, numeric class-ID tie-break, literal sentinel collision, unknown weekday with valid time, malformed-but-nonempty Regular-list precedence, and seconds handling. Preserve existing exact-tie behavior without promising a special stable order. |
-| Model boundary and schedule semantics | Keep `ScheduleValueParser`, Regular-over-Intensive precedence when Regular is nonempty, schedule source/fallback semantics, and base-label construction at the existing Qt/model boundary. Preserve labels and source behavior. |
-| Page behavior | Preserve selected-ID restoration and first-tab default selection. The shared model feeds Classes, My Classes, and Speaking Evaluation pages. |
-| Focused verification | Use `ClassMngrClassTabNavigationModelTests` and relevant `ClassMngrClassesPageTests`; no build or test result is claimed for this accepted slice. |
+| Numeric policy | A Qt-free shared policy rounds positive finite analytics averages to three decimals using positive half-up behavior and converts the rounded value using integer thousandths, with the >=400 advancement threshold and existing 0/5 clamps. Pin exact 2.399 vs 2.400 behavior, 2.3995 rounding to 2.400, a positive half-thousandth, and lower/upper bounds. |
+| Consumer parity | Cover both `SpeakingAnalytics` and the Application class analytics query. Preserve canonical grade mapping, valid-positive-score averaging, partial-snapshot and YTD eligibility, and feature-owned locale formatting. |
+| Scope | State the supported analytics-average input domain explicitly. Do not change aggregation, canonical mapping, locale formatting, arbitrary allocation caps, or sparse-representation policy. |
+| Focused verification | Add focused policy and consumer coverage for the exact threshold, rounding, bounds/clamps, and both callers; no implementation or verification is claimed for this accepted slice. |
 
-F1019 is accepted, not yet implemented or verified. Batch389 retains F1019, F1021, and F1022, with F1019 first.
+F1021 is accepted, not yet implemented or verified. Batch389 now retains F1021 and F1022, with F1021 first.
