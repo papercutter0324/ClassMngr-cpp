@@ -41619,9 +41619,61 @@ F966 acceptance for implementation:
    keys.
 5. Build `ClassMngr` and
    `ClassMngrNextApplicationCalendarEventImportUseCaseTests`; run only the exact
-   `NextApplicationCalendarEventImportUseCase` CTest. Do not run the full suite.
+   generated `ClassMngrNextApplicationCalendarEventImportUseCaseTests` CTest
+   registration. Do not run the full suite.
 
-F966 is the sole active accepted slice. Leave the mapping history update for
-F966 completion. Do not add it to the official Deferred list. All 13 official
-Deferred entries remain unchanged; Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+F966 was the sole active accepted slice at this checkpoint. Leave the mapping
+history update for F966 completion. Do not add it to the official Deferred
+list. All 13 official Deferred entries remain unchanged; Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
+
+### F966 complete; Batch336 closed; Batch337 discovery closed; F967 accepted - 2026-10-16
+
+F966 was implemented at source/test commit
+`3466080b2b6ff46543ac807bed7d9fa160fe626f`, following documentation
+acceptance checkpoint `f0dfe634fe7da5235e0f136c4191cadedc933900`. Independent
+focused verification built `ClassMngr` and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`, then passed the
+actual generated CTest registration
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests` (1/1). The earlier
+acceptance reference to `NextApplicationCalendarEventImportUseCase` as the
+CTest name was inaccurate. `git diff --check` was clean. No full suite ran.
+
+Two complete independent post-F966 audits found all 13 official Deferred
+entries unchanged. Neither F966 nor Batch337 resolved or actioned a Deferred
+entry.
+
+Batch337's independent write-contract scan selected the Native English
+Teacher Directory save contract: the Application validator trusts a supplied
+`normalizedNameKey` instead of deriving identity from raw `name`. The UI
+currently computes the key using Qt `QString::simplified().toCaseFolded()`,
+and the repository recomputes raw-name identity, so no persistence defect is
+claimed. This is separate from F961's GS Team save contract and F962's Teacher
+Import contract. The independent feature-page scan identified a credible
+Testing Classes failed-switch/selection mismatch candidate; it was left for a
+later batch while this contained Application contract was selected.
+
+F967 acceptance for implementation:
+
+1. Remove caller-controlled `normalizedNameKey` from the save row. Inject a
+   Qt-free `std::u16string(std::u16string_view)` name-key policy into
+   validation/use-case code and derive missing-name and duplicate-name
+   identity from each raw name. The production `StaffDirectoryPage` policy
+   must preserve installed Qt `QString::simplified().toCaseFolded()` semantics.
+2. Preserve validation precedence: invalid row ID, duplicate row ID, empty
+   name, duplicate name, invalid birthday, then deleted IDs. Preserve the
+   first invalid index, birthday and ID rules, deletion behavior, port
+   behavior, live UI, transaction, and repository defense.
+3. In app-less tests, cover whitespace-only raw names as `EmptyName` and
+   duplicate normalized raw names as `DuplicateName` with no port call, along
+   with existing valid-name, birthday, and ID behavior. Keep/add Qt-backed
+   `StaffDirectoryNativeEnglishSave` coverage for normalization parity under
+   installed Qt whitespace and case-folding behavior.
+4. Build `ClassMngr`,
+   `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`, and
+   `ClassMngrStaffDirectoryNativeEnglishSaveTests`; run only their exact
+   generated focused CTest registrations. Do not run the full suite.
+
+F967 is the sole active accepted slice. Do not add either Batch337 lead to the
+official Deferred list. All 13 official Deferred entries remain unresolved;
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

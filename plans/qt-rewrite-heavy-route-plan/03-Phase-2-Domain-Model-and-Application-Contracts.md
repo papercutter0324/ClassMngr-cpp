@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F965 is complete and F966 is accepted as the sole active slice: bind Calendar Import signatures to validated save requests and ensure the query range covers every candidate; Blank-draft Sidebar Add remains deferred under F285, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F966 is complete and F967 is accepted as the sole active slice: derive Native English Teacher Directory save identity from raw names through an injected Qt-free policy; Blank-draft Sidebar Add remains deferred under F285, all 13 official Deferred entries remain unresolved, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F966 - Calendar Import signature/range validation: bind supplied keys to validated save requests and reject query ranges that omit candidate dates.
+- F967 - Native English Teacher Directory save identity: derive normalized-name validation keys from raw names through an injected Qt-free policy.
 
 ## Objective
 
