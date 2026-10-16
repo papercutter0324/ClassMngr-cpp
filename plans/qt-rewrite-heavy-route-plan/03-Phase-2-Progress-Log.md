@@ -42184,6 +42184,53 @@ The Executor and independent Tester built `ClassMngr` and
 
 Two independent post-F977 audits reviewed all 13 official Deferred entries.
 All remain unchanged; none became actionable, resolved, superseded, or
-materially changed, and F977 affected none of their triggers. F978 is now
-active, followed by F979 and F980. Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+materially changed, and F977 affected none of their triggers. F978 was active,
+followed by F979 and F980. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
+
+### F978 complete; F979 active - 2026-10-16
+
+F978 was implemented at source/test commit
+`dc5f8e2d`. It changed only `src/next/domain/course.h` and
+`tests/next_domain_contract_tests.cpp`. `Course::weeklyMeetingDayRuleFor()`
+now returns `nullopt` for unknown grade-band and level-category values while
+preserving every declared-value rule, including the existing no-rule behavior
+for `CourseGradeBand::Other`.
+
+Independent verification used Ninja to build `ClassMngr` and
+`ClassMngrNextDomainContractTests`; the exact
+`ClassMngrNextDomainContractTests` CTest passed (1/1), and
+`git diff --check` passed. A Visual Studio FileTracker attempt hit
+`E_ACCESSDENIED` before compilation. No full suite ran.
+
+Two independent post-F978 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, superseded, or
+materially changed, and F978 affected none of their triggers. F979 is now
+active, followed by F980. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
+
+### Batch344 closed; F981-F982 accepted in order - 2026-10-16
+
+Two independent discovery lanes covered Domain/state rules and Application
+contracts. The Domain lane selected F981: reject unknown
+`ScheduleImportStateKind` and `ScheduleImportStateIntensiveMode` values in
+`validateScheduleImportState()` before projection, with a specific validation
+error and preserved behavior for declared values. The Application lane
+selected F982: return false from `classDayFilterMatches()` for unknown
+schedule-source or visibility-scope values while preserving declared-value
+behavior.
+
+F981 will extend
+`tests/next_application_schedule_import_state_validation_tests.cpp` with
+unknown kind/mode and declared-value cases; build `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportStateValidationTests`, then run only
+that exact CTest. F982 will extend
+`tests/next_application_class_day_filter_policy_tests.cpp` with unknown
+source/scope and declared-value cases; build `ClassMngr` and
+`ClassMngrNextApplicationClassDayFilterPolicyTests`, then run only that exact
+CTest. Neither slice may run the full suite.
+
+No other slices were found. F979 and F980 remain the active batch, in that
+order; F981 and F982 are queued after F980. Both discovery lanes reported no
+changes to the 13 official Deferred triggers after F978. Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
