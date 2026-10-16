@@ -6184,3 +6184,31 @@ weekday remains in the facts when its time is invalid so it can establish the
 earliest day while time order stays unknown if no valid time exists for that
 day. Discard seconds at the Platform parser boundary and preserve the existing
 unknown-order sentinel and full-schedule input.
+
+## F1015 closeout and F1016 selection - 2026-10-16
+
+F1015 completed at source commit
+`10d46c5fa15ac3589a42595415a767b8bb29710`. Application now owns the pure
+earliest-canonical-day and earliest-valid-minute reduction over resolved
+facts. Platform still recognizes days, parses times, truncates seconds,
+formats labels, and builds selected-day meeting text. The focused app-less
+test passed 1/1 after the numeric-guard cases were added; three named platform
+slots each passed 3/3. Serial Debug builds passed after FileTracker required
+the `/p:TrackFileAccess=false` retry. No full suite ran.
+
+Two post-F1015 audits found no actionable, resolved, or superseded item among
+the 13 official Deferred entries. F626 has feature-level Sub Prep release and
+re-entry coverage for a retained page, but no matched owner-specific
+packaged Release retained-byte attribution or PageManager eviction/recreation
+contract. Distinguish lifecycle parity from memory attribution when updating
+the defer rationale.
+
+Batch389 compared the setup-specific Initial Setup identity threshold with
+Sub Prep visible-row ordering, Teacher Info preferred-name selection, and
+other feature ordering/grouping policies. Choose F1016 for the Qt-free
+two-of-three teacher identity rule because it is a bounded Application
+contract and can preserve the exact wizard prompt and preflight order. Keep
+the gate separate from shared `TeacherCreate` validation and F285's unresolved
+blank-draft behavior. Keep Sub Prep visible-row ordering next: it is a strong
+Application seam, but exact Qt locale collation and the resulting
+first-visible selection fallback make its parity boundary wider.

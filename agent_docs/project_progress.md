@@ -5856,11 +5856,35 @@ included optional missing Vulkan headers, an MSB8064 generated-dependency
 notice, and duplicate-definition/LNK4088 notices on the page-test link. No
 full suite ran.
 
-Two independent post-F1014 audits found all 13 official Deferred entries
-unchanged, with none newly actionable, resolved, or superseded. Batch387 is
-closed. Batch388 discovery selected F1015, the Sub Prep navigation day/time
-order reduction, as a follow-on to F1013. F1013 left `navigationScheduleOrder`
-in Platform; F1015 moves only the calculation over resolved weekday/minute
-facts into Qt-free Application. Keep exact weekday recognition, time parsing,
-seconds truncation, formatting, and malformed-input handling in Platform.
-Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+F1015, Sub Prep navigation schedule-order reduction, is complete at source
+commit `10d46c5fa15ac3589a42595415a767b8bb29710`. The Qt-free Application
+policy reduces resolved canonical weekday/minute facts to the earliest day
+and earliest valid minute on that day, using sentinel 1000 when unknown. The
+Platform adapter retains exact weekday recognition, raw time parsing,
+seconds-to-minutes truncation, labels, formatting, and selected-day
+`meetingText`. The independent Tester serially built `ClassMngr`, the new
+app-less policy target, and the platform print-source port target. The exact
+app-less CTest passed 1/1 after a final numeric-guard assertion was added and
+the target rebuilt. Three named platform slots each passed 3/3. FileTracker
+denied ordinary access; escalated serial retries with
+`/p:TrackFileAccess=false` passed. Configure reported an optional missing
+Vulkan include. `git diff --check` passed with LF-to-CRLF notices. No full
+suite ran.
+
+Two independent post-F1015 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. F626 now has evidence for
+Sub Prep feature-resource release and refresh on a retained page, but still
+lacks matched owner-specific packaged Release retained-byte attribution and
+a safe PageManager eviction/recreation contract. Keep it deferred and record
+that distinction in the plan.
+
+Batch389 discovery used two Explorers and two Investigators. F1016, Initial
+Setup teacher identity completeness, is accepted: move only the setup-specific
+two-of-three presence rule into a Qt-free Application policy. Keep field
+trimming, translated prompt construction, missing-field order, and the gate's
+position before setup/database preflight and `TeacherCreateUseCase` at the
+wizard boundary. Do not change shared teacher validation or F285's blank-draft
+contract. F1017, Sub Prep visible-row ordering, is next; its Application seam
+is stronger but its order determines F1014's first-visible fallback and uses
+Qt locale comparison at the adapter. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.

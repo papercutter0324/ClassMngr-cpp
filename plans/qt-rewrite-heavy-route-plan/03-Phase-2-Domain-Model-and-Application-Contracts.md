@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1014 is complete at source commit `d9ea2c9ac16c306eb86676b478aacd94b1dc3f05`; F1015, Sub Prep navigation schedule-order reduction, is accepted under Batch388; all 13 Deferred entries remain unchanged and the Phase 2 exit gate is Open.
+- Current note: F1015 is complete at source commit `10d46c5fa15ac3589a42595415a767b8bb29710`; F1016, Initial Setup teacher identity completeness, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -84,10 +84,10 @@ Treat this plan as an operational summary, not a history:
   encoded buffer overlap, but no export-specific peak measurement establishes
   a material cost. Revisit with a matched packaged Release export measurement
   before changing serialization or QSaveFile behavior.
-- F626 - Deferred with no implementation: current process-wide metrics and
-  structural counts do not identify material bytes retained by a cached page
-  after feature-resource release. Revisit only with matched owner-specific
-  packaged Release evidence and a safe state/re-entry contract.
+- F626 - Deferred: F621/F622 show Sub Prep feature-resource release/refresh on
+  a retained page, and F1014 shows class-information re-entry behavior; there
+  is still no owner-specific matched packaged Release retained-byte evidence
+  or safe PageManager eviction/recreation contract.
 - F629 - Deferred pending a suitable packaged macOS universal Phase 0 matrix
   runner; none is exposed in this Windows x64 session. This does not establish
   global runner unavailability; resume when a suitable runner is accessible.
@@ -114,8 +114,13 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch388
-  - F1015 - Sub Prep navigation schedule-order reduction: extract earliest canonical day and its earliest valid time from full-schedule facts.
+- Batch389
+  - F1017 - Sub Prep visible class ordering: sort by configured level, navigation day/time, locale-aware base label, then class ID; preserve adapter-supplied level rank and locale comparison because order also drives first-visible fallback.
+  - F1018 - Teacher Info preferred-name load/edit precedence: extract the selection rule while keeping combo, dialog, and prompt behavior in the UI.
+  - F1019 - Class Tab navigation sort: order from resolved schedule facts while keeping parsing and labels at the feature edge.
+  - F1020 - Testing Classes list ordering: use adapter-resolved ranks and comparator, with a named ordering regression.
+  - F1021 - Speaking Evaluation grade/average alignment: reconcile `qRound` with floor-based rounding before extraction.
+  - F1022 - Sub Prep print grouping/order: group and order typed print-source values while preserving localized labels/rendering; review output-parity risk.
 
 ## Objective
 
