@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_resume_20260929`. Route: Heavy.
+Current deployment: `phase2_resume_batch398_f1028`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,44 +53,27 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1026 complete; F1027 accepted)
+### Current checkpoint - 2026-10-17 (F1027 complete; F1028 accepted)
 
-F1024 completed at source commit `80088444bfcce485a451198527df2316b9ecdd06`.
-Upcoming birthday occurrences now carry `Domain::GregorianDate`; raw reference
-date validation, occurrence ordering, week buckets, year limits, leap-day
-fallback, and feature display behavior remain intact. Three exact focused CTests
-passed and four direct QtTest selectors exited successfully; no full suite ran.
+F1027 is complete at source commit `95fd9e97409ecc78318278016bd2285cdc28ae70`.
+Normal New Teacher Profile creation restores an existing `.tps` after a
+reachable SQLite open/schema failure, leaves no workspace active, and reports
+failure; rollback failure retains and discloses the recovery copy. Successful
+replacement behavior and Initial Setup remain unchanged. The independent
+Tester built the focused Debug target and `ClassMngrFileControllerWorkspaceLifecycleTests`
+passed 1/1; no full suite ran.
 
-F1025 completed across source commits
-`5dfd3b85e7e0eee64ff791cbf1cbd6954f381c5b` and
-`53d516b2783f33f5e6951b80ce5067cc20c98410`. The shared Qt-free ranking policy
-sorts each consumer's original ranking range in place, compares integer
-thousandth scores descending, and invokes the existing name comparator only on
-score ties. The repair removed score-key, index, and reordered-rank buffers;
-score production, aggregation, criterion selection, labels, and presentation
-remain at their existing boundaries. Focused Debug builds and the ranking
-policy, Next query, and Speaking Analytics CTests passed; a corrected feature
-tie test passed its focused CTest. No full suite ran.
-
-F1026 completed at source commit `41c38975`. The shared Qt-free Class Analytics
-criterion-extrema policy preserves missing-data filtering, all maximum/minimum
-ties in criterion order, and strict `<1e-9` tie semantics. Consumers retain
-aggregation, rounding, names, labels, and presentation. The standard Debug
-build and three exact focused CTests passed 3/3 after the exact-tolerance
-boundary case was added. The first CTest invocation lacked `--build-config
-Debug` and was rerun with the correct configuration; no full suite ran.
-
-Two independent post-F1026 reviews checked the Phase 2 plan's exact 13
-Deferred entries: none is actionable, resolved, or superseded. Batches 395 and
-396 found no production candidate. Batch397 accepted F1027 after confirming
-normal New Teacher Profile creation deletes an existing `.tps` before the
-workspace coordinator can fail opening or initializing the replacement.
-F1027 is underway: retain successful replacement behavior, restore the old
-target on a reachable creation failure, leave no workspace open, and report a
-recovery path if rollback cannot restore it. The focused FileController test
-uses a blocking `<target>-journal` path to reach SQLite open failure. Gates
-1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
-pending policy reconciliation.
+Two independent post-F1027 audits found none of the exact 13 official Deferred
+entries actionable, resolved, or superseded. Batch398 rejected the Speaking
+Evaluation import-message finding because F217 explicitly preserves that
+no-change behavior. Batch399 found no eligible gap. Batch400 rejected the
+calendar term-boundary coverage as test-only and the inconsistent persisted
+calendar example as unsupported malformed settings. It accepted F1028 after
+confirming Campus Dashboard saves can persist the reserved `Default` identity
+that repository list/read paths omit. F1028 will reject reserved Create and
+Update snapshots before storage changes, preserving ordinary create/update and
+F951 collision behavior. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

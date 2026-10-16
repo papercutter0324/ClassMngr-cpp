@@ -43922,3 +43922,62 @@ Batch396's two Domain scans found no production candidate: staff-ID value constr
 Batch397's broad workflow scan found no changed-state mismatch; prior B368/B371/B373 findings for workspace/save, restore, update, and document handoff remain applicable. Its companion identified F1027: normal New Teacher Profile creation removes a selected existing `.tps` target before `WorkspaceCoordinator` creation, where reachable SQLite open or schema failures can leave the prior file deleted. B371 had explicitly excluded the `createWorkspace` contract and Initial Setup cancellation, so this is a distinct normal-create failure path, not a reopened B371 issue. Existing tests cover successful replacement only; a directory at `<target>-journal` provides a reachable failure injection, and `InitialSetupLifecycle` has an analogous sibling-backup rollback pattern.
 
 F1027 is accepted before implementation. Preserve successful replacement behavior when creating over an existing `.tps` file. If a reachable coordinator failure occurs, restore the original target contents, leave no workspace active, and report failure. Clean up partial replacement state; if restoration cannot complete, preserve a sibling recovery copy and report it. Keep all 13 official Deferred entries unchanged.
+
+### F1027 complete; post-F1027 Deferred audits clear - 2026-10-17
+
+F1027 completes normal New Teacher Profile failure recovery at source commit
+`95fd9e97409ecc78318278016bd2285cdc28ae70`. When reachable SQLite open or
+schema creation fails, an existing `.tps` is restored, no workspace remains
+active, and failure is reported. If rollback restoration fails, a sibling
+recovery copy is retained and disclosed. Successful replacement semantics
+and Initial Setup remain unchanged. The independent Tester built the scoped
+Debug target; `ClassMngrFileControllerWorkspaceLifecycleTests` passed 1/1. No
+full suite ran.
+
+Two independent post-F1027 audits found none of the 13 official Deferred
+entries actionable, resolved, or superseded; all remain unchanged. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.
+
+Batch398 found no new roster, class-notes, or Speaking import gap. F217
+explicitly preserves the no-change message after evaluation-read failure, and
+its read-failure test asserts that the persisted roster is unchanged.
+
+Batch399's three independent scans found no eligible candidate.
+
+Batch400's class-save scan found no eligible candidate. Calendar `termAt`
+exact-boundary gaps were test-only; cross-year gap/overlap JSON was rejected as
+unsupported malformed settings because normal save paths preserve continuity.
+The Campus JSON repository reserves `Default`: list/read paths exclude IDs or
+names equal to `Default` and `default.json`. Creating a campus named `Default`
+can save `default.json` when it is unoccupied, while renaming an existing
+campus to `Default` writes its current file but list-based reads omit it.
+F951 handles occupied slug-path collisions, not this reserved identity. The
+failed-port UI path already retains dirty edits and displays the returned
+error.
+
+No other slices were found.
+
+Accept F1028 before implementation. Add a Qt-free Application rule for the
+reserved Default campus identity and invoke it before the Campus Dashboard
+repository adapter mutates storage. Reject Create or Update snapshots whose
+effective campus ID or display name equals `default` case-insensitively with
+nonrecoverable `InvalidInput`, preserving the repository's existing exclusion
+semantics. Create with name `Default` and effective ID `default`, and Update
+of existing ID `alpha` to display name `Default`, must neither mutate storage
+nor report Saved; the UI draft remains dirty and shows error feedback.
+Preserve ordinary create/update behavior, F951's occupied-path `Conflict`,
+and existing repository list/load behavior.
+
+F1028 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | A Qt-free Application rule rejects reserved IDs and names case-insensitively with nonrecoverable `InvalidInput` before repository mutation, retaining repository exclusion semantics. |
+| Create and update | Cover Create with name `Default`/effective ID `default` and Update of ID `alpha` to display name `Default`; neither mutates storage or reports Saved, and the UI draft stays dirty with error feedback. |
+| Preserved behavior | Ordinary create/update succeeds, F951 occupied-path collisions remain `Conflict`, and repository list/load behavior is unchanged. |
+| Focused verification | Build affected `ClassMngr`, Application policy tests if introduced, `ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`, and `ClassMngrCampusDashboardPageTests`; run the focused tests only. No full suite. |
+
+F1028 is accepted in Batch400 and remains pending implementation, build, and
+tests. The 13 Deferred entries, Gates 1/2, Phase 2 exit gate, and F1007 status
+remain unchanged.

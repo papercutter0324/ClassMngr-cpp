@@ -6485,3 +6485,22 @@ directory; assert original bytes return at the selected path, the controller
 has no open workspace, and failure is reported. If rollback cannot restore the
 target, retain and disclose the recovery copy. Keep Initial Setup behavior
 unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+## F1027 closeout and F1028 acceptance - 2026-10-17
+
+F1027 completed at source commit `95fd9e97`. The scoped FileController
+workspace-lifecycle CTest passed 1/1 in the standard Debug tree; no full suite
+ran. Two independent post-commit reviews found all 13 official Deferred
+entries unchanged.
+
+Batch398's score-import read-failure message is covered by F217's explicit
+preserved behavior and test. Batch399 found no eligible candidate. In
+Batch400, reject `AcademicCalendarSchedule::termAt` exact-boundary coverage as
+test-only and cross-year discontinuous persisted JSON as unsupported malformed
+settings. Accept F1028 for the Campus Dashboard's reserved `Default` identity:
+the repository excludes that ID/name from list results and rejects lookup by
+ID `default`, but Create can persist it when the destination is free and Update
+can rename a normal ID to that display name. Reject these saves before mutation
+with typed invalid-input feedback, preserve the current draft on failure, and
+retain F951's normalized-path conflict and ordinary rename contracts. Keep the
+Phase 2 Deferred list and gates unchanged.

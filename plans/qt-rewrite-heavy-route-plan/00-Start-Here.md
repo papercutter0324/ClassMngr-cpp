@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1026, shared strongest/focus criterion selection, is complete at source commit `41c38975`; focused Debug verification passed its three exact CTests after adding a regression that confirms an exact `1e-9` difference is excluded by the strict `<1e-9` comparison. F1027, preserving an existing `.tps` file when normal New Teacher Profile creation fails, is accepted before implementation. All 13 official Deferred entries remain unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1027, preserving an existing `.tps` file when normal New Teacher Profile creation fails, is complete at source commit `95fd9e97409ecc78318278016bd2285cdc28ae70`; its scoped Debug target built and `ClassMngrFileControllerWorkspaceLifecycleTests` passed 1/1. F1028, rejecting the reserved Default campus identity before repository mutation, is accepted before implementation. All 13 official Deferred entries remain unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

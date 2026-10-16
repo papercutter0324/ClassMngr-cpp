@@ -2,11 +2,14 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `phase2_resume_20260929`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1026 is complete at source commit `41c38975`;
-  F1027 normal New Teacher Profile replacement failure atomicity is accepted
-  and implementation is underway. Two independent reviews found none of the
-  13 official Phase 2 Deferred entries actionable after F1026.
+- Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
+- Current checkpoint: F1027 is complete at source commit `95fd9e97`;
+  `ClassMngrFileControllerWorkspaceLifecycleTests` passed 1/1 in the standard
+  Debug tree. Two independent post-commit audits found none of the 13 official
+  Phase 2 Deferred entries actionable. Batches 398/399 found no candidate;
+  Batch400 accepted F1028 for rejecting the reserved Campus Dashboard
+  `Default` identity before it can be saved and hidden from list-based reads.
+  The F1028 source slice is pending.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,
@@ -5983,25 +5986,26 @@ Gates 1/2 remain Partial and Phase 2 exit remains Open. Preserve unrelated
 untracked `%SystemDrive%/`, `Testing/`,
 `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
 
-## Current continuation - 2026-10-17 (F1026 complete; F1027 accepted)
+## Current continuation - 2026-10-17 (F1027 complete; F1028 accepted)
 
-F1026 completed at source commit `41c38975`. Its Qt-free Class Analytics
-criterion-extrema policy preserves missing-data filtering, all strongest/focus
-ties in criterion order, and the current strict `<1e-9` tie rule. The independent
-Tester rebuilt the affected Debug targets and passed the exact policy, Next
-dashboard-query, and Speaking Analytics CTests 3/3 after the exact boundary
-case was added. The first invocation omitted `--build-config Debug` and was
-rerun with the correct configuration. No full suite ran.
+F1027 completed at source commit `95fd9e97409ecc78318278016bd2285cdc28ae70`.
+It restores an existing `.tps` after normal New Teacher Profile creation fails,
+keeps no workspace active, and reports the failure; if rollback cannot restore
+the selected file, it retains and discloses a recovery copy. The focused Debug
+build and `ClassMngrFileControllerWorkspaceLifecycleTests` passed 1/1. No full
+suite ran.
 
-Two independent audits of the Phase 2 plan's exact 13 Deferred entries found
-none actionable, resolved, or superseded. Batch395 found no demonstrated
-Application/feature mismatch; Batch396 found no reachable Domain invariant
-gap. Batch397 checked workspace, setup, update, and document workflows against
-prior findings and accepted F1027. The normal “New Teacher Profile” path
-removes an existing target before coordinator creation, but a reachable
-SQLite open/schema failure leaves the old profile lost. Preserve successful
-replacement behavior; on a reachable creation failure restore the selected
-target byte-for-byte, leave no workspace active, and report failure. If
-restoration itself fails, retain a recovery copy and disclose its path. The
-focused failure setup uses a directory at `<target>-journal`. F1027
-implementation is underway; the Phase 2 exit gate remains Open.
+Two independent audits found all 13 official Deferred entries unchanged.
+Batch398's apparent Speaking Evaluation error-message gap was rejected under
+F217's preserved no-change contract. Batch399 found no candidate. Batch400
+found that Campus Dashboard can save a new or renamed campus as the reserved
+`Default` identity, after which repository list/read paths omit it. F951 only
+protects an occupied normalized destination. F1028 is accepted to reject the
+reserved ID/name in both Create and Update before repository mutation, retain
+dirty form data with error feedback, and preserve ordinary saves and F951
+conflict handling. Calendar continuity hardening was rejected because the
+discontinuous stored examples have no supported writer; exact transition
+coverage is a test-only gap. Phase 2 remains Open; Gates 1/2 remain Partial;
+F1007 remains pending policy reconciliation. Preserve unrelated
+`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt` artifacts.

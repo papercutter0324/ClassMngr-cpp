@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1027, preserving an existing `.tps` file when normal New Teacher Profile creation fails, is accepted before implementation; all 13 official Deferred entries remain unchanged and the Phase 2 exit gate is Open.
+- Current note: F1028, rejecting the reserved Default campus identity before repository mutation, is accepted before implementation; Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active candidate
 
-- F1027 - Preserve the existing `.tps` target if normal New Teacher Profile
-  creation fails; keep successful replacement behavior and report recovery if
-  sibling-backup restoration cannot complete.
+- F1028 - Reject the reserved Default campus identity in the Qt-free
+  Application boundary before the repository adapter mutates storage.
 
 ## Objective
 
