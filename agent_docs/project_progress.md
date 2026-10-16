@@ -6169,3 +6169,51 @@ recoverability for invalid input, missing events, and technical failures.
 Other Calendar write adapters and dialog draft retention remain outside this
 slice. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and the Phase 2 exit gate remains Open.
+
+F1036 is complete at source commit `f3124488`. The single-event Calendar Save
+adapter now reports unavailable or closed-session failures as
+`NotFound, recoverable=true` with the existing message, both before the save
+and when a failed repository write detects a closed session. The generic
+failure path remains nonrecoverable for invalid input, missing events, and
+technical failures. The independent Tester built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; its focused
+CTest passed 1/1 after an elevated Visual Studio FileTracker retry. No full
+suite ran. The test covers unavailable sessions before the save call; it does
+not deterministically close a session during a failed repository write, but
+source review confirms that branch uses the same dedicated result helper.
+
+Two independent post-F1036 audits reviewed exactly the 13 official Deferred
+entries. All remain unchanged and unresolved; none became actionable,
+resolved, or superseded. F1036 changes only the single-event Calendar Save
+result contract and does not resolve the Calendar projection injection item.
+The dialog still dismisses after a failed save and does not retain its draft.
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+the Phase 2 exit gate remains Open.
+
+Batch414 scans found no supported candidate in the inspected class/roster,
+workspace/setup, class-notes, directory, and preference boundaries. Batch415
+reviews found that the remaining Calendar mutation adapters still report
+unavailable-session failures as nonrecoverable, matching their prior tests;
+the F1031/F1032 acceptance history supports the same recoverable metadata for
+unavailable-session mutations. A second review confirmed that Calendar import
+loads signatures before saving and propagates query failures unchanged, so
+the import signature-query adapter must be included with import save for an
+unavailable-session error to reach the caller as recoverable.
+
+Accept F1037: in the remaining Calendar series create/edit/delete, single-event
+delete, delete-all, and import-save adapters, and the import signature-query
+adapter, mark only absent/closed-session failures `NotFound, recoverable=true`
+while preserving each existing operation message. Keep invalid input,
+missing entities, open-session repository failures, and technical errors
+unchanged and nonrecoverable. The import UI availability preflight and all UI
+draft behavior remain unchanged. Extend the existing platform adapter tests
+for each unavailable-session case and retain other failure classifications.
+Add an import use-case assertion that the recoverable signature-query failure
+reaches the caller without saving. Build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`; run only the two
+matching CTests. F1036 at `f3124488` is the latest source commit. Post-F1036
+audits are current: all 13 official Deferred entries remain unchanged; repeat
+both audits after F1037 implementation. Gates 1/2 remain Partial, F1007
+remains pending policy reconciliation, and the Phase 2 exit gate remains
+Open. F1037 is accepted and pending implementation.

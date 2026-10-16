@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1035 is complete at source commit `a501998f` and F1036 is accepted in Batch413 pending implementation; post-F1035 audits found all 13 official Deferred entries unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1036 is complete at source commit `f3124488` and F1037 is accepted in Batch416 pending implementation; post-F1036 audits found all 13 official Deferred entries unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch413
+#### Active batch — Batch416
 
-- F1036 - Calendar single-event Save unavailable-session recoverability — return recoverable `NotFound` only for unavailable or closed-session saves.
+- F1037 - Calendar writer unavailable-session recoverability — mark unavailable-session `NotFound` results recoverable across the remaining Calendar write and import-query adapters.
 
 #### Deferred candidates
 

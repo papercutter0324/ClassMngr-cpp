@@ -44505,3 +44505,42 @@ current: all 13 official Deferred candidates remain unchanged; repeat both
 audits after F1036 implementation. Gates 1/2 remain Partial, the Phase 2 exit
 gate remains Open, and F1007 remains pending policy reconciliation. F1036 is
 accepted and pending implementation.
+
+### F1036 complete; post-F1036 Deferred audits clear - 2026-10-17
+
+F1036 completes at source commit `f3124488`. Focused verification built
+`ClassMngr` and `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`;
+the matching CTest passed 1/1. No full suite ran.
+
+Two independent post-F1036 audits reviewed exactly the 13 official Deferred
+entries. All remain unchanged and unresolved, with none actionable, resolved,
+or superseded. Batch413 is closed. Gates 1/2 remain Partial, the Phase 2 exit
+gate remains Open, and F1007 remains pending policy reconciliation.
+
+### Batch414 discovery shortfalls - 2026-10-17
+
+Batch414's class/roster scan and its workspace, setup, class-notes, directory,
+and preferences scan found no supported issue.
+
+### Batch415 research and F1037 accepted before implementation - 2026-10-17
+
+Accept F1037: for Calendar series create/edit/delete, single-event delete,
+delete-all, import-save, and import signature-query adapters, mark only
+unavailable/closed-session `NotFound` failures recoverable while preserving
+each operation's existing message. Import queries signatures before saving,
+so both its query and save adapters are included. Keep validation,
+missing-entity, open-session repository, and technical result mappings
+unchanged. Leave UI availability preflight and draft behavior unchanged.
+
+Build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`. Test that a
+recoverable import signature-query failure propagates through the use case
+without calling save. Run only matching CTests
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`. No full suite.
+F1036 at `f3124488` is the latest source commit. The post-F1036 audits remain
+current: all 13 official Deferred entries are unchanged; repeat both audits
+after F1037 implementation. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation. F1037 is
+accepted in Batch416 and pending implementation.

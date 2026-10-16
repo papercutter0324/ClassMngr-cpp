@@ -6774,3 +6774,49 @@ and discards its draft after failure; this metadata slice does not change that
 UI behavior. Other Calendar writes and draft retention are separate scope.
 Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2
 remains open.
+
+## F1036 closeout - 2026-10-17
+
+F1036 completed at source commit `f3124488`. Calendar single-event Save now
+returns `NotFound, recoverable=true` for an unavailable session before the
+save and when a failed repository write detects a closed session. The existing
+unavailable message is unchanged; invalid input, missing-event, and technical
+failures remain nonrecoverable.
+
+The unavailable-session cases are exercised through
+`CalendarEventSaveUseCase::execute()` with exact code, message, and
+recoverability assertions. The independent Tester built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; the matching
+CTest passed 1/1 after an elevated Visual Studio FileTracker retry. No full
+suite ran. The test does not deterministically close a session during a failed
+repository write; the source branch uses the same dedicated helper. The UI
+still closes the dialog after failed save and discards its draft.
+
+Two independent post-commit audits checked the exact 13 official Deferred
+entries; all remain unchanged and unresolved, with none newly actionable or
+superseded. Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and
+Phase 2 remains open.
+
+## F1037 accepted - 2026-10-17
+
+Batch414 scans found no supported candidate in the class/roster, workspace,
+setup, class-notes, directory, and preference boundaries they reviewed.
+Batch415 surfaced the remaining Calendar mutation ports, whose unavailable-
+session `NotFound` results remain nonrecoverable. The F1031/F1032 history
+establishes the matching recoverable metadata convention for unavailable
+mutation sessions. Two independent reviews confirmed Calendar import queries
+existing signatures before it reaches the save port; that query also returns
+nonrecoverable `NotFound` when the session closes. A save-only change would
+leave that user operation with a nonrecoverable query failure.
+
+Accept F1037 to mark only absent/closed-session failures recoverable across
+the remaining series create/edit/delete, single-event delete, delete-all, and
+import-save adapters, plus the import signature-query adapter. Preserve
+operation-specific messages and leave validation, missing-entity,
+open-session repository, and technical failures unchanged and nonrecoverable.
+The import UI preflight and all UI draft behavior remain outside this metadata
+change. Extend focused platform tests for the unavailable-session cases while
+retaining other failure classifications. Add an import use-case assertion
+that the recoverable signature-query result propagates without reaching save.
+Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2
+remains open.
