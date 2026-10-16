@@ -43095,3 +43095,30 @@ writes, Setup/teacher work, F993 roster custom-column policy, F994, and
 F953/F961/F967). No B370 candidate is selected yet. Gates 1/2 remain Partial,
 the Phase 2 exit gate remains Open, and all 13 Deferred entries remain
 unchanged.
+
+### Batch370 closed; Batch371 discovery underway - 2026-10-16
+
+Batch370 was a discovery shortfall. Its read scan found no actionable mapping
+mismatch: Sub Prep failure preservation and warnings match F176-F180 and B361;
+Rosters distinguish failed reads from valid empty results with disabled
+capabilities and a failure notice; print and transfer fallbacks match F909/F910;
+Speaking Evaluation Import Names retains its tested shared warning for empty
+and failed rosters under F174; and Campus preserves state for failed or absent
+selected-campus reads while reporting admin failure status.
+
+The command-flow scan found no new mutation gap. Class Details retains save
+errors and dirty state; Schedule Import and Class Transfer inspect failures and
+use transaction-backed apply paths; roster row transfer saves both snapshots
+transactionally through `saveRosters`; and Sidebar Add Class blank-draft and
+follow-up read-failure behavior is covered by F642/F644. Existing focused,
+app-less, and platform tests cover these paths, including transfer-trigger
+failure. No production source or test change was made, and the official Deferred
+list did not change. The latest independent all-13 Deferred audit remains post-F994; no
+production source changed after F994. All 13 entries remain unchanged; Gates
+1/2 are Partial and the formal Phase 2 exit gate is Open.
+
+Batch371 is underway in two lanes: live Teacher/Staff create, edit, and delete
+mutations (excluding B368 directory-read coverage and F953/F961/F967 save
+policy); and live MainWindow/FileController/WorkspaceCoordinator open, close,
+save, save-as, and export result handling (excluding the create-workspace
+contract and Initial Setup cancellation).

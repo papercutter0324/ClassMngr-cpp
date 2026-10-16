@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F994 at source commit `fcf321e6` remains the latest source slice; Batches364-369 are closed and Batch370 discovery is underway. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F994 at source commit `fcf321e6` remains the latest source slice; Batches364-370 are closed and B371 discovery is underway. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
