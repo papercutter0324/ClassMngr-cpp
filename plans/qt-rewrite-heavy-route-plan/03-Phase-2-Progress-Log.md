@@ -42006,3 +42006,39 @@ verification when it becomes active.
 
 F974 is the active accepted slice; F975–F977 are queued in that order. Gates
 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F974 complete; F975 active - 2026-10-16
+
+F974 was implemented at source/test commit
+`a3c3965fad586ba7f56cd8d2574e77ac70d78a9b`. The commit changed only
+`src/next/application/teacher_import_latest_source_date_read_query.h` and
+`tests/next_application_teacher_import_latest_source_date_read_query_tests.cpp`.
+The query preserves exact port errors and successful absent dates, accepts
+valid canonical Gregorian ISO dates, and rejects present dates that
+`Domain::GregorianDate::fromIsoString` rejects with nonrecoverable
+`Validation`.
+
+The Executor built `ClassMngr` and
+`ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests`; the
+exact focused CTest passed (1/1). An independent Tester repeated that CTest
+(1/1) and `git diff --check`, with no acceptance gaps. No full suite ran.
+
+Two independent post-F974 audits reviewed every official Deferred candidate.
+All 13 remain unchanged; none became actionable, resolved, superseded, or
+materially changed, and F974 affected none of their triggers. F975 is now
+active, followed by F976 and F977. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
+
+F975 acceptance for implementation:
+
+1. In `ClassCoTeacherTeacherChoicesReadQuery`, preserve rejection of IDs that
+   violate the canonical positive 64-bit policy and additionally reject
+   duplicate teacher IDs in successful snapshots with nonrecoverable
+   `Validation`.
+2. Preserve valid wide IDs, ordering, all choice fields, and exact port-error
+   propagation.
+3. Add a duplicate-row regression in
+   `tests/next_application_class_co_teacher_teacher_choices_read_query_tests.cpp`.
+4. Build `ClassMngr` and
+   `ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests`; run
+   only the exact CTest registration with that name. Do not run the full suite.

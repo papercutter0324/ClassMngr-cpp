@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F974 is active after Batch342 selected F974–F977 in order; two post-F973 audits found all 13 official Deferred entries unchanged, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+- Current note: F975 is active, with F976 and F977 queued; two post-F974 audits found all 13 official Deferred entries unchanged, while Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,6 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F974 — Validate Teacher Import latest source date read query; preserve exact port errors and absent dates, accept canonical Gregorian ISO dates, and reject invalid present dates.
 - F975 — Reject duplicate Class Co-Teacher teacher choice IDs; reject duplicate IDs in successful choice snapshots.
 - F976 — Validate persisted IDs in GS Team and Native English directory read snapshots; reject nonpositive or duplicate row IDs.
 - F977 — Fail closed on unknown Teacher Profile validation severity before persistence; reject unknown severity values before update/reload.
