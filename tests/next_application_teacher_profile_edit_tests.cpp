@@ -202,6 +202,43 @@ void invalidInputsDoNotWrite()
     }
 }
 
+void unknownValidationSeverityBlocksPersistence()
+{
+    std::vector<std::string> calls;
+    FakePolicy policy;
+    FakePort port;
+    policy.calls = &calls;
+    port.calls = &calls;
+    const std::vector<TeacherProfileValidationIssue> expectedIssues{
+        validationIssue(
+            "teacher.profile.unknown-severity",
+            "teacherEn",
+            static_cast<TeacherProfileValidationSeverity>(99),
+            {{.key = "submittedValue", .value = u"Unclassified"},
+             {.key = "policy", .value = u"legacy"}}
+            )
+    };
+    policy.issues = expectedIssues;
+
+    const auto result = TeacherProfileEditUseCase::execute(
+        TeacherProfileEditRequest::fromIntId(8, fields()), policy, port);
+
+    require(!result && result.error().kind
+                == TeacherProfileEditFailureKind::ValidationFailed,
+        "unknown validation severity should fail validation");
+    require(result.error().cause.code == Domain::ErrorCode::Validation
+                && result.error().cause.message
+                    == "Teacher profile validation failed."
+                && result.error().cause.recoverable,
+        "unknown severity should preserve the existing validation failure cause");
+    require(result.error().validationIssues == expectedIssues,
+        "unknown severity failure should preserve the complete issue payload");
+    require(port.updates.empty() && port.reloads.empty(),
+        "unknown validation severity must not update or reload persistence");
+    require(calls == std::vector<std::string>{"validate"},
+        "unknown severity should call only the validation policy");
+}
+
 void wideIdentitySurvivesPolicyUpdateAndReload()
 {
     for (const std::string value : {"1", "2147483647", "2147483648", "9223372036854775807"})
@@ -372,6 +409,7 @@ int main()
     try
     {
         invalidInputsDoNotWrite();
+        unknownValidationSeverityBlocksPersistence();
         wideIdentitySurvivesPolicyUpdateAndReload();
         validSavePreservesFieldsOrderAndCanonicalReturn();
         updateFailureDoesNotReload();

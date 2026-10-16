@@ -193,7 +193,7 @@ public:
             validationResult.issues.end(),
             [](const TeacherProfileValidationIssue& issue)
             {
-                return issue.severity == TeacherProfileValidationSeverity::Error;
+                return issue.severity != TeacherProfileValidationSeverity::Warning;
             }
             );
         if (hasValidationErrors)
