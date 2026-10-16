@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F1003 is complete at source commit `6a2c08d52baa3ee8167ff255fee76cb61984e73c`, and F1004 is accepted for Batch380 before implementation. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1004 is complete at source commit `1a2386a889badc37c1922652c4c79f65b0d2f46c`, and F1005 is accepted from Batch380 before implementation; Batch381 is now active. Two independent post-F1004 audits confirmed all 13 official Deferred entries remain deferred with their original blockers, and none is actionable, resolved, or superseded; Gates 1/2 remain Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
