@@ -6212,3 +6212,30 @@ the gate separate from shared `TeacherCreate` validation and F285's unresolved
 blank-draft behavior. Keep Sub Prep visible-row ordering next: it is a strong
 Application seam, but exact Qt locale collation and the resulting
 first-visible selection fallback make its parity boundary wider.
+
+## F1016 closeout and F1017 continuation - 2026-10-17
+
+F1016 completed at source commit
+`40bb34603a57471e891b64052005dc73966e41f8`. The new Qt-free Application
+policy receives trimmed field-presence facts and returns completeness,
+additional fields required, and missing-field membership. The Initial Setup
+wizard continues to own trimming, translations, prompt construction, and
+English/Korean/Preferred Spelling display order; the gate remains before setup
+lookup and `TeacherCreateUseCase`. Focused Debug builds passed for `ClassMngr`,
+the policy target, and the wizard parity target. The app-less and exact
+Initial Setup parity CTest selectors each passed 1/1. FileTracker required an
+elevated serial retry with `/p:TrackFileAccess=false`; configure reported
+optional missing Vulkan headers and build output reported MSB8064 for an
+existing generated dependency. No full suite ran.
+
+Two independent audits of the 13 official Deferred entries found no item
+actionable, resolved, or superseded after F1016. F626's existing rationale
+already reflects F621/F622/F1014 lifecycle evidence and the still-missing
+owner-specific Release retained-byte attribution and safe PageManager
+eviction/recreation contract. Continue with F1017, Sub Prep visible-row
+ordering, as selected in Batch389. The current model computes configured-level
+rank and base labels at the feature edge; Application can own tuple ordering
+over those prepared facts while the model injects `QString::localeAwareCompare`.
+The resulting model order continues to drive F1014's first-visible fallback.
+This corrects the earlier batch note that described the level rank as
+adapter-supplied.

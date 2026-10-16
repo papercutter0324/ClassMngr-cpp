@@ -43733,3 +43733,24 @@ F1016 acceptance criteria:
 | Wizard behavior | Preserve the gate before setup/database preflight and `TeacherCreateUseCase`; retain `identityValidationKeepsFieldsAndPromptOrder` coverage for prompt, order, retained input, no insert, and staying on the page. Add focused UI-mapping coverage if needed. |
 | Boundary and scope | Keep trimming, translation, prompt text, and fixed English/Korean/Preferred Spelling order in the wizard. Do not alter shared teacher validation or F285's blank-draft contract. |
 | Focused verification | Build `ClassMngr`, the app-less policy target, and affected Initial Setup tests; run exact focused selectors only. No full suite. |
+
+### F1016 complete; post-F1016 Deferred audits clear; F1017 accepted - 2026-10-17
+
+F1016 source commit `40bb34603a57471e891b64052005dc73966e41f8` completes Initial Setup teacher identity completeness. The Qt-free Application policy handles the setup-specific requirement that at least two of English, Korean, and preferred spelling are present; the wizard retains trimming, prompt construction/order, and the gate before setup preflight and `TeacherCreateUseCase`. Shared teacher validation and F285's blank-draft contract were not changed.
+
+Serial Debug builds of `ClassMngr`, the F1016 policy target, and `ClassMngrInitialSetupWizardTeacherCreateParityTests` passed after an elevated retry using `/p:TrackFileAccess=false`. The exact app-less policy and Initial Setup parity CTest selectors each passed 1/1. Build output included the optional missing Vulkan headers warning and MSB8064 for the missing generated dependency `teacher_import_plan_mapper.h`. No full suite ran.
+
+Two independent read-only audits reviewed all 13 official Deferred entries after F1016; none became actionable, resolved, or superseded. F626 remains deferred with the existing rationale: F621/F622 show retained-page feature-resource release/refresh and F1014 covers class-information re-entry, but owner-specific packaged Release retained-byte evidence and a safe PageManager eviction/recreation contract are still missing. Keep all 13 entries unchanged. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+F1017, Sub Prep visible class ordering, is accepted as the next Batch389 slice. Although F1018 has a lower-risk boundary, F1017's visible ordering directly determines F1014's first-visible fallback and has a feasible injected text-comparison seam. Limit this slice to tuple sorting and fallback parity.
+
+F1017 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application ordering policy | Add a Qt-free policy over prepared row facts and an injected text-comparison callback. Order by feature-computed configured-level rank, existing navigation day, existing navigation minute, feature-built base label using the callback, and class ID, in that priority order. Preserve stable order for exact ties. Compare numeric time sentinels literally, so unknown 1000 sorts before a valid minute such as 1020. App-less tests cover tuple priority, final ID tie-break, callback use, and unknown sentinels. |
+| Feature model boundary | `SubPrepClassInformationListModel::levelOrder()` currently computes configured-level rank from `ClassInfoConfig::levelsForGrade()`; the rank is not adapter-supplied. Keep rank calculation, base-label construction, `QString::localeAwareCompare` behavior, and filtering in the Qt feature model. Preserve configured-level and locale-aware ordering in model tests, adding a deterministic locale-sensitive case if feasible. |
+| Selection and page parity | Preserve a still-visible class selection; when it disappears, select and load details for the first row in the sorted visible order. Add a multirow page regression that removes the selected class and asserts the sorted-first fallback and detail load. |
+| Focused verification | Build `ClassMngr`, the new app-less policy target (for example, `ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`), `ClassMngrSubPrepClassInformationListModelTests`, `ClassMngrSubPrepPageTests`, and the selection-policy target as needed. Run only exact focused CTests/selectors. No full suite. |
+
+F1017 is accepted, not yet implemented or verified. Batch389 now retains F1018-F1022 as the active candidates.

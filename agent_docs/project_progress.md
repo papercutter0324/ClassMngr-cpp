@@ -5879,12 +5879,29 @@ a safe PageManager eviction/recreation contract. Keep it deferred and record
 that distinction in the plan.
 
 Batch389 discovery used two Explorers and two Investigators. F1016, Initial
-Setup teacher identity completeness, is accepted: move only the setup-specific
-two-of-three presence rule into a Qt-free Application policy. Keep field
-trimming, translated prompt construction, missing-field order, and the gate's
-position before setup/database preflight and `TeacherCreateUseCase` at the
-wizard boundary. Do not change shared teacher validation or F285's blank-draft
-contract. F1017, Sub Prep visible-row ordering, is next; its Application seam
-is stronger but its order determines F1014's first-visible fallback and uses
-Qt locale comparison at the adapter. Gates 1/2 remain Partial and the formal
-Phase 2 exit gate remains Open.
+Setup teacher identity completeness, is complete at source commit
+`40bb34603a57471e891b64052005dc73966e41f8`. The Qt-free Application policy
+accepts trimmed presence facts and returns the two-of-three completeness,
+additional-field count, and missing-field membership. The wizard retains
+trimming, translated prompt construction, fixed missing-field order, and the
+gate before setup/database preflight and `TeacherCreateUseCase`. The app-less
+test passed 1/1 across all eight presence combinations; the exact Initial
+Setup parity test passed 1/1. Serial Debug builds passed for `ClassMngr` and
+both test targets after FileTracker required an elevated
+`/p:TrackFileAccess=false` retry. Configure reported optional missing Vulkan
+headers, and the build reported MSB8064 for an existing generated dependency
+on `teacher_import_plan_mapper.h`. No full suite ran.
+
+Two independent post-F1016 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. F626's current rationale
+already accounts for retained-page release/re-entry evidence while retaining
+the missing owner-specific Release memory evidence and safe eviction contract.
+F1017, Sub Prep visible-row ordering, is accepted next under Batch389.
+Application will order prepared facts by feature-computed level rank,
+projected navigation day/minute, feature-built base label, and class ID, with
+the feature injecting its `QString::localeAwareCompare` callback. Preserve
+numeric unknown sentinels (1000 compares before 1020) and the F1014 fallback:
+retain a still-visible selection, otherwise select/load the first sorted row.
+The earlier active-batch wording incorrectly called the rank adapter-supplied;
+it is computed in the Qt model. Gates 1/2 remain Partial and the formal Phase
+2 exit gate remains Open.

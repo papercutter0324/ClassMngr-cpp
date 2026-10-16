@@ -50,10 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-16
+- Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1015 is complete at source commit `10d46c5fa15ac3589a42595415a767b8bb29710`; F1016, Initial Setup teacher identity completeness, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1016 is complete at source commit `40bb34603a57471e891b64052005dc73966e41f8`; F1017, Sub Prep visible class ordering, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,7 +115,6 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch389
-  - F1017 - Sub Prep visible class ordering: sort by configured level, navigation day/time, locale-aware base label, then class ID; preserve adapter-supplied level rank and locale comparison because order also drives first-visible fallback.
   - F1018 - Teacher Info preferred-name load/edit precedence: extract the selection rule while keeping combo, dialog, and prompt behavior in the UI.
   - F1019 - Class Tab navigation sort: order from resolved schedule facts while keeping parsing and labels at the feature edge.
   - F1020 - Testing Classes list ordering: use adapter-resolved ranks and comparator, with a named ordering regression.
