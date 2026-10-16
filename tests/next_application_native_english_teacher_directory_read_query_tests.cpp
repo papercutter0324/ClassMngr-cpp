@@ -64,6 +64,9 @@ class NextApplicationNativeEnglishTeacherDirectoryReadQueryTests final
 
 private slots:
     void callsPortOnceAndPreservesRepositoryOrderAndAllFields();
+    void rejectsNonPositiveTeacherIds();
+    void rejectsDuplicateTeacherIds();
+    void preservesEmptySnapshot();
     void propagatesPortError();
 };
 
@@ -93,6 +96,58 @@ callsPortOnceAndPreservesRepositoryOrderAndAllFields()
     QCOMPARE(result.value().at(0).birthday, std::u16string(u"03-14"));
     QCOMPARE(result.value().at(0).nationality, std::u16string(u"Canada"));
     QCOMPARE(result.value().at(1).id.value(), 3);
+}
+
+void NextApplicationNativeEnglishTeacherDirectoryReadQueryTests::
+rejectsNonPositiveTeacherIds()
+{
+    for (const int invalidId : std::vector<int>{0, -1})
+    {
+        RecordingReadPort port;
+        port.result = NativeEnglishTeacherDirectoryReadResult::success({
+            teacher(invalidId, u"Alex")
+        });
+        const NativeEnglishTeacherDirectoryReadQuery query(port);
+
+        const NativeEnglishTeacherDirectoryReadResult result = query.execute();
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, 1);
+    }
+}
+
+void NextApplicationNativeEnglishTeacherDirectoryReadQueryTests::
+rejectsDuplicateTeacherIds()
+{
+    RecordingReadPort port;
+    port.result = NativeEnglishTeacherDirectoryReadResult::success({
+        teacher(7, u"Alpha"),
+        teacher(7, u"Zulu")
+    });
+    const NativeEnglishTeacherDirectoryReadQuery query(port);
+
+    const NativeEnglishTeacherDirectoryReadResult result = query.execute();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 1);
+}
+
+void NextApplicationNativeEnglishTeacherDirectoryReadQueryTests::
+preservesEmptySnapshot()
+{
+    RecordingReadPort port;
+    port.result = NativeEnglishTeacherDirectoryReadResult::success({});
+    const NativeEnglishTeacherDirectoryReadQuery query(port);
+
+    const NativeEnglishTeacherDirectoryReadResult result = query.execute();
+
+    QVERIFY(result);
+    QVERIFY(result.value().empty());
+    QCOMPARE(port.callCount, 1);
 }
 
 void NextApplicationNativeEnglishTeacherDirectoryReadQueryTests::

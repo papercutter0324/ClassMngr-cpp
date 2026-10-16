@@ -6,6 +6,7 @@
 
 #include <string>
 #include <type_traits>
+#include <vector>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -66,6 +67,9 @@ class NextApplicationGsTeamDirectoryReadQueryTests final : public QObject
 
 private slots:
     void callsPortOnceAndPreservesRowsAndFields();
+    void rejectsNonPositiveMemberIds();
+    void rejectsDuplicateMemberIds();
+    void preservesEmptySnapshot();
     void propagatesPortError();
 };
 
@@ -95,6 +99,57 @@ callsPortOnceAndPreservesRowsAndFields()
         std::u16string(u"010-1234-5678"));
     QCOMPARE(result.value().at(0).birthday, std::u16string(u"03-14"));
     QCOMPARE(result.value().at(1).id.value(), 3);
+}
+
+void NextApplicationGsTeamDirectoryReadQueryTests::
+rejectsNonPositiveMemberIds()
+{
+    for (const int invalidId : std::vector<int>{0, -1})
+    {
+        RecordingReadPort port;
+        port.result = GsTeamDirectoryReadResult::success({
+            member(invalidId, u"Alex", u"\uC54C\uB809\uC2A4")
+        });
+        const GsTeamDirectoryReadQuery query(port);
+
+        const GsTeamDirectoryReadResult result = query.execute();
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.callCount, 1);
+    }
+}
+
+void NextApplicationGsTeamDirectoryReadQueryTests::
+rejectsDuplicateMemberIds()
+{
+    RecordingReadPort port;
+    port.result = GsTeamDirectoryReadResult::success({
+        member(8, u"Alex", u"\uC54C\uB809\uC2A4"),
+        member(8, u"Sam", u"\uC0D8")
+    });
+    const GsTeamDirectoryReadQuery query(port);
+
+    const GsTeamDirectoryReadResult result = query.execute();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 1);
+}
+
+void NextApplicationGsTeamDirectoryReadQueryTests::preservesEmptySnapshot()
+{
+    RecordingReadPort port;
+    port.result = GsTeamDirectoryReadResult::success({});
+    const GsTeamDirectoryReadQuery query(port);
+
+    const GsTeamDirectoryReadResult result = query.execute();
+
+    QVERIFY(result);
+    QVERIFY(result.value().empty());
+    QCOMPARE(port.callCount, 1);
 }
 
 void NextApplicationGsTeamDirectoryReadQueryTests::propagatesPortError()
