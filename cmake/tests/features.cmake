@@ -724,3 +724,18 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Widgets
         OFFSCREEN
     )
+
+    add_test(
+        NAME UpcomingBirthdaysLocaleAwareOrderingTests
+        COMMAND ClassMngrUpcomingBirthdaysTests
+            ordersNonAsciiNamesAndPositionsUsingQtLocale
+    )
+    set_tests_properties(UpcomingBirthdaysLocaleAwareOrderingTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+    if(WIN32)
+        set_tests_properties(UpcomingBirthdaysLocaleAwareOrderingTests
+            PROPERTIES ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()

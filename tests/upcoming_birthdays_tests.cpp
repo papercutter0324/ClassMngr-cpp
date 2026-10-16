@@ -8,6 +8,9 @@
 #include <QPushButton>
 #include <QtTest>
 
+#include <algorithm>
+#include <vector>
+
 namespace
 {
 Teacher teacher(const QString& name, const QString& birthday)
@@ -58,6 +61,7 @@ private slots:
     void mapsLeapDayToFebruaryTwentyEighthInNonLeapYears();
     void rejectsNonPaddedMonthLikeQtDateFormat();
     void mapsPreferredNamesAndTrimsStaffValues();
+    void ordersNonAsciiNamesAndPositionsUsingQtLocale();
     void dialogCentersTodayAndShowsWeeklyEmptyState();
     void actionIsCreatedWithTeacherMenuText();
 };
@@ -233,6 +237,81 @@ void UpcomingBirthdaysTests::mapsPreferredNamesAndTrimsStaffValues()
     QCOMPARE(nativeEntry->position, QStringLiteral("NET"));
     QCOMPARE(gsEntry->displayName, QStringLiteral("Team Korean Name"));
     QCOMPARE(gsEntry->position, QStringLiteral("Leader"));
+}
+
+void UpcomingBirthdaysTests::ordersNonAsciiNamesAndPositionsUsingQtLocale()
+{
+    const QString firstName = QStringLiteral("\uAC00\uB098\uB2E4");
+    const QString secondName = QStringLiteral("\uB2E4\uB77C\uB9C8");
+    const QString thirdName = QStringLiteral("\uC774\uC218\uC9C4");
+    const QString firstPosition = QStringLiteral("\uAD50\uC0AC");
+    const QString secondPosition = QStringLiteral("\uC0AC\uC6D0");
+    const QString thirdPosition = QStringLiteral("\uBD80\uC7A5");
+    const QString teamPosition = QStringLiteral("\uD300\uC7A5");
+
+    const UpcomingBirthdaySchedule schedule = UpcomingBirthdaySchedule::build(
+        {
+            teacher(secondName, QStringLiteral("08-21")),
+            teacher(firstName, QStringLiteral("08-21")),
+            teacher(thirdName, QStringLiteral("08-21"))
+        },
+        {
+            nativeTeacher(firstName, secondPosition, QStringLiteral("08-21")),
+            nativeTeacher(thirdName, thirdPosition, QStringLiteral("08-21")),
+            nativeTeacher(firstName, firstPosition, QStringLiteral("08-21"))
+        },
+        {
+            gsTeamMember(firstName, QString(), teamPosition, QStringLiteral("08-21"))
+        },
+        QDate(2026, 8, 21)
+        );
+
+    struct ExpectedBirthday final
+    {
+        QString displayName;
+        UpcomingBirthdayGroup group;
+        QString position;
+    };
+    std::vector<ExpectedBirthday> expected{
+        {secondName, UpcomingBirthdayGroup::KoreanTeacher, {}},
+        {firstName, UpcomingBirthdayGroup::KoreanTeacher, {}},
+        {thirdName, UpcomingBirthdayGroup::KoreanTeacher, {}},
+        {firstName, UpcomingBirthdayGroup::NativeEnglishTeacher, secondPosition},
+        {thirdName, UpcomingBirthdayGroup::NativeEnglishTeacher, thirdPosition},
+        {firstName, UpcomingBirthdayGroup::NativeEnglishTeacher, firstPosition},
+        {firstName, UpcomingBirthdayGroup::GsTeam, teamPosition}
+    };
+    std::sort(
+        expected.begin(),
+        expected.end(),
+        [](const ExpectedBirthday& left, const ExpectedBirthday& right)
+        {
+            const int nameComparison = QString::localeAwareCompare(
+                left.displayName,
+                right.displayName
+                );
+            if (nameComparison != 0)
+            {
+                return nameComparison < 0;
+            }
+            if (left.group != right.group)
+            {
+                return static_cast<int>(left.group) < static_cast<int>(right.group);
+            }
+            return QString::localeAwareCompare(left.position, right.position) < 0;
+        }
+        );
+
+    QCOMPARE(schedule.today.size(), static_cast<qsizetype>(expected.size()));
+    for (std::size_t index = 0; index < expected.size(); ++index)
+    {
+        const UpcomingBirthday& actual = schedule.today.at(
+            static_cast<qsizetype>(index)
+            );
+        QCOMPARE(actual.displayName, expected[index].displayName);
+        QVERIFY(actual.group == expected[index].group);
+        QCOMPARE(actual.position, expected[index].position);
+    }
 }
 
 void UpcomingBirthdaysTests::dialogCentersTodayAndShowsWeeklyEmptyState()

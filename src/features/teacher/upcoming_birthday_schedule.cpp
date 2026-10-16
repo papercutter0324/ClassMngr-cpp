@@ -4,9 +4,9 @@
 
 #include <QByteArray>
 
-#include <algorithm>
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace
@@ -27,6 +27,22 @@ std::string utf8(const QString& value)
 std::u16string utf16(const QString& value)
 {
     return value.toStdU16String();
+}
+
+int compareLocaleAwareText(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    const QString leftText = QString::fromUtf16(
+        left.data(),
+        static_cast<qsizetype>(left.size())
+        );
+    const QString rightText = QString::fromUtf16(
+        right.data(),
+        static_cast<qsizetype>(right.size())
+        );
+    return QString::localeAwareCompare(leftText, rightText);
 }
 
 UpcomingBirthdayGroup featureGroup(
@@ -81,41 +97,6 @@ void appendOccurrences(
     for (const UpcomingBirthdayOccurrence& occurrence : source)
     {
         destination->append(convertOccurrence(occurrence));
-    }
-}
-
-bool birthdayLessThan(
-    const UpcomingBirthday& left,
-    const UpcomingBirthday& right
-    )
-{
-    if (left.date != right.date)
-    {
-        return left.date < right.date;
-    }
-
-    const int nameComparison = QString::localeAwareCompare(
-        left.displayName,
-        right.displayName
-        );
-    if (nameComparison != 0)
-    {
-        return nameComparison < 0;
-    }
-
-    if (left.group != right.group)
-    {
-        return static_cast<int>(left.group) < static_cast<int>(right.group);
-    }
-
-    return QString::localeAwareCompare(left.position, right.position) < 0;
-}
-
-void sortBirthdays(QList<UpcomingBirthday>* birthdays)
-{
-    if (birthdays)
-    {
-        std::sort(birthdays->begin(), birthdays->end(), birthdayLessThan);
     }
 }
 
@@ -178,7 +159,8 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
     const ClassMngr::Next::Application::UpcomingBirthdaySchedule schedule =
         UpcomingBirthdayScheduleUseCase::build(
             candidates,
-            applicationReferenceDate
+            applicationReferenceDate,
+            compareLocaleAwareText
             );
 
     UpcomingBirthdaySchedule result;
@@ -186,8 +168,5 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
     appendOccurrences(&result.thisWeek, schedule.thisWeek);
     appendOccurrences(&result.nextWeek, schedule.nextWeek);
 
-    sortBirthdays(&result.today);
-    sortBirthdays(&result.thisWeek);
-    sortBirthdays(&result.nextWeek);
     return result;
 }

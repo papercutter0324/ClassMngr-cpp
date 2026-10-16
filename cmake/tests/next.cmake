@@ -1141,6 +1141,19 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+add_test(
+    NAME NextApplicationUpcomingBirthdayScheduleUseCaseOrdering
+    COMMAND ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests
+        sortsEveryBucketByDateNameGroupAndPosition
+)
+if(WIN32)
+    set_tests_properties(
+        NextApplicationUpcomingBirthdayScheduleUseCaseOrdering
+        PROPERTIES ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+endif()
+
 classmngr_add_qt_test(
     NAME NextApplicationSelection
     SOURCES

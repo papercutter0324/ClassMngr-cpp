@@ -4,23 +4,47 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 using namespace ClassMngr::Next::Application;
 
 namespace
 {
 
+int compareUtf16(
+    const std::u16string_view left,
+    const std::u16string_view right
+    )
+{
+    return left.compare(right);
+}
+
+UpcomingBirthdaySchedule buildSchedule(
+    const std::vector<UpcomingBirthdayCandidate>& candidates,
+    const UpcomingBirthdayDate& referenceDate
+    )
+{
+    return UpcomingBirthdayScheduleUseCase::build(
+        candidates,
+        referenceDate,
+        compareUtf16
+        );
+}
+
 UpcomingBirthdayCandidate birthday(
     std::string monthDay,
     std::u16string displayName,
     const UpcomingBirthdayStaffGroup group =
-        UpcomingBirthdayStaffGroup::KoreanTeacher
+        UpcomingBirthdayStaffGroup::KoreanTeacher,
+    std::u16string position = {}
     )
 {
     return {
         .birthdayMonthDay = std::move(monthDay),
         .displayName = std::move(displayName),
+        .position = std::move(position),
         .group = group
     };
 }
@@ -39,6 +63,7 @@ private slots:
     void omitsCandidatesWithUnknownStaffGroups();
     void preservesEveryDeclaredStaffGroup();
     void preservesNonAsciiUtf16DisplayName();
+    void sortsEveryBucketByDateNameGroupAndPosition();
     void capsRangesAtMaximumDate();
     void invalidReferenceDateReturnsEmptySchedule();
 };
@@ -47,7 +72,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 bucketsTodayThisWeekAndNextWeekThroughSunday()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday(" 08-18 ", u"Today"),
                 birthday("08-23", u"This week Sunday"),
@@ -79,7 +104,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 selectsOccurrencesAcrossCalendarYearRollover()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday("01-03", u"This week"),
                 birthday("01-04", u"Next week"),
@@ -100,7 +125,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 mapsLeapDayToFebruaryTwentyEighthInNonLeapYear()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {birthday("02-29", u"Leap Day")},
             {2027, 2, 22}
             );
@@ -113,7 +138,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 omitsInvalidBirthdaysAndBlankNames()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday("02-30", u"Invalid day"),
                 birthday("13-01", u"Invalid month"),
@@ -134,7 +159,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 omitsCandidatesWithUnknownStaffGroups()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday(
                     "08-18",
@@ -156,19 +181,19 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 preservesEveryDeclaredStaffGroup()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday(
                     "08-18",
-                    u"Korean teacher",
+                    u"Same name",
                     UpcomingBirthdayStaffGroup::KoreanTeacher
                     ),
                 birthday(
                     "08-18",
-                    u"Native English teacher",
+                    u"Same name",
                     UpcomingBirthdayStaffGroup::NativeEnglishTeacher
                     ),
-                birthday("08-18", u"GS team", UpcomingBirthdayStaffGroup::GsTeam)
+                birthday("08-18", u"Same name", UpcomingBirthdayStaffGroup::GsTeam)
             },
             {2026, 8, 18}
             );
@@ -183,7 +208,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 preservesNonAsciiUtf16DisplayName()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {birthday("08-18", u"\uAE40\uBBFC\uC9C0")},
             {2026, 8, 18}
             );
@@ -196,10 +221,52 @@ preservesNonAsciiUtf16DisplayName()
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
+sortsEveryBucketByDateNameGroupAndPosition()
+{
+    const UpcomingBirthdaySchedule schedule = buildSchedule(
+        {
+            birthday("08-18", u"B today"),
+            birthday("08-18", u"A today"),
+            birthday("08-19", u"Zulu", UpcomingBirthdayStaffGroup::KoreanTeacher),
+            birthday("08-19", u"Same", UpcomingBirthdayStaffGroup::GsTeam, u"Team"),
+            birthday("08-19", u"Same", UpcomingBirthdayStaffGroup::NativeEnglishTeacher, u"Z"),
+            birthday("08-19", u"Same", UpcomingBirthdayStaffGroup::NativeEnglishTeacher, u"A"),
+            birthday("08-19", u"Same", UpcomingBirthdayStaffGroup::KoreanTeacher, u"Z"),
+            birthday("08-20", u"A later date"),
+            birthday("08-24", u"B next week"),
+            birthday("08-24", u"A next week")
+        },
+        {2026, 8, 18}
+        );
+
+    QCOMPARE(schedule.today.size(), std::size_t{2});
+    QCOMPARE(schedule.today[0].displayName, std::u16string(u"A today"));
+    QCOMPARE(schedule.today[1].displayName, std::u16string(u"B today"));
+
+    QCOMPARE(schedule.thisWeek.size(), std::size_t{6});
+    QCOMPARE(schedule.thisWeek[0].displayName, std::u16string(u"Same"));
+    QVERIFY(schedule.thisWeek[0].group == UpcomingBirthdayStaffGroup::KoreanTeacher);
+    QCOMPARE(schedule.thisWeek[0].position, std::u16string(u"Z"));
+    QCOMPARE(schedule.thisWeek[1].displayName, std::u16string(u"Same"));
+    QVERIFY(schedule.thisWeek[1].group == UpcomingBirthdayStaffGroup::NativeEnglishTeacher);
+    QCOMPARE(schedule.thisWeek[1].position, std::u16string(u"A"));
+    QCOMPARE(schedule.thisWeek[2].position, std::u16string(u"Z"));
+    QVERIFY(schedule.thisWeek[3].group == UpcomingBirthdayStaffGroup::GsTeam);
+    QCOMPARE(schedule.thisWeek[4].displayName, std::u16string(u"Zulu"));
+    QVERIFY((schedule.thisWeek[4].date == UpcomingBirthdayDate{2026, 8, 19}));
+    QCOMPARE(schedule.thisWeek[5].displayName, std::u16string(u"A later date"));
+    QVERIFY((schedule.thisWeek[5].date == UpcomingBirthdayDate{2026, 8, 20}));
+
+    QCOMPARE(schedule.nextWeek.size(), std::size_t{2});
+    QCOMPARE(schedule.nextWeek[0].displayName, std::u16string(u"A next week"));
+    QCOMPARE(schedule.nextWeek[1].displayName, std::u16string(u"B next week"));
+}
+
+void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 capsRangesAtMaximumDate()
 {
     const UpcomingBirthdaySchedule partialNextWeek =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday("12-20", u"Today"),
                 birthday("12-26", u"This week"),
@@ -217,7 +284,7 @@ capsRangesAtMaximumDate()
     QVERIFY((partialNextWeek.nextWeek.front().date == UpcomingBirthdayDate{9999, 12, 31}));
 
     const UpcomingBirthdaySchedule partialCurrentWeek =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {
                 birthday("12-30", u"Today"),
                 birthday("12-31", u"Partial current week"),
@@ -236,7 +303,7 @@ void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
 invalidReferenceDateReturnsEmptySchedule()
 {
     const UpcomingBirthdaySchedule schedule =
-        UpcomingBirthdayScheduleUseCase::build(
+        buildSchedule(
             {birthday("08-18", u"Valid birthday")},
             {2026, 2, 29}
             );

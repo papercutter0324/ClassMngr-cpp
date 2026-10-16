@@ -61,15 +61,23 @@ struct UpcomingBirthdaySchedule final
     }
 };
 
+// Returns the Qt-compatible locale comparison ordering for two UTF-16 views.
+// The feature adapter supplies the implementation so this contract stays Qt-free.
+using UpcomingBirthdayTextComparator = int(
+    std::u16string_view,
+    std::u16string_view
+    );
+
 // Date parsing, yearly occurrence selection, and week bucketing are independent
-// of Qt. The feature adapter remains responsible for source models, text
-// conversion, and locale-aware ordering.
+// of Qt. The feature adapter remains responsible for source models and text
+// conversion, and supplies the locale-aware text comparison used for ordering.
 class UpcomingBirthdayScheduleUseCase final
 {
 public:
     [[nodiscard]] static UpcomingBirthdaySchedule build(
         const std::vector<UpcomingBirthdayCandidate>& candidates,
-        const UpcomingBirthdayDate& referenceDate
+        const UpcomingBirthdayDate& referenceDate,
+        UpcomingBirthdayTextComparator& compareText
         )
     {
         using namespace std::chrono;
@@ -145,11 +153,69 @@ public:
             }
         }
 
+        sortOccurrences(&schedule.today, compareText);
+        sortOccurrences(&schedule.thisWeek, compareText);
+        sortOccurrences(&schedule.nextWeek, compareText);
+
         return schedule;
     }
 
 private:
     using SysDays = std::chrono::sys_days;
+
+    static void sortOccurrences(
+        std::vector<UpcomingBirthdayOccurrence>* occurrences,
+        UpcomingBirthdayTextComparator& compareText
+        )
+    {
+        if (!occurrences)
+        {
+            return;
+        }
+
+        std::sort(
+            occurrences->begin(),
+            occurrences->end(),
+            [&compareText](
+                const UpcomingBirthdayOccurrence& left,
+                const UpcomingBirthdayOccurrence& right
+                )
+            {
+                if (left.date.year != right.date.year)
+                {
+                    return left.date.year < right.date.year;
+                }
+                if (left.date.month != right.date.month)
+                {
+                    return left.date.month < right.date.month;
+                }
+                if (left.date.day != right.date.day)
+                {
+                    return left.date.day < right.date.day;
+                }
+
+                const int nameComparison = compareText(
+                    std::u16string_view(left.displayName),
+                    std::u16string_view(right.displayName)
+                    );
+                if (nameComparison != 0)
+                {
+                    return nameComparison < 0;
+                }
+
+                if (left.group != right.group)
+                {
+                    return static_cast<int>(left.group)
+                        < static_cast<int>(right.group);
+                }
+
+                return compareText(
+                    std::u16string_view(left.position),
+                    std::u16string_view(right.position)
+                    ) < 0;
+            }
+            );
+    }
 
     [[nodiscard]] static bool isKnownGroup(
         const UpcomingBirthdayStaffGroup group
