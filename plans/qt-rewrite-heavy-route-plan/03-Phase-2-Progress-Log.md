@@ -41866,3 +41866,59 @@ and F971 changed none of their triggers. Batch341 discovery has started. One
 state-machine lane found no candidate; two independent lanes remain in progress,
 so no slice has been selected. Gates 1/2 remain Partial and the formal Phase 2
 exit gate remains Open.
+
+### Batch341 closed; F972 and F973 accepted in order - 2026-10-16
+
+The official post-F971 audit again found all 13 Deferred entries unchanged and
+none actionable; no Deferred item was selected. Three discovery lanes produced
+two supported Application/Domain candidates, while the independent
+state-machine lane found no candidate.
+
+F972 addresses a domain validity gap: `CalendarEventTiming::validate()` handles
+the three declared `CalendarEventTimeStatus` values but accepts an out-of-range
+enum for a non-all-day event without times. Existing domain tests cover valid
+status rules but not invalid enum values; three Application message helpers map
+the timing issues. F972 was selected first as a bounded contract fix.
+
+F972 acceptance for implementation:
+
+1. Add a dedicated invalid-status timing issue and reject values outside
+   Timed/Unknown/Unconfirmed before other status rules. Preserve behavior for
+   every valid status and all existing date/time checks.
+2. Map the new issue in the existing Application message helpers in
+   `calendar_event_edit_draft.h`, `calendar_event_save_port.h`, and
+   `calendar_event_series_edit_port.h`.
+3. Add a domain regression for a non-all-day event with no times and an invalid
+   value such as `static_cast<CalendarEventTimeStatus>(99)`, plus focused
+   Application coverage proving validation reports the invalid status.
+4. Build `ClassMngr`, `ClassMngrNextDomainContractTests`, and
+   `ClassMngrNextApplicationCalendarEventTests`; run only the exact CTests
+   `ClassMngrNextDomainContractTests` and
+   `ClassMngrNextApplicationCalendarEventTests`. Do not run the full suite.
+
+F973 was selected second. The Schedule Testing Class choices query returns a
+successful port snapshot unchanged, although `ClassId` accepts any nonempty
+string and downstream Testing Classes and Assignment UI parse IDs as integers;
+the repository emits positive int-range IDs. Existing query tests provide a
+focused place to cover the result boundary.
+
+F973 acceptance for implementation:
+
+1. For successful port results, reject noncanonical, nonpositive, or
+   out-of-int-range class IDs and duplicate IDs with nonrecoverable
+   `Validation`.
+2. Preserve valid choice ordering and all fields, empty success, and exact
+   propagation of port errors.
+3. Add malformed-ID, duplicate-ID, and preserved-success cases in
+   `tests/next_application_schedule_testing_class_choices_read_query_tests.cpp`.
+4. Build `ClassMngr` and
+   `ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`; run
+   only the exact CTest
+   `ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests`. Do not
+   run the full suite.
+
+F972 is the active accepted slice and F973 is next. Neither is an official
+Deferred entry. All 13 official Deferred entries remain unchanged; Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.
+
+No other slices were found.

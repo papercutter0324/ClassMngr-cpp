@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F971 is complete; Batch341 discovery is underway with no slice selected, all 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
+- Current note: F972 is the active accepted slice and F973 is next; all 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, and the formal Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch341 discovery is underway; no slice has been selected yet.
+- Batch341 is closed: F972 — reject invalid Calendar Event TimeStatus enum values; implement and verify the domain and Application validation contract.
+- F973 — validate Schedule Testing Class choice IDs and uniqueness; implement and verify the Application query result contract after F972.
 
 ## Objective
 
