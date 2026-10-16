@@ -131,6 +131,37 @@ void NextApplicationDocumentContentTests::invalidReferencesDoNotMutateState()
     QCOMPARE(whitespace.error().code, ErrorCode::InvalidInput);
     QVERIFY(session.snapshot() == initial);
 
+    const std::string nonBreakingSpace("\xC2\xA0", 2);
+    const auto nonBreakingSpaceOnly = session.request(
+        DocumentContentReference(nonBreakingSpace)
+        );
+    QVERIFY(!nonBreakingSpaceOnly);
+    QCOMPARE(nonBreakingSpaceOnly.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!nonBreakingSpaceOnly.error().recoverable);
+    QVERIFY(session.snapshot() == initial);
+
+    const std::string ideographicSpace("\xE3\x80\x80", 3);
+    const auto ideographicSpaceOnly = session.request(
+        DocumentContentReference(ideographicSpace)
+        );
+    QVERIFY(!ideographicSpaceOnly);
+    QCOMPARE(ideographicSpaceOnly.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!ideographicSpaceOnly.error().recoverable);
+    QVERIFY(session.snapshot() == initial);
+
+    // Malformed UTF-8 remains nonblank and is retained byte-for-byte; this
+    // session validates blankness only and leaves encoding policy to adapters.
+    DocumentContentSession malformedSession;
+    const std::string malformedUtf8("\xFF", 1);
+    const auto malformedRequest = malformedSession.request(
+        DocumentContentReference(malformedUtf8)
+        );
+    QVERIFY(malformedRequest);
+    QCOMPARE(
+        malformedSession.snapshot().reference()->value(),
+        malformedUtf8
+        );
+
     const std::string oversized(
         kDocumentContentMaxReferenceLength + 1,
         'x'

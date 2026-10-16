@@ -1,10 +1,9 @@
 #pragma once
 
+#include "next/application/qt_compatible_text.h"
 #include "next/domain/document_content_reference.h"
 #include "next/domain/operation_result.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -293,16 +292,7 @@ private:
             return false;
         }
 
-        return !std::all_of(
-            reference.value().cbegin(),
-            reference.value().cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
+        return !isBlankUtf8Text(reference.value());
     }
 
     [[nodiscard]] bool retainsActiveDocument() const noexcept
