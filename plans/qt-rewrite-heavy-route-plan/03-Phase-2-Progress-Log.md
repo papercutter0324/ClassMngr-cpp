@@ -42076,3 +42076,39 @@ F976 acceptance for implementation:
    `ClassMngrNextApplicationGsTeamDirectoryReadQueryTests`, and
    `ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests`; run
    only those exact two CTests. Do not run the full suite.
+
+### F976 complete; F977 active; Batch343 discovery underway - 2026-10-16
+
+F976 was implemented at source/test commit
+`8d20308c9d504f48e328d0513244734796558ac1`. It changed exactly
+`src/next/application/gs_team_directory_read_query.h`,
+`src/next/application/native_english_teacher_directory_read_query.h`,
+`tests/next_application_gs_team_directory_read_query_tests.cpp`, and
+`tests/next_application_native_english_teacher_directory_read_query_tests.cpp`.
+Both queries reject successful snapshots containing nonpositive or duplicate
+row IDs with nonrecoverable `Validation`, while preserving valid row order and
+all fields, empty success, and exact port errors.
+
+The Executor and independent Tester built `ClassMngr` and both exact query
+test targets; the two exact CTests passed (2/2), and `git diff --check` passed.
+No full suite ran.
+
+Two independent post-F976 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, superseded, or
+materially changed, and F976 affected none of their triggers. Batch343
+discovery has started in two independent lanes; no candidate has been selected.
+F977 is now active. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
+
+F977 acceptance for implementation:
+
+1. In `TeacherProfileEditUseCase`, keep `Warning` non-blocking and fail closed
+   with `ValidationFailed` for `Error` and any unknown
+   `TeacherProfileValidationSeverity` value, before persistence update or
+   reload. Preserve every validation issue payload.
+2. Add an unknown severity case (for example, enum value 99) asserting
+   `ValidationFailed` and no persistence update or reload. Preserve the
+   existing `Warning` and `Error` cases.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationTeacherProfileEditTests`; run only the exact CTest
+   `ClassMngrNextApplicationTeacherProfileEditTests`. Do not run the full suite.
