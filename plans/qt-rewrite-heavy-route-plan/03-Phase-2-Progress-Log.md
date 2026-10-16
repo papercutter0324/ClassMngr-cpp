@@ -44044,3 +44044,22 @@ gate remains Open.
 No other slices were found.
 
 Batch404 Heavy-route discovery is underway.
+
+### Batch404 discovery shortfall - 2026-10-17
+
+Two independent Heavy-route reviews found no eligible production slice. Entity
+identifiers already use typed values. Raw integer form values deliberately
+retain invalid input for diagnostics, and existing tests cover that contract.
+The reviewed Calendar import, class-transfer export, speaking roster-score
+import, and Class Teacher Assignments paths preserve expected failures and
+per-row results, with existing tests covering those outcomes.
+
+No source or test files changed and no tests ran. F1028 remains the latest
+source commit (`40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`); the post-F1028
+audits still find all 13 official Deferred entries unchanged. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit
+gate remains Open.
+
+No other slices were found.
+
+Batch405 Heavy-route discovery is underway.
