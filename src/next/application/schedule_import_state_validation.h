@@ -12,6 +12,8 @@ namespace ClassMngr::Next::Application
 
 enum class ScheduleImportStateValidationErrorCode
 {
+    InvalidStateKind,
+    InvalidIntensiveMode,
     SelectedTeacherUnavailable,
     InvalidTeacherTarget,
     MissingTeacherRoom,
@@ -35,6 +37,30 @@ struct ScheduleImportStateValidationError
 
 namespace ScheduleImportStateValidationDetail
 {
+[[nodiscard]] inline std::optional<ScheduleImportStateValidationError>
+validateScheduleImportStateEnums(
+    const ScheduleImportStateValidationRequest& request
+    )
+{
+    if (request.kind != ScheduleImportStateKind::Normal
+        && request.kind != ScheduleImportStateKind::Intensive)
+    {
+        return ScheduleImportStateValidationError{
+            ScheduleImportStateValidationErrorCode::InvalidStateKind
+        };
+    }
+    if (request.intensiveMode
+            != ScheduleImportStateIntensiveMode::UpdateExisting
+        && request.intensiveMode
+            != ScheduleImportStateIntensiveMode::ReplaceWithNew)
+    {
+        return ScheduleImportStateValidationError{
+            ScheduleImportStateValidationErrorCode::InvalidIntensiveMode
+        };
+    }
+    return std::nullopt;
+}
+
 [[nodiscard]] inline std::optional<ScheduleImportStateValidationError>
 validateScheduleImportStateCandidateIndexes(
     const ScheduleImportStateValidationRequest& request
@@ -69,6 +95,13 @@ validateScheduleImportState(
             ScheduleImportStateValidationError{code}
             );
     };
+
+    if (const auto error =
+            ScheduleImportStateValidationDetail::
+                validateScheduleImportStateEnums(request))
+    {
+        return error;
+    }
 
     if (const auto error =
             ScheduleImportStateValidationDetail::
@@ -242,6 +275,12 @@ validateScheduleImportState(
     const ScheduleImportStateValidationRequest& request
     )
 {
+    if (const auto error =
+            ScheduleImportStateValidationDetail::
+                validateScheduleImportStateEnums(request))
+    {
+        return error;
+    }
     if (const auto error =
             ScheduleImportStateValidationDetail::
                 validateScheduleImportStateCandidateIndexes(request))

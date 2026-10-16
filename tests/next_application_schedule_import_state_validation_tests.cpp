@@ -157,6 +157,9 @@ private slots:
     void requiresUniqueExactSkipTarget();
     void rejectsSkippedClassWithMismatchedTeacherKey();
     void rejectsOutOfRangeCandidateIndexesForCreateAndUpdate();
+    void rejectsUnknownStateKindBeforeProjectionConsumption();
+    void rejectsUnknownIntensiveModeBeforeProjectionConsumption();
+    void acceptsReplaceModeForNormalState();
     void rejectsInvalidProjectedTimes();
     void rejectsOverlapsAndAllowsAdjacentTimes();
     void normalProjectionIncludesSkippedButDropsAbsentClasses();
@@ -482,6 +485,75 @@ rejectsOutOfRangeCandidateIndexesForCreateAndUpdate()
                 InvalidClassCandidateIndex
             );
     }
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rejectsUnknownStateKindBeforeProjectionConsumption()
+{
+    ScheduleImportStateValidationRequest request;
+    request.kind = static_cast<ScheduleImportStateKind>(99);
+
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::InvalidStateKind
+        }
+        );
+
+    const ScheduleImportStateProjectedSchedule invalidProjection{
+        ScheduleImportStateCandidateIndex{0},
+        "Invalid projection",
+        {time(7, 16 * 60, 17 * 60, "Funday")}
+    };
+    const auto suppliedProjectionError = validateScheduleImportState(
+        request,
+        std::vector<ScheduleImportStateProjectedSchedule>{invalidProjection}
+        );
+    QVERIFY(suppliedProjectionError.has_value());
+    QCOMPARE(
+        suppliedProjectionError->code,
+        ScheduleImportStateValidationErrorCode::InvalidStateKind
+        );
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+rejectsUnknownIntensiveModeBeforeProjectionConsumption()
+{
+    ScheduleImportStateValidationRequest request;
+    request.intensiveMode =
+        static_cast<ScheduleImportStateIntensiveMode>(99);
+
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::InvalidIntensiveMode
+        }
+        );
+
+    const ScheduleImportStateProjectedSchedule invalidProjection{
+        ScheduleImportStateCandidateIndex{0},
+        "Invalid projection",
+        {time(7, 16 * 60, 17 * 60, "Funday")}
+    };
+    const auto suppliedProjectionError = validateScheduleImportState(
+        request,
+        std::vector<ScheduleImportStateProjectedSchedule>{invalidProjection}
+        );
+    QVERIFY(suppliedProjectionError.has_value());
+    QCOMPARE(
+        suppliedProjectionError->code,
+        ScheduleImportStateValidationErrorCode::InvalidIntensiveMode
+        );
+}
+
+void NextApplicationScheduleImportStateValidationTests::
+acceptsReplaceModeForNormalState()
+{
+    ScheduleImportStateValidationRequest request;
+    request.kind = ScheduleImportStateKind::Normal;
+    request.intensiveMode = ScheduleImportStateIntensiveMode::ReplaceWithNew;
+
+    QVERIFY(!validateScheduleImportState(request).has_value());
 }
 
 void NextApplicationScheduleImportStateValidationTests::
