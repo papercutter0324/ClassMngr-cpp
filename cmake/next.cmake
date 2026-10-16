@@ -313,6 +313,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/teacher_profile_edit_use_case.h
     src/next/application/teacher_profile_read_port.h
     src/next/application/teacher_profile_read_query.h
+    src/next/application/preferred_name_selection_policy.h
     src/next/application/report_job_coordinator.h
     src/next/application/report_job_state.h
     src/next/application/recent_workspace_history.h

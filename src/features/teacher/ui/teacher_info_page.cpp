@@ -17,6 +17,7 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "next/application/teacher_profile_edit_use_case.h"
+#include "next/application/preferred_name_selection_policy.h"
 #include "next/platform/application_services_teacher_profile_edit_persistence_port.h"
 
 #include <QCalendarWidget>
@@ -1547,23 +1548,27 @@ void TeacherInfoPage::updatePreferredNameChoices(
     m_preferredNameCombo->addItems(choices);
     m_preferredNameCombo->setEnabled(!choices.isEmpty());
 
-    int selectedIndex =
-        m_autosave->isLoading()
-            ? choices.indexOf(m_teacher.preferredName.trimmed())
-            : choices.indexOf(previousSelection);
-
-    if (selectedIndex < 0)
+    std::vector<std::u16string> orderedChoices;
+    orderedChoices.reserve(static_cast<std::size_t>(choices.size()));
+    for (const QString& choice : choices)
     {
-        selectedIndex =
-            choices.indexOf(m_teacher.preferredName.trimmed());
+        orderedChoices.push_back(choice.toStdU16String());
     }
 
-    if (selectedIndex < 0 && !choices.isEmpty())
-    {
-        selectedIndex = 0;
-    }
+    const auto selectedIndex =
+        ClassMngr::Next::Application::selectPreferredNameChoiceIndex(
+            orderedChoices,
+            m_teacher.preferredName.trimmed().toStdU16String(),
+            previousSelection.toStdU16String(),
+            m_autosave->isLoading()
+                ? ClassMngr::Next::Application::PreferredNameSelectionContext::Load
+                : ClassMngr::Next::Application::PreferredNameSelectionContext::Edit
+            );
+    const int selectedComboIndex = selectedIndex.has_value()
+        ? static_cast<int>(*selectedIndex)
+        : -1;
 
-    m_preferredNameCombo->setCurrentIndex(selectedIndex);
+    m_preferredNameCombo->setCurrentIndex(selectedComboIndex);
 
     if (
         !m_autosave->isLoading()
@@ -1579,7 +1584,7 @@ void TeacherInfoPage::updatePreferredNameChoices(
                 tr("Select Preferred Name"),
                 tr("Choose the name to display for this teacher."),
                 choices,
-                selectedIndex,
+                selectedComboIndex,
                 false,
                 &accepted
                 );

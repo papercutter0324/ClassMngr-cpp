@@ -80,7 +80,9 @@ private slots:
     void cleanup();
     void personalDetailsUseRequestedTwoRowOrder();
     void preferredNameListsAvailableNameChoices();
+    void preferredNameEditKeepsCurrentSelectionOverStoredChoice();
     void promptsWhenSecondPreferredNameChoiceIsAdded();
+    void cancelingPreferredNamePromptKeepsPreselection();
     void birthdayUsesCalendarMonthAndDayOnly();
     void headerKeyboardOpensUntargeted();
     void inlineValidationBlocksManualSaveUntilCorrected();
@@ -148,11 +150,40 @@ void TeacherInfoPageTests::preferredNameListsAvailableNameChoices()
     QCOMPARE(preferredName->itemText(1), QStringLiteral("Gim Allekseu"));
     QCOMPARE(preferredName->currentText(), QStringLiteral("Gim Allekseu"));
 
+    preferredName->setCurrentIndex(0);
+    page.loadTeacher(teacher);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Gim Allekseu"));
+
     teacher.preferredRomanization.clear();
     teacher.preferredName.clear();
     page.loadTeacher(teacher);
 
     QCOMPARE(preferredName->count(), 1);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Alex Kim"));
+}
+
+void TeacherInfoPageTests::preferredNameEditKeepsCurrentSelectionOverStoredChoice()
+{
+    TeacherInfoPage page(nullptr);
+
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Alex Kim");
+    teacher.preferredRomanization = QStringLiteral("Gim Allekseu");
+    teacher.preferredName = QStringLiteral("Gim Allekseu");
+    page.loadTeacher(teacher);
+
+    auto* englishName = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit"));
+    auto* preferredName = page.findChild<QComboBox*>(
+        QStringLiteral("preferredNameCombo"));
+    QVERIFY(englishName);
+    QVERIFY(preferredName);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Gim Allekseu"));
+
+    preferredName->setCurrentIndex(0);
+    englishName->setText(QStringLiteral(" Alex Kim "));
+
     QCOMPARE(preferredName->currentText(), QStringLiteral("Alex Kim"));
 }
 
@@ -202,6 +233,57 @@ void TeacherInfoPageTests::promptsWhenSecondPreferredNameChoiceIsAdded()
 
     QVERIFY(dialogShown);
     QCOMPARE(preferredName->currentText(), QStringLiteral("Gim Allekseu"));
+}
+
+void TeacherInfoPageTests::cancelingPreferredNamePromptKeepsPreselection()
+{
+    TeacherInfoPage page(nullptr);
+
+    Teacher teacher;
+    teacher.id = 1;
+    teacher.teacherEn = QStringLiteral("Alex Kim");
+    teacher.preferredName = QStringLiteral("Alex Kim");
+    page.loadTeacher(teacher);
+
+    auto* preferredSpelling = page.findChild<QLineEdit*>(
+        QStringLiteral("preferredRomanizationEdit"));
+    auto* preferredName = page.findChild<QComboBox*>(
+        QStringLiteral("preferredNameCombo"));
+    QVERIFY(preferredSpelling);
+    QVERIFY(preferredName);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Alex Kim"));
+
+    bool dialogShown = false;
+    bool dialogPreselectionWasPreserved = false;
+    QTimer::singleShot(
+        0,
+        [&dialogShown, &dialogPreselectionWasPreserved]
+        {
+            auto* dialog = qobject_cast<QInputDialog*>(
+                QApplication::activeModalWidget()
+                );
+            dialogShown = dialog
+                && dialog->windowTitle()
+                    == QStringLiteral("Select Preferred Name");
+            if (!dialog)
+            {
+                return;
+            }
+
+            if (auto* choices = dialog->findChild<QComboBox*>())
+            {
+                dialogPreselectionWasPreserved =
+                    choices->currentText() == QStringLiteral("Alex Kim");
+            }
+            dialog->reject();
+        }
+        );
+
+    preferredSpelling->setText(QStringLiteral("Gim Allekseu"));
+
+    QVERIFY(dialogShown);
+    QVERIFY(dialogPreselectionWasPreserved);
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Alex Kim"));
 }
 
 void TeacherInfoPageTests::birthdayUsesCalendarMonthAndDayOnly()

@@ -1555,6 +1555,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
 )
 
+# Preferred-name selection precedence remains independent of Qt.
+add_executable(
+    ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+    tests/next_application_preferred_name_selection_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+    COMMAND ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationSubPrepScheduleSummaryQuery
     SOURCES
