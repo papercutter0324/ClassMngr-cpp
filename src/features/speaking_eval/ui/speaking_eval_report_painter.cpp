@@ -1,7 +1,10 @@
-#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+#include "features/speaking_eval/ui/speaking_eval_report_painter.h"
+
+#include "features/speaking_eval/services/speaking_eval_report_data_assembler.h"
 
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 
+#include <QCoreApplication>
 #include <QFontMetricsF>
 #include <QImage>
 #include <QPainter>
@@ -586,9 +589,10 @@ qreal speakingEvalFittedFieldFontSize(
     return minimumHalfPoints / 2.0;
 }
 
-void SpeakingEvalReportWidget::paintReport(
+void SpeakingEvalReportPainter::paint(
     QPainter* painter,
-    const QRectF& targetRect
+    const QRectF& targetRect,
+    const SpeakingEvalReportData& data
     ) const
 {
     if (!painter || !targetRect.isValid())
@@ -597,10 +601,10 @@ void SpeakingEvalReportWidget::paintReport(
     }
 
     const SpeakingEvalTemplateAssets& assets =
-        speakingEvalTemplateAssets(reportTemplate());
+        speakingEvalTemplateAssets(data.reportTemplate);
     const QSizeF reportSize =
         speakingEvalReportTemplateLayout(
-            reportTemplate()
+            data.reportTemplate
             ).pageSize;
     const qreal scale =
         std::min(
@@ -639,7 +643,10 @@ void SpeakingEvalReportWidget::paintReport(
                 -30.0
                 ),
             Qt::AlignCenter | Qt::TextWordWrap,
-            tr("Speaking-evaluation template unavailable.\n%1")
+            QCoreApplication::translate(
+                "SpeakingEvalReportWidget",
+                "Speaking-evaluation template unavailable.\n%1"
+                )
                 .arg(assets.error)
             );
         painter->restore();
@@ -654,21 +661,21 @@ void SpeakingEvalReportWidget::paintReport(
     if (!assets.scoreHighlights.isEmpty())
     {
         if (m_compositedScoreBackground.isNull()
-            || m_compositedScoreBackgroundScores != m_data.scores
+            || m_compositedScoreBackgroundScores != data.scores
             || m_compositedScoreBackgroundTemplate
-                != m_data.reportTemplate)
+                != data.reportTemplate)
         {
             m_compositedScoreBackground =
                 assets.background.copy();
             compositeAuthoredScores(
                 &m_compositedScoreBackground,
                 assets,
-                m_data.scores
+                data.scores
                 );
             m_compositedScoreBackgroundScores =
-                m_data.scores;
+                data.scores;
             m_compositedScoreBackgroundTemplate =
-                m_data.reportTemplate;
+                data.reportTemplate;
         }
         reportBackground =
             &m_compositedScoreBackground;
@@ -681,11 +688,13 @@ void SpeakingEvalReportWidget::paintReport(
     drawScores(
         painter,
         assets,
-        m_data.scores
+        data.scores
         );
 
     const auto overallIterator =
-        assets.overallGrades.constFind(overallGrade());
+        assets.overallGrades.constFind(
+            SpeakingEvalReportDataAssembler::overallGrade(data.scores)
+            );
     if (overallIterator != assets.overallGrades.cend())
     {
         drawSprite(
@@ -699,20 +708,20 @@ void SpeakingEvalReportWidget::paintReport(
         painter,
         assets,
         QStringLiteral("englishName"),
-        m_data.englishName
+        data.englishName
         );
     drawField(
         painter,
         assets,
         QStringLiteral("koreanName"),
-        m_data.koreanName
+        data.koreanName
         );
     drawField(
         painter,
         assets,
         QStringLiteral("classLabel"),
-        m_data.classLabel,
-        m_data.reportTemplate == SpeakingEvalReportTemplate::Standard
+        data.classLabel,
+        data.reportTemplate == SpeakingEvalReportTemplate::Standard
             ? 0.5
             : 1.0
         );
@@ -720,33 +729,33 @@ void SpeakingEvalReportWidget::paintReport(
         painter,
         assets,
         QStringLiteral("nativeTeacher"),
-        m_data.nativeTeacher
+        data.nativeTeacher
         );
     drawField(
         painter,
         assets,
         QStringLiteral("koreanTeacher"),
-        m_data.koreanTeacher
+        data.koreanTeacher
         );
     drawField(
         painter,
         assets,
         QStringLiteral("date"),
-        m_data.date
+        data.date
         );
     drawField(
         painter,
         assets,
         QStringLiteral("comments"),
-        m_data.comments
+        data.comments
         );
 
     drawSignature(
         painter,
-        m_data.signatureImage,
+        data.signatureImage,
         assets.signatureBounds,
         speakingEvalReportTemplateLayout(
-            reportTemplate()
+            data.reportTemplate
             ).signatureAlignsBottomLeft
         );
 

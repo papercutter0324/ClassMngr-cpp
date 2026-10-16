@@ -1,6 +1,7 @@
 #include "speaking_eval_internal_pdf_renderer.h"
 
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "features/speaking_eval/ui/speaking_eval_report_painter.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QFileInfo>
@@ -80,9 +81,8 @@ bool SpeakingEvalInternalPdfRenderer::render(
         }
         return false;
     }
-    SpeakingEvalReportWidget report;
-    report.setReportData(data);
-    report.paintReport(&painter, reportPageRect(writer));
+    SpeakingEvalReportPainter report;
+    report.paint(&painter, reportPageRect(writer), data);
     if (!painter.end())
     {
         if (errorMessage)

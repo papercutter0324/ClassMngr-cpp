@@ -1,7 +1,7 @@
 #pragma once
 
 #include "domain/models/document_output_result.h"
-#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+#include "features/speaking_eval/services/speaking_eval_report_data.h"
 #include "domain/models/class_info.h"
 
 #include <QList>

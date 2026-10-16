@@ -170,7 +170,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_painter.cpp
     )
 
     target_compile_features(ClassMngrSpeakingEvalReportWidgetTests
@@ -191,10 +191,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             Qt6::Widgets
     )
 
-    qt_add_resources(ClassMngrSpeakingEvalReportWidgetTests report_test_resources
-        PREFIX "/"
-        BASE "${PROJECT_SOURCE_DIR}/resources"
-        FILES
+    set(speaking_eval_report_test_resources
             resources/assets/fonts/Inter.ttc
             resources/assets/fonts/JustAnotherHand-Regular.ttf
             resources/assets/fonts/PretendardVariable.ttf
@@ -221,9 +218,42 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             resources/assets/templates/speaking-eval/standard-yellow-c.png
     )
 
+    qt_add_resources(ClassMngrSpeakingEvalReportWidgetTests report_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            ${speaking_eval_report_test_resources}
+    )
+
     add_test(
         NAME ClassMngrSpeakingEvalReportWidgetTests
         COMMAND ClassMngrSpeakingEvalReportWidgetTests
+    )
+
+    qt_add_executable(ClassMngrSpeakingEvalWidgetlessPdfTests
+        tests/speaking_eval_widgetless_pdf_tests.cpp
+    )
+
+    target_compile_features(ClassMngrSpeakingEvalWidgetlessPdfTests
+        PRIVATE cxx_std_23
+    )
+    target_include_directories(ClassMngrSpeakingEvalWidgetlessPdfTests
+        PRIVATE ${PROJECT_SOURCE_DIR}/src
+    )
+    target_link_libraries(ClassMngrSpeakingEvalWidgetlessPdfTests
+        PRIVATE Qt6::Core Qt6::Gui Qt6::Pdf Qt6::Test
+    )
+    qt_add_resources(ClassMngrSpeakingEvalWidgetlessPdfTests widgetless_report_test_resources
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES ${speaking_eval_report_test_resources}
+    )
+    add_test(
+        NAME ClassMngrSpeakingEvalWidgetlessPdfTests
+        COMMAND ClassMngrSpeakingEvalWidgetlessPdfTests
+    )
+    set_tests_properties(ClassMngrSpeakingEvalWidgetlessPdfTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrSpeakingEvalBatchReportServiceTests
@@ -251,7 +281,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
         src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp
+        src/features/speaking_eval/ui/speaking_eval_report_painter.cpp
         src/features/speaking_eval/ui/speaking_eval_table_view.cpp
         src/ui/shared/printing/pdf_print_dialog.cpp
         src/ui/shared/printing/pdf_print_dialog_pages.cpp
@@ -327,6 +357,20 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         NAME ClassMngrSpeakingEvalBatchReportServiceTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
     )
+
+    add_test(
+        NAME ClassMngrSpeakingEvalInternalPdfParityTests
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests internalPdfMatchesWidgetRendering
+    )
+    set_tests_properties(ClassMngrSpeakingEvalInternalPdfParityTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+    if(WIN32)
+        set_tests_properties(ClassMngrSpeakingEvalInternalPdfParityTests
+            PROPERTIES ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         classmngr_add_qt_test(

@@ -2,7 +2,6 @@
 
 #include "features/speaking_eval/ui/speaking_eval_comment_edit.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
-#include "next/domain/speaking_evaluation_grade.h"
 
 #include <QByteArray>
 #include <QMouseEvent>
@@ -13,9 +12,6 @@
 #include <QTextDocument>
 
 #include <algorithm>
-#include <string_view>
-
-namespace NextDomain = ClassMngr::Next::Domain;
 
 void SpeakingEvalReportWidget::paintEvent(
     QPaintEvent* event
@@ -242,40 +238,5 @@ void SpeakingEvalReportWidget::updateCommentEditor()
         QStringLiteral(
             "QPlainTextEdit { background: white; color: black; border: none; padding: 0px; }"
             )
-        );
-}
-
-QString SpeakingEvalReportWidget::overallGrade() const
-{
-    NextDomain::SpeakingEvaluationComponentScores componentScores{};
-    for (std::size_t index = 0; index < m_data.scores.size(); ++index)
-    {
-        const QByteArray label = m_data.scores[index].toLatin1();
-        componentScores[index] =
-            NextDomain::speakingEvaluationGradeFromLabel(
-                std::string_view(
-                    label.constData(),
-                    static_cast<std::size_t>(label.size())
-                    )
-            );
-    }
-
-    const auto overallGrade =
-        NextDomain::calculateOverallSpeakingEvaluationGrade(componentScores);
-    if (!overallGrade)
-    {
-        return QStringLiteral("N/A");
-    }
-
-    const auto label =
-        NextDomain::speakingEvaluationGradeLabel(*overallGrade);
-    if (!label)
-    {
-        return QStringLiteral("N/A");
-    }
-
-    return QString::fromLatin1(
-        label->data(),
-        static_cast<qsizetype>(label->size())
         );
 }

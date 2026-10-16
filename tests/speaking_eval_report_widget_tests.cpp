@@ -284,6 +284,8 @@ private slots:
     void commentsUseSharedFontFourteenPointMaximumAndWholePointFitting();
     void templateUsesPortraitSize_data();
     void templateUsesPortraitSize();
+    void sharedPainterMatchesWidget_data();
+    void sharedPainterMatchesWidget();
     void representativeReportPreservesAuthoredBackground_data();
     void representativeReportPreservesAuthoredBackground();
     void dynamicTextNeverEscapesManifestRectangles_data();
@@ -299,6 +301,74 @@ private slots:
     void signaturesKeepAspectRatioWithinManifestBounds_data();
     void signaturesKeepAspectRatioWithinManifestBounds();
 };
+
+void SpeakingEvalReportWidgetTests::sharedPainterMatchesWidget_data()
+{
+    QTest::addColumn<SpeakingEvalReportTemplate>("reportTemplate");
+    QTest::newRow("standard") << SpeakingEvalReportTemplate::Standard;
+    QTest::newRow("advanced") << SpeakingEvalReportTemplate::Advanced;
+}
+
+void SpeakingEvalReportWidgetTests::sharedPainterMatchesWidget()
+{
+    QFETCH(SpeakingEvalReportTemplate, reportTemplate);
+    SpeakingEvalReportData data = representativeData(reportTemplate);
+    data.signatureImage = signatureImage(QSize(400, 100));
+    QVERIFY(!data.signatureImage.isEmpty());
+
+    SpeakingEvalReportWidget widget;
+    SpeakingEvalReportPainter sharedPainter;
+    const auto render = [&](bool throughWidget)
+    {
+        QImage image(QSize(1200, 1700), QImage::Format_ARGB32_Premultiplied);
+        image.fill(QColor(40, 60, 80));
+        QPainter painter(&image);
+        painter.translate(7.0, 11.0);
+        painter.setClipRect(QRectF(30.0, 40.0, 1060.0, 1530.0));
+        const QTransform transform = painter.transform();
+        const QRectF clip = painter.clipBoundingRect();
+        const QRectF target(21.0, 31.0, 1100.0, 1595.0);
+        if (throughWidget)
+        {
+            widget.paintReport(&painter, target);
+        }
+        else
+        {
+            sharedPainter.paint(&painter, target, data);
+        }
+        // Paint must preserve the caller's coordinate system and clipping.
+        if (painter.transform() != transform || painter.clipBoundingRect() != clip)
+        {
+            return QImage();
+        }
+        painter.end();
+        return image;
+    };
+
+    // Reuse both instances across score and template changes to exercise their
+    // composited score caches as well as the initial representative rendering.
+    for (int pass = 0; pass < 3; ++pass)
+    {
+        widget.setReportData(data);
+        const QImage direct = render(false);
+        QVERIFY(!direct.isNull());
+        QCOMPARE(render(true), direct);
+        if (pass == 0)
+        {
+            data.scores = {
+                QStringLiteral("C"), QStringLiteral("B"), QStringLiteral("A+"),
+                QString(), QStringLiteral("invalid"), QStringLiteral("B+")
+            };
+        }
+        else
+        {
+            data.reportTemplate =
+                reportTemplate == SpeakingEvalReportTemplate::Standard
+                    ? SpeakingEvalReportTemplate::Advanced
+                    : SpeakingEvalReportTemplate::Standard;
+        }
+    }
+}
 
 void SpeakingEvalReportWidgetTests::
     templateAssetsAreValidAndUseAuthoritativeGeometry()

@@ -1,33 +1,14 @@
 #pragma once
 
-#include "features/speaking_eval/ui/speaking_eval_report_template.h"
+#include "features/speaking_eval/services/speaking_eval_report_data.h"
+#include "features/speaking_eval/ui/speaking_eval_report_painter.h"
 
-#include <QByteArray>
-#include <QImage>
 #include <QWidget>
 
-#include <array>
 #include <utility>
 
 class QPainter;
 class SpeakingEvalCommentEdit;
-
-struct SpeakingEvalReportData
-{
-    QString englishName;
-    QString koreanName;
-    QString classLabel;
-    QString nativeTeacher;
-    QString koreanTeacher;
-    QString date;
-    QString comments;
-    QString notes;
-    int grade = 0;
-    std::array<QString, 6> scores;
-    QByteArray signatureImage;
-    SpeakingEvalReportTemplate reportTemplate =
-        SpeakingEvalReportTemplate::Standard;
-};
 
 class SpeakingEvalReportWidget : public QWidget
 {
@@ -103,15 +84,9 @@ private:
 
     void updateCommentEditor();
 
-    QString overallGrade() const;
-
 private:
     SpeakingEvalReportData m_data;
     SpeakingEvalCommentEdit* m_commentEditor = nullptr;
     bool m_interactive = false;
-    mutable QImage m_compositedScoreBackground;
-    mutable std::array<QString, 6> m_compositedScoreBackgroundScores;
-    mutable SpeakingEvalReportTemplate
-        m_compositedScoreBackgroundTemplate =
-            SpeakingEvalReportTemplate::Standard;
+    SpeakingEvalReportPainter m_reportPainter;
 };

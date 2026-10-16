@@ -1,6 +1,6 @@
 #pragma once
 
-#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
+#include "features/speaking_eval/services/speaking_eval_report_data.h"
 
 #include <QString>
 

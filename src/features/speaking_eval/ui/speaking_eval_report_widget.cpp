@@ -105,3 +105,11 @@ SpeakingEvalReportTemplate SpeakingEvalReportWidget::reportTemplate() const
 {
     return m_data.reportTemplate;
 }
+
+void SpeakingEvalReportWidget::paintReport(
+    QPainter* painter,
+    const QRectF& targetRect
+    ) const
+{
+    m_reportPainter.paint(painter, targetRect, m_data);
+}
