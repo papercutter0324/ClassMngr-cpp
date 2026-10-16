@@ -44007,3 +44007,21 @@ boundaries. The complementary Application use-case scan found no actionable
 mismatch; Schedule Import Apply and Teacher Import validation/rollback matched
 existing coverage. No other slices were found. Resume with fresh Heavy-route
 discovery.
+
+### Batch402 discovery shortfall - 2026-10-17
+
+Two independent static scans found no actionable production candidate. The
+first inspected setup, Schedule Editor, Co-Teacher save, and calendar event
+save/series/delete seams; typed use cases, adapters, and failure handling
+appeared consistent. The second inspected `ClassDetailsSaveWorkflow` and
+`TeacherProfileEditUseCase` failure results, which matched existing tests.
+Padded schedule weekday/time values are normalized by `ScheduleValueParser`,
+so the possible platform-assertion gap is coverage-only, not a product defect.
+
+No files changed and no tests ran. Because source remains at F1028, the exact
+13 Deferred entries remain covered by the post-F1028 audits and their blockers
+are unchanged.
+
+No other slices were found.
+
+Resume with fresh Heavy-route discovery.
