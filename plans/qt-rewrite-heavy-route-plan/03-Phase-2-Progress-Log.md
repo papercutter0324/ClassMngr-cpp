@@ -44335,3 +44335,44 @@ entries. All remain unchanged, unresolved, and non-actionable; no trigger
 resolved or rationale changed. Batch409 is closed. Gates 1/2 remain Partial,
 the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation. Batch410 Heavy discovery is underway.
+
+### Batch410 discovery and F1033 accepted before implementation - 2026-10-17
+
+The Batch410 platform-boundary scan found no additional candidate.
+Schedule Testing Assignment's `ClassId("00042")` behavior is intentional:
+F780 explicitly accepts and forwards padded positive IDs, the live UI supplies
+canonical IDs, and the integer repository maps `00042` to class 42.
+
+The independent multi-step Application scan found that Initial Setup
+cancellation can leave both the original profile and an incomplete setup
+profile at recovery paths if restore and move-back both fail, while the
+controller warning reports only the original backup. An independent review
+confirmed the UUID-named incomplete-profile path matters to user recovery.
+`incompleteRecovery` is assigned before moving, so it can be stale if the
+initial move fails or move-back succeeds. A second independent review
+recommended clearing the field unless the incomplete file remains at that
+path and showing both labeled paths only when `OriginalProfileRestoreFailed`
+retains both files.
+
+Accept F1033: make `incompleteRecovery` represent only an incomplete profile
+retained at that path (empty after initial-move failure or successful move-
+back; populated when move-back fails and the incomplete profile remains).
+When `OriginalProfileRestoreFailed` retains both files, include both labeled
+paths in the controller warning. Preserve the existing original-backup
+warning when no incomplete sibling remains, all other move/cleanup behavior,
+and cancellation outcomes. The distinct successful-restore/cleanup-failure
+`Canceled` case is outside this slice and remains unchanged.
+
+Tests must assert lifecycle result paths and retained files for initial-move
+failure, move-back success, and double-move failure; controller-warning tests
+must show both paths only for the double-failure retained case and preserve
+existing behavior otherwise. Build `ClassMngr`,
+`ClassMngrNextApplicationInitialSetupLifecycleTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`; run only matching CTests
+`ClassMngrNextApplicationInitialSetupLifecycleTests` and
+`ClassMngrFileControllerWorkspaceLifecycleTests`. No full suite. F1032 at
+`742299288e8d6785ec8b6bc630a1bc2e6ef4ba5f` remains the latest source commit.
+The post-F1032 audits remain current: all 13 official Deferred entries are
+unchanged; repeat both audits after F1033 implementation. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation. F1033 is accepted and pending implementation.

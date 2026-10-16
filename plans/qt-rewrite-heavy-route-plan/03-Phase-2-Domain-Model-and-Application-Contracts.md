@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1032 is complete at source commit `742299288e8d6785ec8b6bc630a1bc2e6ef4ba5f`; all 13 exact official Deferred entries remain unchanged, Batch409 is closed, and Batch410 Heavy discovery is underway; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1032 is complete at source commit `742299288e8d6785ec8b6bc630a1bc2e6ef4ba5f` and F1033 is accepted in Batch410 pending implementation; post-F1032 audits found all 13 official Deferred entries unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch — Batch410
 
-- Heavy-route discovery is underway; no candidate has been selected yet.
+- F1033 - Initial Setup cancellation recovery disclosure — report retained incomplete-profile path accurately and include it in restore-failure warning when present.
 
 #### Deferred candidates
 

@@ -6031,7 +6031,7 @@ UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-17 (F1032 complete; Batch410 discovering)
+## Current continuation - 2026-10-17 (F1033 accepted; Batch410 active)
 
 Batch402–404 found no eligible source slice. Batch405 found an inconsistent
 `FeatureService` contract: some operations fall back to a separate legacy
@@ -6072,7 +6072,17 @@ results changed, and missing-entity behavior and the Details Validation
 Context fallback remain intact. The independent Debug build and three focused
 CTests passed 3/3 after an elevated Visual Studio FileTracker retry; no full
 suite ran. Two independent post-commit audits found all 13 official Deferred
-entries unchanged and unresolved. Batch410 Heavy discovery is underway in
-remaining Application workflows and non-Class platform boundaries. Gates 1/2
-remain Partial, F1007 remains pending policy reconciliation, and the Phase 2
-exit gate remains Open.
+entries unchanged and unresolved. Batch410's Schedule Testing Assignment ID
+scan confirmed F780 intentionally accepts leading-zero IDs and the live UI
+supplies canonical IDs; no additional platform candidate was found. The
+multi-step Application scan found a retained-file disclosure gap in Initial
+Setup cancellation. If restoration and moving the incomplete profile back
+both fail, the lifecycle retains both files but the controller warning omits
+the incomplete profile's UUID-named recovery path. F1033 is accepted before
+implementation: expose `incompleteRecovery` only when the file remains there,
+clear it when the move fails or the profile is moved back, and include both
+paths in the restore-failure warning when both files are retained. Keep the
+successful-restore cleanup-failure `Canceled` path unchanged. Repeat the
+independent audit of all 13 official Deferred entries after implementation.
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+the Phase 2 exit gate remains Open.

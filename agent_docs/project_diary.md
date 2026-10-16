@@ -6659,3 +6659,22 @@ Two independent post-commit audits checked the exact 13 official Deferred
 entries. All remain unchanged and unresolved; none became actionable,
 resolved, or superseded. Batch410 discovery is underway. Gates 1/2 remain
 Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.
+
+## F1033 accepted - 2026-10-17
+
+Batch410 found that Initial Setup cancellation can retain both the original
+profile and incomplete setup profile after restoration and move-back both
+fail, but the controller warning names only the original backup. The incomplete
+profile's UUID-named recovery path is needed to locate that retained artifact.
+The result currently assigns the recovery path before attempting the move, so
+it can also report a destination where no file remains. Two independent reviews
+confirmed the issue and recommended keeping the cleanup-failure `Canceled`
+case separate.
+
+Accept F1033 to make the incomplete-recovery field describe an artifact that
+is actually retained there, and show both labeled recovery paths after the
+double-move failure. Clear the field if the initial move fails or the
+incomplete profile is moved back. Preserve existing cancellation/file-move
+behavior and the separate successful-restore cleanup-failure outcome. Gates
+1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2 remains
+open.
