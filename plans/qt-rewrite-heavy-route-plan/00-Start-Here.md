@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F1008 is complete at source commit `3540010f8859f22f99b9d6b53a8103aa08ed4d52`; F1009 is accepted before implementation, while F1007 remains pending policy reconciliation. Two independent post-F1008 audits found all 13 official Deferred entries unchanged; Gates 1/2 remain Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1009 is complete at source commit `8a11736b3e8e9206dd3c7571a631a144fc009929`; F1010, Academic-year schedule validity, is accepted before implementation, while F1007 remains pending policy reconciliation. Two independent post-F1009 audits found all 13 official Deferred entries unchanged; Gates 1/2 remain Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

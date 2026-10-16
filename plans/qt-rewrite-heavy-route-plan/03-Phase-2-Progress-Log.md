@@ -43583,3 +43583,25 @@ F1009 acceptance criteria:
 | Focused verification | In standard `build/windows-x64-debug`, build affected app-less, application, and feature targets serially; add exact CTest selectors for app policy, PowerPoint rejection, and internal renderer mixed-template behavior, retaining Windows Qt offscreen/PATH setup. Run only focused CTests; no full suite. |
 
 F1007, shared student-name edit validation, remains pending because Roster and Speaking Evaluation differ in raw/normalized checks, issue subsets, and messages. Batch382's academic-calendar validity and winter-continuity candidates and schedule-grid geometry remain unaccepted. No official Deferred candidate changed.
+
+### F1009 complete; post-F1009 Deferred audits clear; Batch382 exhausted; Batch383 discovery complete; F1010 accepted - 2026-10-16
+
+F1009 source commit `8a11736b3e8e9206dd3c7571a631a144fc009929` (`Phase2 - Add Speaking Eval template batch policy`) adds a Qt-free policy over ordered report templates and maps the feature enum at the adapter. The PowerPoint service applies it after empty-request rejection and before path planning or staging; mixed PowerPoint requests retain localized rejection and produce no output files or archive. The internal renderer continues to support mixed templates. No intended UI, output, or rendering edge changed.
+
+The independent Tester confirmed CMake configure and ownership validation for 1,504 handwritten sources. Serial Debug builds of `ClassMngr`, the app-less policy target, and `ClassMngrSpeakingEvalBatchReportServiceTests` passed after an elevated `/p:TrackFileAccess=false` retry for Visual Studio FileTracker; the normal build was denied by FileTracker. `ctest -N` confirmed the whole service target, app-less target, and two exact selectors once each. The focused three CTests passed 3/3. No full suite ran.
+
+Two independent post-F1009 audits checked all 13 official Deferred entries against the source commit. All retain their original blockers; none is newly actionable, resolved, or superseded. Keep the official list unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+Batch382 is exhausted. A short Batch383 review of its recorded alternatives ranked academic-year schedule validity strongest; winter-edit continuity follows because its two-level all-or-nothing rule has weaker rejection coverage; schedule-grid geometry remains coupled to parsing and output; and Sub Prep meeting-time grouping is presentation-heavy. F1007 shared student-name edit validation remains pending reconciliation because Roster and Speaking Evaluation validation contracts differ.
+
+F1010, Academic-year schedule validity, is accepted before implementation. Move only the existing rule into Qt-free Next Application, using resolved facts: `termYear`, whether the `QDate` is a valid Monday, and the four term-week counts. Preserve fixed first term year 2026 and inclusive per-term week counts `[1,53]`. Reuse Application's `FirstTermYear` and `MaximumTermWeeks` constants in calendar feature code. Keep QDate validity/weekday extraction, JSON object/type/four-item-array shape and numeric parsing, term arithmetic, rollover, and UI behavior at the feature edge. Route both `AcademicYearSchedule::isValid()` and parsed-schedule validation through the same policy, preserving all-or-nothing profile behavior. Add no term-year/winter-date relation, total-week rule, or overflow restriction.
+
+F1010 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less tests cover the 2025/2026 year boundary, the resolved valid-Monday fact, inclusive week-count boundaries 1 and 53, and rejection of 0 and 54. |
+| Calendar feature | Regress valid Monday versus invalid/non-Monday QDates and boundary mapping; use the Application constants while keeping QDate validation and term arithmetic at the feature edge. |
+| JSON/profile behavior | Route parsed schedule validation through the policy; retain malformed fallback coverage including JSON shape, exact four-item array requirements, and all-or-nothing profile behavior. |
+| Scope | Add no date/year relationship, total-week restriction, overflow restriction, or UI behavior change. |
+| Focused verification | In standard `build/windows-x64-debug`, build the app-less policy target, `ClassMngr`, and `ClassMngrAcademicCalendarTests` serially; run only the app-less policy CTest and exact feature validity and JSON regression selectors. Preserve the whole calendar target registration, offscreen and Windows Qt PATH settings; no full suite. |
