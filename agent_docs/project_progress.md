@@ -6078,11 +6078,37 @@ supplies canonical IDs; no additional platform candidate was found. The
 multi-step Application scan found a retained-file disclosure gap in Initial
 Setup cancellation. If restoration and moving the incomplete profile back
 both fail, the lifecycle retains both files but the controller warning omits
-the incomplete profile's UUID-named recovery path. F1033 is accepted before
-implementation: expose `incompleteRecovery` only when the file remains there,
-clear it when the move fails or the profile is moved back, and include both
-paths in the restore-failure warning when both files are retained. Keep the
-successful-restore cleanup-failure `Canceled` path unchanged. Repeat the
-independent audit of all 13 official Deferred entries after implementation.
-Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
-the Phase 2 exit gate remains Open.
+the incomplete profile's UUID-named recovery path. F1033 was accepted and its
+acceptance record was committed at `c48b380b`. The source slice is complete at
+`725a654f`: `incompleteRecovery` is empty when the incomplete profile is not
+retained at its recovery path, and the restore-failure warning includes both
+labeled paths only when both files remain. The successful-restore
+cleanup-failure `Canceled` path is unchanged.
+
+The Executor built `ClassMngr`,
+`ClassMngrNextApplicationInitialSetupLifecycleTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`; the matching two focused
+CTests passed 2/2. The independent Tester repeated the build and focused tests
+successfully. Ordinary and `/p:TrackFileAccess=false` builds hit Visual Studio
+FileTracker `E_ACCESSDENIED`; the elevated build retry passed. No full suite
+ran.
+
+Two independent post-commit audits reviewed the exact 13 official Deferred
+entries. All remain unchanged and unresolved; none became actionable, resolved,
+or superseded. F579/F598 still require a WPR capture under an enabled
+Administrator token; this session has only a Medium token. F629 still lacks a
+suitable runner exposed in this Windows x64 session, without establishing
+global runner unavailability. The remaining policy, measurement, callsite, and
+projection-injection triggers remain unmet.
+
+Batch411 discovery found F1034: the Speaking Evaluation save adapter returns
+`NotFound` with `recoverable=false` when its database session is unavailable,
+while sibling read adapters report that condition as recoverable. F1034 is
+accepted as a public result-metadata correction, without claiming a current UI
+defect. Mark only the null or closed session result `NotFound,
+recoverable=true`; preserve invalid-input, technical, and missing-parent
+outcomes. Add direct null-service and closed-session assertions, including the
+error code, message, and recoverability, and retain existing technical failure
+coverage. This is separate from the deferred Dense Speaking Evaluation
+row-limit policy. Gates 1/2 remain Partial, F1007 remains pending policy
+reconciliation, and the Phase 2 exit gate remains Open.

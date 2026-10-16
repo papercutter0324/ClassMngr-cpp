@@ -6678,3 +6678,37 @@ incomplete profile is moved back. Preserve existing cancellation/file-move
 behavior and the separate successful-restore cleanup-failure outcome. Gates
 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2 remains
 open.
+
+## F1033 closeout - 2026-10-17
+
+F1033 completed at source commit `725a654f`. Initial Setup cancellation now
+reports the incomplete recovery path only while that profile remains there.
+When both the original and incomplete profiles are retained, the controller
+warning labels and shows both paths; the original-only warning keeps its
+existing wording. The separate successful-restore cleanup-failure result stays
+unchanged.
+
+The focused lifecycle and controller tests directly assert the reported paths
+and retained files. The independent Tester built `ClassMngr` and both focused
+test targets, then passed both matching CTests. Visual Studio FileTracker
+`E_ACCESSDENIED` blocked ordinary and non-tracking build attempts; an elevated
+retry succeeded. No full suite ran.
+
+Two independent post-commit audits checked the exact 13 official Deferred
+entries. All remain unchanged and unresolved, with none newly actionable or
+superseded. The WPR candidates still lack an enabled Administrator token for
+capture, the macOS runner is not exposed in this Windows session, and the
+remaining policy/evidence/callsite/injection triggers remain unmet.
+
+## F1034 accepted - 2026-10-17
+
+Batch411 found that the Speaking Evaluation save adapter marks an unavailable
+database session as `NotFound, recoverable=false`, while its read adapters mark
+the same condition recoverable. This is an observable result-metadata mismatch
+and does not establish a current UI defect. Accept F1034 to mark only a null or
+closed session as `NotFound, recoverable=true`. Preserve invalid input,
+repository technical failures, and the typed missing-parent diagnostic and
+recoverability. Test both null-service and closed-session results directly.
+This candidate is separate from the deferred Dense Speaking Evaluation
+row-limit policy. Gates 1/2 remain Partial, F1007 awaits policy reconciliation,
+and Phase 2 remains open.

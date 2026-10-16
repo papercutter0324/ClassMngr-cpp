@@ -44376,3 +44376,52 @@ The post-F1032 audits remain current: all 13 official Deferred entries are
 unchanged; repeat both audits after F1033 implementation. Gates 1/2 remain
 Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation. F1033 is accepted and pending implementation.
+
+### F1033 complete; post-F1033 Deferred audits clear; Batch410 closed - 2026-10-17
+
+F1033 completes at source commit `725a654f`; its acceptance was recorded in
+documentation commit `c48b380b`. `incompleteRecovery` now represents a
+retained incomplete profile: it is empty when the initial move fails or
+move-back succeeds, and populated when move-back fails and the file remains
+at that path. When `OriginalProfileRestoreFailed` retains both profiles, the
+controller warning reports both labeled paths; the original-backup warning
+remains when no incomplete sibling remains. The successful-restore/cleanup-
+failure `Canceled` case remains unchanged.
+
+The focused Debug build targets were `ClassMngr`,
+`ClassMngrNextApplicationInitialSetupLifecycleTests`, and
+`ClassMngrFileControllerWorkspaceLifecycleTests`; the two matching CTests
+passed 2/2. Ordinary and `/p:TrackFileAccess=false` builds both hit Visual
+Studio FileTracker `E_ACCESSDENIED`; an elevated retry succeeded. No full
+suite ran.
+
+Two independent post-F1033 audits reviewed exactly the 13 official Deferred
+entries. All remain unchanged and unresolved, with none actionable, resolved,
+or superseded. F579/F598 remain blocked by the Medium token and no enabled
+Administrator group for WPR. F629 has no suitable runner exposed in this
+Windows x64 session; this does not establish global runner unavailability.
+The other listed product-policy, evidence, callsite, and injection triggers
+remain unmet. Batch410 is closed. Gates 1/2 remain Partial, the Phase 2 exit
+gate remains Open, and F1007 remains pending policy reconciliation.
+
+### Batch411 discovery and F1034 accepted before implementation - 2026-10-17
+
+Accept F1034 narrowly: the Speaking Evaluation save adapter returns
+`NotFound` with `recoverable == true` when its session is unavailable
+(`m_session == nullptr` or closed). Preserve every other mapping and message,
+including validation failures, repository technical failures, and missing-
+parent diagnostics. This is observable result metadata and does not claim a
+current UI defect. It is separate from the Deferred Dense Speaking Evaluation
+row-limit policy.
+
+Add direct tests for both null-service and closed-session cases that assert
+error code, message, and recoverability; retain technical-error
+nonrecoverability coverage. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`;
+run only the matching CTest
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`.
+No full suite. F1033 at `725a654f` is the latest source commit. The post-F1033
+audits are current: all 13 official Deferred entries remain unchanged; repeat
+both audits after F1034 implementation. Gates 1/2 remain Partial, the Phase 2
+exit gate remains Open, and F1007 remains pending policy reconciliation.
+F1034 is accepted and pending implementation.

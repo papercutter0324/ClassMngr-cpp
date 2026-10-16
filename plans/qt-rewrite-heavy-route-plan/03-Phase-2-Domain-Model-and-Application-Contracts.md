@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1032 is complete at source commit `742299288e8d6785ec8b6bc630a1bc2e6ef4ba5f` and F1033 is accepted in Batch410 pending implementation; post-F1032 audits found all 13 official Deferred entries unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1033 is complete at source commit `725a654f` and F1034 is accepted in Batch411 pending implementation; post-F1033 audits found all 13 official Deferred entries unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch410
+#### Active batch — Batch411
 
-- F1033 - Initial Setup cancellation recovery disclosure — report retained incomplete-profile path accurately and include it in restore-failure warning when present.
+- F1034 - Speaking Evaluation save unavailable-session recoverability — return recoverable `NotFound` for null or closed sessions.
 
 #### Deferred candidates
 
