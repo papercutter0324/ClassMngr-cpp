@@ -44656,3 +44656,35 @@ No other slices were found.
 
 Batch421 discovery is in progress. Gates 1/2 remain Partial, the Phase 2 exit
 gate remains Open, and F1007 remains pending policy reconciliation.
+
+### F1039 accepted before implementation - 2026-10-17
+
+Batch421 identified a missing failure branch in F680's language QAction
+contract: persistence failure was covered, but apply/load/install failure after
+a QAction request had no deterministic action-level coverage. The unqualified
+F680 acceptance matrix at lines 24902-24920 requires preserving the previous
+stored language, checked action, `OptionState`, effective `LanguageService`
+locale, font, and translated UI on failure, issuing one diagnostic, and
+supporting retry. This extends missing F680 coverage; F1039 does not match or
+change any of the 13 official Deferred entries.
+
+Accept F1039 before implementation. Stage and validate the requested locale
+before persistence, preserving the existing effective translator and
+`LanguageService` state if loading or installation fails. Commit storage,
+selected QAction/`OptionState`, and live language as one visible transition.
+If installation fails after persistence succeeds, attempt exact rollback to
+the prior setting and report one diagnostic, including rollback failure when
+applicable. Preserve the F680 persistence-failure behavior and leave
+programmatic `OptionState::set()` behavior unchanged.
+
+Add deterministic QAction-level apply-failure injection. Assert prior
+persistence, action selection, `OptionState`, `LanguageService` enum and
+locale, font, translated UI, and exactly one diagnostic; then verify a
+successful retry updates them together. Also assert the programmatic set path
+remains unchanged. Extend the existing LanguageService,
+LanguagePreferencePort, and MainWindow document-catalog parity targets. Build
+`ClassMngr` and those three existing targets, and run only their three CTests.
+Add no CMake target. F1039 is accepted in Batch421 and pending implementation;
+all 13 official Deferred entries remain unchanged. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.

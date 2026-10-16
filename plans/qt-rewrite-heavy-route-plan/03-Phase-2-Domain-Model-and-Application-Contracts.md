@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1038 is complete at source commit `586a03f3`, all 13 official Deferred entries remain unchanged, and Batch421 discovery is in progress; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1038 is complete at source commit `586a03f3`; F1039 language QAction apply-failure coverage is accepted in Batch421 and awaits implementation; all 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch — Batch421
 
-- Discovery in progress.
+- F1039 — Language QAction apply-failure rollback: stage locale validation before persistence and preserve the prior visible language state on failure; see the progress log for acceptance and focused verification.
 
 #### Deferred candidates
 

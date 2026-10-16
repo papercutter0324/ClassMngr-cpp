@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1038 is complete at source commit `586a03f3`, and Batch421 discovery is in progress. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification, discovery evidence, and open gates.
+- Current milestone: F1038 is complete at source commit `586a03f3`; F1039 language QAction apply-failure coverage is accepted in Batch421 and awaits implementation. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for acceptance, verification, and open gates.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
