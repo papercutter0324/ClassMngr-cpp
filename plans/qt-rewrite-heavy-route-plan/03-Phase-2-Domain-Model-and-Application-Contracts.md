@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1006 is complete at source commit `bbebcc996b51f1de72779e464426747eb900482e`; F1008 is accepted, F1007 remains pending policy reconciliation, and Batch382 queues F1009; one post-F1006 audit found all 13 official Deferred entries unchanged, with Gates 1/2 Partial and the Phase 2 exit gate Open.
+- Current note: F1008 is complete at source commit `3540010f8859f22f99b9d6b53a8103aa08ed4d52`; F1009 is accepted before implementation and F1007 remains pending policy reconciliation; two post-F1008 audits found all 13 official Deferred entries unchanged, with Gates 1/2 Partial and the Phase 2 exit gate Open.
 
 ### Slice discovery batches
 
@@ -115,7 +115,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch382
-  - F1009 - PowerPoint batch single-template consistency: evaluate the narrow Qt-free equality rule; apply only to PowerPoint and preserve empty=true behavior.
+  - F1009 - PowerPoint batch single-template consistency: accepted before implementation; move only the PowerPoint consistency decision into a Qt-free policy and preserve internal mixed-template rendering.
 
 ## Objective
 

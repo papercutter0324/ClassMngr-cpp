@@ -43563,3 +43563,23 @@ F1008 acceptance criteria:
 | Focused verification | Build affected targets in standard `build/windows-x64-debug` and run exact focused CTests only; no full suite. |
 
 F1009, PowerPoint batch single-template consistency, is the next queued Batch382 candidate: evaluate the narrow Qt-free equality rule, apply it only to PowerPoint, and preserve empty=true behavior. F1007 remains pending reconciliation. No official Deferred candidate changed.
+
+### F1008 complete; post-F1008 Deferred audits clear; F1009 accepted - 2026-10-16
+
+F1008 source commit `3540010f8859f22f99b9d6b53a8103aa08ed4d52` moves upcoming-birthday ordering into the Qt-free Next Application use case. Application sorts `today`, `thisWeek`, and `nextWeek` by date, injected text comparison, enum group order, and position; the Qt adapter supplies exact `QString::localeAwareCompare` behavior. CMake regenerated, and `ClassMngr`, `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, and `ClassMngrUpcomingBirthdaysTests` built serially in the standard Windows x64 Debug tree. Standard and `/p:TrackFileAccess=false` in-sandbox builds were denied by FileTracker; elevated retries with `/p:TrackFileAccess=false` passed. Test-target builds emitted MSB8064 warnings for missing generated dependency `src/next/application/teacher_import_plan_mapper.h`, but produced executables. `ctest -N` showed the target registrations and both exact selectors once; the app-less target/selector and feature target/selector passed 4/4. `git diff --check` passed with LF-to-CRLF notices. No full suite ran.
+
+Two independent post-F1008 audits reviewed all 13 official Deferred entries. Each remains unchanged with its original blocker; none is actionable, resolved, or superseded. Keep the Deferred list unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+F1009, PowerPoint batch single-template consistency, is accepted from Batch382 before implementation. Add a Qt-free policy over the ordered existing Next `SpeakingEvaluationReportTemplate` values: empty, single-template, and all-equal lists return true; mixed lists return false. Map the feature enum to the Application enum at the adapter. Preserve the service's empty-request rejection before policy evaluation, call the policy only for PowerPoint and before path planning or staging, and keep the existing localized error and no-output behavior. Preserve mixed-template support in the internal renderer with a focused integration regression. Extend the mixed PowerPoint rejection regression to prove that no output files or archive are created. Keep template mapping, output operations, rendering, and Office automation at the feature edge.
+
+F1009 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less tests cover empty, single, all-equal, and mixed template sequences. |
+| PowerPoint behavior | Verify empty-request rejection precedes the policy; policy applies only to PowerPoint and before path planning/staging; mixed requests retain localized rejection and create no files/archive. |
+| Internal renderer | Add focused integration coverage proving mixed templates remain supported by the internal renderer. |
+| Feature edge | Map the existing feature enum to Application at the adapter; keep output operations, rendering, and Office automation in the feature layer. |
+| Focused verification | In standard `build/windows-x64-debug`, build affected app-less, application, and feature targets serially; add exact CTest selectors for app policy, PowerPoint rejection, and internal renderer mixed-template behavior, retaining Windows Qt offscreen/PATH setup. Run only focused CTests; no full suite. |
+
+F1007, shared student-name edit validation, remains pending because Roster and Speaking Evaluation differ in raw/normalized checks, issue subsets, and messages. Batch382's academic-calendar validity and winter-continuity candidates and schedule-grid geometry remain unaccepted. No official Deferred candidate changed.
