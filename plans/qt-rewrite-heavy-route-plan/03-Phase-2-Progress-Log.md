@@ -43122,3 +43122,36 @@ mutations (excluding B368 directory-read coverage and F953/F961/F967 save
 policy); and live MainWindow/FileController/WorkspaceCoordinator open, close,
 save, save-as, and export result handling (excluding the create-workspace
 contract and Initial Setup cancellation).
+
+### Batch371 closed; Batch372 discovery underway - 2026-10-16
+
+Batch371 was a discovery shortfall. The Teacher/Staff lane found no actionable
+mismatch. Sidebar `addTeacher()` submits a blank name and validation rejects it
+before persistence, as covered by existing tests and Deferred F285. Teacher
+edit preserves the stable ID and distinguishes update from reload errors;
+F960 covers wide-ID save/reload/selection/delete. Co-Teacher retains dirty
+state and warns on save failure, with test coverage. F975 covers duplicate
+choice-ID validation. Teacher Import uses a typed port and refreshes only on
+success; use-case tests cover write/commit rollback. No candidate was selected.
+
+The workspace lane found no actionable current production failure. Open maps
+typed errors to a warning and preserves the existing workspace; save-as/export
+warn and retain state. Close failure is silent, but no concrete reachable
+failure was established in current wiring. `ApplicationServices::saveDatabase()`
+discards `QSqlDatabase::commit()`'s result, while the workspace adapter checks
+only open/path postconditions before the coordinator marks the workspace saved.
+Two independent reviews found no actionable failure at this boundary: current
+explicit transactions are operation-scoped and check commit, no app-owned
+transaction persists until menu Save, and implicit SQLite writes commit when
+their statement completes. Propagating `false` could produce false warnings.
+The port test intentionally starts an external transaction and verifies Save
+commits it; changing this requires a broader transaction-ownership contract.
+No source slice was accepted.
+
+No production or test change followed F994. No official Deferred trigger
+changed; all 13 remain unchanged and the post-F994 all-13 audit remains latest.
+Gates 1/2 remain Partial and the Phase 2 exit gate remains Open. Batch372 is
+underway in two read-only lanes: Testing Classes normal list/details/create/
+edit/delete/selection flows and app-contract mapping; and normal Schedule page
+reads, slot states, edits, and page state, excluding Schedule Import and
+Calendar.

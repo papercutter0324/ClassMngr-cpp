@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F994 at source commit `fcf321e6` remains the latest source slice; Batches364-370 are closed and B371 discovery is underway, with all 13 Deferred entries unchanged, Gates 1/2 Partial, and the Phase 2 exit gate Open.
+- Current note: F994 at source commit `fcf321e6` remains the latest source slice; Batches364-371 are closed and B372 discovery is underway, all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch371 (discovery underway)
-  - Live Teacher/Staff creation, edit, and delete mutation flows - inspect reachable production paths, excluding B368 directory-read coverage and F953/F961/F967 save policy.
-  - Live MainWindow/FileController/WorkspaceCoordinator open, close, save, save-as, and export result handling - inspect reachable callers, excluding the create-workspace contract and Initial Setup cancellation.
+- Batch372 (discovery underway)
+  - Testing Classes normal list, details, create, edit, delete, and selection flows, including app-contract mapping.
+  - Normal Schedule page reads, slot states, edits, and page state, excluding Schedule Import and Calendar.
 
 ## Objective
 
