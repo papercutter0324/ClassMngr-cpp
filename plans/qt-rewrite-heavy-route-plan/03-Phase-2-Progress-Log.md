@@ -42256,3 +42256,134 @@ Two independent post-F979 audits reviewed all 13 official Deferred entries.
 All remain unchanged; none became actionable, resolved, or superseded. F980
 is now active. Batch344's F981-F982 remain queued after Batch343. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F980 complete; F981 active - 2026-10-16
+
+F980 was implemented at source/test commit
+`a9fed8edbaf0c2deeaea1c9583a34d0328704bf1`. It changed only
+`src/next/application/schedule_testing_assignment_read_query.h` and
+`tests/next_application_schedule_testing_assignment_read_query_tests.cpp`.
+Successful query rows now preserve `-1` as unassigned and positive class IDs,
+while rejecting zero and values below `-1`.
+
+The Executor and independent Tester built `ClassMngr` and
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests` in the
+existing shared `build/windows-x64-debug-ninja` directory; the exact CTest
+passed (1/1), and `git diff --check` passed. The designated
+`build/windows-x64-debug` Visual Studio attempt failed before compilation with
+FileTracker `E_ACCESSDENIED`. Inspection found prior-run diagnostic/database
+data there, so the directory was not cleared. No full suite ran.
+
+Two independent post-F980 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, or superseded. F981
+is now active; F982 follows. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.
+
+### F981 complete; F982 active - 2026-10-16
+
+F981 was implemented at source/test commit
+`0fd681c3ddc590c228e11513bcc4a4885e9b9666`. It validates both
+`ScheduleImportStateKind` and `ScheduleImportStateIntensiveMode` in
+`validateScheduleImportState()` and returns specific validation errors for
+unknown values before candidate-index and projection validation/handling.
+
+The independent Tester built
+`ClassMngrNextApplicationScheduleImportStateValidationTests` in the existing
+shared `build/windows-x64-debug-ninja` directory; the exact CTest passed
+(1/1), and `git diff --check` passed. As with F980, the designated
+`build/windows-x64-debug` Visual Studio attempt stopped before compilation
+with FileTracker `E_ACCESSDENIED`; prior-run diagnostic/database data was
+found, so that directory was not cleared. No full suite ran.
+
+Two independent post-F981 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, or superseded. F982
+is now active. Gates 1/2 remain Partial and the formal Phase 2 exit gate
+remains Open.
+
+### Batch345 closed; F983 accepted after F982 - 2026-10-16
+
+The independent Domain and Application discovery lanes converged on F983:
+reject unknown `ScheduleImportStateTeacherAction` and
+`ScheduleImportStateClassAction` values with specific validation errors
+before action-dependent processing, while preserving every declared action.
+Extend `tests/next_application_schedule_import_state_validation_tests.cpp`
+with unknown-action cases, including an unknown class action combined with an
+out-of-range candidate index, to prove the enum error is reported first.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationScheduleImportStateValidationTests`; run only the
+exact CTest registration of that name. Do not run the full suite. No other
+slices were found. F982 remains the active slice, with F983 queued after it.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F982 complete; F983 active - 2026-10-16
+
+F982 was implemented at source/test commit `ac1be9a1` in
+`src/next/application/class_day_filter_policy.h` and
+`tests/next_application_class_day_filter_policy_tests.cpp`. The class-day
+filter now returns false for unknown schedule-source or visibility-scope
+values while preserving declared-value behavior. The focused
+`ClassMngrNextApplicationClassDayFilterPolicyTests` CTest passed (1/1) using
+the existing shared `build/windows-x64-debug-ninja` fallback. The designated
+`build/windows-x64-debug` Visual Studio directory remains uncleared because
+it contains prior-run diagnostic/database data; its FileTracker attempt
+failed before compilation with `E_ACCESSDENIED`. No full suite ran.
+
+### F983 complete; F984 active - 2026-10-16
+
+F983 was implemented at source/test commit `7651956c` in
+`src/next/application/schedule_import_state_validation.h` and
+`tests/next_application_schedule_import_state_validation_tests.cpp`. It
+rejects unknown `ScheduleImportStateTeacherAction` and
+`ScheduleImportStateClassAction` values with specific validation errors
+before candidate-index and projection validation/handling, preserving
+declared actions. The focused
+`ClassMngrNextApplicationScheduleImportStateValidationTests` CTest passed
+(1/1) using the existing shared Ninja fallback, and `git diff --check` passed;
+the designated Visual Studio
+`build/windows-x64-debug` attempt had the same pre-compilation FileTracker
+limitation described above.
+No full suite ran.
+
+Two independent post-F983 audits reviewed all 13 official Deferred entries;
+all remain unchanged, and none became actionable, resolved, or superseded.
+
+### F984 complete; F985 active in Batch346 - 2026-10-16
+
+F984 was implemented at source/test commit `8ca2d139` in
+`src/next/application/import_job_coordinator.h`,
+`src/next/application/report_job_coordinator.h`,
+`tests/next_application_import_job_coordinator_tests.cpp`, and
+`tests/next_application_report_job_coordinator_tests.cpp`. The Import and
+Report event queues reject unknown kinds in `ImportJobEventQueue::post` and
+`ReportJobEventQueue::post`, respectively. Verification built `ClassMngr`,
+`ClassMngrNextApplicationImportJobCoordinatorTests`, and
+`ClassMngrNextApplicationReportJobCoordinatorTests` in the existing shared
+`build/windows-x64-debug-ninja` fallback; the exact two CTests passed (2/2),
+and `git diff --check` passed. The designated
+`build/windows-x64-debug` Visual Studio directory was not cleared due to
+prior-run diagnostic/database data; its FileTracker attempt failed before
+compilation with `E_ACCESSDENIED`. No full suite ran.
+
+Two independent post-F984 audits reviewed all 13 official Deferred entries;
+all remain unchanged, and none became actionable, resolved, or superseded.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+
+Batch346 has F985 active. Its accepted criteria are:
+
+1. Reject unknown `ScheduleImportMatchingKind` values with a typed, explicit
+   failure.
+2. Propagate that failure safely through the repository and review dialog.
+3. Validate upstream `ScheduleImportKind` at both adapters so invalid values
+   cannot be normalized to `Normal`.
+4. Preserve behavior for the declared `Normal` and `Intensive` values.
+
+### Batch347 in progress; F986-F987 queued after Batch346 - 2026-10-16
+
+Batch347 has accepted two slices to follow active F985. F986 omits candidates
+with an unknown `UpcomingBirthdayStaffGroup`, preventing the feature adapter's
+fallback from misclassifying them as `KoreanTeacher`. F987 makes an unknown
+`speakingEvaluationGradeLabel` enum an explicit optional result and adapts its
+callers while preserving declared labels and the roster `N/A` behavior.
+F986 and F987 are queued after Batch346; F985 remains the only active-batch
+entry. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

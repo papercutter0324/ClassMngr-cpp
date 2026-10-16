@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F980 is active; Batch344's F981-F982 remain queued after Batch343, two post-F979 audits found all 13 official Deferred entries unchanged, and Gates 1/2 remain Partial with the formal Phase 2 exit gate Open.
+- Current note: F985 is active in Batch346 and Batch347's F986-F987 are queued after it; two post-F984 audits found all 13 official Deferred entries unchanged, and Gates 1/2 remain Partial with the formal Phase 2 exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F980 — Active: reject invalid Schedule Testing Assignment class IDs while preserving `-1` as unassigned and positive IDs.
+- F985 — Active: reject unknown Schedule Import matching kinds and validate upstream kinds at both adapters while preserving Normal and Intensive.
 
 ## Objective
 
