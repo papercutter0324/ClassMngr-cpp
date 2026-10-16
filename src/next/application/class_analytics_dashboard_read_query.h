@@ -2,6 +2,7 @@
 
 #include "next/application/class_analytics_dashboard_read_port.h"
 #include "next/application/class_analytics_numeric_policy.h"
+#include "next/application/class_analytics_ranking_order_policy.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/domain/speaking_evaluation_grade.h"
 
@@ -411,16 +412,33 @@ namespace ClassAnalyticsDashboardReadDetail
         }
     }
 
-    std::sort(
-        snapshot.rankings.begin(), snapshot.rankings.end(),
-        [&names](const ClassAnalyticsStudentRank& left,
-                 const ClassAnalyticsStudentRank& right)
-        {
-            if (left.overall3 != right.overall3)
-                return left.overall3 > right.overall3;
-            return names.compareEnglishNames(left.englishName,
-                                             right.englishName) < 0;
-        });
+    std::vector<int> rankingScoreKeys;
+    rankingScoreKeys.reserve(snapshot.rankings.size());
+    for (const ClassAnalyticsStudentRank& rank : snapshot.rankings)
+    {
+        rankingScoreKeys.push_back(
+            ClassAnalyticsNumericPolicy::roundToThousandths(rank.overall3));
+    }
+    const std::vector<std::size_t> rankingOrder =
+        ClassAnalyticsRankingOrderPolicy::orderByScoreThenName(
+            rankingScoreKeys,
+            [&names, &rankings = snapshot.rankings](
+                const std::size_t left,
+                const std::size_t right
+                )
+            {
+                return names.compareEnglishNames(
+                    rankings[left].englishName,
+                    rankings[right].englishName);
+            });
+    std::vector<ClassAnalyticsStudentRank> orderedRankings;
+    orderedRankings.reserve(snapshot.rankings.size());
+    for (const std::size_t sourceIndex : rankingOrder)
+    {
+        orderedRankings.push_back(
+            std::move(snapshot.rankings[sourceIndex]));
+    }
+    snapshot.rankings = std::move(orderedRankings);
     return snapshot;
 }
 

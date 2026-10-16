@@ -46,6 +46,7 @@ private slots:
     void roundedClassAverageAtGradeBoundaryAdvances();
     void strongestAndFocusTies();
     void computeFullMatrix();
+    void rankingUsesScoreThenLocaleAwareName();
     void computePartialCriterion();
     void consolidatesStudentsAcrossEvaluations();
     void computeEmpty();
@@ -244,6 +245,49 @@ void SpeakingAnalyticsTests::computeFullMatrix()
     QCOMPARE(snap.rankings.at(2).englishName, QStringLiteral("Ben"));
     QCOMPARE(snap.rankings.at(2).overall3, 2.0);
     QCOMPARE(snap.rankings.at(2).overallLetter, QStringLiteral("B"));
+}
+
+void SpeakingAnalyticsTests::rankingUsesScoreThenLocaleAwareName()
+{
+    SpeakingEvalRows matrix;
+    // A 112-row baseline gives 672 scored cells per student. One extra point
+    // rounds from 3.000 to 3.001, so the later name must rank first.
+    for (int repeat = 0; repeat < 112; ++repeat)
+    {
+        matrix.append(makeRow(
+            QStringLiteral("Mia"), QString(), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+"), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+")));
+        matrix.append(makeRow(
+            QStringLiteral("Bea"), QString(), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+"), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+")));
+        matrix.append(makeRow(
+            QStringLiteral("Amy"), QString(), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+"), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+")));
+        QStringList higher = makeRow(
+            QStringLiteral("Zed"), QString(), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+"), QStringLiteral("B+"),
+            QStringLiteral("B+"), QStringLiteral("B+"));
+        if (repeat == 0)
+            higher[3] = QStringLiteral("A");
+        matrix.append(higher);
+    }
+
+    const auto snapshot = SpeakingAnalytics::compute({ matrix }, 4);
+    QCOMPARE(snapshot.rankings.size(), 4);
+    QCOMPARE(snapshot.rankings.at(0).englishName, QStringLiteral("Zed"));
+    QCOMPARE(snapshot.rankings.at(0).overall3, 3.001);
+    QCOMPARE(snapshot.rankings.at(1).englishName, QStringLiteral("Amy"));
+    QCOMPARE(snapshot.rankings.at(1).overall3, 3.0);
+    QCOMPARE(snapshot.rankings.at(2).englishName, QStringLiteral("Bea"));
+    QCOMPARE(snapshot.rankings.at(3).englishName, QStringLiteral("Mia"));
+    for (const SpeakingAnalytics::StudentRank& rank : snapshot.rankings)
+    {
+        QCOMPARE(rank.overallLetter, QStringLiteral("B+"));
+        QCOMPARE(rank.fullyScored, true);
+    }
 }
 
 void SpeakingAnalyticsTests::computePartialCriterion()

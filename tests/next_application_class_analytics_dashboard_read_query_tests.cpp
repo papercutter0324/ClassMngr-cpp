@@ -276,6 +276,33 @@ void duplicateRowsConsolidateAndRankingTiesUseNamePort()
     assert(selected.rankings[1].overall3 == 3.0);
 }
 
+void adjacentRoundedScoresRankBeforeNamePort()
+{
+    FakeReadPort port;
+    // 112 rows provide 672 score cells per student. One extra point therefore
+    // rounds to an adjacent thousandth: 3.001 must beat 3.000 even though Amy
+    // sorts before Zed by name.
+    for (int repeat = 0; repeat < 112; ++repeat)
+    {
+        port.evaluations[0].push_back(row(u"Amy", u"", u"B+"));
+        ClassAnalyticsEvaluationRow higher = row(u"Zed", u"", u"B+");
+        if (repeat == 0) higher.scores[0] = u"A";
+        port.evaluations[0].push_back(std::move(higher));
+    }
+    const TestNameSemantics names;
+
+    const auto result = run(port, names, u"Winter");
+    assert(result);
+    const auto& rankings = result.value().selectedSnapshot.rankings;
+    assert(rankings.size() == 2);
+    assert(rankings[0].englishName == u"Zed");
+    assert(rankings[0].overall3 == 3.001);
+    assert(rankings[0].overallLetter == u"B+");
+    assert(rankings[1].englishName == u"Amy");
+    assert(rankings[1].overall3 == 3.0);
+    assert(rankings[1].overallLetter == u"B+");
+}
+
 void emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd()
 {
     FakeReadPort port;
@@ -421,6 +448,7 @@ int main()
     canonicalOrderLatestClassShapeAndYtd();
     currentRosterUsesNormalizedEnglishAndKoreanIdentities();
     duplicateRowsConsolidateAndRankingTiesUseNamePort();
+    adjacentRoundedScoresRankBeforeNamePort();
     emptyRosterLeavesEvaluationRowsUnfilteredAndPartialScoresDoNotMakeYtd();
     missingAndUnknownSelectionKeepGlobalYtdWhileUnknownSelectionIsEmpty();
     selectedEvaluationStillReadsEveryYtdInputInOneBatch();

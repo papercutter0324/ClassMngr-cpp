@@ -125,6 +125,37 @@ add_test(
     COMMAND ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
 )
 
+# Ranking order uses prepared integer keys and remains independent of Qt.
+add_executable(
+    ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+    tests/next_application_class_analytics_ranking_order_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+    COMMAND ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+)
+
 classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassAnalyticsDashboardReadPort
     SOURCES
