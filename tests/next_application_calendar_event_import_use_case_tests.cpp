@@ -122,27 +122,21 @@ CalendarEventSaveRequest saveRequest(std::string title)
     return request;
 }
 
-CalendarEventImportSignature signature(std::u16string title)
+CalendarEventImportCandidate candidate(CalendarEventSaveRequest saveRequest)
 {
-    return CalendarEventImportSignature::fromNormalizedFields({
-        .simplifiedTitle = std::move(title),
-        .normalizedEventType = u"Other",
-        .startDateIso = u"2026-02-03",
-        .endDateIso = u"2026-02-03",
-        .allDay = false,
-        .normalizedTimeStatus = u"Unknown"
-    });
+    const auto signature = CalendarEventImportIdentity::fromSaveRequest(
+        saveRequest
+        );
+    Q_ASSERT(signature.has_value());
+    return {
+        .signature = *signature,
+        .saveRequest = std::move(saveRequest)
+    };
 }
 
-CalendarEventImportCandidate candidate(
-    CalendarEventImportSignature signature,
-    std::string title
-    )
+CalendarEventImportCandidate candidate(std::string title)
 {
-    return {
-        .signature = std::move(signature),
-        .saveRequest = saveRequest(std::move(title))
-    };
+    return candidate(saveRequest(std::move(title)));
 }
 
 Domain::CalendarEventId calendarEventId(const int value)
@@ -171,11 +165,16 @@ private slots:
     void emptyInputSkipsPortsAndPreservesParserSkipCount();
     void invalidCandidateFailsBeforeCallingEitherPort();
     void candidateIdFailsBeforeCallingEitherPort();
+    void forgedSignatureFailsBeforeCallingEitherPort();
+    void normalizedTitleMatchesQtSimplifiedWhitespace();
+    void signatureRangeMustCoverEveryCandidateDate();
+    void signatureRangeMustCoverCandidateStartDate();
     void acceptedCandidatesStayOrderedAndCountsMatch();
     void duplicateOnlyInputStillSavesAnEmptyBatch();
     void duplicateHeavyInputIsFilteredBeforeApplyingSaveLimit();
     void filteredBatchAboveSaveLimitFailsBeforeSaving();
     void signatureIdentityRemainsExactUtf16();
+    void signatureIncludesEveryIdentityFieldButExcludesTimes();
     void queryFailurePropagatesWithoutSaving();
     void saveFailurePropagatesAfterPreparation();
 };
@@ -214,8 +213,8 @@ invalidCandidateFailsBeforeCallingEitherPort()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.candidates = {
-        candidate(signature(u"valid"), "Valid candidate"),
-        candidate(signature(u"invalid"), " \t ")
+        candidate("Valid candidate"),
+        candidate(" \t ")
     };
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
@@ -238,10 +237,7 @@ candidateIdFailsBeforeCallingEitherPort()
     CalendarEventImportUseCaseRequest request = requestWithRange();
     CalendarEventSaveRequest updateRequest = saveRequest("Existing event");
     updateRequest.id = calendarEventId(17);
-    request.candidates = {{
-        .signature = signature(u"update"),
-        .saveRequest = std::move(updateRequest)
-    }};
+    request.candidates = {candidate(std::move(updateRequest))};
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
 
@@ -262,20 +258,139 @@ candidateIdFailsBeforeCallingEitherPort()
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::
+forgedSignatureFailsBeforeCallingEitherPort()
+{
+    CalendarEventImportUseCaseRequest request = requestWithRange();
+    CalendarEventImportCandidate forged = candidate("Trusted payload");
+    forged.signature = candidate("Different identity").signature;
+    request.candidates = {std::move(forged)};
+    FakeSignatureQueryPort queryPort;
+    FakeSavePort savePort;
+    RecordingObserver observer;
+
+    const auto result = CalendarEventImportUseCase::execute(
+        request,
+        queryPort,
+        savePort,
+        &observer
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(queryPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(observer.stages.empty());
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
+normalizedTitleMatchesQtSimplifiedWhitespace()
+{
+    const QString sourceTitle = QStringLiteral(
+        "\u00a0  Plan\t\u2003\u00a0 Review\u0085"
+        );
+    CalendarEventImportUseCaseRequest request = requestWithRange();
+    const CalendarEventImportCandidate normalized = candidate("Plan Review");
+    const CalendarEventImportCandidate source = candidate(saveRequest(
+        sourceTitle.toUtf8().toStdString()
+        ));
+    request.candidates = {source};
+
+    std::u16string expectedSignature =
+        sourceTitle.simplified().toStdU16String();
+    expectedSignature.append(u"|Other|2026-02-03|2026-02-03|0|Unknown");
+    QVERIFY(source.signature.value() == expectedSignature);
+    QVERIFY(source.signature == normalized.signature);
+
+    FakeSignatureQueryPort queryPort;
+    queryPort.signatures = {normalized.signature};
+    FakeSavePort savePort;
+
+    const auto result = CalendarEventImportUseCase::execute(
+        request,
+        queryPort,
+        savePort
+        );
+
+    QVERIFY(result);
+    QCOMPARE(result.value().importedCount, 0);
+    QCOMPARE(result.value().skippedCount, 1);
+    QCOMPARE(queryPort.callCount, 1);
+    QCOMPARE(savePort.callCount, 1);
+    QVERIFY(savePort.lastRequest.events.empty());
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
+signatureRangeMustCoverEveryCandidateDate()
+{
+    CalendarEventImportUseCaseRequest request = requestWithRange();
+    CalendarEventSaveRequest spanningRequest = saveRequest("Range boundary");
+    spanningRequest.startDate = "2026-02-28";
+    spanningRequest.endDate = "2026-03-01";
+    request.candidates = {candidate(std::move(spanningRequest))};
+    FakeSignatureQueryPort queryPort;
+    FakeSavePort savePort;
+    RecordingObserver observer;
+
+    const auto result = CalendarEventImportUseCase::execute(
+        request,
+        queryPort,
+        savePort,
+        &observer
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(queryPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(observer.stages.empty());
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
+signatureRangeMustCoverCandidateStartDate()
+{
+    CalendarEventImportUseCaseRequest request = requestWithRange();
+    CalendarEventSaveRequest earlyStartRequest = saveRequest("Early start");
+    earlyStartRequest.startDate = "2026-01-31";
+    earlyStartRequest.endDate = "2026-02-03";
+    request.candidates = {candidate(std::move(earlyStartRequest))};
+    FakeSignatureQueryPort queryPort;
+    FakeSavePort savePort;
+    RecordingObserver observer;
+
+    const auto result = CalendarEventImportUseCase::execute(
+        request,
+        queryPort,
+        savePort,
+        &observer
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(queryPort.callCount, 0);
+    QCOMPARE(savePort.callCount, 0);
+    QVERIFY(observer.stages.empty());
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
 acceptedCandidatesStayOrderedAndCountsMatch()
 {
     const std::string multibyteTitle = repeatedHangulTitle(86);
+    const CalendarEventImportCandidate existingDuplicate =
+        candidate("Existing duplicate");
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 4;
     request.candidates = {
-        candidate(signature(u"new-a"), multibyteTitle),
-        candidate(signature(u"existing"), "Existing duplicate"),
-        candidate(signature(u"new-b"), "Second accepted"),
-        candidate(signature(u"new-a"), "In-batch duplicate")
+        candidate(multibyteTitle),
+        existingDuplicate,
+        candidate("Second accepted"),
+        candidate(multibyteTitle)
     };
 
     FakeSignatureQueryPort queryPort;
-    queryPort.signatures = {signature(u"existing"), signature(u"existing")};
+    queryPort.signatures = {
+        existingDuplicate.signature,
+        existingDuplicate.signature
+    };
     FakeSavePort savePort;
     savePort.returnedIds = {calendarEventId(31), calendarEventId(32)};
     RecordingObserver observer;
@@ -318,10 +433,11 @@ duplicateOnlyInputStillSavesAnEmptyBatch()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 2;
-    request.candidates = {candidate(signature(u"existing"), "Duplicate")};
+    const CalendarEventImportCandidate duplicate = candidate("Duplicate");
+    request.candidates = {duplicate};
 
     FakeSignatureQueryPort queryPort;
-    queryPort.signatures = {signature(u"existing")};
+    queryPort.signatures = {duplicate.signature};
     FakeSavePort savePort;
 
     const auto result = CalendarEventImportUseCase::execute(
@@ -346,17 +462,12 @@ void NextApplicationCalendarEventImportUseCaseTests::
 duplicateHeavyInputIsFilteredBeforeApplyingSaveLimit()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    const CalendarEventImportSignature duplicateSignature =
-        signature(u"repeated event");
     request.candidates.reserve(kCalendarEventImportSaveMaxEvents + 1);
     for (std::size_t index = 0;
          index < kCalendarEventImportSaveMaxEvents + 1;
          ++index)
     {
-        request.candidates.push_back(candidate(
-            duplicateSignature,
-            "Repeated candidate"
-            ));
+        request.candidates.push_back(candidate("Repeated candidate"));
     }
 
     FakeSignatureQueryPort queryPort;
@@ -390,14 +501,7 @@ filteredBatchAboveSaveLimitFailsBeforeSaving()
          ++index)
     {
         const std::string suffix = std::to_string(index);
-        const std::u16string signatureTitle(
-            suffix.begin(),
-            suffix.end()
-            );
-        request.candidates.push_back(candidate(
-            signature(signatureTitle),
-            "Candidate " + suffix
-            ));
+        request.candidates.push_back(candidate("Candidate " + suffix));
     }
 
     FakeSignatureQueryPort queryPort;
@@ -418,20 +522,25 @@ filteredBatchAboveSaveLimitFailsBeforeSaving()
 void NextApplicationCalendarEventImportUseCaseTests::
 signatureIdentityRemainsExactUtf16()
 {
-    const CalendarEventImportSignature loneSurrogate = signature(
-        std::u16string(1, static_cast<char16_t>(0xD800))
-        );
+    const QString supplementaryTitle = QStringLiteral("Launch \U0001f680");
+    const CalendarEventImportCandidate exactUtf16 = candidate(saveRequest(
+        supplementaryTitle.toUtf8().toStdString()
+        ));
+    std::u16string expectedUtf16 =
+        supplementaryTitle.simplified().toStdU16String();
+    expectedUtf16.append(u"|Other|2026-02-03|2026-02-03|0|Unknown");
+    QVERIFY(exactUtf16.signature.value() == expectedUtf16);
+
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.candidates = {
-        candidate(signature(u"case-sensitive"), "Different case"),
-        candidate(signature(u"CASE-SENSITIVE"), "Exact match"),
-        candidate(loneSurrogate, "Unpaired surrogate")
+        candidate("case-sensitive"),
+        candidate("CASE-SENSITIVE")
     };
 
     FakeSignatureQueryPort queryPort;
-    queryPort.signatures = {signature(u"CASE-SENSITIVE")};
+    queryPort.signatures = {candidate("CASE-SENSITIVE").signature};
     FakeSavePort savePort;
-    savePort.returnedIds = {calendarEventId(41), calendarEventId(42)};
+    savePort.returnedIds = {calendarEventId(41)};
 
     const auto result = CalendarEventImportUseCase::execute(
         request,
@@ -440,24 +549,66 @@ signatureIdentityRemainsExactUtf16()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().importedCount, 2);
+    QCOMPARE(result.value().importedCount, 1);
     QCOMPARE(result.value().skippedCount, 1);
-    QCOMPARE(savePort.lastRequest.events.size(), std::size_t(2));
+    QCOMPARE(savePort.lastRequest.events.size(), std::size_t(1));
     QCOMPARE(
         QString::fromStdString(savePort.lastRequest.events.at(0).title),
-        QStringLiteral("Different case")
+        QStringLiteral("case-sensitive")
         );
-    QCOMPARE(
-        QString::fromStdString(savePort.lastRequest.events.at(1).title),
-        QStringLiteral("Unpaired surrogate")
-        );
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
+signatureIncludesEveryIdentityFieldButExcludesTimes()
+{
+    CalendarEventSaveRequest baseRequest = saveRequest("Identity");
+    baseRequest.startDate = "2026-02-03";
+    baseRequest.endDate = "2026-02-05";
+    baseRequest.timeStatus = "Timed";
+    baseRequest.startTime = "09:00";
+    baseRequest.endTime = "10:00";
+    const CalendarEventImportSignature original =
+        candidate(baseRequest).signature;
+
+    CalendarEventSaveRequest changed = baseRequest;
+    changed.title = "Different identity";
+    QVERIFY(candidate(changed).signature != original);
+
+    changed = baseRequest;
+    changed.eventType = "Meeting";
+    QVERIFY(candidate(changed).signature != original);
+
+    changed = baseRequest;
+    changed.startDate = "2026-02-04";
+    QVERIFY(candidate(changed).signature != original);
+
+    changed = baseRequest;
+    changed.endDate = "2026-02-06";
+    QVERIFY(candidate(changed).signature != original);
+
+    changed = baseRequest;
+    changed.allDay = true;
+    changed.startTime.reset();
+    changed.endTime.reset();
+    QVERIFY(candidate(changed).signature != original);
+
+    changed = baseRequest;
+    changed.timeStatus = "Unconfirmed";
+    changed.startTime.reset();
+    changed.endTime.reset();
+    QVERIFY(candidate(changed).signature != original);
+
+    changed = baseRequest;
+    changed.startTime = "14:00";
+    changed.endTime = "15:00";
+    QVERIFY(candidate(changed).signature == original);
 }
 
 void NextApplicationCalendarEventImportUseCaseTests::
 queryFailurePropagatesWithoutSaving()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
-    request.candidates = {candidate(signature(u"candidate"), "Candidate")};
+    request.candidates = {candidate("Candidate")};
     FakeSignatureQueryPort queryPort;
     const Domain::OperationError expectedError =
         sampleError("signature lookup failed");
@@ -481,7 +632,7 @@ saveFailurePropagatesAfterPreparation()
 {
     CalendarEventImportUseCaseRequest request = requestWithRange();
     request.initiallySkippedCount = 3;
-    request.candidates = {candidate(signature(u"candidate"), "Candidate")};
+    request.candidates = {candidate("Candidate")};
     FakeSignatureQueryPort queryPort;
     FakeSavePort savePort;
     const Domain::OperationError expectedError = sampleError("batch save failed");
