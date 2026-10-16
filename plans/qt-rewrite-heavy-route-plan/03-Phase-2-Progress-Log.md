@@ -42574,3 +42574,19 @@ checking the Phase 2 rule against DataService, MainWindow, PageManager, and
 widget dependencies. No candidate has been accepted. The 13 official Deferred
 entries remain unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+### Batch352 closed; Batch353 discovery underway - 2026-10-16
+
+The CMake boundary review found no Domain link dependencies; Application links
+only Domain and Persistence, Platform links Application and QtCore, and the
+Next executable links QtCore. The source scan found no forbidden
+DataService/MainWindow/PageManager/widget references in Domain or Application.
+
+The reachable Class Transfer adapter stores `ApplicationServices*` but only
+accesses `databaseSession()` and its repository. This is the existing
+platform/legacy-host bridge; no concrete DataService dependency or clear Phase
+2 boundary violation was found. No other slices were found.
+
+Batch353 discovery has started. The 13 official Deferred entries remain
+unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
