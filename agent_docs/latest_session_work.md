@@ -5862,40 +5862,36 @@ order is computed only within the earliest day. The next action is the F1014
 closeout/F1015 acceptance-doc checkpoint; after it lands, begin F1015
 implementation. Unrelated untracked artifacts remain untouched.
 
-## Current continuation - 2026-10-17 (F1019 complete; F1021 accepted)
+## Current continuation - 2026-10-17 (F1021 complete; F1022 accepted)
 
-F1020 completed at source commit `6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848`;
-its focused app-less CTest passed 1/1 and the named page QtTest passed 3/3.
-F1019 completed at source commit `85849c85574b1478c15ab8b3b8c9e281e93401a`.
-The Qt-free policy compares prepared shared Class Tab ordering facts. The model
-retains raw parsing, regular/intensive order-source choice, label behavior,
-locale comparison, and downstream page selection. A nonempty Regular list
-supplies order facts; the existing label helper may still fall back to
-Intensive when Regular has no displayable time. Unknown weekday with valid
-time retains day sentinel 1000 and the valid minute; 1000 can tie valid 16:40.
-The slice also covers seconds truncation, malformed Regular data, labels,
-selected-ID restoration, and first-tab default selection.
+F1021 completed at source commit `4d13f0e04903d751168936376d65d0258c44d937`;
+the range-contract comment is separately committed as
+`5a86ee39d7b8b8b7f3e35b3c7968e3fff989a7a4`. Its Qt-free policy rounds finite
+averages in [0,5] half-up to thousandths and computes grade from those
+thousandths at fractional >=400, preserving 0/5 clamps. Exact 2.400 now
+advances to grade 3/B+; feature `QLocale` formatting, aggregate calculation,
+canonical grade mappings, and YTD eligibility remain in the consumers.
 
-Independent Tester built `ClassMngr`, policy, shared-model, and page targets in
-Debug Ninja/MSVC/Qt 6.12. All 13 selected model methods passed (QtTest 15/15
-including setup/cleanup), policy CTest passed 1/1 with five internal checks,
-and the two page selectors passed (QtTest 4/4 including setup/cleanup). A
-mistyped label separator in two expectations was corrected before final
-verification. Independent source review confirmed identical facts compare
-false both ways and the feature supplies `QString::localeAwareCompare`.
-Two independent post-commit audits found all 13 official Deferred entries
-unchanged. No full suite ran. Optional Vulkan/long-object-path warnings and
-existing page-test font/database warnings were nonfatal. Preserve pre-existing
-untracked `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`,
-`stdout`, and `txt` artifacts.
+Independent source review confirmed both consumers call the policy and their
+presentation/aggregation remain unchanged. Debug Ninja/MSVC/Qt 6.12 CTest ran
+the Speaking Analytics, Application analytics query, and Class Analytics
+page-parity registrations: 3/3 passed, including 2.399/2.400, 2.3995 rounding,
+both B+ computation paths, partial scores, and fully-scored YTD eligibility.
+Ninja reported all build targets already up to date, so the retry performed no
+new compilation. No full suite ran. Two independent post-commit audits found
+all 13 official Deferred entries unchanged. Preserve pre-existing untracked
+`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt` artifacts.
 
-F1021 is accepted next: unify the feature and Application policies for
-three-decimal average rounding and grade conversion, leaving aggregation,
-canonical grade mapping, YTD eligibility, and `QLocale` presentation in place.
-Valid computed averages derive from 1–5 score values; round positive averages
-half-up to thousandths, then grade using integer thousandths at the 400
-fractional threshold with existing 0/5 clamps. Exact 2.400 must advance to
-grade 3 because binary subtraction currently lands just below 0.4; pin that
-behavior and a 2.3995 average-rounding tie. After F1021, F1022 (Sub Prep print
-grouping/order) remains the next Batch389 candidate. Gates 1/2 remain Partial
-and Phase 2 exit remains Open.
+F1022 is accepted next as an ordering policy over prepared teacher/class facts
+that returns indexes into its original input. The feature retains validation
+filters and first-occurrence duplicate handling; it prepares locale sort keys,
+configured grade/level ranks, and the earliest valid selected-mode meeting
+key. Policy order is teacher: English-name present, English, Korean, ID; then
+class: grade rank, level rank, weekday rank, start minute, class ID. Seconds do
+not affect this order. Leave schedule parsing, localized labels, exact-time
+grouping, label deduplication, renderer data, colors, and pagination in the
+feature layer. Focus verification on policy ordering, model integration,
+mapper behavior, and PDF order/color/page-break behavior. F1022 is the final
+remaining Batch389 slice. Gates 1/2 remain Partial and Phase 2 exit remains
+Open.

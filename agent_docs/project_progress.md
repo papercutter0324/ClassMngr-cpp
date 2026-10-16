@@ -5930,9 +5930,17 @@ parsing, ordering-source selection, labels, locale comparison, and page
 selection behavior. All 13 focused model methods passed (QtTest 15/15 including
 setup/cleanup), policy CTest passed 1/1, and two page selectors passed (QtTest
 4/4 including setup/cleanup). Two independent post-commit audits found all 13
-official Deferred entries unchanged. F1021 is accepted next: unify average
-rounding and grade conversion over analytics averages from canonical scores
-1–5. Compute grade from the rounded thousandths so exact 2.400 advances at the
-existing >=0.4 boundary; preserve locale formatting and analytics aggregation.
-F1022 remains the next Batch389 candidate after F1021. Gates 1/2 remain Partial
-and the formal Phase 2 exit gate remains Open.
+official Deferred entries unchanged. F1021, Class Analytics average and grade
+rounding, is complete across source commit
+`4d13f0e04903d751168936376d65d0258c44d937` and range-contract comment commit
+`5a86ee39d7b8b8b7f3e35b3c7968e3fff989a7a4`. Its shared Qt-free policy rounds
+finite [0,5] averages to three decimals and derives grade from integer
+thousandths, fixing the exact 2.400 >=0.4 threshold. The focused analytics and
+page parity CTest registrations passed 3/3; Ninja reported targets up to date,
+so the retry did not recompile. Two independent audits found all 13 official
+Deferred entries unchanged, including the Class Analytics allocation-cap and
+Dense Speaking Evaluation row-limit items. F1022, Sub Prep print grouping and
+order, is accepted next: order prepared teacher/class facts through a Qt-free
+index policy while the feature retains filters, parsing, labels, meeting
+formatting, and PDF rendering. Gates 1/2 remain Partial and the formal Phase 2
+exit gate remains Open.

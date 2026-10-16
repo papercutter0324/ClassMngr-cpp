@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1019, Class Tab navigation sorting, is complete at source commit `85849c85574b1478c15ab8b3b8c9e281e93401a`; F1021, Speaking Evaluation grade/average alignment, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1021, Speaking Evaluation grade/average alignment, is complete at source commit `4d13f0e04903d751168936376d65d0258c44d937` with range-comment follow-up `5a86ee39d7b8b8b7f3e35b3c7968e3fff989a7a4`; F1022, Sub Prep print grouping/order, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,8 +115,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch389
-  - F1021 - Speaking Evaluation grade/average alignment: unify average rounding and grade conversion with integer-thousandth threshold behavior at 2.400.
-  - F1022 - Sub Prep print grouping/order: group and order typed print-source values while preserving localized labels/rendering; review output-parity risk.
+  - F1022 - Sub Prep print grouping/order: order prepared teacher/class facts through index policy while preserving model filtering, labels, renderer behavior, and PDF pagination.
 
 ## Objective
 

@@ -6348,3 +6348,39 @@ feature-owned `QLocale` formatting. F1022, Sub Prep print grouping and order,
 remains the next candidate after F1021 because it crosses source mapping,
 locale ordering, schedule parsing, and PDF rendering. Gates 1/2 remain Partial;
 Phase 2 exit remains Open.
+
+## F1021 closeout and F1022 acceptance - 2026-10-17
+
+F1021 completed at code commit
+`4d13f0e04903d751168936376d65d0258c44d937`; the accepted `[0,5]` helper range
+comment is in `5a86ee39d7b8b8b7f3e35b3c7968e3fff989a7a4`. The shared Qt-free
+policy rounds positive averages half-up to thousandths and computes grade
+advancement from that integer representation. Exact 2.400 now advances at the
+existing 400-thousandths boundary, fixing binary subtraction that previously
+left it at grade 2. Feature `QLocale` formatting, canonical mappings, score
+filtering, aggregates, and YTD eligibility remain in existing consumers.
+Independent source review confirmed both paths use the policy. The focused
+Speaking Analytics, Application analytics query, and Class Analytics page
+parity CTest registrations passed 3/3 in Debug Ninja/MSVC/Qt 6.12; Ninja found
+the targets up to date, so this run performed no recompilation. The focused
+tests cover both consumer outputs at 2.400, half-thousandth rounding, clamps,
+partial scores, and YTD eligibility. No full suite ran. Two independent
+post-commit audits found all 13 official Deferred entries unchanged, including
+the Analytics allocation-cap/sparse-representation and Speaking Evaluation
+row-limit items.
+
+Accept F1022 next as a Qt-free policy that groups and orders prepared teacher
+and class facts by returning indexes into the original facts. Feature code
+continues to filter invalid, hidden, unassigned, and duplicate rows before
+ordering; duplicate class IDs keep first-occurrence behavior. It prepares
+trimmed teacher sort keys and locale-comparison callbacks, configured grade
+and level ranks, and the current selected-mode earliest visible valid meeting
+key (weekday rank, then start minute; seconds do not affect this order). The
+policy preserves English-name-present first, English then Korean locale order,
+teacher ID, followed by class grade rank, level rank, first meeting day/minute,
+and class ID. Leave `ScheduleValueParser`, meeting labels and exact-time
+grouping, class/teacher labels and label deduplication, renderer construction,
+first-class section colors, and pagination in the feature layer. Cover ordered
+groups and rows, unknown ranks/meetings, mode/day filtering, duplicate label
+details, and relevant PDF color/page-break behavior. Keep typed-source order
+and validation unchanged. Gates 1/2 remain Partial; Phase 2 exit remains Open.
