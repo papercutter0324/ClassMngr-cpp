@@ -185,18 +185,27 @@ void UpdateDialog::closeEvent(
 
 void UpdateDialog::handleCheckStarted()
 {
-    m_notesLabel->clear();
-    m_notesLabel->setVisible(false);
+    if (!m_hasResult)
+    {
+        m_notesLabel->clear();
+        m_notesLabel->setVisible(false);
+    }
     clearProgressText();
 
     m_progressBar->setRange(0, 0);
     m_progressBar->setVisible(true);
 
+    QString details = tr("Contacting GitHub Releases...");
+    if (m_hasResult)
+    {
+        details += QStringLiteral("\n\n") + resultDetails(m_result);
+    }
+
     setStatus(
         QStringLiteral("◌"),
         QStringLiteral("#4da3ff"),
         tr("Checking for Updates"),
-        tr("Contacting GitHub Releases...")
+        details
         );
     configureActions(
         false,

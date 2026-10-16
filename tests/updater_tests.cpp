@@ -419,6 +419,40 @@ private:
     bool m_rangeSupport = false;
     bool m_rejectRanges = false;
 };
+
+namespace ManualUpdate = ClassMngr::Next::Application;
+
+class RecordingManualUpdateCheckPort final
+    : public ManualUpdate::ManualUpdateCheckPort
+{
+public:
+    ManualUpdate::ManualUpdateCheckSnapshot snapshot() const override
+    {
+        return m_snapshot;
+    }
+
+    ManualUpdate::ManualUpdateCheckDispatch check(
+        ManualUpdate::ManualUpdateCheckPolicy policy,
+        ManualUpdate::ManualUpdateCheckCompletion completion
+        ) override
+    {
+        lastPolicy = policy;
+        m_completion = std::move(completion);
+        return dispatchResult;
+    }
+
+    void setObserver(ManualUpdate::ManualUpdateCheckObserver observer) override
+    {
+        m_observer = std::move(observer);
+    }
+
+    ManualUpdate::ManualUpdateCheckSnapshot m_snapshot;
+    ManualUpdate::ManualUpdateCheckDispatch dispatchResult =
+        ManualUpdate::ManualUpdateCheckDispatch::Started;
+    std::optional<ManualUpdate::ManualUpdateCheckPolicy> lastPolicy;
+    ManualUpdate::ManualUpdateCheckCompletion m_completion;
+    ManualUpdate::ManualUpdateCheckObserver m_observer;
+};
 }
 
 class UpdaterTests : public QObject
@@ -437,6 +471,7 @@ private slots:
     void serviceCachesSuccessfulResultAndSkipsFreshCheck();
     void dialogShowsDisabledResourcePackSection();
     void dialogOpenWithoutCacheStartsIfStaleCheck();
+    void dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale();
     void dialogShowsInvalidResponseFailure();
     void dialogShowsNetworkFailure();
     void dialogRetryForcesCheckWithFreshCache();
@@ -753,13 +788,72 @@ void UpdaterTests::dialogOpenWithoutCacheStartsIfStaleCheck()
     QVERIFY(!service.hasResult());
     dialog.refreshForOpen();
     QVERIFY(service.isBusy());
-    QTRY_VERIFY(service.hasResult());
-    QTRY_COMPARE(server.requestCount(), 1);
 
     QLabel* const title = dialog.findChild<QLabel*>(
         QStringLiteral("programUpdateTitle"));
+    QLabel* const details = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateDetails"));
+    QProgressBar* const progress = dialog.findChild<QProgressBar*>(
+        QStringLiteral("programUpdateProgress"));
     QVERIFY(title);
+    QVERIFY(details);
+    QVERIFY(progress);
+    QCOMPARE(title->text(), QStringLiteral("Checking for Updates"));
+    QCOMPARE(details->text(), QStringLiteral("Contacting GitHub Releases..."));
+    QVERIFY(!progress->isHidden());
+
+    QTRY_VERIFY(service.hasResult());
+    QTRY_COMPARE(server.requestCount(), 1);
     QCOMPARE(title->text(), QStringLiteral("Update Available"));
+}
+
+void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
+{
+    RecordingManualUpdateCheckPort port;
+    port.m_snapshot.cachedResult = ManualUpdate::ManualUpdateCheckResult{
+        .currentVersion = {1, 0, 0},
+        .latestVersion = {2, 0, 0},
+        .artifact = {
+            .platformKey = "windows-x64",
+            .url = "https://example.com/ClassMngr-2.0.0-win-x64.exe",
+            .fileName = "ClassMngr-2.0.0-win-x64.exe",
+            .sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            .sizeBytes = 123
+        },
+        .releaseDateIso = "2026-08-05",
+        .releaseUrl = "https://example.com/releases/2.0.0",
+        .checkedAtUtcMilliseconds = 0,
+        .updateAvailable = true
+    };
+    port.m_snapshot.resultFresh = false;
+
+    UpdateDialog dialog(port, true);
+    dialog.refreshForOpen();
+
+    QVERIFY(port.lastPolicy.has_value());
+    QCOMPARE(*port.lastPolicy, ManualUpdate::ManualUpdateCheckPolicy::IfStale);
+    QVERIFY(static_cast<bool>(port.m_completion));
+
+    QLabel* const title = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateTitle"));
+    QLabel* const details = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateDetails"));
+    QLabel* const notes = dialog.findChild<QLabel*>(
+        QStringLiteral("programUpdateNotes"));
+    QProgressBar* const progress = dialog.findChild<QProgressBar*>(
+        QStringLiteral("programUpdateProgress"));
+    QVERIFY(title);
+    QVERIFY(details);
+    QVERIFY(notes);
+    QVERIFY(progress);
+    QCOMPARE(title->text(), QStringLiteral("Checking for Updates"));
+    QVERIFY(details->text().contains(
+        QStringLiteral("ClassMngr 2.0.0 is available")));
+    QVERIFY(details->text().contains(
+        QStringLiteral("Installed Version: 1.0.0")));
+    QVERIFY(!notes->isHidden());
+    QVERIFY(notes->text().contains(QStringLiteral("https://example.com/releases/2.0.0")));
+    QVERIFY(!progress->isHidden());
 }
 
 void UpdaterTests::dialogShowsInvalidResponseFailure()
@@ -1081,6 +1175,7 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
             )
         );
     QVERIFY(currentTitle);
+    QCOMPARE(currentTitle->text(), QStringLiteral("You're Up to Date"));
     QVERIFY(currentNotes);
     QVERIFY(currentProgress);
     QVERIFY(currentProgressText);
