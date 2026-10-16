@@ -428,6 +428,22 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         )
     endif()
 
+    add_test(
+        NAME SpeakingEvalPowerPointMixedTemplatesRejected
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            mixedPowerPointTemplatesAreRejected
+    )
+    add_test(
+        NAME SpeakingEvalInternalMixedTemplatesAccepted
+        COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+            internalRendererCreatesReadablePdf
+    )
+    set_tests_properties(
+        SpeakingEvalPowerPointMixedTemplatesRejected
+        SpeakingEvalInternalMixedTemplatesAccepted
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         classmngr_add_qt_test(
             NAME ProcessMemorySnapshot
@@ -564,6 +580,8 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ClassMngrCampusMapTests
             ClassMngrSpeakingEvalReportWidgetTests
             ClassMngrSpeakingEvalBatchReportServiceTests
+            SpeakingEvalPowerPointMixedTemplatesRejected
+            SpeakingEvalInternalMixedTemplatesAccepted
             SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation
             SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes
             SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime

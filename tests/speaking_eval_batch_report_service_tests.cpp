@@ -6291,12 +6291,10 @@ void SpeakingEvalBatchReportServiceTests::mixedPowerPointTemplatesAreRejected()
             Qt::CaseInsensitive
             )
         );
-    QCOMPARE(
+    QVERIFY(
         QDir(outputDirectory.path()).entryList(
-            { QStringLiteral("*.pdf") },
-            QDir::Files
-            ).size(),
-        0
+            QDir::Files | QDir::NoDotAndDotDot
+            ).isEmpty()
         );
 }
 

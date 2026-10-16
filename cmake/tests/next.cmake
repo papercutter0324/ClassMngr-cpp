@@ -1,5 +1,37 @@
 include_guard(GLOBAL)
 
+# Keep PowerPoint batch template compatibility independent of Qt and the
+# feature layer.
+add_executable(
+    ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+    tests/next_application_speaking_evaluation_report_template_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+    COMMAND ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+)
+
 # Schedule slot policy remains independent of Qt and the feature layer.
 add_executable(
     ClassMngrNextApplicationScheduleSlotPolicyTests

@@ -4,11 +4,13 @@
 #include "speaking_eval_report_data_assembler.h"
 
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "next/application/speaking_evaluation_report_template_policy.h"
 
 #include <QDir>
 #include <QJsonArray>
 
-#include <algorithm>
+#include <cstddef>
+#include <vector>
 
 namespace SpeakingEvalPowerPointJobModel
 {
@@ -223,20 +225,29 @@ bool usesSingleTemplate(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports
     )
 {
-    if (reports.isEmpty())
+    using ApplicationReportTemplate =
+        ClassMngr::Next::Application::SpeakingEvaluationReportTemplate;
+
+    std::vector<ApplicationReportTemplate> reportTemplates;
+    reportTemplates.reserve(static_cast<std::size_t>(reports.size()));
+    for (const SpeakingEvalBatchReportService::StudentReport& report : reports)
     {
-        return true;
+        switch (report.report.reportTemplate)
+        {
+        case SpeakingEvalReportTemplate::Standard:
+            reportTemplates.push_back(ApplicationReportTemplate::Standard);
+            break;
+        case SpeakingEvalReportTemplate::Advanced:
+            reportTemplates.push_back(ApplicationReportTemplate::Advanced);
+            break;
+        default:
+            return false;
+        }
     }
 
-    const SpeakingEvalReportTemplate reportTemplate =
-        reports.constFirst().report.reportTemplate;
-    return std::all_of(
-        reports.cbegin(),
-        reports.cend(),
-        [reportTemplate](const auto& report)
-        {
-            return report.report.reportTemplate == reportTemplate;
-        }
+    return ClassMngr::Next::Application::
+        usesSingleSpeakingEvaluationReportTemplate(
+            reportTemplates
         );
 }
 }
