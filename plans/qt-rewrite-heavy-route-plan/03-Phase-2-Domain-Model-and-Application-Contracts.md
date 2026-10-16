@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F996 is the accepted next implementation slice; F995 closed at source commit `13c8f448` with the focused CTest still at 36/39 and six independent transition/F912 checks passing; F997 is B373's sole candidate, all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F996 completed at source commit `88f4bd35` with the focused CTest failing 13/14 on Schedule Import's missing expected resolution and no proven pre-F996 baseline; F997 is accepted for implementation, all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,10 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch372 (F996 accepted; next implementation slice)
-  - F996 - Schedule sibling-page invalidation after direct writes: add page-level success notifications for slot toggle, testing assignment, and Schedule Editor save so MainWindow marks only the sibling SchedulePage stale; preserve existing invalidation paths.
-- Batch373 (discovery complete)
-  - F997 - Qt-free asynchronous startup update-check use case: define and integrate the startup-check result/error contract while preserving F215/F216 policies and current networking/dialog owners; leave the manual QAction/dialog path with its existing owner per F215/F456.
+- Batch373 (F997 accepted; next implementation slice)
+  - F997 - Qt-free asynchronous startup update-check use case: define and integrate the startup-check result/error contract while preserving F215/F216 eligibility/skipped-version policies and current networking/dialog owners; keep the manual QAction/dialog path unchanged per F215/F456.
 No other slices were found.
 
 ## Objective

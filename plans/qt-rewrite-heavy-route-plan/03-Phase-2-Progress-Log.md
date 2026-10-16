@@ -43255,3 +43255,57 @@ F996 acceptance criteria:
 
 No F996 implementation or verification outcome is claimed. F997 remains the
 sole B373 candidate; all 13 official Deferred entries remain unchanged.
+
+### F996 complete; post-F996 Deferred audit unchanged - 2026-10-16
+
+F996 source/test commit `88f4bd35` changes MainWindow, ScheduleWidget/
+SchedulePage, and `tests/mainwindow_schedule_testing_classes_handoff_parity_tests.cpp`
+only. The incremental Windows x64 Debug build of `ClassMngr` and
+`ClassMngrMainWindowScheduleTestingClassesHandoffParityTests` succeeded in
+`build/windows-x64-debug`. The data-driven F996 test passed from both standalone
+and My Workspace origins: each successful slot-toggle, testing-assignment,
+and Schedule Editor write emitted one notification, left the writer current,
+marked only the sibling stale, and showed persisted state after sibling
+activation. Failed Schedule Editor save emitted no notification and left the
+sibling fresh. The independent Tester passed the focused direct method 4/4
+and the existing workspace editor parity method 3/3.
+
+The exact focused CTest registration failed 1/1 (13/14 methods):
+`scheduleImportPersistsAndRefreshesTeacherSidebar` failed before review
+application because the expected import resolution was missing. An isolated
+run reproduced it. That path emits no `scheduleDataChanged` and uses its own
+temporary DB/settings. F418/F443 history records this import test passing, but
+there is no immediate pre-F996 baseline; do not call the failure proven
+pre-existing. No full suite ran. `git diff --check` passed.
+
+Two independent post-F996 audits reviewed exactly the 13 official Deferred
+entries. None became actionable, resolved, superseded, or materially changed;
+all remain unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate
+remains Open.
+
+### F997 accepted for implementation - 2026-10-16
+
+The live startup path creates `UpdateService`/`UpdateController` and dispatches
+the automatic forced check. Next Application has startup eligibility and
+skipped-version policies but no update-check use case/port; service results,
+errors, and asynchronous signals expose Qt types. The Phase 2 objective
+includes checking for updates after startup, so this is a missing Application
+boundary, not a demonstrated runtime bug. Two independent Investigators agree
+a forwarding wrapper is insufficient and startup-only asynchronous migration
+is feasible. Per the main decision, leave the manual QAction/dialog direct
+path with its existing owner per F215/F456, and preserve F215/F216 policy
+ownership. F997 is accepted for implementation, not completed.
+
+F997 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope | Add a Qt-free Next Application asynchronous startup update-check contract/use case and adapt the live automatic startup caller through a platform/updater bridge plus existing focused tests. Keep the manual QAction/dialog path, network backend, eligibility and skipped-version policy ownership unchanged per F215/F216/F456; make no unrelated update behavior changes. |
+| Request and immediate disposition | Use explicit input and distinguish accepted/started from busy/already-in-progress or immediate configuration/dispatch failure; do not expose the service's ambiguous `bool`. Startup retains the existing forced check only after current eligibility and one-shot gates. |
+| Async result/error | Use a Qt-free result DTO with metadata needed for startup success/version reconciliation/dialog handoff and structured application errors for asynchronous failure; no `QObject`, `QString`, `QUrl`, `QDate`, or other Qt types in Application. Translate service success, no-update, network, and invalid-response paths at the bridge. Deliver one terminal completion, including synchronous configuration failure without double completion. |
+| Lifecycle and routing | Define callback lifetime and suppress unsafe delivery after controller/adapter destruction; do not promise cancellation because `UpdateService` has no cancel API. Route startup completion through one controller/application path so success reconciliation, cleanup, and dialog effects run once. Keep `UpdateDialog` presentation-signal observation and manual check/retry unchanged. |
+| Regression coverage | App-less fake-port tests cover immediate Started/Busy/error and async update/no-update/failure with exactly one completion. Focused controller/bridge coverage preserves startup timing, eligibility, forced dispatch, retry, one-shot and silent-failure semantics; verifies automatic success effects once and unchanged manual QAction/dialog handoff, using existing automatic-startup and manual-handoff seams. |
+| Focused verification | Build affected targets and run only the exact focused CTests; do not run the full suite. |
+
+F997 is the sole B373 candidate; no other slices were found. All 13 official
+Deferred entries remain unchanged.
