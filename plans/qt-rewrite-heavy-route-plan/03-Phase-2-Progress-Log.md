@@ -41922,3 +41922,22 @@ Deferred entry. All 13 official Deferred entries remain unchanged; Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
 
 No other slices were found.
+
+### F972 complete; F973 active - 2026-10-16
+
+F972 was implemented at source/test commit
+`f99fc66cd1be66a997fb46620b5bdbb46d24f770` (`Phase2 - Reject invalid
+calendar time statuses`). Independent verification clean-rebuilt `ClassMngr`,
+`ClassMngrNextDomainContractTests`, and
+`ClassMngrNextApplicationCalendarEventTests`; the exact two CTests passed
+(2/2). Coverage includes invalid status value 99 for all-day and non-all-day
+events, valid statuses, and all three Application issue messages.
+`git diff --check` passed; no full suite ran.
+
+Two independent post-F972 audits found all 13 official Deferred entries
+unchanged; none became actionable, resolved, superseded, or materially
+changed. F709's trigger is unaffected: F972 changed neither raw SQL
+normalization into invalid `QTime` values nor the Calendar Page summary
+injection seam. F973 is now the active accepted slice; its acceptance criteria
+above remain in force. Gates 1/2 remain Partial and the formal Phase 2 exit
+gate remains Open.
