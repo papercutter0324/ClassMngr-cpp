@@ -42167,3 +42167,23 @@ F980 acceptance for implementation:
 
 F977 remains the active slice; F978-F980 are queued in this order. Gates 1/2
 remain Partial and the formal Phase 2 exit gate remains Open.
+
+### F977 complete; F978 active - 2026-10-16
+
+F977 was implemented at source/test commit
+`13b4e8fe0c3a19b5bae9fc80da842568412dde98`. It changed only
+`src/next/application/teacher_profile_edit_use_case.h` and
+`tests/next_application_teacher_profile_edit_tests.cpp`. `Warning` remains
+nonblocking; `Error` and unknown validation severities fail with
+`ValidationFailed` before persistence or reload, preserving the complete issue
+payload.
+
+The Executor and independent Tester built `ClassMngr` and
+`ClassMngrNextApplicationTeacherProfileEditTests`; the exact CTest passed
+(1/1), and `git diff --check` passed. No full suite ran.
+
+Two independent post-F977 audits reviewed all 13 official Deferred entries.
+All remain unchanged; none became actionable, resolved, superseded, or
+materially changed, and F977 affected none of their triggers. F978 is now
+active, followed by F979 and F980. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
