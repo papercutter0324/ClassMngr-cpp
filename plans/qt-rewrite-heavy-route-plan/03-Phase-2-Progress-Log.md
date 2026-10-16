@@ -44194,3 +44194,21 @@ entries; all remain unchanged, with none actionable, resolved, or superseded.
 Batch406 is closed. Gates 1/2 remain Partial, the Phase 2 exit gate remains
 Open, and F1007 remains pending policy reconciliation. Batch407 Heavy
 discovery is underway.
+
+### Batch407 discovery shortfall - 2026-10-17
+
+Two independent Explorer scans found no actionable candidate. The stateful
+Application scan found that `WorkspaceCoordinator`,
+`SubPrepClassInformationState`, and `ReportJobCoordinator` preserve state and
+identity and filter stale events, with existing focused tests. The projection
+scan found that My Classes, teacher display-name, class-teacher assignments,
+roster, and directory reads preserve counts, order, and error behavior, also
+with existing coverage. No files or tests changed in Batch407. HEAD is
+`24a7ab5ee26be16f800231bfdd9856484ab94e78`; the latest source remains F1030 at
+`e2c5e65eca8c566fbb25a8553aa9993e0252236a`.
+
+The independent Deferred audits were performed after F1030 and remain the
+current evidence: all 13 official entries are unchanged, with none actionable,
+resolved, or superseded. Batch407 closed without a production slice. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation. Batch408 Heavy discovery is underway.

@@ -6596,3 +6596,15 @@ explicitly check recoverability, though all invalid cases use the shared
 nonrecoverable `invalidInput` helper; the new Unicode cases assert it. Batch407
 Heavy-route discovery is underway. Gates 1/2 remain Partial, F1007 awaits
 policy reconciliation, and Phase 2 remains open.
+
+## Batch407 discovery shortfall - 2026-10-17
+
+Two independent scans found no eligible production change. Stateful
+Application transitions in WorkspaceCoordinator,
+SubPrepClassInformationState, and ReportJobCoordinator already preserve prior
+state on failure and filter stale events with focused tests. My Classes,
+teacher display-name, class-teacher assignment, roster, and directory
+projections preserve row counts and order with existing coverage. No files or
+tests changed. The post-F1030 audits still find all 13 official Deferred
+entries unchanged. Batch408 discovery is underway; Gates 1/2 remain Partial,
+F1007 awaits policy reconciliation, and Phase 2 remains open.

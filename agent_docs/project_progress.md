@@ -6031,7 +6031,7 @@ UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-17 (F1030 complete; Batch407 discovering)
+## Current continuation - 2026-10-17 (F1030 complete; Batch408 discovering)
 
 Batch402–404 found no eligible source slice. Batch405 found an inconsistent
 `FeatureService` contract: some operations fall back to a separate legacy
@@ -6051,6 +6051,8 @@ the shared Qt-compatible UTF-8 blankness helper. Its focused content and
 catalog CTests passed 2/2; coverage includes NBSP/U+3000 rejection with no
 snapshot mutation, malformed-byte preservation, and the exact length limit.
 No full suite ran. Two independent audits again found all 13 official
-Deferred entries unchanged. Batch407 Heavy-route discovery is underway. Gates
-1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase
-2 exit gate remains Open.
+Deferred entries unchanged. Batch407 found no production slice: the stateful
+Application transitions and read projections preserve their contracts with
+existing focused coverage. No files or tests changed. Batch408 Heavy-route
+discovery is underway. Gates 1/2 remain Partial, F1007 remains pending policy
+reconciliation, and the Phase 2 exit gate remains Open.
