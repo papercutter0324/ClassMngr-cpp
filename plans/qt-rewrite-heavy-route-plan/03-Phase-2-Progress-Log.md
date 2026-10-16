@@ -41577,3 +41577,51 @@ the official Deferred list. Leave the migration mapping update for F965
 post-implementation closeout. All 13 official Deferred entries remain
 unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### F965 complete; Batch335 closed; Batch336 discovery closed; F966 accepted - 2026-10-16
+
+F965 was implemented at source commit `b8c66c3578ff2f9a9f03a6b7a8c853d479bc106a`
+after F964 at `60146c8f`; its documentation acceptance checkpoint was
+`bef1c738c164007db5f78477a08c415aabde199b`. Independent verification built
+`ClassMngr` with `vcvars64.bat` and Ninja, built
+`ClassMngrClassDetailsPageDisplayTests`, and passed only the registered
+`ClassDetailsPageDisplay` CTest (1/1). `git diff --check` was clean. No full
+suite ran.
+
+Two independent complete post-F965 audits found all 13 official Deferred
+entries unchanged, with no newly actionable, resolved, or superseded item.
+Batch336's three independent scans converged on one Calendar Import candidate;
+an independent Investigator confirmed a bounded Application-layer check is
+feasible.
+
+F966 acceptance for implementation:
+
+1. At the Qt-free Application boundary, validate each candidate save request,
+   derive its expected F50 six-field signature, and reject any supplied
+   signature mismatch as `InvalidInput` before signature query, observer
+   progress, or save. Preserve F50 identity: simplified title, normalized event
+   type, canonical start/end ISO dates, `allDay`, and normalized time status;
+   exclude times. Match Qt `QString::simplified()` title whitespace with the
+   existing Qt-compatible UTF-8/Unicode whitespace and canonical field
+   normalization. Keep the production `CalendarEventImportService` pairing
+   and normalization in parity.
+2. Before querying, require `signatureRange` to contain every candidate's
+   start and end date, or derive an equivalent min-start/max-end query range.
+   A narrow caller range must not allow stored duplicates to be missed.
+3. Preserve empty-candidate no-port behavior, the non-empty duplicate-only
+   empty-save call, ordering, counts, and initial skip semantics.
+4. Cover a forged unique signature for an already-existing payload (rejected
+   with no query/save), exact and normalized matching signatures filtered as
+   duplicates, formatting variants that normalize identically, significant
+   identity-field differences, too-narrow rejection before ports, a broader
+   valid range, and unchanged empty/duplicate-only behavior. Update fixtures
+   that currently pair arbitrary signatures and titles to use valid derived
+   keys.
+5. Build `ClassMngr` and
+   `ClassMngrNextApplicationCalendarEventImportUseCaseTests`; run only the exact
+   `NextApplicationCalendarEventImportUseCase` CTest. Do not run the full suite.
+
+F966 is the sole active accepted slice. Leave the mapping history update for
+F966 completion. Do not add it to the official Deferred list. All 13 official
+Deferred entries remain unchanged; Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
