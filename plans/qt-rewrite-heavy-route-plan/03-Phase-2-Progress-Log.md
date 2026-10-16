@@ -43188,3 +43188,70 @@ candidates F614/F618/F626; and (2) backup/recovery and application-update
 use-case boundaries and live callers. No implementation or verification
 outcome is claimed for F995. All 13 official Deferred entries remain unchanged;
 Gates 1/2 are Partial and the Phase 2 exit gate is Open.
+
+### F995 complete; post-F995 Deferred audit unchanged - 2026-10-16
+
+F995 source/test commit `13c8f448` changes only
+`src/features/classes/ui/testing_classes_page.cpp` and the existing
+`tests/testing_classes_page_tests.cpp`. It captures the requested ID before
+save/rebuild and keeps selection, editor, and mutation target aligned across
+successful switches, failed reads/saves, and a missing prior row. An
+incremental Windows x64 Debug build of `ClassMngrTestingClassesPageTests` in
+`build/windows-x64-debug` succeeded with existing duplicate-symbol and
+`/FORCE` linker warnings. Its exact CTest registration failed 1/1 at 36/39
+methods. The independent Tester ran all six F995 transition/F912 methods from
+the rebuilt executable; all six passed. The three remaining failures are
+`rosterKeyboardTriggerOpensInAppPalette`,
+`rosterKeyboardWritesToKoreanNameCell`, and
+`outputAvailabilityFollowsRosterTabAndLoadedClass`. A history scan found the
+same three recorded both before and after F912 (2026-10-15 log, around
+38066-38083), but no source hash binds that run, so it is not a proven
+pre-F995 baseline. Static path review found the keyboard methods construct
+`RosterEditorWidget` directly and the output test's `refresh()->loadClass()`
+does not call the changed selection handler. `git diff --check` passed; no full
+suite ran.
+
+Two independent post-`13c8f448` audits reviewed each of the 13 official
+Deferred entries. None became actionable, resolved, or superseded; all remain
+unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+### Batch373 discovery complete; F996 accepted as next slice - 2026-10-16
+
+Document viewer/content lifecycle and Sub Prep output-source discovery found
+no actionable gap; the relevant lifecycle/error seams are covered, including
+prior F939/F940 work. Backup/recovery discovery found setup/migration backup
+coverage but no reachable restore consumer, so it selected no slice.
+
+Application update checking yielded F997 as the sole B373 candidate. Startup
+and the manual dialog call `UpdateService` directly; Next Application has
+eligibility and skipped-version policies but no asynchronous update-check use
+case/port, and service results/errors carry Qt types. Independent Investigators
+agree a forwarding wrapper is insufficient: the useful boundary is a Qt-free
+asynchronous result/error contract integrated into startup. Candidate scope
+is startup checking only; keep the manual QAction/dialog path with its current
+owner per F215/F456, preserve F215/F216 policies, and retain networking/dialog
+owners. F997 is a candidate, not yet accepted. No other slices were found.
+
+F996 is accepted before implementation as the next slice. Standalone and My
+Workspace own separate SchedulePage/ScheduleWidget render models over shared
+DB/services; successful direct slot-toggle, testing-assignment, or Schedule
+Editor writes reload only the writer, leaving its sibling stale until
+activation. Existing Import and Testing Classes paths invalidate both pages
+(F422), while `classInfoSaved` refreshes Classes/sidebar. Evidence:
+`schedule_widget.cpp:488-527, 551-668`,
+`mainwindow.cpp:1115-1168, 1262-1274`,
+`basepage.cpp:419-437`, and
+`tests/mainwindow_schedule_testing_classes_handoff_parity_tests.cpp:2470-2655`.
+
+F996 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope | Change only the Schedule UI page/widget, MainWindow handoff, and existing integration test; no repository, Application API, CMake, or unrelated-page changes. |
+| Notification and invalidation | Each of the three direct write paths emits a page-level schedule-data-changed notification only after successful write. MainWindow marks only the sibling SchedulePage stale; the writer stays current. Failed writes do not invalidate the sibling. |
+| Reload and preservation | On normal next activation, the sibling reloads and displays persisted state. Preserve `classInfoSaved` Classes/sidebar refresh and existing Import/Testing Classes invalidation routes. |
+| Regression coverage | Extend the real MainWindow/temp-DB integration seam for all three writes; check writer freshness, sibling staleness, and persisted state after sibling activation. Cover standalone and My Workspace origins where supported; add a focused failed-write/no-invalidation assertion if injectable. |
+| Focused verification | Build affected targets and run only the exact focused CTest; do not run the full suite. |
+
+No F996 implementation or verification outcome is claimed. F997 remains the
+sole B373 candidate; all 13 official Deferred entries remain unchanged.

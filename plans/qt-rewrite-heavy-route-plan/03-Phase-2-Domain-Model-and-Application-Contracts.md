@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F994 remains the latest source slice; F995 is accepted for implementation, F996 is the remaining B372 candidate, and B373 discovery has started; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F996 is the accepted next implementation slice; F995 closed at source commit `13c8f448` with the focused CTest still at 36/39 and six independent transition/F912 checks passing; F997 is B373's sole candidate, all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,11 +114,11 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch372 (discovery underway)
-  - F996 - Schedule sibling-page invalidation after direct writes: add parity coverage at the MainWindow handoff seam, then notify after successful slot-toggle, testing-assignment, and Schedule Editor writes so MainWindow marks only the sibling SchedulePage stale while preserving existing invalidations.
-- Batch373 (discovery underway)
-  - Document content/viewer lifecycle and report/substitute output-source contracts, excluding F614/F618/F626.
-  - Backup/recovery and application-update use-case boundaries and live callers.
+- Batch372 (F996 accepted; next implementation slice)
+  - F996 - Schedule sibling-page invalidation after direct writes: add page-level success notifications for slot toggle, testing assignment, and Schedule Editor save so MainWindow marks only the sibling SchedulePage stale; preserve existing invalidation paths.
+- Batch373 (discovery complete)
+  - F997 - Qt-free asynchronous startup update-check use case: define and integrate the startup-check result/error contract while preserving F215/F216 policies and current networking/dialog owners; leave the manual QAction/dialog path with its existing owner per F215/F456.
+No other slices were found.
 
 ## Objective
 

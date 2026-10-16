@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F995 is accepted for implementation; F994 at source commit `fcf321e6` remains the latest source slice, B372 has F996 remaining, and B373 discovery has started. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F995 closed at source commit `13c8f448`; its focused CTest remains 36/39 while six independent transition/F912 checks passed, and F996 is the accepted next slice. F997 is the sole B373 candidate; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
