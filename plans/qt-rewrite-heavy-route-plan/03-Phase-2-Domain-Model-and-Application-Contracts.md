@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1013 is complete at source commit `fa63e499ab87bdb15763369d46b650ed6e972d44`; F1014, Sub Prep class-information selection fallback, is accepted under Batch387. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate remains Open.
+- Current note: F1014 is complete at source commit `d9ea2c9ac16c306eb86676b478aacd94b1dc3f05`; F1015, Sub Prep navigation schedule-order reduction, is accepted under Batch388; all 13 Deferred entries remain unchanged and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch387
-  - F1014 - Sub Prep class-information selection fallback: preserve a visible selection or choose the first currently visible class in supplied row order.
+- Batch388
+  - F1015 - Sub Prep navigation schedule-order reduction: extract earliest canonical day and its earliest valid time from full-schedule facts.
 
 ## Objective
 

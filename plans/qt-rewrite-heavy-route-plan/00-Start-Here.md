@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F1013, Sub Prep regular-before-intensive navigation metadata precedence, is complete at source commit `fa63e499ab87bdb15763369d46b650ed6e972d44`; F1014, Sub Prep class-information selection fallback, is accepted under Batch387. Two post-F1013 audits found all 13 official Deferred entries unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1014, Sub Prep class-information selection fallback, is complete at source commit `d9ea2c9ac16c306eb86676b478aacd94b1dc3f05`; F1015, Sub Prep navigation schedule-order reduction, is accepted under Batch388. Two post-F1014 audits found all 13 official Deferred entries unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

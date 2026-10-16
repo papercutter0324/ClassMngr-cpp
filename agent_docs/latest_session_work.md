@@ -5815,7 +5815,7 @@ The acceptance checkpoint is being committed before source changes. Gates 1/2
 remain Partial and Phase 2 exit remains Open. Existing unrelated untracked
 artifacts remain untouched.
 
-## Current continuation - 2026-10-16 (F1013 complete; F1014 accepted)
+## Current continuation - 2026-10-16 (F1014 complete; F1015 accepted)
 
 F1011 source/test commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9` adds
 64-bit academic-calendar winter-continuity validation. The helper checks the
@@ -5845,10 +5845,19 @@ Intensive fallback slots each passed 3/3. FileTracker required
 `/p:TrackFileAccess=false`; optional missing Vulkan headers were a configure
 warning. No full suite ran.
 
-Two post-F1013 audits found all 13 official Deferred entries unchanged.
-Batch386 is closed. Batch387 discovery selected F1014: preserve a current
-Sub Prep class while it remains in the ordered visible IDs; otherwise use the
-first caller-supplied ID, or none for an empty list. Keep row ordering and
-grade filtering at the model/page edge. The next action is the F1013
-closeout/F1014 acceptance-doc checkpoint; after it lands, begin F1014
+F1014 source commit `d9ea2c9ac16c306eb86676b478aacd94b1dc3f05` adds a Qt-free
+class-selection policy that retains a still-visible ID or falls back to the
+first ID supplied in model row order. Empty input clears selection. The page
+keeps filtering and ordering. Four serial Debug builds passed, the exact
+app-less CTest passed 1/1, and five named page slots each passed 3/3. FileTracker
+required `/p:TrackFileAccess=false`; configure and link produced nonfatal
+Vulkan, MSB8064, and duplicate-definition/LNK4088 warnings. No full suite ran.
+
+Two post-F1014 audits found all 13 official Deferred entries unchanged.
+Batch387 is closed. Batch388 selected F1015, a Qt-free reducer for the
+Sub Prep navigation day/time order. The Platform adapter will continue to
+recognize canonical weekdays and parse raw times, then pass resolved facts to
+Application; invalid times still establish their canonical day, and the time
+order is computed only within the earliest day. The next action is the F1014
+closeout/F1015 acceptance-doc checkpoint; after it lands, begin F1015
 implementation. Unrelated untracked artifacts remain untouched.

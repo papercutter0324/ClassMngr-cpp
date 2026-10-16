@@ -6162,3 +6162,25 @@ first supplied ID or no selection for an empty list. The list model must
 continue to own grade filtering, row ordering, locale comparison, and label
 construction; deriving fallback from summary projection order could change the
 selected class.
+
+## F1014 closeout and F1015 selection - 2026-10-16
+
+F1014 completed at source commit `d9ea2c9ac16c306eb86676b478aacd94b1dc3f05`.
+The Application policy retains a selected class present in the ordered visible
+IDs, falls back to the first supplied ID when missing, and returns no
+selection for an empty list. The page supplies model row order and keeps grade
+filtering, sorting, and label construction. Independent Debug builds of four
+targets passed; the app-less test passed 1/1 and five named page slots each
+passed 3/3. The build retries used `/p:TrackFileAccess=false` after FileTracker
+denied ordinary access. Optional Vulkan, MSB8064, and duplicate-definition /
+LNK4088 warnings were nonfatal. No full suite ran. Two independent audits
+found all 13 official Deferred entries unchanged.
+
+Batch388 selected F1015, a pure Application reducer for the navigation
+day/time order tuple. This is a follow-on to F1013, which kept the
+`navigationScheduleOrder` helper at the Platform edge. Keep that helper as the
+raw parser and fact mapper; move only the ordering calculation. A canonical
+weekday remains in the facts when its time is invalid so it can establish the
+earliest day while time order stays unknown if no valid time exists for that
+day. Discard seconds at the Platform parser boundary and preserve the existing
+unknown-order sentinel and full-schedule input.

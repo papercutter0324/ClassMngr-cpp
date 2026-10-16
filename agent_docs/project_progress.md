@@ -5807,7 +5807,7 @@ keys.
 F959 is the sole active slice. No source changes have been made for it yet.
 Gates 1/2 remain Partial; the formal Phase 2 exit gate remains Open.
 
-## Current Position - 2026-10-16 (F1013 complete; F1014 accepted)
+## Current Position - 2026-10-16 (F1014 complete; F1015 accepted)
 
 F1011, academic-year winter continuity, is complete at source/test commit
 `7acb5c5e5da5a88f29510a6315bc722e16d765d9`. Its Qt-free policy accepts the
@@ -5843,11 +5843,24 @@ independent Tester retried builds with `/p:TrackFileAccess=false` after
 FileTracker denied ordinary access. Configure completed with an optional
 missing Vulkan include warning. `git diff --check` passed; no full suite ran.
 
-Two independent post-F1013 audits found all 13 official Deferred entries
-unchanged, with none newly actionable, resolved, or superseded. Batch386 is
-closed. Batch387 discovery compared visible-row ordering with first-visible
-class-selection fallback. F1014 is accepted before implementation: select the
-current Sub Prep class if it remains in the caller-supplied ordered visible
-IDs; otherwise select the first ID, or no class for an empty list. Preserve
-model/page ownership of filtering, sorting, grade choice, and labels. Gates
-1/2 remain Partial and the formal Phase 2 exit gate remains Open.
+F1014, Sub Prep class-information selection fallback, is complete at source
+commit `d9ea2c9ac16c306eb86676b478aacd94b1dc3f05`. Its Qt-free policy retains
+the selected class when it remains among caller-supplied visible IDs;
+otherwise it chooses the first ID in current model order or no class for an
+empty list. The page continues to own filtering, sorting, grade choice, and
+labels. Independent serial Debug builds passed for `ClassMngr`, the policy
+target, the existing state target, and `ClassMngrSubPrepPageTests`. The exact
+app-less CTest passed 1/1, and five named page slots each passed 3/3. FileTracker
+denied ordinary access and `/p:TrackFileAccess=false` retries passed. Warnings
+included optional missing Vulkan headers, an MSB8064 generated-dependency
+notice, and duplicate-definition/LNK4088 notices on the page-test link. No
+full suite ran.
+
+Two independent post-F1014 audits found all 13 official Deferred entries
+unchanged, with none newly actionable, resolved, or superseded. Batch387 is
+closed. Batch388 discovery selected F1015, the Sub Prep navigation day/time
+order reduction, as a follow-on to F1013. F1013 left `navigationScheduleOrder`
+in Platform; F1015 moves only the calculation over resolved weekday/minute
+facts into Qt-free Application. Keep exact weekday recognition, time parsing,
+seconds truncation, formatting, and malformed-input handling in Platform.
+Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.
