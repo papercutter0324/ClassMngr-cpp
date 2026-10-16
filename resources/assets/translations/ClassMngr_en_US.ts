@@ -2501,6 +2501,11 @@
         <translation type="unfinished"># of Students</translation>
     </message>
     <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="900"/>
+        <source>Unavailable</source>
+        <translation type="unfinished">Unavailable</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Regular</source>
         <translation type="unfinished">Regular</translation>

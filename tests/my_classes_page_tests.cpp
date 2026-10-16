@@ -342,7 +342,7 @@ private slots:
     void studentCountReadsOnlySelectedClassAndKeepsCounts();
     void flatPageReentryRestoresDetailsWithoutSummaryRead();
     void groupedGradeSelectionMaterializesOnlySelectedDetails();
-    void rosterReadFailureKeepsClassAndShowsZeroStudentCount();
+    void rosterReadFailureKeepsClassAndShowsUnavailableStudentCount();
     void rosterWithoutNameColumnsShowsZeroStudentCount();
 };
 
@@ -1848,7 +1848,7 @@ rosterCountUsesNonblankEnglishOrKoreanCells()
 }
 
 void MyClassesPageTests::
-rosterReadFailureKeepsClassAndShowsZeroStudentCount()
+rosterReadFailureKeepsClassAndShowsUnavailableStudentCount()
 {
     MyClassesPageFixture fixture;
     QString error;
@@ -1934,7 +1934,7 @@ rosterReadFailureKeepsClassAndShowsZeroStudentCount()
         );
     QVERIFY(count);
     QVERIFY(count->isVisible());
-    QCOMPARE(count->text(), QStringLiteral("0"));
+    QCOMPARE(count->text(), QStringLiteral("Unavailable"));
     QCOMPARE(labelsWithText(page, QStringLiteral("E4 - Theseus")).size(), 1);
     const auto metricsAfterFailure =
         rosterRepository->myClassesStudentCountBatchReadMetrics();

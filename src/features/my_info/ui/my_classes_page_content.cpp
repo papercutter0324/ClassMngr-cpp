@@ -897,7 +897,7 @@ void MyClassesPage::rebuildClassInformation()
                 ClassMngr::Next::Domain::ClassId::fromString(
                     std::to_string(summary.classroom.id)
                     );
-            int studentCount = 0;
+            QString studentCountText = tr("Unavailable");
             if (typedClassId)
             {
                 const std::vector<ClassMngr::Next::Domain::ClassId>
@@ -916,8 +916,10 @@ void MyClassesPage::rebuildClassInformation()
                     && loadedStudentCounts.value().size() == 1
                     && loadedStudentCounts.value().front().studentCount)
                 {
-                    studentCount = loadedStudentCounts.value()
-                        .front().studentCount.value();
+                    studentCountText = QString::number(
+                        loadedStudentCounts.value()
+                            .front().studentCount.value()
+                        );
                 }
 
                 ClassMngr::Next::Platform::
@@ -1147,7 +1149,7 @@ void MyClassesPage::rebuildClassInformation()
                 classGrid,
                 row++,
                 tr("# of Students"),
-                QString::number(studentCount),
+                studentCountText,
                 classCard
                 );
 

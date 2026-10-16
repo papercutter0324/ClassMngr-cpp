@@ -2496,6 +2496,11 @@
         <translation>학생 수</translation>
     </message>
     <message>
+        <location filename="../../../src/features/my_info/ui/my_classes_page_content.cpp" line="900"/>
+        <source>Unavailable</source>
+        <translation>확인 불가</translation>
+    </message>
+    <message>
         <location line="+10"/>
         <source>Regular</source>
         <translation>정규</translation>
