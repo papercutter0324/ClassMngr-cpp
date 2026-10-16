@@ -6140,3 +6140,32 @@ direction normalization behavior. Add tests for malformed and wrong-root
 fields, unchanged Update bytes, no Create file, and valid empty roots. Gates
 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase
 2 exit gate remains Open.
+
+F1035 is complete at source commit `a501998f`. The adapter validates both
+directions strings as JSON objects and housing as a JSON array after reserved-
+identity validation and before writes. Malformed or wrong-root data returns
+field-specific nonrecoverable `InvalidInput`; invalid Create leaves no file,
+and invalid Update leaves its existing bytes unchanged. Tests preserve empty
+roots against raw-repository normalization baselines, verify reserved-
+identity precedence, and retain nested/custom round-trip coverage. The
+independent Tester built `ClassMngr` and
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`; focused
+CTest passed 1/1 after an elevated Visual Studio FileTracker retry. No full
+suite ran.
+
+Two independent post-F1035 audits reviewed exactly the 13 official Deferred
+entries. All remain unchanged and unresolved; none became actionable,
+resolved, or superseded. WPR still requires an enabled Administrator token,
+and the macOS runner is not exposed in this Windows x64 session. The listed
+policy, measurement, callsite, and injection triggers remain unmet.
+
+Batch413 found F1036: Calendar single-event Save reports an unavailable
+database session as `NotFound, recoverable=false`, although the session can
+be restored and the operation retried. Two independent reviews confirmed the
+adapter/use-case path and recommended changing only unavailable-session save
+results to `NotFound, recoverable=true`, preserving the message and all other
+failure mappings. Test those outcomes through the use case; retain non-
+recoverability for invalid input, missing events, and technical failures.
+Other Calendar write adapters and dialog draft retention remain outside this
+slice. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
+and the Phase 2 exit gate remains Open.

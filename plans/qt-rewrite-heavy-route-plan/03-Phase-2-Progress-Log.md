@@ -44469,3 +44469,39 @@ are current: all 13 official Deferred entries remain unchanged; repeat both
 audits after F1035 implementation. Gates 1/2 remain Partial, the Phase 2 exit
 gate remains Open, and F1007 remains pending policy reconciliation. F1035 is
 accepted and pending implementation.
+
+### F1035 complete; post-F1035 Deferred audits clear; Batch412 closed - 2026-10-17
+
+F1035 completes at source commit `a501998f`. Independent focused Debug
+verification built `ClassMngr` and
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`; the exact
+matching CTest passed 1/1. No full suite ran.
+
+Two independent post-F1035 audits reviewed exactly the 13 official Deferred
+candidates. All remain unchanged and unresolved, with none actionable,
+resolved, or superseded. Batch412 is closed. Gates 1/2 remain Partial, the
+Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.
+
+### Batch413 discovery and F1036 accepted before implementation - 2026-10-17
+
+Accept F1036 narrowly: through the single-event `CalendarEventSaveUseCase`,
+map unavailable/closed database-session save failures to `NotFound` with
+`recoverable == true` and retain the existing message, including any existing
+post-repository-failure session-closure detection. Keep invalid-input,
+missing-event, and technical outcomes and messages unchanged and
+nonrecoverable. Do not extend the change to series, import, or delete writers
+or dialog draft retention; the current dialog dismisses after a failed save.
+This is result metadata and does not claim a current UI defect.
+
+Test the single-event Save through the use case, asserting recoverable
+`NotFound` for unavailable/closed sessions while retaining unchanged
+invalid-input, missing-event, and technical outcomes. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; run only the
+matching CTest
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. No full suite.
+F1035 at `a501998f` is the latest source commit. The post-F1035 audits are
+current: all 13 official Deferred candidates remain unchanged; repeat both
+audits after F1036 implementation. Gates 1/2 remain Partial, the Phase 2 exit
+gate remains Open, and F1007 remains pending policy reconciliation. F1036 is
+accepted and pending implementation.

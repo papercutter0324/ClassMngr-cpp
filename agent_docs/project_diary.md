@@ -6742,3 +6742,35 @@ nested direction forms, and nested/custom housing values. Do not broaden the
 legacy codec's normalization of arbitrary directions fields. Preserve
 reserved-identity validation precedence. Gates 1/2 remain Partial, F1007
 awaits policy reconciliation, and Phase 2 remains open.
+
+## F1035 closeout - 2026-10-17
+
+F1035 completed at source commit `a501998f`. The Campus Dashboard adapter
+validates directions JSON as objects and housing JSON as an array before
+Create or Update writes, after reserved-identity validation. Invalid fields
+return nonrecoverable `InvalidInput` with field-specific diagnostics; rejected
+Create leaves no file and rejected Update preserves the exact original bytes.
+Valid empty roots are exercised through both intents and compared against raw
+repository round-trip baselines so current `CampusJsonCodec` normalization
+remains intact. Existing nested/custom round-trip coverage remains.
+
+The independent Tester built `ClassMngr` and
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`; the
+matching CTest passed 1/1 after an elevated Visual Studio FileTracker retry.
+No full suite ran. Two independent post-commit audits checked the exact 13
+official Deferred entries; all remain unchanged and unresolved.
+
+## F1036 accepted - 2026-10-17
+
+Batch413 found that Calendar single-event Save reports unavailable database
+sessions as `NotFound, recoverable=false`, unlike the save availability policy
+established by F1034. Two independent reviews confirmed the adapter and live
+use-case path. Accept F1036 to return `NotFound, recoverable=true` only for
+unavailable/closed-session save failures, preserving the existing message and
+all other mappings. Keep invalid input, a missing event, and technical errors
+nonrecoverable. Verify through the use case for unavailable-session cases and
+retain focused failure regressions. The dialog currently closes before saving
+and discards its draft after failure; this metadata slice does not change that
+UI behavior. Other Calendar writes and draft retention are separate scope.
+Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2
+remains open.
