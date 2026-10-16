@@ -10,7 +10,8 @@ namespace ClassMngr::Next::Application
 
 [[nodiscard]] inline NativeEnglishTeacherDirectorySaveValidation
 validateNativeEnglishTeacherDirectorySave(
-    const NativeEnglishTeacherDirectorySaveRequest& request
+    const NativeEnglishTeacherDirectorySaveRequest& request,
+    NativeEnglishTeacherDirectorySaveNameKeyPolicy& nameKeyPolicy
     )
 {
     std::unordered_set<std::u16string> nameKeys;
@@ -38,14 +39,16 @@ validateNativeEnglishTeacherDirectorySave(
                 };
             }
         }
-        if (row.normalizedNameKey.empty())
+        const std::u16string nameKey = nameKeyPolicy(
+            std::u16string_view(row.name));
+        if (nameKey.empty())
         {
             return {
                 .issue = NativeEnglishTeacherDirectorySaveIssue::EmptyName,
                 .rowIndex = index
             };
         }
-        if (!nameKeys.insert(row.normalizedNameKey).second)
+        if (!nameKeys.insert(nameKey).second)
         {
             return {
                 .issue = NativeEnglishTeacherDirectorySaveIssue::DuplicateName,

@@ -285,13 +285,17 @@ duplicateUnicodeComparisonKeyPreventsWritesAndShowsCurrentWarning()
     auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    const QString uppercaseKey =
-        QStringLiteral("\u00C4").simplified().toCaseFolded();
-    const QString lowercaseKey =
-        QStringLiteral("\u00E4").simplified().toCaseFolded();
+    const QString uppercaseKey = QStringLiteral(
+        "\u00a0\u00C4   Teacher\u3000Name\u2003").simplified().toCaseFolded();
+    const QString lowercaseKey = QStringLiteral(
+        "\u00E4 Teacher Name").simplified().toCaseFolded();
     QCOMPARE(uppercaseKey, lowercaseKey);
-    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("\u00C4"));
-    setStaffDirectoryCellText(*table, 1, 0, QStringLiteral("\u00E4"));
+    setStaffDirectoryCellText(
+        *table,
+        0,
+        0,
+        QStringLiteral("\u00a0\u00C4   Teacher\u3000Name\u2003"));
+    setStaffDirectoryCellText(*table, 1, 0, QStringLiteral("\u00E4 Teacher Name"));
 
     const auto before = services.databaseSession()
         ->nativeEnglishTeacherRepository()->getAll();

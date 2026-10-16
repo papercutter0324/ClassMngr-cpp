@@ -11,11 +11,12 @@ class NativeEnglishTeacherDirectorySaveUseCase final
 public:
     [[nodiscard]] static NativeEnglishTeacherDirectorySaveOutcome execute(
         const NativeEnglishTeacherDirectorySaveRequest& request,
-        const NativeEnglishTeacherDirectorySavePort& port
+        const NativeEnglishTeacherDirectorySavePort& port,
+        NativeEnglishTeacherDirectorySaveNameKeyPolicy& nameKeyPolicy
         )
     {
         const NativeEnglishTeacherDirectorySaveValidation validation =
-            validateNativeEnglishTeacherDirectorySave(request);
+            validateNativeEnglishTeacherDirectorySave(request, nameKeyPolicy);
         if (!validation.isValid())
         {
             return NativeEnglishTeacherDirectorySaveOutcome::invalid(validation);

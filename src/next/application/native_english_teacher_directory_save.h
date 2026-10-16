@@ -6,14 +6,18 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
 {
 
-// The feature edge supplies a Qt-normalized comparison key. Application
-// validates birthday text directly while remaining independent of Qt.
+// The feature edge supplies a stateless name-key policy so Application can
+// derive uniqueness keys from raw names without depending on Qt.
+using NativeEnglishTeacherDirectorySaveNameKeyPolicy =
+    std::u16string(std::u16string_view);
+
 struct NativeEnglishTeacherDirectorySaveRow final
 {
     // A missing ID explicitly represents a row that must be inserted.
@@ -24,7 +28,6 @@ struct NativeEnglishTeacherDirectorySaveRow final
     std::u16string email;
     std::u16string birthday;
     std::u16string nationality;
-    std::u16string normalizedNameKey;
 
     friend bool operator==(
         const NativeEnglishTeacherDirectorySaveRow&,

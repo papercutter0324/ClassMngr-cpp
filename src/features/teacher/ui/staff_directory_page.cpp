@@ -373,7 +373,7 @@ QString normalizedName(const QString& value)
     return value.simplified().toCaseFolded();
 }
 
-std::u16string gsTeamDirectorySaveNameKey(const std::u16string_view value)
+std::u16string staffDirectorySaveNameKey(const std::u16string_view value)
 {
     return normalizedName(
         QString::fromStdU16String(std::u16string(value))
@@ -738,8 +738,6 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             teacher.email = cellText(model, row, 3).toStdU16String();
             teacher.birthday = birthday.toStdU16String();
             teacher.nationality = cellText(model, row, 5).toStdU16String();
-            teacher.normalizedNameKey =
-                normalizedName(name).toStdU16String();
             request.rows.push_back(std::move(teacher));
         }
 
@@ -754,7 +752,8 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             ClassMngr::Next::Application::
                 NativeEnglishTeacherDirectorySaveUseCase::execute(
                     request,
-                    port
+                    port,
+                    staffDirectorySaveNameKey
                     );
         if (!outcome.validation.isValid())
         {
@@ -839,7 +838,7 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
         ClassMngr::Next::Application::GsTeamDirectorySaveUseCase::execute(
             request,
             port,
-            gsTeamDirectorySaveNameKey
+            staffDirectorySaveNameKey
             );
     if (!outcome.validation.isValid())
     {
