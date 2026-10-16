@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1002 is complete at source commit `944cff4a537a19eb8726225d8495f749d8187fed` and F1003 is accepted for Batch379; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F1003 is complete at source commit `6a2c08d52baa3ee8167ff255fee76cb61984e73c` and F1004 is accepted for Batch380 before implementation; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,10 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch379
-  - F1003: Speaking Evaluation AI prompt policy - implement the Qt-free Application prompt policy for single and batch callers with a Platform text matcher that preserves Qt Unicode case-insensitive behavior.
-
-No other slices were found.
+- Batch380
+  - Sub Prep selected-class policy: consider moving schedule-order selection (selected day, positive IDs only, first occurrence wins) into a Qt-free Application policy with a UI adapter that projects the legacy ScheduleViewModel; preserve display traversal order and exact canonical day matching.
 
 ## Objective
 

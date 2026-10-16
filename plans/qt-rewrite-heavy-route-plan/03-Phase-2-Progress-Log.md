@@ -43468,3 +43468,32 @@ F1003 is accepted for implementation. The Qt-free Next Application slice adds a 
 | Focused verification | Build affected targets in standard `build/windows-x64-debug` and run exact focused CTests only; no full suite. |
 
 The existing Qt-free text utility supports Unicode trimming but not case-folding or match spans. The Platform matcher follows the existing roster-save comparison callback and fits the current CMake dependency boundaries. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate remains Open.
+
+### F1003 complete; post-F1003 Deferred audits clear; Batch380 discovery complete; F1004 accepted - 2026-10-16
+
+F1003 source commit `6a2c08d52baa3ee8167ff255fee76cb61984e73c` (`Phase2 - Move Speaking Eval AI prompts to Application`) completes the accepted Qt-free prompt-policy slice. The independent Tester rebuilt in the reused `build/windows-x64-debug` tree (Visual Studio 18 2026, x64, Debug). Sandbox FileTracker `UnauthorizedAccessException` blocked the initial build; the elevated serial retry with `/p:TrackFileAccess=false` passed. The exact focused build was:
+
+`cmake --build build/windows-x64-debug --config Debug --target ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests ClassMngrSpeakingEvalBatchReportServiceTests ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests --parallel 1 -- /p:TrackFileAccess=false`
+
+The exact CTest selection passed 8/8:
+
+`ctest --test-dir build/windows-x64-debug -C Debug --output-on-failure -R "^(SpeakingEvalAiBatchResponseParser|SpeakingEvalAiBatchPromptUiParity|SpeakingEvalAiSinglePromptUiParity|ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests|ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests|ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests|ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests|ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests)$"`
+
+`git diff --check` passed. No full suite ran. Two independent post-F1003 audits reviewed exactly all 13 official Deferred entries; none was actionable, resolved, or superseded. Keep all 13 unchanged. The dense Speaking Evaluation row-limit remains deferred; no cap was added. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+Batch380 discovery surfaced two candidates: Speaking Evaluation report output schedule-label policy and Sub Prep selected-class policy. An Investigator verified the schedule-label defect: `defaultDirectory` groups all schedule days but uses only the first start time, while valid `ClassInfo` can contain different start times. For Monday 4 PM / Wednesday 5 PM the generated label is `MW - 4pm`. The output directory is user-visible and prefilled; the current default path is not moved. Independent comparison recommended this concrete output-label defect ahead of Sub Prep selection cleanup, whose UI day/order coverage exists while ID-deduplication and nonpositive-ID filtering lack direct tests. Teacher Import preview was weaker because parsing and diagnostics remain at the feature edge and Next already owns plan validation. No official Deferred entry changed.
+
+F1004, Speaking Evaluation mixed-time schedule-label projection, is accepted before implementation. Add a Qt-free Next Application projection that accepts ordered, preformatted day-abbreviation/start-time label pairs. Group entries by exact formatted time in first-seen order; retain first-seen day order and deduplicate days within each group, while preserving the same day at distinct times in separate groups. Empty input returns empty. One group keeps existing formatting (`MW - 4pm`, or the sole nonempty side); multiple groups join with `, ` using `<days> - <time>` or whichever side is present. Same-time default names therefore stay byte-for-byte stable, while mixed times become accurate (for example, `M - 4pm, W - 5pm`).
+
+Keep `shortDay`, F702 `shortTime` parsing/formatting (six-format allowlist, output and malformed fallback), `QStandardPaths`, `QDir` cleaning/root selection, safe component/fallback/localization, and filesystem operations at the Qt feature edge. Do not change root/class/evaluation folder structure, custom-folder behavior, `shortTime`, or file operations. Public path tests must retain colon sanitation, yielding `M - 4-07pm, W - 5-07pm`. Only the prefilled default directory for mixed-time schedules may change; existing folders and files are not migrated.
+
+F1004 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Projection | App-less exact tests cover empty, single/same-time, mixed-time, repeated day within a group, same day across different groups, first-seen ordering, and missing day/time. |
+| Edge and path parity | Existing service/path tests retain same-time and fallback behavior and assert the sanitized mixed-time final path. Keep all path/root/folder/filesystem and F702 formatting responsibilities at the Qt feature edge. |
+| F702 compatibility | Keep the six-format and malformed-fallback tests passing; do not alter `shortTime`. |
+| Focused verification | Build the new app-less target, `ClassMngr`, and `ClassMngrSpeakingEvalBatchReportServiceTests` in standard `build/windows-x64-debug`; run only exact focused CTests, with no full suite. |
+
+The Sub Prep selected-class policy remains a queued candidate only, not accepted as F1005: it would move selected-day/order policy (positive IDs only, first occurrence wins) to a Qt-free Application contract with a UI adapter projecting the legacy `ScheduleViewModel`, preserving display traversal order and exact canonical day matching. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
