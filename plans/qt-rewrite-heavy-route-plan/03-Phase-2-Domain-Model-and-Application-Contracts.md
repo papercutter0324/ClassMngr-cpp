@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F999 is complete in source commits `16b62987` and `d0189635`; its focused Debug CTest selection passed 6/6, while the broader selection passed 5/6 with one independently reproduced pre-F999 baseline fixture failure; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open as B377 discovery proceeds.
+- Current note: F1000 is accepted but not implemented after B377 found a bounded synchronous widgetless Speaking Evaluation report-painter extraction; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch377 (discovery in progress; no slice accepted). See the latest progress-log entry for its discovery lanes.
+- Batch377 (F1000 accepted; next implementation slice)
+  - F1000: synchronous widgetless Speaking Evaluation report-painter extraction; see the latest progress-log entry for evidence and criteria.
 
 ## Objective
 

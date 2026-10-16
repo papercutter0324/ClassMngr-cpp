@@ -43356,4 +43356,20 @@ The independent Tester rebuilt Windows x64 Debug Ninja targets at `HEAD d0189635
 
 Two independent post-F999 Investigators reviewed exactly the 13 official Deferred entries; none was actionable, resolved, superseded, or materially changed. Batch 197 teacher reassignment remains adjacent but unchanged; Sidebar wide-ID remains blocked under F285. Keep all 13 entries unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
 
-B377 discovery is underway with no next slice accepted. Its lanes are: (1) remaining live Phase 2 Application-boundary gaps, excluding F997-F999 and the official Deferred list; and (2) current feasibility of the Speaking Evaluation report/export-job lifecycle after widget/thread-safety findings.
+B377 discovery is complete. The Explorer found no other clear, bounded live Application candidate outside Speaking Evaluation report/export. Two independent Investigators agree that extracting a shared widgetless renderer is coherent as a synchronous rendering boundary, not as worker integration. Drawing is concentrated in `src/features/speaking_eval/ui/speaking_eval_report_widget_rendering.cpp:589`; `SpeakingEvalReportWidget::paintReport` owns painting at `:589-675`, while `src/features/speaking_eval/services/speaking_eval_internal_pdf_renderer.cpp:83-85` constructs a widget only to call it. `SpeakingEvalReportData` is declared in the QWidget-including `speaking_eval_report_widget.h`. The painter needs report data, template assets, QPainter, and QImage, but not widget geometry, interaction, or editor state. Font loading still requires QGuiApplication. Resettable static template caches are unsynchronized and active page resource leases own their lifetime, so extraction does not establish background safety.
+
+### F1000 accepted for implementation - 2026-10-16
+
+F1000 is accepted, not implemented. The slice extracts a shared widgetless report painter and report-data value type, then routes `SpeakingEvalReportWidget` painting and internal PDF rendering through it. The internal PDF renderer must no longer construct a `SpeakingEvalReportWidget`. Keep synchronous ownership and existing QGuiApplication/font setup and template-resource lease/cache lifetime. Do not wire `QtReportJobWorker`, change cancellation or progress, or claim Qt-free or worker/thread safety.
+
+F1000 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Scope | Extract a shared widgetless report painter and report-data value type; make `SpeakingEvalReportWidget` delegate painting and internal PDF rendering call the painter without constructing a widget. Keep batch dialog flow, output behavior, application report-job integration, print UI, and PowerPoint unchanged. |
+| Output parity | Preserve standard and advanced templates, painter geometry, text clipping/translation, score backgrounds/highlights/cache, overall grade, signature bounds, authored template background, and report-data meaning. Shared-component and widget rendering agree for fixed representative inputs on both templates; retain independent pixel/layout expectations and existing PDF raster parity checks. |
+| Runtime ownership | Keep synchronous ownership, QGuiApplication/font setup, and existing template-resource lease/cache lifetime. Make no Qt-free or worker/thread-safety claim; do not wire `QtReportJobWorker` or change cancellation/progress. |
+| Regression coverage | Cover shared-component/widget equality on both templates, independent visual assertions for standard/advanced rendering, and PDF rendering without constructing a report widget. Retain current widget-rendering and internal-PDF parity tests. |
+| Focused verification | Build affected Windows x64 Debug targets and run only exact focused CTests; do not run the full suite. |
+
+PDF Save As for one report is the narrowest later worker candidate, but worker handoff remains future work pending stable resource ownership, UI-owner event pumping, bounded progress, and safe cancellation/commit semantics. Printing UI remains outside any worker path. The 13 official Deferred entries remain unchanged. The F999 baseline failure and post-F999 audit status above remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open.
