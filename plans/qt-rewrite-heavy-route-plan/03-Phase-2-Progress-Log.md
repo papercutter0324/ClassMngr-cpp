@@ -43605,3 +43605,26 @@ F1010 acceptance criteria:
 | JSON/profile behavior | Route parsed schedule validation through the policy; retain malformed fallback coverage including JSON shape, exact four-item array requirements, and all-or-nothing profile behavior. |
 | Scope | Add no date/year relationship, total-week restriction, overflow restriction, or UI behavior change. |
 | Focused verification | In standard `build/windows-x64-debug`, build the app-less policy target, `ClassMngr`, and `ClassMngrAcademicCalendarTests` serially; run only the app-less policy CTest and exact feature validity and JSON regression selectors. Preserve the whole calendar target registration, offscreen and Windows Qt PATH settings; no full suite. |
+
+### F1010 complete; post-F1010 Deferred audits clear; Batch384 discovery complete; F1011 accepted - 2026-10-16
+
+F1010 source commit `60238998911a4ba6ee13d2e4c4a364b953f7fcb1` (`Phase2 - Add academic year schedule policy`) adds the Qt-free `isAcademicYearScheduleValid` contract over term year, resolved valid-Monday status, and exactly four counts. It owns `FirstTermYear=2026` and `MaximumTermWeeks=53`; both `AcademicYearSchedule::isValid()` and JSON parsing use the policy. Feature QDate parsing and weekday resolution, JSON type/shape/four-count checks, arithmetic, rollover, and UI behavior remain at their existing edges. The calendar preferences panel reuses `MaximumTermWeeks` without changing its zero editing minimum.
+
+The independent Tester confirmed ownership validation for 1,506 handwritten sources. Serial Debug builds of the policy target, `ClassMngr`, and `ClassMngrAcademicCalendarTests` passed after the standard FileTracker Access Denied attempt was retried with `/p:TrackFileAccess=false`. All three focused CTests passed, and `git diff --check` passed. The build reported MSB8064 for missing generated dependency `src/next/application/teacher_import_plan_mapper.h`; the targets passed. The unrelated Campus Map registration was not built. No full target or suite ran.
+
+Two independent post-F1010 audits reviewed all 13 official Deferred entries. Each retains its existing blocker; none is newly actionable, resolved, or superseded. Keep the official list unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+Batch383 is complete. Batch384 discovery ranked academic-year winter-edit continuity highest: it has a narrow whole-week rule with an atomic two-profile update boundary. Schedule-grid geometry remains coupled to parsing/output, Sub Prep meeting-time grouping is presentation-heavy, and F1007 remains pending because Roster and Speaking Evaluation validation semantics differ. The Explorer and Investigator confirmed F1011's feature boundary and the need to validate both profiles before mutation, preserving UI validation-before-warning/save order. No official Deferred candidate changed.
+
+F1011, Academic-year winter-edit continuity, is accepted before implementation. Add a Qt-free Application helper mapping resolved signed day distance to `optional<int>` week count. Accept only positive multiples of seven producing 1 through `MaximumTermWeeks` (53), and return the count so feature callers do not repeat division/range checks. Keep `QDate::daysTo()` at the feature edge. Use the helper in `AcademicCalendarSchedule::setYearSchedules`, `CalendarPreferencesPanel::saveTermSchedules`, and `commitDate` for intra- and inter-term spans. Preserve messages, save/confirmation order, staged input, and `FirstTermYear` gating. In `setYearSchedules`, calculate both profile results before any map mutation; on either failure, preserve both maps, including later custom schedules. Add no date-year relationship or total-week rule.
+
+F1011 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less tests cover 7 to 1 week and 371 to 53 weeks; reject zero, negative, non-week-aligned, and 378-day spans. |
+| Atomic profile update | Test two proposed valid schedules where one continuity span is invalid; assert `setYearSchedules` leaves `toJson()` exactly unchanged, including a later custom year. Retain successful continuity and later-invalidation regressions. |
+| Calendar Preferences UI | Verify an invalid 54-week winter-to-save span retains the existing warning and performs no schedule write. Verify an over-53 or unaligned inner-term edit retains its warning and refreshed-field behavior. |
+| Focused verification | Add exact selectors for the app-less policy, Academic Calendar atomicity case, and affected Preferences UI methods. Build the app-less target, `ClassMngr`, `ClassMngrAcademicCalendarTests`, and `ClassMngrCalendarPreferencesRestoreDefaultsTests` serially in standard `build/windows-x64-debug`; run only focused selectors, preserving whole-target registrations, offscreen and Windows Qt PATH. No full suite. |
+
+F1007 remains pending policy reconciliation. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.

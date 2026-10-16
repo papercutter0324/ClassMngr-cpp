@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1009 is complete at source commit `8a11736b3e8e9206dd3c7571a631a144fc009929`; F1010, Academic-year schedule validity, is accepted before implementation and F1007 remains pending policy reconciliation; two post-F1009 audits found all 13 official Deferred entries unchanged, with Gates 1/2 Partial and the Phase 2 exit gate Open.
+- Current note: F1010 is complete at source commit `60238998911a4ba6ee13d2e4c4a364b953f7fcb1`; F1011, Academic-year winter-edit continuity, is accepted before implementation. Two post-F1010 audits found all 13 official Deferred entries unchanged; F1007 remains pending reconciliation, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch383
-  - F1010 - Academic-year schedule validity: accepted before implementation; move only resolved validity facts and the existing year/week-count rule into Qt-free Next Application.
+- Batch384
+  - F1011 - Academic-year winter-edit continuity: accepted before implementation; centralize positive whole-week span validation and preserve two-profile all-or-nothing updates.
 
 ## Objective
 
