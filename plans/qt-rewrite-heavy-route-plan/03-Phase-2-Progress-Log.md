@@ -44212,3 +44212,35 @@ current evidence: all 13 official entries are unchanged, with none actionable,
 resolved, or superseded. Batch407 closed without a production slice. Gates 1/2
 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
 policy reconciliation. Batch408 Heavy discovery is underway.
+
+### Batch408 discovery and F1031 accepted before implementation - 2026-10-17
+
+The independent domain scan found no eligible candidate. The application scan
+found that the Testing Classes details-update platform adapter maps an
+unavailable-session `NotFound` as nonrecoverable, while details-read, create,
+and delete adapters mark the same unavailable-session condition recoverable.
+Two independent read-only reviews confirmed the mismatch is observable through
+public `OperationError::recoverable`; the page checks only the error code, so
+this does not establish a current page bug. A deleted parent class also maps
+to `NotFound` and correctly remains nonrecoverable with its existing
+diagnostic. Existing tests cover the closed-session error code and deleted
+parent nonrecoverability, but not recoverability for closed-session update.
+
+Accept F1031: change only unavailable-session details-update failures to
+`NotFound` with `recoverable == true`. Preserve deleted-parent nonrecoverable
+`NotFound` and its diagnostic, validation precedence, success behavior, and
+all other result mappings. Extend the existing focused update-port regression
+to assert recoverability for an unavailable session and retain the deleted-
+parent assertion.
+
+Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`
+in the existing Debug tree, then run only CTest
+`ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests`.
+No full suite. F1030 at `e2c5e65eca8c566fbb25a8553aa9993e0252236a` remains the
+latest source commit. The post-F1030 audit remains the current evidence: all
+13 official Deferred entries are unchanged, with none actionable, resolved,
+or superseded; repeat the independent audits after F1031 implementation.
+Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007
+remains pending policy reconciliation. F1031 is accepted and pending
+implementation.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1030 is complete at source commit `e2c5e65eca8c566fbb25a8553aa9993e0252236a`, the exact 13 Deferred entries remain unchanged, Batch407 closed without a production slice and Batch408 Heavy discovery is underway, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1030 is complete at source commit `e2c5e65eca8c566fbb25a8553aa9993e0252236a` and F1031 is accepted in Batch408 pending implementation; the exact 13 Deferred entries remain unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch — Batch408
 
-- Heavy-route discovery is underway; no candidate has been selected yet.
+- F1031 - Testing Classes update recoverability — mark unavailable-session NotFound results recoverable.
 
 #### Deferred candidates
 

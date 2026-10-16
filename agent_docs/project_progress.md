@@ -6031,7 +6031,7 @@ UI paths or the remaining Application import use cases. Batch402 discovery is
 underway. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-17 (F1030 complete; Batch408 discovering)
+## Current continuation - 2026-10-17 (F1031 accepted; Batch408 active)
 
 Batch402–404 found no eligible source slice. Batch405 found an inconsistent
 `FeatureService` contract: some operations fall back to a separate legacy
@@ -6054,5 +6054,13 @@ No full suite ran. Two independent audits again found all 13 official
 Deferred entries unchanged. Batch407 found no production slice: the stateful
 Application transitions and read projections preserve their contracts with
 existing focused coverage. No files or tests changed. Batch408 Heavy-route
-discovery is underway. Gates 1/2 remain Partial, F1007 remains pending policy
-reconciliation, and the Phase 2 exit gate remains Open.
+discovery identified an Application result inconsistency. The Testing Classes
+details-update adapter marks an unavailable-session `NotFound` nonrecoverable,
+unlike the corresponding read/create/delete adapters; the page caller checks
+only the error code, so this is a public result-metadata contract issue, not a
+current page defect. F1031 is accepted before implementation: make only that
+unavailable-session update result recoverable, preserving nonrecoverable
+deleted-parent `NotFound` and its diagnostic. Repeat the independent audit of
+all 13 official Deferred entries after implementation. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit
+gate remains Open.
