@@ -44570,6 +44570,8 @@ asserts the silent fallback for an assigned but missing teacher, and F913's
 accepted history keeps that presentation for any profile error. This is not a
 current official Deferred candidate; no implementation was selected.
 
+No other slices were found.
+
 ### Batch418 discovery shortfall - 2026-10-17
 
 Three independent scans found no eligible slice. F285's blank-draft and
