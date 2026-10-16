@@ -123,6 +123,11 @@ public:
         ImportJobEvent event
         ) override
     {
+        if (!isSupportedEventKind(event.kind))
+        {
+            return Domain::Result<void>::failure(invalidEventKind());
+        }
+
         std::lock_guard lock(m_mutex);
         if (m_events.size() >= m_capacity)
         {
@@ -184,6 +189,30 @@ public:
     }
 
 private:
+    [[nodiscard]] static bool isSupportedEventKind(
+        const ImportJobEventKind kind
+        ) noexcept
+    {
+        switch (kind)
+        {
+        case ImportJobEventKind::Progress:
+        case ImportJobEventKind::CancellationAcknowledged:
+        case ImportJobEventKind::Completed:
+        case ImportJobEventKind::Failed:
+            return true;
+        }
+        return false;
+    }
+
+    [[nodiscard]] static Domain::OperationError invalidEventKind()
+    {
+        return Domain::OperationError{
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Import job event kind is invalid.",
+            .recoverable = false
+        };
+    }
+
     [[nodiscard]] static Domain::OperationError queueOverflow()
     {
         return Domain::OperationError{

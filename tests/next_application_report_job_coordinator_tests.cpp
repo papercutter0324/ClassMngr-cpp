@@ -143,6 +143,7 @@ private slots:
     void workerStartExceptionsBecomeTechnicalFailedStates();
     void staleGenerationCannotMutateRestartedJob();
     void queueOverflowIsBoundedAndThreadSafe();
+    void invalidEventKindIsRejectedWithoutChangingQueuedEvents();
     void zeroCapacityQueueRejectsWithoutChangingState();
     void terminalStateRemainsImmutableForLateEvents();
     void workerBoundaryIsAbstractAndCopyableEventsCarryNoWorkerState();
@@ -524,6 +525,32 @@ void NextApplicationReportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
 
     QCOMPARE(accepted.load(), 3);
     QCOMPARE(concurrentQueue.size(), std::size_t{3});
+}
+
+void NextApplicationReportJobCoordinatorTests::invalidEventKindIsRejectedWithoutChangingQueuedEvents()
+{
+    ReportJobEventQueue queue(4);
+    QVERIFY(queue.post(ReportJobEvent::progress(1, 1)));
+    QVERIFY(queue.post(ReportJobEvent::cancellationAcknowledged(1)));
+    QVERIFY(queue.post(ReportJobEvent::completed(1, "report.pdf")));
+    QVERIFY(queue.post(ReportJobEvent::failed(1, workerError("failure"))));
+
+    ReportJobEvent invalidEvent = ReportJobEvent::progress(1, 99);
+    invalidEvent.kind = static_cast<ReportJobEventKind>(255);
+    const auto result = queue.post(std::move(invalidEvent));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QVERIFY(result.error().message == "Report job event kind is invalid.");
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(queue.size(), std::size_t{4});
+
+    const auto events = queue.drain();
+    QCOMPARE(events.size(), std::size_t{4});
+    QCOMPARE(events[0].kind, ReportJobEventKind::Progress);
+    QCOMPARE(events[1].kind, ReportJobEventKind::CancellationAcknowledged);
+    QCOMPARE(events[2].kind, ReportJobEventKind::Completed);
+    QCOMPARE(events[3].kind, ReportJobEventKind::Failed);
 }
 
 void NextApplicationReportJobCoordinatorTests::zeroCapacityQueueRejectsWithoutChangingState()

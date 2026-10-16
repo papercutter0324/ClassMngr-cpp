@@ -127,6 +127,11 @@ public:
         ReportJobEvent event
         ) override
     {
+        if (!isSupportedEventKind(event.kind))
+        {
+            return Domain::Result<void>::failure(invalidEventKind());
+        }
+
         std::lock_guard lock(m_mutex);
         if (m_events.size() >= m_capacity)
         {
@@ -188,6 +193,30 @@ public:
     }
 
 private:
+    [[nodiscard]] static bool isSupportedEventKind(
+        const ReportJobEventKind kind
+        ) noexcept
+    {
+        switch (kind)
+        {
+        case ReportJobEventKind::Progress:
+        case ReportJobEventKind::CancellationAcknowledged:
+        case ReportJobEventKind::Completed:
+        case ReportJobEventKind::Failed:
+            return true;
+        }
+        return false;
+    }
+
+    [[nodiscard]] static Domain::OperationError invalidEventKind()
+    {
+        return Domain::OperationError{
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Report job event kind is invalid.",
+            .recoverable = false
+        };
+    }
+
     [[nodiscard]] static Domain::OperationError queueOverflow()
     {
         return Domain::OperationError{

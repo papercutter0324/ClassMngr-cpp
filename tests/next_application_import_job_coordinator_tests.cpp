@@ -123,6 +123,7 @@ private slots:
     void workerStartFailureBecomesExplicitFailedState();
     void staleGenerationCannotMutateRestartedJob();
     void queueOverflowIsBoundedAndThreadSafe();
+    void invalidEventKindIsRejectedWithoutChangingQueuedEvents();
     void zeroCapacityQueueRejectsWithoutChangingState();
     void terminalStateRemainsImmutableForLateEvents();
     void workerBoundaryIsAbstractAndCopyableEventsCarryNoWorkerState();
@@ -422,6 +423,32 @@ void NextApplicationImportJobCoordinatorTests::queueOverflowIsBoundedAndThreadSa
 
     QCOMPARE(accepted.load(), 3);
     QCOMPARE(concurrentQueue.size(), std::size_t{3});
+}
+
+void NextApplicationImportJobCoordinatorTests::invalidEventKindIsRejectedWithoutChangingQueuedEvents()
+{
+    ImportJobEventQueue queue(4);
+    QVERIFY(queue.post(ImportJobEvent::progress(1, 1)));
+    QVERIFY(queue.post(ImportJobEvent::cancellationAcknowledged(1)));
+    QVERIFY(queue.post(ImportJobEvent::completed(1)));
+    QVERIFY(queue.post(ImportJobEvent::failed(1, workerError("failure"))));
+
+    ImportJobEvent invalidEvent = ImportJobEvent::progress(1, 99);
+    invalidEvent.kind = static_cast<ImportJobEventKind>(255);
+    const auto result = queue.post(std::move(invalidEvent));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+    QVERIFY(result.error().message == "Import job event kind is invalid.");
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(queue.size(), std::size_t{4});
+
+    const auto events = queue.drain();
+    QCOMPARE(events.size(), std::size_t{4});
+    QCOMPARE(events[0].kind, ImportJobEventKind::Progress);
+    QCOMPARE(events[1].kind, ImportJobEventKind::CancellationAcknowledged);
+    QCOMPARE(events[2].kind, ImportJobEventKind::Completed);
+    QCOMPARE(events[3].kind, ImportJobEventKind::Failed);
 }
 
 void NextApplicationImportJobCoordinatorTests::zeroCapacityQueueRejectsWithoutChangingState()
