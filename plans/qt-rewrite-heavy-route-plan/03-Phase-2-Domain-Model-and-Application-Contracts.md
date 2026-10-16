@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1017, Sub Prep visible class ordering, is complete at source commit `bd94f54422fa7053a94bf5799471aef6e6f203db`; F1018, Teacher Info preferred-name load/edit precedence, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1018, Teacher Info preferred-name load/edit precedence, is complete at source commit `a6a69b4fcc420acab7160da1cf9c28112c457513`; F1020, Testing Classes list ordering, is accepted under Batch389; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -115,8 +115,7 @@ Treat this plan as an operational summary, not a history:
 #### Active batch
 
 - Batch389
-  - F1019 - Class Tab navigation sort: order from resolved schedule facts while keeping parsing and labels at the feature edge.
-  - F1020 - Testing Classes list ordering: use adapter-resolved ranks and comparator, with a named ordering regression.
+  - F1019 - Class Tab navigation sort: extract sorting from the shared model only after preserving raw parsing, regular/intensive semantics, and unknown schedule behavior.
   - F1021 - Speaking Evaluation grade/average alignment: reconcile `qRound` with floor-based rounding before extraction.
   - F1022 - Sub Prep print grouping/order: group and order typed print-source values while preserving localized labels/rendering; review output-parity risk.
 

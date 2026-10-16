@@ -6264,3 +6264,26 @@ Teacher Info preferred-name load/edit precedence, next. Its boundary is a
 Qt-free selector over the already ordered candidate choices and stored/current
 names, while candidate construction and UI prompting remain at existing
 boundaries.
+
+## F1018 closeout and F1019 boundary review - 2026-10-17
+
+F1018 completed at source commit
+`a6a69b4fcc420acab7160da1cf9c28112c457513`. The Application policy returns an
+optional exact, case-sensitive choice index. Load prefers the stored name;
+edit prefers the current selection, then stored name; both fall back to the
+first choice, with no selection for an empty list. `Teacher::preferredNameChoices()`
+and the Teacher Info prompt/dialog boundaries remain unchanged. Serial Debug
+builds passed for `ClassMngr`, the policy target, and the Teacher Info page
+tests; both focused CTest selectors passed. FileTracker required elevated
+access; optional Vulkan and existing generated-dependency/duplicate-link
+warnings were nonfatal. No full suite ran.
+
+Two independent audits found none of the 13 official Deferred entries
+actionable, resolved, or superseded after F1018. Candidate review found that
+F1019's raw-schedule sort lives in a model shared by Classes, My Classes, and
+Speaking Evaluation; it also has regular/intensive preference and an unknown
+weekday/time interaction where sentinel 1000 can equal a valid 16:40 minute.
+Keep F1019 active for a later slice with those boundaries explicit. Select
+F1020, Testing Classes list ordering, next because it is a page-local policy
+over prepared ranks/text keys, does not change the shared query DTO, and keeps
+selection keyed by class ID.

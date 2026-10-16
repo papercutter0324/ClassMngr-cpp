@@ -5907,14 +5907,25 @@ missing Vulkan headers; build output included MSB8064 for an existing
 generated dependency and duplicate-symbol/`/FORCE` notices on the page-test
 link. No full suite ran.
 
-Two independent post-F1017 audits reviewed all 13 official Deferred entries;
-none became actionable, resolved, or superseded. The F1017 page regression
-adds only in-place sorted-selection fallback/detail-load evidence; it provides
-no memory attribution or PageManager eviction/recreation contract. F626 and
-the other 12 entries remain deferred. F1018, Teacher Info preferred-name
-load/edit precedence, is accepted next under Batch389. Its Qt-free policy
-selects from the existing ordered choices: on load prefer stored then first;
-on edit prefer current then stored then first; return no selection when empty.
-Keep choice construction, normalization, prompt eligibility, and dialog
-behavior in their existing Domain/UI boundaries. Gates 1/2 remain Partial and
-the formal Phase 2 exit gate remains Open.
+F1018, Teacher Info preferred-name load/edit precedence, is complete at source
+commit `a6a69b4fcc420acab7160da1cf9c28112c457513`. The Qt-free policy selects
+an exact case-sensitive choice index: load prefers stored then first; edit
+prefers current, then stored, then first; empty choices return no index.
+Choice construction, trimming, deduplication/order, combo state, and prompt
+dialog behavior remain at their previous boundaries. Serial Debug builds
+passed for `ClassMngr`, the policy target, and `ClassMngrTeacherInfoPageTests`;
+the two exact focused CTest selectors passed 2/2. FileTracker required an
+elevated retry; configure reported optional missing Vulkan headers, and build
+output reported an existing generated dependency and forced duplicate-link
+notices. No full suite ran.
+
+Two independent post-F1018 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, superseded, or needed rationale changes.
+F1020, Testing Classes list ordering, is accepted next under Batch389. It is
+page-local and can sort prepared rank/text facts in a Qt-free policy while
+leaving `ScheduleTestingClassChoice` unchanged and preserving class-ID
+selection. F1019 remains active but follows later: its raw-schedule parser is
+inside a Class Tab model shared by Classes, My Classes, and Speaking
+Evaluation, with special regular/intensive and unknown-weekday behavior to
+preserve. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.

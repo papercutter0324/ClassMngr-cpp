@@ -43775,3 +43775,26 @@ F1018 acceptance criteria:
 | Focused verification | Serially build `ClassMngr`, the new app-less policy target, `ClassMngrTeacherInfoPageTests`, and `TeacherInfoPagePersistenceParity` if needed; run only exact focused CTests/selectors. No full suite. |
 
 F1018 is accepted, not yet implemented or verified. Batch389 retains F1019-F1022 as the remaining active candidates.
+
+### F1018 complete; post-F1018 Deferred audits clear; F1020 accepted - 2026-10-17
+
+F1018 source commit `a6a69b4fcc420acab7160da1cf9c28112c457513` completes Teacher Info preferred-name load/edit precedence. The Application policy selects an ordered choice index for Load or Edit context; choice construction, normalization, UI prompts, and dialog behavior remain at the page boundary.
+
+The independent Tester passed serial Debug builds of `ClassMngr`, the new policy target, and `ClassMngrTeacherInfoPageTests`. The two exact focused CTest selectors passed 2/2. FileTracker required an elevated retry. Build output included optional missing Vulkan headers, a missing generated dependency, and duplicate-link notices. No full suite ran.
+
+Two independent audits reviewed all 13 official Deferred entries after F1018. All remain unchanged; none became actionable, resolved, or superseded, and no Deferred wording change is needed. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+For the remaining Batch389 candidates, select F1020, Testing Classes list ordering, next. Its policy can order prepared row facts within the page boundary. F1019 remains active for later because schedule parsing and ordering live in a model shared by Classes, My Classes, and Speaking Evaluation, with regular/intensive and unknown-weekday/time semantics to preserve.
+
+F1020, Testing Classes list ordering, is accepted before implementation. Add a Qt-free Application policy over prepared grade/level ranks and text, with an injected comparator. Keep rank resolution and `QString::localeAwareCompare` at the page edge. Preserve the current priority: grade rank, level rank, comparator-based level text, then comparator-based class name. Do not change `ScheduleTestingClassChoice`, and do not sort by room or class ID. Selection remains keyed by class ID and survives sort/rebuild. Since the current comparator uses `std::sort`, exact ties have no stability guarantee; tests must not promise tie order.
+
+F1020 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application policy | App-less tests cover grade and level rank precedence, injected comparator use for level then name text, unknown rank, and no exact-tie order promise. |
+| Page regression | Use deliberately unsorted choices to cover grade/level/locale-text ordering, room independence, and preferred class ID selection after sorting/rebuild. |
+| Boundary and scope | Keep rank resolution and locale-aware comparison at the page edge. Do not change the `ScheduleTestingClassChoice` query DTO; do not sort by room or class ID. Preserve ID-based selection across sorting/rebuild. |
+| Focused verification | Serially build `ClassMngr`, the new app-less policy target, and `ClassMngrTestingClassesPageTests`; run only the app-less CTest and exact focused page selectors. No full suite. |
+
+F1020 is accepted, not yet implemented or verified. Batch389 now retains F1019, F1021, and F1022, with F1019 first.
