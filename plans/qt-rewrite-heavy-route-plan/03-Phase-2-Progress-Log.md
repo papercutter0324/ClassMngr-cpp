@@ -42590,3 +42590,22 @@ platform/legacy-host bridge; no concrete DataService dependency or clear Phase
 Batch353 discovery has started. The 13 official Deferred entries remain
 unchanged; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
 Open.
+
+### Batch353 closed; Batch354 discovery underway - 2026-10-16
+
+The Domain `Result<T>`/`OperationError` scan found no demonstrable invariant
+leak. The document-content lifecycle scan found no transition bug, including
+release-supported cancellation while Loading. It did find that production
+does not call `DocumentCatalogUseCase::requestPrimaryContent()` or
+`requestExportContent()`: `NavigationController` creates a local catalog
+use-case/session and resolves metadata, while `PdfViewerPage` owns the active
+session. The plan assigns active-session ownership to the viewer/platform and
+leaves broader legacy content loading open, but no source defines how the
+Application use case should own production requests. This is an
+ownership/integration shortfall; no minimal actionable slice or user-visible
+defect was established. No other slices were found.
+
+Batch354 discovery is underway in two read-only lanes: Domain
+contract/value-object invariants and Application use-case validation/port-
+ordering. The 13 official Deferred entries remain unchanged; Gates 1/2 remain
+Partial and the formal Phase 2 exit gate remains Open.
