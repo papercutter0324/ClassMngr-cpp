@@ -1,6 +1,7 @@
 #include "features/classes/services/speaking_analytics.h"
 
 #include "core/utils/student_name_utils.h"
+#include "next/application/class_analytics_criterion_extrema_policy.h"
 #include "next/application/class_analytics_numeric_policy.h"
 #include "next/application/class_analytics_ranking_order_policy.h"
 #include "next/application/evaluation_default_selection.h"
@@ -221,9 +222,6 @@ Snapshot compute(
     std::array<int, CriterionCount> criterionCounts{};
     std::array<int, CriterionCount> criterionStudentCounts{};
     std::array<QMap<QString, int>, CriterionCount> distributions;
-    QList<double> criterionAverages;
-    criterionAverages.reserve(CriterionCount);
-
     double classSum = 0.0;
     int classCount = 0;
 
@@ -296,38 +294,25 @@ Snapshot compute(
         {
             slice.average3 = roundTo3(
                 criterionSums[criterion] / criterionCounts[criterion]);
-            criterionAverages.append(slice.average3);
-        }
-        else
-        {
-            criterionAverages.append(-1.0);
         }
         snapshot.criteria.append(slice);
     }
 
-    double strongest = -1.0;
-    double focus = 6.0;
-    for (double average : criterionAverages)
+    const auto extrema = ClassMngr::Next::Application::
+        selectClassAnalyticsCriterionExtrema(snapshot.criteria);
+    for (const std::size_t index : extrema.strongestIndices)
     {
-        if (average < 0.0)
-            continue;
-        strongest = qMax(strongest, average);
-        focus = qMin(focus, average);
+        const CriterionSlice& slice = snapshot.criteria.at(
+            static_cast<qsizetype>(index));
+        snapshot.strongestNames.append(slice.name);
+        snapshot.strongestLabels.append(criterionLabel(slice));
     }
-    for (const CriterionSlice& slice : snapshot.criteria)
+    for (const std::size_t index : extrema.focusIndices)
     {
-        if (!slice.hasData)
-            continue;
-        if (qAbs(slice.average3 - strongest) < 1e-9)
-        {
-            snapshot.strongestNames.append(slice.name);
-            snapshot.strongestLabels.append(criterionLabel(slice));
-        }
-        if (qAbs(slice.average3 - focus) < 1e-9)
-        {
-            snapshot.focusNames.append(slice.name);
-            snapshot.focusLabels.append(criterionLabel(slice));
-        }
+        const CriterionSlice& slice = snapshot.criteria.at(
+            static_cast<qsizetype>(index));
+        snapshot.focusNames.append(slice.name);
+        snapshot.focusLabels.append(criterionLabel(slice));
     }
 
     ClassMngr::Next::Application::ClassAnalyticsRankingOrderPolicy::

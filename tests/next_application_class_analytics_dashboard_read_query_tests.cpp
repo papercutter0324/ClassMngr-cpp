@@ -230,6 +230,34 @@ void canonicalOrderLatestClassShapeAndYtd()
     assert(result.value().yearToDatePoints[1].evaluationName == u"Speech Contest");
 }
 
+void strongestAndFocusCriteriaPreserveOrderAndLabels()
+{
+    FakeReadPort port;
+    ClassAnalyticsEvaluationRow student = row(u"Taylor", u"", u"B");
+    student.scores[0] = u"A"; // Grammar: strongest tie.
+    student.scores[1] = u"B"; // Pronunciation: focus tie.
+    student.scores[2] = u"A"; // Fluency: strongest tie.
+    student.scores[3].clear(); // Manner: no data.
+    student.scores[4] = u"B"; // Content: focus tie.
+    student.scores[5].clear(); // Overall Effort: no data.
+    port.evaluations[0].push_back(std::move(student));
+    const TestNameSemantics names;
+
+    const auto result = run(port, names, u"Winter");
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert((selected.strongestNames == std::vector<std::u16string>{
+        u"Grammar", u"Fluency" }));
+    assert((selected.focusNames == std::vector<std::u16string>{
+        u"Pronunciation", u"Content" }));
+    assert((selected.strongestLabels == std::vector<std::u16string>{
+        u"Grammar (A)", u"Fluency (A)" }));
+    assert((selected.focusLabels == std::vector<std::u16string>{
+        u"Pronunciation (B)", u"Content (B)" }));
+    assert(!selected.criteria[3].hasData);
+    assert(!selected.criteria[5].hasData);
+}
+
 void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
 {
     FakeReadPort port;
@@ -446,6 +474,7 @@ int main()
     numericPolicyBoundaries();
     roundedClassAverageAtGradeBoundaryAdvances();
     canonicalOrderLatestClassShapeAndYtd();
+    strongestAndFocusCriteriaPreserveOrderAndLabels();
     currentRosterUsesNormalizedEnglishAndKoreanIdentities();
     duplicateRowsConsolidateAndRankingTiesUseNamePort();
     adjacentRoundedScoresRankBeforeNamePort();

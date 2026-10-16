@@ -125,6 +125,37 @@ add_test(
     COMMAND ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
 )
 
+# Strongest/focus criterion selection remains Qt-free and preserves ties.
+add_executable(
+    ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+    tests/next_application_class_analytics_criterion_extrema_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+    COMMAND ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+)
+
 # Ranking order uses prepared integer keys and remains independent of Qt.
 add_executable(
     ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests

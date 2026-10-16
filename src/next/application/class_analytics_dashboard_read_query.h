@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/class_analytics_dashboard_read_port.h"
+#include "next/application/class_analytics_criterion_extrema_policy.h"
 #include "next/application/class_analytics_numeric_policy.h"
 #include "next/application/class_analytics_ranking_order_policy.h"
 #include "next/application/positive_decimal_id_validation.h"
@@ -366,7 +367,6 @@ namespace ClassAnalyticsDashboardReadDetail
     snapshot.classAverageLetter = numberToGrade(
         roundAverageToGrade(snapshot.classAverage3));
 
-    std::array<double, kClassAnalyticsCriterionCount> criterionAverages{};
     for (std::size_t criterion = 0;
          criterion < kClassAnalyticsCriterionCount;
          ++criterion)
@@ -380,36 +380,25 @@ namespace ClassAnalyticsDashboardReadDetail
         {
             slice.average3 = roundTo3(
                 criterionSums[criterion] / criterionCounts[criterion]);
-            criterionAverages[criterion] = slice.average3;
-        }
-        else
-        {
-            criterionAverages[criterion] = -1.0;
         }
         snapshot.criteria.push_back(std::move(slice));
     }
 
-    double strongest = -1.0;
-    double focus = 6.0;
-    for (const double average : criterionAverages)
+    const auto extrema = selectClassAnalyticsCriterionExtrema(
+        snapshot.criteria);
+    for (const std::size_t index : extrema.strongestIndices)
     {
-        if (average < 0.0) continue;
-        strongest = std::max(strongest, average);
-        focus = std::min(focus, average);
+        const ClassAnalyticsCriterionSlice& criterion =
+            snapshot.criteria[index];
+        snapshot.strongestNames.push_back(criterion.name);
+        snapshot.strongestLabels.push_back(criterionLabel(criterion));
     }
-    for (const ClassAnalyticsCriterionSlice& criterion : snapshot.criteria)
+    for (const std::size_t index : extrema.focusIndices)
     {
-        if (!criterion.hasData) continue;
-        if (std::abs(criterion.average3 - strongest) < 1e-9)
-        {
-            snapshot.strongestNames.push_back(criterion.name);
-            snapshot.strongestLabels.push_back(criterionLabel(criterion));
-        }
-        if (std::abs(criterion.average3 - focus) < 1e-9)
-        {
-            snapshot.focusNames.push_back(criterion.name);
-            snapshot.focusLabels.push_back(criterionLabel(criterion));
-        }
+        const ClassAnalyticsCriterionSlice& criterion =
+            snapshot.criteria[index];
+        snapshot.focusNames.push_back(criterion.name);
+        snapshot.focusLabels.push_back(criterionLabel(criterion));
     }
 
     ClassAnalyticsRankingOrderPolicy::sortByScoreThenName(
