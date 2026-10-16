@@ -36,6 +36,8 @@ private slots:
     void selectsOccurrencesAcrossCalendarYearRollover();
     void mapsLeapDayToFebruaryTwentyEighthInNonLeapYear();
     void omitsInvalidBirthdaysAndBlankNames();
+    void omitsCandidatesWithUnknownStaffGroups();
+    void preservesEveryDeclaredStaffGroup();
     void preservesNonAsciiUtf16DisplayName();
     void capsRangesAtMaximumDate();
     void invalidReferenceDateReturnsEmptySchedule();
@@ -126,6 +128,55 @@ omitsInvalidBirthdaysAndBlankNames()
 
     QCOMPARE(schedule.today.size(), std::size_t{1});
     QCOMPARE(schedule.today.front().displayName, std::u16string(u"Visible"));
+}
+
+void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
+omitsCandidatesWithUnknownStaffGroups()
+{
+    const UpcomingBirthdaySchedule schedule =
+        UpcomingBirthdayScheduleUseCase::build(
+            {
+                birthday(
+                    "08-18",
+                    u"Unknown group",
+                    static_cast<UpcomingBirthdayStaffGroup>(99)
+                    ),
+                birthday("08-18", u"Known group")
+            },
+            {2026, 8, 18}
+            );
+
+    QCOMPARE(schedule.today.size(), std::size_t{1});
+    QCOMPARE(schedule.today.front().displayName, std::u16string(u"Known group"));
+    QVERIFY(schedule.thisWeek.empty());
+    QVERIFY(schedule.nextWeek.empty());
+}
+
+void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
+preservesEveryDeclaredStaffGroup()
+{
+    const UpcomingBirthdaySchedule schedule =
+        UpcomingBirthdayScheduleUseCase::build(
+            {
+                birthday(
+                    "08-18",
+                    u"Korean teacher",
+                    UpcomingBirthdayStaffGroup::KoreanTeacher
+                    ),
+                birthday(
+                    "08-18",
+                    u"Native English teacher",
+                    UpcomingBirthdayStaffGroup::NativeEnglishTeacher
+                    ),
+                birthday("08-18", u"GS team", UpcomingBirthdayStaffGroup::GsTeam)
+            },
+            {2026, 8, 18}
+            );
+
+    QCOMPARE(schedule.today.size(), std::size_t{3});
+    QVERIFY(schedule.today[0].group == UpcomingBirthdayStaffGroup::KoreanTeacher);
+    QVERIFY(schedule.today[1].group == UpcomingBirthdayStaffGroup::NativeEnglishTeacher);
+    QVERIFY(schedule.today[2].group == UpcomingBirthdayStaffGroup::GsTeam);
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::

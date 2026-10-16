@@ -96,6 +96,11 @@ public:
 
         for (const UpcomingBirthdayCandidate& candidate : candidates)
         {
+            if (!isKnownGroup(candidate.group))
+            {
+                continue;
+            }
+
             if (isBlank(candidate.displayName))
             {
                 continue;
@@ -145,6 +150,21 @@ public:
 
 private:
     using SysDays = std::chrono::sys_days;
+
+    [[nodiscard]] static bool isKnownGroup(
+        const UpcomingBirthdayStaffGroup group
+        ) noexcept
+    {
+        switch (group)
+        {
+        case UpcomingBirthdayStaffGroup::KoreanTeacher:
+        case UpcomingBirthdayStaffGroup::NativeEnglishTeacher:
+        case UpcomingBirthdayStaffGroup::GsTeam:
+            return true;
+        }
+
+        return false;
+    }
 
     [[nodiscard]] static std::optional<SysDays> toSysDays(
         const UpcomingBirthdayDate& date
