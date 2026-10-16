@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current state - 2026-10-17 (F1022 complete; F1023 accepted)
+### Current state - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
 Initial Setup and Testing teacher-choice reads reject terminal cursor errors;
@@ -5350,6 +5350,30 @@ selected in Batch 289, pending its required SQLite baseline for
 public-list candidate does not resolve the Sidebar Teacher Create/Delete
 int-based ID deferral. Gates 1 and 2 remain Partial and the formal Phase 2 exit
 gate remains Open.
+
+F1023 completed at source commit `5cb82bf04591608a6f9f8db5cff88dbbbcaf1baf`.
+The new immutable `Domain::BirthdayMonthDay` expresses valid month/day values
+including February 29 in leap year 2000. Save validation and upcoming-birthday
+scheduling use the type after retaining their own Qt-compatible Unicode and
+ASCII trimming rules. Raw stored, read, and draft birthday strings remain
+unchanged. The independent Tester built and linked `ClassMngr` and the GS Team
+save target; Domain Contract, Upcoming Birthday, Native English save, and GS
+Team save CTests passed 4/4. No full suite ran. Two independent post-commit
+audits found all 13 official Deferred entries unchanged.
+
+F1024, typed upcoming-birthday occurrence dates, is accepted and implementation
+is pending. Change only the output date on `UpcomingBirthdayOccurrence` to
+`Domain::GregorianDate`; keep the raw reference date input so invalid values
+still produce an empty schedule. Preserve candidate ASCII trimming, ordering,
+week buckets, years 1..9999, and February 29 mapping to February 28 in
+non-leap years, including the 9999 boundary. The feature adapter must retain
+the same `QDate` and display behavior. Check the chrono-to-domain optional and
+assert/fail closed if the valid-generated-date invariant breaks. Focused
+verification covers `NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`,
+`UpcomingBirthdaysLocaleAwareOrderingTests`, and
+`UpcomingBirthdaysLeapDayFallbackBehavior` only.
+Batch391 begins with F1024. All 13 official Deferred entries remain unchanged;
+Gates 1/2 are Partial and the formal Phase 2 exit gate remains Open.
 
 ## Phase 2 current position — 2026-10-15 (F886 accepted; F887 selected)
 

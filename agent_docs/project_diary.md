@@ -6410,3 +6410,38 @@ build and run only the domain-contract, upcoming-schedule, Native English
 save, and GS Team save CTests. No database, UI, or profile-field migration is
 part of the slice. Batch389 is closed; Batch390 starts with F1023. Gates 1/2
 remain Partial and Phase 2 exit remains Open.
+
+## F1023 closeout and F1024 acceptance - 2026-10-17
+
+F1023 completed at source commit
+`5cb82bf04591608a6f9f8db5cff88dbbbcaf1baf`. The new immutable Qt-free
+`Domain::BirthdayMonthDay` represents valid recurring month/day values,
+including February 29 against leap year 2000. The save-validation parser keeps
+Qt-compatible Unicode trimming and exact ASCII `MM-dd`; upcoming scheduling
+keeps ASCII-only trimming and now uses the typed value instead of an integer
+pair. Raw stored, read, and draft birthday strings remain unchanged. The
+independent Tester built and linked `ClassMngr` and the GS Team save target;
+the Domain Contract, Upcoming Birthday, Native English save, and GS Team save
+CTest registrations passed 4/4. Three targets were up to date; no full suite
+ran.
+
+Two independent post-commit audits found all 13 official Deferred entries
+unchanged and needing no rationale updates. F1023 does not affect F285's blank
+draft contract, F614/F618/F626 memory evidence, or any other listed blocker.
+Keep all 13 entries and existing rationales.
+
+Accept F1024 as the next Batch391 slice. Change only
+`UpcomingBirthdayOccurrence::date` to `Domain::GregorianDate`; keep the
+unvalidated `UpcomingBirthdayDate` reference input so invalid reference dates
+still return an empty schedule. The Application retains ASCII-trimmed birthday
+parsing, occurrence ordering, week buckets, 1..9999 cap, and February 29 to
+February 28 in non-leap years, including year 9999. Check chrono conversion
+explicitly; assert the invariant in Debug and fail closed in Release if the
+domain constructor unexpectedly rejects a generated date. The feature adapter
+uses the domain accessors to produce the same `QDate` and display text. Preserve
+rollover, sorting, leap-day, invalid-reference, and maximum-date tests; add
+invalid reference years 0/10000 and February 29 at year 9999. Verify only
+`NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`,
+`UpcomingBirthdaysLocaleAwareOrderingTests`, and the existing focused
+`UpcomingBirthdaysLeapDayFallbackBehavior` CTest. Gates 1/2 remain Partial;
+Phase 2 exit remains Open.

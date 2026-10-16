@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1023, the shared derived `BirthdayMonthDay` domain value, is accepted under Batch390 with raw birthday persistence and existing parser normalization boundaries preserved; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1024, typed upcoming birthday occurrence dates, is accepted under Batch391 while preserving raw reference inputs and existing feature date/display behavior; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch390
-  - F1023 - Shared derived `BirthdayMonthDay` value: add a typed month/day value after existing Application parsers while preserving raw birthday storage and parser-specific normalization.
+- Batch391
+  - F1024 - Typed upcoming birthday occurrence dates: expose `Domain::GregorianDate` after validated reference-date handling while preserving ordering, bounds, and feature display behavior.
 
 ## Objective
 

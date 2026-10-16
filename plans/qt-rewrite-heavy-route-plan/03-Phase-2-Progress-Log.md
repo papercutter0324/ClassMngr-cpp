@@ -43842,3 +43842,22 @@ F1023 acceptance criteria:
 | Upcoming schedule | Preserve ASCII trim, invalid-value omission, sorting/bucketing, and February 29 occurrence behavior while using the typed value after parsing. |
 | Persistence and presentation | Keep `TeacherProfileFields::birthday` raw text and preserve storage, read/draft semantics, formatting, and UI behavior; no schema or database migration. |
 | Focused verification | Build `ClassMngr` and four affected targets covering the domain contract, upcoming schedule, Native English save, and GS Team save; run exact focused CTests only. No full suite. |
+
+### F1023 complete; post-F1023 Deferred audits clear; F1024 accepted - 2026-10-17
+
+F1023 source commit `5cb82bf04591608a6f9f8db5cff88dbbbcaf1baf` completes the shared derived `Domain::BirthdayMonthDay` value. The domain accepts validated month/day components, including February 29 via leap year 2000. Existing Application parsers retain their separate input normalization and parsing rules, and use the typed value after parsing; persisted `TeacherProfileFields::birthday` remains raw text with storage, read, and draft behavior unchanged.
+
+Four focused CTest registrations passed: `ClassMngrNextDomainContractTests`, `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, `ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests`, and `ClassMngrNextApplicationGsTeamDirectorySaveTests`. No full suite ran.
+
+Two independent post-commit audits found all 13 official Deferred entries unchanged; preserve the complete list and existing rationales. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation. Batch390 is closed.
+
+Accept F1024 in Batch391 to type the date on each upcoming birthday occurrence without changing the raw reference-date input. Change only `UpcomingBirthdayOccurrence::date` from `UpcomingBirthdayDate` to existing `Domain::GregorianDate`; keep raw `UpcomingBirthdayDate` input so invalid reference components still produce an empty schedule. Preserve ASCII trimming and parsing, ordering and week buckets, the supported year range 1–9999, February 29 mapping to February 28 in non-leap years (including reference year 9999), and feature `QDate`/display behavior through accessors. When converting from `std::chrono`, explicitly check the optional result: assert the invariant in Debug and return an empty schedule in Release on the impossible conversion failure; never dereference an empty optional or fabricate a date.
+
+F1024 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application occurrence type | `UpcomingBirthdayOccurrence::date` is `Domain::GregorianDate`; raw `UpcomingBirthdayDate` remains the reference input and invalid components return an empty schedule. |
+| Date conversion and boundaries | Check the optional chrono-to-domain conversion explicitly, assert in Debug, and fail closed in Release. Preserve years 1–9999, ordering, week buckets, leap-day mapping, and rollover behavior; cover invalid reference years 0 and 10000 and February 29 in year 9999 mapping to February 28. |
+| Feature adapter | Update the adapter to read the typed date through accessors and preserve existing `QDate`, locale-aware ordering, and display behavior. Retain rollover/order/leap-day/max-date coverage. |
+| Focused verification | Build `ClassMngr`, `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`, and `ClassMngrUpcomingBirthdaysTests`; run exact CTests `NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`, `UpcomingBirthdaysLocaleAwareOrderingTests`, and `UpcomingBirthdaysLeapDayFallbackBehavior` only. No full suite. |

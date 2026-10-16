@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1022, Sub Prep print grouping/order, is complete at source commit `fd793132da5860714be6801c956ea167f168c20d`; F1023, the shared derived `BirthdayMonthDay` domain value, is accepted under Batch390. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1023, the shared derived `BirthdayMonthDay` domain value, is complete at source commit `5cb82bf04591608a6f9f8db5cff88dbbbcaf1baf`; F1024, typed upcoming birthday occurrence dates, is accepted under Batch391. All 13 official Deferred entries remain unresolved; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

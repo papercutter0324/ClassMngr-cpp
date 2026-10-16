@@ -5919,3 +5919,28 @@ schedule, Native English save, and GS Team save tests only. Batch389 is closed;
 Batch390 is active. Gates 1/2 remain Partial and Phase 2 exit remains Open.
 Preserve unrelated untracked `%SystemDrive%/`, `Testing/`,
 `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
+
+## Current continuation - 2026-10-17 (F1023 complete; F1024 accepted)
+
+F1023 completed at source commit
+`5cb82bf04591608a6f9f8db5cff88dbbbcaf1baf`. `Domain::BirthdayMonthDay` is an
+immutable Qt-free recurring month/day value valid against leap year 2000. Save
+validation and upcoming scheduling use it after their existing parser rules;
+raw stored, read, and draft birthday strings remain unchanged. The independent
+Tester built and linked `ClassMngr` and the GS Team save target; the Domain
+Contract, Upcoming Birthday, Native English save, and GS Team save CTests passed
+4/4 in Debug Ninja/MSVC 14.51/Qt 6.12.0. Three test targets were up to date; no
+full suite ran. Two independent post-commit audits found all 13 official
+Deferred entries unchanged.
+
+F1024 is accepted: type only `UpcomingBirthdayOccurrence::date` as
+`Domain::GregorianDate`; retain the raw reference-date input and its invalid
+date to empty-schedule behavior. Keep schedule parsing, sorting, week buckets,
+the 1..9999 boundary, and February 29 to February 28 behavior unchanged. The
+feature adapter continues to generate the same `QDate` and display. Verify
+only `NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`,
+`UpcomingBirthdaysLocaleAwareOrderingTests`, and
+`UpcomingBirthdaysLeapDayFallbackBehavior`. Batch390 is
+closed; Batch391 is active. Gates 1/2 remain Partial and Phase 2 exit remains
+Open. Preserve unrelated untracked `%SystemDrive%/`, `Testing/`,
+`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
