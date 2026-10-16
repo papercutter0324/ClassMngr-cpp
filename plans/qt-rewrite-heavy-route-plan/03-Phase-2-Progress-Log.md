@@ -42931,3 +42931,54 @@ No CMake update is expected if only existing headers change. All 13 official
 Deferred entries remain unchanged after the post-F992 audits; the post-F993
 audit is pending. Gates 1/2 remain Partial and the formal Phase 2 exit gate
 remains Open.
+
+### F993 complete; Batch363 closed - 2026-10-16
+
+F993's acceptance matrix was recorded at documentation commit
+`76aa04b3`; the source/test change is at `00374ccc`. The Schedule Testing
+layout-clear lane was a shortfall. F993 unified the roster custom-column
+length limit across admission and save preparation and rejects overlength
+names before the live Add Column path mutates the model or schedules autosave.
+
+The executor built `ClassMngr` and the four focused targets:
+`ClassMngrNextApplicationRosterCustomColumnNamePolicyTests`,
+`ClassMngrNextApplicationRosterCustomColumnAppendTests`,
+`ClassMngrNextApplicationRosterSaveUseCaseTests`, and
+`ClassMngrRosterModelTests`. Their exact CTests passed 4/4. The independent
+Tester passed the same four registrations 4/4. After adding the
+overlength-required-name precedence case, the policy target independently
+passed 1/1. No full suite ran.
+
+Two independent post-F993 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. Preserve the list unchanged.
+Batch363 is closed.
+
+### F994 selected in Batch364 - 2026-10-16
+
+Batch364 review did not select a birthday dismissed-date slice: the historical
+startup auto-notice reader was removed and only a manual QAction remains;
+using it to block explicit manual opens would require product policy. The My
+Classes teacher wide-ID contradiction is test-only and excluded by the Phase
+2 no test-only-slice rule. Class Notes autosave feedback is a policy/feedback
+question without a length mismatch. Campus save repeats recent F951/F955.
+These findings do not change the official Deferred list.
+
+F994 addresses the My Classes student count: `src/features/my_info/ui/my_classes_page_content.cpp`
+initializes an `int` to zero and updates it only after a successful per-class
+result, while `Domain::Result<int>` distinguishes failure. The current
+source path therefore renders a failed or missing count as `0`; this is
+source-based diagnosis, not a runtime reproduction.
+
+F994 acceptance matrix, recorded before implementation:
+
+| Area | Acceptance |
+| --- | --- |
+| Result and display | Preserve the `Domain::Result<int>` success/failure state. For a missing or failed count, render localized `tr("Unavailable")` in `# of Students` while preserving class and tab details and showing no warning. A successful zero remains `0`, including the zero-on-no-name-columns behavior. |
+| Localization | Update all five tracked catalogs for the new `MyClassesPage` source text, including the Korean translation in `ClassMngr_ko_KR.ts`: `ClassMngr_en_AU.ts`, `ClassMngr_en_CA.ts`, `ClassMngr_en_GB.ts`, `ClassMngr_en_US.ts`, and `ClassMngr_ko_KR.ts`. |
+| Regression coverage | Update `rosterReadFailureKeepsClassAndShowsZeroStudentCount` to assert Unavailable while retaining no-warning, class-visible, and fallback assertions. Retain `rosterWithoutNameColumnsShowsZeroStudentCount` as proof that successful zero remains zero. |
+| Scope | Make no query, repository, API, CMake, or other-page changes. |
+| Focused verification | In the configured Windows x64 Debug Ninja/MSVC tree, build `ClassMngr` and `ClassMngrMyClassesPageTests`; run exact CTest `MyClassesPage` and scoped `git diff --check`. Do not run the full suite. |
+
+All 13 official Deferred entries remain unchanged after the post-F993 audits;
+the post-F994 audit is pending. Gates 1/2 remain Partial and the formal Phase
+2 exit gate remains Open.

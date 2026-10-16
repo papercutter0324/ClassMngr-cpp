@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F993 is active in Batch363 to align Roster custom-column admission with the 64 UTF-16-unit save limit; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F993 is complete and F994 is active in Batch364; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch363 (F993 active)
-  - F993 - Align Roster custom-column admission and model feedback with the 64 UTF-16-unit save limit; prevent unsavable additions before mutation or autosave.
+- Batch364 (F994 active)
+  - F994 - Preserve failed/missing student-count state in My Classes by rendering localized Unavailable while retaining successful zero behavior.
 
 ## Objective
 

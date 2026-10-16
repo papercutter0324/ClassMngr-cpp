@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F993 is active in Batch363 after a code-path-confirmed Roster custom-column length mismatch; no runtime reproduction was run. All 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F993 is complete at source commit `00374ccc` and Batch363 is closed; F994 is active in Batch364 to preserve failed-versus-successful-zero student-count state in My Classes. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
