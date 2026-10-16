@@ -13,12 +13,13 @@
   `ClassMngr` and the three existing focused targets built successfully, and
   their CTests passed 3/3 in both executor and independent verification. No
   full suite ran. A post-commit audit found all 13 official Deferred entries
-  unchanged. Batch422's three independent scans found no eligible slice: the
-  apparent adapter mismatch conflicts with explicit tests, preference actions
-  already restore state, and reviewed use cases have accepted behavior/tests.
-  Batch422 is closed as a discovery shortfall; Batch423 discovery is active.
-  Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
-  Phase 2 remains Open.
+  unchanged. Batch422's three scans and Batch423's two scans found no eligible
+  slice. B422's apparent adapter mismatch conflicts with explicit tests,
+  preference actions already restore state, and use cases preserve accepted
+  behavior. B423's read/query results and Qt-free boundaries are covered by
+  explicit tests and CMake checks. Both are closed as discovery shortfalls;
+  Batch424 discovery is active. Gates 1/2 remain Partial, F1007 remains pending
+  policy reconciliation, and Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

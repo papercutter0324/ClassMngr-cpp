@@ -44738,3 +44738,19 @@ These findings do not change the 13 official Deferred entries; the
 post-F1039 audit remains current. Batch422 is closed. Gates 1/2 remain
 Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation. Batch423 discovery is active.
+
+### Batch423 discovery shortfall - 2026-10-17
+
+Two independent discovery lanes found no eligible slice. The read/query scan
+confirmed malformed Teacher Import source dates return successful `nullopt`
+under an explicit test; ClassDetails partial snapshots are intentional and
+tested; My Classes rejects incomplete batches; and Campus Dashboard maps
+malformed or unreadable records to absence under tests. The Qt-free boundary
+scan found no Qt, UI, or legacy UI dependencies in `src/next/domain` or
+`src/next/application`; CMake layer assertions and app-less contract tests
+already enforce that boundary.
+
+No official Deferred trigger or F1039 behavior changed; all 13 official
+Deferred entries remain unchanged. No other slices were found. Batch423 is
+closed and Batch424 discovery is active. Gates 1/2 remain Partial, the Phase 2
+exit gate remains Open, and F1007 remains pending policy reconciliation.

@@ -6306,3 +6306,13 @@ application-use-case scan found failure propagation or explicit tested
 contracts, including F971's limit on ImportJob pump error reporting. Batch422
 is closed as a discovery shortfall; Batch423 discovery is active. Gates 1/2
 remain Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.
+
+Batch423 also found no eligible slice. The read/query scan confirmed that
+Teacher Import malformed dates, Class Details partial snapshots, My Classes
+batch completeness, and Campus Dashboard malformed-record handling all match
+explicit tests. The Qt-free boundary scan found no Qt/UI/legacy UI dependency
+in `src/next/domain` or `src/next/application`; existing CMake dependency
+assertions and app-less contract tests enforce the gate. No official Deferred
+item changed. Batch423 is closed as a discovery shortfall; Batch424 discovery
+is active. Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and
+Phase 2 remains open.

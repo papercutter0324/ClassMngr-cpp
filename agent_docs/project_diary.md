@@ -6927,3 +6927,16 @@ F971 specifically excludes broader ImportJob pump error reporting. No
 official Deferred item changed. Batch422 is closed as a discovery shortfall;
 Batch423 discovery is the continuation point. Gates 1/2 remain Partial, F1007
 remains pending policy reconciliation, and Phase 2 remains open.
+
+## Batch423 discovery shortfall - 2026-10-17
+
+Two independent read-only lanes found no eligible slice. The read/query scan
+confirmed malformed Teacher Import dates map to absence under an explicit
+adapter test; Class Details partial snapshots, My Classes batch completeness,
+and Campus Dashboard malformed-record handling also match tests. The Qt-free
+boundary scan found no Qt/UI/legacy UI dependencies in `src/next/domain` or
+`src/next/application`; CMake layer assertions and app-less contract tests
+already enforce that architecture gate. No official Deferred entry changed.
+Batch423 is closed as a discovery shortfall; Batch424 is the continuation
+point. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
+and Phase 2 remains open.
