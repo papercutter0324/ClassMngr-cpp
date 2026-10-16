@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1005 is complete at source commit `4b1d2b6908ea9dd0869b0550e683fd61aa9192b9` and F1006 is accepted before implementation; Batch381 retains F1007 and F1008, and two post-F1005 audits confirm all 13 official Deferred entries remain deferred with original blockers and none is actionable, resolved, or superseded; Gates 1/2 remain Partial and the Phase 2 exit gate is Open.
+- Current note: F1006 is complete at source commit `bbebcc996b51f1de72779e464426747eb900482e`; F1008 is accepted, F1007 remains pending policy reconciliation, and Batch382 queues F1009; one post-F1006 audit found all 13 official Deferred entries unchanged, with Gates 1/2 Partial and the Phase 2 exit gate Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch381
-  - F1007 - Shared student-name edit validation: unaccepted; reconcile Roster and Speaking Evaluation issue sets and normalization before defining the shared contract.
-  - F1008 - Upcoming-birthday ordering: unaccepted; preserve feature-edge `QString::localeAwareCompare` ordering semantics if reconsidered.
+- Batch382
+  - F1009 - PowerPoint batch single-template consistency: evaluate the narrow Qt-free equality rule; apply only to PowerPoint and preserve empty=true behavior.
 
 ## Objective
 

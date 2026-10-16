@@ -43540,4 +43540,26 @@ F1006 acceptance matrix:
 | Feature adapter parity | Keep `ScheduleValueParser` and exact raw-label canonicality checks at the feature edge. Retain padded/unknown weekday and padded/malformed time parity, including a regression showing padded/unknown non-weekend day text with a canonical early hour retains the existing time-based default. Add a focused Testing-mode model regression at an early canonical hour proving Testing retains regular default/toggle behavior. Keep row trimming, assignments, testing grade suppression, cell contents, and summaries out of scope. |
 | Focused verification | Build the app-less target, `ClassMngr`, and `ClassMngrSchedulePrintModelTests` in standard `build/windows-x64-debug`; run only the new app-less and exact feature-method CTests, with no full suite. Retain the whole-target CTest. |
 
-F1006 remains unimplemented and unverified. F1007, shared student-name edit validation, remains unaccepted pending reconciliation of Roster and Speaking Evaluation differences. F1008, upcoming-birthday ordering, remains unaccepted because `QString::localeAwareCompare` must retain visible ordering semantics. Batch381 now contains only F1007 and F1008. Do not start Batch382 yet; it is due when work begins on the second-last candidate, F1007.
+### F1006 complete; post-F1006 Deferred audit clear; Batch382 discovery complete; F1008 accepted - 2026-10-16
+
+F1006 source commit `bbebcc996b51f1de72779e464426747eb900482e` (`Phase2 - Add schedule slot policy`) moves schedule slot default-state and toggle-enabled decisions into Qt-free Next Application. The feature edge retains raw-label parsing/canonicality and QString state mapping. Canonical weekend precedence, Intensive defaults, the Regular hour-15 cutoff, missing-time behavior, and toggle rules remain as accepted.
+
+The independent Tester built the app-less target, `ClassMngr`, and `ClassMngrSchedulePrintModelTests`. App-less tests and the exact new SchedulePrintModel CTests passed 2/2. Direct method selection also passed `slotDefaultsMatchRegularAndIntensiveTimes` and `weekendSlotRulesRequireCanonicalWeekdayLabels`. FileTracker denial required an elevated serial retry; optional Vulkan include and bundled-zlib fallback warnings were non-blocking. No full suite ran.
+
+One independent post-F1006 audit reviewed all 13 official Deferred entries and found each unchanged with its original blocker; none is newly actionable, resolved, or superseded. Keep the official list unchanged. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+
+Batch382 discovery is complete. Explorer A identified academic-year schedule validity as its smallest calendar candidate, requiring resolved QDate validity/Monday facts and `[1,53]` week counts; winter-edit continuity has a two-level all-or-nothing rule and weak rejection coverage; schedule-grid geometry remains coupled to parsing and output. Explorer B identified PowerPoint batch single-template consistency as a narrow Qt-free equality rule with existing mixed-template/no-output regression coverage, preserving `empty=true` and applying only to PowerPoint. Sub Prep meeting grouping is more presentation-heavy and weaker. F1007 shared student-name edit validation is unsafe as broad reuse because Roster and Speaking Evaluation differ in raw/normalized checks, issue subsets, and messages; leave it pending until a narrower edit-feedback contract is reconciled.
+
+F1008, Upcoming-birthday ordering, is accepted before implementation. Move the existing ordering tuple into its Qt-free Application use case and inject a mandatory text comparator port; the feature adapter implements that port with exact `QString::localeAwareCompare` semantics for display name and position. Preserve tuple order (date, locale-aware display name, enum group order, locale-aware position) and sorting of `today`, `thisWeek`, and `nextWeek`. Leave date-occurrence selection, bucketing, text conversion, and source mapping unchanged.
+
+F1008 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Application ordering | Sort the existing three birthday groups with a mandatory injected comparator for display-name and position text; preserve the existing tuple ordering and date semantics. |
+| Comparator parity | Feature adapter delegates to exact `QString::localeAwareCompare`; test parity for non-ASCII names and positions under the active locale. |
+| Regression coverage | App-less ordering tests use a deterministic comparator. Update the existing test that assumes unsorted input order. Add focused CTest registration and exact feature-method coverage. |
+| Scope | Do not move date-occurrence selection, week bucketing, text conversion, or source mapping. |
+| Focused verification | Build affected targets in standard `build/windows-x64-debug` and run exact focused CTests only; no full suite. |
+
+F1009, PowerPoint batch single-template consistency, is the next queued Batch382 candidate: evaluate the narrow Qt-free equality rule, apply it only to PowerPoint, and preserve empty=true behavior. F1007 remains pending reconciliation. No official Deferred candidate changed.
