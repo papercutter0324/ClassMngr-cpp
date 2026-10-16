@@ -69,6 +69,16 @@ public:
             });
         }
 
+        if (request.mode != ClassDetailsScheduleMode::Regular
+            && request.mode != ClassDetailsScheduleMode::Intensive)
+        {
+            return ClassDetailsScheduleConflictResult::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "The class-details schedule mode is invalid.",
+                .recoverable = true
+            });
+        }
+
         return port.classDetailsScheduleConflicts(request);
     }
 };

@@ -65,6 +65,7 @@ private slots:
     void forwardsEmptyCandidatesWithoutSkippingThePort();
     void propagatesPortFailureExactly();
     void rejectsNonCanonicalIdsBeforePortCall();
+    void rejectsUnknownModeBeforePortCall();
     void acceptsMaximumClassIdAndPreservesRequest();
 };
 
@@ -216,6 +217,29 @@ rejectsNonCanonicalIdsBeforePortCall()
         QVERIFY(port.requests.empty());
     }
 
+    QVERIFY(port.requests.empty());
+}
+
+void NextApplicationClassDetailsScheduleConflictQueryTests::
+rejectsUnknownModeBeforePortCall()
+{
+    RecordingPort port;
+    const auto result = ClassDetailsScheduleConflictQuery::execute(
+        {
+            .classId = classId("42"),
+            .mode = static_cast<ClassDetailsScheduleMode>(99),
+            .candidateTimes = {}
+        },
+        port
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("The class-details schedule mode is invalid.")
+        );
+    QVERIFY(result.error().recoverable);
     QVERIFY(port.requests.empty());
 }
 
