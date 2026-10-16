@@ -142,6 +142,7 @@ private slots:
     void providerSaveFailureDoesNotPublishScheduleOrRevision();
     void customizedYearShiftsRolloverButFutureUsesDefaults();
     void winterEditKeepsPreviousFallContinuous();
+    void invalidWinterContinuityLeavesBothProfilesAndLaterCustomYearsUnchanged();
     void replacingEarlierYearInvalidatesLaterCustomization();
     void jsonRoundTripAndMalformedFallback();
 };
@@ -589,6 +590,64 @@ void AcademicCalendarTests::winterEditKeepsPreviousFallContinuous()
     QCOMPARE(middle2026.weeks[3], 19);
     QCOMPARE(elementary2026.endDate(), QDate(2027, 1, 4));
     QCOMPARE(middle2026.endDate(), QDate(2027, 1, 4));
+}
+
+void AcademicCalendarTests::
+invalidWinterContinuityLeavesBothProfilesAndLaterCustomYearsUnchanged()
+{
+    AcademicCalendarSchedule calendar;
+    AcademicYearSchedule elementary2027 =
+        calendar.yearSchedule(SchoolLevel::Elementary, 2027);
+    AcademicYearSchedule middle2027 =
+        calendar.yearSchedule(SchoolLevel::Middle, 2027);
+    calendar.setYearSchedules(2027, elementary2027, middle2027);
+
+    AcademicYearSchedule elementary2028 =
+        calendar.yearSchedule(SchoolLevel::Elementary, 2028);
+    AcademicYearSchedule middle2028 =
+        calendar.yearSchedule(SchoolLevel::Middle, 2028);
+    elementary2028.weeks[0] = 12;
+    middle2028.weeks[0] = 12;
+    calendar.setYearSchedules(2028, elementary2028, middle2028);
+    QVERIFY(calendar.hasCustomYearAfter(2027));
+
+    const QByteArray before = QJsonDocument(calendar.toJson())
+        .toJson(QJsonDocument::Compact);
+    const QDate previousElementaryFall =
+        calendar.yearSchedule(SchoolLevel::Elementary, 2026)
+            .termStart(AcademicTerm::Fall);
+    const QDate previousMiddleFall =
+        calendar.yearSchedule(SchoolLevel::Middle, 2026)
+            .termStart(AcademicTerm::Fall);
+    elementary2027.winterStart = previousElementaryFall.addDays(54 * 7);
+    middle2027.winterStart = previousMiddleFall.addDays(18 * 7);
+
+    QVERIFY(elementary2027.isValid());
+    QVERIFY(middle2027.isValid());
+    QCOMPARE(
+        previousElementaryFall.daysTo(elementary2027.winterStart),
+        54 * 7
+        );
+    QCOMPARE(
+        static_cast<int>(previousMiddleFall.daysTo(middle2027.winterStart)),
+        18 * 7
+        );
+
+    calendar.setYearSchedules(2027, elementary2027, middle2027);
+
+    QCOMPARE(
+        QJsonDocument(calendar.toJson()).toJson(QJsonDocument::Compact),
+        before
+        );
+    QVERIFY(calendar.hasCustomYearAfter(2027));
+    QCOMPARE(
+        calendar.yearSchedule(SchoolLevel::Elementary, 2028).weeks,
+        elementary2028.weeks
+        );
+    QCOMPARE(
+        calendar.yearSchedule(SchoolLevel::Middle, 2028).weeks,
+        middle2028.weeks
+        );
 }
 
 void AcademicCalendarTests::replacingEarlierYearInvalidatesLaterCustomization()

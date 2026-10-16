@@ -101,17 +101,16 @@ void CalendarPreferencesPanel::saveTermSchedules()
                     schoolLevel(school),
                     m_termYear - 1
                     );
-            const int days =
+            const auto days =
                 previous
                     .termStart(AcademicTerm::Fall)
                     .daysTo(m_schedules[school].winterStart);
+            const auto fallWeeks =
+                ClassMngr::Next::Application::termWeeksFromDayDistance(
+                    days
+                    );
 
-            if (
-                days < 7
-                || days % 7 != 0
-                || days / 7
-                    > ClassMngr::Next::Application::MaximumTermWeeks
-                )
+            if (!fallWeeks)
             {
                 DialogServices::showWarning(
                     this,
@@ -821,14 +820,11 @@ void CalendarPreferencesPanel::commitDate(int schoolIndex, int termIndex)
     {
         const QDate previousStart =
             schedule.termStart(academicTerm(termIndex - 1));
-        const int days = previousStart.daysTo(edited);
-        const int weeks = days / 7;
+        const auto days = previousStart.daysTo(edited);
+        const auto weeks =
+            ClassMngr::Next::Application::termWeeksFromDayDistance(days);
 
-        if (
-            days <= 0
-            || days % 7 != 0
-            || weeks > ClassMngr::Next::Application::MaximumTermWeeks
-            )
+        if (!weeks)
         {
             DialogServices::showWarning(
                 this,
@@ -839,7 +835,7 @@ void CalendarPreferencesPanel::commitDate(int schoolIndex, int termIndex)
             return;
         }
 
-        schedule.weeks[termIndex - 1] = weeks;
+        schedule.weeks[termIndex - 1] = *weeks;
     }
 
     if (m_linkCheck->isChecked() && schoolIndex == 0 && termIndex <= 2)

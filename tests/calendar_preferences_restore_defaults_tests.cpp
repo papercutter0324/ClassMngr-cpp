@@ -176,6 +176,24 @@ QWidget* widgetAt(
     return item ? item->widget() : nullptr;
 }
 
+QGridLayout* calendarScheduleGrid(CalendarPreferencesPanel& panel)
+{
+    for (QGridLayout* const candidate : panel.findChildren<QGridLayout*>())
+    {
+        if (
+            qobject_cast<QDateEdit*>(widgetAt(candidate, 2, 1))
+            && qobject_cast<QSpinBox*>(widgetAt(candidate, 2, 2))
+            && qobject_cast<QDateEdit*>(widgetAt(candidate, 2, 4))
+            && qobject_cast<QSpinBox*>(widgetAt(candidate, 2, 5))
+            )
+        {
+            return candidate;
+        }
+    }
+
+    return nullptr;
+}
+
 bool executeCalendarPreferenceSql(
     ApplicationServices& services,
     const QString& statement
@@ -633,6 +651,8 @@ class CalendarPreferencesRestoreDefaultsTests final : public QObject
 
 private slots:
     void restoreDefaultsStagesVisibleSchedulesWithoutPersistence();
+    void rejectsOutOfRangeWinterStartWithoutPersistence();
+    void rejectsOutOfRangeInternalTermStartAndRefreshesWithoutPersistence();
     void failedScheduleSaveKeepsDraftAndRetrySucceeds();
     void failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds();
     void failedFirstDaySaveRestoresPersistedValueAndRetrySucceeds();
@@ -979,6 +999,188 @@ restoreDefaultsStagesVisibleSchedulesWithoutPersistence()
     qInfo().noquote()
         << "F384_CALENDAR_PREFERENCES_RESTORE_DEFAULTS_SHA256"
         << QString::fromLatin1(transcriptHash);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+rejectsOutOfRangeWinterStartWithoutPersistence()
+{
+    AcademicCalendarSchedule initialSchedule;
+    auto state = std::make_shared<CalendarPreferenceState>();
+    state->scheduleJson = QJsonDocument(initialSchedule.toJson())
+        .toJson(QJsonDocument::Compact)
+        .toStdString();
+    const std::string persistedBefore = state->scheduleJson;
+    auto provider = makeProvider(state);
+    const QJsonObject providerScheduleBefore = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    const QDate providerWinterStartBefore =
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2027)
+            .winterStart;
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    ApplicationServices services;
+    CalendarPreferencesPanel panel(provider.get(), &services);
+    auto* const termYear = panel.findChild<QSpinBox*>(
+        QStringLiteral("preferencesCalendarTermYear")
+        );
+    auto* const linkOption = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarLinkWinterSpring")
+        );
+    auto* const saveButton = panel.findChild<QPushButton*>(
+        QStringLiteral("preferencesCalendarSaveTermSchedule")
+        );
+    QVERIFY(termYear);
+    QVERIFY(linkOption);
+    QVERIFY(saveButton);
+    termYear->setValue(2027);
+    linkOption->setChecked(false);
+
+    QGridLayout* const scheduleFields = calendarScheduleGrid(panel);
+    QVERIFY2(scheduleFields, "The visible term schedule grid was not found.");
+    auto* const elementaryWinterStart = qobject_cast<QDateEdit*>(
+        widgetAt(scheduleFields, 2, 1)
+        );
+    QVERIFY(elementaryWinterStart);
+
+    const QDate previousFallStart =
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .termStart(AcademicTerm::Fall);
+    const QDate proposedWinterStart = previousFallStart.addDays(54 * 7);
+    QCOMPARE(proposedWinterStart.dayOfWeek(), static_cast<int>(Qt::Monday));
+    QCOMPARE(
+        static_cast<int>(previousFallStart.daysTo(proposedWinterStart)),
+        54 * 7
+        );
+    elementaryWinterStart->setDate(proposedWinterStart);
+    QCOMPARE(elementaryWinterStart->date(), proposedWinterStart);
+
+    QSignalSpy preferencesChanged(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged
+        );
+    QVERIFY(preferencesChanged.isValid());
+    RecordingCalendarPromptService prompts;
+    CalendarPromptServiceOverride promptOverride(&prompts);
+
+    saveButton->click();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Invalid Winter Start")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral(
+            "Winter must begin 1 to 53 complete weeks after the preceding Fall term starts."
+            )
+        );
+    QCOMPARE(state->scheduleWriteAttemptCount, 0);
+    QCOMPARE(state->scheduleWriteCount, 0);
+    QCOMPARE(state->scheduleJson, persistedBefore);
+    QCOMPARE(provider->schedule().toJson(), providerScheduleBefore);
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2027)
+            .winterStart,
+        providerWinterStartBefore
+        );
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(preferencesChanged.count(), 0);
+    QCOMPARE(elementaryWinterStart->date(), proposedWinterStart);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+rejectsOutOfRangeInternalTermStartAndRefreshesWithoutPersistence()
+{
+    AcademicCalendarSchedule initialSchedule;
+    auto state = std::make_shared<CalendarPreferenceState>();
+    state->scheduleJson = QJsonDocument(initialSchedule.toJson())
+        .toJson(QJsonDocument::Compact)
+        .toStdString();
+    const std::string persistedBefore = state->scheduleJson;
+    auto provider = makeProvider(state);
+    const QJsonObject providerScheduleBefore = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    const AcademicYearSchedule scheduleBefore =
+        provider->schedule().yearSchedule(SchoolLevel::Elementary, 2026);
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    ApplicationServices services;
+    CalendarPreferencesPanel panel(provider.get(), &services);
+    auto* const termYear = panel.findChild<QSpinBox*>(
+        QStringLiteral("preferencesCalendarTermYear")
+        );
+    QVERIFY(termYear);
+    termYear->setValue(2026);
+
+    QGridLayout* const scheduleFields = calendarScheduleGrid(panel);
+    QVERIFY2(scheduleFields, "The visible term schedule grid was not found.");
+    auto* const elementarySpringStart = qobject_cast<QDateEdit*>(
+        widgetAt(scheduleFields, 3, 1)
+        );
+    auto* const elementarySpringWeeks = qobject_cast<QSpinBox*>(
+        widgetAt(scheduleFields, 3, 2)
+        );
+    QVERIFY(elementarySpringStart);
+    QVERIFY(elementarySpringWeeks);
+
+    const QDate originalSpringStart =
+        scheduleBefore.termStart(AcademicTerm::Spring);
+    const QDate proposedSpringStart =
+        scheduleBefore.termStart(AcademicTerm::Winter).addDays(54 * 7);
+    QCOMPARE(proposedSpringStart.dayOfWeek(), static_cast<int>(Qt::Monday));
+    QCOMPARE(
+        static_cast<int>(
+            scheduleBefore.termStart(AcademicTerm::Winter)
+                .daysTo(proposedSpringStart)
+            ),
+        54 * 7
+        );
+
+    QSignalSpy preferencesChanged(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged
+        );
+    QVERIFY(preferencesChanged.isValid());
+    RecordingCalendarPromptService prompts;
+    CalendarPromptServiceOverride promptOverride(&prompts);
+
+    elementarySpringStart->setDate(proposedSpringStart);
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Invalid Term Start")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral(
+            "The start must be 1 to 53 complete weeks after the preceding term starts."
+            )
+        );
+    QCOMPARE(elementarySpringStart->date(), originalSpringStart);
+    QCOMPARE(elementarySpringWeeks->value(), scheduleBefore.weeks[1]);
+    QCOMPARE(state->scheduleWriteAttemptCount, 0);
+    QCOMPARE(state->scheduleWriteCount, 0);
+    QCOMPARE(state->scheduleJson, persistedBefore);
+    QCOMPARE(provider->schedule().toJson(), providerScheduleBefore);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(preferencesChanged.count(), 0);
 }
 
 void CalendarPreferencesRestoreDefaultsTests::

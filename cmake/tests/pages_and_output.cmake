@@ -181,6 +181,30 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+add_test(
+    NAME CalendarPreferencesRejectsOutOfRangeWinterStart
+    COMMAND ClassMngrCalendarPreferencesRestoreDefaultsTests
+        rejectsOutOfRangeWinterStartWithoutPersistence
+)
+add_test(
+    NAME CalendarPreferencesRejectsOutOfRangeInternalTermStart
+    COMMAND ClassMngrCalendarPreferencesRestoreDefaultsTests
+        rejectsOutOfRangeInternalTermStartAndRefreshesWithoutPersistence
+)
+set_tests_properties(
+    CalendarPreferencesRejectsOutOfRangeWinterStart
+    CalendarPreferencesRejectsOutOfRangeInternalTermStart
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+if(WIN32)
+    set_tests_properties(
+        CalendarPreferencesRejectsOutOfRangeWinterStart
+        CalendarPreferencesRejectsOutOfRangeInternalTermStart
+        PROPERTIES ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+endif()
+
 qt_add_resources(
     ClassMngrCalendarPreferencesRestoreDefaultsTests
     calendar_preferences_event_reset_qml_test_resources

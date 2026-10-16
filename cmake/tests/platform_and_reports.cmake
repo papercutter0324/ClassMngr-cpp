@@ -38,15 +38,40 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrAcademicCalendarTests
             jsonRoundTripAndMalformedFallback
     )
+    add_test(
+        NAME AcademicCalendarInvalidWinterContinuityIsAtomic
+        COMMAND ClassMngrAcademicCalendarTests
+            invalidWinterContinuityLeavesBothProfilesAndLaterCustomYearsUnchanged
+    )
     set_tests_properties(
         AcademicCalendarScheduleValidityPolicy
         AcademicCalendarJsonRoundTripAndMalformedFallback
+        AcademicCalendarInvalidWinterContinuityIsAtomic
         PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
     if(WIN32)
         set_tests_properties(
             AcademicCalendarScheduleValidityPolicy
             AcademicCalendarJsonRoundTripAndMalformedFallback
+            AcademicCalendarInvalidWinterContinuityIsAtomic
+            PROPERTIES ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
+
+    add_test(
+        NAME AcademicYearScheduleDayDistancePolicy
+        COMMAND
+            "$<TARGET_FILE:ClassMngrNextApplicationAcademicYearSchedulePolicyTests>"
+            termWeeksFromDayDistance
+    )
+    set_tests_properties(
+        AcademicYearScheduleDayDistancePolicy
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+    if(WIN32)
+        set_tests_properties(
+            AcademicYearScheduleDayDistancePolicy
             PROPERTIES ENVIRONMENT_MODIFICATION
                 "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
         )

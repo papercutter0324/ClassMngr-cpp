@@ -344,45 +344,28 @@ void AcademicCalendarSchedule::setYearSchedules(
         previousMiddle =
             yearSchedule(SchoolLevel::Middle, termYear - 1);
 
-        auto alignPreviousFall =
-            [](AcademicYearSchedule* previous, const QDate& nextWinterStart)
-            {
-                if (!previous)
-                {
-                    return false;
-                }
+        const auto elementaryFallWeeks =
+            ClassMngr::Next::Application::termWeeksFromDayDistance(
+                previousElementary
+                    .termStart(AcademicTerm::Fall)
+                    .daysTo(elementary.winterStart)
+                );
+        const auto middleFallWeeks =
+            ClassMngr::Next::Application::termWeeksFromDayDistance(
+                previousMiddle
+                    .termStart(AcademicTerm::Fall)
+                    .daysTo(middle.winterStart)
+                );
 
-                const QDate fallStart =
-                    previous->termStart(AcademicTerm::Fall);
-                const int days = fallStart.daysTo(nextWinterStart);
-                const int weeks = days / DaysPerWeek;
-
-                if (
-                    days <= 0
-                    || days % DaysPerWeek != 0
-                    || weeks > ClassMngr::Next::Application::MaximumTermWeeks
-                    )
-                {
-                    return false;
-                }
-
-                previous->weeks[termIndex(AcademicTerm::Fall)] = weeks;
-                return true;
-            };
-
-        if (
-            !alignPreviousFall(
-                &previousElementary,
-                elementary.winterStart
-                )
-            || !alignPreviousFall(
-                &previousMiddle,
-                middle.winterStart
-                )
-            )
+        if (!elementaryFallWeeks || !middleFallWeeks)
         {
             return;
         }
+
+        previousElementary.weeks[termIndex(AcademicTerm::Fall)] =
+            *elementaryFallWeeks;
+        previousMiddle.weeks[termIndex(AcademicTerm::Fall)] =
+            *middleFallWeeks;
     }
 
     while (!m_elementarySchedules.isEmpty()
