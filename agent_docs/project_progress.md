@@ -5921,11 +5921,15 @@ notices. No full suite ran.
 
 Two independent post-F1018 audits reviewed all 13 official Deferred entries;
 none became actionable, resolved, superseded, or needed rationale changes.
-F1020, Testing Classes list ordering, is accepted next under Batch389. It is
-page-local and can sort prepared rank/text facts in a Qt-free policy while
-leaving `ScheduleTestingClassChoice` unchanged and preserving class-ID
-selection. F1019 remains active but follows later: its raw-schedule parser is
-inside a Class Tab model shared by Classes, My Classes, and Speaking
-Evaluation, with special regular/intensive and unknown-weekday behavior to
-preserve. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
-Open.
+F1020, Testing Classes list ordering, is complete at source commit
+`6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848`. The Qt-free policy orders prepared
+grade/level ranks and text with the page-injected comparator; the page retains
+rank resolution, locale comparison, and class-ID selection. Its app-less CTest
+passed 1/1, and the named page QtTest passed 3/3. Two independent post-commit
+audits found all 13 official Deferred entries unchanged. F1019, shared Class
+Tab navigation ordering, is accepted next: keep parsing, regular/intensive
+source precedence, and base-label construction in the shared model while the
+Qt-free policy orders prepared facts. Preserve unknown-weekday plus valid-time
+behavior, literal sentinel 1000 collision, seconds truncation, selection
+restoration, and first-tab default selection. Gates 1/2 remain Partial and the
+formal Phase 2 exit gate remains Open.

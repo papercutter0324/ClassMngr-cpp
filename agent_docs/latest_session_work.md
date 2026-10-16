@@ -5861,3 +5861,32 @@ Application; invalid times still establish their canonical day, and the time
 order is computed only within the earliest day. The next action is the F1014
 closeout/F1015 acceptance-doc checkpoint; after it lands, begin F1015
 implementation. Unrelated untracked artifacts remain untouched.
+
+## Current continuation - 2026-10-17 (F1020 complete; F1019 accepted)
+
+F1020 source commit `6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848` extracts Testing
+Classes ordering over prepared grade/level ranks and text. The page keeps rank
+resolution and locale comparison, then rebuilds rows from policy-returned
+indexes while retaining selection by class ID. Independent Tester evidence:
+serial Debug builds passed for `ClassMngr`, the app-less policy target, and the
+page target; app-less CTest passed 1/1; named QtTest
+`testingClassOrderingUsesRanksLocaleTextAndPreservesSelection` passed 3/3.
+No full suite ran. FileTracker required elevated workspace access; optional
+Vulkan headers were unavailable and existing forced-link duplicate-symbol
+notices appeared. Two independent audits found no change to the 13 official
+Deferred entries.
+
+F1019 is accepted as the next slice. Extract only the shared Class Tab tuple
+ordering over prepared grade/level ranks, recognized weekday and start-minute
+ranks, base label, and class ID, using an injected locale comparator. Preserve
+model-owned raw schedule parsing, regular-list precedence whenever regular
+rows exist, intensive fallback, labels, and selected-ID/first-tab behavior.
+Cover the Class Tab-specific unknown weekday with valid time (day sentinel
+1000 can collide with valid 16:40), seconds truncation, and malformed but
+nonempty regular source. The previous two post-commit audits established that
+none of the official Deferred candidates are now actionable or superseded.
+After F1019's focused verification and source commit, repeat the official
+Deferred audit and continue with the next Phase 2 candidate. Gates 1/2 remain
+Partial and Phase 2 exit remains Open. Preserve the pre-existing untracked
+`%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
+`txt` artifacts.

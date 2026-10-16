@@ -43786,15 +43786,23 @@ Two independent audits reviewed all 13 official Deferred entries after F1018. Al
 
 For the remaining Batch389 candidates, select F1020, Testing Classes list ordering, next. Its policy can order prepared row facts within the page boundary. F1019 remains active for later because schedule parsing and ordering live in a model shared by Classes, My Classes, and Speaking Evaluation, with regular/intensive and unknown-weekday/time semantics to preserve.
 
-F1020, Testing Classes list ordering, is accepted before implementation. Add a Qt-free Application policy over prepared grade/level ranks and text, with an injected comparator. Keep rank resolution and `QString::localeAwareCompare` at the page edge. Preserve the current priority: grade rank, level rank, comparator-based level text, then comparator-based class name. Do not change `ScheduleTestingClassChoice`, and do not sort by room or class ID. Selection remains keyed by class ID and survives sort/rebuild. Since the current comparator uses `std::sort`, exact ties have no stability guarantee; tests must not promise tie order.
+### F1020 complete; post-F1020 Deferred audits clear; F1019 accepted - 2026-10-17
 
-F1020 acceptance criteria:
+F1020 source commit `6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848` completes Testing Classes list ordering. The Qt-free Application policy compares prepared grade and level ranks, level text, and class name using the injected text comparator. The page still resolves ranks and locale-aware comparison, then uses output indexes to rebuild rows. Tests cover rank/comparator behavior, sentinel 1000, and class-ID selection after a reversed-input rebuild.
+
+The independent Tester built `ClassMngr`, the app-less policy target, and the page target. The policy CTest passed 1/1; direct QtTest selector `testingClassOrderingUsesRanksLocaleTextAndPreservesSelection` passed 3 with 0 failures. No full suite ran.
+
+Two independent post-commit audits found no official Deferred candidate actionable, resolved, or superseded, and no rationale changes are needed. Preserve all 13 official Deferred entries. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+F1019, Class Tab navigation sorting, is accepted as the next Batch389 slice. Extract ordering from `src/features/classes/models/class_tab_navigation_model.cpp` into a Qt-free policy over prepared grade rank, level rank, earliest recognized weekday rank, earliest start-minute rank, base label, and numeric class ID, with an injected label comparator. Keep schedule parsing through `ScheduleValueParser`, regular-list precedence over Intensive when Regular is nonempty, schedule source/fallback semantics, and base-label construction at the existing Qt/model boundary. Do not reuse F1015 Sub Prep reduction: unknown weekday with valid time preserves day 1000 while using its valid time, and literal 1000 may collide with a valid 16:40 rank. Preserve the current `std::sort` behavior; it establishes no special order for exact ties.
+
+F1019 acceptance criteria:
 
 | Area | Acceptance |
 | --- | --- |
-| Application policy | App-less tests cover grade and level rank precedence, injected comparator use for level then name text, unknown rank, and no exact-tie order promise. |
-| Page regression | Use deliberately unsorted choices to cover grade/level/locale-text ordering, room independence, and preferred class ID selection after sorting/rebuild. |
-| Boundary and scope | Keep rank resolution and locale-aware comparison at the page edge. Do not change the `ScheduleTestingClassChoice` query DTO; do not sort by room or class ID. Preserve ID-based selection across sorting/rebuild. |
-| Focused verification | Serially build `ClassMngr`, the new app-less policy target, and `ClassMngrTestingClassesPageTests`; run only the app-less CTest and exact focused page selectors. No full suite. |
+| Application policy | Focus model tests on tuple priority, injected locale comparator, numeric class-ID tie-break, literal sentinel collision, unknown weekday with valid time, malformed-but-nonempty Regular-list precedence, and seconds handling. Preserve existing exact-tie behavior without promising a special stable order. |
+| Model boundary and schedule semantics | Keep `ScheduleValueParser`, Regular-over-Intensive precedence when Regular is nonempty, schedule source/fallback semantics, and base-label construction at the existing Qt/model boundary. Preserve labels and source behavior. |
+| Page behavior | Preserve selected-ID restoration and first-tab default selection. The shared model feeds Classes, My Classes, and Speaking Evaluation pages. |
+| Focused verification | Use `ClassMngrClassTabNavigationModelTests` and relevant `ClassMngrClassesPageTests`; no build or test result is claimed for this accepted slice. |
 
-F1020 is accepted, not yet implemented or verified. Batch389 now retains F1019, F1021, and F1022, with F1019 first.
+F1019 is accepted, not yet implemented or verified. Batch389 retains F1019, F1021, and F1022, with F1019 first.

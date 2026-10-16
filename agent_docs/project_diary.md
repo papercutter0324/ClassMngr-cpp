@@ -6287,3 +6287,30 @@ Keep F1019 active for a later slice with those boundaries explicit. Select
 F1020, Testing Classes list ordering, next because it is a page-local policy
 over prepared ranks/text keys, does not change the shared query DTO, and keeps
 selection keyed by class ID.
+
+## F1020 closeout and F1019 acceptance - 2026-10-17
+
+F1020 completed at source commit
+`6aa20a7ecfbcbd87b8e9d408a93b5b03a1b38848`. Its Qt-free policy compares
+prepared grade/level ranks and labels with a page-injected comparator; rank
+resolution, locale comparison, and class-ID selection remain in the page.
+Focused Debug builds passed for `ClassMngr`, the app-less policy target, and
+the page target. The exact app-less CTest passed 1/1; the named page QtTest
+`testingClassOrderingUsesRanksLocaleTextAndPreservesSelection` passed 3/3.
+FileTracker required elevated workspace access; configure reported optional
+missing Vulkan headers, and the page-test link emitted existing duplicate
+symbol/`/FORCE` notices. No full suite ran. Two independent post-commit audits
+found all 13 official Deferred entries unchanged and needing no rationale
+updates.
+
+Accept F1019 next as a Qt-free ordering policy over prepared Class Tab facts:
+grade and level ranks, earliest recognized day, earliest start minute, base
+label, and numeric class ID, with the feature's locale-aware comparator
+injected. Keep `ScheduleValueParser`, regular-list precedence over intensive,
+source fallback, and labels at the shared model boundary. Unlike F1015, Class
+Tab preserves a valid minute when no weekday is recognized, so day sentinel
+1000 may tie a valid 16:40 minute. Preserve seconds truncation, malformed but
+nonempty regular-list precedence, selection restoration, and first-tab
+fallback behavior. The focused slice should cover these contracts and must not
+change unrelated Deferred entries. Gates 1/2 remain Partial; Phase 2 exit
+remains Open.
