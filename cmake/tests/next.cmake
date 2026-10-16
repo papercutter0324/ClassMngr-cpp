@@ -1,5 +1,36 @@
 include_guard(GLOBAL)
 
+# Schedule slot policy remains independent of Qt and the feature layer.
+add_executable(
+    ClassMngrNextApplicationScheduleSlotPolicyTests
+    tests/next_application_schedule_slot_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationScheduleSlotPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationScheduleSlotPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationScheduleSlotPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationScheduleSlotPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationScheduleSlotPolicyTests
+    COMMAND ClassMngrNextApplicationScheduleSlotPolicyTests
+)
+
 # Class Analytics composition/calculation must remain Qt-free.
 add_executable(
     ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests

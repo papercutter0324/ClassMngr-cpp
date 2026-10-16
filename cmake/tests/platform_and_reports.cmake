@@ -553,6 +553,8 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ClassMngrSidebarStructureTests
             ClassMngrScheduleBuilderTests
             ClassMngrSchedulePrintModelTests
+            SchedulePrintModelNoncanonicalWeekdayDefaultParity
+            SchedulePrintModelTestingModeRegularSlotPolicy
             ClassMngrSchedulePrintPdfTests
             ClassMngrSubPrepPrintPdfTests
             ClassMngrRosterModelTests

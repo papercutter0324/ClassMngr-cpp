@@ -86,6 +86,8 @@ class SchedulePrintModelTests : public QObject
 private slots:
     void visibleDaysCanIncludeWeekends();
     void slotDefaultsMatchRegularAndIntensiveModes();
+    void noncanonicalWeekdayDefaultsRetainCanonicalTimeBehavior();
+    void testingModeRetainsRegularSlotDefaultAndToggleBehavior();
     void weekendSlotRulesRequireCanonicalWeekdayLabels_data();
     void weekendSlotRulesRequireCanonicalWeekdayLabels();
     void persistedOverridesRespectTogglingRules();
@@ -188,6 +190,50 @@ void SchedulePrintModelTests::slotDefaultsMatchRegularAndIntensiveModes()
             ),
         scheduleEssaySlotState()
         );
+}
+
+void SchedulePrintModelTests::
+noncanonicalWeekdayDefaultsRetainCanonicalTimeBehavior()
+{
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral("Funday"),
+            QStringLiteral("09:00"),
+            false
+            ),
+        scheduleEmptySlotState()
+        );
+    QCOMPARE(
+        scheduleDefaultSlotState(
+            QStringLiteral(" Monday "),
+            QStringLiteral("09:00"),
+            false
+            ),
+        scheduleEmptySlotState()
+        );
+}
+
+void SchedulePrintModelTests::
+testingModeRetainsRegularSlotDefaultAndToggleBehavior()
+{
+    const QStringList days{QStringLiteral("Monday")};
+    const ScheduleBuildResult result =
+        blankResult(
+            days,
+            {QStringLiteral("09:00")}
+            );
+    ScheduleViewRequest request = requestFor(days);
+    request.displayMode = ScheduleDisplayMode::Testing;
+
+    const ScheduleViewModel model =
+        buildScheduleViewModel(result, request);
+
+    QCOMPARE(model.rows.size(), 1);
+    QCOMPARE(model.rows.first().cells.size(), 1);
+    const ScheduleCellView& cell = model.rows.first().cells.first();
+    QCOMPARE(cell.defaultSlotState, scheduleEmptySlotState());
+    QCOMPARE(cell.slotState, scheduleEmptySlotState());
+    QVERIFY(!cell.slotTogglingEnabled);
 }
 
 void SchedulePrintModelTests::

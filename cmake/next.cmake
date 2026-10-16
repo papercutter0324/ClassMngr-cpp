@@ -314,6 +314,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/schedule_display_preferences.h
     src/next/application/schedule_display_mode_preferences.h
     src/next/application/schedule_slot_state_read_query.h
+    src/next/application/schedule_slot_policy.h
     src/next/application/schedule_testing_class_choices_query.h
     src/next/application/testing_class_details_read_query.h
     src/next/application/testing_class_required_fields_validation.h

@@ -61,6 +61,17 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrSchedulePrintModelTests
     )
 
+    add_test(
+        NAME SchedulePrintModelNoncanonicalWeekdayDefaultParity
+        COMMAND ClassMngrSchedulePrintModelTests
+            noncanonicalWeekdayDefaultsRetainCanonicalTimeBehavior
+    )
+    add_test(
+        NAME SchedulePrintModelTestingModeRegularSlotPolicy
+        COMMAND ClassMngrSchedulePrintModelTests
+            testingModeRetainsRegularSlotDefaultAndToggleBehavior
+    )
+
     qt_add_executable(ClassMngrScheduleBuilderTests
         tests/schedule_builder_tests.cpp
         src/features/schedule/ui/schedule_builder.cpp

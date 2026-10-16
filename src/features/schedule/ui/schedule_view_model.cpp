@@ -2,24 +2,55 @@
 
 #include "domain/rules/schedule_value_parser.h"
 #include "features/schedule/ui/schedule_time_formatter.h"
+#include "next/application/schedule_slot_policy.h"
 #include "next/domain/course.h"
 
 #include <algorithm>
+#include <optional>
 
 namespace
 {
-constexpr int RegularEarlyEmptyFinalHour = 15;
+using ClassMngr::Next::Application::ScheduleSlotPolicy;
+using ClassMngr::Next::Application::ScheduleSlotState;
+using ClassMngr::Next::Application::scheduleSlotPolicy;
 
-bool isRegularEarlyEmptySlot(
+std::optional<int> canonicalScheduleHour(
     const QString& timeLabel
     )
 {
     const auto parsedTime =
         ScheduleValueParser::parseTime(timeLabel);
 
-    return parsedTime
-        && parsedTime->text == timeLabel
-        && parsedTime->value.hour() <= RegularEarlyEmptyFinalHour;
+    if (!parsedTime || parsedTime->text != timeLabel)
+    {
+        return std::nullopt;
+    }
+
+    return parsedTime->value.hour();
+}
+
+ScheduleSlotPolicy resolvedScheduleSlotPolicy(
+    const QString& day,
+    const QString& timeLabel,
+    bool useIntensive,
+    bool regularWeekdaySlotTogglingEnabled
+    )
+{
+    return scheduleSlotPolicy(
+        isScheduleWeekendDay(day),
+        canonicalScheduleHour(timeLabel),
+        useIntensive,
+        regularWeekdaySlotTogglingEnabled
+        );
+}
+
+QString scheduleSlotStateText(
+    ScheduleSlotState state
+    )
+{
+    return state == ScheduleSlotState::Empty
+        ? scheduleEmptySlotState()
+        : scheduleEssaySlotState();
 }
 
 bool rowHasVisibleContent(
@@ -40,23 +71,20 @@ bool rowHasVisibleContent(
             return true;
         }
 
-        const QString defaultState =
-            scheduleDefaultSlotState(
+        const ScheduleSlotPolicy policy =
+            resolvedScheduleSlotPolicy(
                 day,
                 scheduleRow.label,
                 scheduleModeUsesIntensiveTimes(
                     request.displayMode
-                    )
-                );
-
-        const QString state =
-            scheduleSlotTogglingEnabled(
-                day,
-                scheduleModeUsesIntensiveTimes(
-                    request.displayMode
                     ),
                 request.regularWeekdaySlotTogglingEnabled
-                )
+                );
+        const QString defaultState =
+            scheduleSlotStateText(policy.defaultState);
+
+        const QString state =
+            policy.togglingEnabled
                 ? scheduleSlotState(
                     day,
                     scheduleRow.label,
@@ -233,22 +261,14 @@ QString scheduleDefaultSlotState(
     bool useIntensive
     )
 {
-    if (isScheduleWeekendDay(day))
-    {
-        return scheduleEmptySlotState();
-    }
-
-    if (useIntensive)
-    {
-        return scheduleEssaySlotState();
-    }
-
-    if (isRegularEarlyEmptySlot(timeLabel))
-    {
-        return scheduleEmptySlotState();
-    }
-
-    return scheduleEssaySlotState();
+    return scheduleSlotStateText(
+        resolvedScheduleSlotPolicy(
+            day,
+            timeLabel,
+            useIntensive,
+            false
+            ).defaultState
+        );
 }
 
 bool scheduleSlotTogglingEnabled(
@@ -257,13 +277,12 @@ bool scheduleSlotTogglingEnabled(
     bool regularWeekdaySlotTogglingEnabled
     )
 {
-    if (useIntensive)
-    {
-        return true;
-    }
-
-    return isScheduleWeekendDay(day)
-        || regularWeekdaySlotTogglingEnabled;
+    return resolvedScheduleSlotPolicy(
+        day,
+        QString(),
+        useIntensive,
+        regularWeekdaySlotTogglingEnabled
+        ).togglingEnabled;
 }
 
 QString scheduleSlotState(
@@ -367,22 +386,18 @@ ScheduleViewModel buildScheduleViewModel(
                 }
             }
 
-            cell.defaultSlotState =
-                scheduleDefaultSlotState(
+            const ScheduleSlotPolicy policy =
+                resolvedScheduleSlotPolicy(
                     day,
                     scheduleRow.label,
-                    scheduleModeUsesIntensiveTimes(
-                        request.displayMode
-                        )
-                    );
-            cell.slotTogglingEnabled =
-                scheduleSlotTogglingEnabled(
-                    day,
                     scheduleModeUsesIntensiveTimes(
                         request.displayMode
                         ),
                     request.regularWeekdaySlotTogglingEnabled
                     );
+            cell.defaultSlotState =
+                scheduleSlotStateText(policy.defaultState);
+            cell.slotTogglingEnabled = policy.togglingEnabled;
             cell.slotState =
                 cell.slotTogglingEnabled
                     ? scheduleSlotState(
