@@ -41964,3 +41964,45 @@ all remain unchanged, and none became actionable, resolved, superseded, or
 materially changed. F973 affected none of their triggers. Batch342 discovery is
 next and has not started; no candidates have been selected. Gates 1/2 remain
 Partial and the formal Phase 2 exit gate remains Open.
+
+### Batch342 closed; F974–F977 accepted in order - 2026-10-16
+
+Batch342's read-only domain scan found no candidate. The Application query scan
+found F974: `TeacherImportLatestSourceDateReadQuery` passes through an optional
+source date even though its port documents a present canonical ISO date. The
+same scan found F975: Class Co-Teacher choices validate canonical positive IDs
+but do not reject duplicates, and F976: GS Team and Native English directory
+read queries pass through snapshots whose save policies reject nonpositive or
+duplicate row IDs. The draft/save scan found F977: Teacher Profile validation
+defines Warning and Error, but the edit use case blocks only exact Error, so an
+unknown severity can permit persistence and reload. These are bounded
+Application contract candidates; discovery ran no tests.
+
+Two independent audits reviewed all 13 official Deferred candidates after
+F973. All remain unchanged; none became actionable, resolved, superseded, or
+materially changed. F973 changed none of their triggers.
+
+F974 is selected first. Its acceptance and focused verification are:
+
+1. In `TeacherImportLatestSourceDateReadQuery`, preserve the exact error from
+   the port and successful absence. Preserve present valid canonical Gregorian
+   ISO dates accepted by `Domain::GregorianDate::fromIsoString`; reject any
+   present date rejected by that parser with nonrecoverable `Validation`.
+2. Cover invalid present dates, valid canonical dates, successful absence, and
+   exact port-error propagation in the owning query tests.
+3. Build `ClassMngr` and
+   `ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests`; run
+   only the exact CTest registration with that name. Do not run the full suite.
+
+F975 is selected second: reject duplicate Class Co-Teacher teacher choice IDs
+while preserving the existing valid snapshot and port-error behavior. F976 is
+selected third: reject nonpositive or duplicate IDs in successful GS Team and
+Native English directory read snapshots while preserving valid snapshots,
+empty successful snapshots, ordering, and port errors. F977 is selected
+fourth: fail closed on unknown Teacher Profile validation severity before
+persistence, preserving Warning and Error behavior. Each is a bounded
+contract-test slice; define its file-level acceptance and exact focused
+verification when it becomes active.
+
+F974 is the active accepted slice; F975–F977 are queued in that order. Gates
+1/2 remain Partial and the formal Phase 2 exit gate remains Open.
