@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F998 completed in source commits `6ff06fbf` and `2e79403f`; the independent focused Debug CTest rerun passed 6/6. F999 is accepted; two post-F997 audits and F998's non-overlap review leave all 13 official Deferred entries unchanged. Gates 1/2 are Partial and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F999 completed in source commits `16b62987` and `d0189635`; its Debug CTest selection passed 6/6, while the broader selection passed 5/6 with one independently reproduced pre-F999 baseline fixture failure. The post-F999 audit leaves all 13 official Deferred entries unchanged; Gates 1/2 remain Partial, the Phase 2 exit gate is Open, and B377 discovery is underway. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

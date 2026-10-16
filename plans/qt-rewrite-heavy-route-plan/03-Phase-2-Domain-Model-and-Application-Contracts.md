@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F998 is complete in source commits `6ff06fbf` and `2e79403f`, and F999 is accepted for implementation; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open.
+- Current note: F999 is complete in source commits `16b62987` and `d0189635`; its focused Debug CTest selection passed 6/6, while the broader selection passed 5/6 with one independently reproduced pre-F999 baseline fixture failure; all 13 official Deferred entries remain unchanged, Gates 1/2 are Partial, and the Phase 2 exit gate is Open as B377 discovery proceeds.
 
 ### Slice discovery batches
 
@@ -114,9 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch376 (F999 accepted; next implementation slice)
-  - F999 - Live Class Transfer preview: add a Qt-free Application query/read port and Platform adapter, then route the sidebar preview through it while preserving matching and apply behavior.
-No other slice is accepted for this batch; report-job integration remains unselected pending worker-safety/thread-ownership extraction and is not an official Deferred entry.
+- Batch377 (discovery in progress; no slice accepted). See the latest progress-log entry for its discovery lanes.
 
 ## Objective
 
