@@ -6217,3 +6217,53 @@ audits are current: all 13 official Deferred entries remain unchanged; repeat
 both audits after F1037 implementation. Gates 1/2 remain Partial, F1007
 remains pending policy reconciliation, and the Phase 2 exit gate remains
 Open. F1037 is accepted and pending implementation.
+
+F1037 is complete at source commit `eb4da0c9`. Seven Calendar adapters now
+return `NotFound, recoverable=true` only for unavailable/closed-session
+failures, preserving each existing message. Generic failure helpers remain
+nonrecoverable for invalid input, missing entities/signatures, open-session
+repository failures, and technical errors. Platform tests assert exact
+unavailable-session metadata; an import use-case test verifies a recoverable
+signature-query error propagates without calling save.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`; the two focused
+CTests passed 2/2 after an elevated Visual Studio FileTracker retry. No full
+suite ran. The executor's elevated build also logged nonfatal `MSB8064` for a
+missing dependency path `src/next/application/teacher_import_plan_mapper.h`;
+the independent build and CTests passed. Tests do not deterministically close
+a session during a repository call, but source review confirmed those
+post-failure branches use the same dedicated helper.
+
+Two independent post-F1037 audits reviewed exactly the 13 official Deferred
+entries. All remain unchanged and unresolved; none became actionable,
+resolved, or superseded. F1037 does not establish a Calendar projection
+injection seam. Gates 1/2 remain Partial, F1007 remains pending policy
+reconciliation, and the Phase 2 exit gate remains Open.
+
+Batch417 rejected an apparent My Classes assigned-teacher presentation issue:
+F913 and `failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback()`
+explicitly preserve the silent Unassigned fallback when the profile cannot be
+loaded. Batch418's three independent reviews found no supported slice; F285
+and F707 remain behind their recorded triggers, and the Speaking Evaluation
+blank-grid fallback remains explicitly tested pending policy. All 13 official
+Deferred entries remain unchanged.
+
+F1038 is complete at source commit `586a03f3`. The Roster Save adapter now
+returns `NotFound,recoverable=true` only for an unavailable session, retaining
+the exact existing message. The shared failure helper and separate Row
+Transfer path are unchanged. Tests assert closed-session recoverability and
+missing-parent nonrecoverability.
+
+The executor built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`; focused CTest
+passed 1/1. The independent Tester repeated the incremental Debug build and
+CTest, also passing 1/1 after the ordinary MSBuild FileTracker attempt failed
+with `E_ACCESSDENIED` and an elevated retry succeeded. No full suite ran.
+
+Two independent post-F1038 audits checked exactly all 13 official Deferred
+entries. All remain unchanged and unresolved, with none actionable, resolved,
+or superseded. Batch419 is closed with no other supported slice found.
+Batch420 discovery is in progress. Gates 1/2 remain Partial, F1007 awaits
+policy reconciliation, and Phase 2 remains open.

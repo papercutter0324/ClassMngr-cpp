@@ -6820,3 +6820,61 @@ retaining other failure classifications. Add an import use-case assertion
 that the recoverable signature-query result propagates without reaching save.
 Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and Phase 2
 remains open.
+
+## F1037 closeout - 2026-10-17
+
+F1037 completed at source commit `eb4da0c9`. The remaining Calendar series,
+delete, and import adapters now return `NotFound, recoverable=true` only for
+unavailable or closed sessions, preserving operation-specific messages. The
+import use-case test confirms a recoverable signature-query failure reaches
+the caller without invoking save. Generic failure helpers and all other
+failure mappings remain unchanged.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`; the matching CTests
+passed 2/2 after an elevated Visual Studio FileTracker retry. No full suite
+ran. The executor's elevated build emitted a nonfatal `MSB8064` for missing
+dependency path `src/next/application/teacher_import_plan_mapper.h`, but the
+independent build and tests succeeded. The tests do not trigger a session
+closing during a repository call; source review confirms those branches use
+the same helper.
+
+Two independent post-commit audits checked the exact 13 official Deferred
+entries; all remain unchanged and unresolved. Gates 1/2 remain Partial, F1007
+awaits policy reconciliation, and Phase 2 remains open.
+
+## Batch417-Batch419 discovery - 2026-10-17
+
+The My Classes assigned-teacher fallback is intentional parity behavior, not
+a new defect: F913 and the existing regression test explicitly preserve the
+silent Unassigned presentation for profile failures. Speaking Evaluation's
+blank-grid fallback is likewise explicitly tested and remains policy-bound.
+Check prior accepted criteria and fallback tests before promoting a UI
+failure-state difference to a slice.
+
+Batch418 found no supported candidate. In Batch419, cross-checking the Roster
+Save adapter's `recoverable` field against sibling mutation decisions supports
+changing only its unavailable-session `NotFound` metadata. Keep the generic
+failure helper unchanged because missing-parent and repository failures share
+it but have different retry meaning. The UI currently retains the edit after
+failure, so this is a typed result-contract correction, not a claimed UI fix.
+
+## F1038 closeout - 2026-10-17
+
+F1038 completed at source commit `586a03f3`. The Roster Save adapter returns
+`NotFound,recoverable=true` only for an unavailable session and preserves the
+existing diagnostic. Generic failure behavior and the separate row-transfer
+save contract remain unchanged; the focused tests assert recoverable
+unavailability and nonrecoverable missing parent.
+
+The executor and independent Tester each built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`; the matching
+CTest passed 1/1 for both. The independent Debug build required escalation
+after the normal MSBuild FileTracker attempt returned `E_ACCESSDENIED`. No
+full suite ran.
+
+Two independent post-implementation audits checked all 13 official Deferred
+entries and found none changed, actionable, resolved, or superseded. Batch419
+is closed. Batch420 discovery is the continuation point; Gates 1/2 remain
+Partial, F1007 awaits policy reconciliation, and Phase 2 remains open.
