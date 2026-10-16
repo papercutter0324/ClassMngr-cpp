@@ -94,10 +94,7 @@ public:
             DatabaseSession* const session = m_services.databaseSession();
             if (!session || !session->isOpen())
             {
-                return failure(
-                    Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
-                    );
+                return unavailableSessionFailure();
             }
 
             CalendarEvent event;
@@ -161,10 +158,7 @@ public:
             {
                 if (!session->isOpen())
                 {
-                    return failure(
-                        Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
-                        );
+                    return unavailableSessionFailure();
                 }
 
                 const QByteArray errorBytes = saved.diagnostic.toUtf8();
@@ -307,6 +301,16 @@ private:
             .code = code,
             .message = std::move(message),
             .recoverable = false
+        });
+    }
+
+    [[nodiscard]] static Application::CalendarEventSaveResult
+    unavailableSessionFailure()
+    {
+        return Application::CalendarEventSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The calendar service is unavailable.",
+            .recoverable = true
         });
     }
 

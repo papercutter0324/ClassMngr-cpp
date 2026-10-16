@@ -9,6 +9,7 @@
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_import_signature_query_port.h"
 #include "next/application/calendar_event_save_port.h"
+#include "next/application/calendar_event_save_use_case.h"
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
@@ -1958,13 +1959,27 @@ reportsUnavailableSaveSessionStructurally()
         ErrorCode::InvalidInput
         );
 
+    const auto verifyUnavailableSave = [](
+        const CalendarEventSaveResult& result
+        )
+    {
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::NotFound);
+        QCOMPARE(
+            result.error().message,
+            std::string("The calendar service is unavailable.")
+            );
+        QVERIFY(result.error().recoverable);
+    };
+
     auto validUpdate = validSaveRequest();
     validUpdate.id = calendarEventId(1);
-    verifyFailure(port.saveEvent(validUpdate), ErrorCode::NotFound);
+    verifyUnavailableSave(
+        CalendarEventSaveUseCase::execute(port, validUpdate)
+        );
 
-    verifyFailure(
-        port.saveEvent(validSaveRequest()),
-        ErrorCode::NotFound
+    verifyUnavailableSave(
+        CalendarEventSaveUseCase::execute(port, validSaveRequest())
         );
 
     QVERIFY(openDatabase(services, m_directory));
@@ -1978,9 +1993,8 @@ reportsUnavailableSaveSessionStructurally()
         ErrorCode::InvalidInput
         );
 
-    verifyFailure(
-        port.saveEvent(validSaveRequest()),
-        ErrorCode::NotFound
+    verifyUnavailableSave(
+        CalendarEventSaveUseCase::execute(port, validSaveRequest())
         );
 }
 
