@@ -10,6 +10,9 @@
 namespace ClassMngr::Next::Application
 {
 class SkippedUpdateVersionPreferencesPort;
+class StartupUpdateCheckPort;
+class StartupUpdateCheckUseCase;
+struct StartupUpdateCheckResult;
 }
 
 class ActionRegistry;
@@ -31,6 +34,7 @@ public:
                 SkippedUpdateVersionPreferencesPort
             > skippedUpdateVersionPreferencesPort = {}
         );
+    ~UpdateController() override;
 
     void attachMainWindow(
         MainWindow* window,
@@ -45,7 +49,10 @@ private:
     [[nodiscard]] bool automaticChecksEnabled() const;
     void runStartupMaintenance();
     [[nodiscard]] bool reconcileSkippedVersion(
-        const UpdateCheckResult& result
+        const ClassMngr::Next::Application::StartupUpdateCheckResult& result
+        );
+    void handleCheckSucceeded(
+        const ClassMngr::Next::Application::StartupUpdateCheckResult& result
         );
     [[nodiscard]] ClassMngr::Next::Domain::Result<void> skipVersion(
         const QString& version
@@ -58,13 +65,17 @@ private:
         );
 
 private:
-    UpdateService* m_service = nullptr;
+    QPointer<UpdateService> m_service;
     std::shared_ptr<
         ClassMngr::Next::Application::SkippedUpdateVersionPreferencesPort
         > m_skippedUpdateVersionPreferencesPort;
     QPointer<MainWindow> m_window;
     QPointer<UpdateDialog> m_dialog;
-    bool m_automaticCheckStarted = false;
+    std::unique_ptr<ClassMngr::Next::Application::StartupUpdateCheckPort>
+        m_startupUpdateCheckPort;
+    std::unique_ptr<ClassMngr::Next::Application::StartupUpdateCheckUseCase>
+        m_startupUpdateCheckUseCase;
+    bool m_startupCheckActive = false;
     bool m_startupMaintenanceRun = false;
     bool m_startupComplete = false;
     bool m_automaticPromptSuppressed = false;

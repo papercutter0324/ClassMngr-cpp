@@ -798,6 +798,37 @@ add_test(
     COMMAND ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
 )
 
+# Keep asynchronous startup orchestration app-less and Qt-free.
+add_executable(
+    ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+    tests/next_application_startup_update_check_use_case_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+    COMMAND ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+)
+
 # Keep skipped-update version decisions independent of Qt and the runtime.
 add_executable(
     ClassMngrNextApplicationSkippedUpdateVersionPolicyTests

@@ -5,10 +5,11 @@
 #include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
 #include "core/updater/version.h"
-#include "next/application/automatic_update_startup_eligibility.h"
+#include "next/application/startup_update_check_use_case.h"
 #include "next/application/skipped_update_version_policy.h"
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "next/platform/update_service_startup_check_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -60,36 +61,57 @@ UpdateController::UpdateController(
             >();
     }
 
+    // Install the legacy/manual route before the bridge. During a startup
+    // signal this route sees the active request and leaves its effects to the
+    // application completion below. Same-thread Qt connections run in order.
     connect(
         m_service,
         &UpdateService::checkSucceeded,
         this,
         [this](const UpdateCheckResult& result)
         {
-            const bool latestVersionIsSkipped =
-                reconcileSkippedVersion(result);
-
-            UpdateDownloader::cleanupDownloads(
-                result.updateAvailable
-                    ? UpdateDownloader::CleanupMode::KeepOnlyArtifact
-                    : UpdateDownloader::CleanupMode::RemoveAll,
-                result.updateAvailable
-                    ? std::optional<UpdateArtifact>(result.artifact)
-                    : std::nullopt
-                );
-
-            if (
-                result.updateAvailable
-                && !hasVisibleDialog()
-                && !m_automaticPromptSuppressed
-                && automaticChecksEnabled()
-                && !latestVersionIsSkipped
-                )
+            if (!m_startupCheckActive)
             {
-                showAutomaticUpdateDialog();
+                handleCheckSucceeded(
+                    ClassMngr::Next::Platform::toStartupUpdateCheckResult(result)
+                    );
             }
         }
         );
+    m_startupUpdateCheckPort = std::make_unique<
+        ClassMngr::Next::Platform::UpdateServiceStartupCheckPort>(m_service);
+    m_startupUpdateCheckUseCase = std::make_unique<
+        ClassMngr::Next::Application::StartupUpdateCheckUseCase>(
+            *m_startupUpdateCheckPort);
+}
+
+UpdateController::~UpdateController() = default;
+
+void UpdateController::handleCheckSucceeded(
+    const ClassMngr::Next::Application::StartupUpdateCheckResult& result
+    )
+{
+    const bool latestVersionIsSkipped = reconcileSkippedVersion(result);
+    const UpdateArtifact artifact{
+        .platformKey = QString::fromStdString(result.artifact.platformKey),
+        .url = QUrl::fromEncoded(QByteArray::fromStdString(result.artifact.url)),
+        .fileName = QString::fromStdString(result.artifact.fileName),
+        .sha256 = QString::fromStdString(result.artifact.sha256),
+        .sizeBytes = result.artifact.sizeBytes
+    };
+    UpdateDownloader::cleanupDownloads(
+        result.updateAvailable
+            ? UpdateDownloader::CleanupMode::KeepOnlyArtifact
+            : UpdateDownloader::CleanupMode::RemoveAll,
+        result.updateAvailable ? std::optional<UpdateArtifact>(artifact) : std::nullopt
+        );
+
+    if (result.updateAvailable && !hasVisibleDialog()
+        && !m_automaticPromptSuppressed && automaticChecksEnabled()
+        && !latestVersionIsSkipped)
+    {
+        showAutomaticUpdateDialog();
+    }
 }
 
 bool UpdateController::automaticChecksEnabled() const
@@ -103,7 +125,7 @@ bool UpdateController::automaticChecksEnabled() const
 }
 
 bool UpdateController::reconcileSkippedVersion(
-    const UpdateCheckResult& result
+    const ClassMngr::Next::Application::StartupUpdateCheckResult& result
     )
 {
     const auto storedSkippedVersion =
@@ -117,12 +139,12 @@ bool UpdateController::reconcileSkippedVersion(
         decideSkippedUpdateVersion;
 
     SkippedUpdateVersionPolicyInput input;
-    input.currentVersion =
-        toApplicationVersion(result.currentVersion);
-    input.latestVersion =
-        toApplicationVersion(result.latestVersion);
+    input.currentVersion = result.currentVersion;
+    input.latestVersion = result.latestVersion;
     const std::string latestVersionText =
-        result.latestVersion.toString().trimmed().toUtf8().toStdString();
+        std::to_string(result.latestVersion.major) + "."
+        + std::to_string(result.latestVersion.minor) + "."
+        + std::to_string(result.latestVersion.patch);
     input.latestVersionText = std::string_view(latestVersionText);
 
     if (!storedSkippedVersion)
@@ -260,44 +282,47 @@ void UpdateController::runStartupMaintenance()
 
 void UpdateController::startAutomaticCheck()
 {
-    // The application-wide startup-complete transition is the only point at
-    // which background update work may begin.  Keeping the guard here makes
-    // that ordering hold even if this controller is reused by another
-    // bootstrap path.
-    if (
-        !m_startupComplete
-        || m_automaticCheckStarted
-        || !m_service
-        )
+    if (!m_startupComplete || !m_service)
     {
         return;
     }
-
     runStartupMaintenance();
 
-    const UpdateConfiguration configuration =
-        m_service->configuration();
-    const ClassMngr::Next::Platform::
-        SettingsManagerAutomaticUpdatePreferencesPort
+    const UpdateConfiguration configuration = m_service->configuration();
+    const ClassMngr::Next::Platform::SettingsManagerAutomaticUpdatePreferencesPort
         automaticUpdatePreferencesPort;
-
-    if (
-        !ClassMngr::Next::Application::
-            automaticUpdateStartupCheckIsEligible(
-                configuration.checkOnStartup,
-                automaticUpdatePreferencesPort.read(),
-                configuration.hasReleasesApiUrl()
-                )
-        )
+    using namespace ClassMngr::Next::Application;
+    const QPointer<UpdateController> guard(this);
+    // Set before dispatch because a configuration failure can complete inline.
+    // Do not reset an already active request on a repeated startup call.
+    if (m_startupCheckActive)
     {
         return;
     }
-
-    m_automaticCheckStarted =
-        true;
-    m_service->checkForUpdates(
-        UpdateService::CheckPolicy::Force
-        );
+    m_startupCheckActive = true;
+    const auto dispatch = m_startupUpdateCheckUseCase->start({
+        .startupComplete = m_startupComplete,
+        .checkOnStartup = configuration.checkOnStartup,
+        .preferences = automaticUpdatePreferencesPort.read(),
+        .hasReleasesApiUrl = configuration.hasReleasesApiUrl()
+    }, [guard](StartupUpdateCheckOutcome outcome)
+    {
+        if (!guard)
+        {
+            return;
+        }
+        guard->m_startupCheckActive = false;
+        if (const auto* result = std::get_if<StartupUpdateCheckResult>(&outcome))
+        {
+            guard->handleCheckSucceeded(*result);
+        }
+        // Automatic failures remain silent. A manual dialog retains its own
+        // service signal handling and retry behavior.
+    });
+    if (dispatch != StartupUpdateCheckDisposition::Started)
+    {
+        m_startupCheckActive = false;
+    }
 }
 
 void UpdateController::setStartupComplete()

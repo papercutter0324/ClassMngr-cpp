@@ -32,6 +32,15 @@ public:
         Force
     };
 
+    enum class FailureCategory
+    {
+        Configuration,
+        Network,
+        InvalidResponse,
+        InvalidCurrentVersion
+    };
+    Q_ENUM(FailureCategory)
+
     explicit UpdateService(
         UpdateConfiguration configuration = UpdateConfiguration::fromBuild(),
         QObject* parent = nullptr
@@ -64,12 +73,17 @@ signals:
     void checkFailed(
         const QString& message
         );
+    void checkFailedWithCategory(
+        UpdateService::FailureCategory category,
+        const QString& message
+        );
 
 private:
     void completeCheck(
         const QByteArray& data
         );
     void fail(
+        FailureCategory category,
         const QString& message
         );
 

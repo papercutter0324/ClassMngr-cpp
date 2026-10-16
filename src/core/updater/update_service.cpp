@@ -104,6 +104,7 @@ bool UpdateService::checkForUpdates(
     if (!m_configuration.hasReleasesApiUrl())
     {
         fail(
+            FailureCategory::Configuration,
             tr("GitHub releases API URL is not configured.")
             );
         return false;
@@ -112,6 +113,7 @@ bool UpdateService::checkForUpdates(
     if (!isAllowedApiUrl(m_configuration.releasesApiUrl))
     {
         fail(
+            FailureCategory::Configuration,
             tr("GitHub releases API URL must use HTTPS.")
             );
         return false;
@@ -159,6 +161,7 @@ bool UpdateService::checkForUpdates(
             if (reply->error() != QNetworkReply::NoError)
             {
                 fail(
+                    FailureCategory::Network,
                     tr("Unable to check GitHub releases: %1")
                         .arg(reply->errorString())
                     );
@@ -173,6 +176,7 @@ bool UpdateService::checkForUpdates(
             if (!HttpRequestPolicy::isSuccessfulStatus(statusCode))
             {
                 fail(
+                    FailureCategory::Network,
                     tr("Unable to check GitHub releases: HTTP %1")
                         .arg(statusCode.toInt())
                     );
@@ -185,6 +189,7 @@ bool UpdateService::checkForUpdates(
             if (data.size() > MaximumResponseBytes)
             {
                 fail(
+                    FailureCategory::InvalidResponse,
                     tr("GitHub releases response is too large.")
                     );
                 return;
@@ -209,6 +214,7 @@ void UpdateService::completeCheck(
     if (!release)
     {
         fail(
+            FailureCategory::InvalidResponse,
             release.error()
             );
         return;
@@ -222,6 +228,7 @@ void UpdateService::completeCheck(
     if (!currentVersion)
     {
         fail(
+            FailureCategory::InvalidCurrentVersion,
             tr("Current application version is invalid: %1")
                 .arg(currentVersion.error())
             );
@@ -258,6 +265,7 @@ void UpdateService::completeCheck(
 }
 
 void UpdateService::fail(
+    FailureCategory category,
     const QString& message
     )
 {
@@ -265,6 +273,7 @@ void UpdateService::fail(
         false;
 
     emit checkFailed(message);
+    emit checkFailedWithCategory(category, message);
 }
 
 bool UpdateService::isAllowedApiUrl(

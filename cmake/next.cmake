@@ -225,6 +225,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/excel_import_timeout_preferences.h
     src/next/application/automatic_update_preferences.h
     src/next/application/automatic_update_startup_eligibility.h
+    src/next/application/startup_update_check.h
+    src/next/application/startup_update_check_use_case.h
     src/next/application/skipped_update_version_policy.h
     src/next/application/evaluation_default_policy_preferences.h
     src/next/application/evaluation_default_selection.h
@@ -465,6 +467,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.h
     src/next/platform/settings_manager_excel_import_timeout_port.h
     src/next/platform/settings_manager_automatic_update_preferences_port.h
+    src/next/platform/update_service_startup_check_port.h
     src/next/platform/settings_manager_ai_comment_custom_website_port.h
     src/next/platform/settings_manager_ai_comment_provider_preferences_port.h
     src/next/platform/settings_manager_ai_comment_voice_preferences_port.h

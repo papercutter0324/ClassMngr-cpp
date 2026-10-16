@@ -4,6 +4,7 @@
 #include "core/updater/update_configuration.h"
 #include "core/updater/update_service.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "next/platform/update_service_startup_check_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
 #include <QApplication>
@@ -301,6 +302,13 @@ private slots:
     void failedUserUnskipRetainsStateAndAllowsRetry();
     void failedStaleCleanupRetainsValueAndDisplayAndAllowsPrompt();
     void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
+    void bridgeMapsSuccessAndForcesFreshCheck_data();
+    void bridgeMapsSuccessAndForcesFreshCheck();
+    void bridgeMapsFailures_data();
+    void bridgeMapsFailures();
+    void bridgeAndControllerDestructionSuppressDelivery();
+    void startupSuccessEffectsOccurOnceAndManualChecksStillWork_data();
+    void startupSuccessEffectsOccurOnceAndManualChecksStillWork();
 
 private:
     std::unique_ptr<QTemporaryDir> m_settingsRoot;
@@ -896,6 +904,257 @@ failedAutomaticSkipKeepsDialogOpenAndAllowsRetry()
     QVERIFY(!controller.hasVisibleDialog());
     QVERIFY(!settings.get(skippedVersionKey).isValid());
     QCOMPARE(synchronizationAttempts, 3);
+}
+
+void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck_data()
+{
+    QTest::addColumn<bool>("updateAvailable");
+    QTest::newRow("update") << true;
+    QTest::newRow("no-update") << false;
+}
+
+void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck()
+{
+    QFETCH(bool, updateAvailable);
+    using namespace ClassMngr::Next::Application;
+    QCoreApplication::setApplicationVersion(
+        updateAvailable ? QStringLiteral("1.0.0") : QStringLiteral("3.0.0"));
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    UpdateService service(configurationFor(server.url()));
+    QSignalSpy succeeded(&service, &UpdateService::checkSucceeded);
+    QSignalSpy started(&service, &UpdateService::checkStarted);
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeeded.count(), 1);
+    QVERIFY(service.isResultFresh());
+
+    ClassMngr::Next::Platform::UpdateServiceStartupCheckPort bridge(&service);
+    int completions = 0;
+    std::optional<StartupUpdateCheckOutcome> outcome;
+    QCOMPARE(bridge.check([&](StartupUpdateCheckOutcome value)
+        {
+            ++completions;
+            outcome = std::move(value);
+        }), StartupUpdateCheckDispatch::Started);
+    QCOMPARE(started.count(), 2); // A fresh cached result must not skip startup.
+    int busyCompletions = 0;
+    QCOMPARE(bridge.check([&](StartupUpdateCheckOutcome) { ++busyCompletions; }),
+        StartupUpdateCheckDispatch::Busy);
+    QCOMPARE(completions, 0);
+    QTRY_COMPARE(completions, 1);
+    QCOMPARE(succeeded.count(), 2);
+    QCOMPARE(busyCompletions, 0);
+    QVERIFY(outcome && std::holds_alternative<StartupUpdateCheckResult>(*outcome));
+    const auto& result = std::get<StartupUpdateCheckResult>(*outcome);
+    QCOMPARE(result.updateAvailable, updateAvailable);
+    QCOMPARE(result.latestVersion, (UpdateVersion{2, 0, 0}));
+    const auto legacy = service.lastResult();
+    QVERIFY(legacy.has_value());
+    QCOMPARE(result.currentVersion.major, legacy->currentVersion.majorVersion());
+    QCOMPARE(result.artifact.platformKey, legacy->artifact.platformKey.toStdString());
+    QCOMPARE(result.artifact.url, legacy->artifact.url.toEncoded().toStdString());
+    QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
+    QCOMPARE(result.artifact.sha256, legacy->artifact.sha256.toStdString());
+    QCOMPARE(result.artifact.sizeBytes, legacy->artifact.sizeBytes);
+    QCOMPARE(result.releaseDateIso, std::string("2026-08-05"));
+    QCOMPARE(result.releaseUrl, legacy->releaseUrl.toEncoded().toStdString());
+    QCOMPARE(result.checkedAtUtcMilliseconds, legacy->checkedAtUtc.toMSecsSinceEpoch());
+    // Repeated terminal signals are not a second completion for this request.
+    service.checkSucceeded(*legacy);
+    service.checkFailedWithCategory(UpdateService::FailureCategory::Network,
+        QStringLiteral("late terminal failure"));
+    QCOMPARE(completions, 1);
+    QCOMPARE(busyCompletions, 0);
+
+    // A check already owned by a direct/manual caller also reports Busy and
+    // must not borrow that caller's eventual completion.
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QCOMPARE(bridge.check([&](StartupUpdateCheckOutcome) { ++busyCompletions; }),
+        StartupUpdateCheckDispatch::Busy);
+    QTRY_COMPARE(succeeded.count(), 4);
+    QCOMPARE(busyCompletions, 0);
+}
+
+void UpdateControllerAutomaticStartupTests::bridgeMapsFailures_data()
+{
+    QTest::addColumn<int>("failureKind");
+    QTest::newRow("missing-url") << 0;
+    QTest::newRow("disallowed-url") << 1;
+    QTest::newRow("invalid-response") << 2;
+    QTest::newRow("invalid-current-version") << 3;
+    QTest::newRow("network") << 4;
+}
+
+void UpdateControllerAutomaticStartupTests::bridgeMapsFailures()
+{
+    QFETCH(int, failureKind);
+    using namespace ClassMngr::Next::Application;
+    QCoreApplication::setApplicationVersion(failureKind == 3
+        ? QStringLiteral("not-a-version") : QStringLiteral("1.0.0"));
+    LocalHttpServer server(failureKind == 2 ? QByteArrayLiteral("{not json")
+        : validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    QUrl url = server.url();
+    if (failureKind == 0)
+    {
+        url = QUrl();
+    }
+    else if (failureKind == 1)
+    {
+        url = QUrl(QStringLiteral("http://example.com/releases"));
+    }
+    else if (failureKind == 4)
+    {
+        QTcpServer closedPort;
+        QVERIFY(closedPort.listen(QHostAddress::LocalHost, 0));
+        url = QUrl(QStringLiteral("http://127.0.0.1:%1/releases").arg(closedPort.serverPort()));
+        closedPort.close();
+    }
+    UpdateService service(configurationFor(url));
+    QSignalSpy oldFailure(&service, &UpdateService::checkFailed);
+    QSignalSpy typedFailure(&service, &UpdateService::checkFailedWithCategory);
+    ClassMngr::Next::Platform::UpdateServiceStartupCheckPort bridge(&service);
+    int completions = 0;
+    std::optional<StartupUpdateCheckOutcome> outcome;
+    const auto dispatch = bridge.check([&](StartupUpdateCheckOutcome value)
+        {
+            ++completions;
+            outcome = std::move(value);
+        });
+    QCOMPARE(dispatch, failureKind < 2 ? StartupUpdateCheckDispatch::Failed
+        : StartupUpdateCheckDispatch::Started);
+    if (failureKind < 2)
+    {
+        QCOMPARE(completions, 1); // Inline configuration failure completes once.
+    }
+    QTRY_COMPARE(completions, 1);
+    QCOMPARE(oldFailure.count(), 1);
+    QCOMPARE(typedFailure.count(), 1);
+    QCOMPARE(typedFailure.first().at(1).toString(), oldFailure.first().at(0).toString());
+    QVERIFY(outcome && std::holds_alternative<StartupUpdateCheckError>(*outcome));
+    const auto& error = std::get<StartupUpdateCheckError>(*outcome);
+    const auto expected = failureKind < 2 ? StartupUpdateCheckErrorCode::Configuration
+        : failureKind == 2 ? StartupUpdateCheckErrorCode::InvalidResponse
+        : failureKind == 3 ? StartupUpdateCheckErrorCode::InvalidCurrentVersion
+        : StartupUpdateCheckErrorCode::Network;
+    QCOMPARE(error.code, expected);
+    QCOMPARE(error.message, oldFailure.first().at(0).toString().toUtf8().toStdString());
+    QVERIFY(!error.message.empty());
+    service.checkFailedWithCategory(UpdateService::FailureCategory::Network,
+        QStringLiteral("duplicate"));
+    QCOMPARE(completions, 1);
+}
+
+void UpdateControllerAutomaticStartupTests::bridgeAndControllerDestructionSuppressDelivery()
+{
+    using namespace ClassMngr::Next::Application;
+    QCoreApplication::setApplicationVersion(QStringLiteral("1.0.0"));
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    UpdateService service(configurationFor(server.url()));
+    QSignalSpy succeeded(&service, &UpdateService::checkSucceeded);
+    int completions = 0;
+    {
+        ClassMngr::Next::Platform::UpdateServiceStartupCheckPort bridge(&service);
+        QCOMPARE(bridge.check([&](StartupUpdateCheckOutcome) { ++completions; }),
+            StartupUpdateCheckDispatch::Started);
+    }
+    QTRY_COMPARE(succeeded.count(), 1);
+    QCOMPARE(completions, 0);
+
+    auto destroyedService = std::make_unique<UpdateService>(configurationFor(server.url()));
+    ClassMngr::Next::Platform::UpdateServiceStartupCheckPort bridge(destroyedService.get());
+    QCOMPARE(bridge.check([&](StartupUpdateCheckOutcome) { ++completions; }),
+        StartupUpdateCheckDispatch::Started);
+    destroyedService.reset();
+    QCoreApplication::processEvents();
+    QCOMPARE(completions, 0);
+    std::optional<StartupUpdateCheckOutcome> missingServiceOutcome;
+    QCOMPARE(bridge.check([&](StartupUpdateCheckOutcome outcome)
+        { missingServiceOutcome = std::move(outcome); }), StartupUpdateCheckDispatch::Failed);
+    QVERIFY(missingServiceOutcome.has_value());
+    QCOMPARE(std::get<StartupUpdateCheckError>(*missingServiceOutcome).code,
+        StartupUpdateCheckErrorCode::Dispatch);
+
+    setAutomaticChecksEnabled(true);
+    {
+        UpdateController controller(&service);
+        controller.setStartupComplete();
+        controller.startAutomaticCheck();
+    }
+    QTRY_COMPARE(succeeded.count(), 2);
+    QVERIFY(!automaticUpdateDialog());
+
+    // A service disappearing before the controller also leaves startup safe.
+    auto shortLivedService = std::make_unique<UpdateService>(configurationFor(server.url()));
+    UpdateController controller(shortLivedService.get());
+    shortLivedService.reset();
+    controller.setStartupComplete();
+    controller.startAutomaticCheck();
+    QVERIFY(!controller.hasVisibleDialog());
+}
+
+void UpdateControllerAutomaticStartupTests::startupSuccessEffectsOccurOnceAndManualChecksStillWork_data()
+{
+    QTest::addColumn<bool>("updateAvailable");
+    QTest::newRow("update") << true;
+    QTest::newRow("no-update") << false;
+}
+
+void UpdateControllerAutomaticStartupTests::startupSuccessEffectsOccurOnceAndManualChecksStillWork()
+{
+    QFETCH(bool, updateAvailable);
+    QCoreApplication::setApplicationVersion(
+        updateAvailable ? QStringLiteral("1.0.0") : QStringLiteral("3.0.0"));
+    setAutomaticChecksEnabled(true);
+    QVERIFY(setSkippedUpdateVersion("1.5.0"));
+    LocalHttpServer server(validReleaseResponse(QStringLiteral("2.0.0")));
+    QVERIFY(server.listen());
+    UpdateService service(configurationFor(server.url()));
+    QSignalSpy succeeded(&service, &UpdateService::checkSucceeded);
+    int cleanupAttempts = 0;
+    auto preferences = std::make_shared<
+        ClassMngr::Next::Platform::SettingsManagerSkippedUpdateVersionPort>(
+            [&](QSettings&)
+            {
+                // Retaining stale data makes duplicate reconciliation visible.
+                ++cleanupAttempts;
+                return QSettings::AccessError;
+            });
+    UpdateController controller(&service, nullptr, preferences);
+    controller.setStartupComplete();
+    controller.startAutomaticCheck();
+    controller.startAutomaticCheck();
+    QTRY_COMPARE(succeeded.count(), 1);
+    QCOMPARE(controller.hasVisibleDialog(), updateAvailable);
+    QCOMPARE(cleanupAttempts, 1);
+    QCOMPARE(server.requestCount(), 1);
+    auto* dialog = automaticUpdateDialog();
+    QCOMPARE(dialog != nullptr, updateAvailable);
+    int visibleAutomaticDialogs = 0;
+    for (auto* widget : QApplication::topLevelWidgets())
+    {
+        if (qobject_cast<UpdateDialog*>(widget) && widget->isVisible()
+            && widget->property("automaticUpdatePrompt").toBool())
+        {
+            ++visibleAutomaticDialogs;
+        }
+    }
+    QCOMPARE(visibleAutomaticDialogs, updateAvailable ? 1 : 0);
+    controller.startAutomaticCheck();
+    QCOMPARE(server.requestCount(), 1);
+
+    // Later direct/manual checks keep their previous service signal route.
+    QVERIFY(service.checkForUpdates(UpdateService::CheckPolicy::Force));
+    QTRY_COMPARE(succeeded.count(), 2);
+    QCOMPARE(cleanupAttempts, 2);
+    QCOMPARE(server.requestCount(), 2);
+    QCOMPARE(controller.hasVisibleDialog(), updateAvailable);
+    if (dialog)
+    {
+        dialog->setProperty("automaticUpdatePrompt", false);
+        dialog->close();
+    }
 }
 
 QTEST_MAIN(UpdateControllerAutomaticStartupTests)
