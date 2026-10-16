@@ -2,6 +2,7 @@
 
 #include "domain/models/class_transfer.h"
 #include "next/application/class_transfer_apply_request.h"
+#include "next/application/class_transfer_preview_query.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QList>
@@ -21,6 +22,13 @@ public:
         ApplicationServices* applicationServices,
         const ClassTransferPackage& package,
         const ClassImportPreview& preview,
+        QWidget* parent = nullptr
+        );
+
+    explicit ClassImportDialog(
+        ApplicationServices* applicationServices,
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferPreviewResult& preview,
         QWidget* parent = nullptr
         );
 

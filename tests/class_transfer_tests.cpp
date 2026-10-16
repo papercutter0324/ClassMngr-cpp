@@ -8,7 +8,9 @@
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
+#include "next/application/class_transfer_preview_query.h"
 #include "next/platform/class_transfer_apply_legacy_adapter.h"
+#include "next/platform/class_transfer_preview_legacy_adapter.h"
 #include "data/repositories/class_transfer_repository.h"
 
 #include <QApplication>
@@ -361,6 +363,7 @@ private slots:
     void exportRosterReadFailurePrecedesMissingTeacher();
     void importsCompleteClassesAndDeduplicatesTeacher();
     void previewMatchesCourseAndTeacherIgnoringSchedule();
+    void typedPreviewQueryNormalizesAndReturnsTypedCandidates();
     void previewPreservesQtNameAndCourseNormalization();
     void previewBatchesDestinationClassInfoInClassOrder();
     void previewUsesConditionalAssignedTeacherNames();
@@ -1510,6 +1513,104 @@ void ClassTransferTests::previewMatchesCourseAndTeacherIgnoringSchedule()
     QCOMPARE(preview->classes.size(), 1);
     QCOMPARE(preview->classes.first().matchingClassIds,
              QList<int>({destinationClass}));
+}
+
+void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    DataService service;
+    QVERIFY(service.openDatabase(
+        directory.filePath(QStringLiteral("destination.db"))).has_value());
+
+    Teacher localTeacher = completeTeacher(QStringLiteral("élodie kim"));
+    localTeacher.teacherKr = QStringLiteral("김 민수");
+    const int destinationTeacherId = createdTeacherId(service, localTeacher);
+    const int destinationClassId = createdClassId(
+        service, QStringLiteral("Matched Destination"));
+    QVERIFY(destinationTeacherId > 0);
+    QVERIFY(destinationClassId > 0);
+    ClassInfo destinationInfo;
+    destinationInfo.classId = destinationClassId;
+    destinationInfo.teacherId = destinationTeacherId;
+    destinationInfo.classGrade = QStringLiteral("e4");
+    destinationInfo.classLevel = QStringLiteral("perseus");
+    QVERIFY(service.saveClassInfo(destinationInfo).has_value());
+
+    ClassTransferPackage package;
+    ClassTransferTeacher sourceTeacher;
+    sourceTeacher.key = QStringLiteral("source-teacher");
+    sourceTeacher.teacher.teacherEn = QStringLiteral("  ÉLODIE\tKIM  ");
+    sourceTeacher.teacher.teacherKr = QStringLiteral(" 김\t민수 ");
+    package.teachers.append(sourceTeacher);
+
+    ClassTransferClass sourceClass;
+    sourceClass.key = QStringLiteral("source-class");
+    sourceClass.teacherKey = sourceTeacher.key;
+    sourceClass.info.classGrade = QStringLiteral(" E4\t");
+    sourceClass.info.classLevel = QStringLiteral(" PERSEUS  ");
+    package.classes.append(sourceClass);
+
+    const auto request =
+        ClassMngr::Next::Platform::classTransferPreviewRequest(package);
+    QCOMPARE(request.teachers.size(), std::size_t{1});
+    QCOMPARE(request.teachers.front().sourceKey,
+        std::string("source-teacher"));
+    QCOMPARE(request.teachers.front().names.english,
+        QString(sourceTeacher.teacher.teacherEn).simplified()
+            .toCaseFolded().toStdString());
+    QCOMPARE(request.teachers.front().names.korean,
+        QString(sourceTeacher.teacher.teacherKr).simplified()
+            .toCaseFolded().toStdString());
+    QCOMPARE(request.classes.size(), std::size_t{1});
+    QCOMPARE(request.classes.front().packageClassIndex, std::size_t{0});
+    QCOMPARE(request.classes.front().teacherSourceKey,
+        std::string("source-teacher"));
+    QCOMPARE(request.classes.front().grade,
+        QString(sourceClass.info.classGrade).simplified()
+            .toCaseFolded().toStdString());
+    QCOMPARE(request.classes.front().level,
+        QString(sourceClass.info.classLevel).simplified()
+            .toCaseFolded().toStdString());
+
+    DatabaseSession* const session = service.databaseSession();
+    QVERIFY(session);
+    ClassTransferRepository* const repository =
+        session->classTransferRepository();
+    QVERIFY(repository);
+    const auto result = ClassMngr::Next::Application::
+        ClassTransferPreviewQuery(*repository).execute(request);
+    QVERIFY(result.hasValue());
+    const auto& typedPreview = result.value();
+    QCOMPARE(typedPreview.teachers.size(), std::size_t{1});
+    QCOMPARE(typedPreview.teachers.front().teacherKey,
+        std::string("source-teacher"));
+    QCOMPARE(typedPreview.teachers.front().matchingTeacherIds,
+        std::vector<ClassMngr::Next::Domain::TeacherId>{
+            *ClassMngr::Next::Domain::TeacherId::fromString(
+                std::to_string(destinationTeacherId))
+        });
+    QCOMPARE(typedPreview.classes.size(), std::size_t{1});
+    QCOMPARE(typedPreview.classes.front().packageClassIndex, 0);
+    QCOMPARE(typedPreview.classes.front().matchingClassIds,
+        std::vector<ClassMngr::Next::Domain::ClassId>{
+            *ClassMngr::Next::Domain::ClassId::fromString(
+                std::to_string(destinationClassId))
+        });
+
+    QSqlQuery schemaQuery(session->database());
+    QVERIFY2(schemaQuery.exec(QStringLiteral(
+        "ALTER TABLE class_times RENAME COLUMN day TO unavailable_day")),
+        qPrintable(schemaQuery.lastError().text()));
+    const auto failedRead =
+        ClassMngr::Next::Application::ClassTransferPreviewQuery(*repository)
+            .execute(request);
+    QVERIFY(!failedRead.hasValue());
+    QCOMPARE(failedRead.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical);
+    QVERIFY(QString::fromUtf8(failedRead.error().message.data(),
+            static_cast<qsizetype>(failedRead.error().message.size()))
+        .contains(QStringLiteral("Loading regular classes navigation schedules failed")));
 }
 
 void ClassTransferTests::replacementRetainsIdAndClearsOldChildren()

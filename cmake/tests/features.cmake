@@ -67,6 +67,27 @@ qt_add_executable(ClassMngrClassTransferTests
     )
 
     add_test(
+        NAME ClassTransferPreviewAdapterRegressionTests
+        COMMAND ClassMngrClassTransferTests
+            typedPreviewQueryNormalizesAndReturnsTypedCandidates
+            previewUsesConditionalAssignedTeacherNames
+            previewSkipsClassInfoBatchWhenThereAreNoDestinations
+    )
+    set_tests_properties(ClassTransferPreviewAdapterRegressionTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    add_test(
+        NAME ClassTransferApplyStaleChoiceRegressionTests
+        COMMAND ClassMngrClassTransferTests
+            applyRejectsReplacementOutsideCurrentPreviewMatches
+            typedApplyRevalidatesStaleTeacherAndMakesNoWrites
+    )
+    set_tests_properties(ClassTransferApplyStaleChoiceRegressionTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
+    add_test(
         NAME ClassMngrClassTransferRowIndexRegressionTests
         COMMAND ClassMngrClassTransferTests
             exportSkipsMalformedEvaluationRowIndexes
@@ -105,6 +126,28 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Test
             Qt6::Widgets
         OFFSCREEN
+    )
+
+    add_test(
+        NAME SidebarClassTransferMatchedPreviewIntegrationTests
+        COMMAND ClassMngrSidebarClassTransferApplyParityTests
+            matchedTeacherAndClassAreAppliedFromTypedPreview
+    )
+    add_test(
+        NAME SidebarClassTransferPreviewReadFailureIntegrationTests
+        COMMAND ClassMngrSidebarClassTransferApplyParityTests
+            previewReadFailureWarnsWithoutOpeningDialogOrApplying
+    )
+    add_test(
+        NAME SidebarClassTransferNoMatchCreateRegressionTests
+        COMMAND ClassMngrSidebarClassTransferApplyParityTests
+            successRefreshesNavigatesAndReportsCounts
+    )
+    set_tests_properties(
+        SidebarClassTransferMatchedPreviewIntegrationTests
+        SidebarClassTransferPreviewReadFailureIntegrationTests
+        SidebarClassTransferNoMatchCreateRegressionTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     classmngr_add_qt_test(

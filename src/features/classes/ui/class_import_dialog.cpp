@@ -1,5 +1,6 @@
 #include "class_import_dialog.h"
 #include "next/platform/class_transfer_apply_legacy_adapter.h"
+#include "next/platform/class_transfer_preview_legacy_adapter.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include "core/application_services.h"
@@ -660,6 +661,21 @@ ClassImportDialog::ClassImportDialog(
     m_importButton->setObjectName(QStringLiteral("importClassesButton"));
     m_importButton->setText(tr("Import"));
     updateImportEnabled();
+}
+
+ClassImportDialog::ClassImportDialog(
+    ApplicationServices* applicationServices,
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferPreviewResult& preview,
+    QWidget* parent
+    )
+    : ClassImportDialog(
+        applicationServices,
+        package,
+        ClassMngr::Next::Platform::legacyClassTransferPreview(preview),
+        parent
+        )
+{
 }
 
 ClassImportPlan ClassImportDialog::importPlan() const

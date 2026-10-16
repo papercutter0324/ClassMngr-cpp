@@ -9,9 +9,12 @@ using namespace SidebarControllerPrivate;
 #include "data/repositories/class_transfer_legacy_package_adapter.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "next/platform/application_services_class_transfer_export_source_read_port.h"
+#include "next/platform/application_services_class_transfer_preview_read_port.h"
+#include "next/platform/class_transfer_preview_legacy_adapter.h"
 #include "features/classes/ui/class_export_dialog.h"
 #include "features/classes/ui/class_import_dialog.h"
 #include "next/application/class_transfer_apply_use_case.h"
+#include "next/application/class_transfer_preview_query.h"
 #include "next/platform/application_services_class_transfer_apply_port.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
@@ -190,12 +193,21 @@ void SidebarController::importClasses()
         return;
     }
 
-    const auto preview = classes->previewImport(*package);
+    const auto previewRequest =
+        ClassMngr::Next::Platform::classTransferPreviewRequest(*package);
+    ClassMngr::Next::Platform::ApplicationServicesClassTransferPreviewReadPort
+        previewReadPort(*m_services);
+    const auto preview =
+        ClassMngr::Next::Application::ClassTransferPreviewQuery(
+            previewReadPort).execute(previewRequest);
 
     if (!preview)
     {
         DialogServices::showWarning(
-            m_sidebar, tr("Import Classes"), preview.error());
+            m_sidebar,
+            tr("Import Classes"),
+            QString::fromUtf8(preview.error().message.data(),
+                static_cast<qsizetype>(preview.error().message.size())));
         return;
     }
 
@@ -204,7 +216,7 @@ void SidebarController::importClasses()
         ClassImportDialog dialog(
             m_services,
             *package,
-            *preview,
+            preview.value(),
             m_sidebar
             );
 

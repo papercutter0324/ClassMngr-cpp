@@ -1,8 +1,13 @@
 #include "app/controllers/sidebar_controller.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
+#include "data/repositories/teacher_repository.h"
+#include "domain/models/class_info.h"
 #include "domain/models/class_transfer.h"
+#include "domain/models/teacher.h"
 #include "features/classes/services/class_transfer_json_codec.h"
 #include "features/classes/ui/class_import_dialog.h"
 #include "features/classes/ui/classes_page.h"
@@ -42,6 +47,24 @@ ClassTransferPackage transferPackage()
     return package;
 }
 
+ClassTransferPackage matchedTransferPackage()
+{
+    ClassTransferPackage package;
+    ClassTransferTeacher transferTeacher;
+    transferTeacher.key = QStringLiteral("matched-source-teacher");
+    transferTeacher.teacher.teacherEn = QStringLiteral("Shared Teacher");
+    package.teachers.append(transferTeacher);
+
+    ClassTransferClass transferClass;
+    transferClass.key = QStringLiteral("matched-source-class");
+    transferClass.name = QStringLiteral("Imported Matched Class");
+    transferClass.teacherKey = transferTeacher.key;
+    transferClass.info.classGrade = QStringLiteral("E4");
+    transferClass.info.classLevel = QStringLiteral("Theseus");
+    package.classes.append(transferClass);
+    return package;
+}
+
 QString boolJson(const bool value)
 {
     return value ? QStringLiteral("true") : QStringLiteral("false");
@@ -70,10 +93,11 @@ public:
     {
         Accept,
         Cancel,
-        Skip
+        Skip,
+        Replace
     };
 
-    [[nodiscard]] bool open()
+    [[nodiscard]] bool open(const bool withMatchingDestination = false)
     {
         if (!services.openDatabase(directory.filePath(
                 QStringLiteral("class-transfer-apply-parity.tps"))))
@@ -81,17 +105,48 @@ public:
             return false;
         }
 
+        Teacher teacher;
+        teacher.teacherEn = QStringLiteral("Shared Teacher");
+        if (withMatchingDestination)
+        {
+            const auto savedTeacher = services.databaseSession()
+                ->teacherRepository()->createTeacher(teacher);
+            if (!savedTeacher)
+            {
+                return false;
+            }
+            existingTeacherId = *savedTeacher;
+        }
+
         const auto existing = services.databaseSession()->classRepository()
-            ->createClass(QStringLiteral("Existing Class"));
+            ->createClass(withMatchingDestination
+                ? QStringLiteral("Existing Matched Class")
+                : QStringLiteral("Existing Class"));
         if (!existing)
         {
             return false;
         }
         existingClassId = *existing;
 
+        if (withMatchingDestination)
+        {
+            ClassInfo info;
+            info.classId = existingClassId;
+            info.teacherId = existingTeacherId;
+            info.classGrade = QStringLiteral("e4");
+            info.classLevel = QStringLiteral("theseus");
+            if (!services.databaseSession()->classInfoRepository()
+                    ->saveClassInfo(info))
+            {
+                return false;
+            }
+        }
+
         if (!ClassTransferJsonCodec::saveFile(
                 packagePath,
-                transferPackage()))
+                withMatchingDestination
+                    ? matchedTransferPackage()
+                    : transferPackage()))
         {
             return false;
         }
@@ -158,6 +213,30 @@ public:
                 }
                 choice->setCurrentIndex(skip);
             }
+            else if (action == DialogAction::Replace)
+            {
+                auto* const choice = dialog->findChild<QComboBox*>(
+                    QStringLiteral("classImportChoice_0"));
+                int replace = -1;
+                if (choice)
+                {
+                    for (int index = 0; index < choice->count(); ++index)
+                    {
+                        if (choice->itemData(index, Qt::UserRole).toInt()
+                            == static_cast<int>(ClassImportAction::Replace))
+                        {
+                            replace = index;
+                            break;
+                        }
+                    }
+                }
+                if (!choice || replace < 0)
+                {
+                    dialog->reject();
+                    return;
+                }
+                choice->setCurrentIndex(replace);
+            }
 
             auto* const accept = dialog->findChild<QPushButton*>(
                 QStringLiteral("importClassesButton"));
@@ -196,6 +275,13 @@ public:
             "BEGIN SELECT RAISE(ABORT, 'F367 apply failure'); END"));
     }
 
+    [[nodiscard]] bool installClassPreviewReadFailure() const
+    {
+        QSqlQuery trigger(services.databaseSession()->database());
+        return trigger.exec(QStringLiteral(
+            "ALTER TABLE class_times RENAME COLUMN day TO unavailable_day"));
+    }
+
     QTemporaryDir directory;
     ApplicationServices services;
     PageManager pages;
@@ -206,6 +292,7 @@ public:
     ClassesPage* page = nullptr;
     QString packagePath = directory.filePath(QStringLiteral("package.json"));
     int existingClassId = -1;
+    int existingTeacherId = -1;
 };
 }
 
@@ -219,6 +306,8 @@ private slots:
     void dialogCancelHasNoSideEffects();
     void writeFailureWarnsWithoutRefreshOrNavigation();
     void successRefreshesNavigatesAndReportsCounts();
+    void matchedTeacherAndClassAreAppliedFromTypedPreview();
+    void previewReadFailureWarnsWithoutOpeningDialogOrApplying();
     void skippedOnlyRestoresPriorSelection();
 };
 
@@ -367,6 +456,68 @@ successRefreshesNavigatesAndReportsCounts()
         "\"destination_opened\":true,\"sidebar\":\"classes\","
         "\"prompt\":\"Import complete. Created: 1, replaced: 0, skipped: 0.\"}"
         ));
+}
+
+void SidebarClassTransferApplyParityTests::
+matchedTeacherAndClassAreAppliedFromTypedPreview()
+{
+    ImportFixture fixture;
+    QVERIFY(fixture.open(true));
+    fixture.selectPackageFile();
+    bool dialogSeen = false;
+    bool dialogAccepted = false;
+
+    QVERIFY(fixture.invokeImport(ImportFixture::DialogAction::Replace,
+        &dialogSeen, &dialogAccepted));
+
+    QVERIFY(dialogSeen);
+    QVERIFY(dialogAccepted);
+    QCOMPARE(fixture.prompts.messages.size(), 1);
+    const PromptRequest& information = fixture.prompts.messages.first();
+    QCOMPARE(information.message,
+        QStringLiteral("Import complete. Created: 0, replaced: 1, skipped: 0."));
+    QCOMPARE(information.severity, PromptSeverity::Information);
+    QCOMPARE(rowCount(fixture.services, QStringLiteral("classes")), 1);
+    QCOMPARE(rowCount(fixture.services, QStringLiteral("teachers")), 1);
+    QCOMPARE(fixture.page->currentClassId(), fixture.existingClassId);
+
+    const auto classAfter = fixture.services.classService()->classroom(
+        fixture.existingClassId);
+    QVERIFY(classAfter);
+    QCOMPARE(classAfter->name, QStringLiteral("Imported Matched Class"));
+    const auto infoAfter = fixture.services.classService()->classInfo(
+        fixture.existingClassId);
+    QVERIFY(infoAfter);
+    QCOMPARE(infoAfter->teacherId, fixture.existingTeacherId);
+    QCOMPARE(infoAfter->classGrade, QStringLiteral("E4"));
+    QCOMPARE(infoAfter->classLevel, QStringLiteral("Theseus"));
+}
+
+void SidebarClassTransferApplyParityTests::
+previewReadFailureWarnsWithoutOpeningDialogOrApplying()
+{
+    ImportFixture fixture;
+    QVERIFY(fixture.open(true));
+    fixture.selectPackageFile();
+    QVERIFY(fixture.installClassPreviewReadFailure());
+    const int queriesBefore = fixture.page->runtimeMetrics().classQueryCount;
+    bool dialogSeen = false;
+    bool dialogAccepted = false;
+
+    QVERIFY(fixture.invokeImport(ImportFixture::DialogAction::Accept,
+        &dialogSeen, &dialogAccepted));
+
+    QVERIFY(!dialogSeen);
+    QVERIFY(!dialogAccepted);
+    QCOMPARE(fixture.prompts.messages.size(), 1);
+    const PromptRequest& warning = fixture.prompts.messages.first();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Import Classes"));
+    QVERIFY(warning.message.contains(QStringLiteral("Loading regular classes navigation schedules failed")));
+    QCOMPARE(rowCount(fixture.services, QStringLiteral("classes")), 1);
+    QCOMPARE(rowCount(fixture.services, QStringLiteral("teachers")), 1);
+    QCOMPARE(fixture.page->runtimeMetrics().classQueryCount - queriesBefore, 0);
+    QVERIFY(fixture.services.hasOpenDatabase());
 }
 
 void SidebarClassTransferApplyParityTests::skippedOnlyRestoresPriorSelection()

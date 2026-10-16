@@ -1,5 +1,6 @@
 #include "class_transfer_repository.h"
 #include "next/platform/class_transfer_apply_legacy_adapter.h"
+#include "next/platform/class_transfer_preview_legacy_adapter.h"
 
 #include "core/result.h"
 #include "data/database/database_transaction.h"
@@ -12,6 +13,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "next/application/class_transfer_matching_policy.h"
 #include "next/application/class_transfer_projection.h"
+#include "next/application/class_transfer_preview_query.h"
 
 #include <QHash>
 #include <QObject>
@@ -23,10 +25,8 @@
 #include <algorithm>
 #include <array>
 #include <limits>
-#include <map>
 #include <optional>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -48,12 +48,6 @@ struct ValidatedPlan
 QString normalized(const QString& value)
 {
     return value.simplified().toCaseFolded();
-}
-
-template <typename TypedId>
-TypedId applicationId(const qint64 legacyId)
-{
-    return *TypedId::fromString(std::to_string(legacyId));
 }
 
 QString reviewIssueMessage(
@@ -497,273 +491,30 @@ QStringList findScheduleConflicts(
     return regularConflicts;
 }
 
+QString operationErrorText(
+    const ClassMngr::Next::Domain::OperationError& error
+    )
+{
+    return QString::fromUtf8(error.message.data(),
+        static_cast<qsizetype>(error.message.size()));
+}
+
 Result<ClassImportPreview> buildPreview(
-    QSqlDatabase& database,
+    ClassMngr::Next::Application::ClassTransferPreviewReadPort& readPort,
     const ClassTransferPackage& package
     )
 {
-    TeacherRepository teacherRepository(database);
-    ClassRepository classRepository(database);
-    ClassInfoRepository classInfoRepository(database);
-
-    struct DestinationTeacherMatchRecord
+    const auto query = ClassMngr::Next::Application::ClassTransferPreviewQuery(
+        readPort);
+    const auto result = query.execute(
+        ClassMngr::Next::Platform::classTransferPreviewRequest(package));
+    if (!result)
     {
-        qint64 id = -1;
-        QString teacherEn;
-        QString teacherKr;
-    };
-
-    QList<DestinationTeacherMatchRecord> destinationTeachers;
-    QSqlQuery destinationTeacherQuery(database);
-    const auto destinationTeachersLoaded = SqlQueryUtils::execute(
-        destinationTeacherQuery,
-        QStringLiteral(R"(
-            SELECT id, teacher_en, teacher_kr
-            FROM teachers
-            ORDER BY teacher_en
-        )"),
-        QObject::tr("Loading teachers for class import")
-        );
-    if (!destinationTeachersLoaded)
-    {
-        return std::unexpected(
-            destinationTeachersLoaded.error().userMessage());
-    }
-    while (destinationTeacherQuery.next())
-    {
-        bool teacherIdValid = false;
-        const qint64 teacherId = destinationTeacherQuery
-            .value(QStringLiteral("id")).toLongLong(&teacherIdValid);
-        if (!teacherIdValid || teacherId <= 0)
-        {
-            return std::unexpected(QObject::tr(
-                "A teacher identifier could not be read for class import."));
-        }
-        destinationTeachers.append({
-            teacherId,
-            destinationTeacherQuery.value(QStringLiteral("teacher_en"))
-                .toString(),
-            destinationTeacherQuery.value(QStringLiteral("teacher_kr"))
-                .toString()
-        });
-    }
-    if (destinationTeacherQuery.lastError().isValid())
-    {
-        return std::unexpected(destinationTeacherQuery.lastError().text());
+        return std::unexpected(operationErrorText(result.error()));
     }
 
-    const Result<QList<Classroom>> destinationClasses =
-        classRepository.getClasses();
-    if (!destinationClasses)
-    {
-        return std::unexpected(destinationClasses.error());
-    }
-
-    using namespace ClassMngr::Next::Application;
-
-    ClassTransferMatchingRequest matchingRequest;
-    matchingRequest.sourceTeachers.reserve(
-        static_cast<std::size_t>(package.teachers.size())
-        );
-    for (const ClassTransferTeacher& source : package.teachers)
-    {
-        matchingRequest.sourceTeachers.push_back({
-            source.key.toStdString(),
-            {
-                normalized(source.teacher.teacherEn).toStdString(),
-                normalized(source.teacher.teacherKr).toStdString()
-            }
-        });
-    }
-
-    std::map<ClassMngr::Next::Domain::TeacherId, qint64> legacyTeacherIds;
-    QHash<qint64, ClassTransferMatchingTeacherNames>
-        destinationTeacherNamesById;
-    matchingRequest.destinationTeachers.reserve(
-        static_cast<std::size_t>(destinationTeachers.size())
-        );
-    for (const DestinationTeacherMatchRecord& destination : destinationTeachers)
-    {
-        const auto typedId = applicationId<
-            ClassMngr::Next::Domain::TeacherId>(destination.id);
-        const ClassTransferMatchingTeacherNames names{
-            normalized(destination.teacherEn).toStdString(),
-            normalized(destination.teacherKr).toStdString()
-        };
-        legacyTeacherIds.emplace(typedId, destination.id);
-        destinationTeacherNamesById.insert(destination.id, names);
-        matchingRequest.destinationTeachers.push_back({
-            typedId,
-            names
-        });
-    }
-
-    for (int index = 0; index < package.classes.size(); ++index)
-    {
-        const ClassTransferClass& source = package.classes[index];
-        matchingRequest.sourceClasses.push_back({
-            static_cast<std::size_t>(index),
-            source.teacherKey.toStdString(),
-            normalized(source.info.classGrade).toStdString(),
-            normalized(source.info.classLevel).toStdString()
-        });
-    }
-
-    std::unordered_set<std::string> sourceTeacherKeys;
-    sourceTeacherKeys.reserve(matchingRequest.sourceTeachers.size());
-    for (const auto& teacher : matchingRequest.sourceTeachers)
-    {
-        sourceTeacherKeys.insert(teacher.sourceKey);
-    }
-
-    const auto hasSourceTeacherForCourse = [&](
-        const std::string& grade,
-        const std::string& level)
-    {
-        return std::any_of(
-            matchingRequest.sourceClasses.cbegin(),
-            matchingRequest.sourceClasses.cend(),
-            [&](const ClassTransferMatchingSourceClass& sourceClass)
-            {
-                if (sourceClass.grade.empty() || sourceClass.level.empty()
-                    || sourceClass.grade != grade
-                    || sourceClass.level != level)
-                {
-                    return false;
-                }
-                return sourceTeacherKeys.contains(
-                    sourceClass.teacherSourceKey);
-            }
-            );
-    };
-
-    std::map<ClassMngr::Next::Domain::ClassId, int> legacyClassIds;
-    const bool hasCompleteSourceClass = std::any_of(
-        matchingRequest.sourceClasses.cbegin(),
-        matchingRequest.sourceClasses.cend(),
-        [](const ClassTransferMatchingSourceClass& sourceClass)
-        {
-            return !sourceClass.grade.empty() && !sourceClass.level.empty();
-        }
-        );
-
-    if (hasCompleteSourceClass)
-    {
-        matchingRequest.destinationClasses.reserve(
-            static_cast<std::size_t>(destinationClasses->size())
-            );
-        QList<int> destinationClassIds;
-        destinationClassIds.reserve(destinationClasses->size());
-        for (const Classroom& destination : *destinationClasses)
-        {
-            destinationClassIds.append(destination.id);
-        }
-
-        if (!destinationClassIds.isEmpty())
-        {
-            const Result<QList<ClassNavigationReadRecord>> destinationInfoRecords =
-                classInfoRepository.loadClassesNavigationRecords(
-                    destinationClassIds);
-            if (!destinationInfoRecords)
-            {
-                return std::unexpected(destinationInfoRecords.error());
-            }
-
-            for (qsizetype index = 0;
-                 index < destinationClasses->size();
-                 ++index)
-            {
-                const Classroom& destination = destinationClasses->at(index);
-                const ClassNavigationReadRecord& destinationInfo =
-                    destinationInfoRecords->at(index);
-                const QString grade = normalized(destinationInfo.grade);
-                const QString level = normalized(destinationInfo.level);
-                std::optional<ClassTransferMatchingDestinationTeacher>
-                    destinationTeacher;
-                if (destinationInfo.teacherId > 0)
-                {
-                    const auto typedTeacherId = applicationId<
-                        ClassMngr::Next::Domain::TeacherId>(
-                            destinationInfo.teacherId);
-                    ClassTransferMatchingTeacherNames names;
-                    if (hasSourceTeacherForCourse(
-                            grade.toStdString(), level.toStdString()))
-                    {
-                        const auto teacherNames =
-                            destinationTeacherNamesById.constFind(
-                                destinationInfo.teacherId);
-                        if (teacherNames != destinationTeacherNamesById.cend())
-                        {
-                            names = *teacherNames;
-                        }
-                        else
-                        {
-                            const TeacherProfileLookupResult teacher =
-                                teacherRepository.lookupTeacherProfileById(
-                                    destinationInfo.teacherId);
-                            if (teacher.code != TeacherProfileLookupCode::Found)
-                            {
-                                return std::unexpected(teacher.diagnostic);
-                            }
-
-                            names = {
-                                normalized(teacher.profile.teacherEn)
-                                    .toStdString(),
-                                normalized(teacher.profile.teacherKr)
-                                    .toStdString()
-                            };
-                        }
-                    }
-
-                    destinationTeacher = ClassTransferMatchingDestinationTeacher{
-                        typedTeacherId,
-                        std::move(names)
-                    };
-                }
-
-                const auto typedId = applicationId<
-                    ClassMngr::Next::Domain::ClassId>(destination.id);
-                legacyClassIds.emplace(typedId, destination.id);
-                matchingRequest.destinationClasses.push_back({
-                    typedId,
-                    grade.toStdString(),
-                    level.toStdString(),
-                    std::move(destinationTeacher)
-                });
-            }
-        }
-    }
-
-    const ClassTransferMatchingResult matches =
-        matchClassTransferCandidates(matchingRequest);
-    ClassImportPreview preview;
-    preview.teachers.reserve(static_cast<qsizetype>(matches.teachers.size()));
-    for (std::size_t index = 0; index < matches.teachers.size(); ++index)
-    {
-        ClassImportTeacherPreview teacherPreview;
-        teacherPreview.teacherKey = package.teachers[
-            static_cast<qsizetype>(index)].key;
-        for (const auto& id : matches.teachers[index].matchingTeacherIds)
-        {
-            teacherPreview.matchingTeacherIds.append(legacyTeacherIds.at(id));
-        }
-        preview.teachers.append(std::move(teacherPreview));
-    }
-
-    preview.classes.reserve(static_cast<qsizetype>(matches.classes.size()));
-    for (const auto& match : matches.classes)
-    {
-        ClassImportClassPreview classPreview;
-        classPreview.packageClassIndex = static_cast<int>(
-            match.packageClassIndex);
-        for (const auto& id : match.matchingClassIds)
-        {
-            classPreview.matchingClassIds.append(legacyClassIds.at(id));
-        }
-        preview.classes.append(std::move(classPreview));
-    }
-
-    return preview;
+    return ClassMngr::Next::Platform::legacyClassTransferPreview(
+        result.value());
 }
 
 Result<ValidatedPlan> validatePlan(
@@ -772,7 +523,8 @@ Result<ValidatedPlan> validatePlan(
     const ClassMngr::Next::Application::ClassTransferApplyRequest& choices
     )
 {
-    const auto previewResult = buildPreview(database, package);
+    ClassTransferRepository readRepository(database);
+    const auto previewResult = buildPreview(readRepository, package);
 
     if (!previewResult)
     {
@@ -1290,6 +1042,285 @@ ClassTransferRepository::ClassTransferRepository(
 {
 }
 
+ClassMngr::Next::Application::ClassTransferPreviewReadResult
+ClassTransferRepository::readSnapshot(
+    const ClassMngr::Next::Application::ClassTransferPreviewRequest& request
+    ) const
+{
+    using namespace ClassMngr::Next;
+    using Application::ClassTransferMatchingDestinationTeacher;
+    using Application::ClassTransferMatchingTeacherNames;
+    using Application::ClassTransferPreviewReadResult;
+    using Application::ClassTransferPreviewReadSnapshot;
+
+    const auto failure = [](
+        const Domain::ErrorCode code,
+        const QString& message,
+        const bool recoverable = true)
+    {
+        const QByteArray bytes = message.toUtf8();
+        return ClassTransferPreviewReadResult::failure({
+            .code = code,
+            .message = std::string(bytes.constData(),
+                static_cast<std::size_t>(bytes.size())),
+            .recoverable = recoverable
+        });
+    };
+
+    if (!m_database.isOpen())
+    {
+        return failure(
+            Domain::ErrorCode::NotFound,
+            QObject::tr("No Teacher Profile is open."));
+    }
+
+    const auto hasCompleteSourceClass = std::any_of(
+        request.classes.cbegin(), request.classes.cend(),
+        [](const Application::ClassTransferMatchingSourceClass& source)
+        {
+            return !source.grade.empty() && !source.level.empty();
+        });
+    const auto sourceHasAssignedTeacherForAnyCourse = [&]
+    {
+        return std::any_of(
+            request.classes.cbegin(), request.classes.cend(),
+            [&request](const Application::ClassTransferMatchingSourceClass& source)
+            {
+                if (source.grade.empty() || source.level.empty())
+                {
+                    return false;
+                }
+                return std::any_of(
+                    request.teachers.cbegin(), request.teachers.cend(),
+                    [&source](const Application::ClassTransferMatchingSourceTeacher& teacher)
+                    {
+                        return teacher.sourceKey == source.teacherSourceKey;
+                    });
+            });
+    };
+    const bool needTeacherRows = sourceHasAssignedTeacherForAnyCourse()
+        || std::any_of(
+            request.teachers.cbegin(), request.teachers.cend(),
+            [](const Application::ClassTransferMatchingSourceTeacher& teacher)
+            {
+                return !teacher.names.english.empty()
+                    || !teacher.names.korean.empty();
+            });
+
+    ClassTransferPreviewReadSnapshot snapshot;
+    QHash<qint64, ClassTransferMatchingTeacherNames> teacherNamesById;
+    if (needTeacherRows)
+    {
+        QSqlQuery destinationTeacherQuery(m_database);
+        const auto loaded = SqlQueryUtils::execute(
+            destinationTeacherQuery,
+            QStringLiteral(R"(
+                SELECT id, teacher_en, teacher_kr
+                FROM teachers
+                ORDER BY teacher_en
+            )"),
+            QObject::tr("Loading teachers for class import")
+            );
+        if (!loaded)
+        {
+            return failure(
+                Domain::ErrorCode::Technical,
+                loaded.error().userMessage());
+        }
+
+        while (destinationTeacherQuery.next())
+        {
+            bool valid = false;
+            const qint64 legacyId = destinationTeacherQuery
+                .value(QStringLiteral("id")).toLongLong(&valid);
+            if (!valid || legacyId <= 0)
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    QObject::tr("A teacher identifier could not be read for class import."),
+                    false);
+            }
+
+            const auto typedId = Domain::TeacherId::fromString(
+                std::to_string(legacyId));
+            if (!typedId)
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    QObject::tr("A teacher identifier could not be read for class import."),
+                    false);
+            }
+
+            const ClassTransferMatchingTeacherNames names{
+                normalized(destinationTeacherQuery
+                    .value(QStringLiteral("teacher_en")).toString())
+                    .toStdString(),
+                normalized(destinationTeacherQuery
+                    .value(QStringLiteral("teacher_kr")).toString())
+                    .toStdString()
+            };
+            teacherNamesById.insert(legacyId, names);
+            snapshot.teachers.push_back({*typedId, names});
+        }
+
+        if (destinationTeacherQuery.lastError().isValid())
+        {
+            return failure(
+                Domain::ErrorCode::Technical,
+                destinationTeacherQuery.lastError().text());
+        }
+    }
+
+    if (!hasCompleteSourceClass)
+    {
+        return ClassTransferPreviewReadResult::success(std::move(snapshot));
+    }
+
+    ClassRepository classRepository(m_database);
+    ClassInfoRepository classInfoRepository(m_database);
+    TeacherRepository teacherRepository(m_database);
+    const Result<QList<Classroom>> destinationClasses =
+        classRepository.getClasses();
+    if (!destinationClasses)
+    {
+        return failure(Domain::ErrorCode::Technical,
+            destinationClasses.error());
+    }
+
+    if (destinationClasses->isEmpty())
+    {
+        return ClassTransferPreviewReadResult::success(std::move(snapshot));
+    }
+
+    QList<int> destinationClassIds;
+    destinationClassIds.reserve(destinationClasses->size());
+    for (const Classroom& destination : *destinationClasses)
+    {
+        if (destination.id <= 0)
+        {
+            return failure(
+                Domain::ErrorCode::Validation,
+                QObject::tr("A class identifier could not be read for class import."),
+                false);
+        }
+        destinationClassIds.append(destination.id);
+    }
+
+    const Result<QList<ClassNavigationReadRecord>> destinationInfoRecords =
+        classInfoRepository.loadClassesNavigationRecords(destinationClassIds);
+    if (!destinationInfoRecords)
+    {
+        return failure(Domain::ErrorCode::Technical,
+            destinationInfoRecords.error());
+    }
+    if (destinationInfoRecords->size() != destinationClasses->size())
+    {
+        return failure(
+            Domain::ErrorCode::Validation,
+            QObject::tr("Class information returned a different number of rows for class import."),
+            false);
+    }
+
+    const auto hasSourceTeacherForCourse = [&request](
+        const QString& grade,
+        const QString& level)
+    {
+        const std::string normalizedGrade = normalized(grade).toStdString();
+        const std::string normalizedLevel = normalized(level).toStdString();
+        return std::any_of(
+            request.classes.cbegin(), request.classes.cend(),
+            [&request, &normalizedGrade, &normalizedLevel](
+                const Application::ClassTransferMatchingSourceClass& source)
+            {
+                if (source.grade.empty() || source.level.empty()
+                    || source.grade != normalizedGrade
+                    || source.level != normalizedLevel)
+                {
+                    return false;
+                }
+                return std::any_of(
+                    request.teachers.cbegin(), request.teachers.cend(),
+                    [&source](const Application::ClassTransferMatchingSourceTeacher& teacher)
+                    {
+                        return teacher.sourceKey == source.teacherSourceKey;
+                    });
+            });
+    };
+
+    snapshot.classes.reserve(static_cast<std::size_t>(destinationClasses->size()));
+    for (qsizetype index = 0; index < destinationClasses->size(); ++index)
+    {
+        const Classroom& destination = destinationClasses->at(index);
+        const ClassNavigationReadRecord& info = destinationInfoRecords->at(index);
+        const QString grade = normalized(info.grade);
+        const QString level = normalized(info.level);
+
+        std::optional<ClassTransferMatchingDestinationTeacher> teacher;
+        if (info.teacherId > 0)
+        {
+            const auto typedTeacherId = Domain::TeacherId::fromString(
+                std::to_string(info.teacherId));
+            if (!typedTeacherId)
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    QObject::tr("A teacher identifier could not be read for class import."),
+                    false);
+            }
+
+            ClassTransferMatchingTeacherNames names;
+            if (hasSourceTeacherForCourse(grade, level))
+            {
+                const auto existingNames = teacherNamesById.constFind(
+                    info.teacherId);
+                if (existingNames != teacherNamesById.cend())
+                {
+                    names = *existingNames;
+                }
+                else
+                {
+                    const TeacherProfileLookupResult profile =
+                        teacherRepository.lookupTeacherProfileById(
+                            info.teacherId);
+                    if (profile.code != TeacherProfileLookupCode::Found)
+                    {
+                        return failure(Domain::ErrorCode::Technical,
+                            profile.diagnostic);
+                    }
+                    names = {
+                        normalized(profile.profile.teacherEn).toStdString(),
+                        normalized(profile.profile.teacherKr).toStdString()
+                    };
+                }
+            }
+
+            teacher = ClassTransferMatchingDestinationTeacher{
+                *typedTeacherId,
+                std::move(names)
+            };
+        }
+
+        const auto typedClassId = Domain::ClassId::fromString(
+            std::to_string(destination.id));
+        if (!typedClassId)
+        {
+            return failure(
+                Domain::ErrorCode::Validation,
+                QObject::tr("A class identifier could not be read for class import."),
+                false);
+        }
+
+        snapshot.classes.push_back({
+            *typedClassId,
+            grade.toStdString(),
+            level.toStdString(),
+            std::move(teacher)
+        });
+    }
+
+    return ClassTransferPreviewReadResult::success(std::move(snapshot));
+}
+
 Result<ClassTransferExportSource> ClassTransferRepository::readExportSource(
     const QList<int>& classIds
     )
@@ -1662,12 +1693,7 @@ Result<ClassImportPreview> ClassTransferRepository::previewImport(
     const ClassTransferPackage& package
     )
 {
-    if (!m_database.isOpen())
-    {
-        return std::unexpected(QObject::tr("No Teacher Profile is open."));
-    }
-
-    return buildPreview(m_database, package);
+    return buildPreview(*this, package);
 }
 
 Result<ClassImportSummary> ClassTransferRepository::importClasses(

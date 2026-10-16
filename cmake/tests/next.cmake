@@ -1515,6 +1515,37 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+# Keep class-transfer preview orchestration independent of Qt and feature services.
+add_executable(
+    ClassMngrNextApplicationClassTransferPreviewQueryTests
+    tests/next_application_class_transfer_preview_query_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassTransferPreviewQueryTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassTransferPreviewQueryTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassTransferPreviewQueryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassTransferPreviewQueryTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassTransferPreviewQueryTests
+    COMMAND ClassMngrNextApplicationClassTransferPreviewQueryTests
+)
+
 classmngr_add_qt_test(
     NAME NextApplicationClassTransferExportQuery
     SOURCES tests/next_application_class_transfer_export_query_tests.cpp

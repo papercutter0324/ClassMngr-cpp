@@ -5,6 +5,7 @@
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_transfer.h"
 #include "next/application/class_transfer_apply_request.h"
+#include "next/application/class_transfer_preview_query.h"
 
 #include <QList>
 #include <QHash>
@@ -68,7 +69,8 @@ struct ClassTransferImportError
 using ClassTransferDetailedImportResult =
     std::expected<ClassImportSummary, ClassTransferImportError>;
 
-class ClassTransferRepository
+class ClassTransferRepository final
+    : public ClassMngr::Next::Application::ClassTransferPreviewReadPort
 {
 public:
     explicit ClassTransferRepository(
@@ -88,6 +90,12 @@ public:
     [[nodiscard]] Result<ClassImportPreview> previewImport(
         const ClassTransferPackage& package
         );
+
+    // SQL reads and legacy text normalization stay at the repository edge.
+    [[nodiscard]] ClassMngr::Next::Application::ClassTransferPreviewReadResult
+    readSnapshot(
+        const ClassMngr::Next::Application::ClassTransferPreviewRequest& request
+        ) const override;
 
     [[nodiscard]] Result<ClassImportSummary> importClasses(
         const ClassTransferPackage& package,
