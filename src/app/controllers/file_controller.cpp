@@ -1,4 +1,5 @@
 #include "app/controllers/file_controller.h"
+#include "app/controllers/file_controller_workspace_messages.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "app/mainwindow.h"
@@ -9,16 +10,19 @@
 #include "next/application/initial_setup_lifecycle.h"
 #include "next/application/recent_workspace_history.h"
 #include "next/application/recent_workspace_history_use_case.h"
+#include "next/application/workspace_creation_lifecycle.h"
 #include "next/application/workspace_coordinator.h"
 #include "next/platform/initial_setup_lifecycle_adapter.h"
 #include "next/platform/application_services_workspace_port.h"
 #include "next/platform/legacy_workspace_gateway.h"
 #include "next/platform/settings_manager_last_database_directory_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
+#include "next/platform/workspace_creation_lifecycle_adapter.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 
 #include <QAction>
 #include <QByteArray>
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -70,6 +74,64 @@ QString qtWorkspacePath(
         static_cast<qsizetype>(path.value().size())
         );
 }
+}
+
+QString ClassMngr::App::Controllers::
+newTeacherProfileCreationFailureMessage(
+    const ClassMngr::Next::Application::WorkspaceCreationLifecycleResult& result,
+    const QString& selectedPath
+    )
+{
+    QString message = QString::fromUtf8(
+        result.error.message.data(),
+        static_cast<qsizetype>(result.error.message.size())
+        );
+
+    if (!result.workspaceClosed)
+    {
+        message += QCoreApplication::translate(
+            "FileController",
+            "\n\nThe failed workspace could not be closed."
+            );
+    }
+
+    if (!result.originalRecoveryPath.empty())
+    {
+        const QString recoveryPath = QString::fromUtf8(
+            result.originalRecoveryPath.value().data(),
+            static_cast<qsizetype>(
+                result.originalRecoveryPath.value().size()
+                )
+            );
+        message += QCoreApplication::translate(
+            "FileController",
+            "\n\nThe original Teacher Profile could not be restored "
+            "to the selected path. Its recovery copy is at:\n%1"
+            ).arg(recoveryPath);
+    }
+
+    if (!result.partialRecoveryPath.empty())
+    {
+        const QString recoveryPath = QString::fromUtf8(
+            result.partialRecoveryPath.value().data(),
+            static_cast<qsizetype>(
+                result.partialRecoveryPath.value().size()
+                )
+            );
+        message += QCoreApplication::translate(
+            "FileController",
+            "\n\nThe incomplete replacement was retained at:\n%1"
+            ).arg(recoveryPath);
+    }
+    else if (result.partialReplacementRemainsAtTarget)
+    {
+        message += QCoreApplication::translate(
+            "FileController",
+            "\n\nThe incomplete replacement remains at:\n%1"
+            ).arg(selectedPath);
+    }
+
+    return message;
 }
 
 FileController::FileController(
@@ -161,6 +223,20 @@ FileController::FileController(
         std::make_unique<
             ClassMngr::Next::Application::InitialSetupLifecycle
             >(*m_initialSetupLifecycleAdapter);
+
+    m_workspaceCreationLifecycleAdapter =
+        std::make_unique<
+            ClassMngr::Next::Platform::WorkspaceCreationLifecycleAdapter
+            >(
+                *m_services,
+                *m_workspaceCoordinator,
+                *m_workspaceState
+                );
+
+    m_workspaceCreationLifecycle =
+        std::make_unique<
+            ClassMngr::Next::Application::WorkspaceCreationLifecycle
+            >(*m_workspaceCreationLifecycleAdapter);
 }
 
 FileController::~FileController() = default;
@@ -355,44 +431,29 @@ bool FileController::createNewDatabaseInteractive(
         return false;
     }
 
-    if (
-        QFile::exists(normalizedPath)
-        && !QFile::remove(normalizedPath)
-        )
+    const auto created = m_workspaceCreationLifecycle->createReplacingProfile(
+        ClassMngr::Next::Application::WorkspaceLocation(
+            utf8Path(normalizedPath)
+            )
+        );
+
+    if (!created.created)
     {
         DialogServices::showWarning(
             m_window,
             tr("New Teacher Profile"),
-            tr("Unable to replace existing Teacher Profile file:\n%1")
-                .arg(normalizedPath)
-            );
-
-        enterNoDatabaseState();
-        return false;
-    }
-
-    const auto created =
-        m_workspaceCoordinator->createWorkspace(
-            ClassMngr::Next::Application::CreateWorkspaceRequest{
-                ClassMngr::Next::Application::WorkspaceLocation(
-                    normalizedPath.toUtf8().toStdString()
+            ClassMngr::App::Controllers::
+                newTeacherProfileCreationFailureMessage(
+                    created,
+                    normalizedPath
                     )
-            }
-            );
-
-    if (!created)
-    {
-        DialogServices::showWarning(
-            m_window,
-            tr("New Teacher Profile"),
-            domainErrorMessage(created.error())
             );
 
         enterNoDatabaseState();
         return false;
     }
 
-    m_currentFile = qtWorkspacePath(created.value().location());
+    m_currentFile = qtWorkspacePath(created.createdProfile);
 
     updateRecentFiles(m_currentFile);
 
@@ -403,6 +464,18 @@ bool FileController::createNewDatabaseInteractive(
     else
     {
         setLoadedFileState();
+    }
+
+    if (!created.originalRecoveryPath.empty())
+    {
+        DialogServices::showWarning(
+            m_window,
+            tr("New Teacher Profile"),
+            tr(
+                "The new Teacher Profile was created, but the replaced "
+                "original could not be removed. Its recovery copy is at:\n%1"
+                ).arg(qtWorkspacePath(created.originalRecoveryPath))
+            );
     }
 
     return true;

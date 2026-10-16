@@ -369,6 +369,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/user_preferences_state.h
     src/next/application/workspace_contracts.h
     src/next/application/initial_setup_lifecycle.h
+    src/next/application/workspace_creation_lifecycle.h
     src/next/application/workspace_coordinator.h
     src/next/application/workspace_state.h
     src/next/application/workspace_use_case.h
@@ -382,6 +383,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/class_transfer_preview_legacy_adapter.h
     src/next/platform/legacy_workspace_gateway.h
     src/next/platform/initial_setup_lifecycle_adapter.h
+    src/next/platform/workspace_creation_lifecycle_adapter.h
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h
     src/next/platform/application_services_document_catalog_port.h
     src/next/platform/application_services_calendar_event_port.h

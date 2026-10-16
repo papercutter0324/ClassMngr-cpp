@@ -581,6 +581,7 @@ set(CLASSMNGR_APP_SERVICES_SOURCES
     "src/app/controllers/edit_controller.h"
     "src/app/controllers/file_controller.cpp"
     "src/app/controllers/file_controller.h"
+    "src/app/controllers/file_controller_workspace_messages.h"
     "src/app/controllers/font_size_controller.cpp"
     "src/app/controllers/font_size_controller.h"
     "src/app/controllers/language_controller.cpp"

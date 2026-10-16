@@ -1,10 +1,12 @@
 #include "app/controllers/file_controller.h"
+#include "app/controllers/file_controller_workspace_messages.h"
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/settingsmanager.h"
 #include "data/database/database_schema_manager.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/application/workspace_creation_lifecycle.h"
 #include "next/platform/settings_manager_last_database_directory_port.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "ui/shared/actions/action_registry.h"
@@ -24,6 +26,10 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <cstddef>
+#include <string>
+#include <utility>
+
 namespace
 {
 bool writeFile(
@@ -39,6 +45,140 @@ bool writeFile(
 
     return file.write(contents) == contents.size();
 }
+
+class FailingWorkspaceCreationPort final
+    : public ClassMngr::Next::Application::WorkspaceCreationLifecyclePort
+{
+public:
+    explicit FailingWorkspaceCreationPort(QString selectedPath)
+        : targetPath(std::move(selectedPath))
+    {
+    }
+
+    [[nodiscard]] bool profileExists(
+        const ClassMngr::Next::Application::WorkspaceLocation& location
+        ) const override
+    {
+        return QFileInfo::exists(toQString(location));
+    }
+
+    [[nodiscard]] ClassMngr::Next::Application::WorkspaceLocation
+    recoveryLocationFor(
+        const ClassMngr::Next::Application::WorkspaceLocation& profile
+        ) override
+    {
+        const QFileInfo info(toQString(profile));
+        const QString recoveryPath = info.absoluteDir().filePath(
+            QStringLiteral(".%1.test-recovery-%2")
+                .arg(info.fileName())
+                .arg(recoveryPaths.size() + 1)
+            );
+        recoveryPaths.append(recoveryPath);
+        return fromQString(recoveryPath);
+    }
+
+    [[nodiscard]] bool moveProfile(
+        const ClassMngr::Next::Application::WorkspaceLocation& source,
+        const ClassMngr::Next::Application::WorkspaceLocation& destination
+        ) override
+    {
+        const QString sourcePath = toQString(source);
+        const QString destinationPath = toQString(destination);
+        if (
+            (createAttempted && sourcePath == targetPath)
+            || QFileInfo::exists(destinationPath)
+            )
+        {
+            return false;
+        }
+
+        return QFile::rename(sourcePath, destinationPath);
+    }
+
+    [[nodiscard]] bool removeProfile(
+        const ClassMngr::Next::Application::WorkspaceLocation& location
+        ) override
+    {
+        // Keep the failed replacement at the selected path so restoring the
+        // original is rejected without overwriting either file.
+        if (toQString(location) == targetPath)
+        {
+            return false;
+        }
+
+        return QFile::remove(toQString(location));
+    }
+
+    [[nodiscard]] ClassMngr::Next::Domain::Result<void>
+    closeActiveWorkspace() override
+    {
+        workspaceCloseAttempted = true;
+        return ClassMngr::Next::Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] ClassMngr::Next::Domain::Result<
+        ClassMngr::Next::Application::WorkspaceSession
+        > createWorkspace(
+            const ClassMngr::Next::Application::CreateWorkspaceRequest& request
+            ) override
+    {
+        createAttempted = true;
+        const QString path = toQString(request.location);
+        if (!writeFile(path, partialReplacementContents))
+        {
+            return ClassMngr::Next::Domain::Result<
+                ClassMngr::Next::Application::WorkspaceSession
+                >::failure(
+                    ClassMngr::Next::Domain::OperationError{
+                        .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                        .message = "Injected workspace creation failure.",
+                        .recoverable = true
+                    }
+                    );
+        }
+
+        return ClassMngr::Next::Domain::Result<
+            ClassMngr::Next::Application::WorkspaceSession
+            >::failure(
+                ClassMngr::Next::Domain::OperationError{
+                    .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                    .message = "Injected workspace creation failure.",
+                    .recoverable = true
+                }
+                );
+    }
+
+    QString targetPath;
+    QStringList recoveryPaths;
+    QByteArray partialReplacementContents = QByteArrayLiteral(
+        "partial replacement must remain untouched"
+        );
+    bool workspaceCloseAttempted = false;
+    bool createAttempted = false;
+
+private:
+    [[nodiscard]] static QString toQString(
+        const ClassMngr::Next::Application::WorkspaceLocation& location
+        )
+    {
+        return QString::fromUtf8(
+            location.value().data(),
+            static_cast<qsizetype>(location.value().size())
+            );
+    }
+
+    [[nodiscard]] static ClassMngr::Next::Application::WorkspaceLocation
+    fromQString(const QString& path)
+    {
+        const QByteArray encoded = path.toUtf8();
+        return ClassMngr::Next::Application::WorkspaceLocation(
+            std::string(
+                encoded.constData(),
+                static_cast<std::size_t>(encoded.size())
+                )
+            );
+    }
+};
 
 QSettings::Status syncAndReturnAccessError(QSettings& settings)
 {
@@ -248,6 +388,8 @@ private slots:
     void recentFilesPreserveUnicodePaths();
     void startupUsesListFirstAndLastFileFallback();
     void normalCreateReplacesExistingTarget();
+    void normalCreateFailureRestoresExistingTarget();
+    void workspaceCreationRollbackFailureRetainsOriginalRecoveryCopy();
     void createDoesNotPrepareAfterCloseFailure();
     void initialSetupBackupIsRemovedOnFinish();
     void initialSetupBackupIsRestoredOnCancel();
@@ -1040,9 +1182,129 @@ void FileControllerWorkspaceLifecycleTests::normalCreateReplacesExistingTarget()
     QCOMPARE(services.currentDatabasePath(), expectedPath);
     QVERIFY2(
         readFile(targetPath) != QByteArrayLiteral("obsolete profile"),
-        "normal creation must remove an existing target before coordinator create"
+        "successful normal creation must replace the selected profile"
         );
     QVERIFY(prompts.messages.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+normalCreateFailureRestoresExistingTarget()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("failed-create-target.tps")
+        );
+    const QByteArray originalContents = QByteArrayLiteral(
+        "original profile bytes that must survive a failed create"
+        );
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    // SQLite cannot initialize the replacement while its rollback-journal
+    // path is occupied by a directory.
+    const QString journalPath = targetPath + QStringLiteral("-journal");
+    QVERIFY(QDir().mkdir(journalPath));
+
+    FakeFileDialogService fileDialogs;
+    fileDialogs.scriptedSaveFiles.enqueue(
+        std::optional<QString>(targetPath)
+        );
+    DialogServices::setFileDialogServiceForTesting(&fileDialogs);
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    FileController controller(&services, nullptr);
+
+    QVERIFY(!controller.createNewDatabaseInteractive());
+
+    QCOMPARE(readFile(targetPath), originalContents);
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.currentDatabasePath().isEmpty());
+    QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
+    QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("New Teacher Profile")
+        );
+    const QString failure = prompts.messages.constFirst().message;
+    QVERIFY(failure.contains(QStringLiteral("Unable to initialize Teacher Profile")));
+    QVERIFY(failure.contains(QFileInfo(targetPath).absoluteFilePath()));
+    QVERIFY(failure.contains(QStringLiteral("unable to open database file")));
+
+    const QStringList recoveryCopies = QDir(workspaceRoot.path()).entryList(
+        QStringList{
+            QStringLiteral(".failed-create-target.tps.workspace-create-*.recovery")
+        },
+        QDir::Files | QDir::Hidden,
+        QDir::Name
+        );
+    QVERIFY(recoveryCopies.isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+workspaceCreationRollbackFailureRetainsOriginalRecoveryCopy()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("rollback-failure-target.tps")
+        );
+    const QByteArray originalContents = QByteArrayLiteral(
+        "original profile bytes must remain recoverable"
+        );
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FailingWorkspaceCreationPort port(targetPath);
+    ClassMngr::Next::Application::WorkspaceCreationLifecycle lifecycle(port);
+    const QByteArray encodedTargetPath = targetPath.toUtf8();
+    const auto result = lifecycle.createReplacingProfile(
+        ClassMngr::Next::Application::WorkspaceLocation(
+            std::string(
+                encodedTargetPath.constData(),
+                static_cast<std::size_t>(encodedTargetPath.size())
+                )
+            )
+        );
+
+    QVERIFY(!result.created);
+    QVERIFY(port.createAttempted);
+    QVERIFY(port.workspaceCloseAttempted);
+    QVERIFY(result.workspaceClosed);
+    QVERIFY(!result.originalProfileRestored);
+    QVERIFY(result.partialReplacementRemainsAtTarget);
+    QCOMPARE(port.recoveryPaths.size(), 2);
+
+    const QString originalRecoveryPath =
+        port.recoveryPaths.constFirst();
+    QCOMPARE(
+        QString::fromUtf8(
+            result.originalRecoveryPath.value().data(),
+            static_cast<qsizetype>(
+                result.originalRecoveryPath.value().size()
+                )
+            ),
+        originalRecoveryPath
+        );
+    QCOMPARE(readFile(originalRecoveryPath), originalContents);
+    QCOMPARE(readFile(targetPath), port.partialReplacementContents);
+
+    const QString warning =
+        ClassMngr::App::Controllers::
+            newTeacherProfileCreationFailureMessage(result, targetPath);
+    QCOMPARE(
+        warning,
+        QStringLiteral(
+            "Injected workspace creation failure.\n\n"
+            "The original Teacher Profile could not be restored to the "
+            "selected path. Its recovery copy is at:\n%1\n\n"
+            "The incomplete replacement remains at:\n%2"
+            ).arg(originalRecoveryPath, targetPath)
+        );
 }
 
 void FileControllerWorkspaceLifecycleTests::createDoesNotPrepareAfterCloseFailure()
