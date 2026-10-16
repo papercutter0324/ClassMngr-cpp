@@ -6455,3 +6455,7 @@ Phase 2 exit remains Open.
   arbitrary floating-point inputs.
 - Do not add a tertiary key or stable-order promise when the existing
   `std::sort` paths define order only by score and name.
+- Review temporary storage against roster cardinality before accepting a
+  projection change. The final policy sorts each source range in place and
+  avoids score-key, index, and duplicate-rank arrays; this does not resolve
+  the separate deferred roster-materialization question.

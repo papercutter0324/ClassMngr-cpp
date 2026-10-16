@@ -53,24 +53,32 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1024 complete; F1025 accepted)
+### Current checkpoint - 2026-10-17 (F1025 complete; F1026 accepted)
 
 F1024 completed at source commit `80088444bfcce485a451198527df2316b9ecdd06`.
 Upcoming birthday occurrences now carry `Domain::GregorianDate`; raw reference
 date validation, occurrence ordering, week buckets, year limits, leap-day
 fallback, and feature display behavior remain intact. Three exact focused CTests
 passed and four direct QtTest selectors exited successfully; no full suite ran.
-Two independent post-commit audits found all 13 official Deferred candidates
-unchanged.
 
-Batch391 is closed. Batch392 discovery selected F1025, a Qt-free Class Analytics
-ranking-order policy shared by the feature `SpeakingAnalytics` and the Next
-Application dashboard query. Compare prepared integer-thousandth scores in
-descending order and use each consumer's existing English-name comparator only
-for ties. Keep score production, aggregation, criterion strongest/focus logic,
-labels, and presentation in their current owners; do not promise stable order
-for exact score/name ties. The next milestone is F1025 implementation, focused
-verification, and source commit. Gates 1/2 remain Partial, the Phase 2 exit gate
+F1025 completed across source commits
+`5dfd3b85e7e0eee64ff791cbf1cbd6954f381c5b` and
+`53d516b2783f33f5e6951b80ce5067cc20c98410`. The shared Qt-free ranking policy
+sorts each consumer's original ranking range in place, compares integer
+thousandth scores descending, and invokes the existing name comparator only on
+score ties. The repair removed score-key, index, and reordered-rank buffers;
+score production, aggregation, criterion selection, labels, and presentation
+remain at their existing boundaries. Focused Debug builds and the ranking
+policy, Next query, and Speaking Analytics CTests passed; a corrected feature
+tie test passed its focused CTest. No full suite ran.
+
+Two independent final-state audits found all 13 official Deferred candidates
+unchanged. Batch392 is closed. Batch393 selected F1026, the shared Qt-free
+Class Analytics strongest/focus criterion selection policy. Implementation is
+underway; independent focused verification and the source commit are pending.
+Preserve missing-data filtering, all maximum/minimum ties in criterion order,
+and current tie semantics; keep aggregation, rounding, names, labels, and
+presentation in each consumer. Gates 1/2 remain Partial, the Phase 2 exit gate
 remains Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)

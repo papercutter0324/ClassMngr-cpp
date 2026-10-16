@@ -43886,3 +43886,23 @@ F1025 acceptance criteria:
 | Focused verification | Run the app-less policy test, `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and `ClassMngrSpeakingAnalyticsTests`; run page parity only if needed. No full suite. |
 
 Batch392 is closed with F1025 accepted, not implemented or verified. The official Deferred list remains unchanged; Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+### F1025 complete; post-F1025 Deferred audits clear; F1026 accepted - 2026-10-17
+
+F1025 completes shared Class Analytics student ranking order at source commit `5dfd3b85e7e0eee64ff791cbf1cbd6954f381c5b` (`Phase2 - Share Class Analytics ranking order`) and corrective commit `53d516b2783f33f5e6951b80ce5067cc20c98410` (`Phase2 - Sort Class Analytics rankings in place`). Review found the first integration's score-key/index/reordered vectors added unnecessary O(n) scratch storage. The corrective implementation sorts both original ranking ranges in place, projects integer-thousandth scores, calls each consumer's existing name comparator only for score ties, and promises no stable order. This replaces the initially accepted source-index-return contract.
+
+The independent Tester reused `build/windows-x64-debug` in Debug with VS 18 2026 and Qt 6.12. Sequential builds of `ClassMngr`, `ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests`, `ClassMngrSpeakingAnalyticsTests`, and `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests` passed after an elevated FileTracker retry. Forced serial project rebuilds confirmed the changed policy, Next query, Speaking Analytics test and production objects compiled before the final link. The exact CTest regex selecting the three test targets passed 3/3. A later focused equal-score feature-test correction compiled and `ClassMngrSpeakingAnalyticsTests` passed 1/1. `git diff --check` passed. No full suite ran.
+
+Two independent final-state Deferred audits found all 13 official entries unchanged. The Class Analytics roster-cap/sparse-data item remains deferred: F1025 removed ranking scratch vectors but did not change roster materialization or provide measurement or product policy. Do not add an arbitrary row cap. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+Batch393 discovery found duplicate strongest/focus criterion selection in `speaking_analytics.cpp` and `class_analytics_dashboard_read_query.h`. `AcademicCalendarSchedule::termAt` was also considered, but needs broader exact-boundary coverage; F1026 is the tighter next slice. Accept F1026 to extract criterion selection to a Qt-free Next Application policy. The inputs are verified `roundTo3` values in [0,5] on a 0.001 grid, so integer-thousandths keys preserve the current `< 1e-9` tie output behavior: adjacent thousandths remain distinct. Ignore missing criteria and preserve all maximum/minimum ties in input criterion order. Keep averaging, rounding, labels, and presentation in the consumers.
+
+F1026 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Policy | App-less tests cover integer-thousandths keys from `roundTo3` values in [0,5] on a 0.001 grid, preserving `< 1e-9` output behavior: adjacent thousandths are distinct, missing criteria are ignored, and all maximum/minimum ties remain in input criterion order. |
+| Consumers | Integrate the policy in both consumers while retaining averaging, rounding, labels, and presentation at their existing boundaries. Add a query integration regression because current Next query tests have no strongest/focus assertions; retain the existing Speaking Analytics tie, partial, missing, and label regressions. |
+| Focused verification | Run the policy test, `ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests`, and `ClassMngrSpeakingAnalyticsTests`; no full suite. |
+
+F1026 is accepted in Batch393 and remains pending implementation, build, and tests. The 13 Deferred entries, Gates 1/2, Phase 2 exit gate, and F1007 status remain unchanged.

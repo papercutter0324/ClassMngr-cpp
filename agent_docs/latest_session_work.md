@@ -5945,23 +5945,36 @@ closed; Batch391 is active. Gates 1/2 remain Partial and Phase 2 exit remains
 Open. Preserve unrelated untracked `%SystemDrive%/`, `Testing/`,
 `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
 
-## Current continuation - 2026-10-17 (F1024 complete; F1025 accepted)
+## Current continuation - 2026-10-17 (F1025 complete; F1026 accepted)
 
-F1024 completed at source commit
-`80088444bfcce485a451198527df2316b9ecdd06`. The Application occurrence date
-is now `Domain::GregorianDate`; invalid reference dates remain empty schedules,
-and the feature adapter preserves `QDate` and display behavior. The three exact
-focused CTests passed, as did direct QtTest selectors for invalid reference
-dates, maximum date/Feb 29 fallback, rollover, and week bucketing. No full
-suite ran. Two independent post-commit audits found all 13 official Deferred
-entries unchanged.
+F1025 completed across source commits
+`5dfd3b85e7e0eee64ff791cbf1cbd6954f381c5b` and
+`53d516b2783f33f5e6951b80ce5067cc20c98410`. The final Qt-free ranking policy
+sorts each original ranking range in place by descending integer-thousandth
+score, using each consumer's existing name comparator only for score ties. It
+does not promise stable order for exact score/name ties. The corrective commit
+removed the temporary score-key, index, and reordered-rank vectors. Aggregation,
+score production, criterion selection, labels, and presentation remain at their
+existing boundaries.
 
-Batch391 is closed. Batch392 discovery selected F1025, a shared Qt-free
-Class Analytics ranking-order policy over integer-thousandth score keys, with
-each consumer retaining its existing English-name comparator. Preserve score
-production, aggregation, criterion strongest/focus selection, labels, and
-presentation. The app-less policy will return source indexes, sort higher
-scores first, and use the supplied comparator only on ties; exact score/name
-ties receive no new stability guarantee. The next action is implement F1025,
-verify its policy and both consumer paths with focused checks, then commit the
-slice. Gates 1/2 remain Partial and the Phase 2 exit gate remains Open.
+The independent Tester built and linked ClassMngr and the ranking policy,
+Speaking Analytics, and Next dashboard query test targets in the reused
+build/windows-x64-debug Debug tree. The three focused CTests passed 3/3; after a
+feature tie-test correction, its focused CTest passed 1/1. git diff --check
+passed. No full suite ran. Two independent final-state reviews found all 13
+official Deferred entries unchanged, including the roster-cap/sparse-data item:
+the source sort no longer adds roster-sized scratch buffers, but roster
+materialization and its deferred evidence remain unchanged.
+
+F1026 is accepted in Batch393: extract the duplicate strongest/focus criterion
+selection into a Qt-free Next Application policy. Preserve missing-data
+filtering, all maximum/minimum ties in criterion order, and current tie
+semantics. Consumers retain aggregation, rounding, criterion metadata, names,
+labels, and presentation. Add app-less policy tests and Next query integration
+coverage; retain feature tie, partial-criterion, and label regressions. Focused
+verification targets the policy, ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests,
+and ClassMngrSpeakingAnalyticsTests; no full suite. The next action is finish,
+verify, and commit F1026, then select and begin the following Phase 2 slice.
+Gates 1/2 remain Partial and Phase 2 exit remains Open. Preserve unrelated
+untracked `%SystemDrive%/`, `Testing/`,
+`Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.

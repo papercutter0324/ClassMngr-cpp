@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch392 is closed with F1025, shared Class Analytics student ranking order, accepted pending implementation; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
+- Current note: F1026, shared strongest/focus criterion selection, is accepted in Batch393 and implementation is underway, with focused verification and source commit pending; all 13 official Deferred entries remain unresolved and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
