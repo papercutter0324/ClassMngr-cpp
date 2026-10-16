@@ -44425,3 +44425,47 @@ audits are current: all 13 official Deferred entries remain unchanged; repeat
 both audits after F1034 implementation. Gates 1/2 remain Partial, the Phase 2
 exit gate remains Open, and F1007 remains pending policy reconciliation.
 F1034 is accepted and pending implementation.
+
+### F1034 complete; post-F1034 Deferred audits clear; Batch411 closed - 2026-10-17
+
+F1034 completes at source commit `86200e26`. Both null-service and closed-
+session save results return `NotFound` with `recoverable == true`; direct tests
+assert error code, message, and recoverability. Tests also directly assert the
+typed missing-parent message and noncanonical-ID `InvalidInput` as
+nonrecoverable.
+
+`ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests`
+were built, and the matching CTest passed 1/1 after an elevated FileTracker
+retry. No full suite ran.
+
+Two independent post-F1034 audits reviewed exactly the 13 official Deferred
+entries; all remain unchanged, with none actionable, resolved, or superseded.
+Batch411 is closed. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation.
+
+### Batch412 discovery and F1035 accepted before implementation - 2026-10-17
+
+Accept F1035: before Create or Update writes, validate
+`directionsAddressEnJson` and `directionsAddressKrJson` as JSON objects and
+`housingLocationsJson` as a JSON array. Parse failures and wrong root types
+return nonrecoverable `InvalidInput` with field-specific diagnostics and do
+not mutate existing bytes or create files. Preserve valid `{}` and `[]`,
+recognized nested directions/housing data, and nested/custom fields. Do not
+broaden legacy `CampusJsonCodec` normalization to arbitrary direction custom
+keys; preserve reserved-identity validation precedence. This is a public
+save-contract data-loss guard; the UI serializes typed values, so this does
+not claim a current UI defect.
+
+Extend the campus repository adapter tests for malformed/invalid and wrong-
+root values, exact error classification, unchanged Update bytes, no Create
+file, and valid empty roots; retain existing nested/custom round-trip coverage.
+Build `ClassMngr` and
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`; run only
+the matching CTest
+`ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests`. No full
+suite. F1034 at `86200e26` is the latest source commit. The post-F1034 audits
+are current: all 13 official Deferred entries remain unchanged; repeat both
+audits after F1035 implementation. Gates 1/2 remain Partial, the Phase 2 exit
+gate remains Open, and F1007 remains pending policy reconciliation. F1035 is
+accepted and pending implementation.

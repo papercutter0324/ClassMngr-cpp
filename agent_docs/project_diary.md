@@ -6712,3 +6712,33 @@ recoverability. Test both null-service and closed-session results directly.
 This candidate is separate from the deferred Dense Speaking Evaluation
 row-limit policy. Gates 1/2 remain Partial, F1007 awaits policy reconciliation,
 and Phase 2 remains open.
+
+## F1034 closeout - 2026-10-17
+
+F1034 completed at source commit `86200e26`. Speaking Evaluation save now
+reports unavailable database sessions as recoverable `NotFound` while
+preserving the existing message and all other save failure mappings. Tests
+cover null services and a captured closed session through the save use case,
+the exact typed missing-parent diagnostic, and noncanonical class ID rejection
+as nonrecoverable `InvalidInput`.
+
+The independent Tester built `ClassMngr` and the Speaking Evaluation save
+adapter test target. Its focused CTest passed 1/1 after an elevated Visual
+Studio FileTracker retry. No full suite ran. Two independent post-commit audits
+checked the exact 13 official Deferred entries; all remain unchanged and
+unresolved.
+
+## F1035 accepted - 2026-10-17
+
+Batch412 found that malformed or wrong-root directions/housing JSON in a
+Campus Dashboard snapshot is converted to an empty object or array before the
+repository update, allowing existing data to be replaced silently. The typed
+UI producer emits valid JSON; this is a public save-contract gap, not a claim
+of a current UI defect. Accept F1035 to validate both directions fields as
+JSON objects and housing as a JSON array before Create or Update writes.
+Return nonrecoverable `InvalidInput` with field-specific diagnostics and leave
+files unchanged on rejection. Preserve valid empty `{}`/`[]`, recognized
+nested direction forms, and nested/custom housing values. Do not broaden the
+legacy codec's normalization of arbitrary directions fields. Preserve
+reserved-identity validation precedence. Gates 1/2 remain Partial, F1007
+awaits policy reconciliation, and Phase 2 remains open.

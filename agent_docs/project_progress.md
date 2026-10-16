@@ -6112,3 +6112,31 @@ error code, message, and recoverability, and retain existing technical failure
 coverage. This is separate from the deferred Dense Speaking Evaluation
 row-limit policy. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and the Phase 2 exit gate remains Open.
+
+F1034 is complete at source commit `86200e26`. The Speaking Evaluation save
+adapter now marks only a null or closed session `NotFound, recoverable=true`;
+the existing unavailable message and other error mappings remain intact. Tests
+assert the null and closed session results through the save use case, the exact
+typed missing-parent diagnostic, and noncanonical-ID `InvalidInput` with
+`recoverable=false`. `ClassMngr` and the focused adapter target built, and its
+CTest passed 1/1 after an elevated Visual Studio FileTracker retry. No full
+suite ran.
+
+Two independent post-F1034 audits checked the exact 13 official Deferred
+entries. All remain unchanged and unresolved; none became actionable, resolved,
+or superseded. WPR capture still requires an enabled Administrator token, and
+the macOS runner is not exposed in this Windows x64 session. The listed
+product-policy, measurement, callsite, and injection triggers remain unmet.
+
+Batch412 found F1035: the Campus Dashboard adapter parses its directions JSON
+strings and housing JSON string without checking parse errors or root types,
+then can persist empty objects or arrays on Update. F1035 is accepted as a
+public save-contract data-loss guard, not as a current UI defect. Validate both
+directions fields as JSON objects and housing as a JSON array before Create or
+Update writes; return nonrecoverable `InvalidInput` with field-specific
+diagnostics without mutating files. Preserve valid `{}` and `[]`, existing
+recognized nested direction forms, housing nested/custom fields, and current
+direction normalization behavior. Add tests for malformed and wrong-root
+fields, unchanged Update bytes, no Create file, and valid empty roots. Gates
+1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase
+2 exit gate remains Open.
