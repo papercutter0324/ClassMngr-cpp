@@ -62,10 +62,7 @@ public:
             DatabaseSession* const session = m_services.databaseSession();
             if (!session || !session->isOpen())
             {
-                return failure(
-                    Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
-                    );
+                return unavailableSessionFailure();
             }
 
             const QDate startDate = QDate::fromString(
@@ -98,10 +95,7 @@ public:
             {
                 if (!session->isOpen())
                 {
-                    return failure(
-                        Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
-                        );
+                    return unavailableSessionFailure();
                 }
 
                 const QByteArray errorBytes = deleted.error().toUtf8();
@@ -132,6 +126,16 @@ public:
     }
 
 private:
+    [[nodiscard]] static Application::CalendarEventSeriesDeleteResult
+    unavailableSessionFailure()
+    {
+        return Application::CalendarEventSeriesDeleteResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The calendar service is unavailable.",
+            .recoverable = true
+        });
+    }
+
     [[nodiscard]] static Application::CalendarEventSeriesDeleteResult
     failure(
         const Domain::ErrorCode code,

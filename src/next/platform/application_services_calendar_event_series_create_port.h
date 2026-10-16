@@ -72,10 +72,7 @@ public:
             DatabaseSession* const session = m_services.databaseSession();
             if (!session || !session->isOpen())
             {
-                return failure(
-                    Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
-                    );
+                return unavailableSessionFailure();
             }
 
             const QString repeatSeriesId = legacyText(
@@ -134,10 +131,7 @@ public:
             {
                 if (!session->isOpen())
                 {
-                    return failure(
-                        Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
-                        );
+                    return unavailableSessionFailure();
                 }
 
                 const QByteArray errorBytes = saved.error().toUtf8();
@@ -344,6 +338,16 @@ private:
         }
 
         return event;
+    }
+
+    [[nodiscard]] static Application::CalendarEventSeriesCreateResult
+    unavailableSessionFailure()
+    {
+        return Application::CalendarEventSeriesCreateResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The calendar service is unavailable.",
+            .recoverable = true
+        });
     }
 
     [[nodiscard]] static Application::CalendarEventSeriesCreateResult

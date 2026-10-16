@@ -176,6 +176,7 @@ private slots:
     void signatureIdentityRemainsExactUtf16();
     void signatureIncludesEveryIdentityFieldButExcludesTimes();
     void queryFailurePropagatesWithoutSaving();
+    void recoverableQueryFailurePropagatesWithoutSaving();
     void saveFailurePropagatesAfterPreparation();
 };
 
@@ -612,6 +613,32 @@ queryFailurePropagatesWithoutSaving()
     FakeSignatureQueryPort queryPort;
     const Domain::OperationError expectedError =
         sampleError("signature lookup failed");
+    queryPort.failure = expectedError;
+    FakeSavePort savePort;
+
+    const auto result = CalendarEventImportUseCase::execute(
+        request,
+        queryPort,
+        savePort
+        );
+
+    QVERIFY(!result);
+    QVERIFY(result.error() == expectedError);
+    QCOMPARE(queryPort.callCount, 1);
+    QCOMPARE(savePort.callCount, 0);
+}
+
+void NextApplicationCalendarEventImportUseCaseTests::
+recoverableQueryFailurePropagatesWithoutSaving()
+{
+    CalendarEventImportUseCaseRequest request = requestWithRange();
+    request.candidates = {candidate("Candidate")};
+    FakeSignatureQueryPort queryPort;
+    const Domain::OperationError expectedError{
+        .code = Domain::ErrorCode::NotFound,
+        .message = "signature service is unavailable",
+        .recoverable = true
+    };
     queryPort.failure = expectedError;
     FakeSavePort savePort;
 

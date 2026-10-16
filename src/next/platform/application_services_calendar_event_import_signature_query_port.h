@@ -95,10 +95,7 @@ public:
             DatabaseSession* const session = m_services.databaseSession();
             if (!session || !session->isOpen())
             {
-                return failure(
-                    Domain::ErrorCode::NotFound,
-                    "The calendar event repository is unavailable."
-                    );
+                return unavailableSessionFailure();
             }
 
             CalendarEventRepository* const repository =
@@ -118,10 +115,7 @@ public:
                 const QString repositoryError = loaded.error();
                 if (!session->isOpen())
                 {
-                    return failure(
-                        Domain::ErrorCode::NotFound,
-                        "The calendar event repository is unavailable."
-                        );
+                    return unavailableSessionFailure();
                 }
 
                 return failure(
@@ -182,6 +176,16 @@ private:
                     event.timeStatus
                     ).toStdU16String()
             });
+    }
+
+    [[nodiscard]] static Application::CalendarEventImportSignatureQueryResult
+    unavailableSessionFailure()
+    {
+        return Application::CalendarEventImportSignatureQueryResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The calendar event repository is unavailable.",
+            .recoverable = true
+        });
     }
 
     [[nodiscard]] static Application::CalendarEventImportSignatureQueryResult

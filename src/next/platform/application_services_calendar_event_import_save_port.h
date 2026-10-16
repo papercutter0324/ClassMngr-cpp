@@ -69,10 +69,7 @@ public:
             DatabaseSession* const session = m_services.databaseSession();
             if (!session || !session->isOpen())
             {
-                return failure(
-                    Domain::ErrorCode::NotFound,
-                    "The calendar service is unavailable."
-                    );
+                return unavailableSessionFailure();
             }
 
             QList<CalendarEvent> normalizedEvents;
@@ -124,10 +121,7 @@ public:
             {
                 if (!session->isOpen())
                 {
-                    return failure(
-                        Domain::ErrorCode::NotFound,
-                        "The calendar service is unavailable."
-                        );
+                    return unavailableSessionFailure();
                 }
 
                 const QByteArray errorBytes = saved.error().toUtf8();
@@ -305,6 +299,16 @@ private:
 
         event.repeatSeriesId.clear();
         return event;
+    }
+
+    [[nodiscard]] static Application::CalendarEventImportSaveResult
+    unavailableSessionFailure()
+    {
+        return Application::CalendarEventImportSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The calendar service is unavailable.",
+            .recoverable = true
+        });
     }
 
     [[nodiscard]] static Application::CalendarEventImportSaveResult failure(

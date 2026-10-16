@@ -261,6 +261,19 @@ void verifyFailure(
 }
 
 template <typename Value>
+void verifyRecoverableFailure(
+    const Domain::Result<Value>& result,
+    const ErrorCode expectedCode,
+    const std::string& expectedMessage
+    )
+{
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, expectedCode);
+    QCOMPARE(result.error().message, expectedMessage);
+    QVERIFY(result.error().recoverable);
+}
+
+template <typename Value>
 void verifyPublicTimeBoundaryFailure(
     const Domain::Result<void>& requestValidation,
     const Domain::Result<Value>& portResult,
@@ -1116,9 +1129,10 @@ reportsUnavailableDeleteSessionStructurally()
 
     ApplicationServicesCalendarEventDeletePort port(services);
 
-    verifyFailure(
+    verifyRecoverableFailure(
         port.deleteEvent(calendarEventId(1)),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
 
     QVERIFY(openDatabase(services, m_directory));
@@ -1127,9 +1141,10 @@ reportsUnavailableDeleteSessionStructurally()
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
 
-    verifyFailure(
+    verifyRecoverableFailure(
         port.deleteEvent(calendarEventId(1)),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
 }
 
@@ -1239,7 +1254,11 @@ reportsUnavailableDeleteAllSessionStructurally()
     ApplicationServicesCalendarEventDeleteAllPort port(services);
 
     QVERIFY(!port.isAvailable());
-    verifyFailure(port.deleteAllEvents(), ErrorCode::NotFound);
+    verifyRecoverableFailure(
+        port.deleteAllEvents(),
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
+        );
 
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(session->isOpen());
@@ -1250,7 +1269,11 @@ reportsUnavailableDeleteAllSessionStructurally()
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
     QVERIFY(!port.isAvailable());
-    verifyFailure(port.deleteAllEvents(), ErrorCode::NotFound);
+    verifyRecoverableFailure(
+        port.deleteAllEvents(),
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -1504,11 +1527,16 @@ reportsUnavailableImportSaveSessionStructurally()
     QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventImportSavePort port(services);
 
-    verifyFailure(
+    verifyRecoverableFailure(
         port.saveImportedEvents(validImportSaveRequest()),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
-    verifyFailure(port.saveImportedEvents({}), ErrorCode::NotFound);
+    verifyRecoverableFailure(
+        port.saveImportedEvents({}),
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
+        );
 
     auto invalidRequest = validImportSaveRequest();
     invalidRequest.events.front().id = calendarEventId(999);
@@ -1524,11 +1552,16 @@ reportsUnavailableImportSaveSessionStructurally()
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
 
-    verifyFailure(
+    verifyRecoverableFailure(
         port.saveImportedEvents(validImportSaveRequest()),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
-    verifyFailure(port.saveImportedEvents({}), ErrorCode::NotFound);
+    verifyRecoverableFailure(
+        port.saveImportedEvents({}),
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -2410,7 +2443,7 @@ reportsUnavailableSeriesCreateSessionStructurally()
         ErrorCode::InvalidInput
         );
 
-    verifyFailure(
+    verifyRecoverableFailure(
         port.createRepeatSeries(seriesCreateRequest(
             "series-unavailable",
             {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
@@ -2418,7 +2451,8 @@ reportsUnavailableSeriesCreateSessionStructurally()
             QStringLiteral("Meeting"),
             QStringLiteral("Timed")
             )),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
 
     QVERIFY(openDatabase(services, m_directory));
@@ -2427,7 +2461,7 @@ reportsUnavailableSeriesCreateSessionStructurally()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    verifyFailure(
+    verifyRecoverableFailure(
         port.createRepeatSeries(seriesCreateRequest(
             "series-closed",
             {{QDate(2026, 12, 1), QDate(2026, 12, 1)}},
@@ -2435,7 +2469,8 @@ reportsUnavailableSeriesCreateSessionStructurally()
             QStringLiteral("Meeting"),
             QStringLiteral("Timed")
             )),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
 }
 
@@ -2962,10 +2997,10 @@ reportsUnavailableRepeatSeriesEditSessionStructurally()
     const auto unavailable = port.editRepeatSeriesFromDate(
         validSeriesEditRequest()
         );
-    verifyFailure(unavailable, ErrorCode::NotFound);
-    QCOMPARE(
-        unavailable.error().message,
-        std::string("The calendar event repository is unavailable.")
+    verifyRecoverableFailure(
+        unavailable,
+        ErrorCode::NotFound,
+        "The calendar event repository is unavailable."
         );
 
     QVERIFY(openDatabase(services, m_directory));
@@ -2977,10 +3012,10 @@ reportsUnavailableRepeatSeriesEditSessionStructurally()
     const auto closed = port.editRepeatSeriesFromDate(
         validSeriesEditRequest()
         );
-    verifyFailure(closed, ErrorCode::NotFound);
-    QCOMPARE(
-        closed.error().message,
-        std::string("The calendar event repository is unavailable.")
+    verifyRecoverableFailure(
+        closed,
+        ErrorCode::NotFound,
+        "The calendar event repository is unavailable."
         );
 }
 
@@ -3471,12 +3506,13 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
     QVERIFY(!session->isOpen());
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
 
-    verifyFailure(
+    verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
             "series-delete-unavailable",
             "2026-12-08"
         }),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
 
     QVERIFY(openDatabase(services, m_directory));
@@ -3486,12 +3522,13 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    verifyFailure(
+    verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
             "series-delete-unavailable",
             "2026-12-08"
         }),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar service is unavailable."
         );
 }
 
@@ -3964,12 +4001,13 @@ reportsUnavailableAndInvalidImportSignatureRangesStructurally()
         unavailableServices
         );
     QVERIFY(!unavailablePort.isAvailable());
-    verifyFailure(
+    verifyRecoverableFailure(
         unavailablePort.loadSignaturesInRange(importSignatureRange(
             QDate(2026, 9, 20),
             QDate(2026, 9, 21)
             )),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar event repository is unavailable."
         );
 
     ApplicationServices services;
@@ -4001,12 +4039,13 @@ reportsUnavailableAndInvalidImportSignatureRangesStructurally()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!port.isAvailable());
-    verifyFailure(
+    verifyRecoverableFailure(
         port.loadSignaturesInRange(importSignatureRange(
             QDate(2026, 9, 20),
             QDate(2026, 9, 21)
             )),
-        ErrorCode::NotFound
+        ErrorCode::NotFound,
+        "The calendar event repository is unavailable."
         );
 }
 
