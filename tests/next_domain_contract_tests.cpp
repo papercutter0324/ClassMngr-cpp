@@ -84,6 +84,26 @@ void NextDomainContractTests::typedIdentifiersRemainDistinct()
     QVERIFY(first.has_value());
     QVERIFY(second.has_value());
     QVERIFY(*first == *second);
+
+    const auto moveConstructionValue = ClassId::fromString("class-move");
+    QVERIFY(moveConstructionValue.has_value());
+    ClassId moveConstructionSource = *moveConstructionValue;
+    const std::string moveConstructionSnapshot =
+        moveConstructionSource.value();
+    const ClassId moveConstructed(std::move(moveConstructionSource));
+    QVERIFY(moveConstructionSource.value() == moveConstructionSnapshot);
+    QVERIFY(moveConstructed.value() == moveConstructionSnapshot);
+
+    const auto moveAssignmentValue = ClassId::fromString("class-assign");
+    const auto initialDestinationValue = ClassId::fromString("class-before");
+    QVERIFY(moveAssignmentValue.has_value());
+    QVERIFY(initialDestinationValue.has_value());
+    ClassId moveAssignmentSource = *moveAssignmentValue;
+    const std::string moveAssignmentSnapshot = moveAssignmentSource.value();
+    ClassId moveAssignmentDestination = *initialDestinationValue;
+    moveAssignmentDestination = std::move(moveAssignmentSource);
+    QVERIFY(moveAssignmentSource.value() == moveAssignmentSnapshot);
+    QVERIFY(moveAssignmentDestination.value() == moveAssignmentSnapshot);
 }
 
 void NextDomainContractTests::documentContentReferencesHaveValueSemantics()

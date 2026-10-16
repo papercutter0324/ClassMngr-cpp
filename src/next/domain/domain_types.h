@@ -13,6 +13,9 @@ template <typename Tag>
 class TypedId final
 {
 public:
+    TypedId(const TypedId&) = default;
+    TypedId& operator=(const TypedId&) = default;
+
     [[nodiscard]] static std::optional<TypedId> fromString(
         std::string_view value
         )
