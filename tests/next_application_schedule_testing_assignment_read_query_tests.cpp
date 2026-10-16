@@ -38,6 +38,7 @@ private slots:
     void preservesOrderedRawAssignmentsAndDisplayFields();
     void preservesAssignmentsWithoutSpecialClassMetadata();
     void acceptsAnEmptySuccessfulSnapshot();
+    void rejectsInvalidClassIdentifiers();
     void propagatesStructuredReadFailures();
 };
 
@@ -139,6 +140,37 @@ acceptsAnEmptySuccessfulSnapshot()
     QVERIFY(result);
     QVERIFY(result.value().rows.empty());
     QCOMPARE(port.readCount, 1);
+}
+
+void NextApplicationScheduleTestingAssignmentReadQueryTests::
+rejectsInvalidClassIdentifiers()
+{
+    for (const int classId : {0, -2, -17})
+    {
+        RecordingScheduleTestingAssignmentReadPort port;
+        port.result = ScheduleTestingAssignmentReadResult::success({
+            .rows = {
+                {
+                    .day = u"Monday",
+                    .startTime = u"09:00",
+                    .room = u"Room 4",
+                    .classId = classId
+                }
+            }
+        });
+
+        const auto result =
+            ScheduleTestingAssignmentReadQueryHandler::execute({}, port);
+
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(
+            result.error().message,
+            std::string("The schedule testing assignment contains an invalid class identifier.")
+            );
+        QVERIFY(!result.error().recoverable);
+        QCOMPARE(port.readCount, 1);
+    }
 }
 
 void NextApplicationScheduleTestingAssignmentReadQueryTests::

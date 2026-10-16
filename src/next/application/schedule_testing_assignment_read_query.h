@@ -89,6 +89,21 @@ public:
                 loaded.error()
                 );
         }
+
+        for (const ScheduleTestingAssignmentReadRow& row : loaded.value().rows)
+        {
+            if (row.classId == -1 || row.classId > 0)
+            {
+                continue;
+            }
+
+            return ScheduleTestingAssignmentReadResult::failure({
+                .code = Domain::ErrorCode::Validation,
+                .message = "The schedule testing assignment contains an invalid class identifier.",
+                .recoverable = false
+            });
+        }
+
         return loaded;
     }
 };
