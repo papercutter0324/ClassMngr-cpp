@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-16
-- Current milestone: F1011, Academic-year winter-edit continuity, is complete at source commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9`; F1012, Sub Prep selected-day meeting grouping, is accepted under Batch385. Two post-F1011 audits found all 13 official Deferred entries unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1012, Sub Prep selected-day meeting grouping, is complete at source commit `e57a3c816ca3b88fcd31a6401ba3f9dd0649b5ae`; F1013, regular-before-intensive navigation metadata precedence, is accepted under Batch386. Two post-F1012 audits found all 13 official Deferred entries unchanged; F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

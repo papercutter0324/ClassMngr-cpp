@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1011 is complete at source commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9`; F1012, Sub Prep selected-day meeting grouping, is accepted under Batch385, with all 13 official Deferred entries unchanged and Gates 1/2 Partial while the Phase 2 exit gate remains Open.
+- Current note: F1012 is complete at source commit `e57a3c816ca3b88fcd31a6401ba3f9dd0649b5ae`; F1013, regular-before-intensive navigation metadata precedence, is accepted under Batch386. All 13 official Deferred entries remain unchanged; Gates 1/2 are Partial and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -114,8 +114,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch385
-  - F1012 - Sub Prep selected-day meeting grouping: accepted before implementation; move only summary `meetingText` filtering, grouping, and ordering into Qt-free Application while retaining platform parsing/formatting and separate legacy/navigation behavior.
+- Batch386
+  - F1013 - Sub Prep navigation metadata precedence: select regular all-week metadata before intensive metadata, with atomic selected-source fields and existing selected-mode fallback.
 
 ## Objective
 

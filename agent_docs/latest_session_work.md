@@ -5815,25 +5815,30 @@ The acceptance checkpoint is being committed before source changes. Gates 1/2
 remain Partial and Phase 2 exit remains Open. Existing unrelated untracked
 artifacts remain untouched.
 
-## Current continuation - 2026-10-16 (F1011 complete; F1012 accepted)
+## Current continuation - 2026-10-16 (F1012 complete; F1013 accepted)
 
 F1011 source/test commit `7acb5c5e5da5a88f29510a6315bc722e16d765d9` adds
-64-bit whole-week continuity validation for academic-calendar winter spans.
-The helper checks the 64-bit quotient against 53 before converting to `int`;
-calendar updates validate both school profiles before mutating schedule maps.
-Focused independent verification passed all four exact selectors and built
-the app-less policy, application, calendar, and Preferences targets serially.
-Ordinary MSBuild attempts hit the known FileTracker access denial and passed
-with `/p:TrackFileAccess=false`; Preferences emitted a nonfatal MSB8064 warning
-for missing generated dependency `src/next/application/teacher_import_plan_mapper.h`.
-No full suite ran. Two post-commit audits found all 13 official Deferred
-entries unchanged.
+64-bit academic-calendar winter-continuity validation. The helper checks the
+full day span and 53-week quotient before narrowing; both school profiles are
+validated before mutation. Four focused selectors passed. Builds required
+`/p:TrackFileAccess=false`; Preferences emitted a nonfatal MSB8064 warning for
+`teacher_import_plan_mapper.h`.
 
-Batch384 is closed. Batch385 selected F1012 after two independent discovery
-reviews. F1012 is accepted before implementation: extract only the selected-day
-`meetingText` grouping/order into a Qt-free Application policy using canonical
-weekday and seconds-of-day values. Retain platform parsing, translations,
-compact text, legacy feature fallback, and navigation grouping/formatting.
-The acceptance-docs checkpoint is committed separately before F1012
-implementation. Proceed to the F1012 Executor after that checkpoint lands.
-Existing unrelated untracked artifacts remain untouched.
+F1012 source/test commit `e57a3c816ca3b88fcd31a6401ba3f9dd0649b5ae` moves
+selected-day `meetingText` grouping into Qt-free Application using canonical
+weekday and exact seconds-of-day facts. Raw parsing, labels, text formatting,
+legacy feature behavior, and navigation remain separate. The app-less CTest
+passed 1/1 after correcting a fixture that incorrectly expected equal times
+on two days to remain separate; both named platform slots passed. Ownership
+validation covered 1,508 sources. The app-less, application, and platform
+targets built serially; FileTracker retries required elevated
+`/p:TrackFileAccess=false`. Configure warned that optional Vulkan headers were
+unavailable; generation succeeded. No full suite ran.
+
+Two post-F1012 audits found all 13 official Deferred entries unchanged.
+Batch385 is closed. Batch386 rejected moving page-owned Sub Prep content
+defaults into Application and accepted F1013, a pure selection policy for
+regular-over-intensive navigation metadata with selected-mode fallback. The
+next action is the separate F1012 closeout/F1013 acceptance-docs checkpoint;
+after it lands, begin F1013 implementation. Unrelated untracked artifacts
+remain untouched.

@@ -5807,25 +5807,34 @@ keys.
 F959 is the sole active slice. No source changes have been made for it yet.
 Gates 1/2 remain Partial; the formal Phase 2 exit gate remains Open.
 
-## Current Position - 2026-10-16 (F1011 complete; F1012 accepted)
+## Current Position - 2026-10-16 (F1012 complete; F1013 accepted)
 
 F1011, academic-year winter continuity, is complete at source/test commit
 `7acb5c5e5da5a88f29510a6315bc722e16d765d9`. Its Qt-free policy accepts the
 full 64-bit resolved day span, checks the 53-week limit before narrowing, and
 is used by the calendar schedule and Preferences paths. Both profile spans
-are validated before schedule mutation. The independent Tester built the
-four required Debug targets serially and passed all four exact F1011 selectors.
-VS FileTracker denied each ordinary build attempt; retries with
-`/p:TrackFileAccess=false` passed. The Preferences target emitted a nonfatal
-MSB8064 generated-dependency warning for
+are validated before schedule mutation. Four exact focused selectors passed;
+ordinary MSBuild attempts hit FileTracker denial and passed with
+`/p:TrackFileAccess=false`. The Preferences target had a nonfatal MSB8064
+warning for missing generated dependency
 `src/next/application/teacher_import_plan_mapper.h`. No full suite ran.
 
-Two independent post-commit audits found all 13 official Phase 2 Deferred
-entries unchanged and none newly actionable, resolved, or superseded.
-Batch384 is closed. Batch385 selected F1012, a Qt-free Application grouping
-policy for the selected-day Sub Prep summary `meetingText` path. F1012 is
-accepted before implementation; the policy will consume resolved weekday and
-seconds-of-day values, while raw parsing, labels, text formatting, legacy
-feature behavior, and the separate navigation pipeline remain at their
-existing boundaries. Gates 1/2 remain Partial and the formal Phase 2 exit
-gate remains Open.
+F1012, Sub Prep selected-day summary grouping, is complete at source/test
+commit `e57a3c816ca3b88fcd31a6401ba3f9dd0649b5ae`. The Qt-free Application
+policy groups resolved canonical weekdays by exact seconds-of-day; the
+platform adapter retains raw parsing, translated labels, compact formatting,
+legacy feature behavior, and the distinct navigation path. The independent
+Tester validated ownership for 1,508 handwritten files, built `ClassMngr`,
+the app-less policy target, and the platform target serially, passed the
+app-less CTest 1/1 after a contradictory fixture was corrected, and passed
+the two named adapter slots. Normal MSBuild hit FileTracker denial and
+elevated retries with `/p:TrackFileAccess=false` passed. Configure reported an
+optional missing `Vulkan_INCLUDE_DIR`; generation succeeded. No full suite ran.
+
+Two independent post-F1012 audits found all 13 official Phase 2 Deferred
+entries unchanged and none newly actionable, resolved, or superseded. Batch385
+is closed. Batch386 discovery rejected moving the established Sub Prep
+missing-value defaults out of the page and selected F1013: a Qt-free
+Application policy for choosing regular, intensive, or selected-mode Sub Prep
+navigation metadata. F1013 is accepted before implementation. Gates 1/2
+remain Partial and the formal Phase 2 exit gate remains Open.

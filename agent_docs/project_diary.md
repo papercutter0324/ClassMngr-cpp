@@ -6133,3 +6133,12 @@ When deriving bounded week counts from `QDate::daysTo()`, preserve its full
 53-week bound before narrowing to the schedule's `int` field; a large aligned
 span can otherwise wrap into a small valid count. Keep an app-less regression
 whose aligned input would narrow to a valid week count in 32-bit arithmetic.
+
+## Sub Prep summary and navigation boundaries - 2026-10-16
+
+F1012 moves only selected-day `meetingText` grouping into Qt-free Application,
+using canonical weekday and full seconds-of-day facts. Keep raw parsing and
+labels at the Platform edge. Navigation metadata is a separate full-week
+selection rule: regular wins whenever its record exists; intensive is a
+fallback only for Intensive mode, followed by the selected-mode record. Do not
+merge navigation metadata with selected-day meeting text.
