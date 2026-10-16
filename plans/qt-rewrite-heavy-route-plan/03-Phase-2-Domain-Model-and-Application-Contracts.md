@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F992 is complete and Batch362 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
+- Current note: F992 is complete and Batch363 discovery is underway; all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,9 +114,9 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- Batch362 (underway)
-  - Application: inspect Speaking Evaluation AI batch eligibility, accepted-comment/review policy, and current callsites/tests.
-  - Application: inspect Automatic Update startup eligibility, preference interpretation, skipped-version policy, and current Next callsites/tests.
+- Batch363 (underway)
+  - Application: inspect the Schedule Testing layout-clear use case, current production caller, and tests; exclude F989 assignment save and the previously scanned Testing Class lifecycle.
+  - Application: inspect Roster local row/column mutation and save-preparation policies with reachable callers/tests; exclude accepted Roster Save ID validation, Roster Row Transfer F774/F957, and Sub Prep/print-source scans.
 
 ## Objective
 

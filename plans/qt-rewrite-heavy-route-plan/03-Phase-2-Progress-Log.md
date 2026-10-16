@@ -42880,3 +42880,23 @@ Automatic Update startup eligibility, preference interpretation,
 skipped-version policy, and current Next callsites/tests. All 13 official
 Deferred entries remain unchanged. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### Batch362 closed; Batch363 discovery underway - 2026-10-16
+
+Batch362 was a discovery shortfall. Speaking Evaluation AI batch
+eligibility, accepted-comment/review policies, and current callsites matched
+the focused tests. Automatic Update startup eligibility, preference
+interpretation, skipped-version policy, and controller integration matched
+their recorded contracts and tests. No source changes or Deferred-trigger
+changes resulted. No other slices were found.
+
+The two independent post-F992 audits recorded above found no actionable,
+resolved, or superseded Deferred candidate; all 13 remain unchanged.
+
+Batch363 has started in two read-only lanes: the Schedule Testing
+layout-clear use case, its current production caller, and tests, excluding
+F989 assignment save and the previously scanned Testing Class lifecycle; and
+Roster local row/column mutation plus save-preparation policies with reachable
+callers/tests, excluding accepted Roster Save ID validation, Roster Row
+Transfer F774/F957, and Sub Prep/print-source scans. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
