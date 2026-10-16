@@ -49,6 +49,7 @@ private slots:
     void speakingEvaluationGradeAggregationRejectsInvalidOrMissingScores();
     void speakingEvaluationGradeAggregationClampsToSupportedRange();
     void coursesExposeWeeklyMeetingDayRules();
+    void weeklyMeetingDayRulesRejectUnknownCourseClassificationValues();
     void weeklyMeetingDayRulesRejectInvalidPatterns();
     void koreanTeacherKeysKeepEveryAcceptedRangeAndBoundary();
     void koreanTeacherKeysDiscardOtherCodeUnitsWithoutNormalization();
@@ -936,6 +937,49 @@ void NextDomainContractTests::weeklyMeetingDayRulesRejectInvalidPatterns()
     QVERIFY(!rule->allows({Weekday::Sunday}));
     QVERIFY(!rule->allows({static_cast<Weekday>(7)}));
     QVERIFY(!rule->allows({}));
+}
+
+void NextDomainContractTests::
+    weeklyMeetingDayRulesRejectUnknownCourseClassificationValues()
+{
+    constexpr std::array<CourseGradeBand, 7> declaredGrades{
+        CourseGradeBand::E4,
+        CourseGradeBand::E5,
+        CourseGradeBand::E6,
+        CourseGradeBand::M1,
+        CourseGradeBand::M2,
+        CourseGradeBand::M3,
+        CourseGradeBand::Other
+    };
+    constexpr std::array<CourseLevelCategory, 3> declaredLevels{
+        CourseLevelCategory::Standard,
+        CourseLevelCategory::Athena,
+        CourseLevelCategory::Songs
+    };
+    constexpr CourseGradeBand unknownGrade =
+        static_cast<CourseGradeBand>(99);
+    constexpr CourseLevelCategory unknownLevel =
+        static_cast<CourseLevelCategory>(99);
+
+    for (const CourseLevelCategory level : declaredLevels)
+    {
+        QVERIFY(!Course::weeklyMeetingDayRuleFor(
+            unknownGrade,
+            level
+            ).has_value());
+        QVERIFY(!Course::weeklyMeetingDayRuleFor(
+            CourseGradeBand::Other,
+            level
+            ).has_value());
+    }
+
+    for (const CourseGradeBand grade : declaredGrades)
+    {
+        QVERIFY(!Course::weeklyMeetingDayRuleFor(
+            grade,
+            unknownLevel
+            ).has_value());
+    }
 }
 
 void NextDomainContractTests::

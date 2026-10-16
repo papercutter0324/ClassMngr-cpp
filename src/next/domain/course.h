@@ -202,6 +202,30 @@ public:
         CourseLevelCategory level
         )
     {
+        switch (grade)
+        {
+        case CourseGradeBand::E4:
+        case CourseGradeBand::E5:
+        case CourseGradeBand::E6:
+        case CourseGradeBand::M1:
+        case CourseGradeBand::M2:
+        case CourseGradeBand::M3:
+        case CourseGradeBand::Other:
+            break;
+        default:
+            return std::nullopt;
+        }
+
+        switch (level)
+        {
+        case CourseLevelCategory::Standard:
+        case CourseLevelCategory::Athena:
+        case CourseLevelCategory::Songs:
+            break;
+        default:
+            return std::nullopt;
+        }
+
         using Pattern = WeeklyMeetingDayPattern;
         using RuleKind = WeeklyMeetingDayRuleKind;
         const Pattern mondayWednesday{
