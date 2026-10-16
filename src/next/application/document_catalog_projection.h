@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -303,6 +305,87 @@ template <typename TypedId>
     return Domain::Result<void>::success();
 }
 
+[[nodiscard]] inline Domain::Result<void> validateFolderHierarchy(
+    const std::vector<DocumentFolderMetadata>& folders
+    )
+{
+    std::unordered_map<std::string_view, std::size_t> folderIndexesByPath;
+    folderIndexesByPath.reserve(folders.size());
+    for (std::size_t index = 0; index < folders.size(); ++index)
+    {
+        if (!folderIndexesByPath.emplace(folders[index].path, index).second)
+        {
+            return Domain::Result<void>::failure(
+                invalidInput("Document folder paths must be unique.")
+                );
+        }
+    }
+
+    // Parent paths form a directed graph where roots have no outgoing edge.
+    // Marking each rooted chain avoids recursion and bounds validation work
+    // even when input is ordered independently of its hierarchy.
+    std::vector<std::uint8_t> state(folders.size(), 0);
+    std::vector<std::size_t> chain;
+    chain.reserve(folders.size());
+    for (std::size_t start = 0; start < folders.size(); ++start)
+    {
+        if (state[start] == 2)
+        {
+            continue;
+        }
+
+        chain.clear();
+        auto current = start;
+        while (true)
+        {
+            if (state[current] == 2)
+            {
+                for (const auto index : chain)
+                {
+                    state[index] = 2;
+                }
+                break;
+            }
+
+            if (state[current] == 1)
+            {
+                return Domain::Result<void>::failure(
+                    invalidInput(
+                        "Document folder hierarchy must reach a root and must not contain parent cycles."
+                        )
+                    );
+            }
+
+            state[current] = 1;
+            chain.push_back(current);
+
+            const auto& parentPath = folders[current].parentPath;
+            if (parentPath.empty())
+            {
+                for (const auto index : chain)
+                {
+                    state[index] = 2;
+                }
+                break;
+            }
+
+            const auto parent = folderIndexesByPath.find(parentPath);
+            if (parent == folderIndexesByPath.cend())
+            {
+                return Domain::Result<void>::failure(
+                    invalidInput(
+                        "Non-root document folder parent path must resolve to a folder."
+                        )
+                    );
+            }
+
+            current = parent->second;
+        }
+    }
+
+    return Domain::Result<void>::success();
+}
+
 [[nodiscard]] inline Domain::Result<void> validateInput(
     const DocumentCatalogProjectionInput& input
     )
@@ -328,6 +411,12 @@ template <typename TypedId>
         }
 
         folderIds.push_back(folder.id);
+    }
+
+    const auto hierarchyValidation = validateFolderHierarchy(input.folders);
+    if (!hierarchyValidation)
+    {
+        return hierarchyValidation;
     }
 
     std::vector<Domain::DocumentId> documentIds;
