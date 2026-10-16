@@ -42977,7 +42977,7 @@ F994 acceptance matrix, recorded before implementation:
 | Localization | Update all five tracked catalogs for the new `MyClassesPage` source text, including the Korean translation in `ClassMngr_ko_KR.ts`: `ClassMngr_en_AU.ts`, `ClassMngr_en_CA.ts`, `ClassMngr_en_GB.ts`, `ClassMngr_en_US.ts`, and `ClassMngr_ko_KR.ts`. |
 | Regression coverage | Update `rosterReadFailureKeepsClassAndShowsZeroStudentCount` to assert Unavailable while retaining no-warning, class-visible, and fallback assertions. Retain `rosterWithoutNameColumnsShowsZeroStudentCount` as proof that successful zero remains zero. |
 | Scope | Make no query, repository, API, CMake, or other-page changes. |
-| Focused verification | In the configured Windows x64 Debug Ninja/MSVC tree, build `ClassMngr` and `ClassMngrMyClassesPageTests`; run exact CTest `MyClassesPage` and scoped `git diff --check`. Do not run the full suite. |
+| Focused verification | In the configured Windows x64 Debug Ninja/MSVC tree, build `ClassMngr` and `ClassMngrMyClassesPageTests`; run exact CTest `ClassMngrMyClassesPageTests` and scoped `git diff --check`. Do not run the full suite. |
 
 All 13 official Deferred entries remain unchanged after the post-F993 audits;
 the post-F994 audit is pending. Gates 1/2 remain Partial and the formal Phase
