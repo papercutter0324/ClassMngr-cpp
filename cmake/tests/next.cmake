@@ -1555,6 +1555,37 @@ add_test(
     COMMAND ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
 )
 
+# Keep Class Tab tuple comparison independent of Qt and feature formatting.
+add_executable(
+    ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+    tests/next_application_class_tab_navigation_ordering_policy_tests.cpp
+)
+target_compile_features(
+    ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+    PRIVATE
+        cxx_std_23
+)
+set_target_properties(
+    ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(
+    TARGET ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+target_link_libraries(
+    ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+    PRIVATE
+        ClassMngrNext::Application
+)
+add_test(
+    NAME ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+    COMMAND ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+)
+
 # Keep Testing Classes list ordering independent of Qt.
 add_executable(
     ClassMngrNextApplicationTestingClassesOrderingPolicyTests

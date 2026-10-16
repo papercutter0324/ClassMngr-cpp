@@ -2,6 +2,7 @@
 
 #include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
+#include "next/application/class_tab_navigation_ordering_policy.h"
 #include "next/application/class_day_filter_policy.h"
 
 #include <algorithm>
@@ -22,6 +23,12 @@ struct TabCandidate
     ClassTabNavigation::ClassTab tab;
     QString baseLabel;
     QString teacherLabel;
+};
+
+struct SortCandidate
+{
+    ClassTabNavigation::ClassEntry entry;
+    ClassMngr::Next::Application::ClassTabNavigationOrderingFact orderingFact;
 };
 
 QString trimmedOr(
@@ -606,87 +613,66 @@ QString teacherLabel(
     return entry.teacherKr.trimmed();
 }
 
-bool entryLessThan(
-    const ClassTabNavigation::ClassEntry& left,
-    const ClassTabNavigation::ClassEntry& right
+ClassMngr::Next::Application::ClassTabNavigationOrderingFact orderingFact(
+    const ClassTabNavigation::ClassEntry& entry
     )
 {
-    const int leftGradeOrder =
-        gradeOrder(
-            left.grade
-            );
-    const int rightGradeOrder =
-        gradeOrder(
-            right.grade
-            );
+    return {
+        .gradeRank = gradeOrder(entry.grade),
+        .levelRank = levelOrder(entry.grade, entry.level),
+        .earliestScheduleDayRank = firstDayOrder(entry),
+        .earliestStartMinuteRank = firstTimeOrder(entry),
+        .baseLabel = baseLabel(entry, true).toStdU16String(),
+        .classId = entry.classId
+    };
+}
 
-    if (leftGradeOrder != rightGradeOrder)
-    {
-        return leftGradeOrder < rightGradeOrder;
-    }
+int compareLocaleAwareBaseLabels(
+    const std::u16string_view leftLabel,
+    const std::u16string_view rightLabel
+    )
+{
+    return QString::localeAwareCompare(
+        QString::fromStdU16String(std::u16string(leftLabel)),
+        QString::fromStdU16String(std::u16string(rightLabel))
+        );
+}
 
-    const int leftLevelOrder =
-        levelOrder(
-            left.grade,
-            left.level
-            );
-    const int rightLevelOrder =
-        levelOrder(
-            right.grade,
-            right.level
-            );
-
-    if (leftLevelOrder != rightLevelOrder)
-    {
-        return leftLevelOrder < rightLevelOrder;
-    }
-
-    const int leftDayOrder =
-        firstDayOrder(left);
-    const int rightDayOrder =
-        firstDayOrder(right);
-
-    if (leftDayOrder != rightDayOrder)
-    {
-        return leftDayOrder < rightDayOrder;
-    }
-
-    const int leftTimeOrder =
-        firstTimeOrder(left);
-    const int rightTimeOrder =
-        firstTimeOrder(right);
-
-    if (leftTimeOrder != rightTimeOrder)
-    {
-        return leftTimeOrder < rightTimeOrder;
-    }
-
-    const int labelComparison =
-        QString::localeAwareCompare(
-            baseLabel(left, true),
-            baseLabel(right, true)
-            );
-
-    if (labelComparison != 0)
-    {
-        return labelComparison < 0;
-    }
-
-    return left.classId < right.classId;
+bool entryLessThan(
+    const SortCandidate& left,
+    const SortCandidate& right
+    )
+{
+    return ClassMngr::Next::Application::classTabNavigationFactLessThan(
+        left.orderingFact,
+        right.orderingFact,
+        compareLocaleAwareBaseLabels
+        );
 }
 
 QList<ClassTabNavigation::ClassEntry> sortedEntries(
     const QList<ClassTabNavigation::ClassEntry>& entries
     )
 {
-    QList<ClassTabNavigation::ClassEntry> result =
-        entries;
+    QList<SortCandidate> candidates;
+    candidates.reserve(entries.size());
+    for (const ClassTabNavigation::ClassEntry& entry : entries)
+    {
+        candidates.append({entry, orderingFact(entry)});
+    }
 
     std::sort(
-        result.begin(),
-        result.end(),
+        candidates.begin(),
+        candidates.end(),
         entryLessThan
         );
+
+    QList<ClassTabNavigation::ClassEntry> result;
+    result.reserve(candidates.size());
+    for (SortCandidate& candidate : candidates)
+    {
+        result.append(std::move(candidate.entry));
+    }
 
     return result;
 }

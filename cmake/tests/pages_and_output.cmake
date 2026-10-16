@@ -1780,6 +1780,18 @@ qt_add_executable(ClassMngrClassesPageTests
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    add_test(
+        NAME ClassMngrClassesPageF1019NavigationSelectionTests
+        COMMAND ClassMngrClassesPageTests
+            classTabDefaultSelectionFollowsNavigationOrder
+            classInfoSaveRefreshesVisibleClassListAndPreservesSelection
+    )
+    set_tests_properties(
+        ClassMngrClassesPageF1019NavigationSelectionTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+
     qt_add_resources(ClassMngrClassesPageTests classes_page_keyboard_test_resources
         PREFIX "/"
         BASE "${PROJECT_SOURCE_DIR}/resources"

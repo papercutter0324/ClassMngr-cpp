@@ -216,6 +216,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/sub_prep_navigation_schedule_order_policy.h
     src/next/application/sub_prep_visible_class_ordering_policy.h
     src/next/application/testing_classes_ordering_policy.h
+    src/next/application/class_tab_navigation_ordering_policy.h
     src/next/application/sub_prep_selected_days_validation.h
     src/next/application/sub_prep_package_request_validation.h
     src/next/application/sub_prep_selected_class_ids.h

@@ -363,6 +363,7 @@ private slots:
     void explicitClassRequestRetainsExcludingFiltersAndAllSelection();
     void testingModeUsesRegularMeetingsForDayFiltering();
     void allGradeTabShowsClassesAcrossGrades();
+    void classTabDefaultSelectionFollowsNavigationOrder();
     void classesNavigationReadFailureKeepsNamesAndBlankMetadata();
     void classesNavigationEntryFailureKeepsIdentityAndValidSiblingDetails();
     void classesListQueryUsesActiveRepositoryOnOpenAndAfterInfoSave();
@@ -1556,6 +1557,35 @@ void ClassesPageTests::allGradeTabShowsClassesAcrossGrades()
     QApplication::processEvents();
     QCOMPARE(page.currentClassId(), 43);
     QCOMPARE(tabs->currentIndex(), tabs->count() - 1);
+}
+
+void ClassesPageTests::classTabDefaultSelectionFollowsNavigationOrder()
+{
+    ApplicationServices services;
+    ClassesPage page(&services);
+
+    QVERIFY(page.openClass(-1));
+    QCOMPARE(page.currentClassId(), 42);
+
+    auto* gradeTabsWidget = gradeTabs(&page);
+    QVERIFY(gradeTabsWidget);
+    QCOMPARE(
+        gradeTabsWidget->tabText(gradeTabsWidget->currentIndex()),
+        QStringLiteral("All")
+        );
+    auto* allClassesTabs = gradeTabsWidget->currentWidget()
+        ? gradeTabsWidget->currentWidget()->findChild<NavigationTabWidget*>(
+            QStringLiteral("classesLevelTabs")
+            )
+        : nullptr;
+    QVERIFY(allClassesTabs);
+    QVERIFY(allClassesTabs->count() > 0);
+    QCOMPARE(allClassesTabs->currentIndex(), 0);
+    QCOMPARE(
+        allClassesTabs->widget(0)->property("class_id").toInt(),
+        42
+        );
+    QVERIFY(allClassesTabs->selectionVisible());
 }
 
 void ClassesPageTests::classesNavigationReadFailureKeepsNamesAndBlankMetadata()

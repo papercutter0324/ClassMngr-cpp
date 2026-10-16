@@ -68,6 +68,10 @@ private slots:
     void moreThanSixClassesUseOrderedGradeGroups();
     void gradeModeLabelsUseLevelAndSchedule();
     void classTabsSortByLevelThenDay();
+    void unknownWeekdayWithValidTimeKeepsTimeRank();
+    void unknownWeekdaySixFortyCollidesWithUnknownTimeSentinel();
+    void malformedNonemptyRegularScheduleDoesNotUseIntensiveFallback();
+    void blankRegularStartKeepsRegularOrderingAndIntensiveLabelFallback();
     void classTimeLabelsAcceptDisplayFormats();
     void malformedDisplayTimeUsesCompactFallback();
     void invalidDisplayTimesSortLast();
@@ -384,6 +388,151 @@ void ClassTabNavigationTests::classTabsSortByLevelThenDay()
             );
     QCOMPARE(unknownWeekdayModel.gradeGroups.size(), 1);
     QCOMPARE(classIds(unknownWeekdayModel), QList<int>({30, 31, 32, 33}));
+}
+
+void ClassTabNavigationTests::unknownWeekdayWithValidTimeKeepsTimeRank()
+{
+    ClassTabNavigation::ClassEntry invalidTime = classEntry(
+        1,
+        QString(),
+        QString(),
+        {classTime(QStringLiteral("Funday"), QStringLiteral("!invalid"))}
+        );
+    invalidTime.classroomName = QStringLiteral("Alpha");
+    ClassTabNavigation::ClassEntry validTime = classEntry(
+        2,
+        QString(),
+        QString(),
+        {classTime(QStringLiteral("Funday"), QStringLiteral("9:00"))}
+        );
+    validTime.classroomName = QStringLiteral("Zulu");
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        invalidTime,
+        validTime
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+
+    // Both weekdays have rank 1000. The valid 9:00 minute still sorts before
+    // the invalid time, even though its class label sorts later.
+    QCOMPARE(classIds(model), QList<int>({2, 1}));
+}
+
+void ClassTabNavigationTests::
+unknownWeekdaySixFortyCollidesWithUnknownTimeSentinel()
+{
+    ClassTabNavigation::ClassEntry unknownTime = classEntry(
+        2,
+        QString(),
+        QString(),
+        {classTime(QStringLiteral("Funday"), QStringLiteral("!invalid"))}
+        );
+    unknownTime.classroomName = QStringLiteral("Zulu");
+    ClassTabNavigation::ClassEntry validSixForty = classEntry(
+        9,
+        QString(),
+        QString(),
+        {classTime(QStringLiteral("Funday"), QStringLiteral("16:40"))}
+        );
+    validSixForty.classroomName = QStringLiteral("Alpha");
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        unknownTime,
+        validSixForty
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+
+    // Both time ranks are exactly 1000: one is unknown, the other is 16:40.
+    // The tuple therefore falls through to base-label comparison.
+    QCOMPARE(classIds(model), QList<int>({9, 2}));
+    QCOMPARE(
+        model.gradeGroups.first().classes.first().label,
+        QStringLiteral("Alpha \u2022 Funday 16:40")
+        );
+    QCOMPARE(
+        model.gradeGroups.first().classes.at(1).label,
+        QStringLiteral("Zulu \u2022 Funday !invalid")
+        );
+}
+
+void ClassTabNavigationTests::
+malformedNonemptyRegularScheduleDoesNotUseIntensiveFallback()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Friday"), QStringLiteral("not-a-time"))},
+            {classTime(QStringLiteral("Monday"), QStringLiteral("8:00 AM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+
+    QCOMPARE(classIds(model), QList<int>({2, 1}));
+    QCOMPARE(
+        model.gradeGroups.first().classes.at(1).label,
+        QStringLiteral("Perseus \u2022 F not-a-time")
+        );
+    QVERIFY(
+        !model.gradeGroups.first().classes.at(1).label.contains(
+            QStringLiteral("Int")
+            )
+        );
+}
+
+void ClassTabNavigationTests::
+blankRegularStartKeepsRegularOrderingAndIntensiveLabelFallback()
+{
+    const QList<ClassTabNavigation::ClassEntry> entries{
+        classEntry(
+            1,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
+            ),
+        classEntry(
+            2,
+            QStringLiteral("E4"),
+            QStringLiteral("Perseus"),
+            {classTime(QStringLiteral("Friday"), QString())},
+            {classTime(QStringLiteral("Monday"), QStringLiteral("8:00 AM"))}
+            )
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            entries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+
+    // The nonempty regular list determines sorting, while label rendering
+    // falls back to Intensive when the regular row has no displayable time.
+    QCOMPARE(classIds(model), QList<int>({1, 2}));
+    QVERIFY(
+        model.gradeGroups.first().classes.at(1).label.endsWith(
+            QStringLiteral("Int M 8:00")
+            )
+        );
 }
 
 void ClassTabNavigationTests::classTimeLabelsAcceptDisplayFormats()
