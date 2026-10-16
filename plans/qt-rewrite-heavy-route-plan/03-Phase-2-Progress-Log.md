@@ -42475,3 +42475,51 @@ actions even when the corresponding key or index is empty or unknown, preserve
 declared behavior and established issue ordering, reject without port calls,
 and cover combined-invalid regressions. Gates 1/2 remain Partial and the formal
 Phase 2 exit gate remains Open.
+
+### F988 complete; Batch349 closed - 2026-10-16
+
+F988 was implemented at source/test commit
+`3427e2b66b7cdaca1fa3f29b1b5ae8284fa6d396` in
+`src/next/application/class_transfer_projection.h` and
+`tests/next_application_class_transfer_tests.cpp`. The projection now validates
+each resolution action before its same-item key/index lookup, reports unknown
+actions even when the corresponding key or index is invalid, preserves issue
+ordering across resolutions, and rejects without port calls.
+
+The focused test initially exposed an incorrect expectation that
+`2147483648` was an invalid teacher ID. That value is valid at the 64-bit
+teacher-ID boundary; the test was corrected to exercise its normal decision
+validation path while retaining invalid coverage for the 32-bit class index.
+The Tester built `ClassMngr` and
+`ClassMngrNextApplicationClassTransferTests` in the existing shared Ninja
+fallback; the exact CTest passed (1/1), and `git diff --check` passed. No
+dynamic database checks or full suite ran.
+
+Two independent post-F988 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. Preserve the Deferred list
+unchanged. F985's focused `ClassMngrScheduleImportTests` failure remains
+unresolved: `typedApplyPreservesExactTargetIdsThroughStateValidation` expected
+`stateValidationError.has_value()` but got false. No pre-F985 baseline was run,
+so do not characterize the failure as pre-existing.
+
+Batch349's Domain and Application discovery lanes found no actionable
+candidates. No other slices were found. Gates 1/2 remain Partial and the formal
+Phase 2 exit gate remains Open.
+
+### Batch350 closed; F989 active - 2026-10-16
+
+The Domain lane found no candidate after inspecting public value factories,
+conversions, arithmetic, and ordering. The Application lane accepted F989:
+`ScheduleTestingAssignmentSaveRequest::validate()` reports the generic empty
+day/start-time error before checking an unknown
+`ScheduleTestingAssignmentMutation`, despite the later invalid-action check.
+Existing focused coverage combines an unknown action with a nonempty invalid
+weekday but does not cover empty required fields.
+
+F989 acceptance: validate the mutation action before required fields; for an
+unknown action with empty day and start time, return
+`Testing assignment action is invalid.` and make zero port calls. Preserve
+behavior for declared mutations. The exact focused CTest is
+`NextApplicationScheduleTestingAssignmentSaveUseCase`. This candidate does not
+overlap the 13 official Deferred entries. No other slices were found. F989 is
+active; Gates 1/2 remain Partial and the formal Phase 2 exit gate remains Open.

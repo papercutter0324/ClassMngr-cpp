@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-16
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F985's source commit is recorded, but one focused Schedule Import registration failure remains unresolved; F988 is active after F987's focused pass, and the 13 Deferred entries remain unchanged with Gates 1/2 Partial and the exit gate Open.
+- Current note: F988 is complete and F989 is active after Batch350 closed; the F985 focused Schedule Import registration failure remains unresolved without a pre-F985 baseline, all 13 Deferred entries remain unchanged, Gates 1/2 are Partial, and the exit gate is Open.
 
 ### Slice discovery batches
 
@@ -114,7 +114,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch
 
-- F988 - Active: preflight Class Transfer resolution actions independently of invalid teacher keys or class indices, preserve action and issue-order behavior, and reject without port calls.
+- F989 - Active: validate unknown Schedule Testing Assignment mutation actions before required-field validation, report the invalid action, reject without port calls, and preserve declared mutation behavior.
 
 ## Objective
 
