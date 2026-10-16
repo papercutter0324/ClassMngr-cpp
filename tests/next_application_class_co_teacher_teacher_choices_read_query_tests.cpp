@@ -46,6 +46,7 @@ class NextApplicationClassCoTeacherTeacherChoicesReadQueryTests final
 private slots:
     void callsPortOnceAndPreservesTypedTeacherFields();
     void acceptsWideTeacherIdentity();
+    void rejectsDuplicateTeacherIdentities();
     void propagatesPortFailure();
     void rejectsInvalidTeacherIdentities();
 };
@@ -109,6 +110,48 @@ acceptsWideTeacherIdentity()
         result.value().teachers.front().teacherId.value(),
         std::string("2147483648")
         );
+}
+
+void NextApplicationClassCoTeacherTeacherChoicesReadQueryTests::
+rejectsDuplicateTeacherIdentities()
+{
+    RecordingTeacherChoicesPort port;
+    Application::ClassCoTeacherTeacherChoicesSnapshot snapshot;
+    snapshot.teachers.push_back({
+        .teacherId = teacherId("42"),
+        .teacherKr = u"First Teacher",
+        .teacherEn = u"First Teacher",
+        .roomNumber = u"Room 1",
+        .internetType = {},
+        .wifiName = {},
+        .wifiPassword = {},
+        .projectionType = {},
+        .zoomId = {},
+        .zoomPassword = {}
+    });
+    snapshot.teachers.push_back({
+        .teacherId = teacherId("42"),
+        .teacherKr = u"Second Teacher",
+        .teacherEn = u"Second Teacher",
+        .roomNumber = u"Room 2",
+        .internetType = {},
+        .wifiName = {},
+        .wifiPassword = {},
+        .projectionType = {},
+        .zoomId = {},
+        .zoomPassword = {}
+    });
+    port.result = Application::ClassCoTeacherTeacherChoicesResult::success(
+        std::move(snapshot)
+        );
+    const Application::ClassCoTeacherTeacherChoicesReadQuery query(port);
+
+    const auto result = query.execute();
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(!result.error().recoverable);
+    QCOMPARE(port.callCount, 1);
 }
 
 void NextApplicationClassCoTeacherTeacherChoicesReadQueryTests::

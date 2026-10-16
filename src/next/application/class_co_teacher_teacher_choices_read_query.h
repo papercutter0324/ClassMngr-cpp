@@ -3,6 +3,8 @@
 #include "next/application/class_co_teacher_teacher_choices_read_port.h"
 #include "next/application/positive_decimal_id_validation.h"
 
+#include <string>
+#include <unordered_set>
 #include <utility>
 
 namespace ClassMngr::Next::Application
@@ -29,6 +31,8 @@ public:
         }
 
         auto snapshot = std::move(source.value());
+        std::unordered_set<std::string> seenTeacherIds;
+        seenTeacherIds.reserve(snapshot.teachers.size());
         for (const ClassCoTeacherTeacherChoice& teacher : snapshot.teachers)
         {
             if (!isCanonicalPositiveDecimalId64(teacher.teacherId.value()))
@@ -37,6 +41,16 @@ public:
                     .code = Domain::ErrorCode::Validation,
                     .message =
                         "Co-teacher teacher choices contain an invalid teacher identifier.",
+                    .recoverable = false
+                });
+            }
+
+            if (!seenTeacherIds.insert(teacher.teacherId.value()).second)
+            {
+                return ClassCoTeacherTeacherChoicesResult::failure({
+                    .code = Domain::ErrorCode::Validation,
+                    .message =
+                        "Co-teacher teacher choices contain a duplicate teacher identifier.",
                     .recoverable = false
                 });
             }
