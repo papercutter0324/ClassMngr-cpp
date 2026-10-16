@@ -44544,3 +44544,70 @@ current: all 13 official Deferred entries are unchanged; repeat both audits
 after F1037 implementation. Gates 1/2 remain Partial, the Phase 2 exit gate
 remains Open, and F1007 remains pending policy reconciliation. F1037 is
 accepted in Batch416 and pending implementation.
+
+### F1037 complete; post-F1037 Deferred audits clear; Batch416 closed - 2026-10-17
+
+F1037 completes at source commit `eb4da0c9`. Seven Calendar adapters now mark
+only unavailable or closed-session results `NotFound,recoverable=true`, while
+retaining operation messages and all other result mappings. The independent
+Tester built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`; the two matching
+CTests passed 2/2 after an elevated FileTracker retry. No full suite ran.
+
+Coverage does not deterministically close a session during a repository call;
+source review confirmed the post-failure branches use the same helper. Two
+independent post-F1037 audits reviewed exactly the 13 official Deferred
+entries. All remain unchanged and unresolved. Batch416 is closed. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.
+
+### Batch417 discovery shortfall - 2026-10-17
+
+The proposed My Classes change to distinguish assigned-teacher profile errors
+from unassigned teachers is rejected: `tests/my_classes_page_tests.cpp::failedTeacherProfileKeepsClassAndUsesSilentUnassignedFallback`
+asserts the silent fallback for an assigned but missing teacher, and F913's
+accepted history keeps that presentation for any profile error. This is not a
+current official Deferred candidate; no implementation was selected.
+
+### Batch418 discovery shortfall - 2026-10-17
+
+Three independent scans found no eligible slice. F285's blank-draft and
+F707's no-callsite triggers remain unmet; existing import, roster, student,
+and document use cases are supported. Speaking Evaluation batch/read and
+document resource validation are covered. A Sub Prep secondary
+schedule-summary failure policy remains undefined. Speaking Evaluation's
+blank-grid/clean-state fallback is explicitly tested, and Batch333 found no
+reproduced successful overwrite; changing it requires policy. No official
+Deferred trigger resolved; all 13 entries remain unchanged.
+
+No other slices were found.
+
+### Batch419 discovery and F1038 accepted before implementation - 2026-10-17
+
+Three independent discovery lanes found one narrow candidate: in
+`src/next/platform/application_services_roster_save_port.h`,
+`unavailableFailure()` returns `NotFound` through a helper that hardcodes
+`recoverable=false`. The UI retains roster/model/autosave dirty state after a
+failed save and clears it only on success; `RosterSaveUseCase` validates
+before the port and forwards its result. Missing-parent `NotFound` must remain
+nonrecoverable; repository and exception failures remain Technical. The
+separate row-transfer save contract is out of scope. F1038 does not match any
+of the 13 official Deferred entries.
+
+Accept F1038: change only unavailable-session Roster Save to
+`NotFound,recoverable=true`, retaining the exact message
+`The roster service is unavailable.`. Extend the closed-session adapter
+regression to assert recoverability and strengthen missing-parent coverage to
+assert `recoverable=false`. Preserve validation precedence, direct
+noncanonical-ID behavior, open-session repository/technical errors, all
+messages, success and persistence behavior, and separate row-transfer
+behavior. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`; run only the
+matching CTest
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`. No full suite.
+F1037 at `eb4da0c9` is the latest source commit. The post-F1037 audits remain
+current: all 13 official Deferred entries are unchanged; repeat both audits
+after F1038 implementation. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation. F1038 is
+accepted in Batch419 and pending implementation.
