@@ -44063,3 +44063,42 @@ gate remains Open.
 No other slices were found.
 
 Batch405 Heavy-route discovery is underway.
+
+### F1029 accepted before implementation - 2026-10-17
+
+Batch405's two independent no-candidate scans found no actionable mismatch in
+non-calendar read adapters, canonical-session/null-legacy ApplicationServices
+wiring, or the remaining direct query seams. Read adapters preserve rows and
+order, and their existing tests cover the observed behavior.
+
+The candidate review found a FeatureService contract inconsistency. The public
+constructor accepts both `DatabaseSession*` and `DataService*`, while
+`isAvailable()` reflects the bound session. Some descendants correctly avoid
+legacy fallback when that session is unavailable, but Teacher, Class, Schedule,
+Roster, and selected Calendar/Speaking operations still use `DataService` in
+some missing-repository paths. Existing lifecycle tests establish no-fallback
+behavior for Settings, Calendar operations, class notes, and selected Sub Prep
+operations, but do not establish one consistent rule across descendants. A
+direct caller can therefore see `isAvailable() == false` while a descendant
+reads or mutates a separate open legacy database. Normal ApplicationServices
+currently supplies a null legacy fallback; this acceptance addresses the
+public core API contract and does not claim a current UI defect.
+
+Accept F1029 before implementation. When FeatureService has a non-null bound
+session, that session is authoritative for every descendant operation: an
+unavailable repository must fail without falling back to `DataService`.
+Preserve existing `DataService`-only construction and behavior.
+
+F1029 acceptance criteria:
+
+| Area | Acceptance |
+| --- | --- |
+| Bound-session authority | All FeatureService descendant operations use the bound session when supplied and do not fall back to `DataService` when its repository is unavailable. |
+| Lifecycle regression | With a closed bound session and a separate open legacy database, an affected TeacherService read and mutation fail and leave legacy rows unchanged; TeacherService constructed with only the legacy DataService continues to work. |
+| Preserved behavior | Keep existing no-fallback coverage, validation precedence, ApplicationServices composition, database schemas, and UI behavior. |
+| Focused verification | Build `ClassMngr` and `ClassMngrDataServiceLifecycleTests`; run only the `ClassMngrDataServiceLifecycleTests` CTest. No full suite. |
+
+The exact 13 official Deferred entries remain unchanged under the post-F1028
+audits; repeat the independent audits after F1029 implementation. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation. F1029 is accepted and pending implementation.

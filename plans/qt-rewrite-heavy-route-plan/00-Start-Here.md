@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1028, rejecting the reserved Default campus identity before repository mutation, is complete at source commit `40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`; its three focused Debug CTests passed 3/3. Batch404's two independent scans found no eligible slice, and Batch405 Heavy-route discovery is underway; all 13 official Deferred entries remain unchanged, F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+- Current milestone: F1028, rejecting the reserved Default campus identity before repository mutation, is complete at source commit `40cfa3f71e2b256f9318de29ccdaf077e2fe57cf`; its three focused Debug CTests passed 3/3. F1029, making a bound FeatureService session authoritative across descendant operations, is accepted and pending implementation. The 13 official Deferred entries remain unchanged, F1007 remains pending policy reconciliation, Gates 1/2 remain Partial, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
