@@ -42647,7 +42647,39 @@ factory and contract coverage.
 
 Build `ClassMngr` and `ClassMngrNextDomainContractTests` in the existing
 `build/windows-x64-debug-ninja` directory with the MSVC environment. Confirm
-the exact CTest registration `NextDomainContract` occurs once and run only
-that registration. Do not run the full suite. F990 does not overlap the 13
-official Deferred candidates; preserve that list. Gates 1/2 remain Partial and
-the formal Phase 2 exit gate remains Open.
+the generated CTest registration `ClassMngrNextDomainContractTests` occurs
+once; the test helper's logical `NAME` is `NextDomainContract`. Run only the
+generated registration. Do not run the full suite. F990 does not overlap the
+13 official Deferred candidates; preserve that list. Gates 1/2 remain Partial
+and the formal Phase 2 exit gate remains Open.
+
+### F990 complete; Batch356 discovery underway - 2026-10-16
+
+F990 was implemented at source/test commit
+`1189a83283ca1d1d34cd9ff7d606f1d55aec1028`. Publicly defaulted copy
+construction and copy assignment suppress implicit moves, so rvalue
+construction and assignment preserve both the source and destination values.
+The focused tests cover both operations.
+
+The independent Tester built `ClassMngr` and
+`ClassMngrNextDomainContractTests` in
+`build/windows-x64-debug-ninja` with the MSVC environment (exit 0). The
+generated CTest name `ClassMngrNextDomainContractTests` occurs once; its
+helper logical `NAME` is `NextDomainContract`. The exact generated CTest
+passed 1/1 (#190); the literal `NextDomainContract` regex matched zero.
+`git diff --check` passed. No full suite ran.
+
+Two independent audits reviewed all 13 official Deferred entries after F990;
+none was resolved, superseded, or actionable. F709 remains deferred: its
+`CalendarEventCache` factory and malformed-time cache tests predate its
+re-deferral and do not inject into `CalendarPage::projectionTime()`;
+`CalendarPage` still creates its cache with the default factory. Preserve all
+13 entries. Gates 1/2 remain Partial and the formal Phase 2 exit gate remains
+Open.
+
+Batch356 discovery is underway in two read-only lanes: Domain cross-field
+construction/conversion invariants in remaining Domain records, excluding
+F990 and generic primitive factories; and Application structured-failure and
+partial-success propagation in multi-step use cases, excluding recent
+validation-order, async coordinator, document-session, and Schedule Import
+work. No Batch356 slice has been accepted yet.
