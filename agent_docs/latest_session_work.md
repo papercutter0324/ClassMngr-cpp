@@ -15,8 +15,10 @@
   official Deferred entries unresolved, with none newly actionable. F629's
   hosted ARM64 macOS runner labels have 14 GB SSD versus the script's 18 GiB
   free-space preflight, so the packaged 24-route matrix remains blocked.
-  Batch427 is closed and Batch428 discovery is active. Gates 1/2 remain Partial,
-  F1007 remains pending policy reconciliation, and Phase 2 remains Open.
+  Batch427 is closed. Batch428 accepted F1044 to restore the prior Sidebar
+  selection when catalog-document navigation is canceled at the unsaved-change
+  prompt; implementation is pending. Gates 1/2 remain Partial, F1007 remains
+  pending policy reconciliation, and Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

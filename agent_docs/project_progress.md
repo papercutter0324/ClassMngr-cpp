@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1043 complete; Batch428 active)
+### Current checkpoint - 2026-10-17 (F1043 complete; F1044 accepted)
 
 F1042 is complete at source commit
 `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
@@ -78,9 +78,13 @@ Two independent post-F1043 audits reviewed all 13 official Deferred entries.
 None became actionable, resolved, or superseded. F629's runner evidence was
 refined: GitHub lists ARM64 macOS hosted labels, but their published 14 GB SSD
 does not meet the Phase 0 script's 18 GiB free-space preflight, so the 24-route
-matrix remains blocked. Batch427 is closed; Batch428 discovery is active.
-Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
-pending policy reconciliation.
+matrix remains blocked. Batch427 is closed. Batch428 accepted F1044 to restore
+the prior Sidebar selection when catalog-document navigation is canceled at
+the unsaved-changes prompt. The existing cancellation test will verify
+selection restoration alongside dirty-page preservation, no viewer creation,
+and preflight lease release; implementation is pending. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

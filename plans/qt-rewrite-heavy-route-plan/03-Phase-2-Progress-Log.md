@@ -44980,3 +44980,29 @@ packaged matrix ([official runner specifications](https://docs.github.com/en/act
 Batch427 is closed and Batch428 discovery is active. Gates 1/2 remain Partial,
 the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation.
+
+### F1044 accepted before implementation - 2026-10-17
+
+Batch428 accepts F1044 for catalog-navigation leave cancellation. After document
+resources are successfully preflight-resolved, a false result from
+`confirmCurrentPageCanLeave()` returns without restoring the Sidebar's previous
+selection. The current page remains the dirty source and no viewer is created;
+the preflight resource lease releases when the navigation function returns.
+The adjacent resource-resolution failure branch already restores the selection.
+The existing
+`DocumentCatalogNavigationParityTests::canceledRouteReleasesPreflightLeaseAndPreservesDirtySource`
+regression covers the dirty source, absence of a viewer, and absence of a
+remaining resource mount/lease, but not Sidebar selection. F1041 covers
+selection restoration on resource-resolution failure only.
+
+Before returning from the cancellation branch, restore the prior Sidebar
+selection. Extend the existing cancellation regression to capture
+`selectedKeys()` before requesting the other document and assert the selection
+is restored after cancel (also assert temporary requested-route selection after
+click if useful). Preserve the dirty source page, no viewer, no warnings, and
+preflight lease cleanup behavior. Build `ClassMngr` and
+`ClassMngrDocumentCatalogNavigationParityTests`, run only their matching Debug
+CTest and `git diff --check`; no full suite. F1044 is accepted pending
+implementation. No official Deferred entry changes. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.

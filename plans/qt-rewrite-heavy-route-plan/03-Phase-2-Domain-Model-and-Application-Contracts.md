@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1043 is complete at source commit `b5fd1823879734d5bda12e87c75d0c233fc50274`; Batch427 is closed and Batch428 discovery is active, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1043 is complete at source commit `b5fd1823879734d5bda12e87c75d0c233fc50274`; F1044 is accepted pending implementation in Batch428, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch — Batch428
 
-Batch428 discovery is active.
+- F1044 - Restore Sidebar selection after catalog-navigation cancellation; restore the prior selection before returning when the leave prompt is canceled.
 
 #### Deferred candidates
 

@@ -7048,3 +7048,15 @@ F629 now records that public hosted ARM64 macOS labels exist but publish only
 14 GB SSD, below the Phase 0 script's 18 GiB free-space preflight; this does
 not establish a suitable runner or complete matrix. Batch427 is closed and
 Batch428 is the continuation point.
+
+## F1044 accepted before implementation - 2026-10-17
+
+Batch428 accepted a visible catalog-navigation mismatch: after document
+resources preflight successfully, canceling the unsaved-changes prompt leaves
+Sidebar selection on the requested document while the dirty source page stays
+displayed. The adjacent resource-resolution failure already restores prior
+selection. F1041 covers that failure path, while the existing F393 cancellation
+test covers dirty-state preservation, no viewer creation, and preflight lease
+release but omits selection. F1044 is limited to restoring the prior Sidebar
+selection on the cancel return and asserting the pre-click selected keys in
+that test. Preserve prompt, page, viewer, warning, and lease outcomes.
