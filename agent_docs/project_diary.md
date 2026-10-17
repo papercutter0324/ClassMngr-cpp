@@ -7034,3 +7034,17 @@ source row and dirty state on all failures, so no user-visible repair is
 claimed. Change only the unavailable-service result to recoverable; preserve
 invalid-ID and technical mappings, message/code, and atomic persistence. Add a
 focused adapter regression. Batch427's other two lanes found no candidate.
+
+## F1043 complete and Deferred audit - 2026-10-17
+
+F1043 source/test commit `b5fd1823879734d5bda12e87c75d0c233fc50274` aligns
+Row Transfer's unavailable-service result metadata with the Roster Save
+contract: same `NotFound` and message, now recoverable. The focused adapter
+test exercises a closed database while `dataService()` remains available but
+closed. Independent verification passed the matching Debug CTest (1/1) and
+`git diff --check`; no full suite ran. Two independent audits of all 13
+official Deferred entries found none actionable, resolved, or superseded.
+F629 now records that public hosted ARM64 macOS labels exist but publish only
+14 GB SSD, below the Phase 0 script's 18 GiB free-space preflight; this does
+not establish a suitable runner or complete matrix. Batch427 is closed and
+Batch428 is the continuation point.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1043 is accepted pending implementation in active Batch427; F1042 is complete at source commit `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1043 is complete at source commit `b5fd1823879734d5bda12e87c75d0c233fc50274`; Batch427 is closed and Batch428 discovery is active, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch427
+#### Active batch — Batch428
 
-Batch427 is active with F1043 accepted pending implementation.
+Batch428 discovery is active.
 
 #### Deferred candidates
 
@@ -92,9 +92,10 @@ Batch427 is active with F1043 accepted pending implementation.
   a retained page, and F1014 shows class-information re-entry behavior; there
   is still no owner-specific matched packaged Release retained-byte evidence
   or safe PageManager eviction/recreation contract.
-- F629 - Deferred pending a suitable packaged macOS universal Phase 0 matrix
-  runner; none is exposed in this Windows x64 session. This does not establish
-  global runner unavailability; resume when a suitable runner is accessible.
+- F629 - Deferred: GitHub lists ARM64 macOS hosted runners such as `macos-15`
+  with 14 GB SSD, while Phase 0 requires Apple Silicon and at least 18 GiB free;
+  this does not establish a fitting runner or a passing 24-route matrix
+  ([official runner specifications](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)).
 - F707 - Deferred from Batch 178: the `sidebarClassNodeLessThan`/`timeOrder`
   helper chain has no observed app callsite; revisit when a live use is found.
 - F709 - Deferred from Batch 178 and rechecked before F738: raw SQL values

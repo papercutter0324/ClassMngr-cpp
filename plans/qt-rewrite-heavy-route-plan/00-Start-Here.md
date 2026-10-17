@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1042 is complete at source commit `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`; Batch426 closed after a discovery shortfall, and F1043 is accepted pending implementation in active Batch427. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: F1043 is complete at source commit `b5fd1823879734d5bda12e87c75d0c233fc50274`; Batch427 is closed and Batch428 discovery is active. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

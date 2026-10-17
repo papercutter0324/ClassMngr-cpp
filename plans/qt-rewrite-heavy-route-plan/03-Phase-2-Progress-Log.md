@@ -44947,3 +44947,36 @@ matching Debug CTest and `git diff --check`. No full suite. F1043 is accepted
 pending implementation in Batch427. No Deferred candidate is changed by this
 acceptance. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
 F1007 remains pending policy reconciliation.
+
+### F1043 complete; post-F1043 Deferred audits clear; Batch427 closed - 2026-10-17
+
+F1043 completes at source commit
+`b5fd1823879734d5bda12e87c75d0c233fc50274`. The row-transfer save adapter now
+returns `NotFound`, `The roster service is unavailable.`, and
+`recoverable=true` when the roster service is unavailable. Invalid-ID,
+technical-error, and exception paths remain nonrecoverable; the pair-save call
+is unchanged.
+
+An independent tester reports successful Ninja Debug builds of `ClassMngr`
+and `ClassMngrNextPlatformApplicationServicesRosterSavePortTests` (exit 0; no
+work remained after the Executor built the outputs), the matching focused
+Debug CTest passing 1/1, and `git diff --check` passing. No full suite was run.
+
+Two independent audits reviewed all 13 official Deferred entries. None became
+actionable, resolved, or superseded from F1043. F285 and Sidebar Add still need
+blank-draft policy; F579/F598 need elevated Administrator captures; F614/F618/
+F626 need measurement or ownership evidence; F707 has no live comparator
+callsite; F709 lacks a Page-level malformed-summary seam; Batch197 notes and
+schedule policy, Class Analytics cap/sparse-representation policy, and Speaking
+Evaluation row-limit policy remain unresolved. F1043's result-contract
+correction changed none of these.
+
+F629 remains Deferred, with one updated availability fact: GitHub's official
+runner specifications now list ARM64 macOS labels including `macos-15`, but
+their 14 GB SSD does not meet Phase 0's Apple Silicon plus at least 18 GiB free
+requirement and does not establish a fitting runner or a passing 24-route
+packaged matrix ([official runner specifications](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)).
+
+Batch427 is closed and Batch428 discovery is active. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.

@@ -3,26 +3,20 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1042 is complete at source commit
-  `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`; its acceptance and completion
-  are recorded in the Phase 2 progress log. A requested Sub Prep package folder
-  open failure now produces a warning result while preserving the created
-  package and its paths. The opener is request scoped and defaults to
-  `QDesktopServices::openUrl`; successful open and disabled auto-open preserve
-  their normal completion behavior. Print failure precedence and cancellation
-  remain intact. Executor and independent verification built `ClassMngr` and
-  both affected Debug targets and passed their exact CTests 2/2. The first
-  sandbox build attempts were blocked by MSBuild FileTracker; the approved
-  elevated build route passed. `git diff --check` passed; no full suite ran.
-  Two post-F1042 audits found all 13 official Deferred entries unchanged,
-  unresolved, and not newly actionable. Batch425 is closed. Three Batch426
-  read-only discovery lanes found no qualifying production candidate; their
-  findings are recorded in the Phase 2 progress log, and Batch426 is closed as
-  a discovery shortfall. Batch427 discovery is active. Gates 1/2 remain
-  Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
-  Open. Batch427 accepted F1043: align the unavailable-service Roster Row
-  Transfer result's `recoverable` flag with the established Roster Save
-  contract; implementation is pending.
+- Current checkpoint: F1043 is complete at source/test commit
+  `b5fd1823879734d5bda12e87c75d0c233fc50274`; its acceptance and completion
+  are recorded in the Phase 2 progress log. The Row Transfer adapter's
+  unavailable-service `NotFound` result is recoverable, consistent with Roster
+  Save; invalid-ID and technical mappings remain nonrecoverable. The closed-DB
+  regression confirms non-null `dataService()` remains closed and checks exact
+  code/message/recoverability. Independent verification built `ClassMngr` and
+  the focused Debug target, passed its exact CTest 1/1, and passed
+  `git diff --check`; no full suite ran. Two post-F1043 audits found all 13
+  official Deferred entries unresolved, with none newly actionable. F629's
+  hosted ARM64 macOS runner labels have 14 GB SSD versus the script's 18 GiB
+  free-space preflight, so the packaged 24-route matrix remains blocked.
+  Batch427 is closed and Batch428 discovery is active. Gates 1/2 remain Partial,
+  F1007 remains pending policy reconciliation, and Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

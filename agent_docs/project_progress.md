@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1042 complete; F1043 accepted)
+### Current checkpoint - 2026-10-17 (F1043 complete; Batch428 active)
 
 F1042 is complete at source commit
 `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
@@ -66,16 +66,21 @@ focused targets and passed their matching CTests 2/2; `git diff --check` also
 passed. The initial sandbox FileTracker denial required an approved elevated
 retry. No full suite ran.
 
-Two independent post-F1042 audits reviewed all 13 official Deferred entries.
-None became actionable, resolved, or superseded; the list remains unchanged.
-Batch425 is closed. Three Batch426 discovery lanes found no additional
-production candidate; the reviewed behaviors match their contracts/tests or
-are already deferred under F298. Batch426 is closed as a discovery shortfall
-and Batch427 is active. It accepted F1043 to align Roster Row Transfer's
-unavailable-service `NotFound` recoverability with the already established
-Roster Save contract. F1043 is pending implementation. Gates 1/2 remain
-Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
-reconciliation.
+F1043 is complete at source/test commit
+`b5fd1823879734d5bda12e87c75d0c233fc50274`. The Row Transfer adapter now marks
+the unavailable-service `NotFound` result recoverable, matching the established
+Roster Save result contract while preserving invalid-ID and technical failures.
+The independent Tester confirmed the closed-database/no-fallback regression;
+the `ClassMngr` and focused adapter test targets built, the matching Debug
+CTest passed 1/1, and `git diff --check` passed. No full suite ran.
+
+Two independent post-F1043 audits reviewed all 13 official Deferred entries.
+None became actionable, resolved, or superseded. F629's runner evidence was
+refined: GitHub lists ARM64 macOS hosted labels, but their published 14 GB SSD
+does not meet the Phase 0 script's 18 GiB free-space preflight, so the 24-route
+matrix remains blocked. Batch427 is closed; Batch428 discovery is active.
+Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
+pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
