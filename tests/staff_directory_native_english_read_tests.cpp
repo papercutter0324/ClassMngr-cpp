@@ -12,6 +12,7 @@
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
 #include <QApplication>
+#include <QPushButton>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QComboBox>
@@ -78,6 +79,18 @@ NavigationData nativeEnglishDirectoryRoute()
     };
 }
 
+QPushButton* buttonWithText(QWidget& page, const QString& text)
+{
+    for (QPushButton* button : page.findChildren<QPushButton*>())
+    {
+        if (button->text() == text)
+        {
+            return button;
+        }
+    }
+    return nullptr;
+}
+
 }
 
 class StaffDirectoryNativeEnglishReadTests final : public QObject
@@ -88,6 +101,7 @@ private slots:
     void cleanup();
     void nativePageMapsSixFieldsInRepositoryOrderWithTypedRowIds();
     void nativePositionEditorKeepsRawKnownAndUnknownValues();
+    void successfulReloadClearsDirtyAndPendingDeletedState();
     void unavailableSessionClearsSilently();
     void repositoryFailureWarnsAndRetainsDirtyState();
     void routeConfirmsBeforeReadAndShowsOnlyAfterSuccessfulLoad();
@@ -214,6 +228,54 @@ nativePositionEditorKeepsRawKnownAndUnknownValues()
     QVERIFY(!page.hasUnsavedChanges());
 }
 
+void StaffDirectoryNativeEnglishReadTests::
+successfulReloadClearsDirtyAndPendingDeletedState()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(seedTeachers(services));
+
+    StaffDirectoryPage page(
+        &services,
+        StaffDirectoryKind::NativeEnglishTeachers);
+    page.setSaveMode(SaveMode::Manual);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(
+        QStringLiteral("nativeEnglishTeachersTable"));
+    QVERIFY(table);
+    QCOMPARE(table->model()->rowCount(), 3);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    table->selectRow(0);
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(deleteButton);
+    deleteButton->click();
+    QCOMPARE(table->model()->rowCount(), 2);
+    QVERIFY(page.hasUnsavedChanges());
+
+    QVERIFY(page.loadDirectory());
+    QCOMPARE(table->model()->rowCount(), 3);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Coordinator"));
+    QVERIFY(!page.hasUnsavedChanges());
+
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Coordinator Updated")));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(saved.size(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    const auto persisted = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 3);
+}
+
 void StaffDirectoryNativeEnglishReadTests::unavailableSessionClearsSilently()
 {
     StaffDirectoryPage page(
@@ -254,23 +316,79 @@ repositoryFailureWarnsAndRetainsDirtyState()
     auto* table = page.findChild<QTableView*>(
         QStringLiteral("nativeEnglishTeachersTable"));
     QVERIFY(table);
-    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Edited locally"));
+    QCOMPARE(table->model()->rowCount(), 3);
+    const int editedId = staffDirectoryCellData(
+        *table, 0, 0, NativeEnglishIdRole).toInt();
+    const int deletedId = staffDirectoryCellData(
+        *table, 2, 0, NativeEnglishIdRole).toInt();
+    QVERIFY(editedId > 0);
+    QVERIFY(deletedId > 0);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Edited locally")));
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    table->selectRow(2);
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(deleteButton);
+    deleteButton->click();
+    QCOMPARE(table->model()->rowCount(), 2);
+    QList<int> retainedIds;
+    for (int row = 0; row < table->model()->rowCount(); ++row)
+    {
+        retainedIds.append(staffDirectoryCellData(
+            *table, row, 0, NativeEnglishIdRole).toInt());
+    }
     QVERIFY(page.hasUnsavedChanges());
 
     QSqlQuery query(services.databaseSession()->database());
-    QVERIFY2(query.exec(QStringLiteral("DROP TABLE native_english_teachers")),
+    QVERIFY2(query.exec(QStringLiteral(
+        "ALTER TABLE native_english_teachers RENAME TO unavailable_native_english_teachers")),
         qPrintable(query.lastError().text()));
 
-    FakeUserPromptService prompts;
-    DialogServices::setUserPromptServiceForTesting(&prompts);
     QVERIFY(!page.loadDirectory());
 
-    QCOMPARE(table->model()->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 2);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Edited locally"));
+    for (int row = 0; row < table->model()->rowCount(); ++row)
+    {
+        QCOMPARE(staffDirectoryCellData(
+            *table, row, 0, NativeEnglishIdRole).toInt(), retainedIds.at(row));
+    }
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
     QCOMPARE(prompts.messages.first().title, QStringLiteral("Load Directory"));
     QVERIFY(!prompts.messages.first().message.isEmpty());
+    QPushButton* saveButton = buttonWithText(page, QStringLiteral("Save Changes *"));
+    QVERIFY(saveButton);
+    QVERIFY(saveButton->isEnabled());
+
+    QVERIFY2(query.exec(QStringLiteral(
+        "ALTER TABLE unavailable_native_english_teachers RENAME TO native_english_teachers")),
+        qPrintable(query.lastError().text()));
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    saveButton->click();
+    QCOMPARE(saved.size(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+
+    const auto persisted = services.databaseSession()
+        ->nativeEnglishTeacherRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 2);
+    bool editPersisted = false;
+    for (const NativeEnglishTeacher& value : *persisted)
+    {
+        QVERIFY(value.id != deletedId);
+        if (value.id == editedId)
+        {
+            QCOMPARE(value.name, QStringLiteral("Edited locally"));
+            editPersisted = true;
+        }
+    }
+    QVERIFY(editPersisted);
 }
 
 void StaffDirectoryNativeEnglishReadTests::

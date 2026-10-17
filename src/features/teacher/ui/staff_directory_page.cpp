@@ -533,7 +533,7 @@ bool StaffDirectoryPage::loadDirectory()
 {
     auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
     m_loading = true;
-    model->setRows({});
+    QVector<StaffDirectoryRow> rows;
 
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
@@ -568,7 +568,6 @@ bool StaffDirectoryPage::loadDirectory()
         }
 
         const auto& teachers = loadedTeachers.value();
-        QVector<StaffDirectoryRow> rows;
         rows.reserve(static_cast<qsizetype>(teachers.size()));
         for (const auto& teacher : teachers)
         {
@@ -584,7 +583,6 @@ bool StaffDirectoryPage::loadDirectory()
             };
             rows.push_back(std::move(row));
         }
-        model->setRows(std::move(rows));
     }
     else
     {
@@ -616,7 +614,6 @@ bool StaffDirectoryPage::loadDirectory()
         }
 
         const auto& members = loadedMembers.value();
-        QVector<StaffDirectoryRow> rows;
         rows.reserve(static_cast<qsizetype>(members.size()));
         for (const auto& member : members)
         {
@@ -631,9 +628,9 @@ bool StaffDirectoryPage::loadDirectory()
             };
             rows.push_back(std::move(row));
         }
-        model->setRows(std::move(rows));
     }
 
+    model->setRows(std::move(rows));
     m_deletedGsTeamMemberIds.clear();
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;

@@ -286,23 +286,76 @@ void StaffDirectoryGsTeamReadTests::repositoryFailureWarnsAndRetainsDirtyState()
     QVERIFY(page.loadDirectory());
     auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
     QVERIFY(table);
-    setStaffDirectoryCellText(*table, 0, 0, QStringLiteral("Edited locally"));
+    QCOMPARE(table->model()->rowCount(), 4);
+    const int editedId = staffDirectoryCellData(*table, 0, 0, IdRole).toInt();
+    const int deletedId = staffDirectoryCellData(*table, 3, 0, IdRole).toInt();
+    QVERIFY(editedId > 0);
+    QVERIFY(deletedId > 0);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Edited locally")));
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    table->selectRow(3);
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(deleteButton);
+    deleteButton->click();
+    QCOMPARE(table->model()->rowCount(), 3);
+    QList<int> retainedIds;
+    for (int row = 0; row < table->model()->rowCount(); ++row)
+    {
+        retainedIds.append(staffDirectoryCellData(*table, row, 0, IdRole).toInt());
+    }
     QVERIFY(page.hasUnsavedChanges());
 
     QSqlQuery query(services.databaseSession()->database());
-    QVERIFY2(query.exec(QStringLiteral("DROP TABLE gs_team")),
+    QVERIFY2(query.exec(QStringLiteral(
+        "ALTER TABLE gs_team RENAME TO unavailable_gs_team")),
         qPrintable(query.lastError().text()));
 
-    FakeUserPromptService prompts;
-    DialogServices::setUserPromptServiceForTesting(&prompts);
     QVERIFY(!page.loadDirectory());
 
-    QCOMPARE(table->model()->rowCount(), 0);
+    QCOMPARE(table->model()->rowCount(), 3);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0), QStringLiteral("Edited locally"));
+    for (int row = 0; row < table->model()->rowCount(); ++row)
+    {
+        QCOMPARE(staffDirectoryCellData(*table, row, 0, IdRole).toInt(),
+            retainedIds.at(row));
+    }
     QVERIFY(page.hasUnsavedChanges());
     QCOMPARE(prompts.messages.size(), 1);
     QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
     QCOMPARE(prompts.messages.first().title, QStringLiteral("Load Directory"));
     QVERIFY(!prompts.messages.first().message.isEmpty());
+    QPushButton* saveButton = buttonWithText(page, QStringLiteral("Save Changes *"));
+    QVERIFY(saveButton);
+    QVERIFY(saveButton->isEnabled());
+
+    QVERIFY2(query.exec(QStringLiteral(
+        "ALTER TABLE unavailable_gs_team RENAME TO gs_team")),
+        qPrintable(query.lastError().text()));
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+    saveButton->click();
+    QCOMPARE(saved.size(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+
+    const auto persisted = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 3);
+    bool editPersisted = false;
+    for (const GsTeamMember& value : *persisted)
+    {
+        QVERIFY(value.id != deletedId);
+        if (value.id == editedId)
+        {
+            QCOMPARE(value.name, QStringLiteral("Edited locally"));
+            editPersisted = true;
+        }
+    }
+    QVERIFY(editPersisted);
 }
 
 void StaffDirectoryGsTeamReadTests::
