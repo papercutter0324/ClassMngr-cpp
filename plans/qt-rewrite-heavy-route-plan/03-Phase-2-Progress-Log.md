@@ -44754,3 +44754,40 @@ No official Deferred trigger or F1039 behavior changed; all 13 official
 Deferred entries remain unchanged. No other slices were found. Batch423 is
 closed and Batch424 discovery is active. Gates 1/2 remain Partial, the Phase 2
 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+### F1040 accepted before implementation - 2026-10-17
+
+Batch424 accepts F1040 for `StaffDirectoryPage::loadDirectory()` for both
+Native English and GS Team. The current function clears the displayed model
+before querying; a technical/recoverable read failure therefore returns false
+and shows the existing warning but loses the last displayed rows while leaving
+dirty state set.
+
+Stage loaded rows and apply them only after a successful read. On technical
+read failure, preserve displayed rows and model IDs, local edits, pending
+deletions, and the dirty flag; retain the existing warning and false return.
+In Manual save mode, the Save button remains enabled while the page is dirty.
+Preserve current NotFound/unavailable-session behavior, which clears database
+state silently and returns false. A successful reload applies the staged rows
+and only then clears dirty and pending-deletion state.
+
+Extend the existing regressions in
+`tests/staff_directory_native_english_read_tests.cpp` and
+`tests/staff_directory_gs_team_read_tests.cpp`. For each directory kind,
+begin with multiple persisted rows, edit one, and queue deletion of another.
+Temporarily rename the relevant directory table to induce a reversible read
+failure, then assert false return, retained edited value, model row count and
+IDs, dirty state, one existing Load Directory warning, and an enabled Manual
+Save button. Restore the table and invoke Manual Save; assert the edit is
+persisted and the queued deletion is applied, proving the private deletion
+queue survived the failed reload. Keep successful-reload assertions for
+replacement rows and cleared dirty/deleted state, and preserve each
+`unavailableSessionClearsSilently` NotFound regression.
+
+The existing targets are `ClassMngrStaffDirectoryNativeEnglishReadTests` and
+`ClassMngrStaffDirectoryGsTeamReadTests`, confirmed from the `NAME` values and
+target naming in `classmngr_add_qt_test`. Build `ClassMngr` and these two test
+targets, then run only their matching CTests. No full suite or new CMake target.
+F1040 does not change any of the 13 official Deferred entries. It is accepted
+in Batch424 and pending implementation; Gates 1/2 remain Partial, the Phase 2
+exit gate remains Open, and F1007 remains pending policy reconciliation.
