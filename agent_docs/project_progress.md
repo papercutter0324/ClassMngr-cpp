@@ -53,27 +53,22 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1027 complete; F1028 accepted)
+### Current checkpoint - 2026-10-17 (F1041 complete; F1042 accepted)
 
-F1027 is complete at source commit `95fd9e97409ecc78318278016bd2285cdc28ae70`.
-Normal New Teacher Profile creation restores an existing `.tps` after a
-reachable SQLite open/schema failure, leaves no workspace active, and reports
-failure; rollback failure retains and discloses the recovery copy. Successful
-replacement behavior and Initial Setup remain unchanged. The independent
-Tester built the focused Debug target and `ClassMngrFileControllerWorkspaceLifecycleTests`
-passed 1/1; no full suite ran.
+F1041 is complete at source commit
+`953d9a913368a7718d1fd43242f8c81f11365c58`. If document resource resolution
+fails before viewer loading, Sidebar selection is restored to the still
+displayed document. The focused Debug build of `ClassMngr` and
+`ClassMngrDocumentCatalogNavigationParityTests` passed; its matching CTest
+passed 1/1, and an independent tester repeated the focused verification. No
+full suite ran.
 
-Two independent post-F1027 audits found none of the exact 13 official Deferred
-entries actionable, resolved, or superseded. Batch398 rejected the Speaking
-Evaluation import-message finding because F217 explicitly preserves that
-no-change behavior. Batch399 found no eligible gap. Batch400 rejected the
-calendar term-boundary coverage as test-only and the inconsistent persisted
-calendar example as unsupported malformed settings. It accepted F1028 after
-confirming Campus Dashboard saves can persist the reserved `Default` identity
-that repository list/read paths omit. F1028 will reject reserved Create and
-Update snapshots before storage changes, preserving ordinary create/update and
-F951 collision behavior. Gates 1/2 remain Partial, the Phase 2 exit gate
-remains Open, and F1007 remains pending policy reconciliation.
+Two independent post-F1041 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. F1042 is accepted and pending
+implementation in active Batch425: surface the existing Sub Prep package
+folder-open failure as a warning while preserving the successfully created
+package and its paths. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

@@ -6964,3 +6964,26 @@ macOS universal Phase 0 runner required by F629 is still not exposed. Other
 evidence, seam, and policy triggers remain unchanged. Batch424 is closed and
 Batch425 discovery is active. Gates 1/2 remain Partial, F1007 remains pending
 policy reconciliation, and Phase 2 remains open.
+
+## F1041 closeout, Deferred audit, and F1042 acceptance - 2026-10-17
+
+F1041 closes the Sidebar selection mismatch when catalog document resource
+resolution fails before viewer loading. The stable-key selection is restored
+to the document still displayed. Its same-manager regression keeps a valid PDF
+lease active while attempting a missing resource, verifies the selected key and
+loaded document remain aligned, then releases the original viewer and confirms
+the pack unmounts. The initial fixture failed earlier at pack acquisition; it
+was replaced with a fixture that reaches the intended missing-content branch.
+The existing F393 missing-content contract remains unchanged. Focused Debug
+build and CTest passed 1/1; independent verification repeated the check. No
+full suite ran. Source commit: `953d9a913368a7718d1fd43242f8c81f11365c58`.
+
+Two independent post-F1041 audits reviewed all 13 official Phase 2 Deferred
+entries and found none newly actionable, resolved, or superseded. F1042 is
+accepted for Batch425: report a failed requested folder open after successful
+Sub Prep package generation, while preserving the generated package, path
+fields, and existing print failure/cancel behavior. The implementation will
+use a request-scoped opener seam with the desktop opener as its default and
+focused deterministic service and page regressions. Batch425 remains active;
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+Phase 2 remains open.

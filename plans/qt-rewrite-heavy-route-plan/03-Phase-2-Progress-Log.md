@@ -44810,3 +44810,70 @@ Batch424 had one accepted slice, F1040. Its other independent lanes, covering
 legacy adapters and application contracts, found no eligible slice. Batch424
 is closed and Batch425 discovery is active. Gates 1/2 remain Partial, the
 Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+### F1041 accepted before implementation - 2026-10-17
+
+Batch425 accepted F1041: when opening a catalog document whose resource cannot
+be resolved before the viewer load path, restore Sidebar selection to the
+document still displayed. The existing deterministic
+`DocumentCatalogNavigationParityTests::missingResourceReturnsBeforePromptAndPreservesDirtySource`
+F393 case remains unchanged: it verifies no warning or dirty-source prompt,
+preserves the dirty source page, and asserts the documents resource pack is
+unmounted. A separate same-manager case uses a fixture containing
+`documents.json` and valid PDF A only. With A open and selected, attempting
+missing-resource B fails before viewer load; A remains loaded,
+`selectedKeys()` returns to A, and no warning appears. The failure releases
+B's temporary lease; A's original viewer lease keeps the pack mounted until A
+is released, after which the pack unmounts. Existing app-less and
+resource-ownership tests remain unchanged. PDF parse/load failures after
+successful resource resolution and unrelated cancellation/error paths remain
+excluded.
+
+F1041 completes at source commit
+`953d9a913368a7718d1fd43242f8c81f11365c58` (`Phase2 - Restore sidebar on
+document resource failure`).
+
+The focused Debug build of `ClassMngr` and
+`ClassMngrDocumentCatalogNavigationParityTests` passed, and its matching CTest
+passed 1/1. An independent tester repeated the focused Ninja build (no work)
+and CTest, which passed 1/1. No full suite was run. All 13 official Deferred
+entries remain unchanged. Batch425 discovery remains active; Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.
+
+### Post-F1041 Deferred audits clear; F1042 accepted before implementation - 2026-10-17
+
+Two independent post-F1041 audits reviewed exactly the 13 official Deferred
+entries. None became actionable, resolved, or superseded. F579/F598 still need
+an elevated Administrator capture; F629 needs a suitable packaged macOS
+universal Phase 0 runner; F614/F618/F626 still need their recorded
+measurements or ownership evidence; F285 and Sidebar Add still await blank-draft
+policy; F707 lacks a live callsite; F709 lacks a Calendar summary injection
+seam. Batch197, Class Analytics allocation policy, and Speaking Evaluation
+row-limit policy remain unresolved. All 13 Deferred entries are preserved.
+
+Accept F1042 in Batch425: if Sub Prep package creation succeeds and the user
+requested opening the folder, but the folder opener returns false, surface the
+existing message
+`Sub Prep package created, but the folder could not be opened.` as a UI warning
+rather than silently treating it as Completed.
+Preserve successful package artifacts: `folderCreated=true`, nonempty
+`outputDirectory`, all `documentPaths`, and generated files remain accessible;
+the warning includes the created package path via the existing page branch.
+The service reports the requested folder-open failure in its result, with an
+optional request-scoped folder opener defaulting to
+`QDesktopServices::openUrl`; use no global mutable test state. Open success
+stays Completed without a failure warning, and when auto-open is disabled the
+opener is not called. Preserve current print failure/cancel and package-
+generation behavior, including any created-folder/path fields.
+
+Add deterministic service tests for opener false/true and auto-open disabled,
+asserting result status/message/artifact fields and callback calls. Add a
+deterministic page test that drives folder-open false and verifies a warning
+includes the message and created output path. Build `ClassMngr`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests`; run only
+the two matching CTests and `git diff --check`. No full suite. F1042 is accepted
+but not implemented; F1041 remains complete at source commit
+`953d9a913368a7718d1fd43242f8c81f11365c58`. Batch425 remains active. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.

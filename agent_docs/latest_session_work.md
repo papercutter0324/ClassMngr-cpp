@@ -3,23 +3,19 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1039 is complete at source commit `2a66e3f2`; its
-  acceptance record is `e5315ebc`. The language QAction path stages locale
-  loading, persists before installing the prepared translator, and commits
-  action/typed state only after success. Load/install failures preserve the
-  previous translator, selection, font, and translated UI; failed installation
-  restores the prior raw setting and reports one diagnostic, including any
-  rollback error. Programmatic `OptionState::set()` behavior remains unchanged.
-  `ClassMngr` and the three existing focused targets built successfully, and
-  their CTests passed 3/3 in both executor and independent verification. No
-  full suite ran. A post-commit audit found all 13 official Deferred entries
-  unchanged. Batch422's three scans and Batch423's two scans found no eligible
-  slice. B422's apparent adapter mismatch conflicts with explicit tests,
-  preference actions already restore state, and use cases preserve accepted
-  behavior. B423's read/query results and Qt-free boundaries are covered by
-  explicit tests and CMake checks. Both are closed as discovery shortfalls;
-  Batch424 discovery is active. Gates 1/2 remain Partial, F1007 remains pending
-  policy reconciliation, and Phase 2 remains Open.
+- Current checkpoint: F1041 is complete at source commit
+  `953d9a913368a7718d1fd43242f8c81f11365c58`; its acceptance and verification
+  are recorded in the Phase 2 progress log. Failed document resource resolution
+  restores Sidebar selection to the still displayed document before viewer
+  loading. The focused `ClassMngr` and
+  `ClassMngrDocumentCatalogNavigationParityTests` Debug build passed and its
+  CTest passed 1/1; independent verification repeated the focused build and
+  CTest. No full suite ran. Two post-F1041 audits found all 13 official
+  Deferred entries unchanged and unresolved. F1042 is accepted, pending
+  implementation in active Batch425: report a failed requested Sub Prep folder
+  open while preserving the generated package artifacts and paths. Gates 1/2
+  remain Partial, F1007 remains pending policy reconciliation, and Phase 2
+  remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

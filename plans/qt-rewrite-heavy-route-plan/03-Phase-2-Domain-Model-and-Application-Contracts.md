@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1040 is complete at source commit `6035349b`; Batch425 discovery is active; all 13 official Deferred entries remain unchanged, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1041 is complete at source commit `953d9a913368a7718d1fd43242f8c81f11365c58`; F1042 is accepted and pending implementation in active Batch425; the post-F1041 audits leave all 13 official Deferred entries unchanged, Gates 1/2 Partial, F1007 pending policy reconciliation, and the Phase 2 exit gate Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch — Batch425
 
-Discovery is in progress; no candidate has been accepted yet.
+F1041 is complete at source commit `953d9a913368a7718d1fd43242f8c81f11365c58`. F1042 is accepted and pending implementation; Batch425 remains active.
 
 #### Deferred candidates
 
