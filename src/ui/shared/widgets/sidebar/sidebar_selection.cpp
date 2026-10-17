@@ -147,11 +147,11 @@ void Sidebar::onItemClicked(
         item == m_nodes.value("campus_info")
         )
     {
+        const QStringList itemKeys = getItemKeys(item);
         const bool previousSelectionInsideGroup =
-            itemContainsCurrentSelection(
-                item,
-                m_previousCurrentItem
-                );
+            !itemKeys.isEmpty()
+            && m_previousSelectionKeys.size() >= itemKeys.size()
+            && m_previousSelectionKeys.mid(0, itemKeys.size()) == itemKeys;
 
         const bool expanded =
             !item->isExpanded();

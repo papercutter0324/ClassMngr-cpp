@@ -36,6 +36,8 @@ namespace
 {
 
 constexpr auto RequestedDocumentId = "document_guides_lesson_planning";
+constexpr auto MissingResourceDocumentId =
+    "document_guides_powerpoint_shortcuts";
 constexpr auto PersistedTeacherNotes = "Persisted teacher profile notes";
 constexpr auto UnsavedTeacherNotes =
     "Exact unsaved document route notes\nPreserve every character.";
@@ -43,6 +45,8 @@ constexpr auto ExpectedDocumentReference =
     "resource://documents/Guides/DYB Lesson Planning Guide.pdf";
 constexpr auto ExpectedDocumentRelativePath =
     "Guides/DYB Lesson Planning Guide.pdf";
+constexpr auto MissingDocumentRelativePath =
+    "Guides/PowerPoint Keyboard Shortcuts.pdf";
 
 using DocumentCatalogProjection =
     ClassMngr::Next::Application::DocumentCatalogProjection;
@@ -361,6 +365,11 @@ QString missingDocumentResourceBaselineDirectory()
     return QStringLiteral(CLASSMNGR_TEST_DOCUMENT_MISSING_RESOURCE_PACK_DIR);
 }
 
+QString singleDocumentResourceBaselineDirectory()
+{
+    return QStringLiteral(CLASSMNGR_TEST_DOCUMENT_SINGLE_A_BASELINE_PACK_DIR);
+}
+
 }
 
 class DocumentCatalogNavigationParityTests final : public QObject
@@ -371,6 +380,7 @@ private slots:
     void canceledRouteReleasesPreflightLeaseAndPreservesDirtySource();
     void discardedRouteLoadsRequestedPdfAndCapabilities();
     void missingResourceReturnsBeforePromptAndPreservesDirtySource();
+    void missingResourceRestoresSelectedDocumentAndPreservesViewer();
 };
 
 void DocumentCatalogNavigationParityTests::
@@ -618,6 +628,136 @@ missingResourceReturnsBeforePromptAndPreservesDirtySource()
     verifyDirtyTeacherUnchanged(pages, *source);
     QVERIFY(!pages.isPageInstantiated(PageType::PdfViewer));
     QVERIFY(pages.pdfViewerPage() == nullptr);
+    QVERIFY(!resources.isMounted(QStringLiteral("documents")));
+    QVERIFY(resources.activeRoot(QStringLiteral("documents")).isEmpty());
+}
+
+void DocumentCatalogNavigationParityTests::
+missingResourceRestoresSelectedDocumentAndPreservesViewer()
+{
+    QTemporaryDir databaseDirectory;
+    QVERIFY(databaseDirectory.isValid());
+    QTemporaryDir resourceStorage;
+    QVERIFY(resourceStorage.isValid());
+    ResourcePackManager resources(
+        resourceStorage.filePath(QStringLiteral("storage")),
+        singleDocumentResourceBaselineDirectory()
+        );
+    QVERIFY(!resources.isMounted(QStringLiteral("documents")));
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(databaseDirectory)));
+
+    QString error;
+    PageManager pages;
+    const auto source = prepareDirtyTeacherPage(services, pages, &error);
+    QVERIFY2(source.has_value(), qPrintable(error));
+
+    Sidebar sidebar;
+    const auto projection = projectSidebarDocuments(services, sidebar, &error);
+    QVERIFY2(projection.has_value(), qPrintable(error));
+    const auto requestedDocument = std::find_if(
+        projection->documents().cbegin(),
+        projection->documents().cend(),
+        [](const auto& document)
+        {
+            return document.id.value() == RequestedDocumentId;
+        }
+        );
+    QVERIFY(requestedDocument != projection->documents().cend());
+    const auto missingDocument = std::find_if(
+        projection->documents().cbegin(),
+        projection->documents().cend(),
+        [](const auto& document)
+        {
+            return document.id.value() == MissingResourceDocumentId;
+        }
+        );
+    QVERIFY(missingDocument != projection->documents().cend());
+
+    NavigationController navigation(
+        &services,
+        &sidebar,
+        &pages,
+        resources
+        );
+
+    FakeUserPromptService prompts;
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Discard
+        );
+    ScopedPromptService promptOverride(prompts);
+
+    const auto requestedRoute = clickDocumentLeaf(
+        sidebar,
+        QString::fromLatin1(RequestedDocumentId),
+        &error
+        );
+    QVERIFY2(requestedRoute.has_value(), qPrintable(error));
+    verifyDocumentRoute(
+        *requestedRoute,
+        QString::fromLatin1(RequestedDocumentId)
+        );
+    navigation.handleNavigation(*requestedRoute);
+
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    QVERIFY(resources.isMounted(QStringLiteral("documents")));
+    const QString requestedResourceRoot =
+        resources.activeRoot(QStringLiteral("documents"));
+    QVERIFY(!requestedResourceRoot.isEmpty());
+    const QString expectedRequestedPath = QDir(requestedResourceRoot).filePath(
+        QString::fromLatin1(ExpectedDocumentRelativePath)
+        );
+    QVERIFY(QFile::exists(expectedRequestedPath));
+    const QString expectedMissingPath = QDir(requestedResourceRoot).filePath(
+        QString::fromLatin1(MissingDocumentRelativePath)
+        );
+    QVERIFY(!QFile::exists(expectedMissingPath));
+
+    QTRY_VERIFY(pages.isCurrentPage(PageType::PdfViewer));
+    PdfViewerPage* const viewer = pages.pdfViewerPage();
+    QVERIFY(viewer);
+    QTRY_VERIFY(viewer->hasLoadedDocument());
+    QTRY_VERIFY(
+        viewer->documentContentSnapshot().phase()
+            == ClassMngr::Next::Application::DocumentContentPhase::Ready
+        );
+    QCOMPARE(viewer->currentFilePath(), expectedRequestedPath);
+    QCOMPARE(sidebar.selectedKeys(), requestedRoute->keys);
+
+    const auto missingRoute = clickDocumentLeaf(
+        sidebar,
+        QString::fromLatin1(MissingResourceDocumentId),
+        &error
+        );
+    QVERIFY2(missingRoute.has_value(), qPrintable(error));
+    verifyDocumentRoute(
+        *missingRoute,
+        QString::fromLatin1(MissingResourceDocumentId)
+        );
+    QCOMPARE(sidebar.selectedKeys(), missingRoute->keys);
+
+    QVector<QString> warnings;
+    {
+        ScopedWarningCapture warningCapture(warnings);
+        navigation.handleNavigation(*missingRoute);
+    }
+
+    QCOMPARE(prompts.unsavedChangesConfirmations.size(), 1);
+    verifyNoOtherPrompts(prompts);
+    QVERIFY2(warnings.isEmpty(),
+        qPrintable(warnings.isEmpty() ? QString() : warnings.constFirst()));
+    QCOMPARE(sidebar.selectedKeys(), requestedRoute->keys);
+    QVERIFY(pages.isCurrentPage(PageType::PdfViewer));
+    QCOMPARE(pages.pdfViewerPage(), viewer);
+    QVERIFY(viewer->hasLoadedDocument());
+    QCOMPARE(viewer->currentFilePath(), expectedRequestedPath);
+    QVERIFY(resources.isMounted(QStringLiteral("documents")));
+    QCOMPARE(
+        resources.activeRoot(QStringLiteral("documents")),
+        requestedResourceRoot
+        );
+
+    viewer->releaseDocument();
     QVERIFY(!resources.isMounted(QStringLiteral("documents")));
     QVERIFY(resources.activeRoot(QStringLiteral("documents")).isEmpty());
 }

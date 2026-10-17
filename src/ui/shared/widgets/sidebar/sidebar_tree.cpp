@@ -99,13 +99,12 @@ QList<TreeNodeSpec> documentChildren(
 
 void Sidebar::buildTree()
 {
-    m_previousCurrentItem =
-        nullptr;
-
-    m_tree->clear();
+    m_previousSelectionKeys.clear();
+    m_previousSelectionTeacherId = -1;
 
     m_nodes.clear();
     m_teacherItems.clear();
+    m_tree->clear();
 
 
 
@@ -277,6 +276,33 @@ QStringList Sidebar::selectedKeys() const
     return getItemKeys(
         m_tree ? m_tree->currentItem() : nullptr
         );
+}
+
+void Sidebar::restorePreviousSelection()
+{
+    if (!m_tree)
+    {
+        return;
+    }
+
+    const QStringList previousKeys = m_previousSelectionKeys;
+    const qint64 previousTeacherId = m_previousSelectionTeacherId;
+
+    m_tree->clearSelection();
+    if (previousKeys.isEmpty())
+    {
+        m_tree->setCurrentItem(nullptr);
+        return;
+    }
+
+    selectByKeys(previousKeys, previousTeacherId);
+    if (selectedKeys() != previousKeys
+        || (previousTeacherId > 0
+            && getSelectedTeacherId() != previousTeacherId))
+    {
+        m_tree->clearSelection();
+        m_tree->setCurrentItem(nullptr);
+    }
 }
 
 void Sidebar::selectByKeys(

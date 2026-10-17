@@ -11,6 +11,7 @@
 
 class QTreeWidget;
 class QResizeEvent;
+class QEvent;
 class SidebarMarqueeDelegate;
 struct TreeNodeSpec;
 
@@ -80,6 +81,10 @@ public:
 
     QStringList selectedKeys() const;
 
+    // Restores the keyed selection captured immediately before the most
+    // recent Sidebar item click. Missing paths leave the tree unselected.
+    void restorePreviousSelection();
+
     void selectByKeys(
         const QStringList& keys,
         qint64 teacherId = -1
@@ -133,6 +138,11 @@ protected:
 
     void resizeEvent(
         QResizeEvent* event
+        ) override;
+
+    bool eventFilter(
+        QObject* watched,
+        QEvent* event
         ) override;
 
 
@@ -233,7 +243,8 @@ private:
 
     bool m_databaseSectionsVisible = true;
 
-    QTreeWidgetItem* m_previousCurrentItem = nullptr;
+    QStringList m_previousSelectionKeys;
+    qint64 m_previousSelectionTeacherId = -1;
 
 
 

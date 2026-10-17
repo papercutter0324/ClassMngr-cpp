@@ -479,6 +479,32 @@ qt_add_binary_resources(
         "${document_catalog_navigation_missing_pack_dir}/documents.rcc"
 )
 
+set(document_catalog_navigation_single_a_pack_dir
+    "${CMAKE_CURRENT_BINARY_DIR}/document-catalog-navigation-single-a-resource-pack"
+)
+file(MAKE_DIRECTORY "${document_catalog_navigation_single_a_pack_dir}")
+set(document_catalog_navigation_single_a_pack_qrc
+    "${CMAKE_CURRENT_BINARY_DIR}/document-catalog-navigation-single-a-resource-pack.qrc"
+)
+file(TO_CMAKE_PATH
+    "${PROJECT_SOURCE_DIR}/resources/assets/documents/Guides/DYB Lesson Planning Guide.pdf"
+    document_catalog_navigation_requested_pdf_path
+)
+file(WRITE "${document_catalog_navigation_single_a_pack_qrc}"
+    "<RCC version=\"1.0\">\n"
+    "  <qresource prefix=\"/resource-packs/documents\">\n"
+    "    <file alias=\"documents.json\">${document_catalog_navigation_catalog_path}</file>\n"
+    "    <file alias=\"Guides/DYB Lesson Planning Guide.pdf\">${document_catalog_navigation_requested_pdf_path}</file>\n"
+    "  </qresource>\n"
+    "</RCC>\n"
+)
+qt_add_binary_resources(
+    ClassMngrDocumentCatalogNavigationSingleAResourcePack
+    "${document_catalog_navigation_single_a_pack_qrc}"
+    DESTINATION
+        "${document_catalog_navigation_single_a_pack_dir}/documents.rcc"
+)
+
 classmngr_add_qt_test(
     NAME DocumentCatalogNavigationParity
     SOURCES
@@ -489,12 +515,14 @@ classmngr_add_qt_test(
     DEPENDENCIES
         ClassMngrdocumentsResourcePack
         ClassMngrDocumentCatalogNavigationMissingResourcePack
+        ClassMngrDocumentCatalogNavigationSingleAResourcePack
     OFFSCREEN
 )
 target_compile_definitions(ClassMngrDocumentCatalogNavigationParityTests
     PRIVATE
         CLASSMNGR_TEST_DOCUMENT_BASELINE_PACK_DIR="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}"
         CLASSMNGR_TEST_DOCUMENT_MISSING_RESOURCE_PACK_DIR="${document_catalog_navigation_missing_pack_dir}"
+        CLASSMNGR_TEST_DOCUMENT_SINGLE_A_BASELINE_PACK_DIR="${document_catalog_navigation_single_a_pack_dir}"
 )
 
 qt_add_resources(

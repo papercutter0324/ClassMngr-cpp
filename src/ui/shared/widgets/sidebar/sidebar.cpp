@@ -1,5 +1,7 @@
 #include "sidebar_p.h"
 
+#include <QEvent>
+
 Sidebar::Sidebar(QWidget *parent)
     : QWidget(parent)
 {
@@ -69,6 +71,23 @@ void Sidebar::resizeEvent(
     {
         m_marqueeDelegate->resetMarquee();
     }
+}
+
+bool Sidebar::eventFilter(
+    QObject* watched,
+    QEvent* event
+    )
+{
+    if (m_tree
+        && watched == m_tree->viewport()
+        && event
+        && event->type() == QEvent::MouseButtonPress)
+    {
+        m_previousSelectionKeys = selectedKeys();
+        m_previousSelectionTeacherId = getSelectedTeacherId();
+    }
+
+    return QWidget::eventFilter(watched, event);
 }
 
 
@@ -141,6 +160,8 @@ void Sidebar::setupUi()
         m_marqueeDelegate
         );
 
+    m_tree->viewport()->installEventFilter(this);
+
     layout->addWidget(m_tree);
 
     layout->setContentsMargins(
@@ -164,20 +185,6 @@ void Sidebar::setupSignals()
         &QTreeWidget::itemClicked,
         this,
         &Sidebar::onItemClicked
-        );
-
-    connect(
-        m_tree,
-        &QTreeWidget::currentItemChanged,
-        this,
-        [this](
-            QTreeWidgetItem*,
-            QTreeWidgetItem* previous
-            )
-        {
-            m_previousCurrentItem =
-                previous;
-        }
         );
 
     m_tree->setContextMenuPolicy(

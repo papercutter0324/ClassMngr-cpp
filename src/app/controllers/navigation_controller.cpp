@@ -452,6 +452,10 @@ void NavigationController::handleDocument(
         );
     if (!resources)
     {
+        if (m_sidebar)
+        {
+            m_sidebar->restorePreviousSelection();
+        }
         return;
     }
 
