@@ -44920,3 +44920,30 @@ Two post-F1042 Deferred audits still find all 13 official entries unchanged
 and unresolved. Batch426 is closed without an accepted slice. Batch427
 discovery is active. Gates 1/2 remain Partial, the Phase 2 exit gate remains
 Open, and F1007 remains pending policy reconciliation.
+
+### F1043 accepted before implementation - 2026-10-17
+
+Batch427's schedule/roster discovery lane found F1043; the other two lanes
+found no eligible slice. In
+`src/next/platform/application_services_roster_row_transfer_save_port.h`, an
+unavailable ApplicationServices/database/rosterService returns `NotFound` with
+`The roster service is unavailable.` but sets `recoverable=false`. Single
+Roster Save returns the same code and message with `recoverable=true` under
+F1038 (`586a03f3`), which explicitly excluded the separate row-transfer save
+contract. `OperationError::recoverable` is a typed result field propagated
+unchanged by the row-transfer use case. The current UI does not inspect the
+field and preserves source dirty state on all failures, so this is a contract-
+consistency fix, not a demonstrated UI behavior defect.
+
+Change only this unavailable-service result to `recoverable=true`. Preserve
+its code and message, invalid-ID behavior, technical errors and exceptions,
+success behavior, and atomic save behavior. Add a deterministic adapter test
+for a closed database with non-null ApplicationServices and an existing but
+closed `dataService()` session, matching F1038's no-fallback case; assert exact
+`NotFound`, the exact message, and `recoverable=true`. Existing transfer tests
+continue to cover atomic rollback and UI state. Build `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`; run only its
+matching Debug CTest and `git diff --check`. No full suite. F1043 is accepted
+pending implementation in Batch427. No Deferred candidate is changed by this
+acceptance. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
+F1007 remains pending policy reconciliation.

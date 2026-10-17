@@ -20,7 +20,9 @@
   findings are recorded in the Phase 2 progress log, and Batch426 is closed as
   a discovery shortfall. Batch427 discovery is active. Gates 1/2 remain
   Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
-  Open.
+  Open. Batch427 accepted F1043: align the unavailable-service Roster Row
+  Transfer result's `recoverable` flag with the established Roster Save
+  contract; implementation is pending.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

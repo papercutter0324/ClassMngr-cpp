@@ -7021,3 +7021,16 @@ post-F1042 audit still found all 13 official Deferred entries unresolved and
 unchanged. Batch426 is closed as a discovery shortfall; Batch427 is the
 continuation point. Gates 1/2 remain Partial, F1007 remains pending policy
 reconciliation, and Phase 2 remains open.
+
+## F1043 accepted before implementation - 2026-10-17
+
+Batch427 accepted F1043 as a typed result-contract correction. The Row
+Transfer save adapter returns `NotFound` and the same unavailable-service
+message as Roster Save, but currently marks the result nonrecoverable. F1038
+established `recoverable=true` for this unavailable-session condition and
+explicitly excluded the separate Row Transfer contract. The use case passes
+the result through; the current UI does not read the flag and preserves the
+source row and dirty state on all failures, so no user-visible repair is
+claimed. Change only the unavailable-service result to recoverable; preserve
+invalid-ID and technical mappings, message/code, and atomic persistence. Add a
+focused adapter regression. Batch427's other two lanes found no candidate.

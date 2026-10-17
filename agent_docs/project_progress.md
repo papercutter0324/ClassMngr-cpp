@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1042 complete; Batch427 active)
+### Current checkpoint - 2026-10-17 (F1042 complete; F1043 accepted)
 
 F1042 is complete at source commit
 `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
@@ -71,8 +71,11 @@ None became actionable, resolved, or superseded; the list remains unchanged.
 Batch425 is closed. Three Batch426 discovery lanes found no additional
 production candidate; the reviewed behaviors match their contracts/tests or
 are already deferred under F298. Batch426 is closed as a discovery shortfall
-and Batch427 is active. Gates 1/2 remain Partial, the Phase 2 exit gate
-remains Open, and F1007 remains pending policy reconciliation.
+and Batch427 is active. It accepted F1043 to align Roster Row Transfer's
+unavailable-service `NotFound` recoverability with the already established
+Roster Save contract. F1043 is pending implementation. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
