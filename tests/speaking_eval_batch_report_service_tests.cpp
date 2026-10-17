@@ -548,6 +548,8 @@ private slots:
     void batchExportPresentationSurfacesCommittedOutput();
     void existingBatchArchiveRequiresOverwritePermission();
     void duplicateBatchFileNamesAreRejected();
+    void caseOnlyBatchFileNamesAreRejected_data();
+    void caseOnlyBatchFileNamesAreRejected();
     void internalPdfMatchesWidgetRendering_data();
     void internalPdfMatchesWidgetRendering();
     void singleReportCanBeSavedToAnExactFilePath();
@@ -1414,6 +1416,62 @@ void SpeakingEvalBatchReportServiceTests::
         { QStringLiteral("Second"), data }
     };
     request.savePdf = true;
+    request.outputDirectory = outputDirectory.path();
+
+    const SpeakingEvalBatchReportService::Result result =
+        SpeakingEvalBatchReportService::exportReports(request);
+    QCOMPARE(
+        result.status,
+        SpeakingEvalBatchReportService::Status::Failed
+        );
+    QVERIFY(
+        QDir(outputDirectory.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot
+            ).isEmpty()
+        );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    caseOnlyBatchFileNamesAreRejected_data()
+{
+    QTest::addColumn<bool>("keepIndividualPdfFiles");
+    QTest::newRow("archive-only") << false;
+    QTest::newRow("archive-and-individual-pdfs") << true;
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    caseOnlyBatchFileNamesAreRejected()
+{
+    QFETCH(bool, keepIndividualPdfFiles);
+
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+
+    SpeakingEvalReportData first =
+        goldenReportData(SpeakingEvalReportTemplate::Standard);
+    first.englishName = QStringLiteral("Amy");
+    SpeakingEvalReportData second = first;
+    second.englishName = QStringLiteral("AMY");
+
+    const QString firstFileName = SpeakingEvalBatchReportService::safeFileName(
+        first.englishName,
+        first.koreanName
+        );
+    const QString secondFileName =
+        SpeakingEvalBatchReportService::safeFileName(
+            second.englishName,
+            second.koreanName
+            );
+    QCOMPARE(firstFileName.toCaseFolded(), secondFileName.toCaseFolded());
+    QVERIFY(firstFileName != secondFileName);
+
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {
+        { first.englishName, first },
+        { second.englishName, second }
+    };
+    request.savePdf = true;
+    request.keepIndividualPdfFiles = keepIndividualPdfFiles;
     request.outputDirectory = outputDirectory.path();
 
     const SpeakingEvalBatchReportService::Result result =

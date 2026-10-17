@@ -89,8 +89,10 @@ bool targetFilePaths(
                 report.report.koreanName
                 )
             );
+        const QString normalizedPathKey =
+            QDir::cleanPath(path).toCaseFolded();
 
-        if (seenPaths.contains(path)
+        if (seenPaths.contains(normalizedPathKey)
             || (saveIndividualPdfFiles
                 && !request.overwriteExisting
                 && QFileInfo::exists(path)))
@@ -104,7 +106,7 @@ bool targetFilePaths(
             return false;
         }
 
-        seenPaths.insert(path);
+        seenPaths.insert(normalizedPathKey);
         targetPaths->append(path);
     }
 
