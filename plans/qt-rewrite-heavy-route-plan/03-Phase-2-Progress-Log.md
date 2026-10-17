@@ -44877,3 +44877,29 @@ but not implemented; F1041 remains complete at source commit
 `953d9a913368a7718d1fd43242f8c81f11365c58`. Batch425 remains active. Gates 1/2
 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
 policy reconciliation.
+
+### F1042 complete; post-F1042 Deferred audits clear; Batch425 closed - 2026-10-17
+
+F1042 completes at source commit
+`b44d1fcee02d25b47b14dafde30fd74a9e4452ce` (`Phase2 - Report Sub Prep folder
+open failure`). The request-scoped folder opener defaults to
+`QDesktopServices::openUrl`. If opening the requested folder fails after
+package creation, the service returns a user-visible Failed result while
+preserving `folderCreated`, `outputDirectory`, `documentPaths`, and generated
+files; the page warning includes the package path. Successful opening remains
+Completed, disabled auto-open skips the callback, and print failure/cancel
+precedence and artifact fields are preserved.
+
+The focused Debug builds of `ClassMngr`,
+`ClassMngrSubPrepPackageServiceTests`, and `ClassMngrSubPrepPageTests` passed;
+the two matching CTests passed 2/2. An independent tester repeated the builds
+and focused CTests, also passing 2/2. `git diff --check` passed. The initial
+sandbox FileTracker access denial required the approved elevated build route,
+which succeeded. No full suite was run.
+
+Two independent post-F1042 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. The Deferred list is
+unchanged. Batch425 is closed: F1041 and F1042 are complete, with no other
+actionable Batch425 item. Batch426 discovery is active. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.

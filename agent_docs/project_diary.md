@@ -6987,3 +6987,24 @@ use a request-scoped opener seam with the desktop opener as its default and
 focused deterministic service and page regressions. Batch425 remains active;
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
 Phase 2 remains open.
+
+## F1042 closeout and Batch426 start - 2026-10-17
+
+F1042 completed at source commit
+`b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. A failed requested folder open
+after successful Sub Prep package creation now returns a user-visible failure
+result with the existing localized text while preserving `folderCreated`,
+`outputDirectory`, `documentPaths`, and generated PDFs. The opener is an
+optional request-scoped callback defaulting to `QDesktopServices::openUrl`.
+Tests cover false and true opener results, disabled auto-open, page warning
+message/path, and printer-failure precedence with preserved paths and files.
+Executor and independent verification built `ClassMngr` and both focused
+targets and passed both matching Debug CTests (2/2); `git diff --check` passed.
+The build first hit sandbox FileTracker access denial, then passed through the
+approved elevated route. No full suite ran.
+
+Two independent audits reviewed all 13 official Phase 2 Deferred entries
+after F1042. None became actionable, resolved, or superseded, so the Deferred
+list remains unchanged. Batch425 is closed and Batch426 discovery is active.
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+Phase 2 remains open.

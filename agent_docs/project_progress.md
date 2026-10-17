@@ -53,22 +53,24 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1041 complete; F1042 accepted)
+### Current checkpoint - 2026-10-17 (F1042 complete; Batch426 active)
 
-F1041 is complete at source commit
-`953d9a913368a7718d1fd43242f8c81f11365c58`. If document resource resolution
-fails before viewer loading, Sidebar selection is restored to the still
-displayed document. The focused Debug build of `ClassMngr` and
-`ClassMngrDocumentCatalogNavigationParityTests` passed; its matching CTest
-passed 1/1, and an independent tester repeated the focused verification. No
-full suite ran.
+F1042 is complete at source commit
+`b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
+reports a failed requested folder open as a warning result while preserving
+the generated package, output directory, document paths, and files. The
+request-scoped opener defaults to `QDesktopServices::openUrl`; success and
+disabled auto-open retain their existing outcomes, and print failure keeps
+precedence. The executor and independent Tester built `ClassMngr` plus both
+focused targets and passed their matching CTests 2/2; `git diff --check` also
+passed. The initial sandbox FileTracker denial required an approved elevated
+retry. No full suite ran.
 
-Two independent post-F1041 audits reviewed all 13 official Deferred entries;
-none became actionable, resolved, or superseded. F1042 is accepted and pending
-implementation in active Batch425: surface the existing Sub Prep package
-folder-open failure as a warning while preserving the successfully created
-package and its paths. Gates 1/2 remain Partial, the Phase 2 exit gate remains
-Open, and F1007 remains pending policy reconciliation.
+Two independent post-F1042 audits reviewed all 13 official Deferred entries.
+None became actionable, resolved, or superseded; the list remains unchanged.
+Batch425 is closed and Batch426 discovery is active. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

@@ -3,19 +3,21 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1041 is complete at source commit
-  `953d9a913368a7718d1fd43242f8c81f11365c58`; its acceptance and verification
-  are recorded in the Phase 2 progress log. Failed document resource resolution
-  restores Sidebar selection to the still displayed document before viewer
-  loading. The focused `ClassMngr` and
-  `ClassMngrDocumentCatalogNavigationParityTests` Debug build passed and its
-  CTest passed 1/1; independent verification repeated the focused build and
-  CTest. No full suite ran. Two post-F1041 audits found all 13 official
-  Deferred entries unchanged and unresolved. F1042 is accepted, pending
-  implementation in active Batch425: report a failed requested Sub Prep folder
-  open while preserving the generated package artifacts and paths. Gates 1/2
-  remain Partial, F1007 remains pending policy reconciliation, and Phase 2
-  remains Open.
+- Current checkpoint: F1042 is complete at source commit
+  `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`; its acceptance and completion
+  are recorded in the Phase 2 progress log. A requested Sub Prep package folder
+  open failure now produces a warning result while preserving the created
+  package and its paths. The opener is request scoped and defaults to
+  `QDesktopServices::openUrl`; successful open and disabled auto-open preserve
+  their normal completion behavior. Print failure precedence and cancellation
+  remain intact. Executor and independent verification built `ClassMngr` and
+  both affected Debug targets and passed their exact CTests 2/2. The first
+  sandbox build attempts were blocked by MSBuild FileTracker; the approved
+  elevated build route passed. `git diff --check` passed; no full suite ran.
+  Two post-F1042 audits found all 13 official Deferred entries unchanged,
+  unresolved, and not newly actionable. Batch425 is closed and Batch426
+  discovery is active. Gates 1/2 remain Partial, F1007 remains pending policy
+  reconciliation, and Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,
