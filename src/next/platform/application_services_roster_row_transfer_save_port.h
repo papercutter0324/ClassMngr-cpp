@@ -32,7 +32,7 @@ public:
         if (!m_services || !m_services->hasOpenDatabase()
             || !m_services->rosterService())
             return failure(Domain::ErrorCode::NotFound,
-                "The roster service is unavailable.");
+                "The roster service is unavailable.", true);
         try
         {
             const Status saved = m_services->rosterService()->saveRosters({
@@ -92,10 +92,11 @@ private:
     }
 
     [[nodiscard]] static Domain::Result<void> failure(
-        Domain::ErrorCode code, std::string message)
+        Domain::ErrorCode code, std::string message,
+        const bool recoverable = false)
     {
         return Domain::Result<void>::failure({
-            .code = code, .message = std::move(message), .recoverable = false});
+            .code = code, .message = std::move(message), .recoverable = recoverable});
     }
 
     ApplicationServices* m_services = nullptr;

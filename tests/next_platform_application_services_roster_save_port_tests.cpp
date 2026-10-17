@@ -8,6 +8,7 @@
 #include "features/roster/ui/roster_save_validation_adapter.h"
 #include <random>
 #include "next/platform/application_services_roster_save_port.h"
+#include "next/platform/application_services_roster_row_transfer_save_port.h"
 
 #include <QSqlError>
 #include <QSqlQuery>
@@ -96,6 +97,7 @@ private slots:
     void forwardsQuestionableKoreanNameDecision();
     void repositoryFailureMapsTechnicalAndRollsBack();
     void closedSessionReturnsFailureWithoutDataServiceFallback();
+    void rowTransferClosedSessionReturnsRecoverableUnavailableFailure();
 };
 
 void NextPlatformApplicationServicesRosterSavePortTests::
@@ -377,6 +379,36 @@ closedSessionReturnsFailureWithoutDataServiceFallback()
         request(*createdClass),
         port, Platform::rosterSaveCaseInsensitiveEquals
         );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QCOMPARE(result.error().message, std::string("The roster service is unavailable."));
+    QVERIFY(result.error().recoverable);
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+rowTransferClosedSessionReturnsRecoverableUnavailableFailure()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    services.closeDatabase();
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.dataService());
+    QVERIFY(!services.dataService()->isOpen());
+
+    const auto sourceId = Domain::ClassId::fromString("1");
+    const auto targetId = Domain::ClassId::fromString("2");
+    QVERIFY(sourceId);
+    QVERIFY(targetId);
+    Platform::ApplicationServicesRosterRowTransferSavePort port(&services);
+    const auto result = port.saveTransfer({
+        .sourceClassId = *sourceId,
+        .targetClassId = *targetId,
+        .sourceRoster = {},
+        .targetRoster = {}
+    });
+
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
     QCOMPARE(result.error().message, std::string("The roster service is unavailable."));
