@@ -464,6 +464,10 @@ void NavigationController::handleDocument(
     // as this function returns, before any viewer is created.
     if (!m_pages->confirmCurrentPageCanLeave())
     {
+        if (m_sidebar)
+        {
+            m_sidebar->restorePreviousSelection();
+        }
         return;
     }
 

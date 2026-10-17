@@ -171,7 +171,9 @@ std::optional<DocumentCatalogProjection> projectSidebarDocuments(
 std::optional<NavigationData> clickDocumentLeaf(
     Sidebar& sidebar,
     const QString& documentId,
-    QString* error
+    QString* error,
+    QStringList* selectionBeforeClick = nullptr,
+    bool clearSelectionBeforeClick = false
     )
 {
     sidebar.resize(360, 680);
@@ -235,6 +237,16 @@ std::optional<NavigationData> clickDocumentLeaf(
             *error = QStringLiteral("Sidebar navigation signal could not be observed.");
         }
         return std::nullopt;
+    }
+
+    if (clearSelectionBeforeClick)
+    {
+        tree->clearSelection();
+        tree->setCurrentItem(nullptr);
+    }
+    if (selectionBeforeClick)
+    {
+        *selectionBeforeClick = sidebar.selectedKeys();
     }
 
     QTest::mouseClick(
@@ -421,13 +433,18 @@ canceledRouteReleasesPreflightLeaseAndPreservesDirtySource()
         );
 
     NavigationController navigation(&services, &sidebar, &pages, resources);
+    QStringList previousSelection;
     const auto route = clickDocumentLeaf(
         sidebar,
         QString::fromLatin1(RequestedDocumentId),
-        &error
+        &error,
+        &previousSelection,
+        true
         );
     QVERIFY2(route.has_value(), qPrintable(error));
+    QVERIFY(previousSelection.isEmpty());
     verifyDocumentRoute(*route, QString::fromLatin1(RequestedDocumentId));
+    QCOMPARE(sidebar.selectedKeys(), route->keys);
 
     FakeUserPromptService prompts;
     prompts.scriptedUnsavedChangesChoices.enqueue(
@@ -444,6 +461,7 @@ canceledRouteReleasesPreflightLeaseAndPreservesDirtySource()
     verifyNoOtherPrompts(prompts);
     QVERIFY2(warnings.isEmpty(),
         qPrintable(warnings.isEmpty() ? QString() : warnings.constFirst()));
+    QCOMPARE(sidebar.selectedKeys(), previousSelection);
     verifyDirtyTeacherUnchanged(pages, *source);
     QVERIFY(!pages.isPageInstantiated(PageType::PdfViewer));
     QVERIFY(pages.pdfViewerPage() == nullptr);
