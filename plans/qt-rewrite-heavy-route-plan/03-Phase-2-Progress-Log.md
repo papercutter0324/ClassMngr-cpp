@@ -45040,3 +45040,34 @@ both list 14 GB SSD, below Phase 0's Apple Silicon plus 18 GiB free requirement
 Batch428 is closed with F1044 complete; Batch429 discovery is active. Gates 1/2
 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
 policy reconciliation.
+
+### F1045 accepted before implementation - 2026-10-17
+
+Batch429 accepts F1045 for Speaking Evaluation report path collisions.
+`SpeakingEvalReportOutput::targetFilePaths()` deduplicates generated
+paths with a case-sensitive `QSet<QString>`, and `studentFileName()` preserves
+case. Thus names such as `Amy` and `AMY` pass preflight although their generated
+PDF paths alias on standard case-insensitive Windows directories; Windows also
+supports opt-in case-sensitive directories ([Microsoft WSL case-sensitivity
+documentation](https://learn.microsoft.com/en-us/windows/wsl/case-sensitivity)).
+Archive-only output uses these basenames as ZIP entries, which collide on
+extraction. With individual PDFs, the staged `.classmngr-part` paths also alias,
+so the batch fails during commit instead of before staging. The service
+propagates export failure to the dialog; no silent overwrite or data loss is
+claimed. Existing `duplicateBatchFileNamesAreRejected` covers exact duplicates
+only.
+
+Use an unconditional platform-independent normalized/case-folded key for
+duplicate generated PDF path detection (for example, `QString::toCaseFolded()`),
+while preserving original filename casing. Reject case-only collisions before
+staging in archive-only and archive-plus-individual output. This intentionally
+treats case variants as duplicates on case-sensitive filesystems as well, for
+portable deterministic output. Preserve unique filenames, exact-duplicate
+handling, commit/rollback semantics, and the remaining ZIP/file workflow.
+Extend the service tests for both output modes; each must return failure and
+publish no files. Build `ClassMngr` and
+`ClassMngrSpeakingEvalBatchReportServiceTests`, run only its matching Debug
+CTest selection and `git diff --check`; no full suite. F1045 is accepted pending
+implementation. The 13 official Deferred entries are unchanged. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.

@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1044 complete; Batch429 active)
+### Current checkpoint - 2026-10-17 (F1044 complete; F1045 accepted)
 
 F1042 is complete at source commit
 `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
@@ -83,9 +83,12 @@ navigation now restores prior Sidebar selection when the unsaved-change prompt
 is canceled after resource preflight. `ClassMngr` and
 `ClassMngrDocumentCatalogNavigationParityTests` built in Ninja Debug; the
 matching CTest passed 1/1 and `git diff --check` passed. No full suite ran.
-Batch428 is closed and Batch429 discovery is active. Gates 1/2 remain Partial,
-the Phase 2 exit gate remains Open, and F1007 remains pending policy
-reconciliation.
+Batch428 is closed. Batch429's async-job review found no live production
+caller for the queue-terminal concern. Its file-export lane accepted F1045 to
+reject case-only duplicate generated PDF paths before staging, including
+archive-only and archive-plus-individual output; implementation is pending.
+Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
+pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

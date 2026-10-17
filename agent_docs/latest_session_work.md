@@ -14,9 +14,12 @@
   `git diff --check` passed. No full suite ran. Two post-F1044 audits found all
   13 official Deferred entries unresolved and not newly actionable. F629's
   standard and larger hosted ARM64 macOS runners publish 14 GB SSD, below the
-  Phase 0 18 GiB free-space preflight. Batch428 is closed and Batch429 discovery
-  is active. Gates 1/2 remain Partial, F1007 remains pending policy
-  reconciliation, and Phase 2 remains Open.
+  Phase 0 18 GiB free-space preflight. Batch428 is closed. Batch429's async-job
+  review found no production caller for the queue-terminal concern. F1045 is
+  accepted pending implementation: reject case-only duplicate generated PDF
+  paths before staging in archive-only and archive-plus-individual output.
+  Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+  Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

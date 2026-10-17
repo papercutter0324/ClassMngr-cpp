@@ -7078,3 +7078,16 @@ unresolved and not newly actionable. GitHub standard and larger ARM64 macOS
 runner specifications publish 14 GB SSD, below Phase 0's 18 GiB free-space
 preflight; F629 remains deferred without a fitting runner or 24-route matrix.
 Batch428 is closed and Batch429 is the continuation point.
+
+## F1045 accepted before implementation - 2026-10-17
+
+Batch429 accepted a generated-path collision in Speaking Evaluation batch
+export. `targetFilePaths()` compares case-sensitive strings while student
+filenames preserve case, so case-only names can pass preflight and later alias
+on common case-insensitive destinations or when a ZIP is extracted there. The
+service then fails later during staged output commit; no overwrite is claimed.
+F1045 applies a platform-independent case-folded path key while preserving
+output casing, rejecting the collision before staging. Test archive-only and
+archive-plus-individual-PDF modes for failure with no published output. The
+separate bounded-job queue concern is not actionable without a live production
+caller or terminal-delivery contract; it was not accepted.

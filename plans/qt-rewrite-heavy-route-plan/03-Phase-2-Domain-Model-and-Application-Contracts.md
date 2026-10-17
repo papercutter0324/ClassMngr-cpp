@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1044 is complete at source commit `8dc894ca9b60bca158ac41211c3ec10be5f49080`; Batch429 discovery is active, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1045 is accepted pending implementation in Batch429; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch — Batch429
 
-- Discovery is active; no accepted candidates are recorded yet.
+- F1045 - Reject case-folded generated report-path collisions before staging; preserve output casing and verify archive-only and archive-plus-individual batches.
 
 #### Deferred candidates
 
