@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-17
-- Current milestone: F1039 is complete at source commit `2a66e3f2`; F1040 is accepted in Batch424 and pending implementation. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification, Deferred audits, and open gates.
+- Current milestone: F1040 is complete at source commit `6035349b`; Batch425 discovery is active. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification, Deferred audits, and open gates.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

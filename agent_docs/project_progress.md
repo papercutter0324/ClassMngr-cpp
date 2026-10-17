@@ -6316,3 +6316,20 @@ assertions and app-less contract tests enforce the gate. No official Deferred
 item changed. Batch423 is closed as a discovery shortfall; Batch424 discovery
 is active. Gates 1/2 remain Partial, F1007 awaits policy reconciliation, and
 Phase 2 remains open.
+
+F1040 is complete at source commit `6035349b`. `StaffDirectoryPage::loadDirectory()`
+now stages both Native English and GS Team rows and replaces the table only
+after a successful read. Technical read failures retain the displayed model,
+IDs, local edits, pending deletions, and dirty state while preserving the
+warning. NotFound/unavailable-session clearing remains unchanged. The executor
+and independent Tester built `ClassMngr` and both existing directory read
+targets; their focused CTests passed 2/2. No full suite ran.
+
+Two independent post-F1040 audits reviewed all 13 official Deferred entries;
+none is actionable, resolved, or superseded. F579's review trigger is
+satisfied, but F579/F598 captures require an elevated Administrator token;
+F629 still needs a suitable macOS universal Phase 0 runner. The remaining
+measurement, source-seam, and policy prerequisites are unchanged. Batch424 is
+closed after accepting F1040; Batch425 discovery is active. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
+Open. Preserve unrelated user work.

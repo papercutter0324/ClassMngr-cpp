@@ -44791,3 +44791,22 @@ targets, then run only their matching CTests. No full suite or new CMake target.
 F1040 does not change any of the 13 official Deferred entries. It is accepted
 in Batch424 and pending implementation; Gates 1/2 remain Partial, the Phase 2
 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+### F1040 complete; post-F1040 Deferred audit clear; Batch424 closed - 2026-10-17
+
+F1040 completes at source commit `6035349b`. Focused builds of
+`ClassMngrStaffDirectoryNativeEnglishReadTests` and
+`ClassMngrStaffDirectoryGsTeamReadTests` passed; their matching CTests passed
+2/2. No full suite was run.
+
+Two independent post-F1040 audits reviewed all 13 official Deferred entries;
+all remain unchanged and unresolved, with none actionable, resolved, or
+superseded. F579 and F598 still require
+an elevated Administrator token for their matched captures; F629 still needs a
+suitable macOS universal runner. The remaining evidence, policy, and injection-
+seam triggers are unchanged.
+
+Batch424 had one accepted slice, F1040. Its other independent lanes, covering
+legacy adapters and application contracts, found no eligible slice. Batch424
+is closed and Batch425 discovery is active. Gates 1/2 remain Partial, the
+Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.

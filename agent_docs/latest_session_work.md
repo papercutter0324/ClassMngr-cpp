@@ -6019,3 +6019,34 @@ coverage is a test-only gap. Phase 2 remains Open; Gates 1/2 remain Partial;
 F1007 remains pending policy reconciliation. Preserve unrelated
 `%SystemDrive%/`, `Testing/`, `Windows Performance Analyzer/`, `stdout`, and
 `txt` artifacts.
+
+## Current continuation - 2026-10-17 (F1040 complete; Batch425 active)
+
+Batch423's no-candidate closeout was committed at `0aaa08d8`. F1040's
+pre-implementation acceptance matrix was committed at `284a490c`, then the
+implementation at `6035349b`.
+
+F1040 makes `StaffDirectoryPage::loadDirectory()` stage Native English and GS
+Team snapshots before replacing the table. A technical read failure now
+preserves the current row model and IDs, unsaved edits, pending deletions, and
+dirty state while retaining the warning. Successful reads replace the model
+and clear dirty/deletion state; NotFound/unavailable-session behavior still
+clears state silently. Both existing regression targets test a reversible
+read failure, enabled Manual Save, and recovery persistence of the edit and
+queued deletion.
+
+The executor and independent Tester built `ClassMngr`,
+`ClassMngrStaffDirectoryNativeEnglishReadTests`, and
+`ClassMngrStaffDirectoryGsTeamReadTests`; both focused CTests passed 2/2. The
+initial ordinary MSBuild attempts hit FileTracker `E_ACCESSDENIED`; elevated
+retries passed. `git diff --check` passed; no full suite ran.
+
+Two independent post-F1040 audits checked the 13 official Deferred entries;
+none became actionable, resolved, or superseded. F579/F598 still require an
+elevated Administrator token, F629 still requires a suitable macOS universal
+Phase 0 runner, and other measurement, injection-seam, or policy triggers are
+unchanged. Batch424 is closed; Batch425 is active. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation. Preserve the unrelated user modification in
+`src/app/controllers/file_controller.h` and untracked `%SystemDrive%/`,
+`Testing/`, `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.

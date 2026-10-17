@@ -6940,3 +6940,27 @@ already enforce that architecture gate. No official Deferred entry changed.
 Batch423 is closed as a discovery shortfall; Batch424 is the continuation
 point. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and Phase 2 remains open.
+
+## F1040 and Batch424 closeout - 2026-10-17
+
+Batch424 accepted one supported defect: a technical Staff Directory read
+failure cleared the current model before the query succeeded, losing visible
+rows and edits while leaving the page dirty. F1040 stages Native English and
+GS Team rows and applies them only after success. Technical failures retain
+the last displayed rows and pending edits/deletions, while NotFound continues
+to clear database state silently.
+
+F1040 completed at source commit `6035349b`; acceptance was committed at
+`284a490c`. The executor and independent Tester built `ClassMngr` and the two
+existing directory read test targets; exact focused CTests passed 2/2. No full
+suite ran. Batch424's platform-adapter lane found only default materialization
+and explicitly best-effort tested migration writes; its application-contract
+lane found no additional supported slice.
+
+Two independent audits rechecked all 13 official Deferred entries after
+F1040. None became actionable, resolved, or superseded. The Windows process is
+not Administrator, so F579/F598 capture prerequisites remain blocked; the
+macOS universal Phase 0 runner required by F629 is still not exposed. Other
+evidence, seam, and policy triggers remain unchanged. Batch424 is closed and
+Batch425 discovery is active. Gates 1/2 remain Partial, F1007 remains pending
+policy reconciliation, and Phase 2 remains open.
