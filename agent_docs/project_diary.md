@@ -7060,3 +7060,21 @@ test covers dirty-state preservation, no viewer creation, and preflight lease
 release but omits selection. F1044 is limited to restoring the prior Sidebar
 selection on the cancel return and asserting the pre-click selected keys in
 that test. Preserve prompt, page, viewer, warning, and lease outcomes.
+
+## F1044 complete and Deferred audit - 2026-10-17
+
+F1044 source/test commit `8dc894ca9b60bca158ac41211c3ec10be5f49080` restores
+prior Sidebar selection when catalog navigation is canceled after resource
+preflight and the unsaved-change prompt. Independent verification passed the
+Ninja Debug build for `ClassMngr` and
+`ClassMngrDocumentCatalogNavigationParityTests`, the matching CTest (1/1), and
+`git diff --check`; no full suite ran. The first regression run exposed a
+snapshot taken before the Sidebar was shown and its event filter captured the
+prior selection. Moving the snapshot to immediately before the click fixed the
+test setup while retaining route-selected and post-cancel restoration checks.
+
+Two independent post-F1044 audits found all 13 official Deferred entries
+unresolved and not newly actionable. GitHub standard and larger ARM64 macOS
+runner specifications publish 14 GB SSD, below Phase 0's 18 GiB free-space
+preflight; F629 remains deferred without a fitting runner or 24-route matrix.
+Batch428 is closed and Batch429 is the continuation point.

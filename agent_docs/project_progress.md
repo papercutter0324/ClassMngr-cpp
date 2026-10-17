@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1043 complete; F1044 accepted)
+### Current checkpoint - 2026-10-17 (F1044 complete; Batch429 active)
 
 F1042 is complete at source commit
 `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
@@ -74,16 +74,17 @@ The independent Tester confirmed the closed-database/no-fallback regression;
 the `ClassMngr` and focused adapter test targets built, the matching Debug
 CTest passed 1/1, and `git diff --check` passed. No full suite ran.
 
-Two independent post-F1043 audits reviewed all 13 official Deferred entries.
-None became actionable, resolved, or superseded. F629's runner evidence was
-refined: GitHub lists ARM64 macOS hosted labels, but their published 14 GB SSD
-does not meet the Phase 0 script's 18 GiB free-space preflight, so the 24-route
-matrix remains blocked. Batch427 is closed. Batch428 accepted F1044 to restore
-the prior Sidebar selection when catalog-document navigation is canceled at
-the unsaved-changes prompt. The existing cancellation test will verify
-selection restoration alongside dirty-page preservation, no viewer creation,
-and preflight lease release; implementation is pending. Gates 1/2 remain
-Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+Two independent post-F1044 audits reviewed all 13 official Deferred entries.
+None became actionable, resolved, or superseded. GitHub lists standard and
+larger ARM64 macOS runners, but their published 14 GB SSD is below Phase 0's
+18 GiB free-space preflight; F629 remains deferred. F1044 is complete at
+source/test commit `8dc894ca9b60bca158ac41211c3ec10be5f49080`. Catalog
+navigation now restores prior Sidebar selection when the unsaved-change prompt
+is canceled after resource preflight. `ClassMngr` and
+`ClassMngrDocumentCatalogNavigationParityTests` built in Ninja Debug; the
+matching CTest passed 1/1 and `git diff --check` passed. No full suite ran.
+Batch428 is closed and Batch429 discovery is active. Gates 1/2 remain Partial,
+the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)

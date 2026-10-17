@@ -45006,3 +45006,37 @@ CTest and `git diff --check`; no full suite. F1044 is accepted pending
 implementation. No official Deferred entry changes. Gates 1/2 remain Partial,
 the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation.
+
+### F1044 complete; post-F1044 Deferred audits clear; Batch428 closed - 2026-10-17
+
+F1044 completes at source commit
+`8dc894ca9b60bca158ac41211c3ec10be5f49080`. After successful resource
+preflight, `NavigationController` now calls
+`m_sidebar->restorePreviousSelection()` when the catalog-document leave prompt
+is canceled. The regression captures prior keys after Sidebar display/event
+setup immediately before click, confirms the requested route is selected after
+click, and verifies the prior selection after Cancel.
+
+Executor and independent Tester built `ClassMngr` and
+`ClassMngrDocumentCatalogNavigationParityTests` in Ninja Debug. The matching
+CTest passed 1/1 (0.74 sec), and `git diff --check` passed. An initial test
+snapshot taken before Sidebar display exposed a timing failure; moving the
+snapshot to immediately before click corrected it while retaining route and
+restore assertions. No full suite was run.
+
+Two independent post-F1044 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. F285 and Sidebar Add still
+need blank-draft policy; F579/F598 need elevated Administrator captures;
+F614/F618/F626 need measurements or ownership evidence; F629 lacks a fitting
+ARM64 macOS runner and passing 24-route matrix; F707 has no live comparator
+callsite; F709 lacks a Page-level malformed-summary seam; Batch197 reassignment
+notes and schedule policy, Class Analytics cap/sparse policy, and Speaking
+Evaluation row-limit policy remain unresolved. GitHub standard (`macos-15`) and
+larger (`macos-15-xlarge`, `macos-26-xlarge`) ARM64 macOS runner specifications
+both list 14 GB SSD, below Phase 0's Apple Silicon plus 18 GiB free requirement
+([standard runner specifications](https://docs.github.com/en/actions/reference/runners/github-hosted-runners),
+[larger runner specifications](https://docs.github.com/en/actions/reference/runners/larger-runners)).
+
+Batch428 is closed with F1044 complete; Batch429 discovery is active. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.

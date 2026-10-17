@@ -3,22 +3,20 @@
 ## Current Deployment Handoff
 
 - Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1043 is complete at source/test commit
-  `b5fd1823879734d5bda12e87c75d0c233fc50274`; its acceptance and completion
-  are recorded in the Phase 2 progress log. The Row Transfer adapter's
-  unavailable-service `NotFound` result is recoverable, consistent with Roster
-  Save; invalid-ID and technical mappings remain nonrecoverable. The closed-DB
-  regression confirms non-null `dataService()` remains closed and checks exact
-  code/message/recoverability. Independent verification built `ClassMngr` and
-  the focused Debug target, passed its exact CTest 1/1, and passed
-  `git diff --check`; no full suite ran. Two post-F1043 audits found all 13
-  official Deferred entries unresolved, with none newly actionable. F629's
-  hosted ARM64 macOS runner labels have 14 GB SSD versus the script's 18 GiB
-  free-space preflight, so the packaged 24-route matrix remains blocked.
-  Batch427 is closed. Batch428 accepted F1044 to restore the prior Sidebar
-  selection when catalog-document navigation is canceled at the unsaved-change
-  prompt; implementation is pending. Gates 1/2 remain Partial, F1007 remains
-  pending policy reconciliation, and Phase 2 remains Open.
+- Current checkpoint: F1044 is complete at source/test commit
+  `8dc894ca9b60bca158ac41211c3ec10be5f49080`. Catalog-document navigation now
+  restores prior Sidebar selection when Cancel returns from the unsaved-change
+  prompt. The existing regression checks selection before the click, requested
+  route selection after the click, and restoration after Cancel, while
+  preserving dirty-page, no-viewer, no-warning, and preflight-lease assertions.
+  Ninja Debug builds for `ClassMngr` and
+  `ClassMngrDocumentCatalogNavigationParityTests` passed; exact CTest 1/1 and
+  `git diff --check` passed. No full suite ran. Two post-F1044 audits found all
+  13 official Deferred entries unresolved and not newly actionable. F629's
+  standard and larger hosted ARM64 macOS runners publish 14 GB SSD, below the
+  Phase 0 18 GiB free-space preflight. Batch428 is closed and Batch429 discovery
+  is active. Gates 1/2 remain Partial, F1007 remains pending policy
+  reconciliation, and Phase 2 remains Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

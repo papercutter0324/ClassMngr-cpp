@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1043 is complete at source commit `b5fd1823879734d5bda12e87c75d0c233fc50274`; F1044 is accepted pending implementation in Batch428, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1044 is complete at source commit `8dc894ca9b60bca158ac41211c3ec10be5f49080`; Batch429 discovery is active, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch428
+#### Active batch — Batch429
 
-- F1044 - Restore Sidebar selection after catalog-navigation cancellation; restore the prior selection before returning when the leave prompt is canceled.
+- Discovery is active; no accepted candidates are recorded yet.
 
 #### Deferred candidates
 
@@ -92,10 +92,11 @@ Treat this plan as an operational summary, not a history:
   a retained page, and F1014 shows class-information re-entry behavior; there
   is still no owner-specific matched packaged Release retained-byte evidence
   or safe PageManager eviction/recreation contract.
-- F629 - Deferred: GitHub lists ARM64 macOS hosted runners such as `macos-15`
-  with 14 GB SSD, while Phase 0 requires Apple Silicon and at least 18 GiB free;
-  this does not establish a fitting runner or a passing 24-route matrix
-  ([official runner specifications](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)).
+- F629 - Deferred: GitHub standard (`macos-15`) and larger (`macos-15-xlarge`,
+  `macos-26-xlarge`) ARM64 macOS runner specifications list 14 GB SSD; Phase 0
+  requires Apple Silicon and at least 18 GiB free, so no fitting runner or
+  passing 24-route matrix is established ([standard runner specifications](https://docs.github.com/en/actions/reference/runners/github-hosted-runners),
+  [larger runner specifications](https://docs.github.com/en/actions/reference/runners/larger-runners)).
 - F707 - Deferred from Batch 178: the `sidebarClassNodeLessThan`/`timeOrder`
   helper chain has no observed app callsite; revisit when a live use is found.
 - F709 - Deferred from Batch 178 and rechecked before F738: raw SQL values
