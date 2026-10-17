@@ -15,9 +15,12 @@
   sandbox build attempts were blocked by MSBuild FileTracker; the approved
   elevated build route passed. `git diff --check` passed; no full suite ran.
   Two post-F1042 audits found all 13 official Deferred entries unchanged,
-  unresolved, and not newly actionable. Batch425 is closed and Batch426
-  discovery is active. Gates 1/2 remain Partial, F1007 remains pending policy
-  reconciliation, and Phase 2 remains Open.
+  unresolved, and not newly actionable. Batch425 is closed. Three Batch426
+  read-only discovery lanes found no qualifying production candidate; their
+  findings are recorded in the Phase 2 progress log, and Batch426 is closed as
+  a discovery shortfall. Batch427 discovery is active. Gates 1/2 remain
+  Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
+  Open.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,

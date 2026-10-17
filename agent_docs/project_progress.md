@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1042 complete; Batch426 active)
+### Current checkpoint - 2026-10-17 (F1042 complete; Batch427 active)
 
 F1042 is complete at source commit
 `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
@@ -68,9 +68,11 @@ retry. No full suite ran.
 
 Two independent post-F1042 audits reviewed all 13 official Deferred entries.
 None became actionable, resolved, or superseded; the list remains unchanged.
-Batch425 is closed and Batch426 discovery is active. Gates 1/2 remain Partial,
-the Phase 2 exit gate remains Open, and F1007 remains pending policy
-reconciliation.
+Batch425 is closed. Three Batch426 discovery lanes found no additional
+production candidate; the reviewed behaviors match their contracts/tests or
+are already deferred under F298. Batch426 is closed as a discovery shortfall
+and Batch427 is active. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

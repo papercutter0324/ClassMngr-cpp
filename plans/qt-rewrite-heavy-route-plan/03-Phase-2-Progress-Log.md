@@ -44903,3 +44903,20 @@ unchanged. Batch425 is closed: F1041 and F1042 are complete, with no other
 actionable Batch425 item. Batch426 discovery is active. Gates 1/2 remain
 Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation.
+
+### Batch426 discovery shortfall - 2026-10-17
+
+Three independent read-only lanes found no actionable slice. Platform adapter
+result mapping and Calendar Import projection align with explicit adapter and
+use-case tests. Reviewed domain timing validation, student-name trimming,
+canonical Gregorian date parsing, and empty `KoreanTeacherKey` behavior align
+with consumers and tests or have no normal valid import path. Calendar Import
+count and identity validation, Document Catalog reference/session
+propagation, and roster score-import behavior are covered; per-item
+score-import skipping remains explicitly deferred under F298. No source,
+test, or other files changed.
+
+Two post-F1042 Deferred audits still find all 13 official entries unchanged
+and unresolved. Batch426 is closed without an accepted slice. Batch427
+discovery is active. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation.

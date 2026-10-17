@@ -7008,3 +7008,16 @@ after F1042. None became actionable, resolved, or superseded, so the Deferred
 list remains unchanged. Batch425 is closed and Batch426 discovery is active.
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
 Phase 2 remains open.
+
+## Batch426 discovery shortfall - 2026-10-17
+
+Three independent read-only lanes examined Next application contracts,
+platform adapters, and domain invariants. They found no new production
+mismatch. Reviewed Calendar Import projections and result validation,
+Document Catalog session propagation, update adapter results, date/timing
+validation, and name trimming align with their contracts and tests. The roster
+score-import per-item failure lead is already deferred under F298. The
+post-F1042 audit still found all 13 official Deferred entries unresolved and
+unchanged. Batch426 is closed as a discovery shortfall; Batch427 is the
+continuation point. Gates 1/2 remain Partial, F1007 remains pending policy
+reconciliation, and Phase 2 remains open.

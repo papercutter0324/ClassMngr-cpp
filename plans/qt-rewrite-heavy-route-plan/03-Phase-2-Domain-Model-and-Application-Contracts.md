@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-17
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1042 is complete at source commit `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`; post-F1042 audits leave all 13 official Deferred entries unchanged, Batch426 discovery is active, Gates 1/2 Partial, F1007 pending policy reconciliation, and the Phase 2 exit gate Open.
+- Current note: F1042 is complete at source commit `b44d1fcee02d25b47b14dafde30fd74a9e4452ce`; post-F1042 audits leave all 13 official Deferred entries unchanged, Batch427 discovery is active, Gates 1/2 Partial, F1007 pending policy reconciliation, and the Phase 2 exit gate Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch426
+#### Active batch — Batch427
 
-Batch426 discovery is active.
+Batch427 discovery is active.
 
 #### Deferred candidates
 
