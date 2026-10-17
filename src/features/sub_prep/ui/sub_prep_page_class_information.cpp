@@ -383,6 +383,33 @@ SubPrepPage::SubPrepPage(
     Application::SubPrepClassDetailsReadPort& detailsReadPort,
     Application::SubPrepPrintSourceReadPort& printSourceReadPort,
     Application::SubPrepCalendarEventIntervalsReadPort& calendarIntervalsReadPort,
+    std::function<bool(const QUrl&)> folderOpener,
+    QWidget* parent
+    )
+    : BasePage(parent),
+      m_services(services),
+      m_folderOpener(std::move(folderOpener)),
+      m_calendarIntervalsReadPort(&calendarIntervalsReadPort),
+      m_classInformationDataAccess(
+          std::make_unique<SubPrepClassInformationDataAccess>(
+              summaryReadPort,
+              detailsReadPort,
+              printSourceReadPort
+              )
+          ),
+      m_classInformationState(
+          std::make_unique<Application::SubPrepClassInformationState>()
+          )
+{
+    initialize();
+}
+
+SubPrepPage::SubPrepPage(
+    ApplicationServices* services,
+    Application::SubPrepScheduleSummaryReadPort& summaryReadPort,
+    Application::SubPrepClassDetailsReadPort& detailsReadPort,
+    Application::SubPrepPrintSourceReadPort& printSourceReadPort,
+    Application::SubPrepCalendarEventIntervalsReadPort& calendarIntervalsReadPort,
     QWidget* parent
     )
     : BasePage(parent),

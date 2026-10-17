@@ -719,6 +719,7 @@ void SubPrepPage::generateSubPrep()
     packageRequest.printPaperCopies = dialog.printPaperCopies();
     packageRequest.openFolderAfterGeneration =
         dialog.openFolderAfterGeneration();
+    packageRequest.folderOpener = m_folderOpener;
     std::unique_ptr<
         ClassMngr::Next::Platform::
             ApplicationServicesSubPrepRosterOutputSourcePort

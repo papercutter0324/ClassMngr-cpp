@@ -309,6 +309,23 @@ public:
     {
     }
 
+    SubPrepPageHarness(
+        ApplicationServices* services,
+        SubPrepCalendarEventIntervalsReadPort& calendarIntervalsReadPort,
+        SubPrepPackageService::FolderOpener folderOpener
+        )
+        : page(
+              services,
+              summaryReadPort,
+              detailsReadPort,
+              printSourceReadPort,
+              calendarIntervalsReadPort,
+              std::move(folderOpener),
+              nullptr
+              )
+    {
+    }
+
     SubPrepTestSummaryReadPort summaryReadPort;
     SubPrepTestDetailsReadPort detailsReadPort;
     SubPrepTestPrintSourceReadPort printSourceReadPort;
@@ -402,7 +419,7 @@ private slots:
     void printDialogRequiresAndSavesMissingUserName();
     void printDialogAcceptsWhenRememberedNameSaveFails();
     void clearDatabaseStateStopsAutosaveAndRemovesLoadedContent();
-    void pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf();
+    void pageGenerationReportsFolderOpenFailureAndWritesInformationPdf();
     void pageGenerationForwardsSelectedDaysAndClassesInDisplayOrder();
     void pageGenerationForwardsIntensiveModeWithFilteredClasses();
 
@@ -2721,7 +2738,7 @@ generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog()
 }
 
 void SubPrepPageTests::
-pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf()
+pageGenerationReportsFolderOpenFailureAndWritesInformationPdf()
 {
     QTemporaryDir outputRoot;
     QVERIFY(outputRoot.isValid());
@@ -2849,7 +2866,18 @@ pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf()
     const auto unselectedTeacherId = typedTeacherId(702);
 
     SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
-    SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
+    int folderOpenCalls = 0;
+    QUrl requestedFolderUrl;
+    SubPrepPageHarness harness(
+        &services,
+        calendarIntervalsReadPort,
+        [&folderOpenCalls, &requestedFolderUrl](const QUrl& folderUrl)
+        {
+            ++folderOpenCalls;
+            requestedFolderUrl = folderUrl;
+            return false;
+        }
+        );
     harness.printSourceReadPort.sourceInput.teachers = {
         {
             .id = selectedTeacherId,
@@ -2973,7 +3001,7 @@ pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf()
             tuesdayCheck->setChecked(true);
             targetEdit->setText(outputRoot.path());
             nameEdit->setText(QStringLiteral("F380"));
-            openFolderCheck->setChecked(false);
+            openFolderCheck->setChecked(true);
             acceptButton->click();
             dialogAccepted = dialog->result() == QDialog::Accepted;
         }
@@ -3003,9 +3031,10 @@ pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf()
         return messages;
     }();
     QVERIFY2(
-        promptService.messages.isEmpty(),
+        promptService.messages.size() == 1,
         qPrintable(generationMessages.join(QLatin1Char('\n')))
         );
+    QCOMPARE(folderOpenCalls, 1);
     QCOMPARE(harness.printSourceReadPort.loadCount, 1);
     QCOMPARE(
         harness.printSourceReadPort.lastRequest.selectedClassIds.size(),
@@ -3038,6 +3067,16 @@ pageGenerationUsesSelectedTypedPrintSourceAndWritesInformationPdf()
     const QString outputDirectory = QDir(outputRoot.path()).filePath(
         packageDirectories.first()
         );
+    QCOMPARE(requestedFolderUrl, QUrl::fromLocalFile(outputDirectory));
+    const PromptRequest& folderOpenWarning = promptService.messages.front();
+    QCOMPARE(folderOpenWarning.severity, PromptSeverity::Warning);
+    QCOMPARE(folderOpenWarning.title, QStringLiteral("Generate Sub Prep"));
+    QVERIFY(folderOpenWarning.message.contains(
+        QStringLiteral(
+            "Sub Prep package created, but the folder could not be opened."
+            )
+        ));
+    QVERIFY(folderOpenWarning.message.contains(outputDirectory));
     QVERIFY(QFileInfo(outputDirectory).isDir());
     const QStringList classDirectories = QDir(outputDirectory).entryList(
         QDir::Dirs | QDir::NoDotAndDotDot,

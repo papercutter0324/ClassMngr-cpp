@@ -7,7 +7,9 @@
 
 #include <QList>
 #include <QStringList>
+#include <QUrl>
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -110,6 +112,19 @@ public:
             calendarIntervalsReadPort,
         QWidget* parent = nullptr
         );
+    SubPrepPage(
+        ApplicationServices* services,
+        ClassMngr::Next::Application::SubPrepScheduleSummaryReadPort&
+            summaryReadPort,
+        ClassMngr::Next::Application::SubPrepClassDetailsReadPort&
+            detailsReadPort,
+        ClassMngr::Next::Application::SubPrepPrintSourceReadPort&
+            printSourceReadPort,
+        ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort&
+            calendarIntervalsReadPort,
+        std::function<bool(const QUrl&)> folderOpener,
+        QWidget* parent
+        );
     ~SubPrepPage() override;
 
     void saveData() override;
@@ -205,6 +220,7 @@ private:
 
 private:
     ApplicationServices* m_services = nullptr;
+    std::function<bool(const QUrl&)> m_folderOpener;
     ClassMngr::Next::Application::SubPrepCalendarEventIntervalsReadPort*
         m_calendarIntervalsReadPort = nullptr;
 

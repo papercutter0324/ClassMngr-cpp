@@ -10,13 +10,17 @@
 #include <QPageLayout>
 #include <QString>
 #include <QStringList>
+#include <QUrl>
 
+#include <functional>
 #include <vector>
 
 class QWidget;
 
 namespace SubPrepPackageService
 {
+using FolderOpener = std::function<bool(const QUrl&)>;
+
 enum class Status
 {
     Completed,
@@ -39,6 +43,7 @@ struct Request
     bool replaceExisting = false;
     bool printPaperCopies = false;
     bool openFolderAfterGeneration = true;
+    FolderOpener folderOpener;
     RosterTemplatePrintService::TemplateId rosterTemplate =
         RosterTemplatePrintService::TemplateId::ByDay;
     QStringList selectedExtraColumns;

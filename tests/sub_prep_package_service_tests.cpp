@@ -854,6 +854,7 @@ private slots:
     void init();
     void rejectsInvalidPackagePreflightBeforeFilesystemEffects();
     void byDayPackageCreatesExpectedTreeAndReplacesTransactionally();
+    void folderOpenOutcomePreservesGeneratedPackageArtifacts();
     void acceptsWideTeacherIdAndUsesPreferredDisplayName();
     void dailyPackageUsesDailyRosterTemplate();
     void perClassPackagePlacesRosterInsideClassFolder();
@@ -1016,6 +1017,132 @@ void SubPrepPackageServiceTests
     QVERIFY(QFileInfo::exists(
         QDir(replaced.outputDirectory).filePath(QStringLiteral("Sub Prep.pdf"))
         ));
+}
+
+void SubPrepPackageServiceTests
+    ::folderOpenOutcomePreservesGeneratedPackageArtifacts()
+{
+    const auto verifyPackageArtifacts =
+        [](const SubPrepPackageService::Result& result,
+            const QString& expectedDirectory)
+        {
+            QCOMPARE(result.outputDirectory, expectedDirectory);
+            QVERIFY(result.folderCreated);
+            QCOMPARE(result.documentPaths.size(), 2);
+            for (const QString& documentPath : result.documentPaths)
+            {
+                QVERIFY(QFileInfo(documentPath).isFile());
+                QCOMPARE(
+                    QFileInfo(documentPath).absolutePath(),
+                    QDir(expectedDirectory).absolutePath()
+                    );
+            }
+        };
+
+    QTemporaryDir failedOpenRoot;
+    QVERIFY(failedOpenRoot.isValid());
+    const QString failedOpenName = QStringLiteral("Open failed");
+    const QString expectedFailedOpenDirectory = QDir(failedOpenRoot.path())
+        .filePath(SubPrepPackageService::datedFolderName(
+            failedOpenName,
+            {QDate(2026, 7, 21)}
+            ));
+    int failedOpenCalls = 0;
+    QUrl failedOpenUrl;
+    SubPrepPackageService::Request failedOpenRequest = packageRequest(
+        failedOpenRoot.path(),
+        failedOpenName
+        );
+    failedOpenRequest.openFolderAfterGeneration = true;
+    failedOpenRequest.folderOpener =
+        [&failedOpenCalls, &failedOpenUrl](const QUrl& url)
+        {
+            ++failedOpenCalls;
+            failedOpenUrl = url;
+            return false;
+        };
+
+    const SubPrepPackageService::Result failedOpen =
+        SubPrepPackageService::generate(std::move(failedOpenRequest));
+    QCOMPARE(failedOpen.status, SubPrepPackageService::Status::Failed);
+    QCOMPARE(
+        failedOpen.message,
+        QStringLiteral(
+            "Sub Prep package created, but the folder could not be opened."
+            )
+        );
+    QCOMPARE(failedOpenCalls, 1);
+    QCOMPARE(
+        failedOpenUrl,
+        QUrl::fromLocalFile(expectedFailedOpenDirectory)
+        );
+    QVERIFY(!failedOpen.printCanceled);
+    verifyPackageArtifacts(failedOpen, expectedFailedOpenDirectory);
+
+    QTemporaryDir successfulOpenRoot;
+    QVERIFY(successfulOpenRoot.isValid());
+    const QString successfulOpenName = QStringLiteral("Open succeeded");
+    const QString expectedSuccessfulOpenDirectory = QDir(
+        successfulOpenRoot.path()
+        ).filePath(SubPrepPackageService::datedFolderName(
+            successfulOpenName,
+            {QDate(2026, 7, 21)}
+            ));
+    int successfulOpenCalls = 0;
+    QUrl successfulOpenUrl;
+    SubPrepPackageService::Request successfulOpenRequest = packageRequest(
+        successfulOpenRoot.path(),
+        successfulOpenName
+        );
+    successfulOpenRequest.openFolderAfterGeneration = true;
+    successfulOpenRequest.folderOpener =
+        [&successfulOpenCalls, &successfulOpenUrl](const QUrl& url)
+        {
+            ++successfulOpenCalls;
+            successfulOpenUrl = url;
+            return true;
+        };
+
+    const SubPrepPackageService::Result successfulOpen =
+        SubPrepPackageService::generate(std::move(successfulOpenRequest));
+    QCOMPARE(successfulOpen.status, SubPrepPackageService::Status::Completed);
+    QCOMPARE(successfulOpen.message, QStringLiteral("Sub Prep package created."));
+    QCOMPARE(successfulOpenCalls, 1);
+    QCOMPARE(
+        successfulOpenUrl,
+        QUrl::fromLocalFile(expectedSuccessfulOpenDirectory)
+        );
+    QVERIFY(!successfulOpen.printCanceled);
+    verifyPackageArtifacts(successfulOpen, expectedSuccessfulOpenDirectory);
+
+    QTemporaryDir disabledOpenRoot;
+    QVERIFY(disabledOpenRoot.isValid());
+    const QString disabledOpenName = QStringLiteral("Open disabled");
+    const QString expectedDisabledOpenDirectory = QDir(disabledOpenRoot.path())
+        .filePath(SubPrepPackageService::datedFolderName(
+            disabledOpenName,
+            {QDate(2026, 7, 21)}
+            ));
+    int disabledOpenCalls = 0;
+    SubPrepPackageService::Request disabledOpenRequest = packageRequest(
+        disabledOpenRoot.path(),
+        disabledOpenName
+        );
+    disabledOpenRequest.openFolderAfterGeneration = false;
+    disabledOpenRequest.folderOpener =
+        [&disabledOpenCalls](const QUrl&)
+        {
+            ++disabledOpenCalls;
+            return false;
+        };
+
+    const SubPrepPackageService::Result disabledOpen =
+        SubPrepPackageService::generate(std::move(disabledOpenRequest));
+    QCOMPARE(disabledOpen.status, SubPrepPackageService::Status::Completed);
+    QCOMPARE(disabledOpen.message, QStringLiteral("Sub Prep package created."));
+    QCOMPARE(disabledOpenCalls, 0);
+    QVERIFY(!disabledOpen.printCanceled);
+    verifyPackageArtifacts(disabledOpen, expectedDisabledOpenDirectory);
 }
 
 void SubPrepPackageServiceTests::
@@ -1305,16 +1432,44 @@ void SubPrepPackageServiceTests
     SubPrepPackageService::Request failureRequest =
         packageRequest(targetRoot.path(), QStringLiteral("Printer Failure"));
     failureRequest.printPaperCopies = true;
+    int folderOpenCalls = 0;
+    failureRequest.openFolderAfterGeneration = true;
+    failureRequest.folderOpener =
+        [&folderOpenCalls](const QUrl&)
+        {
+            ++folderOpenCalls;
+            return false;
+        };
     g_batchPrintStatus = PdfPrintService::Status::Failed;
     const SubPrepPackageService::Result failedPrint =
         SubPrepPackageService::generate(failureRequest);
     QCOMPARE(failedPrint.status, SubPrepPackageService::Status::Failed);
+    QCOMPARE(failedPrint.message, QStringLiteral("Printer failed"));
+    QCOMPARE(folderOpenCalls, 1);
     QVERIFY(failedPrint.folderCreated);
-    QVERIFY(QFileInfo::exists(
-        QDir(failedPrint.outputDirectory).filePath(
+    const QString expectedFailedPrintDirectory = QDir(targetRoot.path())
+        .filePath(SubPrepPackageService::datedFolderName(
+            QStringLiteral("Printer Failure"),
+            {QDate(2026, 7, 21)}
+            ));
+    QCOMPARE(failedPrint.outputDirectory, expectedFailedPrintDirectory);
+    const QStringList expectedFailedPrintDocuments{
+        QDir(expectedFailedPrintDirectory).filePath(
             QStringLiteral("Sub Prep.pdf")
+            ),
+        QDir(expectedFailedPrintDirectory).filePath(
+            QStringLiteral("Rosters - By Day.pdf")
             )
-    ));
+    };
+    QCOMPARE(failedPrint.documentPaths, expectedFailedPrintDocuments);
+    for (const QString& documentPath : failedPrint.documentPaths)
+    {
+        QVERIFY(QFileInfo(documentPath).isFile());
+        QCOMPARE(
+            QFileInfo(documentPath).absolutePath(),
+            QDir(expectedFailedPrintDirectory).absolutePath()
+            );
+    }
 }
 
 void SubPrepPackageServiceTests::

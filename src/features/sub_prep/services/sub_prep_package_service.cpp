@@ -1208,14 +1208,20 @@ Result generate(
         }
     }
 
-    if (
-        folderCreated
-        && request.openFolderAfterGeneration
-        && !QDesktopServices::openUrl(QUrl::fromLocalFile(packageDirectory))
-        )
+    bool folderOpenFailed = false;
+    if (folderCreated && request.openFolderAfterGeneration)
     {
-        completionMessage =
-            QObject::tr("Sub Prep package created, but the folder could not be opened.");
+        const QUrl packageUrl = QUrl::fromLocalFile(packageDirectory);
+        const bool opened = request.folderOpener
+            ? request.folderOpener(packageUrl)
+            : QDesktopServices::openUrl(packageUrl);
+        folderOpenFailed = !opened;
+        if (folderOpenFailed)
+        {
+            completionMessage = QObject::tr(
+                "Sub Prep package created, but the folder could not be opened."
+                );
+        }
     }
 
     if (!printFailure.isEmpty())
@@ -1224,6 +1230,16 @@ Result generate(
         result.outputDirectory = folderCreated ? packageDirectory : QString();
         result.documentPaths = documentPaths;
         result.folderCreated = folderCreated;
+        return result;
+    }
+
+    if (folderOpenFailed)
+    {
+        Result result = failed(completionMessage);
+        result.outputDirectory = packageDirectory;
+        result.documentPaths = documentPaths;
+        result.folderCreated = folderCreated;
+        result.printCanceled = printCanceled;
         return result;
     }
 
