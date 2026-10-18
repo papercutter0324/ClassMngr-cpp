@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch465 is closed and was pushed at `e88f6daa`; Batch466 is closed with F1067 complete at `e98c8cb9`; Batch467 is closed with F1068 complete at `71c16b78`. Batch468 discovery is pending. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) for current status and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 has five discovered slices in order, with F1069 selected/in progress and F1070-F1073 provisional. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch468) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch467 is closed with F1068 complete at `71c16b78`. Batch468 discovery is pending.
+Batch468's discovered slices, in order (with status):
+
+1. **F1069 — Preserve Academic Calendar schedule on technical preference-read failure.** Selected/in progress: preserve the current schedule when a technical preference read fails and prevent apparent defaults from being saved.
+2. **F1070 — Restore Sidebar selection after canceled Campus Directory navigation (root and child).** Provisional candidate: verify both real Cancel paths and restore the pre-click selection.
+3. **F1071 — Restore Sidebar selection after canceled Sub Prep navigation.** Provisional candidate: verify Cancel restores the pre-click selection.
+4. **F1072 — Restore Sidebar selection after canceled Classes navigation.** Provisional candidate: verify Cancel restores the pre-click selection.
+5. **F1073 — Restore Sidebar selection after canceled Staff Directory navigation.** Provisional candidate: verify Cancel restores the pre-click selection.
 
 The
 [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)

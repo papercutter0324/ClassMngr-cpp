@@ -59,6 +59,9 @@ struct CalendarPreferenceState final
     std::string scheduleJson;
     int scheduleWriteCount = 0;
     int scheduleWriteAttemptCount = 0;
+    bool failScheduleReads = false;
+    std::string scheduleReadFailure =
+        "Academic calendar schedule read test failure.";
     bool failScheduleWrites = false;
     std::string scheduleWriteFailure =
         "Academic calendar schedule test failure.";
@@ -81,9 +84,24 @@ public:
     {
     }
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]]
+    ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesReadResult read() const override
     {
-        return m_state->scheduleJson;
+        if (m_state->failScheduleReads)
+        {
+            return ClassMngr::Next::Application::
+                AcademicCalendarSchedulePreferencesReadResult::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                    .message = m_state->scheduleReadFailure,
+                    .recoverable = false
+                });
+        }
+
+        return ClassMngr::Next::Application::
+            AcademicCalendarSchedulePreferencesReadResult::success(
+                m_state->scheduleJson
+                );
     }
 
     [[nodiscard]]
@@ -655,6 +673,7 @@ private slots:
     void rejectsOutOfRangeWinterStartWithoutPersistence();
     void rejectsOutOfRangeInternalTermStartAndRefreshesWithoutPersistence();
     void failedScheduleSaveKeepsDraftAndRetrySucceeds();
+    void scheduleReadFailureWarnsAndKeepsDraftUntilReloadSucceeds();
     void failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds();
     void unavailableEventDisplaySaveRestoresDefaultsAndDoesNotEmit();
     void failedFirstDaySaveRestoresPersistedValueAndRetrySucceeds();
@@ -1279,6 +1298,105 @@ failedScheduleSaveKeepsDraftAndRetrySucceeds()
     QCOMPARE(state->scheduleWriteAttemptCount, 2);
     QCOMPARE(state->scheduleWriteCount, 1);
     QVERIFY(state->scheduleJson != persistedBefore);
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        proposedWeeks
+        );
+    QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(revisionChanged.count(), 1);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+scheduleReadFailureWarnsAndKeepsDraftUntilReloadSucceeds()
+{
+    auto state = std::make_shared<CalendarPreferenceState>();
+    state->failScheduleReads = true;
+    auto provider = makeProvider(state);
+    const QJsonObject defaultSchedule = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    ApplicationServices services;
+    CalendarPreferencesPanel panel(provider.get(), &services);
+    auto* const termYear = panel.findChild<QSpinBox*>(
+        QStringLiteral("preferencesCalendarTermYear")
+        );
+    auto* const saveButton = panel.findChild<QPushButton*>(
+        QStringLiteral("preferencesCalendarSaveTermSchedule")
+        );
+    QVERIFY(termYear);
+    QVERIFY(saveButton);
+    termYear->setValue(2026);
+
+    QGridLayout* scheduleFields = nullptr;
+    for (QGridLayout* const candidate : panel.findChildren<QGridLayout*>())
+    {
+        if (
+            qobject_cast<QDateEdit*>(widgetAt(candidate, 2, 1))
+            && qobject_cast<QSpinBox*>(widgetAt(candidate, 2, 2))
+            && qobject_cast<QDateEdit*>(widgetAt(candidate, 2, 4))
+            && qobject_cast<QSpinBox*>(widgetAt(candidate, 2, 5))
+            )
+        {
+            scheduleFields = candidate;
+            break;
+        }
+    }
+    QVERIFY2(scheduleFields, "The visible term schedule grid was not found.");
+    auto* const elementarySummerWeeks = qobject_cast<QSpinBox*>(
+        widgetAt(scheduleFields, 4, 2)
+        );
+    QVERIFY(elementarySummerWeeks);
+
+    const int initialWeeks = elementarySummerWeeks->value();
+    elementarySummerWeeks->setValue(initialWeeks + 1);
+    const int proposedWeeks = elementarySummerWeeks->value();
+    QCOMPARE(proposedWeeks, initialWeeks + 1);
+
+    QSignalSpy preferencesChanged(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged
+        );
+    QVERIFY(preferencesChanged.isValid());
+    RecordingCalendarPromptService prompts;
+    CalendarPromptServiceOverride promptOverride(&prompts);
+
+    saveButton->click();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Academic Schedule Not Saved")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().details,
+        QString::fromStdString(state->scheduleReadFailure)
+        );
+    QCOMPARE(preferencesChanged.count(), 0);
+    QCOMPARE(state->scheduleWriteAttemptCount, 0);
+    QCOMPARE(state->scheduleWriteCount, 0);
+    QCOMPARE(provider->schedule().toJson(), defaultSchedule);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(elementarySummerWeeks->value(), proposedWeeks);
+
+    state->failScheduleReads = false;
+    provider->reload();
+    saveButton->click();
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(preferencesChanged.count(), 1);
+    QCOMPARE(preferencesChanged.at(0).at(0).toBool(), false);
+    QCOMPARE(state->scheduleWriteAttemptCount, 1);
+    QCOMPARE(state->scheduleWriteCount, 1);
     QCOMPARE(
         provider->schedule()
             .yearSchedule(SchoolLevel::Elementary, 2026)

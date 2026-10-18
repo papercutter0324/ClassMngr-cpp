@@ -50,31 +50,45 @@ public:
         ApplicationServicesAcademicCalendarSchedulePreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]] Application::AcademicCalendarSchedulePreferencesReadResult
+    read() const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return {};
+            return Application::AcademicCalendarSchedulePreferencesReadResult::
+                success({});
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return {};
+            return Application::AcademicCalendarSchedulePreferencesReadResult::
+                success({});
         }
 
         const auto stored = repository->loadSetting(key());
         if (!stored)
         {
-            return {};
+            const QByteArray errorBytes = stored.error().toUtf8();
+            return Application::AcademicCalendarSchedulePreferencesReadResult::
+                failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = errorBytes.isEmpty()
+                        ? "Academic calendar schedule could not be read."
+                        : errorBytes.toStdString(),
+                    .recoverable = false
+                });
         }
 
         const QByteArray payload = stored->toString().toUtf8();
 
-        return std::string(
-            payload.constData(),
-            static_cast<std::size_t>(payload.size())
-            );
+        return Application::AcademicCalendarSchedulePreferencesReadResult::
+            success(
+                std::string(
+                    payload.constData(),
+                    static_cast<std::size_t>(payload.size())
+                    )
+                );
     }
 
     [[nodiscard]] Application::AcademicCalendarSchedulePreferencesSaveResult

@@ -45983,4 +45983,32 @@ The Executor and independent Tester both passed the focused target. The Tester b
 
 ### Batch467 closure - 2026-10-18
 
-Batch467 contained one accepted slice, F1068, which is complete at `71c16b78`; the batch is closed. Batch468 discovery is pending. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+Batch467 contained one accepted slice, F1068, which is complete at `71c16b78`; the batch is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch467 push - 2026-10-18
+
+The Batch467 closure was pushed at `537e420b`.
+
+### Batch468 discovery; F1069 selected and F1070-F1073 provisional - 2026-10-18
+
+The application scan found that `SettingsRepository::loadSetting()` distinguishes a missing setting, returned as a null `QVariant`, from a technical read error (`src/data/repositories/settings_repository.cpp:90-119`). `ApplicationServicesAcademicCalendarSchedulePreferencesPort::read()` currently collapses a technical error to an empty string (`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h:53-78`). `AcademicCalendarProvider::reload()` clears the in-memory schedule before reading the preference (`src/features/calendar/ui/academic_calendar_provider.cpp:258-289`); `CalendarPreferencesPanel` then loads the apparent defaults and can save them over the stored schedule (`src/features/calendar/ui/calendar_preferences_panel.cpp:75-165,615-645`). F193 deliberately preserved read-error-as-empty behavior, while F1066 later accepted typed technical read failures for current-campus preferences. Select F1069 to reopen only schedule-read handling because this path presents a concrete risk of overwriting the user's schedule.
+
+Accept F1069: distinguish a technical schedule-preference read failure from a successful empty/missing preference that uses the existing default schedule. Unavailable, closed, and null services remain successful empty reads. On `Technical`, preserve the loaded schedule and revision and emit no change signals; after an initial read failure, block schedule saves until a successful reload. The preferences panel must warn and retain its current draft, then recover after a successful reload. Preserve valid JSON parsing/round-trip behavior, empty/default behavior, and existing write-error behavior.
+
+Build `ClassMngr`, `ClassMngrAcademicCalendarTests`, `ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`, and `ClassMngrCalendarPreferencesRestoreDefaultsTests`. Run only the matching focused CTests for the three test targets, then `git diff --check`; no full suite.
+
+The Executor's build of the four targets and focused CTests passed (3/3). The independent Tester repeated the focused CTests (3/3); after adding assertions for a stored empty value and no `firstDayOfWeekChanged` signal, it rebuilt the two affected test targets and reran their CTests (2/2). `git diff --check` passed. No full suite ran.
+
+The UI scan independently found four reachable Sidebar Cancel gaps: Campus Directory root and child, Sub Prep, Classes, and Staff Directory (`src/ui/shared/widgets/sidebar/sidebar_definitions.cpp`; `src/app/controllers/navigation_controller.cpp`). The deferred audit found no newly met official trigger. No other eligible candidates were found. Class-detail, roster, and evaluation return paths were not listed because no Sidebar producer was established.
+
+Batch468's discovered slices, in order (with status and next action):
+
+1. F1069 - Preserve Academic Calendar schedule on technical preference-read failure (selected/in progress): preserve the current schedule when a technical preference read fails and prevent apparent defaults from being saved.
+2. F1070 - Restore Sidebar selection after canceled Campus Directory navigation (root and child) (provisional candidate): verify both real Cancel paths and restore the pre-click selection.
+3. F1071 - Restore Sidebar selection after canceled Sub Prep navigation (provisional candidate): verify Cancel restores the pre-click selection.
+4. F1072 - Restore Sidebar selection after canceled Classes navigation (provisional candidate): verify Cancel restores the pre-click selection.
+5. F1073 - Restore Sidebar selection after canceled Staff Directory navigation (provisional candidate): verify Cancel restores the pre-click selection.
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

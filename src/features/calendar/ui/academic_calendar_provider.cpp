@@ -192,6 +192,23 @@ AcademicCalendarProvider::saveYearSchedules(
     const AcademicYearSchedule& middle
     )
 {
+    if (!m_schedulePersistenceKnown)
+    {
+        const ClassMngr::Next::Domain::OperationError error =
+            m_scheduleReadError.value_or(
+                ClassMngr::Next::Domain::OperationError{
+                    .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                    .message =
+                        "Academic calendar schedule persistence state is unknown.",
+                    .recoverable = false
+                }
+                );
+        return ClassMngr::Next::Application::
+            AcademicCalendarSchedulePreferencesSaveResult::failure(
+                error
+                );
+    }
+
     AcademicCalendarSchedule candidate = m_schedule;
     candidate.setYearSchedules(
         termYear,
@@ -257,14 +274,28 @@ AcademicCalendarProvider::setFirstDayOfWeek(int firstDayOfWeek)
 
 void AcademicCalendarProvider::reload()
 {
+    using ScheduleReadResult = ClassMngr::Next::Application::
+        AcademicCalendarSchedulePreferencesReadResult;
+
+    const ScheduleReadResult stored = m_schedulePreferences
+        ? m_schedulePreferences->read()
+        : ScheduleReadResult::success({});
+    if (!stored)
+    {
+        m_scheduleReadError = stored.error();
+        m_schedulePersistenceKnown = false;
+        return;
+    }
+
+    m_scheduleReadError.reset();
+    m_schedulePersistenceKnown = true;
+
     const QJsonObject scheduleBefore = m_schedule.toJson();
     const int firstDayBefore = m_firstDayOfWeek;
     m_schedule.clear();
     loadOptions();
 
-    const std::string json = m_schedulePreferences
-        ? m_schedulePreferences->read()
-        : std::string{};
+    const std::string& json = stored.value();
     if (!json.empty())
     {
         QJsonParseError error;

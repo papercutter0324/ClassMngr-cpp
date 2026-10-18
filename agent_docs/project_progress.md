@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch467 complete; Batch468 discovery pending)
+### Current checkpoint - 2026-10-18 (Batch468 active; F1069 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -75,7 +75,19 @@ regression verifies source page, profile, form draft, selection, and database
 session retention on Cancel, then successful navigation and draft clearing on
 Discard. The Executor and independent Tester passed the affected build, the
 focused Sidebar navigation CTest (1/1), and `git diff --check`; no full suite
-ran. Batch467 is complete and its documentation closeout/push is underway.
+ran. Batch467 is closed and pushed at `537e420b`, including the F1068
+closeout record. Batch468 discovery recorded five ordered candidates: F1069
+Academic Calendar schedule preference read failures; F1070 Campus Directory
+Cancel selection; F1071 Sub Prep Cancel selection; F1072 Classes Cancel
+selection; and F1073 Staff Directory Cancel selection. F1069 is selected
+because a technical read error currently appears as an empty preference,
+clears the in-memory schedule, and can expose defaults to a later save. This
+narrowly reopens F193's legacy read-error fallback in light of that risk and
+F1066's typed technical-preference-read policy. The Executor's focused build
+and three CTests passed. Independent verification passed the same focused
+CTest set (3/3), then rebuilt the two targets affected by extra assertions and
+passed their focused CTests (2/2). The slice is ready to commit; no full suite
+ran.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -84,8 +96,9 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Close and push Batch467, then begin Batch468 slice discovery. Preserve the
-open exit gate and unresolved policy reconciliation.
+Complete and commit F1069, then proceed through Batch468 in order. Start
+Batch469 discovery when work begins on F1072, the second-last Batch468 slice.
+Preserve the open exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

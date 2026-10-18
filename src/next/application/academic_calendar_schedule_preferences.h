@@ -10,6 +10,8 @@ namespace ClassMngr::Next::Application
 // The application boundary carries the academic-calendar schedule as an
 // opaque UTF-8 JSON payload. JSON parsing and schema ownership remain with
 // the calendar feature.
+using AcademicCalendarSchedulePreferencesReadResult =
+    Domain::Result<std::string>;
 using AcademicCalendarSchedulePreferencesSaveResult = Domain::Result<void>;
 
 class AcademicCalendarSchedulePreferencesPort
@@ -17,7 +19,8 @@ class AcademicCalendarSchedulePreferencesPort
 public:
     virtual ~AcademicCalendarSchedulePreferencesPort() = default;
 
-    [[nodiscard]] virtual std::string read() const = 0;
+    [[nodiscard]] virtual AcademicCalendarSchedulePreferencesReadResult read()
+        const = 0;
 
     [[nodiscard]] virtual AcademicCalendarSchedulePreferencesSaveResult write(
         const std::string& payload

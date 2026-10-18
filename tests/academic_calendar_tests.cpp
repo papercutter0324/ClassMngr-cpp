@@ -23,6 +23,9 @@ struct AcademicCalendarPreferenceState final
     CalendarFirstDayOfWeek firstDayOfWeek = CalendarFirstDayOfWeek::Sunday;
     int scheduleWriteCount = 0;
     int scheduleWriteAttemptCount = 0;
+    bool failScheduleReads = false;
+    std::string scheduleReadFailure =
+        "Academic calendar schedule read test failure.";
     bool failScheduleWrites = false;
     std::string scheduleWriteFailure =
         "Academic calendar schedule test failure.";
@@ -44,9 +47,21 @@ public:
     {
     }
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]] AcademicCalendarSchedulePreferencesReadResult read()
+        const override
     {
-        return m_state->scheduleJson;
+        if (m_state->failScheduleReads)
+        {
+            return AcademicCalendarSchedulePreferencesReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = m_state->scheduleReadFailure,
+                .recoverable = false
+            });
+        }
+
+        return AcademicCalendarSchedulePreferencesReadResult::success(
+            m_state->scheduleJson
+            );
     }
 
     [[nodiscard]] AcademicCalendarSchedulePreferencesSaveResult write(
@@ -137,6 +152,8 @@ private slots:
     void providerOverridesFirstDayOfWeek();
     void providerReadsAndWritesInjectedPreferencePorts();
     void providerReloadSignalsOnlyPersistedChanges();
+    void providerReadFailureRetainsLoadedScheduleAndRevision();
+    void providerInitialReadFailureBlocksSaveUntilSuccessfulReload();
     void providerFirstDaySaveFailureDoesNotPublishAndRetrySucceeds();
     void providerWithoutFirstDayPortDoesNotPublishChange();
     void providerSaveFailureDoesNotPublishScheduleOrRevision();
@@ -397,6 +414,115 @@ void AcademicCalendarTests::providerReloadSignalsOnlyPersistedChanges()
     QCOMPARE(provider->revision(), revisionBefore + 2);
     QCOMPARE(firstDayChanged.count(), 1);
     QCOMPARE(revisionChanged.count(), 2);
+}
+
+void AcademicCalendarTests::
+providerReadFailureRetainsLoadedScheduleAndRevision()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    auto provider = makeProvider(state);
+
+    AcademicYearSchedule proposedElementary =
+        provider->schedule().yearSchedule(SchoolLevel::Elementary, 2026);
+    AcademicYearSchedule middle =
+        provider->schedule().yearSchedule(SchoolLevel::Middle, 2026);
+    ++proposedElementary.weeks[2];
+    QVERIFY(provider->saveYearSchedules(2026, proposedElementary, middle));
+
+    const QJsonObject scheduleBefore = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    const int writeAttemptsBefore = state->scheduleWriteAttemptCount;
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+    QSignalSpy firstDayChanged(
+        provider.get(),
+        &AcademicCalendarProvider::firstDayOfWeekChanged
+        );
+    QVERIFY(firstDayChanged.isValid());
+
+    state->failScheduleReads = true;
+    state->firstDayOfWeek = CalendarFirstDayOfWeek::Monday;
+    provider->reload();
+
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
+    QCOMPARE(provider->firstDayOfWeek(), 0);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(firstDayChanged.count(), 0);
+
+    const auto blocked = provider->saveYearSchedules(
+        2026,
+        proposedElementary,
+        middle
+        );
+    QVERIFY(!blocked);
+    QCOMPARE(blocked.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(blocked.error().message, state->scheduleReadFailure);
+    QCOMPARE(state->scheduleWriteAttemptCount, writeAttemptsBefore);
+    QCOMPARE(provider->schedule().toJson(), scheduleBefore);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+    QCOMPARE(firstDayChanged.count(), 0);
+}
+
+void AcademicCalendarTests::
+providerInitialReadFailureBlocksSaveUntilSuccessfulReload()
+{
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    state->failScheduleReads = true;
+    auto provider = makeProvider(state);
+    const QJsonObject defaultSchedule = provider->schedule().toJson();
+    const int revisionBefore = provider->revision();
+    QSignalSpy revisionChanged(
+        provider.get(),
+        &AcademicCalendarProvider::revisionChanged
+        );
+    QVERIFY(revisionChanged.isValid());
+
+    AcademicYearSchedule elementary =
+        provider->schedule().yearSchedule(SchoolLevel::Elementary, 2026);
+    AcademicYearSchedule middle =
+        provider->schedule().yearSchedule(SchoolLevel::Middle, 2026);
+    ++elementary.weeks[2];
+    QVERIFY(elementary.isValid());
+
+    const auto blocked = provider->saveYearSchedules(
+        2026,
+        elementary,
+        middle
+        );
+    QVERIFY(!blocked);
+    QCOMPARE(blocked.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(blocked.error().message, state->scheduleReadFailure);
+    QCOMPARE(state->scheduleWriteAttemptCount, 0);
+    QCOMPARE(state->scheduleWriteCount, 0);
+    QVERIFY(state->scheduleJson.empty());
+    QCOMPARE(provider->schedule().toJson(), defaultSchedule);
+    QCOMPARE(provider->revision(), revisionBefore);
+    QCOMPARE(revisionChanged.count(), 0);
+
+    state->failScheduleReads = false;
+    provider->reload();
+    const auto saved = provider->saveYearSchedules(
+        2026,
+        elementary,
+        middle
+        );
+
+    QVERIFY(saved);
+    QCOMPARE(state->scheduleWriteAttemptCount, 1);
+    QCOMPARE(state->scheduleWriteCount, 1);
+    QCOMPARE(
+        provider->schedule()
+            .yearSchedule(SchoolLevel::Elementary, 2026)
+            .weeks[2],
+        elementary.weeks[2]
+        );
+    QCOMPARE(provider->revision(), revisionBefore + 1);
+    QCOMPARE(revisionChanged.count(), 1);
 }
 
 void AcademicCalendarTests::

@@ -5,6 +5,7 @@
 #include "next/application/calendar_first_day_of_week_preferences.h"
 
 #include <memory>
+#include <optional>
 
 #include <QObject>
 #include <QDateTime>
@@ -79,6 +80,9 @@ private:
     std::unique_ptr<ClassMngr::Next::Application::
         CalendarFirstDayOfWeekPreferencesPort> m_firstDayOfWeekPreferences;
     AcademicCalendarSchedule m_schedule;
+    std::optional<ClassMngr::Next::Domain::OperationError>
+        m_scheduleReadError;
+    bool m_schedulePersistenceKnown = false;
     int m_revision = 0;
     int m_firstDayOfWeek = 0;
 };
