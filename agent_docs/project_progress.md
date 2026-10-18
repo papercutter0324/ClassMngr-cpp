@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1048 complete; Batch435 active)
+### Current checkpoint - 2026-10-18 (F1048 complete; F1049 accepted)
 
 F1048 is complete at acceptance commit
 `a9e136009d22a52c4e5faa0ee606a715199f2b66` and source/test commit
@@ -75,9 +75,16 @@ No full suite ran.
 Two independent post-F1048 audits reviewed all 13 official Deferred entries;
 none became actionable, resolved, or superseded, and all remain unchanged.
 Batch434 closed with F1048 as its only accepted slice. Batch435 discovery is
-active, checking the legacy application mapping against current source. Gates
-1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
-pending policy reconciliation.
+complete and F1049 is accepted for implementation. The roster-row-transfer
+adapter will move from `RosterService` to the active session's transactional
+`RosterRepository`, persist the use case's prepared snapshots, and honor
+questionable Korean name lengths after the existing UI confirmation. This
+addresses the mismatch where `RosterService::saveRosters` re-rejects those
+confirmed values using its stricter default. Batch435 also found mapping-table
+staleness to correct at slice closure; its accessor audit did not identify
+another production candidate. All 13 official Deferred entries remain
+unchanged. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
+F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

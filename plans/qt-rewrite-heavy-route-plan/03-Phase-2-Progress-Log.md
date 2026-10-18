@@ -45163,3 +45163,47 @@ none became actionable, resolved, or superseded, and all entries remain
 unchanged. Batch434 found F1048 and no other slice. Batch434 is closed, Batch435
 discovery is active, Gates 1/2 remain Partial, the Phase 2 exit gate remains
 Open, and F1007 remains pending policy reconciliation.
+
+### Batch435 discovery; F1049 accepted before implementation - 2026-10-18
+
+The roster-row-transfer review found that
+`RosterRowTransferUseCase` validates prepared/normalized copies of the source
+and target, but currently passes its earlier snapshots to the typed save port.
+It also validates distinct canonical positive class IDs. The platform adapter
+converts those snapshots to legacy `Roster` values and calls
+`RosterService::saveRosters`; that batch service applies strict roster
+validation again and may reject a questionable Korean name length after the
+UI has obtained confirmation. The batch repository method itself is
+transactional, but the adapter calls the legacy service instead of requiring
+the active open session's `RosterRepository`; `RosterService` retains a
+`DataService` fallback, though the current `ApplicationServices` factory passes
+no `DataService` to it. Evidence:
+`roster_row_transfer_use_case.h`,
+`application_services_roster_row_transfer_save_port.h`,
+`RosterEditorWidget::validateRosterBeforeSave()` and
+`confirmQuestionableKoreanNameLengths()`, `RosterService::saveRosters()`, and
+`RosterRepository::saveRosters()`.
+
+F1049 is accepted: pass the prepared source and target snapshots to the typed
+port; write them through the active open session's `RosterRepository` in one
+`saveRosters` transaction, without `RosterService` or `DataService` fallback.
+Preserve distinct canonical positive IDs, map a closed/unavailable session to
+recoverable `NotFound`, and reject invalid roster structure before writing.
+Honor the existing UI policy that permits questionable Korean name lengths
+after explicit confirmation; bypassing the legacy batch service's second,
+strict validation is an intentional correction. Focused tests must cover
+normalized source/target persistence, confirmed questionable lengths,
+second-roster failure rolling both writes back, unavailable-session result,
+and the use-case save request contents. Build `ClassMngr`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`, and
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests` in
+`build/windows-x64-debug`; run only matching CTests and `git diff --check`, with
+no full suite. This acceptance records no implementation or test execution.
+
+The mapping-accuracy review also found that `classService()` omits F172 and
+F1048; the `ApplicationServices` boundary and `dataService()`/
+`databaseSession` mapping are incomplete or inaccurate; and the
+`rosterService()` and `speakingEvaluationService()` rows are stale. Carry these
+findings into the mapping's closure documentation. All 13 official Deferred
+entries remain unchanged. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation.
