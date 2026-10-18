@@ -45810,3 +45810,13 @@ The workspace/import-export lane found no eligible candidate. Its nearest lead, 
 No other slices were found.
 
 Batch459 contains only F1064. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1064 completion - 2026-10-18
+
+F1064 is committed as `5f0235af` (`Phase2 - Guard staff directories after reload failure`). When a Native English or GS Team mutation succeeds but the immediate directory reload fails, the page keeps its visible snapshot, clears unsaved state, stops autosave, disables edits/add/delete/save, warns that the save committed but refresh failed, and still emits `directorySaved` once. A later successful reload restores persisted IDs and normal editing; the retained ID-less row cannot be submitted again.
+
+The executor built `ClassMngrStaffDirectoryNativeEnglishSaveParityTests` and `ClassMngrStaffDirectoryGsTeamSaveTests`; both focused CTests passed. The independent Tester incrementally rebuilt the targets, reran both CTests (2/2), and directly ran the new post-save failure slots plus existing pre-save read-failure and mutation-failure slots for both directories. Recovery, signal/warning, read-only state, and unchanged row counts passed. `git diff --check` passed. The test seam injects one failure into the shared post-save read-failure handler rather than forcing the SQLite query itself to fail; the existing read-failure tests exercise real repository failures before save. No full suite ran.
+
+### Batch459 push - 2026-10-18
+
+Pushed `5f0235af` to `origin/Qt-Rewrite`, advancing it from `720a2d84`. Batch459 contained only F1064 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
