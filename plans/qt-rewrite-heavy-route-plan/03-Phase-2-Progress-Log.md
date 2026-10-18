@@ -45420,3 +45420,47 @@ the missing launch assertion is only a test gap. No Batch443 edits or tests
 were made. The next resume begins a fresh discovery pass. Gates 1/2 remain
 Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation.
+
+### Batch444 discovery; F1053 accepted before implementation - 2026-10-18
+
+An independent feature/UI review identified stale output-action state when
+switching child tabs within My Workspace; the application-contract lane
+independently found no candidate. This is outside F1050-F1052 and does not
+change any official Deferred entry.
+
+`MyWorkspacePage::outputCapabilities()` delegates to the current child page
+(`src/features/my_info/ui/my_workspace_page.cpp:259-263`). Its tab
+`currentChanged` handler initializes and activates the child without emitting
+`outputCapabilitiesChanged`
+(`src/features/my_info/ui/my_workspace_page.cpp:325-345`); subsequent child
+capability changes are forwarded
+(`src/features/my_info/ui/my_workspace_page.cpp:413-414`).
+`PageManager` emits capabilities only when the current top-level page emits
+(`src/ui/shared/pages/pagemanager.cpp:308-319`), and `MainWindow` updates the
+Print current page and Save current page as actions only on that signal or
+during initial setup (`src/app/mainwindow.cpp:912-922,1456-1478`). This leaves
+the actions reflecting the previous child after a tab switch, contrary to the
+Phase 0 contract that actions reflect current-page capabilities
+(`docs/qt-rewrite/phase-0-source-archaeology.md:188`). Schedule supports
+output when a database is open; BasePage defaults to no output, and Details
+and Calendar do not enable output.
+
+F1053 is accepted with scope limited to
+`src/features/my_info/ui/my_workspace_page.cpp` and
+`tests/mainwindow_save_as_export_parity_tests.cpp`. Emit the existing
+capability-change signal after a child-tab transition/initialization so
+PageManager and MainWindow recompute action states. Keep child capability
+values, output actions, activation behavior, existing child-capability
+forwarding, and unrelated tab/navigation behavior unchanged; add no CMake
+target. A real MainWindow with an open database must show both actions enabled
+on Schedule, disabled on Details, disabled on Calendar, and enabled again on
+Schedule. Exercise the transitions through the existing UI without
+test-side signal connections or manual refresh.
+
+Before slice closeout, build `ClassMngr` and
+`ClassMngrMainWindowSaveAsExportParityTests` in
+`build/windows-x64-debug`, run only CTest
+`ClassMngrMainWindowSaveAsExportParityTests`, then run `git diff --check`;
+no full suite. This is acceptance only: no implementation or verification
+result is recorded here. Gates 1/2 remain Partial, the Phase 2 exit gate
+remains Open, and F1007 remains pending policy reconciliation.

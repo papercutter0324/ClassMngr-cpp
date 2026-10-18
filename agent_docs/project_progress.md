@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1052 complete; Batch444 discovery underway)
+### Current checkpoint - 2026-10-18 (F1052 complete; F1053 accepted)
 
 F1050 is complete at source/test commit
 `1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
@@ -130,9 +130,16 @@ contract and feature-boundary reviews found no concrete mismatch. Custom-color
 unavailable writes match the documented no-op policy, Class Notes unavailable
 saves already fail, and Useful Links dispatch matches the legacy behavior;
 the remaining launch-assertion gap alone does not establish a contract change.
-Batch444 application-contract and feature/UI discovery is underway. Deployment
-remains `phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is pending
-policy reconciliation, and the Phase 2 exit gate is Open.
+Batch444's feature/UI lane found F1053: switching the selected My Workspace
+child changes `outputCapabilities()`, but the tab-change handler does not emit
+the signal that causes PageManager and MainWindow to refresh Print and Save As
+actions. The application-contract lane found no candidate. F1053 is accepted
+before implementation: emit the existing signal after tab transition and
+assert both actions enabled on Schedule, disabled on Details and Calendar, and
+enabled again on Schedule through the real MainWindow. The slice is limited to
+MyWorkspacePage and its MainWindow parity test; no CMake change. Deployment
+remains `phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is
+pending policy reconciliation, and the Phase 2 exit gate is Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
