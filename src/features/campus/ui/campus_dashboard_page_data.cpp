@@ -110,6 +110,28 @@ void CampusDashboardPage::loadCampuses()
     const QString currentCampusId =
         m_currentCampus.id;
 
+    if (m_dirty && !currentCampusId.isEmpty())
+    {
+        bool selectedCampusIsAvailable = false;
+        for (const auto& campusMetadata : campuses)
+        {
+            if (
+                QString::fromStdString(campusMetadata.id)
+                == currentCampusId
+                )
+            {
+                selectedCampusIsAvailable = true;
+                break;
+            }
+        }
+
+        if (!selectedCampusIsAvailable)
+        {
+            setStatus(tr("The selected campus is no longer available."));
+            return;
+        }
+    }
+
     m_campusCombo->clear();
 
     for (const auto& campusMetadata : campuses)
