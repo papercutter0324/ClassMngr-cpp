@@ -940,6 +940,110 @@ Status ClassInfoRepository::saveClassCoTeacherAssignment(
     return {};
 }
 
+ClassInfoRepository::ClassCoTeacherAssignmentSaveDetailedResult
+ClassInfoRepository::saveClassCoTeacherAssignmentDetailed(
+    const int classId,
+    const std::optional<qint64> teacherId
+    )
+{
+    if (classId <= 0)
+    {
+        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
+            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Saving class information failed: invalid class id %1."
+                ).arg(classId)
+        });
+    }
+
+    DatabaseTransaction transaction(m_database);
+    if (!transaction.started())
+    {
+        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
+            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Starting class information save transaction failed for "
+                "class id %1: %2"
+                ).arg(classId)
+                 .arg(m_database.lastError().text())
+        });
+    }
+
+    QSqlQuery query(m_database);
+    query.prepare(R"(
+        INSERT INTO class_info (
+            class_id,
+            teacher_id
+        )
+        SELECT ?, ?
+        WHERE ? IS NULL OR EXISTS (
+            SELECT 1 FROM teachers WHERE id=?
+        )
+
+        ON CONFLICT(class_id)
+        DO UPDATE SET
+            teacher_id=excluded.teacher_id
+    )");
+    query.addBindValue(classId);
+    query.addBindValue(
+        teacherId ? QVariant(*teacherId) : QVariant()
+        );
+    query.addBindValue(
+        teacherId ? QVariant(*teacherId) : QVariant()
+        );
+    query.addBindValue(
+        teacherId ? QVariant(*teacherId) : QVariant()
+        );
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Saving class information"),
+        identity
+        );
+    if (!executed)
+    {
+        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
+            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
+            .diagnostic = executed.error().userMessage()
+        });
+    }
+
+    if (query.numRowsAffected() == 0 && teacherId.has_value())
+    {
+        query.finish();
+        if (!transaction.rollbackChecked())
+        {
+            return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
+                .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
+                .diagnostic = QObject::tr(
+                    "Rolling back class information save failed for %1: %2"
+                    ).arg(identity, m_database.lastError().text())
+            });
+        }
+
+        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
+            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::TeacherNotFound,
+            .diagnostic = QObject::tr(
+                "Saving class information failed: teacher id %1 was not "
+                "found."
+                ).arg(teacherId.value_or(-1))
+        });
+    }
+
+    if (!transaction.commit())
+    {
+        return std::unexpected(ClassCoTeacherAssignmentSaveFailure{
+            .kind = ClassCoTeacherAssignmentSaveFailure::Kind::Technical,
+            .diagnostic = QObject::tr(
+                "Committing class information failed for %1: %2"
+                ).arg(identity, m_database.lastError().text())
+        });
+    }
+
+    return {};
+}
+
 namespace
 {
 Status assignExportTeacherId(ClassInfo& info, const QVariant& value)

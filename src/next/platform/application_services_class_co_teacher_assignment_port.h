@@ -166,7 +166,8 @@ public:
                 return repositoryFailure(session, intensiveConflicts.error());
             }
 
-            const Status saved = repository->saveClassCoTeacherAssignment(
+            const auto saved =
+                repository->saveClassCoTeacherAssignmentDetailed(
                 normalized.classId,
                 *teacherId > 0
                     ? std::optional<qint64>{*teacherId}
@@ -174,7 +175,23 @@ public:
                 );
             if (!saved)
             {
-                return repositoryFailure(session, saved.error());
+                const auto& error = saved.error();
+                if (
+                    error.kind
+                        == ClassInfoRepository::
+                            ClassCoTeacherAssignmentSaveFailure::Kind::
+                                TeacherNotFound
+                    && session->isOpen()
+                    )
+                {
+                    return Domain::Result<void>::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = toStdString(error.diagnostic),
+                        .recoverable = true
+                    });
+                }
+
+                return repositoryFailure(session, error.diagnostic);
             }
 
             return Domain::Result<void>::success();

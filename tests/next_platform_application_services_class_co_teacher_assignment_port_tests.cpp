@@ -1,6 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/database/sql_query_utils.h"
 #include "data/repositories/class_info_repository.h"
 #include "next/application/class_co_teacher_assignment_use_case.h"
 #include "next/platform/application_services_class_co_teacher_assignment_port.h"
@@ -13,6 +14,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -364,6 +366,7 @@ private slots:
     void regularConflictPrecedesIntensiveConflict();
     void assignmentPreservesRawMetadataAndScheduleRows();
     void assignmentCreatesMissingClassInfoRowWithDefaults();
+    void missingTeacherReturnsRecoverableNotFoundWithoutMutation();
     void teacherIdStatementFailurePreservesClassInfoAndSchedules();
     void validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation();
     void regularScheduleLateFetchFailureReturnsTechnicalWithoutMutation();
@@ -1158,6 +1161,146 @@ assignmentCreatesMissingClassInfoRowWithDefaults()
 }
 
 void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
+missingTeacherReturnsRecoverableNotFoundWithoutMutation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int selectedClassId = createClass(
+        services,
+        QStringLiteral("Missing Co-Teacher Assignment")
+        );
+    const int originalTeacherId = createTeacher(
+        services,
+        QStringLiteral("Original Teacher")
+        );
+    QVERIFY(selectedClassId > 0);
+    QVERIFY(originalTeacherId > 0);
+
+    ClassInfo original = newClassInfo(
+        services,
+        selectedClassId,
+        originalTeacherId
+        );
+    original.classTimes = {{
+        QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"),
+        QStringLiteral("9:50 AM")
+    }};
+    original.intensiveTimes = {{
+        QStringLiteral("Friday"),
+        QStringLiteral("10:00 AM"),
+        QStringLiteral("10:50 AM")
+    }};
+    QVERIFY(saveClassInfo(services, original));
+
+    ClassInfoRepository* const repository =
+        services.databaseSession()->classInfoRepository();
+    QVERIFY(repository);
+    const auto savedBefore = repository->loadClassInfo(selectedClassId);
+    QVERIFY(savedBefore);
+    QSqlDatabase database = services.databaseSession()->database();
+    const QVariantList rawInfoBefore = rawClassInfoFields(
+        database,
+        selectedClassId
+        );
+    const QList<QVariantList> regularBefore = rawScheduleRows(
+        database,
+        selectedClassId,
+        QStringLiteral("class_times")
+        );
+    const QList<QVariantList> intensiveBefore = rawScheduleRows(
+        database,
+        selectedClassId,
+        QStringLiteral("class_intensive_times")
+        );
+
+    const qint64 missingTeacherId = std::numeric_limits<qint64>::max();
+    QSqlQuery checkTeacher(database);
+    checkTeacher.prepare(QStringLiteral(
+        "SELECT 1 FROM teachers WHERE id=?"
+        ));
+    checkTeacher.addBindValue(missingTeacherId);
+    QVERIFY2(checkTeacher.exec(), qPrintable(checkTeacher.lastError().text()));
+    QVERIFY(!checkTeacher.next());
+
+    const auto typedSave = repository->saveClassCoTeacherAssignmentDetailed(
+        selectedClassId,
+        missingTeacherId
+        );
+    QVERIFY(!typedSave);
+    QVERIFY(
+        typedSave.error().kind
+            == ClassInfoRepository::ClassCoTeacherAssignmentSaveFailure::
+                Kind::TeacherNotFound
+        );
+
+    QSqlQuery legacyDiagnosticQuery(database);
+    legacyDiagnosticQuery.prepare(R"(
+        INSERT INTO class_info (
+            class_id,
+            teacher_id
+        )
+        VALUES (?, ?)
+
+        ON CONFLICT(class_id)
+        DO UPDATE SET
+            teacher_id=excluded.teacher_id
+    )");
+    legacyDiagnosticQuery.addBindValue(selectedClassId);
+    legacyDiagnosticQuery.addBindValue(missingTeacherId);
+    const auto legacyExpectedDiagnostic = SqlQueryUtils::executePrepared(
+        legacyDiagnosticQuery,
+        QObject::tr("Saving class information"),
+        QObject::tr("class id %1").arg(selectedClassId)
+        );
+    QVERIFY(!legacyExpectedDiagnostic);
+
+    const Status legacySave = repository->saveClassCoTeacherAssignment(
+        selectedClassId,
+        missingTeacherId
+        );
+    QVERIFY(!legacySave);
+    QCOMPARE(
+        legacySave.error(),
+        legacyExpectedDiagnostic.error().userMessage()
+        );
+
+    Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
+    const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
+        selectedClassId,
+        missingTeacherId,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(result.error().recoverable);
+
+    const auto savedAfter = repository->loadClassInfo(selectedClassId);
+    QVERIFY(savedAfter);
+    QVERIFY(sameCompleteClassInfo(*savedAfter, *savedBefore));
+    QCOMPARE(rawClassInfoFields(database, selectedClassId), rawInfoBefore);
+    QCOMPARE(
+        rawScheduleRows(
+            database,
+            selectedClassId,
+            QStringLiteral("class_times")
+            ),
+        regularBefore
+        );
+    QCOMPARE(
+        rawScheduleRows(
+            database,
+            selectedClassId,
+            QStringLiteral("class_intensive_times")
+            ),
+        intensiveBefore
+        );
+}
+
+void NextPlatformApplicationServicesClassCoTeacherAssignmentPortTests::
 teacherIdStatementFailurePreservesClassInfoAndSchedules()
 {
     QTemporaryDir directory;
@@ -1222,6 +1365,7 @@ teacherIdStatementFailurePreservesClassInfoAndSchedules()
         );
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!result.error().recoverable);
     QVERIFY(QString::fromStdString(result.error().message).contains(
         QStringLiteral("forced co-teacher update failure")
         ));

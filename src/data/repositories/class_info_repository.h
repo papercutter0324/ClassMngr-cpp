@@ -526,6 +526,21 @@ public:
     using ClassDetailsParentCheckDetailedResult =
         std::expected<void, ClassDetailsSaveFailure>;
 
+    struct ClassCoTeacherAssignmentSaveFailure final
+    {
+        enum class Kind
+        {
+            TeacherNotFound,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using ClassCoTeacherAssignmentSaveDetailedResult =
+        std::expected<void, ClassCoTeacherAssignmentSaveFailure>;
+
     explicit ClassInfoRepository(
         QSqlDatabase& database
         );
@@ -568,6 +583,11 @@ public:
         int classId,
         std::optional<qint64> teacherId
         );
+    [[nodiscard]] ClassCoTeacherAssignmentSaveDetailedResult
+        saveClassCoTeacherAssignmentDetailed(
+            int classId,
+            std::optional<qint64> teacherId
+            );
 
     [[nodiscard]] Result<ClassInfo> loadClassInfo(
         int classId
