@@ -104,6 +104,32 @@ Roster rosterFromApplicationSnapshot(
     return roster;
 }
 
+bool hasOnlyQuestionableKoreanNameLengthErrors(
+    const ClassMngr::Next::Application::RosterSavePreparation& prepared
+    )
+{
+    bool foundQuestionableLengthError = false;
+    for (const auto& issue : prepared.issues)
+    {
+        if (issue.severity
+            != ClassMngr::Next::Application::RosterSaveIssueSeverity::Error)
+        {
+            continue;
+        }
+
+        if (issue.code == "student_name.korean.too_short"
+            || issue.code == "student_name.korean.too_long")
+        {
+            foundQuestionableLengthError = true;
+            continue;
+        }
+
+        return false;
+    }
+
+    return foundQuestionableLengthError;
+}
+
 } // namespace
 
 RosterEditorWidget::RosterEditorWidget(
@@ -165,7 +191,12 @@ RosterEditorWidget::RosterEditorWidget(
         m_autosave,
         &AutosaveCoordinator::saveRequested,
         this,
-        [this](bool interactive) { saveRosterInternal(interactive); }
+        [this](bool interactive)
+        {
+            const bool confirmQuestionableLengths =
+                interactive && m_autosave->saveMode() == SaveMode::Manual;
+            saveRosterInternal(interactive, confirmQuestionableLengths);
+        }
         );
     connect(
         m_autosave,
@@ -615,6 +646,8 @@ void RosterEditorWidget::updateRosterValidation()
         applicationRosterSnapshot(currentRosterForSave()), false,
         ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals);
     const ValidationResult validation = RosterSaveValidationAdapter::validation(prepared);
+    const bool manualSaveEligible =
+        hasOnlyQuestionableKoreanNameLengthErrors(prepared);
 
     m_updatingValidation = true;
     m_validationBinder->setValidation(
@@ -627,6 +660,7 @@ void RosterEditorWidget::updateRosterValidation()
         }
         );
     m_model->setDomainValidation(validation);
+    m_autosave->setManualSaveEligible(manualSaveEligible);
     m_updatingValidation = false;
 }
 

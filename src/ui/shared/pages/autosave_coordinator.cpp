@@ -126,6 +126,18 @@ void AutosaveCoordinator::setValid(bool valid)
     emit stateChanged();
 }
 
+void AutosaveCoordinator::setManualSaveEligible(bool eligible)
+{
+    if (m_manualSaveEligible == eligible)
+    {
+        return;
+    }
+
+    m_manualSaveEligible = eligible;
+    updateSaveButton();
+    emit stateChanged();
+}
+
 void AutosaveCoordinator::setSaveAvailable(bool available)
 {
     if (m_saveAvailable == available)
@@ -219,10 +231,14 @@ void AutosaveCoordinator::requestSave(bool interactive)
 {
     m_timer->stop();
 
+    const bool eligibleManualSave =
+        interactive
+        && m_saveMode == SaveMode::Manual
+        && m_manualSaveEligible;
     if (
         !m_dirty
         || m_loading
-        || !m_valid
+        || (!m_valid && !eligibleManualSave)
         || !m_saveAvailable
         || (m_manualSaveRequired && !interactive)
         )
@@ -262,12 +278,15 @@ void AutosaveCoordinator::updateSaveButton()
     const bool manual =
         m_saveMode != SaveMode::Automatic
         || m_manualSaveRequired;
+    const bool validityAllowsSave =
+        m_valid
+        || (m_saveMode == SaveMode::Manual && m_manualSaveEligible);
     m_saveButton->setVisible(manual);
     m_saveButton->setEnabled(
         manual
         && m_dirty
         && !m_loading
-        && m_valid
+        && validityAllowsSave
         && m_saveAvailable
         );
     m_saveButton->setText(

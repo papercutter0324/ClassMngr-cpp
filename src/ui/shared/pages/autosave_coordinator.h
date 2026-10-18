@@ -34,6 +34,8 @@ public:
     void markClean();
     void setLoading(bool loading);
     void setValid(bool valid);
+    // Overrides strict validity only for an interactive request in Manual mode.
+    void setManualSaveEligible(bool eligible);
     void setSaveAvailable(bool available);
     void setManualSaveRequired(bool required);
     void setSaveMode(SaveMode mode);
@@ -59,6 +61,7 @@ private:
     bool m_dirty = false;
     bool m_loading = false;
     bool m_valid = true;
+    bool m_manualSaveEligible = false;
     bool m_saveAvailable = true;
     bool m_manualSaveRequired = false;
     SaveMode m_saveMode = SaveMode::Automatic;

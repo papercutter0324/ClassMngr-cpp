@@ -139,6 +139,19 @@ bool setStudent(
             );
 }
 
+QPushButton* findSaveButton(RosterEditorWidget& editor)
+{
+    for (QPushButton* button : editor.findChildren<QPushButton*>())
+    {
+        if (button->text().startsWith(QStringLiteral("Save Changes")))
+        {
+            return button;
+        }
+    }
+
+    return nullptr;
+}
+
 }
 
 class RosterEditorWidgetSaveTests final : public QObject
@@ -154,6 +167,8 @@ private slots:
     void customColumnRemovalConfirmationSelectionWidthAndAutosave();
     void invalidRosterSaveSelectsFirstInvalidCell();
     void autosaveFailureRemainsSilentAndDirty();
+    void manualSaveButtonConfirmsQuestionableKoreanNameLengths();
+    void manualSaveButtonBlocksOtherErrorsAndAutomaticMode();
     void confirmedInteractiveSaveAllowsQuestionableKoreanNameLength();
     void rejectedQuestionableLengthKeepsFocusDirtyAndStorage();
     void literalLeadingBomInNameRemainsInvalid();
@@ -722,6 +737,167 @@ autosaveFailureRemainsSilentAndDirty()
     QCOMPARE(saveSpy.constFirst().at(0).toBool(), false);
     QVERIFY(editor.hasUnsavedChanges());
     QVERIFY(prompts.messages.isEmpty());
+}
+
+void RosterEditorWidgetSaveTests::
+manualSaveButtonConfirmsQuestionableKoreanNameLengths()
+{
+    const QVector<QString> questionableNames{
+        QStringLiteral("\uAE40"),
+        QStringLiteral("\uAE40\uBBFC\uC11C\uC9C0\uC6B0")
+    };
+    const QVector<PromptChoice> choices{
+        PromptChoice::Accepted,
+        PromptChoice::Rejected
+    };
+
+    for (const QString& koreanName : questionableNames)
+    {
+        for (const PromptChoice choice : choices)
+        {
+            RosterEditorFixture fixture;
+            QString error;
+            QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+            const auto storedBefore =
+                fixture.services.rosterService()->roster(fixture.classId);
+            QVERIFY(storedBefore);
+
+            FakeUserPromptService prompts;
+            prompts.scriptedChoices.enqueue(choice);
+            ScopedPromptService promptScope(&prompts);
+
+            RosterEditorWidget editor(&fixture.services);
+            editor.loadClass(
+                Classroom(QStringLiteral("Manual button confirmation"), fixture.classId)
+                );
+            editor.setSaveMode(SaveMode::Manual);
+            RosterModel* const model = editor.findChild<RosterModel*>();
+            QPushButton* const saveButton = findSaveButton(editor);
+            QVERIFY(model);
+            QVERIFY(saveButton);
+
+            QVERIFY(setStudent(
+                model,
+                0,
+                QStringLiteral("Dana"),
+                koreanName
+                ));
+            QVERIFY(editor.hasUnsavedChanges());
+            QVERIFY(saveButton->isEnabled());
+
+            saveButton->click();
+
+            QCOMPARE(prompts.confirmations.size(), 1);
+            QVERIFY(prompts.messages.isEmpty());
+            const int koreanColumn = columnByName(
+                model,
+                QStringLiteral("Korean")
+                );
+            QVERIFY(koreanColumn >= 0);
+            QVERIFY(!model->data(
+                model->index(0, koreanColumn),
+                Qt::ToolTipRole
+                ).toString().isEmpty());
+
+            if (choice == PromptChoice::Accepted)
+            {
+                QVERIFY(!editor.hasUnsavedChanges());
+                const auto stored =
+                    fixture.services.rosterService()->roster(fixture.classId);
+                QVERIFY(stored);
+                QCOMPARE(stored->rows.at(0).at(0), QStringLiteral("Dana"));
+                QCOMPARE(stored->rows.at(0).at(1), koreanName);
+            }
+            else
+            {
+                QVERIFY(editor.hasUnsavedChanges());
+                const auto storedAfter =
+                    fixture.services.rosterService()->roster(fixture.classId);
+                QVERIFY(storedAfter);
+                QCOMPARE(storedAfter->columns, storedBefore->columns);
+                QCOMPARE(storedAfter->rows, storedBefore->rows);
+                QCOMPARE(storedAfter->columnWidths, storedBefore->columnWidths);
+            }
+        }
+    }
+}
+
+void RosterEditorWidgetSaveTests::
+manualSaveButtonBlocksOtherErrorsAndAutomaticMode()
+{
+    RosterEditorFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    const auto storedBefore =
+        fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(storedBefore);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    ScopedPromptService promptScope(&prompts);
+
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Manual save eligibility"), fixture.classId));
+    RosterModel* const model = editor.findChild<RosterModel*>();
+    auto* const autosave = editor.findChild<AutosaveCoordinator*>();
+    QPushButton* const saveButton = findSaveButton(editor);
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(saveButton);
+    autosave->setDebounceInterval(10);
+
+    editor.setSaveMode(SaveMode::Manual);
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Dana"),
+        QStringLiteral("\uAE40")
+        ));
+    QVERIFY(saveButton->isEnabled());
+
+    const int englishColumn = columnByName(model, QStringLiteral("English"));
+    QVERIFY(englishColumn >= 0);
+    QVERIFY(model->setData(
+        model->index(0, englishColumn),
+        QString(QChar(0xfeff)) + QStringLiteral("Dana"),
+        Qt::EditRole
+        ));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    saveButton->click();
+    QCOMPARE(prompts.confirmations.size(), 0);
+    QVERIFY(editor.hasUnsavedChanges());
+
+    const auto storedAfterInvalidManualClick =
+        fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(storedAfterInvalidManualClick);
+    QCOMPARE(storedAfterInvalidManualClick->columns, storedBefore->columns);
+    QCOMPARE(storedAfterInvalidManualClick->rows, storedBefore->rows);
+    QCOMPARE(storedAfterInvalidManualClick->columnWidths, storedBefore->columnWidths);
+
+    editor.discardChanges();
+    QVERIFY(setStudent(
+        model,
+        0,
+        QStringLiteral("Dana"),
+        QStringLiteral("\uAE40")
+        ));
+    QVERIFY(editor.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    editor.setSaveMode(SaveMode::Automatic);
+    QVERIFY(!saveButton->isEnabled());
+
+    QTest::qWait(50);
+    QVERIFY(editor.hasUnsavedChanges());
+    QCOMPARE(prompts.confirmations.size(), 0);
+    const auto storedAfterAutomaticMode =
+        fixture.services.rosterService()->roster(fixture.classId);
+    QVERIFY(storedAfterAutomaticMode);
+    QCOMPARE(storedAfterAutomaticMode->columns, storedBefore->columns);
+    QCOMPARE(storedAfterAutomaticMode->rows, storedBefore->rows);
+    QCOMPARE(storedAfterAutomaticMode->columnWidths, storedBefore->columnWidths);
 }
 
 void RosterEditorWidgetSaveTests::
