@@ -277,6 +277,10 @@ void NavigationController::handleNavigation(
                     : m_pages->ensureGsTeamPage();
             if (!page || !page->loadDirectory())
             {
+                if (m_sidebar)
+                {
+                    m_sidebar->restorePreviousSelection();
+                }
                 return;
             }
             m_pages->showPage(

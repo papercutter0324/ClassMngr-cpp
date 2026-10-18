@@ -7,10 +7,13 @@
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "domain/models/class_info.h"
+#include "domain/models/gs_team_member.h"
+#include "domain/models/native_english_teacher.h"
 #include "domain/models/teacher.h"
 #include "domain/validation/teacher_validator.h"
 #include "features/campus/ui/campus_dashboard_page.h"
 #include "features/classes/ui/classes_page.h"
+#include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/domain/domain_types.h"
@@ -38,6 +41,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTextEdit>
+#include <QTableView>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QtTest>
@@ -347,6 +351,8 @@ private slots:
     void campusDirectoryCancelRestoresTeacherSidebarSelection();
     void staffDirectoryCancelRestoresTeacherSidebarSelection_data();
     void staffDirectoryCancelRestoresTeacherSidebarSelection();
+    void staffDirectoryLoadFailureRestoresTeacherSidebarSelection_data();
+    void staffDirectoryLoadFailureRestoresTeacherSidebarSelection();
     void languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft();
     void deleteTeacherActionChooserCancelPreservesWorkspace();
     void deleteTeacherActionChooserDeleteRemovesOnlyTarget();
@@ -1741,6 +1747,329 @@ staffDirectoryCancelRestoresTeacherSidebarSelection()
     QVERIFY(teacherPage->hasUnsavedChanges());
     QCOMPARE(sidebar->selectedKeys(), sourceSelectedKeys);
     QCOMPARE(sidebar->getSelectedTeacherId(), sourceSelectedTeacherId);
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::
+staffDirectoryLoadFailureRestoresTeacherSidebarSelection_data()
+{
+    QTest::addColumn<QString>("routeKey");
+    QTest::addColumn<QString>("failureKind");
+
+    QTest::newRow("native-english-technical")
+        << QStringLiteral("native_english_teachers")
+        << QStringLiteral("technical");
+    QTest::newRow("native-english-not-found")
+        << QStringLiteral("native_english_teachers")
+        << QStringLiteral("not-found");
+    QTest::newRow("gs-team-technical")
+        << QStringLiteral("gs_team")
+        << QStringLiteral("technical");
+    QTest::newRow("gs-team-not-found")
+        << QStringLiteral("gs_team")
+        << QStringLiteral("not-found");
+}
+
+void MainWindowTeacherSidebarNavigationParityTests::
+staffDirectoryLoadFailureRestoresTeacherSidebarSelection()
+{
+    QFETCH(QString, routeKey);
+    QFETCH(QString, failureKind);
+
+    const bool isNativeEnglish =
+        routeKey == QStringLiteral("native_english_teachers");
+    const bool isTechnicalFailure =
+        failureKind == QStringLiteral("technical");
+    const PageType destinationPageType = isNativeEnglish
+        ? PageType::NativeEnglishTeachers
+        : PageType::GsTeam;
+    const QString expectedDirectoryName = isNativeEnglish
+        ? QStringLiteral("Persisted Native Staff Row")
+        : QStringLiteral("Persisted GS Staff Row");
+
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString workspacePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("staff-load-failure.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(workspacePath));
+    Teacher sourceTeacher = teacherFixture(
+        QStringLiteral("김직원실패"),
+        QStringLiteral("Staff Failure Teacher"),
+        QStringLiteral("Staff Failure"),
+        QStringLiteral("Persisted staff failure profile")
+        );
+    QVERIFY(persistTeacher(seedServices, sourceTeacher) > 0);
+
+    if (isNativeEnglish)
+    {
+        NativeEnglishTeacher row;
+        row.name = expectedDirectoryName;
+        row.position = QStringLiteral("NET");
+        row.phoneNumber = QStringLiteral("010-4000-1000");
+        row.email = QStringLiteral("native-staff@example.test");
+        row.birthday = QStringLiteral("04-10");
+        row.nationality = QStringLiteral("Korea");
+        const auto saved = seedServices.teacherService()
+            ->saveNativeEnglishTeacherDirectory({row}, {});
+        QVERIFY(static_cast<bool>(saved));
+    }
+    else
+    {
+        GsTeamMember row;
+        row.name = expectedDirectoryName;
+        row.koreanName = QStringLiteral("직원 실패 테스트");
+        row.position = QStringLiteral("M1");
+        row.phoneNumber = QStringLiteral("010-4000-2000");
+        row.birthday = QStringLiteral("04-20");
+        const auto saved = seedServices.teacherService()
+            ->saveGsTeamDirectory({row}, {});
+        QVERIFY(static_cast<bool>(saved));
+    }
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = workspacePath;
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+    QVERIFY(window.isVisible());
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    DatabaseSession* const activeSession = services->databaseSession();
+    QVERIFY(activeSession);
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->setSaveMode(SaveMode::Manual);
+
+    Sidebar* const sidebar = window.findChild<Sidebar*>();
+    QVERIFY(sidebar);
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+
+    StaffDirectoryPage* destinationPage = nullptr;
+    QTableView* destinationTable = nullptr;
+    destinationPage = isNativeEnglish
+        ? pages->ensureNativeEnglishTeachersPage()
+        : pages->ensureGsTeamPage();
+    QVERIFY(destinationPage);
+    QVERIFY(destinationPage->loadDirectory());
+    destinationTable = destinationPage->findChild<QTableView*>();
+    QVERIFY(destinationTable);
+    const int destinationRowCountBeforeFailure =
+        destinationTable->model()->rowCount();
+    QCOMPARE(destinationRowCountBeforeFailure, 1);
+    QCOMPARE(
+        destinationTable->model()->data(
+            destinationTable->model()->index(0, 0)
+            ).toString(),
+        expectedDirectoryName
+        );
+
+    const QStringList teacherKeys{
+        QStringLiteral("campus_staff"),
+        QStringLiteral("teachers_all_korean"),
+        QStringLiteral("teacher")
+    };
+    QTreeWidgetItem* const teacherLeaf = findTeacherLeaf(
+        tree,
+        teacherKeys,
+        sourceTeacher.id
+        );
+    QVERIFY(teacherLeaf);
+
+    QSignalSpy routeSpy(sidebar, &Sidebar::itemSelected);
+    QVERIFY(routeSpy.isValid());
+    QVERIFY(clickTreeItem(tree, teacherLeaf));
+    QCOMPARE(routeSpy.size(), 1);
+    const NavigationData teacherRoute = qvariant_cast<NavigationData>(
+        routeSpy.takeFirst().at(0)
+        );
+    QCOMPARE(teacherRoute.type, NodeType::Teacher);
+    QCOMPARE(teacherRoute.teacherId, sourceTeacher.id);
+    QCOMPARE(teacherRoute.keys, teacherKeys);
+    QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+    QCOMPARE(sidebar->selectedKeys(), teacherKeys);
+    QCOMPARE(sidebar->getSelectedTeacherId(), qint64{sourceTeacher.id});
+
+    TeacherInfoPage* const teacherPage = pages->teacherPage();
+    QVERIFY(teacherPage);
+    QCOMPARE(teacherPage->teacher().id, sourceTeacher.id);
+    const QJsonObject persistedTeacher = teacherSnapshot(
+        teacherPage->teacher()
+        );
+    const QJsonObject persistedForm = teacherFormSnapshot(*teacherPage);
+    QLineEdit* const teacherName = teacherPage->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    QTextEdit* const teacherNotes = teacherPage->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(teacherName);
+    QVERIFY(teacherNotes);
+    teacherName->setText(QStringLiteral("Dirty before Staff Load Failure"));
+    teacherNotes->setPlainText(
+        QStringLiteral("Discard this draft before the failed navigation")
+        );
+    QVERIFY(teacherPage->hasUnsavedChanges());
+
+    QWidget* const sourcePageWidget = pages->currentWidget();
+    QVERIFY(sourcePageWidget);
+    const QString sourcePageIdentifier = pages->currentPageIdentifier();
+    const QStringList sourceSelectedKeys = sidebar->selectedKeys();
+    const qint64 sourceSelectedTeacherId = sidebar->getSelectedTeacherId();
+    QCOMPARE(sourceSelectedKeys, teacherKeys);
+    QCOMPARE(sourceSelectedTeacherId, qint64{sourceTeacher.id});
+    const qsizetype expectedPromptCount =
+        prompts.unsavedChangesConfirmations.size() + 1;
+
+    bool closedSessionWhenDiscardRestoredTeacher = false;
+    if (!isTechnicalFailure)
+    {
+        const QString persistedTeacherName =
+            persistedForm.value(QStringLiteral("line:teacherEnEdit")).toString();
+        connect(
+            teacherName,
+            &QLineEdit::textChanged,
+            teacherName,
+            [services,
+             persistedTeacherName,
+             &closedSessionWhenDiscardRestoredTeacher](const QString& text)
+            {
+                if (!closedSessionWhenDiscardRestoredTeacher
+                    && text == persistedTeacherName)
+                {
+                    closedSessionWhenDiscardRestoredTeacher = true;
+                    services->closeDatabase();
+                }
+            }
+            );
+    }
+
+    if (isTechnicalFailure)
+    {
+        QSqlQuery induceReadFailure(activeSession->database());
+        const QString tableName = isNativeEnglish
+            ? QStringLiteral("native_english_teachers")
+            : QStringLiteral("gs_team");
+        QVERIFY2(
+            induceReadFailure.exec(
+                QStringLiteral("CREATE TEMP TABLE %1 (id INTEGER PRIMARY KEY)")
+                    .arg(tableName)
+                ),
+            qPrintable(induceReadFailure.lastError().text())
+            );
+    }
+
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Discard
+        );
+    QTreeWidgetItem* const campusStaff = findTopLevelItemByKey(
+        tree,
+        QStringLiteral("campus_staff")
+        );
+    QVERIFY(campusStaff);
+    QTreeWidgetItem* const targetItem = findItemByKey(campusStaff, routeKey);
+    QVERIFY(targetItem);
+    const QStringList targetKeys{
+        QStringLiteral("campus_staff"),
+        routeKey
+    };
+    QVERIFY(clickTreeItem(tree, targetItem));
+
+    QCOMPARE(routeSpy.size(), 1);
+    const NavigationData failedRoute = qvariant_cast<NavigationData>(
+        routeSpy.takeFirst().at(0)
+        );
+    QCOMPARE(failedRoute.type, NodeType::Page);
+    QCOMPARE(failedRoute.keys, targetKeys);
+    QCOMPARE(failedRoute.routeKey, routeKey);
+    QCOMPARE(
+        prompts.unsavedChangesConfirmations.size(),
+        expectedPromptCount
+        );
+    QVERIFY(prompts.scriptedUnsavedChangesChoices.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+
+    QVERIFY(services == window.services());
+    QVERIFY(services->databaseSession() == activeSession);
+    if (isTechnicalFailure)
+    {
+        QVERIFY(services->hasOpenDatabase());
+        QVERIFY(activeSession->isOpen());
+        QCOMPARE(services->currentDatabasePath(), workspacePath);
+        QCOMPARE(prompts.messages.size(), 1);
+        const PromptRequest& warning = prompts.messages.constFirst();
+        QCOMPARE(warning.severity, PromptSeverity::Warning);
+        QCOMPARE(warning.title, QStringLiteral("Load Directory"));
+        QVERIFY(!warning.message.trimmed().isEmpty());
+    }
+    else
+    {
+        QVERIFY(closedSessionWhenDiscardRestoredTeacher);
+        QVERIFY(!services->hasOpenDatabase());
+        QVERIFY(!activeSession->isOpen());
+        QVERIFY(prompts.messages.isEmpty());
+    }
+
+    QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+    QVERIFY(!pages->isCurrentPage(destinationPageType));
+    QCOMPARE(pages->currentWidget(), sourcePageWidget);
+    QCOMPARE(pages->currentPageIdentifier(), sourcePageIdentifier);
+    QVERIFY(teacherPage == pages->teacherPage());
+    QCOMPARE(teacherSnapshot(teacherPage->teacher()), persistedTeacher);
+    QCOMPARE(teacherFormSnapshot(*teacherPage), persistedForm);
+    QVERIFY(!teacherPage->hasUnsavedChanges());
+    QCOMPARE(sidebar->selectedKeys(), sourceSelectedKeys);
+    QCOMPARE(sidebar->getSelectedTeacherId(), sourceSelectedTeacherId);
+
+    destinationPage = isNativeEnglish
+        ? pages->nativeEnglishTeachersPage()
+        : pages->gsTeamPage();
+    QVERIFY(destinationPage);
+    destinationTable = destinationPage->findChild<QTableView*>();
+    QVERIFY(destinationTable);
+    if (isTechnicalFailure)
+    {
+        QCOMPARE(
+            destinationTable->model()->rowCount(),
+            destinationRowCountBeforeFailure
+            );
+        QCOMPARE(
+            destinationTable->model()->data(
+                destinationTable->model()->index(0, 0)
+                ).toString(),
+            expectedDirectoryName
+            );
+    }
+    else
+    {
+        QCOMPARE(destinationTable->model()->rowCount(), 0);
+    }
 }
 
 void MainWindowTeacherSidebarNavigationParityTests::
