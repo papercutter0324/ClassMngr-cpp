@@ -26,6 +26,8 @@ private slots:
     void preservesSupportedPersistedTestingClassIdsAndOrder();
     void rejectsInvalidPersistedTestingClassIdsWithoutMutation();
     void deletesEveryCascadeRowAndPreservesSiblingClass();
+    void reportsTypedMissingAndPreservesLegacyDeleteDiagnostic();
+    void preservesRegularClassWithoutTestingSubtype();
     void rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails();
     void returnsEmptyTestingClassListWhenNoneExist();
     void loadsRegularClassTeacherAssignmentsInOneSnapshot();
@@ -1175,6 +1177,146 @@ deletesEveryCascadeRowAndPreservesSiblingClass()
 }
 
 void TestingClassRepositoryTests::
+reportsTypedMissingAndPreservesLegacyDeleteDiagnostic()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_typed_missing_delete");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        TestingClassRepository repository(database);
+        constexpr int missingClassId = 987654;
+
+        QSqlQuery setupQuery(database);
+        setupQuery.prepare(QStringLiteral(R"(
+            INSERT INTO schedule_testing_blocks (
+                day,
+                start_time,
+                room,
+                class_id
+            )
+            VALUES ('Monday', '16:00', 'Orphan', ?)
+        )"));
+        setupQuery.addBindValue(missingClassId);
+        QVERIFY(setupQuery.exec());
+
+        const auto missing =
+            repository.deleteTestingClassDetailed(missingClassId);
+        QVERIFY(!missing);
+        QCOMPARE(
+            missing.error().kind,
+            TestingClassRepository::DeleteFailure::Kind::TestingClassMissing
+            );
+        QCOMPARE(
+            missing.error().diagnostic,
+            QStringLiteral("The testing class no longer exists.")
+            );
+
+        QSqlQuery orphanCount(database);
+        orphanCount.prepare(QStringLiteral(
+            "SELECT COUNT(*) FROM schedule_testing_blocks WHERE class_id=?"
+            ));
+        orphanCount.addBindValue(missingClassId);
+        QVERIFY(orphanCount.exec());
+        QVERIFY(orphanCount.next());
+        QCOMPARE(orphanCount.value(0).toInt(), 1);
+
+        const Status legacyMissing =
+            repository.deleteTestingClass(missingClassId);
+        QVERIFY(!legacyMissing);
+        QCOMPARE(
+            legacyMissing.error(),
+            QStringLiteral("The testing class no longer exists.")
+            );
+
+        database.close();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::
+preservesRegularClassWithoutTestingSubtype()
+{
+    const QString connectionName =
+        QStringLiteral("testing_class_repository_regular_class_delete");
+
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            connectionName
+            );
+        database.setDatabaseName(QStringLiteral(":memory:"));
+        QVERIFY(database.open());
+        QVERIFY(createSchema(database));
+        ClassRepository classRepository(database);
+        TestingClassRepository testingClassRepository(database);
+
+        const auto regularClassId = classRepository.createClass(
+            QStringLiteral("Regular Class")
+            );
+        QVERIFY(regularClassId);
+
+        QSqlQuery setupQuery(database);
+        setupQuery.prepare(QStringLiteral(R"(
+            INSERT INTO class_info (class_id, class_grade, class_level)
+            VALUES (?, 'M1', 'Major')
+        )"));
+        setupQuery.addBindValue(*regularClassId);
+        QVERIFY(setupQuery.exec());
+        setupQuery.prepare(QStringLiteral(R"(
+            INSERT INTO schedule_testing_blocks (
+                day,
+                start_time,
+                room,
+                class_id
+            )
+            VALUES ('Monday', '16:00', 'Regular Room', ?)
+        )"));
+        setupQuery.addBindValue(*regularClassId);
+        QVERIFY(setupQuery.exec());
+
+        const auto deletion =
+            testingClassRepository.deleteTestingClassDetailed(*regularClassId);
+        QVERIFY(!deletion);
+        QCOMPARE(
+            deletion.error().kind,
+            TestingClassRepository::DeleteFailure::Kind::TestingClassMissing
+            );
+
+        const auto regularClass = classRepository.getClassById(*regularClassId);
+        QVERIFY(regularClass);
+        QCOMPARE(regularClass->name, QStringLiteral("Regular Class"));
+
+        QSqlQuery retainedRows(database);
+        retainedRows.prepare(QStringLiteral(R"(
+            SELECT
+                (SELECT COUNT(*) FROM testing_classes WHERE class_id=?),
+                (SELECT COUNT(*) FROM class_info WHERE class_id=?),
+                (SELECT COUNT(*) FROM schedule_testing_blocks WHERE class_id=?)
+        )"));
+        retainedRows.addBindValue(*regularClassId);
+        retainedRows.addBindValue(*regularClassId);
+        retainedRows.addBindValue(*regularClassId);
+        QVERIFY(retainedRows.exec());
+        QVERIFY(retainedRows.next());
+        QCOMPARE(retainedRows.value(0).toInt(), 0);
+        QCOMPARE(retainedRows.value(1).toInt(), 1);
+        QCOMPARE(retainedRows.value(2).toInt(), 1);
+
+        database.close();
+    }
+
+    QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TestingClassRepositoryTests::
 rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails()
 {
     const QString connectionName =
@@ -1225,7 +1367,16 @@ rollsBackEveryCascadeDeleteWhenFinalClassDeleteFails()
             "BEGIN SELECT RAISE(ABORT, 'injected final delete failure'); END"
             ).arg(*targetId)));
 
-        QVERIFY(!repository.deleteTestingClass(*targetId));
+        const auto deletion =
+            repository.deleteTestingClassDetailed(*targetId);
+        QVERIFY(!deletion);
+        QCOMPARE(
+            deletion.error().kind,
+            TestingClassRepository::DeleteFailure::Kind::Technical
+            );
+        QVERIFY(deletion.error().diagnostic.contains(
+            QStringLiteral("injected final delete failure")
+            ));
         QCOMPARE(cascadeCounts(database, *targetId), targetBefore);
         QCOMPARE(cascadeCounts(database, *siblingId), siblingBefore);
         QCOMPARE(

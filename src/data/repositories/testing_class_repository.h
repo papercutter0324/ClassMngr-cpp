@@ -77,6 +77,20 @@ public:
 
     using UpdateResult = std::expected<void, UpdateFailure>;
 
+    struct DeleteFailure final
+    {
+        enum class Kind
+        {
+            TestingClassMissing,
+            Technical
+        };
+
+        Kind kind = Kind::Technical;
+        QString diagnostic;
+    };
+
+    using DeleteResult = std::expected<void, DeleteFailure>;
+
     explicit TestingClassRepository(
         QSqlDatabase& database
         );
@@ -119,6 +133,12 @@ public:
         testingClassChoicesReadMetrics() const noexcept;
 
     [[nodiscard]] Status deleteTestingClass(
+        int classId
+        );
+
+    // Typed deletion distinguishes a vanished target without changing the
+    // legacy Status diagnostic exposed by deleteTestingClass().
+    [[nodiscard]] DeleteResult deleteTestingClassDetailed(
         int classId
         );
 

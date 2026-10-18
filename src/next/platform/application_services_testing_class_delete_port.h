@@ -88,15 +88,17 @@ public:
                     );
             }
 
-            const Status deleted = repository->deleteTestingClass(classId);
+            const TestingClassRepository::DeleteResult deleted =
+                repository->deleteTestingClassDetailed(classId);
             if (!deleted)
             {
-                const QString& message = deleted.error();
-                return Application::TestingClassDeleteResult::failure({
-                    .code = Domain::ErrorCode::Technical,
-                    .message = toStdString(message),
-                    .recoverable = false
-                });
+                const TestingClassRepository::DeleteFailure& error =
+                    deleted.error();
+                const Domain::ErrorCode code =
+                    error.kind == TestingClassRepository::DeleteFailure::Kind::TestingClassMissing
+                    ? Domain::ErrorCode::NotFound
+                    : Domain::ErrorCode::Technical;
+                return failure(code, toStdString(error.diagnostic));
             }
 
             return Application::TestingClassDeleteResult::success();

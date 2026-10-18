@@ -891,23 +891,39 @@ Status TestingClassRepository::deleteTestingClass(
     int classId
     )
 {
-    const Result<bool> existing =
-        isTestingClass(classId);
-    if (!existing)
+    const DeleteResult deleted = deleteTestingClassDetailed(classId);
+    if (!deleted)
     {
-        return std::unexpected(existing.error());
+        return std::unexpected(deleted.error().diagnostic);
     }
-    if (!*existing)
+
+    return {};
+}
+
+TestingClassRepository::DeleteResult
+TestingClassRepository::deleteTestingClassDetailed(
+    int classId
+    )
+{
+    const auto technicalFailure = [](const QString& diagnostic)
     {
-        return std::unexpected(
-            QObject::tr("The testing class no longer exists.")
-            );
-    }
+        return std::unexpected(DeleteFailure{
+            .kind = DeleteFailure::Kind::Technical,
+            .diagnostic = diagnostic
+        });
+    };
+    const auto missingFailure = []
+    {
+        return std::unexpected(DeleteFailure{
+            .kind = DeleteFailure::Kind::TestingClassMissing,
+            .diagnostic = QObject::tr("The testing class no longer exists.")
+        });
+    };
 
     DatabaseTransaction transaction(m_database);
     if (!transaction.started())
     {
-        return std::unexpected(
+        return technicalFailure(
             QObject::tr("Could not start the testing class transaction.")
             );
     }
@@ -950,14 +966,6 @@ Status TestingClassRepository::deleteTestingClass(
         {
             QStringLiteral("DELETE FROM class_info WHERE class_id=?"),
             QObject::tr("Removing class details")
-        },
-        {
-            QStringLiteral("DELETE FROM testing_classes WHERE class_id=?"),
-            QObject::tr("Removing the testing class profile")
-        },
-        {
-            QStringLiteral("DELETE FROM classes WHERE id=?"),
-            QObject::tr("Removing the testing class")
         }
     };
 
@@ -967,15 +975,79 @@ Status TestingClassRepository::deleteTestingClass(
         query.addBindValue(classId);
         if (!query.exec())
         {
-            return std::unexpected(
+            return technicalFailure(
                 queryFailure(query, deletion.second)
                 );
         }
     }
 
+    query.prepare(QStringLiteral(R"(
+        DELETE FROM classes
+        WHERE id=?
+        AND EXISTS (
+            SELECT 1 FROM testing_classes WHERE class_id=?
+        )
+    )"));
+    query.addBindValue(classId);
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return technicalFailure(
+            queryFailure(query, QObject::tr("Removing the testing class"))
+            );
+    }
+
+    const int affectedRows = query.numRowsAffected();
+    if (affectedRows < 0)
+    {
+        return technicalFailure(
+            QObject::tr(
+                "Removing the testing class returned an unknown affected-row count."
+                )
+            );
+    }
+    if (affectedRows == 0)
+    {
+        if (!transaction.rollbackChecked())
+        {
+            return technicalFailure(
+                QObject::tr(
+                    "Rolling back the missing testing class deletion failed: %1"
+                    ).arg(m_database.lastError().text())
+                );
+        }
+
+        return missingFailure();
+    }
+    if (affectedRows != 1)
+    {
+        return technicalFailure(
+            QObject::tr(
+                "Removing the testing class affected an unexpected number of rows."
+                )
+            );
+    }
+
+    // Production profiles use ON DELETE CASCADE for this subtype row. The
+    // direct delete also keeps compatibility with existing schemas that do
+    // not declare that foreign key.
+    query.prepare(QStringLiteral(
+        "DELETE FROM testing_classes WHERE class_id=?"
+        ));
+    query.addBindValue(classId);
+    if (!query.exec())
+    {
+        return technicalFailure(
+            queryFailure(
+                query,
+                QObject::tr("Removing the testing class profile")
+                )
+            );
+    }
+
     if (!transaction.commit())
     {
-        return std::unexpected(
+        return technicalFailure(
             QObject::tr("Committing the testing class deletion failed: %1")
                 .arg(m_database.lastError().text())
             );

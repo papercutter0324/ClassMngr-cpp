@@ -179,7 +179,7 @@ class NextPlatformApplicationServicesTestingClassDeletePortTests final
 private slots:
     void deletesThroughActiveSessionRepositoryAndPreservesSibling();
     void reportsUnavailableSessionsWithoutFallback();
-    void mapsMissingClassAndRepositoryErrorToTechnical();
+    void mapsTypedMissingAndRepositoryErrorOutcomes();
 };
 
 void NextPlatformApplicationServicesTestingClassDeletePortTests::
@@ -283,7 +283,7 @@ reportsUnavailableSessionsWithoutFallback()
 }
 
 void NextPlatformApplicationServicesTestingClassDeletePortTests::
-mapsMissingClassAndRepositoryErrorToTechnical()
+mapsTypedMissingAndRepositoryErrorOutcomes()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
@@ -297,7 +297,8 @@ mapsMissingClassAndRepositoryErrorToTechnical()
 
     const auto missing = port.deleteTestingClass(request(987654));
     QVERIFY(!missing);
-    QCOMPARE(missing.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(missing.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(missing.error().recoverable);
     QCOMPARE(
         missing.error().message,
         std::string("The testing class no longer exists.")
@@ -307,6 +308,13 @@ mapsMissingClassAndRepositoryErrorToTechnical()
         newTestingClass(QStringLiteral("Blocked Delete"), QStringLiteral("Room C"))
         );
     QVERIFY(target);
+    QVERIFY(insertCascadeRows(
+        session->database(),
+        *target,
+        QStringLiteral("Monday"),
+        QStringLiteral("16:00"),
+        QStringLiteral("Blocked Speaking")
+        ));
     QSqlQuery trigger(session->database());
     QVERIFY(trigger.exec(QStringLiteral(
         "CREATE TRIGGER fail_testing_class_delete "
@@ -317,9 +325,21 @@ mapsMissingClassAndRepositoryErrorToTechnical()
     const auto repositoryFailure = port.deleteTestingClass(request(*target));
     QVERIFY(!repositoryFailure);
     QCOMPARE(repositoryFailure.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!repositoryFailure.error().recoverable);
     QVERIFY(repositoryFailure.error().message.find(
         "injected final delete failure"
         ) != std::string::npos);
+    QCOMPARE(scalar(
+        session->database(),
+        QStringLiteral(
+            "SELECT COUNT(*) FROM schedule_testing_blocks WHERE class_id=?"
+            ),
+        *target
+        ), 1);
+    QCOMPARE(
+        tableCount(session->database(), QStringLiteral("speaking_eval_data")),
+        1
+        );
     const auto stillPresent = repository->loadTestingClass(*target);
     QVERIFY(stillPresent);
 }
