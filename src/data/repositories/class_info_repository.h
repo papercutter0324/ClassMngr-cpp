@@ -113,7 +113,7 @@ struct ClassNotesPageRegularTime final
 struct ClassPageDetailsReadRecord final
 {
     int classId = -1;
-    int teacherId = -1;
+    qint64 teacherId = -1;
     QString classGrade;
     QString classLevel;
     QList<ClassPageDetailsRegularTime> regularTimes;

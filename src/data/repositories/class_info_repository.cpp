@@ -1773,7 +1773,7 @@ Result<ClassPageDetailsReadRecord> ClassInfoRepository::loadClassPageDetails(
     if (metadataQuery.next())
     {
         const QVariant teacherId = metadataQuery.value("teacher_id");
-        record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+        record.teacherId = teacherId.isNull() ? -1 : teacherId.toLongLong();
         record.classGrade = metadataQuery.value("class_grade").toString();
         record.classLevel = metadataQuery.value("class_level").toString();
         record.notes = metadataQuery.value("notes").toString();
@@ -1869,7 +1869,7 @@ ClassInfoRepository::loadClassPageDetailsDetailed(const int classId)
     }
 
     const QVariant teacherId = metadataQuery.value("teacher_id");
-    record.teacherId = teacherId.isNull() ? -1 : teacherId.toInt();
+    record.teacherId = teacherId.isNull() ? -1 : teacherId.toLongLong();
     record.classGrade = metadataQuery.value("class_grade").toString();
     record.classLevel = metadataQuery.value("class_level").toString();
     record.notes = metadataQuery.value("notes").toString();

@@ -75,6 +75,7 @@ class NextPlatformApplicationServicesClassDetailsValidationContextPortTests
 
 private slots:
     void readsSentinelTeacherIdAndExactTextFromActiveRepository();
+    void preservesWideTeacherIdFromActiveRepository();
     void deletedParentWithOrphansIsNotFoundButLegacyReadIsPreserved();
     void missingClassInfoRowPreservesRepositoryDefaults();
     void neverPresentParentIsRecoverableNotFound();
@@ -151,6 +152,51 @@ readsSentinelTeacherIdAndExactTextFromActiveRepository()
     QCOMPARE(metrics.callCount, 2);
     QCOMPARE(metrics.metadataStatementCount, 2);
     QCOMPARE(metrics.regularScheduleStatementCount, 2);
+}
+
+void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
+preservesWideTeacherIdFromActiveRepository()
+{
+    constexpr qint64 wideTeacherId = 2147483648LL;
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const int id = createClass(
+        services,
+        QStringLiteral("Validation Context Wide Teacher")
+        );
+    QVERIFY(id > 0);
+    QVERIFY(seedClassInfo(services, id));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    QSqlQuery insertTeacher(session->database());
+    insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en) VALUES (?, ?, ?)"
+        ));
+    insertTeacher.addBindValue(wideTeacherId);
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery update(session->database());
+    update.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        ));
+    update.addBindValue(wideTeacherId);
+    update.addBindValue(id);
+    QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    QCOMPARE(update.numRowsAffected(), 1);
+
+    const auto repositoryRecord = session->classInfoRepository()
+        ->loadClassPageDetailsDetailed(id);
+    QVERIFY(repositoryRecord);
+    QCOMPARE(repositoryRecord->record.teacherId, wideTeacherId);
+
+    const auto result = readContext(&services, classId(id));
+    QVERIFY(result);
+    QCOMPARE(result.value().teacherId, wideTeacherId);
 }
 
 void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::

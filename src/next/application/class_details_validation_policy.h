@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <optional>
 #include <string>
@@ -25,7 +26,7 @@ struct ClassDetailsScheduleValidationRow final
 struct ClassDetailsValidationInput final
 {
     int classId = -1;
-    int teacherId = -1;
+    std::int64_t teacherId = -1;
     std::u16string classGrade;
     std::u16string classLevel;
     std::u16string readingBook;
@@ -103,7 +104,7 @@ struct ClassDetailsValidationIssue final
     ClassDetailsValidationField field;
     std::optional<ClassDetailsValidationSchedule> schedule;
     std::size_t row = 0;
-    std::optional<int> integerValue;
+    std::optional<std::int64_t> integerValue;
     std::optional<std::u16string> value;
     std::optional<std::u16string> start;
     std::optional<std::u16string> end;
@@ -500,7 +501,7 @@ private:
         ClassDetailsValidationOutput& output,
         ClassDetailsValidationCode code,
         ClassDetailsValidationField field,
-        std::optional<int> integerValue = std::nullopt,
+        std::optional<std::int64_t> integerValue = std::nullopt,
         std::optional<std::u16string> value = std::nullopt,
         std::optional<std::u16string> start = std::nullopt,
         std::optional<std::u16string> end = std::nullopt,

@@ -2,6 +2,9 @@
 
 #include <QtTest/QtTest>
 
+#include <cstdint>
+#include <type_traits>
+
 using namespace ClassMngr::Next::Application;
 
 namespace
@@ -65,6 +68,7 @@ private slots:
     void preservesLegacyValidationIssueOrderAndMalformedRowDetails();
     void reportsDuplicateGroupsInDeterministicFirstSeenOrder();
     void reportsBooksWithoutGradeAndLevelInBookOrder();
+    void acceptsWideTeacherIdsAndRejectsInvalidTeacherIds();
 };
 
 void NextApplicationClassDetailsValidationPolicyTests::
@@ -379,6 +383,51 @@ reportsBooksWithoutGradeAndLevelInBookOrder()
         output.issues[1].field,
         ClassDetailsValidationField::EssayBook
         );
+}
+
+void NextApplicationClassDetailsValidationPolicyTests::
+acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
+{
+    static_assert(std::is_same_v<
+        decltype(ClassDetailsValidationInput::teacherId),
+        std::int64_t
+        >);
+
+    ClassDetailsValidationInput wideInput = validInput();
+    wideInput.teacherId = 2147483648LL;
+    const ClassDetailsValidationOutput wideOutput =
+        ClassDetailsValidationPolicy::normalizeAndValidate(wideInput, catalog());
+    QVERIFY(!wideOutput.hasErrors());
+    QCOMPARE(wideOutput.normalized.teacherId, std::int64_t{2147483648LL});
+
+    for (const std::int64_t teacherId : {
+             std::int64_t{0},
+             std::int64_t{-2},
+             std::int64_t{-2147483649LL}
+         })
+    {
+        ClassDetailsValidationInput invalidInput = validInput();
+        invalidInput.teacherId = teacherId;
+        const ClassDetailsValidationOutput invalidOutput =
+            ClassDetailsValidationPolicy::normalizeAndValidate(
+                invalidInput,
+                catalog()
+                );
+
+        QCOMPARE(invalidOutput.issues.size(), std::size_t(1));
+        QCOMPARE(
+            invalidOutput.issues.front().code,
+            ClassDetailsValidationCode::TeacherIdInvalid
+            );
+        QCOMPARE(
+            invalidOutput.issues.front().field,
+            ClassDetailsValidationField::TeacherId
+            );
+        QCOMPARE(
+            invalidOutput.issues.front().integerValue.value(),
+            teacherId
+            );
+    }
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassDetailsValidationPolicyTests)

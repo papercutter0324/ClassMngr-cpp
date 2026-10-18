@@ -232,6 +232,7 @@ private slots:
     void invalidScheduleUiSavesMatchCommonBaselineInputs();
     void staleHiddenValidationDataBlocksCommonBaselineSaveInputs();
     void validVisibleSavePreservesUpdatedHiddenValues();
+    void wideAssignedTeacherIdSurvivesRegularEditSave();
     void freshInvalidTeacherIdBlocksCommonBaselineSaveInputs();
 };
 
@@ -1096,6 +1097,65 @@ void ClassDetailsPageSaveParityTests::validVisibleSavePreservesUpdatedHiddenValu
     QCOMPARE(persisted->essayBook, QStringLiteral("4A"));
     QCOMPARE(persisted->notes, notes);
     QCOMPARE(persisted->timeFillerActivities, activities);
+}
+
+void ClassDetailsPageSaveParityTests::
+wideAssignedTeacherIdSurvivesRegularEditSave()
+{
+    constexpr qint64 wideTeacherId = 2147483648LL;
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const QString name = QStringLiteral("Wide Teacher Class Details Edit");
+    const int classId = createClass(services, name);
+    QVERIFY(classId > 0);
+    QVERIFY(seedClassInfo(services, classId));
+
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session && session->isOpen());
+    QSqlQuery insertTeacher(session->database());
+    insertTeacher.prepare(QStringLiteral(
+        "INSERT INTO teachers (id, teacher_kr, teacher_en) VALUES (?, ?, ?)"
+        ));
+    insertTeacher.addBindValue(wideTeacherId);
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    insertTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
+
+    QSqlQuery assignTeacher(session->database());
+    assignTeacher.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=?"
+        ));
+    assignTeacher.addBindValue(wideTeacherId);
+    assignTeacher.addBindValue(classId);
+    QVERIFY2(assignTeacher.exec(), qPrintable(assignTeacher.lastError().text()));
+    QCOMPARE(assignTeacher.numRowsAffected(), 1);
+
+    ClassDetailsPage page(&services, false);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadClass(Classroom(name, classId));
+    chooseNewDetails(page);
+
+    QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
+    QVERIFY(savedSpy.isValid());
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(page.saveChanges());
+
+    QCOMPARE(savedSpy.size(), 1);
+    QCOMPARE(savedSpy.at(0).at(0).toInt(), classId);
+    QVERIFY(!page.hasUnsavedChanges());
+
+    QSqlQuery persistedTeacher(session->database());
+    persistedTeacher.prepare(QStringLiteral(
+        "SELECT teacher_id, typeof(teacher_id) FROM class_info "
+        "WHERE class_id=?"
+        ));
+    persistedTeacher.addBindValue(classId);
+    QVERIFY2(persistedTeacher.exec(), qPrintable(persistedTeacher.lastError().text()));
+    QVERIFY(persistedTeacher.next());
+    QCOMPARE(persistedTeacher.value(0).toLongLong(), wideTeacherId);
+    QCOMPARE(persistedTeacher.value(1).toString(), QStringLiteral("integer"));
 }
 
 void ClassDetailsPageSaveParityTests::

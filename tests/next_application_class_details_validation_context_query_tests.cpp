@@ -2,6 +2,7 @@
 
 #include <QtTest/QtTest>
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -55,6 +56,7 @@ private slots:
     void rejectsMismatchedClassIdentity();
     void rejectsNonCanonicalIdsBeforePortCall();
     void acceptsMaximumClassIdAndPreservesMatchedIdentity();
+    void preservesWideTeacherIdThroughContextQuery();
 };
 
 void NextApplicationClassDetailsValidationContextQueryTests::
@@ -66,7 +68,11 @@ contractUsesTypedQtFreeContextValues()
         >);
     static_assert(std::is_same_v<
         decltype(Application::ClassDetailsValidationContextData::teacherId),
-        int
+        std::int64_t
+        >);
+    static_assert(std::is_same_v<
+        decltype(Application::ClassDetailsValidationContextSnapshot::teacherId),
+        std::int64_t
         >);
     static_assert(std::is_same_v<
         decltype(Application::ClassDetailsValidationContextSnapshot::notes),
@@ -216,6 +222,27 @@ acceptsMaximumClassIdAndPreservesMatchedIdentity()
     QVERIFY(port.requestedClassId.has_value());
     QCOMPARE(port.requestedClassId->value(), std::string("2147483647"));
     QCOMPARE(result.value().matchedClassId.value(), std::string("2147483647"));
+}
+
+void NextApplicationClassDetailsValidationContextQueryTests::
+preservesWideTeacherIdThroughContextQuery()
+{
+    constexpr std::int64_t wideTeacherId = 2147483648LL;
+    RecordingPort port;
+    port.result = Application::ClassDetailsValidationContextPortResult::success({
+        .matchedClassId = classId("42"),
+        .teacherId = wideTeacherId,
+        .notes = u"wide teacher",
+        .timeFillerActivities = u"activities"
+    });
+
+    const auto result = Application::ClassDetailsValidationContextQuery::execute(
+        classId("42"),
+        port
+        );
+
+    QVERIFY(result);
+    QCOMPARE(result.value().teacherId, wideTeacherId);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassDetailsValidationContextQueryTests)

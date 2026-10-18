@@ -4,6 +4,7 @@
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
+#include <cstdint>
 #include <string>
 
 namespace ClassMngr::Next::Application
@@ -12,7 +13,7 @@ namespace ClassMngr::Next::Application
 struct ClassDetailsValidationContextData final
 {
     Domain::ClassId matchedClassId;
-    int teacherId = -1;
+    std::int64_t teacherId = -1;
     std::u16string notes;
     std::u16string timeFillerActivities;
 };
@@ -21,7 +22,7 @@ struct ClassDetailsValidationContextSnapshot final
 {
     Domain::ClassId requestedClassId;
     Domain::ClassId matchedClassId;
-    int teacherId = -1;
+    std::int64_t teacherId = -1;
     std::u16string notes;
     std::u16string timeFillerActivities;
 };
