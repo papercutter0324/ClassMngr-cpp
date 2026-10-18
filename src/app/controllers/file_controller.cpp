@@ -639,6 +639,27 @@ void FileController::showInitialSetupCancelWarning(
             );
     }
     else if (
+        result.status
+        == InitialSetupCancelStatus::OriginalRestoredRecoveryRemovalFailed
+        )
+    {
+        const QString incompleteRecoveryPath = QString::fromUtf8(
+            result.incompleteRecovery.value().data(),
+            static_cast<qsizetype>(
+                result.incompleteRecovery.value().size()
+                )
+            );
+        DialogServices::showWarning(
+            m_window,
+            tr("Initial Setup"),
+            tr(
+                "The original Teacher Profile was restored, but the "
+                "incomplete setup copy could not be removed. It remains at:\n%1"
+                )
+                .arg(incompleteRecoveryPath)
+            );
+    }
+    else if (
         result.status == InitialSetupCancelStatus::OriginalProfileRestoreFailed
         )
     {

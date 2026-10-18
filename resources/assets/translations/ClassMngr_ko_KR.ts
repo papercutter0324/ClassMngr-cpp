@@ -2195,6 +2195,13 @@
         <source>Export Teacher Profile</source>
         <translation>교사 프로필 내보내기</translation>
     </message>
+    <message>
+        <location filename="../../../src/app/controllers/file_controller.cpp" line="655"/>
+        <source>The original Teacher Profile was restored, but the incomplete setup copy could not be removed. It remains at:
+%1</source>
+        <translation>원래 교사 프로필은 복원되었지만, 초기 설정 중 생성된 불완전한 프로필 복사본을 삭제하지 못했습니다. 해당 파일은 다음 위치에 남아 있습니다:
+%1</translation>
+    </message>
 </context>
 <context>
     <name>MainWindow</name>

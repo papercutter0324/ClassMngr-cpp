@@ -99,6 +99,10 @@ public:
         ++removeCalls;
         if (failRemoveCalls.contains(removeCalls))
         {
+            if (deleteOnFailedRemoval)
+            {
+                files.erase(location.value());
+            }
             return false;
         }
         files.erase(location.value());
@@ -139,6 +143,7 @@ public:
     bool active = false;
     bool createFails = false;
     bool createWritesPartialFile = true;
+    bool deleteOnFailedRemoval = false;
     int closeCalls = 0;
     int moveCalls = 0;
     int removeCalls = 0;
@@ -355,6 +360,103 @@ bool createFailureRestoresExistingProfileAndRemovesIncompleteCopy()
             )
         && require(port.files.at("profile.tps") == "original", "rollback did not restore original")
         && require(!lifecycle.hasPendingSetup(), "rollback retained setup state");
+}
+
+bool restoredOriginalWithFailedRecoveryCleanupRetainsRecoveryPath()
+{
+    FakeInitialSetupPort port;
+    port.files["profile.tps"] = "original";
+    InitialSetupLifecycle lifecycle(port);
+
+    const auto started = lifecycle.begin(WorkspaceLocation("profile.tps"));
+    if (!require(started.started(), "setup did not start before recovery cleanup failure test"))
+    {
+        return false;
+    }
+    port.failRemoveCalls.insert(1);
+
+    const auto canceled = lifecycle.cancel();
+    return require(
+        canceled.status
+            == InitialSetupCancelStatus::OriginalRestoredRecoveryRemovalFailed,
+        "cancel did not report failed recovery cleanup after restoring the original"
+        )
+        && require(canceled.workspaceClosed, "cancel did not close the setup workspace")
+        && require(!port.active, "cancel left the setup workspace active")
+        && require(
+            canceled.incompleteRecovery == WorkspaceLocation("profile.tps.recovery-2"),
+            "failed recovery cleanup did not report the retained path"
+            )
+        && require(
+            port.files.at("profile.tps") == "original",
+            "failed recovery cleanup did not preserve the restored original"
+            )
+        && require(
+            port.files.at("profile.tps.recovery-2") == "new setup profile",
+            "failed recovery cleanup did not retain the incomplete setup copy"
+            )
+        && require(
+            !port.files.contains("profile.tps.recovery-1"),
+            "failed recovery cleanup unexpectedly retained the original backup"
+            )
+        && require(!lifecycle.hasPendingSetup(), "cleanup failure retained setup state");
+}
+
+bool successfulRecoveryCleanupClearsRecoveryPath()
+{
+    FakeInitialSetupPort port;
+    port.files["profile.tps"] = "original";
+    InitialSetupLifecycle lifecycle(port);
+
+    const auto started = lifecycle.begin(WorkspaceLocation("profile.tps"));
+    if (!require(started.started(), "setup did not start before successful recovery cleanup test"))
+    {
+        return false;
+    }
+
+    const auto canceled = lifecycle.cancel();
+    return require(
+        canceled.status == InitialSetupCancelStatus::Canceled,
+        "successful recovery cleanup did not complete cancellation"
+        )
+        && require(canceled.incompleteRecovery.empty(), "successful cleanup left a stale recovery path")
+        && require(
+            port.files.at("profile.tps") == "original",
+            "successful cleanup did not restore the original profile"
+            )
+        && require(
+            !port.files.contains("profile.tps.recovery-2"),
+            "successful cleanup left the incomplete setup copy"
+            );
+}
+
+bool failedRecoveryCleanupAfterAbsenceClearsRecoveryPath()
+{
+    FakeInitialSetupPort port;
+    port.files["profile.tps"] = "original";
+    port.deleteOnFailedRemoval = true;
+    InitialSetupLifecycle lifecycle(port);
+
+    const auto started = lifecycle.begin(WorkspaceLocation("profile.tps"));
+    if (!require(started.started(), "setup did not start before absent recovery cleanup test"))
+    {
+        return false;
+    }
+    port.failRemoveCalls.insert(1);
+
+    const auto canceled = lifecycle.cancel();
+    return require(
+        canceled.status == InitialSetupCancelStatus::Canceled,
+        "failed cleanup after recovery absence did not complete cancellation"
+        )
+        && require(
+            canceled.incompleteRecovery.empty(),
+            "failed cleanup reported a recovery path that no longer exists"
+            )
+        && require(
+            port.files.at("profile.tps") == "original",
+            "failed cleanup after recovery absence did not restore the original"
+            );
 }
 
 bool failedCancelCloseRetainsTicketForRetry()
@@ -575,6 +677,9 @@ int main()
         && closeFailureStopsBeforeProfileOperations()
         && preserveFailureDoesNotCreateOrLoseOriginal()
         && createFailureRestoresExistingProfileAndRemovesIncompleteCopy()
+        && restoredOriginalWithFailedRecoveryCleanupRetainsRecoveryPath()
+        && successfulRecoveryCleanupClearsRecoveryPath()
+        && failedRecoveryCleanupAfterAbsenceClearsRecoveryPath()
         && failedCancelCloseRetainsTicketForRetry()
         && failedIncompleteRemovalLeavesRecoverableProfile()
         && failedInitialIncompleteMoveDoesNotReportRecoveryPath()

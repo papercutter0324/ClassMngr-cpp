@@ -57,6 +57,7 @@ enum class InitialSetupCancelStatus
     Canceled,
     CloseWorkspaceFailed,
     IncompleteProfileRemovalFailed,
+    OriginalRestoredRecoveryRemovalFailed,
     OriginalProfileRestoreFailed
 };
 
@@ -275,9 +276,20 @@ public:
         {
             // The original profile is already restored. A failed cleanup only
             // leaves an extra recoverable setup artifact.
-            (void) m_port.removeProfile(result.incompleteRecovery);
+            if (
+                !m_port.removeProfile(result.incompleteRecovery)
+                && m_port.profileExists(result.incompleteRecovery)
+                )
+            {
+                result.status =
+                    InitialSetupCancelStatus::
+                        OriginalRestoredRecoveryRemovalFailed;
+                clearPendingSetup();
+                return result;
+            }
         }
 
+        result.incompleteRecovery = {};
         result.status = InitialSetupCancelStatus::Canceled;
         clearPendingSetup();
         return result;

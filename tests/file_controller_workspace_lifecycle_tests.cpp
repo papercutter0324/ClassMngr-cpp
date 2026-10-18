@@ -110,6 +110,11 @@ public:
     closeActiveWorkspace() override
     {
         active = false;
+        ++closeCalls;
+        if (servicesToClose)
+        {
+            servicesToClose->closeDatabase();
+        }
         return ClassMngr::Next::Domain::Result<void>::success();
     }
 
@@ -157,6 +162,11 @@ public:
         const ClassMngr::Next::Application::WorkspaceLocation& location
         ) override
     {
+        ++removeCalls;
+        if (failRemoveCalls.contains(removeCalls))
+        {
+            return false;
+        }
         return QFile::remove(qtPath(location));
     }
 
@@ -198,8 +208,12 @@ public:
         "incomplete setup profile"
         );
     std::set<int> failMoveCalls{3, 4};
+    std::set<int> failRemoveCalls;
+    ApplicationServices* servicesToClose = nullptr;
     bool active = false;
     int moveCalls = 0;
+    int removeCalls = 0;
+    int closeCalls = 0;
     int recoveryPathCount = 0;
 };
 
@@ -550,6 +564,8 @@ private slots:
     void createDoesNotPrepareAfterCloseFailure();
     void initialSetupBackupIsRemovedOnFinish();
     void initialSetupBackupIsRestoredOnCancel();
+    void initialSetupRestoreWithRecoveryCleanupFailureWarnsWithPath();
+    void initialSetupRestoreWithSuccessfulCleanupDoesNotWarn();
     void initialSetupWithoutBackupUpdatesRecentOnlyOnFinish();
     void initialSetupCreateFailureWarnsAfterRestoringOriginal();
     void initialSetupRestoreFailureWarnsWithOriginalBackupPath();
@@ -1601,6 +1617,138 @@ void FileControllerWorkspaceLifecycleTests::initialSetupBackupIsRestoredOnCancel
     QVERIFY(initialSetupBackups(workspaceRoot, QStringLiteral("cancel-target.tps")).isEmpty());
     QVERIFY(SettingsManager::instance().getRecentFiles().isEmpty());
     QVERIFY(SettingsManager::instance().getLastFile().isEmpty());
+}
+
+void FileControllerWorkspaceLifecycleTests::
+initialSetupRestoreWithRecoveryCleanupFailureWarnsWithPath()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("cleanup-failure-target.tps")
+        );
+    const QString backupPath = workspaceRoot.filePath(
+        QStringLiteral(".cleanup-failure-target.original.backup")
+        );
+    const QString incompleteRecoveryPath = workspaceRoot.filePath(
+        QStringLiteral(".cleanup-failure-target.incomplete.recovery")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("original profile");
+    const QByteArray incompleteContents = QByteArrayLiteral(
+        "incomplete setup profile"
+        );
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    ScriptedInitialSetupLifecyclePort port(
+        backupPath,
+        incompleteRecoveryPath
+        );
+    port.failMoveCalls.clear();
+    port.failRemoveCalls.insert(1);
+    port.servicesToClose = &services;
+    FileController controller(&services, nullptr);
+    const auto started =
+        FileControllerWorkspaceLifecycleTestAccess::beginInitialSetup(
+            controller,
+            port,
+            workspaceLocation(targetPath)
+            );
+
+    QVERIFY(started.started());
+    QCOMPARE(readFile(backupPath), originalContents);
+    QCOMPARE(readFile(targetPath), incompleteContents);
+
+    const QString activeWorkspacePath = workspaceRoot.filePath(
+        QStringLiteral("active-workspace.tps")
+        );
+    QVERIFY(services.openDatabase(activeWorkspacePath));
+    QVERIFY(services.hasOpenDatabase());
+
+    controller.cancelInitialSetup();
+
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.currentDatabasePath().isEmpty());
+    QVERIFY(!port.active);
+    QCOMPARE(port.closeCalls, 2);
+    QCOMPARE(readFile(targetPath), originalContents);
+    QVERIFY(!QFileInfo::exists(backupPath));
+    QCOMPARE(readFile(incompleteRecoveryPath), incompleteContents);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Initial Setup")
+        );
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral(
+            "The original Teacher Profile was restored, but the incomplete "
+            "setup copy could not be removed. It remains at:\n%1"
+            ).arg(incompleteRecoveryPath)
+        );
+}
+
+void FileControllerWorkspaceLifecycleTests::
+initialSetupRestoreWithSuccessfulCleanupDoesNotWarn()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString targetPath = workspaceRoot.filePath(
+        QStringLiteral("cleanup-success-target.tps")
+        );
+    const QString backupPath = workspaceRoot.filePath(
+        QStringLiteral(".cleanup-success-target.original.backup")
+        );
+    const QString incompleteRecoveryPath = workspaceRoot.filePath(
+        QStringLiteral(".cleanup-success-target.incomplete.recovery")
+        );
+    const QByteArray originalContents = QByteArrayLiteral("original profile");
+    const QByteArray incompleteContents = QByteArrayLiteral(
+        "incomplete setup profile"
+        );
+    QVERIFY(writeFile(targetPath, originalContents));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+
+    ApplicationServices services;
+    ScriptedInitialSetupLifecyclePort port(
+        backupPath,
+        incompleteRecoveryPath
+        );
+    port.failMoveCalls.clear();
+    port.servicesToClose = &services;
+    FileController controller(&services, nullptr);
+    const auto started =
+        FileControllerWorkspaceLifecycleTestAccess::beginInitialSetup(
+            controller,
+            port,
+            workspaceLocation(targetPath)
+            );
+
+    QVERIFY(started.started());
+    QCOMPARE(readFile(backupPath), originalContents);
+    QCOMPARE(readFile(targetPath), incompleteContents);
+
+    const QString activeWorkspacePath = workspaceRoot.filePath(
+        QStringLiteral("active-workspace.tps")
+        );
+    QVERIFY(services.openDatabase(activeWorkspacePath));
+    QVERIFY(services.hasOpenDatabase());
+
+    controller.cancelInitialSetup();
+
+    QVERIFY(!services.hasOpenDatabase());
+    QVERIFY(services.currentDatabasePath().isEmpty());
+    QCOMPARE(readFile(targetPath), originalContents);
+    QVERIFY(!QFileInfo::exists(backupPath));
+    QVERIFY(!QFileInfo::exists(incompleteRecoveryPath));
+    QVERIFY(prompts.messages.isEmpty());
 }
 
 void FileControllerWorkspaceLifecycleTests::
