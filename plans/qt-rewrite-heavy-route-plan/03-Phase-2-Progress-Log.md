@@ -45619,3 +45619,26 @@ passed (2/2), and `git diff --check` passed. No full suite was run. Batch447
 consists of F1056. Batch448 discovery starts before the next implementation.
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
 Phase 2 remains open.
+
+### Batch448 discovery; F1057 accepted before implementation - 2026-10-18
+
+The report-job worker lane found a lifecycle mismatch: `ReportJobState::complete()`
+rejects blank or oversized output references, but `QtReportJobWorker` currently
+posts a Completed event for every successful callback result, and the
+coordinator discards the failed `complete()` result. With an invalid successful
+callback result, the worker reports success while the coordinator stays
+Running without output or an error. Accept F1057: convert that adapter result
+into a Failed event with `InvalidInput`, return a failed worker task result,
+and leave the coordinator in terminal Failed state after its event is pumped.
+Preserve valid completion, callback errors, cancellation, progress, event-queue
+failure handling, and the generic coordinator's recovery from malformed
+completion events. No current feature instantiates `QtReportJobWorker`; this is
+bounded adapter-contract hardening and adds no feature wiring, consistent with
+the existing F1000 decision.
+
+The bounded platform-result lane found no additional candidate.
+
+No other slices were found.
+
+Batch448 contains only F1057. Gates 1/2 remain Partial, F1007 remains pending
+policy reconciliation, and the Phase 2 exit gate remains Open.
