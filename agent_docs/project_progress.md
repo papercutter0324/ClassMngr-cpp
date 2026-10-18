@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1051 complete; next preference candidate under review)
+### Current checkpoint - 2026-10-18 (F1051 complete; F1052 accepted)
 
 F1050 is complete at source/test commit
 `1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
@@ -103,11 +103,16 @@ elevated Administrator token for matched WPR captures; all other recorded
 triggers remain unchanged. Batch440's application/domain and feature-boundary
 lanes and Batch441's student-workflow and remaining-page lanes found no
 actionable candidate; both close as discovery shortfalls, not as claims that
-Phase 2 is complete. Batch442's independent contract and UI reviews found a
-possible Schedule Display no-session save mismatch; it remains under review and
-is not accepted yet. Deployment remains `phase2_resume_batch398_f1028`. Gates
-1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2
-exit gate is Open.
+Phase 2 is complete. Batch442's independent contract and UI reviews found
+F1052: Schedule Display preferences use the active database's settings
+repository, but the Preferences controls remain available with no database
+and the adapter reports success for a non-persisted no-op. F1052 is accepted
+before implementation for the five Schedule Display settings: unavailable
+saves return a technical failure and use the existing warning, reload, and
+no-refresh path. Preserve default-false loads and active-database atomic saves;
+leave Current Campus and other preference ports out of scope. Deployment
+remains `phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is
+pending policy reconciliation, and the Phase 2 exit gate is Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.

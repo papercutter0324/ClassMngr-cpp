@@ -45342,3 +45342,56 @@ independent contract and UI reviews found a likely separate Schedule Display
 unavailable-save no-op candidate; it remains under review and is not accepted. Gates
 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
 pending policy reconciliation.
+
+### Batch442 discovery; F1052 accepted before implementation - 2026-10-18
+
+Independent contract and UI audits accepted F1052 for Schedule Display's
+unavailable-save behavior. The typed `ScheduleDisplayPreferencesPort` promises
+atomic save (`src/next/application/schedule_display_preferences.h:32-43`),
+but its platform adapter returns success without writing when the session is
+absent/closed or the settings repository is missing; otherwise it writes
+through the active database's `SettingsRepository`
+(`src/next/platform/application_services_schedule_display_preferences_port.h:86-100,102-138`).
+Current port tests expect unavailable and closed saves to succeed and confirm
+stored values remain unchanged after reopen
+(`tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp:152-246`).
+Unlike this no-op path, Calendar event display (F1051) and nearby persisted
+preference ports report unavailable persistence as an error.
+The global Preferences action and Schedule tab are available without a
+database. On save failure, the menu callback warns, reloads saved/default values
+with signals blocked, and returns before `refreshSchedulePreferences()`
+(`src/app/menu_builder.cpp:1488-1509,251-272,361-423`).
+
+The adapter's active-session repository use is the evidence for per-database
+storage; F1052 keeps its scope to `use24HourTime`, `showEnglishNames`,
+`showWeekends`, `showAllIntensiveHours`, and `testingAffectsM1`. Unavailable
+loads remain false-default. Saves return Technical for no or closed session
+and missing repository. Preserve active-database atomic save, rollback, and
+unrelated settings. The existing UI failure path must warn, restore all five
+controls with signals blocked, and skip schedule refresh. Exclude Current
+Campus, Personal Display Name, Custom Color Palette, and all other preference
+ports.
+
+Focused port coverage in
+`tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp`
+must replace the unavailable/closed success expectation with save failures,
+retain false-default loads, and preserve active-database five-value atomic
+round-trip, rollback, and unrelated-setting checks. Handle the missing-repository
+guard in implementation; test it only if the public session API can construct
+that state. If it cannot, source-review the guard and record the limit without
+adding a test seam. Add a focused UI regression to
+`tests/mainwindow_class_visibility_preferences_failure_tests.cpp` for the
+Schedule Display tab: assert the existing warning, restoration of all five
+values, and no schedule refresh after failure.
+
+Build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests`,
+and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests` in
+`build/windows-x64-debug`; run matching CTests
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests`
+and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, then
+`git diff --check`; no full suite. This acceptance records no implementation
+or verification result. The post-F1051 audit found all 13 official Deferred
+entries unchanged; F579/F598 remain blocked on elevated Administrator WPR
+captures. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
+F1007 remains pending policy reconciliation.
