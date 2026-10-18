@@ -64,8 +64,8 @@ private slots:
     void readsTrueSetting();
     void readsFalseSetting();
     void missingSettingDefaultsFalse();
-    void unavailableSettingsDefaultFalse();
-    void closedSessionDefaultsAndIgnoresSave();
+    void unavailableSettingsDefaultFalseAndSaveFails();
+    void closedSessionDefaultsAndSaveFailurePreservesValues();
     void readErrorsDefaultFalse();
     void savesAllValuesAndUsesLegacyKeys();
     void preservesLegacyQVariantCoercion();
@@ -149,7 +149,7 @@ missingSettingDefaultsFalse()
 }
 
 void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
-unavailableSettingsDefaultFalse()
+unavailableSettingsDefaultFalseAndSaveFails()
 {
     ApplicationServices services;
     QVERIFY(services.dataService());
@@ -174,11 +174,15 @@ unavailableSettingsDefaultFalse()
         .showAllIntensiveHours = true,
         .testingAffectsM1 = true
     });
-    QVERIFY(saved);
+    QVERIFY(!saved);
+    QCOMPARE(
+        saved.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
 }
 
 void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
-closedSessionDefaultsAndIgnoresSave()
+closedSessionDefaultsAndSaveFailurePreservesValues()
 {
     ApplicationServices services;
     const QString path = databasePath(m_directory);
@@ -210,13 +214,18 @@ closedSessionDefaultsAndIgnoresSave()
     const auto loadedWhileClosed = port.load();
     QVERIFY(loadedWhileClosed);
     QVERIFY(loadedWhileClosed.value() == ScheduleDisplayPreferences{});
-    QVERIFY(port.save({
+    const auto savedWhileClosed = port.save({
         .use24HourTime = false,
         .showEnglishNames = false,
         .showWeekends = false,
         .showAllIntensiveHours = false,
         .testingAffectsM1 = false
-    }));
+    });
+    QVERIFY(!savedWhileClosed);
+    QCOMPARE(
+        savedWhileClosed.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
 
     QVERIFY(services.openDatabase(path));
     QVERIFY(session->isOpen());

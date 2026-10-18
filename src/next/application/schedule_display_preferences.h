@@ -29,7 +29,9 @@ using ScheduleDisplayPreferencesSaveRequest = ScheduleDisplayPreferencesRequest;
 using ScheduleDisplayPreferencesSaveResult = Domain::Result<void>;
 using ScheduleDisplayPreferencesSaveError = Domain::OperationError;
 
-// The application boundary exposes typed load and atomic save operations;
+// The application boundary exposes typed load and atomic save operations.
+// A successful save means use24HourTime, showEnglishNames, showWeekends,
+// showAllIntensiveHours, and testingAffectsM1 were persisted atomically;
 // persistence and presentation conversion belong to an outer adapter.
 class ScheduleDisplayPreferencesPort
 {

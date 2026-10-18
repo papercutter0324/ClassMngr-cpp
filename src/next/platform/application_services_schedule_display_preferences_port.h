@@ -13,8 +13,9 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the schedule display preferences. The caller owns
-// ApplicationServices; missing or unavailable legacy settings preserve the
-// existing false fallback and saves are delegated atomically as one bundle.
+// ApplicationServices; missing or unavailable settings preserve the false
+// load fallback, while saves require an open database and atomically persist
+// the complete preference bundle.
 class ApplicationServicesScheduleDisplayPreferencesPort final
     : public Application::ScheduleDisplayPreferencesPort
 {
@@ -90,13 +91,23 @@ public:
         DatabaseSession* const session = m_services.databaseSession();
         if (!session || !session->isOpen())
         {
-            return Application::ScheduleDisplayPreferencesSaveResult::success();
+            return Application::ScheduleDisplayPreferencesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message =
+                    "Schedule display preferences require an open database.",
+                .recoverable = false
+            });
         }
 
         SettingsRepository* const repository = session->settingsRepository();
         if (!repository)
         {
-            return Application::ScheduleDisplayPreferencesSaveResult::success();
+            return Application::ScheduleDisplayPreferencesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message =
+                    "Schedule display settings are unavailable.",
+                .recoverable = false
+            });
         }
 
         const Status saved = repository->saveSettings({

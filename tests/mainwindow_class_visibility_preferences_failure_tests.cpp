@@ -5,6 +5,7 @@
 #include "data/database/database_session.h"
 #include "data/repositories/settings_repository.h"
 #include "features/classes/ui/classes_page.h"
+#include "features/schedule/ui/schedule_page.h"
 #include "next/application/class_visibility_preferences.h"
 #include "next/application/class_day_filter_reset_policy.h"
 #include "next/application/class_selection_reset_policy.h"
@@ -26,6 +27,7 @@
 #include <QDialog>
 #include <QMessageBox>
 #include <QRadioButton>
+#include <QSignalBlocker>
 #include <QStandardPaths>
 #include <QSqlQuery>
 #include <QTabWidget>
@@ -174,6 +176,7 @@ class MainWindowClassVisibilityPreferencesFailureTests final : public QObject
 
 private slots:
     void initTestCase();
+    void noDatabaseScheduleDisplayPreferenceFailureRestoresDefaultsWithoutRefreshingSchedule();
     void preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh();
@@ -219,6 +222,202 @@ void MainWindowClassVisibilityPreferencesFailureTests::initTestCase()
         ));
     SettingsManager::instance().clear();
     SettingsManager::instance().sync();
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+noDatabaseScheduleDisplayPreferenceFailureRestoresDefaultsWithoutRefreshingSchedule()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    QVERIFY(window.services());
+    DatabaseSession* const session = window.services()->databaseSession();
+    QVERIFY(session);
+    QVERIFY(!session->isOpen());
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->showPage(PageType::Schedule);
+    SchedulePage* const schedulePage = pages->schedulePage();
+    QVERIFY(schedulePage);
+    QVERIFY(!schedulePage->needsRefresh());
+    pages->showPage(PageType::Classes);
+    QVERIFY(!pages->isCurrentPage(PageType::Schedule));
+    QVERIFY(!schedulePage->needsRefresh());
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool preferencesDialogObserved = false;
+    bool warningObserved = false;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    QString scriptFailure;
+    bool allDefaultsRestored = false;
+    bool scheduleRemainedFresh = false;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            const auto fail = [&](const QString& reason)
+            {
+                scriptFailure = reason;
+                if (dialog)
+                {
+                    dialog->reject();
+                }
+            };
+            if (!dialog)
+            {
+                fail(QStringLiteral("Preferences dialog was not opened."));
+                return;
+            }
+
+            auto* const tabs = dialog->findChild<QTabWidget*>(
+                QStringLiteral("preferencesTabs")
+                );
+            QWidget* const scheduleTab = dialog->findChild<QWidget*>(
+                QStringLiteral("preferencesScheduleTab")
+                );
+            auto* const showEnglishNames = dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowEnglishNames")
+                );
+            auto* const use24HourTime = dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleUse24HourTime")
+                );
+            auto* const showWeekends = dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowWeekends")
+                );
+            auto* const showAllHours = dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowAllIntensiveHours")
+                );
+            auto* const testingAffectsM1 = dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleTestingAffectsM1")
+                );
+            if (!tabs || !scheduleTab || !showEnglishNames || !use24HourTime
+                || !showWeekends || !showAllHours || !testingAffectsM1
+                || tabs->indexOf(scheduleTab) < 0)
+            {
+                fail(QStringLiteral(
+                    "Schedule display preference controls were missing."
+                    ));
+                return;
+            }
+
+            preferencesDialogObserved = true;
+            tabs->setCurrentWidget(scheduleTab);
+            if (showEnglishNames->isChecked() || use24HourTime->isChecked()
+                || showWeekends->isChecked() || showAllHours->isChecked()
+                || testingAffectsM1->isChecked())
+            {
+                fail(QStringLiteral(
+                    "No-database schedule preference defaults were not false."
+                    ));
+                return;
+            }
+
+            for (QCheckBox* checkBox : {
+                     showEnglishNames,
+                     use24HourTime,
+                     showWeekends,
+                     showAllHours,
+                     testingAffectsM1
+                 })
+            {
+                const QSignalBlocker blocker(checkBox);
+                checkBox->setChecked(true);
+            }
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QWidget* const activeModal =
+                        QApplication::activeModalWidget();
+                    auto* const warning = qobject_cast<QMessageBox*>(
+                        activeModal
+                        );
+                    if (!warning)
+                    {
+                        if (activeModal)
+                        {
+                            activeModal->close();
+                        }
+                        scriptFailure = QStringLiteral(
+                            "Unavailable schedule preferences did not show a warning."
+                            );
+                        return;
+                    }
+
+                    ++warningCount;
+                    warningObserved = true;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    warning->accept();
+                }
+                );
+
+            use24HourTime->click();
+            if (!scriptFailure.isEmpty())
+            {
+                dialog->reject();
+                return;
+            }
+
+            allDefaultsRestored =
+                !showEnglishNames->isChecked()
+                && !use24HourTime->isChecked()
+                && !showWeekends->isChecked()
+                && !showAllHours->isChecked()
+                && !testingAffectsM1->isChecked();
+            scheduleRemainedFresh = !schedulePage->needsRefresh();
+            if (!warningObserved
+                || warningCount != 1
+                || warningTitle != QStringLiteral("Unable to Save Preference")
+                || !warningText.contains(QStringLiteral("open database"))
+                || !allDefaultsRestored
+                || !scheduleRemainedFresh)
+            {
+                fail(QStringLiteral(
+                    "Unavailable schedule preference save did not warn, restore all defaults, and preserve schedule freshness."
+                    ));
+                return;
+            }
+
+            dialog->accept();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(preferencesDialogObserved);
+    QVERIFY(warningObserved);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningText.contains(QStringLiteral("open database")));
+    QVERIFY(allDefaultsRestored);
+    QVERIFY(scheduleRemainedFresh);
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::
