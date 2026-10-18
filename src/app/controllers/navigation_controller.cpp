@@ -551,6 +551,10 @@ void NavigationController::handleSubPrep(
 
     if (!alreadyShowingSubPrep && !m_pages->confirmCurrentPageCanLeave())
     {
+        if (m_sidebar)
+        {
+            m_sidebar->restorePreviousSelection();
+        }
         return;
     }
 
