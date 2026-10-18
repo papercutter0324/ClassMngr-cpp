@@ -45820,3 +45820,13 @@ The executor built `ClassMngrStaffDirectoryNativeEnglishSaveParityTests` and `Cl
 ### Batch459 push - 2026-10-18
 
 Pushed `5f0235af` to `origin/Qt-Rewrite`, advancing it from `720a2d84`. Batch459 contained only F1064 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch460 discovery shortfall - 2026-10-18
+
+The workspace-lifecycle lane found no eligible issue. Save As can copy a workspace before its follow-up open fails, but no normal route or recorded evidence establishes that failure as a caller-visible mismatch; the earlier Batch371 review found no pending app-owned commit at the menu Save boundary. New Profile replacement and Initial Setup recovery paths remain covered by F1027, F1033, and F1054.
+
+The regular-class/course lane found no eligible mismatch in class-detail validation or course handling. Course-specific meeting-day checks belong to the separately reviewed Schedule Import path, and stricter teacher-reassignment policy remains deferred. Its near miss, Sidebar Add Class followed by a failed read, is behavior explicitly retained by F644, with route coverage confirming no class remains after the injected failure.
+
+No other slices were found.
+
+Batch460 closed without an accepted slice. Batch461 discovery is next. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: F1064 is complete and pushed at `5f0235af`; Batch459 is closed, and Batch460 discovery is next. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch460) for the active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
+- Current milestone: F1064 is complete and pushed at `5f0235af`; Batch460 closed as a discovery shortfall, and Batch461 discovery is next. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch461) for the active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch459 is closed. Batch460 discovery is next; no candidates have been accepted yet.
+Batch460 closed without an accepted slice. Batch461 discovery is next; no candidates have been accepted yet.
 
-The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch460) is the canonical active list and acceptance record.
+The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch461) is the canonical active list and acceptance record.
 
 ## Phase notes, slice batches, and progress logs
 
