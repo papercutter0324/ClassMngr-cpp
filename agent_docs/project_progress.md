@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-19 (F1086 complete; F629 open; F1087 next)
+### Current checkpoint - 2026-10-19 (F1087 complete; F629 open; F1088 next)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -93,6 +93,18 @@ the combined Phase 0 exit gate remain open. Full evidence is under
 `/private/tmp/classmngr-f629-macos-universal-20261019-run3`; the focused trace
 is under `/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`.
 
+F1087 is complete at source/test commit `7ec8ba7a`. The Middle School Analytics
+preference port now returns a typed `Result<bool>` and propagates technical
+read errors without writing a false fallback. Missing, invalid, and unavailable
+settings retain their existing false defaults and legacy QVariant coercion.
+ClassesPage and the Preferences control preserve the known in-memory
+Analytics/Evaluations visibility when a read fails. Independent verification
+built both affected targets and passed the focused preference-port and
+MainWindow failure CTests (2/2); the existing save-failure rollback/retry
+coverage passed, as did `git diff --check`. The read-failure test drops
+`app_settings`, so it cannot independently count write attempts during that
+fault; the adapter's error path returns before any write. No full suite ran.
+
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
 commit, and discovery evidence is in
@@ -100,7 +112,7 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Begin F1087, the Middle School Analytics visibility slice. Keep F629 open
+Begin F1088, the Evaluation default policy slice. Keep F629 open
 until the Sub Prep page-boundary mismatch has source-bound Windows layout
 evidence or another justified cross-platform resolution, then rerun the full
 macOS matrix. F628's full Windows evidence root also remains unavailable in

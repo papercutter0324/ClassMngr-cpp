@@ -11,11 +11,12 @@
   ScheduleWidget read-error and save/retry QtTest cases, and
   `git diff --check`. The broad ScheduleWidget CTest hung without output and was
   interrupted; no full suite ran.
-- Batch473 has five discovered candidates, F1086-F1090. F629 was resumed from
-  Deferred at the user's direction and selected next after F1086; F1087-F1090
-  follow it provisionally. The Phase 2 plan/progress log contain the ordered
-  list and acceptance evidence. Gates 1/2 remain Partial; F1007 remains
-  pending policy reconciliation; Phase 2 exit remains Open.
+- Batch473 has five discovered candidates, F1086-F1090. F1086 and F1087 are
+  complete; F629 was resumed from Deferred at the user's direction and remains
+  open after its macOS matrix parity failure; F1088 is next and F1089-F1090
+  remain provisional. The Phase 2 plan/progress log contain the ordered list
+  and acceptance evidence. Gates 1/2 remain Partial; F1007 remains pending
+  policy reconciliation; Phase 2 exit remains Open.
 - F629's clean macOS universal matrix ran at commit `3ab4fa3a` from
   `/private/tmp/classmngr-f629-macos-universal-20261019-run3`. The package audit
   passed (116 Mach-O files, arm64+x86_64, deployment target 14.4), signature
@@ -28,9 +29,19 @@
   evidence root is unavailable in this Mac session.
 - Commit `3ab4fa3a` makes the Sub Prep memory-platform assertion native-aware;
   the run passed that assertion and stopped only at PDF semantic parity. F629's
-  outcome is recorded; begin F1087 next. Push after Batch473 is closed; preserve
-  unrelated user files. Gates 1/2 remain Partial, F1007 remains pending policy
-  reconciliation, and Phase 2 exit remains Open.
+  outcome is recorded; F1087 is complete and F1088 is next. Push after Batch473
+  is closed; preserve unrelated user files. Gates 1/2 remain Partial, F1007
+  remains pending policy reconciliation, and Phase 2 exit remains Open.
+
+- F1087 source/test commit `7ec8ba7a` changes the Middle School Analytics
+  preference read to `Result<bool>`, propagates technical errors without a
+  false fallback, and preserves the known in-memory visibility in ClassesPage
+  and Preferences. Missing/invalid/unavailable defaults and QVariant coercion
+  remain unchanged. Independent verification built both affected targets and
+  passed the port and MainWindow failure CTests (2/2), including save-failure
+  rollback/retry. `git diff --check` passed. The read-failure test drops
+  `app_settings`, so it cannot directly count write attempts during that fault;
+  the adapter error path returns before writing.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

@@ -46323,5 +46323,30 @@ The Mac trace confirms breaks before Teacher 18 and Teacher 21 but does not
 establish Windows layout decisions. No parity assertion was weakened and no
 fix is claimed. F629 remains open, and the combined Phase 0 exit gate remains
 open pending accepted macOS universal evidence. F629's matrix was attempted
-but remains open and is not accepted. Batch473 remains active with F1087
-selected/next; F1088-F1090 remain provisional.
+but remains open and is not accepted. At this checkpoint, Batch473 had F1087
+selected/next; F1088-F1090 remained provisional.
+
+### F1087 completion; F1088 selected - 2026-10-19
+
+F1087 is complete at implementation/test commit `7ec8ba7a`. The Middle School
+Analytics visibility preference port now returns `Domain::Result<bool>` and
+propagates repository read errors without converting them to false or writing
+a fallback. Unavailable repositories and missing settings retain their
+existing defaults and QVariant coercion behavior. MainWindow preserves known
+Analytics and Evaluations visibility when a later preference read fails.
+
+Independent verification built
+`ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests`
+and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. CTest regex
+`ClassMngr(NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPort|MainWindowClassVisibilityPreferencesFailure)Tests`
+passed 2/2; `git diff --check` passed. Existing save-failure warning,
+rollback, and retry coverage passed. The read-failure tests induce the error by
+dropping `app_settings`, so they cannot directly count attempted writes under
+that SQLite fault; source inspection confirms the error path returns before
+writing. No full suite ran.
+
+Batch473 remains active: F1086 is complete, F629's matrix was attempted but
+F629 remains open and unaccepted, F1087 is complete, F1088 is selected/next,
+and F1089-F1090 remain provisional. The combined Phase 0 exit gate remains
+open; the Phase 2 exit gate remains Open. The discovered Batch473 slice list
+remains F1086-F1090 as recorded above.

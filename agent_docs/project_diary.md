@@ -7135,3 +7135,16 @@ route's failure leaves F629 and the combined Phase 0 exit gate open. Evidence
 roots are `/private/tmp/classmngr-f629-macos-universal-20261019-run3` and
 `/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`. F1087 is next;
 push remains deferred until Batch473 closes.
+
+## F1087 preference-read failure - 2026-10-19
+
+Commit `7ec8ba7a` changes the Middle School Analytics visibility preference
+read to `Result<bool>`. Technical repository errors propagate without a false
+fallback write, while missing, invalid, and unavailable settings keep their
+existing defaults and QVariant coercion. ClassesPage and Preferences preserve
+the known in-memory visibility after a technical read failure. Focused port and
+MainWindow failure CTests passed 2/2, including the existing save-failure
+rollback/retry test; `git diff --check` passed. The table-drop read-failure
+test cannot observe write attempts while the table is absent; the adapter's
+technical-error branch returns before writing. F629 remains open, F1088 is
+next, and Batch473 push remains deferred until the batch closes.
