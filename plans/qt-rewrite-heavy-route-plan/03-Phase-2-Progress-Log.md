@@ -45395,3 +45395,28 @@ or verification result. The post-F1051 audit found all 13 official Deferred
 entries unchanged; F579/F598 remain blocked on elevated Administrator WPR
 captures. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
 F1007 remains pending policy reconciliation.
+
+### F1052 complete; post-slice audits clear; Batch443 closed - 2026-10-18
+
+F1052 completes at source/test commit
+`70147e7c3144dff8fec7529b1d9f12113ea116a0`; its acceptance was recorded at
+`20f6b894beb0ec790e0e5600263f44b85754ae05`. Schedule Display saves for its five
+per-database options now return Technical when an active session or settings
+repository is unavailable. The existing Preferences failure path warns,
+restores saved/default values, and skips schedule refresh. Active-database
+atomic save behavior is unchanged.
+
+The independent verifier built `ClassMngr` and both focused targets; both
+focused CTests passed 2/2, and `git diff --check` passed. Public APIs cannot
+construct null-session or missing-repository states for direct tests, so those
+guards were source-reviewed without adding a test seam. No full suite ran.
+
+Two independent post-F1052 audits reviewed all 13 official Deferred
+candidates; none became actionable, resolved, or superseded, so the list is
+unchanged. Batch443 closed as a discovery shortfall: custom-color unavailable
+writes are an explicit tested no-op policy, Class Notes already reports errors
+for absent/closed sessions, and Sidebar Useful Links matches legacy behavior;
+the missing launch assertion is only a test gap. No Batch443 edits or tests
+were made. The next resume begins a fresh discovery pass. Gates 1/2 remain
+Partial, the Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.

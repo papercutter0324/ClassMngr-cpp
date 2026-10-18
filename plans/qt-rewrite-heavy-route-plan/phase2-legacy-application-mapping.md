@@ -4825,6 +4825,19 @@ The missing-repository guard is source-reviewed only: public `DatabaseSession`
 APIs do not expose an open session without its repository. See the [Phase 2
 progress log](03-Phase-2-Progress-Log.md) for build and test details.
 
+## F1052 Schedule Display unavailable-save failures
+
+F1052, source/test commit `70147e7c`, makes Schedule Display saves return
+Technical when no active open session or settings repository can persist the
+five per-database options: `use24HourTime`, `showEnglishNames`,
+`showWeekends`, `showAllIntensiveHours`, and `testingAffectsM1`. Unavailable
+loads still use false defaults, and active-database atomic saves are unchanged.
+On failure, the existing Preferences path warns, restores the saved/default
+values, and skips schedule refresh. The missing-repository and null-session
+guards were source-reviewed; public APIs cannot construct those states for
+direct tests. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
+verification details.
+
 ## F191 accepted Calendar Event type-color preferences port
 
 Commit `d170c5f3` migrates

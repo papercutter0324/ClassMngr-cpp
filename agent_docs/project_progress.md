@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1051 complete; F1052 accepted)
+### Current checkpoint - 2026-10-18 (F1052 complete; Batch444 discovery underway)
 
 F1050 is complete at source/test commit
 `1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
@@ -103,16 +103,36 @@ elevated Administrator token for matched WPR captures; all other recorded
 triggers remain unchanged. Batch440's application/domain and feature-boundary
 lanes and Batch441's student-workflow and remaining-page lanes found no
 actionable candidate; both close as discovery shortfalls, not as claims that
-Phase 2 is complete. Batch442's independent contract and UI reviews found
-F1052: Schedule Display preferences use the active database's settings
-repository, but the Preferences controls remain available with no database
-and the adapter reports success for a non-persisted no-op. F1052 is accepted
-before implementation for the five Schedule Display settings: unavailable
-saves return a technical failure and use the existing warning, reload, and
-no-refresh path. Preserve default-false loads and active-database atomic saves;
-leave Current Campus and other preference ports out of scope. Deployment
-remains `phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is
-pending policy reconciliation, and the Phase 2 exit gate is Open.
+Phase 2 is complete.
+
+Batch442's independent contract and UI reviews found F1052: Schedule Display
+preferences use the active database's settings repository, but the Preferences
+controls remain available with no database and the adapter reported success
+for a non-persisted no-op. F1052 is complete at source/test commit
+`70147e7c3144dff8fec7529b1d9f12113ea116a`. Unavailable saves now fail and use
+the existing warning/reload/no-refresh path; default-false loads and
+active-database atomic saves remain intact. Current Campus and other preference
+ports were not changed.
+
+The canonical Debug build passed for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests`,
+and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`; both matching
+CTests passed (2/2), and `git diff --check` passed. An initial MSBuild
+FileTracker access denial required an approved expanded-access retry. No full
+suite ran. Null-session and missing-repository states are not constructible via
+the public API; those guards are source-reviewed only, with no test-only seam.
+
+Two independent audits of the exact 13 official Deferred entries after F1052
+found none newly actionable, resolved, or superseded. F579 and F598 remain
+blocked on the elevated Administrator WPR capture; the other recorded
+triggers remain unchanged. Batch443 closed as a shortfall: application-
+contract and feature-boundary reviews found no concrete mismatch. Custom-color
+unavailable writes match the documented no-op policy, Class Notes unavailable
+saves already fail, and Useful Links dispatch matches the legacy behavior;
+the remaining launch-assertion gap alone does not establish a contract change.
+Batch444 application-contract and feature/UI discovery is underway. Deployment
+remains `phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is pending
+policy reconciliation, and the Phase 2 exit gate is Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
