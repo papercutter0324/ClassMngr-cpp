@@ -5,6 +5,11 @@
 - The repository is intentionally layered: domain models and validation are
   separate from SQLite repositories, feature services, and shared Qt UI. Keep
   new work at the narrowest appropriate layer.
+- Verify UI save behavior through the actual button route as well as direct save
+  APIs: a Manual button can be enabled and emit an interactive request while a
+  separate confirmation argument still defaults off. Likewise, test each
+  navigation route that reloads a selection; list-click rollback does not cover
+  programmatic opens automatically.
 - Validate SQLite `lastInsertId()` as qint64 for conversion, positivity, and the
   consumer's representable range before writing dependent rows. Keep those
   writes in the transaction so an invalid generated identity rolls back rather

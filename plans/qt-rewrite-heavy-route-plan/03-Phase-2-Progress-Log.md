@@ -45842,3 +45842,21 @@ Accept F1065: in Manual mode, enable the actual Speaking Evaluation Save Changes
 No other slices were found.
 
 Batch461 contains two slices, in order: the F995 programmatic-route follow-up, then F1065. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch461 completion - 2026-10-18
+
+F995's programmatic `openTestingClass(B)` failure path is complete in `0c2165b1` (`Phase2 - Restore Testing Class identity on open failure`). When B's details read fails while A is active, the selector returns to A if A remains in the refreshed choices; if A is absent, the page clears selection and active identity together. Regression coverage checks the editor, embedded roster, warning, and update/delete targets, plus the absent-A case. The independent Tester rebuilt `ClassMngrTestingClassesPageTests` and ran the F912 initial-load failure, existing list-click F995 failure/retry, and new programmatic failure cases: 6 passed, 0 failed. `git diff --check` passed. The broader 43-test target has three separate failures: two keyboard tests fail under the offscreen plugin, and `outputAvailabilityFollowsRosterTabAndLoadedClass` logs `QSqlQuery::prepare: database not open`; this focused verification did not establish their baseline.
+
+F1065 is complete in `46851a65` (`Phase2 - Enable Speaking Evaluation name confirmation`). Manual mode enables the actual Save Changes button when questionable Korean-name length errors are the only validation errors; the interactive click now passes the existing confirmation flag. Accept persists the draft and clears dirty state, reject preserves the draft and stored values, mixed validation errors remain blocked, and Automatic mode makes no silent write. Direct `saveChanges()` behavior and F1007's shared policy remain unchanged. The independent Tester built both Speaking Evaluation save targets, ran the three new button tests and existing `manualValidationAndConfirmedSaveKeepTheirCurrentTiming` test (6 passed including setup/cleanup), and passed the save parity CTest (1/1). `git diff --check` passed. The wider save CTest still has the separate `outputReportsUsesProjectedRegularSchedule` output-directory assertion failure; baseline status was not established. No full suite ran.
+
+### Batch461 push - 2026-10-18
+
+Pushed `46851a65` to `origin/Qt-Rewrite`, advancing it from `8c18efeb`. Batch461 contained the F995 route follow-up and F1065 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch462 discovery shortfall - 2026-10-18
+
+The application/domain-contract and class/course/navigation/identity lane found no eligible mismatch. Class-list and navigation snapshot queries validate canonical IDs, ordering, and returned values; course/class-detail behavior has focused coverage, and the previously examined teacher reassignment policy remains deferred. The persistence/autosave/reload/output lane also found no eligible slice: `AutosaveCoordinator` gates writes on dirty, loading, validity, availability, and save mode with focused component coverage; F964, F1061, F1062, and F1064 cover the reviewed read/reload cases; F1057 validates output references and has no production `QtReportJobWorker` caller; and report queue overflow remains an API-only path without a production caller or failure policy. Recent F995, F1065, F1062, F1063, and F1064 work was excluded as already completed.
+
+No other slices were found.
+
+Batch462 closed without an accepted slice. Batch463 discovery is next; no candidates have been accepted yet. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

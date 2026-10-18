@@ -5916,3 +5916,35 @@ the Phase 2 exit gate remains Open, and F1007 remains pending policy
 reconciliation. Preserve the unrelated user modification in
 `src/app/controllers/file_controller.h` and untracked `%SystemDrive%/`,
 `Testing/`, `Windows Performance Analyzer/`, `stdout`, and `txt` artifacts.
+
+## Current continuation - 2026-10-18 (Batch461 complete; Batch462 shortfall)
+
+Active deployment ID: `qt-rewrite-phase2-resume-20260928`. Batch461 is complete
+and pushed to `origin/Qt-Rewrite` at `46851a65`; its acceptance record is
+`1ddc978f`, F995 programmatic-route follow-up is `0c2165b1`, and F1065 is
+`46851a65`.
+
+F995 restores the prior Testing Classes selection/editor/update/delete target
+after a programmatic `openTestingClass(B)` read failure, or clears selection
+and identity together if the prior class disappeared. Independent focused
+verification passed the F912 initial-load failure, prior list-click F995
+failure/retry, and both new programmatic failure cases (6 passed). The wider
+43-test target had three separate failures: two offscreen keyboard tests and
+`outputAvailabilityFollowsRosterTabAndLoadedClass`; baseline status was not
+established.
+
+F1065 exposes the Speaking Evaluation Manual Save button when questionable
+Korean-name length errors are the only validation errors and routes the click
+through the existing confirmation. Independent focused tests passed short/long
+acceptance and rejection, mixed-error blocking, Automatic no-write, direct
+`saveChanges()`, and save parity. The wider save target still reports the
+separate `outputReportsUsesProjectedRegularSchedule` output-directory
+assertion; baseline status was not established. `git diff --check` passed for
+both slices; no full suite ran.
+
+Batch462 discovery used independent application-contract/class-identity and
+persistence/autosave/reload/output lanes; neither found an eligible mismatch.
+The shortfall and evidence are recorded in the Phase 2 progress log. Next,
+commit and push the pending Batch462 closure documentation, then begin Batch463
+discovery. Gates 1/2 remain Partial, F1007 remains pending policy
+reconciliation, and the Phase 2 exit gate remains Open.

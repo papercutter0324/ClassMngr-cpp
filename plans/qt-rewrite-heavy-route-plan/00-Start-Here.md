@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: F1064 is complete and pushed at `5f0235af`; Batch461 has two accepted slices in order: the F995 programmatic-route follow-up, then F1065. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch461) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
+- Current milestone: Batch461 is complete and pushed at `46851a65`; Batch462 closed as a discovery shortfall, and Batch463 discovery is next. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch463) for the active batch state and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for completion and discovery evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch461 contains two accepted slices, in order:
+Batch462 closed without an accepted slice. Batch463 discovery is next; no candidates have been accepted yet.
 
-1. **F995 follow-up — Restore Testing Classes identity after a programmatic open failure.** If a requested class fails to load while another class is active, keep the selection and editor target aligned with the previous class.
-2. **F1065 — Enable Speaking Evaluation Manual Save confirmation for questionable Korean name lengths.** Allow the existing confirmation path when those lengths are the only validation errors; preserve strict automatic saving and other validation errors.
-
-The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch461) is the canonical active list and acceptance record.
+The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch463) is the canonical active list and acceptance record.
 
 ## Phase notes, slice batches, and progress logs
 

@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `phase2_resume_batch398_f1028`. Route: Heavy.
+Current deployment: `qt-rewrite-phase2-resume-20260928`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,37 +53,23 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1053 and macOS build cleanup complete)
+### Current checkpoint - 2026-10-18 (Batch461 complete; Batch462 shortfall)
 
-F1053 remains complete at source/test commit
-fed596fcee971187ddd5a71433007cc2ab18d129. My Workspace emits its existing
-output-capability signal after a child-tab transition; the MainWindow regression
-confirms Print and Save As track Schedule, Details, lazy Calendar, and returning
-to Schedule. The focused Windows x64 Debug build and CTest passed 1/1 as
-recorded in the Phase 2 progress log.
+Batch461 is complete and pushed at `46851a65`. F995's programmatic
+Testing Classes open-failure follow-up is committed at `0c2165b1`; F1065's
+Speaking Evaluation Manual Save confirmation is committed at `46851a65`.
+Independent focused verification passed for both slices. Batch462's
+application-contract and persistence/output discovery found no eligible slice.
+Batch463 discovery is the next milestone.
 
-The follow-up build repair is committed at
-52e88f604cf43608238a85e84cf0c5936885a433. It fixes the macOS build errors and
-five distinct project compiler warnings, including UTF-8 filesystem path
-construction, exhaustive Schedule Import validation messages, and the Qt UTC
-date-time overload. The existing Windows path branch and user-facing fallback
-messages remain intact.
-
-A fresh configure and full 2,170-action universal Debug build passed in the
-canonical build/macos-clang-debug tree on macOS 27 arm64 with Qt 6.12 and
-AppleClang 21; no project compiler warnings or errors remained. Four targeted
-CTests passed in the combined run. ClassMngrUpdaterTests passed 1/1 when rerun
-with loopback access after the sandbox blocked its local test-server bind. The
-F1053 MainWindow parity test passed 1/1, and git diff --check passed. No full
-suite or Windows build ran for the cleanup commit.
-
-Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, F1007 remains
-pending policy reconciliation, and Batch444 is closed. The next resume begins
-a fresh Phase 2 discovery pass at Batch445.
+Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
+remains pending policy reconciliation. The exact acceptance, verification,
+commit, push, and discovery evidence is in
+`plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 
 ## Next Milestone
 
-Begin Phase 2 Batch445 discovery and select the next bounded slice. Preserve
+Begin Phase 2 Batch463 discovery and select the next bounded slice. Preserve
 the open exit gate and unresolved policy reconciliation. Detailed historical
 slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
