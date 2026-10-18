@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: F1046 is complete at source commit `f1701262`; F1047 is accepted in Batch430. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: F1047 is complete at source commit `4f812b76`; no next slice is accepted. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

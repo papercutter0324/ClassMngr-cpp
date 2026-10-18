@@ -53,34 +53,34 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1046 complete; F1047 accepted)
+### Current checkpoint - 2026-10-18 (F1047 complete; no next slice selected)
 
-F1046 is complete at source/test commit
-`f17012628fd5fe9cab9b55c509e1b46b38dc6884`. Ordinary workspace opens use a
-QSQLITE URI in read-write `mode=rw`, which prevents SQLite from creating a
-target that disappears after the preflight check; this path also skips parent
-directory creation. The normalized filesystem path is passed to schema setup
-so v4/v6 migration backups remain at the expected sibling path. Missing paths
-map to typed recoverable `NotFound`, while technical open failures remain
-technical. Explicit create/open behavior is preserved.
+F1047 is complete at source/test commit
+`4f812b76dc15d291daa714f66eccb23957683c91`. Testing-class deletion now
+returns a typed Missing or Technical outcome while the legacy `Status` method
+preserves its existing diagnostic. The final conditional parent DELETE checks
+for a matching testing subtype without a pre-read; zero affected rows roll
+back child deletions and return typed Missing, while unknown/unexpected counts
+remain Technical. This also prevents deleting a regular class through the
+testing-class repository. The platform adapter maps Missing to recoverable
+`NotFound` and Technical to nonrecoverable `Technical`.
 
-The Executor and independent Tester built `ClassMngr` and the focused
-workspace-port, workspace-gateway, and workspace-coordinator targets in the
-required `build/windows-x64-debug` tree; the matching CTests passed 3/3.
-Coverage includes missing target/parent non-creation, active session
-preservation, Unicode and reserved path characters, typed gateway mapping,
-and the v5-to-v6 schema-backup path. `git diff --check` passed. The first
-sandbox build attempt hit MSBuild FileTracker access denial and the elevated
-retry in the same tree passed. No full suite or live UNC-share integration ran.
+The Executor and independent Tester built `ClassMngr`,
+`ClassMngrTestingClassRepositoryTests`, and
+`ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests` in the
+required `build/windows-x64-debug` tree. The matching CTests #21 and #456
+passed 2/2. Coverage includes typed missing, wrapper diagnostic compatibility,
+rollback on missing and injected SQL failure, regular-class preservation,
+and adapter error mapping. `git diff --check` passed. The sandbox build hit
+MSBuild FileTracker access denial; an elevated retry in the same tree passed.
+No full suite ran.
 
-Batch431's two discovery lanes found no additional candidate; its shortfall
-is recorded in the public progress log. All 13 official Deferred entries
-remain unchanged and unresolved. Batch430 continues with F1047 accepted:
-class deletion will return typed recoverable `NotFound` for a missing target,
-preserve technical failures without message matching or a pre-read, and keep
-the legacy `Status` deletion API compatible. Gates 1/2 remain Partial, the
-Phase 2 exit gate remains Open, and F1007 remains pending policy
-reconciliation.
+Two independent post-F1047 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. Batch432's application
+contract and repository mutation discovery lanes found no additional
+candidate; Batch431 was also a discovery shortfall. The Phase 2 plan has no
+next accepted slice. Gates 1/2 remain Partial, the Phase 2 exit gate remains
+Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
