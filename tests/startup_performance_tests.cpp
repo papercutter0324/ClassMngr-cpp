@@ -10286,6 +10286,19 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             );
     }
 
+    QString expectedMemoryPlatform;
+#if defined(Q_OS_WIN)
+    expectedMemoryPlatform = QStringLiteral("windows");
+#elif defined(Q_OS_MACOS)
+    expectedMemoryPlatform = QStringLiteral("macos");
+#elif defined(Q_OS_LINUX)
+    expectedMemoryPlatform = QStringLiteral("linux");
+#else
+    QSKIP(
+        "Process memory snapshots are only supported on Windows, macOS, and Linux."
+        );
+#endif
+
     const QString appPath =
         qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH");
     QVERIFY2(
@@ -10645,7 +10658,7 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             );
         QCOMPARE(
             sample.value(QStringLiteral("platform")).toString(),
-            QStringLiteral("windows")
+            expectedMemoryPlatform
             );
         for (const QString& field : {
                  QStringLiteral("workingSetBytes"),
@@ -10653,8 +10666,7 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
                  QStringLiteral("privateUsageBytes"),
                  QStringLiteral("privateWorkingSetBytes"),
                  QStringLiteral("pagefileUsageBytes"),
-                 QStringLiteral("privateDirtyBytes"),
-                 QStringLiteral("commitBytes")
+                 QStringLiteral("privateDirtyBytes")
              })
         {
             QVERIFY2(
@@ -10674,10 +10686,13 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         QVERIFY(
             sample.value(QStringLiteral("privateWorkingSetBytes")).toDouble() > 0.0
             );
+#if defined(Q_OS_WIN)
+        QVERIFY(sample.contains(QStringLiteral("commitBytes")));
         QCOMPARE(
             sample.value(QStringLiteral("commitBytes")).toDouble(),
             sample.value(QStringLiteral("privateUsageBytes")).toDouble()
             );
+#endif
         const QJsonObject operation =
             sample.value(QStringLiteral("operation")).toObject();
         QVERIFY(
