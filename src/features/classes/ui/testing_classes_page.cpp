@@ -3,6 +3,7 @@
 
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
+#include "data/database/database_session.h"
 #include "next/platform/application_services_custom_color_palette_preferences_port.h"
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/testing_classes_ordering_policy.h"
@@ -1645,6 +1646,26 @@ void TestingClassesPage::deleteCurrentClass()
         m_testingClassDeletePort
             ? *m_testingClassDeletePort
             : defaultPort;
+    const auto selectClassAfterDelete = [this]
+    {
+        beginNewClass({}, {}, false);
+        rebuildClassList();
+        if (m_classList->count() > 0)
+        {
+            m_classList->setCurrentRow(0);
+            loadClass(
+                m_classList
+                    ->currentItem()
+                    ->data(Qt::UserRole)
+                    .toInt()
+                );
+        }
+        else
+        {
+            m_nameEdit->setFocus();
+        }
+        emit testingDataChanged();
+    };
     const auto deleted =
         ClassMngr::Next::Application::TestingClassDeleteUseCase::execute(
             request,
@@ -1657,6 +1678,16 @@ void TestingClassesPage::deleteCurrentClass()
                 == ClassMngr::Next::Domain::ErrorCode::NotFound
             )
         {
+            DatabaseSession* const session =
+                m_services ? m_services->databaseSession() : nullptr;
+            if (
+                !hasUnsavedChanges()
+                && session
+                && session->isOpen()
+                )
+            {
+                selectClassAfterDelete();
+            }
             return;
         }
 
@@ -1672,21 +1703,5 @@ void TestingClassesPage::deleteCurrentClass()
         return;
     }
 
-    beginNewClass({}, {}, false);
-    rebuildClassList();
-    if (m_classList->count() > 0)
-    {
-        m_classList->setCurrentRow(0);
-        loadClass(
-            m_classList
-                ->currentItem()
-                ->data(Qt::UserRole)
-                .toInt()
-            );
-    }
-    else
-    {
-        m_nameEdit->setFocus();
-    }
-    emit testingDataChanged();
+    selectClassAfterDelete();
 }

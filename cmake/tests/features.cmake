@@ -703,6 +703,10 @@ qt_add_executable(ClassMngrClassTransferTests
             testingClassDeletionFailureRetainsDraftAndDoesNotSave
             testingClassDeletionSuccessSelectsSiblingAndEmitsOnce
             testingClassDeletionSuccessWithNoSiblingStartsNewDraft
+            testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce
+            testingClassDeletionNotFoundWithNoClassesStartsNewDraft
+            testingClassDeletionNotFoundRetainsDirtyDraft
+            testingClassDeletionNotFoundWithUnavailableSessionRetainsSelection
     )
 
     set_tests_properties(

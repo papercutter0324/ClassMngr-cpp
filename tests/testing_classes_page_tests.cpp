@@ -53,6 +53,7 @@ namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setTestingClass(const TestingClass& testingClass);
+void setDatabaseOpen(bool open);
 int testingClassCount();
 bool hasTestingClassNamed(const QString& name);
 }
@@ -560,6 +561,10 @@ private slots:
     void testingClassDeletionFailureRetainsDraftAndDoesNotSave();
     void testingClassDeletionSuccessSelectsSiblingAndEmitsOnce();
     void testingClassDeletionSuccessWithNoSiblingStartsNewDraft();
+    void testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce();
+    void testingClassDeletionNotFoundWithNoClassesStartsNewDraft();
+    void testingClassDeletionNotFoundRetainsDirtyDraft();
+    void testingClassDeletionNotFoundWithUnavailableSessionRetainsSelection();
     void rosterFailureBlocksTestingClassDetailsUpdate();
     void savedRosterRemainsCleanWhenDetailsUpdateFails();
     void zeroTeacherIdKeepsNoneSelectedWithoutWarning();
@@ -3244,6 +3249,273 @@ testingClassDeletionSuccessWithNoSiblingStartsNewDraft()
     QCOMPARE(list->count(), 0);
     QVERIFY(!list->currentItem());
     QCOMPARE(nameEdit->text(), QStringLiteral("Testing Class"));
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void TestingClassesPageTests::
+testingClassDeletionNotFoundReconcilesToSiblingAndEmitsOnce()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass target = testingClass(QStringLiteral("Vanished Target"));
+    target.teacherId = -1;
+    const auto targetId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(target);
+    QVERIFY(targetId);
+    TestingClass sibling = testingClass(QStringLiteral("Remaining Sibling"));
+    sibling.teacherId = -1;
+    const auto siblingId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(sibling);
+    QVERIFY(siblingId);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ClassMngr::Next::Platform::ApplicationServicesTestingClassDeletePort
+        persistedDeletePort(services);
+    RecordingTestingClassDeletePort deletePort;
+    deletePort.delegate = &persistedDeletePort;
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &deletePort
+        );
+    page.openTestingClass(*targetId);
+    page.refresh();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* deleteButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(list);
+    QVERIFY(deleteButton);
+    QVERIFY(services.databaseSession()->testingClassRepository()
+        ->deleteTestingClass(*targetId));
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+
+    deleteButton->click();
+
+    QCOMPARE(deletePort.callCount, 1);
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(list->count(), 1);
+    QCOMPARE(list->currentRow(), 0);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *siblingId);
+    QCOMPARE(nameEdit->text(), QStringLiteral("Remaining Sibling"));
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void TestingClassesPageTests::
+testingClassDeletionNotFoundWithNoClassesStartsNewDraft()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass target = testingClass(QStringLiteral("Vanished Only Class"));
+    target.teacherId = -1;
+    const auto targetId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(target);
+    QVERIFY(targetId);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ClassMngr::Next::Platform::ApplicationServicesTestingClassDeletePort
+        persistedDeletePort(services);
+    RecordingTestingClassDeletePort deletePort;
+    deletePort.delegate = &persistedDeletePort;
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &deletePort
+        );
+    page.openTestingClass(*targetId);
+    page.refresh();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* deleteButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(list);
+    QVERIFY(deleteButton);
+    QVERIFY(services.databaseSession()->testingClassRepository()
+        ->deleteTestingClass(*targetId));
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+
+    deleteButton->click();
+
+    QCOMPARE(deletePort.callCount, 1);
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(changedSpy.size(), 1);
+    QCOMPARE(list->count(), 0);
+    QVERIFY(!list->currentItem());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Testing Class"));
+    QVERIFY(!page.hasUnsavedChanges());
+}
+
+void TestingClassesPageTests::testingClassDeletionNotFoundRetainsDirtyDraft()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    TestingClass target = testingClass(QStringLiteral("Vanished Dirty Target"));
+    target.teacherId = -1;
+    const auto targetId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(target);
+    QVERIFY(targetId);
+    TestingClass sibling = testingClass(QStringLiteral("Dirty Test Sibling"));
+    sibling.teacherId = -1;
+    const auto siblingId = services.databaseSession()
+        ->testingClassRepository()->createTestingClass(sibling);
+    QVERIFY(siblingId);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    ClassMngr::Next::Platform::ApplicationServicesTestingClassDeletePort
+        persistedDeletePort(services);
+    RecordingTestingClassDeletePort deletePort;
+    deletePort.delegate = &persistedDeletePort;
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        &deletePort
+        );
+    page.openTestingClass(*targetId);
+    page.refresh();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* deleteButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(list);
+    QVERIFY(deleteButton);
+    nameEdit->setText(QStringLiteral("Unsaved Dirty Draft"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(services.databaseSession()->testingClassRepository()
+        ->deleteTestingClass(*targetId));
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+
+    deleteButton->click();
+
+    QCOMPARE(deletePort.callCount, 1);
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(changedSpy.size(), 0);
+    QCOMPARE(list->count(), 2);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), *targetId);
+    QCOMPARE(nameEdit->text(), QStringLiteral("Unsaved Dirty Draft"));
+    QVERIFY(page.hasUnsavedChanges());
+}
+
+void TestingClassesPageTests::
+testingClassDeletionNotFoundWithUnavailableSessionRetainsSelection()
+{
+    ApplicationServices services;
+    constexpr int targetId = 42;
+    FixedTestingClassChoicesReadPort choicesReadPort;
+    setSingleTestingClassChoice(
+        choicesReadPort,
+        targetId,
+        QStringLiteral("Cached Target")
+        );
+    FixedTestingClassDetailsReadPort detailsReadPort;
+    detailsReadPort.result = ClassMngr::Next::Application::
+        TestingClassDetailsReadResult::success(
+            testingClassDetails(targetId, QStringLiteral("Cached Target"))
+            );
+    RecordingTestingClassDeletePort deletePort;
+    deletePort.result = ClassMngr::Next::Application::
+        TestingClassDeleteResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::NotFound,
+            .message = "The active database session is unavailable.",
+            .recoverable = true
+        });
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    TestingClassesPage page(
+        &services,
+        nullptr,
+        &choicesReadPort,
+        &detailsReadPort,
+        nullptr,
+        nullptr,
+        nullptr,
+        &deletePort
+        );
+    page.openTestingClass(targetId);
+    page.refresh();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* list = page.findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* deleteButton = page.findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    QVERIFY(nameEdit);
+    QVERIFY(list);
+    QVERIFY(deleteButton);
+    QCOMPARE(list->count(), 1);
+    QVERIFY(services.databaseSession()->isOpen());
+    ScheduleWidgetTestStubs::setDatabaseOpen(false);
+    QVERIFY(!services.databaseSession()->isOpen());
+    QSignalSpy changedSpy(&page, &TestingClassesPage::testingDataChanged);
+    QVERIFY(changedSpy.isValid());
+
+    deleteButton->click();
+
+    QCOMPARE(deletePort.callCount, 1);
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(prompts.messages.isEmpty());
+    QCOMPARE(changedSpy.size(), 0);
+    QCOMPARE(list->count(), 1);
+    QVERIFY(list->currentItem());
+    QCOMPARE(list->currentItem()->data(Qt::UserRole).toInt(), targetId);
+    QCOMPARE(nameEdit->text(), QStringLiteral("Cached Target"));
     QVERIFY(!page.hasUnsavedChanges());
 }
 
