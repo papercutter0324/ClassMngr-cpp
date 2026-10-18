@@ -17,6 +17,8 @@
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "next/application/teacher_profile_edit_use_case.h"
+#include "next/application/teacher_profile_read_query.h"
+#include "next/domain/teacher_profile.h"
 #include "next/application/preferred_name_selection_policy.h"
 #include "next/platform/application_services_teacher_profile_edit_persistence_port.h"
 
@@ -1135,6 +1137,7 @@ void TeacherInfoPage::loadTeacher(
 
 void TeacherInfoPage::loadTeacher(const Teacher& teacher, const qint64 teacherId)
 {
+    setReloadRequired(false);
     m_teacherId = teacherId;
     m_autosave->setLoading(true);
 
@@ -1205,6 +1208,39 @@ void TeacherInfoPage::loadTeacher(const Teacher& teacher, const qint64 teacherId
     clearDirty();
 }
 
+bool TeacherInfoPage::reloadTeacherProfile(
+    const ClassMngr::Next::Application::TeacherProfileReadPort& readPort
+    )
+{
+    if (m_teacherId <= 0)
+    {
+        return false;
+    }
+
+    const auto teacherId = NextDomain::TeacherId::fromString(
+        std::to_string(m_teacherId));
+    if (!teacherId)
+    {
+        return false;
+    }
+
+    const NextApplication::TeacherProfileReadQuery query(readPort);
+    const NextApplication::TeacherProfileReadResult result =
+        query.execute(*teacherId);
+    if (!result)
+    {
+        setReloadRequired(true);
+        return false;
+    }
+
+    const NextDomain::TeacherProfile profile{
+        .id = result.value().teacherId,
+        .fields = result.value().fields
+    };
+    loadTeacher(teacherFromProfile(profile), m_teacherId);
+    return true;
+}
+
 void TeacherInfoPage::saveData()
 {
     saveTeacher();
@@ -1238,6 +1274,11 @@ bool TeacherInfoPage::hasUnsavedChanges() const
 
 void TeacherInfoPage::discardChanges()
 {
+    if (m_reloadRequired)
+    {
+        return;
+    }
+
     m_autosave->cancelPendingSave();
 
     loadTeacher(m_teacher, m_teacherId);
@@ -1267,7 +1308,7 @@ void TeacherInfoPage::saveTeacher()
 
 void TeacherInfoPage::handleFieldChanged()
 {
-    if (m_autosave->isLoading())
+    if (m_autosave->isLoading() || m_reloadRequired)
     {
         return;
     }
@@ -1344,6 +1385,11 @@ void TeacherInfoPage::updateFormValidation()
 bool TeacherInfoPage::saveTeacherInternal(bool showErrors)
 {
     m_autosave->cancelPendingSave();
+    if (m_reloadRequired)
+    {
+        return false;
+    }
+
     updateFormValidation();
 
     if (
@@ -1449,9 +1495,51 @@ void TeacherInfoPage::clearDirty()
     updateActions();
 }
 
+void TeacherInfoPage::setReloadRequired(const bool required)
+{
+    if (m_reloadRequired == required)
+    {
+        return;
+    }
+
+    m_reloadRequired = required;
+    if (required)
+    {
+        m_autosave->cancelPendingSave();
+        m_autosave->markClean();
+    }
+
+    const bool editingEnabled = !required;
+    for (QWidget* const widget : {
+             static_cast<QWidget*>(m_koreanKeyboardButton),
+             static_cast<QWidget*>(m_teacherKrEdit),
+             static_cast<QWidget*>(m_teacherEnEdit),
+             static_cast<QWidget*>(m_preferredRomanizationEdit),
+             static_cast<QWidget*>(m_preferredNameCombo),
+             static_cast<QWidget*>(m_roomNumberEdit),
+             static_cast<QWidget*>(m_birthdayEdit),
+             static_cast<QWidget*>(m_phoneNumberEdit),
+             static_cast<QWidget*>(m_wifiNameEdit),
+             static_cast<QWidget*>(m_wifiPasswordEdit),
+             static_cast<QWidget*>(m_internetTypeCombo),
+             static_cast<QWidget*>(m_zoomIdEdit),
+             static_cast<QWidget*>(m_zoomPasswordEdit),
+             static_cast<QWidget*>(m_projectionTypeCombo),
+             static_cast<QWidget*>(m_notesEdit)
+         })
+    {
+        if (widget)
+        {
+            widget->setEnabled(editingEnabled);
+        }
+    }
+
+    updateActions();
+}
+
 void TeacherInfoPage::updateActions()
 {
-    m_autosave->setSaveAvailable(m_teacherId > 0);
+    m_autosave->setSaveAvailable(m_teacherId > 0 && !m_reloadRequired);
     m_autosave->setSaveMode(m_autosave->saveMode());
 }
 

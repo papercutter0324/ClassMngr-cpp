@@ -1,10 +1,15 @@
 #include "app/controllers/sidebar_controller.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/teacher_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
+#include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_user_prompt_service.h"
+#include "next/application/teacher_profile_read_port.h"
+#include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
@@ -24,6 +29,7 @@
 #include <QTreeWidgetItem>
 #include <QUuid>
 #include <QSignalSpy>
+#include <QTextEdit>
 #include <QtTest/QtTest>
 
 #include <cstdio>
@@ -210,6 +216,24 @@ struct ScopedPromptService final
     }
 };
 
+class FailingTeacherProfileReadPort final
+    : public ClassMngr::Next::Application::TeacherProfileReadPort
+{
+public:
+    [[nodiscard]] ClassMngr::Next::Application::TeacherProfileReadResult
+    readTeacherProfile(
+        const ClassMngr::Next::Domain::TeacherId& id
+        ) const override
+    {
+        Q_UNUSED(id);
+        return ClassMngr::Next::Application::TeacherProfileReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "Injected teacher profile read failure.",
+            .recoverable = true
+        });
+    }
+};
+
 void emitTranscript(const QString& entry, const QString& scenario,
     const QString& result)
 {
@@ -227,6 +251,8 @@ class TeacherImportUiApplyParityTests final : public QObject
 
 private slots:
     void sidebarSuccessTranscript();
+    void importRefreshesActiveTeacherPageBeforeFurtherEdit();
+    void failedImportRefreshRequiresFreshTeacherProfileLoad();
     void sidebarCancelTranscript();
     void sidebarErrorTranscript();
     void wizardSuccessTranscript();
@@ -288,6 +314,159 @@ void TeacherImportUiApplyParityTests::sidebarCancelTranscript()
     QVERIFY(prompts.messages.isEmpty());
     emitTranscript(QStringLiteral("sidebar"), QStringLiteral("cancel"),
         tableCounts(services) + QStringLiteral("|notice=none"));
+}
+
+void TeacherImportUiApplyParityTests::
+importRefreshesActiveTeacherPageBeforeFurtherEdit()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    QVERIFY(QFileInfo::exists(fixturePath()));
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("홍길동D");
+    original.teacherEn = QStringLiteral("Manual English");
+    original.preferredRomanization = QStringLiteral("Manual Romanization");
+    original.preferredName = QStringLiteral("Manual English");
+    original.roomNumber = QStringLiteral("Old Room");
+    original.birthday = QStringLiteral("01-01");
+    original.phoneNumber = QStringLiteral("010-1111-1111");
+    original.wifiName = QStringLiteral("Manual WiFi");
+    original.wifiPassword = QStringLiteral("Manual WiFi Password");
+    original.internetType = QStringLiteral("LAN");
+    original.zoomId = QStringLiteral("manual.zoom");
+    original.zoomPassword = QStringLiteral("manual.zoom.password");
+    original.projectionType = QStringLiteral("Any");
+    original.notes = QStringLiteral("Manual notes");
+    const Result<int> created = services.databaseSession()
+        ->teacherRepository()->createTeacher(original);
+    QVERIFY(created);
+    original.id = *created;
+
+    PageManager pages;
+    pages.initialize(&services, false);
+    pages.showPage(PageType::TeacherInfo);
+    TeacherInfoPage* const page = pages.teacherPage();
+    QVERIFY(page);
+    page->setSaveMode(SaveMode::Manual);
+    page->loadTeacher(original, original.id);
+    QCOMPARE(pages.currentWidget(), page);
+    QCOMPARE(page->teacherId(), static_cast<qint64>(original.id));
+    QVERIFY(!page->hasUnsavedChanges());
+
+    Sidebar sidebar;
+    SidebarController controller(&services, &sidebar, &pages);
+    ActionRegistry actions;
+    actions.createActions();
+    controller.connectActions(actions);
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(prompts);
+
+    DialogRun dialog;
+    QVERIFY(runWithTeacherDialog(&sidebar, true,
+        [&] { actions.importTeachers->trigger(); }, dialog));
+
+    QVERIFY(pages.isCurrentPage(PageType::TeacherInfo));
+    QCOMPARE(pages.currentWidget(), page);
+    QCOMPARE(page->teacherId(), static_cast<qint64>(original.id));
+    QCOMPARE(page->teacher().teacherKr, QStringLiteral("홍길동"));
+    QCOMPARE(page->teacher().roomNumber, QStringLiteral("413"));
+    QCOMPARE(page->teacher().birthday, QStringLiteral("02-29"));
+    QCOMPARE(page->teacher().phoneNumber, QStringLiteral("010-1111-1111"));
+    QCOMPARE(page->teacher().teacherEn, QStringLiteral("Manual English"));
+    QVERIFY(!page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Information);
+    QVERIFY(prompts.messages.first().message.contains(
+        QStringLiteral("1 updated")));
+
+    auto* notes = page->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit"));
+    QVERIFY(notes);
+    notes->setPlainText(QStringLiteral("Edited after teacher import"));
+    QVERIFY(page->hasUnsavedChanges());
+    QVERIFY(page->saveChanges());
+    QVERIFY(!page->hasUnsavedChanges());
+
+    const Result<Teacher> persisted = services.databaseSession()
+        ->teacherRepository()->getTeacher(original.id);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->teacherKr, QStringLiteral("홍길동"));
+    QCOMPARE(persisted->roomNumber, QStringLiteral("413"));
+    QCOMPARE(persisted->birthday, QStringLiteral("02-29"));
+    QCOMPARE(persisted->phoneNumber, QStringLiteral("010-1111-1111"));
+    QCOMPARE(persisted->teacherEn, QStringLiteral("Manual English"));
+    QCOMPARE(persisted->notes, QStringLiteral("Edited after teacher import"));
+}
+
+void TeacherImportUiApplyParityTests::
+failedImportRefreshRequiresFreshTeacherProfileLoad()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    Teacher original;
+    original.teacherKr = QStringLiteral("김수진");
+    original.teacherEn = QStringLiteral("Original English");
+    original.preferredName = original.teacherEn;
+    original.roomNumber = QStringLiteral("Old Room");
+    original.notes = QStringLiteral("Original notes");
+    const Result<int> created = services.databaseSession()
+        ->teacherRepository()->createTeacher(original);
+    QVERIFY(created);
+    original.id = *created;
+
+    TeacherInfoPage page(&services);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadTeacher(original, original.id);
+    auto* korean = page.findChild<QLineEdit*>(
+        QStringLiteral("teacherKrEdit"));
+    auto* room = page.findChild<QLineEdit*>(
+        QStringLiteral("roomNumberEdit"));
+    auto* save = page.findChild<QPushButton*>(
+        QStringLiteral("teacherInfoSaveButton"));
+    QVERIFY(korean);
+    QVERIFY(room);
+    QVERIFY(save);
+
+    QSqlQuery imported(services.databaseSession()->database());
+    imported.prepare(QStringLiteral(
+        "UPDATE teachers SET teacher_kr=?, room_number=? WHERE id=?"));
+    imported.addBindValue(QStringLiteral("Imported Name"));
+    imported.addBindValue(QStringLiteral("413"));
+    imported.addBindValue(original.id);
+    QVERIFY(imported.exec());
+
+    FailingTeacherProfileReadPort failingRead;
+    QVERIFY(!page.reloadTeacherProfile(failingRead));
+    QCOMPARE(page.teacherId(), static_cast<qint64>(original.id));
+    QCOMPARE(page.teacher().teacherKr, QStringLiteral("김수진"));
+    QCOMPARE(korean->text(), QStringLiteral("김수진"));
+    QVERIFY(!korean->isEnabled());
+    QVERIFY(!room->isEnabled());
+    QVERIFY(!save->isEnabled());
+    QVERIFY(!page.hasUnsavedChanges());
+
+    page.saveData();
+    const Result<Teacher> untouched = services.databaseSession()
+        ->teacherRepository()->getTeacher(original.id);
+    QVERIFY(untouched);
+    QCOMPARE(untouched->teacherKr, QStringLiteral("Imported Name"));
+    QCOMPARE(untouched->roomNumber, QStringLiteral("413"));
+
+    ClassMngr::Next::Platform::ApplicationServicesTeacherProfileReadPort readPort(
+        &services);
+    QVERIFY(page.reloadTeacherProfile(readPort));
+    QCOMPARE(page.teacherId(), static_cast<qint64>(original.id));
+    QCOMPARE(page.teacher().teacherKr, QStringLiteral("Imported Name"));
+    QCOMPARE(page.teacher().roomNumber, QStringLiteral("413"));
+    QVERIFY(korean->isEnabled());
+    QVERIFY(room->isEnabled());
+    QVERIFY(!page.hasUnsavedChanges());
 }
 
 void TeacherImportUiApplyParityTests::sidebarErrorTranscript()

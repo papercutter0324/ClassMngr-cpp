@@ -8,6 +8,7 @@ using namespace SidebarControllerPrivate;
 #include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/application/teacher_import_latest_source_date_read_query.h"
+#include "next/platform/application_services_teacher_profile_read_port.h"
 #include "next/platform/application_services_teacher_import_latest_source_date_read_port.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 
@@ -100,6 +101,21 @@ void SidebarController::importTeachers()
         return;
     }
 
+    const TeacherImportSummary& summary = *imported;
+    bool teacherInfoReloadFailed = false;
+    if (summary.koreanTeachers.updated > 0
+        && m_pages->isCurrentPage(PageType::TeacherInfo))
+    {
+        TeacherInfoPage* const teacherPage = m_pages->teacherPage();
+        if (teacherPage && teacherPage->teacherId() > 0)
+        {
+            const ClassMngr::Next::Platform::
+                ApplicationServicesTeacherProfileReadPort readPort(m_services);
+            teacherInfoReloadFailed =
+                !teacherPage->reloadTeacherProfile(readPort);
+        }
+    }
+
     refreshTeacherSidebar();
     if (m_pages->nativeEnglishTeachersPage())
     {
@@ -111,7 +127,6 @@ void SidebarController::importTeachers()
     }
     updateActionStates();
 
-    const TeacherImportSummary& summary = *imported;
     DialogServices::showInformation(
         m_sidebar,
         tr("Import Teachers"),
@@ -128,4 +143,12 @@ void SidebarController::importTeachers()
             .arg(summary.gsTeamMembers.created)
             .arg(summary.gsTeamMembers.updated)
             .arg(summary.gsTeamMembers.unchanged));
+
+    if (teacherInfoReloadFailed)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Import Teachers"),
+            tr("The teacher import succeeded, but the active Teacher Info page could not be refreshed. Navigate away and reopen this teacher profile to load the imported data before editing or saving."));
+    }
 }

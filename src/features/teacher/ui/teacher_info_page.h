@@ -18,6 +18,11 @@ class OnScreenKeyboard;
 
 class ApplicationServices;
 
+namespace ClassMngr::Next::Application
+{
+class TeacherProfileReadPort;
+}
+
 class TeacherInfoPage : public BasePage
 {
     Q_OBJECT
@@ -36,6 +41,12 @@ public:
     // Retain identity separately from the legacy int-based Teacher fields.
     void loadTeacher(const Teacher& fields, qint64 teacherId);
     [[nodiscard]] qint64 teacherId() const { return m_teacherId; }
+
+    // Reload the current profile through the typed read contract. On failure,
+    // the visible profile is retained and the page requires a fresh load.
+    [[nodiscard]] bool reloadTeacherProfile(
+        const ClassMngr::Next::Application::TeacherProfileReadPort& readPort
+        );
 
     void saveData() override;
 
@@ -89,6 +100,7 @@ private:
     bool saveTeacherInternal(bool showErrors = true);
 
     void clearDirty();
+    void setReloadRequired(bool required);
 
     void updateActions();
     void updateFieldWidths();
@@ -111,6 +123,7 @@ private:
 
     Teacher m_teacher;
     qint64 m_teacherId = -1;
+    bool m_reloadRequired = false;
     AutosaveCoordinator* m_autosave = nullptr;
     FormValidationBinder* m_validationBinder = nullptr;
 

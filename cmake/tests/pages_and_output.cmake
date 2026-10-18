@@ -8,6 +8,61 @@ classmngr_add_qt_test(
     OFFSCREEN
 )
 
+qt_add_resources(
+    ClassMngrTeacherImportUiApplyParityTests
+    teacher_import_ui_apply_parity_keyboard_test_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
+)
+
+add_test(
+    NAME TeacherImportUiApplyParityF1061Refresh
+    COMMAND ClassMngrTeacherImportUiApplyParityTests
+        importRefreshesActiveTeacherPageBeforeFurtherEdit
+)
+add_test(
+    NAME TeacherImportUiApplyParityF1061ReloadFailure
+    COMMAND ClassMngrTeacherImportUiApplyParityTests
+        failedImportRefreshRequiresFreshTeacherProfileLoad
+)
+add_test(
+    NAME TeacherImportUiApplyParityF1061SidebarSuccess
+    COMMAND ClassMngrTeacherImportUiApplyParityTests
+        sidebarSuccessTranscript
+)
+add_test(
+    NAME TeacherImportUiApplyParityF1061SidebarCancel
+    COMMAND ClassMngrTeacherImportUiApplyParityTests
+        sidebarCancelTranscript
+)
+add_test(
+    NAME TeacherImportUiApplyParityF1061SidebarApplyFailure
+    COMMAND ClassMngrTeacherImportUiApplyParityTests
+        sidebarErrorTranscript
+)
+set_tests_properties(
+    TeacherImportUiApplyParityF1061Refresh
+    TeacherImportUiApplyParityF1061ReloadFailure
+    TeacherImportUiApplyParityF1061SidebarSuccess
+    TeacherImportUiApplyParityF1061SidebarCancel
+    TeacherImportUiApplyParityF1061SidebarApplyFailure
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+if(WIN32)
+    set_tests_properties(
+        TeacherImportUiApplyParityF1061Refresh
+        TeacherImportUiApplyParityF1061ReloadFailure
+        TeacherImportUiApplyParityF1061SidebarSuccess
+        TeacherImportUiApplyParityF1061SidebarCancel
+        TeacherImportUiApplyParityF1061SidebarApplyFailure
+        PROPERTIES ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+    )
+endif()
+
 classmngr_add_qt_test(
     NAME PageManager
     SOURCES
