@@ -178,6 +178,17 @@ void NavigationController::handleTeacher(
 
     if (!m_pages->confirmCurrentPageCanLeave())
     {
+        const TeacherInfoPage* const activeTeacherPage =
+            m_pages->teacherPage();
+        const bool targetIsDisplayedTeacher =
+            m_pages->isCurrentPage(PageType::TeacherInfo)
+            && activeTeacherPage
+            && activeTeacherPage->teacherId() == data.teacherId;
+
+        if (m_sidebar && !targetIsDisplayedTeacher)
+        {
+            m_sidebar->restorePreviousSelection();
+        }
         return;
     }
 

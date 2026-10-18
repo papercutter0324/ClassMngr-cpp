@@ -896,6 +896,10 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
         QCOMPARE(sourceRoute.keys, koreanTeacherKeys);
         QCOMPARE(sourceRoute.routeKey, QStringLiteral("teacher"));
         QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+        const QStringList sourceSelectedKeys = sidebar->selectedKeys();
+        const qint64 sourceSelectedTeacherId = sidebar->getSelectedTeacherId();
+        QCOMPARE(sourceSelectedKeys, koreanTeacherKeys);
+        QCOMPARE(sourceSelectedTeacherId, qint64{sourceTeacher.id});
 
         TeacherInfoPage* const teacherPage = pages->teacherPage();
         QVERIFY(teacherPage);
@@ -951,6 +955,8 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
         QCOMPARE(teacherPage->teacher().id, sourceTeacher.id);
         QCOMPARE(teacherFormSnapshot(*teacherPage), dirtyForm);
         QVERIFY(teacherPage->hasUnsavedChanges());
+        QCOMPARE(sidebar->selectedKeys(), sourceSelectedKeys);
+        QCOMPARE(sidebar->getSelectedTeacherId(), sourceSelectedTeacherId);
 
         prompts.scriptedUnsavedChangesChoices.enqueue(
             UnsavedChangesChoice::Discard
@@ -977,6 +983,8 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
         QCOMPARE(services->currentDatabasePath(), workspacePath);
         QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
         QCOMPARE(teacherPage->teacher().id, targetCase.teacherId);
+        QCOMPARE(sidebar->selectedKeys(), targetCase.keyPath);
+        QCOMPARE(sidebar->getSelectedTeacherId(), qint64{targetCase.teacherId});
         QCOMPARE(
             teacherPage->teacher().teacherEn,
             targetCase.expectedTeacherName
