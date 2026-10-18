@@ -53,17 +53,14 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch461 complete; Batch462 shortfall; F403 follow-up accepted)
+### Current checkpoint - 2026-10-18 (Batch463 complete; Batch464 discovery next)
 
-Batch461 is complete and pushed at `46851a65`. F995's programmatic
-Testing Classes open-failure follow-up is committed at `0c2165b1`; F1065's
-Speaking Evaluation Manual Save confirmation is committed at `46851a65`.
-Independent focused verification passed for both slices. Batch462's
-application-contract and persistence/output discovery found no eligible slice.
-Batch463 has one accepted slice: complete F403 by restoring the source teacher
-selection when Cancel blocks navigation to a different teacher identity. Cover
-both dynamic teacher groups while preserving the dirty draft, page, session,
-same-teacher duplicate occurrence, and Discard path.
+Batch463 is complete at source commit `ac2492c3`. The F403 follow-up restores
+the source Sidebar selection when Cancel blocks navigation to a different
+teacher identity in either teacher group, while preserving same-teacher
+duplicate occurrences and Discard behavior. Independent focused verification
+passed the F403 cases and the matching Teacher Sidebar Navigation parity CTest
+(4 QtTest cases including setup/cleanup; CTest 1/1). Batch464 discovery is next.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -72,10 +69,9 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Implement and verify the accepted F403 follow-up in Batch463, then continue
-Phase 2 discovery. Preserve
-the open exit gate and unresolved policy reconciliation. Detailed historical
-slice evidence remains in
+Discover and record the ordered Batch464 slice list, then continue Phase 2 in
+order. Preserve the open exit gate and unresolved policy reconciliation.
+Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
 ## Current Phase 2 position - 2026-09-26

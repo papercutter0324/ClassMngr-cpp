@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch461 is complete and pushed at `46851a65`; Batch462 closed without an eligible slice; Batch463 has one accepted F403 teacher-selection follow-up; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: Batch463 is complete at `ac2492c3`; Batch464 discovery is next; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch463
+#### Active batch: Batch464
 
-- F403 follow-up — Restore the source selection after Cancel when dirty Teacher Info navigation would change teacher identity; preserve the draft/page/session, same-teacher duplicate occurrence, and Discard behavior for both teacher groups.
+Discovery is next; no candidates have been accepted yet.
 
 #### Deferred candidates
 
