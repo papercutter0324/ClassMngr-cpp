@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1050 complete; F1051 accepted)
+### Current checkpoint - 2026-10-18 (F1051 complete; next preference candidate under review)
 
 F1050 is complete at source/test commit
 `1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
@@ -81,17 +81,33 @@ all unchanged; none became actionable, resolved, superseded, or materially
 changed. Batch437 closes with F1050 as its only slice. Batch438's app/domain
 and feature-boundary lanes found no new actionable candidate and close as a
 discovery shortfall; this is not a claim that Phase 2 has no remaining work.
-Batch439 found F1051: Calendar event-display preferences report successful
-saves when no active settings repository exists, although the values are
-database-backed and not retained. The existing tests encode this no-op.
-F1051 is accepted before implementation: preserve default-false loads, return
-a technical failure for absent/closed sessions or a missing settings
-repository, and use the panel's existing restore/warning/no-change-signal path.
-Preserve atomic active-database saves and unrelated settings; do not add a
-sessionless ephemeral preference store. Batch440 discovery is underway in
-parallel. Deployment remains `phase2_resume_batch398_f1028`. Gates 1/2 remain
-Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is
-Open.
+Batch439 found F1051: Calendar event-display preferences reported successful
+saves when no active settings repository existed, although the values were
+database-backed and not retained. F1051 is complete at source commit
+`b99be4e14beed1081be42fe48cbe826957d1da7d`. Saves now fail for absent/closed
+sessions and unavailable settings repositories; default-false loads, active-DB
+atomic persistence, and the panel's rollback/warning/no-change-signal behavior
+remain intact.
+
+The canonical Debug build passed for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`,
+and `ClassMngrCalendarPreferencesRestoreDefaultsTests`; both matching CTests
+passed (2/2), and `git diff --check` passed. Initial MSBuild FileTracker access
+was denied; the elevated retry succeeded. No full suite ran. A missing settings
+repository cannot be constructed through the public session API, so that guard
+is implemented but not directly tested; no test-only seam was added.
+
+Two independent audits of all 13 exact official Deferred candidates found none
+newly actionable, resolved, or superseded. F579 and F598 remain gated on an
+elevated Administrator token for matched WPR captures; all other recorded
+triggers remain unchanged. Batch440's application/domain and feature-boundary
+lanes and Batch441's student-workflow and remaining-page lanes found no
+actionable candidate; both close as discovery shortfalls, not as claims that
+Phase 2 is complete. Batch442's independent contract and UI reviews found a
+possible Schedule Display no-session save mismatch; it remains under review and
+is not accepted yet. Deployment remains `phase2_resume_batch398_f1028`. Gates
+1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2
+exit gate is Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.

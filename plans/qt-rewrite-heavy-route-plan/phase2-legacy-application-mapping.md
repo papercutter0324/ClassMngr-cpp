@@ -2964,7 +2964,8 @@ continues on the typed projection values.
 `ApplicationServicesCalendarEventDisplayPreferencesPort`. It no longer
 captures `SettingsService*` for the event-display setting pair. The Platform
 adapter retains the exact keys, default-false reads, unavailable-save no-op,
-and atomic save semantics; unrelated preferences remain untouched.
+and atomic save semantics; unrelated preferences remain untouched. F1051 below
+supersedes the no-op save behavior for these event-display options.
 
 
 ## Academic calendar preference-port ownership - 2026-09-24
@@ -4798,15 +4799,31 @@ log](03-Phase-2-Progress-Log.md).
 
 Commit `7d1c6cdd` migrates
 `ApplicationServicesCalendarEventDisplayPreferencesPort` to the active open
-session's `SettingsRepository`. It preserves the exact keys, default-false
-reads, QVariant boolean coercion, read-error fallback to false, unavailable
-and null no-op behavior, Technical save-error mapping, atomic two-key save,
-and unrelated settings. The focused build succeeded; the independent Tester
+session's `SettingsRepository`. At F190, it preserved the exact keys,
+default-false reads, QVariant boolean coercion, read-error fallback to false,
+unavailable and null no-op saves, Technical save-error mapping, atomic two-key
+save, and unrelated settings. F1051 supersedes the unavailable/null no-op save
+behavior. The focused build succeeded; the independent Tester
 passed `ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
 1/1 and `git diff --check`. Closed/unavailable-session coverage includes
 `DataService`; generic `SettingsService` behavior and UI/callers are unchanged.
 The stale `saveAll` comment was corrected before the source commit. See the
 [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+## F1051 Calendar event-display preference save failures
+
+F1051, commit `b99be4e1`, keeps the two event-display values as per-database
+preferences and makes `ApplicationServicesCalendarEventDisplayPreferencesPort`
+return Technical when a save has no active session, a closed session, a null
+service, or no settings repository. Unavailable reads still default to false;
+active-session saves retain the atomic two-key write and unrelated settings.
+`CalendarPreferencesPanel` uses its existing failure path to restore both
+options, show its warning, and suppress `calendarPreferencesChanged`. Focused
+port and panel tests directly cover unopened-session, closed-session, and null-service
+saves, atomic persistence/rollback, unrelated settings, and UI failure behavior.
+The missing-repository guard is source-reviewed only: public `DatabaseSession`
+APIs do not expose an open session without its repository. See the [Phase 2
+progress log](03-Phase-2-Progress-Log.md) for build and test details.
 
 ## F191 accepted Calendar Event type-color preferences port
 

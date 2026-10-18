@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1051 is accepted pending implementation in active Batch439; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1051 is complete; Batch442 candidate review is active, with no candidate accepted yet. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Batch439 (active)
+#### Batch442 (active)
 
-- F1051 - Return Technical for event-display saves with no/closed session or
-  missing settings repository.
+Schedule Display's unavailable-save behavior is under review; no candidate has
+been accepted yet.
 
 #### Deferred candidates
 
