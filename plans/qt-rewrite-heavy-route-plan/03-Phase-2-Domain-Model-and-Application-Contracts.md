@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch463 is complete and pushed at `d5d33b59`; Batch464 closed without an eligible slice; Batch465 discovery is next; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: Batch463 is complete and pushed at `d5d33b59`; Batch464 closed without an eligible slice; Batch465 has two accepted slices in order—F1066 current-campus preference read failures, then the F1062 Campus Dashboard refresh follow-up; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch465
 
-Discovery is next; no candidates have been accepted yet.
+- F1066 - Preserve current-campus preference read failures: distinguish technical read errors from empty preferences and update each direct consumer to prevent silent campus substitution or overwrite.
+- F1062 follow-up - Preserve dirty campus identity on nonempty refresh: retain the selector, snapshot, draft, and timer when the selected campus disappears from a still-nonempty refresh result.
 
 #### Deferred candidates
 

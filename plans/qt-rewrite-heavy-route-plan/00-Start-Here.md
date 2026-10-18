@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch463 is complete and pushed at `d5d33b59`; Batch464 closed as a discovery shortfall. Batch465 discovery is next. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch465) for the current batch list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for acceptance and verification evidence.
+- Current milestone: Batch463 is complete and pushed at `d5d33b59`; Batch464 closed as a discovery shortfall. Batch465 has two accepted slices, in order: F1066 current-campus preference read failures, then the F1062 Campus Dashboard refresh follow-up. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch465) for the ordered list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for acceptance and verification evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch465 discovery is next; no candidates have been accepted yet. The
+Batch465 contains two accepted slices, in order:
+
+1. **F1066 — Preserve current-campus preference read failures.** Distinguish technical read errors from empty preferences and keep direct consumers from silently selecting, printing, or writing another campus.
+2. **F1062 follow-up — Preserve dirty campus identity on nonempty refresh.** Keep the current selector and draft when refresh omits the selected campus, so a different campus is not shown beside the retained draft.
+
+The
 [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch465)
 is the canonical current batch list and the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md) holds acceptance and verification evidence.
