@@ -10,6 +10,10 @@
   separate confirmation argument still defaults off. Likewise, test each
   navigation route that reloads a selection; list-click rollback does not cover
   programmatic opens automatically.
+- When a preferences panel combines independent sources, track load errors per
+  option group, block writes only for the group whose stored state is unknown,
+  and keep successfully loaded groups saveable. Verify the disabled group's
+  controls cannot trigger writes to its settings or unrelated rows.
 - Validate SQLite `lastInsertId()` as qint64 for conversion, positivity, and the
   consumer's representable range before writing dependent rows. Keep those
   writes in the transaction so an invalid generated identity rolls back rather

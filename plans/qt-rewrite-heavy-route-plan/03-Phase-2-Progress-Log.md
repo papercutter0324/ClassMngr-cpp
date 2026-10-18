@@ -46288,3 +46288,11 @@ Independent verification built `ClassMngr`, `ClassMngrNextPlatformApplicationSer
 F1085 is selected/in progress: distinguish Technical read failures from event-display and first-day-of-week defaults before Calendar Preferences aggregate-saves those settings. Likely targets are the event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
 
 Batch472 remains active with F1081-F1084 complete and F1085 selected/in progress. F1086-F1090 remain a separate Batch473 discovery-only record and are not active plan slices. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1085 completion; Batch472 closure; F1086 selected - 2026-10-18
+
+F1085 is complete at source/test commit `116719e1`. Calendar event-display and first-day-of-week preference ports now return `Technical` for repository errors while preserving existing defaults and fallback behavior for missing, invalid, or unavailable settings. The provider retains its locale display fallback and prevents writes for the failed first-day group. Calendar Preferences shows diagnostics and disables or guards only the failed option group; the healthy group remains saveable.
+
+Independent verification built `ClassMngr` and four affected targets. Focused CTests passed 4/4, with 50 QtTest cases total: Calendar Preferences 13, Academic Calendar 21, event-display port 7, and first-day port 9. `git diff --check` passed; no full suite ran.
+
+Batch472 is closed with F1081-F1085 complete. Batch473 is now the active list, using the five candidates already recorded in its discovery entry; no new discovery-acceptance audit was performed. F1086 is selected as next to preserve Schedule display mode after a technical read failure. F1087-F1090 remain provisional. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

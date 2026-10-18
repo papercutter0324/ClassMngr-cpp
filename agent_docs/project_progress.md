@@ -53,59 +53,24 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch471 closed and pushed; Batch472 active; F1084 selected)
+### Current checkpoint - 2026-10-18 (Batch472 closed; Batch473 next)
 
-Batch468 is closed and pushed at `8f921a91`; Batch469 is closed and pushed to
-`origin/Qt-Rewrite` at `6ffa19bf`. Batch470's sole slice, F1078, is complete at
-`fbca6d4e`, and the closeout was pushed to `origin/Qt-Rewrite` at `97db4dae`:
-non-series Calendar create/edit keeps the same dialog and fields
-available after a failed save, with retry or Cancel. The focused Calendar
-mutation CTest passed 1/1 with 24 QtTest cases; `git diff --check` passed and
-no full suite ran. F1079 is complete at `5ad80284`: the focused port and page
-CTests passed 2/2 with 42 QtTest cases. The user-visible load warning,
-retained content, blocked writes, refresh recovery, and resumed autosave are
-covered. `git diff --check` passed; no full suite ran. F1080 is complete at
-`82eaa317`: the custom-color palette port preserves default behavior for
-missing/invalid settings and absent/closed sessions, returns `Technical` for
-repository read faults, and ColorUtils skips writes after accepted or canceled
-dialogs on a read fault. The accepted color still returns; successful default
-reads retain Cancel persistence. The focused port and ColorUtils CTests passed
-2/2 with 22 QtTest cases, and `git diff --check` passed; no full suite ran. The
-open-session/no-settings-repository branch lacks a direct test. Batch471 is
-closed with F1079 `5ad80284` and F1080 `82eaa317`; the closeout was pushed to
-`origin/Qt-Rewrite` at `0a570252`. Batch472 discovery found five candidates:
-retry paths for recurring Calendar occurrence edits, suffix edits, and series
-creation, plus technical-read protection for Schedule display preferences and
-Calendar options. F1081 is complete at `a9066ae7`: failed saves of a selected
-repeat-series occurrence retain the same dialog and values, show the existing
-warning, and allow retry or Cancel. Retry updates only the selected occurrence
-and refreshes the projection; sibling rows stay unchanged. The accepted
-this-event-only behavior still clears the selected row's `repeatSeriesId`.
-Independent verification passed the focused Calendar CTest 1/1 with 26 QtTest
-cases; `git diff --check` passed and no full suite ran. F1082 is complete at
-`c48d43a4`: failed “this and following” saves retain the same dialog, fields,
-and scope; retry updates selected and later occurrences and refreshes the
-projection, while the earlier occurrence stays unchanged. Cancel preserves
-the full pre-edit snapshot. Independent verification passed the focused
-Calendar CTest 1/1 with 28 QtTest cases; `git diff --check` passed and no full
-suite ran. F1083 is complete at `e26e866b`: failed repeat-series creation
-keeps the same dialog and recurrence values available for retry or Cancel.
-An injected failure on the second occurrence leaves no partial rows; retry
-creates four weekly occurrences with a shared series ID and refreshes the
-projection, while Cancel leaves storage and model revision unchanged.
-Independent verification passed the focused Calendar CTest 1/1 with 30 passed,
-0 failed, and 0 skipped; `git diff --check` passed and no full suite ran. F1084
-is complete at `14fd7ae4`: a technical Schedule preference-read failure now
-shows a diagnostic, disables the five aggregate-saved controls, and blocks
-signal-driven saves. Missing and unavailable reads keep their false defaults,
-and legacy `QVariant` coercion is preserved. Independent verification built
-`ClassMngr` and both focused targets; CTests passed 2/2 with 20 QtTest cases,
-and `git diff --check` passed. F1085 is selected/in progress to protect
-Calendar event-display and first-day-of-week preferences from technical
-read-failure defaults. Batch473 discovery began in separate domain/application
-and UI/application lanes as F1084 started. The lanes returned five provisional
-candidates for Batch473 and no newly met Deferred trigger; their evidence is
-recorded in the Phase 2 progress log.
+Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
+is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
+`e26e866b`, `14fd7ae4`, and `116719e1`. F1085 preserves Calendar preferences
+when a technical read error occurs: the failed option group shows a diagnostic
+and blocks its writes, while a successfully loaded group remains saveable.
+Missing, invalid, and unavailable settings retain their defaults/fallbacks.
+Independent verification built `ClassMngr` and four affected targets; focused
+CTests passed 4/4 with 50 QtTest cases, and `git diff --check` passed. No full
+suite ran.
+
+Batch473 discovery found five candidates: F1086 Schedule display mode,
+F1087 Middle School Analytics visibility, F1088 Evaluation default policy,
+F1089 personal signature settings, and F1090 Sub Prep Zoom preference, each
+covering technical preference-read failures. F1086 is selected as the next
+slice. Discovery evidence and the ordered active list are in the Phase 2 plan
+and progress log.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
@@ -114,8 +79,10 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue with F1085 in Batch472. Batch473 discovery is recorded while
-Batch472 remains active. Preserve the open Phase 2 exit gate and unresolved
+Begin F1086 in Batch473 after the Batch472 closeout is pushed. F629's macOS
+evidence runner requires 18 GiB free for isolated universal builds and
+evidence; the current Mac volume has 11 GiB available, so F629 cannot start
+without additional free space. Preserve the Phase 2 exit gate and unresolved
 policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.

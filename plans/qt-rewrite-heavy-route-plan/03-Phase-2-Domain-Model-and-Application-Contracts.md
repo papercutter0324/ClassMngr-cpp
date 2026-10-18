@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1085 is selected/in progress in active Batch472 to preserve Calendar options after technical preference-read failures; F1084 is complete at `14fd7ae4` and Batch471 was pushed to `origin/Qt-Rewrite` at `0a570252`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1086 is selected as next in active Batch473 to preserve Schedule display mode after a technical read failure; Batch472 is closed with F1085 complete at source/test commit `116719e1`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,15 +68,15 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch472 (5 discovered slices)
+#### Active batch: Batch473 (5 discovered slices)
 
-Batch472's discovered slices, in order (with status):
+Batch473's discovered slices, in order (with status):
 
-1. F1081 - Keep Calendar occurrence edits retryable after save failure: complete at `a9066ae7`. On failure, retain the same dialog and values, show the existing warning, and allow retry or Cancel. Retry updates only the selected occurrence and refreshes the projection; sibling rows remain unchanged. The accepted this-event-only save still clears the selected occurrence's `repeatSeriesId`.
-2. F1082 - Keep Calendar “this and following” edits retryable after failure: complete at `c48d43a4`. On series-edit failure, retain the same dialog, fields, and scope and show the warning; retry updates selected and following rows and refreshes the view while the earlier occurrence remains unchanged, and Cancel restores the full pre-edit snapshot.
-3. F1083 - Keep Calendar repeat-series creation retryable after failure: complete at `e26e866b`. A failed create retains the dialog and recurrence values; transaction rollback leaves no partial rows, and retry creates four weekly occurrences sharing a series ID and refreshes the projection. Cancel leaves storage and model revision unchanged.
-4. F1084 - Preserve Schedule display preferences after a technical read failure: complete at `14fd7ae4`. Repository read errors return `Technical`; missing/unavailable settings retain false defaults. The Preferences screen shows a diagnostic warning, disables all five controls, and blocks aggregate writes. Focused targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
-5. F1085 - Preserve Calendar option state after technical preference-read failures: selected/in progress; distinguish Technical failures from event-display and first-day-of-week defaults before aggregate saves. Likely targets: event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
+1. F1086 - Preserve Schedule display mode after a technical read failure: selected as next; distinguish a technical canonical-key read failure from a missing preference and prevent fallback migration from overwriting it. Likely targets: Schedule display-mode port tests and `ScheduleWidget` tests.
+2. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: provisional; distinguish read errors from false before persistence. Likely targets: its preference port and MainWindow/class visibility tests.
+3. F1088 - Preserve Evaluation default policy after a technical preference-read failure: provisional; distinguish read errors from missing values before persistence. Likely targets: its preference port and Preferences integration tests.
+4. F1089 - Preserve personal signature settings after technical read errors: provisional; preserve unread values across aggregate Personal Details and Initial Setup saves. Likely targets: signature port, My Workspace page, and Initial Setup Wizard tests.
+5. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure: provisional; prevent a failed primary read from falling through to legacy-value migration. Likely targets: Zoom preference port and Sub Prep page tests.
 
 #### Deferred candidates
 

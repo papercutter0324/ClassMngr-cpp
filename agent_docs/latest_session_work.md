@@ -2,31 +2,28 @@
 
 ## Current Deployment Handoff
 
-- Deployment: f1053-phase2-macos-20261018; Heavy route; branch Qt-Rewrite;
-  completed 2026-10-18.
-- F1053 was already complete at source/test commit
-  fed596fcee971187ddd5a71433007cc2ab18d129. It refreshes the existing
-  output-capability signal after My Workspace child-tab transitions. The
-  focused Windows x64 Debug build and MainWindow parity CTest passed 1/1.
-- The subsequent build cleanup is committed at
-  52e88f604cf43608238a85e84cf0c5936885a433. It repaired the previously
-  failing macOS build and five distinct compiler warning types across the
-  application and tests. No warning flags were weakened.
-- A fresh configure and full 2,170-action build passed in the standard
-  build/macos-clang-debug tree on macOS 27 arm64, AppleClang 21, Qt 6.12.0,
-  universal arm64;x86_64, deployment target 14.4. The configure and build
-  logs contain no project warnings or errors.
-- Focused CTests passed for DataService lifecycle, Schedule Import, Schedule
-  Import dialog, and F1053 MainWindow parity (4/4 in the combined run).
-  ClassMngrUpdaterTests passed 1/1 separately with loopback access after the
-  sandbox blocked its local server bind. git diff --check passed. No full
-  suite or Windows build ran for the cleanup.
-- Phase 2 remains In Progress/Open; Gates 1/2 remain Partial and F1007 remains
-  pending policy reconciliation. Batch444 is closed. Next action: begin a
-  fresh Phase 2 discovery pass at Batch445.
-- Final source/test worktree was clean after the two commits. Preserve the
-  Phase 2 exit-gate and Deferred-candidate state recorded in the current
-  plan and progress log.
+- Active deployment: `qt-rewrite-phase2-resume-20260928`; Heavy route; branch
+  `Qt-Rewrite`; current checkpoint 2026-10-18.
+- Batch472 is complete. F1085 source/test commit `116719e1` distinguishes
+  technical read errors from Calendar event-display and first-day defaults.
+  Preferences shows diagnostics and disables/guards only the failed group;
+  healthy loaded options remain saveable. Missing, invalid, and unavailable
+  reads retain their existing defaults/fallbacks.
+- Independent verification built `ClassMngr` and four affected targets.
+  Focused CTests passed 4/4 with 50 QtTest cases total; `git diff --check`
+  passed. No full suite ran. F1081-F1085 source commits are recorded in the
+  Phase 2 plan and progress log.
+- Batch473 contains F1086-F1090; F1086, Schedule display mode after a technical
+  read failure, is next. The ordered list and discovery evidence are in the
+  Phase 2 plan/progress log. Gates 1/2 remain Partial; F1007 remains pending
+  policy reconciliation; Phase 2 exit remains Open.
+- F629's macOS runner refuses to start below 18 GiB free space. The current
+  volume has 11 GiB available; no build output was removed. The runner builds
+  isolated universal Release/package and Debug harness artifacts before the
+  24-route evidence run. Revisit F629 after enough space is available and the
+  Windows evidence root for combined validation is available.
+- Next action: push the Batch472 closeout, then begin F1086. Preserve the open
+  Phase 2 exit gate and unrelated user files.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 
