@@ -2,24 +2,34 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `phase2_resume_batch398_f1028`; Heavy route; resumed 2026-10-17.
-- Current checkpoint: F1044 is complete at source/test commit
-  `8dc894ca9b60bca158ac41211c3ec10be5f49080`. Catalog-document navigation now
-  restores prior Sidebar selection when Cancel returns from the unsaved-change
-  prompt. The existing regression checks selection before the click, requested
-  route selection after the click, and restoration after Cancel, while
-  preserving dirty-page, no-viewer, no-warning, and preflight-lease assertions.
-  Ninja Debug builds for `ClassMngr` and
-  `ClassMngrDocumentCatalogNavigationParityTests` passed; exact CTest 1/1 and
-  `git diff --check` passed. No full suite ran. Two post-F1044 audits found all
-  13 official Deferred entries unresolved and not newly actionable. F629's
-  standard and larger hosted ARM64 macOS runners publish 14 GB SSD, below the
-  Phase 0 18 GiB free-space preflight. Batch428 is closed. Batch429's async-job
-  review found no production caller for the queue-terminal concern. F1045 is
-  accepted pending implementation: reject case-only duplicate generated PDF
-  paths before staging in archive-only and archive-plus-individual output.
-  Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
-  Phase 2 remains Open.
+- Deployment: `phase2_resume_batch398_f1028`; Heavy route; branch `Qt-Rewrite`;
+  resumed 2026-10-18.
+- Current checkpoint: F1053 is complete. Acceptance commit
+  `a9797d84421ea52dcb342a65402e632b92f0efbf`, source/test commit
+  `fed596fcee971187ddd5a71433007cc2ab18d129`, and closeout commit
+  `ee028188972b16492d2a7f3220d35d6320116e8b`. My Workspace now emits its
+  existing output-capability signal after child-tab transitions, keeping the
+  MainWindow Print and Save As actions aligned with Schedule, Details, and the
+  lazily initialized Calendar tab. The integration regression checks
+  Schedule enabled -> Details disabled -> Calendar disabled -> Schedule
+  enabled, without test-side signal hookups or manual refresh.
+- Independent verification built `ClassMngr` and
+  `ClassMngrMainWindowSaveAsExportParityTests` sequentially in
+  `build/windows-x64-debug`; the exact Debug CTest passed 1/1, and
+  `git diff --check` passed. Initial sandbox builds hit MSBuild FileTracker
+  Access Denied; approved expanded-access retries succeeded. No full suite ran.
+- Two independent post-F1053 audits checked all 13 exact official Deferred
+  candidates; all remain unchanged, none became actionable/resolved/superseded.
+  F579/F598 still require an elevated Administrator token for matched WPR
+  captures. Batch444 is closed. Gates 1/2 remain Partial, F1007 is pending
+  policy reconciliation, and the Phase 2 exit gate is Open.
+- Resume on the other device with a fresh Phase 2 discovery pass (next batch
+  number: 445); there is no active candidate or implementation slice. Keep
+  using Heavy, commit acceptance before each slice, commit each source/test
+  slice, audit the official Deferred list after it, and update the plan/log.
+- Preserve unrelated workspace state: `src/app/controllers/file_controller.h`
+  is modified, and `%SystemDrive%/`, `Testing/`, `Windows Performance
+  Analyzer/`, `stdout`, and `txt` are untracked. These were not part of F1053.
 - F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
   selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
   `ClassTransferExportPackage` alias is removed; export query, JSON codec,
