@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 active; F1069 selected)
+### Current checkpoint - 2026-10-18 (Batch468 active; F1070 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -79,15 +79,19 @@ ran. Batch467 is closed and pushed at `537e420b`, including the F1068
 closeout record. Batch468 discovery recorded five ordered candidates: F1069
 Academic Calendar schedule preference read failures; F1070 Campus Directory
 Cancel selection; F1071 Sub Prep Cancel selection; F1072 Classes Cancel
-selection; and F1073 Staff Directory Cancel selection. F1069 is selected
+selection; and F1073 Staff Directory Cancel selection. F1069 was selected
 because a technical read error currently appears as an empty preference,
 clears the in-memory schedule, and can expose defaults to a later save. This
 narrowly reopens F193's legacy read-error fallback in light of that risk and
-F1066's typed technical-preference-read policy. The Executor's focused build
-and three CTests passed. Independent verification passed the same focused
-CTest set (3/3), then rebuilt the two targets affected by extra assertions and
-passed their focused CTests (2/2). The slice is ready to commit; no full suite
-ran.
+F1066's typed technical-preference-read policy. F1069 is committed at
+`46780e00`; the typed read result distinguishes technical repository errors
+from missing/empty values, and the provider preserves loaded schedules and
+blocks saves while the stored schedule is unknown. The Executor and
+independent Tester built the affected targets and passed the three focused
+CTests (3/3); after two assertions were added, the independent Tester rebuilt
+the changed test targets and passed those focused CTests (2/2). No full suite
+ran. F1070 is selected: restore the real Sidebar selection after Cancel from
+dirty Teacher Info to Campus Directory root and child routes.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -96,7 +100,7 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Complete and commit F1069, then proceed through Batch468 in order. Start
+Complete and commit F1070, then proceed through Batch468 in order. Start
 Batch469 discovery when work begins on F1072, the second-last Batch468 slice.
 Preserve the open exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
