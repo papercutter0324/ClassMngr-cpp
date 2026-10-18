@@ -45788,3 +45788,13 @@ The analytics/read-projection lane found no eligible candidate: Class Analytics 
 No other slices were found.
 
 Batch458 contains only F1063. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1063 completion - 2026-10-18
+
+F1063 is committed as `3919caea` (`Phase2 - Enable manual roster length confirmation`). The explicit Manual Save button now enables for one-syllable and five-or-more-syllable Korean names when those are the only validation errors, then uses the existing confirmation. Accept persists and clears the draft; reject retains dirty state and stored data. Other validation errors remain blocking, and automatic saving remains blocked even after a dirty draft switches from Manual to Automatic mode.
+
+The executor configured the `macos-clang-debug` preset and built `ClassMngrRosterEditorWidgetSaveTests`; its focused CTest passed 1/1. The independent Tester incrementally built `ClassMngr` and the save-test target, reran the CTest (1/1), and directly invoked the four relevant QtTest slots; six cases passed, including setup/cleanup. Coverage included actual-button accept/reject for short and long names, mixed-error blocking, Automatic mode and mode transition, and existing `saveChanges()` acceptance/rejection behavior. `git diff --check` passed. The CTest registration runs the full Roster Editor save-test binary; no full project suite ran. Non-blocking macOS pasteboard/service and missing-keyboard-SVG diagnostics appeared during tests.
+
+### Batch458 push - 2026-10-18
+
+Pushed `3919caea` to `origin/Qt-Rewrite`, advancing it from `ab805196`. Batch458 contained only F1063 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
