@@ -32,6 +32,7 @@ public:
         );
 
     bool loadDirectory();
+    void failNextPostSaveDirectoryReadForTesting();
 
     void saveData() override;
     bool saveChanges() override;
@@ -57,6 +58,8 @@ private:
     void deleteSelectedRows();
     void markDirty(bool scheduleAutosave = true);
     bool saveDirectory(bool showErrors);
+    void reloadAfterSuccessfulSave();
+    void reportDirectoryLoadFailure(const QString& message);
     void updateActions();
     void updateTableMetrics();
 
@@ -65,6 +68,8 @@ private:
     SaveMode m_saveMode = SaveMode::Automatic;
     bool m_loading = false;
     bool m_dirty = false;
+    bool m_reloadRequired = false;
+    bool m_failNextPostSaveDirectoryReadForTesting = false;
     QList<ClassMngr::Next::Domain::GsTeamMemberId> m_deletedGsTeamMemberIds;
     QList<ClassMngr::Next::Domain::NativeEnglishTeacherId>
         m_deletedNativeEnglishTeacherIds;

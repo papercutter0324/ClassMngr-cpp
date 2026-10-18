@@ -159,7 +159,12 @@ public:
         {
             return Qt::NoItemFlags;
         }
-        return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+        Qt::ItemFlags result = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        if (m_editingEnabled)
+        {
+            result |= Qt::ItemIsEditable;
+        }
+        return result;
     }
 
     bool setData(
@@ -168,7 +173,8 @@ public:
         const int role
         ) override
     {
-        if (role != Qt::EditRole
+        if (!m_editingEnabled
+            || role != Qt::EditRole
             || !index.isValid()
             || index.row() < 0
             || index.row() >= rowCount()
@@ -196,7 +202,11 @@ public:
         const QModelIndex& parent = QModelIndex()
         ) override
     {
-        if (parent.isValid() || row < 0 || row > rowCount() || count <= 0)
+        if (!m_editingEnabled
+            || parent.isValid()
+            || row < 0
+            || row > rowCount()
+            || count <= 0)
         {
             return false;
         }
@@ -220,7 +230,8 @@ public:
         const QModelIndex& parent = QModelIndex()
         ) override
     {
-        if (parent.isValid()
+        if (!m_editingEnabled
+            || parent.isValid()
             || row < 0
             || count <= 0
             || row + count > rowCount())
@@ -243,6 +254,11 @@ public:
         endResetModel();
     }
 
+    void setEditingEnabled(const bool enabled)
+    {
+        m_editingEnabled = enabled;
+    }
+
     void setHeaders(QStringList headers)
     {
         m_headers = std::move(headers);
@@ -262,6 +278,7 @@ public:
 
 private:
     int m_columnCount = 0;
+    bool m_editingEnabled = true;
     QVector<StaffDirectoryRow> m_rows;
     QStringList m_headers;
 };
@@ -547,23 +564,18 @@ bool StaffDirectoryPage::loadDirectory()
                 query.execute();
         if (!loadedTeachers)
         {
-            m_loading = false;
-            updateActions();
             if (loadedTeachers.error().code
-                == ClassMngr::Next::Domain::ErrorCode::NotFound)
+                    == ClassMngr::Next::Domain::ErrorCode::NotFound
+                && !m_reloadRequired)
             {
                 clearDatabaseState();
                 return false;
             }
 
             const std::string& message = loadedTeachers.error().message;
-            DialogServices::showWarning(
-                this,
-                tr("Load Directory"),
-                QString::fromUtf8(
-                    message.data(),
-                    static_cast<qsizetype>(message.size()))
-                );
+            reportDirectoryLoadFailure(QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())));
             return false;
         }
 
@@ -593,23 +605,18 @@ bool StaffDirectoryPage::loadDirectory()
             loadedMembers = query.execute();
         if (!loadedMembers)
         {
-            m_loading = false;
-            updateActions();
             if (loadedMembers.error().code
-                == ClassMngr::Next::Domain::ErrorCode::NotFound)
+                    == ClassMngr::Next::Domain::ErrorCode::NotFound
+                && !m_reloadRequired)
             {
                 clearDatabaseState();
                 return false;
             }
 
             const std::string& message = loadedMembers.error().message;
-            DialogServices::showWarning(
-                this,
-                tr("Load Directory"),
-                QString::fromUtf8(
-                    message.data(),
-                    static_cast<qsizetype>(message.size()))
-                );
+            reportDirectoryLoadFailure(QString::fromUtf8(
+                message.data(),
+                static_cast<qsizetype>(message.size())));
             return false;
         }
 
@@ -634,14 +641,70 @@ bool StaffDirectoryPage::loadDirectory()
     m_deletedGsTeamMemberIds.clear();
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
+    m_reloadRequired = false;
     m_loading = false;
+    m_autosaveTimer->stop();
     updateActions();
     markRefreshed();
     return true;
 }
 
+void StaffDirectoryPage::failNextPostSaveDirectoryReadForTesting()
+{
+    m_failNextPostSaveDirectoryReadForTesting = true;
+}
+
+void StaffDirectoryPage::reloadAfterSuccessfulSave()
+{
+    m_dirty = false;
+    m_reloadRequired = true;
+    m_autosaveTimer->stop();
+
+    if (m_failNextPostSaveDirectoryReadForTesting)
+    {
+        m_failNextPostSaveDirectoryReadForTesting = false;
+        reportDirectoryLoadFailure(tr("The directory read failed."));
+        return;
+    }
+
+    loadDirectory();
+}
+
+void StaffDirectoryPage::reportDirectoryLoadFailure(const QString& message)
+{
+    m_loading = false;
+
+    if (m_reloadRequired)
+    {
+        m_dirty = false;
+        m_autosaveTimer->stop();
+        updateActions();
+
+        const QString directoryName =
+            m_kind == StaffDirectoryKind::NativeEnglishTeachers
+                ? tr("Native English Teacher")
+                : tr("GS Team");
+        DialogServices::showWarning(
+            this,
+            tr("Save Directory"),
+            tr("The %1 directory was saved, but its refresh failed. "
+               "Reload the directory before continuing.\n\n%2")
+                .arg(directoryName, message)
+            );
+        return;
+    }
+
+    updateActions();
+    DialogServices::showWarning(this, tr("Load Directory"), message);
+}
+
 void StaffDirectoryPage::addRow()
 {
+    if (m_reloadRequired)
+    {
+        return;
+    }
+
     auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
     const int row = model->rowCount();
     model->insertRows(row, 1);
@@ -653,6 +716,11 @@ void StaffDirectoryPage::addRow()
 
 void StaffDirectoryPage::deleteSelectedRows()
 {
+    if (m_reloadRequired)
+    {
+        return;
+    }
+
     auto* model = static_cast<StaffDirectoryTableModel*>(m_model);
     const QModelIndexList selected = m_table->selectionModel()->selectedRows();
     if (selected.isEmpty())
@@ -703,6 +771,11 @@ void StaffDirectoryPage::deleteSelectedRows()
 
 bool StaffDirectoryPage::saveDirectory(bool showErrors)
 {
+    if (m_reloadRequired)
+    {
+        return false;
+    }
+
     const auto* model = static_cast<const StaffDirectoryTableModel*>(m_model);
     if (m_kind == StaffDirectoryKind::NativeEnglishTeachers)
     {
@@ -790,7 +863,7 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
             return false;
         }
 
-        loadDirectory();
+        reloadAfterSuccessfulSave();
         emit directorySaved();
         return true;
     }
@@ -875,14 +948,14 @@ bool StaffDirectoryPage::saveDirectory(bool showErrors)
         return false;
     }
 
-    loadDirectory();
+    reloadAfterSuccessfulSave();
     emit directorySaved();
     return true;
 }
 
 void StaffDirectoryPage::markDirty(bool scheduleAutosave)
 {
-    if (m_loading) return;
+    if (m_loading || m_reloadRequired) return;
     m_dirty = true;
     updateActions();
     if (scheduleAutosave && m_saveMode == SaveMode::Automatic)
@@ -898,7 +971,7 @@ void StaffDirectoryPage::saveData()
 
 bool StaffDirectoryPage::saveChanges()
 {
-    return !m_dirty || saveDirectory(true);
+    return !m_reloadRequired && (!m_dirty || saveDirectory(true));
 }
 
 bool StaffDirectoryPage::hasUnsavedChanges() const
@@ -947,7 +1020,9 @@ void StaffDirectoryPage::clearDatabaseState()
     m_deletedGsTeamMemberIds.clear();
     m_deletedNativeEnglishTeacherIds.clear();
     m_dirty = false;
+    m_reloadRequired = false;
     m_loading = false;
+    m_autosaveTimer->stop();
     updateActions();
 }
 
@@ -1027,12 +1102,23 @@ void StaffDirectoryPage::updateTableMetrics()
 void StaffDirectoryPage::updateActions()
 {
     if (!m_table) return;
+    const bool editingEnabled = !m_reloadRequired;
+    static_cast<StaffDirectoryTableModel*>(m_model)->setEditingEnabled(
+        editingEnabled);
+    m_table->setEditTriggers(
+        editingEnabled
+            ? QAbstractItemView::DoubleClicked
+                | QAbstractItemView::EditKeyPressed
+                | QAbstractItemView::SelectedClicked
+            : QAbstractItemView::NoEditTriggers);
+    m_addButton->setEnabled(editingEnabled);
     m_deleteButton->setEnabled(
-        !m_table->selectionModel()->selectedRows().isEmpty());
+        editingEnabled
+        && !m_table->selectionModel()->selectedRows().isEmpty());
     const bool manual = m_saveMode != SaveMode::Automatic;
     m_discardButton->setVisible(manual);
-    m_discardButton->setEnabled(manual && m_dirty);
+    m_discardButton->setEnabled(manual && m_dirty && editingEnabled);
     m_saveButton->setVisible(manual);
-    m_saveButton->setEnabled(manual && m_dirty);
+    m_saveButton->setEnabled(manual && m_dirty && editingEnabled);
     m_saveButton->setText(m_dirty ? tr("Save Changes *") : tr("Save Changes"));
 }

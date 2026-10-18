@@ -171,6 +171,7 @@ private slots:
     void deletesOnlySelectedPersistedRowsWithOneConfirmation();
     void manualDiscardRestoresRowsAndClearsPendingDeletes();
     void refreshWhileDirtyPreservesEditsAndPendingDeletes();
+    void successfulWriteWithFailedReloadRequiresReloadBeforeEditingOrSaving();
 };
 
 void StaffDirectoryGsTeamSaveTests::cleanup()
@@ -952,6 +953,109 @@ refreshWhileDirtyPreservesEditsAndPendingDeletes()
         memberNamed(*persisted, QStringLiteral("Edited Before Refresh"));
     QCOMPARE(updated.id, updateTarget.id);
     QVERIFY(memberNamed(*persisted, QStringLiteral("Delete Target")).id <= 0);
+}
+
+void StaffDirectoryGsTeamSaveTests::
+successfulWriteWithFailedReloadRequiresReloadBeforeEditingOrSaving()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    StaffDirectoryPage page(&services, StaffDirectoryKind::GsTeam);
+    page.setSaveMode(SaveMode::Automatic);
+    QVERIFY(page.loadDirectory());
+    auto* table = page.findChild<QTableView*>(QStringLiteral("gsTeamTable"));
+    QVERIFY(table);
+    QPushButton* addButton = buttonWithText(page, QStringLiteral("Add"));
+    QVERIFY(addButton);
+
+    addButton->click();
+    QCOMPARE(table->model()->rowCount(), 1);
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Committed Member")));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 1, QStringLiteral("\uAE40\uD558\uB298")));
+    QVERIFY(setStaffDirectoryCellText(*table, 0, 2, QStringLiteral("M1")));
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 3, QStringLiteral("010-5555-1234")));
+    QVERIFY(page.hasUnsavedChanges());
+
+    page.failNextPostSaveDirectoryReadForTesting();
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QSignalSpy saved(&page, &StaffDirectoryPage::directorySaved);
+
+    QVERIFY(page.saveChanges());
+    QCOMPARE(saved.count(), 1);
+    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(table->model()->rowCount(), 1);
+    QVERIFY(staffDirectoryCellData(*table, 0, 0, IdRole).isNull());
+
+    const auto committed = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(committed);
+    QCOMPARE(committed->size(), 1);
+    const GsTeamMember persisted =
+        memberNamed(*committed, QStringLiteral("Committed Member"));
+    QVERIFY(persisted.id > 0);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.first().severity, PromptSeverity::Warning);
+    QCOMPARE(prompts.messages.first().title, QStringLiteral("Save Directory"));
+    QVERIFY(prompts.messages.first().message.contains(
+        QStringLiteral("GS Team directory was saved")));
+    QVERIFY(prompts.messages.first().message.contains(
+        QStringLiteral("refresh failed")));
+
+    QVERIFY(!page.saveChanges());
+    page.saveData();
+    QTest::qWait(900);
+    QCOMPARE(saved.count(), 1);
+    const auto afterBlockedSaves = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(afterBlockedSaves);
+    QCOMPARE(afterBlockedSaves->size(), 1);
+
+    page.setSaveMode(SaveMode::Manual);
+    QPushButton* saveButton = buttonWithText(page, QStringLiteral("Save Changes"));
+    QPushButton* deleteButton = buttonWithText(page, QStringLiteral("Delete"));
+    QVERIFY(saveButton);
+    QVERIFY(deleteButton);
+    QVERIFY(!addButton->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+    table->selectRow(0);
+    QVERIFY(!deleteButton->isEnabled());
+    QVERIFY(!table->model()->flags(table->model()->index(0, 0))
+        .testFlag(Qt::ItemIsEditable));
+    QVERIFY(!setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Blocked Edit")));
+    addButton->click();
+    QCOMPARE(table->model()->rowCount(), 1);
+    QCOMPARE(staffDirectoryCellText(*table, 0, 0),
+        QStringLiteral("Committed Member"));
+
+    QVERIFY(page.loadDirectory());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(rowForId(*table, persisted.id), 0);
+    QVERIFY(table->model()->flags(table->model()->index(0, 0))
+        .testFlag(Qt::ItemIsEditable));
+    QVERIFY(addButton->isEnabled());
+    QVERIFY(!saveButton->isEnabled());
+
+    QVERIFY(setStaffDirectoryCellText(
+        *table, 0, 0, QStringLiteral("Recovered Member")));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(page.saveChanges());
+    QCOMPARE(saved.count(), 2);
+    const auto recovered = services.databaseSession()
+        ->gsTeamRepository()->getAll();
+    QVERIFY(recovered);
+    QCOMPARE(recovered->size(), 1);
+    const GsTeamMember updated =
+        memberNamed(*recovered, QStringLiteral("Recovered Member"));
+    QCOMPARE(updated.id, persisted.id);
 }
 
 QTEST_MAIN(StaffDirectoryGsTeamSaveTests)
