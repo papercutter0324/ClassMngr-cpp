@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1047 complete; no next slice selected)
+### Current checkpoint - 2026-10-18 (F1047 complete; F1048 accepted)
 
 F1047 is complete at source/test commit
 `4f812b76dc15d291daa714f66eccb23957683c91`. Testing-class deletion now
@@ -79,9 +79,13 @@ Two independent post-F1047 audits reviewed all 13 official Deferred entries;
 none became actionable, resolved, or superseded. Batch432's application
 contract and repository mutation lanes and Batch433's domain invariant and
 coordinator state lanes found no additional candidate; Batch431 was also a
-discovery shortfall. The Phase 2 plan has no next accepted slice. Gates 1/2
-remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
-policy reconciliation.
+discovery shortfall. Batch434's operation-result lane found no mismatch. The
+teacher/class write lane established that a stale positive co-teacher ID is
+rejected by the database foreign key but reported as nonrecoverable Technical;
+F1048 is accepted to return a typed missing-teacher result and map it to
+recoverable NotFound atomically while preserving the legacy repository API.
+The plan's 13 Deferred entries remain unchanged. Gates 1/2 remain Partial, the
+Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

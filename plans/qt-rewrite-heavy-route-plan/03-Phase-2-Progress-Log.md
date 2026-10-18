@@ -45107,3 +45107,34 @@ Batch432 discovery found no additional candidate. The application use-case/domai
 ### Batch433 discovery shortfall - 2026-10-18
 
 Batch433's domain-invariant and coordinator-state lanes found no actionable Phase 2 slice. They audited all 13 official Deferred candidates; none became actionable, resolved, or superseded, and no Deferred entry changed. Batch433 is closed as a discovery shortfall; no historical marker is added to the operational plan.
+
+### Batch434 discovery; F1048 accepted before implementation - 2026-10-18
+
+Batch434's operation-result lane found no mismatch. The teacher/class write lane
+identified a target-existence lead; review confirmed that
+`ClassCoTeacherAssignmentUseCase` accepts a positive `TeacherId` and delegates,
+while the production UI loads selectable teachers from the teacher directory.
+The database foreign key from `class_info.teacher_id` to `teachers(id)` uses
+`ON DELETE SET NULL`, and teacher deletion clears assignments. A stale positive
+teacher ID currently makes `INSERT .. ON CONFLICT` fail its foreign key; the
+adapter reports nonrecoverable `Technical`, although a missing class already
+maps to recoverable `NotFound`. Schema integrity remains protected, so this is
+a result-semantics issue, not persisted corruption. All 13 official Deferred
+entries remain unchanged.
+
+No other slices were found.
+
+F1048 is accepted before implementation: return a typed missing-teacher
+outcome atomically from the API/port, without a pre-read or message matching,
+and map it to recoverable `NotFound` in the adapter. Preserve the legacy
+repository `Status` wrapper and diagnostic, nonrecoverable technical failures,
+successful assigned/unassigned behavior, class/schedule validation, and
+teacher deletion. At the existing class-co-teacher port/repository seam, cover
+an unknown positive teacher returning typed `NotFound,recoverable=true` with no
+mutation; retain trigger-injected SQL failure coverage as nonrecoverable
+`Technical`, plus success/unassigned and legacy-wrapper behavior. An atomic
+conditional write may distinguish affected-row outcomes; the implementation
+choice remains with the Executor. Build `ClassMngr` and affected targets in
+`build/windows-x64-debug`, run only matching CTests and `git diff --check`; no
+full suite. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
+F1007 remains pending policy reconciliation.
