@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1063 is complete and pushed at `3919caea`; Batch459 discovery is next; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1063 is complete and pushed at `3919caea`; Batch459 contains one accepted slice, F1064, to prevent retrying a committed staff-directory draft after its refresh fails; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch459
 
-Batch459 discovery is next; no candidates have been accepted yet.
+- F1064 — After a successful Native English or GS Team directory save whose immediate reload fails, retain the visible snapshot but block edits and further saves until a later reload succeeds; report the committed save accurately and prevent duplicate inserts.
 
 #### Deferred candidates
 

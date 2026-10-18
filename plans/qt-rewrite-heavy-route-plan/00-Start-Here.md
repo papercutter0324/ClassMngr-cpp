@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: F1063 is complete and pushed at `3919caea`; Batch458 is closed, and Batch459 discovery is next. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch459) for the active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
+- Current milestone: F1063 is complete and pushed at `3919caea`; Batch459 has one accepted slice, F1064, awaiting implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch459) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch458 is closed. Batch459 discovery is next; no candidates have been accepted yet.
+Batch459 contains one accepted slice, in order:
+
+1. **F1064 — Prevent repeat staff-directory writes after a successful save and failed refresh.** Keep the committed page read-only until a later reload succeeds, so a retry cannot create a duplicate row.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch459) is the canonical active list and acceptance record.
 
