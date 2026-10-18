@@ -46092,9 +46092,9 @@ The independent Tester built `ClassMngr` and `ClassMngrMainWindowTeacherSidebarN
 
 F1077 is selected/in progress as the next Batch469 slice. Investigate navigation and source-page behavior when `loadClasses()` fails after leave confirmation, while honoring the committed Save/Discard choice.
 
-Batch470 discovery began in two lanes when F1076 became the second-last Batch469 slice: Qt-free domain/application and UI/application integration. The Qt-free lane found no eligible candidate. The UI lane identified one provisional lead in `src/features/calendar/ui/calendar_page_events.cpp`, `CalendarPage::openCalendarDialog()`: a stack `CalendarEventDialog` is executed, then a failed single-event `CalendarEventSaveUseCase::execute` displays a warning and returns, destroying the dialog and its entered fields. Existing UI tests cover successful page mutations and application/use-case tests cover error propagation; no UI retry-after-failure coverage was found. This is distinct from F1036's earlier explicit exclusion of dialog draft retention and remains provisional.
+Batch470 discovery began in two lanes when F1076 became the second-last Batch469 slice: Qt-free domain/application and UI/application integration. The Qt-free lane found no eligible candidate. The UI lane identified one provisional lead in `src/features/calendar/ui/calendar_page_events.cpp`, `CalendarPage::openCalendarDialog()`: in the ordinary `!repeatSeriesEvent && !dialog.repeatEnabled()` save branch, a failed single-event `CalendarEventSaveUseCase::execute` displays a warning and returns, destroying the stack `CalendarEventDialog` and its entered fields. Existing UI tests cover successful page mutations and application/use-case tests cover error propagation; no UI retry-after-failure coverage was found. This is distinct from F1036's earlier explicit exclusion of dialog draft retention and remains provisional.
 
-Proposed F1078 acceptance: for single-event create/edit, keep the dialog open with its fields intact and the error visible after save failure; after the failure is removed, retry persists the event and only then closes the dialog. An independent Deferred audit found no official trigger newly met.
+Proposed F1078 acceptance is limited to non-series single-event create/edit in the ordinary `!repeatSeriesEvent && !dialog.repeatEnabled()` save branch of `CalendarPage::openCalendarDialog()`. After a failed save, retain the same dialog, its fields, and the warning; allow retries until success or user Cancel. Exclude deletes, repeat-series create/edit, and repeat-series-member saves because those use distinct mutation paths. An independent Deferred audit found no official trigger newly met.
 
 Batch470's discovered slices, in order (with status):
 
@@ -46111,5 +46111,34 @@ Independent verification built `ClassMngr` and `ClassMngrMainWindowClassesSideba
 Batch469 is closed with all four ordered source commits: F1074 `cbe7be5c`, F1075 `8c0dbc24`, F1076 `7a938cc4`, and F1077 `bc87ffa8`.
 
 Batch470 is now active, with F1078 selected/in progress as the sole discovered slice. Preserve the single-event create/edit dialog and entered fields, display the save error, and close only after a retry persists successfully. The discovery evidence is in `src/features/calendar/ui/calendar_page_events.cpp` (`CalendarPage::openCalendarDialog()` and `CalendarEventSaveUseCase::execute`); this remains the scoped candidate distinguished from F1036's earlier explicit exclusion.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1078 completion; Batch470 closure - 2026-10-18
+
+F1078 is complete at source/test commit `fbca6d4e` on `Qt-Rewrite`. The change covers non-series Calendar create/edit in the ordinary `!repeatSeriesEvent && !dialog.repeatEnabled()` save branch: after failed save, retain the same dialog and fields with the warning, and allow retry until success or user Cancel. Deletes, repeat-series create/edit, and repeat-series-member saves use separate mutation paths and remain excluded.
+
+`ClassMngr` and `ClassMngrCalendarPageEventMutationParityTests` built; the focused CTest passed 1/1 and raw QtTest passed 24/0/0 (passed/failed/skipped). `git diff --check` passed; no full suite ran. A separate edit-cancel row was not added; create cancellation and create/edit retries are covered.
+
+Batch470 is closed with its sole discovered slice, F1078 at `fbca6d4e`.
+
+### Batch471 discovery; F1079 selected, F1080 provisional - 2026-10-18
+
+The UI/navigation lane found no additional eligible candidate or newly met official Deferred trigger. The domain/application lane found two candidates; neither matched an existing Deferred entry.
+
+F1079 is selected/in progress to preserve Sub Prep's four stored content settings after a technical preferences read failure. `src/next/platform/application_services_sub_prep_preferences_port.cpp:15-63` logs repository read failures and substitutes defaults while returning success. `src/features/sub_prep/ui/sub_prep_page_settings.cpp:29-89` loads the four saved content fields, while `:324-390` persists them together; `src/features/sub_prep/ui/sub_prep_page.cpp:504-523` schedules autosave on edits. The cross-operation data-loss exposure is an inference: if writes recover after the read fails, a one-field autosave could overwrite other unread values with defaults.
+
+Accept F1079 for the four stored content settings: distinguish `Technical` read errors from successful missing/empty values; preserve existing missing/empty/unavailable display semantics and write-failure behavior; warn, preserve form content, and block aggregate autosave/save after a `Technical` read until successful reload, then resume normal saves. Likely targets are `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests` and `ClassMngrSubPrepPageTests`.
+
+F1080 is provisional: keep custom color swatches safe after a technical palette-read failure. `src/next/platform/application_services_custom_color_palette_preferences_port.cpp:38-72` returns defaults on read errors; `src/core/utils/colorutils.cpp:182-210,217-230` loads that palette and writes swatches after the dialog closes, including Cancel. Existing coverage separately checks read fallback and Cancel save behavior. `rg` found shared callers in Setup Wizard, Schedule editor/import review, and Classes. The possible data-loss exposure if the read fails and becomes writable before close is an inference.
+
+Proposed bounded F1080 acceptance preserves fallback display and existing successful/missing/Cancel policy while distinguishing `Technical` read failures and avoiding persistence of a palette derived from a failed read. Next, assess shared `ColorUtils::getColor()` behavior and verify retry/Cancel compatibility. Likely targets are `ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests` and `ClassMngrColorUtilsCustomColorPaletteTests`, plus production callers/build.
+
+Batch471's discovered slices, in order (with status):
+
+1. F1079 - Preserve Sub Prep saved content after technical settings read failure (selected/in progress).
+2. F1080 - Keep custom color swatches safe after a technical palette-read failure (provisional; assess shared `ColorUtils::getColor()` behavior and retry/Cancel compatibility).
+
+No other slices were found.
 
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

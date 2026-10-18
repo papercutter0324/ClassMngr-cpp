@@ -53,115 +53,28 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 closed and pushed; Batch469 closed; Batch470 active; F1078 selected)
+### Current checkpoint - 2026-10-18 (Batch470 closed; Batch471 active; F1079 selected)
 
-Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
-source Sidebar selection when Cancel blocks navigation to a different teacher
-identity in either teacher group, while preserving same-teacher duplicate
-occurrences and Discard behavior. Independent focused verification passed
-the F403 cases and the matching Teacher Sidebar Navigation parity CTest
-(4 QtTest cases including setup/cleanup). Batch464 found no eligible slice.
-Batch465 is complete: F1066 is committed at `222b6060`; four focused CTests
-passed, while Initial Setup runtime verification aborts in Qt/macOS before
-the new scenario reaches the preference failure. The F1062 Campus Dashboard
-refresh follow-up is committed at `6b296a23`; the focused CTest, direct clean
-and dirty refresh slots, and clean/dirty empty-result CTests passed. Batch465
-was pushed at `e88f6daa`. Batch466's F1067 slice is committed at `e98c8cb9`;
-the two affected focused CTests passed 2/2, both new direct tests passed, and
-`git diff --check` passed. No full suite ran. Batch467's only slice, F1068,
-is committed at `71c16b78`. It restores the pre-click Sidebar selection when
-Cancel blocks the real My Workspace route from dirty Teacher Info. The
-regression verifies source page, profile, form draft, selection, and database
-session retention on Cancel, then successful navigation and draft clearing on
-Discard. The Executor and independent Tester passed the affected build, the
-focused Sidebar navigation CTest (1/1), and `git diff --check`; no full suite
-ran. Batch467 is closed and pushed at `537e420b`, including the F1068
-closeout record. Batch468 discovery recorded five ordered candidates: F1069
-Academic Calendar schedule preference read failures; F1070 Campus Directory
-Cancel selection; F1071 Sub Prep Cancel selection; F1072 Classes Cancel
-selection; and F1073 Staff Directory Cancel selection. F1069 was selected
-because a technical read error currently appears as an empty preference,
-clears the in-memory schedule, and can expose defaults to a later save. This
-narrowly reopens F193's legacy read-error fallback in light of that risk and
-F1066's typed technical-preference-read policy. F1069 is committed at
-`46780e00`; the typed read result distinguishes technical repository errors
-from missing/empty values, and the provider preserves loaded schedules and
-blocks saves while the stored schedule is unknown. The Executor and
-independent Tester built the affected targets and passed the three focused
-CTests (3/3); after two assertions were added, the independent Tester rebuilt
-the changed test targets and passed those focused CTests (2/2). No full suite
-ran. F1070 is complete at `6712a57d`. Its Campus root and child Cancel branches
-restore the real Sidebar selection captured before the click. The MainWindow
-regression verifies Cancel from dirty Teacher Info preserves the source page,
-profile, form draft, and database session, then verifies Discard navigates to
-the requested Campus section. Executor and independent Tester built the
-application and test target, passed the focused CTest (1/1), passed the two
-Campus data rows in the offscreen direct invocation (4 QtTest cases), and
-passed `git diff --check`; no full suite ran. F1071 is complete at
-`760511ab`. The real rendered root-click regression verifies Cancel preserves
-the source page, profile, form draft, and database session, then verifies
-Discard navigates to Sub Prep and clears the draft. Executor and independent
-Tester built the application and dedicated test target, passed the focused
-CTest (1/1), and passed `git diff --check`; no full suite ran. F1072 is
-selected: from dirty Teacher Info, a real Classes root click followed by
-Cancel must restore the pre-click Sidebar keys and teacher ID while preserving
-the source page, profile, draft, and database session; Discard must still
-navigate. Direct-dispatch tests cover page/draft behavior but do not exercise
-Sidebar selection. The real-click regression target is
-`ClassMngrMainWindowClassesSidebarRootNavigationTests`. Batch469 discovery
-has started in independent Qt-free domain/application and UI/app integration
-lanes as work begins on the second-last Batch468 slice.
-F1072 is complete at `684c49c7`. Its Classes root Cancel branch restores the
-pre-click Sidebar selection; the real-click regression verifies Cancel
-preserves Teacher Info and its session, then verifies Discard navigates. The
-Executor and independent Tester built the application and target, passed the
-focused CTest (1/1), and passed `git diff --check`; no full suite ran. F1073 is
-complete at `f686e596`. Real-click rows for Native English Teachers and GS
-Team verify Cancel restores the pre-click Sidebar selection while preserving
-Teacher Info, the profile, draft, and session; existing direct tests retain
-Cancel/Discard route coverage. The Executor and independent Tester passed the
-focused build, CTest (1/1), and `git diff --check`; no full suite ran. Batch468
-is closed with five ordered slices and was pushed at `8f921a91`. Batch469
-discovery found a personal-name technical-read overwrite risk and failed
-Sidebar navigation selection mismatches; the Deferred audit found no newly
-met official trigger. F1074 is complete at `cbe7be5c`: Personal Details now
-preserves a dirty form and blocks aggregate saves through a technical name
-read failure, then recovers after a successful reload. The independent
-Tester passed the focused build, three CTests (3/3), and `git diff --check`;
-no full suite ran. F1075 is complete at `8c0dbc24`: failed dynamic Teacher
-profile reads restore the prior Sidebar selection before the leave guard,
-preserving the displayed profile, draft, and session on `NotFound` and
-`Technical`. The independent Tester passed the focused target (16 QtTest
-cases) and `git diff --check`; no full suite ran. A same-teacher duplicate
-Cancel case was not added; that branch is unchanged. F1076 is complete at
-`7a938cc4`: failed loading or creation of either Staff Directory child
-destination after the leave guard restores the prior Sidebar selection and
-keeps the source page visible while honoring the committed Save/Discard choice.
-The independent Tester built `ClassMngr` and the MainWindow Sidebar navigation
-target; the focused CTest passed 1/1 with 20 QtTest cases, and the supplemental
-Native English, GS Team, and open-session navigation CTests passed 3/3 (22
-QtTest cases total). `git diff --check` passed; no full suite ran. F1077 is
-F1077 is complete at `bc87ffa8`: when navigation from another page reaches a
-Classes page creation or required `loadClasses()` failure after leave
-confirmation, the prior Sidebar selection is restored and the source page
-remains visible. The accepted Save/Discard decision stands. The independent
-Tester built the application and Classes root navigation target; the focused
-CTest passed 1/1 with 11 QtTest cases, and `git diff --check` passed. No full
-suite ran. The null page-creation branch is not directly tested, and the failed
-load test covers Discard; Save is covered on successful navigation. Batch469
-is closed with its four ordered source commits. Batch470 is active with F1078
-selected, the sole discovered candidate: keep single-event Calendar edits
-retryable after save failure.
+Batch468 is closed and pushed at `8f921a91`; Batch469 is closed and pushed to
+`origin/Qt-Rewrite` at `6ffa19bf`. Batch470's sole slice, F1078, is complete at
+`fbca6d4e`: non-series Calendar create/edit keeps the same dialog and fields
+available after a failed save, with retry or Cancel. The focused Calendar
+mutation CTest passed 1/1 with 24 QtTest cases; `git diff --check` passed and
+no full suite ran. Batch471 discovery found two candidates: F1079 is selected
+to protect Sub Prep's four saved content settings after a technical
+preferences read failure; F1080 is provisional for custom color swatches after
+a technical palette-read failure. The UI/navigation discovery lane found no
+additional candidate, and no official Deferred trigger newly met.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
-remains pending policy reconciliation. The exact acceptance, verification,
-commit, push, and discovery evidence is in
+remains pending policy reconciliation. Exact acceptance, verification,
+commit, and discovery evidence is in
 `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
 
 ## Next Milestone
 
-Complete F1078, close Batch470, and push it. Preserve the open Phase 2 exit
-gate and unresolved policy reconciliation.
+Complete F1079, assess F1080 in order, and continue Batch471. Preserve the
+open Phase 2 exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
