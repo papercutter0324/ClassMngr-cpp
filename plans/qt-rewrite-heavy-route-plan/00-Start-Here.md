@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch447's F1056 is complete at source/test commit `acaec587`; Batch448's next slice is F1057, accepted for implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) for the active candidate and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
+- Current milestone: F1057 is complete and pushed at `1f1d42e1`; Batches449–453 closed as discovery shortfalls or rejected leads. Batch454 has one accepted slice, F1060, awaiting implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch454) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -35,6 +35,14 @@
 | 13 | 14-Phase-13-Post-Release-Maintenance.md | Not started | Heavy | 12 |
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
+
+## Current Phase 2 batch
+
+Batch454 contains one accepted slice, in order:
+
+1. **F1060 — Reconcile a stale Testing Classes selection after a missing-class delete.** When the selected testing class is already absent, refresh a clean page with an open database session to the first remaining class or a new draft; preserve dirty drafts and unavailable-session behavior.
+
+The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch454) is the canonical active list and acceptance record.
 
 ## Phase notes, slice batches, and progress logs
 

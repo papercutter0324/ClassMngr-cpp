@@ -45650,3 +45650,63 @@ push includes F1056 (`acaec587`), its completion record, and the Batch448
 discovery record. Batch447 is closed; F1057 is the active Batch448 slice.
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
 the Phase 2 exit gate remains Open.
+
+### F1057 completion - 2026-10-18
+
+F1057 is committed as `1f1d42e1` (`Phase2 - Fail invalid report worker outputs`). The shared Qt-free output-reference validator now gates successful report-worker callbacks before a completion event is posted. An invalid reference posts a Failed event with `InvalidInput` and returns a failed worker result, allowing the coordinator to reach terminal Failed state. Cancellation remains higher priority even when the callback also contains an invalid output reference; valid completion, callback errors, progress, event-queue failures, and the coordinator's malformed-completion recovery remain unchanged.
+
+The independent Tester built `ClassMngrNextPlatformQtJobWorkerTests` incrementally in the existing `build/macos-clang-debug` tree without warnings. The exact focused CTest passed 1/1 and `git diff --check` passed. No full suite ran; the existing generic-coordinator malformed-completion recovery test was not rerun for this adapter change.
+
+### Batch448 push - 2026-10-18
+
+Pushed F1057 commit `1f1d42e1` to `origin/Qt-Rewrite`, advancing it from `bad247fd`. Batch448 contained only F1057 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch449 discovery shortfall - 2026-10-18
+
+Two bounded discovery lanes found no supported production mismatch. Batch449 closed as a discovery shortfall; no slice was accepted.
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch450 discovery shortfall; F1058 rejected - 2026-10-18
+
+The core temporal/recurrence lane found no actionable candidate. The platform lane proposed F1058 around regular-class deletion after its target row is already absent. Review rejected it: idempotent success reaches the intended class-absent state, and this behavior was already reviewed in Batch445. No implementation was accepted.
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch451 discovery shortfall - 2026-10-18
+
+The Application result-propagation lane found import-job events without a live production caller that would make the lead actionable. The platform read-adapter lane confirmed that the reviewed adapters distinguish missing, empty, and technical outcomes with focused coverage. Batch451 closed without an eligible slice.
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch452 discovery shortfall; F1059 rejected - 2026-10-18
+
+The My Classes projection/state lane found no caller-visible mismatch. The Schedule Slot lane found that an unsupported persisted state is passed through and rendered blank, and proposed feature-boundary fallback while preserving F919's raw repository/read-port mapping. Review rejected F1059 as framed: the claim that the slot cannot be toggled was false for the normal intensive path, while unknown-state preservation in the feature model was an explicit prior behavior decision. The blank rendering alone did not establish a new accepted slice.
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch453 discovery shortfall - 2026-10-18
+
+The application-contract lane found no mismatch in course and Schedule Import validation, class-transfer apply, or the existing Class Details read-failure fallback. The platform-integration lane found failure propagation intact in Calendar series and Roster paths; Class Details and Staff Directory outcomes also match their established contracts. Batch453 closed without an eligible slice.
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch454 discovery; F1060 accepted before implementation - 2026-10-18
+
+The reporting/output lane found no new mismatch: Speaking Evaluation and Sub Prep propagate typed failures, the Document Catalog projection-failure lead was already rejected in Batch366 and retained by F1041, and Class Export's read-failure fallback is covered. The Teacher/Class integration lane found a separate stale-selection gap in `TestingClassesPage::deleteCurrentClass()`: the `NotFound` branch at `src/features/classes/ui/testing_classes_page.cpp:1653` returns before the successful-delete list/editor rebuild and `testingDataChanged` emission at lines 1675–1691. The platform adapter maps both a missing testing-class row and an unavailable session to `NotFound` (`src/next/platform/application_services_testing_class_delete_port.h:91,170`), so the refresh must be guarded. F1047 intentionally left this page refresh edge outside the repository/result-classification slice. None of the 13 official Deferred entries covers this page-state behavior.
+
+Accept F1060 with a safety boundary: when delete returns `NotFound`, reconcile the selection only if the page is clean and its database session is still open. Reuse the successful-delete selection behavior: rebuild the list, select and load the first remaining testing class, or start a new draft if none remain, then emit `testingDataChanged` once. Keep current behavior for a dirty page or unavailable session so local edits and cached page state are not discarded. Preserve Technical failure warning and draft/selection retention, and ordinary successful deletion. Add focused page coverage for the missing selected class with a remaining sibling and with no remaining classes, plus dirty-draft and unavailable-session boundaries; retain the existing Technical and success cases. Build the affected targets in the canonical Debug preset, run only their focused CTests, and run `git diff --check`; no full suite.
+
+No other slices were found.
+
+Batch454 contains only F1060. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

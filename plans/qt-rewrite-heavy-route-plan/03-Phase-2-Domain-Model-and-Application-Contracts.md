@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch447's F1056 is complete as `acaec587`; Batch448's next slice is F1057, accepted for implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: Batch454 has one accepted slice, F1060, to reconcile a clean Testing Classes page after its selected class is already missing; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch448
+#### Active batch: Batch454
 
-- F1057 — Fail a report job when a successful worker callback returns an invalid output reference; report the failure through the worker result and coordinator.
+- F1060 — Reconcile the Testing Classes list and selection when a clean page's selected class is already missing; preserve dirty drafts and unavailable-session behavior.
 
 #### Deferred candidates
 
