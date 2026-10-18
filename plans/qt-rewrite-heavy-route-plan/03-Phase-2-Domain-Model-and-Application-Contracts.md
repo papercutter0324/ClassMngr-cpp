@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1064 is complete and pushed at `5f0235af`; Batch460 found no eligible slice, and Batch461 discovery is next; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1064 is complete and pushed at `5f0235af`; Batch461 has two accepted slices, the F995 programmatic-route follow-up followed by F1065 Speaking Evaluation Manual Save confirmation; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,8 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch461
 
-Batch461 discovery is next; no candidates have been accepted yet.
+- F995 follow-up — Restore the prior Testing Classes selection, editor, and update/delete target when `openTestingClass(B)` fails to load B while A is active; preserve F912's initial-load behavior.
+- F1065 — Let the Speaking Evaluation Manual Save button reach its existing questionable Korean-name confirmation when those length errors are the only validation errors; keep automatic saves and other errors blocked.
 
 #### Deferred candidates
 
