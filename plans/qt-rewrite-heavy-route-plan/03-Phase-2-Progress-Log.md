@@ -46075,3 +46075,31 @@ The independent Tester verified that valid-but-empty reads succeed and exercised
 A Personal Details campus-only technical failure is not separately exercised because the shared-table name read fails first; the current-campus port suite passed, and the UI test checks displayed and stored campus preservation.
 
 F1075 is now selected/in progress as the next Batch469 slice: on dynamic Teacher profile navigation, a `NotFound` or `Technical` profile-read failure must restore the prior Sidebar selection while preserving the displayed profile, draft, and session. No leave prompt is expected because the read precedes the leave guard. F1076 and F1077 remain provisional.
+
+### F1075 completion; F1076 selected - 2026-10-18
+
+F1075 is complete at source commit `8c0dbc24` on `Qt-Rewrite`. When the pre-guard dynamic Teacher profile read returns `NotFound` or `Technical`, navigation restores the previous Sidebar selection. Real Sidebar-click rows preserve displayed Teacher Info, profile, draft, session, selected keys, and teacher ID, and no leave prompt occurs.
+
+The independent Tester built the affected targets and passed `ClassMngrMainWindowTeacherSidebarNavigationParityTests` CTest (1/1), with 16 QtTest passes; `git diff --check` passed. No full suite ran. Existing same-ID duplicate-occurrence navigation and Cancel/Discard tests passed, but the combined same-teacher duplicate Cancel case is not explicitly tested; the Cancel branch is unchanged.
+
+F1076 is selected/in progress as the next Batch469 slice. When either Staff Directory child destination creation/load fails after the leave guard, restore prior Sidebar selection and leave the source page visible while honoring the committed Save/Discard choice. Technical reads already stage rows locally and preserve destination state; NotFound's existing clear/silent semantics remain. The investigation found that restoring source changes after explicit Discard would contradict the user's choice, and that NotFound destination clearing is existing behavior.
+
+### F1076 completion; F1077 selected - 2026-10-18
+
+F1076 is complete at source commit `7a938cc4`. When either Staff Directory child destination creation/load fails after the leave guard, navigation restores the prior Sidebar selection and leaves the source page visible while honoring the committed Save/Discard choice. Technical reads stage rows locally and preserve destination state; NotFound's current clear/silent semantics remain.
+
+The independent Tester built `ClassMngr` and `ClassMngrMainWindowTeacherSidebarNavigationParityTests` in `build/macos-clang-debug` with `--parallel 4`; the focused CTest passed 1/1 (20 QtTest cases, 0 failures or skips). The supplemental `ClassMngrStaffDirectoryNativeEnglishReadTests`, `ClassMngrStaffDirectoryGsTeamReadTests`, and `ClassMngrStaffDirectoryOpenSessionNavigationParityTests` builds and matching CTests passed 3/3 (8, 7, and 7 QtTest cases). `git diff --check` passed; no full suite ran.
+
+F1077 is selected/in progress as the next Batch469 slice. Investigate navigation and source-page behavior when `loadClasses()` fails after leave confirmation, while honoring the committed Save/Discard choice.
+
+Batch470 discovery began in two lanes when F1076 became the second-last Batch469 slice: Qt-free domain/application and UI/application integration. The Qt-free lane found no eligible candidate. The UI lane identified one provisional lead in `src/features/calendar/ui/calendar_page_events.cpp`, `CalendarPage::openCalendarDialog()`: a stack `CalendarEventDialog` is executed, then a failed single-event `CalendarEventSaveUseCase::execute` displays a warning and returns, destroying the dialog and its entered fields. Existing UI tests cover successful page mutations and application/use-case tests cover error propagation; no UI retry-after-failure coverage was found. This is distinct from F1036's earlier explicit exclusion of dialog draft retention and remains provisional.
+
+Proposed F1078 acceptance: for single-event create/edit, keep the dialog open with its fields intact and the error visible after save failure; after the failure is removed, retry persists the event and only then closes the dialog. An independent Deferred audit found no official trigger newly met.
+
+Batch470's discovered slices, in order (with status):
+
+1. F1078 - Keep Calendar single-event edits retryable after save failure (provisional).
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

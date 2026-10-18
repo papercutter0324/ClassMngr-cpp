@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is active with F1074 complete at `cbe7be5c`, F1075 selected/in progress, and F1076-F1077 provisional. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch469) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is active with F1074 complete at `cbe7be5c`, F1075 complete at `8c0dbc24`, F1076 complete at `7a938cc4`, and F1077 selected/in progress. Batch470 has a pending next-batch preview with provisional F1078. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch469) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -41,9 +41,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 Batch469's discovered slices, in order (with status):
 
 1. **F1074 — Preserve Personal Details name through a technical preference-read failure.** Complete at source commit `cbe7be5c`; see the progress log for focused verification.
-2. **F1075 — Restore prior Sidebar selection after failed dynamic Teacher profile navigation.** Selected/in progress; preserve the displayed profile, draft, and session after `NotFound` or `Technical` read failure, with no leave prompt because the read precedes the guard.
-3. **F1076 — Keep Staff Directory navigation coherent when directory loading fails after leave confirmation.** Provisional.
-4. **F1077 — Keep Classes navigation coherent when class loading fails after leave confirmation.** Provisional.
+2. **F1075 — Restore prior Sidebar selection after failed dynamic Teacher profile navigation.** Complete at source commit `8c0dbc24`; see the progress log for focused verification and the duplicate-occurrence coverage note.
+3. **F1076 — Keep Staff Directory navigation coherent when directory loading fails after leave confirmation.** Complete at source commit `7a938cc4`; focused verification is recorded in the progress log.
+4. **F1077 — Keep Classes navigation coherent when class loading fails after leave confirmation.** Selected/in progress; investigate navigation and source-page behavior when `loadClasses()` fails after leave confirmation, while honoring the committed Save/Discard choice.
+
+### Pending next-batch preview: Batch470 (not active)
+
+1. **F1078 — Keep Calendar single-event edits retryable after save failure.** Provisional; keep the dialog and entered fields available for a retry after failure, and close only after successful persistence. See the progress log for discovery evidence.
 
 The
 [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)

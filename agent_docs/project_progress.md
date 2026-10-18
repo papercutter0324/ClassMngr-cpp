@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 closed and pushed; Batch469 active; F1075 selected)
+### Current checkpoint - 2026-10-18 (Batch468 closed and pushed; Batch469 active; F1077 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -128,9 +128,24 @@ met official trigger. F1074 is complete at `cbe7be5c`: Personal Details now
 preserves a dirty form and blocks aggregate saves through a technical name
 read failure, then recovers after a successful reload. The independent
 Tester passed the focused build, three CTests (3/3), and `git diff --check`;
-no full suite ran. F1075 is selected for dynamic Teacher profile read
-failures; F1076 and F1077 remain provisional Staff Directory and Classes
-loading-failure follow-ups.
+no full suite ran. F1075 is complete at `8c0dbc24`: failed dynamic Teacher
+profile reads restore the prior Sidebar selection before the leave guard,
+preserving the displayed profile, draft, and session on `NotFound` and
+`Technical`. The independent Tester passed the focused target (16 QtTest
+cases) and `git diff --check`; no full suite ran. A same-teacher duplicate
+Cancel case was not added; that branch is unchanged. F1076 is complete at
+`7a938cc4`: failed loading or creation of either Staff Directory child
+destination after the leave guard restores the prior Sidebar selection and
+keeps the source page visible while honoring the committed Save/Discard choice.
+The independent Tester built `ClassMngr` and the MainWindow Sidebar navigation
+target; the focused CTest passed 1/1 with 20 QtTest cases, and the supplemental
+Native English, GS Team, and open-session navigation CTests passed 3/3 (22
+QtTest cases total). `git diff --check` passed; no full suite ran. F1077 is
+selected for Classes root navigation: when destination creation or a required
+class-list load fails after the leave guard, restore the prior Sidebar
+selection and keep the source page visible while honoring Save/Discard.
+Batch470 discovery has one provisional candidate, F1078, for retryable
+single-event Calendar edits after save failure.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -139,9 +154,9 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Complete and commit F1075, then continue through Batch469 in order. Push the
-batch after its slices close. Preserve the open Phase 2 exit gate and
-unresolved policy reconciliation.
+Complete and commit F1077, close Batch469, and push the batch. Then begin
+Batch470 with its provisional F1078 candidate. Preserve the open Phase 2 exit
+gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
