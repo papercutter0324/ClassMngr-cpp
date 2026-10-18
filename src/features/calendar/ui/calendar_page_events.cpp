@@ -765,189 +765,114 @@ void CalendarPage::openCalendarDialog(
         this
         );
 
-    if (dialog.exec() != QDialog::Accepted)
+    while (true)
     {
-        return;
-    }
-
-    const bool repeatSeriesEvent =
-        existingEvent
-        && isRepeatSeriesEvent(draft);
-    const bool thisAndFollowing =
-        repeatSeriesEvent
-        && dialog.seriesEditScope()
-            == CalendarEventSeriesEditScope::ThisAndFollowingEvents;
-
-    if (dialog.deleteRequested())
-    {
-        QString deleteError;
-        if (thisAndFollowing)
+        if (dialog.exec() != QDialog::Accepted)
         {
-            const ClassMngr::Next::Application::
-                CalendarEventSeriesDeleteRequest request{
-                    *draft.repeatSeriesId,
-                    draft.startDate
-                };
-            ClassMngr::Next::Platform::
-                ApplicationServicesCalendarEventSeriesDeletePort deletePort(
-                    *m_services
-                    );
-            const auto typedDeleted =
-                ClassMngr::Next::Application::
-                    CalendarEventSeriesDeleteUseCase::execute(
-                        deletePort,
-                        request
-                        );
-            if (!typedDeleted)
-            {
-                deleteError = projectionText(typedDeleted.error().message);
-            }
-        }
-        else
-        {
-            if (!draft.id)
-            {
-                return;
-            }
-
-            ClassMngr::Next::Platform::
-                ApplicationServicesCalendarEventDeletePort deletePort(
-                    *m_services
-                    );
-            const auto typedDeleted =
-                ClassMngr::Next::Application::CalendarEventDeleteUseCase::
-                    execute(deletePort, *draft.id);
-            if (!typedDeleted)
-            {
-                deleteError = projectionText(typedDeleted.error().message);
-            }
-        }
-
-        if (!deleteError.isNull())
-        {
-            DialogServices::showWarning(
-                this,
-                tr("Delete Calendar Event"),
-                deleteError
-                );
             return;
         }
-    }
-    else
-    {
-        CalendarEventEditDraft savedDraft =
-            dialog.eventData();
 
-        if (thisAndFollowing)
+        const bool repeatSeriesEvent =
+            existingEvent
+            && isRepeatSeriesEvent(draft);
+        const bool thisAndFollowing =
+            repeatSeriesEvent
+            && dialog.seriesEditScope()
+                == CalendarEventSeriesEditScope::ThisAndFollowingEvents;
+        bool retrySingleEventSave = false;
+
+        if (dialog.deleteRequested())
         {
-            const std::string repeatSeriesId = savedDraft.repeatSeriesId
-                ? *savedDraft.repeatSeriesId
-                : *draft.repeatSeriesId;
-            ClassMngr::Next::Application::CalendarEventSeriesEditRequest
-                request{
-                    repeatSeriesId,
-                    draft.startDate,
-                    savedDraft.startDate,
-                    savedDraft.endDate,
-                    savedDraft.title,
-                    savedDraft.allDay
-                        ? std::nullopt
-                        : savedDraft.startTime,
-                    savedDraft.allDay
-                        ? std::nullopt
-                        : savedDraft.endTime,
-                    savedDraft.allDay,
-                    savedDraft.eventType,
-                    savedDraft.timeStatus
-                };
-
-            ClassMngr::Next::Platform::
-                ApplicationServicesCalendarEventSeriesEditPort editPort(
-                    *m_services
-                    );
-            const auto typedSaved =
-                ClassMngr::Next::Application::
-                    CalendarEventSeriesEditUseCase::execute(
-                        editPort,
-                        request
+            QString deleteError;
+            if (thisAndFollowing)
+            {
+                const ClassMngr::Next::Application::
+                    CalendarEventSeriesDeleteRequest request{
+                        *draft.repeatSeriesId,
+                        draft.startDate
+                    };
+                ClassMngr::Next::Platform::
+                    ApplicationServicesCalendarEventSeriesDeletePort deletePort(
+                        *m_services
                         );
-            if (!typedSaved)
-            {
-                DialogServices::showWarning(
-                    this,
-                    tr("Save Calendar Event"),
-                    projectionText(typedSaved.error().message)
-                    );
-                return;
+                const auto typedDeleted =
+                    ClassMngr::Next::Application::
+                        CalendarEventSeriesDeleteUseCase::execute(
+                            deletePort,
+                            request
+                            );
+                if (!typedDeleted)
+                {
+                    deleteError = projectionText(typedDeleted.error().message);
+                }
             }
-        }
-        else if (!repeatSeriesEvent && !dialog.repeatEnabled())
-        {
-            CalendarEventSaveRequest request =
-                saveRequestFromDraft(savedDraft);
-
-            ClassMngr::Next::Platform::
-                ApplicationServicesCalendarEventSavePort savePort(
-                    *m_services
-                    );
-            const auto typedSaved =
-                ClassMngr::Next::Application::CalendarEventSaveUseCase::execute(
-                    savePort,
-                    request
-                    );
-            if (!typedSaved)
+            else
             {
-                DialogServices::showWarning(
-                    this,
-                    tr("Save Calendar Event"),
-                    projectionText(typedSaved.error().message)
-                    );
-                return;
+                if (!draft.id)
+                {
+                    return;
+                }
+
+                ClassMngr::Next::Platform::
+                    ApplicationServicesCalendarEventDeletePort deletePort(
+                        *m_services
+                        );
+                const auto typedDeleted =
+                    ClassMngr::Next::Application::CalendarEventDeleteUseCase::
+                        execute(deletePort, *draft.id);
+                if (!typedDeleted)
+                {
+                    deleteError = projectionText(typedDeleted.error().message);
+                }
             }
-        }
-        else if (repeatSeriesEvent)
-        {
-            CalendarEventSaveRequest request =
-                saveRequestFromDraft(savedDraft);
 
-            ClassMngr::Next::Platform::
-                ApplicationServicesCalendarEventSavePort savePort(
-                    *m_services
-                    );
-            const auto typedSaved =
-                ClassMngr::Next::Application::CalendarEventSaveUseCase::execute(
-                    savePort,
-                    request
-                    );
-            if (!typedSaved)
+            if (!deleteError.isNull())
             {
                 DialogServices::showWarning(
                     this,
-                    tr("Save Calendar Event"),
-                    projectionText(typedSaved.error().message)
+                    tr("Delete Calendar Event"),
+                    deleteError
                     );
                 return;
             }
         }
         else
         {
-            if (dialog.repeatEnabled())
+            CalendarEventEditDraft savedDraft =
+                dialog.eventData();
+
+            if (thisAndFollowing)
             {
+                const std::string repeatSeriesId = savedDraft.repeatSeriesId
+                    ? *savedDraft.repeatSeriesId
+                    : *draft.repeatSeriesId;
+                ClassMngr::Next::Application::CalendarEventSeriesEditRequest
+                    request{
+                        repeatSeriesId,
+                        draft.startDate,
+                        savedDraft.startDate,
+                        savedDraft.endDate,
+                        savedDraft.title,
+                        savedDraft.allDay
+                            ? std::nullopt
+                            : savedDraft.startTime,
+                        savedDraft.allDay
+                            ? std::nullopt
+                            : savedDraft.endTime,
+                        savedDraft.allDay,
+                        savedDraft.eventType,
+                        savedDraft.timeStatus
+                    };
+
                 ClassMngr::Next::Platform::
-                    ApplicationServicesCalendarEventSeriesCreatePort
-                    createPort(*m_services);
+                    ApplicationServicesCalendarEventSeriesEditPort editPort(
+                        *m_services
+                        );
                 const auto typedSaved =
                     ClassMngr::Next::Application::
-                        CalendarEventSeriesCreateUseCase::execute(
-                            createPort,
-                            saveRequestFromDraft(savedDraft),
-                            newRepeatSeriesId().toUtf8().toStdString(),
-                            applicationRepeatFrequency(
-                                dialog.repeatFrequency()
-                                ),
-                            dialog.repeatUntilDate()
-                                .toString(Qt::ISODate)
-                                .toStdString()
+                        CalendarEventSeriesEditUseCase::execute(
+                            editPort,
+                            request
                             );
                 if (!typedSaved)
                 {
@@ -959,8 +884,95 @@ void CalendarPage::openCalendarDialog(
                     return;
                 }
             }
-        }
-    }
+            else if (!repeatSeriesEvent && !dialog.repeatEnabled())
+            {
+                CalendarEventSaveRequest request =
+                    saveRequestFromDraft(savedDraft);
 
-    invalidateCalendarData();
+                ClassMngr::Next::Platform::
+                    ApplicationServicesCalendarEventSavePort savePort(
+                        *m_services
+                        );
+                const auto typedSaved =
+                    ClassMngr::Next::Application::CalendarEventSaveUseCase::
+                        execute(
+                            savePort,
+                            request
+                            );
+                if (!typedSaved)
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Save Calendar Event"),
+                        projectionText(typedSaved.error().message)
+                        );
+                    retrySingleEventSave = true;
+                }
+            }
+            else if (repeatSeriesEvent)
+            {
+                CalendarEventSaveRequest request =
+                    saveRequestFromDraft(savedDraft);
+
+                ClassMngr::Next::Platform::
+                    ApplicationServicesCalendarEventSavePort savePort(
+                        *m_services
+                        );
+                const auto typedSaved =
+                    ClassMngr::Next::Application::CalendarEventSaveUseCase::
+                        execute(
+                            savePort,
+                            request
+                            );
+                if (!typedSaved)
+                {
+                    DialogServices::showWarning(
+                        this,
+                        tr("Save Calendar Event"),
+                        projectionText(typedSaved.error().message)
+                        );
+                    return;
+                }
+            }
+            else
+            {
+                if (dialog.repeatEnabled())
+                {
+                    ClassMngr::Next::Platform::
+                        ApplicationServicesCalendarEventSeriesCreatePort
+                        createPort(*m_services);
+                    const auto typedSaved =
+                        ClassMngr::Next::Application::
+                            CalendarEventSeriesCreateUseCase::execute(
+                                createPort,
+                                saveRequestFromDraft(savedDraft),
+                                newRepeatSeriesId().toUtf8().toStdString(),
+                                applicationRepeatFrequency(
+                                    dialog.repeatFrequency()
+                                    ),
+                                dialog.repeatUntilDate()
+                                    .toString(Qt::ISODate)
+                                    .toStdString()
+                                );
+                    if (!typedSaved)
+                    {
+                        DialogServices::showWarning(
+                            this,
+                            tr("Save Calendar Event"),
+                            projectionText(typedSaved.error().message)
+                            );
+                        return;
+                    }
+                }
+            }
+        }
+
+        if (retrySingleEventSave)
+        {
+            continue;
+        }
+
+        invalidateCalendarData();
+        return;
+    }
 }

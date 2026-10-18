@@ -449,6 +449,61 @@ bool applyDialogValues(
     return true;
 }
 
+bool dialogMatchesValues(
+    CalendarEventDialog* dialog,
+    const EventDialogValues& values
+    )
+{
+    if (!dialog)
+    {
+        return false;
+    }
+
+    auto* const title = dialog->findChild<QLineEdit*>(
+        QStringLiteral("calendarEventTitleEdit")
+        );
+    auto* const startDate = dialog->findChild<QDateEdit*>(
+        QStringLiteral("calendarEventStartDateEdit")
+        );
+    auto* const startTime = dialog->findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
+    auto* const endDate = dialog->findChild<QDateEdit*>(
+        QStringLiteral("calendarEventEndDateEdit")
+        );
+    auto* const endTime = dialog->findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
+    if (
+        !title
+        || !startDate
+        || !startTime
+        || !endDate
+        || !endTime
+        || title->text() != values.title
+        || startDate->date() != values.startDate
+        || startTime->time() != values.startTime
+        || endDate->date() != values.endDate
+        || endTime->time() != values.endTime
+    )
+    {
+        return false;
+    }
+
+    for (QRadioButton* const button : dialog->findChildren<QRadioButton*>())
+    {
+        if (
+            button->isChecked()
+            && button->property("eventType").toString() == values.eventType
+        )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool activateAndHandleDialog(
     CalendarPage& page,
     const std::function<bool(QQuickItem*)>& activate,
@@ -926,6 +981,8 @@ private slots:
     void workspaceCalendarResourcesReleaseAndRestore();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals_data();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
+    void ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure_data();
+    void ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure();
     void repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection();
     void monthGridCellsMatchCalendarEventModelDateProjection();
     void currentMonthUpcomingRowsMatchVisibleCalendarRange();
@@ -1304,6 +1361,435 @@ ordinaryCreateEditAndDeleteUseCalendarPageSignals()
         {QStringLiteral("after_update"), afterUpdateTranscript},
         {QStringLiteral("after_delete"), afterDeleteTranscript}
     });
+}
+
+void CalendarPageEventMutationParityTests::
+ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure_data()
+{
+    QTest::addColumn<bool>("editing");
+    QTest::addColumn<bool>("cancelAfterFailure");
+    QTest::newRow("create-retry") << false << false;
+    QTest::newRow("edit-retry") << true << false;
+    QTest::newRow("create-cancel-after-failure") << false << true;
+}
+
+void CalendarPageEventMutationParityTests::
+ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure()
+{
+    QFETCH(bool, editing);
+    QFETCH(bool, cancelAfterFailure);
+
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const EventDialogValues values{
+        editing
+            ? QStringLiteral("F1078 Retried Edit")
+            : QStringLiteral("F1078 Retried Create"),
+        QDate(2026, 10, 24),
+        QTime(9, 30),
+        QDate(2026, 10, 24),
+        QTime(11, 0),
+        QStringLiteral("Workshop")
+    };
+    qint64 editedEventId = -1;
+    if (editing)
+    {
+        CalendarEvent existing;
+        existing.title = QStringLiteral("F1078 Original Edit");
+        existing.eventType = QStringLiteral("Meeting");
+        existing.timeStatus = QStringLiteral("Timed");
+        existing.startDate = QDate(2026, 10, 19);
+        existing.startTime = QTime(8, 0);
+        existing.endDate = QDate(2026, 10, 19);
+        existing.endTime = QTime(9, 0);
+        editedEventId = saveFixtureEvent(workspace, existing, &setupError);
+        QVERIFY2(editedEventId > 0, qPrintable(setupError));
+    }
+
+    const QString triggerName = editing
+        ? QStringLiteral("fail_f1078_calendar_event_update")
+        : QStringLiteral("fail_f1078_calendar_event_insert");
+    const QString triggerSql = editing
+        ? QStringLiteral(R"(
+            CREATE TRIGGER fail_f1078_calendar_event_update
+            BEFORE UPDATE ON calendar_events
+            WHEN OLD.id = %1 AND NEW.title = 'F1078 Retried Edit'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced F1078 calendar event save failure');
+            END
+        )").arg(editedEventId)
+        : QStringLiteral(R"(
+            CREATE TRIGGER fail_f1078_calendar_event_insert
+            BEFORE INSERT ON calendar_events
+            WHEN NEW.title = 'F1078 Retried Create'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced F1078 calendar event save failure');
+            END
+        )");
+    QString sqlError;
+    QVERIFY2(
+        executeWorkspaceSql(workspace, triggerSql, &sqlError),
+        qPrintable(sqlError)
+        );
+
+    CalendarPage page(&workspace.services);
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+
+    int interactionStage = 0;
+    QString interactionError;
+    QPointer<CalendarEventDialog> originalDialog;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    bool warningIcon = false;
+    bool fieldsRetainedWhileWarningWasShown = false;
+    bool failedSaveLeftRowsUnchanged = false;
+    bool failureTriggerRemoved = false;
+    bool sameDialogWasReopened = false;
+    bool fieldsRetainedBeforeRetry = false;
+    bool retrySubmitted = false;
+    bool cancelSubmitted = false;
+
+    QTimer interactionTimer;
+    interactionTimer.setInterval(10);
+    QObject::connect(
+        &interactionTimer,
+        &QTimer::timeout,
+        &page,
+        [&]
+        {
+            QWidget* const activeModal = QApplication::activeModalWidget();
+            if (interactionStage == 0)
+            {
+                auto* const dialog = qobject_cast<CalendarEventDialog*>(
+                    activeModal
+                    );
+                if (!dialog)
+                {
+                    return;
+                }
+
+                originalDialog = dialog;
+                interactionStage = 1;
+                if (!applyDialogValues(
+                        dialog,
+                        values,
+                        false,
+                        &interactionError
+                        ))
+                {
+                    interactionStage = 4;
+                    dialog->reject();
+                }
+                return;
+            }
+
+            if (interactionStage == 1)
+            {
+                auto* const warning = qobject_cast<QMessageBox*>(activeModal);
+                if (!warning)
+                {
+                    if (!activeModal)
+                    {
+                        return;
+                    }
+                    interactionError = QStringLiteral(
+                        "The failed calendar save did not show a warning."
+                        );
+                    interactionStage = 4;
+                    activeModal->close();
+                    return;
+                }
+
+                ++warningCount;
+                warningTitle = warning->windowTitle();
+                warningText = warning->text();
+                warningIcon = warning->icon() == QMessageBox::Warning;
+                fieldsRetainedWhileWarningWasShown =
+                    dialogMatchesValues(originalDialog, values);
+                const PersistedEventRows afterFailure = persistedEventRows(
+                    workspace.services
+                    );
+                if (editing)
+                {
+                    failedSaveLeftRowsUnchanged =
+                        afterFailure.succeeded
+                        && afterFailure.rows == QStringList({
+                            expectedEventRow(
+                                workspace.preservedEventId,
+                                QStringLiteral("F375 Preserved Ordinary"),
+                                QStringLiteral("Holiday"),
+                                QStringLiteral("2026-10-22"),
+                                QStringLiteral("11:00"),
+                                QStringLiteral("2026-10-22"),
+                                QStringLiteral("12:00")
+                                ),
+                            expectedEventRow(
+                                editedEventId,
+                                QStringLiteral("F1078 Original Edit"),
+                                QStringLiteral("Meeting"),
+                                QStringLiteral("2026-10-19"),
+                                QStringLiteral("08:00"),
+                                QStringLiteral("2026-10-19"),
+                                QStringLiteral("09:00")
+                                )
+                        });
+                }
+                else
+                {
+                    failedSaveLeftRowsUnchanged =
+                        afterFailure.succeeded
+                        && afterFailure.rows == QStringList({
+                            expectedEventRow(
+                                workspace.preservedEventId,
+                                QStringLiteral("F375 Preserved Ordinary"),
+                                QStringLiteral("Holiday"),
+                                QStringLiteral("2026-10-22"),
+                                QStringLiteral("11:00"),
+                                QStringLiteral("2026-10-22"),
+                                QStringLiteral("12:00")
+                                )
+                        });
+                }
+
+                failureTriggerRemoved = executeWorkspaceSql(
+                    workspace,
+                    QStringLiteral("DROP TRIGGER %1").arg(triggerName),
+                    &sqlError
+                    );
+                if (!failureTriggerRemoved)
+                {
+                    interactionError = sqlError;
+                    interactionStage = 4;
+                }
+                else
+                {
+                    interactionStage = 2;
+                }
+                warning->accept();
+                return;
+            }
+
+            if (interactionStage == 2)
+            {
+                auto* const dialog = qobject_cast<CalendarEventDialog*>(
+                    activeModal
+                    );
+                if (!dialog)
+                {
+                    if (!activeModal)
+                    {
+                        return;
+                    }
+                    interactionError = QStringLiteral(
+                        "A different modal dialog appeared before calendar save retry."
+                        );
+                    interactionStage = 4;
+                    activeModal->close();
+                    return;
+                }
+
+                sameDialogWasReopened = dialog == originalDialog.data();
+                fieldsRetainedBeforeRetry =
+                    dialogMatchesValues(dialog, values);
+                auto* const buttonBox = dialog->findChild<QDialogButtonBox*>();
+                QPushButton* const cancel = buttonBox
+                    ? buttonBox->button(QDialogButtonBox::Cancel)
+                    : nullptr;
+                QPushButton* const save = buttonBox
+                    ? buttonBox->button(QDialogButtonBox::Save)
+                    : nullptr;
+                if (cancelAfterFailure && !cancel)
+                {
+                    interactionError = QStringLiteral(
+                        "Calendar event cancel button was unavailable after failure."
+                        );
+                    interactionStage = 4;
+                    dialog->reject();
+                    return;
+                }
+                if (!cancelAfterFailure && !save)
+                {
+                    interactionError = QStringLiteral(
+                        "Calendar event save button was unavailable on retry."
+                        );
+                    interactionStage = 4;
+                    dialog->reject();
+                    return;
+                }
+
+                interactionStage = 3;
+                if (cancelAfterFailure)
+                {
+                    cancelSubmitted = true;
+                    cancel->click();
+                }
+                else
+                {
+                    retrySubmitted = true;
+                    save->click();
+                }
+                return;
+            }
+
+            if (interactionStage == 4)
+            {
+                interactionTimer.stop();
+                if (activeModal)
+                {
+                    activeModal->close();
+                }
+            }
+        }
+        );
+
+    QTimer failSafeTimer;
+    failSafeTimer.setInterval(3000);
+    QObject::connect(
+        &failSafeTimer,
+        &QTimer::timeout,
+        &page,
+        [&]
+        {
+            if (interactionStage != 3)
+            {
+                if (interactionError.isEmpty())
+                {
+                    interactionError = QStringLiteral(
+                        "Calendar save failure retry interaction timed out."
+                        );
+                }
+                if (QWidget* const activeModal = QApplication::activeModalWidget())
+                {
+                    activeModal->close();
+                }
+            }
+        }
+        );
+
+    interactionTimer.start();
+    failSafeTimer.start();
+    const bool activated = editing
+        ? QMetaObject::invokeMethod(
+            root,
+            "eventActivated",
+            Qt::DirectConnection,
+            Q_ARG(QString, QString::number(editedEventId))
+            )
+        : QMetaObject::invokeMethod(
+            root,
+            "dayActivated",
+            Qt::DirectConnection,
+            Q_ARG(int, 2026),
+            Q_ARG(int, 10),
+            Q_ARG(int, 24)
+            );
+    interactionTimer.stop();
+    failSafeTimer.stop();
+
+    QVERIFY2(activated, "Calendar page activation signal could not be invoked.");
+    QVERIFY2(interactionError.isEmpty(), qPrintable(interactionError));
+    QCOMPARE(interactionStage, 3);
+    QCOMPARE(warningCount, 1);
+    QCOMPARE(warningTitle, QStringLiteral("Save Calendar Event"));
+    QVERIFY(warningIcon);
+    QVERIFY(warningText.contains(
+        QStringLiteral("forced F1078 calendar event save failure")
+        ));
+    QVERIFY(fieldsRetainedWhileWarningWasShown);
+    QVERIFY(failedSaveLeftRowsUnchanged);
+    QVERIFY(failureTriggerRemoved);
+    QVERIFY(sameDialogWasReopened);
+    QVERIFY(fieldsRetainedBeforeRetry);
+    QCOMPARE(retrySubmitted, !cancelAfterFailure);
+    QCOMPARE(cancelSubmitted, cancelAfterFailure);
+
+    const PersistedEventRows afterRetry = persistedEventRows(workspace.services);
+    QVERIFY2(afterRetry.succeeded, qPrintable(afterRetry.error));
+    if (cancelAfterFailure)
+    {
+        QCOMPARE(
+            eventIdForTitle(workspace.services, values.title),
+            qint64(-1)
+            );
+        QCOMPARE(
+            afterRetry.rows,
+            QStringList({
+                expectedEventRow(
+                    workspace.preservedEventId,
+                    QStringLiteral("F375 Preserved Ordinary"),
+                    QStringLiteral("Holiday"),
+                    QStringLiteral("2026-10-22"),
+                    QStringLiteral("11:00"),
+                    QStringLiteral("2026-10-22"),
+                    QStringLiteral("12:00")
+                    )
+            })
+            );
+    }
+    else if (editing)
+    {
+        QCOMPARE(
+            afterRetry.rows,
+            QStringList({
+                expectedEventRow(
+                    workspace.preservedEventId,
+                    QStringLiteral("F375 Preserved Ordinary"),
+                    QStringLiteral("Holiday"),
+                    QStringLiteral("2026-10-22"),
+                    QStringLiteral("11:00"),
+                    QStringLiteral("2026-10-22"),
+                    QStringLiteral("12:00")
+                    ),
+                expectedEventRow(
+                    editedEventId,
+                    values.title,
+                    values.eventType,
+                    QStringLiteral("2026-10-24"),
+                    QStringLiteral("09:30"),
+                    QStringLiteral("2026-10-24"),
+                    QStringLiteral("11:00")
+                    )
+            })
+            );
+    }
+    else
+    {
+        const qint64 createdEventId = eventIdForTitle(
+            workspace.services,
+            values.title
+            );
+        QVERIFY(createdEventId > workspace.preservedEventId);
+        QCOMPARE(
+            afterRetry.rows,
+            QStringList({
+                expectedEventRow(
+                    workspace.preservedEventId,
+                    QStringLiteral("F375 Preserved Ordinary"),
+                    QStringLiteral("Holiday"),
+                    QStringLiteral("2026-10-22"),
+                    QStringLiteral("11:00"),
+                    QStringLiteral("2026-10-22"),
+                    QStringLiteral("12:00")
+                    ),
+                expectedEventRow(
+                    createdEventId,
+                    values.title,
+                    values.eventType,
+                    QStringLiteral("2026-10-24"),
+                    QStringLiteral("09:30"),
+                    QStringLiteral("2026-10-24"),
+                    QStringLiteral("11:00")
+                    )
+            })
+            );
+    }
 }
 
 void CalendarPageEventMutationParityTests::
