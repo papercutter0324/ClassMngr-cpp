@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1066 complete; F1062 follow-up next)
+### Current checkpoint - 2026-10-18 (Batch465 complete; F1067 accepted)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -61,10 +61,14 @@ identity in either teacher group, while preserving same-teacher duplicate
 occurrences and Discard behavior. Independent focused verification passed
 the F403 cases and the matching Teacher Sidebar Navigation parity CTest
 (4 QtTest cases including setup/cleanup). Batch464 found no eligible slice.
-F1066 is committed at `222b6060`; four focused CTests passed, while the
-Initial Setup test aborts in Qt/macOS before its new scenario reaches the
-preference failure. The F1062 Campus Dashboard refresh follow-up is the
-remaining Batch465 slice.
+Batch465 is complete: F1066 is committed at `222b6060`; four focused CTests
+passed, while Initial Setup runtime verification aborts in Qt/macOS before
+the new scenario reaches the preference failure. The F1062 Campus Dashboard
+refresh follow-up is committed at `6b296a23`; the focused CTest, direct clean
+and dirty refresh slots, and clean/dirty empty-result CTests passed. No full
+suite ran. Batch466 has one accepted slice, F1067, to reject Unicode
+whitespace-only last-selected campus IDs consistently at the application and
+Qt adapter boundaries; implementation has not started.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -73,9 +77,8 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Implement and verify the F1062 Campus Dashboard refresh follow-up, then close
-and push Batch465. Preserve the open exit gate and unresolved policy
-reconciliation.
+Implement and verify F1067, commit the slice, then close and push Batch466.
+Preserve the open exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

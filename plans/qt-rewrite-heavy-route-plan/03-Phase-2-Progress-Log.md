@@ -45923,4 +45923,28 @@ F1066 is committed as `222b6060` (`Phase2 - Preserve current campus read failure
 
 The Executor and independent Tester built `ClassMngr` and all five affected focused test targets. Four matching CTests passed: the preference port, Sub Prep, My Workspace/Personal Details, and Calendar. `git diff --check` passed. The Initial Setup target builds, but its CTest aborts in `keyboardIsAvailableAtTextEntryStages` with Qt/macOS `NSBundle initWithURL: nil URL argument`; the isolated new slot fails at `showPersonalDetailsPage()` with the same exception before the preference read failure is injected. The Initial Setup guard is source-inspected but not runtime-verified on this host. The Personal Details runtime test preserves the selected value and stored row, but its table-rename fault also prevents a write; source inspection confirms the typed-error branch skips correction logic. The Sub Prep test verifies the warning and N/A campus fields; it does not invoke printing, while source inspection confirms those fields populate the print request. No full suite ran.
 
-F1062 is the remaining accepted Batch465 slice: preserve the dirty Campus Dashboard selector and snapshot when a nonempty refresh no longer includes the selected campus, then verify explicit `NotFound` save and recovery to the still-available campus.
+At that point, F1062 remained Batch465's final accepted slice: preserve the dirty Campus Dashboard selector and snapshot when a nonempty refresh no longer includes the selected campus, then verify explicit `NotFound` save and recovery to the still-available campus. Its completion and verification are recorded below.
+
+### F1062 follow-up completion - 2026-10-18
+
+The F1062 nonempty-refresh follow-up is complete at `6b296a23`. If refresh omits the selected campus while the page is dirty, it preserves the selector, identity, model, draft, dirty state, and timer without an implicit save, and reports that the campus is unavailable.
+
+Independent verification passed the focused Campus Dashboard CTest (1/1), the direct clean and dirty nonempty-refresh slots, and the clean/dirty empty-result CTests (2/2). No full suite ran.
+
+### Batch465 closure - 2026-10-18
+
+Batch465's accepted slices, in order, were F1066 (`222b6060`) and the F1062 Campus Dashboard refresh follow-up (`6b296a23`); both are complete and the batch is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch466 discovery; F1067 accepted before implementation - 2026-10-18
+
+Both discovery lanes found no other eligible candidate. The contract lane surfaced a Unicode whitespace mismatch in the last-selected-campus ID boundary: `src/next/application/last_selected_campus_id_policy.h:15-29` uses byte-wise `std::isspace`, while `src/next/platform/settings_manager_last_selected_campus_port.h:30-43` treats `QString::trimmed().isEmpty()` as no selection; its `write()` uses the shared policy at lines 55-56. The same Qt-free policy serves `UserPreferencesState`. F857's contract requires nonblank IDs bounded to 256 bytes (recorded above at F857); the current campus ID generator emits ASCII slugs (`src/features/campus/data/campus_json_repository.cpp:243-267`). This is accepted as a scoped F857 follow-up because the public write/read contract differs for Unicode whitespace even though generated IDs are currently ASCII.
+
+Accept F1067: make the shared Qt-free last-selected-campus-ID policy reject UTF-8 IDs made only of Unicode whitespace that `QString::trimmed().isEmpty()` treats as blank, in agreement with adapter read semantics. Test at least U+00A0 and U+3000 through `UserPreferencesState` validation and adapter `write`; assert invalid results and no state/preference mutation. Preserve ASCII whitespace rejection, the 256-byte bound and over-bound rejection, exact valid-ID text, existing read behavior, and technical write errors. Build `ClassMngrNextApplicationUserPreferencesTests` and `ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests`; run only their matching focused CTests and `git diff --check`; no full suite.
+
+No other slices were found.
+
+Batch466 contains one accepted slice, in order:
+
+1. F1067 - Reject Unicode whitespace-only last-selected campus IDs (accepted/in progress before implementation).
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
