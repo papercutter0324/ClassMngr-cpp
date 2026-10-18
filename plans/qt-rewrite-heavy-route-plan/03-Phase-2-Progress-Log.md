@@ -45512,3 +45512,89 @@ server bind was blocked by the sandbox and was rerun with loopback access.
 cleanup. This is post-F1053 build cleanup, not a new F1053 slice; Gates 1/2
 remain Partial, the Phase 2 exit gate remains Open, and the official Deferred
 set is unchanged.
+
+### Batch445 discovery shortfall - 2026-10-18
+
+The fresh core/application lane found that regular-class deletion does not
+inspect the final parent DELETE row count. Review found no actionable mismatch:
+the delete remains idempotent when the class is already absent, cleans any
+remaining child rows inside the transaction, and reaches the intended
+class-absent state. F1047 covers the distinct testing-class subtype constraint.
+The independent UI, preference, document, and output lane found no new
+mismatch. Batch445 is closed as a discovery shortfall; the official Deferred
+set and Phase 2 gates are unchanged.
+
+### Batch446 discovery; F1054 and F1055 accepted before implementation - 2026-10-18
+
+The workspace lifecycle lane found that canceling Initial Setup after
+replacing an existing profile restores the original, then ignores failure to
+remove the incomplete setup profile at its recovery path. The result remains
+`Canceled` and retains `incompleteRecovery`; the controller warns only for
+other cleanup/restore statuses, leaving this retained copy undisclosed. F1033
+explicitly excluded this successful-restore/cleanup-failure path. Accept F1054
+to distinguish cancellation with a retained recovery copy, clear the recovery
+path after successful cleanup or when the file is absent, and warn with the
+remaining path when cleanup fails. Preserve the restored original, closed
+workspace, existing no-original removal failure, and original-restore failure
+behavior. Cover the application lifecycle and FileController warning paths.
+
+The output-job lane found that `ReportJobState::isValidOutputReference()` uses
+byte-wise `std::isspace`, so valid UTF-8 references made only of Unicode
+whitespace such as U+00A0 or U+3000 are accepted as completed outputs. The
+existing Qt-free `isBlankUtf8Text()` helper has the intended QString-compatible
+whitespace behavior and treats malformed UTF-8 as nonblank. Accept F1055 to use
+that helper while preserving the 4,096-byte bound and malformed-UTF-8 policy;
+extend the existing report-job state test to assert Unicode-blank rejection
+and no snapshot mutation alongside existing ASCII, size, and valid-reference
+coverage.
+
+Batch446 order: F1054 Initial Setup recovery-copy disclosure, then F1055 report
+output-reference validation. Workspace and report-job were the two actionable
+lanes; import/transfer found no candidate. All candidates are outside the 13
+official Deferred entries. Batch447 discovery starts alongside F1054 because
+it is the second-last candidate in Batch446. Gates 1/2 remain Partial, F1007
+remains pending policy reconciliation, and Phase 2 remains open.
+
+### Batch447 discovery; F1056 accepted before implementation - 2026-10-18
+
+The platform-result lane found that the Campus Dashboard distinguishes Create
+from Update in its application port, but its Update adapter calls the legacy
+upsert-style `CampusJsonRepository::saveCampus()`. If a campus file disappears
+after it is loaded, saving the stale form recreates the file and reports
+success; the page then clears its dirty state. Accept F1056: make the typed
+Update path return recoverable `NotFound` when its target file is absent and
+leave that path absent, while preserving Create collision handling, ordinary
+updates, reserved-identity validation, and the legacy repository upsert used by
+other callers. Verify the application adapter result and page draft/error
+behavior. The state-contract lane found no production mismatch; its stale
+wide-ID test expectation is test-only and outside the Phase 2 slice rules. No
+other slices were found. Implement F1056 only after Batch446's F1054 and F1055
+are committed and pushed. Gates 1/2 remain Partial, F1007 remains pending
+policy reconciliation, and Phase 2 remains open.
+
+### F1054 completion - 2026-10-18
+
+F1054 is committed as `f7e6dc4a` (`Phase2 - Disclose retained setup recovery
+copies`). The cancellation result now distinguishes a retained incomplete
+setup copy after the original profile has been restored, clears the recovery
+path when cleanup succeeds or the file is already absent, and warns with the
+remaining path. The independent Debug build passed for `ClassMngr` and both
+focused test targets; the two focused CTests passed (2/2). The Korean
+FileController catalog entry was independently reviewed and XML-validated;
+`git diff --check` passed. The deletion failure is exercised through a scripted
+port; an actual operating-system deletion refusal was not induced. F1055 is
+the current Batch446 slice. Gates 1/2 remain Partial, F1007 remains pending
+policy reconciliation, and Phase 2 remains open.
+
+### F1055 completion - 2026-10-18
+
+F1055 is committed as `a317783d` (`Phase2 - Reject Unicode blank report
+outputs`). Output-reference validation now uses the existing
+`isBlankUtf8Text()` helper after the empty and 4,096-byte checks. The focused
+test rejects ASCII whitespace, U+00A0, and U+3000 without changing the running
+snapshot, preserves the 4,096/4,097-byte boundary, accepts valid references,
+and confirms malformed UTF-8 remains nonblank. The independent target build
+passed, the focused CTest passed (1/1), and `git diff --check` passed. Batch446's
+F1054 and F1055 slice commits are complete; push Batch446 before starting
+F1056. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
+and Phase 2 remains open.
