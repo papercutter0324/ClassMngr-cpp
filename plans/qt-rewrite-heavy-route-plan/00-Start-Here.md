@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: F1062 is complete and pushed at `9d4b1c3e`; Batch457 closed as a discovery shortfall, and Batch458 discovery is underway. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch458) for the active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
+- Current milestone: F1062 is complete and pushed at `9d4b1c3e`; Batch458 has one accepted slice, F1063, awaiting implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch458) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch457 closed without an accepted slice. Batch458 discovery is underway; no candidates have been accepted yet.
+Batch458 contains one accepted slice, in order:
+
+1. **F1063 — Allow Manual Roster saves to confirm questionable Korean name lengths.** Enable the explicit Manual Save path when those lengths are the only validation errors; preserve strict automatic saves and other validation errors.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch458) is the canonical active list and acceptance record.
 

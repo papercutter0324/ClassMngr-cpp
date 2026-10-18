@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1062 is complete and pushed at `9d4b1c3e`; Batch458 discovery is underway; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1062 is complete and pushed at `9d4b1c3e`; Batch458 contains one accepted slice, F1063, to let explicit Manual Roster saves reach the existing questionable-name confirmation while preserving automatic-save validation; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch458
 
-Batch458 discovery is underway; no candidates have been accepted yet.
+- F1063 — Allow explicit Manual Roster saves to confirm questionable Korean name lengths when they are the only validation errors; keep automatic saving and unrelated validation errors blocked.
 
 #### Deferred candidates
 

@@ -45776,3 +45776,15 @@ The feature-integration lane examined Document Catalog to PDF Viewer navigation.
 No other slices were found.
 
 Batch457 closed without an accepted slice. Batch458 discovery is underway. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch458 discovery; F1063 accepted before implementation - 2026-10-18
+
+The regular-class/student workflow lane found that Roster Editor's Manual Save button is disabled for one-syllable and five-or-more-syllable Korean names. Live validation calls `prepareRosterSaveText(..., false, ...)`, producing errors for these lengths; `FormValidationBinder` passes invalid state into `AutosaveCoordinator`, which disables the Manual Save button. The button request handler also calls `saveRosterInternal(interactive)` without enabling the existing questionable-length confirmation. By contrast, `saveChanges()` invokes `saveRosterInternal(true, true)`, and existing focused tests cover accepted and rejected confirmation through that route (`src/features/roster/ui/roster_editor_widget.cpp:145-164,328-330,422-472,601-620`; `src/ui/shared/pages/autosave_coordinator.cpp:230-290`; `tests/roster_editor_widget_save_tests.cpp:727,1285`). Thus, an explicit Manual Save button click cannot reach the existing confirmation for these names.
+
+Accept F1063: in Manual mode, enable and route the explicit Roster Save button through the existing confirmation when questionable Korean name length is the only validation issue. Acceptance persists the roster and clears dirty state; rejection keeps the draft dirty and storage unchanged. Keep Automatic mode from saving these names without confirmation, including after changing save modes; other validation errors must continue to block the button and must not show the length confirmation. Preserve the existing `saveChanges()`/page-leave behavior and do not change the broader validation policy tracked by F1007. Add focused actual-button coverage for the short and long questionable lengths, acceptance and rejection behavior, unrelated validation blocking, and automatic-save blocking. Build the affected targets in the canonical Debug preset, run focused Roster Editor save CTests, and run `git diff --check`; no full suite.
+
+The analytics/read-projection lane found no eligible candidate: Class Analytics intentionally uses the accepted F299 empty state for both no data and read failure, with full-page mapping coverage from F361; relevant read-adapter and row-index behavior is covered by F933, F794, F829, and F836.
+
+No other slices were found.
+
+Batch458 contains only F1063. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
