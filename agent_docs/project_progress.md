@@ -53,29 +53,34 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1045 complete; F1046 accepted)
+### Current checkpoint - 2026-10-18 (F1046 complete; F1047 accepted)
 
-F1045 is complete at source/test commit
-`be00a799d9a143bdeb2ab4698335987077baa522`. Speaking Evaluation report
-preflight now compares cleaned, case-folded path keys while retaining each
-original output path and casing. Regressions cover case-only duplicates in
-archive-only and archive-plus-individual-PDF modes; both fail without files in
-the output directory. The independent Tester built `ClassMngr` and
-`ClassMngrSpeakingEvalBatchReportServiceTests` in the required
-`build/windows-x64-debug` tree and passed the focused CTest 1/1 after an
-elevated retry for sandbox FileTracker denial. `git diff --check` passed; no
-full suite ran.
+F1046 is complete at source/test commit
+`f17012628fd5fe9cab9b55c509e1b46b38dc6884`. Ordinary workspace opens use a
+QSQLITE URI in read-write `mode=rw`, which prevents SQLite from creating a
+target that disappears after the preflight check; this path also skips parent
+directory creation. The normalized filesystem path is passed to schema setup
+so v4/v6 migration backups remain at the expected sibling path. Missing paths
+map to typed recoverable `NotFound`, while technical open failures remain
+technical. Explicit create/open behavior is preserved.
 
-Two independent post-F1045 audits reviewed all 13 official Deferred entries;
-none became actionable, resolved, or superseded. The separate dense Speaking
-Evaluation row-limit policy remains unresolved. Batch429 is closed. Batch430
-is active with F1046 accepted pending implementation and F1047 queued. F1046
-will reject ordinary opens of missing workspace paths without creating the
-database or parent directories, preserve explicit creation, and propagate a
-typed recoverable `NotFound` while preserving workspace and selection state.
-Batch431's two discovery lanes found no additional candidate; that shortfall
-is recorded in the public progress log. Gates 1/2 remain Partial, the Phase 2
-exit gate remains Open, and F1007 remains pending policy reconciliation.
+The Executor and independent Tester built `ClassMngr` and the focused
+workspace-port, workspace-gateway, and workspace-coordinator targets in the
+required `build/windows-x64-debug` tree; the matching CTests passed 3/3.
+Coverage includes missing target/parent non-creation, active session
+preservation, Unicode and reserved path characters, typed gateway mapping,
+and the v5-to-v6 schema-backup path. `git diff --check` passed. The first
+sandbox build attempt hit MSBuild FileTracker access denial and the elevated
+retry in the same tree passed. No full suite or live UNC-share integration ran.
+
+Batch431's two discovery lanes found no additional candidate; its shortfall
+is recorded in the public progress log. All 13 official Deferred entries
+remain unchanged and unresolved. Batch430 continues with F1047 accepted:
+class deletion will return typed recoverable `NotFound` for a missing target,
+preserve technical failures without message matching or a pre-read, and keep
+the legacy `Status` deletion API compatible. Gates 1/2 remain Partial, the
+Phase 2 exit gate remains Open, and F1007 remains pending policy
+reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
