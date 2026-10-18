@@ -46200,3 +46200,23 @@ Batch472's active slices, in order (with status):
 5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
 
 The two discovery lanes found no newly met Deferred trigger. Batch471 is closed; Batch472 is the active plan list. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch471 push; F1081 completion; F1082 selected - 2026-10-18
+
+Batch471 closeout commit `0a570252` was pushed to `origin/Qt-Rewrite`.
+
+F1081 is complete at source/test commit `a9066ae7`. A failed repeat-series occurrence save retains the same dialog and values, shows the existing warning, and permits retry or Cancel. Retry updates only the selected occurrence and refreshes its projection; sibling rows remain unchanged. The accepted this-event-only save continues to clear the selected occurrence's `repeatSeriesId`.
+
+Independent verification built `ClassMngr` and `ClassMngrCalendarPageEventMutationParityTests`. The focused CTest passed 1/1 with 26 passed, 0 failed, and 0 skipped; `git diff --check` passed, and no full suite ran. The focused suite includes the successful “this and following” path, but does not fault-inject that branch or series-create failures.
+
+F1082 is selected/in progress: after a “this and following” series-edit failure, retain the same dialog fields, show the existing warning, and allow retry or Cancel. F1083 remains provisional for repeat-series creation retry after failure; F1084 and F1085 remain provisional for Schedule display and Calendar option preference-read failures.
+
+Batch472's active slices, in order (with status):
+
+1. F1081 - Keep Calendar occurrence edits retryable after save failure (complete at `a9066ae7`).
+2. F1082 - Keep Calendar “this and following” edits retryable after failure (selected/in progress).
+3. F1083 - Keep Calendar repeat-series creation retryable after failure (provisional).
+4. F1084 - Preserve Schedule display preferences after a technical read failure (provisional).
+5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
+
+Batch472 remains active. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

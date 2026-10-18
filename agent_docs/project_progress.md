@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch471 closed; Batch472 active; F1081 selected)
+### Current checkpoint - 2026-10-18 (Batch471 closed and pushed; Batch472 active; F1082 selected)
 
 Batch468 is closed and pushed at `8f921a91`; Batch469 is closed and pushed to
 `origin/Qt-Rewrite` at `6ffa19bf`. Batch470's sole slice, F1078, is complete at
@@ -72,13 +72,21 @@ dialogs on a read fault. The accepted color still returns; successful default
 reads retain Cancel persistence. The focused port and ColorUtils CTests passed
 2/2 with 22 QtTest cases, and `git diff --check` passed; no full suite ran. The
 open-session/no-settings-repository branch lacks a direct test. Batch471 is
-closed with F1079 `5ad80284` and F1080 `82eaa317`. Batch472 discovery found
-five candidates:
+closed with F1079 `5ad80284` and F1080 `82eaa317`; the closeout was pushed to
+`origin/Qt-Rewrite` at `0a570252`. Batch472 discovery found five candidates:
 retry paths for recurring Calendar occurrence edits, suffix edits, and series
 creation, plus technical-read protection for Schedule display preferences and
-Calendar options. F1081, retrying Calendar occurrence edits after save failure,
-is selected; F1082-F1085 remain provisional. Neither discovery lane found a
-newly met official Deferred trigger.
+Calendar options. F1081 is complete at `a9066ae7`: failed saves of a selected
+repeat-series occurrence retain the same dialog and values, show the existing
+warning, and allow retry or Cancel. Retry updates only the selected occurrence
+and refreshes the projection; sibling rows stay unchanged. The accepted
+this-event-only behavior still clears the selected row's `repeatSeriesId`.
+Independent verification passed the focused Calendar CTest 1/1 with 26 QtTest
+cases; `git diff --check` passed and no full suite ran. F1082, retrying “this
+and following” edits after a series-edit failure, is selected; F1083-F1085
+remain provisional. The F1081 focused suite covers successful suffix editing
+but does not inject failures in the suffix-edit or series-create branches.
+Neither discovery lane found a newly met official Deferred trigger.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
@@ -87,7 +95,7 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue with F1081 in Batch472. Preserve the open Phase 2 exit gate and
+Continue with F1082 in Batch472. Preserve the open Phase 2 exit gate and
 unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.

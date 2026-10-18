@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1081 is selected/in progress in active Batch472 to keep Calendar occurrence edits retryable after save failure; Batch471 is closed at `5ad80284` and `82eaa317`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1082 is selected/in progress in active Batch472 to keep “this and following” Calendar edits retryable after series-edit failure; Batch471 was pushed to `origin/Qt-Rewrite` at `0a570252`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -72,8 +72,8 @@ Treat this plan as an operational summary, not a history:
 
 Batch472's discovered slices, in order (with status):
 
-1. F1081 - Keep Calendar occurrence edits retryable after save failure: selected/in progress. The repeat-series-member branch uses ordinary `CalendarEventSaveUseCase` and returns after warning; retain the occurrence edit for retry after failure. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
-2. F1082 - Keep Calendar “this and following” edits retryable after failure: provisional; retain the suffix edit for retry after series-edit failure. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+1. F1081 - Keep Calendar occurrence edits retryable after save failure: complete at `a9066ae7`. On failure, retain the same dialog and values, show the existing warning, and allow retry or Cancel. Retry updates only the selected occurrence and refreshes the projection; sibling rows remain unchanged. The accepted this-event-only save still clears the selected occurrence's `repeatSeriesId`.
+2. F1082 - Keep Calendar “this and following” edits retryable after failure: selected/in progress. On series-edit failure, retain the dialog fields and show the existing warning; allow retry or Cancel. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
 3. F1083 - Keep Calendar repeat-series creation retryable after failure: provisional; retain recurrence inputs for retry after series-create failure. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
 4. F1084 - Preserve Schedule display preferences after a technical read failure: provisional; distinguish Technical read errors from false defaults before aggregate-saving all five values on a checkbox change. Likely targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
 5. F1085 - Preserve Calendar option state after technical preference-read failures: provisional; distinguish Technical failures from event-display and first-day-of-week defaults before aggregate saves. Likely targets: event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
