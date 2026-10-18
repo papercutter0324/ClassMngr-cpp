@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch466 complete; F1068 accepted)
+### Current checkpoint - 2026-10-18 (Batch467 complete; Batch468 discovery pending)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -68,9 +68,14 @@ refresh follow-up is committed at `6b296a23`; the focused CTest, direct clean
 and dirty refresh slots, and clean/dirty empty-result CTests passed. Batch465
 was pushed at `e88f6daa`. Batch466's F1067 slice is committed at `e98c8cb9`;
 the two affected focused CTests passed 2/2, both new direct tests passed, and
-`git diff --check` passed. No full suite ran. Batch467 has one accepted slice,
-F1068, to restore Sidebar selection when a canceled My Info route keeps the
-source page open; implementation has not started.
+`git diff --check` passed. No full suite ran. Batch467's only slice, F1068,
+is committed at `71c16b78`. It restores the pre-click Sidebar selection when
+Cancel blocks the real My Workspace route from dirty Teacher Info. The
+regression verifies source page, profile, form draft, selection, and database
+session retention on Cancel, then successful navigation and draft clearing on
+Discard. The Executor and independent Tester passed the affected build, the
+focused Sidebar navigation CTest (1/1), and `git diff --check`; no full suite
+ran. Batch467 is complete and its documentation closeout/push is underway.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -79,8 +84,8 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Implement and verify F1068, commit the slice, then close and push Batch467.
-Preserve the open exit gate and unresolved policy reconciliation.
+Close and push Batch467, then begin Batch468 slice discovery. Preserve the
+open exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

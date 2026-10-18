@@ -45974,3 +45974,13 @@ Batch467 contains one accepted slice, in order:
 1. F1068 - Restore Sidebar selection after canceled My Workspace navigation from dirty Teacher Info (accepted/in progress before implementation).
 
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1068 completion - 2026-10-18
+
+F1068 is committed as `71c16b78` (`Phase2 - Restore Sidebar after canceled My Workspace navigation`). The implementation restores pre-click Sidebar selection on Cancel in the dispatched `my_workspace` path; the unreachable `my_info_class_information` branch remains unchanged. The real Sidebar click test verifies Cancel retains selection, page, form draft, profile, and session; Discard navigates and clears the draft.
+
+The Executor and independent Tester both passed the focused target. The Tester built `ClassMngr` and `ClassMngrMainWindowTeacherSidebarNavigationParityTests`, ran `ctest --test-dir build/macos-clang-debug -R '^ClassMngrMainWindowTeacherSidebarNavigationParityTests$' --output-on-failure` (1/1), and passed `git diff --check`. No full suite ran.
+
+### Batch467 closure - 2026-10-18
+
+Batch467 contained one accepted slice, F1068, which is complete at `71c16b78`; the batch is closed. Batch468 discovery is pending. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

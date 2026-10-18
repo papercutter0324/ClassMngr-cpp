@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch465 is closed and was pushed at `e88f6daa`; Batch466 is closed with F1067 complete at `e98c8cb9`. Batch467 has one accepted slice in progress: F1068, restore Sidebar selection when Cancel is chosen on a real My Workspace click from dirty Teacher Info. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch467) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch465 is closed and was pushed at `e88f6daa`; Batch466 is closed with F1067 complete at `e98c8cb9`; Batch467 is closed with F1068 complete at `71c16b78`. Batch468 discovery is pending. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md) for current status and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,14 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch467's discovered slices, in order (with status):
-
-1. **F1068 — Restore Sidebar selection after canceled My Workspace navigation.** Accepted/in progress: on a real Sidebar click from dirty Teacher Info, Cancel restores the pre-click selection and preserves the source page, draft, and session.
+Batch467 is closed with F1068 complete at `71c16b78`. Batch468 discovery is pending.
 
 The
-[Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch467)
-keeps the ordered current batch list until closure; the [Phase 2 progress
-log](03-Phase-2-Progress-Log.md) holds acceptance and verification evidence.
+[Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
+shows current status; the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+holds acceptance and verification evidence.
 
 ## Phase notes, slice batches, and progress logs
 

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch466 is closed with F1067 complete at `e98c8cb9`; Batch467 F1068 is accepted and in progress for canceled My Workspace navigation from dirty Teacher Info; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: Batch467 is closed with F1068 complete at `71c16b78`; Batch468 discovery is pending; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -67,12 +67,6 @@ Treat this plan as an operational summary, not a history:
 - When a slice is accepted, record its evidence in the progress log and update its status in this plan. Remove the batch list when the batch closes; replace it in place with the next active batch and do not carry forward history.
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
-
-#### Active batch: Batch467
-
-Batch467's discovered slices, in order (with status):
-
-1. F1068 - Restore Sidebar selection after canceled My Workspace navigation: accepted/in progress; on a real Sidebar click from dirty Teacher Info, Cancel must restore the pre-click selection and preserve the source page, draft, and session.
 
 #### Deferred candidates
 
