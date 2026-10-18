@@ -45242,7 +45242,7 @@ claim is made that Phase 2 has no remaining slices.
 Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
 pending policy reconciliation.
 
-### Batch437 discovery; F1050 accepted before implementation - 2026-10-18
+### F1050 complete; post-slice audits clear; Batch437 closed - 2026-10-18
 
 The teacher/setup/class and remaining feature-boundary review found a width
 mismatch in the regular Class Details page-save validation context.
@@ -45271,28 +45271,31 @@ policy validation (`src/next/application/class_details_save_workflow.h` and
 a normal page edit fail even though the typed save port supports the value.
 The policy and save path impose no explicit upper bound.
 
-F1050 is accepted before implementation: preserve positive 64-bit teacher IDs
-from the repository-backed regular Class Details validation-context result
-through the Qt-free context contract and validation input/policy. A normal
-page edit with teacher ID `2147483648` must complete and leave that exact ID
-persisted. Keep class IDs and unrelated legacy teacher-selection paths
-unchanged, preserve the null sentinel `-1`, and continue rejecting teacher ID
-zero and values below `-1`.
+F1050 completes at source commit
+`1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. The regular Class Details
+validation-context repository record, application context contract, and
+validation input/policy now preserve the assigned teacher ID as `qint64`.
+Normal edit/save retains `2147483648`; `-1` remains the null sentinel, zero
+and values below `-1` remain rejected, and the invalid 64-bit diagnostic stays
+exact. Class IDs and unrelated teacher-selection routes are unchanged.
 
-Focused acceptance adds a wide-ID case to
-`tests/next_platform_application_services_class_details_validation_context_port_tests.cpp`,
-type/policy coverage as needed in
-`tests/next_application_class_details_validation_context_query_tests.cpp` and
-`tests/next_application_class_details_validation_policy_tests.cpp`, and a
-normal edit-save regression in
-`tests/class_details_page_save_parity_tests.cpp`; retain existing invalid-ID
-coverage. Build `ClassMngr`,
-`ClassMngrNextApplicationClassDetailsValidationContextQueryTests`,
-`ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+The independent Tester built `ClassMngr` and the following targets
+sequentially in `build/windows-x64-debug`; all five matching CTests passed:
+`ClassMngrClassDetailsPageSaveParityTests`,
 `ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
-`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`,
-and `ClassMngrClassDetailsPageSaveParityTests` in
-`build/windows-x64-debug`; run only matching CTests and `git diff --check`, with
-no full suite. This acceptance records no implementation or verification
-result. No other slices were found. Gates 1/2 remain Partial, the Phase 2 exit
-gate remains Open, and F1007 remains pending policy reconciliation.
+`ClassMngrNextApplicationClassDetailsValidationContextQueryTests`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`, and
+`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`.
+One correctly configured run exposed a missing teacher in the platform-port
+fixture; the fixture was fixed and its target rebuilt. An initial FileTracker run
+returned `E_ACCESSDENIED`; the elevated retry succeeded. `git diff --check`
+passed. No full suite ran.
+
+Two independent audits reviewed the exact 13 official Deferred entries; all
+remain unchanged, with none newly actionable, resolved, or superseded. Batch437
+closes with F1050 as its sole slice. Batch438's app/domain/repository and
+feature/UI boundary lanes found no actionable candidate, a discovery shortfall
+that does not establish Phase 2 completion. Batch439 discovery is underway in
+separate Schedule Import, workspace/navigation/resource, and Calendar/preferences
+lanes; no candidate has been accepted yet. Gates 1/2 remain Partial, the Phase 2
+exit gate remains Open, and F1007 remains pending policy reconciliation.

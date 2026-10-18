@@ -4208,6 +4208,16 @@ target row. The conflict check uses a warning trap, not a query-count
 comparison. Verification and limits are in the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md).
 
+## F1050 accepted wide teacher-ID validation context
+
+F1050, commit `1a684c67`, preserves the assigned teacher ID as `qint64` from
+the regular Class Details active-session repository context through the typed
+context contract and validation policy. A normal edit retains teacher ID
+`2147483648`; `-1` remains the null sentinel, zero and values below `-1` are
+rejected, and the invalid 64-bit diagnostic remains exact. This covers the
+regular page context/save path; unrelated teacher-selection routes are
+unchanged. Verification evidence is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
 ## F154 accepted Class Notes page read
 
 F154, commit `8bcbf136`, adds a typed Class Notes query/port and active-session

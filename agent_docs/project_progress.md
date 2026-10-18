@@ -53,35 +53,40 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1049 complete; F1050 accepted)
+### Current checkpoint - 2026-10-18 (F1050 complete; Batch439 discovery underway)
 
-F1049 is complete at source/test commit `4fd66df346abccde4b2c3f2a04008ce3a4a0d663`.
-Typed roster-row transfer persists the use case's prepared snapshots through
-the active session's `RosterRepository::saveRosters()` transaction. Explicit
-UI confirmation controls questionable source lengths, and questionable lengths
-in the exact prepared target require a second confirmation before saving. The
-adapter has no `RosterService` or `DataService` fallback.
+F1050 is complete at source/test commit
+`1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
+preserves a qint64 assigned teacher ID through repository reload, the Qt-free
+validation context and policy, and validation diagnostics. A normal page edit
+retains teacher ID `2147483648` in SQLite; `-1` remains the null sentinel, and
+zero or values below `-1` remain invalid.
 
-The canonical Debug build passed for `ClassMngr`,
-`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
-`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`, and
-`ClassMngrRosterTransferMenuTests`; all three matching CTests passed. Coverage
-includes prepared payloads, source/target confirmation and cancellation,
-normalized persistence, unavailable-session handling, and rollback on a
-second-roster failure. `git diff --check` passed. No full suite ran.
+The canonical `build/windows-x64-debug` build passed sequentially for
+`ClassMngr` and all five focused test targets. The five matching CTests passed:
+`ClassMngrClassDetailsPageSaveParityTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrNextApplicationClassDetailsValidationContextQueryTests`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`, and
+`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`.
+The page parity case asserts the wide ID remains persisted as an SQLite
+integer after an ordinary edit/save. An initial fixture omitted the referenced
+teacher row; the fixture was corrected, the affected target rebuilt, and all
+five tests passed. `git diff --check` passed. Initial sandbox builds hit MSBuild
+FileTracker `E_ACCESSDENIED`; the sequential builds succeeded with approved
+access. No full suite ran.
 
-Two independent audits around F1049 closure reviewed all 13 official Deferred
-entries; none became actionable, resolved, or superseded. Batch436 closed as a
-discovery shortfall, with no claim that Phase 2 has no remaining slices.
-Batch437 discovery found F1050: a wide positive assigned teacher ID such as
-`2147483648` is narrowed in the regular Class Details validation-context path,
-blocking an otherwise valid edit even though the typed save path supports that
-ID. F1050 is accepted before implementation to preserve the 64-bit teacher ID
-through that context and policy path, with a repository-backed regression and
-regular page save parity coverage. A complementary feature-boundary lane found
-no other candidate; all 13 Deferred entries remain unchanged. Gates 1/2 remain
-Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate
-is Open. Deployment remains `phase2_resume_batch398_f1028`.
+Two independent audits of the exact 13 official Deferred entries found them
+all unchanged; none became actionable, resolved, superseded, or materially
+changed. Batch437 closes with F1050 as its only slice. Batch438's app/domain
+and feature-boundary lanes found no new actionable candidate and close as a
+discovery shortfall; this is not a claim that Phase 2 has no remaining work.
+Batch439 discovery is underway across Schedule Import, workspace/navigation
+resources, and Calendar/preferences. A possible Calendar preference
+no-session save mismatch is under independent policy review and is not yet
+accepted. Deployment remains `phase2_resume_batch398_f1028`. Gates 1/2 remain
+Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is
+Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.
