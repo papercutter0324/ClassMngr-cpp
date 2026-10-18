@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch454 has one accepted slice, F1060, to reconcile a clean Testing Classes page after its selected class is already missing; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: Batch455 has one accepted slice, F1061, to reload the active Teacher Info profile after a successful Teacher Import updates Korean teachers; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch454
+#### Active batch: Batch455
 
-- F1060 — Reconcile the Testing Classes list and selection when a clean page's selected class is already missing; preserve dirty drafts and unavailable-session behavior.
+- F1061 — Reload the active Teacher Info profile by 64-bit teacher ID after a successful Teacher Import updates Korean teachers; prevent stale-profile edits if the post-import read fails.
 
 #### Deferred candidates
 

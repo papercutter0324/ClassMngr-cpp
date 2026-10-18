@@ -45710,3 +45710,25 @@ Accept F1060 with a safety boundary: when delete returns `NotFound`, reconcile t
 No other slices were found.
 
 Batch454 contains only F1060. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1060 completion - 2026-10-18
+
+F1060 is committed as `b9f34c7f` (`Phase2 - Refresh stale testing class selection`). When typed testing-class deletion returns `NotFound`, `TestingClassesPage` now reconciles the visible list and selection only if the page has no unsaved changes and its database session remains open. It selects and loads the first remaining class or starts a new draft when none remain, then emits `testingDataChanged` once. Dirty draft, unavailable-session, Technical-failure, and successful-delete behavior remain covered.
+
+The focused F147 CTest registration now includes all four new `NotFound` cases. The executor built `ClassMngrTestingClassesPageTests`; the independent Tester rebuilt incrementally (target up to date). The exact focused CTest passed 1/1 and verbose output confirmed nine deletion methods ran (11 QtTest cases including setup/cleanup). `git diff --check` passed. The broader `ClassMngrTestingClassesPageTests` registration remains red: 41 passed and three keyboard/output checks failed; the independent Tester reproduced those three individually, and none exercises deletion. No full suite ran.
+
+### Batch454 push - 2026-10-18
+
+Pushed `b9f34c7f` to `origin/Qt-Rewrite`, advancing it from `1f1d42e1`. The push includes F1060, its focused CTest registration, and the Batch454 acceptance record. Batch454 contained only F1060 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch455 discovery; F1061 accepted before implementation - 2026-10-18
+
+The Calendar/preferences lane found no new candidate: Calendar read failures, cache recovery, and the reviewed preference/theme paths match accepted contracts and focused coverage; the existing Calendar event-activation feedback lead remains deferred under its recorded UX decision.
+
+The Teacher integration lane found that successful `SidebarController::importTeachers()` refreshes the sidebar and Native English/GS Team directories but not a current Teacher Info page (`src/app/controllers/sidebar_controller_teacher_import.cpp:18,91-98`). The leave gate resolves dirty state but does not navigate away (`src/ui/shared/pages/pagemanager.cpp:508`), and `TeacherInfoPage::refresh()` only updates the widget (`src/features/teacher/ui/teacher_info_page.cpp:1604`). Korean import can update existing teacher profile fields (`src/next/application/teacher_import_use_case.h:560`, `src/data/repositories/teacher_import_sql_persistence_adapter.cpp:271`); Teacher Info retains its prior snapshot (`teacher_info_page.cpp:1136`) and later submits the full profile (`teacher_info_page.cpp:1344`, `src/data/repositories/teacher_repository.cpp:261`). Thus, after a successful import update, a later edit/save can overwrite the imported fields with stale values. Existing F431 covered the dirty-page gate but scoped out successful apply; current import UI success coverage uses an empty database and does not cover an active Teacher Info page. None of the 13 official Deferred entries covers this stale-write path.
+
+Accept F1061: after apply succeeds and `summary.koreanTeachers.updated > 0`, if Teacher Info is the active page with a valid 64-bit teacher ID, re-read that same profile by ID and reload it into the existing page. Preserve dialog/date-confirmation cancellation, pre-apply dirty-state handling, apply failures, other current pages, and existing sidebar/directory refreshes. If the post-import profile read fails, keep the displayed identity and values visible but mark the page reload-required, block editing and saving until a fresh normal Teacher Info load succeeds, and warn that the import succeeded but the page could not be refreshed; still report the successful import summary. Focused coverage must import an update to the teacher currently shown, verify the page reloads cleanly, then edit another field and save to prove imported fields persist. Also cover the reload-required state after a failed post-import read through the smallest coherent test seam; retain cancel and apply-failure behavior. Build affected targets in the canonical Debug preset, run the focused CTests, and run `git diff --check`; no full suite.
+
+No other slices were found.
+
+Batch455 contains only F1061. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

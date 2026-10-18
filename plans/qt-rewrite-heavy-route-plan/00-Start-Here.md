@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: F1057 is complete and pushed at `1f1d42e1`; Batches449–453 closed as discovery shortfalls or rejected leads. Batch454 has one accepted slice, F1060, awaiting implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch454) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
+- Current milestone: F1060 is complete and pushed at `b9f34c7f`; Batch455 has one accepted slice, F1061, awaiting implementation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch455) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for discovery evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,11 +38,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch454 contains one accepted slice, in order:
+Batch455 contains one accepted slice, in order:
 
-1. **F1060 — Reconcile a stale Testing Classes selection after a missing-class delete.** When the selected testing class is already absent, refresh a clean page with an open database session to the first remaining class or a new draft; preserve dirty drafts and unavailable-session behavior.
+1. **F1061 — Refresh the active Teacher Info page after successful Teacher Import updates existing Korean teachers.** Reload the current teacher by its 64-bit identity after a successful import update; if reload fails, keep the profile visible but block edits and saves until a fresh load succeeds.
 
-The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch454) is the canonical active list and acceptance record.
+The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch455) is the canonical active list and acceptance record.
 
 ## Phase notes, slice batches, and progress logs
 
