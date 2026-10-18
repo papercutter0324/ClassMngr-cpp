@@ -179,8 +179,22 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         COMMAND ClassMngrCampusDashboardPageTests
     )
 
+    add_test(
+        NAME CampusDashboardCleanRefreshToEmpty
+        COMMAND ClassMngrCampusDashboardPageTests
+            cleanRefreshWithNoCampusesClearsCurrentCampus
+    )
+
+    add_test(
+        NAME CampusDashboardDirtyRefreshToEmpty
+        COMMAND ClassMngrCampusDashboardPageTests
+            dirtyRefreshWithNoCampusesPreservesDraftAndPendingSave
+    )
+
     set_tests_properties(
         ClassMngrCampusDashboardPageTests
+        CampusDashboardCleanRefreshToEmpty
+        CampusDashboardDirtyRefreshToEmpty
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )

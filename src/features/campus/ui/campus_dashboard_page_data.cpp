@@ -80,6 +80,31 @@ void CampusDashboardPage::loadCampuses()
                 m_campusDirectory
                 ).loadCampuses();
 
+    if (campuses.empty() && m_dirty)
+    {
+        return;
+    }
+
+    if (campuses.empty())
+    {
+        const QSignalBlocker blocker(m_campusCombo);
+        m_campusCombo->clear();
+        m_currentCampus = {};
+        m_currentCampusComboIndex = -1;
+        populateFields(m_currentCampus);
+        m_dirty = false;
+
+        if (m_saveTimer)
+        {
+            m_saveTimer->stop();
+        }
+
+        updateCampusSaveButton();
+        setStatus(QString());
+        updateCampusSelectorWidth();
+        return;
+    }
+
     const QSignalBlocker blocker(m_campusCombo);
 
     const QString currentCampusId =
@@ -103,12 +128,6 @@ void CampusDashboardPage::loadCampuses()
             campusDisplayName(campus),
             campus.id
             );
-    }
-
-    if (campuses.empty())
-    {
-        updateCampusSelectorWidth();
-        return;
     }
 
     QString campusIdToSelect =

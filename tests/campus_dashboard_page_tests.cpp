@@ -16,6 +16,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QTest>
 
 #include <memory>
@@ -98,6 +99,7 @@ public:
 
     QString failureMessage;
     QString createConflictMessage;
+    mutable std::optional<ClassMngr::Next::Domain::ErrorCode> lastErrorCode;
     mutable std::vector<
         ClassMngr::Next::Application::CampusDashboardCampusSnapshot
         > savedSnapshots;
@@ -134,9 +136,18 @@ public:
             });
         }
 
-        return ClassMngr::Next::Platform::
+        const auto result = ClassMngr::Next::Platform::
             CampusDashboardCampusRepositoryAdapter(m_directory)
                 .saveCampus(campus, intent);
+        if (result)
+        {
+            lastErrorCode.reset();
+        }
+        else
+        {
+            lastErrorCode = result.error().code;
+        }
+        return result;
     }
 
 private:
@@ -363,6 +374,8 @@ private slots:
     void failedSaveRestoresSelectionAndSkipsRequestedRead();
     void failedSavePreventsNewCampusDraft();
     void successfulNewCampusSaveRetainsIdForUpdates();
+    void cleanRefreshWithNoCampusesClearsCurrentCampus();
+    void dirtyRefreshWithNoCampusesPreservesDraftAndPendingSave();
     void saveIntentTracksDraftAndCreateConflictRetainsIt();
     void missingSelectedCampusDetailLeavesVisibleAndStoredStateUntouched();
     void failedSelectedCampusDetailLeavesVisibleAndStoredStateUntouched();
@@ -996,6 +1009,175 @@ void CampusDashboardPageTests::missingUpdateTargetKeepsDraftDirtyAndShowsError()
     QVERIFY(labelWithText(page, failureMessage));
     QVERIFY(!labelWithText(page, QStringLiteral("Saved")));
     QVERIFY(!QFile::exists(alphaPath));
+}
+
+void CampusDashboardPageTests::cleanRefreshWithNoCampusesClearsCurrentCampus()
+{
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize());
+    CampusDashboardPage& page = *fixture.page;
+
+    auto* selector = page.findChild<QComboBox*>();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    auto* codeEdit = campusCodeEdit(page);
+    auto* buildingEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusBuildingNameEdit")
+        );
+    QVERIFY(selector);
+    QVERIFY(nameEdit);
+    QVERIFY(codeEdit);
+    QVERIFY(buildingEdit);
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Alpha"));
+    QCOMPARE(buildingEdit->text(), QStringLiteral("Alpha Hall"));
+
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        QStringLiteral("Alpha"),
+        QStringLiteral("ALPHA")
+        ));
+    QVERIFY(page.saveChanges());
+    QVERIFY(!page.hasUnsavedChanges());
+    QLabel* const statusLabel = labelWithText(
+        page,
+        QStringLiteral("Saved")
+        );
+    QVERIFY(statusLabel);
+    QCOMPARE(fixture.savePort.saveIntents.size(), std::size_t(1));
+
+    const CampusJsonRepository repository(fixture.campusDirectory.path());
+    for (const QString& campusId : {
+             QStringLiteral("alpha"),
+             QStringLiteral("beta")
+         })
+    {
+        const QString campusPath = repository.filePathForCampusId(campusId);
+        QVERIFY(QFile::exists(campusPath));
+        QVERIFY(QFile::remove(campusPath));
+    }
+
+    page.refresh();
+
+    QCOMPARE(selector->count(), 0);
+    QCOMPARE(selector->currentIndex(), -1);
+    QVERIFY(selector->currentData().toString().isEmpty());
+    QCOMPARE(nameEdit->text(), QString());
+    QCOMPARE(codeEdit->text(), QString());
+    QCOMPARE(buildingEdit->text(), QString());
+    QVERIFY(!page.hasUnsavedChanges());
+    QPushButton* const saveButton = buttonWithText(
+        page,
+        QStringLiteral("Save Campus")
+        );
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(statusLabel->text().isEmpty());
+
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        QStringLiteral("Gamma"),
+        QStringLiteral("GAMMA")
+        ));
+    QVERIFY(page.saveChanges());
+    QCOMPARE(fixture.savePort.savedSnapshots.size(), std::size_t(2));
+    QCOMPARE(
+        fixture.savePort.saveIntents.back(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.back().id.value(),
+        std::string("gamma")
+        );
+}
+
+void CampusDashboardPageTests::
+    dirtyRefreshWithNoCampusesPreservesDraftAndPendingSave()
+{
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize(SaveMode::Automatic));
+    CampusDashboardPage& page = *fixture.page;
+
+    auto* selector = page.findChild<QComboBox*>();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    auto* codeEdit = campusCodeEdit(page);
+    auto* buildingEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusBuildingNameEdit")
+        );
+    auto* saveTimer = page.findChild<QTimer*>();
+    QVERIFY(selector);
+    QVERIFY(nameEdit);
+    QVERIFY(codeEdit);
+    QVERIFY(buildingEdit);
+    QVERIFY(saveTimer);
+    saveTimer->setInterval(60000);
+
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        QStringLiteral("Alpha Draft"),
+        QStringLiteral("ALPHA-DRAFT")
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveTimer->isActive());
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+
+    const CampusJsonRepository repository(fixture.campusDirectory.path());
+    for (const QString& campusId : {
+             QStringLiteral("alpha"),
+             QStringLiteral("beta")
+         })
+    {
+        const QString campusPath = repository.filePathForCampusId(campusId);
+        QVERIFY(QFile::exists(campusPath));
+        QVERIFY(QFile::remove(campusPath));
+    }
+
+    page.refresh();
+
+    QCOMPARE(selector->count(), 2);
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Alpha Draft"));
+    QCOMPARE(codeEdit->text(), QStringLiteral("ALPHA-DRAFT"));
+    QCOMPARE(buildingEdit->text(), QStringLiteral("Alpha Hall"));
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(saveTimer->isActive());
+    QVERIFY(fixture.savePort.savedSnapshots.empty());
+
+    QVERIFY(!page.saveChanges());
+
+    QCOMPARE(fixture.savePort.savedSnapshots.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.saveIntents.front(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.front().campusName,
+        std::string("Alpha Draft")
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.front().campusCode,
+        std::string("ALPHA-DRAFT")
+        );
+    QCOMPARE(
+        fixture.savePort.savedSnapshots.front().id.value(),
+        std::string("alpha")
+        );
+    QVERIFY(fixture.savePort.lastErrorCode.has_value());
+    QCOMPARE(
+        fixture.savePort.lastErrorCode.value(),
+        ClassMngr::Next::Domain::ErrorCode::NotFound
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Alpha Draft"));
+    QVERIFY(labelWithText(
+        page,
+        QStringLiteral("This campus no longer exists. Reload it before saving.")
+        ));
+    saveTimer->stop();
 }
 
 void CampusDashboardPageTests::reservedCreateIdentityFailureRetainsDirtyForm()
