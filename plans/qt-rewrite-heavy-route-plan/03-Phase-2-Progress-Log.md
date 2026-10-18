@@ -46102,4 +46102,14 @@ Batch470's discovered slices, in order (with status):
 
 No other slices were found.
 
+### F1077 completion; Batch469 closure; F1078 selected - 2026-10-18
+
+F1077 is complete at source commit `bc87ffa8`. When navigation from a different page receives a Classes page creation failure or required `loadClasses()` failure after leave confirmation, the Sidebar selection returns to its prior value and the source page remains visible. The accepted Save/Discard decision stands.
+
+Independent verification built `ClassMngr` and `ClassMngrMainWindowClassesSidebarRootNavigationTests`; the focused CTest passed 1/1 and raw QtTest passed 11/0/0 (passed/failed/skipped). `git diff --check` passed; no full suite ran. The `ensureClassesPage()` null branch is not directly exercised. The failed-load row covers Discard; the Save path is covered on successful navigation.
+
+Batch469 is closed with all four ordered source commits: F1074 `cbe7be5c`, F1075 `8c0dbc24`, F1076 `7a938cc4`, and F1077 `bc87ffa8`.
+
+Batch470 is now active, with F1078 selected/in progress as the sole discovered slice. Preserve the single-event create/edit dialog and entered fields, display the save error, and close only after a retry persists successfully. The discovery evidence is in `src/features/calendar/ui/calendar_page_events.cpp` (`CalendarPage::openCalendarDialog()` and `CalendarEventSaveUseCase::execute`); this remains the scoped candidate distinguished from F1036's earlier explicit exclusion.
+
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

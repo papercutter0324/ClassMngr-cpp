@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 closed and pushed; Batch469 active; F1077 selected)
+### Current checkpoint - 2026-10-18 (Batch468 closed and pushed; Batch469 closed; Batch470 active; F1078 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -141,11 +141,17 @@ The independent Tester built `ClassMngr` and the MainWindow Sidebar navigation
 target; the focused CTest passed 1/1 with 20 QtTest cases, and the supplemental
 Native English, GS Team, and open-session navigation CTests passed 3/3 (22
 QtTest cases total). `git diff --check` passed; no full suite ran. F1077 is
-selected for Classes root navigation: when destination creation or a required
-class-list load fails after the leave guard, restore the prior Sidebar
-selection and keep the source page visible while honoring Save/Discard.
-Batch470 discovery has one provisional candidate, F1078, for retryable
-single-event Calendar edits after save failure.
+F1077 is complete at `bc87ffa8`: when navigation from another page reaches a
+Classes page creation or required `loadClasses()` failure after leave
+confirmation, the prior Sidebar selection is restored and the source page
+remains visible. The accepted Save/Discard decision stands. The independent
+Tester built the application and Classes root navigation target; the focused
+CTest passed 1/1 with 11 QtTest cases, and `git diff --check` passed. No full
+suite ran. The null page-creation branch is not directly tested, and the failed
+load test covers Discard; Save is covered on successful navigation. Batch469
+is closed with its four ordered source commits. Batch470 is active with F1078
+selected, the sole discovered candidate: keep single-event Calendar edits
+retryable after save failure.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -154,8 +160,7 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Complete and commit F1077, close Batch469, and push the batch. Then begin
-Batch470 with its provisional F1078 candidate. Preserve the open Phase 2 exit
+Complete F1078, close Batch470, and push it. Preserve the open Phase 2 exit
 gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.

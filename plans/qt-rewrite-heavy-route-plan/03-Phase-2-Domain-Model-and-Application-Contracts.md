@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1077 is selected/in progress in Batch469 for Classes refresh failures after leave confirmation; Batch470 has a pending next-batch preview with provisional F1078, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1078 is selected/in progress in active Batch470 to keep Calendar single-event edits retryable after save failures; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,18 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch469
+#### Active batch: Batch470
 
-Batch469's discovered slices, in order (with status):
+Batch470's discovered slices, in order (with status):
 
-1. F1074 - Preserve Personal Details name through a technical preference-read failure: complete at `cbe7be5c`. Distinguish successful empty/missing/unavailable reads from `Technical`; Personal Details warns, preserves the current form, and blocks aggregate saves while the stored name is unknown. A successful reload restores ordinary saves. Preserve other consumers' explicit empty-name behavior. See the progress log for completion evidence.
-2. F1075 - Restore the prior Sidebar selection after dynamic Teacher profile navigation receives `NotFound` or `Technical`: complete at `8c0dbc24`. Preserve the displayed profile, draft, session, selected keys, and teacher ID; the read precedes the guard, so no leave prompt occurs.
-3. F1076 - Keep Staff Directory navigation coherent when either child destination creation/load fails after the leave guard: complete at `7a938cc4`. Restore prior Sidebar selection and leave the source page visible while honoring the committed Save/Discard choice. Technical reads already stage rows locally and preserve destination state; retain NotFound's current clear/silent semantics.
-4. F1077 - Keep Classes navigation coherent when `loadClasses()` fails after leave confirmation: selected/in progress; investigate destination/sidebar and source-page behavior after the failure while honoring the committed Save/Discard choice.
-
-#### Pending next-batch preview: Batch470 (not active)
-
-1. F1078 - Keep Calendar single-event edits retryable after save failure: provisional. Preserve the dialog fields and show the error after a failed single-event save; close only after a retry persists successfully. See the progress log for discovery evidence.
+1. F1078 - Keep Calendar single-event edits retryable after save failure: selected/in progress. For single-event create/edit, retain the dialog fields and show the error after a failed save; retry must persist before the dialog closes. See the progress log for discovery evidence and acceptance.
 
 #### Deferred candidates
 
