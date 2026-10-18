@@ -53,39 +53,35 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1048 complete; F1049 accepted)
+### Current checkpoint - 2026-10-18 (F1049 complete; F1050 accepted)
 
-F1048 is complete at acceptance commit
-`a9e136009d22a52c4e5faa0ee606a715199f2b66` and source/test commit
-`28171108bcb7f3ddfdaf83bc277c9434f42ef5cb`. The class-co-teacher repository
-returns typed `TeacherNotFound` from its atomic conditional write; the adapter
-maps it to recoverable `NotFound`. The legacy `Status` method retains its
-original SQL and `SqlQueryUtils::userMessage()` diagnostic path.
+F1049 is complete at source/test commit `4fd66df346abccde4b2c3f2a04008ce3a4a0d663`.
+Typed roster-row transfer persists the use case's prepared snapshots through
+the active session's `RosterRepository::saveRosters()` transaction. Explicit
+UI confirmation controls questionable source lengths, and questionable lengths
+in the exact prepared target require a second confirmation before saving. The
+adapter has no `RosterService` or `DataService` fallback.
 
-The Executor and independent Tester built `ClassMngr` and
-`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests` in
-the canonical `build/windows-x64-debug` tree. The matching CTest passed 1/1.
-Coverage includes unknown positive teacher ID, typed repository and recoverable
-port results, unchanged class information and schedules, legacy diagnostic
-parity, assignment/unassignment behavior, and trigger-injected nonrecoverable
-Technical failure. `git diff --check` passed. The sandbox build initially hit
-MSBuild FileTracker `E_ACCESSDENIED`; an elevated retry in the same tree passed.
-No full suite ran.
+The canonical Debug build passed for `ClassMngr`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`, and
+`ClassMngrRosterTransferMenuTests`; all three matching CTests passed. Coverage
+includes prepared payloads, source/target confirmation and cancellation,
+normalized persistence, unavailable-session handling, and rollback on a
+second-roster failure. `git diff --check` passed. No full suite ran.
 
-Two independent post-F1048 audits reviewed all 13 official Deferred entries;
-none became actionable, resolved, or superseded, and all remain unchanged.
-Batch434 closed with F1048 as its only accepted slice. Batch435 discovery is
-complete and F1049 is accepted for implementation. The roster-row-transfer
-adapter will move from `RosterService` to the active session's transactional
-`RosterRepository`, persist the use case's prepared snapshots, and honor
-questionable Korean name lengths after the existing UI confirmation. This
-addresses the mismatch where `RosterService::saveRosters` re-rejects those
-confirmed values using its stricter default. Batch435 also found mapping-table
-staleness to correct at slice closure; its accessor audit did not identify
-another production candidate. All 13 official Deferred entries remain
-unchanged. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and
-F1007 remains pending policy reconciliation.
-
+Two independent audits around F1049 closure reviewed all 13 official Deferred
+entries; none became actionable, resolved, or superseded. Batch436 closed as a
+discovery shortfall, with no claim that Phase 2 has no remaining slices.
+Batch437 discovery found F1050: a wide positive assigned teacher ID such as
+`2147483648` is narrowed in the regular Class Details validation-context path,
+blocking an otherwise valid edit even though the typed save path supports that
+ID. F1050 is accepted before implementation to preserve the 64-bit teacher ID
+through that context and policy path, with a repository-backed regression and
+regular page save parity coverage. A complementary feature-boundary lane found
+no other candidate; all 13 Deferred entries remain unchanged. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate
+is Open. Deployment remains `phase2_resume_batch398_f1028`.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.

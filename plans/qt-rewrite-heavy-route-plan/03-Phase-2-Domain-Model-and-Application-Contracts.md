@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1049 is accepted before implementation; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1050 is accepted before implementation; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Batch435 (active)
+#### Batch437 (active)
 
-- F1049 - Direct typed roster-row-transfer saves through the active session's
-  `RosterRepository`; preserve the confirmed UI validation policy.
+- F1050 - Preserve positive 64-bit teacher IDs through regular Class Details
+  validation-context reload and save.
+
+No other slices were found.
 
 #### Deferred candidates
 

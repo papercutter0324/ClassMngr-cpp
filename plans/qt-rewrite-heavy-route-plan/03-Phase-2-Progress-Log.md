@@ -45207,3 +45207,92 @@ F1048; the `ApplicationServices` boundary and `dataService()`/
 findings into the mapping's closure documentation. All 13 official Deferred
 entries remain unchanged. Gates 1/2 remain Partial, the Phase 2 exit gate
 remains Open, and F1007 remains pending policy reconciliation.
+
+### F1049 complete; post-commit audits clear; Batch435 closed - 2026-10-18
+
+F1049 source commit `4fd66df3` routes typed roster-row-transfer persistence
+through the active session's `RosterRepository::saveRosters()` transaction.
+The use case passes its prepared source and target snapshots. The source's
+questionable Korean name lengths are allowed only after the UI's explicit
+validation confirmation; questionable lengths in the exact prepared target
+are passed with their issues to a confirmation port, and a rejection cancels
+before save. Closed/unavailable sessions map to recoverable `NotFound`, and
+the adapter has no `RosterService` or `DataService` fallback.
+
+The canonical `build/windows-x64-debug` build succeeded for `ClassMngr`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`, and
+`ClassMngrRosterTransferMenuTests`. The three matching CTests passed 3/3;
+`git diff --check` passed. Coverage includes the explicit source/target
+confirmation behavior, prepared payloads, normalized persistence, atomic
+rollback on the second roster failure, and unavailable-session handling. No
+full suite ran.
+
+Two independent audits around F1049 closure found no newly actionable official
+Deferred candidate; all 13 remain unchanged. Batch435 closes with F1049 as its only
+accepted slice. Gates 1/2 remain Partial, the Phase 2 exit gate remains Open,
+and F1007 remains pending policy reconciliation.
+
+### Batch436 discovery shortfall - 2026-10-18
+
+Independent app/domain and repository/platform discovery lanes found no
+actionable Batch436 candidate. The post-F1049 audit found all 13 official
+Deferred entries unchanged. Batch436 closes as a discovery shortfall; no
+claim is made that Phase 2 has no remaining slices.
+Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
+pending policy reconciliation.
+
+### Batch437 discovery; F1050 accepted before implementation - 2026-10-18
+
+The teacher/setup/class and remaining feature-boundary review found a width
+mismatch in the regular Class Details page-save validation context.
+`ClassPageDetailsReadRecord::teacherId` is `int` in
+`src/data/repositories/class_info_repository.h`, and
+`ClassInfoRepository::loadClassPageDetailsDetailed()` converts the SQLite
+`teacher_id` value with `QVariant::toInt()` in
+`src/data/repositories/class_info_repository.cpp`. The repository-backed
+platform context port forwards that value through int fields in
+`src/next/application/class_details_validation_context_query.h`; the Qt-free
+`ClassDetailsValidationInput::teacherId` is also `int`, and
+`ClassDetailsValidationPolicy` rejects zero and values below the `-1` null
+sentinel in `src/next/application/class_details_validation_policy.h`.
+
+The schema declares `teacher_id INTEGER` in
+`src/data/database/database_schema_manager.cpp`. The typed class-details save
+port stores teacher IDs as `qint64`, and
+`savesWideTeacherIdAtomicallyWithClassDetails()` in
+`tests/next_platform_application_services_class_details_save_port_tests.cpp`
+proves that `2147483648` persists. The setup parity case
+`wideTeacherSelectionReachesTypedSave()` in
+`tests/initial_setup_wizard_class_create_save_parity_tests.cpp` also creates
+and saves that ID. The regular page workflow reloads validation context before
+policy validation (`src/next/application/class_details_save_workflow.h` and
+`src/features/classes/ui/class_details_page.cpp`), so the narrowing read makes
+a normal page edit fail even though the typed save port supports the value.
+The policy and save path impose no explicit upper bound.
+
+F1050 is accepted before implementation: preserve positive 64-bit teacher IDs
+from the repository-backed regular Class Details validation-context result
+through the Qt-free context contract and validation input/policy. A normal
+page edit with teacher ID `2147483648` must complete and leave that exact ID
+persisted. Keep class IDs and unrelated legacy teacher-selection paths
+unchanged, preserve the null sentinel `-1`, and continue rejecting teacher ID
+zero and values below `-1`.
+
+Focused acceptance adds a wide-ID case to
+`tests/next_platform_application_services_class_details_validation_context_port_tests.cpp`,
+type/policy coverage as needed in
+`tests/next_application_class_details_validation_context_query_tests.cpp` and
+`tests/next_application_class_details_validation_policy_tests.cpp`, and a
+normal edit-save regression in
+`tests/class_details_page_save_parity_tests.cpp`; retain existing invalid-ID
+coverage. Build `ClassMngr`,
+`ClassMngrNextApplicationClassDetailsValidationContextQueryTests`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests`,
+and `ClassMngrClassDetailsPageSaveParityTests` in
+`build/windows-x64-debug`; run only matching CTests and `git diff --check`, with
+no full suite. This acceptance records no implementation or verification
+result. No other slices were found. Gates 1/2 remain Partial, the Phase 2 exit
+gate remains Open, and F1007 remains pending policy reconciliation.
