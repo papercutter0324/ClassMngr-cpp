@@ -53,39 +53,31 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1047 complete; F1048 accepted)
+### Current checkpoint - 2026-10-18 (F1048 complete; Batch435 active)
 
-F1047 is complete at source/test commit
-`4f812b76dc15d291daa714f66eccb23957683c91`. Testing-class deletion now
-returns a typed Missing or Technical outcome while the legacy `Status` method
-preserves its existing diagnostic. The final conditional parent DELETE checks
-for a matching testing subtype without a pre-read; zero affected rows roll
-back child deletions and return typed Missing, while unknown/unexpected counts
-remain Technical. This also prevents deleting a regular class through the
-testing-class repository. The platform adapter maps Missing to recoverable
-`NotFound` and Technical to nonrecoverable `Technical`.
+F1048 is complete at acceptance commit
+`a9e136009d22a52c4e5faa0ee606a715199f2b66` and source/test commit
+`28171108bcb7f3ddfdaf83bc277c9434f42ef5cb`. The class-co-teacher repository
+returns typed `TeacherNotFound` from its atomic conditional write; the adapter
+maps it to recoverable `NotFound`. The legacy `Status` method retains its
+original SQL and `SqlQueryUtils::userMessage()` diagnostic path.
 
-The Executor and independent Tester built `ClassMngr`,
-`ClassMngrTestingClassRepositoryTests`, and
-`ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests` in the
-required `build/windows-x64-debug` tree. The matching CTests #21 and #456
-passed 2/2. Coverage includes typed missing, wrapper diagnostic compatibility,
-rollback on missing and injected SQL failure, regular-class preservation,
-and adapter error mapping. `git diff --check` passed. The sandbox build hit
-MSBuild FileTracker access denial; an elevated retry in the same tree passed.
+The Executor and independent Tester built `ClassMngr` and
+`ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests` in
+the canonical `build/windows-x64-debug` tree. The matching CTest passed 1/1.
+Coverage includes unknown positive teacher ID, typed repository and recoverable
+port results, unchanged class information and schedules, legacy diagnostic
+parity, assignment/unassignment behavior, and trigger-injected nonrecoverable
+Technical failure. `git diff --check` passed. The sandbox build initially hit
+MSBuild FileTracker `E_ACCESSDENIED`; an elevated retry in the same tree passed.
 No full suite ran.
 
-Two independent post-F1047 audits reviewed all 13 official Deferred entries;
-none became actionable, resolved, or superseded. Batch432's application
-contract and repository mutation lanes and Batch433's domain invariant and
-coordinator state lanes found no additional candidate; Batch431 was also a
-discovery shortfall. Batch434's operation-result lane found no mismatch. The
-teacher/class write lane established that a stale positive co-teacher ID is
-rejected by the database foreign key but reported as nonrecoverable Technical;
-F1048 is accepted to return a typed missing-teacher result and map it to
-recoverable NotFound atomically while preserving the legacy repository API.
-The plan's 13 Deferred entries remain unchanged. Gates 1/2 remain Partial, the
-Phase 2 exit gate remains Open, and F1007 remains pending policy reconciliation.
+Two independent post-F1048 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded, and all remain unchanged.
+Batch434 closed with F1048 as its only accepted slice. Batch435 discovery is
+active, checking the legacy application mapping against current source. Gates
+1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
+pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

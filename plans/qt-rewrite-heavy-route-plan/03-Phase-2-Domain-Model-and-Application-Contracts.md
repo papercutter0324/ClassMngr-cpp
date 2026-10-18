@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1048 is accepted before implementation; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1048 is complete and Batch435 discovery is active; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Batch434 (active)
-
-- F1048 - Missing-teacher result for class co-teacher assignment: return typed recoverable `NotFound` atomically while preserving technical failures and legacy behavior.
+#### Batch435 (discovery active)
 
 #### Deferred candidates
 
