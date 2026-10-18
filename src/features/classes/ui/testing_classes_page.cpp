@@ -176,7 +176,37 @@ void TestingClassesPage::refresh()
 
     if (requestedClassId > 0)
     {
+        const int previousClassId = m_currentClassId;
         loadClass(requestedClassId);
+        if (
+            m_currentClassId != requestedClassId
+            && previousClassId > 0
+            )
+        {
+            int previousRow = -1;
+            for (int row = 0; row < m_classList->count(); ++row)
+            {
+                if (
+                    m_classList->item(row)
+                        ->data(Qt::UserRole)
+                        .toInt() == previousClassId
+                    )
+                {
+                    previousRow = row;
+                    break;
+                }
+            }
+
+            if (previousRow >= 0)
+            {
+                const QSignalBlocker blocker(m_classList);
+                m_classList->setCurrentRow(previousRow);
+            }
+            else
+            {
+                beginNewClass({}, {}, false);
+            }
+        }
         return;
     }
 

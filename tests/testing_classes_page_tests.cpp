@@ -546,6 +546,8 @@ private slots:
     void missingTestingClassDetailsShowsWarning();
     void testingClassDetailsReadFailureShowsWarningWithoutFallback();
     void cleanTestingClassSelectionFailureRestoresActiveClass();
+    void programmaticTestingClassDetailsFailureRestoresActiveClass();
+    void programmaticTestingClassDetailsFailureWithoutPriorChoiceClearsTarget();
     void dirtyTestingClassSelectionLoadsRequestedClassAfterSave();
     void dirtyTestingClassSelectionFailureRestoresSavedClass();
     void dirtyTestingClassSelectionFailureWithoutPriorRowClearsTarget();
@@ -1985,6 +1987,202 @@ cleanTestingClassSelectionFailureRestoresActiveClass()
     QVERIFY(list->currentItem());
     QCOMPARE(testingClassRow(list, fixture.secondClassId), list->currentRow());
     QCOMPARE(nameEdit->text(), QStringLiteral("Beta B"));
+}
+
+void TestingClassesPageTests::
+programmaticTestingClassDetailsFailureRestoresActiveClass()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+
+    Roster firstRoster = rosterWithEvaluation();
+    firstRoster.rows[0][0] = QStringLiteral("Alpha roster marker");
+    Roster secondRoster = rosterWithEvaluation();
+    secondRoster.rows[0][0] = QStringLiteral("Beta roster marker");
+    auto* rosterRepository =
+        fixture.services.databaseSession()->rosterRepository();
+    QVERIFY(rosterRepository);
+    QVERIFY(rosterRepository->saveRoster(
+        fixture.firstClassId,
+        firstRoster
+        ).has_value());
+    QVERIFY(rosterRepository->saveRoster(
+        fixture.secondClassId,
+        secondRoster
+        ).has_value());
+
+    const auto allChoices = fixture.choicesReadPort.result;
+    fixture.choicesReadPort.resultsByCall = {
+        allChoices,
+        allChoices
+    };
+    fixture.readPort.result = ClassMngr::Next::Application::
+        TestingClassDetailsReadResult::success(testingClassDetails(
+            fixture.firstClassId,
+            QStringLiteral("Alpha A")
+            ));
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected Beta details read failure",
+            .recoverable = false
+        })
+    };
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* deleteButton = fixture.page->findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    auto* rosterTable = fixture.page->findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QVERIFY(deleteButton);
+    QVERIFY(rosterTable);
+    const int englishColumn = columnByName(
+        rosterTable->model(),
+        QStringLiteral("English")
+        );
+    QVERIFY(englishColumn >= 0);
+    QCOMPARE(
+        rosterTable->model()->index(0, englishColumn).data().toString(),
+        QStringLiteral("Alpha Roster Marker")
+        );
+
+    fixture.page->openTestingClass(fixture.secondClassId);
+    fixture.page->refresh();
+
+    QCOMPARE(fixture.readPort.callCount, 2);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(1),
+        std::to_string(fixture.secondClassId)
+        );
+    QVERIFY(list->currentItem());
+    QCOMPARE(
+        list->currentItem()->data(Qt::UserRole).toInt(),
+        fixture.firstClassId
+        );
+    QCOMPARE(nameEdit->text(), QStringLiteral("Alpha A"));
+    QCOMPARE(
+        rosterTable->model()->index(0, englishColumn).data().toString(),
+        QStringLiteral("Alpha Roster Marker")
+        );
+    QVERIFY(deleteButton->isEnabled());
+    QVERIFY(!fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected Beta details read failure")
+        );
+
+    nameEdit->setText(QStringLiteral("Update still targets A"));
+    QVERIFY(fixture.page->saveChanges());
+    QCOMPARE(fixture.updatePort.callCount, 1);
+    QVERIFY(fixture.updatePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.updatePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Destructive);
+    deleteButton->click();
+    QCOMPARE(fixture.deletePort.callCount, 1);
+    QVERIFY(fixture.deletePort.lastRequest.has_value());
+    QCOMPARE(
+        fixture.deletePort.lastRequest->classId.value(),
+        std::to_string(fixture.firstClassId)
+        );
+}
+
+void TestingClassesPageTests::
+programmaticTestingClassDetailsFailureWithoutPriorChoiceClearsTarget()
+{
+    TestingClassSelectionFixture fixture;
+    QVERIFY(fixture.createClasses());
+
+    const auto allChoices = fixture.choicesReadPort.result;
+    setSingleTestingClassChoice(
+        fixture.choicesReadPort,
+        fixture.secondClassId,
+        QStringLiteral("Beta B")
+        );
+    const auto betaChoice = fixture.choicesReadPort.result;
+    fixture.choicesReadPort.resultsByCall = {
+        allChoices,
+        betaChoice
+    };
+    fixture.readPort.result = ClassMngr::Next::Application::
+        TestingClassDetailsReadResult::success(testingClassDetails(
+            fixture.firstClassId,
+            QStringLiteral("Alpha A")
+            ));
+    fixture.readPort.resultsByCall = {
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::success(
+            testingClassDetails(
+                fixture.firstClassId,
+                QStringLiteral("Alpha A")
+                )
+            ),
+        ClassMngr::Next::Application::TestingClassDetailsReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "injected Beta details read failure",
+            .recoverable = false
+        })
+    };
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    fixture.openFirstClass();
+
+    auto* list = fixture.page->findChild<QListWidget*>(
+        QStringLiteral("testingClassesList")
+        );
+    auto* nameEdit = fixture.page->findChild<QLineEdit*>(
+        QStringLiteral("testingClassNameEdit")
+        );
+    auto* deleteButton = fixture.page->findChild<QPushButton*>(
+        QStringLiteral("testingClassesDeleteButton")
+        );
+    auto* tabs = fixture.page->findChild<QTabWidget*>();
+    QVERIFY(list);
+    QVERIFY(nameEdit);
+    QVERIFY(deleteButton);
+    QVERIFY(tabs);
+    QCOMPARE(testingClassRow(list, fixture.firstClassId), list->currentRow());
+
+    fixture.page->openTestingClass(fixture.secondClassId);
+    fixture.page->refresh();
+
+    QCOMPARE(fixture.readPort.callCount, 2);
+    QCOMPARE(
+        fixture.readPort.requestedClassIds.at(1),
+        std::to_string(fixture.secondClassId)
+        );
+    QCOMPARE(list->count(), 1);
+    QVERIFY(!list->currentItem());
+    QCOMPARE(nameEdit->text(), QStringLiteral("Testing Class"));
+    QVERIFY(!deleteButton->isEnabled());
+    QVERIFY(!tabs->isTabEnabled(1));
+    QVERIFY(!fixture.page->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("injected Beta details read failure")
+        );
 }
 
 void TestingClassesPageTests::
