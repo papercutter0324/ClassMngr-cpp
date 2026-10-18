@@ -199,6 +199,33 @@ bool installFailingSignaturePreferenceReadView(
             );
 }
 
+bool installFailingZoomUnavailableReadView(
+    ApplicationServices& services
+    )
+{
+    return executeSql(
+               services,
+               QStringLiteral(
+                   "ALTER TABLE app_settings "
+                   "RENAME TO app_settings_preserved"
+                   )
+               )
+        && executeSql(
+            services,
+            QStringLiteral(R"(
+                CREATE VIEW app_settings AS
+                SELECT
+                    key,
+                    CASE
+                        WHEN key = 'myInfo/zoomNotAvailable'
+                        THEN abs(-9223372036854775807 - 1)
+                        ELSE value
+                    END AS value
+                FROM app_settings_preserved
+            )")
+            );
+}
+
 bool restoreSettingsTable(ApplicationServices& services)
 {
     return executeSql(services, QStringLiteral("DROP VIEW app_settings"))
@@ -368,6 +395,7 @@ private slots:
     void storedZoomCredentialsPrefillAndRespectUnavailableState();
     void missingZoomValuesUseNaFallbackAndDisableFields();
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
+    void zoomPreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload();
     void storedSignaturePreferencesPopulateModeTextAndFont();
     void signaturePreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload();
     void unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad();
@@ -1615,6 +1643,122 @@ void MyWorkspacePageTests::legacyZoomValuesMigrateDuringPersonalDetailsLoad()
             ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
             ->toString(),
         QStringLiteral("legacy secret")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomNotAvailableKey))
+            ->toBool(),
+        false
+        );
+}
+
+void MyWorkspacePageTests::
+zoomPreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Stored Name")},
+        {QString::fromUtf8(CurrentCampusKey), QStringLiteral("Jeongja")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("stored-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("stored-pass")},
+        {QString::fromUtf8(ZoomNotAvailableKey), false},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.dataService()->saveSettings(initialValues));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    auto* const name = personalNameEditor(page);
+    auto* const loginId = personalZoomLoginEditor(page);
+    auto* const password = personalZoomPasswordEditor(page);
+    auto* const unavailable = personalZoomUnavailableCheck(page);
+    QVERIFY(details);
+    QVERIFY(name);
+    QVERIFY(loginId);
+    QVERIFY(password);
+    QVERIFY(unavailable);
+    QCOMPARE(loginId->text(), QStringLiteral("stored-login"));
+    QCOMPARE(password->text(), QStringLiteral("stored-pass"));
+    QVERIFY(!unavailable->isChecked());
+
+    loginId->setText(QStringLiteral("visible draft login"));
+    password->setText(QStringLiteral("visible draft password"));
+    QVERIFY(installFailingZoomUnavailableReadView(services));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral(
+                "Failed to load setting.*myInfo/zoomNotAvailable.*"
+                )
+            )
+        );
+    details->discardChanges();
+
+    QCOMPARE(loginId->text(), QStringLiteral("visible draft login"));
+    QCOMPARE(password->text(), QStringLiteral("visible draft password"));
+    QVERIFY(!unavailable->isChecked());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Zoom Preferences Could Not Be Loaded")
+        );
+    QVERIFY(prompts.messages.constFirst().details.contains(
+        QStringLiteral("myInfo/zoomNotAvailable")
+        ));
+
+    name->setText(QStringLiteral("Should Not Be Saved"));
+    QVERIFY(!details->saveChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("Zoom preferences are unknown")
+        ));
+
+    QVERIFY(restoreSettingsTable(services));
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        QCOMPARE(
+            services.dataService()->loadSetting(setting.key()).value(),
+            setting.value()
+            );
+    }
+
+    details->discardChanges();
+    QCOMPARE(loginId->text(), QStringLiteral("stored-login"));
+    QCOMPARE(password->text(), QStringLiteral("stored-pass"));
+    QVERIFY(!unavailable->isChecked());
+    name->setText(QStringLiteral("Recovered Name"));
+    QVERIFY(details->saveChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        QStringLiteral("Recovered Name")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomLoginIdKey))
+            ->toString(),
+        QStringLiteral("stored-login")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(ZoomPasswordKey))
+            ->toString(),
+        QStringLiteral("stored-pass")
         );
     QCOMPARE(
         services.dataService()

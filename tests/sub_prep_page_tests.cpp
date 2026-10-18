@@ -409,6 +409,7 @@ private slots:
     void emptyCampusDetailsDisplayNotAvailable();
     void campusReadFailureShowsUnavailableDetailsAndWarning();
     void zoomUnavailableHidesStoredCredentials();
+    void zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic();
     void unavailablePreferenceLoadsPreservePageValues();
     void unavailablePreferenceSaveHasNoSideEffects();
     void failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft();
@@ -1616,6 +1617,106 @@ void SubPrepPageTests
                 )
             ->toString(),
         QStringLiteral("legacy@example.com")
+        );
+}
+
+void SubPrepPageTests::
+zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic()
+{
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/zoomLoginId"),
+        QStringLiteral("teacher@example.com")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/zoomPassword"),
+        QStringLiteral("stored password")
+        );
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/zoomNotAvailable"),
+        false
+        );
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+
+    auto* const loginId = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepZoomLoginIdEdit")
+        );
+    auto* const password = page.findChild<QLineEdit*>(
+        QStringLiteral("subPrepZoomPasswordEdit")
+        );
+    QVERIFY(loginId);
+    QVERIFY(password);
+    QVERIFY(loginId->isReadOnly());
+    QVERIFY(password->isReadOnly());
+    QCOMPARE(loginId->text(), QStringLiteral("teacher@example.com"));
+    QCOMPARE(password->text(), QStringLiteral("stored password"));
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("myInfo/zoomNotAvailable"),
+        QStringLiteral("Injected personal Zoom read failure")
+        );
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral(
+                "Failed to load setting.*myInfo/zoomNotAvailable.*"
+                )
+            )
+        );
+    page.refresh();
+
+    QCOMPARE(loginId->text(), QStringLiteral("teacher@example.com"));
+    QCOMPARE(password->text(), QStringLiteral("stored password"));
+    QCOMPARE(promptService.messages.size(), 1);
+    const PromptRequest& warning = promptService.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(
+        warning.title,
+        QStringLiteral("Personal Zoom Information Could Not Be Loaded")
+        );
+    QVERIFY(warning.message.contains(QStringLiteral("kept")));
+    QVERIFY(warning.message.contains(QStringLiteral("Refresh this page")));
+    QVERIFY(warning.details.contains(
+        QStringLiteral("myInfo/zoomNotAvailable")
+        ));
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(QString(), QString());
+    page.refresh();
+    QCOMPARE(loginId->text(), QStringLiteral("teacher@example.com"));
+    QCOMPARE(password->text(), QStringLiteral("stored password"));
+    QCOMPARE(promptService.messages.size(), 1);
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("myInfo/zoomLoginId"))
+            ->toString(),
+        QStringLiteral("teacher@example.com")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("myInfo/zoomPassword"))
+            ->toString(),
+        QStringLiteral("stored password")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QStringLiteral("myInfo/zoomNotAvailable"))
+            ->toBool(),
+        false
         );
 }
 

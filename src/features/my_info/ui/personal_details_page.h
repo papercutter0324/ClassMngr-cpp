@@ -125,5 +125,6 @@ private:
     bool m_hasFailedCampusCorrection = false;
     bool m_storedNameKnown = false;
     bool m_signaturePreferencesKnown = false;
+    bool m_zoomPreferencesKnown = false;
 
 };

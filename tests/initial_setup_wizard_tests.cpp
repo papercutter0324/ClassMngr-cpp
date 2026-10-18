@@ -134,6 +134,33 @@ bool installFailingSignaturePreferenceReadView(
             );
 }
 
+bool installFailingZoomUnavailableReadView(
+    ApplicationServices& services
+    )
+{
+    return executeSql(
+               services,
+               QStringLiteral(
+                   "ALTER TABLE app_settings "
+                   "RENAME TO app_settings_preserved"
+                   )
+               )
+        && executeSql(
+            services,
+            QStringLiteral(R"(
+                CREATE VIEW app_settings AS
+                SELECT
+                    key,
+                    CASE
+                        WHEN key = 'myInfo/zoomNotAvailable'
+                        THEN abs(-9223372036854775807 - 1)
+                        ELSE value
+                    END AS value
+                FROM app_settings_preserved
+            )")
+            );
+}
+
 bool restoreSettingsTable(ApplicationServices& services)
 {
     return executeSql(services, QStringLiteral("DROP VIEW app_settings"))
@@ -196,6 +223,7 @@ private slots:
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void campusReadFailureBlocksAggregateSaveAndCanRetry();
     void signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry();
+    void zoomPreferenceReadFailureBlocksAggregateSaveAndCanRetry();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
     void aggregateSaveComposesTypedReadsWithoutDataLoss();
@@ -1061,6 +1089,101 @@ signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry()
             ).toInt(),
         2
         );
+}
+
+void InitialSetupWizardTests::
+zoomPreferenceReadFailureBlocksAggregateSaveAndCanRetry()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QString typedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Old Name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("Bundang")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old-password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), false},
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), typedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    QWizardPage* const personalDetailsPage =
+        wizard.page(InitialSetupWizard::PersonalDetailsPage);
+    QVERIFY(personalDetailsPage);
+    personalDetailsPage->initializePage();
+    auto* const name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    QVERIFY(name);
+    QCOMPARE(name->text(), QStringLiteral("Old Name"));
+    name->setText(QStringLiteral("New Name"));
+
+    QVERIFY(installFailingZoomUnavailableReadView(services));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral(
+                "Failed to load setting.*myInfo/zoomNotAvailable.*"
+                )
+            )
+        );
+    QVERIFY(!personalDetailsPage->validatePage());
+
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Initial Setup"));
+    QVERIFY(warning.message.contains(QStringLiteral("not saved")));
+    QVERIFY(warning.message.contains(QStringLiteral("Retry by selecting Next")));
+    QVERIFY(warning.details.contains(QStringLiteral("myInfo/zoomNotAvailable")));
+
+    QVERIFY(restoreSettingsTable(services));
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        QCOMPARE(
+            services.settingsService()->loadOrDefault(
+                setting.key(), QVariant()
+                ),
+            setting.value()
+            );
+    }
+
+    QVERIFY(personalDetailsPage->validatePage());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(DisplayNameKey), QVariant()
+            ).toString(),
+        QStringLiteral("New Name")
+        );
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        if (setting.key() == QString::fromUtf8(DisplayNameKey))
+        {
+            continue;
+        }
+        QCOMPARE(
+            services.settingsService()->loadOrDefault(
+                setting.key(), QVariant()
+                ),
+            setting.value()
+            );
+    }
 }
 
 void InitialSetupWizardTests::

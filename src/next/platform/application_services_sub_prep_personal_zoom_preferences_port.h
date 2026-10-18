@@ -15,8 +15,9 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for Sub Prep personal-Zoom settings. Primary values
-// win; legacy values are read only when primary values are absent and are
-// migrated best-effort without changing the typed read result on save error.
+// win; legacy values are read only when primary values are missing or invalid.
+// Legacy values migrate best-effort after all required settings were read,
+// without changing the typed result if a migration save fails.
 class ApplicationServicesSubPrepPersonalZoomPreferencesPort final
     : public Application::SubPrepPersonalZoomPreferencesPort
 {

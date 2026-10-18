@@ -69,6 +69,76 @@ bool executeSql(
     return query.exec(statement);
 }
 
+bool installFailingSettingReadView(
+    ApplicationServices& services,
+    const QString& failingKey
+    )
+{
+    if (!executeSql(
+            services,
+            QStringLiteral(
+                "ALTER TABLE app_settings RENAME TO app_settings_preserved"
+                )
+            ))
+    {
+        return false;
+    }
+
+    return executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE VIEW app_settings AS
+            SELECT
+                key,
+                CASE
+                    WHEN key = '%1'
+                    THEN abs(-9223372036854775807 - 1)
+                    ELSE value
+                END AS value
+            FROM app_settings_preserved
+        )").arg(failingKey)
+        );
+}
+
+bool rawSettingExists(
+    ApplicationServices& services,
+    const QString& key
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    query.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM app_settings_preserved WHERE key = ?"
+        ));
+    query.addBindValue(key);
+    return query.exec() && query.next() && query.value(0).toInt() > 0;
+}
+
+bool rawSettingEquals(
+    ApplicationServices& services,
+    const QString& key,
+    const QVariant& expected
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    query.prepare(QStringLiteral(
+        "SELECT value FROM app_settings_preserved WHERE key = ?"
+        ));
+    query.addBindValue(key);
+    return query.exec() && query.next() && query.value(0) == expected;
+}
+
 std::string utf8(const QString& value)
 {
     const QByteArray encoded = value.toUtf8();
@@ -93,7 +163,8 @@ private slots:
     void unavailableSettingsFailWithoutChangingCallerState();
     void closedSessionFailsWithoutDataServiceFallback();
     void migrationSaveFailureStillReturnsLegacyValues();
-    void repositoryReadFailureWarnsAndUsesDefaults();
+    void repositoryReadFailureReturnsTechnicalError();
+    void technicalReadFailuresDoNotFallBackOrStartMigration();
 
 private:
     QTemporaryDir m_directory;
@@ -414,7 +485,7 @@ migrationSaveFailureStillReturnsLegacyValues()
 }
 
 void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
-repositoryReadFailureWarnsAndUsesDefaults()
+repositoryReadFailureReturnsTechnicalError()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -422,24 +493,109 @@ repositoryReadFailureWarnsAndUsesDefaults()
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
 
     ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
-    for (int index = 0; index < 6; ++index)
-    {
-        QTest::ignoreMessage(
-            QtWarningMsg,
-            QRegularExpression(QStringLiteral("Failed to load setting.*"))
-            );
-    }
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/zoomLoginId.*")
+            )
+        );
 
     const auto loaded = port.load();
-    QVERIFY(loaded);
-    QCOMPARE(
-        loaded.value(),
-        (SubPrepPersonalZoomPreferences{
-            .loginId = "N/A",
-            .password = "N/A",
-            .unavailable = true
-        })
-        );
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+}
+
+void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
+technicalReadFailuresDoNotFallBackOrStartMigration()
+{
+    const QVariantMap legacyValues = {
+        {QString::fromUtf8(LegacyLoginIdKey), QStringLiteral("legacy login")},
+        {QString::fromUtf8(LegacyPasswordKey), QStringLiteral("legacy pass")},
+        {QString::fromUtf8(LegacyUnavailableKey), false}
+    };
+
+    for (const QString& failingKey : {
+             QString::fromUtf8(PrimaryLoginIdKey),
+             QString::fromUtf8(PrimaryPasswordKey),
+             QString::fromUtf8(PrimaryUnavailableKey),
+             QString::fromUtf8(LegacyLoginIdKey),
+             QString::fromUtf8(LegacyPasswordKey),
+             QString::fromUtf8(LegacyUnavailableKey)
+         })
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.dataService());
+        SettingsRepository* const repository = settingsRepository(services);
+        QVERIFY(repository);
+        QVERIFY(repository->saveSettings(legacyValues));
+
+        QVariant seededPrimaryValue;
+        if (failingKey == QString::fromUtf8(PrimaryLoginIdKey))
+        {
+            seededPrimaryValue = QStringLiteral("primary login");
+            QVERIFY(repository->saveSetting(
+                failingKey,
+                seededPrimaryValue
+                ));
+        }
+        else if (failingKey == QString::fromUtf8(PrimaryPasswordKey))
+        {
+            seededPrimaryValue = QStringLiteral("primary password");
+            QVERIFY(repository->saveSetting(
+                failingKey,
+                seededPrimaryValue
+                ));
+        }
+        else if (failingKey == QString::fromUtf8(PrimaryUnavailableKey))
+        {
+            seededPrimaryValue = false;
+            QVERIFY(repository->saveSetting(failingKey, seededPrimaryValue));
+        }
+
+        QVERIFY(installFailingSettingReadView(services, failingKey));
+        QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(
+                QStringLiteral("Failed to load setting.*%1.*")
+                    .arg(QRegularExpression::escape(failingKey))
+                )
+            );
+
+        ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
+        const auto loaded = port.load();
+        QVERIFY(!loaded);
+        QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+        QVERIFY(loaded.error().message.find(failingKey.toStdString())
+            != std::string::npos);
+
+        for (const QString& primaryKey : {
+                 QString::fromUtf8(PrimaryLoginIdKey),
+                 QString::fromUtf8(PrimaryPasswordKey),
+                 QString::fromUtf8(PrimaryUnavailableKey)
+             })
+        {
+            if (primaryKey == failingKey)
+            {
+                QVERIFY(rawSettingEquals(
+                    services,
+                    primaryKey,
+                    seededPrimaryValue
+                    ));
+            }
+            else
+            {
+                QVERIFY(!rawSettingExists(services, primaryKey));
+            }
+        }
+
+        for (auto setting = legacyValues.cbegin();
+             setting != legacyValues.cend();
+             ++setting)
+        {
+            QVERIFY(rawSettingExists(services, setting.key()));
+        }
+    }
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests)

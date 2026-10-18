@@ -835,6 +835,8 @@ void PersonalDetailsPage::loadPageData()
 }
 bool PersonalDetailsPage::loadStoredSettings()
 {
+    m_zoomPreferencesKnown = false;
+
     const auto storedNameResult =
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort(
@@ -1037,6 +1039,7 @@ bool PersonalDetailsPage::loadStoredSettings()
     const auto storedPreferences = personalZoomPreferencesPort.load();
     if (storedPreferences)
     {
+        m_zoomPreferencesKnown = true;
         const auto& preferences = storedPreferences.value();
         const auto fromUtf8 = [](const std::string& value)
         {
@@ -1059,6 +1062,31 @@ bool PersonalDetailsPage::loadStoredSettings()
                 : password
             );
         m_zoomNotAvailableCheck->setChecked(preferences.unavailable);
+    }
+    else
+    {
+        const auto& error = storedPreferences.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic =
+                tr("No additional error details are available.");
+        }
+
+        DialogServices::showWarning(
+            this,
+            tr("Zoom Preferences Could Not Be Loaded"),
+            tr(
+                "The stored Zoom preferences could not be read. Your current "
+                "Zoom controls have been preserved, and saving is paused "
+                "until a successful reload. Select Discard Changes to retry "
+                "loading the stored settings."
+                ),
+            diagnostic
+            );
     }
     m_signatureImageData = QByteArray::fromStdString(
         ClassMngr::Next::Platform::
@@ -1155,6 +1183,18 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
             *errorMessage = tr(
                 "The stored signature preferences are unknown. Reload My "
                 "Details successfully before saving."
+                );
+        }
+        return false;
+    }
+
+    if (!m_zoomPreferencesKnown)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = tr(
+                "The stored Zoom preferences are unknown. Reload My Details "
+                "successfully before saving."
                 );
         }
         return false;

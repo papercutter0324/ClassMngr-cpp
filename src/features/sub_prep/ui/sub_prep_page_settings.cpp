@@ -169,6 +169,28 @@ void SubPrepPage::loadPersonalZoomInformation()
         personalZoomPreferencesPort.load();
     if (!storedPreferences)
     {
+        const auto& error = storedPreferences.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic = tr(
+                "No additional error details are available."
+                );
+        }
+
+        DialogServices::showWarning(
+            this,
+            tr("Personal Zoom Information Could Not Be Loaded"),
+            tr(
+                "The saved Zoom preferences could not be read. The current "
+                "read-only Zoom fields have been kept. Refresh this page to "
+                "try again."
+                ),
+            diagnostic
+            );
         return;
     }
 

@@ -593,9 +593,32 @@ public:
                 ApplicationServicesSubPrepPersonalZoomPreferencesPort(
                     setup->services()
                     ).load();
-        const auto zoom = zoomResult
-            ? zoomResult.value()
-            : ClassMngr::Next::Application::SubPrepPersonalZoomPreferences{};
+        if (!zoomResult)
+        {
+            const auto& error = zoomResult.error();
+            QString diagnostic = QString::fromUtf8(
+                error.message.data(),
+                static_cast<qsizetype>(error.message.size())
+                );
+            if (diagnostic.isEmpty())
+            {
+                diagnostic =
+                    tr("No additional error details are available.");
+            }
+
+            DialogServices::showWarning(
+                this,
+                tr("Initial Setup"),
+                tr(
+                    "The Zoom preferences could not be read. Your "
+                    "information was not saved. Retry by selecting Next "
+                    "again."
+                    ),
+                diagnostic
+                );
+            return false;
+        }
+        const auto& zoom = zoomResult.value();
 
         const QByteArray storedSignature = QByteArray::fromStdString(
             ClassMngr::Next::Platform::

@@ -48,6 +48,7 @@ void PersonalDetailsPage::clearDatabaseState()
     m_autosave->setLoading(true);
     m_storedNameKnown = false;
     m_signaturePreferencesKnown = false;
+    m_zoomPreferencesKnown = false;
     m_failedCampusCorrectionStoredValue.clear();
     m_failedCampusCorrectionSelectedCampus.clear();
     m_hasFailedCampusCorrection = false;
