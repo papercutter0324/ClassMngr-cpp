@@ -158,6 +158,21 @@ F629 remains open and unaccepted. The Mac had approximately 48 GiB free before
 the build and 44 GiB afterward; 18 GiB is the runner's preflight minimum, not
 observed consumption.
 
+F629 diagnosis confirmed that the parity difference is real but does not yet
+establish a renderer defect. The Mac run5 manifest ties the generated output
+to source commit `667ff54e`, while its historical reference is explicitly
+`sourceBound=false` and `semanticOracleOnly=true`. The renderer measures
+teacher-card frame bounds and inserts breaks before groups that span a page;
+the Mac trace records breaks before Teachers 18 and 21. Bundled Inter and
+Pretendard fonts loaded successfully, but the run does not record effective
+glyph metrics or Windows layout decisions. The checked-in Windows route summary
+has no source identity and omits original route artifacts, and no source-bound
+Windows output for `667ff54e` or Windows route runner is available in this Mac
+workspace. No renderer change is justified by these artifacts. F629 remains
+active and Batch473 remains open; the next evidence step is a source-bound
+Windows run at the same commit, fixture, and font assets, or another
+evidence-backed resolution, followed by the unchanged Mac parity check.
+
 F1090 is complete at source/test commit `f78791a9`. The Sub Prep Zoom
 preference port now returns `Technical` for any primary or required legacy
 read failure. It does not read legacy values after a technical primary error,
@@ -187,13 +202,15 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue F629 by obtaining source-bound Windows layout evidence or another
-evidence-supported resolution for the `output-sub-prep` page-parity mismatch,
-then rerun the macOS universal matrix without weakening the comparator. The
-current-source run had sufficient disk space; its only remaining failure is
-semantic PDF parity. F628's full Windows evidence root also remains unavailable
-in this Mac session, so the combined Phase 0 exit gate cannot be claimed.
-Preserve the open Phase 2 exit gate and unresolved policy reconciliation.
+Continue F629 by obtaining a Windows x64 host or retained source-bound output
+for commit `667ff54e` and comparing its layout inputs and page assignments with
+the Mac trace. If that evidence establishes a product defect, make an
+evidence-supported renderer change and rerun the macOS universal matrix without
+weakening the comparator. The Mac run had sufficient disk space; the 18 GiB
+value is only the runner preflight minimum. F628's full Windows evidence root
+also remains unavailable in this Mac session, so the combined Phase 0 exit
+gate cannot be claimed. Preserve the open Phase 2 exit gate and unresolved
+policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

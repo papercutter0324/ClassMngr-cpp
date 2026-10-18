@@ -38,10 +38,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch473 — Active; 5 discovered slices and 1 reactivated Deferred item, in discovery order (with current status):**
+**Batch473 — Active; 5 discovered candidates plus 1 reactivated Deferred item, in current active work order:**
 
 1. **F1086 — Preserve Schedule display mode after a technical read failure.** Complete at source/test commit `aeb2a46f`.
-2. **F629 — Run the macOS universal Phase 0 route matrix.** Revalidation attempted from clean source; run5 attempted all 24 routes, with 23 completed and only `output-sub-prep` failing strict page-by-page PDF parity on pages 9-10. Open/unaccepted; selected/in progress for diagnosis. Reactivated from Deferred, not from Batch473 discovery. Run4 started at 48 GiB free and ended at 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
+2. **F629 — Run the macOS universal Phase 0 route matrix.** Reactivated from Deferred, not found by Batch473 discovery. From clean source commit `667ff54e`, run5 attempted all 24 routes; 23 completed and only `output-sub-prep` failed strict PDF page parity on pages 9-10. The semantic-only reference differs, but does not establish a renderer defect. Open/unaccepted; selected/in progress. Next: obtain source-bound Windows layout evidence or another evidence-backed resolution, keeping the comparator strict. Run4 began with 48 GiB free and ended with 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
 3. **F1087 — Preserve Middle School Analytics visibility after a technical preference-read failure.** Complete at source/test commit `7ec8ba7a`.
 4. **F1088 — Preserve Evaluation default policy after a technical preference-read failure.** Complete at source/test commit `53c43e75`.
 5. **F1089 — Preserve personal signature settings after technical read errors.** Complete at source/test commit `15c5d035`.

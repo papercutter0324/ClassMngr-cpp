@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F629 is selected/in progress for diagnosis after clean-source revalidation from `667ff54eb716e4669fb2aa44bd6f9470d0572dbc` again left only `output-sub-prep` failing strict page-by-page PDF parity (run4 began at 48 GiB free; 18 GiB is the preflight minimum), so the combined Phase 0 evidence gate remains open; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F629 is selected/in progress: run5 from clean source `667ff54e` attempted all 24 routes, with 23 completed and only `output-sub-prep` failing strict page parity; source-bound Windows layout evidence or another evidence-backed resolution is needed, so the combined Phase 0 evidence gate remains open; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,12 +68,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch473 (5 discovery candidates and 1 reactivated Deferred item)
+#### Active batch: Batch473 (5 discovered candidates and 1 reactivated Deferred item)
 
 Batch473's ordered active slices contain five candidates from the discovery pass plus F629 reactivated from Deferred; F629 was not found by that pass:
 
 1. F1086 - Preserve Schedule display mode after a technical read failure: complete at source/test commit `aeb2a46f`.
-2. F629 - Run the macOS universal Phase 0 route matrix: clean-source revalidation from `667ff54eb716e4669fb2aa44bd6f9470d0572dbc` remains open and unaccepted. The sandbox attempt failed two Calendar routes at `QTcpServer::listen(LocalHost)` plus `output-sub-prep`; run5 with loopback access attempted all 24, completed 23, and only `output-sub-prep` failed strict page-by-page PDF semantic parity on pages 9-10. Selected/in progress for diagnosis. Run4 started at 48 GiB free and ended at 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
+2. F629 - Run the macOS universal Phase 0 route matrix: reactivated from Deferred, not found by Batch473 discovery. Run5 from clean source `667ff54e` attempted all 24 routes, completed 23, and only `output-sub-prep` failed strict page-by-page PDF parity on pages 9-10. The reference is `sourceBound=false` and `semanticOracleOnly=true`: the page-placement mismatch is real against that reference but does not prove a renderer defect. No source-bound Windows output for this commit is available locally; obtain such layout evidence or another evidence-backed resolution while retaining the strict comparator. Selected/in progress and open/unaccepted. Run4 began with 48 GiB free and ended with 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
 3. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: complete at source/test commit `7ec8ba7a`.
 4. F1088 - Preserve Evaluation default policy after a technical preference-read failure: complete at source/test commit `53c43e75`.
 5. F1089 - Preserve personal signature settings after technical read errors: complete at source/test commit `15c5d035`.

@@ -46510,6 +46510,19 @@ has Teacher 21; the reference has Teacher 18 alone on page 9 and Teachers
 assertion was weakened and no renderer fix is claimed. The available Mac trace
 does not establish Windows layout decisions.
 
+The reference metadata is `sourceBound=false` and `semanticOracleOnly=true`;
+therefore the page-placement mismatch is established against that reference,
+but it does not establish a renderer defect. The current renderer uses per-card
+frame bounds and accumulated page-break decisions, and loads bundled fonts;
+evidence does not show identical glyph metrics across platforms. Qt's rich-text
+CSS documentation lists `page-break-before` and `page-break-after`, but not
+`page-break-inside`; this is a documentation-based inference, not evidence of
+the exact runtime behavior. No source-bound Windows output for
+`667ff54e` is checked in or available locally, and the existing Windows run is
+an uncommitted compact summary that cannot be tied to that commit. This Mac has
+no Windows route runner. Next, obtain source-bound Windows layout evidence or
+another evidence-backed resolution without changing the strict comparator.
+
 Run4 began with 48 GiB free and ended with 44 GiB free. The 18 GiB figure is
 the runner's preflight minimum, not observed consumption. F629 is selected/in
 progress for diagnosis; the repeated strict page-parity failure keeps the

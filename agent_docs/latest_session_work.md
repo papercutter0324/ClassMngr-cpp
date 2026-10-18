@@ -4,34 +4,29 @@
 
 - Active deployment: `qt-rewrite-phase2-resume-20260928`; Heavy route; branch
   `Qt-Rewrite`; current checkpoint 2026-10-19.
-- Batch472 is complete and pushed. F1086 source/test commit `aeb2a46f`
-  preserves Schedule display mode after technical preference-read failures
-  and prevents fallback migration after a failed read. Focused verification
-  passed the preference-port and My Workspace CTests (2/2), the targeted
-  ScheduleWidget read-error and save/retry QtTest cases, and
-  `git diff --check`. The broad ScheduleWidget CTest hung without output and was
-  interrupted; no full suite ran.
-- Batch473 has five discovered candidates, F1086-F1090. F1086-F1088 are
-  complete; F629 was resumed from Deferred at the user's direction and remains
-  open after its macOS matrix parity failure; F1089 is next and F1090 remains
-  provisional. The Phase 2 plan/progress log contain the ordered list and
-  acceptance evidence. Gates 1/2 remain Partial; F1007 remains pending policy
+- Batch472 is complete and pushed. Batch473's five discovered slices are
+  F1086-F1090; all five are complete. F629 was separately reactivated from
+  Deferred and inserted after F1086 in active work order; it remains
+  open/unaccepted, and Batch473 remains open. The Phase 2 plan contains the
+  complete active order. Gates 1/2 remain Partial; F1007 remains pending policy
   reconciliation; Phase 2 exit remains Open.
-- F629's clean macOS universal matrix ran at commit `3ab4fa3a` from
-  `/private/tmp/classmngr-f629-macos-universal-20261019-run3`. The package audit
-  passed (116 Mach-O files, arm64+x86_64, deployment target 14.4), signature
-  checks and runner self-check passed, and 24 routes were attempted. 23 passed;
-  `output-sub-prep` failed strict per-page PDF parity on pages 9-10. The focused
-  trace at `/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`
-  shows Mac breaks before Teachers 18 and 21, but cannot explain the Windows
-  reference placement. No assertion was weakened and no renderer change was
-  made. F629 and the combined Phase 0 gate remain open; the full F628 Windows
-  evidence root is unavailable in this Mac session.
-- Commit `3ab4fa3a` makes the Sub Prep memory-platform assertion native-aware;
-  the run passed that assertion and stopped only at PDF semantic parity. F629's
-  outcome is recorded; F1087 is complete and F1088 is next. Push after Batch473
-  is closed; preserve unrelated user files. Gates 1/2 remain Partial, F1007
-  remains pending policy reconciliation, and Phase 2 exit remains Open.
+- F629's clean macOS universal revalidation ran from source commit `667ff54e`
+  under `/private/tmp/classmngr-f629-macos-universal-20261019-run4` and `run5`.
+  Build/package audit passed (116 arm64+x86_64 Mach-O files, deployment
+  target 14.4), signature checks and runner self-check passed. Run5 attempted
+  all 24 routes: 23 completed and only `output-sub-prep` failed strict
+  page-by-page PDF parity on pages 9-10. The Mac had about 48 GiB free before
+  run4 and 44 GiB after; 18 GiB is the preflight minimum.
+- The mismatch is repeatable but not yet attributable to a renderer defect:
+  run5's historical PDF reference is marked `sourceBound=false` and
+  `semanticOracleOnly=true`. The Mac trace shows breaks before Teachers 18 and
+  21, and the packaged app loaded bundled Inter and Pretendard; no effective
+  cross-platform glyph metrics are recorded. The retained Windows summary has
+  no source identity and omits route artifacts; there is no source-bound Windows
+  result for `667ff54e` or Windows route runner on this Mac. Keep the comparator
+  strict and F629 active. Next obtain source-bound Windows layout evidence at
+  the same commit/fixture/fonts, or another evidence-backed resolution, then
+  rerun Mac parity. Push only after Batch473 closes.
 
 - F1087 source/test commit `7ec8ba7a` changes the Middle School Analytics
   preference read to `Result<bool>`, propagates technical errors without a

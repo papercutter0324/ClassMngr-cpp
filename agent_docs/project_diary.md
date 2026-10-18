@@ -75,6 +75,9 @@
   normal target from the temporary <512 MiB diagnostic ceiling. Legacy heavy
   routes retain both comparisons as trend evidence; do not treat an over-target
   legacy route as a Phase 0 failure.
+- A semantic-only historical PDF can establish a page-assignment mismatch but
+  cannot attribute it to a platform or source change. Keep strict parity checks
+  intact and obtain matched source/layout evidence before changing pagination.
 - When native desktop automation is unavailable, a small in-process Qt
   controller can drive real modal dialogs and capture the packaged offscreen
   state. The Sub Prep route now retains both valid-generation and disabled-OK
