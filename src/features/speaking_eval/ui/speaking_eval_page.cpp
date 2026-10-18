@@ -39,7 +39,7 @@ SpeakingEvalPage::SpeakingEvalPage(
         &AutosaveCoordinator::saveRequested,
         this,
         [this](bool interactive) {
-            saveEvaluationInternal(interactive, interactive);
+            saveEvaluationInternal(interactive, interactive, interactive);
         }
         );
     updateActions();

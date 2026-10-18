@@ -355,6 +355,9 @@ class SpeakingEvalPageSaveTests final : public QObject
 private slots:
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
     void manualValidationAndConfirmedSaveKeepTheirCurrentTiming();
+    void manualSaveButtonConfirmsShortAndLongKoreanNames();
+    void manualSaveButtonRejectsMixedValidationErrors();
+    void automaticModeDoesNotSaveQuestionableKoreanNamesSilently();
     void failedClassAndEvaluationSwitchesRestoreTheCurrentSelection();
     void classTabsKeepOrderAndSelectedClass();
     void groupedNavigationUsesBoundedPagesAndRestoresSelection();
@@ -561,6 +564,243 @@ manualValidationAndConfirmedSaveKeepTheirCurrentTiming()
     QVERIFY(persisted);
     QCOMPARE(persisted->at(0).at(1), QStringLiteral("Alice"));
     QCOMPARE(persisted->at(0).at(2), QStringLiteral("\uAE40"));
+}
+
+void SpeakingEvalPageSaveTests::
+manualSaveButtonConfirmsShortAndLongKoreanNames()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    const QString evaluationName = QStringLiteral("Winter");
+    const QString originalKoreanName = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    SpeakingEvalRows savedRows = SpeakingEval::emptyRows();
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Alice");
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        originalKoreanName;
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        evaluationName,
+        savedRows
+        ));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        evaluationName
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    auto* const saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    QVERIFY(model);
+    QVERIFY(saveButton);
+
+    const int koreanColumn = SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
+    const QString shortKoreanName = QStringLiteral("\uAE40");
+    QVERIFY(model->setData(
+        model->index(0, koreanColumn),
+        shortKoreanName,
+        Qt::EditRole
+        ));
+    QVERIFY(saveButton->isEnabled());
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    saveButton->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(page.hasUnsavedChanges());
+
+    auto persisted = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        evaluationName
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->at(0).at(koreanColumn), originalKoreanName);
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    saveButton->click();
+    QCOMPARE(prompts.confirmations.size(), 2);
+    QVERIFY(!page.hasUnsavedChanges());
+    persisted = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        evaluationName
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->at(0).at(koreanColumn), shortKoreanName);
+    QCOMPARE(model->rows().at(0).at(koreanColumn), persisted->at(0).at(koreanColumn));
+
+    const QString longKoreanName = QStringLiteral("\uAC00\uB098\uB2E4\uB77C\uB9C8");
+    QVERIFY(model->setData(
+        model->index(0, koreanColumn),
+        longKoreanName,
+        Qt::EditRole
+        ));
+    QVERIFY(saveButton->isEnabled());
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    saveButton->click();
+    QCOMPARE(prompts.confirmations.size(), 3);
+    QVERIFY(page.hasUnsavedChanges());
+    persisted = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        evaluationName
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->at(0).at(koreanColumn), shortKoreanName);
+
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    saveButton->click();
+    QCOMPARE(prompts.confirmations.size(), 4);
+    QVERIFY(!page.hasUnsavedChanges());
+    persisted = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        evaluationName
+        );
+    QVERIFY(persisted);
+    QCOMPARE(persisted->at(0).at(koreanColumn), longKoreanName);
+    QCOMPARE(model->rows().at(0).at(koreanColumn), persisted->at(0).at(koreanColumn));
+}
+
+void SpeakingEvalPageSaveTests::
+manualSaveButtonRejectsMixedValidationErrors()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    const QString evaluationName = QStringLiteral("Winter");
+    const QString originalKoreanName = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    SpeakingEvalRows savedRows = SpeakingEval::emptyRows();
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Alice");
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        originalKoreanName;
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        evaluationName,
+        savedRows
+        ));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        evaluationName
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    auto* const autosave = page.findChild<AutosaveCoordinator*>();
+    auto* const saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(saveButton);
+
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+        QStringLiteral("\uAE40"),
+        Qt::EditRole
+        ));
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::Grammar)),
+        QStringLiteral("Invalid"),
+        Qt::EditRole
+        ));
+
+    QVERIFY(!autosave->isValid());
+    QVERIFY(!saveButton->isEnabled());
+    saveButton->click();
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+
+    const auto persisted = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        evaluationName
+        );
+    QVERIFY(persisted);
+    QCOMPARE(
+        persisted->at(0).at(SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+        originalKoreanName
+        );
+}
+
+void SpeakingEvalPageSaveTests::
+automaticModeDoesNotSaveQuestionableKoreanNamesSilently()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    const QString evaluationName = QStringLiteral("Winter");
+    const QString originalKoreanName = QStringLiteral("\uAE40\uBBFC\uC9C0");
+    SpeakingEvalRows savedRows = SpeakingEval::emptyRows();
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Alice");
+    savedRows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        originalKoreanName;
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(),
+        evaluationName,
+        savedRows
+        ));
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        evaluationName
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    auto* const autosave = page.findChild<AutosaveCoordinator*>();
+    auto* const saveButton = page.findChild<QPushButton*>(
+        QStringLiteral("speakingEvalSaveButton")
+        );
+    QVERIFY(model);
+    QVERIFY(autosave);
+    QVERIFY(saveButton);
+    QSignalSpy saveSpy(autosave, &AutosaveCoordinator::saveRequested);
+    QVERIFY(saveSpy.isValid());
+
+    QVERIFY(model->setData(
+        model->index(0, SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+        QStringLiteral("\uAE40"),
+        Qt::EditRole
+        ));
+    QVERIFY(saveButton->isHidden());
+    QVERIFY(!saveButton->isEnabled());
+
+    QTest::qWait(AutosaveCoordinator::DefaultDebounceIntervalMs + 100);
+
+    QCOMPARE(saveSpy.count(), 0);
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    const auto persisted = fixture.services.speakingEvaluationService()->evaluation(
+        fixture.classIds.first(),
+        evaluationName
+        );
+    QVERIFY(persisted);
+    QCOMPARE(
+        persisted->at(0).at(SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)),
+        originalKoreanName
+        );
 }
 
 void SpeakingEvalPageSaveTests::
