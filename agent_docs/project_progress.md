@@ -77,10 +77,11 @@ No full suite ran.
 
 Two independent post-F1047 audits reviewed all 13 official Deferred entries;
 none became actionable, resolved, or superseded. Batch432's application
-contract and repository mutation discovery lanes found no additional
-candidate; Batch431 was also a discovery shortfall. The Phase 2 plan has no
-next accepted slice. Gates 1/2 remain Partial, the Phase 2 exit gate remains
-Open, and F1007 remains pending policy reconciliation.
+contract and repository mutation lanes and Batch433's domain invariant and
+coordinator state lanes found no additional candidate; Batch431 was also a
+discovery shortfall. The Phase 2 plan has no next accepted slice. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
