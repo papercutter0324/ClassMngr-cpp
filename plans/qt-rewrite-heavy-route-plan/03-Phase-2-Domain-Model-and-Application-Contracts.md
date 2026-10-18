@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1086 is selected as next in active Batch473 to preserve Schedule display mode after a technical read failure; Batch472 is closed with F1085 complete at source/test commit `116719e1`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1086 is complete at `aeb2a46f`; F629 is selected/in progress for the next fresh current-source macOS universal Phase 0 24-route matrix with 66 GiB available, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,15 +68,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch473 (5 discovered slices)
+#### Active batch: Batch473 (5 discovery candidates and 1 reactivated Deferred item)
 
-Batch473's discovered slices, in order (with status):
+Batch473's ordered active slices contain five candidates from the discovery pass plus F629 reactivated from Deferred; F629 was not found by that pass:
 
-1. F1086 - Preserve Schedule display mode after a technical read failure: selected as next; distinguish a technical canonical-key read failure from a missing preference and prevent fallback migration from overwriting it. Likely targets: Schedule display-mode port tests and `ScheduleWidget` tests.
-2. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: provisional; distinguish read errors from false before persistence. Likely targets: its preference port and MainWindow/class visibility tests.
-3. F1088 - Preserve Evaluation default policy after a technical preference-read failure: provisional; distinguish read errors from missing values before persistence. Likely targets: its preference port and Preferences integration tests.
-4. F1089 - Preserve personal signature settings after technical read errors: provisional; preserve unread values across aggregate Personal Details and Initial Setup saves. Likely targets: signature port, My Workspace page, and Initial Setup Wizard tests.
-5. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure: provisional; prevent a failed primary read from falling through to legacy-value migration. Likely targets: Zoom preference port and Sub Prep page tests.
+1. F1086 - Preserve Schedule display mode after a technical read failure: complete at source/test commit `aeb2a46f`.
+2. F629 - Run the macOS universal Phase 0 route matrix: selected/in progress; reactivated from Deferred after 66 GiB became available. Next, run a fresh current-source 24-route matrix; no runner or toolchain preflight has run.
+3. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: provisional; distinguish read errors from false before persistence. Likely targets: its preference port and MainWindow/class visibility tests.
+4. F1088 - Preserve Evaluation default policy after a technical preference-read failure: provisional; distinguish read errors from missing values before persistence. Likely targets: its preference port and Preferences integration tests.
+5. F1089 - Preserve personal signature settings after technical read errors: provisional; preserve unread values across aggregate Personal Details and Initial Setup saves. Likely targets: signature port, My Workspace page, and Initial Setup Wizard tests.
+6. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure: provisional; prevent a failed primary read from falling through to legacy-value migration. Likely targets: Zoom preference port and Sub Prep page tests.
 
 #### Deferred candidates
 
@@ -98,11 +99,6 @@ Batch473's discovered slices, in order (with status):
   a retained page, and F1014 shows class-information re-entry behavior; there
   is still no owner-specific matched packaged Release retained-byte evidence
   or safe PageManager eviction/recreation contract.
-- F629 - Deferred: GitHub standard (`macos-15`) and larger (`macos-15-xlarge`,
-  `macos-26-xlarge`) ARM64 macOS runner specifications list 14 GB SSD; Phase 0
-  requires Apple Silicon and at least 18 GiB free, so no fitting runner or
-  passing 24-route matrix is established ([standard runner specifications](https://docs.github.com/en/actions/reference/runners/github-hosted-runners),
-  [larger runner specifications](https://docs.github.com/en/actions/reference/runners/larger-runners)).
 - F707 - Deferred from Batch 178: the `sidebarClassNodeLessThan`/`timeOrder`
   helper chain has no observed app callsite; revisit when a live use is found.
 - F709 - Deferred from Batch 178 and rechecked before F738: raw SQL values

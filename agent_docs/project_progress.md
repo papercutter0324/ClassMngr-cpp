@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch472 closed; Batch473 next)
+### Current checkpoint - 2026-10-18 (F1086 complete; F629 next)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -65,12 +65,19 @@ Independent verification built `ClassMngr` and four affected targets; focused
 CTests passed 4/4 with 50 QtTest cases, and `git diff --check` passed. No full
 suite ran.
 
-Batch473 discovery found five candidates: F1086 Schedule display mode,
-F1087 Middle School Analytics visibility, F1088 Evaluation default policy,
-F1089 personal signature settings, and F1090 Sub Prep Zoom preference, each
-covering technical preference-read failures. F1086 is selected as the next
-slice. Discovery evidence and the ordered active list are in the Phase 2 plan
-and progress log.
+F1086 is complete at source/test commit `aeb2a46f`. It preserves the Schedule
+display mode after technical preference-read failures and prevents a failed
+read from triggering legacy migration. Independent focused verification
+passed the preference-port and My Workspace CTests (2/2), the two targeted
+ScheduleWidget QtTest cases, and `git diff --check`. The broad ScheduleWidget
+CTest hung without output and was interrupted; no full suite ran.
+
+Batch473's five discovered candidates are F1086, F1087 Middle School Analytics
+visibility, F1088 Evaluation default policy, F1089 personal signature
+settings, and F1090 Sub Prep Zoom preference, all covering technical
+preference-read failures. At the user's direction, F629 was resumed from
+Deferred and selected immediately after F1086. The Phase 2 plan and progress
+log hold the ordered list and discovery evidence.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
@@ -79,11 +86,14 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Begin F1086 in Batch473 after the Batch472 closeout is pushed. F629's macOS
-evidence runner requires 18 GiB free for isolated universal builds and
-evidence; the current Mac volume has 11 GiB available, so F629 cannot start
-without additional free space. Preserve the Phase 2 exit gate and unresolved
-policy reconciliation.
+F629 preflight passed on arm64 macOS 27.0.1 with Xcode 27.1, universal Qt
+6.12.0, CMake 4.3.3, and Ninja 1.13.2. `/private/tmp` has 66 GiB free and
+the planned evidence root is absent. Run the current-source macOS universal
+Phase 0 matrix after committing the documentation update and confirming a
+clean worktree. F628's full Windows evidence root remains unavailable in
+this Mac session, so the combined Phase 0 exit gate cannot yet be claimed.
+After F629 is recorded, begin F1087. Preserve the open Phase 2 exit gate and
+unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
