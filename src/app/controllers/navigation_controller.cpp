@@ -253,9 +253,17 @@ void NavigationController::handleNavigation(
             if (
                 !m_services
                 || !m_services->teacherService()->isAvailable()
-                || !m_pages->confirmCurrentPageCanLeave()
                 )
             {
+                return;
+            }
+
+            if (!m_pages->confirmCurrentPageCanLeave())
+            {
+                if (m_sidebar)
+                {
+                    m_sidebar->restorePreviousSelection();
+                }
                 return;
             }
 
