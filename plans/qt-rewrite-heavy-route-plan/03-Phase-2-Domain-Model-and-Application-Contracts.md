@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1079 is selected/in progress in active Batch471 to preserve Sub Prep content through a technical settings read failure; F1080 is provisional, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1081 is selected/in progress in active Batch472 to keep Calendar occurrence edits retryable after save failure; Batch471 is closed at `5ad80284` and `82eaa317`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,12 +68,15 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch471 (2 discovered slices)
+#### Active batch: Batch472 (5 discovered slices)
 
-Batch471's discovered slices, in order (with status):
+Batch472's discovered slices, in order (with status):
 
-1. F1079 - Preserve Sub Prep saved content after technical settings read failure: selected/in progress. Distinguish `Technical` read errors from successful missing/empty values for the four stored content settings. Preserve missing/empty/unavailable display semantics and write-failure behavior; warn, preserve form content, and block aggregate autosave/save after a `Technical` read until successful reload, then resume normal saves. Likely tests: `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests` and `ClassMngrSubPrepPageTests`.
-2. F1080 - Keep custom color swatches safe after a technical palette-read failure: provisional; assess shared `ColorUtils::getColor()` behavior and retry/cancel compatibility. Preserve fallback display and successful/missing/Cancel policy while distinguishing `Technical` reads and avoiding persistence of a palette derived from the failed read. Likely tests: `ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests` and `ClassMngrColorUtilsCustomColorPaletteTests`.
+1. F1081 - Keep Calendar occurrence edits retryable after save failure: selected/in progress. The repeat-series-member branch uses ordinary `CalendarEventSaveUseCase` and returns after warning; retain the occurrence edit for retry after failure. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+2. F1082 - Keep Calendar “this and following” edits retryable after failure: provisional; retain the suffix edit for retry after series-edit failure. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+3. F1083 - Keep Calendar repeat-series creation retryable after failure: provisional; retain recurrence inputs for retry after series-create failure. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+4. F1084 - Preserve Schedule display preferences after a technical read failure: provisional; distinguish Technical read errors from false defaults before aggregate-saving all five values on a checkbox change. Likely targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
+5. F1085 - Preserve Calendar option state after technical preference-read failures: provisional; distinguish Technical failures from event-display and first-day-of-week defaults before aggregate saves. Likely targets: event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
 
 #### Deferred candidates
 

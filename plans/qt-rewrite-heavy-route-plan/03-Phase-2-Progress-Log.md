@@ -46142,3 +46142,61 @@ Batch471's discovered slices, in order (with status):
 No other slices were found.
 
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1079 completion; F1080 selected - 2026-10-18
+
+F1079 is complete at source/test commit `5ad80284`. The Sub Prep preferences port now returns `Technical` on repository read errors for the four stored content preferences while preserving missing/empty/unavailable defaults and write errors. The page shows a “Load Sub Prep Content” warning with diagnostic and refresh instruction, retains editors, blocks manual and autosave writes until successful refresh, then resumes normal saves.
+
+Independent verification built `ClassMngr`, `ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests`, and `ClassMngrSubPrepPageTests`; the matching focused CTests passed 2/2, with 9 port and 33 page QtTest cases (42 total). `git diff --check` passed; no full suite ran. Port database-fault tests fail the first key, while page injection tests fail the third; not all keys were faulted individually. The load-warning/no-overwrite path was tested for the third key. Unavailable-load coverage passes but does not explicitly assert an empty prompt list.
+
+F1080 is selected/in progress as Batch471's next slice. `SettingsRepository::loadSetting()` distinguishes a missing key (successful invalid `QVariant`) from a query error. The adapter at `src/next/platform/application_services_custom_color_palette_preferences_port.cpp:38-72` currently maps read errors to defaults; `src/core/utils/colorutils.cpp:182-210,217-230` loads those defaults and writes palette slots after dialog close regardless of accept/cancel. All seven production callers use `ColorUtils::getColor()`, so a central change should suffice. Acceptance: expose read status through the port and `ColorUtils`; preserve fallback display and existing unavailable/missing/success behavior, including Cancel writes after successful/missing reads; after a Technical read error, skip writing the fallback-derived palette after accept or cancel, while an accepted dialog still returns its selected color. Likely targets are `ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests` and `ClassMngrColorUtilsCustomColorPaletteTests`. No implementation or test verification has run.
+
+### Batch472 discovery - 2026-10-18
+
+Two independent lanes began Batch472 discovery when work on F1079 began as Batch471's second-last slice. The UI/navigation lane found no additional eligible candidate; neither lane found a newly met Deferred trigger. The domain/application lane found five provisional candidates:
+
+1. F1081 - Keep Calendar occurrence edits retryable after save failure. `src/features/calendar/ui/calendar_page_events.cpp` uses ordinary `CalendarEventSaveUseCase` for a repeat-series member and returns after warning; current UI retry coverage is for ordinary create/edit. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+2. F1082 - Keep Calendar “this and following” edits retryable after failure. The series-edit use-case failure warns and returns; successful suffix editing is covered, but UI failure/retry is not. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+3. F1083 - Keep Calendar repeat-series creation retryable after failure. The series-create failure warns and returns, discarding recurrence inputs; UI failure/retry is not covered. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+4. F1084 - Preserve Schedule display preferences after a technical read failure. `ApplicationServicesScheduleDisplayPreferencesPort::load()` maps setting errors to false defaults, while Preferences > Schedule aggregate-saves all five values when any checkbox changes. Likely targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
+5. F1085 - Preserve Calendar option state after technical preference-read failures. Event-display and first-day-of-week ports map errors to false/locale defaults, while Calendar Preferences saves display-option pairs and first-day selection. Likely targets: the event-display port tests, first-day-of-week port tests, and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
+
+The data-loss sequences for F1084 and F1085 are inferences from read-then-aggregate-save paths. The candidates are independent; the three Calendar UI candidates use distinct mutation paths despite sharing a source/test target.
+
+Batch472's discovered slices, in order (with status):
+
+1. F1081 - Calendar occurrence edit retry after save failure (provisional).
+2. F1082 - Calendar “this and following” edit retry after failure (provisional).
+3. F1083 - Calendar repeat-series creation retry after failure (provisional).
+4. F1084 - Preserve Schedule display preferences after a technical read failure (provisional).
+5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
+
+No other slices were found.
+
+At this discovery checkpoint, Batch471 remained active and Batch472 was recorded pending Batch471 closeout. Gates 1/2 remained Partial, F1007 remained pending policy reconciliation, and the Phase 2 exit gate remained Open.
+
+### F1080 completion; Batch471 closure; F1081 selected - 2026-10-18
+
+F1080 is complete at source commit `82eaa317`. Successful default/missing/invalid and absent/closed-session reads preserve defaults, while repository read faults return `Technical`. `ColorUtils` displays defaults and skips palette writes after accept or cancel on a read failure; an accepted dialog still returns the selected color. A successful default read retains the existing Cancel write policy.
+
+The independent Tester built `ClassMngr`, `ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`, and `ClassMngrColorUtilsCustomColorPaletteTests`. Focused CTests passed 2/2, with 11 port and 11 ColorUtils QtTest cases (22 total); `git diff --check` passed, and no full suite ran. The open-session/no-settings-repository branch remains an uncovered verification gap.
+
+At this pre-push checkpoint, Batch471 was closed with its two ordered source commits: F1079 `5ad80284` and F1080 `82eaa317`; the batch had not yet been pushed.
+
+Batch472 is now active with five discovered slices. F1081 is selected/in progress: keep Calendar occurrence edits retryable after save failure. In `src/features/calendar/ui/calendar_page_events.cpp`, the repeat-series-member path uses ordinary `CalendarEventSaveUseCase` and returns after warning; existing UI retry coverage is for ordinary create/edit. Likely target: `ClassMngrCalendarPageEventMutationParityTests`.
+
+F1082 remains provisional: keep Calendar “this and following” edits retryable after failure; the series-edit use-case warns and returns, while successful suffix editing is covered but UI failure/retry is not. F1083 remains provisional: keep repeat-series creation retryable after failure; the series-create failure warns and returns, discarding recurrence inputs, with no UI failure/retry coverage. Both likely target `ClassMngrCalendarPageEventMutationParityTests` and follow distinct Calendar mutation paths.
+
+F1084 remains provisional: preserve Schedule display preferences after technical read failure. `ApplicationServicesScheduleDisplayPreferencesPort::load()` maps setting errors to false defaults, while Preferences > Schedule saves all five values when any checkbox changes. Likely targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
+
+F1085 remains provisional: preserve Calendar option state after technical preference-read failures. Event-display and first-day-of-week ports map errors to false/locale defaults, while Calendar Preferences saves display-option pairs and first-day selection. Likely targets: event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`. The F1084/F1085 data-loss sequences are inferences from read-then-aggregate-save paths.
+
+Batch472's active slices, in order (with status):
+
+1. F1081 - Keep Calendar occurrence edits retryable after save failure (selected/in progress).
+2. F1082 - Keep Calendar “this and following” edits retryable after failure (provisional).
+3. F1083 - Keep Calendar repeat-series creation retryable after failure (provisional).
+4. F1084 - Preserve Schedule display preferences after a technical read failure (provisional).
+5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
+
+The two discovery lanes found no newly met Deferred trigger. Batch471 is closed; Batch472 is the active plan list. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

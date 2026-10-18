@@ -53,18 +53,32 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch470 closed; Batch471 active; F1079 selected)
+### Current checkpoint - 2026-10-18 (Batch471 closed; Batch472 active; F1081 selected)
 
 Batch468 is closed and pushed at `8f921a91`; Batch469 is closed and pushed to
 `origin/Qt-Rewrite` at `6ffa19bf`. Batch470's sole slice, F1078, is complete at
-`fbca6d4e`: non-series Calendar create/edit keeps the same dialog and fields
+`fbca6d4e`, and the closeout was pushed to `origin/Qt-Rewrite` at `97db4dae`:
+non-series Calendar create/edit keeps the same dialog and fields
 available after a failed save, with retry or Cancel. The focused Calendar
 mutation CTest passed 1/1 with 24 QtTest cases; `git diff --check` passed and
-no full suite ran. Batch471 discovery found two candidates: F1079 is selected
-to protect Sub Prep's four saved content settings after a technical
-preferences read failure; F1080 is provisional for custom color swatches after
-a technical palette-read failure. The UI/navigation discovery lane found no
-additional candidate, and no official Deferred trigger newly met.
+no full suite ran. F1079 is complete at `5ad80284`: the focused port and page
+CTests passed 2/2 with 42 QtTest cases. The user-visible load warning,
+retained content, blocked writes, refresh recovery, and resumed autosave are
+covered. `git diff --check` passed; no full suite ran. F1080 is complete at
+`82eaa317`: the custom-color palette port preserves default behavior for
+missing/invalid settings and absent/closed sessions, returns `Technical` for
+repository read faults, and ColorUtils skips writes after accepted or canceled
+dialogs on a read fault. The accepted color still returns; successful default
+reads retain Cancel persistence. The focused port and ColorUtils CTests passed
+2/2 with 22 QtTest cases, and `git diff --check` passed; no full suite ran. The
+open-session/no-settings-repository branch lacks a direct test. Batch471 is
+closed with F1079 `5ad80284` and F1080 `82eaa317`. Batch472 discovery found
+five candidates:
+retry paths for recurring Calendar occurrence edits, suffix edits, and series
+creation, plus technical-read protection for Schedule display preferences and
+Calendar options. F1081, retrying Calendar occurrence edits after save failure,
+is selected; F1082-F1085 remain provisional. Neither discovery lane found a
+newly met official Deferred trigger.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
@@ -73,8 +87,8 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Complete F1079, assess F1080 in order, and continue Batch471. Preserve the
-open Phase 2 exit gate and unresolved policy reconciliation.
+Continue with F1081 in Batch472. Preserve the open Phase 2 exit gate and
+unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

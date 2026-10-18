@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is closed with F1074-F1077 complete at `cbe7be5c`, `8c0dbc24`, `7a938cc4`, and `bc87ffa8`; Batch470 is closed with F1078 complete at `fbca6d4e`. Batch471 is active with two discovered slices: F1079 selected/in progress and F1080 provisional. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch471-2-discovered-slices) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is closed with F1074-F1077 complete at `cbe7be5c`, `8c0dbc24`, `7a938cc4`, and `bc87ffa8`; Batch470 is closed with F1078 complete at `fbca6d4e`. Batch471 is closed with F1079 and F1080 complete at `5ad80284` and `82eaa317`; Batch472 is active with F1081 selected/in progress and four provisional candidates. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch472-5-discovered-slices) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,10 +38,13 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch471 — Active; 2 discovered slices, in order (with status):**
+**Batch472 — Active; 5 discovered slices, in order (with status):**
 
-1. **F1079 — Preserve Sub Prep saved content after technical settings read failure.** Selected/in progress; preserve the four stored content settings and block saves/autosave until a successful reload after a `Technical` read failure.
-2. **F1080 — Keep custom color swatches safe after a technical palette-read failure.** Provisional; assess `ColorUtils::getColor()` read and retry/cancel behavior.
+1. **F1081 — Keep Calendar occurrence edits retryable after save failure.** Selected/in progress; retain the occurrence edit for retry after a failed save.
+2. **F1082 — Keep Calendar “this and following” edits retryable after failure.** Provisional; retain the series suffix edit for retry after a failed save.
+3. **F1083 — Keep Calendar repeat-series creation retryable after failure.** Provisional; retain recurrence inputs for retry after a failed save.
+4. **F1084 — Preserve Schedule display preferences after a technical read failure.** Provisional; distinguish Technical reads before aggregate-saving the five display settings.
+5. **F1085 — Preserve Calendar option state after technical preference-read failures.** Provisional; distinguish Technical reads before saving display options or first-day selection.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 
