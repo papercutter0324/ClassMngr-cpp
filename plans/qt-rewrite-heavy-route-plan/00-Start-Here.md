@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch464 is the latest published batch, closed as a discovery shortfall and pushed at `3b6b33cb`; Batch465 is closed with F1066 complete at `222b6060` and the F1062 follow-up complete at `6b296a23`. Batch466 has one accepted slice in progress: F1067, reject Unicode whitespace-only last-selected campus IDs. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch466) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch465 is closed and was pushed at `e88f6daa`; Batch466 is closed with F1067 complete at `e98c8cb9`. Batch467 has one accepted slice in progress: F1068, restore Sidebar selection after canceled My Info navigation. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch467) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch466's accepted slices, in discovery order:
+Batch467's accepted slices, in discovery order:
 
-1. **F1067 — Reject Unicode whitespace-only last-selected campus IDs.** Accepted/in progress: align the shared Qt-free ID policy with the adapter's Unicode-aware blank check.
+1. **F1068 — Restore Sidebar selection after canceled My Info navigation.** Accepted/in progress: restore the pre-click selection on canceled class-information and workspace routes while preserving the source page and draft.
 
 The
-[Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch466)
+[Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch467)
 keeps the ordered current batch list until closure; the [Phase 2 progress
 log](03-Phase-2-Progress-Log.md) holds acceptance and verification evidence.
 

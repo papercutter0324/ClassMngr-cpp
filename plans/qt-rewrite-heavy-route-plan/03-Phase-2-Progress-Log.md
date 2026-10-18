@@ -45935,6 +45935,10 @@ Independent verification passed the focused Campus Dashboard CTest (1/1), the di
 
 Batch465's accepted slices, in order, were F1066 (`222b6060`) and the F1062 Campus Dashboard refresh follow-up (`6b296a23`); both are complete and the batch is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
 
+### Batch465 push - 2026-10-18
+
+Batch465 was pushed at `e88f6daa`.
+
 ### Batch466 discovery; F1067 accepted before implementation - 2026-10-18
 
 Both discovery lanes found no other eligible candidate. The contract lane surfaced a Unicode whitespace mismatch in the last-selected-campus ID boundary: `src/next/application/last_selected_campus_id_policy.h:15-29` uses byte-wise `std::isspace`, while `src/next/platform/settings_manager_last_selected_campus_port.h:30-43` treats `QString::trimmed().isEmpty()` as no selection; its `write()` uses the shared policy at lines 55-56. The same Qt-free policy serves `UserPreferencesState`. F857's contract requires nonblank IDs bounded to 256 bytes (recorded above at F857); the current campus ID generator emits ASCII slugs (`src/features/campus/data/campus_json_repository.cpp:243-267`). This is accepted as a scoped F857 follow-up because the public write/read contract differs for Unicode whitespace even though generated IDs are currently ASCII.
@@ -45946,5 +45950,27 @@ No other slices were found.
 Batch466 contains one accepted slice, in order:
 
 1. F1067 - Reject Unicode whitespace-only last-selected campus IDs (accepted/in progress before implementation).
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1067 completion - 2026-10-18
+
+F1067 is complete at `e98c8cb9`. The shared Qt-free last-selected-campus-ID policy now rejects Unicode whitespace-only UTF-8 IDs recognized as blank by the adapter. Independent verification passed the user-preferences and SettingsManager port CTests (2/2), directly exercised the new tests, and passed `git diff --check`. No full suite ran.
+
+### Batch466 closure - 2026-10-18
+
+Batch466 contained only F1067, which is complete at `e98c8cb9`; the batch is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch467 discovery; F1068 accepted before implementation - 2026-10-18
+
+The My Info route-navigation lane found that canceled navigation leaves the clicked Sidebar selection active. `NavigationController` returns from the canceled `my_info_class_information` branch without calling `m_sidebar->restorePreviousSelection()` (`src/app/controllers/navigation_controller.cpp:584-595`); the My Info workspace-route branch has the same gap (`navigation_controller.cpp:609-615`). `Sidebar::eventFilter()` snapshots the selection before the click and `Sidebar::restorePreviousSelection()` restores it (`src/ui/shared/widgets/sidebar/sidebar.cpp:76-88`; `src/ui/shared/widgets/sidebar/sidebar_tree.cpp:281-305`). The existing `MyInfoRouteNavigationParityTests::routeAvailabilityMatrix` covers successful Discard and closed-session rows, but no Cancel row or selection assertion (`tests/my_info_route_navigation_parity_tests.cpp:300-448`). The real-click fixture and Cancel assertions in `tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:736-985` provide a precedent. The other discovery lane found no additional eligible candidate; no matching Deferred item was found.
+
+Accept F1068: in both My Info Cancel branches, restore the pre-click Sidebar selection while preserving the current source page, form draft, and session. Test real Sidebar clicks from dirty Teacher Info to one class-information route and one workspace route; assert the selected keys and teacher ID return to their pre-click values and the source state remains unchanged. Preserve existing Discard and successful navigation routes and same-page behavior. Build `ClassMngr` and `ClassMngrMainWindowTeacherSidebarNavigationParityTests`, run the matching focused CTest and `git diff --check`; no full suite.
+
+No other slices were found.
+
+Batch467 contains one accepted slice, in order:
+
+1. F1068 - Restore Sidebar selection after canceled My Info navigation (accepted/in progress before implementation).
 
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
