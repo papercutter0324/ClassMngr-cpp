@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1050 complete; Batch439 discovery underway)
+### Current checkpoint - 2026-10-18 (F1050 complete; F1051 accepted)
 
 F1050 is complete at source/test commit
 `1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
@@ -81,10 +81,15 @@ all unchanged; none became actionable, resolved, superseded, or materially
 changed. Batch437 closes with F1050 as its only slice. Batch438's app/domain
 and feature-boundary lanes found no new actionable candidate and close as a
 discovery shortfall; this is not a claim that Phase 2 has no remaining work.
-Batch439 discovery is underway across Schedule Import, workspace/navigation
-resources, and Calendar/preferences. A possible Calendar preference
-no-session save mismatch is under independent policy review and is not yet
-accepted. Deployment remains `phase2_resume_batch398_f1028`. Gates 1/2 remain
+Batch439 found F1051: Calendar event-display preferences report successful
+saves when no active settings repository exists, although the values are
+database-backed and not retained. The existing tests encode this no-op.
+F1051 is accepted before implementation: preserve default-false loads, return
+a technical failure for absent/closed sessions or a missing settings
+repository, and use the panel's existing restore/warning/no-change-signal path.
+Preserve atomic active-database saves and unrelated settings; do not add a
+sessionless ephemeral preference store. Batch440 discovery is underway in
+parallel. Deployment remains `phase2_resume_batch398_f1028`. Gates 1/2 remain
 Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is
 Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)

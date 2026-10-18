@@ -45299,3 +45299,45 @@ that does not establish Phase 2 completion. Batch439 discovery is underway in
 separate Schedule Import, workspace/navigation/resource, and Calendar/preferences
 lanes; no candidate has been accepted yet. Gates 1/2 remain Partial, the Phase 2
 exit gate remains Open, and F1007 remains pending policy reconciliation.
+
+### Batch439 discovery; F1051 accepted before implementation - 2026-10-18
+
+F1051 addresses false success when saving the two Calendar event-display
+options without an available persistence path. The prior documented policy
+treated unavailable-session saves as a no-op. Contract review found that
+`CalendarEventDisplayPreferencesPort` promises typed load and atomic save
+(`src/next/application/calendar_event_display_preferences.h:31-43`), while
+the adapter reports success without persistence for absent/closed sessions or
+a missing settings repository (`src/next/platform/application_services_calendar_event_display_preferences_port.h:81-97`).
+Existing port tests encode that success path
+(`tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp:87-175`).
+The preferences panel is available without a database, and its established save
+failure path restores the controls, shows the existing warning, and emits no
+`calendarPreferencesChanged` signal
+(`src/features/calendar/ui/calendar_preferences_panel.cpp:371-381, 688-722`).
+The nearby first-day preference reports unavailable-persistence failure.
+
+F1051 is accepted to make the event-display port honor its persistence
+contract. Scope is only `showEventsAtAllCampuses` and
+`hideStartOfTermEvents`: unavailable loads keep default-false values; saves
+return a technical failure for no session, a closed session, or a missing
+settings repository. Reuse the panel's current rollback, warning, and
+no-signal behavior. Preserve active-database atomic round-trip, unrelated
+settings, and existing load defaults; add no application-wide ephemeral
+preference behavior.
+
+Focused port-test acceptance in
+`tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp`
+covers each unavailable-save condition while retaining the active-database
+atomic round-trip, rollback, and unrelated-settings preservation. Panel-test
+acceptance in `tests/calendar_preferences_restore_defaults_tests.cpp` verifies
+the panel restores both options, warns, and emits no change signal. Build
+`ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`,
+and `ClassMngrCalendarPreferencesRestoreDefaultsTests`; run matching CTests
+`ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests`
+and `ClassMngrCalendarPreferencesRestoreDefaultsTests`, then
+`git diff --check`; no full suite.
+This acceptance records no implementation or verification result. Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and F1007 remains pending
+policy reconciliation.
