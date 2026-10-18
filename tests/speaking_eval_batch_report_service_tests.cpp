@@ -506,10 +506,15 @@ public:
 
     ~AiCommentProviderPreferenceRestorer()
     {
-        ClassMngr::Next::Platform::
+        const auto restored = ClassMngr::Next::Platform::
             SettingsManagerAiCommentProviderPreferencesPort().write(
                 m_provider
                 );
+        if (!restored.hasValue())
+        {
+            qWarning().noquote()
+                << QString::fromStdString(restored.error().message);
+        }
         SettingsManager::instance().sync();
     }
 
@@ -3213,7 +3218,9 @@ void SpeakingEvalBatchReportServiceTests::
     AiCommentProviderPreferenceRestorer restoreProvider(
         providerPreferences.read()
         );
-    providerPreferences.write(PersistedProvider::Gemini);
+    QVERIFY(
+        providerPreferences.write(PersistedProvider::Gemini).hasValue()
+        );
     SettingsManager::instance().sync();
 
     SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
@@ -4831,7 +4838,7 @@ void SpeakingEvalBatchReportServiceTests::
 
     for (const ProviderCase& providerCase : providerCases)
     {
-        providerPreferences.write(providerCase.provider);
+        QVERIFY(providerPreferences.write(providerCase.provider).hasValue());
         SettingsManager::instance().sync();
 
         SpeakingEvalReportDialog dialog(
@@ -4943,7 +4950,9 @@ void SpeakingEvalBatchReportServiceTests::
     AiCommentProviderPreferenceRestorer restoreProvider(
         providerPreferences.read()
         );
-    providerPreferences.write(PersistedProvider::ChatGPT);
+    QVERIFY(
+        providerPreferences.write(PersistedProvider::ChatGPT).hasValue()
+        );
     SettingsManager::instance().sync();
 
     SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
@@ -5125,7 +5134,9 @@ void SpeakingEvalBatchReportServiceTests::
         QStringLiteral(
             "https://custom.example.test/f482/preview?source=phase2"
             );
-    providerPreferences.write(PersistedProvider::CustomWebsite);
+    QVERIFY(
+        providerPreferences.write(PersistedProvider::CustomWebsite).hasValue()
+        );
     QVERIFY(
         customWebsitePreferences.save(customWebsiteUrl.toStdString()).hasValue()
         );
@@ -5296,7 +5307,9 @@ void SpeakingEvalBatchReportServiceTests::
     AiCommentProviderPreferenceRestorer restoreProvider(
         providerPreferences.read()
         );
-    providerPreferences.write(PersistedProvider::Gemini);
+    QVERIFY(
+        providerPreferences.write(PersistedProvider::Gemini).hasValue()
+        );
     SettingsManager::instance().sync();
 
     SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
@@ -5464,7 +5477,9 @@ void SpeakingEvalBatchReportServiceTests::
     AiCommentProviderPreferenceRestorer restoreProvider(
         providerPreferences.read()
         );
-    providerPreferences.write(PersistedProvider::Claude);
+    QVERIFY(
+        providerPreferences.write(PersistedProvider::Claude).hasValue()
+        );
     SettingsManager::instance().sync();
 
     SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;
@@ -5632,7 +5647,9 @@ void SpeakingEvalBatchReportServiceTests::
     AiCommentProviderPreferenceRestorer restoreProvider(
         providerPreferences.read()
         );
-    providerPreferences.write(PersistedProvider::MicrosoftCopilot);
+    QVERIFY(
+        providerPreferences.write(PersistedProvider::MicrosoftCopilot).hasValue()
+        );
     SettingsManager::instance().sync();
 
     SpeakingEvalPromptPreviewCapturedUrlHandler capturedUrlHandler;

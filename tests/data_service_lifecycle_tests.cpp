@@ -510,9 +510,9 @@ void DataServiceLifecycleTests::databaseFileCopyReplacesDestinationAndCreatesPar
     QVERIFY(directory.isValid());
 
     const QString sourcePath =
-        directory.filePath(QStringLiteral("source.db"));
+        directory.filePath(QStringLiteral("source-프로필.db"));
     const QString destinationPath = directory.filePath(
-        QStringLiteral("nested/target.db")
+        QStringLiteral("nested/대상.db")
         );
     const QByteArray sourceBytes("replacement source contents");
     const QByteArray previousBytes("previous destination contents");

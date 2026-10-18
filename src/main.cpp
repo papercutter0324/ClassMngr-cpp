@@ -1190,6 +1190,8 @@ QString startupPdfDocumentStatusName(QPdfDocument::Status status)
         return QStringLiteral("Loading");
     case QPdfDocument::Status::Ready:
         return QStringLiteral("Ready");
+    case QPdfDocument::Status::Unloading:
+        return QStringLiteral("Unloading");
     case QPdfDocument::Status::Error:
         return QStringLiteral("Error");
     }

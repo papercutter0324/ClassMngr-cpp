@@ -28,6 +28,51 @@ namespace ScheduleImportReviewPresentation
 constexpr int RegularPreviewFirstHour = 16;
 constexpr int RegularPreviewLastHour = 21;
 
+QString reviewDecisionMessage(
+    const ClassMngr::Next::Application::ScheduleImportReviewDecisionIssue& issue
+    )
+{
+    using Code = ClassMngr::Next::Application::
+        ScheduleImportReviewDecisionIssueCode;
+    switch (issue.code)
+    {
+    case Code::InvalidTeacherAction:
+    case Code::EmptyTeacherKey:
+    case Code::DuplicateTeacherResolution:
+    case Code::UnknownTeacherResolution:
+    case Code::MissingTeacherResolution:
+        return QObject::tr("Choose a resolution for every Korean teacher.");
+    case Code::MissingTeacherRoom:
+    case Code::ForeignTeacherRoom:
+        return QObject::tr(
+            "Choose one imported room for this Korean teacher resolution."
+            );
+    case Code::InvalidClassAction:
+    case Code::CandidateIndexOutOfRange:
+    case Code::DuplicateClassResolution:
+    case Code::MissingClassResolution:
+        return QObject::tr("Choose an action for every class.");
+    case Code::UpdateClassMissingTarget:
+        return QObject::tr("Choose an existing class to update.");
+    case Code::InvalidExistingClassTarget:
+        return QObject::tr("Choose a valid existing class target.");
+    case Code::CreateNewClassHasTarget:
+        return QObject::tr(
+            "A newly created class cannot have an existing target."
+            );
+    case Code::DuplicateUpdatedClassTarget:
+    case Code::DuplicateSkippedClassTarget:
+        return QObject::tr(
+            "Multiple imported classes cannot use the same existing class."
+            );
+    case Code::ActiveClassAssignedToSkippedTeacher:
+        return QObject::tr(
+            "Classes assigned to a skipped Korean teacher must also be skipped."
+            );
+    }
+    return QObject::tr("Review the Schedule Import choices.");
+}
+
 int timeMinutes(
     const QString& value
     )

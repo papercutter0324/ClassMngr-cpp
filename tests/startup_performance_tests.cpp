@@ -1,5 +1,6 @@
 #include <QDir>
 #include <QDirIterator>
+#include <QByteArrayView>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QElapsedTimer>
@@ -772,9 +773,9 @@ QJsonObject sourceTreeSnapshot(
 
         const QString relativePath = QDir(sourceRoot).relativeFilePath(path);
         sourceHash.addData(relativePath.toUtf8());
-        sourceHash.addData("\0", 1);
+        sourceHash.addData(QByteArrayView("\0", 1));
         sourceHash.addData(fileHash);
-        sourceHash.addData("\n", 1);
+        sourceHash.addData(QByteArrayView("\n", 1));
         ++fileCount;
     }
 

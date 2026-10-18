@@ -134,6 +134,7 @@ private slots:
     void uniqueExactTargetedClassSkipIsAllowed();
     void targetlessClassSkipIsAllowed();
     void reviewWarnsForDuplicateClassTargets();
+    void invalidExistingClassTargetMessageIsClear();
     void reviewWarnsForOverlappingProjectedTimes();
     void reviewRejectsMalformedProjectedTime();
     void reviewWarnsWhenRetainedIntensiveClassOverlaps();
@@ -4440,6 +4441,20 @@ void ScheduleImportDialogTests::reviewWarnsForDuplicateClassTargets()
             );
     QVERIFY(warning);
     warning->accept();
+}
+
+void ScheduleImportDialogTests::invalidExistingClassTargetMessageIsClear()
+{
+    using Code = ClassMngr::Next::Application::
+        ScheduleImportReviewDecisionIssueCode;
+    const ClassMngr::Next::Application::ScheduleImportReviewDecisionIssue issue{
+        Code::InvalidExistingClassTarget
+    };
+
+    QCOMPARE(
+        ScheduleImportReviewPresentation::reviewDecisionMessage(issue),
+        QStringLiteral("Choose a valid existing class target.")
+        );
 }
 
 void ScheduleImportDialogTests::reviewWarnsForOverlappingProjectedTimes()

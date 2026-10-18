@@ -6,7 +6,9 @@
 #include <QSaveFile>
 
 #include <filesystem>
+#include <string>
 #include <system_error>
+#include <utility>
 
 namespace
 {
@@ -16,7 +18,19 @@ std::filesystem::path fileSystemPath(const QString& path)
     return std::filesystem::path(path.toStdWString());
 #else
     const QByteArray utf8Path = path.toUtf8();
-    return std::filesystem::u8path(utf8Path.constData());
+    std::u8string pathBytes;
+    pathBytes.reserve(static_cast<std::size_t>(utf8Path.size()));
+    for (const char byte : utf8Path)
+    {
+        if (byte == '\0')
+        {
+            break;
+        }
+        pathBytes.push_back(static_cast<char8_t>(
+            static_cast<unsigned char>(byte)
+            ));
+    }
+    return std::filesystem::path(std::move(pathBytes));
 #endif
 }
 

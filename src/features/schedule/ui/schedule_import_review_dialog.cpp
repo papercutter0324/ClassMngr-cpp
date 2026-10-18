@@ -504,6 +504,12 @@ QString stateValidationMessage(const StateValidationError& error)
 {
     switch (error.code)
     {
+    case StateValidationErrorCode::InvalidStateKind:
+    case StateValidationErrorCode::InvalidIntensiveMode:
+    case StateValidationErrorCode::InvalidTeacherAction:
+    case StateValidationErrorCode::InvalidClassAction:
+    case StateValidationErrorCode::InvalidClassCandidateIndex:
+        break;
     case StateValidationErrorCode::SelectedTeacherUnavailable:
         return QObject::tr("A selected Korean teacher is no longer available.");
     case StateValidationErrorCode::InvalidTeacherTarget:
@@ -591,46 +597,6 @@ QString scheduleImportSnapshotFailureMessage(
     return QObject::tr("Current schedule data could not be loaded.");
 }
 
-QString reviewDecisionMessage(const ReviewDecisionIssue& issue)
-{
-    using Code = ReviewDecisionIssueCode;
-    switch (issue.code)
-    {
-    case Code::InvalidTeacherAction:
-    case Code::EmptyTeacherKey:
-    case Code::DuplicateTeacherResolution:
-        return QObject::tr("Choose a resolution for every Korean teacher.");
-    case Code::UnknownTeacherResolution:
-    case Code::MissingTeacherResolution:
-        return QObject::tr("Choose a resolution for every Korean teacher.");
-    case Code::MissingTeacherRoom:
-    case Code::ForeignTeacherRoom:
-        return QObject::tr(
-            "Choose one imported room for this Korean teacher resolution."
-            );
-    case Code::InvalidClassAction:
-    case Code::CandidateIndexOutOfRange:
-    case Code::DuplicateClassResolution:
-    case Code::MissingClassResolution:
-        return QObject::tr("Choose an action for every class.");
-    case Code::UpdateClassMissingTarget:
-        return QObject::tr("Choose an existing class to update.");
-    case Code::CreateNewClassHasTarget:
-        return QObject::tr(
-            "A newly created class cannot have an existing target."
-            );
-    case Code::DuplicateUpdatedClassTarget:
-    case Code::DuplicateSkippedClassTarget:
-        return QObject::tr(
-            "Multiple imported classes cannot use the same existing class."
-            );
-    case Code::ActiveClassAssignedToSkippedTeacher:
-        return QObject::tr(
-            "Classes assigned to a skipped Korean teacher must also be skipped."
-            );
-    }
-    return QObject::tr("Review the Schedule Import choices.");
-}
 }
 
 ScheduleImportReviewDialog::ScheduleImportReviewDialog(
@@ -1818,7 +1784,9 @@ void ScheduleImportReviewDialog::updateReviewState()
         valid = false;
         if (message.isEmpty())
         {
-            message = reviewDecisionMessage(issue);
+            message = ScheduleImportReviewPresentation::reviewDecisionMessage(
+                issue
+                );
         }
 
         if (

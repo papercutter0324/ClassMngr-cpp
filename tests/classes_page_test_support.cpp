@@ -1,57 +1,11 @@
-#include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
-#include "data/repositories/settings_repository.h"
-
-#include <QSqlDatabase>
 
 namespace ScheduleWidgetTestStubs
 {
-void saveSessionSetting(const QString& key, const QVariant& value);
-QVariant loadSessionSetting(const QString& key);
 QString selectedClassGrade(int classId);
 QString selectedClassLevel(int classId);
 bool selectedClassGradeReadWillFail();
 extern int selectedClassGradeReadCount;
-}
-
-SettingsRepository* DatabaseSession::settingsRepository() const
-{
-    if (!isOpen())
-    {
-        return nullptr;
-    }
-
-    static QSqlDatabase database;
-    static SettingsRepository repository(database);
-    return &repository;
-}
-
-Status SettingsRepository::saveSetting(
-    const QString& key,
-    const QVariant& value
-    )
-{
-    ScheduleWidgetTestStubs::saveSessionSetting(key, value);
-    return {};
-}
-
-Status SettingsRepository::saveSettings(
-    const QVariantMap& values
-    )
-{
-    for (auto setting = values.cbegin(); setting != values.cend(); ++setting)
-    {
-        ScheduleWidgetTestStubs::saveSessionSetting(
-            setting.key(),
-            setting.value()
-            );
-    }
-    return {};
-}
-
-Result<QVariant> SettingsRepository::loadSetting(const QString& key)
-{
-    return ScheduleWidgetTestStubs::loadSessionSetting(key);
 }
 
 Result<ClassDetailsPageReadRecord>

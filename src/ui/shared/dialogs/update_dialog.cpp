@@ -16,6 +16,7 @@
 #include <QPointer>
 #include <QPushButton>
 #include <QTimer>
+#include <QTimeZone>
 #include <QtGlobal>
 #include <QVBoxLayout>
 
@@ -51,7 +52,7 @@ UpdateCheckResult toPresentationResult(
             ),
         .releaseUrl = QUrl::fromEncoded(QByteArray::fromStdString(result.releaseUrl)),
         .checkedAtUtc = QDateTime::fromMSecsSinceEpoch(
-            result.checkedAtUtcMilliseconds, Qt::UTC
+            result.checkedAtUtcMilliseconds, QTimeZone::utc()
             ),
         .updateAvailable = result.updateAvailable
     };

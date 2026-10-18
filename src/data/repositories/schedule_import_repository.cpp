@@ -733,6 +733,12 @@ QString stateValidationMessage(
 {
     switch (error.code)
     {
+    case ScheduleImportStateValidationErrorCode::InvalidStateKind:
+    case ScheduleImportStateValidationErrorCode::InvalidIntensiveMode:
+    case ScheduleImportStateValidationErrorCode::InvalidTeacherAction:
+    case ScheduleImportStateValidationErrorCode::InvalidClassAction:
+    case ScheduleImportStateValidationErrorCode::InvalidClassCandidateIndex:
+        break;
     case ScheduleImportStateValidationErrorCode::SelectedTeacherUnavailable:
         return QObject::tr("A selected Korean teacher is no longer available.");
     case ScheduleImportStateValidationErrorCode::InvalidTeacherTarget:

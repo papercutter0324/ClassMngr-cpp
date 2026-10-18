@@ -260,6 +260,9 @@ void NextPlatformLegacyWorkspaceGatewayTests::adapterSurfaceIsInjectableAndAppli
     static_assert(
         std::is_base_of_v<WorkspaceGateway, LegacyWorkspaceGateway>
         );
+    static_assert(
+        std::is_constructible_v<LegacyWorkspaceGateway, FakeLegacyWorkspacePort&>
+        );
     static_assert(!std::is_copy_constructible_v<LegacyWorkspaceGateway>);
     static_assert(std::is_copy_constructible_v<LegacyWorkspaceHandle>);
     static_assert(
@@ -268,7 +271,6 @@ void NextPlatformLegacyWorkspaceGatewayTests::adapterSurfaceIsInjectableAndAppli
 
     FakeLegacyWorkspacePort port;
     LegacyWorkspaceGateway gateway(port);
-    QVERIFY(&gateway != nullptr);
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::openMapsLocationAndPreservesTypedIdentity()

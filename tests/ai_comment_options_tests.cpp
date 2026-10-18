@@ -374,9 +374,9 @@ void AiCommentOptionsTests::
     const ClassMngr::Next::Platform::
         SettingsManagerAiCommentCustomWebsitePort websitePort;
 
-    websitePort.write(
+    QVERIFY(websitePort.save(
         std::string("https://example.ai/chat")
-        );
+        ).hasValue());
     settings.set(
         providerKey,
         static_cast<int>(AiCommentProvider::CustomWebsite)
@@ -389,7 +389,7 @@ void AiCommentOptionsTests::
         AiCommentProvider::CustomWebsite
         );
 
-    websitePort.write(std::string("not a website"));
+    QVERIFY(websitePort.save(std::string("not a website")).hasValue());
     settings.set(
         providerKey,
         static_cast<int>(AiCommentProvider::CustomWebsite)

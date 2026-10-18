@@ -2,6 +2,7 @@
 
 #include "domain/models/schedule_import.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "next/application/schedule_import_review_decisions.h"
 #include "next/application/schedule_import_state_snapshot.h"
 
 #include <QString>
@@ -12,6 +13,10 @@ struct ScheduleDisplayState;
 
 namespace ScheduleImportReviewPresentation
 {
+[[nodiscard]] QString reviewDecisionMessage(
+    const ClassMngr::Next::Application::ScheduleImportReviewDecisionIssue& issue
+    );
+
 [[nodiscard]] QString compactMeetingText(
     const QList<ClassTime>& times
     );

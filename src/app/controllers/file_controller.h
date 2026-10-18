@@ -16,6 +16,7 @@ namespace ClassMngr::Next::Application
 class InitialSetupLifecycle;
 struct InitialSetupCancelResult;
 class SelectionState;
+class WorkspaceCreationLifecycle;
 class WorkspaceCoordinator;
 class WorkspaceState;
 class WorkspaceUseCase;
@@ -28,6 +29,7 @@ namespace ClassMngr::Next::Platform
 class ApplicationServicesWorkspacePort;
 class InitialSetupLifecycleAdapter;
 class LegacyWorkspaceGateway;
+class WorkspaceCreationLifecycleAdapter;
 }
 
 class FileController : public QObject
@@ -215,6 +217,14 @@ private:
     std::unique_ptr<
         ClassMngr::Next::Application::InitialSetupLifecycle
         > m_initialSetupLifecycle;
+
+    std::unique_ptr<
+        ClassMngr::Next::Platform::WorkspaceCreationLifecycleAdapter
+        > m_workspaceCreationLifecycleAdapter;
+
+    std::unique_ptr<
+        ClassMngr::Next::Application::WorkspaceCreationLifecycle
+        > m_workspaceCreationLifecycle;
 };
 
 #endif // FILE_CONTROLLER_H

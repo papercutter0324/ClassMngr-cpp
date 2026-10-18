@@ -636,7 +636,7 @@ bool DatabaseSession::isOpen() const
 
 SettingsRepository* DatabaseSession::settingsRepository() const
 {
-    if (!ScheduleWidgetTestStubs::settingsRepositoryAvailable)
+    if (!isOpen() || !ScheduleWidgetTestStubs::settingsRepositoryAvailable)
     {
         return nullptr;
     }
