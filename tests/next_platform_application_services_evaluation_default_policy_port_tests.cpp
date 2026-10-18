@@ -82,7 +82,7 @@ private slots:
     void invalidEnumSaveReturnsInvalidInputAndPreservesSettings();
     void closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
-    void repositoryReadFailureDefaultsAndRemainsSilent();
+    void repositoryReadFailureReturnsTechnicalWithoutMaterializingFallback();
 
 private:
     QTemporaryDir m_directory;
@@ -103,7 +103,9 @@ missingSettingDefaultsToAll()
     QVERIFY(repository);
 
     ApplicationServicesEvaluationDefaultPolicyPort port(services);
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), EvaluationDefaultPolicy::All);
 
     const auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
@@ -128,7 +130,9 @@ validUnsupportedValuesDefaultWithoutRewrite()
     for (const QVariant& value : unsupportedValues)
     {
         QVERIFY(repository->saveSetting(policyKey(), value));
-        QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), EvaluationDefaultPolicy::All);
 
         const auto stored = repository->loadSetting(policyKey());
         QVERIFY(stored);
@@ -146,7 +150,9 @@ unavailableSettingsDefaultToAll()
     QVERIFY(!services.databaseSession()->isOpen());
     QVERIFY(!services.databaseSession()->settingsRepository());
 
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+    const auto unavailablePolicy = port.load();
+    QVERIFY(unavailablePolicy);
+    QCOMPARE(unavailablePolicy.value(), EvaluationDefaultPolicy::All);
     const auto saved = port.save(
         EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
@@ -154,7 +160,9 @@ unavailableSettingsDefaultToAll()
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
     QVERIFY(saved.error().message.find("no database session is open")
         != std::string::npos);
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+    const auto stillUnavailablePolicy = port.load();
+    QVERIFY(stillUnavailablePolicy);
+    QCOMPARE(stillUnavailablePolicy.value(), EvaluationDefaultPolicy::All);
 }
 
 void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::
@@ -172,8 +180,10 @@ loadsCurrentOrPreviousTermValue()
         );
 
     ApplicationServicesEvaluationDefaultPolicyPort port(services);
+    const auto currentOrPreviousTermLoaded = port.load();
+    QVERIFY(currentOrPreviousTermLoaded);
     QCOMPARE(
-        port.load(),
+        currentOrPreviousTermLoaded.value(),
         EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
 }
@@ -200,8 +210,10 @@ savesBothValuesUsingTheExactLegacyKey()
     auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("current_or_previous_term"));
+    const auto currentOrPreviousTermLoaded = port.load();
+    QVERIFY(currentOrPreviousTermLoaded);
     QCOMPARE(
-        port.load(),
+        currentOrPreviousTermLoaded.value(),
         EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
 
@@ -210,7 +222,9 @@ savesBothValuesUsingTheExactLegacyKey()
     stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("all"));
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+    const auto allLoaded = port.load();
+    QVERIFY(allLoaded);
+    QCOMPARE(allLoaded.value(), EvaluationDefaultPolicy::All);
 
     const auto unrelated = repository->loadSetting(
         QStringLiteral("classes_navigation_unrelated_preference")
@@ -250,7 +264,9 @@ invalidEnumSaveReturnsInvalidInputAndPreservesSettings()
     const auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("current_or_previous_term"));
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::CurrentOrPreviousTerm);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), EvaluationDefaultPolicy::CurrentOrPreviousTerm);
 }
 
 void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::
@@ -280,7 +296,9 @@ closedSessionDefaultsAndIgnoresSaveWithoutChangingSettings()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+    const auto closedPolicy = port.load();
+    QVERIFY(closedPolicy);
+    QCOMPARE(closedPolicy.value(), EvaluationDefaultPolicy::All);
     const auto closedSessionSave = port.save(EvaluationDefaultPolicy::All);
     QVERIFY(!closedSessionSave);
     QCOMPARE(closedSessionSave.error().code, Domain::ErrorCode::Technical);
@@ -351,7 +369,7 @@ failedSaveReturnsTechnicalDiagnosticAndPreservesSettings()
 }
 
 void NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests::
-repositoryReadFailureDefaultsAndRemainsSilent()
+repositoryReadFailureReturnsTechnicalWithoutMaterializingFallback()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -360,7 +378,18 @@ repositoryReadFailureDefaultsAndRemainsSilent()
 
     ApplicationServicesEvaluationDefaultPolicyPort port(services);
     QTest::failOnWarning();
-    QCOMPARE(port.load(), EvaluationDefaultPolicy::All);
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().recoverable);
+    QVERIFY(!loaded.error().message.empty());
+
+    QSqlQuery tables(services.databaseSession()->database());
+    QVERIFY(tables.exec(QStringLiteral(
+        "SELECT name FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'app_settings'"
+        )));
+    QVERIFY(!tables.next());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesEvaluationDefaultPolicyPortTests)

@@ -610,10 +610,26 @@ void addNavigationPreferencesTab(
         window && window->services()
             ? window->services()
             : nullptr;
-    const auto evaluationDefaultPolicy = services
+    const auto evaluationDefaultPolicyLoad = services
         ? ClassMngr::Next::Platform::
             ApplicationServicesEvaluationDefaultPolicyPort(*services).load()
+        : ClassMngr::Next::Application::
+            EvaluationDefaultPolicyPreferencesLoadResult::success(
+                ClassMngr::Next::Application::EvaluationDefaultPolicy::All
+                );
+    auto lastKnownEvaluationDefaultPolicy = evaluationDefaultPolicyLoad
+        ? evaluationDefaultPolicyLoad.value()
         : ClassMngr::Next::Application::EvaluationDefaultPolicy::All;
+    const bool evaluationDefaultPolicyKnown =
+        static_cast<bool>(evaluationDefaultPolicyLoad);
+    if (!evaluationDefaultPolicyLoad)
+    {
+        DialogServices::showWarning(
+            window,
+            preferencesText("Unable to Load Preference"),
+            QString::fromStdString(evaluationDefaultPolicyLoad.error().message)
+            );
+    }
     auto* followTermSchedule = new QRadioButton(
         preferencesText(
             "Follow term schedules (use the current term, or the previous evaluation when it is empty)"
@@ -624,9 +640,10 @@ void addNavigationPreferencesTab(
         QStringLiteral("preferencesNavigationEvaluationDefaultTermSchedule")
         );
     followTermSchedule->setChecked(
-        evaluationDefaultPolicy
+        lastKnownEvaluationDefaultPolicy
         == ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
+    followTermSchedule->setEnabled(evaluationDefaultPolicyKnown);
     evaluationDefaultLayout->addWidget(followTermSchedule);
     auto* defaultAnalyticsToAll = new QRadioButton(
         preferencesText("All"),
@@ -636,9 +653,10 @@ void addNavigationPreferencesTab(
         QStringLiteral("preferencesNavigationEvaluationDefaultAll")
         );
     defaultAnalyticsToAll->setChecked(
-        evaluationDefaultPolicy
+        lastKnownEvaluationDefaultPolicy
         == ClassMngr::Next::Application::EvaluationDefaultPolicy::All
         );
+    defaultAnalyticsToAll->setEnabled(evaluationDefaultPolicyKnown);
     evaluationDefaultLayout->addWidget(defaultAnalyticsToAll);
     navigationLayout->addWidget(evaluationDefaultGroup);
 
@@ -912,20 +930,24 @@ void addNavigationPreferencesTab(
         }
         );
     const auto saveEvaluationDefaultPolicy =
-        [window, services, followTermSchedule, defaultAnalyticsToAll](bool checked)
+        [window,
+            services,
+            followTermSchedule,
+            defaultAnalyticsToAll,
+            evaluationDefaultPolicyKnown,
+            lastKnownEvaluationDefaultPolicy](bool checked) mutable
         {
-            if (!checked || !services)
+            if (!checked || !services || !evaluationDefaultPolicyKnown)
             {
                 return;
             }
 
             ClassMngr::Next::Platform::
                 ApplicationServicesEvaluationDefaultPolicyPort port(*services);
-            const auto saved = port.save(
-                followTermSchedule->isChecked()
-                    ? ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
-                    : ClassMngr::Next::Application::EvaluationDefaultPolicy::All
-                );
+            const auto selectedPolicy = followTermSchedule->isChecked()
+                ? ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+                : ClassMngr::Next::Application::EvaluationDefaultPolicy::All;
+            const auto saved = port.save(selectedPolicy);
             if (!saved)
             {
                 DialogServices::showWarning(
@@ -935,6 +957,10 @@ void addNavigationPreferencesTab(
                     );
 
                 const auto persistedPolicy = port.load();
+                if (persistedPolicy)
+                {
+                    lastKnownEvaluationDefaultPolicy = persistedPolicy.value();
+                }
                 const QSignalBlocker followTermScheduleSignals(
                     followTermSchedule
                     );
@@ -942,15 +968,17 @@ void addNavigationPreferencesTab(
                     defaultAnalyticsToAll
                     );
                 followTermSchedule->setChecked(
-                    persistedPolicy
+                    lastKnownEvaluationDefaultPolicy
                         == ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
                     );
                 defaultAnalyticsToAll->setChecked(
-                    persistedPolicy
+                    lastKnownEvaluationDefaultPolicy
                         == ClassMngr::Next::Application::EvaluationDefaultPolicy::All
                     );
                 return;
             }
+
+            lastKnownEvaluationDefaultPolicy = selectedPolicy;
         };
     QObject::connect(
         followTermSchedule,

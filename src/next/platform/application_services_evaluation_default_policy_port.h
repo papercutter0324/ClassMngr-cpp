@@ -41,38 +41,63 @@ public:
         ApplicationServicesEvaluationDefaultPolicyPort&&
         ) = delete;
 
-    [[nodiscard]] Application::EvaluationDefaultPolicy load()
-        const override
+    [[nodiscard]] Application::EvaluationDefaultPolicyPreferencesLoadResult
+    load() const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return Application::EvaluationDefaultPolicy::All;
+            return Application::
+                EvaluationDefaultPolicyPreferencesLoadResult::success(
+                    Application::EvaluationDefaultPolicy::All
+                    );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return Application::EvaluationDefaultPolicy::All;
+            return Application::
+                EvaluationDefaultPolicyPreferencesLoadResult::success(
+                    Application::EvaluationDefaultPolicy::All
+                    );
         }
 
         const auto storedPolicy = repository->loadSetting(key());
-        if (!storedPolicy || !storedPolicy->isValid())
+        if (!storedPolicy)
+        {
+            const QByteArray errorBytes = storedPolicy.error().toUtf8();
+            return Application::
+                EvaluationDefaultPolicyPreferencesLoadResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = errorBytes.isEmpty()
+                        ? "Evaluation default policy could not be loaded."
+                        : errorBytes.toStdString(),
+                    .recoverable = false
+                });
+        }
+
+        if (!storedPolicy->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
-            // behavior when storage is available.
+            // behavior for a successfully read, missing value.
             static_cast<void>(
                 repository->saveSetting(
                     key(),
                     storedPolicyValue(Application::EvaluationDefaultPolicy::All)
                     )
                 );
-            return Application::EvaluationDefaultPolicy::All;
+            return Application::
+                EvaluationDefaultPolicyPreferencesLoadResult::success(
+                    Application::EvaluationDefaultPolicy::All
+                    );
         }
 
-        return storedPolicy->toString().trimmed().toLower()
-            == QStringLiteral("current_or_previous_term")
-            ? Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
-            : Application::EvaluationDefaultPolicy::All;
+        return Application::
+            EvaluationDefaultPolicyPreferencesLoadResult::success(
+                storedPolicy->toString().trimmed().toLower()
+                    == QStringLiteral("current_or_previous_term")
+                    ? Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+                    : Application::EvaluationDefaultPolicy::All
+                );
     }
 
     [[nodiscard]] Application::EvaluationDefaultPolicyPreferencesSaveResult

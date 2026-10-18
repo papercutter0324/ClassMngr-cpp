@@ -118,6 +118,7 @@ class EvaluationDefaultSelectionIntegrationTests final : public QObject
 private slots:
     void productionPathUsesSavedPolicyScheduleAndEvaluations();
     void failedCurrentEvaluationReadReturnsNoDefault();
+    void technicalPolicyReadFailureReturnsNoDefault();
     void missingScheduleOrRequiredClassDataReturnsNoDefault();
 
 private:
@@ -248,6 +249,44 @@ failedCurrentEvaluationReadReturnsNoDefault()
             middleClass,
             fixedDate
             ).isEmpty()
+        );
+}
+
+void EvaluationDefaultSelectionIntegrationTests::
+technicalPolicyReadFailureReturnsNoDefault()
+{
+    QVERIFY(m_directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(m_directory)));
+
+    const int middleClass = createClass(
+        services,
+        QStringLiteral("Class With Unknown Evaluation Default Policy"),
+        QStringLiteral("M2")
+        );
+    QVERIFY(middleClass > 0);
+    QVERIFY(saveSchedule(services));
+    setSelectionPolicy(
+        services,
+        Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
+        );
+
+    const QDate fixedDate(2026, 9, 7);
+    QCOMPARE(
+        EvaluationDefaultSelection::forClass(&services, middleClass, fixedDate),
+        QStringLiteral("Summer")
+        );
+
+    QVERIFY(services.dataService());
+    QVERIFY(services.dataService()->databaseSession());
+    QSqlQuery query(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY(query.exec(QStringLiteral("DROP TABLE app_settings")));
+
+    QVERIFY(
+        EvaluationDefaultSelection::forClass(&services, middleClass, fixedDate)
+            .isEmpty()
         );
 }
 

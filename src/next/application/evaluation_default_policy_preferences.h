@@ -14,6 +14,9 @@ enum class EvaluationDefaultPolicy
     CurrentOrPreviousTerm
 };
 
+using EvaluationDefaultPolicyPreferencesLoadResult =
+    Domain::Result<EvaluationDefaultPolicy>;
+using EvaluationDefaultPolicyPreferencesLoadError = Domain::OperationError;
 using EvaluationDefaultPolicyPreferencesSaveResult = Domain::Result<void>;
 using EvaluationDefaultPolicyPreferencesSaveError = Domain::OperationError;
 
@@ -22,7 +25,8 @@ class EvaluationDefaultPolicyPreferencesPort
 public:
     virtual ~EvaluationDefaultPolicyPreferencesPort() = default;
 
-    [[nodiscard]] virtual EvaluationDefaultPolicy load() const = 0;
+    [[nodiscard]] virtual EvaluationDefaultPolicyPreferencesLoadResult load()
+        const = 0;
 
     [[nodiscard]] virtual EvaluationDefaultPolicyPreferencesSaveResult save(
         EvaluationDefaultPolicy policy

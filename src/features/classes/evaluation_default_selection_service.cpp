@@ -38,10 +38,10 @@ QString forClass(
 
     const ClassMngr::Next::Platform::
         ApplicationServicesEvaluationDefaultPolicyPort policyPort(*services);
-    if (
-        policyPort.load()
-        != ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
-        )
+    const auto defaultPolicy = policyPort.load();
+    if (!defaultPolicy
+        || defaultPolicy.value()
+            != ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm)
     {
         return {};
     }

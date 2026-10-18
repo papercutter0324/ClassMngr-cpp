@@ -184,7 +184,9 @@ private slots:
     void preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void middleSchoolPreferenceReadFailurePreservesKnownVisibleState();
+    void evaluationDefaultPolicyReadFailureShowsWarningAndDisablesControls();
     void evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh();
+    void evaluationDefaultPolicyReadFailureAfterSaveFailureRestoresLastKnownSelection();
     void dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
     void classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
     void excelImportTimeoutFailureRestoresSelectionAndAllowsRetry();
@@ -1041,39 +1043,58 @@ middleSchoolPreferenceReadFailurePreservesKnownVisibleState()
     bool dialogObserved = false;
     bool preferenceControlPreserved = false;
     QString scriptFailure;
+    const auto inspectPreferencesDialog = [&]()
+    {
+        QDialog* const dialog = window.findChild<QDialog*>(
+            QStringLiteral("preferencesDialog")
+            );
+        if (!dialog)
+        {
+            scriptFailure = QStringLiteral(
+                "Preferences dialog was not opened after a preference read failure."
+                );
+            return;
+        }
+
+        auto* const showAnalytics = dialog->findChild<QCheckBox*>(
+            QStringLiteral(
+                "preferencesNavigationShowMiddleSchoolAnalyticsAndEvaluations"
+                )
+            );
+        if (!showAnalytics)
+        {
+            scriptFailure = QStringLiteral(
+                "Middle-school analytics preference control was missing."
+                );
+            dialog->reject();
+            return;
+        }
+
+        dialogObserved = true;
+        preferenceControlPreserved = showAnalytics->isChecked();
+        dialog->reject();
+    };
     QTimer::singleShot(
         0,
         &window,
         [&]()
         {
-            QDialog* const dialog = window.findChild<QDialog*>(
-                QStringLiteral("preferencesDialog")
+            auto* const warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget()
                 );
-            if (!dialog)
+            if (warning
+                && warning->windowTitle()
+                    == QStringLiteral("Unable to Load Preference"))
             {
-                scriptFailure = QStringLiteral(
-                    "Preferences dialog was not opened after a preference read failure."
+                warning->accept();
+                QTimer::singleShot(
+                    0,
+                    &window,
+                    inspectPreferencesDialog
                     );
                 return;
             }
-
-            auto* const showAnalytics = dialog->findChild<QCheckBox*>(
-                QStringLiteral(
-                    "preferencesNavigationShowMiddleSchoolAnalyticsAndEvaluations"
-                    )
-                );
-            if (!showAnalytics)
-            {
-                scriptFailure = QStringLiteral(
-                    "Middle-school analytics preference control was missing."
-                    );
-                dialog->reject();
-                return;
-            }
-
-            dialogObserved = true;
-            preferenceControlPreserved = showAnalytics->isChecked();
-            dialog->reject();
+            inspectPreferencesDialog();
         }
         );
 
@@ -1086,6 +1107,135 @@ middleSchoolPreferenceReadFailurePreservesKnownVisibleState()
     QCOMPARE(sectionTabs->count(), 6);
     QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
     QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+evaluationDefaultPolicyReadFailureShowsWarningAndDisablesControls()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    const QString databasePath = m_databaseDirectory->filePath(
+        QStringLiteral("evaluation-default-policy-initial-read-failure.tps")
+        );
+    QVERIFY2(
+        window.services()->openDatabase(databasePath).has_value(),
+        "Could not open the test database."
+        );
+    window.applyDatabaseLoadedState();
+
+    ClassMngr::Next::Platform::ApplicationServicesEvaluationDefaultPolicyPort
+        preferences(*window.services());
+    const auto initialSave = preferences.save(
+        ClassMngr::Next::Application::EvaluationDefaultPolicy::
+            CurrentOrPreviousTerm
+        );
+    QVERIFY(initialSave);
+
+    DatabaseSession* const session = window.services()->databaseSession();
+    QVERIFY(session);
+    QVERIFY(executeSql(session, QStringLiteral("DROP TABLE app_settings")));
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool warningObserved = false;
+    QString warningTitle;
+    QString warningText;
+    bool controlsDisabled = false;
+    bool disabledSelectionPreserved = false;
+    QString scriptFailure;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            auto* const warning = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget()
+                );
+            if (!warning)
+            {
+                scriptFailure = QStringLiteral(
+                    "Evaluation default policy read failure did not show a warning."
+                    );
+                return;
+            }
+
+            warningObserved = true;
+            warningTitle = warning->windowTitle();
+            warningText = warning->text();
+            warning->accept();
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    QDialog* const dialog = window.findChild<QDialog*>(
+                        QStringLiteral("preferencesDialog")
+                        );
+                    auto* const followTermSchedule =
+                        dialog ? dialog->findChild<QRadioButton*>(
+                            QStringLiteral(
+                                "preferencesNavigationEvaluationDefaultTermSchedule"
+                                )
+                            ) : nullptr;
+                    auto* const defaultAnalyticsToAll =
+                        dialog ? dialog->findChild<QRadioButton*>(
+                            QStringLiteral(
+                                "preferencesNavigationEvaluationDefaultAll"
+                                )
+                            ) : nullptr;
+                    if (!dialog || !followTermSchedule
+                        || !defaultAnalyticsToAll)
+                    {
+                        scriptFailure = QStringLiteral(
+                            "Evaluation default policy controls were missing after the load warning."
+                            );
+                        if (dialog)
+                        {
+                            dialog->reject();
+                        }
+                        return;
+                    }
+
+                    controlsDisabled = !followTermSchedule->isEnabled()
+                        && !defaultAnalyticsToAll->isEnabled();
+                    const bool initiallyAll =
+                        defaultAnalyticsToAll->isChecked()
+                        && !followTermSchedule->isChecked();
+                    followTermSchedule->click();
+                    disabledSelectionPreserved = initiallyAll
+                        && defaultAnalyticsToAll->isChecked()
+                        && !followTermSchedule->isChecked();
+                    dialog->accept();
+                }
+                );
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(warningObserved);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Load Preference"));
+    QVERIFY(!warningText.trimmed().isEmpty());
+    QVERIFY(controlsDisabled);
+    QVERIFY(disabledSelectionPreserved);
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::
@@ -1377,6 +1527,168 @@ evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh(
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount);
     QCOMPARE(policyAfterRetry, QStringLiteral("all"));
     QCOMPARE(auditsAfterRetry, 1);
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+evaluationDefaultPolicyReadFailureAfterSaveFailureRestoresLastKnownSelection()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    const QString databasePath = m_databaseDirectory->filePath(
+        QStringLiteral("evaluation-default-policy-save-read-failure.tps")
+        );
+    QVERIFY2(
+        window.services()->openDatabase(databasePath).has_value(),
+        "Could not open the test database."
+        );
+    window.applyDatabaseLoadedState();
+
+    ClassMngr::Next::Platform::ApplicationServicesEvaluationDefaultPolicyPort
+        preferences(*window.services());
+    QVERIFY(preferences.save(
+        ClassMngr::Next::Application::EvaluationDefaultPolicy::
+            CurrentOrPreviousTerm
+        ));
+
+    DatabaseSession* const session = window.services()->databaseSession();
+    QVERIFY(session);
+    QVERIFY(executeSql(
+        session,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_evaluation_default_policy_write_before_read
+            BEFORE INSERT ON app_settings
+            WHEN NEW.key = 'classes_navigation_evaluation_default_policy'
+            BEGIN
+                SELECT RAISE(ABORT, 'forced evaluation policy write failure');
+            END
+            )")
+        ));
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+
+    bool preferencesDialogObserved = false;
+    bool warningObserved = false;
+    QString warningTitle;
+    QString warningText;
+    bool lastKnownSelectionRestored = false;
+    QString scriptFailure;
+
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            auto* const followTermSchedule = dialog
+                ? dialog->findChild<QRadioButton*>(QStringLiteral(
+                    "preferencesNavigationEvaluationDefaultTermSchedule"
+                    ))
+                : nullptr;
+            auto* const defaultAnalyticsToAll = dialog
+                ? dialog->findChild<QRadioButton*>(QStringLiteral(
+                    "preferencesNavigationEvaluationDefaultAll"
+                    ))
+                : nullptr;
+            if (!dialog || !followTermSchedule || !defaultAnalyticsToAll)
+            {
+                scriptFailure = QStringLiteral(
+                    "Evaluation default policy controls were missing."
+                    );
+                if (dialog)
+                {
+                    dialog->reject();
+                }
+                return;
+            }
+
+            preferencesDialogObserved = true;
+            if (!followTermSchedule->isChecked()
+                || defaultAnalyticsToAll->isChecked())
+            {
+                scriptFailure = QStringLiteral(
+                    "Initial evaluation default policy radios did not match storage."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            QTimer::singleShot(
+                0,
+                &window,
+                [&]()
+                {
+                    auto* const warning = qobject_cast<QMessageBox*>(
+                        QApplication::activeModalWidget()
+                        );
+                    if (!warning)
+                    {
+                        scriptFailure = QStringLiteral(
+                            "Evaluation default policy save failure did not show a warning."
+                            );
+                        return;
+                    }
+
+                    warningObserved = true;
+                    warningTitle = warning->windowTitle();
+                    warningText = warning->text();
+                    if (!executeSql(
+                            session,
+                            QStringLiteral("DROP TABLE app_settings")
+                            ))
+                    {
+                        scriptFailure = QStringLiteral(
+                            "Could not inject the evaluation policy read failure."
+                            );
+                    }
+                    warning->accept();
+                }
+                );
+
+            defaultAnalyticsToAll->click();
+            const auto loadAfterFailure = preferences.load();
+            const bool technicalReadFailure = !loadAfterFailure
+                && loadAfterFailure.error().code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical;
+            lastKnownSelectionRestored = followTermSchedule->isChecked()
+                && !defaultAnalyticsToAll->isChecked();
+            if (loadAfterFailure || !technicalReadFailure
+                || !lastKnownSelectionRestored)
+            {
+                scriptFailure = QStringLiteral(
+                    "A failed save followed by a failed read did not restore the last known evaluation default policy."
+                    );
+            }
+            dialog->accept();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(preferencesDialogObserved);
+    QVERIFY(warningObserved);
+    QCOMPARE(warningTitle, QStringLiteral("Unable to Save Preference"));
+    QVERIFY(warningText.contains(QStringLiteral(
+        "forced evaluation policy write failure"
+        )));
+    QVERIFY(lastKnownSelectionRestored);
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::
