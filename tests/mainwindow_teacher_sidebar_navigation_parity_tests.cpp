@@ -1000,6 +1000,126 @@ refreshedTeacherLeavesDispatchCancelAndDiscard()
             sourceProfileSnapshot
             );
     }
+
+    QVERIFY(clickTreeItem(tree, sourceLeaf));
+    QCOMPARE(routeSpy.size(), 1);
+    const NavigationData sourceRoute =
+        qvariant_cast<NavigationData>(routeSpy.takeFirst().at(0));
+    QCOMPARE(sourceRoute.type, NodeType::Teacher);
+    QCOMPARE(sourceRoute.teacherId, sourceTeacher.id);
+    QCOMPARE(sourceRoute.keys, koreanTeacherKeys);
+    QCOMPARE(sourceRoute.routeKey, QStringLiteral("teacher"));
+    QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+
+    TeacherInfoPage* const teacherPage = pages->teacherPage();
+    QVERIFY(teacherPage);
+    QCOMPARE(teacherPage->teacher().id, sourceTeacher.id);
+    QLineEdit* const teacherName = teacherPage->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    QTextEdit* const teacherNotes = teacherPage->findChild<QTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(teacherName);
+    QVERIFY(teacherNotes);
+    const QJsonObject sourceForm = teacherFormSnapshot(*teacherPage);
+    teacherName->setText(QStringLiteral("My Info Cancel draft"));
+    teacherNotes->setPlainText(
+        QStringLiteral("Retained through My Info Cancel")
+        );
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    const QJsonObject dirtyForm = teacherFormSnapshot(*teacherPage);
+    QWidget* const sourcePageWidget = pages->currentWidget();
+    QVERIFY(sourcePageWidget);
+    const QString sourcePageIdentifier = pages->currentPageIdentifier();
+    const QStringList sourceSelectedKeys = sidebar->selectedKeys();
+    const qint64 sourceSelectedTeacherId = sidebar->getSelectedTeacherId();
+    QCOMPARE(sourceSelectedKeys, koreanTeacherKeys);
+    QCOMPARE(sourceSelectedTeacherId, qint64{sourceTeacher.id});
+
+    QTreeWidgetItem* const myWorkspaceLeaf = findTopLevelItemByKey(
+        tree,
+        QStringLiteral("my_workspace")
+        );
+    QVERIFY(myWorkspaceLeaf);
+    const int expectedCancelPromptCount =
+        static_cast<int>(prompts.unsavedChangesConfirmations.size()) + 1;
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Cancel
+        );
+    QVERIFY(clickTreeItem(tree, myWorkspaceLeaf));
+
+    QCOMPARE(routeSpy.size(), 1);
+    const NavigationData cancelledRoute =
+        qvariant_cast<NavigationData>(routeSpy.takeFirst().at(0));
+    QCOMPARE(cancelledRoute.type, NodeType::Page);
+    QCOMPARE(cancelledRoute.keys, QStringList{QStringLiteral("my_workspace")});
+    QCOMPARE(cancelledRoute.routeKey, QStringLiteral("my_workspace"));
+    QCOMPARE(
+        prompts.unsavedChangesConfirmations.size(),
+        expectedCancelPromptCount
+        );
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+
+    QVERIFY(services == window.services());
+    QVERIFY(services->hasOpenDatabase());
+    QVERIFY(services->databaseSession() == activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+    QCOMPARE(pages->currentWidget(), sourcePageWidget);
+    QCOMPARE(pages->currentPageIdentifier(), sourcePageIdentifier);
+    QVERIFY(teacherPage == pages->teacherPage());
+    QCOMPARE(teacherPage->teacher().id, sourceTeacher.id);
+    QCOMPARE(teacherSnapshot(teacherPage->teacher()), sourceProfileSnapshot);
+    QCOMPARE(teacherFormSnapshot(*teacherPage), dirtyForm);
+    QVERIFY(teacherPage->hasUnsavedChanges());
+    QCOMPARE(sidebar->selectedKeys(), sourceSelectedKeys);
+    QCOMPARE(sidebar->getSelectedTeacherId(), sourceSelectedTeacherId);
+
+    const int expectedDiscardPromptCount =
+        static_cast<int>(prompts.unsavedChangesConfirmations.size()) + 1;
+    prompts.scriptedUnsavedChangesChoices.enqueue(
+        UnsavedChangesChoice::Discard
+        );
+    QVERIFY(clickTreeItem(tree, myWorkspaceLeaf));
+    QCOMPARE(routeSpy.size(), 1);
+    const NavigationData discardedRoute =
+        qvariant_cast<NavigationData>(routeSpy.takeFirst().at(0));
+    QCOMPARE(discardedRoute.type, NodeType::Page);
+    QCOMPARE(discardedRoute.keys, QStringList{QStringLiteral("my_workspace")});
+    QCOMPARE(discardedRoute.routeKey, QStringLiteral("my_workspace"));
+    QCOMPARE(
+        prompts.unsavedChangesConfirmations.size(),
+        expectedDiscardPromptCount
+        );
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(prompts.confirmations.isEmpty());
+    QVERIFY(prompts.actionPrompts.isEmpty());
+    QVERIFY(services == window.services());
+    QVERIFY(services->hasOpenDatabase());
+    QVERIFY(services->databaseSession() == activeSession);
+    QCOMPARE(services->currentDatabasePath(), workspacePath);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    QVERIFY(pages->currentWidget() != sourcePageWidget);
+    QCOMPARE(sidebar->selectedKeys(), QStringList{QStringLiteral("my_workspace")});
+    QCOMPARE(sidebar->getSelectedTeacherId(), qint64{-1});
+    QVERIFY(!teacherPage->hasUnsavedChanges());
+    QCOMPARE(teacherPage->teacher().id, sourceTeacher.id);
+    QCOMPARE(teacherSnapshot(teacherPage->teacher()), sourceProfileSnapshot);
+    QCOMPARE(teacherFormSnapshot(*teacherPage), sourceForm);
+
+    const auto persistedAfterMyInfoDiscard = services->teacherService()->teacher(
+        sourceTeacher.id
+        );
+    QVERIFY(persistedAfterMyInfoDiscard.has_value());
+    QCOMPARE(
+        teacherSnapshot(*persistedAfterMyInfoDiscard),
+        sourceProfileSnapshot
+        );
 }
 
 void MainWindowTeacherSidebarNavigationParityTests::
