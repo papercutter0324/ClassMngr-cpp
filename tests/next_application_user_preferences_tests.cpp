@@ -237,6 +237,34 @@ void NextApplicationUserPreferencesTests::invalidCampusPreservesSnapshotAndRetur
         );
     QVERIFY(state.snapshot() == before);
 
+    const std::string nonBreakingSpaceValue("\xC2\xA0", 2);
+    const auto nonBreakingSpaceId = Domain::CampusId::fromString(
+        nonBreakingSpaceValue
+        );
+    QVERIFY(nonBreakingSpaceId.has_value());
+    const auto nonBreakingSpaceResult =
+        state.setLastSelectedCampusId(*nonBreakingSpaceId);
+    QVERIFY(!nonBreakingSpaceResult);
+    QCOMPARE(
+        nonBreakingSpaceResult.error().code,
+        ErrorCode::InvalidInput
+        );
+    QVERIFY(state.snapshot() == before);
+
+    const std::string ideographicSpaceValue("\xE3\x80\x80", 3);
+    const auto ideographicSpaceId = Domain::CampusId::fromString(
+        ideographicSpaceValue
+        );
+    QVERIFY(ideographicSpaceId.has_value());
+    const auto ideographicSpaceResult =
+        state.setLastSelectedCampusId(*ideographicSpaceId);
+    QVERIFY(!ideographicSpaceResult);
+    QCOMPARE(
+        ideographicSpaceResult.error().code,
+        ErrorCode::InvalidInput
+        );
+    QVERIFY(state.snapshot() == before);
+
     const auto oversizedId = Domain::CampusId::fromString(
         std::string(kMaximumLastSelectedCampusIdLength + 1, 'x')
         );

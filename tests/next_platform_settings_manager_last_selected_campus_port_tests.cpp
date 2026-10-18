@@ -209,6 +209,34 @@ blankPresentIdIsRejectedBeforeSettingsAccess()
     QVERIFY(!blankResult.error().recoverable);
     QCOMPARE(synchronizationAttempts, 0);
     QCOMPARE(settings.get(key), previousValue);
+
+    const auto nonBreakingSpaceId = Domain::CampusId::fromString(
+        std::string("\xC2\xA0", 2)
+        );
+    QVERIFY(nonBreakingSpaceId.has_value());
+    const auto nonBreakingSpaceResult = port.write(nonBreakingSpaceId);
+    QVERIFY(!nonBreakingSpaceResult);
+    QCOMPARE(
+        nonBreakingSpaceResult.error().code,
+        Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!nonBreakingSpaceResult.error().recoverable);
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(settings.get(key), previousValue);
+
+    const auto ideographicSpaceId = Domain::CampusId::fromString(
+        std::string("\xE3\x80\x80", 3)
+        );
+    QVERIFY(ideographicSpaceId.has_value());
+    const auto ideographicSpaceResult = port.write(ideographicSpaceId);
+    QVERIFY(!ideographicSpaceResult);
+    QCOMPARE(
+        ideographicSpaceResult.error().code,
+        Domain::ErrorCode::InvalidInput
+        );
+    QVERIFY(!ideographicSpaceResult.error().recoverable);
+    QCOMPARE(synchronizationAttempts, 0);
+    QCOMPARE(settings.get(key), previousValue);
 }
 
 void NextPlatformSettingsManagerLastSelectedCampusPortTests::

@@ -1,9 +1,8 @@
 #pragma once
 
 #include "next/domain/domain_types.h"
+#include "next/application/qt_compatible_text.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <string_view>
 
@@ -18,17 +17,7 @@ inline constexpr std::size_t kMaximumLastSelectedCampusIdLength = 256;
 {
     const std::string_view value(campusId.value());
     return value.size() <= kMaximumLastSelectedCampusIdLength
-        && !value.empty()
-        && std::any_of(
-            value.cbegin(),
-            value.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) == 0;
-            }
-            );
+        && !isBlankUtf8Text(value);
 }
 
 } // namespace ClassMngr::Next::Application
