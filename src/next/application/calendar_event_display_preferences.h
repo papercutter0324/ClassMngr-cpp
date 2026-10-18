@@ -28,8 +28,10 @@ using CalendarEventDisplayPreferencesSaveRequest =
 using CalendarEventDisplayPreferencesSaveResult = Domain::Result<void>;
 using CalendarEventDisplayPreferencesSaveError = Domain::OperationError;
 
-// The application boundary exposes typed load and atomic save operations;
-// persistence and presentation conversion belong to an outer adapter.
+// The application boundary exposes typed loads and atomic saves. A successful
+// save means the complete preference pair was persisted atomically; unavailable
+// persistence must be reported as a failure. Persistence and presentation
+// conversion belong to an outer adapter.
 class CalendarEventDisplayPreferencesPort
 {
 public:

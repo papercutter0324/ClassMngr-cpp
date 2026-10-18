@@ -32,6 +32,7 @@
 #include <QQuickWidget>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSignalBlocker>
 #include <QSignalSpy>
 #include <QSpinBox>
 #include <QTemporaryDir>
@@ -655,6 +656,7 @@ private slots:
     void rejectsOutOfRangeInternalTermStartAndRefreshesWithoutPersistence();
     void failedScheduleSaveKeepsDraftAndRetrySucceeds();
     void failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds();
+    void unavailableEventDisplaySaveRestoresDefaultsAndDoesNotEmit();
     void failedFirstDaySaveRestoresPersistedValueAndRetrySucceeds();
     void resetEventsMatchesConfirmationDeleteFailureAndRefreshParity();
 };
@@ -1452,6 +1454,68 @@ failedEventDisplaySaveRestoresPersistedPairAndRetrySucceeds()
     QCOMPARE(preferencesChanged.count(), 2);
     QCOMPARE(preferencesChanged.at(1).at(0).toBool(), false);
     QCOMPARE(modelRefreshes.count(), 1);
+}
+
+void CalendarPreferencesRestoreDefaultsTests::
+unavailableEventDisplaySaveRestoresDefaultsAndDoesNotEmit()
+{
+    ApplicationServices services;
+    QVERIFY(services.databaseSession());
+    QVERIFY(!services.databaseSession()->isOpen());
+
+    auto preferenceState = std::make_shared<CalendarPreferenceState>();
+    auto provider = makeProvider(preferenceState);
+    CalendarPreferencesPanel panel(provider.get(), &services);
+    auto* const showAllCampuses = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarShowAllCampuses")
+        );
+    auto* const hideStartOfTerm = panel.findChild<QCheckBox*>(
+        QStringLiteral("preferencesCalendarHideStartOfTermEvents")
+        );
+    QVERIFY(showAllCampuses);
+    QVERIFY(hideStartOfTerm);
+    QVERIFY(!showAllCampuses->isChecked());
+    QVERIFY(!hideStartOfTerm->isChecked());
+
+    QSignalSpy preferencesChanged(
+        &panel,
+        &CalendarPreferencesPanel::calendarPreferencesChanged
+        );
+    QVERIFY(preferencesChanged.isValid());
+    RecordingCalendarPromptService prompts;
+    CalendarPromptServiceOverride promptOverride(&prompts);
+
+    showAllCampuses->setChecked(true);
+    QVERIFY(!showAllCampuses->isChecked());
+    QVERIFY(!hideStartOfTerm->isChecked());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constLast().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constLast().title,
+        QStringLiteral("Calendar Preferences Not Saved")
+        );
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("no database session is open")
+        ));
+    QCOMPARE(preferencesChanged.count(), 0);
+
+    hideStartOfTerm->setChecked(true);
+    QVERIFY(!showAllCampuses->isChecked());
+    QVERIFY(!hideStartOfTerm->isChecked());
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(prompts.messages.constLast().severity, PromptSeverity::Warning);
+    QCOMPARE(preferencesChanged.count(), 0);
+
+    {
+        const QSignalBlocker blocker(showAllCampuses);
+        showAllCampuses->setChecked(true);
+    }
+    hideStartOfTerm->setChecked(true);
+    QVERIFY(!showAllCampuses->isChecked());
+    QVERIFY(!hideStartOfTerm->isChecked());
+    QCOMPARE(prompts.messages.size(), 3);
+    QCOMPARE(prompts.messages.constLast().severity, PromptSeverity::Warning);
+    QCOMPARE(preferencesChanged.count(), 0);
 }
 
 void CalendarPreferencesRestoreDefaultsTests::

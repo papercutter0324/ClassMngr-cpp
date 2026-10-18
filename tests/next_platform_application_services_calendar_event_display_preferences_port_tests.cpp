@@ -113,10 +113,18 @@ missingAndUnavailableSettingsDefaultFalse()
     QVERIFY(unavailable);
     QVERIFY(!unavailable.value().showEventsAtAllCampuses);
     QVERIFY(!unavailable.value().hideStartOfTermEvents);
-    QVERIFY(unavailablePort.save({
+    const auto unavailableSave = unavailablePort.save({
         .showEventsAtAllCampuses = true,
         .hideStartOfTermEvents = true
-    }));
+    });
+    QVERIFY(!unavailableSave);
+    QVERIFY(unavailableSave.error().code == Domain::ErrorCode::Technical);
+    QCOMPARE(
+        QString::fromStdString(unavailableSave.error().message),
+        QStringLiteral(
+            "Calendar event-display preferences cannot be saved because no database session is open."
+            )
+        );
 
     ApplicationServices closedServices;
     const QString closedDatabasePath = databasePath(m_directory);
@@ -142,10 +150,18 @@ missingAndUnavailableSettingsDefaultFalse()
     const auto closed = closedPort.load();
     QVERIFY(closed);
     QCOMPARE(closed.value(), CalendarEventDisplayPreferences{});
-    QVERIFY(closedPort.save({
+    const auto closedSave = closedPort.save({
         .showEventsAtAllCampuses = false,
         .hideStartOfTermEvents = false
-    }));
+    });
+    QVERIFY(!closedSave);
+    QVERIFY(closedSave.error().code == Domain::ErrorCode::Technical);
+    QCOMPARE(
+        QString::fromStdString(closedSave.error().message),
+        QStringLiteral(
+            "Calendar event-display preferences cannot be saved because no database session is open."
+            )
+        );
 
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
     QVERIFY(closedSession->isOpen());
@@ -169,10 +185,18 @@ missingAndUnavailableSettingsDefaultFalse()
     const auto nullServices = nullPort.load();
     QVERIFY(nullServices);
     QCOMPARE(nullServices.value(), CalendarEventDisplayPreferences{});
-    QVERIFY(nullPort.save({
+    const auto nullSave = nullPort.save({
         .showEventsAtAllCampuses = true,
         .hideStartOfTermEvents = false
-    }));
+    });
+    QVERIFY(!nullSave);
+    QVERIFY(nullSave.error().code == Domain::ErrorCode::Technical);
+    QCOMPARE(
+        QString::fromStdString(nullSave.error().message),
+        QStringLiteral(
+            "Calendar event-display preferences cannot be saved because no database session is open."
+            )
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests::

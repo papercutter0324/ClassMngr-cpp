@@ -86,14 +86,24 @@ public:
         if (!m_session || !m_session->isOpen())
         {
             return Application::
-                CalendarEventDisplayPreferencesSaveResult::success();
+                CalendarEventDisplayPreferencesSaveResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message =
+                        "Calendar event-display preferences cannot be saved because no database session is open.",
+                    .recoverable = false
+                });
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
             return Application::
-                CalendarEventDisplayPreferencesSaveResult::success();
+                CalendarEventDisplayPreferencesSaveResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message =
+                        "Calendar event-display preferences cannot be saved because the settings repository is unavailable.",
+                    .recoverable = false
+                });
         }
 
         const Status saved = repository->saveSettings({
