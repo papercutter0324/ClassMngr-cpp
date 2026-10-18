@@ -1,9 +1,8 @@
 #pragma once
 
 #include "next/domain/operation_result.h"
+#include "next/application/qt_compatible_text.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -264,16 +263,7 @@ private:
             return false;
         }
 
-        return !std::all_of(
-            outputReference.cbegin(),
-            outputReference.cend(),
-            [](const char character)
-            {
-                return std::isspace(
-                    static_cast<unsigned char>(character)
-                    ) != 0;
-            }
-            );
+        return !isBlankUtf8Text(outputReference);
     }
 
     [[nodiscard]] static Domain::OperationError invalidInput(

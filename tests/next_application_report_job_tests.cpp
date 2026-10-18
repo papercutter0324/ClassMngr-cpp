@@ -25,6 +25,7 @@ private slots:
     void directCancelTransitionsToCanceled();
     void completeRequiresAllProgressAndValidOutput();
     void invalidOutputReferencesDoNotMutateState();
+    void malformedUtf8OutputReferenceRemainsNonblank();
     void zeroUnitJobCompletesWithOutputReference();
     void failurePreservesStructuredError();
     void failedStateRejectsLateEventsAndRestarts();
@@ -207,6 +208,16 @@ void NextApplicationReportJobTests::invalidOutputReferencesDoNotMutateState()
     QCOMPARE(blank.error().code, ErrorCode::InvalidInput);
     QVERIFY(state.snapshot() == before);
 
+    const auto nonBreakingSpace = state.complete("\xC2\xA0");
+    QVERIFY(!nonBreakingSpace);
+    QCOMPARE(nonBreakingSpace.error().code, ErrorCode::InvalidInput);
+    QVERIFY(state.snapshot() == before);
+
+    const auto ideographicSpace = state.complete("\xE3\x80\x80");
+    QVERIFY(!ideographicSpace);
+    QCOMPARE(ideographicSpace.error().code, ErrorCode::InvalidInput);
+    QVERIFY(state.snapshot() == before);
+
     const auto empty = state.complete("");
     QVERIFY(!empty);
     QCOMPARE(empty.error().code, ErrorCode::InvalidInput);
@@ -229,6 +240,21 @@ void NextApplicationReportJobTests::invalidOutputReferencesDoNotMutateState()
     QCOMPARE(state.snapshot().phase(), ReportJobPhase::Completed);
     QVERIFY(state.snapshot().outputReference().has_value());
     QCOMPARE(*state.snapshot().outputReference(), atLimit);
+}
+
+void NextApplicationReportJobTests::malformedUtf8OutputReferenceRemainsNonblank()
+{
+    ReportJobState state;
+    QVERIFY(state.start(1));
+    QVERIFY(state.reportProgress(1));
+
+    const std::string malformedUtf8("\xC3\x28", 2);
+
+    QVERIFY(state.complete(malformedUtf8));
+
+    const ReportJobSnapshot completed = state.snapshot();
+    QCOMPARE(completed.phase(), ReportJobPhase::Completed);
+    QCOMPARE(completed.outputReference(), std::optional<std::string>(malformedUtf8));
 }
 
 void NextApplicationReportJobTests::zeroUnitJobCompletesWithOutputReference()
