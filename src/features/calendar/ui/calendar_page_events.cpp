@@ -779,7 +779,7 @@ void CalendarPage::openCalendarDialog(
             repeatSeriesEvent
             && dialog.seriesEditScope()
                 == CalendarEventSeriesEditScope::ThisAndFollowingEvents;
-        bool retrySingleEventSave = false;
+        bool retryEventSave = false;
 
         if (dialog.deleteRequested())
         {
@@ -906,7 +906,7 @@ void CalendarPage::openCalendarDialog(
                         tr("Save Calendar Event"),
                         projectionText(typedSaved.error().message)
                         );
-                    retrySingleEventSave = true;
+                    retryEventSave = true;
                 }
             }
             else if (repeatSeriesEvent)
@@ -931,7 +931,7 @@ void CalendarPage::openCalendarDialog(
                         tr("Save Calendar Event"),
                         projectionText(typedSaved.error().message)
                         );
-                    return;
+                    retryEventSave = true;
                 }
             }
             else
@@ -967,7 +967,7 @@ void CalendarPage::openCalendarDialog(
             }
         }
 
-        if (retrySingleEventSave)
+        if (retryEventSave)
         {
             continue;
         }
