@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch471 closed and pushed; Batch472 active; F1082 selected)
+### Current checkpoint - 2026-10-18 (Batch471 closed and pushed; Batch472 active; F1084 selected)
 
 Batch468 is closed and pushed at `8f921a91`; Batch469 is closed and pushed to
 `origin/Qt-Rewrite` at `6ffa19bf`. Batch470's sole slice, F1078, is complete at
@@ -88,9 +88,17 @@ and scope; retry updates selected and later occurrences and refreshes the
 projection, while the earlier occurrence stays unchanged. Cancel preserves
 the full pre-edit snapshot. Independent verification passed the focused
 Calendar CTest 1/1 with 28 QtTest cases; `git diff --check` passed and no full
-suite ran. F1083, retrying repeat-series creation after failure, is selected;
-F1084-F1085 remain provisional. Series-create failure remains untested.
-Neither discovery lane found a newly met official Deferred trigger.
+suite ran. F1083 is complete at `e26e866b`: failed repeat-series creation
+keeps the same dialog and recurrence values available for retry or Cancel.
+An injected failure on the second occurrence leaves no partial rows; retry
+creates four weekly occurrences with a shared series ID and refreshes the
+projection, while Cancel leaves storage and model revision unchanged.
+Independent verification passed the focused Calendar CTest 1/1 with 30 passed,
+0 failed, and 0 skipped; `git diff --check` passed and no full suite ran. F1084 is selected
+to preserve Schedule display preferences after a technical preference-read
+failure; F1085 remains provisional. Batch473 discovery began in separate
+domain/application and UI/application lanes as F1084 started; results are
+pending.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
@@ -99,7 +107,8 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue with F1083 in Batch472. Preserve the open Phase 2 exit gate and
+Continue with F1084 in Batch472 and record Batch473 discovery when the two
+lanes report. Preserve the open Phase 2 exit gate and
 unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.

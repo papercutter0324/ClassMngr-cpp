@@ -46221,6 +46221,46 @@ Batch472's active slices, in order (with status):
 
 Batch472 remains active. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
 
+### F1083 completion; F1084 selected - 2026-10-18
+
+F1083 is complete at source commit `e26e866b`. A failed repeat-series create retains the dialog and recurrence values. Failure on the second occurrence rolls back the transaction without partial rows; retry creates four weekly occurrences sharing a series ID and refreshes the projection. Cancel leaves storage and model revision unchanged.
+
+The independent focused Calendar CTest passed 1/1; QtTest reported 30 passed, 0 failed, and 0 skipped. `git diff --check` passed, and no full suite ran.
+
+F1084 is selected/in progress: distinguish Technical errors from false defaults when Schedule display preferences are loaded, before a checkbox change aggregate-saves all five values. Likely targets are `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`. F1085 remains provisional for Calendar option preference-read failures.
+
+Batch472 remains active, in order (with status):
+
+1. F1081 - Keep Calendar occurrence edits retryable after save failure (complete at `a9066ae7`).
+2. F1082 - Keep Calendar “this and following” edits retryable after failure (complete at `c48d43a4`).
+3. F1083 - Keep Calendar repeat-series creation retryable after failure (complete at `e26e866b`).
+4. F1084 - Preserve Schedule display preferences after a technical read failure (selected/in progress).
+5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
+
+### Batch473 discovery - 2026-10-18
+
+Two discovery lanes returned five unique provisional candidates. Schedule display mode was identified independently by both lanes; no newly met Deferred trigger or other eligible item was found in the reviewed surfaces.
+
+1. F1086 - Preserve Schedule display mode after a technical read failure. Its adapter maps a failed canonical-key load to missing and may legacy-migrate. This is separate from F1084's five other Schedule display values. Likely targets: Schedule display-mode port tests and `ScheduleWidget` tests.
+2. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure. The bool port conflates a read error with false and may persist false. Likely targets: its port and MainWindow/class visibility tests.
+3. F1088 - Preserve Evaluation default policy after a technical preference-read failure. The port conflates an error with missing and may persist `All`. Likely targets: its preference port and Preferences integration tests.
+4. F1089 - Preserve personal signature settings after technical read errors. The signature port replaces read errors with partial defaults before aggregate Personal Details or Initial Setup saves. Likely targets: signature port, My Workspace page, and Initial Setup Wizard tests.
+5. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure. The read may fall through to a legacy value and migrate it. This is separate from F1079. Likely targets: Zoom preference port and Sub Prep page tests.
+
+The possible overwrite impact is inferred where current tests only drop the settings table; they do not establish a subsequent write sequence.
+
+Batch473's discovered slices, in order (with status):
+
+1. F1086 - Preserve Schedule display mode after a technical read failure (provisional).
+2. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure (provisional).
+3. F1088 - Preserve Evaluation default policy after a technical preference-read failure (provisional).
+4. F1089 - Preserve personal signature settings after technical read errors (provisional).
+5. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure (provisional).
+
+No other slices were found.
+
+Batch473 remains a discovery record only; Batch472 remains the active plan list. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
 ### F1082 completion; F1083 selected - 2026-10-18
 
 F1082 is complete at source/test commit `c48d43a4`. A series-edit failure in the “this and following” path retains the same dialog, fields, and selected scope and shows the warning. Retry updates the selected and following rows and refreshes the view while the earlier occurrence remains unchanged; Cancel preserves the full pre-edit snapshot.
