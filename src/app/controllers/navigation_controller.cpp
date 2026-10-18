@@ -672,6 +672,10 @@ void NavigationController::handleCampus(
         {
             if (!m_pages->confirmCurrentPageCanLeave())
             {
+                if (m_sidebar)
+                {
+                    m_sidebar->restorePreviousSelection();
+                }
                 return;
             }
 
@@ -692,6 +696,10 @@ void NavigationController::handleCampus(
 
     if (!alreadyShowingCampus && !m_pages->confirmCurrentPageCanLeave())
     {
+        if (m_sidebar)
+        {
+            m_sidebar->restorePreviousSelection();
+        }
         return;
     }
 
