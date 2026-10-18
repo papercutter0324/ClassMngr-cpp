@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1086 complete; F629 next)
+### Current checkpoint - 2026-10-19 (F1086 complete; F629 open; F1087 next)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -79,6 +79,20 @@ preference-read failures. At the user's direction, F629 was resumed from
 Deferred and selected immediately after F1086. The Phase 2 plan and progress
 log hold the ordered list and discovery evidence.
 
+F629's clean current-source macOS universal matrix ran at commit `3ab4fa3a`.
+The package audit passed for 116 Mach-O files with arm64 and x86_64 slices and
+14.4 minimum deployment targets; signature checks and the runner self-check
+passed. All 24 routes were attempted: 23 completed, and `output-sub-prep`
+failed the existing strict per-page semantic PDF comparison. Generated page 9
+contains Teachers 18-20 while the reference page 9 contains Teacher 18;
+generated page 10 contains Teacher 21 while the reference page 10 contains
+Teachers 19-21. A focused Mac trace confirms breaks before Teachers 18 and 21,
+but supplies no Windows frame or break decisions. The checked assertion was
+not weakened and no renderer change was justified by this evidence. F629 and
+the combined Phase 0 exit gate remain open. Full evidence is under
+`/private/tmp/classmngr-f629-macos-universal-20261019-run3`; the focused trace
+is under `/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`.
+
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
 commit, and discovery evidence is in
@@ -86,14 +100,12 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-F629 preflight passed on arm64 macOS 27.0.1 with Xcode 27.1, universal Qt
-6.12.0, CMake 4.3.3, and Ninja 1.13.2. `/private/tmp` has 66 GiB free and
-the planned evidence root is absent. Run the current-source macOS universal
-Phase 0 matrix after committing the documentation update and confirming a
-clean worktree. F628's full Windows evidence root remains unavailable in
-this Mac session, so the combined Phase 0 exit gate cannot yet be claimed.
-After F629 is recorded, begin F1087. Preserve the open Phase 2 exit gate and
-unresolved policy reconciliation.
+Begin F1087, the Middle School Analytics visibility slice. Keep F629 open
+until the Sub Prep page-boundary mismatch has source-bound Windows layout
+evidence or another justified cross-platform resolution, then rerun the full
+macOS matrix. F628's full Windows evidence root also remains unavailable in
+this Mac session, so the combined Phase 0 exit gate cannot be claimed. Preserve
+the open Phase 2 exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

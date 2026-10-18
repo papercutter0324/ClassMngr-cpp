@@ -3,7 +3,7 @@
 ## Current Deployment Handoff
 
 - Active deployment: `qt-rewrite-phase2-resume-20260928`; Heavy route; branch
-  `Qt-Rewrite`; current checkpoint 2026-10-18.
+  `Qt-Rewrite`; current checkpoint 2026-10-19.
 - Batch472 is complete and pushed. F1086 source/test commit `aeb2a46f`
   preserves Schedule display mode after technical preference-read failures
   and prevents fallback migration after a failed read. Focused verification
@@ -16,17 +16,21 @@
   follow it provisionally. The Phase 2 plan/progress log contain the ordered
   list and acceptance evidence. Gates 1/2 remain Partial; F1007 remains
   pending policy reconciliation; Phase 2 exit remains Open.
-- The user confirmed adequate disk space for F629. Preflight passed on arm64
-  macOS 27.0.1 with Xcode 27.1, Qt 6.12.0 universal, CMake 4.3.3, and Ninja
-  1.13.2. `/private/tmp` has 66 GiB available, and
-  `/private/tmp/classmngr-f629-macos-universal-20261018` is absent. The runner
-  will build/audit the universal Release package and Debug startup harness
-  before running the 24-route matrix. The full F628 Windows evidence root is
-  unavailable in this Mac session, so combined Phase 0 exit-gate validation
-  cannot yet be claimed.
-- Next action: commit the F1086/F629 documentation update, then run F629 from
-  a clean worktree and record its evidence before beginning F1087. Push after
-  Batch473 is closed; preserve unrelated user files.
+- F629's clean macOS universal matrix ran at commit `3ab4fa3a` from
+  `/private/tmp/classmngr-f629-macos-universal-20261019-run3`. The package audit
+  passed (116 Mach-O files, arm64+x86_64, deployment target 14.4), signature
+  checks and runner self-check passed, and 24 routes were attempted. 23 passed;
+  `output-sub-prep` failed strict per-page PDF parity on pages 9-10. The focused
+  trace at `/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`
+  shows Mac breaks before Teachers 18 and 21, but cannot explain the Windows
+  reference placement. No assertion was weakened and no renderer change was
+  made. F629 and the combined Phase 0 gate remain open; the full F628 Windows
+  evidence root is unavailable in this Mac session.
+- Commit `3ab4fa3a` makes the Sub Prep memory-platform assertion native-aware;
+  the run passed that assertion and stopped only at PDF semantic parity. F629's
+  outcome is recorded; begin F1087 next. Push after Batch473 is closed; preserve
+  unrelated user files. Gates 1/2 remain Partial, F1007 remains pending policy
+  reconciliation, and Phase 2 exit remains Open.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

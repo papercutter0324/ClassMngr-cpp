@@ -7113,3 +7113,25 @@ warnings, and test a user-facing issue message when making it specific.
 Distinguish CMake's compiler probes from project compiler diagnostics; the
 earlier probe warning did not reproduce in the fresh configure. The cleanup
 commit and exact macOS build/test evidence are in the Phase 2 progress log.
+
+## F629 macOS universal matrix attempt - 2026-10-19
+
+Commit `3ab4fa3a` updates the Sub Prep memory-snapshot assertion to expect the
+native platform while keeping the Windows-only `commitBytes` check. The clean
+current-source macOS universal run attempted all 24 routes: 23 completed and
+`output-sub-prep` failed the existing strict page-by-page semantic comparison.
+The signed package audit passed for 116 Mach-O files with arm64 and x86_64
+slices and a 14.4 deployment target; runner self-check and signature checks
+passed. The runner's 18 GiB requirement is a free-space preflight reserve for
+isolated universal builds and evidence, not a measured per-slice consumption;
+the run began with about 56 GiB available.
+
+The generated Sub Prep PDF puts Teachers 18-20 on page 9 and Teacher 21 on page
+10; the Windows-validated reference puts Teacher 18 on page 9 and Teachers
+19-21 on page 10. Temporary tracing shows the Mac renderer adds breaks before
+Teachers 18 and 21, but does not establish the Windows renderer's decisions.
+No teacher-specific break or weakened parity assertion was added. The output
+route's failure leaves F629 and the combined Phase 0 exit gate open. Evidence
+roots are `/private/tmp/classmngr-f629-macos-universal-20261019-run3` and
+`/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`. F1087 is next;
+push remains deferred until Batch473 closes.

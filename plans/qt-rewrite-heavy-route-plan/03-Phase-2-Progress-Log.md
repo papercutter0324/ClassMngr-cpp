@@ -46303,4 +46303,25 @@ F1086 is complete at source/test commit `aeb2a46f`. The typed Schedule display-m
 
 Independent verification built `ClassMngr`, the display-mode preference port target, My Workspace target, and ScheduleWidget target (up to date). Port and My Workspace focused CTests passed 2/2. Direct QtTest cases `displayModeReadErrorsPreserveStateAndSkipMigration` and `failedDisplayModeSaveRestoresStateAndSuccessfulRetryPersistsOnce` passed; `git diff --check` passed. The broader ScheduleWidget CTest hung without output for over four minutes and was interrupted. This remains a verification gap; no full suite ran.
 
-Batch473's active order is F1086 (complete), F629 (selected/in progress), then F1087-F1090 (provisional). F629 is one reactivated Deferred item alongside the five candidates from Batch473's discovery pass; it was not a discovery result. `df -h . /private/tmp` showed 66 GiB available; queue a fresh current-source macOS universal Phase 0 24-route matrix. The proposed evidence root `/private/tmp/classmngr-f629-macos-universal-20261018` was absent at the latest check; the runner has not run and no toolchain preflight is claimed. F628's full Windows root remains unavailable on this Mac, so the combined exit gate is not established. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+At the 2026-10-18 reactivation checkpoint, Batch473's active order was F1086 (complete), F629 (selected/in progress), then F1087-F1090 (provisional). F629 was one reactivated Deferred item alongside the five candidates from Batch473's discovery pass; it was not a discovery result. `df -h . /private/tmp` showed 66 GiB available. The proposed evidence root `/private/tmp/classmngr-f629-macos-universal-20261018` was absent then; at that checkpoint the runner had not run and no toolchain preflight was claimed. F628's full Windows root was unavailable on this Mac, so the combined exit gate was not established. Gates 1/2 were Partial, F1007 remained pending policy reconciliation, and the Phase 2 exit gate was Open. The subsequent matrix outcome is below.
+
+### F629 current-source macOS universal matrix outcome - 2026-10-19
+
+The current-source matrix ran from test-patch commit `3ab4fa3a` with a clean
+source snapshot. Packaging produced 116 Mach-O files for arm64 and x86_64; the
+deployment target and plist minimum were both 14.4. Package signature
+verification and the runner self-check passed. All 24 routes were attempted;
+23 completed and `output-sub-prep` failed the unchanged strict, page-by-page
+semantic parity check. Evidence is in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run3`; the focused
+pagination trace is in
+`/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`.
+
+The generated PDF places Teachers 18-20 on page 9 and Teacher 21 on page 10;
+the reference places Teacher 18 alone on page 9 and Teachers 19-21 on page 10.
+The Mac trace confirms breaks before Teacher 18 and Teacher 21 but does not
+establish Windows layout decisions. No parity assertion was weakened and no
+fix is claimed. F629 remains open, and the combined Phase 0 exit gate remains
+open pending accepted macOS universal evidence. F629's matrix was attempted
+but remains open and is not accepted. Batch473 remains active with F1087
+selected/next; F1088-F1090 remain provisional.
