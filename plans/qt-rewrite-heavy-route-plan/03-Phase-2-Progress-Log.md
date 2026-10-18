@@ -45882,3 +45882,17 @@ F403 is complete at source commit `ac2492c3` (`Phase2 - Restore teacher selectio
 The independent Tester built `ClassMngr` and `ClassMngrMainWindowTeacherSidebarNavigationParityTests`; the focused F403 and duplicate-occurrence cases passed (4 QtTest cases including setup/cleanup), and the matching CTest passed 1/1. `git diff --check` passed. No full suite ran.
 
 Batch463 is complete. Batch464 discovery is next. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch463 push - 2026-10-18
+
+Pushed `d5d33b59` to `origin/Qt-Rewrite`, advancing it from `5af11d3b`. Batch463 and its closure documentation are complete and published.
+
+### Batch464 discovery shortfall - 2026-10-18
+
+The UI workflow lane sampled My Details aggregate saves, Class Transfer import/export controls, and Calendar event activation. My Details preserves dirty values on save failure with aggregate-save coverage, Class Transfer validates the import request before enabling Import, and the Calendar missing-event lookup behavior is already a deferred UX lead. None showed a new eligible mismatch.
+
+The Qt-free contract lane found no eligible issue. The document-session whitespace mismatch is fixed in F1030; monthly repeat planning's chained month-end clamping is explicitly covered behavior; and ImportJob/ReportJob coordinator queue cases have no production caller. The 13 Deferred entries remain behind their recorded triggers or policy decisions.
+
+No other slices were found.
+
+Batch464 closed without an accepted slice. Batch465 discovery is next. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
