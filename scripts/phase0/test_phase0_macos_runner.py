@@ -127,6 +127,13 @@ class MacRunnerContractTests(unittest.TestCase):
                         for name in invocation["environmentOverrides"]
                     )
                 )
+                if route.route_id == "output-sub-prep":
+                    self.assertEqual(
+                        invocation["environmentOverrides"].get(
+                            "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE"
+                        ),
+                        "2026-09-14",
+                    )
                 for value in invocation["arguments"]:
                     candidate = Path(value)
                     if candidate.is_absolute():
@@ -134,6 +141,8 @@ class MacRunnerContractTests(unittest.TestCase):
                 for name, value in invocation["environmentOverrides"].items():
                     if name == "QT_QPA_PLATFORM":
                         self.assertEqual(value, "offscreen")
+                    elif name == "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE":
+                        self.assertEqual(value, "2026-09-14")
                     elif value != "1":
                         self.assertTrue(Path(value).is_relative_to(root), value)
 

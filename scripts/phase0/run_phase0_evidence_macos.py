@@ -291,6 +291,7 @@ def route_invocation(
         arguments = ["capturesLargeStaffDirectoryBoundaryWhenConfigured"]
     elif route_id == "output-sub-prep":
         overrides["CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR"] = str(route_root)
+        overrides["CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE"] = "2026-09-14"
         arguments = ["capturesLargeSubPrepOutputBoundaryWhenConfigured"]
     elif route_id == "resource-trace":
         overrides["CLASSMNGR_LARGE_RESOURCE_TRACE_REFERENCE_DIR"] = str(route_root)
