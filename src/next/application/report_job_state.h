@@ -80,6 +80,26 @@ private:
     std::optional<OutputReference> m_outputReference;
 };
 
+[[nodiscard]] inline Domain::Result<void> validateReportJobOutputReference(
+    const ReportJobSnapshot::OutputReference& outputReference
+    )
+{
+    if (outputReference.empty()
+        || outputReference.size() > kReportJobMaxOutputReferenceLength
+        || isBlankUtf8Text(outputReference))
+    {
+        return Domain::Result<void>::failure(
+            Domain::OperationError{
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "Report output reference must be non-blank and bounded.",
+                .recoverable = false
+            }
+            );
+    }
+
+    return Domain::Result<void>::success();
+}
+
 // Owns one report/PDF/export lifecycle. The state owner releases its
 // operation-scoped render source and output buffers after recording
 // completion, cancellation, or failure; this snapshot retains only the
@@ -205,13 +225,11 @@ public:
                 );
         }
 
-        if (!isValidOutputReference(outputReference))
+        const Domain::Result<void> outputReferenceValidation =
+            validateReportJobOutputReference(outputReference);
+        if (!outputReferenceValidation)
         {
-            return Domain::Result<void>::failure(
-                invalidInput(
-                    "Report output reference must be non-blank and bounded."
-                    )
-                );
+            return outputReferenceValidation;
         }
 
         if (m_snapshot.m_completedUnits != m_snapshot.m_totalUnits)
@@ -251,19 +269,6 @@ private:
     [[nodiscard]] bool isRunning() const noexcept
     {
         return m_snapshot.phase() == ReportJobPhase::Running;
-    }
-
-    [[nodiscard]] static bool isValidOutputReference(
-        const OutputReference& outputReference
-        ) noexcept
-    {
-        if (outputReference.empty()
-            || outputReference.size() > kReportJobMaxOutputReferenceLength)
-        {
-            return false;
-        }
-
-        return !isBlankUtf8Text(outputReference);
     }
 
     [[nodiscard]] static Domain::OperationError invalidInput(

@@ -8,6 +8,7 @@
 #include <QWaitCondition>
 #include <QtTest>
 
+#include <array>
 #include <stdexcept>
 #include <string>
 
@@ -56,7 +57,9 @@ class NextPlatformQtJobWorkerTests final : public QObject
 private slots:
     void importWorkerRunsOffCallerAndCompletesThroughCoordinator();
     void reportWorkerRunsOffCallerAndCompletesWithOutputReference();
+    void reportWorkerRejectsInvalidOutputReferencesAsFailures();
     void reportCancellationIsAcknowledgedAfterCooperativeWorkReturns();
+    void reportCancellationWinsOverInvalidOutputReference();
     void importCancellationIsAcknowledgedAfterCooperativeWorkReturns();
     void taskFailureAndExceptionProduceFailedEvents();
     void zeroCapacityQueueMakesLastResultReportPostFailure();
@@ -142,6 +145,53 @@ void NextPlatformQtJobWorkerTests::
 }
 
 void NextPlatformQtJobWorkerTests::
+    reportWorkerRejectsInvalidOutputReferencesAsFailures()
+{
+    const std::array<std::string, 4> invalidReferences{
+        std::string{},
+        std::string(" \t\n"),
+        std::string("\xE3\x80\x80"),
+        std::string(kReportJobMaxOutputReferenceLength + 1, 'x')
+    };
+    const OperationError expectedError{
+        .code = ErrorCode::InvalidInput,
+        .message = "Report output reference must be non-blank and bounded.",
+        .recoverable = false
+    };
+
+    for (const std::string& invalidReference : invalidReferences)
+    {
+        QtReportJobWorker worker(
+            [&invalidReference](const auto, const auto, auto&, const auto&)
+            {
+                return Result<std::string>::success(invalidReference);
+            }
+            );
+        ReportJobCoordinator coordinator(worker);
+
+        QVERIFY(coordinator.startJob(1));
+        QTRY_VERIFY_WITH_TIMEOUT(!worker.isRunning(), kTimeoutMs);
+        worker.waitForFinished();
+
+        const auto taskResult = worker.lastResult();
+        QVERIFY(taskResult.has_value());
+        QVERIFY(!*taskResult);
+        QCOMPARE(taskResult->error(), expectedError);
+        QCOMPARE(coordinator.pendingEventCount(), std::size_t{2});
+
+        const auto pump = coordinator.pump();
+        QVERIFY(pump);
+        QCOMPARE(pump.value(), std::size_t{2});
+        const ReportJobSnapshot snapshot = coordinator.snapshot();
+        QCOMPARE(snapshot.phase(), ReportJobPhase::Failed);
+        QCOMPARE(snapshot.completedUnits(), ReportJobSnapshot::UnitCount{1});
+        QVERIFY(snapshot.error().has_value());
+        QCOMPARE(*snapshot.error(), expectedError);
+        QVERIFY(!snapshot.outputReference().has_value());
+    }
+}
+
+void NextPlatformQtJobWorkerTests::
     reportCancellationIsAcknowledgedAfterCooperativeWorkReturns()
 {
     QMutex mutex;
@@ -182,6 +232,58 @@ void NextPlatformQtJobWorkerTests::
     const ReportJobSnapshot snapshot = coordinator.snapshot();
     QCOMPARE(snapshot.phase(), ReportJobPhase::Canceled);
     QVERIFY(snapshot.cancellationRequested());
+}
+
+void NextPlatformQtJobWorkerTests::
+    reportCancellationWinsOverInvalidOutputReference()
+{
+    QMutex mutex;
+    QWaitCondition condition;
+    bool entered = false;
+    bool released = false;
+    const std::string invalidOutputReference;
+
+    QtReportJobWorker worker(
+        [&](const auto, const auto, auto&, const QtJobCancellationToken& token)
+        {
+            QMutexLocker locker(&mutex);
+            entered = true;
+            condition.wakeAll();
+            while (!token.isCancellationRequested())
+            {
+                condition.wait(&mutex);
+            }
+            released = true;
+            condition.wakeAll();
+            return Result<std::string>::success(invalidOutputReference);
+        }
+        );
+    ReportJobCoordinator coordinator(worker);
+
+    QVERIFY(coordinator.startJob(5));
+    QVERIFY(waitForFlag(mutex, condition, entered));
+    QVERIFY(coordinator.requestCancellation());
+    {
+        QMutexLocker locker(&mutex);
+        condition.wakeAll();
+    }
+    QVERIFY(waitForFlag(mutex, condition, released));
+    QTRY_VERIFY_WITH_TIMEOUT(!worker.isRunning(), kTimeoutMs);
+    worker.waitForFinished();
+
+    const auto taskResult = worker.lastResult();
+    QVERIFY(taskResult.has_value());
+    QVERIFY(*taskResult);
+    QCOMPARE(coordinator.pendingEventCount(), std::size_t{2});
+
+    const auto pump = coordinator.pump();
+    QVERIFY(pump);
+    QCOMPARE(pump.value(), std::size_t{2});
+    const ReportJobSnapshot snapshot = coordinator.snapshot();
+    QCOMPARE(snapshot.phase(), ReportJobPhase::Canceled);
+    QVERIFY(snapshot.cancellationRequested());
+    QCOMPARE(snapshot.completedUnits(), ReportJobSnapshot::UnitCount{5});
+    QVERIFY(!snapshot.outputReference().has_value());
 }
 
 void NextPlatformQtJobWorkerTests::

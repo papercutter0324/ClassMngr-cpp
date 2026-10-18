@@ -316,6 +316,26 @@ public:
                         );
                 }
 
+                const Domain::Result<void> outputReferenceValidation =
+                    Application::validateReportJobOutputReference(
+                        workResult.value()
+                        );
+                if (!outputReferenceValidation)
+                {
+                    const auto postResult = postEvent(
+                        eventSink,
+                        Application::ReportJobEvent::failed(
+                            generation,
+                            outputReferenceValidation.error()
+                            )
+                        );
+                    return postResult
+                        ? Domain::Result<void>::failure(
+                            outputReferenceValidation.error()
+                            )
+                        : postResult;
+                }
+
                 return postEvent(
                     eventSink,
                     Application::ReportJobEvent::completed(
