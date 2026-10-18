@@ -91,6 +91,7 @@ public:
 
     int currentClassId() const;
     ClassesSection currentSection() const;
+    [[nodiscard]] bool showsMiddleSchoolAnalyticsAndEvaluations() const;
     [[nodiscard]] ClassesPageRuntimeMetrics runtimeMetrics() const;
     [[nodiscard]] bool isEditorInstantiated(
         ClassesSection section

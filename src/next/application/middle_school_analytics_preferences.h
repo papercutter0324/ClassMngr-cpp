@@ -6,6 +6,7 @@ namespace ClassMngr::Next::Application
 {
 
 using MiddleSchoolAnalyticsPreferencesSaveResult = Domain::Result<void>;
+using MiddleSchoolAnalyticsPreferencesReadResult = Domain::Result<bool>;
 using MiddleSchoolAnalyticsPreferencesSaveError = Domain::OperationError;
 
 // The application boundary carries only the typed middle-school analytics
@@ -16,7 +17,8 @@ class MiddleSchoolAnalyticsPreferencesPort
 public:
     virtual ~MiddleSchoolAnalyticsPreferencesPort() = default;
 
-    [[nodiscard]] virtual bool load() const = 0;
+    [[nodiscard]] virtual MiddleSchoolAnalyticsPreferencesReadResult load()
+        const = 0;
 
     [[nodiscard]] virtual MiddleSchoolAnalyticsPreferencesSaveResult save(
         bool show

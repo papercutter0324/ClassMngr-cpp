@@ -54,7 +54,7 @@ private slots:
     void initTestCase();
     void missingSettingDefaultsFalseAndPersists();
     void preservesLegacyQVariantCoercion();
-    void readFailureDefaultsFalse();
+    void readFailureReturnsTechnicalFailureWithoutFalseFallback();
     void saveFailureReturnsTechnicalDiagnosticAndPreservesStoredValue();
     void unavailableSettingsDefaultFalseAndReturnsSaveFailure();
     void closedSessionDefaultsFalseAndDoesNotOverwritePersistedValue();
@@ -82,7 +82,9 @@ missingSettingDefaultsFalseAndPersists()
     QVERIFY(repository);
 
     ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
-    QCOMPARE(port.load(), false);
+    const auto missing = port.load();
+    QVERIFY(missing);
+    QCOMPARE(missing.value(), false);
 
     auto stored = repository->loadSetting(preferenceKey());
     QVERIFY(stored);
@@ -90,7 +92,9 @@ missingSettingDefaultsFalseAndPersists()
     QCOMPARE(stored->toBool(), false);
 
     QVERIFY(repository->saveSetting(preferenceKey(), QVariant()));
-    QCOMPARE(port.load(), false);
+    const auto invalidValue = port.load();
+    QVERIFY(invalidValue);
+    QCOMPARE(invalidValue.value(), false);
     stored = repository->loadSetting(preferenceKey());
     QVERIFY(stored);
     QVERIFY(stored->isValid());
@@ -121,12 +125,14 @@ preservesLegacyQVariantCoercion()
     for (const auto& [value, expected] : values)
     {
         QVERIFY(repository->saveSetting(preferenceKey(), value));
-        QCOMPARE(port.load(), expected);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), expected);
     }
 }
 
 void NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests::
-readFailureDefaultsFalse()
+readFailureReturnsTechnicalFailureWithoutFalseFallback()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -139,7 +145,19 @@ readFailureDefaultsFalse()
     QVERIFY(query.exec(QStringLiteral("DROP TABLE app_settings")));
 
     ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
-    QCOMPARE(port.load(), false);
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().message.empty());
+
+    QSqlQuery tableLookup(session->database());
+    QVERIFY(tableLookup.exec(QStringLiteral(R"(
+        SELECT COUNT(*)
+        FROM sqlite_master
+        WHERE type = 'table' AND name = 'app_settings'
+    )")));
+    QVERIFY(tableLookup.next());
+    QCOMPARE(tableLookup.value(0).toInt(), 0);
 }
 
 void NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests::
@@ -204,14 +222,18 @@ unavailableSettingsDefaultFalseAndReturnsSaveFailure()
     QVERIFY(!session->settingsRepository());
     ApplicationServicesMiddleSchoolAnalyticsPreferencesPort port(services);
 
-    QCOMPARE(port.load(), false);
+    const auto unloaded = port.load();
+    QVERIFY(unloaded);
+    QCOMPARE(unloaded.value(), false);
     const auto saveFailure = port.save(true);
     QVERIFY(!saveFailure);
     QCOMPARE(saveFailure.error().code, Domain::ErrorCode::Technical);
     QVERIFY(QString::fromStdString(saveFailure.error().message).contains(
         QStringLiteral("no database session is open")
         ));
-    QCOMPARE(port.load(), false);
+    const auto stillUnavailable = port.load();
+    QVERIFY(stillUnavailable);
+    QCOMPARE(stillUnavailable.value(), false);
 }
 
 void NextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests::
@@ -232,7 +254,9 @@ closedSessionDefaultsFalseAndDoesNotOverwritePersistedValue()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QCOMPARE(port.load(), false);
+    const auto closed = port.load();
+    QVERIFY(closed);
+    QCOMPARE(closed.value(), false);
     const auto saveFailure = port.save(false);
     QVERIFY(!saveFailure);
     QCOMPARE(saveFailure.error().code, Domain::ErrorCode::Technical);
@@ -272,7 +296,9 @@ roundTripsBothValuesUsingTheExactLegacyKey()
     {
         const auto saved = port.save(expected);
         QVERIFY(saved);
-        QCOMPARE(port.load(), expected);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), expected);
 
         const auto stored = repository->loadSetting(preferenceKey());
         QVERIFY(stored);

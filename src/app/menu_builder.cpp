@@ -4,6 +4,7 @@
 #include "core/application_services.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/calendar/ui/calendar_preferences_panel.h"
+#include "features/classes/ui/classes_page.h"
 #include "mainwindow.h"
 #include "next/application/schedule_testing_layout_clear_use_case.h"
 #include "next/platform/application_services_schedule_testing_layout_clear_port.h"
@@ -18,6 +19,7 @@
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QAction>
@@ -571,13 +573,30 @@ void addNavigationPreferencesTab(
             "preferencesNavigationShowMiddleSchoolAnalyticsAndEvaluations"
             )
         );
+    bool currentAnalyticsAndEvaluationsVisibility = false;
+    if (window && window->pageManager())
+    {
+        if (const ClassesPage* const classesPage =
+                window->pageManager()->classesPage())
+        {
+            currentAnalyticsAndEvaluationsVisibility =
+                classesPage->showsMiddleSchoolAnalyticsAndEvaluations();
+        }
+    }
+    if (window && window->services())
+    {
+        const auto storedVisibility = ClassMngr::Next::Platform::
+            ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
+                *window->services()
+                ).load();
+        if (storedVisibility)
+        {
+            currentAnalyticsAndEvaluationsVisibility =
+                storedVisibility.value();
+        }
+    }
     showMiddleSchoolAnalyticsAndEvaluations->setChecked(
-        window && window->services()
-            ? ClassMngr::Next::Platform::
-                ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
-                    *window->services()
-                    ).load()
-            : false
+        currentAnalyticsAndEvaluationsVisibility
         );
     navigationLayout->addWidget(showMiddleSchoolAnalyticsAndEvaluations);
 
@@ -837,7 +856,11 @@ void addNavigationPreferencesTab(
         showMiddleSchoolAnalyticsAndEvaluations,
         &QCheckBox::toggled,
         page,
-        [window, showMiddleSchoolAnalyticsAndEvaluations](bool show)
+        [
+            window,
+            showMiddleSchoolAnalyticsAndEvaluations,
+            lastKnownVisibility = currentAnalyticsAndEvaluationsVisibility
+        ](bool show) mutable
         {
             if (window && window->services())
             {
@@ -854,15 +877,32 @@ void addNavigationPreferencesTab(
                         QString::fromStdString(saved.error().message)
                         );
 
-                    const bool persistedValue = port.load();
+                    bool restoredVisibility = lastKnownVisibility;
+                    if (window->pageManager())
+                    {
+                        if (const ClassesPage* const classesPage =
+                                window->pageManager()->classesPage())
+                        {
+                            restoredVisibility =
+                                classesPage->showsMiddleSchoolAnalyticsAndEvaluations();
+                        }
+                    }
+                    const auto persistedValue = port.load();
+                    if (persistedValue)
+                    {
+                        restoredVisibility = persistedValue.value();
+                        lastKnownVisibility = restoredVisibility;
+                    }
                     const QSignalBlocker showAnalyticsSignals(
                         showMiddleSchoolAnalyticsAndEvaluations
                         );
                     showMiddleSchoolAnalyticsAndEvaluations->setChecked(
-                        persistedValue
+                        restoredVisibility
                         );
                     return;
                 }
+
+                lastKnownVisibility = show;
             }
 
             if (window)

@@ -472,6 +472,11 @@ ClassesSection ClassesPage::currentSection() const
     return m_currentSection;
 }
 
+bool ClassesPage::showsMiddleSchoolAnalyticsAndEvaluations() const
+{
+    return m_showMiddleSchoolAnalyticsAndEvaluations;
+}
+
 ClassesPageRuntimeMetrics ClassesPage::runtimeMetrics() const
 {
     ClassesPageRuntimeMetrics metrics;
@@ -713,14 +718,23 @@ void ClassesPage::refreshNavigationPreferences()
             ? ClassTabNavigation::VisibilityScope::AllClasses
             : ClassTabNavigation::VisibilityScope::ActiveSchedule
         );
-    setShowMiddleSchoolAnalyticsAndEvaluations(
-        m_services
-            ? ClassMngr::Next::Platform::
-                ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
-                    *m_services
-                    ).load()
-            : false
-        );
+    if (!m_services)
+    {
+        setShowMiddleSchoolAnalyticsAndEvaluations(false);
+        return;
+    }
+
+    const auto showMiddleSchoolAnalyticsAndEvaluations =
+        ClassMngr::Next::Platform::
+            ApplicationServicesMiddleSchoolAnalyticsPreferencesPort(
+                *m_services
+                ).load();
+    if (showMiddleSchoolAnalyticsAndEvaluations)
+    {
+        setShowMiddleSchoolAnalyticsAndEvaluations(
+            showMiddleSchoolAnalyticsAndEvaluations.value()
+            );
+    }
 }
 
 void ClassesPage::markStale()

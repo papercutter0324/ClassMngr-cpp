@@ -1,9 +1,12 @@
 #include "app/mainwindow.h"
+#include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/repositories/settings_repository.h"
+#include "domain/models/class_info.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "next/application/class_visibility_preferences.h"
@@ -18,6 +21,7 @@
 #include "next/platform/application_services_evaluation_default_policy_port.h"
 #include "next/platform/application_services_middle_school_analytics_preferences_port.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QAction>
 #include <QApplication>
@@ -179,6 +183,7 @@ private slots:
     void noDatabaseScheduleDisplayPreferenceFailureRestoresDefaultsWithoutRefreshingSchedule();
     void preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
+    void middleSchoolPreferenceReadFailurePreservesKnownVisibleState();
     void evaluationDefaultPolicyFailureRestoresSelectionAndSuccessfulRetryDoesNotRefresh();
     void dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
     void classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce();
@@ -960,6 +965,127 @@ middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount + 1);
     QVERIFY(preferenceAfterRetry);
     QCOMPARE(auditsAfterRetry, 1);
+}
+
+void MainWindowClassVisibilityPreferencesFailureTests::
+middleSchoolPreferenceReadFailurePreservesKnownVisibleState()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+
+    const QString databasePath = m_databaseDirectory->filePath(
+        QStringLiteral("middle-school-analytics-read-failure.tps")
+        );
+    const Status opened = window.services()->openDatabase(databasePath);
+    QVERIFY2(opened.has_value(), "Could not open the test database.");
+    window.applyDatabaseLoadedState();
+
+    auto* const services = window.services();
+    QVERIFY(services);
+    const auto createdClass = services->classService()->create(
+        QStringLiteral("Middle School Read Failure")
+        );
+    QVERIFY(createdClass.has_value());
+    DatabaseSession* const session = services->databaseSession();
+    QVERIFY(session);
+    ClassInfo classInfo;
+    classInfo.classId = createdClass.value();
+    classInfo.classGrade = QStringLiteral("M1");
+    QVERIFY(session->classInfoRepository()->saveClassInfo(classInfo));
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesMiddleSchoolAnalyticsPreferencesPort preferences(
+            *services
+            );
+    QVERIFY(preferences.save(true));
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    pages->showPage(PageType::Classes);
+    ClassesPage* const classesPage = pages->classesPage();
+    QVERIFY(classesPage);
+    QVERIFY(classesPage->openClass(createdClass.value()));
+    QVERIFY(classesPage->showsMiddleSchoolAnalyticsAndEvaluations());
+
+    auto* const sectionTabs = classesPage->findChild<NavigationTabWidget*>(
+        QStringLiteral("classesSectionTabs")
+        );
+    QVERIFY(sectionTabs);
+    QCOMPARE(sectionTabs->count(), 6);
+    QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
+    QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
+
+    QAction* const preferencesAction = window.findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(preferencesAction);
+    QVERIFY(executeSql(session, QStringLiteral("DROP TABLE app_settings")));
+
+    classesPage->refreshNavigationPreferences();
+    QVERIFY(classesPage->showsMiddleSchoolAnalyticsAndEvaluations());
+    QCOMPARE(sectionTabs->count(), 6);
+    QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
+    QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
+
+    bool dialogObserved = false;
+    bool preferenceControlPreserved = false;
+    QString scriptFailure;
+    QTimer::singleShot(
+        0,
+        &window,
+        [&]()
+        {
+            QDialog* const dialog = window.findChild<QDialog*>(
+                QStringLiteral("preferencesDialog")
+                );
+            if (!dialog)
+            {
+                scriptFailure = QStringLiteral(
+                    "Preferences dialog was not opened after a preference read failure."
+                    );
+                return;
+            }
+
+            auto* const showAnalytics = dialog->findChild<QCheckBox*>(
+                QStringLiteral(
+                    "preferencesNavigationShowMiddleSchoolAnalyticsAndEvaluations"
+                    )
+                );
+            if (!showAnalytics)
+            {
+                scriptFailure = QStringLiteral(
+                    "Middle-school analytics preference control was missing."
+                    );
+                dialog->reject();
+                return;
+            }
+
+            dialogObserved = true;
+            preferenceControlPreserved = showAnalytics->isChecked();
+            dialog->reject();
+        }
+        );
+
+    preferencesAction->trigger();
+
+    QVERIFY2(scriptFailure.isEmpty(), qPrintable(scriptFailure));
+    QVERIFY(dialogObserved);
+    QVERIFY(preferenceControlPreserved);
+    QVERIFY(classesPage->showsMiddleSchoolAnalyticsAndEvaluations());
+    QCOMPARE(sectionTabs->count(), 6);
+    QCOMPARE(sectionTabs->tabText(2), QStringLiteral("Analytics"));
+    QCOMPARE(sectionTabs->tabText(3), QStringLiteral("Evaluations"));
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::

@@ -41,30 +41,48 @@ public:
         ApplicationServicesMiddleSchoolAnalyticsPreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] bool load() const override
+    [[nodiscard]] Application::MiddleSchoolAnalyticsPreferencesReadResult
+    load() const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return false;
+            return Application::MiddleSchoolAnalyticsPreferencesReadResult::
+                success(false);
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return false;
+            return Application::MiddleSchoolAnalyticsPreferencesReadResult::
+                success(false);
         }
 
         const auto storedValue = repository->loadSetting(key());
-        if (!storedValue || !storedValue->isValid())
+        if (!storedValue)
+        {
+            const QByteArray errorBytes = storedValue.error().toUtf8();
+            return Application::MiddleSchoolAnalyticsPreferencesReadResult::
+                failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = errorBytes.isEmpty()
+                        ? "Middle-school analytics preference could not be loaded."
+                        : errorBytes.toStdString(),
+                    .recoverable = false
+                });
+        }
+
+        if (!storedValue->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
             static_cast<void>(repository->saveSetting(key(), false));
-            return false;
+            return Application::MiddleSchoolAnalyticsPreferencesReadResult::
+                success(false);
         }
 
         // Preserve the previous QVariant coercion for stored values.
-        return storedValue->toBool();
+        return Application::MiddleSchoolAnalyticsPreferencesReadResult::
+            success(storedValue->toBool());
     }
 
     [[nodiscard]] Application::MiddleSchoolAnalyticsPreferencesSaveResult save(
