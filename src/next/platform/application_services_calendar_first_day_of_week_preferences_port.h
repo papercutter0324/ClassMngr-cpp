@@ -50,37 +50,48 @@ public:
         ApplicationServicesCalendarFirstDayOfWeekPreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] Application::CalendarFirstDayOfWeek load()
-        const override
+    [[nodiscard]] Application::CalendarFirstDayOfWeekPreferencesLoadResult
+    load() const override
     {
         const Application::CalendarFirstDayOfWeek fallback =
             localeFirstDayOfWeek();
 
         if (!m_session || !m_session->isOpen())
         {
-            return fallback;
+            return Application::
+                CalendarFirstDayOfWeekPreferencesLoadResult::success(fallback);
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return fallback;
+            return Application::
+                CalendarFirstDayOfWeekPreferencesLoadResult::success(fallback);
         }
 
         const auto stored = repository->loadSetting(key());
         if (!stored)
         {
-            return fallback;
+            return Application::
+                CalendarFirstDayOfWeekPreferencesLoadResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = loadFailure(stored.error()),
+                    .recoverable = false
+                });
         }
 
         bool ok = false;
         const int storedDay = stored->toInt(&ok);
         if (!ok || storedDay < 0 || storedDay > 6)
         {
-            return fallback;
+            return Application::
+                CalendarFirstDayOfWeekPreferencesLoadResult::success(fallback);
         }
 
-        return static_cast<Application::CalendarFirstDayOfWeek>(storedDay);
+        return Application::
+            CalendarFirstDayOfWeekPreferencesLoadResult::success(
+                static_cast<Application::CalendarFirstDayOfWeek>(storedDay)
+                );
     }
 
     [[nodiscard]] Application::
@@ -142,6 +153,20 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::string loadFailure(const QString& diagnostic)
+    {
+        std::string message = "Calendar first-day preference '";
+        message.append(key().toStdString());
+        message.append("' could not be loaded");
+        if (!diagnostic.isEmpty())
+        {
+            message.append(": ");
+            message.append(diagnostic.toStdString());
+        }
+        message.push_back('.');
+        return message;
+    }
+
     [[nodiscard]] static Application::
         CalendarFirstDayOfWeekPreferencesPort::SaveResult failure(
             std::string message

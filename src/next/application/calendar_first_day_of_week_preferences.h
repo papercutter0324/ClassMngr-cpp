@@ -18,12 +18,16 @@ enum class CalendarFirstDayOfWeek
     Saturday = 6
 };
 
+using CalendarFirstDayOfWeekPreferencesLoadResult =
+    Domain::Result<CalendarFirstDayOfWeek>;
+
 class CalendarFirstDayOfWeekPreferencesPort
 {
 public:
     virtual ~CalendarFirstDayOfWeekPreferencesPort() = default;
 
-    [[nodiscard]] virtual CalendarFirstDayOfWeek load() const = 0;
+    [[nodiscard]] virtual CalendarFirstDayOfWeekPreferencesLoadResult load()
+        const = 0;
 
     using SaveResult = Domain::Result<void>;
 

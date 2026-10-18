@@ -68,7 +68,7 @@ class NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests
 private slots:
     void initTestCase();
     void missingAndUnavailableSettingsDefaultFalse();
-    void readErrorsDefaultFalse();
+    void readErrorsReturnTechnicalFailure();
     void exactKeysRoundTripAndPreserveUnrelatedSettings();
     void preservesLegacyQVariantBooleanCoercion();
     void atomicSaveFailureRollsBackAndPreservesUnrelatedSettings();
@@ -200,7 +200,7 @@ missingAndUnavailableSettingsDefaultFalse()
 }
 
 void NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests::
-readErrorsDefaultFalse()
+readErrorsReturnTechnicalFailure()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -213,9 +213,15 @@ readErrorsDefaultFalse()
 
     ApplicationServicesCalendarEventDisplayPreferencesPort port(services);
     const auto loaded = port.load();
-    QVERIFY(loaded);
-    QVERIFY(!loaded.value().showEventsAtAllCampuses);
-    QVERIFY(!loaded.value().hideStartOfTermEvents);
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().recoverable);
+    const QString diagnostic = QString::fromStdString(
+        loaded.error().message
+        );
+    QVERIFY(diagnostic.contains(QString::fromUtf8(ShowAllCampusesKey)));
+    QVERIFY(diagnostic.contains(QStringLiteral("could not be loaded")));
+    QVERIFY(diagnostic.contains(QStringLiteral("failed")));
 }
 
 void NextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests::

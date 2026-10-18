@@ -90,7 +90,7 @@ private slots:
     void cleanupTestCase();
     void missingSettingUsesLocaleFallback();
     void invalidSettingUsesLocaleFallback();
-    void readErrorsUseLocaleFallback();
+    void readErrorsReturnTechnicalFailureAndCanRetry();
     void roundTripsAllDaysUsingExactKey();
     void unavailableSettingsUseLocaleFallbackAndReportSaveFailure();
     void invalidEnumSaveIsRejectedAndPreservesStoredValue();
@@ -130,11 +130,11 @@ missingSettingUsesLocaleFallback()
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(
         servicesPointer
         );
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Sunday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Sunday);
 
     QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
-    QCOMPARE(port.load(), localeFirstDayOfWeek());
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(port.load().value(), localeFirstDayOfWeek());
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
@@ -161,7 +161,7 @@ invalidSettingUsesLocaleFallback()
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(
         servicesPointer
         );
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Monday);
     const auto nonNumericStored = repository->loadSetting(
         QString::fromUtf8(FirstDayOfWeekKey)
         );
@@ -174,7 +174,7 @@ invalidSettingUsesLocaleFallback()
             7
             )
         );
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Monday);
     const auto highStored = repository->loadSetting(
         QString::fromUtf8(FirstDayOfWeekKey)
         );
@@ -187,7 +187,7 @@ invalidSettingUsesLocaleFallback()
             -1
             )
         );
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Monday);
     const auto lowStored = repository->loadSetting(
         QString::fromUtf8(FirstDayOfWeekKey)
         );
@@ -196,7 +196,7 @@ invalidSettingUsesLocaleFallback()
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
-readErrorsUseLocaleFallback()
+readErrorsReturnTechnicalFailureAndCanRetry()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -210,7 +210,30 @@ readErrorsUseLocaleFallback()
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
 
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    const auto failed = port.load();
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!failed.error().recoverable);
+    const QString diagnostic = QString::fromStdString(
+        failed.error().message
+        );
+    QVERIFY(diagnostic.contains(QString::fromUtf8(FirstDayOfWeekKey)));
+    QVERIFY(diagnostic.contains(QStringLiteral("could not be loaded")));
+    QVERIFY(diagnostic.contains(QStringLiteral("failed")));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value BLOB)"
+            )
+        ));
+    QVERIFY(session->settingsRepository()->saveSetting(
+        QString::fromUtf8(FirstDayOfWeekKey),
+        static_cast<int>(CalendarFirstDayOfWeek::Tuesday)
+        ));
+    const auto retried = port.load();
+    QVERIFY(retried);
+    QCOMPARE(retried.value(), CalendarFirstDayOfWeek::Tuesday);
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
@@ -248,7 +271,7 @@ roundTripsAllDaysUsingExactKey()
     for (const CalendarFirstDayOfWeek expected : values)
     {
         QVERIFY(port.save(expected));
-        QCOMPARE(port.load(), expected);
+        QCOMPARE(port.load().value(), expected);
 
         const auto stored = repository->loadSetting(
             QString::fromUtf8(FirstDayOfWeekKey)
@@ -275,26 +298,26 @@ unavailableSettingsUseLocaleFallbackAndReportSaveFailure()
     QVERIFY(!session->isOpen());
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
 
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Monday);
     const auto unavailableSave = port.save(CalendarFirstDayOfWeek::Sunday);
     QVERIFY(!unavailableSave);
     QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::Technical);
     QVERIFY(QString::fromStdString(unavailableSave.error().message).contains(
         QStringLiteral("database session")
         ));
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Monday);
 
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
         );
-    QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(nullPort.load().value(), CalendarFirstDayOfWeek::Monday);
     const auto nullSave = nullPort.save(CalendarFirstDayOfWeek::Sunday);
     QVERIFY(!nullSave);
     QCOMPARE(nullSave.error().code, Domain::ErrorCode::Technical);
     QVERIFY(QString::fromStdString(nullSave.error().message).contains(
         QStringLiteral("database session")
         ));
-    QCOMPARE(nullPort.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(nullPort.load().value(), CalendarFirstDayOfWeek::Monday);
 
     ApplicationServices closedServices;
     const QString closedDatabasePath = databasePath(m_directory);
@@ -316,7 +339,7 @@ unavailableSettingsUseLocaleFallbackAndReportSaveFailure()
     closedServices.closeDatabase();
     QVERIFY(closedServices.dataService());
     QVERIFY(!closedSession->isOpen());
-    QCOMPARE(closedPort.load(), CalendarFirstDayOfWeek::Monday);
+    QCOMPARE(closedPort.load().value(), CalendarFirstDayOfWeek::Monday);
     const auto closedSave = closedPort.save(CalendarFirstDayOfWeek::Monday);
     QVERIFY(!closedSave);
     QCOMPARE(closedSave.error().code, Domain::ErrorCode::Technical);
@@ -357,7 +380,7 @@ invalidEnumSaveIsRejectedAndPreservesStoredValue()
         ));
 
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort port(services);
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Tuesday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Tuesday);
 
     const auto rejected = port.save(static_cast<CalendarFirstDayOfWeek>(7));
 
@@ -372,7 +395,7 @@ invalidEnumSaveIsRejectedAndPreservesStoredValue()
         stored->toInt(),
         static_cast<int>(CalendarFirstDayOfWeek::Tuesday)
         );
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Tuesday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Tuesday);
 }
 
 void NextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests::
@@ -412,7 +435,7 @@ saveFailurePreservesStoredValueAndReportsDiagnostic()
     QVERIFY(QString::fromStdString(failed.error().message).contains(
         QStringLiteral("forced calendar first-day failure")
         ));
-    QCOMPARE(port.load(), CalendarFirstDayOfWeek::Sunday);
+    QCOMPARE(port.load().value(), CalendarFirstDayOfWeek::Sunday);
     const auto unrelated = session->settingsRepository()->loadSetting(
         QStringLiteral("calendar/unrelatedPreference")
         );

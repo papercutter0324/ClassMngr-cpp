@@ -58,6 +58,12 @@ int AcademicCalendarProvider::firstDayOfWeek() const
     return m_firstDayOfWeek;
 }
 
+const std::optional<ClassMngr::Next::Domain::OperationError>&
+AcademicCalendarProvider::firstDayOfWeekLoadError() const
+{
+    return m_firstDayOfWeekLoadError;
+}
+
 const AcademicCalendarSchedule& AcademicCalendarProvider::schedule() const
 {
     return m_schedule;
@@ -236,15 +242,21 @@ AcademicCalendarProvider::setFirstDayOfWeek(int firstDayOfWeek)
     const int normalized =
         firstDayOfWeek == 1 ? 1 : 0;
 
-    if (m_firstDayOfWeek == normalized)
-    {
-        return ClassMngr::Next::Application::
-            CalendarFirstDayOfWeekPreferencesPort::SaveResult::success();
-    }
-
     using FirstDayOfWeekPreferencesPort =
         ClassMngr::Next::Application::
             CalendarFirstDayOfWeekPreferencesPort;
+    if (m_firstDayOfWeekLoadError)
+    {
+        return FirstDayOfWeekPreferencesPort::SaveResult::failure(
+            *m_firstDayOfWeekLoadError
+            );
+    }
+
+    if (m_firstDayOfWeek == normalized)
+    {
+        return FirstDayOfWeekPreferencesPort::SaveResult::success();
+    }
+
     if (!m_firstDayOfWeekPreferences)
     {
         return FirstDayOfWeekPreferencesPort::SaveResult::failure({
@@ -336,11 +348,53 @@ void AcademicCalendarProvider::reload()
 
 void AcademicCalendarProvider::loadOptions()
 {
-    m_firstDayOfWeek = m_firstDayOfWeekPreferences
-        ? static_cast<int>(m_firstDayOfWeekPreferences->load())
-        : static_cast<int>(
-            ClassMngr::Next::Application::CalendarFirstDayOfWeek::Sunday
+    using CalendarFirstDayOfWeek =
+        ClassMngr::Next::Application::CalendarFirstDayOfWeek;
+    if (!m_firstDayOfWeekPreferences)
+    {
+        m_firstDayOfWeek = static_cast<int>(
+            CalendarFirstDayOfWeek::Sunday
             );
+        m_firstDayOfWeekLoadError.reset();
+        return;
+    }
+
+    const auto loaded = m_firstDayOfWeekPreferences->load();
+    if (loaded)
+    {
+        m_firstDayOfWeek = static_cast<int>(loaded.value());
+        m_firstDayOfWeekLoadError.reset();
+        return;
+    }
+
+    m_firstDayOfWeekLoadError = loaded.error();
+    switch (QLocale().firstDayOfWeek())
+    {
+    case Qt::Sunday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Sunday);
+        break;
+    case Qt::Monday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Monday);
+        break;
+    case Qt::Tuesday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Tuesday);
+        break;
+    case Qt::Wednesday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Wednesday);
+        break;
+    case Qt::Thursday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Thursday);
+        break;
+    case Qt::Friday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Friday);
+        break;
+    case Qt::Saturday:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Saturday);
+        break;
+    default:
+        m_firstDayOfWeek = static_cast<int>(CalendarFirstDayOfWeek::Sunday);
+        break;
+    }
 }
 
 QString AcademicCalendarProvider::termName(AcademicTerm term) const

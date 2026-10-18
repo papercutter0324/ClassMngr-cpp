@@ -28,6 +28,8 @@ public:
 
     [[nodiscard]] int revision() const;
     [[nodiscard]] int firstDayOfWeek() const;
+    [[nodiscard]] const std::optional<ClassMngr::Next::Domain::OperationError>&
+        firstDayOfWeekLoadError() const;
     [[nodiscard]] const AcademicCalendarSchedule& schedule() const;
 
     Q_INVOKABLE QString monthTitle(
@@ -82,6 +84,8 @@ private:
     AcademicCalendarSchedule m_schedule;
     std::optional<ClassMngr::Next::Domain::OperationError>
         m_scheduleReadError;
+    std::optional<ClassMngr::Next::Domain::OperationError>
+        m_firstDayOfWeekLoadError;
     bool m_schedulePersistenceKnown = false;
     int m_revision = 0;
     int m_firstDayOfWeek = 0;

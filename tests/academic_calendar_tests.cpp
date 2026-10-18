@@ -5,6 +5,7 @@
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QLocale>
 #include <QtTest>
 
 #include <memory>
@@ -17,10 +18,30 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+class DefaultLocaleRestorer final
+{
+public:
+    DefaultLocaleRestorer()
+        : m_originalLocale(QLocale())
+    {
+    }
+
+    ~DefaultLocaleRestorer()
+    {
+        QLocale::setDefault(m_originalLocale);
+    }
+
+private:
+    QLocale m_originalLocale;
+};
+
 struct AcademicCalendarPreferenceState final
 {
     std::string scheduleJson;
     CalendarFirstDayOfWeek firstDayOfWeek = CalendarFirstDayOfWeek::Sunday;
+    bool failFirstDayReads = false;
+    std::string firstDayReadFailure =
+        "Academic calendar first-day read test failure.";
     int scheduleWriteCount = 0;
     int scheduleWriteAttemptCount = 0;
     bool failScheduleReads = false;
@@ -98,9 +119,21 @@ public:
     {
     }
 
-    [[nodiscard]] CalendarFirstDayOfWeek load() const override
+    [[nodiscard]] CalendarFirstDayOfWeekPreferencesLoadResult load()
+        const override
     {
-        return m_state->firstDayOfWeek;
+        if (m_state->failFirstDayReads)
+        {
+            return CalendarFirstDayOfWeekPreferencesLoadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = m_state->firstDayReadFailure,
+                .recoverable = false
+            });
+        }
+
+        return CalendarFirstDayOfWeekPreferencesLoadResult::success(
+            m_state->firstDayOfWeek
+            );
     }
 
     [[nodiscard]] SaveResult save(
@@ -154,6 +187,7 @@ private slots:
     void providerReloadSignalsOnlyPersistedChanges();
     void providerReadFailureRetainsLoadedScheduleAndRevision();
     void providerInitialReadFailureBlocksSaveUntilSuccessfulReload();
+    void providerFirstDayReadFailureUsesLocaleFallbackAndBlocksSave();
     void providerFirstDaySaveFailureDoesNotPublishAndRetrySucceeds();
     void providerWithoutFirstDayPortDoesNotPublishChange();
     void providerSaveFailureDoesNotPublishScheduleOrRevision();
@@ -523,6 +557,37 @@ providerInitialReadFailureBlocksSaveUntilSuccessfulReload()
         );
     QCOMPARE(provider->revision(), revisionBefore + 1);
     QCOMPARE(revisionChanged.count(), 1);
+}
+
+void AcademicCalendarTests::
+providerFirstDayReadFailureUsesLocaleFallbackAndBlocksSave()
+{
+    const DefaultLocaleRestorer restoreLocale;
+    QLocale::setDefault(QLocale(QStringLiteral("en_GB")));
+    auto state = std::make_shared<AcademicCalendarPreferenceState>();
+    state->failFirstDayReads = true;
+    auto provider = makeProvider(state);
+
+    QCOMPARE(provider->firstDayOfWeek(), 1);
+    QVERIFY(provider->firstDayOfWeekLoadError());
+    QCOMPARE(
+        QString::fromStdString(provider->firstDayOfWeekLoadError()->message),
+        QString::fromStdString(state->firstDayReadFailure)
+        );
+
+    const auto blocked = provider->setFirstDayOfWeek(0);
+    QVERIFY(!blocked);
+    QCOMPARE(blocked.error().code, Domain::ErrorCode::Technical);
+    QCOMPARE(state->firstDayWriteAttemptCount, 0);
+
+    state->failFirstDayReads = false;
+    provider->reload();
+    QCOMPARE(provider->firstDayOfWeek(), 0);
+    QVERIFY(!provider->firstDayOfWeekLoadError());
+    const auto saved = provider->setFirstDayOfWeek(1);
+    QVERIFY(saved);
+    QCOMPARE(state->firstDayWriteAttemptCount, 1);
+    QCOMPARE(state->firstDayWriteCount, 1);
 }
 
 void AcademicCalendarTests::

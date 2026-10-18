@@ -4,6 +4,7 @@
 
 #include <array>
 
+#include <QString>
 #include <QWidget>
 
 class AcademicCalendarProvider;
@@ -53,7 +54,10 @@ private:
     void loadSchedules();
     void loadOptions();
     void loadEventDisplayOptions();
-    [[nodiscard]] bool saveOptions();
+    [[nodiscard]] bool saveAvailableOptions();
+    [[nodiscard]] bool saveEventDisplayOptions();
+    [[nodiscard]] bool saveFirstDayOfWeekOption();
+    void updateLoadWarning();
     void refreshFields();
     void commitDate(int schoolIndex, int termIndex);
     void clearDate(int schoolIndex, int termIndex);
@@ -67,6 +71,9 @@ private:
     CalendarEventImportService* m_importService = nullptr;
     int m_termYear = AcademicCalendarSchedule::FirstTermYear;
     bool m_refreshing = false;
+    bool m_eventDisplayLoaded = false;
+    bool m_firstDayOfWeekLoaded = false;
+    QString m_eventDisplayLoadError;
     bool m_dirty = false;
     std::array<AcademicYearSchedule, SchoolCount> m_schedules;
     std::array<std::array<QDateEdit*, AcademicTermCount>, SchoolCount> m_dateEdits{};
@@ -74,6 +81,7 @@ private:
     QCheckBox* m_showAllCampusesCheck = nullptr;
     QCheckBox* m_hideStartOfTermEventsCheck = nullptr;
     QCheckBox* m_startWeekOnMondayCheck = nullptr;
+    QLabel* m_optionsLoadWarningLabel = nullptr;
     QCheckBox* m_linkCheck = nullptr;
     QLineEdit* m_importUrlEdit = nullptr;
     QLabel* m_importStatusLabel = nullptr;

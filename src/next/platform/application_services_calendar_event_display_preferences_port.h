@@ -5,9 +5,10 @@
 #include "data/repositories/settings_repository.h"
 #include "next/application/calendar_event_display_preferences.h"
 
-#include <QByteArray>
 #include <QString>
 #include <QVariant>
+
+#include <string>
 
 namespace ClassMngr::Next::Platform
 {
@@ -63,16 +64,40 @@ public:
         const auto showAllCampuses = repository->loadSetting(
             showEventsAtAllCampusesKey()
             );
+        if (!showAllCampuses)
+        {
+            return Application::CalendarEventDisplayPreferencesResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = settingLoadFailure(
+                    showEventsAtAllCampusesKey(),
+                    showAllCampuses.error()
+                    ),
+                .recoverable = false
+            });
+        }
+
         const auto hideStartOfTerm = repository->loadSetting(
             hideStartOfTermEventsKey()
             );
+        if (!hideStartOfTerm)
+        {
+            return Application::CalendarEventDisplayPreferencesResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = settingLoadFailure(
+                    hideStartOfTermEventsKey(),
+                    hideStartOfTerm.error()
+                    ),
+                .recoverable = false
+            });
+        }
+
         return Application::CalendarEventDisplayPreferencesResult::success({
             .showEventsAtAllCampuses = settingToBool(
-                showAllCampuses ? *showAllCampuses : QVariant(),
+                showAllCampuses.value(),
                 false
                 ),
             .hideStartOfTermEvents = settingToBool(
-                hideStartOfTerm ? *hideStartOfTerm : QVariant(),
+                hideStartOfTerm.value(),
                 false
                 )
         });
@@ -134,6 +159,23 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::string settingLoadFailure(
+        const QString& key,
+        const QString& diagnostic
+        )
+    {
+        std::string message = "Calendar event-display preference '";
+        message.append(key.toStdString());
+        message.append("' could not be loaded");
+        if (!diagnostic.isEmpty())
+        {
+            message.append(": ");
+            message.append(diagnostic.toStdString());
+        }
+        message.push_back('.');
+        return message;
+    }
+
     [[nodiscard]] static QString showEventsAtAllCampusesKey()
     {
         return QStringLiteral("calendar/showEventsAtAllCampuses");

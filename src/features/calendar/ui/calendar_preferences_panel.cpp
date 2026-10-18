@@ -25,6 +25,7 @@
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QStringList>
 #include <QVBoxLayout>
 
 namespace
@@ -360,6 +361,17 @@ QWidget* CalendarPreferencesPanel::buildOptionsSection()
         );
     layout->addWidget(m_startWeekOnMondayCheck);
 
+    m_optionsLoadWarningLabel = new QLabel(section);
+    m_optionsLoadWarningLabel->setObjectName(
+        QStringLiteral("preferencesCalendarLoadWarning")
+        );
+    m_optionsLoadWarningLabel->setWordWrap(true);
+    m_optionsLoadWarningLabel->setStyleSheet(
+        QStringLiteral("color: #a33; font-weight: 600;")
+        );
+    m_optionsLoadWarningLabel->hide();
+    layout->addWidget(m_optionsLoadWarningLabel);
+
     m_resetEventsButton =
         new TextFitPushButton(tr("Reset Calendar to Defaults"), section);
     m_resetEventsButton->setObjectName(
@@ -368,14 +380,26 @@ QWidget* CalendarPreferencesPanel::buildOptionsSection()
     m_resetEventsButton->setMinimumHeight(32);
     layout->addWidget(m_resetEventsButton, 0, Qt::AlignLeft);
 
-    const auto save = [this]()
+    const auto saveEventDisplay = [this]()
     {
-        if (m_refreshing)
+        if (m_refreshing || !m_eventDisplayLoaded)
         {
             return;
         }
 
-        if (saveOptions())
+        if (saveAvailableOptions())
+        {
+            emit calendarPreferencesChanged(false);
+        }
+    };
+    const auto saveFirstDayOfWeek = [this]()
+    {
+        if (m_refreshing || !m_firstDayOfWeekLoaded)
+        {
+            return;
+        }
+
+        if (saveAvailableOptions())
         {
             emit calendarPreferencesChanged(false);
         }
@@ -384,19 +408,19 @@ QWidget* CalendarPreferencesPanel::buildOptionsSection()
         m_showAllCampusesCheck,
         &QCheckBox::toggled,
         this,
-        save
+        saveEventDisplay
         );
     connect(
         m_hideStartOfTermEventsCheck,
         &QCheckBox::toggled,
         this,
-        save
+        saveEventDisplay
         );
     connect(
         m_startWeekOnMondayCheck,
         &QCheckBox::toggled,
         this,
-        save
+        saveFirstDayOfWeek
         );
     connect(
         m_resetEventsButton,
@@ -653,8 +677,20 @@ void CalendarPreferencesPanel::loadOptions()
     if (m_startWeekOnMondayCheck && m_provider)
     {
         m_startWeekOnMondayCheck->setChecked(m_provider->firstDayOfWeek() == 1);
+        m_firstDayOfWeekLoaded =
+            !m_provider->firstDayOfWeekLoadError().has_value();
+        m_startWeekOnMondayCheck->setEnabled(m_firstDayOfWeekLoaded);
+    }
+    else
+    {
+        m_firstDayOfWeekLoaded = false;
+        if (m_startWeekOnMondayCheck)
+        {
+            m_startWeekOnMondayCheck->setEnabled(false);
+        }
     }
 
+    updateLoadWarning();
     m_refreshing = false;
 }
 
@@ -666,6 +702,10 @@ void CalendarPreferencesPanel::loadEventDisplayOptions()
                 m_services
                 ).load();
 
+    m_eventDisplayLoaded = displayPreferences.hasValue();
+    m_eventDisplayLoadError = displayPreferences
+        ? QString()
+        : QString::fromStdString(displayPreferences.error().message);
     if (m_showAllCampusesCheck)
     {
         m_showAllCampusesCheck->setChecked(
@@ -683,10 +723,26 @@ void CalendarPreferencesPanel::loadEventDisplayOptions()
                 : false
             );
     }
+
+    if (m_showAllCampusesCheck)
+    {
+        m_showAllCampusesCheck->setEnabled(m_eventDisplayLoaded);
+    }
+    if (m_hideStartOfTermEventsCheck)
+    {
+        m_hideStartOfTermEventsCheck->setEnabled(m_eventDisplayLoaded);
+    }
+
+    updateLoadWarning();
 }
 
-bool CalendarPreferencesPanel::saveOptions()
+bool CalendarPreferencesPanel::saveEventDisplayOptions()
 {
+    if (!m_eventDisplayLoaded)
+    {
+        return false;
+    }
+
     const auto saved =
         ClassMngr::Next::Platform::
             ApplicationServicesCalendarEventDisplayPreferencesPort(
@@ -707,7 +763,7 @@ bool CalendarPreferencesPanel::saveOptions()
         const bool wasRefreshing = m_refreshing;
         m_refreshing = true;
         loadEventDisplayOptions();
-        if (m_provider && m_startWeekOnMondayCheck)
+        if (m_firstDayOfWeekLoaded && m_provider && m_startWeekOnMondayCheck)
         {
             m_startWeekOnMondayCheck->setChecked(
                 m_provider->firstDayOfWeek() == 1
@@ -727,41 +783,97 @@ bool CalendarPreferencesPanel::saveOptions()
         return false;
     }
 
-    if (m_provider && m_startWeekOnMondayCheck)
+    return true;
+}
+
+bool CalendarPreferencesPanel::saveAvailableOptions()
+{
+    if (m_eventDisplayLoaded && !saveEventDisplayOptions())
     {
-        const auto firstDaySaved = m_provider->setFirstDayOfWeek(
-            m_startWeekOnMondayCheck->isChecked() ? 1 : 0
+        return false;
+    }
+
+    if (m_firstDayOfWeekLoaded && !saveFirstDayOfWeekOption())
+    {
+        return false;
+    }
+
+    return m_eventDisplayLoaded || m_firstDayOfWeekLoaded;
+}
+
+bool CalendarPreferencesPanel::saveFirstDayOfWeekOption()
+{
+    if (!m_firstDayOfWeekLoaded || !m_provider || !m_startWeekOnMondayCheck)
+    {
+        return false;
+    }
+
+    const auto firstDaySaved = m_provider->setFirstDayOfWeek(
+        m_startWeekOnMondayCheck->isChecked() ? 1 : 0
+        );
+    if (!firstDaySaved)
+    {
+        const QString diagnostic = QString::fromStdString(
+            firstDaySaved.error().message
             );
-        if (!firstDaySaved)
-        {
-            const QString diagnostic = QString::fromStdString(
-                firstDaySaved.error().message
-                );
-            qWarning()
-                << "Failed to save calendar first-day preference:"
-                << diagnostic;
+        qWarning()
+            << "Failed to save calendar first-day preference:"
+            << diagnostic;
 
-            const bool wasRefreshing = m_refreshing;
-            m_refreshing = true;
-            m_startWeekOnMondayCheck->setChecked(
-                m_provider->firstDayOfWeek() == 1
-                );
-            m_refreshing = wasRefreshing;
+        const bool wasRefreshing = m_refreshing;
+        m_refreshing = true;
+        m_startWeekOnMondayCheck->setChecked(
+            m_provider->firstDayOfWeek() == 1
+            );
+        m_refreshing = wasRefreshing;
 
-            DialogServices::showWarning(
-                this,
-                tr("Calendar Preferences Not Saved"),
-                tr(
-                    "The first day of the week could not be saved. "
-                    "The previous setting has been restored."
-                    ),
-                diagnostic
-                );
-            return false;
-        }
+        DialogServices::showWarning(
+            this,
+            tr("Calendar Preferences Not Saved"),
+            tr(
+                "The first day of the week could not be saved. "
+                "The previous setting has been restored."
+                ),
+            diagnostic
+            );
+        return false;
     }
 
     return true;
+}
+
+void CalendarPreferencesPanel::updateLoadWarning()
+{
+    if (!m_optionsLoadWarningLabel)
+    {
+        return;
+    }
+
+    QStringList diagnostics;
+    if (!m_eventDisplayLoaded)
+    {
+        diagnostics.append(m_eventDisplayLoadError);
+    }
+    if (m_provider && m_provider->firstDayOfWeekLoadError())
+    {
+        diagnostics.append(QString::fromStdString(
+            m_provider->firstDayOfWeekLoadError()->message
+            ));
+    }
+
+    if (diagnostics.isEmpty())
+    {
+        m_optionsLoadWarningLabel->clear();
+        m_optionsLoadWarningLabel->hide();
+        return;
+    }
+
+    m_optionsLoadWarningLabel->setText(
+        tr("Some calendar preferences could not be loaded. "
+           "The affected controls are disabled.\n%1")
+            .arg(diagnostics.join(QLatin1Char('\n')))
+        );
+    m_optionsLoadWarningLabel->show();
 }
 
 void CalendarPreferencesPanel::refreshFields()
