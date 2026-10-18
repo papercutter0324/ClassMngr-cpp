@@ -11,6 +11,7 @@
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/sidebar/sidebar.h"
 
 #include <QApplication>
@@ -71,6 +72,7 @@ private slots:
     void exportActionPreservesWorkspaceAndUpdatesExportDirectoryPreference();
     void printCurrentPageActionCancellationPreservesWorkspaceState();
     void saveCurrentPageAsActionWritesSchedulePdf();
+    void workspaceChildTabChangesRefreshPrintAndSaveAsActions();
     void saveActionCommitsActiveDatabaseTransaction();
 
 private:
@@ -732,6 +734,79 @@ saveCurrentPageAsActionWritesSchedulePdf()
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
     QVERIFY(QApplication::activeModalWidget() == nullptr);
+}
+
+void MainWindowSaveAsExportParityTests::
+workspaceChildTabChangesRefreshPrintAndSaveAsActions()
+{
+    QTemporaryDir workspaceRoot;
+    QVERIFY(workspaceRoot.isValid());
+
+    const QString sourcePath = QFileInfo(
+        workspaceRoot.filePath(QStringLiteral("workspace-output-actions.tps"))
+        ).absoluteFilePath();
+
+    ApplicationServices seedServices;
+    QVERIFY(seedServices.openDatabase(sourcePath));
+    seedServices.closeDatabase();
+
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.initialDatabasePath = sourcePath;
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    window.show();
+    QApplication::processEvents();
+
+    ApplicationServices* const services = window.services();
+    QVERIFY(services);
+    QVERIFY(services->hasOpenDatabase());
+
+    PageManager* const pages = window.pageManager();
+    QVERIFY(pages);
+    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
+    MyWorkspacePage* const workspace = pages->myWorkspacePage();
+    QVERIFY(workspace);
+
+    QAction* const printAction = window.actions().printCurrentPage;
+    QAction* const saveAsAction = window.actions().saveCurrentPageAs;
+    QVERIFY(printAction);
+    QVERIFY(saveAsAction);
+
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QVERIFY(!workspace->calendarPage());
+    QVERIFY(printAction->isEnabled());
+    QVERIFY(saveAsAction->isEnabled());
+
+    workspace->openTab(WorkspaceTab::Details);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Details);
+    QVERIFY(!printAction->isEnabled());
+    QVERIFY(!saveAsAction->isEnabled());
+
+    NavigationTabWidget* const tabs =
+        workspace->findChild<NavigationTabWidget*>(
+            QStringLiteral("myWorkspaceTabs")
+            );
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(static_cast<int>(WorkspaceTab::Calendar));
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Calendar);
+    QVERIFY(workspace->calendarPage());
+    QVERIFY(!printAction->isEnabled());
+    QVERIFY(!saveAsAction->isEnabled());
+
+    workspace->openTab(WorkspaceTab::Schedule);
+    QCOMPARE(workspace->currentTab(), WorkspaceTab::Schedule);
+    QVERIFY(printAction->isEnabled());
+    QVERIFY(saveAsAction->isEnabled());
 }
 
 void MainWindowSaveAsExportParityTests::

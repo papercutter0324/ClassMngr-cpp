@@ -326,7 +326,7 @@ void MyWorkspacePage::buildUi()
         m_tabs,
         &NavigationTabWidget::currentChanged,
         this,
-        [this](int index)
+        [this, calendarInitializationInProgress = false](int index) mutable
         {
             if (index == tabIndex(WorkspaceTab::Details))
             {
@@ -337,12 +337,18 @@ void MyWorkspacePage::buildUi()
                 && !m_calendarPage
                 )
             {
+                calendarInitializationInProgress = true;
                 ensureCalendarInitialized();
+                calendarInitializationInProgress = false;
                 m_tabs->setCurrentIndex(tabIndex(WorkspaceTab::Calendar));
                 return;
             }
 
             activateCurrentChildPage();
+            if (!calendarInitializationInProgress)
+            {
+                emit outputCapabilitiesChanged();
+            }
         }
         );
     openTab(WorkspaceTab::Schedule);
