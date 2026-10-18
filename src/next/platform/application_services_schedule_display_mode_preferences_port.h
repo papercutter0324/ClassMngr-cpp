@@ -9,6 +9,7 @@
 #include <QString>
 #include <QVariant>
 
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -17,7 +18,7 @@ namespace ClassMngr::Next::Platform
 
 // Qt-boundary adapter for the persisted ScheduleWidget display mode. The
 // canonical string setting and legacy boolean migration remain here; callers
-// consume only the typed application mode.
+// receive a typed mode result that preserves repository read failures.
 class ApplicationServicesScheduleDisplayModePreferencesPort final
     : public Application::ScheduleDisplayModePreferencesPort
 {
@@ -42,29 +43,61 @@ public:
         ApplicationServicesScheduleDisplayModePreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] Application::ScheduleDisplayMode load()
+    [[nodiscard]] Application::ScheduleDisplayModePreferencesLoadResult load()
         const override
     {
         DatabaseSession* const session = m_services.databaseSession();
         if (!session || !session->isOpen())
         {
-            return Application::ScheduleDisplayMode::Regular;
+            return Application::
+                ScheduleDisplayModePreferencesLoadResult::success(
+                    Application::ScheduleDisplayMode::Regular
+                    );
         }
 
         SettingsRepository* const repository = session->settingsRepository();
         if (!repository)
         {
-            return Application::ScheduleDisplayMode::Regular;
+            return Application::
+                ScheduleDisplayModePreferencesLoadResult::success(
+                    Application::ScheduleDisplayMode::Regular
+                    );
         }
 
         const auto storedModeResult = repository->loadSetting(canonicalKey());
-        const QVariant storedMode = storedModeResult.value_or(QVariant());
-        const Application::ScheduleDisplayMode mode = modeFromSetting(
-            storedMode,
-            settingToBool(
-                loadOrDefault(*repository, legacyKey(), false)
-                )
+        if (!storedModeResult)
+        {
+            return loadFailure(
+                canonicalKey(),
+                storedModeResult.error()
+                );
+        }
+
+        const QVariant storedMode = *storedModeResult;
+        const auto parsedMode = modeFromCanonicalSetting(storedMode);
+        if (parsedMode)
+        {
+            return Application::
+                ScheduleDisplayModePreferencesLoadResult::success(*parsedMode);
+        }
+
+        const auto legacyModeResult = repository->loadSetting(legacyKey());
+        if (!legacyModeResult)
+        {
+            return loadFailure(
+                legacyKey(),
+                legacyModeResult.error()
+                );
+        }
+
+        const bool legacyIntensive = settingToBool(
+            legacyModeResult->isValid()
+                ? *legacyModeResult
+                : QVariant()
             );
+        const Application::ScheduleDisplayMode mode = legacyIntensive
+            ? Application::ScheduleDisplayMode::Intensive
+            : Application::ScheduleDisplayMode::Regular;
 
         if (!storedMode.isValid())
         {
@@ -77,7 +110,8 @@ public:
             }
         }
 
-        return mode;
+        return Application::
+            ScheduleDisplayModePreferencesLoadResult::success(mode);
     }
 
     [[nodiscard]] Application::ScheduleDisplayModePreferencesSaveResult save(
@@ -114,6 +148,27 @@ public:
     }
 
 private:
+    [[nodiscard]] static Application::
+        ScheduleDisplayModePreferencesLoadResult loadFailure(
+            const QString& key,
+            const QString& message
+            )
+    {
+        qWarning()
+            << "Failed to load setting"
+            << key
+            << ':'
+            << message;
+        return Application::
+            ScheduleDisplayModePreferencesLoadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = message.isEmpty()
+                    ? "Schedule display mode could not be loaded."
+                    : message.toStdString(),
+                .recoverable = false
+            });
+    }
+
     [[nodiscard]] static Application::
         ScheduleDisplayModePreferencesSaveResult failure(
             std::string message
@@ -170,9 +225,9 @@ private:
         }
     }
 
-    [[nodiscard]] static Application::ScheduleDisplayMode modeFromSetting(
-        const QVariant& value,
-        const bool legacyIntensive
+    [[nodiscard]] static std::optional<Application::ScheduleDisplayMode>
+        modeFromCanonicalSetting(
+        const QVariant& value
         )
     {
         const QString normalized =
@@ -193,9 +248,7 @@ private:
             return Application::ScheduleDisplayMode::Regular;
         }
 
-        return legacyIntensive
-            ? Application::ScheduleDisplayMode::Intensive
-            : Application::ScheduleDisplayMode::Regular;
+        return std::nullopt;
     }
 
     [[nodiscard]] static bool settingToBool(
@@ -221,26 +274,6 @@ private:
         }
 
         return value.toBool();
-    }
-
-    [[nodiscard]] static QVariant loadOrDefault(
-        SettingsRepository& repository,
-        const QString& key,
-        const QVariant& defaultValue
-        )
-    {
-        const auto value = repository.loadSetting(key);
-        if (!value)
-        {
-            qWarning()
-                << "Failed to load setting"
-                << key
-                << ':'
-                << value.error();
-            return defaultValue;
-        }
-
-        return value->isValid() ? *value : defaultValue;
     }
 
     [[nodiscard]] static Application::

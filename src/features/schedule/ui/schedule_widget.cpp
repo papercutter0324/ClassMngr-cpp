@@ -903,18 +903,21 @@ void ScheduleWidget::loadSettings()
                 *m_services
                 );
         const auto storedMode = port.load();
-        switch (storedMode)
+        if (storedMode)
         {
-        case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
-            m_displayMode = ::ScheduleDisplayMode::Intensive;
-            break;
-        case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
-            m_displayMode = ::ScheduleDisplayMode::Testing;
-            break;
-        case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
-        default:
-            m_displayMode = ::ScheduleDisplayMode::Regular;
-            break;
+            switch (storedMode.value())
+            {
+            case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
+                m_displayMode = ::ScheduleDisplayMode::Intensive;
+                break;
+            case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
+                m_displayMode = ::ScheduleDisplayMode::Testing;
+                break;
+            case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
+            default:
+                m_displayMode = ::ScheduleDisplayMode::Regular;
+                break;
+            }
         }
     }
 }

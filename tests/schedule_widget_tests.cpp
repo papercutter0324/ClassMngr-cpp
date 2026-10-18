@@ -87,6 +87,7 @@ void reset();
 void setCurrentTheme(Theme theme);
 void setDatabaseOpen(bool open);
 void setDatabaseSessionOpen(bool open);
+void setSettingsLoadFailure(const QString& key, const QString& error);
 void setScheduleDisplayModeSaveFailure(const QString& error);
 void setSettingsRepositoryAvailable(bool available);
 void setIntensiveSlotStates(QList<IntensiveSlotState> states);
@@ -620,6 +621,7 @@ private slots:
     void cleanup();
     void persistsAndMirrorsEveryViewOption();
     void unavailableDisplayModeRepositoryReturnsTechnicalFailure();
+    void displayModeReadErrorsPreserveStateAndSkipMigration();
     void failedDisplayModeSaveRestoresStateAndSuccessfulRetryPersistsOnce();
     void clearTestingLayoutUsesScheduleService();
     void printUsesSelectedTeacherNameLanguage();
@@ -785,6 +787,120 @@ unavailableDisplayModeRepositoryReturnsTechnicalFailure()
             "Schedule display mode cannot be saved because the settings repository is unavailable."
             )
         );
+}
+
+void ScheduleWidgetTests
+    ::displayModeReadErrorsPreserveStateAndSkipMigration()
+{
+    ApplicationServices services;
+    ScheduleWidget widget(&services);
+    QSignalSpy modeChanged(&widget, &ScheduleWidget::displayModeChanged);
+    QVERIFY(modeChanged.isValid());
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("forced schedule display mode read failure")
+        );
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*schedule_display_mode.*")
+            )
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Regular);
+    QCOMPARE(modeChanged.size(), 0);
+    QVERIFY(!ScheduleWidgetTestStubs::settings.contains(
+        QStringLiteral("schedule_display_mode")
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSuccessfulSaveCount, 0);
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("schedule_show_intensive"),
+        QStringLiteral("forced legacy schedule display mode read failure")
+        );
+    ScheduleWidgetTestStubs::settings.insert(
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("testing")
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Testing);
+    QCOMPARE(modeChanged.size(), 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount, 0);
+    auto* const testing = widget.findChild<QPushButton*>(
+        QStringLiteral("scheduleTestingModeButton")
+        );
+    QVERIFY(testing);
+    QVERIFY(testing->isChecked());
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("schedule_display_mode"),
+        QStringLiteral("forced schedule display mode read failure")
+        );
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*schedule_display_mode.*")
+            )
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Testing);
+    QVERIFY(testing->isChecked());
+    QCOMPARE(modeChanged.size(), 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount, 0);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(
+            QStringLiteral("schedule_display_mode")
+            ),
+        QStringLiteral("testing")
+        );
+
+    ScheduleWidgetTestStubs::settings.remove(
+        QStringLiteral("schedule_display_mode")
+        );
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("schedule_show_intensive"),
+        QStringLiteral("forced legacy schedule display mode read failure")
+        );
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayModePreferencesPort port(services);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*schedule_show_intensive.*")
+            )
+        );
+    const auto failedLegacyLoad = port.load();
+    QVERIFY(!failedLegacyLoad);
+    QCOMPARE(
+        failedLegacyLoad.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!ScheduleWidgetTestStubs::settings.contains(
+        QStringLiteral("schedule_display_mode")
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount, 0);
+
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*schedule_show_intensive.*")
+            )
+        );
+    widget.refreshSchedule();
+
+    QCOMPARE(widget.displayState().displayMode, ScheduleDisplayMode::Testing);
+    QVERIFY(testing->isChecked());
+    QCOMPARE(modeChanged.size(), 0);
+    QVERIFY(!ScheduleWidgetTestStubs::settings.contains(
+        QStringLiteral("schedule_display_mode")
+        ));
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSaveAttemptCount, 0);
+    QCOMPARE(ScheduleWidgetTestStubs::scheduleDisplayModeSuccessfulSaveCount, 0);
 }
 
 void ScheduleWidgetTests

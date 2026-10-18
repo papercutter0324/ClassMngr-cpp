@@ -610,8 +610,10 @@ void MyWorkspacePageTests
     const auto loadedPreferences = preferencesPort.load();
     QVERIFY(loadedPreferences.hasValue());
     QCOMPARE(loadedPreferences.value(), expectedPreferences);
+    const auto initialLoadedMode = modePort.load();
+    QVERIFY(initialLoadedMode);
     QCOMPARE(
-        modePort.load(),
+        initialLoadedMode.value(),
         ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
         );
     QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
@@ -647,8 +649,10 @@ void MyWorkspacePageTests
     const auto preferencesAfterLeave = preferencesPort.load();
     QVERIFY(preferencesAfterLeave.hasValue());
     QCOMPARE(preferencesAfterLeave.value(), expectedPreferences);
+    const auto loadedModeAfterLeave = modePort.load();
+    QVERIFY(loadedModeAfterLeave);
     QCOMPARE(
-        modePort.load(),
+        loadedModeAfterLeave.value(),
         ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
         );
 
@@ -727,8 +731,10 @@ void MyWorkspacePageTests
     const auto preferencesAfterReentry = preferencesPort.load();
     QVERIFY(preferencesAfterReentry.hasValue());
     QCOMPARE(preferencesAfterReentry.value(), expectedPreferences);
+    const auto loadedModeAfterReentry = modePort.load();
+    QVERIFY(loadedModeAfterReentry);
     QCOMPARE(
-        modePort.load(),
+        loadedModeAfterReentry.value(),
         ClassMngr::Next::Application::ScheduleDisplayMode::Intensive
         );
     QCOMPARE(workspaceScheduleModeWriteCount(services), 0);
@@ -750,8 +756,10 @@ void MyWorkspacePageTests
     QVERIFY(regularModeButton);
     regularModeButton->click();
     QCOMPARE(displayModeCallbackCount, 1);
+    const auto loadedModeAfterSelection = modePort.load();
+    QVERIFY(loadedModeAfterSelection);
     QCOMPARE(
-        modePort.load(),
+        loadedModeAfterSelection.value(),
         ClassMngr::Next::Application::ScheduleDisplayMode::Regular
         );
     QCOMPARE(workspaceScheduleModeWriteCount(services), 1);

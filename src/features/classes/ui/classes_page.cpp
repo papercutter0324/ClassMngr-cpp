@@ -274,24 +274,27 @@ bool ClassesPage::openClass(
     }
 
     ScheduleDisplayMode displayMode = ScheduleDisplayMode::Regular;
-    switch (
+    const auto loadedDisplayMode =
         ClassMngr::Next::Platform::
             ApplicationServicesScheduleDisplayModePreferencesPort(
                 *m_services
-                ).load()
-        )
+                ).load();
+    if (loadedDisplayMode)
     {
-    case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
-        displayMode = ScheduleDisplayMode::Intensive;
-        break;
+        switch (loadedDisplayMode.value())
+        {
+        case ClassMngr::Next::Application::ScheduleDisplayMode::Intensive:
+            displayMode = ScheduleDisplayMode::Intensive;
+            break;
 
-    case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
-        displayMode = ScheduleDisplayMode::Testing;
-        break;
+        case ClassMngr::Next::Application::ScheduleDisplayMode::Testing:
+            displayMode = ScheduleDisplayMode::Testing;
+            break;
 
-    case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
-    default:
-        break;
+        case ClassMngr::Next::Application::ScheduleDisplayMode::Regular:
+        default:
+            break;
+        }
     }
     setScheduleSource(scheduleSourceForMode(displayMode));
     setVisibilityScope(

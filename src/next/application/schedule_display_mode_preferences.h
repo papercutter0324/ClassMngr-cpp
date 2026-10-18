@@ -16,13 +16,17 @@ enum class ScheduleDisplayMode
 
 using ScheduleDisplayModePreferencesSaveResult = Domain::Result<void>;
 using ScheduleDisplayModePreferencesSaveError = Domain::OperationError;
+using ScheduleDisplayModePreferencesLoadResult =
+    Domain::Result<ScheduleDisplayMode>;
+using ScheduleDisplayModePreferencesLoadError = Domain::OperationError;
 
 class ScheduleDisplayModePreferencesPort
 {
 public:
     virtual ~ScheduleDisplayModePreferencesPort() = default;
 
-    [[nodiscard]] virtual ScheduleDisplayMode load() const = 0;
+    [[nodiscard]] virtual ScheduleDisplayModePreferencesLoadResult load()
+        const = 0;
 
     [[nodiscard]] virtual ScheduleDisplayModePreferencesSaveResult save(
         ScheduleDisplayMode mode

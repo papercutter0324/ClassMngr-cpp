@@ -61,7 +61,7 @@ private slots:
     void unavailableServicesReturnTechnicalFailure();
     void closedSessionReturnsTechnicalFailureAndPreservesSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
-    void repositoryReadErrorsPreserveWarningsAndFallback();
+    void repositoryReadErrorsReturnTechnicalWithoutMigration();
 
 private:
     QTemporaryDir m_directory;
@@ -110,7 +110,9 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
                 )
             );
 
-        QCOMPARE(port.load(), expectedMode);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), expectedMode);
     }
 }
 
@@ -133,7 +135,9 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
         );
 
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
-    QCOMPARE(port.load(), ScheduleDisplayMode::Intensive);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ScheduleDisplayMode::Intensive);
 
     const auto canonical = repository->loadSetting(
         QString::fromUtf8(CanonicalKey)
@@ -167,13 +171,31 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
         );
 
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
-    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ScheduleDisplayMode::Regular);
 
     const auto canonical = repository->loadSetting(
         QString::fromUtf8(CanonicalKey)
         );
     QVERIFY(canonical);
     QCOMPARE(canonical->toString(), QStringLiteral("unknown"));
+
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(LegacyKey),
+        true
+        ));
+    const auto loadedLegacyIntensiveFallback = port.load();
+    QVERIFY(loadedLegacyIntensiveFallback);
+    QCOMPARE(
+        loadedLegacyIntensiveFallback.value(),
+        ScheduleDisplayMode::Intensive
+        );
+    const auto retainedCanonical = repository->loadSetting(
+        QString::fromUtf8(CanonicalKey)
+        );
+    QVERIFY(retainedCanonical);
+    QCOMPARE(retainedCanonical->toString(), QStringLiteral("unknown"));
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
@@ -189,7 +211,9 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     QVERIFY(repository);
 
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
-    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ScheduleDisplayMode::Regular);
 
     const auto canonical = repository->loadSetting(
         QString::fromUtf8(CanonicalKey)
@@ -265,7 +289,9 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
         );
     QVERIFY(canonical);
     QCOMPARE(canonical->toString(), QStringLiteral("intensive"));
-    QCOMPARE(port.load(), ScheduleDisplayMode::Intensive);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ScheduleDisplayMode::Intensive);
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
@@ -278,7 +304,9 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     QVERIFY(!session->isOpen());
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
 
-    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ScheduleDisplayMode::Regular);
     const auto saved = port.save(ScheduleDisplayMode::Intensive);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
@@ -311,7 +339,9 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ScheduleDisplayMode::Regular);
     const auto saved = port.save(ScheduleDisplayMode::Testing);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
@@ -386,7 +416,7 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
 }
 
 void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
-    ::repositoryReadErrorsPreserveWarningsAndFallback()
+    ::repositoryReadErrorsReturnTechnicalWithoutMigration()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -399,23 +429,19 @@ void NextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
     QSqlQuery query(session->database());
     QVERIFY(query.exec(QStringLiteral("DROP TABLE app_settings")));
 
-    QTest::ignoreMessage(
-        QtWarningMsg,
-        QRegularExpression(
-            QStringLiteral(
-                "Failed to load setting.*schedule_show_intensive.*"
-                )
-            )
-        );
-    QTest::ignoreMessage(
-        QtWarningMsg,
-        QRegularExpression(
-            QStringLiteral("Failed to save schedule display mode:.*")
-            )
-        );
-
     ApplicationServicesScheduleDisplayModePreferencesPort port(services);
-    QCOMPARE(port.load(), ScheduleDisplayMode::Regular);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*schedule_display_mode.*")
+            )
+        );
+    QTest::failOnWarning();
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().recoverable);
+    QVERIFY(!loaded.error().message.empty());
 }
 
 QTEST_MAIN(
