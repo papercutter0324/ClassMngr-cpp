@@ -613,9 +613,33 @@ public:
                 ApplicationServicesPersonalSignaturePreferencesPort(
                     setup->services()
                     ).load();
-        const auto signaturePreferences = signaturePreferencesResult
-            ? signaturePreferencesResult.value()
-            : ClassMngr::Next::Application::PersonalSignaturePreferences{};
+        if (!signaturePreferencesResult)
+        {
+            const auto& error = signaturePreferencesResult.error();
+            QString diagnostic = QString::fromUtf8(
+                error.message.data(),
+                static_cast<qsizetype>(error.message.size())
+                );
+            if (diagnostic.isEmpty())
+            {
+                diagnostic =
+                    tr("No additional error details are available.");
+            }
+
+            DialogServices::showWarning(
+                this,
+                tr("Initial Setup"),
+                tr(
+                    "The signature preferences could not be read. Your "
+                    "information was not saved. Retry by selecting Next "
+                    "again."
+                    ),
+                diagnostic
+                );
+            return false;
+        }
+
+        const auto& signaturePreferences = signaturePreferencesResult.value();
 
         const auto saved =
             ClassMngr::Next::Platform::

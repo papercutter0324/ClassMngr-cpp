@@ -68,6 +68,37 @@ bool executeSql(
     return query.exec(statement);
 }
 
+bool installFailingSettingReadView(
+    ApplicationServices& services,
+    const QString& failingKey
+    )
+{
+    if (!executeSql(
+            services,
+            QStringLiteral(
+                "ALTER TABLE app_settings RENAME TO app_settings_preserved"
+                )
+            ))
+    {
+        return false;
+    }
+
+    return executeSql(
+        services,
+        QStringLiteral(R"(
+            CREATE VIEW app_settings AS
+            SELECT
+                key,
+                CASE
+                    WHEN key = '%1'
+                    THEN abs(-9223372036854775807 - 1)
+                    ELSE value
+                END AS value
+            FROM app_settings_preserved
+        )").arg(failingKey)
+        );
+}
+
 std::string utf8(const QString& value)
 {
     const QByteArray encoded = value.toUtf8();
@@ -99,7 +130,8 @@ private slots:
     void invalidVariantsNormalizeLikeTheLegacyReader();
     void unavailableSettingsReturnFailure();
     void preservesUnrelatedSettingsAndDoesNotWrite();
-    void repositoryReadFailuresWarnAndUseDefaults();
+    void repositoryReadFailuresReturnTechnicalFailure();
+    void technicalReadFailureForEachPreferenceReturnsNoPartialDefaults();
     void closedSessionRefusesReadAndPreservesSettingsOnReopen();
     void readsValuesWrittenByPersonalDetailsSavePort();
 
@@ -339,7 +371,7 @@ preservesUnrelatedSettingsAndDoesNotWrite()
 }
 
 void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
-repositoryReadFailuresWarnAndUseDefaults()
+repositoryReadFailuresReturnTechnicalFailure()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -347,33 +379,68 @@ repositoryReadFailuresWarnAndUseDefaults()
     QVERIFY(settingsRepository(services));
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
 
-    for (const char* key : {
-             SignatureModeKey,
-             TypedSignatureFontKey,
-             TypedSignatureTextKey
-         })
-    {
-        QTest::ignoreMessage(
-            QtWarningMsg,
-            QRegularExpression(
-                QStringLiteral("Failed to load setting.*%1.*")
-                    .arg(QString::fromUtf8(key))
-                )
-            );
-    }
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*%1.*")
+                .arg(QString::fromUtf8(SignatureModeKey))
+            )
+        );
 
     ApplicationServicesPersonalSignaturePreferencesPort port(services);
     const auto loaded = port.load();
 
-    QVERIFY(loaded);
+    QVERIFY(!loaded);
     QCOMPARE(
-        loaded.value(),
-        (PersonalSignaturePreferences{
-            .mode = PersonalSignatureMode::Image,
-            .typedSignatureText = {},
-            .typedSignatureFont = 0
-        })
+        loaded.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
         );
+}
+
+void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::
+technicalReadFailureForEachPreferenceReturnsNoPartialDefaults()
+{
+    const QString typedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    const QVariantMap values = {
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), typedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2}
+    };
+
+    for (const QString& failingKey : {
+             QString::fromUtf8(SignatureModeKey),
+             QString::fromUtf8(TypedSignatureTextKey),
+             QString::fromUtf8(TypedSignatureFontKey)
+         })
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.dataService());
+        SettingsRepository* const repository = settingsRepository(services);
+        QVERIFY(repository);
+        QVERIFY(repository->saveSettings(values));
+        QVERIFY(installFailingSettingReadView(services, failingKey));
+
+        QTest::ignoreMessage(
+            QtWarningMsg,
+            QRegularExpression(
+                QStringLiteral("Failed to load setting.*%1.*")
+                    .arg(QRegularExpression::escape(failingKey))
+                )
+            );
+
+        ApplicationServicesPersonalSignaturePreferencesPort port(services);
+        const auto loaded = port.load();
+
+        QVERIFY(!loaded);
+        QCOMPARE(
+            loaded.error().code,
+            ClassMngr::Next::Domain::ErrorCode::Technical
+            );
+    }
 }
 
 void NextPlatformApplicationServicesPersonalSignaturePreferencesPortTests::

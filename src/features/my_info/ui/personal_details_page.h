@@ -124,5 +124,6 @@ private:
     QString m_failedCampusCorrectionSelectedCampus;
     bool m_hasFailedCampusCorrection = false;
     bool m_storedNameKnown = false;
+    bool m_signaturePreferencesKnown = false;
 
 };

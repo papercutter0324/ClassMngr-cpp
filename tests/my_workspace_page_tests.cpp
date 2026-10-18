@@ -168,6 +168,48 @@ bool executeSql(
     return query.exec(statement);
 }
 
+bool installFailingSignaturePreferenceReadView(
+    ApplicationServices& services
+    )
+{
+    return executeSql(
+               services,
+               QStringLiteral(
+                   "ALTER TABLE app_settings "
+                   "RENAME TO app_settings_preserved"
+                   )
+               )
+        && executeSql(
+            services,
+            QStringLiteral(R"(
+                CREATE VIEW app_settings AS
+                SELECT
+                    key,
+                    CASE
+                        WHEN key IN (
+                            'myInfo/signatureMode',
+                            'myInfo/typedSignatureFont',
+                            'myInfo/typedSignatureText'
+                        )
+                        THEN abs(-9223372036854775807 - 1)
+                        ELSE value
+                    END AS value
+                FROM app_settings_preserved
+            )")
+            );
+}
+
+bool restoreSettingsTable(ApplicationServices& services)
+{
+    return executeSql(services, QStringLiteral("DROP VIEW app_settings"))
+        && executeSql(
+            services,
+            QStringLiteral(
+                "ALTER TABLE app_settings_preserved RENAME TO app_settings"
+                )
+            );
+}
+
 void refreshPersonalDetails(MyWorkspacePage& page)
 {
     page.show();
@@ -327,6 +369,7 @@ private slots:
     void missingZoomValuesUseNaFallbackAndDisableFields();
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
     void storedSignaturePreferencesPopulateModeTextAndFont();
+    void signaturePreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload();
     void unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad();
     void unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues();
     void aggregateSavePersistsAllPersonalDetailsKeys();
@@ -1645,6 +1688,162 @@ void MyWorkspacePageTests::storedSignaturePreferencesPopulateModeTextAndFont()
     }
 }
 
+void MyWorkspacePageTests::
+signaturePreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QString storedName = QStringLiteral("Stored Name");
+    const QString storedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), storedName},
+        {QString::fromUtf8(CurrentCampusKey), QStringLiteral("Jeongja")},
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), storedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.dataService()->saveSettings(initialValues));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    auto* const name = personalNameEditor(page);
+    auto* const imageMode = signatureModeButton(
+        page,
+        QStringLiteral("signatureImageModeButton")
+        );
+    auto* const typeMode = signatureModeButton(
+        page,
+        QStringLiteral("signatureTypeModeButton")
+        );
+    auto* const typedText = details->findChild<QLineEdit*>(
+        QStringLiteral("typedSignatureEdit")
+        );
+    const QList<QPushButton*> fontButtons =
+        details->findChildren<QPushButton*>(
+            QStringLiteral("typedSignatureFontButton")
+            );
+    QVERIFY(name);
+    QVERIFY(imageMode);
+    QVERIFY(typeMode);
+    QVERIFY(typedText);
+    QCOMPARE(fontButtons.size(), 4);
+    QVERIFY(typeMode->isChecked());
+    QCOMPARE(typedText->text(), storedText);
+    QVERIFY(fontButtons.at(2)->isChecked());
+
+    imageMode->click();
+    typedText->setText(QStringLiteral("current signature draft"));
+    fontButtons.at(3)->click();
+    QVERIFY(imageMode->isChecked());
+    QCOMPARE(typedText->text(), QStringLiteral("current signature draft"));
+    QVERIFY(fontButtons.at(3)->isChecked());
+
+    QVERIFY(installFailingSignaturePreferenceReadView(services));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/signatureMode.*")
+            )
+        );
+    details->discardChanges();
+
+    QVERIFY(imageMode->isChecked());
+    QVERIFY(!typeMode->isChecked());
+    QCOMPARE(typedText->text(), QStringLiteral("current signature draft"));
+    QVERIFY(fontButtons.at(3)->isChecked());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Signature Preferences Could Not Be Loaded")
+        );
+
+    name->setText(QStringLiteral("Should Not Be Saved"));
+    QVERIFY(!details->saveChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("signature preferences are unknown")
+        ));
+
+    QVERIFY(restoreSettingsTable(services));
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        storedName
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureModeKey))
+            ->toInt(),
+        1
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureTextKey))
+            ->toString(),
+        storedText
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureFontKey))
+            ->toInt(),
+        2
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(UnrelatedKey))
+            ->toString(),
+        QStringLiteral("preserved")
+        );
+
+    details->discardChanges();
+    QCOMPARE(typedText->text(), storedText);
+    QVERIFY(typeMode->isChecked());
+    QVERIFY(fontButtons.at(2)->isChecked());
+    name->setText(QStringLiteral("Recovered Name"));
+    QVERIFY(details->saveChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(DisplayNameKey))
+            ->toString(),
+        QStringLiteral("Recovered Name")
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(SignatureModeKey))
+            ->toInt(),
+        1
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureTextKey))
+            ->toString(),
+        storedText
+        );
+    QCOMPARE(
+        services.dataService()
+            ->loadSetting(QString::fromUtf8(TypedSignatureFontKey))
+            ->toInt(),
+        2
+        );
+}
+
 void MyWorkspacePageTests::aggregateSavePersistsAllPersonalDetailsKeys()
 {
     QTemporaryDir directory;
@@ -1866,7 +2065,10 @@ unavailablePersonalDetailsSaveDoesNotNormalizeOrClearDirtyValues()
     QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
     QCOMPARE(
         prompts.messages.constFirst().details,
-        QStringLiteral("Personal details settings service is unavailable.")
+        QStringLiteral(
+            "The stored signature preferences are unknown. Reload My Details "
+            "successfully before saving."
+            )
         );
 
     QCOMPARE(login->text(), QStringLiteral("  "));

@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -72,48 +73,89 @@ public:
                     );
         }
 
-        const int storedMode =
-            loadOrDefault(*repository, signatureModeKey(), 0).toInt();
-        const int storedFont =
-            loadOrDefault(*repository, typedSignatureFontKey(), 0).toInt();
-        const QByteArray storedText =
-            loadOrDefault(*repository, typedSignatureTextKey(), QString())
-                .toString()
-                .toUtf8();
+        const QString modeKey = signatureModeKey();
+        const auto storedMode = repository->loadSetting(modeKey);
+        if (!storedMode)
+        {
+            return Application::PersonalSignaturePreferencesResult::failure(
+                settingLoadError(modeKey, storedMode.error())
+                );
+        }
+
+        const QString fontKey = typedSignatureFontKey();
+        const auto storedFont = repository->loadSetting(fontKey);
+        if (!storedFont)
+        {
+            return Application::PersonalSignaturePreferencesResult::failure(
+                settingLoadError(fontKey, storedFont.error())
+                );
+        }
+
+        const QString textKey = typedSignatureTextKey();
+        const auto storedText = repository->loadSetting(textKey);
+        if (!storedText)
+        {
+            return Application::PersonalSignaturePreferencesResult::failure(
+                settingLoadError(textKey, storedText.error())
+                );
+        }
+
+        const QVariant modeValue = storedMode->isValid()
+            ? *storedMode
+            : QVariant(0);
+        const QVariant fontValue = storedFont->isValid()
+            ? *storedFont
+            : QVariant(0);
+        const QVariant textValue = storedText->isValid()
+            ? *storedText
+            : QVariant(QString());
+        const int mode = modeValue.toInt();
+        const int font = fontValue.toInt();
+        const QByteArray text = textValue.toString().toUtf8();
 
         return Application::PersonalSignaturePreferencesResult::success({
-            .mode = storedMode == 1
+            .mode = mode == 1
                 ? Application::PersonalSignatureMode::Type
                 : Application::PersonalSignatureMode::Image,
             .typedSignatureText = std::string(
-                storedText.constData(),
-                static_cast<std::size_t>(storedText.size())
+                text.constData(),
+                static_cast<std::size_t>(text.size())
                 ),
-            .typedSignatureFont = storedFont
+            .typedSignatureFont = font
         });
     }
 
 private:
-    [[nodiscard]] static QVariant loadOrDefault(
-        SettingsRepository& repository,
+    [[nodiscard]] static Domain::OperationError settingLoadError(
         const QString& key,
-        const QVariant& defaultValue
+        const QString& diagnostic
         )
     {
-        const Result<QVariant> stored = repository.loadSetting(key);
-        if (!stored)
-        {
-            qWarning()
-                << "Failed to load setting"
-                << key
-                << ':'
-                << stored.error();
-            return defaultValue;
-        }
+        qWarning()
+            << "Failed to load setting"
+            << key
+            << ':'
+            << diagnostic;
 
-        return stored->isValid()
-            ? *stored
-            : defaultValue;
+        std::string message = "Personal signature preference '";
+        message.append(key.toStdString());
+        message.append("' could not be loaded");
+        if (!diagnostic.isEmpty())
+        {
+            message.append(": ");
+            const QByteArray diagnosticBytes = diagnostic.toUtf8();
+            message.append(
+                diagnosticBytes.constData(),
+                static_cast<std::size_t>(diagnosticBytes.size())
+                );
+        }
+        message.push_back('.');
+
+        return {
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = false
+        };
     }
 
     [[nodiscard]] static QString signatureModeKey()

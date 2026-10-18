@@ -103,6 +103,48 @@ bool executeSql(
     return query.exec(statement);
 }
 
+bool installFailingSignaturePreferenceReadView(
+    ApplicationServices& services
+    )
+{
+    return executeSql(
+               services,
+               QStringLiteral(
+                   "ALTER TABLE app_settings "
+                   "RENAME TO app_settings_preserved"
+                   )
+               )
+        && executeSql(
+            services,
+            QStringLiteral(R"(
+                CREATE VIEW app_settings AS
+                SELECT
+                    key,
+                    CASE
+                        WHEN key IN (
+                            'myInfo/signatureMode',
+                            'myInfo/typedSignatureFont',
+                            'myInfo/typedSignatureText'
+                        )
+                        THEN abs(-9223372036854775807 - 1)
+                        ELSE value
+                    END AS value
+                FROM app_settings_preserved
+            )")
+            );
+}
+
+bool restoreSettingsTable(ApplicationServices& services)
+{
+    return executeSql(services, QStringLiteral("DROP VIEW app_settings"))
+        && executeSql(
+            services,
+            QStringLiteral(
+                "ALTER TABLE app_settings_preserved RENAME TO app_settings"
+                )
+            );
+}
+
 bool addTeacher(ApplicationServices& services, const QString& name)
 {
     Teacher teacher;
@@ -153,6 +195,7 @@ private slots:
     void teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings();
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void campusReadFailureBlocksAggregateSaveAndCanRetry();
+    void signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
     void aggregateSaveComposesTypedReadsWithoutDataLoss();
@@ -906,6 +949,117 @@ campusReadFailureBlocksAggregateSaveAndCanRetry()
             QString::fromUtf8(CampusKey), QVariant()
             ).toString(),
         QStringLiteral("Bundang")
+        );
+}
+
+void InitialSetupWizardTests::
+signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QString typedText = QString::fromUtf8(
+        "  \xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D\xEB\x8B\x98 / "
+        "\xF0\x9F\xA7\xAD  "
+        );
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Old Name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("Bundang")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old-password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), false},
+        {QString::fromUtf8(SignatureModeKey), 1},
+        {QString::fromUtf8(TypedSignatureTextKey), typedText},
+        {QString::fromUtf8(TypedSignatureFontKey), 2},
+        {QString::fromUtf8(UnrelatedKey), QStringLiteral("preserved")}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* const name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* const next = wizard.button(QWizard::NextButton);
+    QVERIFY(name);
+    QVERIFY(next);
+    name->setText(QStringLiteral("New Name"));
+
+    QVERIFY(installFailingSignaturePreferenceReadView(services));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/signatureMode.*")
+            )
+        );
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::PersonalDetailsPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Initial Setup"));
+    QVERIFY(warning.message.contains(QStringLiteral("not saved")));
+    QVERIFY(warning.message.contains(QStringLiteral("Retry by selecting Next")));
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(DisplayNameKey), QVariant()
+            ).toString(),
+        QStringLiteral("Old Name")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(CampusKey), QVariant()
+            ).toString(),
+        QStringLiteral("Bundang")
+        );
+
+    QVERIFY(restoreSettingsTable(services));
+    for (auto setting = initialValues.cbegin();
+         setting != initialValues.cend();
+         ++setting)
+    {
+        QCOMPARE(
+            services.settingsService()->loadOrDefault(
+                setting.key(), QVariant()
+                ),
+            setting.value()
+            );
+    }
+
+    next->click();
+    QApplication::processEvents();
+
+    QVERIFY(wizard.currentId() != InitialSetupWizard::PersonalDetailsPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(DisplayNameKey), QVariant()
+            ).toString(),
+        QStringLiteral("New Name")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(SignatureModeKey), QVariant()
+            ).toInt(),
+        1
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureTextKey), QVariant()
+            ).toString(),
+        typedText
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureFontKey), QVariant()
+            ).toInt(),
+        2
         );
 }
 

@@ -1070,10 +1070,12 @@ bool PersonalDetailsPage::loadStoredSettings()
     ClassMngr::Next::Platform::
         ApplicationServicesPersonalSignaturePreferencesPort
         personalSignaturePreferencesPort(m_services);
+    m_signaturePreferencesKnown = false;
     const auto storedSignaturePreferences =
         personalSignaturePreferencesPort.load();
     if (storedSignaturePreferences)
     {
+        m_signaturePreferencesKnown = true;
         const auto& preferences = storedSignaturePreferences.value();
         const auto fromUtf8 = [](const std::string& value)
         {
@@ -1096,6 +1098,31 @@ bool PersonalDetailsPage::loadStoredSettings()
             fromUtf8(preferences.typedSignatureText)
             );
     }
+    else
+    {
+        const auto& error = storedSignaturePreferences.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic =
+                tr("No additional error details are available.");
+        }
+
+        DialogServices::showWarning(
+            this,
+            tr("Signature Preferences Could Not Be Loaded"),
+            tr(
+                "The stored signature preferences could not be read. Your "
+                "current signature controls have been preserved, and saving "
+                "is paused until a successful reload. Refresh this page to "
+                "try again."
+                ),
+            diagnostic
+            );
+    }
 
     setZoomFieldsEnabled();
     updateMyInformationFieldWidths();
@@ -1116,6 +1143,18 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
             *errorMessage = tr(
                 "The stored personal name is unknown. Reload My Details "
                 "successfully before saving."
+                );
+        }
+        return false;
+    }
+
+    if (!m_signaturePreferencesKnown)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = tr(
+                "The stored signature preferences are unknown. Reload My "
+                "Details successfully before saving."
                 );
         }
         return false;
