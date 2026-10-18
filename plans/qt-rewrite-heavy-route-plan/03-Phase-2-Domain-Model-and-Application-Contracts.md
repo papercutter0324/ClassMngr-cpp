@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F629 is selected/in progress for current-source revalidation/diagnosis after its prior 23/24 macOS routes left a strict Sub Prep page-by-page PDF parity failure (that run had about 56 GiB free; 18 GiB is only preflight reserve), so the combined Phase 0 evidence gate remains open; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F629 is selected/in progress for diagnosis after clean-source revalidation from `667ff54eb716e4669fb2aa44bd6f9470d0572dbc` again left only `output-sub-prep` failing strict page-by-page PDF parity (run4 began at 48 GiB free; 18 GiB is the preflight minimum), so the combined Phase 0 evidence gate remains open; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -73,7 +73,7 @@ Treat this plan as an operational summary, not a history:
 Batch473's ordered active slices contain five candidates from the discovery pass plus F629 reactivated from Deferred; F629 was not found by that pass:
 
 1. F1086 - Preserve Schedule display mode after a technical read failure: complete at source/test commit `aeb2a46f`.
-2. F629 - Run the macOS universal Phase 0 route matrix: attempted but open and unaccepted; 23/24 routes passed, with `output-sub-prep` failing strict page-by-page PDF semantic parity on pages 9-10. Selected/in progress for current-source revalidation/diagnosis. Reactivated from Deferred after 66 GiB became available; the prior run had about 56 GiB free and the 18 GiB threshold is preflight reserve, not observed consumption.
+2. F629 - Run the macOS universal Phase 0 route matrix: clean-source revalidation from `667ff54eb716e4669fb2aa44bd6f9470d0572dbc` remains open and unaccepted. The sandbox attempt failed two Calendar routes at `QTcpServer::listen(LocalHost)` plus `output-sub-prep`; run5 with loopback access attempted all 24, completed 23, and only `output-sub-prep` failed strict page-by-page PDF semantic parity on pages 9-10. Selected/in progress for diagnosis. Run4 started at 48 GiB free and ended at 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
 3. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: complete at source/test commit `7ec8ba7a`.
 4. F1088 - Preserve Evaluation default policy after a technical preference-read failure: complete at source/test commit `53c43e75`.
 5. F1089 - Preserve personal signature settings after technical read errors: complete at source/test commit `15c5d035`.

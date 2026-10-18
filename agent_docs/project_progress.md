@@ -79,7 +79,8 @@ preference-read failures. At the user's direction, F629 was resumed from
 Deferred and selected immediately after F1086. The Phase 2 plan and progress
 log hold the ordered list and discovery evidence.
 
-F629's clean current-source macOS universal matrix ran at commit `3ab4fa3a`.
+F629's initial clean current-source macOS universal matrix ran at commit
+`3ab4fa3a`.
 The package audit passed for 116 Mach-O files with arm64 and x86_64 slices and
 14.4 minimum deployment targets; signature checks and the runner self-check
 passed. All 24 routes were attempted: 23 completed, and `output-sub-prep`
@@ -140,9 +141,22 @@ unverified there; the release app-bundle attempt also failed before QtTest
 started because macOS pasteboard/XPC services were unavailable. No full suite
 ran.
 
-The F629 matrix already ran with approximately 56 GiB free. Its remaining
-blocker is strict PDF semantic parity on `output-sub-prep` pages 9-10, not disk
-space; F629 and the combined Phase 0 exit gate remain open.
+F629 was revalidated from clean source at `667ff54e` after F1090. The fresh
+universal Release/Debug build and 116-Mach-O package audit passed in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run4`. That first route
+attempt was sandboxed: both Calendar Import routes failed immediately because
+the local test server could not bind `QHostAddress::LocalHost`. A fresh
+all-route run reused the verified app and harness with loopback access in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run5`; all 24 routes were
+attempted, 23 completed, and only `output-sub-prep` failed. The generated and
+reference PDFs have the same page count and dimensions. Page 9 contains
+Teachers 18-20 in the generated PDF and Teacher 18 in the reference; page 10
+contains Teacher 21 in the generated PDF and Teachers 19-21 in the reference.
+The strict page-by-page semantic comparator remains unchanged. The Mac evidence
+does not establish Windows layout decisions, so no renderer fix is claimed and
+F629 remains open and unaccepted. The Mac had approximately 48 GiB free before
+the build and 44 GiB afterward; 18 GiB is the runner's preflight minimum, not
+observed consumption.
 
 F1090 is complete at source/test commit `f78791a9`. The Sub Prep Zoom
 preference port now returns `Technical` for any primary or required legacy
@@ -173,13 +187,13 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue F629 with a fresh current-source macOS universal 24-route matrix, then
-investigate the strict `output-sub-prep` page-parity mismatch without weakening
-the comparator. The earlier run had about 56 GiB free; its remaining failure
-was semantic PDF parity, not disk space. F628's full Windows evidence root also
-remains unavailable in this Mac session, so the combined Phase 0 exit gate
-cannot be claimed. Preserve the open Phase 2 exit gate and unresolved policy
-reconciliation.
+Continue F629 by obtaining source-bound Windows layout evidence or another
+evidence-supported resolution for the `output-sub-prep` page-parity mismatch,
+then rerun the macOS universal matrix without weakening the comparator. The
+current-source run had sufficient disk space; its only remaining failure is
+semantic PDF parity. F628's full Windows evidence root also remains unavailable
+in this Mac session, so the combined Phase 0 exit gate cannot be claimed.
+Preserve the open Phase 2 exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

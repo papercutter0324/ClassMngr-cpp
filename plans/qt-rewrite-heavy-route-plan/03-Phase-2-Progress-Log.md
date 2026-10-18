@@ -46484,3 +46484,37 @@ is open and unaccepted. The discovered list remains F1086-F1090, with F629
 separately reactivated from Deferred. Gates 1/2 remain Partial, F1007 is
 pending policy reconciliation, and the combined Phase 0 evidence and Phase 2
 exit gates remain Open. Push remains deferred until Batch473 closes.
+
+### F629 clean-source macOS universal revalidation - 2026-10-19
+
+F629 remains open and unaccepted after clean-source revalidation from F1090
+docs checkpoint commit
+`667ff54eb716e4669fb2aa44bd6f9470d0572dbc`. Run4's evidence root is
+`/private/tmp/classmngr-f629-macos-universal-20261019-run4`; it built from the
+clean source and passed Release and Debug builds. The package audit covered
+116 universal Mach-O files; the minimum deployment target and plist value were
+14.4, and package signature verification and runner self-check passed.
+
+The sandbox route attempt in run4 failed two Calendar routes immediately when
+`QTcpServer::listen(LocalHost)` returned false with `Unknown error`, and also
+failed `output-sub-prep` strict semantic parity. Run5 at
+`/private/tmp/classmngr-f629-macos-universal-20261019-run5` reused the verified
+app and harness with loopback access. All 24 routes were attempted, 23
+completed, and only `output-sub-prep` failed. Validation was false only because
+that failure left manifest/route-failed artifacts missing.
+
+The generated PDF and reference have matching page counts and page dimensions,
+but page boundaries differ: generated page 9 has Teachers 18-20 and page 10
+has Teacher 21; the reference has Teacher 18 alone on page 9 and Teachers
+19-21 on page 10. This reproduces the prior mismatch. No comparator or
+assertion was weakened and no renderer fix is claimed. The available Mac trace
+does not establish Windows layout decisions.
+
+Run4 began with 48 GiB free and ended with 44 GiB free. The 18 GiB figure is
+the runner's preflight minimum, not observed consumption. F629 is selected/in
+progress for diagnosis; the repeated strict page-parity failure keeps the
+combined Phase 0 evidence gate and Phase 2 exit gate open. Batch473 remains in
+its recorded order with all five discovered slices F1086-F1090 and the
+separately reactivated F629; F1086-F1090 are complete, while F629 remains
+open/unaccepted. Gates 1/2 remain Partial, F1007 is pending policy
+reconciliation, and push remains deferred until Batch473 closes.

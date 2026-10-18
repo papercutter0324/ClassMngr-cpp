@@ -7222,3 +7222,31 @@ current-source matrix and parity investigation. Batch473 remains active with
 F1086-F1090 complete and F629 unaccepted. Push is deferred until the batch
 closes; Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and the Phase 2 exit gate remains Open.
+
+## F629 macOS universal current-source revalidation - 2026-10-19
+
+After F1090, a fresh universal Release/Debug build and package audit ran from
+clean source commit `667ff54e` in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run4`. The build and
+116-Mach-O arm64/x86_64 package audit passed, as did signature and runner
+self-checks. The initial sandboxed route execution failed both Calendar Import
+routes because `QTcpServer::listen(QHostAddress::LocalHost)` was denied with
+`Unknown error`; the Sub Prep output route also failed strict PDF parity.
+
+A fresh all-route run in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run5` reused the audited
+current-source app and harness and ran with loopback access. All 24 routes were
+attempted; 23 passed and only `output-sub-prep` failed. The generated and
+reference PDFs have the same page count and page dimensions. Generated page 9
+contains Teachers 18-20 and page 10 contains Teacher 21; the reference places
+Teacher 18 alone on page 9 and Teachers 19-21 on page 10. The strict
+page-by-page semantic comparator remains unchanged. This confirms a pagination
+layout mismatch but does not establish Windows layout decisions; no renderer
+fix or acceptance is claimed. F629 and the combined Phase 0 gate remain open.
+
+The Mac reported approximately 48 GiB free before the build and 44 GiB after
+the run. The 18 GiB figure is the runner's preflight minimum, not observed
+consumption. Batch473 remains active with F1086-F1090 complete and reactivated
+F629 open/unaccepted; the list of five discovered slices remains F1086-F1090.
+Push remains deferred until Batch473 closes. Gates 1/2 remain Partial, F1007
+is pending policy reconciliation, and the Phase 2 exit gate remains Open.
