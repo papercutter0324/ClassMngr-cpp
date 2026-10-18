@@ -45756,3 +45756,23 @@ Accept F1062: when a clean Campus Dashboard refresh returns an empty campus cata
 No other slices were found.
 
 Batch456 contains only F1062. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1062 completion - 2026-10-18
+
+F1062 is committed as `9d4b1c3e` (`Phase2 - Clear stale campus after empty refresh`). A clean Campus Dashboard refresh that returns an empty catalog now clears the prior campus identity, selector, displayed fields, dirty state, timer, and save status. An empty result while dirty preserves the selection, snapshot, fields, dirty state, and timer without saving; a later explicit save of a removed campus retains F1056's `NotFound` behavior.
+
+The executor configured the `macos-clang-debug` preset and built `ClassMngr` and `ClassMngrCampusDashboardPageTests`. Both focused CTests passed. The independent Tester rebuilt the affected targets incrementally (no work remained), reran the two focused CTests successfully, inspected the existing non-empty fallback and F862 detail-read cases, and confirmed `git diff --check` passed. Those existing cases were inspected but not rerun. No full suite ran.
+
+### Batch456 push - 2026-10-18
+
+Pushed `9d4b1c3e` to `origin/Qt-Rewrite`, advancing it from `ec5efd2a`. Batch456 contained only F1062 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch457 discovery shortfall - 2026-10-18
+
+The application-contract lane found no new mismatch in roster transfer, Schedule Import/Class Details re-entry, or Calendar behavior. F1049 covers the active roster transfer write path, the normal class re-entry path reloads the selected Details page after Schedule Import, and recent Schedule/Calendar discovery already found no eligible gap.
+
+The feature-integration lane examined Document Catalog to PDF Viewer navigation. A failed PDF load presents an error and disables output actions, while resource-resolution failure is covered by F1041; the untested navigation return value alone did not establish a behavioral contract violation.
+
+No other slices were found.
+
+Batch457 closed without an accepted slice. Batch458 discovery is underway. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
