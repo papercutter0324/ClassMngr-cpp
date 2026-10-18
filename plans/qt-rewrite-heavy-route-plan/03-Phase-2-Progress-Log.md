@@ -46043,7 +46043,7 @@ F1073 is complete at source commit `f686e596`. Real Sidebar child-row clicks on 
 
 ### Batch468 closure - 2026-10-18
 
-Batch468 is closed with all five discovered slices complete, in order: F1069 at `46780e00`, F1070 at `6712a57d`, F1071 at `760511ab`, F1072 at `684c49c7`, and F1073 at `f686e596`. The Batch468 closure has not yet been pushed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+Batch468 is closed with all five discovered slices complete, in order: F1069 at `46780e00`, F1070 at `6712a57d`, F1071 at `760511ab`, F1072 at `684c49c7`, and F1073 at `f686e596`. The closure was pushed to `origin/Qt-Rewrite` at `8f921a91`. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
 
 ### Batch469 discovery; F1074 selected, F1075-F1077 provisional - 2026-10-18
 
@@ -46065,3 +46065,13 @@ Batch469's discovered slices, in order (with status):
 No other slices were found.
 
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1074 completion; F1075 selected - 2026-10-18
+
+F1074 is complete at source commit `cbe7be5c` on `Qt-Rewrite`. The display-name preference port returns a typed result, preserving successful empty/missing/unavailable semantics and surfacing `Technical` failures. Personal Details warns, preserves a dirty form, blocks aggregate saves while the stored name is unknown, and resumes ordinary saves after a successful reload; other consumers retain empty-name fallback.
+
+The independent Tester verified that valid-but-empty reads succeed and exercised the UI sequence: load a stored name, edit a draft, force a technical reload failure, confirm the draft and dirty state remain, restore the table before the blocked save, confirm the stored name remains intact, then reload and save successfully. The build command `cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests ClassMngrMyWorkspacePageTests ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests --parallel 4` succeeded. The matching CTest selection for the three test targets passed 3/3, and `git diff --check` passed; no full suite ran. Main review found no production acceptance defect.
+
+A Personal Details campus-only technical failure is not separately exercised because the shared-table name read fails first; the current-campus port suite passed, and the UI test checks displayed and stored campus preservation.
+
+F1075 is now selected/in progress as the next Batch469 slice: on dynamic Teacher profile navigation, a `NotFound` or `Technical` profile-read failure must restore the prior Sidebar selection while preserving the displayed profile, draft, and session. No leave prompt is expected because the read precedes the leave guard. F1076 and F1077 remain provisional.

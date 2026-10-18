@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1074 is selected in Batch469 to preserve the Personal Details name after a technical preference-read failure; F1075-F1077 are provisional navigation-failure leads, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1075 is selected/in progress in Batch469 to restore Sidebar selection after a dynamic Teacher profile read failure; F1076-F1077 remain provisional, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -72,8 +72,8 @@ Treat this plan as an operational summary, not a history:
 
 Batch469's discovered slices, in order (with status):
 
-1. F1074 - Preserve Personal Details name through a technical preference-read failure: selected/in progress. Distinguish successful empty/missing/unavailable reads from `Technical`; Personal Details warns, preserves the current form, and blocks aggregate saves while the stored name is unknown. A successful reload restores ordinary saves. Preserve other consumers' explicit empty-name behavior. See the progress log for the narrow F199 policy reopening and inferred test sequence.
-2. F1075 - Restore the prior Sidebar selection after dynamic Teacher profile navigation receives `NotFound` or `Technical`: provisional; preserve the displayed profile, draft, and session, with no leave prompt because the read precedes the guard.
+1. F1074 - Preserve Personal Details name through a technical preference-read failure: complete at `cbe7be5c`. Distinguish successful empty/missing/unavailable reads from `Technical`; Personal Details warns, preserves the current form, and blocks aggregate saves while the stored name is unknown. A successful reload restores ordinary saves. Preserve other consumers' explicit empty-name behavior. See the progress log for completion evidence.
+2. F1075 - Restore the prior Sidebar selection after dynamic Teacher profile navigation receives `NotFound` or `Technical`: selected/in progress; preserve the displayed profile, draft, and session, with no leave prompt because the read precedes the guard.
 3. F1076 - Keep Staff Directory navigation coherent when `loadDirectory()` fails after leave confirmation: provisional; investigate atomic destination loading because Discard may clear a dirty source draft before the read fails.
 4. F1077 - Keep Classes navigation coherent when `loadClasses()` fails after leave confirmation: provisional; investigate atomic loading and source-draft preservation.
 

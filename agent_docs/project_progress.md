@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 closed; Batch469 active; F1074 selected)
+### Current checkpoint - 2026-10-18 (Batch468 closed and pushed; Batch469 active; F1075 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -121,12 +121,16 @@ Team verify Cancel restores the pre-click Sidebar selection while preserving
 Teacher Info, the profile, draft, and session; existing direct tests retain
 Cancel/Discard route coverage. The Executor and independent Tester passed the
 focused build, CTest (1/1), and `git diff --check`; no full suite ran. Batch468
-is closed with five ordered slices. Batch469 discovery found a personal-name
-technical-read overwrite risk and failed Sidebar navigation selection
-mismatches; the Deferred audit found no newly met official trigger. F1074 is
-selected to distinguish technical Personal Details name reads and block
-aggregate writes until a successful reload. F1075-F1077 are provisional
-teacher, Staff Directory, and Classes failed-navigation follow-ups.
+is closed with five ordered slices and was pushed at `8f921a91`. Batch469
+discovery found a personal-name technical-read overwrite risk and failed
+Sidebar navigation selection mismatches; the Deferred audit found no newly
+met official trigger. F1074 is complete at `cbe7be5c`: Personal Details now
+preserves a dirty form and blocks aggregate saves through a technical name
+read failure, then recovers after a successful reload. The independent
+Tester passed the focused build, three CTests (3/3), and `git diff --check`;
+no full suite ran. F1075 is selected for dynamic Teacher profile read
+failures; F1076 and F1077 remain provisional Staff Directory and Classes
+loading-failure follow-ups.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -135,7 +139,7 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Complete and commit F1074, then continue through Batch469 in order. Push the
+Complete and commit F1075, then continue through Batch469 in order. Push the
 batch after its slices close. Preserve the open Phase 2 exit gate and
 unresolved policy reconciliation.
 Detailed historical slice evidence remains in
