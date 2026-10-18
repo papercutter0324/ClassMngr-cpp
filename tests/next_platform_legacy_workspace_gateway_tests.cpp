@@ -219,6 +219,7 @@ class NextPlatformLegacyWorkspaceGatewayTests final : public QObject
 private slots:
     void adapterSurfaceIsInjectableAndApplicationBased();
     void openMapsLocationAndPreservesTypedIdentity();
+    void missingWorkspaceErrorMapsToRecoverableNotFound();
     void createUsesTheExplicitCreateOrOpenHook();
     void createOrOpenLegacyErrorTextMapsToStructuredFailure();
     void emptyCreateOrOpenLegacyErrorUsesOperationFallback();
@@ -298,6 +299,35 @@ void NextPlatformLegacyWorkspaceGatewayTests::openMapsLocationAndPreservesTypedI
         result.value().location().value(),
         std::string("C:/normalized/opened.tps")
         );
+}
+
+void NextPlatformLegacyWorkspaceGatewayTests::
+missingWorkspaceErrorMapsToRecoverableNotFound()
+{
+    FakeLegacyWorkspacePort port;
+    port.open = true;
+    port.currentPath = "C:/active.tps";
+    port.openResponse = LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
+        LegacyWorkspaceError{
+            "opaque platform detail",
+            LegacyWorkspaceError::Code::NotFound
+        }
+        );
+    LegacyWorkspaceGateway gateway(port);
+
+    const auto result = gateway.openWorkspace(
+        OpenWorkspaceRequest{WorkspaceLocation("C:/missing.tps")}
+        );
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, ErrorCode::NotFound);
+    QCOMPARE(result.error().message, std::string("opaque platform detail"));
+    QVERIFY(result.error().recoverable);
+    QCOMPARE(port.openCalls, 1);
+    QCOMPARE(port.hasOpenCalls, 0);
+    QCOMPARE(port.currentPathCalls, 0);
+    QVERIFY(port.open);
+    QCOMPARE(port.currentPath, std::string("C:/active.tps"));
 }
 
 void NextPlatformLegacyWorkspaceGatewayTests::createUsesTheExplicitCreateOrOpenHook()

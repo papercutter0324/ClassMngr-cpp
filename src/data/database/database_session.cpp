@@ -18,15 +18,41 @@
 #include "data/repositories/testing_block_repository.h"
 #include "data/repositories/testing_class_repository.h"
 
+#include <QByteArray>
 #include <QDir>
 #include <QFileInfo>
 #include <QSqlError>
+#include <QUrl>
+#include <QUrlQuery>
 
 #include <atomic>
 #include <utility>
 
 namespace
 {
+QString sqliteReadWriteUri(const QString& absolutePath)
+{
+#if defined(Q_OS_WIN)
+    const QString slashPath = QDir::fromNativeSeparators(absolutePath);
+    if (slashPath.startsWith(QStringLiteral("//")))
+    {
+        const QByteArray encodedPath = QUrl::toPercentEncoding(
+            slashPath,
+            QByteArrayLiteral("/")
+            );
+        return QStringLiteral("file://")
+            + QString::fromLatin1(encodedPath)
+            + QStringLiteral("?mode=rw");
+    }
+#endif
+
+    QUrl uri = QUrl::fromLocalFile(absolutePath);
+    QUrlQuery query;
+    query.addQueryItem(QStringLiteral("mode"), QStringLiteral("rw"));
+    uri.setQuery(query);
+    return uri.toString(QUrl::FullyEncoded);
+}
+
 QString nextConnectionName(const DatabaseSession* session)
 {
     static std::atomic<quint64> sequence{0};
@@ -50,7 +76,10 @@ DatabaseSession::~DatabaseSession()
 Status DatabaseSession::open(const QString& databasePath)
 {
     DatabaseSession candidate;
-    const Status status = candidate.openCandidate(databasePath);
+    const Status status = candidate.openCandidate(
+        databasePath,
+        OpenBehavior::CreateIfMissing
+        );
     if (!status)
     {
         return status;
@@ -60,7 +89,26 @@ Status DatabaseSession::open(const QString& databasePath)
     return {};
 }
 
-Status DatabaseSession::openCandidate(const QString& databasePath)
+Status DatabaseSession::openExisting(const QString& databasePath)
+{
+    DatabaseSession candidate;
+    const Status status = candidate.openCandidate(
+        databasePath,
+        OpenBehavior::ExistingOnly
+        );
+    if (!status)
+    {
+        return status;
+    }
+
+    swapResources(candidate);
+    return {};
+}
+
+Status DatabaseSession::openCandidate(
+    const QString& databasePath,
+    const OpenBehavior behavior
+    )
 {
     if (databasePath.trimmed().isEmpty())
     {
@@ -80,7 +128,8 @@ Status DatabaseSession::openCandidate(const QString& databasePath)
     }
 
     if (
-        !databaseInfo.absolutePath().isEmpty()
+        behavior == OpenBehavior::CreateIfMissing
+        && !databaseInfo.absolutePath().isEmpty()
         && !QDir().mkpath(databaseInfo.absolutePath())
         )
     {
@@ -96,7 +145,15 @@ Status DatabaseSession::openCandidate(const QString& databasePath)
             m_connectionName
             )
         );
-    m_database->setDatabaseName(normalizedPath);
+    if (behavior == OpenBehavior::ExistingOnly)
+    {
+        m_database->setConnectOptions(QStringLiteral("QSQLITE_OPEN_URI"));
+        m_database->setDatabaseName(sqliteReadWriteUri(normalizedPath));
+    }
+    else
+    {
+        m_database->setDatabaseName(normalizedPath);
+    }
 
     if (!m_database->open())
     {
@@ -109,8 +166,10 @@ Status DatabaseSession::openCandidate(const QString& databasePath)
             );
     }
 
-    const Status schemaStatus =
-        DatabaseSchemaManager::ensureSchema(*m_database);
+    const Status schemaStatus = DatabaseSchemaManager::ensureSchema(
+        *m_database,
+        normalizedPath
+        );
     if (!schemaStatus)
     {
         const QString schemaError = schemaStatus.error();

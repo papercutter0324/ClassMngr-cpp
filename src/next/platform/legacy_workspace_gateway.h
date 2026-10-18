@@ -18,6 +18,11 @@ namespace ClassMngr::Next::Platform
 struct LegacyWorkspaceError final
 {
     std::string message;
+    enum class Code
+    {
+        Technical,
+        NotFound
+    } code = Code::Technical;
 
     friend bool operator==(
         const LegacyWorkspaceError&,
@@ -654,9 +659,11 @@ private:
         }
 
         return Domain::OperationError{
-            .code = Domain::ErrorCode::Technical,
+            .code = error.code == LegacyWorkspaceError::Code::NotFound
+                ? Domain::ErrorCode::NotFound
+                : Domain::ErrorCode::Technical,
             .message = std::move(message),
-            .recoverable = false
+            .recoverable = error.code == LegacyWorkspaceError::Code::NotFound
         };
     }
 

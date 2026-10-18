@@ -54,6 +54,20 @@ Status ApplicationServices::openDatabase(
     return m_databaseSession->open(databasePath);
 }
 
+Status ApplicationServices::openExistingDatabase(
+    const QString& databasePath
+    )
+{
+    if (!m_databaseSession)
+    {
+        return std::unexpected(
+            QStringLiteral("Data service is unavailable.")
+            );
+    }
+
+    return m_databaseSession->openExisting(databasePath);
+}
+
 void ApplicationServices::closeDatabase()
 {
     if (m_databaseSession)

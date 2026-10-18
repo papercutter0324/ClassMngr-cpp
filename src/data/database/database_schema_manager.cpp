@@ -1092,16 +1092,19 @@ Status createSchemaIndexes(QSqlDatabase& database)
 
 Status createPreConstraintMigrationBackup(
     QSqlDatabase& database,
+    const QString& databaseFilePath,
     int migrationVersion
     )
 {
-    const QString databasePath = database.databaseName();
-    if (databasePath.isEmpty() || databasePath == QStringLiteral(":memory:"))
+    if (
+        databaseFilePath.isEmpty()
+        || databaseFilePath == QStringLiteral(":memory:")
+        )
     {
         return {};
     }
 
-    const QFileInfo databaseInfo(databasePath);
+    const QFileInfo databaseInfo(databaseFilePath);
     if (!databaseInfo.exists() || !databaseInfo.isFile())
     {
         return {};
@@ -1189,6 +1192,14 @@ const SchemaMigration SchemaMigrations[] = {
 
 Status DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
 {
+    return ensureSchema(database, database.databaseName());
+}
+
+Status DatabaseSchemaManager::ensureSchema(
+    QSqlDatabase& database,
+    const QString& databaseFilePath
+    )
+{
     if (!database.isValid() || !database.isOpen())
     {
         return std::unexpected(
@@ -1238,6 +1249,7 @@ Status DatabaseSchemaManager::ensureSchema(QSqlDatabase& database)
             {
                 const Status backupCreated = createPreConstraintMigrationBackup(
                     database,
+                    databaseFilePath,
                     migration.version
                     );
                 if (!backupCreated)

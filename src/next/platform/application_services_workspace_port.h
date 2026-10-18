@@ -19,9 +19,10 @@ namespace ClassMngr::Next::Platform
 // This port deliberately owns no session snapshot, file-controller policy, or
 // UI pointer. The caller owns ApplicationServices and must keep it alive for
 // the port's lifetime. In particular, createOrOpenDatabase is only the
-// explicit create hook at this seam: it delegates to the legacy open path and
-// never removes or replaces an existing file. FileController remains the
-// separate preparation boundary for the legacy create policy in this slice.
+// explicit create hook at this seam: it uses the legacy open operation and
+// never removes or replaces an existing file. Ordinary open requires an
+// existing filesystem target so the legacy session cannot create a missing
+// workspace as a side effect.
 class ApplicationServicesWorkspacePort final : public LegacyWorkspacePort
 {
 public:
@@ -60,15 +61,21 @@ public:
                 );
         }
 
-        const Status opened = m_services.openDatabase(path.value());
-        if (!opened)
+        if (!QFileInfo::exists(path.value()))
         {
             return LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
-                legacyError(opened.error())
+                LegacyWorkspaceError{
+                    "Workspace file does not exist.",
+                    LegacyWorkspaceError::Code::NotFound
+                }
                 );
         }
 
-        return handleFromCurrentPath("Opening the workspace");
+        return openNormalizedPath(
+            path.value(),
+            "Opening the workspace",
+            true
+            );
     }
 
     [[nodiscard]] LegacyWorkspaceResult<LegacyWorkspaceHandle>
@@ -77,9 +84,25 @@ public:
         ) override
     {
         // Creation preparation (including any replacement decision) belongs
-        // to FileController. This hook intentionally has the same safe,
-        // non-destructive behavior as the legacy open operation.
-        return openDatabase(databasePath);
+        // to FileController. This hook intentionally bypasses the ordinary
+        // open existence check while keeping the legacy open operation
+        // non-destructive for an existing file.
+        const auto path = normalizeInputPath(
+            databasePath,
+            "Opening the workspace"
+            );
+        if (!path)
+        {
+            return LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
+                path.error()
+                );
+        }
+
+        return openNormalizedPath(
+            path.value(),
+            "Opening the workspace",
+            false
+            );
     }
 
     [[nodiscard]] LegacyWorkspaceStatus closeDatabase(
@@ -315,6 +338,36 @@ public:
     }
 
 private:
+    [[nodiscard]] LegacyWorkspaceResult<LegacyWorkspaceHandle>
+    openNormalizedPath(
+        const QString& path,
+        const char* operation,
+        const bool existingOnly
+        )
+    {
+        const Status opened = existingOnly
+            ? m_services.openExistingDatabase(path)
+            : m_services.openDatabase(path);
+        if (!opened)
+        {
+            if (existingOnly && !QFileInfo::exists(path))
+            {
+                return LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
+                    LegacyWorkspaceError{
+                        "Workspace file does not exist.",
+                        LegacyWorkspaceError::Code::NotFound
+                    }
+                    );
+            }
+
+            return LegacyWorkspaceResult<LegacyWorkspaceHandle>::failure(
+                legacyError(opened.error())
+                );
+        }
+
+        return handleFromCurrentPath(operation);
+    }
+
     [[nodiscard]] static LegacyWorkspaceError legacyError(
         const QString& message
         )

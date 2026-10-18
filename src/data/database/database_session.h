@@ -34,6 +34,7 @@ public:
     DatabaseSession& operator=(const DatabaseSession&) = delete;
 
     [[nodiscard]] Status open(const QString& databasePath);
+    [[nodiscard]] Status openExisting(const QString& databasePath);
     void close();
 
     [[nodiscard]] bool isOpen() const;
@@ -58,7 +59,16 @@ public:
     SpeakingEvalRepository* speakingEvalRepository() const;
 
 private:
-    [[nodiscard]] Status openCandidate(const QString& databasePath);
+    enum class OpenBehavior
+    {
+        CreateIfMissing,
+        ExistingOnly
+    };
+
+    [[nodiscard]] Status openCandidate(
+        const QString& databasePath,
+        OpenBehavior behavior
+        );
     void swapResources(DatabaseSession& other) noexcept;
 
     QString m_databasePath;

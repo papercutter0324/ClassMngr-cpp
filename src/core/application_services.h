@@ -33,6 +33,12 @@ public:
         const QString& databasePath
         );
 
+    // Opens a workspace that already exists. Unlike openDatabase(), this path
+    // never creates a database file or its parent directories.
+    [[nodiscard]] Status openExistingDatabase(
+        const QString& databasePath
+        );
+
     void closeDatabase();
 
     [[nodiscard]] bool hasOpenDatabase() const;

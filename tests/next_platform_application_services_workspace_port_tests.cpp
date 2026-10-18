@@ -40,6 +40,20 @@ void writeInvalidWorkspace(
     QVERIFY(!file.isOpen());
 }
 
+bool createAndCloseWorkspace(
+    ApplicationServicesWorkspacePort& port,
+    const std::string& path
+    )
+{
+    const auto created = port.createOrOpenDatabase(path);
+    if (!created)
+    {
+        return false;
+    }
+
+    return static_cast<bool>(port.closeDatabase(created.value()));
+}
+
 class CurrentDirectoryRestore final
 {
 public:
@@ -66,8 +80,13 @@ class NextPlatformApplicationServicesWorkspacePortTests final : public QObject
 private slots:
     void initTestCase();
     void openAcceptsUtf8PathAndNormalizesHandle();
+    void existingOnlyServiceOpenDoesNotCreateMissingTargetOrParent();
+    void missingWorkspaceOpenIsNotFoundAndPreservesActiveSession();
     void unicodeWhitespaceAndMalformedPathsAreRejectedBeforeServiceEffects();
     void openPreservesNormalUnicodePathBytes();
+    void existingOnlyOpenAcceptsSpecialCharacterPath();
+    void existingOnlyUriTreatsQuestionMarkAsPathData();
+    void existingOnlyOpenCreatesSchemaMigrationBackupAtFilesystemPath();
     void createOrOpenCreatesANewWorkspace();
     void existingInvalidFileIsNotSilentlyReplaced();
     void closeClosesTheOpenWorkspace();
@@ -95,6 +114,8 @@ void NextPlatformApplicationServicesWorkspacePortTests::openAcceptsUtf8PathAndNo
         );
     const std::string expected = normalizedPath(requested);
 
+    QVERIFY(createAndCloseWorkspace(port, utf8(requested)));
+
     const auto result = port.openDatabase(utf8(requested));
 
     QVERIFY(result);
@@ -104,6 +125,177 @@ void NextPlatformApplicationServicesWorkspacePortTests::openAcceptsUtf8PathAndNo
     QVERIFY(services.hasOpenDatabase());
     QVERIFY(QFile::exists(QString::fromUtf8(expected.c_str())));
 
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+existingOnlyServiceOpenDoesNotCreateMissingTargetOrParent()
+{
+    ApplicationServices services;
+    const QString activePath = m_directory.filePath(
+        QStringLiteral("existing-only-active.tps")
+        );
+    QVERIFY(services.openDatabase(activePath));
+    const QString currentPathBefore = services.currentDatabasePath();
+    const QString connectionNameBefore =
+        services.databaseSession()->database().connectionName();
+
+    const QString missingPath = m_directory.filePath(
+        QStringLiteral("existing-only-missing-parent/workspace.tps")
+        );
+    const QString missingParent = QFileInfo(missingPath).absolutePath();
+    QVERIFY(!QFileInfo::exists(missingParent));
+    QVERIFY(!QFileInfo::exists(missingPath));
+
+    const Status opened = services.openExistingDatabase(missingPath);
+
+    QVERIFY(!opened);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), currentPathBefore);
+    QCOMPARE(
+        services.databaseSession()->database().connectionName(),
+        connectionNameBefore
+        );
+    QVERIFY(!QFileInfo::exists(missingPath));
+    QVERIFY(!QFileInfo::exists(missingParent));
+
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+missingWorkspaceOpenIsNotFoundAndPreservesActiveSession()
+{
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const QString activePath = m_directory.filePath(
+        QStringLiteral("open-existing/active.tps")
+        );
+    QVERIFY(createAndCloseWorkspace(port, utf8(activePath)));
+
+    const auto active = port.openDatabase(utf8(activePath));
+    QVERIFY(active);
+    const QString currentPathBefore = services.currentDatabasePath();
+    const QString connectionNameBefore =
+        services.databaseSession()->database().connectionName();
+    DatabaseSession* const sessionBefore = services.databaseSession();
+
+    const QString missingPath = m_directory.filePath(
+        QStringLiteral("missing-parent/workspace.tps")
+        );
+    const QString missingParent = QFileInfo(missingPath).absolutePath();
+    QVERIFY(!QFileInfo::exists(missingParent));
+    QVERIFY(!QFileInfo::exists(missingPath));
+
+    const auto missing = port.openDatabase(utf8(missingPath));
+
+    QVERIFY(!missing);
+    QCOMPARE(missing.error().code, LegacyWorkspaceError::Code::NotFound);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.databaseSession(), sessionBefore);
+    QCOMPARE(services.currentDatabasePath(), currentPathBefore);
+    QCOMPARE(
+        services.databaseSession()->database().connectionName(),
+        connectionNameBefore
+        );
+    QVERIFY(!QFileInfo::exists(missingPath));
+    QVERIFY(!QFileInfo::exists(missingParent));
+
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+existingOnlyOpenAcceptsSpecialCharacterPath()
+{
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+#if defined(Q_OS_WIN)
+    // Win32 reserves '?' in file-name components; cover # and % in an actual
+    // file here, while the URI construction still percent-encodes '?'.
+    const QString path = m_directory.filePath(
+        QString::fromUtf8(
+            "existing-\xED\x95\x9C\xEA\xB8\x80 space # and 100% profile.tps"
+            )
+        );
+#else
+    const QString path = m_directory.filePath(
+        QString::fromUtf8(
+            "existing-\xED\x95\x9C\xEA\xB8\x80 ? # and 100% profile.tps"
+            )
+        );
+#endif
+    const std::string pathUtf8 = utf8(path);
+    QVERIFY(createAndCloseWorkspace(port, pathUtf8));
+
+    const auto opened = port.openDatabase(pathUtf8);
+
+    QVERIFY(opened);
+    QCOMPARE(opened.value().location(), normalizedPath(path));
+    QCOMPARE(port.currentDatabasePath(), normalizedPath(path));
+    QVERIFY(services.hasOpenDatabase());
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+existingOnlyUriTreatsQuestionMarkAsPathData()
+{
+    ApplicationServices services;
+    const QString existingPath = m_directory.filePath(
+        QStringLiteral("uri-question-mark-prefix.tps")
+        );
+    QVERIFY(services.openDatabase(existingPath));
+    const QString currentPathBefore = services.currentDatabasePath();
+
+    // On Windows '?' cannot be part of a normal file name. This missing path
+    // still verifies that URI serialization encodes it as path data: an
+    // unescaped '?' would turn cache=shared into a SQLite URI option and open
+    // the existing prefix file instead.
+    const QString questionMarkPath =
+        existingPath + QStringLiteral("?cache=shared");
+    const Status opened = services.openExistingDatabase(questionMarkPath);
+
+    QVERIFY(!opened);
+    QVERIFY(services.hasOpenDatabase());
+    QCOMPARE(services.currentDatabasePath(), currentPathBefore);
+    QVERIFY(QFileInfo::exists(existingPath));
+    QVERIFY(!QFileInfo::exists(questionMarkPath));
+
+    services.closeDatabase();
+}
+
+void NextPlatformApplicationServicesWorkspacePortTests::
+existingOnlyOpenCreatesSchemaMigrationBackupAtFilesystemPath()
+{
+    ApplicationServices services;
+    ApplicationServicesWorkspacePort port(services);
+    const QString databasePath = m_directory.filePath(
+        QStringLiteral("existing-only-schema-v5/profile.tps")
+        );
+    const QString backupPath = databasePath
+        + QStringLiteral(".pre-schema-v6-backup");
+    QVERIFY(createAndCloseWorkspace(port, utf8(databasePath)));
+    QVERIFY(!QFileInfo::exists(backupPath));
+
+    const QString legacyConnectionName =
+        QStringLiteral("workspace-schema-v5-observer");
+    {
+        QSqlDatabase legacyDatabase = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"),
+            legacyConnectionName
+            );
+        legacyDatabase.setDatabaseName(databasePath);
+        QVERIFY(legacyDatabase.open());
+
+        QSqlQuery versionQuery(legacyDatabase);
+        QVERIFY(versionQuery.exec(QStringLiteral("PRAGMA user_version = 5")));
+        legacyDatabase.close();
+    }
+    QSqlDatabase::removeDatabase(legacyConnectionName);
+
+    const auto opened = port.openDatabase(utf8(databasePath));
+
+    QVERIFY(opened);
+    QVERIFY(QFileInfo::exists(backupPath));
+    QCOMPARE(port.currentDatabasePath(), normalizedPath(databasePath));
     services.closeDatabase();
 }
 
@@ -169,6 +361,8 @@ openPreservesNormalUnicodePathBytes()
     const std::string requestedUtf8 = utf8(requested);
     const std::string expected = normalizedPath(requested);
 
+    QVERIFY(createAndCloseWorkspace(port, requestedUtf8));
+
     const auto result = port.openDatabase(requestedUtf8);
 
     QVERIFY(result);
@@ -225,9 +419,11 @@ void NextPlatformApplicationServicesWorkspacePortTests::closeClosesTheOpenWorksp
 {
     ApplicationServices services;
     ApplicationServicesWorkspacePort port(services);
-    const auto opened = port.openDatabase(
-        utf8(m_directory.filePath(QStringLiteral("close.tps")))
+    const std::string path = utf8(
+        m_directory.filePath(QStringLiteral("close.tps"))
         );
+    QVERIFY(createAndCloseWorkspace(port, path));
+    const auto opened = port.openDatabase(path);
     QVERIFY(opened);
 
     const auto closed = port.closeDatabase(opened.value());
@@ -244,6 +440,7 @@ void NextPlatformApplicationServicesWorkspacePortTests::voidSaveSucceedsOpenAndF
     ApplicationServicesWorkspacePort port(services);
     const QString databasePath =
         m_directory.filePath(QStringLiteral("save.tps"));
+    QVERIFY(createAndCloseWorkspace(port, utf8(databasePath)));
     const auto opened = port.openDatabase(
         utf8(databasePath)
         );
@@ -302,6 +499,7 @@ void NextPlatformApplicationServicesWorkspacePortTests::saveAsPreservesIdentityA
     const QString destinationPath = m_directory.filePath(
         QStringLiteral("save-as/保存先.tps")
         );
+    QVERIFY(createAndCloseWorkspace(port, utf8(sourcePath)));
     const auto opened = port.openDatabase(utf8(sourcePath));
     QVERIFY(opened);
     const std::string originalIdentity = opened.value().workspaceId();
@@ -340,6 +538,7 @@ void NextPlatformApplicationServicesWorkspacePortTests::exportReturnsNormalizedD
     const QString destinationPath = m_directory.filePath(
         QStringLiteral("export/내보내기.tps")
         );
+    QVERIFY(createAndCloseWorkspace(port, utf8(sourcePath)));
     const auto opened = port.openDatabase(utf8(sourcePath));
     QVERIFY(opened);
     const std::string currentPath = port.currentDatabasePath();
@@ -402,6 +601,8 @@ void NextPlatformApplicationServicesWorkspacePortTests::portsUseIndependentServi
         QStringLiteral("independent/second.tps")
         );
 
+    QVERIFY(createAndCloseWorkspace(firstPort, utf8(firstPath)));
+    QVERIFY(createAndCloseWorkspace(secondPort, utf8(secondPath)));
     const auto first = firstPort.openDatabase(utf8(firstPath));
     const auto second = secondPort.openDatabase(utf8(secondPath));
 
