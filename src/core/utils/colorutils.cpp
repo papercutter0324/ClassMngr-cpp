@@ -82,6 +82,19 @@ ClassMngr::Next::Application::CustomColorPalette paletteFromDialog()
     }
     return palette;
 }
+
+bool applyStoredCustomColors(
+    const ClassMngr::Next::Application::
+        CustomColorPalettePreferencesPort& palettePreferencesPort
+    )
+{
+    const auto stored = palettePreferencesPort.read();
+    const auto palette = stored
+        ? stored.value()
+        : ClassMngr::Next::Application::defaultCustomColorPalette();
+    applyCustomColors(colorsForDialog(palette));
+    return stored.hasValue();
+}
 }
 
 // =====================================================
@@ -190,7 +203,8 @@ QColor ColorUtils::getColor(
         )>& onPaletteSaveFailure
     )
 {
-    loadCustomColors(palettePreferencesPort);
+    const bool paletteReadSucceeded =
+        applyStoredCustomColors(palettePreferencesPort);
     QColor startingColor = initialColor.isValid()
         ? initialColor
         : QColor(QStringLiteral("#FFFFFF"));
@@ -199,11 +213,14 @@ QColor ColorUtils::getColor(
     dialog.setCurrentColor(startingColor);
     dialog.setOption(QColorDialog::DontUseNativeDialog, true);
     const int result = dialog.exec();
-    const ClassMngr::Next::Domain::Result<void> saved =
-        saveCustomColors(palettePreferencesPort);
-    if (!saved)
+    if (paletteReadSucceeded)
     {
-        onPaletteSaveFailure(saved.error());
+        const ClassMngr::Next::Domain::Result<void> saved =
+            saveCustomColors(palettePreferencesPort);
+        if (!saved)
+        {
+            onPaletteSaveFailure(saved.error());
+        }
     }
     return result == QDialog::Accepted ? dialog.selectedColor() : QColor{};
 }
@@ -217,9 +234,7 @@ void ColorUtils::loadCustomColors(
         CustomColorPalettePreferencesPort& palettePreferencesPort
     )
 {
-    applyCustomColors(
-        colorsForDialog(palettePreferencesPort.read())
-        );
+    static_cast<void>(applyStoredCustomColors(palettePreferencesPort));
 }
 
 ClassMngr::Next::Domain::Result<void> ColorUtils::saveCustomColors(

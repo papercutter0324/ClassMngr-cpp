@@ -117,13 +117,14 @@ class NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests
 private slots:
     void initTestCase();
     void missingAndUnavailableReadDefaults();
+    void invalidSettingValueDefaultsSuccessfully();
     void compactJsonRoundTripUsesExactKey();
     void legacyQStringListJsonAndSeparatorPayloadsLoad();
     void invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors();
     void saveFailurePreservesStoredPaletteAndWarning();
     void preservesUnrelatedSettings();
     void closedSessionDefaultsAndIgnoresWritesWithoutFallback();
-    void repositoryReadFailureWarnsAndReturnsDefaults();
+    void repositoryReadFailureReturnsTechnicalError();
 
 private:
     QTemporaryDir m_directory;
@@ -145,7 +146,9 @@ missingAndUnavailableReadDefaults()
     QVERIFY(repository);
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
-    QVERIFY(port.read() == defaultCustomColorPalette());
+    const auto missingPalette = port.read();
+    QVERIFY(missingPalette);
+    QVERIFY(missingPalette.value() == defaultCustomColorPalette());
     const auto missing = repository->loadSetting(
         QString::fromUtf8(CustomColorsKey)
         );
@@ -158,17 +161,47 @@ missingAndUnavailableReadDefaults()
     ApplicationServicesCustomColorPalettePreferencesPort unavailablePort(
         unavailableServices
         );
-    QVERIFY(unavailablePort.read() == defaultCustomColorPalette());
+    const auto unavailableRead = unavailablePort.read();
+    QVERIFY(unavailableRead);
+    QVERIFY(unavailableRead.value() == defaultCustomColorPalette());
 
     QVERIFY(unavailablePort.write(paletteWithTwoColors()));
-    QVERIFY(unavailablePort.read() == defaultCustomColorPalette());
+    const auto unavailableReadAfterWrite = unavailablePort.read();
+    QVERIFY(unavailableReadAfterWrite);
+    QVERIFY(
+        unavailableReadAfterWrite.value() == defaultCustomColorPalette()
+        );
 
     ApplicationServicesCustomColorPalettePreferencesPort nullSettingsPort(
         static_cast<ApplicationServices*>(nullptr)
         );
-    QVERIFY(nullSettingsPort.read() == defaultCustomColorPalette());
+    const auto nullSettingsRead = nullSettingsPort.read();
+    QVERIFY(nullSettingsRead);
+    QVERIFY(nullSettingsRead.value() == defaultCustomColorPalette());
     QVERIFY(nullSettingsPort.write(paletteWithTwoColors()));
-    QVERIFY(nullSettingsPort.read() == defaultCustomColorPalette());
+    const auto nullSettingsReadAfterWrite = nullSettingsPort.read();
+    QVERIFY(nullSettingsReadAfterWrite);
+    QVERIFY(
+        nullSettingsReadAfterWrite.value() == defaultCustomColorPalette()
+        );
+}
+
+void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
+invalidSettingValueDefaultsSuccessfully()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(CustomColorsKey),
+        QStringLiteral("not a custom-color palette")
+        ));
+
+    ApplicationServicesCustomColorPalettePreferencesPort port(services);
+    const auto read = port.read();
+    QVERIFY(read);
+    QVERIFY(read.value() == defaultCustomColorPalette());
 }
 
 void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
@@ -186,7 +219,8 @@ compactJsonRoundTripUsesExactKey()
 
     const auto actual = port.read();
     const auto expectedRead = canonicalizedPalette(expected);
-    QVERIFY(actual == expectedRead);
+    QVERIFY(actual);
+    QVERIFY(actual.value() == expectedRead);
 
     const auto stored = repository->loadSetting(
         QString::fromUtf8(CustomColorsKey)
@@ -235,7 +269,9 @@ legacyQStringListJsonAndSeparatorPayloadsLoad()
                 payload
                 )
             );
-        QVERIFY(port.read() == expected);
+        const auto read = port.read();
+        QVERIFY(read);
+        QVERIFY(read.value() == expected);
     }
 }
 
@@ -276,9 +312,10 @@ invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors()
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     const auto actual = port.read();
-    QVERIFY(actual == expected);
+    QVERIFY(actual);
+    QVERIFY(actual.value() == expected);
     QCOMPARE(
-        actual.hexColors.size(),
+        actual.value().hexColors.size(),
         CustomColorPalette::EntryCount
         );
 }
@@ -334,7 +371,8 @@ saveFailurePreservesStoredPaletteAndWarning()
 
     const auto actual = port.read();
     const auto expectedRead = canonicalizedPalette(initial);
-    QVERIFY(actual == expectedRead);
+    QVERIFY(actual);
+    QVERIFY(actual.value() == expectedRead);
     const auto stored = repository->loadSetting(
         QString::fromUtf8(CustomColorsKey)
         );
@@ -397,7 +435,9 @@ closedSessionDefaultsAndIgnoresWritesWithoutFallback()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QVERIFY(port.read() == defaultCustomColorPalette());
+    const auto read = port.read();
+    QVERIFY(read);
+    QVERIFY(read.value() == defaultCustomColorPalette());
     auto attempted = paletteWithTwoColors();
     attempted.hexColors[0] = "#fedcba";
     QVERIFY(port.write(attempted));
@@ -419,7 +459,7 @@ closedSessionDefaultsAndIgnoresWritesWithoutFallback()
 }
 
 void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
-repositoryReadFailureWarnsAndReturnsDefaults()
+repositoryReadFailureReturnsTechnicalError()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -433,7 +473,18 @@ repositoryReadFailureWarnsAndReturnsDefaults()
             QStringLiteral("Failed to load setting.*custom_colors.*")
             )
         );
-    QVERIFY(port.read() == defaultCustomColorPalette());
+    const auto read = port.read();
+    QVERIFY(!read);
+    QCOMPARE(
+        read.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!read.error().recoverable);
+    QVERIFY(
+        QString::fromStdString(read.error().message).contains(
+            QStringLiteral("Failed to load custom colors")
+            )
+        );
 }
 
 QTEST_MAIN(

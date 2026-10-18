@@ -53,7 +53,8 @@ class CustomColorPalettePreferencesPort
 public:
     virtual ~CustomColorPalettePreferencesPort() = default;
 
-    [[nodiscard]] virtual CustomColorPalette read() const = 0;
+    [[nodiscard]] virtual Domain::Result<CustomColorPalette> read()
+        const = 0;
 
     [[nodiscard]] virtual Domain::Result<void> write(
         const CustomColorPalette& palette

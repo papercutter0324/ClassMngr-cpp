@@ -23,24 +23,33 @@ namespace
     };
 }
 
+[[nodiscard]] Domain::OperationError technicalError(
+    std::string message
+    )
+{
+    return {
+        .code = Domain::ErrorCode::Technical,
+        .message = std::move(message),
+        .recoverable = false
+    };
+}
+
 [[nodiscard]] Domain::Result<void> technicalFailure(
     std::string message
     )
 {
-    return Domain::Result<void>::failure({
-        .code = Domain::ErrorCode::Technical,
-        .message = std::move(message),
-        .recoverable = false
-    });
+    return Domain::Result<void>::failure(technicalError(std::move(message)));
 }
 }
 
-Application::CustomColorPalette
+Domain::Result<Application::CustomColorPalette>
 ApplicationServicesCustomColorPalettePreferencesPort::read() const
 {
     if (!m_session || !m_session->isOpen())
     {
-        return Application::defaultCustomColorPalette();
+        return Domain::Result<Application::CustomColorPalette>::success(
+            Application::defaultCustomColorPalette()
+            );
     }
 
     SettingsRepository* const repository = m_session->settingsRepository();
@@ -50,12 +59,16 @@ ApplicationServicesCustomColorPalettePreferencesPort::read() const
             << "Failed to load setting"
             << key()
             << ':'
-            << "No Teacher Profile service is available.";
-        return Application::defaultCustomColorPalette();
+            << "No settings repository is available.";
+        return Domain::Result<Application::CustomColorPalette>::failure(
+            technicalError(
+                "Failed to load custom colors: "
+                "No settings repository is available."
+                )
+            );
     }
 
     const auto stored = repository->loadSetting(key());
-    QVariant storedValue = QString();
     if (!stored)
     {
         qWarning()
@@ -63,13 +76,23 @@ ApplicationServicesCustomColorPalettePreferencesPort::read() const
             << key()
             << ':'
             << stored.error();
-    }
-    else if (stored->isValid())
-    {
-        storedValue = *stored;
+        return Domain::Result<Application::CustomColorPalette>::failure(
+            technicalError(
+                "Failed to load custom colors: " + utf8(stored.error())
+                )
+            );
     }
 
-    return normalizeStoredValue(storedValue);
+    if (!stored->isValid())
+    {
+        return Domain::Result<Application::CustomColorPalette>::success(
+            Application::defaultCustomColorPalette()
+            );
+    }
+
+    return Domain::Result<Application::CustomColorPalette>::success(
+        normalizeStoredValue(*stored)
+        );
 }
 
 Domain::Result<void>

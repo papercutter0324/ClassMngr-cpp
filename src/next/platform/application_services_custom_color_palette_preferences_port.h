@@ -55,7 +55,7 @@ public:
         ApplicationServicesCustomColorPalettePreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] Application::CustomColorPalette read()
+    [[nodiscard]] Domain::Result<Application::CustomColorPalette> read()
         const override;
 
     [[nodiscard]] Domain::Result<void> write(
