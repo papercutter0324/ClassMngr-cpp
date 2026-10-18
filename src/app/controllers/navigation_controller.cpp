@@ -377,6 +377,10 @@ void NavigationController::handleNavigation(
 
             if (!classes)
             {
+                if (!alreadyShowingClasses && m_sidebar)
+                {
+                    m_sidebar->restorePreviousSelection();
+                }
                 return;
             }
 
@@ -387,6 +391,10 @@ void NavigationController::handleNavigation(
             {
                 if (!classes->loadClasses())
                 {
+                    if (!alreadyShowingClasses && m_sidebar)
+                    {
+                        m_sidebar->restorePreviousSelection();
+                    }
                     return;
                 }
             }
