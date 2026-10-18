@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1072 is selected/in progress in Batch468, F1071 completed at `760511ab`, and Batch469 discovery is underway with evidence still being compared; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1074 is selected in Batch469 to preserve the Personal Details name after a technical preference-read failure; F1075-F1077 are provisional navigation-failure leads, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,15 +68,14 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch468
+#### Active batch: Batch469
 
-Batch468's discovered slices, in order (with status):
+Batch469's discovered slices, in order (with status):
 
-1. F1069 - Preserve Academic Calendar schedule on technical preference-read failure: complete at `46780e00`.
-2. F1070 - Restore Sidebar selection after canceled Campus Directory navigation (root and child): complete at `6712a57d`.
-3. F1071 - Restore Sidebar selection after canceled Sub Prep navigation: complete at `760511ab`.
-4. F1072 - Restore Sidebar selection after canceled Classes navigation: selected/in progress; test a real root click from dirty Teacher Info and restore the pre-click selected keys and teacher ID on Cancel while preserving the source state; retain Discard navigation.
-5. F1073 - Restore Sidebar selection after canceled Staff Directory navigation: provisional candidate; verify Cancel restores the pre-click selection.
+1. F1074 - Preserve Personal Details name through a technical preference-read failure: selected/in progress. Distinguish successful empty/missing/unavailable reads from `Technical`; Personal Details warns, preserves the current form, and blocks aggregate saves while the stored name is unknown. A successful reload restores ordinary saves. Preserve other consumers' explicit empty-name behavior. See the progress log for the narrow F199 policy reopening and inferred test sequence.
+2. F1075 - Restore the prior Sidebar selection after dynamic Teacher profile navigation receives `NotFound` or `Technical`: provisional; preserve the displayed profile, draft, and session, with no leave prompt because the read precedes the guard.
+3. F1076 - Keep Staff Directory navigation coherent when `loadDirectory()` fails after leave confirmation: provisional; investigate atomic destination loading because Discard may clear a dirty source draft before the read fails.
+4. F1077 - Keep Classes navigation coherent when `loadClasses()` fails after leave confirmation: provisional; investigate atomic loading and source-draft preservation.
 
 #### Deferred candidates
 

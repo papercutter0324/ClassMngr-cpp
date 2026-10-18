@@ -46030,3 +46030,38 @@ F1071 is complete at source commit `760511ab`. A real rendered Sub Prep root cli
 F1072 is selected for Classes root navigation. Accept a real Classes Sidebar root click from dirty Teacher Info: Cancel must restore the pre-click Sidebar keys and teacher ID while preserving the source page, profile, draft, and session; Discard must still navigate. Existing direct-dispatch coverage does not check Sidebar selection. Target `ClassMngrMainWindowClassesSidebarRootNavigationTests`; build the affected production and test targets, run the matching focused CTest, and `git diff --check`; no full suite.
 
 Batch469 discovery has begun in independent Qt-free domain/application and UI/application integration lanes. Evidence is still being compared; do not add proposed candidates until that comparison is complete.
+
+### F1072 completion; F1073 selected - 2026-10-18
+
+F1072 is complete at source commit `684c49c7`. A real Classes root click from dirty Teacher Info verifies that Cancel restores the pre-click Sidebar keys and teacher ID while preserving the Teacher Info page, profile, draft, and session; Discard navigates. The Executor and independent Tester passed the focused build and matching CTest (1/1), and `git diff --check` passed. No full suite ran.
+
+F1073 is selected for both reachable Staff Directory child Pages: Native English Teachers and GS Team. From dirty Teacher Info, real clicks on each child must make Cancel restore the pre-click Sidebar keys and teacher ID while preserving the page, profile, draft, and session; Discard must still navigate. `Campus Staff` is only an expansion root, and dynamic Korean Teacher routes are unchanged. Target `ClassMngrMainWindowTeacherSidebarNavigationParityTests`; build `ClassMngr` and the test target, run its matching focused CTest, and `git diff --check`; no full suite. Batch469 discovery continues in independent lanes; two candidate leads remain under main review and are not accepted or ordered slices.
+
+### F1073 completion - 2026-10-18
+
+F1073 is complete at source commit `f686e596`. Real Sidebar child-row clicks on Native English Teachers and GS Team verify that Cancel restores the prior selection while preserving the Teacher Info page, profile, draft, and session. The focused build and matching CTest passed (1/1), and `git diff --check` passed. No full suite ran.
+
+### Batch468 closure - 2026-10-18
+
+Batch468 is closed with all five discovered slices complete, in order: F1069 at `46780e00`, F1070 at `6712a57d`, F1071 at `760511ab`, F1072 at `684c49c7`, and F1073 at `f686e596`. The Batch468 closure has not yet been pushed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch469 discovery; F1074 selected, F1075-F1077 provisional - 2026-10-18
+
+The Qt-free lane found the F1074 path in `src/features/my_info/ui/personal_details_page_sections.cpp:852-858,1091-1129` and its aggregate write in `src/next/platform/application_services_personal_details_save_port.h:73-112`; the current preference adapter collapses a `Technical` read failure to empty. The failure can therefore make Personal Details treat the stored name as absent and later overwrite `myInfo/name` with an empty value. This narrowly reopens F199's accepted warning/default-on-read-error policy because this consumer's later aggregate save makes the analogous F1069 data-loss risk concrete.
+
+Accept F1074: the port must distinguish a successful empty/missing/unavailable preference from a `Technical` failure. Personal Details must warn, retain the current form, and block aggregate saves while the stored name is unknown; after a successful reload, ordinary saves resume. Other consumers retain their explicit empty-name behavior. The proposed deterministic UI test is to seed a stored name, temporarily rename `app_settings` to force the read failure, restore the same table so a subsequent write can succeed, and verify that no blank value overwrites the stored name and a successful reload recovers. This sequence is an inference and has not been run. Likely focused targets are `ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`, `ClassMngrMyWorkspacePageTests`, and `ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`.
+
+The UI lane found three additional, separate failed-navigation route families. F1075 is provisional: restore the prior Sidebar selection after dynamic Teacher profile navigation gets `NotFound` or `Technical`, preserving the displayed profile, draft, and session; no leave prompt should occur because the profile read precedes the leave guard. F1076 is provisional: keep Staff Directory navigation coherent if `loadDirectory()` fails after leave confirmation; investigate atomic destination loading because Discard may already clear the dirty source draft. F1077 is provisional: keep Classes navigation coherent if `loadClasses()` fails after leave confirmation, including atomic loading and source-draft preservation. Staff and Classes remain separate from F1075 because their reads occur after leave confirmation and may discard source state.
+
+An independent Deferred audit found no official trigger newly met.
+
+Batch469's discovered slices, in order (with status):
+
+1. F1074 - Preserve Personal Details name through a technical preference-read failure (selected/in progress).
+2. F1075 - Restore prior Sidebar selection after failed dynamic Teacher profile navigation (provisional).
+3. F1076 - Keep Staff Directory navigation coherent when directory loading fails after leave confirmation (provisional).
+4. F1077 - Keep Classes navigation coherent when class loading fails after leave confirmation (provisional).
+
+No other slices were found.
+
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

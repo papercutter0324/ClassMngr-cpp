@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 has five discovered slices in order, with F1069 complete at `46780e00`, F1070 complete at `6712a57d`, F1071 complete at `760511ab`, F1072 selected/in progress, and F1073 provisional. Batch469 discovery is underway, with evidence still being compared. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch468) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is active with F1074 selected/in progress and F1075-F1077 provisional. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch469) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,13 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch468's discovered slices, in order (with status):
+Batch469's discovered slices, in order (with status):
 
-1. **F1069 — Preserve Academic Calendar schedule on technical preference-read failure.** Complete at `46780e00`.
-2. **F1070 — Restore Sidebar selection after canceled Campus Directory navigation (root and child).** Complete at `6712a57d`.
-3. **F1071 — Restore Sidebar selection after canceled Sub Prep navigation.** Complete at `760511ab`.
-4. **F1072 — Restore Sidebar selection after canceled Classes navigation.** Selected/in progress: test a real root click from dirty Teacher Info and restore the pre-click Sidebar keys and teacher ID on Cancel while preserving source state; retain Discard navigation.
-5. **F1073 — Restore Sidebar selection after canceled Staff Directory navigation.** Provisional candidate: verify Cancel restores the pre-click selection.
+1. **F1074 — Preserve Personal Details name through a technical preference-read failure.** Selected/in progress; see the Phase 2 plan and progress log for acceptance and the inferred test sequence.
+2. **F1075 — Restore prior Sidebar selection after failed dynamic Teacher profile navigation.** Provisional.
+3. **F1076 — Keep Staff Directory navigation coherent when directory loading fails after leave confirmation.** Provisional.
+4. **F1077 — Keep Classes navigation coherent when class loading fails after leave confirmation.** Provisional.
 
 The
 [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)

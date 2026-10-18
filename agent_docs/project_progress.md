@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 active; F1072 selected; Batch469 discovery in progress)
+### Current checkpoint - 2026-10-18 (Batch468 closed; Batch469 active; F1074 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -111,6 +111,22 @@ Sidebar selection. The real-click regression target is
 `ClassMngrMainWindowClassesSidebarRootNavigationTests`. Batch469 discovery
 has started in independent Qt-free domain/application and UI/app integration
 lanes as work begins on the second-last Batch468 slice.
+F1072 is complete at `684c49c7`. Its Classes root Cancel branch restores the
+pre-click Sidebar selection; the real-click regression verifies Cancel
+preserves Teacher Info and its session, then verifies Discard navigates. The
+Executor and independent Tester built the application and target, passed the
+focused CTest (1/1), and passed `git diff --check`; no full suite ran. F1073 is
+complete at `f686e596`. Real-click rows for Native English Teachers and GS
+Team verify Cancel restores the pre-click Sidebar selection while preserving
+Teacher Info, the profile, draft, and session; existing direct tests retain
+Cancel/Discard route coverage. The Executor and independent Tester passed the
+focused build, CTest (1/1), and `git diff --check`; no full suite ran. Batch468
+is closed with five ordered slices. Batch469 discovery found a personal-name
+technical-read overwrite risk and failed Sidebar navigation selection
+mismatches; the Deferred audit found no newly met official trigger. F1074 is
+selected to distinguish technical Personal Details name reads and block
+aggregate writes until a successful reload. F1075-F1077 are provisional
+teacher, Staff Directory, and Classes failed-navigation follow-ups.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -119,9 +135,9 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Complete and commit F1072 and F1073 in order. Batch469 discovery is in
-progress; record its ordered candidates before starting the following batch.
-Preserve the open exit gate and unresolved policy reconciliation.
+Complete and commit F1074, then continue through Batch469 in order. Push the
+batch after its slices close. Preserve the open Phase 2 exit gate and
+unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
