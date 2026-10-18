@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (F1052 complete; F1053 accepted)
+### Current checkpoint - 2026-10-18 (F1053 complete; ready for device handoff)
 
 F1050 is complete at source/test commit
 `1a684c67d9865e625ffc3c8f2564ec4b4d8f6443`. Regular Class Details now
@@ -131,15 +131,24 @@ unavailable writes match the documented no-op policy, Class Notes unavailable
 saves already fail, and Useful Links dispatch matches the legacy behavior;
 the remaining launch-assertion gap alone does not establish a contract change.
 Batch444's feature/UI lane found F1053: switching the selected My Workspace
-child changes `outputCapabilities()`, but the tab-change handler does not emit
-the signal that causes PageManager and MainWindow to refresh Print and Save As
-actions. The application-contract lane found no candidate. F1053 is accepted
-before implementation: emit the existing signal after tab transition and
-assert both actions enabled on Schedule, disabled on Details and Calendar, and
-enabled again on Schedule through the real MainWindow. The slice is limited to
-MyWorkspacePage and its MainWindow parity test; no CMake change. Deployment
-remains `phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is
-pending policy reconciliation, and the Phase 2 exit gate is Open.
+child changed `outputCapabilities()` without notifying PageManager and
+MainWindow. F1053 is complete at source/test commit
+`fed596fcee971187ddd5a71433007cc2ab18d129`; the real MainWindow now refreshes
+Print and Save As action states after tab transitions. Its regression verifies
+both actions enabled on Schedule, disabled on Details and lazily initialized
+Calendar, then enabled again on Schedule. The application-contract lane found
+no candidate; no CMake change was needed.
+
+The independent verifier sequentially built `ClassMngr` and
+`ClassMngrMainWindowSaveAsExportParityTests` in
+`build/windows-x64-debug`; the exact Debug CTest passed 1/1, and
+`git diff --check` passed. Initial sandbox builds hit MSBuild FileTracker
+Access Denied; approved expanded-access retries succeeded. No full suite ran.
+Two independent post-slice audits found all 13 official Deferred candidates
+unchanged, with none actionable, resolved, or superseded. Batch444 is closed;
+the next device resumes with a fresh discovery pass. Deployment remains
+`phase2_resume_batch398_f1028`. Gates 1/2 remain Partial, F1007 is pending
+policy reconciliation, and the Phase 2 exit gate is Open.
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 
 F926 is accepted at source/test commit `274feeac91f8afdf91882dc3b9c3891fb3d2eb8a`.

@@ -45464,3 +45464,32 @@ Before slice closeout, build `ClassMngr` and
 no full suite. This is acceptance only: no implementation or verification
 result is recorded here. Gates 1/2 remain Partial, the Phase 2 exit gate
 remains Open, and F1007 remains pending policy reconciliation.
+
+### F1053 complete; post-slice audits clear; Batch444 closed - 2026-10-18
+
+F1053 completes at source/test commit
+`fed596fcee971187ddd5a71433007cc2ab18d129`; its acceptance was recorded at
+`a9797d84421ea52dcb342a65402e632b92f0efbf`. My Workspace now emits its
+existing output-capability change signal after a child-tab transition so
+MainWindow refreshes the Print current page and Save current page as action
+states. The real MainWindow test verifies both actions enabled on Schedule,
+disabled on Details, disabled on lazily initialized Calendar, then enabled on
+Schedule again. Child capabilities, activation behavior, and the actions
+themselves are unchanged.
+
+The independent verifier built `ClassMngr` and
+`ClassMngrMainWindowSaveAsExportParityTests` sequentially in
+`build/windows-x64-debug`. The exact focused CTest
+`ctest --test-dir build/windows-x64-debug -C Debug -R
+"^ClassMngrMainWindowSaveAsExportParityTests$" --output-on-failure` passed
+1/1. MSBuild FileTracker initially returned Access Denied; approved expanded-
+access retries succeeded. `git diff --check` passed with an LF-to-CRLF
+warning. No full suite ran.
+
+Two independent post-F1053 audits reviewed all 13 exact official Deferred
+candidates; all remain unchanged, with none actionable, resolved, or
+superseded. Batch444 contained F1053 as its sole accepted slice; the
+application-contract lane found no candidate. Batch444 is closed, and the
+next resume begins a fresh discovery pass; no Batch445 candidate is recorded.
+Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007
+remains pending policy reconciliation.

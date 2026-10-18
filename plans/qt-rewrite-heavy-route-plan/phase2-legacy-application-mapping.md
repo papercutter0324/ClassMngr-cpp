@@ -4838,6 +4838,17 @@ guards were source-reviewed; public APIs cannot construct those states for
 direct tests. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for
 verification details.
 
+## F1053 My Workspace child-tab output action refresh
+
+F1053, source/test commit `fed596fc`, refreshes the existing Print current page
+and Save current page as actions when the selected My Workspace child tab
+changes. The page emits its existing output-capability change signal after the
+tab transition so PageManager and MainWindow recompute action states; child
+capabilities and output actions are unchanged. The MainWindow regression
+covers Schedule enabled, Details disabled, lazily initialized Calendar
+disabled, then Schedule enabled again. See the [Phase 2 progress
+log](03-Phase-2-Progress-Log.md) for verification details.
+
 ## F191 accepted Calendar Event type-color preferences port
 
 Commit `d170c5f3` migrates
