@@ -19,10 +19,15 @@ ApplicationServicesSubPrepPreferencesPort::load() const
     }
 
     SettingsRepository* const repository = m_session->settingsRepository();
+    struct LoadedSetting final
+    {
+        QVariant value;
+        std::optional<Domain::OperationError> error;
+    };
     const auto loadOrDefault = [repository](
         const QString& key,
         const QVariant& defaultValue
-        ) -> QVariant {
+        ) -> LoadedSetting {
         if (!repository)
         {
             qWarning()
@@ -30,7 +35,7 @@ ApplicationServicesSubPrepPreferencesPort::load() const
                 << key
                 << ':'
                 << "No Teacher Profile service is available.";
-            return defaultValue;
+            return { defaultValue, std::nullopt };
         }
 
         const auto stored = repository->loadSetting(key);
@@ -41,24 +46,78 @@ ApplicationServicesSubPrepPreferencesPort::load() const
                 << key
                 << ':'
                 << stored.error();
-            return defaultValue;
+            return {
+                defaultValue,
+                Domain::OperationError{
+                    .code = Domain::ErrorCode::Technical,
+                    .message = toUtf8(stored.error()),
+                    .recoverable = false
+                }
+            };
         }
 
-        return stored->isValid() ? *stored : defaultValue;
+        return {
+            stored->isValid() ? *stored : defaultValue,
+            std::nullopt
+        };
     };
+
+    const LoadedSetting classMaterials = loadOrDefault(
+        classMaterialsKey(),
+        QString()
+        );
+    if (classMaterials.error)
+    {
+        return Application::SubPrepPreferencesResult::failure(
+            *classMaterials.error
+            );
+    }
+
+    const LoadedSetting bookReportGrading = loadOrDefault(
+        bookReportGradingKey(),
+        QVariant()
+        );
+    if (bookReportGrading.error)
+    {
+        return Application::SubPrepPreferencesResult::failure(
+            *bookReportGrading.error
+            );
+    }
+
+    const LoadedSetting bookReportSpecialInstructions = loadOrDefault(
+        bookReportSpecialInstructionsKey(),
+        QVariant()
+        );
+    if (bookReportSpecialInstructions.error)
+    {
+        return Application::SubPrepPreferencesResult::failure(
+            *bookReportSpecialInstructions.error
+            );
+    }
+
+    const LoadedSetting subComments = loadOrDefault(
+        subCommentsKey(),
+        QString()
+        );
+    if (subComments.error)
+    {
+        return Application::SubPrepPreferencesResult::failure(
+            *subComments.error
+            );
+    }
 
     return Application::SubPrepPreferencesResult::success({
         .classMaterials = toUtf8(
-            loadOrDefault(classMaterialsKey(), QString()).toString()
+            classMaterials.value.toString()
             ),
         .bookReportGrading = optionalUtf8(
-            loadOrDefault(bookReportGradingKey(), QVariant())
+            bookReportGrading.value
             ),
         .bookReportSpecialInstructions = optionalUtf8(
-            loadOrDefault(bookReportSpecialInstructionsKey(), QVariant())
+            bookReportSpecialInstructions.value
             ),
         .subComments = toUtf8(
-            loadOrDefault(subCommentsKey(), QString()).toString()
+            subComments.value.toString()
             )
     });
 }

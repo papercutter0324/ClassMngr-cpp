@@ -99,7 +99,7 @@ void SubPrepPage::refresh()
     loadCampuses();
     refreshGeneratedContent();
 
-    if (!m_dirty)
+    if (!m_dirty || m_subPrepPreferencesLoadBlocked)
     {
         loadStoredSettings();
     }

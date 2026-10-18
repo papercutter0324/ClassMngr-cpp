@@ -54,6 +54,8 @@ int legacyTeacherId(const qint64 teacherId)
 namespace ScheduleWidgetTestStubs
 {
 QHash<QString, QVariant> settings;
+QString settingsLoadFailureKey;
+QString settingsLoadFailure;
 QString settingsSaveFailure;
 QString scheduleDisplayModeSaveFailure;
 int scheduleDisplayModeSaveAttemptCount = 0;
@@ -172,6 +174,8 @@ void reset()
 {
     FontManager::setSizeOffset(0);
     settings.clear();
+    settingsLoadFailureKey.clear();
+    settingsLoadFailure.clear();
     settingsSaveFailure.clear();
     scheduleDisplayModeSaveFailure.clear();
     scheduleDisplayModeSaveAttemptCount = 0;
@@ -255,6 +259,12 @@ void setDatabaseOpen(
     )
 {
     databaseSessionOpen = open;
+}
+
+void setSettingsLoadFailure(const QString& key, const QString& error)
+{
+    settingsLoadFailureKey = key;
+    settingsLoadFailure = error;
 }
 
 void setSettingsSaveFailure(const QString& error)
@@ -691,6 +701,19 @@ Status SettingsRepository::saveSettings(const QVariantMap& values)
 
 Result<QVariant> SettingsRepository::loadSetting(const QString& key)
 {
+    if (
+        !ScheduleWidgetTestStubs::settingsLoadFailure.isEmpty()
+        && (
+            ScheduleWidgetTestStubs::settingsLoadFailureKey.isEmpty()
+            || ScheduleWidgetTestStubs::settingsLoadFailureKey == key
+            )
+        )
+    {
+        return std::unexpected(
+            ScheduleWidgetTestStubs::settingsLoadFailure
+            );
+    }
+
     return ScheduleWidgetTestStubs::settings.value(key);
 }
 

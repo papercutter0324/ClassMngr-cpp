@@ -59,6 +59,7 @@ namespace ScheduleWidgetTestStubs
 {
 void reset();
 void setDatabaseOpen(bool open);
+void setSettingsLoadFailure(const QString& key, const QString& error);
 void setSettingsSaveFailure(const QString& error);
 void setSettingsRepositoryAvailable(bool available);
 void setIncludeAdditionalClass(bool include);
@@ -411,6 +412,7 @@ private slots:
     void unavailablePreferenceLoadsPreservePageValues();
     void unavailablePreferenceSaveHasNoSideEffects();
     void failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft();
+    void repositoryReadFailureBlocksWritesUntilSuccessfulReload();
     void printDialogSelectsNextVacationBlock();
     void printDialogOnlyOffersVacationModeWithinFourWeeks();
     void printDialogCombinesVacationDatesAcrossHolidayBlocks();
@@ -1943,6 +1945,144 @@ failedPreferenceSaveReportsOnlyExplicitFailureAndPreservesDraft()
             ->loadSetting(QStringLiteral("subPrep/unrelatedPreference"))->toString(),
         QStringLiteral("Keep unrelated setting")
         );
+}
+
+void SubPrepPageTests
+    ::repositoryReadFailureBlocksWritesUntilSuccessfulReload()
+{
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    ApplicationServices services;
+    const QStringList keys{
+        QStringLiteral("subPrep/classMaterials"),
+        QStringLiteral("subPrep/bookReportGrading"),
+        QStringLiteral("subPrep/bookReportSpecialInstructions"),
+        QStringLiteral("subPrep/subComments")
+    };
+    const QStringList stored{
+        QStringLiteral("Stored materials"),
+        QStringLiteral("Stored grading"),
+        QStringLiteral("Stored special instructions"),
+        QStringLiteral("Stored notes")
+    };
+    for (qsizetype index = 0; index < keys.size(); ++index)
+    {
+        saveSettingOrFail(services.dataService(), keys[index], stored[index]);
+    }
+
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+    const QList<QTextEdit*> editors{
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepClassMaterialsEdit")),
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepGradingInstructionsEdit")),
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepSpecialInstructionsEdit")),
+        page.findChild<QTextEdit*>(QStringLiteral("subPrepNotesEdit"))
+    };
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        QVERIFY(editors[index]);
+        QCOMPARE(editors[index]->toPlainText(), stored[index]);
+    }
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("subPrep/bookReportSpecialInstructions"),
+        QStringLiteral("F1079 injected settings read failure")
+        );
+    page.refresh();
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        QCOMPARE(editors[index]->toPlainText(), stored[index]);
+    }
+    const auto loadWarning = std::find_if(
+        promptService.messages.cbegin(),
+        promptService.messages.cend(),
+        [](const PromptRequest& request)
+        {
+            return request.title == QStringLiteral("Load Sub Prep Content");
+        }
+        );
+    QVERIFY(loadWarning != promptService.messages.cend());
+    QCOMPARE(loadWarning->severity, PromptSeverity::Warning);
+    QVERIFY(loadWarning->message.contains(
+        QStringLiteral("current editor content has been kept")
+        ));
+    QVERIFY(loadWarning->message.contains(
+        QStringLiteral("Refresh this page")
+        ));
+    QVERIFY(loadWarning->details.contains(
+        QStringLiteral("F1079 injected settings read failure")
+        ));
+    promptService.messages.clear();
+
+    const QString draft = QStringLiteral("Draft materials");
+    editors.first()->setPlainText(draft);
+    QVERIFY(page.hasUnsavedChanges());
+    QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
+    QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(editors.first()->toPlainText(), draft);
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(QString(), QString());
+
+    QVERIFY(!page.saveChanges());
+    QCOMPARE(promptService.messages.size(), 1);
+    QVERIFY(promptService.messages.first().details.contains(
+        QStringLiteral("Refresh the page")
+        ));
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(editors.first()->toPlainText(), draft);
+    for (qsizetype index = 0; index < keys.size(); ++index)
+    {
+        QCOMPARE(
+            services.dataService()->loadSetting(keys[index])->toString(),
+            stored[index]
+            );
+    }
+
+    promptService.messages.clear();
+    QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
+    QVERIFY(promptService.messages.isEmpty());
+    QVERIFY(page.hasUnsavedChanges());
+    for (qsizetype index = 0; index < keys.size(); ++index)
+    {
+        QCOMPARE(
+            services.dataService()->loadSetting(keys[index])->toString(),
+            stored[index]
+            );
+    }
+
+    page.refresh();
+    QVERIFY(!page.hasUnsavedChanges());
+    for (qsizetype index = 0; index < editors.size(); ++index)
+    {
+        QCOMPARE(editors[index]->toPlainText(), stored[index]);
+    }
+
+    const QString recoveredMaterials = QStringLiteral("Recovered materials");
+    editors.first()->setPlainText(recoveredMaterials);
+    QVERIFY(QMetaObject::invokeMethod(&page, "autosave", Qt::DirectConnection));
+    QVERIFY(!page.hasUnsavedChanges());
+    QVERIFY(promptService.messages.isEmpty());
+    QCOMPARE(
+        services.dataService()->loadSetting(keys[0])->toString(),
+        recoveredMaterials
+        );
+    for (qsizetype index = 1; index < keys.size(); ++index)
+    {
+        QCOMPARE(
+            services.dataService()->loadSetting(keys[index])->toString(),
+            stored[index]
+            );
+    }
 }
 
 void SubPrepPageTests

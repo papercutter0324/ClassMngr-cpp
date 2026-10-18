@@ -94,7 +94,7 @@ private slots:
     void atomicSaveFailureRollsBackAndPreservesUnrelatedSettings();
     void unavailableSettingsFailWithoutWrites();
     void closedSessionFailsWithoutDataServiceFallback();
-    void repositoryReadFailureWarnsAndUsesDefaults();
+    void repositoryReadFailureReturnsTechnicalResultAndWarns();
 
 private:
     QTemporaryDir m_directory;
@@ -439,32 +439,23 @@ closedSessionFailsWithoutDataServiceFallback()
 }
 
 void NextPlatformApplicationServicesSubPrepPreferencesPortTests::
-repositoryReadFailureWarnsAndUsesDefaults()
+repositoryReadFailureReturnsTechnicalResultAndWarns()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
 
     ApplicationServicesSubPrepPreferencesPort port(services);
-    for (int index = 0; index < 4; ++index)
-    {
-        QTest::ignoreMessage(
-            QtWarningMsg,
-            QRegularExpression(QStringLiteral("Failed to load setting.*"))
-            );
-    }
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral("Failed to load setting.*"))
+        );
 
     const auto loaded = port.load();
-    QVERIFY(loaded);
-    QCOMPARE(
-        loaded.value(),
-        (SubPrepPreferences{
-            .classMaterials = {},
-            .bookReportGrading = std::nullopt,
-            .bookReportSpecialInstructions = std::nullopt,
-            .subComments = {}
-        })
-        );
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!loaded.error().recoverable);
+    QVERIFY(!loaded.error().message.empty());
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesSubPrepPreferencesPortTests)

@@ -226,6 +226,7 @@ private:
 
     bool m_loading = false;
     bool m_dirty = false;
+    bool m_subPrepPreferencesLoadBlocked = false;
     SubPrepSection m_currentSection = SubPrepSection::ImportantInformation;
     std::vector<
         ClassMngr::Next::Application::SubPrepCampusMetadata

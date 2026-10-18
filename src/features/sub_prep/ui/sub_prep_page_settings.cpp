@@ -45,8 +45,47 @@ void SubPrepPage::loadStoredSettings()
         subPrepPreferencesPort.load();
     if (!storedPreferences)
     {
+        if (
+            storedPreferences.error().code
+            == ClassMngr::Next::Domain::ErrorCode::Technical
+            )
+        {
+            m_subPrepPreferencesLoadBlocked = true;
+
+            if (m_services->hasOpenDatabase())
+            {
+                const std::string& message =
+                    storedPreferences.error().message;
+                QString diagnostic = QString::fromUtf8(
+                    message.data(),
+                    static_cast<qsizetype>(message.size())
+                    );
+                if (diagnostic.isEmpty())
+                {
+                    diagnostic = tr(
+                        "No additional error details are available."
+                        );
+                }
+
+                DialogServices::showWarning(
+                    this,
+                    tr("Load Sub Prep Content"),
+                    tr(
+                        "Saved Sub Prep content could not be loaded. Your "
+                        "current editor content has been kept. Refresh this "
+                        "page to try again; saving is blocked until the "
+                        "reload succeeds."
+                        ),
+                    diagnostic
+                    );
+            }
+        }
         return;
     }
+
+    const bool recoveredFromLoadFailure =
+        m_subPrepPreferencesLoadBlocked;
+    m_subPrepPreferencesLoadBlocked = false;
 
     const auto& preferences =
         storedPreferences.value();
@@ -102,6 +141,15 @@ void SubPrepPage::loadStoredSettings()
             static_cast<qsizetype>(preferences.subComments.size())
             )
         );
+
+    if (recoveredFromLoadFailure)
+    {
+        if (m_autosaveTimer)
+        {
+            m_autosaveTimer->stop();
+        }
+        clearDirty();
+    }
 }
 
 void SubPrepPage::loadPersonalZoomInformation()
@@ -344,6 +392,18 @@ bool SubPrepPage::saveSubPrepInternal(QString* errorMessage)
     if (m_autosaveTimer)
     {
         m_autosaveTimer->stop();
+    }
+
+    if (m_subPrepPreferencesLoadBlocked)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = tr(
+                "Sub Prep settings could not be loaded. Refresh the page "
+                "before saving."
+                );
+        }
+        return false;
     }
 
     const QString gradingInstructions =
