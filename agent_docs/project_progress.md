@@ -94,11 +94,18 @@ An injected failure on the second occurrence leaves no partial rows; retry
 creates four weekly occurrences with a shared series ID and refreshes the
 projection, while Cancel leaves storage and model revision unchanged.
 Independent verification passed the focused Calendar CTest 1/1 with 30 passed,
-0 failed, and 0 skipped; `git diff --check` passed and no full suite ran. F1084 is selected
-to preserve Schedule display preferences after a technical preference-read
-failure; F1085 remains provisional. Batch473 discovery began in separate
-domain/application and UI/application lanes as F1084 started; results are
-pending.
+0 failed, and 0 skipped; `git diff --check` passed and no full suite ran. F1084
+is complete at `14fd7ae4`: a technical Schedule preference-read failure now
+shows a diagnostic, disables the five aggregate-saved controls, and blocks
+signal-driven saves. Missing and unavailable reads keep their false defaults,
+and legacy `QVariant` coercion is preserved. Independent verification built
+`ClassMngr` and both focused targets; CTests passed 2/2 with 20 QtTest cases,
+and `git diff --check` passed. F1085 is selected/in progress to protect
+Calendar event-display and first-day-of-week preferences from technical
+read-failure defaults. Batch473 discovery began in separate domain/application
+and UI/application lanes as F1084 started. The lanes returned five provisional
+candidates for Batch473 and no newly met Deferred trigger; their evidence is
+recorded in the Phase 2 progress log.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
@@ -107,9 +114,9 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue with F1084 in Batch472 and record Batch473 discovery when the two
-lanes report. Preserve the open Phase 2 exit gate and
-unresolved policy reconciliation.
+Continue with F1085 in Batch472. Batch473 discovery is recorded while
+Batch472 remains active. Preserve the open Phase 2 exit gate and unresolved
+policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

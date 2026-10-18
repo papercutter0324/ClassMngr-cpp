@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1084 is selected/in progress in active Batch472 to preserve Schedule display preferences when a settings read fails technically; F1083 is complete at `e26e866b` and Batch471 was pushed to `origin/Qt-Rewrite` at `0a570252`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1085 is selected/in progress in active Batch472 to preserve Calendar options after technical preference-read failures; F1084 is complete at `14fd7ae4` and Batch471 was pushed to `origin/Qt-Rewrite` at `0a570252`, Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -75,8 +75,8 @@ Batch472's discovered slices, in order (with status):
 1. F1081 - Keep Calendar occurrence edits retryable after save failure: complete at `a9066ae7`. On failure, retain the same dialog and values, show the existing warning, and allow retry or Cancel. Retry updates only the selected occurrence and refreshes the projection; sibling rows remain unchanged. The accepted this-event-only save still clears the selected occurrence's `repeatSeriesId`.
 2. F1082 - Keep Calendar “this and following” edits retryable after failure: complete at `c48d43a4`. On series-edit failure, retain the same dialog, fields, and scope and show the warning; retry updates selected and following rows and refreshes the view while the earlier occurrence remains unchanged, and Cancel restores the full pre-edit snapshot.
 3. F1083 - Keep Calendar repeat-series creation retryable after failure: complete at `e26e866b`. A failed create retains the dialog and recurrence values; transaction rollback leaves no partial rows, and retry creates four weekly occurrences sharing a series ID and refreshes the projection. Cancel leaves storage and model revision unchanged.
-4. F1084 - Preserve Schedule display preferences after a technical read failure: selected/in progress; distinguish Technical read errors from false defaults before aggregate-saving all five values on a checkbox change. Likely targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
-5. F1085 - Preserve Calendar option state after technical preference-read failures: provisional; distinguish Technical failures from event-display and first-day-of-week defaults before aggregate saves. Likely targets: event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
+4. F1084 - Preserve Schedule display preferences after a technical read failure: complete at `14fd7ae4`. Repository read errors return `Technical`; missing/unavailable settings retain false defaults. The Preferences screen shows a diagnostic warning, disables all five controls, and blocks aggregate writes. Focused targets: `ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests` and `ClassMngrScheduleTestingLayoutClearParityTests`.
+5. F1085 - Preserve Calendar option state after technical preference-read failures: selected/in progress; distinguish Technical failures from event-display and first-day-of-week defaults before aggregate saves. Likely targets: event-display and first-day-of-week port tests and `ClassMngrCalendarPreferencesRestoreDefaultsTests`.
 
 #### Deferred candidates
 
