@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-19 (F1089 complete; F629 open; F1090 next)
+### Current checkpoint - 2026-10-19 (F1090 complete; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -131,11 +131,11 @@ Independent verification built `ClassMngr`,
 `ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
 `ClassMngrMyWorkspacePageTests`, and `ClassMngrInitialSetupWizardTests`. The
 focused signature-port and My Details CTests passed 2/2, including technical
-failure injection for each preference and save/reload recovery; `git diff
---check` passed. The new Initial Setup regression compiled but could not reach
-its assertions: the macOS Debug harness aborts in Qt's QWizard page/pixmap
-path with `NSBundle initWithURL: nil URL argument`. An existing Initial Setup
-wizard test aborts at the same path, so the product behavior remains
+failure injection for each preference and save/reload recovery;
+`git diff --check` passed. The new Initial Setup regression compiled but could
+not reach its assertions: the macOS Debug harness aborts in Qt's QWizard
+page/pixmap path with `NSBundle initWithURL: nil URL argument`. An existing
+Initial Setup wizard test aborts at the same path, so the product behavior remains
 unverified there; the release app-bundle attempt also failed before QtTest
 started because macOS pasteboard/XPC services were unavailable. No full suite
 ran.
@@ -144,6 +144,28 @@ The F629 matrix already ran with approximately 56 GiB free. Its remaining
 blocker is strict PDF semantic parity on `output-sub-prep` pages 9-10, not disk
 space; F629 and the combined Phase 0 exit gate remain open.
 
+F1090 is complete at source/test commit `f78791a9`. The Sub Prep Zoom
+preference port now returns `Technical` for any primary or required legacy
+read failure. It does not read legacy values after a technical primary error,
+and stages migrations until all three preferences have been read
+successfully. Primary precedence, missing-value defaults, legacy fallback and
+migration, UTF-8/whitespace, and best-effort migration-save behavior remain
+unchanged. My Details blocks aggregate saves until the Zoom bundle reloads
+successfully; Initial Setup warns and returns before aggregate save; Sub Prep
+preserves its read-only Zoom fields and reports the diagnostic.
+
+Independent verification built the four affected test targets. The Zoom port
+CTest passed 10/10 and the full My Details CTest passed. Direct focused Sub
+Prep Zoom, F1079 read-failure/reload, save-failure rollback/retry, and
+unavailable-save cases passed. The Initial Setup Zoom regression passed
+through the real `initializePage()`/`validatePage()` path without showing the
+wizard. The full Sub Prep class hung in the existing
+`unavailablePreferenceLoadsPreservePageValues` case and was interrupted after
+104 seconds. The full Initial Setup class aborts in the existing macOS Qt
+QWizard page/pixmap path (`NSBundle initWithURL: nil URL argument`), also
+reproduced by an existing wizard test; navigation/display runtime remains
+unverified. `git diff --check` passed; no full suite ran.
+
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
 commit, and discovery evidence is in
@@ -151,13 +173,13 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Begin F1090, the Sub Prep Zoom preference slice, and verify whether a technical
-primary-read failure can trigger legacy-value fallback or migration. Keep F629
-open until the Sub Prep page-boundary mismatch has source-bound Windows layout
-evidence or another justified cross-platform resolution, then rerun the full
-macOS matrix. F628's full Windows evidence root also remains unavailable in
-this Mac session, so the combined Phase 0 exit gate cannot be claimed. Preserve
-the open Phase 2 exit gate and unresolved policy reconciliation.
+Continue F629 with a fresh current-source macOS universal 24-route matrix, then
+investigate the strict `output-sub-prep` page-parity mismatch without weakening
+the comparator. The earlier run had about 56 GiB free; its remaining failure
+was semantic PDF parity, not disk space. F628's full Windows evidence root also
+remains unavailable in this Mac session, so the combined Phase 0 exit gate
+cannot be claimed. Preserve the open Phase 2 exit gate and unresolved policy
+reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

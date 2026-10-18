@@ -46449,3 +46449,38 @@ progress. The discovered slice list remains F1086-F1090, with F629 separately
 reactivated from Deferred. Gates 1/2 remain Partial, F1007 is pending policy
 reconciliation, and the combined Phase 0 evidence and Phase 2 exit gates
 remain Open. Push remains deferred until Batch473 closes.
+
+### F1090 completion; F629 selected for revalidation - 2026-10-19
+
+F1090 is complete at source/test commit `f78791a9`. The Zoom preference port
+returns `Technical` for any primary or required legacy read error; a primary
+technical error stops before fallback, and all three migration candidates are
+staged until every read succeeds. Missing defaults, legacy fallback/migration,
+primary precedence, UTF-8 and whitespace handling, and best-effort migration
+save behavior are preserved. My Details protects an unknown Zoom bundle from
+aggregate save until reload; Initial Setup warns and returns before aggregate
+save; Sub Prep preserves read-only Zoom fields and displays the diagnostic.
+
+Four affected test targets compiled. The full preference-port CTest passed
+10/10 and the full My Details CTest passed. The direct Sub Prep Zoom case and
+existing F1079 read-failure/reload, save-failure rollback/retry, and
+unavailable-save cases passed. The direct Initial Setup Zoom regression passed
+through actual `initializePage()`/`validatePage()` without showing the wizard.
+`git diff --check` passed.
+
+The full Sub Prep class hung at the existing
+`unavailablePreferenceLoadsPreservePageValues` case and was interrupted after
+104 seconds. The full Initial Setup class aborted on the pre-existing macOS Qt
+`NSBundle initWithURL: nil URL argument` QWizard page/pixmap path, also
+reproduced by an existing wizard test. Navigation/display runtime remains
+unverified; neither full class is reported as passing.
+
+F629 is selected/in progress for current-source macOS matrix revalidation and
+parity diagnosis. Its prior run had about 56 GiB free and passed 23/24 routes;
+`output-sub-prep` remains open on strict page-by-page PDF parity. The 18 GiB
+figure is preflight reserve, not observed consumption. Batch473's recorded
+order remains unchanged: F1086-F1089 and F1090 are complete; reactivated F629
+is open and unaccepted. The discovered list remains F1086-F1090, with F629
+separately reactivated from Deferred. Gates 1/2 remain Partial, F1007 is
+pending policy reconciliation, and the combined Phase 0 evidence and Phase 2
+exit gates remain Open. Push remains deferred until Batch473 closes.

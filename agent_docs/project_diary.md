@@ -7191,3 +7191,34 @@ Batch473 candidate; the explicit list remains F1086-F1090 plus reactivated
 F629. Batch473 push remains deferred until the batch closes. Gates 1/2 remain
 Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
 Open.
+
+## F1090 Sub Prep Zoom preference read failure - 2026-10-19
+
+Commit `f78791a9` makes the Sub Prep Zoom preferences port propagate Technical
+errors for primary and required legacy reads. It prevents legacy fallback after
+a technical primary read and stages legacy migrations until all three values
+have been read. Existing primary precedence, missing defaults, legacy fallback
+and migration, UTF-8/whitespace, and best-effort migration-save behavior remain
+intact. My Details guards aggregate saves until the Zoom bundle reloads;
+Initial Setup warns and returns before aggregate save; Sub Prep preserves its
+read-only Zoom fields and displays the read diagnostic.
+
+Independent verification built all four affected test targets. The preference
+port CTest passed 10/10 and My Details CTest passed. Direct Sub Prep Zoom,
+F1079 read-failure/reload, save-failure rollback/retry, and unavailable-save
+cases passed. The new Initial Setup Zoom case passed through the actual
+`initializePage()`/`validatePage()` path without showing the wizard. The full
+Sub Prep class hung at the existing `unavailablePreferenceLoadsPreservePageValues`
+case and was interrupted after 104 seconds. The full Initial Setup class
+aborted in the existing Qt/macOS QWizard page/pixmap path with
+`NSBundle initWithURL: nil URL argument`; an existing wizard case reproduces
+the same abort. Wizard navigation/display remains unverified, and no full
+suite ran. `git diff --check` passed.
+
+F629 remains open after its 23/24 macOS routes, with the strict Sub Prep PDF
+page-parity mismatch on pages 9-10. The earlier run had about 56 GiB free, so
+the 18 GiB preflight reserve is not the blocker. F629 is selected for a fresh
+current-source matrix and parity investigation. Batch473 remains active with
+F1086-F1090 complete and F629 unaccepted. Push is deferred until the batch
+closes; Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
+and the Phase 2 exit gate remains Open.
