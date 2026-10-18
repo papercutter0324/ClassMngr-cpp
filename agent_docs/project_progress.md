@@ -53,42 +53,29 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-17 (F1044 complete; F1045 accepted)
+### Current checkpoint - 2026-10-18 (F1045 complete; F1046 accepted)
 
-F1042 is complete at source commit
-`b44d1fcee02d25b47b14dafde30fd74a9e4452ce`. Sub Prep package generation now
-reports a failed requested folder open as a warning result while preserving
-the generated package, output directory, document paths, and files. The
-request-scoped opener defaults to `QDesktopServices::openUrl`; success and
-disabled auto-open retain their existing outcomes, and print failure keeps
-precedence. The executor and independent Tester built `ClassMngr` plus both
-focused targets and passed their matching CTests 2/2; `git diff --check` also
-passed. The initial sandbox FileTracker denial required an approved elevated
-retry. No full suite ran.
+F1045 is complete at source/test commit
+`be00a799d9a143bdeb2ab4698335987077baa522`. Speaking Evaluation report
+preflight now compares cleaned, case-folded path keys while retaining each
+original output path and casing. Regressions cover case-only duplicates in
+archive-only and archive-plus-individual-PDF modes; both fail without files in
+the output directory. The independent Tester built `ClassMngr` and
+`ClassMngrSpeakingEvalBatchReportServiceTests` in the required
+`build/windows-x64-debug` tree and passed the focused CTest 1/1 after an
+elevated retry for sandbox FileTracker denial. `git diff --check` passed; no
+full suite ran.
 
-F1043 is complete at source/test commit
-`b5fd1823879734d5bda12e87c75d0c233fc50274`. The Row Transfer adapter now marks
-the unavailable-service `NotFound` result recoverable, matching the established
-Roster Save result contract while preserving invalid-ID and technical failures.
-The independent Tester confirmed the closed-database/no-fallback regression;
-the `ClassMngr` and focused adapter test targets built, the matching Debug
-CTest passed 1/1, and `git diff --check` passed. No full suite ran.
-
-Two independent post-F1044 audits reviewed all 13 official Deferred entries.
-None became actionable, resolved, or superseded. GitHub lists standard and
-larger ARM64 macOS runners, but their published 14 GB SSD is below Phase 0's
-18 GiB free-space preflight; F629 remains deferred. F1044 is complete at
-source/test commit `8dc894ca9b60bca158ac41211c3ec10be5f49080`. Catalog
-navigation now restores prior Sidebar selection when the unsaved-change prompt
-is canceled after resource preflight. `ClassMngr` and
-`ClassMngrDocumentCatalogNavigationParityTests` built in Ninja Debug; the
-matching CTest passed 1/1 and `git diff --check` passed. No full suite ran.
-Batch428 is closed. Batch429's async-job review found no live production
-caller for the queue-terminal concern. Its file-export lane accepted F1045 to
-reject case-only duplicate generated PDF paths before staging, including
-archive-only and archive-plus-individual output; implementation is pending.
-Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007 remains
-pending policy reconciliation.
+Two independent post-F1045 audits reviewed all 13 official Deferred entries;
+none became actionable, resolved, or superseded. The separate dense Speaking
+Evaluation row-limit policy remains unresolved. Batch429 is closed. Batch430
+is active with F1046 accepted pending implementation and F1047 queued. F1046
+will reject ordinary opens of missing workspace paths without creating the
+database or parent directories, preserve explicit creation, and propagate a
+typed recoverable `NotFound` while preserving workspace and selection state.
+Batch431's two discovery lanes found no additional candidate; that shortfall
+is recorded in the public progress log. Gates 1/2 remain Partial, the Phase 2
+exit gate remains Open, and F1007 remains pending policy reconciliation.
 
 ### Previous checkpoint - 2026-10-17 (F1023 complete; F1024 accepted)
 

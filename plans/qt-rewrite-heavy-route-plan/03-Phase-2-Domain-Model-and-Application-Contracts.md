@@ -50,10 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-17
+- Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1045 is accepted pending implementation in Batch429; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1046 is accepted pending implementation in Batch430, followed by F1047; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch — Batch429
+#### Active batch — Batch430
 
-- F1045 - Reject case-folded generated report-path collisions before staging; preserve output casing and verify archive-only and archive-plus-individual batches.
+- F1046 - Reject ordinary opens of missing workspaces without creating files or directories; preserve current session and coordinator state, and return typed NotFound.
+- F1047 - Map missing or stale testing-class deletion to typed NotFound while preserving technical failures, without message matching or a race-prone pre-read.
 
 #### Deferred candidates
 
