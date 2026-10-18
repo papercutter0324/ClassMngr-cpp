@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch464 shortfall; Batch465 accepted)
+### Current checkpoint - 2026-10-18 (F1066 complete; F1062 follow-up next)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -61,10 +61,10 @@ identity in either teacher group, while preserving same-teacher duplicate
 occurrences and Discard behavior. Independent focused verification passed
 the F403 cases and the matching Teacher Sidebar Navigation parity CTest
 (4 QtTest cases including setup/cleanup). Batch464 found no eligible slice.
-Batch465 has two accepted slices in order: F1066 distinguishes technical
-current-campus preference read failures from empty values across direct
-consumers; the F1062 follow-up preserves a dirty Campus Dashboard identity
-when a nonempty refresh omits that campus.
+F1066 is committed at `222b6060`; four focused CTests passed, while the
+Initial Setup test aborts in Qt/macOS before its new scenario reaches the
+preference failure. The F1062 Campus Dashboard refresh follow-up is the
+remaining Batch465 slice.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -73,8 +73,9 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Implement and verify F1066 in Batch465, commit it, then begin the F1062
-follow-up. Preserve the open exit gate and unresolved policy reconciliation.
+Implement and verify the F1062 Campus Dashboard refresh follow-up, then close
+and push Batch465. Preserve the open exit gate and unresolved policy
+reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 

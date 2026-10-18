@@ -45916,3 +45916,11 @@ Accept F1066: change `CurrentCampusPreferencesPort::read()` to return `Domain::R
 No other slices were found.
 
 Batch465 contains two accepted slices in order: F1066, then the F1062 Campus Dashboard refresh follow-up. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1066 completion - 2026-10-18
+
+F1066 is committed as `222b6060` (`Phase2 - Preserve current campus read failures`). `CurrentCampusPreferencesPort::read()` returns a typed result: missing/empty and unavailable values remain successful empty results, while technical repository failures return recoverable `Technical` results. Sub Prep shows campus details as unavailable on a failed read; Personal Details preserves its current selection and skips correction; Initial Setup blocks before aggregate save; Calendar explicitly preserves its empty-current-campus all-events fallback.
+
+The Executor and independent Tester built `ClassMngr` and all five affected focused test targets. Four matching CTests passed: the preference port, Sub Prep, My Workspace/Personal Details, and Calendar. `git diff --check` passed. The Initial Setup target builds, but its CTest aborts in `keyboardIsAvailableAtTextEntryStages` with Qt/macOS `NSBundle initWithURL: nil URL argument`; the isolated new slot fails at `showPersonalDetailsPage()` with the same exception before the preference read failure is injected. The Initial Setup guard is source-inspected but not runtime-verified on this host. The Personal Details runtime test preserves the selected value and stored row, but its table-rename fault also prevents a write; source inspection confirms the typed-error branch skips correction logic. The Sub Prep test verifies the warning and N/A campus fields; it does not invoke printing, while source inspection confirms those fields populate the print request. No full suite ran.
+
+F1062 is the remaining accepted Batch465 slice: preserve the dirty Campus Dashboard selector and snapshot when a nonempty refresh no longer includes the selected campus, then verify explicit `NotFound` save and recovery to the still-available campus.
