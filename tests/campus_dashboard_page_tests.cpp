@@ -357,6 +357,7 @@ private slots:
     void automaticSaveUsesDebounceAndPersistsOnce();
     void manualSaveFailureRetainsDirtyForm();
     void automaticSaveFailureRetainsDirtyForm();
+    void missingUpdateTargetKeepsDraftDirtyAndShowsError();
     void reservedCreateIdentityFailureRetainsDirtyForm();
     void reservedUpdateNameFailureRetainsDirtyForm();
     void failedSaveRestoresSelectionAndSkipsRequestedRead();
@@ -949,6 +950,52 @@ void CampusDashboardPageTests::automaticSaveFailureRetainsDirtyForm()
         .loadCampus(QStringLiteral("alpha"));
     QVERIFY(persisted.has_value());
     QCOMPARE(persisted->campusName, QStringLiteral("Alpha"));
+}
+
+void CampusDashboardPageTests::missingUpdateTargetKeepsDraftDirtyAndShowsError()
+{
+    CampusDashboardPageFixture fixture;
+    QVERIFY(fixture.initialize());
+    CampusDashboardPage& page = *fixture.page;
+    const QString failureMessage = QStringLiteral(
+        "This campus no longer exists. Reload it before saving."
+        );
+    const QString alphaPath = CampusJsonRepository(
+        fixture.campusDirectory.path()
+        ).filePathForCampusId(QStringLiteral("alpha"));
+    QVERIFY(QFile::exists(alphaPath));
+    QVERIFY(QFile::remove(alphaPath));
+
+    auto* selector = page.findChild<QComboBox*>();
+    auto* nameEdit = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    QVERIFY(selector);
+    QVERIFY(nameEdit);
+    QVERIFY(markCampusFieldsEdited(
+        page,
+        QStringLiteral("Alpha Draft"),
+        QStringLiteral("ALPHA")
+        ));
+
+    QPushButton* saveButton = buttonWithText(
+        page,
+        QStringLiteral("Save Campus")
+        );
+    QVERIFY(saveButton);
+    saveButton->click();
+
+    QCOMPARE(fixture.savePort.savedSnapshots.size(), std::size_t(1));
+    QCOMPARE(
+        fixture.savePort.saveIntents.front(),
+        ClassMngr::Next::Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(selector->currentData().toString(), QStringLiteral("alpha"));
+    QCOMPARE(nameEdit->text(), QStringLiteral("Alpha Draft"));
+    QVERIFY(labelWithText(page, failureMessage));
+    QVERIFY(!labelWithText(page, QStringLiteral("Saved")));
+    QVERIFY(!QFile::exists(alphaPath));
 }
 
 void CampusDashboardPageTests::reservedCreateIdentityFailureRetainsDirtyForm()

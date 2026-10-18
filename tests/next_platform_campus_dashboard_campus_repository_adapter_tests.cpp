@@ -1,6 +1,7 @@
 #include "features/campus/data/campus_json_repository.h"
 #include "next/platform/campus_dashboard_campus_repository_adapter.h"
 
+#include <QDir>
 #include <QFile>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -149,6 +150,7 @@ private slots:
     void init();
     void savesAndReloadsEveryCampusField();
     void savesStandaloneMainImageWithoutMapPaths();
+    void missingUpdateTargetReturnsRecoverableNotFoundWithoutCreatingFile();
     void rejectsReservedCreateIdentityBeforeWritingDefaultFile();
     void rejectsReservedUpdateNameWithoutChangingExistingFile();
     void rejectsInvalidJsonBeforeCreateOrUpdateWrites();
@@ -176,6 +178,7 @@ savesAndReloadsEveryCampusField()
     QVERIFY(expected.has_value());
     auto expectedSnapshot = expected.value();
     expectedSnapshot.imageMain = expectedSnapshot.mapImagePaths.front();
+    QVERIFY(CampusJsonRepository(m_directory.path()).saveCampus(source));
 
     Platform::CampusDashboardCampusRepositoryAdapter adapter(
         m_directory.path()
@@ -207,6 +210,7 @@ savesStandaloneMainImageWithoutMapPaths()
     const auto expected = Platform::CampusDashboardCampusRepositoryAdapter::
         snapshotFromCampusInfo(source);
     QVERIFY(expected.has_value());
+    QVERIFY(CampusJsonRepository(m_directory.path()).saveCampus(source));
 
     Platform::CampusDashboardCampusRepositoryAdapter adapter(
         m_directory.path()
@@ -227,6 +231,37 @@ savesStandaloneMainImageWithoutMapPaths()
     compareSnapshots(actual.value(), expected.value());
     QCOMPARE(actual->imageMain, std::string("standalone-campus-cover.png"));
     QVERIFY(actual->mapImagePaths.empty());
+}
+
+void CampusDashboardCampusRepositoryAdapterTests::
+missingUpdateTargetReturnsRecoverableNotFoundWithoutCreatingFile()
+{
+    CampusInfo source = representativeCampus();
+    source.id = QStringLiteral("missing_update");
+    const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
+        snapshotFromCampusInfo(source);
+    QVERIFY(snapshot.has_value());
+
+    const CampusJsonRepository repository(m_directory.path());
+    const QString missingPath = repository.filePathForCampusId(source.id);
+    QVERIFY(!QFile::exists(missingPath));
+
+    const Domain::Result<void> updated =
+        Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
+            .saveCampus(
+                snapshot.value(),
+                Application::CampusDashboardCampusSaveIntent::Update
+                );
+
+    QVERIFY(!updated);
+    QCOMPARE(updated.error().code, Domain::ErrorCode::NotFound);
+    QVERIFY(updated.error().recoverable);
+    QCOMPARE(
+        updated.error().message,
+        std::string("This campus no longer exists. Reload it before saving.")
+        );
+    QVERIFY(!QFile::exists(missingPath));
+    QVERIFY(!repository.loadCampus(source.id).has_value());
 }
 
 void CampusDashboardCampusRepositoryAdapterTests::
@@ -690,25 +725,22 @@ mapsCreateRepositoryFailureToTechnicalWithExactMessage()
 void CampusDashboardCampusRepositoryAdapterTests::
 mapsRepositoryFailureToTechnicalWithExactMessage()
 {
-    QTemporaryDir blockerDirectory;
-    QVERIFY(blockerDirectory.isValid());
-
-    QFile blocker(blockerDirectory.filePath(QStringLiteral("not-a-directory")));
-    QVERIFY(blocker.open(QIODevice::WriteOnly));
-    blocker.write("file blocks directory creation");
-    blocker.close();
-
-    const CampusInfo source = representativeCampus();
+    CampusInfo source = representativeCampus();
+    source.id = QStringLiteral("repository_failure");
     const auto snapshot = Platform::CampusDashboardCampusRepositoryAdapter::
         snapshotFromCampusInfo(source);
     QVERIFY(snapshot.has_value());
 
-    const Status repositoryFailure = CampusJsonRepository(blocker.fileName())
-        .saveCampus(source);
+    const QString targetFileName =
+        CampusJsonRepository::idFromName(source.id) + QStringLiteral(".json");
+    QVERIFY(QDir(m_directory.path()).mkdir(targetFileName));
+
+    const Status repositoryFailure =
+        CampusJsonRepository(m_directory.path()).saveCampus(source);
     QVERIFY(!repositoryFailure);
 
     const Domain::Result<void> mappedFailure =
-        Platform::CampusDashboardCampusRepositoryAdapter(blocker.fileName())
+        Platform::CampusDashboardCampusRepositoryAdapter(m_directory.path())
             .saveCampus(
                 snapshot.value(),
                 Application::CampusDashboardCampusSaveIntent::Update

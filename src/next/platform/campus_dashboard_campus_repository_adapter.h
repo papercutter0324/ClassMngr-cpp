@@ -5,6 +5,7 @@
 #include "next/application/campus_dashboard_campus_save_port.h"
 
 #include <QByteArray>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -87,6 +88,18 @@ public:
             }
 
             return Domain::Result<void>::success();
+        }
+
+        const QString campusFilePath =
+            m_repository.filePathForCampusId(campus.id);
+        if (!QFileInfo::exists(campusFilePath))
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::NotFound,
+                .message =
+                    "This campus no longer exists. Reload it before saving.",
+                .recoverable = true
+            });
         }
 
         const Status saved = m_repository.saveCampus(campus);
