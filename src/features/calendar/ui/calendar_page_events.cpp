@@ -961,7 +961,7 @@ void CalendarPage::openCalendarDialog(
                             tr("Save Calendar Event"),
                             projectionText(typedSaved.error().message)
                             );
-                        return;
+                        retryEventSave = true;
                     }
                 }
             }

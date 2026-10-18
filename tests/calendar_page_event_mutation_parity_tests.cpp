@@ -18,6 +18,8 @@
 
 #include <QAbstractButton>
 #include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDateEdit>
 #include <QDateTime>
 #include <QDialogButtonBox>
@@ -69,6 +71,14 @@ struct EventDialogValues final
     QDate endDate;
     QTime endTime;
     QString eventType;
+};
+
+struct RepeatSeriesCreateDialogValues final
+{
+    EventDialogValues event;
+    CalendarEventRepeatFrequency frequency =
+        CalendarEventRepeatFrequency::Weekly;
+    QDate repeatUntilDate;
 };
 
 QString databasePath(QTemporaryDir& directory)
@@ -502,6 +512,136 @@ bool dialogMatchesValues(
     }
 
     return false;
+}
+
+bool applyRepeatSeriesCreateDialogValues(
+    CalendarEventDialog* dialog,
+    const RepeatSeriesCreateDialogValues& values,
+    QString* error
+    )
+{
+    auto* const buttonBox = dialog->findChild<QDialogButtonBox*>();
+    auto* const title = dialog->findChild<QLineEdit*>(
+        QStringLiteral("calendarEventTitleEdit")
+        );
+    auto* const startDate = dialog->findChild<QDateEdit*>(
+        QStringLiteral("calendarEventStartDateEdit")
+        );
+    auto* const startTime = dialog->findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventStartTimeEdit")
+        );
+    auto* const endDate = dialog->findChild<QDateEdit*>(
+        QStringLiteral("calendarEventEndDateEdit")
+        );
+    auto* const endTime = dialog->findChild<QTimeEdit*>(
+        QStringLiteral("calendarEventEndTimeEdit")
+        );
+    auto* const frequency = dialog->findChild<QComboBox*>(
+        QStringLiteral("calendarEventRepeatFrequencyCombo")
+        );
+    auto* const repeatUntilDate = dialog->findChild<QDateEdit*>(
+        QStringLiteral("calendarEventRepeatUntilDateEdit")
+        );
+    QCheckBox* repeat = nullptr;
+    for (QCheckBox* const check : dialog->findChildren<QCheckBox*>())
+    {
+        if (check->text() == QStringLiteral("Repeating"))
+        {
+            repeat = check;
+            break;
+        }
+    }
+    QPushButton* const save = buttonBox
+        ? buttonBox->button(QDialogButtonBox::Save)
+        : nullptr;
+    if (
+        !buttonBox
+        || !title
+        || !startDate
+        || !startTime
+        || !endDate
+        || !endTime
+        || !frequency
+        || !repeatUntilDate
+        || !repeat
+        || !save
+    )
+    {
+        if (error)
+        {
+            *error = QStringLiteral(
+                "Calendar repeat-series editor controls were incomplete."
+                );
+        }
+        return false;
+    }
+
+    title->setText(values.event.title);
+    startDate->setDate(values.event.startDate);
+    startTime->setTime(values.event.startTime);
+    endDate->setDate(values.event.endDate);
+    endTime->setTime(values.event.endTime);
+
+    QRadioButton* selectedType = nullptr;
+    for (QRadioButton* const button : dialog->findChildren<QRadioButton*>())
+    {
+        if (button->property("eventType").toString()
+            == values.event.eventType)
+        {
+            selectedType = button;
+            break;
+        }
+    }
+    if (!selectedType)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Calendar event type option was not found.");
+        }
+        return false;
+    }
+    selectedType->click();
+
+    repeat->setChecked(true);
+    const int frequencyIndex = frequency->findData(
+        static_cast<int>(values.frequency)
+        );
+    if (frequencyIndex < 0)
+    {
+        if (error)
+        {
+            *error = QStringLiteral(
+                "Calendar repeat frequency option was not found."
+                );
+        }
+        return false;
+    }
+    frequency->setCurrentIndex(frequencyIndex);
+    repeatUntilDate->setDate(values.repeatUntilDate);
+    if (!dialogMatchesValues(dialog, values.event))
+    {
+        if (error)
+        {
+            *error = QStringLiteral(
+                "Calendar repeat-series event fields were not applied."
+                );
+        }
+        return false;
+    }
+
+    save->click();
+    return true;
+}
+
+bool dialogMatchesRepeatSeriesCreateValues(
+    CalendarEventDialog* dialog,
+    const RepeatSeriesCreateDialogValues& values
+    )
+{
+    return dialogMatchesValues(dialog, values.event)
+        && dialog->repeatEnabled()
+        && dialog->repeatFrequency() == values.frequency
+        && dialog->repeatUntilDate() == values.repeatUntilDate;
 }
 
 bool activateAndHandleDialog(
@@ -1113,6 +1253,243 @@ SeriesEditFailureInteraction interactWithSeriesEditFailure(
     return result;
 }
 
+struct RepeatSeriesCreateFailureInteraction final
+{
+    QString error;
+    int stage = 0;
+    int warningCount = 0;
+    QString warningTitle;
+    QString warningText;
+    bool warningIcon = false;
+    bool fieldsRetainedWhileWarningWasShown = false;
+    bool failedCreateLeftRowsUnchanged = false;
+    bool failureTriggerRemoved = false;
+    bool sameDialogWasReopened = false;
+    bool fieldsRetainedBeforeRetry = false;
+    bool retrySubmitted = false;
+    bool cancelSubmitted = false;
+    bool activated = false;
+};
+
+RepeatSeriesCreateFailureInteraction interactWithRepeatSeriesCreateFailure(
+    CalendarWorkspace& workspace,
+    CalendarPage& page,
+    const QDate& activationDate,
+    const RepeatSeriesCreateDialogValues& values,
+    const QStringList& expectedRowsBeforeFailure,
+    const QString& triggerName,
+    const bool cancelAfterFailure
+    )
+{
+    RepeatSeriesCreateFailureInteraction result;
+    QQuickItem* const root = calendarRoot(page);
+    if (!root)
+    {
+        result.error = QStringLiteral("Calendar QML root was not found.");
+        return result;
+    }
+
+    QPointer<CalendarEventDialog> originalDialog;
+    QTimer interactionTimer;
+    interactionTimer.setInterval(10);
+    QObject::connect(
+        &interactionTimer,
+        &QTimer::timeout,
+        &page,
+        [&]
+        {
+            QWidget* const activeModal = QApplication::activeModalWidget();
+            if (result.stage == 0)
+            {
+                auto* const dialog = qobject_cast<CalendarEventDialog*>(
+                    activeModal
+                    );
+                if (!dialog)
+                {
+                    return;
+                }
+
+                originalDialog = dialog;
+                result.stage = 1;
+                if (!applyRepeatSeriesCreateDialogValues(
+                        dialog,
+                        values,
+                        &result.error
+                        ))
+                {
+                    result.stage = 4;
+                    dialog->reject();
+                }
+                return;
+            }
+
+            if (result.stage == 1)
+            {
+                auto* const warning = qobject_cast<QMessageBox*>(activeModal);
+                if (!warning)
+                {
+                    if (!activeModal)
+                    {
+                        return;
+                    }
+                    result.error = QStringLiteral(
+                        "The failed repeat-series create did not show a warning."
+                        );
+                    result.stage = 4;
+                    activeModal->close();
+                    return;
+                }
+
+                ++result.warningCount;
+                result.warningTitle = warning->windowTitle();
+                result.warningText = warning->text();
+                result.warningIcon = warning->icon() == QMessageBox::Warning;
+                result.fieldsRetainedWhileWarningWasShown =
+                    dialogMatchesRepeatSeriesCreateValues(originalDialog, values);
+                const PersistedEventRows afterFailure = persistedEventRows(
+                    workspace.services
+                    );
+                result.failedCreateLeftRowsUnchanged =
+                    afterFailure.succeeded
+                    && afterFailure.rows == expectedRowsBeforeFailure;
+
+                QString sqlError;
+                result.failureTriggerRemoved = executeWorkspaceSql(
+                    workspace,
+                    QStringLiteral("DROP TRIGGER %1").arg(triggerName),
+                    &sqlError
+                    );
+                if (!result.failureTriggerRemoved)
+                {
+                    result.error = sqlError;
+                    result.stage = 4;
+                }
+                else
+                {
+                    result.stage = 2;
+                }
+                warning->accept();
+                return;
+            }
+
+            if (result.stage == 2)
+            {
+                auto* const dialog = qobject_cast<CalendarEventDialog*>(
+                    activeModal
+                    );
+                if (!dialog)
+                {
+                    if (!activeModal)
+                    {
+                        return;
+                    }
+                    result.error = QStringLiteral(
+                        "A different modal appeared before repeat-series create retry."
+                        );
+                    result.stage = 4;
+                    activeModal->close();
+                    return;
+                }
+
+                result.sameDialogWasReopened = dialog == originalDialog.data();
+                result.fieldsRetainedBeforeRetry =
+                    dialogMatchesRepeatSeriesCreateValues(dialog, values);
+                auto* const buttonBox = dialog->findChild<QDialogButtonBox*>();
+                QPushButton* const cancel = buttonBox
+                    ? buttonBox->button(QDialogButtonBox::Cancel)
+                    : nullptr;
+                QPushButton* const save = buttonBox
+                    ? buttonBox->button(QDialogButtonBox::Save)
+                    : nullptr;
+                if (cancelAfterFailure && !cancel)
+                {
+                    result.error = QStringLiteral(
+                        "Calendar repeat-series cancel button was unavailable after failure."
+                        );
+                    result.stage = 4;
+                    dialog->reject();
+                    return;
+                }
+                if (!cancelAfterFailure && !save)
+                {
+                    result.error = QStringLiteral(
+                        "Calendar repeat-series save button was unavailable on retry."
+                        );
+                    result.stage = 4;
+                    dialog->reject();
+                    return;
+                }
+
+                result.stage = 3;
+                if (cancelAfterFailure)
+                {
+                    result.cancelSubmitted = true;
+                    cancel->click();
+                }
+                else
+                {
+                    result.retrySubmitted = true;
+                    save->click();
+                }
+                return;
+            }
+
+            if (result.stage == 3
+                && qobject_cast<QMessageBox*>(activeModal))
+            {
+                result.error = QStringLiteral(
+                    "The repeat-series retry failed after its trigger was removed."
+                    );
+                result.stage = 4;
+                activeModal->close();
+            }
+            else if (result.stage == 4 && activeModal)
+            {
+                interactionTimer.stop();
+                activeModal->close();
+            }
+        }
+        );
+
+    QTimer failSafeTimer;
+    failSafeTimer.setInterval(3000);
+    QObject::connect(
+        &failSafeTimer,
+        &QTimer::timeout,
+        &page,
+        [&]
+        {
+            if (result.stage != 3)
+            {
+                if (result.error.isEmpty())
+                {
+                    result.error = QStringLiteral(
+                        "Repeat-series create retry interaction timed out."
+                        );
+                }
+                if (QWidget* const activeModal = QApplication::activeModalWidget())
+                {
+                    activeModal->close();
+                }
+            }
+        }
+        );
+
+    interactionTimer.start();
+    failSafeTimer.start();
+    result.activated = QMetaObject::invokeMethod(
+        root,
+        "dayActivated",
+        Qt::DirectConnection,
+        Q_ARG(int, activationDate.year()),
+        Q_ARG(int, activationDate.month()),
+        Q_ARG(int, activationDate.day())
+        );
+    interactionTimer.stop();
+    failSafeTimer.stop();
+    return result;
+}
+
 QPushButton* upcomingEventTypeButton(
     CalendarPage& page,
     const int eventId
@@ -1236,6 +1613,8 @@ private slots:
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
     void ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure_data();
     void ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure();
+    void repeatSeriesCreateKeepsDialogOpenAfterSaveFailure_data();
+    void repeatSeriesCreateKeepsDialogOpenAfterSaveFailure();
     void repeatSeriesOccurrenceEditKeepsDialogOpenAfterSaveFailure_data();
     void repeatSeriesOccurrenceEditKeepsDialogOpenAfterSaveFailure();
     void repeatSeriesSuffixEditKeepsDialogOpenAfterSaveFailure_data();
@@ -2046,6 +2425,204 @@ ordinaryCreateAndEditKeepDialogOpenAfterSaveFailure()
                     )
             })
             );
+    }
+}
+
+void CalendarPageEventMutationParityTests::
+repeatSeriesCreateKeepsDialogOpenAfterSaveFailure_data()
+{
+    QTest::addColumn<bool>("cancelAfterFailure");
+    QTest::newRow("retry") << false;
+    QTest::newRow("cancel-after-failure") << true;
+}
+
+void CalendarPageEventMutationParityTests::
+repeatSeriesCreateKeepsDialogOpenAfterSaveFailure()
+{
+    QFETCH(bool, cancelAfterFailure);
+
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    const QDate firstOfMonth(
+        QDate::currentDate().year(),
+        QDate::currentDate().month(),
+        1
+        );
+    const QDate repeatUntilDate = firstOfMonth.addDays(21);
+    const RepeatSeriesCreateDialogValues values{
+        {
+            QStringLiteral("F1083 Repeat Create"),
+            firstOfMonth,
+            QTime(9, 30),
+            firstOfMonth,
+            QTime(11, 0),
+            QStringLiteral("Workshop")
+        },
+        CalendarEventRepeatFrequency::Weekly,
+        repeatUntilDate
+    };
+    const QStringList beforeRows{
+        expectedEventRow(
+            workspace.preservedEventId,
+            QStringLiteral("F375 Preserved Ordinary"),
+            QStringLiteral("Holiday"),
+            QStringLiteral("2026-10-22"),
+            QStringLiteral("11:00"),
+            QStringLiteral("2026-10-22"),
+            QStringLiteral("12:00")
+            )
+    };
+    const PersistedEventRows beforeCreate = persistedEventRows(
+        workspace.services
+        );
+    QVERIFY2(beforeCreate.succeeded, qPrintable(beforeCreate.error));
+    QCOMPARE(beforeCreate.rows, beforeRows);
+
+    const QString triggerName = QStringLiteral(
+        "fail_f1083_repeat_series_create"
+        );
+    const QString triggerSql = QStringLiteral(R"(
+        CREATE TRIGGER fail_f1083_repeat_series_create
+        BEFORE INSERT ON calendar_events
+        WHEN NEW.title = 'F1083 Repeat Create'
+            AND NEW.start_date = '%1'
+        BEGIN
+            SELECT RAISE(ABORT, 'forced F1083 repeat-series create failure');
+        END
+    )").arg(firstOfMonth.addDays(7).toString(Qt::ISODate));
+    QString sqlError;
+    QVERIFY2(
+        executeWorkspaceSql(workspace, triggerSql, &sqlError),
+        qPrintable(sqlError)
+        );
+
+    CalendarPage page(&workspace.services);
+    QQuickItem* const root = calendarRoot(page);
+    QVERIFY(root);
+    QVERIFY(
+        root->metaObject()->indexOfSignal("dayActivated(int,int,int)") >= 0
+        );
+    QVERIFY(
+        root->metaObject()->indexOfSignal("displayedMonthChanged(int,int)") >= 0
+        );
+    QVERIFY(QMetaObject::invokeMethod(
+        root,
+        "displayedMonthChanged",
+        Qt::DirectConnection,
+        Q_ARG(int, firstOfMonth.year()),
+        Q_ARG(int, firstOfMonth.month())
+        ));
+    CalendarEventModel* const model = calendarModel(page);
+    QVERIFY(model);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(firstOfMonth.year(), firstOfMonth.month()),
+        5000
+        );
+    const int modelRevisionBeforeCreate = model->revision();
+
+    const RepeatSeriesCreateFailureInteraction interaction =
+        interactWithRepeatSeriesCreateFailure(
+            workspace,
+            page,
+            values.event.startDate,
+            values,
+            beforeRows,
+            triggerName,
+            cancelAfterFailure
+            );
+
+    QVERIFY2(interaction.activated, "Calendar day signal could not be invoked.");
+    QVERIFY2(interaction.error.isEmpty(), qPrintable(interaction.error));
+    QCOMPARE(interaction.stage, 3);
+    QCOMPARE(interaction.warningCount, 1);
+    QCOMPARE(interaction.warningTitle, QStringLiteral("Save Calendar Event"));
+    QVERIFY(interaction.warningIcon);
+    QVERIFY(interaction.warningText.contains(
+        QStringLiteral("forced F1083 repeat-series create failure")
+        ));
+    QVERIFY(interaction.fieldsRetainedWhileWarningWasShown);
+    QVERIFY(interaction.failedCreateLeftRowsUnchanged);
+    QVERIFY(interaction.failureTriggerRemoved);
+    QVERIFY(interaction.sameDialogWasReopened);
+    QVERIFY(interaction.fieldsRetainedBeforeRetry);
+    QCOMPARE(interaction.retrySubmitted, !cancelAfterFailure);
+    QCOMPARE(interaction.cancelSubmitted, cancelAfterFailure);
+    QVERIFY(!QApplication::activeModalWidget());
+
+    const PersistedEventRows afterAction = persistedEventRows(workspace.services);
+    QVERIFY2(afterAction.succeeded, qPrintable(afterAction.error));
+    if (cancelAfterFailure)
+    {
+        QCOMPARE(afterAction.rows, beforeRows);
+        QCOMPARE(model->revision(), modelRevisionBeforeCreate);
+        return;
+    }
+
+    QCOMPARE(afterAction.rows.size(), beforeRows.size() + 4);
+    QString repeatSeriesId;
+    for (int index = 0; index < 4; ++index)
+    {
+        const QJsonDocument rowDocument = QJsonDocument::fromJson(
+            afterAction.rows.at(beforeRows.size() + index).toUtf8()
+            );
+        QVERIFY(rowDocument.isArray());
+        const QJsonArray row = rowDocument.array();
+        QCOMPARE(row.size(), 10);
+        QVERIFY(row.at(0).toVariant().toLongLong() > workspace.preservedEventId);
+        QCOMPARE(row.at(1).toString(), values.event.title);
+        QCOMPARE(row.at(2).toString(), values.event.eventType);
+        QCOMPARE(row.at(3).toString(), QStringLiteral("Timed"));
+        if (index == 0)
+        {
+            repeatSeriesId = row.at(4).toString();
+            QVERIFY(!repeatSeriesId.isEmpty());
+        }
+        else
+        {
+            QCOMPARE(row.at(4).toString(), repeatSeriesId);
+        }
+        QCOMPARE(row.at(5).toInt(), 0);
+        const QString expectedDate = firstOfMonth
+            .addDays(index * 7)
+            .toString(Qt::ISODate);
+        QCOMPARE(row.at(6).toString(), expectedDate);
+        QCOMPARE(row.at(7).toString(), QStringLiteral("09:30"));
+        QCOMPARE(row.at(8).toString(), expectedDate);
+        QCOMPARE(row.at(9).toString(), QStringLiteral("11:00"));
+    }
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->revision() > modelRevisionBeforeCreate,
+        5000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        model->isMonthLoaded(firstOfMonth.year(), firstOfMonth.month()),
+        5000
+        );
+    for (int index = 0; index < 4; ++index)
+    {
+        const QDate occurrenceDate = firstOfMonth.addDays(index * 7);
+        const QVariantList projection = model->eventsForDate(
+            occurrenceDate.year(),
+            occurrenceDate.month(),
+            occurrenceDate.day()
+            );
+        const bool occurrenceWasProjected = std::any_of(
+            projection.cbegin(),
+            projection.cend(),
+            [&values](const QVariant& value)
+            {
+                return value.toMap()
+                    .value(QStringLiteral("title")).toString()
+                    == values.event.title;
+            }
+            );
+        QVERIFY(occurrenceWasProjected);
     }
 }
 
