@@ -26,6 +26,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QPointer>
+#include <QRegularExpression>
 #include <QSignalBlocker>
 #include <QSqlQuery>
 #include <QEvent>
@@ -318,8 +319,9 @@ private slots:
     void storedCampusPrefillsAndCorrectsThroughTypedPort();
     void failedCampusCorrectionRetriesAndSuppressesRepeatedWarnings();
     void failedMatchedCampusIdCorrectionWarnsAndRecovers();
-    void campusReadFailurePreservesDisplayedAndStoredChoice();
+    void settingsReadFailurePreservesDisplayedCampusChoice();
     void storedDisplayNamePrefillsWithUtf8AndWhitespace();
+    void displayNameReadFailurePreservesDraftAndBlocksSaveUntilReload();
     void missingAndUnavailableDisplayNamePrefillEmpty();
     void storedZoomCredentialsPrefillAndRespectUnavailableState();
     void missingZoomValuesUseNaFallbackAndDisableFields();
@@ -1182,7 +1184,7 @@ void MyWorkspacePageTests::failedMatchedCampusIdCorrectionWarnsAndRecovers()
     QCOMPARE(prompts.messages.size(), 1);
 }
 
-void MyWorkspacePageTests::campusReadFailurePreservesDisplayedAndStoredChoice()
+void MyWorkspacePageTests::settingsReadFailurePreservesDisplayedCampusChoice()
 {
     FakeUserPromptService prompts;
     ScopedUserPromptService promptScope(prompts);
@@ -1225,6 +1227,10 @@ void MyWorkspacePageTests::campusReadFailurePreservesDisplayedAndStoredChoice()
             )
         ));
 
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral("Failed to load setting.*"))
+        );
     details->refresh();
 
     QCOMPARE(campus->currentIndex(), displayedIndex);
@@ -1234,9 +1240,9 @@ void MyWorkspacePageTests::campusReadFailurePreservesDisplayedAndStoredChoice()
     QCOMPARE(warning.severity, PromptSeverity::Warning);
     QCOMPARE(
         warning.title,
-        QStringLiteral("Campus Preference Could Not Be Loaded")
+        QStringLiteral("Personal Name Could Not Be Loaded")
         );
-    QVERIFY(warning.message.contains(QStringLiteral("preserved")));
+    QVERIFY(warning.message.contains(QStringLiteral("form has been preserved")));
     QVERIFY(warning.details.contains(
         QStringLiteral("Loading application setting")
         ));
@@ -1272,6 +1278,106 @@ void MyWorkspacePageTests::storedDisplayNamePrefillsWithUtf8AndWhitespace()
     auto* name = personalNameEditor(page);
     QVERIFY(name);
     QCOMPARE(name->text(), expected);
+}
+
+void MyWorkspacePageTests::
+displayNameReadFailurePreservesDraftAndBlocksSaveUntilReload()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+
+    const QString storedName = QStringLiteral("Stored personal name");
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(DisplayNameKey),
+        storedName
+        ));
+
+    MyWorkspacePage page(&services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+
+    page.openTab(WorkspaceTab::Details);
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    QLineEdit* const name = personalNameEditor(page);
+    QVERIFY(name);
+    QCOMPARE(name->text(), storedName);
+    QVERIFY(!details->hasUnsavedChanges());
+
+    const QString draftName = QStringLiteral("Unsaved personal name draft");
+    name->setText(draftName);
+    QVERIFY(details->hasUnsavedChanges());
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "ALTER TABLE app_settings RENAME TO app_settings_preserved"
+            )
+        ));
+
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(QStringLiteral("Failed to load setting.*"))
+        );
+    // Force the reload even though the draft is dirty; refresh skips dirty
+    // forms by design.
+    details->discardChanges();
+
+    QCOMPARE(name->text(), draftName);
+    QVERIFY(details->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.constFirst().title,
+        QStringLiteral("Personal Name Could Not Be Loaded")
+        );
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("form has been preserved")
+        ));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "ALTER TABLE app_settings_preserved RENAME TO app_settings"
+            )
+        ));
+
+    QVERIFY(!details->saveChanges());
+    QCOMPARE(name->text(), draftName);
+    QVERIFY(details->hasUnsavedChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        prompts.messages.constLast().title,
+        QStringLiteral("My Details Could Not Be Saved")
+        );
+    QVERIFY(prompts.messages.constLast().details.contains(
+        QStringLiteral("stored personal name is unknown")
+        ));
+    const auto stillStored = services.dataService()->loadSetting(
+        QString::fromUtf8(DisplayNameKey)
+        );
+    QVERIFY(stillStored);
+    QCOMPARE(stillStored->toString(), storedName);
+
+    details->discardChanges();
+    QCOMPARE(name->text(), storedName);
+    QVERIFY(!details->hasUnsavedChanges());
+
+    const QString recoveredName = QStringLiteral("Recovered personal name");
+    name->setText(recoveredName);
+    QVERIFY(details->saveChanges());
+    QCOMPARE(prompts.messages.size(), 2);
+    const auto recovered = services.dataService()->loadSetting(
+        QString::fromUtf8(DisplayNameKey)
+        );
+    QVERIFY(recovered);
+    QCOMPARE(recovered->toString(), recoveredName);
 }
 
 void MyWorkspacePageTests::missingAndUnavailableDisplayNamePrefillEmpty()

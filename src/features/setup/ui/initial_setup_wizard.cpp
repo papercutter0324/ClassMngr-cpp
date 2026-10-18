@@ -484,11 +484,14 @@ public:
             return;
         }
 
-        const std::string storedName =
+        const auto storedNameResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalDisplayNamePreferencesPort(
                     *setup->services()
                     ).read();
+        const std::string storedName = storedNameResult
+            ? storedNameResult.value()
+            : std::string();
         if (m_name->text().trimmed().isEmpty())
         {
             m_name->setText(QString::fromUtf8(

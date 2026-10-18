@@ -60,7 +60,7 @@ private:
     void buildMyInformationSection();
     void buildSignatureSection();
     void loadPageData();
-    void loadStoredSettings();
+    bool loadStoredSettings();
     bool saveMyInfoInternal(QString* errorMessage = nullptr);
     bool normalizeZoomFields();
     bool normalizeLineEdit(QLineEdit* edit, const QString& defaultText);
@@ -123,5 +123,6 @@ private:
     QString m_failedCampusCorrectionStoredValue;
     QString m_failedCampusCorrectionSelectedCampus;
     bool m_hasFailedCampusCorrection = false;
+    bool m_storedNameKnown = false;
 
 };

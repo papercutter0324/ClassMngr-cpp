@@ -30,6 +30,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesPersonalDisplayNamePreferencesPort(
+        ApplicationServices* services
+        ) noexcept
+        : m_session(services ? services->databaseSession() : nullptr)
+    {
+    }
+
     ApplicationServicesPersonalDisplayNamePreferencesPort(
         const ApplicationServicesPersonalDisplayNamePreferencesPort&
         ) = delete;
@@ -43,21 +50,23 @@ public:
         ApplicationServicesPersonalDisplayNamePreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]] Application::PersonalDisplayNamePreferencesReadResult
+    read() const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return {};
+            return Application::PersonalDisplayNamePreferencesReadResult::
+                success({});
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return {};
+            return Application::PersonalDisplayNamePreferencesReadResult::
+                success({});
         }
 
         const auto stored = repository->loadSetting(key());
-        QVariant storedName = QString();
         if (!stored)
         {
             qWarning()
@@ -65,17 +74,31 @@ public:
                 << key()
                 << ':'
                 << stored.error();
+
+            const QByteArray errorBytes = stored.error().toUtf8();
+            return Application::PersonalDisplayNamePreferencesReadResult::
+                failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = errorBytes.isEmpty()
+                        ? "Personal display name could not be loaded."
+                        : errorBytes.toStdString(),
+                    .recoverable = false
+                });
         }
-        else if (stored->isValid())
+
+        if (!stored->isValid())
         {
-            storedName = *stored;
+            return Application::PersonalDisplayNamePreferencesReadResult::
+                success({});
         }
 
-        const QByteArray storedNameUtf8 = storedName.toString().toUtf8();
+        const QByteArray storedNameUtf8 = stored->toString().toUtf8();
 
-        return std::string(
-            storedNameUtf8.constData(),
-            static_cast<std::size_t>(storedNameUtf8.size())
+        return Application::PersonalDisplayNamePreferencesReadResult::success(
+            std::string(
+                storedNameUtf8.constData(),
+                static_cast<std::size_t>(storedNameUtf8.size())
+                )
             );
     }
 

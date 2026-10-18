@@ -755,8 +755,11 @@ void ScheduleImportDialog::prepareUserSelection()
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort
             personalDisplayNamePreferencesPort(*m_services);
-        const std::string profileName =
+        const auto profileNameResult =
             personalDisplayNamePreferencesPort.read();
+        const std::string profileName = profileNameResult
+            ? profileNameResult.value()
+            : std::string();
         m_profileName = QString::fromUtf8(
             profileName.data(),
             static_cast<qsizetype>(profileName.size())

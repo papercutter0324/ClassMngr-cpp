@@ -83,7 +83,7 @@ private slots:
     void exactKeyAndUtf8WhitespaceRoundTrip();
     void writePersistsExactKeyAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmpty();
-    void readFailureReturnsEmpty();
+    void readFailureReturnsTechnicalError();
     void preservesUnrelatedSettingsAndDoesNotWrite();
     void writeFailureMapsToTechnicalError();
     void readsNameWrittenByPersonalDetailsSavePort();
@@ -115,7 +115,9 @@ exactKeyAndUtf8WhitespaceRoundTrip()
         );
 
     ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
-    QCOMPARE(port.read(), utf8(expected));
+    const auto read = port.read();
+    QVERIFY(read);
+    QCOMPARE(read.value(), utf8(expected));
 
     const auto stored = services.dataService()->loadSetting(
         QString::fromUtf8(PersonalDisplayNameKey)
@@ -146,7 +148,9 @@ writePersistsExactKeyAndPreservesUnrelatedSettings()
     const QString expected = expectedUtf8Name();
     ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
     QVERIFY(port.write(utf8(expected)));
-    QCOMPARE(port.read(), utf8(expected));
+    const auto read = port.read();
+    QVERIFY(read);
+    QCOMPARE(read.value(), utf8(expected));
 
     const auto stored = services.dataService()->loadSetting(
         QString::fromUtf8(PersonalDisplayNameKey)
@@ -168,7 +172,9 @@ missingAndUnavailableReadEmpty()
     QVERIFY(openDatabase(services, m_directory));
 
     ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
-    QVERIFY(port.read().empty());
+    const auto missingName = port.read();
+    QVERIFY(missingName);
+    QVERIFY(missingName.value().empty());
 
     const auto missing = services.dataService()->loadSetting(
         QString::fromUtf8(PersonalDisplayNameKey)
@@ -176,16 +182,33 @@ missingAndUnavailableReadEmpty()
     QVERIFY(missing);
     QVERIFY(!missing->isValid());
 
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(PersonalDisplayNameKey),
+        QStringLiteral("")
+        ));
+    const auto storedEmptyName = port.read();
+    QVERIFY(storedEmptyName);
+    QVERIFY(storedEmptyName.value().empty());
+
+    const auto storedEmpty = services.dataService()->loadSetting(
+        QString::fromUtf8(PersonalDisplayNameKey)
+        );
+    QVERIFY(storedEmpty);
+    QVERIFY(storedEmpty->isValid());
+    QVERIFY(storedEmpty->toString().isEmpty());
+
     ApplicationServices unavailableServices;
     ApplicationServicesPersonalDisplayNamePreferencesPort unavailablePort(
         unavailableServices
         );
-    QVERIFY(unavailablePort.read().empty());
+    const auto unavailableName = unavailablePort.read();
+    QVERIFY(unavailableName);
+    QVERIFY(unavailableName.value().empty());
     QVERIFY(unavailablePort.write("ignored"));
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
-readFailureReturnsEmpty()
+readFailureReturnsTechnicalError()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -196,7 +219,13 @@ readFailureReturnsEmpty()
         QtWarningMsg,
         QRegularExpression(QStringLiteral("Failed to load setting.*"))
         );
-    QVERIFY(port.read().empty());
+    const auto read = port.read();
+    QVERIFY(!read);
+    QCOMPARE(
+        read.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(!read.error().message.empty());
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
@@ -213,7 +242,9 @@ preservesUnrelatedSettingsAndDoesNotWrite()
         );
 
     ApplicationServicesPersonalDisplayNamePreferencesPort port(services);
-    QVERIFY(port.read().empty());
+    const auto name = port.read();
+    QVERIFY(name);
+    QVERIFY(name.value().empty());
 
     const auto unrelated = services.dataService()->loadSetting(
         QString::fromUtf8(UnrelatedKey)
@@ -283,7 +314,9 @@ readsNameWrittenByPersonalDetailsSavePort()
     QVERIFY(savePort.save(request));
 
     ApplicationServicesPersonalDisplayNamePreferencesPort readPort(services);
-    QCOMPARE(readPort.read(), utf8(expectedUtf8Name()));
+    const auto read = readPort.read();
+    QVERIFY(read);
+    QCOMPARE(read.value(), utf8(expectedUtf8Name()));
 }
 
 void NextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests::
@@ -313,7 +346,9 @@ closedSessionReadsEmptyAndIgnoresWrites()
     QVERIFY(services.dataService());
     QVERIFY(!services.databaseSession()->isOpen());
 
-    QVERIFY(port.read().empty());
+    const auto closedName = port.read();
+    QVERIFY(closedName);
+    QVERIFY(closedName.value().empty());
     QVERIFY(port.write("ignored while closed"));
 
     QVERIFY(services.openDatabase(path));

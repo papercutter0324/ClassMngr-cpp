@@ -825,13 +825,51 @@ void PersonalDetailsPage::loadPageData()
 {
     m_autosave->setLoading(true);
 
-    loadStoredSettings();
+    const bool loaded = loadStoredSettings();
 
     m_autosave->setLoading(false);
-    clearDirty();
+    if (loaded)
+    {
+        clearDirty();
+    }
 }
-void PersonalDetailsPage::loadStoredSettings()
+bool PersonalDetailsPage::loadStoredSettings()
 {
+    const auto storedNameResult =
+        ClassMngr::Next::Platform::
+            ApplicationServicesPersonalDisplayNamePreferencesPort(
+                m_services
+                ).read();
+    if (!storedNameResult)
+    {
+        m_storedNameKnown = false;
+
+        const auto& error = storedNameResult.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic =
+                tr("No additional error details are available.");
+        }
+
+        DialogServices::showWarning(
+            this,
+            tr("Personal Name Could Not Be Loaded"),
+            tr(
+                "The stored personal name could not be read. Your current "
+                "form has been preserved, and saving is paused until a "
+                "successful reload. Refresh this page to try again."
+                ),
+            diagnostic
+            );
+        return false;
+    }
+
+    m_storedNameKnown = true;
+
     if (
         !ClassMngr::Next::Platform::
             ApplicationServicesCurrentCampusPreferencesPort(
@@ -839,7 +877,7 @@ void PersonalDetailsPage::loadStoredSettings()
                 ).isAvailable()
         )
     {
-        return;
+        return true;
     }
 
     const QSignalBlocker nameBlocker(m_nameEdit);
@@ -850,10 +888,7 @@ void PersonalDetailsPage::loadStoredSettings()
     const QSignalBlocker typedSignatureBlocker(m_typedSignatureEdit);
 
     const QByteArray storedName = QByteArray::fromStdString(
-        ClassMngr::Next::Platform::
-            ApplicationServicesPersonalDisplayNamePreferencesPort(
-                *m_services
-                ).read()
+        storedNameResult.value()
         );
     m_nameEdit->setText(QString::fromUtf8(storedName));
 
@@ -1067,10 +1102,24 @@ void PersonalDetailsPage::loadStoredSettings()
     updateSignatureControls();
     updateTypedSignatureFontOptions();
     updateSignaturePreview();
+
+    return true;
 }
 bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
 {
     m_autosave->cancelPendingSave();
+
+    if (!m_storedNameKnown)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = tr(
+                "The stored personal name is unknown. Reload My Details "
+                "successfully before saving."
+                );
+        }
+        return false;
+    }
 
     QString zoomLoginId = m_zoomLoginIdEdit->text();
     QString zoomPassword = m_zoomPasswordEdit->text();

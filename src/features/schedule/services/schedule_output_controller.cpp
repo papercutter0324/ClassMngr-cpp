@@ -44,8 +44,11 @@ void ScheduleOutputController::execute(
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort
             personalDisplayNamePreferencesPort(*services);
-        const std::string userName =
+        const auto userNameResult =
             personalDisplayNamePreferencesPort.read();
+        const std::string userName = userNameResult
+            ? userNameResult.value()
+            : std::string();
         request.userName = QString::fromUtf8(
             userName.data(),
             static_cast<qsizetype>(userName.size())

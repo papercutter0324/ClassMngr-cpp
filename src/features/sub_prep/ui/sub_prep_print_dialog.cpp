@@ -278,8 +278,11 @@ SubPrepPrintDialog::SubPrepPrintDialog(
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalDisplayNamePreferencesPort
             personalDisplayNamePreferencesPort(*m_services);
-        const std::string storedUserName =
+        const auto storedUserNameResult =
             personalDisplayNamePreferencesPort.read();
+        const std::string storedUserName = storedUserNameResult
+            ? storedUserNameResult.value()
+            : std::string();
         m_storedUserName = QString::fromUtf8(
             storedUserName.data(),
             static_cast<qsizetype>(storedUserName.size())
