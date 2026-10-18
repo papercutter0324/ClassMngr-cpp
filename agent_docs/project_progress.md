@@ -82,10 +82,14 @@ warning, and allow retry or Cancel. Retry updates only the selected occurrence
 and refreshes the projection; sibling rows stay unchanged. The accepted
 this-event-only behavior still clears the selected row's `repeatSeriesId`.
 Independent verification passed the focused Calendar CTest 1/1 with 26 QtTest
-cases; `git diff --check` passed and no full suite ran. F1082, retrying “this
-and following” edits after a series-edit failure, is selected; F1083-F1085
-remain provisional. The F1081 focused suite covers successful suffix editing
-but does not inject failures in the suffix-edit or series-create branches.
+cases; `git diff --check` passed and no full suite ran. F1082 is complete at
+`c48d43a4`: failed “this and following” saves retain the same dialog, fields,
+and scope; retry updates selected and later occurrences and refreshes the
+projection, while the earlier occurrence stays unchanged. Cancel preserves
+the full pre-edit snapshot. Independent verification passed the focused
+Calendar CTest 1/1 with 28 QtTest cases; `git diff --check` passed and no full
+suite ran. F1083, retrying repeat-series creation after failure, is selected;
+F1084-F1085 remain provisional. Series-create failure remains untested.
 Neither discovery lane found a newly met official Deferred trigger.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
@@ -95,7 +99,7 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Continue with F1082 in Batch472. Preserve the open Phase 2 exit gate and
+Continue with F1083 in Batch472. Preserve the open Phase 2 exit gate and
 unresolved policy reconciliation.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.

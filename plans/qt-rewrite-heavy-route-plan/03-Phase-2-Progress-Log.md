@@ -46220,3 +46220,21 @@ Batch472's active slices, in order (with status):
 5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
 
 Batch472 remains active. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1082 completion; F1083 selected - 2026-10-18
+
+F1082 is complete at source/test commit `c48d43a4`. A series-edit failure in the “this and following” path retains the same dialog, fields, and selected scope and shows the warning. Retry updates the selected and following rows and refreshes the view while the earlier occurrence remains unchanged; Cancel preserves the full pre-edit snapshot.
+
+The independent Tester passed the focused CTest 1/1 with 28 passed, 0 failed, and 0 skipped; `git diff --check` passed, and no full suite ran. Repeat-series creation failure remains outside F1082 scope and untested.
+
+F1083 is selected/in progress: retain the repeat-series creation dialog and recurrence inputs after create failure, show the warning, and allow retry or Cancel. F1084 and F1085 remain provisional.
+
+Batch472's active slices, in order (with status):
+
+1. F1081 - Keep Calendar occurrence edits retryable after save failure (complete at `a9066ae7`).
+2. F1082 - Keep Calendar “this and following” edits retryable after failure (complete at `c48d43a4`).
+3. F1083 - Keep Calendar repeat-series creation retryable after failure (selected/in progress).
+4. F1084 - Preserve Schedule display preferences after a technical read failure (provisional).
+5. F1085 - Preserve Calendar option state after technical preference-read failures (provisional).
+
+Batch472 remains active. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
