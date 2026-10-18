@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch463
 
-- F403 follow-up — Restore the source teacher selection after Cancel from dirty Teacher Info navigation to another dynamic teacher leaf; preserve existing draft/page/session and Discard behavior for both teacher groups.
+- F403 follow-up — Restore the source selection after Cancel when dirty Teacher Info navigation would change teacher identity; preserve the draft/page/session, same-teacher duplicate occurrence, and Discard behavior for both teacher groups.
 
 #### Deferred candidates
 

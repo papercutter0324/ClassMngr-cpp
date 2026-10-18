@@ -40,7 +40,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 Batch463 contains one accepted slice, in order:
 
-1. **F403 follow-up — Restore teacher selection after Cancel.** When dirty Teacher Info navigation to another dynamic teacher leaf is canceled, restore the source teacher selection for both teacher groups; preserve the draft and page, and keep Discard behavior unchanged.
+1. **F403 follow-up — Restore teacher selection after Cancel.** When canceled dirty Teacher Info navigation would change teacher identity, restore the source selection for both teacher groups; preserve the draft and page, and keep same-teacher duplicate occurrence and Discard behavior unchanged.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch463) is the canonical active list and acceptance record.
 

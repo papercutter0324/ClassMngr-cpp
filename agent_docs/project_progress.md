@@ -61,9 +61,9 @@ Speaking Evaluation Manual Save confirmation is committed at `46851a65`.
 Independent focused verification passed for both slices. Batch462's
 application-contract and persistence/output discovery found no eligible slice.
 Batch463 has one accepted slice: complete F403 by restoring the source teacher
-selection when dirty Teacher Info navigation is canceled. The focus is both
-dynamic teacher groups; preserve the existing dirty draft, page, session, and
-Discard path.
+selection when Cancel blocks navigation to a different teacher identity. Cover
+both dynamic teacher groups while preserving the dirty draft, page, session,
+same-teacher duplicate occurrence, and Discard path.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,

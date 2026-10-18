@@ -45870,3 +45870,7 @@ Accept one Batch463 slice: in the `handleTeacher()` Cancel branch, restore the S
 No other slices were found.
 
 Batch463 contains one accepted slice: the F403 teacher-selection follow-up. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch463 acceptance refinement - 2026-10-18
+
+Independent verification passed the F403 Cancel/Discard case for both teacher groups, but the matching CTest target exposed a failure in the existing `languageSwitchPreservesDuplicateTeacherOccurrenceAndDraft` case. That test navigates between two Sidebar occurrences of the same teacher ID; the fake unsaved-change prompt defaults to Cancel. The unconditional restoration changes the requested occurrence back to the prior path, even though the active profile identity did not change. This is an established duplicate-occurrence behavior that must remain intact. Refine the F403 follow-up: restore the prior Sidebar keys and teacher ID on a Cancel that leaves a different teacher identity displayed, while retaining the requested occurrence when its teacher ID matches the active Teacher Info profile. Preserve existing source-page, draft, session, and Discard behavior for different teacher identities. Run the full matching MainWindow Teacher Sidebar Navigation parity CTest (including the duplicate-occurrence language-switch case), alongside the focused F403 case and `git diff --check`; no full suite.

@@ -5951,7 +5951,11 @@ selected while the source page remains active. The existing F403 test checks
 page, draft, and session but not Sidebar selection; `handleTeacher()` returns
 on Cancel without using `Sidebar::restorePreviousSelection()`, unlike the
 F1044 document-navigation path. The ordered Batch463 list and acceptance are
-recorded in Start Here and the Phase 2 plan/log. Next, implement restoration
-for both teacher groups, verify Cancel and unchanged Discard behavior, commit
-the slice, then close and push Batch463. Gates 1/2 remain Partial, F1007
-remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+recorded in Start Here and the Phase 2 plan/log. Independent CTest also exposed
+the existing duplicate-occurrence language-switch case: when the target leaf
+has the same teacher ID as the displayed profile, preserve the requested
+occurrence selection. Refine restoration to canceled navigation that changes
+teacher identity, verify the full target including the duplicate-occurrence
+case and unchanged Discard behavior, commit the slice, then close and push
+Batch463. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
+and the Phase 2 exit gate remains Open.
