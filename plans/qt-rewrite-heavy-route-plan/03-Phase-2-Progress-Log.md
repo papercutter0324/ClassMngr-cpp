@@ -45732,3 +45732,27 @@ Accept F1061: after apply succeeds and `summary.koreanTeachers.updated > 0`, if 
 No other slices were found.
 
 Batch455 contains only F1061. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1061 completion - 2026-10-18
+
+F1061 is committed as `ec5efd2a` (`Phase2 - Refresh active teacher after import`). After a successful Teacher Import updates an existing Korean teacher, the active Teacher Info page now reloads that profile through the typed 64-bit ID read path. If the read fails, the page retains the visible profile but disables edits and saves until a fresh load succeeds; the successful import summary is still shown before the refresh warning.
+
+The focused import refresh, reload-failure, sidebar success, cancel, and apply-failure CTests passed 5/5. Teacher Info CTests passed 2/2 and the typed Teacher Profile read-port CTest passed 1/1. The independent Tester confirmed the focused registrations invoke only their intended QtTest slots; `git diff --check` passed. The existing all-slots import parity CTest remains known to abort in `wizardSuccessTranscript` on this macOS host with a Qt `NSBundle initWithURL:nil` exception; the F1061-specific registrations isolate the verified cases. No full suite ran.
+
+### Batch455 push - 2026-10-18
+
+Pushed `ec5efd2a` to `origin/Qt-Rewrite`, advancing it from `e9df7df1`. Batch455 contained only F1061 and is closed. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch456 discovery; F1062 accepted before implementation - 2026-10-18
+
+The My Info lifecycle lane found no new caller-visible candidate. My Workspace routes refresh their typed schedule state on reactivation, Details retains dirty drafts, and My Classes profile refresh preserves selection with empty/error projection coverage. The F33 unavailable-save timing mismatch is not reachable through the normal route without an open database; the standalone Schedule invalidation lead lacks an ordinary user route.
+
+The Campus/setup lane found that `CampusDashboardPage::refresh()` calls `loadCampuses()`, which clears the selector and returns early when the directory query returns no campuses, leaving `m_currentCampus`, its combo index, and the displayed fields untouched (`src/features/campus/ui/campus_dashboard_page.cpp:199`, `src/features/campus/ui/campus_dashboard_page_data.cpp:75-100`). Thus a clean refresh can show an empty selector next to an old campus profile, and the retained identity remains available to admin edit/save logic. The directory adapter returns a plain vector; `CampusJsonRepository::loadCampuses()` omits unreadable/invalid files and does not distinguish an empty catalog from an unavailable listing (`src/next/platform/calendar_page_campus_directory_query_adapter.h:17-50`, `src/features/campus/data/campus_json_repository.cpp:49-75,221`). Scope the correction to the empty result returned to the page; do not claim to handle or classify operational listing failures.
+
+This is distinct from F288's catalog ordering/selection fallback, F862's failure to load an individually selected campus from a populated list, and F1056's `NotFound` result when updating a campus whose file is absent (`03-Phase-2-Progress-Log.md:10557,34837,45612`). F1056 does not clear stale page state. The My Info route lane found no eligible candidate, and no matching campus item is in the current deferred-candidate list.
+
+Accept F1062: when a clean Campus Dashboard refresh returns an empty campus catalog, clear the old selected-campus identity, combo index, model, and displayed fields so the page cannot continue presenting or targeting a campus absent from the returned catalog. Preserve the existing non-empty selection fallback and F862 behavior for a detail-read failure. Do not silently discard a dirty draft: if an empty result is received while dirty, retain its selection, model, fields, dirty state, and pending timer, and do not save as part of refresh; a later explicit save of a removed target must retain F1056's `NotFound` behavior. Add focused coverage for clean refresh-to-empty and dirty refresh-to-empty, verifying that refresh itself issues no save and the dirty draft remains intact; keep the existing selected-campus failure and save behavior covered. Build the affected target in the canonical Debug preset, run the focused Campus Dashboard CTest, and run `git diff --check`; no full suite.
+
+No other slices were found.
+
+Batch456 contains only F1062. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
