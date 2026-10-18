@@ -7091,3 +7091,16 @@ output casing, rejecting the collision before staging. Test archive-only and
 archive-plus-individual-PDF modes for failure with no published output. The
 separate bounded-job queue concern is not actionable without a live production
 caller or terminal-delivery contract; it was not accepted.
+
+
+## Phase 2 universal macOS build repair - 2026-10-18
+
+A fresh universal build exposed five project warning types that incremental
+and prior Windows evidence could not reveal: deprecated UTF-8 filesystem path
+construction, deprecated Qt UTC conversion, and non-exhaustive Schedule
+Import error-message switches. Keep platform path encodings explicit, preserve
+UTC with QTimeZone::utc(), map known enum cases instead of suppressing switch
+warnings, and test a user-facing issue message when making it specific.
+Distinguish CMake's compiler probes from project compiler diagnostics; the
+earlier probe warning did not reproduce in the fresh configure. The cleanup
+commit and exact macOS build/test evidence are in the Phase 2 progress log.

@@ -2,175 +2,31 @@
 
 ## Current Deployment Handoff
 
-- Deployment: `phase2_resume_batch398_f1028`; Heavy route; branch `Qt-Rewrite`;
-  resumed 2026-10-18.
-- Current checkpoint: F1053 is complete. Acceptance commit
-  `a9797d84421ea52dcb342a65402e632b92f0efbf`, source/test commit
-  `fed596fcee971187ddd5a71433007cc2ab18d129`, and closeout commit
-  `ee028188972b16492d2a7f3220d35d6320116e8b`. My Workspace now emits its
-  existing output-capability signal after child-tab transitions, keeping the
-  MainWindow Print and Save As actions aligned with Schedule, Details, and the
-  lazily initialized Calendar tab. The integration regression checks
-  Schedule enabled -> Details disabled -> Calendar disabled -> Schedule
-  enabled, without test-side signal hookups or manual refresh.
-- Independent verification built `ClassMngr` and
-  `ClassMngrMainWindowSaveAsExportParityTests` sequentially in
-  `build/windows-x64-debug`; the exact Debug CTest passed 1/1, and
-  `git diff --check` passed. Initial sandbox builds hit MSBuild FileTracker
-  Access Denied; approved expanded-access retries succeeded. No full suite ran.
-- Two independent post-F1053 audits checked all 13 exact official Deferred
-  candidates; all remain unchanged, none became actionable/resolved/superseded.
-  F579/F598 still require an elevated Administrator token for matched WPR
-  captures. Batch444 is closed. Gates 1/2 remain Partial, F1007 is pending
-  policy reconciliation, and the Phase 2 exit gate is Open.
-- Resume on the other device with a fresh Phase 2 discovery pass (next batch
-  number: 445); there is no active candidate or implementation slice. Keep
-  using Heavy, commit acceptance before each slice, commit each source/test
-  slice, audit the official Deferred list after it, and update the plan/log.
-- Preserve unrelated workspace state: `src/app/controllers/file_controller.h`
-  is modified, and `%SystemDrive%/`, `Testing/`, `Windows Performance
-  Analyzer/`, `stdout`, and `txt` are untracked. These were not part of F1053.
-- F861 source/test commit: `2a1e78aea4b7a1dff98120ce5dfec2e52b2952b1`;
-  selection record: `5fc2368104db5961583f8c7b312634a577916f19`. The
-  `ClassTransferExportPackage` alias is removed; export query, JSON codec,
-  and tests use `ClassTransferPortablePackage` explicitly.
-- In `build/windows-x64-debug`, independent verification rebuilt `ClassMngr`
-  and the four affected targets. Exactly the four planned Debug CTests passed
-  4/4; no full suite ran. The first invocation omitted `-C Debug` and marked
-  those tests Not Run; the verifier reran the exact selection with the correct
-  configuration. The stale AUTOGEN dependency warning reported by the
-  Executor did not recur.
-- F862 source/test commit: `36747caa9034064a3808133d657b8e16ab1004fa`;
-  selection and F861 acceptance record: `bdc6e73e58c1093d2c9fb7ba7f870c49be8008c6`.
-  The standard Windows x64 Debug build passed for `ClassMngr` and
-  `ClassMngrCampusDashboardPageTests`; the exact CTest passed 1/1 on
-  independent verification. Coverage includes admin read-error and missing
-  results, rollback to Alpha, visible error status, edits saved only to Alpha,
-  and successful Beta retry. Existing non-admin failure and save-failure
-  rollback assertions remain. No full suite ran.
-- F863 source/test commit: `2fad90b6195344ea6cdb4e48601e62da77b18786`;
-  acceptance/selection record: `7786990df543b816e9c7c1675ae306304097dd77`.
-  Strict SQLite storage-class decoding preserves NULL sentinels and positive
-  INTEGER class IDs through `INT_MAX`; malformed IDs fail in both assignment
-  readers and the save overwrite precheck. The executor reproduced an
-  overwrite from nonnumeric TEXT before the fix. Independent verification
-  built five planned targets and passed the four exact Debug CTests 4/4; no
-  full suite ran. The Executor observed nonblocking `LNK4006`/`LNK4088 /FORCE`
-  warnings on the ScheduleWidget test link.
-- Post-F861, F862, and F863 audits reviewed all 13 Deferred entries; none
-  became newly actionable. F579/F598 still require an elevated Administrator
-  token; F629 remains a session-limited runner gap. F709 still lacks a seam
-  that reaches CalendarPage summary formatting.
-- F864 source/test commit: `30add1d6d16021b7be0e725066b8658053055eb7`; the
-  roster editor now visibly reports failed reads and disables editing, saves,
-  print, and Save As until a successful read. Valid empty rosters remain
-  available. Independent verification built `ClassMngr` and
-  `ClassMngrRosterEditorWidgetSaveTests`; its exact CTest passed 1/1. No full
-  suite ran.
-- F865 source/test commit: `015cd8d0f6aeb98cba28102cac62155cfb8f874b`;
-  `ClassRepository::getClasses()` now rejects persisted IDs outside the
-  positive signed-int range before they can become a different class identity.
-  Independent verification built `ClassMngr`, the Classes-list port target, and
-  the class-create port target; exactly the two focused Debug CTests passed
-  2/2. No full suite ran.
-- The post-F865 audit reviewed all 13 Deferred entries and found none newly
-  actionable. Batch 279 found no qualifying candidate; unknown schedule slot
-  states remain explicitly preserved, Speaking Evaluation out-of-range integer
-  behavior is covered by F847/F848, and the Calendar port already rejects
-  invalid projected summaries. Batch 281's teacher-profile and Native English
-  directory review found no qualifying candidate.
-- F866 source/test commit: `8312111233769650d57a611ce02a679f7c6f4396`;
-  class deletion now removes speaking-evaluation child data through a
-  class-scoped SQL subquery, avoiding narrowed evaluation IDs. Independent
-  verification built `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesClassDeletePortTests`; exactly the
-  Debug CTest passed 1/1. FileTracker denied sandbox builds, so the same build
-  commands passed after elevated retries. The target build had a nonfatal
-  `MSB8064` generated-dependency warning. No full suite ran.
-- F867 source/test commit: `cc6b61ac920ec62ebc1b8c07f6cc1fcf750ade1c`;
-  `TestingClassRepository::createTestingClass()` validates the generated
-  `lastInsertId()` as qint64 before dependent details and assignment writes.
-  Independent Debug builds of `ClassMngr` and
-  `ClassMngrTestingClassRepositoryTests` succeeded; the exact Debug CTest
-  passed 1/1 on the rebuilt executable. No full suite ran.
-- F868 source/test commit: `e5085a1b79695425ef52d022a427ece11ce69fa8`;
-  `TestingClassRepository::loadTestingClassChoices()` validates persisted class
-  IDs as qint64 in `1..INT_MAX` before narrowing. The regression first
-  reproduced IDs 1 and 4294967297 as two typed choices with ID 1; after the fix,
-  the query returns typed Technical failure with no partial choices and
-  preserves both database rows. Independent Debug builds of `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests`
-  succeeded; its exact CTest passed 1/1 after the row-preservation assertions
-  were strengthened. The first build hit FileTracker access denied and passed
-  after an approved retry; final builds had no warnings/errors. No full suite
-  ran.
-- F869 source/test commit: `0ff21b2aad92d5011e5bab7cd78a51e30d643c4b`;
-  Schedule Import now checks generated class IDs as qint64 before related
-  writes. The baseline reproduced a generated ID `4294967297` narrowing to 1,
-  causing a successful CreateNew import to overwrite class 1's details and
-  schedule. Independent Debug builds of `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`
-  succeeded; the exact Debug CTest passed 1/1. The initial fixture fast-failed
-  because its sentinel details referenced a missing teacher; setting the
-  sentinel teacher ID to NULL allowed the baseline to reproduce. FileTracker
-  access errors required approved retries; final builds had no warnings. No
-  full suite ran.
-- F870 source/test commit: `63058294f1f24ae9f63e6814c51d0dfbe82b5794`;
-  Class Transfer CreateNew now checks generated class IDs as qint64 before
-  recording the ID or writing imported class details. The baseline reproduced
-  a generated ID `4294967297` aliasing to class `1` when that class had no
-  `class_info`; the import returned success and attached details to class 1.
-  Independent Debug builds of `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`
-  succeeded; the exact Debug CTest passed 1/1. FileTracker access errors
-  required approved retries; the final build had no warnings. No full suite
-  ran.
-- F871 source/test commit: `1ef9dd7553a5afd7b0b7b0de9baa5097a74a30ee`;
-  `CampusRecordRepository::saveCampus()` now validates generated IDs as
-  qint64 and atomically rejects IDs outside the positive `int` range. The
-  required pre-fix baseline reproduced ID `4294967297` being stored while
-  `DataService::saveCampus()` returned aliased ID `1`; its exact lifecycle
-  CTest passed 1/1. The final regression preserves campus 1, rejects and rolls
-  back the high-ID insert, and verifies ordinary ID 2 and `INT_MAX`
-  creation/reload.
-- Independent verification sequentially built `ClassMngr` and
-  `ClassMngrDataServiceLifecycleTests` in the standard Debug tree and passed
-  the exact CTest 1/1. Both targets initially hit MSBuild FileTracker access
-  denial before compilation; elevated retries succeeded with no final build
-  warnings. The executor's baseline target build reported one nonblocking
-  MSB8064 AUTOGEN timestamp warning for the unrelated missing
-  `src/next/application/teacher_import_plan_mapper.h`; no full suite ran.
-- F872 source/test commit: `88aca00b4ba7884b6283ad859680d0228dc6ffa5`;
-  `DataService::getAllCampuses()` now validates each persisted campus ID as
-  qint64 before narrowing and returns typed failure with no partial list for
-  IDs outside the positive `int` range. The required SQLite baseline
-  reproduced IDs 1 and 4294967297 collapsing to 1 in the returned list while
-  both distinct rows remained stored. Executor and independent Tester each
-  built `ClassMngr` and `ClassMngrDataServiceLifecycleTests` sequentially and
-  passed the exact Debug CTest 1/1. No full suite ran.
-- F872 completed Batch 287. The post-F872 audit reviewed all 13 Deferred
-  entries and found no newly actionable item; all remain unchanged. Batch 288
-- F873 source/test commit: `d813993bffacd24c387205ee94fa02bce98b2f4b`;
-  `ClassInfoRepository::loadScheduleClassInfos()` now rejects persisted class
-  IDs outside the positive `int` range before narrowing or schedule reads. The
-  pre-fix SQLite baseline reproduced IDs 1 and 4294967297 aliasing in the
-  source and misassociating both schedules; the handler rejected duplicate
-  IDs. The final focused test preserves IDs 1 and `INT_MAX`, rejects wide and
-  zero IDs without schedule queries, and confirms SQLite rows remain intact.
-  Executor and independent Tester sequentially built `ClassMngr` and
-  `ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests`;
-  the exact registered CTest passed 1/1. No full suite ran.
-- F873 completed first in Batch 288. F874 is selected to validate persisted
-  IDs in the public legacy testing-class list read; F868's separate choice
-  read is already guarded. F875, the Class Details conflict-label fallback,
-  remains next. Both require their own pre-fix baseline. Batch 289 candidate
-  discovery begins as F874 starts, following the phase plan's batch cadence.
-  All 13 Deferred entries remain unchanged. Phase 2 is In Progress/Open;
-  Gates 1 and 2 remain Partial.
-- Phase 2 is In Progress/Open; Gates 1 and 2 remain Partial. See
-  `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
-- An elevated Administrator session was requested for the deferred WPR captures;
-  no user reply is recorded yet.
+- Deployment: f1053-phase2-macos-20261018; Heavy route; branch Qt-Rewrite;
+  completed 2026-10-18.
+- F1053 was already complete at source/test commit
+  fed596fcee971187ddd5a71433007cc2ab18d129. It refreshes the existing
+  output-capability signal after My Workspace child-tab transitions. The
+  focused Windows x64 Debug build and MainWindow parity CTest passed 1/1.
+- The subsequent build cleanup is committed at
+  52e88f604cf43608238a85e84cf0c5936885a433. It repaired the previously
+  failing macOS build and five distinct compiler warning types across the
+  application and tests. No warning flags were weakened.
+- A fresh configure and full 2,170-action build passed in the standard
+  build/macos-clang-debug tree on macOS 27 arm64, AppleClang 21, Qt 6.12.0,
+  universal arm64;x86_64, deployment target 14.4. The configure and build
+  logs contain no project warnings or errors.
+- Focused CTests passed for DataService lifecycle, Schedule Import, Schedule
+  Import dialog, and F1053 MainWindow parity (4/4 in the combined run).
+  ClassMngrUpdaterTests passed 1/1 separately with loopback access after the
+  sandbox blocked its local server bind. git diff --check passed. No full
+  suite or Windows build ran for the cleanup.
+- Phase 2 remains In Progress/Open; Gates 1/2 remain Partial and F1007 remains
+  pending policy reconciliation. Batch444 is closed. Next action: begin a
+  fresh Phase 2 discovery pass at Batch445.
+- Final source/test worktree was clean after the two commits. Preserve the
+  Phase 2 exit-gate and Deferred-candidate state recorded in the current
+  plan and progress log.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

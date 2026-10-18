@@ -45493,3 +45493,22 @@ application-contract lane found no candidate. Batch444 is closed, and the
 next resume begins a fresh discovery pass; no Batch445 candidate is recorded.
 Gates 1/2 remain Partial, the Phase 2 exit gate remains Open, and F1007
 remains pending policy reconciliation.
+
+### Post-F1053 macOS universal build cleanup - 2026-10-18
+
+Commit `52e88f604cf43608238a85e84cf0c5936885a433` repaired earlier macOS
+compile errors and project warnings, including C++ filesystem UTF-8 path
+migration, exhaustive schedule-import diagnostics, and UTC Qt API modernization.
+The fresh canonical macOS Debug preset configure in
+`build/macos-clang-debug` and full universal `arm64;x86_64` build (2,170
+actions) passed on macOS 27 arm64 with AppleClang 21, Qt 6.12.0, and deployment
+target 14.4, with no project warnings or errors. The four focused CTests
+`ClassMngrDataServiceLifecycleTests`, `ClassMngrScheduleImportTests`,
+`ClassMngrScheduleImportDialogTests`, and
+`ClassMngrMainWindowSaveAsExportParityTests` passed; these include F1053
+coverage. `ClassMngrUpdaterTests` passed separately 1/1 after its default local
+server bind was blocked by the sandbox and was rerun with loopback access.
+`git diff --check` passed. No full suite or Windows build was run for this
+cleanup. This is post-F1053 build cleanup, not a new F1053 slice; Gates 1/2
+remain Partial, the Phase 2 exit gate remains Open, and the official Deferred
+set is unchanged.
