@@ -260,6 +260,8 @@ void addSchedulePreferencesTab(
             ? window->services()
             : nullptr;
     ClassMngr::Next::Application::ScheduleDisplayPreferences values;
+    bool preferencesLoaded = true;
+    QString preferenceLoadError;
     if (services)
     {
         ClassMngr::Next::Platform::
@@ -269,7 +271,29 @@ void addSchedulePreferencesTab(
         {
             values = loaded.value();
         }
+        else
+        {
+            preferencesLoaded = false;
+            preferenceLoadError = QString::fromStdString(
+                loaded.error().message
+                );
+        }
     }
+
+    auto* loadErrorLabel = new QLabel(page);
+    loadErrorLabel->setObjectName(
+        QStringLiteral("preferencesScheduleLoadError")
+        );
+    loadErrorLabel->setWordWrap(true);
+    if (!preferencesLoaded)
+    {
+        loadErrorLabel->setText(
+            preferencesText("Unable to Load Schedule Preferences: %1")
+                .arg(preferenceLoadError)
+            );
+    }
+    loadErrorLabel->setVisible(!preferencesLoaded);
+    layout->addWidget(loadErrorLabel);
 
     auto* displayGroup = new QGroupBox(preferencesText("Display"), page);
     auto* displayLayout = new QVBoxLayout(displayGroup);
@@ -282,6 +306,7 @@ void addSchedulePreferencesTab(
         QStringLiteral("preferencesScheduleShowEnglishNames")
         );
     showEnglishNames->setChecked(values.showEnglishNames);
+    showEnglishNames->setEnabled(preferencesLoaded);
     displayLayout->addWidget(showEnglishNames);
     auto* use24HourTime = new QCheckBox(
         preferencesText("Use 24-Hour Time"),
@@ -291,6 +316,7 @@ void addSchedulePreferencesTab(
         QStringLiteral("preferencesScheduleUse24HourTime")
         );
     use24HourTime->setChecked(values.use24HourTime);
+    use24HourTime->setEnabled(preferencesLoaded);
     displayLayout->addWidget(use24HourTime);
     auto* showWeekends = new QCheckBox(
         preferencesText("Show Weekends"),
@@ -300,6 +326,7 @@ void addSchedulePreferencesTab(
         QStringLiteral("preferencesScheduleShowWeekends")
         );
     showWeekends->setChecked(values.showWeekends);
+    showWeekends->setEnabled(preferencesLoaded);
     displayLayout->addWidget(showWeekends);
     layout->addWidget(displayGroup);
 
@@ -314,6 +341,7 @@ void addSchedulePreferencesTab(
         QStringLiteral("preferencesScheduleShowAllIntensiveHours")
         );
     showAllHours->setChecked(values.showAllIntensiveHours);
+    showAllHours->setEnabled(preferencesLoaded);
     intensiveLayout->addWidget(showAllHours);
     auto* intensiveExplanation = new QLabel(
         preferencesText("When disabled, empty hours at the beginning and end of an intensive schedule are hidden."),
@@ -340,6 +368,7 @@ void addSchedulePreferencesTab(
         QStringLiteral("preferencesScheduleTestingAffectsM1")
         );
     testingAffectsM1->setChecked(values.testingAffectsM1);
+    testingAffectsM1->setEnabled(preferencesLoaded);
     testingLayout->addWidget(testingAffectsM1);
     auto* clearButton = new TextFitPushButton(
         preferencesText("Clear Testing Layout"),
@@ -358,9 +387,15 @@ void addSchedulePreferencesTab(
         showEnglishNames,
         showWeekends,
         showAllHours,
-        testingAffectsM1
+        testingAffectsM1,
+        preferencesLoaded
         ]()
     {
+        if (!preferencesLoaded)
+        {
+            return;
+        }
+
         if (services)
         {
             ClassMngr::Next::Platform::

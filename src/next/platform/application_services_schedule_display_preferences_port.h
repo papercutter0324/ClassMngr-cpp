@@ -13,9 +13,10 @@ namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for the schedule display preferences. The caller owns
-// ApplicationServices; missing or unavailable settings preserve the false
-// load fallback, while saves require an open database and atomically persist
-// the complete preference bundle.
+// ApplicationServices; missing keys and unavailable sessions/repositories
+// preserve the false load fallback, while read failures are typed. Saves
+// require an open database and atomically persist the complete preference
+// bundle.
 class ApplicationServicesScheduleDisplayPreferencesPort final
     : public Application::ScheduleDisplayPreferencesPort
 {
@@ -55,32 +56,68 @@ public:
             return Application::ScheduleDisplayPreferencesResult::success({});
         }
 
-        const auto settingToBoolOrDefault = [repository](const QString& key)
+        const auto loadBooleanSetting = [repository](const QString& key)
         {
             const auto stored = repository->loadSetting(key);
-            return stored
+            if (!stored)
+            {
+                return Result<bool>(std::unexpected(
+                    QStringLiteral("Loading schedule display preference '%1' failed: %2")
+                        .arg(key, stored.error())
+                    ));
+            }
+
+            return Result<bool>(stored->isValid()
                 ? settingToBool(*stored, false)
-                : false;
+                : false);
         };
 
+        const auto use24HourTime = loadBooleanSetting(
+            QStringLiteral("schedule_use_24h")
+            );
+        if (!use24HourTime)
+        {
+            return loadFailure(use24HourTime.error());
+        }
+
+        const auto showEnglishNames = loadBooleanSetting(
+            QStringLiteral("schedule_show_korean_teacher_english_names")
+            );
+        if (!showEnglishNames)
+        {
+            return loadFailure(showEnglishNames.error());
+        }
+
+        const auto showWeekends = loadBooleanSetting(
+            QStringLiteral("schedule_show_weekends")
+            );
+        if (!showWeekends)
+        {
+            return loadFailure(showWeekends.error());
+        }
+
+        const auto showAllIntensiveHours = loadBooleanSetting(
+            QStringLiteral("schedule_show_all_hours_v2")
+            );
+        if (!showAllIntensiveHours)
+        {
+            return loadFailure(showAllIntensiveHours.error());
+        }
+
+        const auto testingAffectsM1 = loadBooleanSetting(
+            QStringLiteral("schedule_testing_affects_m1")
+            );
+        if (!testingAffectsM1)
+        {
+            return loadFailure(testingAffectsM1.error());
+        }
+
         return Application::ScheduleDisplayPreferencesResult::success({
-            .use24HourTime = settingToBoolOrDefault(
-                QStringLiteral("schedule_use_24h")
-                ),
-            .showEnglishNames = settingToBoolOrDefault(
-                QStringLiteral(
-                    "schedule_show_korean_teacher_english_names"
-                    )
-                ),
-            .showWeekends = settingToBoolOrDefault(
-                QStringLiteral("schedule_show_weekends")
-                ),
-            .showAllIntensiveHours = settingToBoolOrDefault(
-                QStringLiteral("schedule_show_all_hours_v2")
-                ),
-            .testingAffectsM1 = settingToBoolOrDefault(
-                QStringLiteral("schedule_testing_affects_m1")
-                )
+            .use24HourTime = *use24HourTime,
+            .showEnglishNames = *showEnglishNames,
+            .showWeekends = *showWeekends,
+            .showAllIntensiveHours = *showAllIntensiveHours,
+            .testingAffectsM1 = *testingAffectsM1
         });
     }
 
@@ -181,6 +218,19 @@ private:
         }
 
         return value.toBool();
+    }
+
+    [[nodiscard]] static Application::ScheduleDisplayPreferencesResult
+    loadFailure(const QString& message)
+    {
+        const QByteArray errorBytes = message.toUtf8();
+        return Application::ScheduleDisplayPreferencesResult::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = errorBytes.isEmpty()
+                ? "Schedule display preferences could not be loaded."
+                : errorBytes.toStdString(),
+            .recoverable = false
+        });
     }
 
     ApplicationServices& m_services;

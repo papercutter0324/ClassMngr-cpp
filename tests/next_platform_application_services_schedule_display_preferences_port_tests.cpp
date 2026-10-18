@@ -66,7 +66,7 @@ private slots:
     void missingSettingDefaultsFalse();
     void unavailableSettingsDefaultFalseAndSaveFails();
     void closedSessionDefaultsAndSaveFailurePreservesValues();
-    void readErrorsDefaultFalse();
+    void readErrorsReturnTypedTechnicalFailure();
     void savesAllValuesAndUsesLegacyKeys();
     void preservesLegacyQVariantCoercion();
     void atomicSaveFailureReturnsTypedErrorAndRollsBack();
@@ -241,7 +241,7 @@ closedSessionDefaultsAndSaveFailurePreservesValues()
 }
 
 void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
-readErrorsDefaultFalse()
+readErrorsReturnTypedTechnicalFailure()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -254,8 +254,17 @@ readErrorsDefaultFalse()
 
     ApplicationServicesScheduleDisplayPreferencesPort port(services);
     const auto loaded = port.load();
-    QVERIFY(loaded);
-    QVERIFY(loaded.value() == ScheduleDisplayPreferences{});
+    QVERIFY(!loaded);
+    QCOMPARE(
+        loaded.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(QString::fromStdString(loaded.error().message).contains(
+        QStringLiteral("schedule_use_24h")
+        ));
+    QVERIFY(QString::fromStdString(loaded.error().message).contains(
+        QStringLiteral("failed")
+        ));
 }
 
 void NextPlatformApplicationServicesScheduleDisplayPreferencesPortTests::
@@ -338,9 +347,11 @@ preservesLegacyQVariantCoercion()
     SettingsRepository* const repository = session->settingsRepository();
     QVERIFY(repository);
 
-    const std::array<std::pair<QVariant, bool>, 6> values = {{
+    const std::array<std::pair<QVariant, bool>, 8> values = {{
         {QVariant(QStringLiteral(" TRUE ")), true},
         {QVariant(QStringLiteral(" 0 ")), false},
+        {QVariant(QStringLiteral("legacy-invalid")), true},
+        {QVariant(), false},
         {QVariant(1), true},
         {QVariant(0), false},
         {QVariant(true), true},

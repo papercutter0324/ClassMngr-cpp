@@ -696,13 +696,27 @@ class ScheduleTestingLayoutClearParityTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void warnsWhenNoDatabaseIsOpenBeforeConfirmation();
     void confirmationCancelLeavesRowsAndViewsUntouched();
     void writeFailureWarnsAndPreservesRowsWithoutRefresh();
     void successClearsLayoutPreservesSavedDataAndRefreshesViews();
     void preferencesToggleTestingGradeVisibilityAndRefreshesSchedule();
     void schedulePreferenceSaveFailureRestoresControlsAndCanRetry();
+    void schedulePreferenceLoadFailureDisablesControlsAndBlocksWrites();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
+
+void ScheduleTestingLayoutClearParityTests::initTestCase()
+{
+    QVERIFY(m_settingsDirectory.isValid());
+    QVERIFY(qputenv(
+        "CLASSMNGR_SETTINGS_ROOT",
+        m_settingsDirectory.path().toUtf8()
+        ));
+}
 
 void ScheduleTestingLayoutClearParityTests::
 warnsWhenNoDatabaseIsOpenBeforeConfirmation()
@@ -1185,6 +1199,224 @@ schedulePreferenceSaveFailureRestoresControlsAndCanRetry()
     QVERIFY(retryRefreshedSchedule);
     QCOMPARE(fixture.prompts.calls, QStringList{QStringLiteral("warning")});
     QCOMPARE(fixture.prompts.messages.size(), 1);
+}
+
+void ScheduleTestingLayoutClearParityTests::
+schedulePreferenceLoadFailureDisablesControlsAndBlocksWrites()
+{
+    LayoutClearFixture fixture(true);
+    QVERIFY(fixture.databaseReady);
+    QVERIFY(fixture.window->services());
+
+    auto* const services = fixture.window->services();
+    auto* const session = services->databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const ClassMngr::Next::Application::ScheduleDisplayPreferences initial{
+        .use24HourTime = true,
+        .showEnglishNames = true,
+        .showWeekends = true,
+        .showAllIntensiveHours = true,
+        .testingAffectsM1 = true
+    };
+    ClassMngr::Next::Platform::
+        ApplicationServicesScheduleDisplayPreferencesPort preferencesPort(
+            *services
+            );
+    QVERIFY(preferencesPort.save(initial));
+    QVERIFY(repository->saveSetting(
+        QStringLiteral("schedule/unrelated"),
+        QStringLiteral("preserved")
+        ));
+
+    QSqlDatabase database = session->database();
+    QVERIFY(executeSql(
+        database,
+        QStringLiteral("DROP TABLE app_settings")
+        ));
+
+    bool foundDialog = false;
+    bool foundScheduleTab = false;
+    bool loadWarningVisible = false;
+    bool allAggregateControlsDisabled = false;
+    bool restoredRowsBeforeSignal = false;
+    bool signalEmittedAfterRestore = false;
+    bool allPreferenceRowsPreserved = false;
+    bool unrelatedRowPreserved = false;
+    QString loadWarningText;
+
+    QTimer::singleShot(0, fixture.window.get(), [&]()
+    {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!dialog)
+        {
+            return;
+        }
+        foundDialog = true;
+
+        auto* const tabs = dialog->findChild<QTabWidget*>(
+            QStringLiteral("preferencesTabs")
+            );
+        auto* const scheduleTab = dialog->findChild<QWidget*>(
+            QStringLiteral("preferencesScheduleTab")
+            );
+        if (!tabs || !scheduleTab)
+        {
+            dialog->reject();
+            return;
+        }
+        tabs->setCurrentWidget(scheduleTab);
+        foundScheduleTab = true;
+
+        auto* const loadWarning = dialog->findChild<QLabel*>(
+            QStringLiteral("preferencesScheduleLoadError")
+            );
+        const std::array<QCheckBox*, 5> controls{{
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowEnglishNames")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleUse24HourTime")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowWeekends")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleShowAllIntensiveHours")
+                ),
+            dialog->findChild<QCheckBox*>(
+                QStringLiteral("preferencesScheduleTestingAffectsM1")
+                )
+        }};
+        if (!loadWarning || std::any_of(
+                controls.cbegin(),
+                controls.cend(),
+                [](const QCheckBox* const control) { return !control; }
+                ))
+        {
+            dialog->reject();
+            return;
+        }
+
+        loadWarningVisible = loadWarning->isVisible();
+        loadWarningText = loadWarning->text();
+        allAggregateControlsDisabled = std::all_of(
+            controls.cbegin(),
+            controls.cend(),
+            [](const QCheckBox* const control)
+            {
+                return !control->isEnabled();
+            }
+            );
+
+        restoredRowsBeforeSignal = executeSql(
+            database,
+            QStringLiteral(R"(
+                CREATE TABLE app_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )
+            )")
+            );
+        const std::array<std::pair<QString, QString>, 6> rows{{
+            {
+                QStringLiteral("schedule_use_24h"),
+                QStringLiteral("true")
+            },
+            {
+                QStringLiteral("schedule_show_korean_teacher_english_names"),
+                QStringLiteral("true")
+            },
+            {
+                QStringLiteral("schedule_show_weekends"),
+                QStringLiteral("true")
+            },
+            {
+                QStringLiteral("schedule_show_all_hours_v2"),
+                QStringLiteral("true")
+            },
+            {
+                QStringLiteral("schedule_testing_affects_m1"),
+                QStringLiteral("true")
+            },
+            {
+                QStringLiteral("schedule/unrelated"),
+                QStringLiteral("preserved")
+            }
+        }};
+        for (const auto& [key, value] : rows)
+        {
+            restoredRowsBeforeSignal = restoredRowsBeforeSignal
+                && executeSql(
+                    database,
+                    QStringLiteral(
+                        "INSERT INTO app_settings (key, value) VALUES (?, ?)"
+                        ),
+                    {key, value}
+                    );
+        }
+        if (!restoredRowsBeforeSignal)
+        {
+            dialog->reject();
+            return;
+        }
+
+        bool toggledToTrue = false;
+        QObject::connect(
+            controls.at(0),
+            &QCheckBox::toggled,
+            dialog,
+            [&toggledToTrue](const bool checked)
+            {
+                toggledToTrue = checked;
+            }
+            );
+        controls.at(0)->setChecked(true);
+        signalEmittedAfterRestore = toggledToTrue;
+
+        const auto afterSignal = preferencesPort.load();
+        allPreferenceRowsPreserved = afterSignal
+            && afterSignal.value() == initial;
+        const auto unrelated = repository->loadSetting(
+            QStringLiteral("schedule/unrelated")
+            );
+        unrelatedRowPreserved = unrelated
+            && unrelated->toString() == QStringLiteral("preserved");
+        dialog->accept();
+    });
+
+    QAction* const action = fixture.window->findChild<QAction*>(
+        QStringLiteral("preferencesAction")
+        );
+    QVERIFY(action);
+    action->trigger();
+
+    QVERIFY(foundDialog);
+    QVERIFY(foundScheduleTab);
+    QVERIFY(loadWarningVisible);
+    QVERIFY(loadWarningText.contains(
+        QStringLiteral("Unable to Load Schedule Preferences")
+        ));
+    QVERIFY(loadWarningText.contains(QStringLiteral("schedule_use_24h")));
+    QVERIFY(loadWarningText.contains(QStringLiteral("failed")));
+    QVERIFY(allAggregateControlsDisabled);
+    QVERIFY(restoredRowsBeforeSignal);
+    QVERIFY(signalEmittedAfterRestore);
+    QVERIFY(allPreferenceRowsPreserved);
+    QVERIFY(unrelatedRowPreserved);
+    QVERIFY(std::none_of(
+        fixture.prompts.messages.cbegin(),
+        fixture.prompts.messages.cend(),
+        [](const PromptRequest& prompt)
+        {
+            return prompt.title == QStringLiteral("Unable to Save Preference");
+        }
+        ));
 }
 
 QTEST_MAIN(ScheduleTestingLayoutClearParityTests)
