@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-19 (F1087 complete; F629 open; F1088 next)
+### Current checkpoint - 2026-10-19 (F1088 complete; F629 open; F1089 next)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -105,6 +105,20 @@ coverage passed, as did `git diff --check`. The read-failure test drops
 `app_settings`, so it cannot independently count write attempts during that
 fault; the adapter's error path returns before any write. No full suite ran.
 
+F1088 is complete at source/test commit `53c43e75`. The Evaluation default
+policy port returns `Result<EvaluationDefaultPolicy>` and propagates technical
+read errors without writing `All`. Missing, invalid, and unavailable settings
+retain their defaults, and unsupported stored values remain unchanged.
+Preferences shows a load diagnostic and disables the two policy radios when
+the value is unknown; failed save/reload restores the last known policy. The
+Class Analytics default-selection service returns no automatic selection on a
+technical read error. Independent verification built the port, selection
+integration, and MainWindow failure targets; focused CTests passed 3/3,
+including save-failure rollback/retry. `git diff --check` passed. The SQLite
+missing-table fault gives a generic diagnostic and cannot count write attempts
+while the table is absent; the adapter returns before writing. No full suite
+ran.
+
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
 commit, and discovery evidence is in
@@ -112,7 +126,7 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Begin F1088, the Evaluation default policy slice. Keep F629 open
+Begin F1089, the personal signature settings slice. Keep F629 open
 until the Sub Prep page-boundary mismatch has source-bound Windows layout
 evidence or another justified cross-platform resolution, then rerun the full
 macOS matrix. F628's full Windows evidence root also remains unavailable in

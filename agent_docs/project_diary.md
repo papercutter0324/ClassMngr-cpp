@@ -7148,3 +7148,17 @@ rollback/retry test; `git diff --check` passed. The table-drop read-failure
 test cannot observe write attempts while the table is absent; the adapter's
 technical-error branch returns before writing. F629 remains open, F1088 is
 next, and Batch473 push remains deferred until the batch closes.
+
+## F1088 evaluation policy read failure - 2026-10-19
+
+Commit `53c43e75` makes Evaluation default policy reads return a typed result.
+Technical reads do not materialize `All`; missing, invalid, unavailable, and
+unsupported-value behavior remains intact. Preferences shows a diagnostic and
+disables policy edits when the stored value is unknown, then restores the last
+known choice after a failed save/reload. Class Analytics skips automatic term
+selection when policy loading fails. Focused port, selection integration, and
+MainWindow failure CTests passed 3/3, including save-failure rollback/retry;
+`git diff --check` passed. SQLite's missing-table fault gives a generic
+diagnostic and cannot count attempted writes while absent, but the adapter
+returns before its fallback write. F629 remains open; F1089 is next, and push
+remains deferred until Batch473 closes.

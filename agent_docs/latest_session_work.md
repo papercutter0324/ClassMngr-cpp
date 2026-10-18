@@ -11,12 +11,12 @@
   ScheduleWidget read-error and save/retry QtTest cases, and
   `git diff --check`. The broad ScheduleWidget CTest hung without output and was
   interrupted; no full suite ran.
-- Batch473 has five discovered candidates, F1086-F1090. F1086 and F1087 are
+- Batch473 has five discovered candidates, F1086-F1090. F1086-F1088 are
   complete; F629 was resumed from Deferred at the user's direction and remains
-  open after its macOS matrix parity failure; F1088 is next and F1089-F1090
-  remain provisional. The Phase 2 plan/progress log contain the ordered list
-  and acceptance evidence. Gates 1/2 remain Partial; F1007 remains pending
-  policy reconciliation; Phase 2 exit remains Open.
+  open after its macOS matrix parity failure; F1089 is next and F1090 remains
+  provisional. The Phase 2 plan/progress log contain the ordered list and
+  acceptance evidence. Gates 1/2 remain Partial; F1007 remains pending policy
+  reconciliation; Phase 2 exit remains Open.
 - F629's clean macOS universal matrix ran at commit `3ab4fa3a` from
   `/private/tmp/classmngr-f629-macos-universal-20261019-run3`. The package audit
   passed (116 Mach-O files, arm64+x86_64, deployment target 14.4), signature
@@ -42,6 +42,20 @@
   rollback/retry. `git diff --check` passed. The read-failure test drops
   `app_settings`, so it cannot directly count write attempts during that fault;
   the adapter error path returns before writing.
+
+- F1088 source/test commit `53c43e75` gives Evaluation default policy reads a
+  typed result, stops technical errors from materializing `All`, and preserves
+  existing defaults and unsupported-value behavior. Preferences surfaces an
+  unknown initial value and disables the two radios; a failed save/reload
+  restores the last known policy. Class Analytics does not auto-select a term
+  when the policy read fails. The port, selection integration, and MainWindow
+  failure CTests passed 3/3; `git diff --check` passed. The SQLite missing-table
+  fault's diagnostic is generic and cannot count writes while the table is
+  absent; the adapter returns before writing. No full suite ran.
+
+- Push remains deferred until Batch473 closes. F629 and the Phase 0/Phase 2
+  exit gates remain open; Gates 1/2 remain Partial and F1007 remains pending
+  policy reconciliation.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

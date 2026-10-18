@@ -46345,8 +46345,34 @@ dropping `app_settings`, so they cannot directly count attempted writes under
 that SQLite fault; source inspection confirms the error path returns before
 writing. No full suite ran.
 
-Batch473 remains active: F1086 is complete, F629's matrix was attempted but
-F629 remains open and unaccepted, F1087 is complete, F1088 is selected/next,
-and F1089-F1090 remain provisional. The combined Phase 0 exit gate remains
-open; the Phase 2 exit gate remains Open. The discovered Batch473 slice list
+At this checkpoint, Batch473's active order was F1086 complete, F629's
+attempted matrix still open and unaccepted, F1087 complete, F1088 selected/next,
+and F1089-F1090 provisional. The combined Phase 0 exit gate was open, and the
+Phase 2 exit gate remained Open. The discovered Batch473 slice list remains
+F1086-F1090 as recorded above.
+
+### F1088 completion; F1089 selected - 2026-10-19
+
+F1088 is complete at source/test commit `53c43e75`. The Evaluation default
+policy port returns `Domain::Result<EvaluationDefaultPolicy>` and propagates
+technical reads without materializing `All`. Unavailable repositories and
+missing or invalid values retain the `All` default; unsupported stored values
+also resolve to `All` without being rewritten. When the initial state is
+unknown, Preferences shows a diagnostic and disables the policy radios. A
+failed save/reload restores the last known policy, and the evaluation-selection
+service returns no default when its preference read fails.
+
+Independent verification built and passed these CTest targets 3/3:
+`ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests`,
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`, and
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. Existing
+save-failure rollback and retry coverage passed; `git diff --check` passed.
+The missing-table SQLite fault makes the diagnostic generic and cannot count
+writes while the table is absent; source inspection confirms the error path
+returns before the fallback write. No full suite ran.
+
+Batch473 remains active: F1086 and F1087-F1088 are complete; F629's matrix was
+attempted but F629 remains open and unaccepted; F1089 is selected/next and
+F1090 remains provisional. The combined Phase 0 exit gate remains open, and
+the Phase 2 exit gate remains Open. The discovered Batch473 slice list
 remains F1086-F1090 as recorded above.
