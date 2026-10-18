@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-19 (F1088 complete; F629 open; F1089 next)
+### Current checkpoint - 2026-10-19 (F1089 complete; F629 open; F1090 next)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -119,6 +119,31 @@ missing-table fault gives a generic diagnostic and cannot count write attempts
 while the table is absent; the adapter returns before writing. No full suite
 ran.
 
+F1089 is committed at `15c5d035`. The personal signature preference port now
+returns a typed technical error if any mode, typed-text, or font read fails;
+missing or invalid fields keep their existing defaults. My Details preserves
+the visible signature controls, marks the preference bundle unknown, and
+blocks aggregate saves until a successful reload. Initial Setup shows a
+retryable warning and returns before aggregate save on a technical read
+failure.
+
+Independent verification built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
+`ClassMngrMyWorkspacePageTests`, and `ClassMngrInitialSetupWizardTests`. The
+focused signature-port and My Details CTests passed 2/2, including technical
+failure injection for each preference and save/reload recovery; `git diff
+--check` passed. The new Initial Setup regression compiled but could not reach
+its assertions: the macOS Debug harness aborts in Qt's QWizard page/pixmap
+path with `NSBundle initWithURL: nil URL argument`. An existing Initial Setup
+wizard test aborts at the same path, so the product behavior remains
+unverified there; the release app-bundle attempt also failed before QtTest
+started because macOS pasteboard/XPC services were unavailable. No full suite
+ran.
+
+The F629 matrix already ran with approximately 56 GiB free. Its remaining
+blocker is strict PDF semantic parity on `output-sub-prep` pages 9-10, not disk
+space; F629 and the combined Phase 0 exit gate remain open.
+
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
 commit, and discovery evidence is in
@@ -126,8 +151,9 @@ commit, and discovery evidence is in
 
 ## Next Milestone
 
-Begin F1089, the personal signature settings slice. Keep F629 open
-until the Sub Prep page-boundary mismatch has source-bound Windows layout
+Begin F1090, the Sub Prep Zoom preference slice, and verify whether a technical
+primary-read failure can trigger legacy-value fallback or migration. Keep F629
+open until the Sub Prep page-boundary mismatch has source-bound Windows layout
 evidence or another justified cross-platform resolution, then rerun the full
 macOS matrix. F628's full Windows evidence root also remains unavailable in
 this Mac session, so the combined Phase 0 exit gate cannot be claimed. Preserve

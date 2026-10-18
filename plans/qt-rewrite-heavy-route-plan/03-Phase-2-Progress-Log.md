@@ -46371,8 +46371,81 @@ The missing-table SQLite fault makes the diagnostic generic and cannot count
 writes while the table is absent; source inspection confirms the error path
 returns before the fallback write. No full suite ran.
 
-Batch473 remains active: F1086 and F1087-F1088 are complete; F629's matrix was
-attempted but F629 remains open and unaccepted; F1089 is selected/next and
-F1090 remains provisional. The combined Phase 0 exit gate remains open, and
-the Phase 2 exit gate remains Open. The discovered Batch473 slice list
-remains F1086-F1090 as recorded above.
+At this checkpoint, Batch473 was active: F1086 and F1087-F1088 were complete;
+F629's matrix had been attempted but remained open and unaccepted; F1089 was
+selected/next and F1090 remained provisional. The combined Phase 0 exit gate
+was open, and the Phase 2 exit gate remained Open. The discovered Batch473
+slice list remains F1086-F1090 as recorded above.
+
+### F1089 completion; F1090 selected - 2026-10-19
+
+F1089 is complete at source/test commit `15c5d035`. The typed personal
+signature preference bundle returns `Technical` if reading mode, text, or
+font fails. Missing and invalid values retain their defaults. My Details
+preserves the controls, marks signature state unknown, and blocks its aggregate
+save until reload; Initial Setup returns before aggregate save and shows a
+retry warning on a read failure.
+
+Independent builds passed for `ClassMngr`,
+`ClassMngrInitialSetupWizardTests`, `ClassMngrMyWorkspacePageTests`, and
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`.
+Focused My Details and signature-port CTests passed 2/2. Focused port cases,
+including failures for each preference, and the My Details failure/retry case
+passed. `git diff --check` passed; no full suite ran.
+
+The Initial Setup regression compiled but aborted before assertions in the
+QWizard page/pixmap path with `NSBundle initWithURL: nil URL argument`. The
+existing `storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement`
+test aborts through the same helper/path, indicating baseline macOS test-harness
+behavior. A stale Cocoa app-bundle attempt also aborted before QtTest due to
+pasteboard/XPC services. Initial Setup runtime behavior remains unverified;
+no product failure was reproduced.
+
+F629's macOS universal matrix ran with about 56 GiB free and passed 23/24
+routes. The remaining `output-sub-prep` failure is strict page-by-page PDF
+semantic parity on pages 9-10. The 18 GiB threshold is a preflight reserve,
+not observed disk consumption; more free space does not address this parity
+failure. F629 is not accepted, and the combined Phase 0 exit gate remains open.
+
+Batch473 remains active in its recorded discovery order: F1086, F1087, F1088,
+and F1089 are complete; reactivated F629 remains open and unaccepted; F1090
+was selected for bounded acceptance/solution review. The five
+discovered slices remain F1086-F1090, with F629 separately reactivated from
+Deferred. Gates 1/2 remain Partial, F1007 is pending policy reconciliation,
+and the Phase 2 exit gate remains Open. Push is deferred until Batch473 closes.
+
+### F1090 accepted; selected/in progress - 2026-10-19
+
+Discovery and independent solution review support F1090; it is accepted and
+selected/in progress, with implementation and verification still outstanding.
+The accepted behavior is:
+
+1. The Zoom preference port returns `Technical` for any primary or required
+   legacy read error. A primary `Technical` error stops before legacy reads or
+   migration, and migration writes do not begin until all three values have
+   been read successfully. Preserve missing/invalid defaults, legacy fallback
+   and migration, primary-value precedence, UTF-8/whitespace handling, and the
+   best-effort migration-save behavior that still returns the legacy values.
+2. My Details preserves its current Zoom controls, marks the Zoom bundle
+   unknown after a failed read, blocks aggregate save until a successful
+   reload, and resets known state on database clear.
+3. Initial Setup warns and offers retry, then returns before aggregate save
+   when the Zoom read fails.
+4. Sub Prep keeps its Zoom fields read-only and unchanged, surfaces the
+   technical failure, and introduces no Zoom writes. The behavior remains
+   compatible with F1079 content preferences.
+
+The evidence review confirmed that `SettingsRepository::loadSetting`
+distinguishes a failed query from a missing or invalid `QVariant`, while the
+current adapter collapses failures in `loadOrDefault` before legacy fallback
+and migration. Migration currently occurs before later bundle reads. The
+review found aggregate-save hazard exposure across all three caller paths; the
+accepted behavior blocks saves in My Details and Initial Setup while keeping
+Sub Prep read-only and adding no Zoom writes.
+
+Batch473 remains in its recorded order: F1086, F1087, F1088, and F1089 are
+complete; reactivated F629 remains open and unaccepted; F1090 is selected/in
+progress. The discovered slice list remains F1086-F1090, with F629 separately
+reactivated from Deferred. Gates 1/2 remain Partial, F1007 is pending policy
+reconciliation, and the combined Phase 0 evidence and Phase 2 exit gates
+remain Open. Push remains deferred until Batch473 closes.

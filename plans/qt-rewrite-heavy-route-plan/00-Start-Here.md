@@ -5,8 +5,8 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-18
-- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is closed with F1074-F1077 complete at `cbe7be5c`, `8c0dbc24`, `7a938cc4`, and `bc87ffa8`; Batch470 is closed with F1078 complete at `fbca6d4e`. Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`, with F1079 and F1080 complete at `5ad80284` and `82eaa317`. Batch472 is closed with F1081-F1085 complete; F1085 is at source/test commit `116719e1`. Batch473 is active: F1086 is complete at `aeb2a46f`, F629 is selected/in progress, and F1087-F1090 remain provisional. The active list contains Batch473's five discovery candidates plus F629 reactivated from Deferred. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch473-5-discovery-candidates-and-1-reactivated-deferred-item) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Last updated: 2026-10-19
+- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is closed with F1074-F1077 complete at `cbe7be5c`, `8c0dbc24`, `7a938cc4`, and `bc87ffa8`; Batch470 is closed with F1078 complete at `fbca6d4e`. Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`, with F1079 and F1080 complete at `5ad80284` and `82eaa317`. Batch472 is closed with F1081-F1085 complete; F1085 is at source/test commit `116719e1`. Batch473 is active: F1086 is complete at `aeb2a46f`, F629's macOS matrix was attempted but remains open and unaccepted (23/24 routes; Sub Prep page parity fails), F1087 is complete at `7ec8ba7a`, F1088 at `53c43e75`, F1089 at `15c5d035`, and F1090 is accepted and selected/in progress. F629 ran with about 56 GiB free; 18 GiB is the runner's preflight reserve, not observed consumption, and more disk space does not resolve the PDF parity failure. The active list contains Batch473's five discovered candidates plus F629 reactivated from Deferred. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the combined Phase 0 evidence gate and Phase 2 exit gate remain Open. Push is deferred until Batch473 closes. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch473-5-discovery-candidates-and-1-reactivated-deferred-item) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,14 +38,14 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch473 — Active; 5 discovery candidates and 1 reactivated Deferred item, in order (with status):**
+**Batch473 — Active; 5 discovered slices and 1 reactivated Deferred item, in discovery order (with current status):**
 
 1. **F1086 — Preserve Schedule display mode after a technical read failure.** Complete at source/test commit `aeb2a46f`.
-2. **F629 — Run the macOS universal Phase 0 route matrix.** Selected/in progress; reactivated from Deferred after 66 GiB became available. This item was not found by Batch473's recent discovery pass. Next: run a fresh current-source 24-route matrix.
-3. **F1087 — Preserve Middle School Analytics visibility after a technical preference-read failure.** Provisional; verify read-error handling before any preference write.
-4. **F1088 — Preserve Evaluation default policy after a technical preference-read failure.** Provisional; verify read-error handling before any preference write.
-5. **F1089 — Preserve personal signature settings after technical read errors.** Provisional; verify aggregate Personal Details and Initial Setup saves preserve unread values.
-6. **F1090 — Preserve Sub Prep Zoom preference after a technical primary read failure.** Provisional; verify a failed primary read cannot fall through to legacy-value migration.
+2. **F629 — Run the macOS universal Phase 0 route matrix.** Attempted but not accepted: 23/24 routes passed; `output-sub-prep` fails strict page-by-page PDF semantic parity on pages 9-10. Reactivated from Deferred; not found by Batch473's discovery pass. About 56 GiB was free for the run; 18 GiB is preflight reserve, not observed consumption. More free space does not address the parity mismatch.
+3. **F1087 — Preserve Middle School Analytics visibility after a technical preference-read failure.** Complete at source/test commit `7ec8ba7a`.
+4. **F1088 — Preserve Evaluation default policy after a technical preference-read failure.** Complete at source/test commit `53c43e75`.
+5. **F1089 — Preserve personal signature settings after technical read errors.** Complete at source/test commit `15c5d035`.
+6. **F1090 — Preserve Sub Prep Zoom preference after a technical primary read failure.** Accepted and selected/in progress; return Technical on primary or required legacy read errors, prevent fallback/migration after a primary Technical error, and preserve callers' state and aggregate-save behavior.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 

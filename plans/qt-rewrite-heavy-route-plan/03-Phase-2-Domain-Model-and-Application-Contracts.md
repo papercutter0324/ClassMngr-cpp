@@ -50,10 +50,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phase 1
 - Blocks: Persistence, bootstrap, shared UI, and feature migration
 - Owner: Unassigned
-- Last updated: 2026-10-18
+- Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1086 is complete at `aeb2a46f`; F629 is selected/in progress for the next fresh current-source macOS universal Phase 0 24-route matrix with 66 GiB available, while Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1090 is accepted and selected/in progress; F629's macOS matrix remains unaccepted after 23/24 routes because Sub Prep page-by-page PDF parity fails (18 GiB is preflight reserve, not observed consumption), so the combined Phase 0 evidence gate remains open; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -73,11 +73,11 @@ Treat this plan as an operational summary, not a history:
 Batch473's ordered active slices contain five candidates from the discovery pass plus F629 reactivated from Deferred; F629 was not found by that pass:
 
 1. F1086 - Preserve Schedule display mode after a technical read failure: complete at source/test commit `aeb2a46f`.
-2. F629 - Run the macOS universal Phase 0 route matrix: selected/in progress; reactivated from Deferred after 66 GiB became available. Next, run a fresh current-source 24-route matrix; no runner or toolchain preflight has run.
-3. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: provisional; distinguish read errors from false before persistence. Likely targets: its preference port and MainWindow/class visibility tests.
-4. F1088 - Preserve Evaluation default policy after a technical preference-read failure: provisional; distinguish read errors from missing values before persistence. Likely targets: its preference port and Preferences integration tests.
-5. F1089 - Preserve personal signature settings after technical read errors: provisional; preserve unread values across aggregate Personal Details and Initial Setup saves. Likely targets: signature port, My Workspace page, and Initial Setup Wizard tests.
-6. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure: provisional; prevent a failed primary read from falling through to legacy-value migration. Likely targets: Zoom preference port and Sub Prep page tests.
+2. F629 - Run the macOS universal Phase 0 route matrix: attempted but open and unaccepted; 23/24 routes passed, with `output-sub-prep` failing strict page-by-page PDF semantic parity on pages 9-10. Reactivated from Deferred after 66 GiB became available; the run had about 56 GiB free. The 18 GiB threshold is preflight reserve, not observed consumption. Next: resolve the parity failure without weakening the comparator.
+3. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: complete at source/test commit `7ec8ba7a`.
+4. F1088 - Preserve Evaluation default policy after a technical preference-read failure: complete at source/test commit `53c43e75`.
+5. F1089 - Preserve personal signature settings after technical read errors: complete at source/test commit `15c5d035`.
+6. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure: accepted and selected/in progress; return Technical on primary or required legacy read errors, preserve legacy fallback/migration semantics, and prevent aggregate saves of unknown Zoom preferences. Likely targets: Zoom preference port and Sub Prep page tests.
 
 #### Deferred candidates
 

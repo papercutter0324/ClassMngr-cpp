@@ -7162,3 +7162,32 @@ MainWindow failure CTests passed 3/3, including save-failure rollback/retry;
 diagnostic and cannot count attempted writes while absent, but the adapter
 returns before its fallback write. F629 remains open; F1089 is next, and push
 remains deferred until Batch473 closes.
+
+## F1089 personal signature preference read failure - 2026-10-19
+
+Commit `15c5d035` makes the signature preference bundle return a typed
+Technical error if mode, typed text, or font cannot be read. Missing or invalid
+settings still use existing defaults. My Details preserves its visible
+signature controls, tracks the bundle as unknown, and blocks aggregate saves
+until it reloads successfully. Initial Setup warns and returns before its
+aggregate save when the bundle read fails.
+
+Independent verification built `ClassMngr`, the signature-preference port,
+My Workspace, and Initial Setup test targets. Focused port and My Details
+failure/retry CTests passed 2/2, including per-preference read failures;
+`git diff --check` passed. The new Initial Setup regression compiled but did
+not reach assertions because the macOS Debug test executable aborts in Qt's
+QWizard page/pixmap path with `NSBundle initWithURL: nil URL argument`. An
+existing Initial Setup wizard test aborts through the same helper/path. The
+Release app-bundle attempt also aborted before QtTest because macOS pasteboard
+and XPC services were unavailable. Record Initial Setup runtime behavior as
+unverified; no product failure was reproduced. No full suite ran.
+
+F629 had already run with approximately 56 GiB available. Its remaining issue
+is the existing strict PDF semantic parity mismatch on `output-sub-prep` pages
+9-10, so additional free disk space does not resolve the open gate. F629 and
+the combined Phase 0 exit gate remain open. F1090 is the next recorded
+Batch473 candidate; the explicit list remains F1086-F1090 plus reactivated
+F629. Batch473 push remains deferred until the batch closes. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
+Open.
