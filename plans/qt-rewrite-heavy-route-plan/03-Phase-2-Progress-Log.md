@@ -45860,3 +45860,13 @@ The application/domain-contract and class/course/navigation/identity lane found 
 No other slices were found.
 
 Batch462 closed without an accepted slice. Batch463 discovery is next; no candidates have been accepted yet. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### Batch463 discovery; F403 follow-up accepted before implementation - 2026-10-18
+
+The feature-navigation lane found a caller-visible cancellation mismatch in F403. The existing real MainWindow regression navigates from dirty Teacher Info to another dynamic teacher leaf for both Co-Teachers and Korean Teachers; on Cancel it verifies the original profile, page, exact dirty draft, session, and emitted target route, but not Sidebar selection (`tests/mainwindow_teacher_sidebar_navigation_parity_tests.cpp:924-947`). `Sidebar::eventFilter()` snapshots selected keys and teacher ID on mouse press (`src/ui/shared/widgets/sidebar/sidebar.cpp:76`); the tree selection then changes before the route is emitted (`sidebar_selection.cpp:229`). `NavigationController::handleTeacher()` returns when `confirmCurrentPageCanLeave()` is false without restoring that snapshot (`navigation_controller.cpp:148-196`). Therefore Cancel leaves the requested teacher selected while the source profile remains displayed. This is a follow-up to F403, not a new feature ID. F1044 established the same restoration behavior for canceled document navigation; the existing `Sidebar::restorePreviousSelection()` API also restores teacher ID and stable keys (`sidebar.h:84-86`, `sidebar_tree.cpp:281-303`). The read/query contract lane found no new slice; class-list, navigation, and roster IDs are already validated, with focused malformed-ID and identity-mismatch tests.
+
+Accept one Batch463 slice: in the `handleTeacher()` Cancel branch, restore the Sidebar selection captured before the clicked dynamic leaf. Extend the existing F403 MainWindow test for both teacher groups to capture and assert source selected keys and teacher ID after Cancel. Preserve the original profile/page, exact dirty draft, open database session/path, one-prompt behavior, and existing Discard behavior (the requested target remains selected and loads). Keep the change scoped to the Cancel branch; do not broaden it to unrelated profile-read failures. Build `ClassMngr` and `ClassMngrMainWindowTeacherSidebarNavigationParityTests`, run the matching CTest, and run `git diff --check`; no full suite.
+
+No other slices were found.
+
+Batch463 contains one accepted slice: the F403 teacher-selection follow-up. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.

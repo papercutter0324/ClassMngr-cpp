@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-18
-- Current milestone: Batch461 is complete and pushed at `46851a65`; Batch462 closed as a discovery shortfall, and Batch463 discovery is next. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch463) for the active batch state and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for completion and discovery evidence.
+- Current milestone: Batch461 is complete and pushed at `46851a65`; Batch462 closed as a discovery shortfall. Batch463 has one accepted slice: the F403 canceled teacher-navigation follow-up. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch463) for the ordered active slice list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for acceptance evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-Batch462 closed without an accepted slice. Batch463 discovery is next; no candidates have been accepted yet.
+Batch463 contains one accepted slice, in order:
+
+1. **F403 follow-up — Restore teacher selection after Cancel.** When dirty Teacher Info navigation to another dynamic teacher leaf is canceled, restore the source teacher selection for both teacher groups; preserve the draft and page, and keep Discard behavior unchanged.
 
 The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch463) is the canonical active list and acceptance record.
 
