@@ -173,6 +173,10 @@ void NavigationController::handleTeacher(
         query.execute(*teacherId);
     if (!profile)
     {
+        if (m_sidebar)
+        {
+            m_sidebar->restorePreviousSelection();
+        }
         return;
     }
 
