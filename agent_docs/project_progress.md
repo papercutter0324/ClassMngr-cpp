@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-18 (Batch468 active; F1070 selected)
+### Current checkpoint - 2026-10-18 (Batch468 active; F1071 selected)
 
 Batch463 is complete and pushed at `d5d33b59`. Its F403 slice restores the
 source Sidebar selection when Cancel blocks navigation to a different teacher
@@ -90,8 +90,16 @@ blocks saves while the stored schedule is unknown. The Executor and
 independent Tester built the affected targets and passed the three focused
 CTests (3/3); after two assertions were added, the independent Tester rebuilt
 the changed test targets and passed those focused CTests (2/2). No full suite
-ran. F1070 is selected: restore the real Sidebar selection after Cancel from
-dirty Teacher Info to Campus Directory root and child routes.
+ran. F1070 is complete at `6712a57d`. Its Campus root and child Cancel branches
+restore the real Sidebar selection captured before the click. The MainWindow
+regression verifies Cancel from dirty Teacher Info preserves the source page,
+profile, form draft, and database session, then verifies Discard navigates to
+the requested Campus section. Executor and independent Tester built the
+application and test target, passed the focused CTest (1/1), passed the two
+Campus data rows in the offscreen direct invocation (4 QtTest cases), and
+passed `git diff --check`; no full suite ran. F1071 is selected: restore the
+pre-click Sidebar selection when Cancel blocks the real Sub Prep root route
+from dirty Teacher Info.
 
 Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. The exact acceptance, verification,
@@ -100,7 +108,7 @@ commit, push, and discovery evidence is in
 
 ## Next Milestone
 
-Complete and commit F1070, then proceed through Batch468 in order. Start
+Complete and commit F1071, then proceed through Batch468 in order. Start
 Batch469 discovery when work begins on F1072, the second-last Batch468 slice.
 Preserve the open exit gate and unresolved policy reconciliation.
 Detailed historical slice evidence remains in

@@ -46008,11 +46008,17 @@ Accept F1070 — restore Sidebar selection after canceled Campus Directory navig
 Batch468's discovered slices, in order (with status and next action):
 
 1. F1069 - Preserve Academic Calendar schedule on technical preference-read failure (complete at `46780e00`).
-2. F1070 - Restore Sidebar selection after canceled Campus Directory navigation (root and child) (selected/in progress): test real Cancel clicks from dirty Teacher Info and restore the pre-click selection for both routes.
-3. F1071 - Restore Sidebar selection after canceled Sub Prep navigation (provisional candidate): verify Cancel restores the pre-click selection.
+2. F1070 - Restore Sidebar selection after canceled Campus Directory navigation (root and child) (complete at `6712a57d`).
+3. F1071 - Restore Sidebar selection after canceled Sub Prep navigation (selected/in progress): test a real root click from dirty Teacher Info and restore the pre-click selection on Cancel, preserving source state and Discard navigation.
 4. F1072 - Restore Sidebar selection after canceled Classes navigation (provisional candidate): verify Cancel restores the pre-click selection.
 5. F1073 - Restore Sidebar selection after canceled Staff Directory navigation (provisional candidate): verify Cancel restores the pre-click selection.
 
 No other slices were found.
 
 Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+### F1070 completion; F1071 selected - 2026-10-18
+
+F1070 is complete at `6712a57d`. The implementation restores Sidebar selection after Cancel for Campus Directory root and child navigation. Executor and independent verification succeeded: the focused build completed, the matching CTest passed (1/1), the explicit offscreen test invocation passed both campus-root and campus-child rows (4 passed, 0 failed), and `git diff --check` passed. An unqualified direct test invocation aborted because no screen was available; CTest supplies the offscreen platform. No full suite ran.
+
+F1071 is selected for Sub Prep's real Sidebar root route. `sub_prep` is a root page route; `NavigationController::handleSubPrep()` returns on Cancel without calling `restorePreviousSelection()` (`src/app/controllers/navigation_controller.cpp:552`). `MainWindowSubPrepSidebarRootNavigationTests` verifies successful navigation only, while `SubPrepRouteGateParityTests` uses direct dispatch and does not cover Cancel. Accept F1071: from dirty Teacher Info, click the Sub Prep root in the Sidebar and choose Cancel; restore the pre-click selected keys and teacher ID while preserving the source page, form draft, and session. Retain Discard navigation. Extend `MainWindowSubPrepSidebarRootNavigationTests` (registered in `cmake/tests/pages_and_output.cmake:770`) or the Teacher Sidebar parity target. Build the affected production and test targets, run the matching focused CTest, and `git diff --check`; no full suite.

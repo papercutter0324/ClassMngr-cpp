@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-18
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch467 is closed and pushed at `537e420b`; Batch468 has five discovered slices in order, with F1069 complete at `46780e00`, F1070 selected/in progress, and F1071-F1073 provisional; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: Batch467 is closed and pushed at `537e420b`; Batch468 has five discovered slices in order, with F1069 complete at `46780e00`, F1070 complete at `6712a57d`, F1071 selected/in progress, and F1072-F1073 provisional; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
 
 ### Slice discovery batches
 
@@ -73,8 +73,8 @@ Treat this plan as an operational summary, not a history:
 Batch468's discovered slices, in order (with status):
 
 1. F1069 - Preserve Academic Calendar schedule on technical preference-read failure: complete at `46780e00`.
-2. F1070 - Restore Sidebar selection after canceled Campus Directory navigation (root and child): selected/in progress; test real Cancel clicks from dirty Teacher Info and restore the pre-click selection for both routes.
-3. F1071 - Restore Sidebar selection after canceled Sub Prep navigation: provisional candidate; verify Cancel restores the pre-click selection.
+2. F1070 - Restore Sidebar selection after canceled Campus Directory navigation (root and child): complete at `6712a57d`.
+3. F1071 - Restore Sidebar selection after canceled Sub Prep navigation: selected/in progress; test a real root click from dirty Teacher Info and restore the pre-click selection on Cancel, preserving the source state and Discard navigation.
 4. F1072 - Restore Sidebar selection after canceled Classes navigation: provisional candidate; verify Cancel restores the pre-click selection.
 5. F1073 - Restore Sidebar selection after canceled Staff Directory navigation: provisional candidate; verify Cancel restores the pre-click selection.
 
