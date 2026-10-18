@@ -76,7 +76,7 @@ private slots:
     void missingAndUnavailableReadEmpty();
     void reportsSettingsAvailability();
     void closedSessionDefaultsAndIgnoresWrite();
-    void repositoryReadErrorsWarnAndReturnEmpty();
+    void repositoryReadErrorsReturnTechnicalFailure();
     void preservesQVariantToStringConversion();
     void preservesUnrelatedSettings();
     void writeFailureMapsToTechnicalError();
@@ -112,7 +112,9 @@ exactKeyAndVerbatimStringRoundTrip()
         );
 
     ApplicationServicesCurrentCampusPreferencesPort port(services);
-    QCOMPARE(port.read(), utf8(expected));
+    const auto loaded = port.read();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), utf8(expected));
 
     const auto stored = repository->loadSetting(
         QString::fromUtf8(CurrentCampusKey)
@@ -142,7 +144,9 @@ writePersistsExactKeyAndPreservesUnrelatedSettings()
     const QString expected = QStringLiteral("  캠퍼스 A / 🧭  ");
     ApplicationServicesCurrentCampusPreferencesPort port(services);
     QVERIFY(port.write(utf8(expected)));
-    QCOMPARE(port.read(), utf8(expected));
+    const auto loaded = port.read();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), utf8(expected));
 
     const auto stored = repository->loadSetting(
         QString::fromUtf8(CurrentCampusKey)
@@ -164,7 +168,9 @@ missingAndUnavailableReadEmpty()
     QVERIFY(openDatabase(services, m_directory));
 
     ApplicationServicesCurrentCampusPreferencesPort port(services);
-    QVERIFY(port.read().empty());
+    const auto missing = port.read();
+    QVERIFY(missing);
+    QVERIFY(missing.value().empty());
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
@@ -175,13 +181,17 @@ missingAndUnavailableReadEmpty()
     ApplicationServicesCurrentCampusPreferencesPort unavailablePort(
         unavailableServices
         );
-    QVERIFY(unavailablePort.read().empty());
+    const auto unavailable = unavailablePort.read();
+    QVERIFY(unavailable);
+    QVERIFY(unavailable.value().empty());
     QVERIFY(unavailablePort.write("ignored"));
 
     ApplicationServicesCurrentCampusPreferencesPort nullPort(
         static_cast<ApplicationServices*>(nullptr)
         );
-    QVERIFY(nullPort.read().empty());
+    const auto nullResult = nullPort.read();
+    QVERIFY(nullResult);
+    QVERIFY(nullResult.value().empty());
     QVERIFY(nullPort.write("ignored"));
 }
 
@@ -234,7 +244,9 @@ closedSessionDefaultsAndIgnoresWrite()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!port.isAvailable());
-    QVERIFY(port.read().empty());
+    const auto closed = port.read();
+    QVERIFY(closed);
+    QVERIFY(closed.value().empty());
     QVERIFY(port.write(utf8(QStringLiteral("Campus After Close"))));
 
     QVERIFY(services.openDatabase(path));
@@ -250,7 +262,7 @@ closedSessionDefaultsAndIgnoresWrite()
 }
 
 void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
-repositoryReadErrorsWarnAndReturnEmpty()
+repositoryReadErrorsReturnTechnicalFailure()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -269,7 +281,18 @@ repositoryReadErrorsWarnAndReturnEmpty()
         );
 
     ApplicationServicesCurrentCampusPreferencesPort port(services);
-    QVERIFY(port.read().empty());
+    const auto read = port.read();
+
+    QVERIFY(!read);
+    QCOMPARE(
+        read.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(read.error().recoverable);
+    QVERIFY(
+        read.error().message.find("Loading application setting")
+            != std::string::npos
+        );
 }
 
 void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
@@ -291,7 +314,9 @@ preservesQVariantToStringConversion()
             42
             )
         );
-    QCOMPARE(port.read(), utf8(QStringLiteral("42")));
+    const auto integerValue = port.read();
+    QVERIFY(integerValue);
+    QCOMPARE(integerValue.value(), utf8(QStringLiteral("42")));
 
     QVERIFY(
         repository->saveSetting(
@@ -299,7 +324,9 @@ preservesQVariantToStringConversion()
             QString()
             )
         );
-    QVERIFY(port.read().empty());
+    const auto emptyValue = port.read();
+    QVERIFY(emptyValue);
+    QVERIFY(emptyValue.value().empty());
 }
 
 void NextPlatformApplicationServicesCurrentCampusPreferencesPortTests::
@@ -327,7 +354,9 @@ preservesUnrelatedSettings()
         );
 
     ApplicationServicesCurrentCampusPreferencesPort port(services);
-    QCOMPARE(port.read(), utf8(QStringLiteral("Campus B")));
+    const auto campus = port.read();
+    QVERIFY(campus);
+    QCOMPARE(campus.value(), utf8(QStringLiteral("Campus B")));
 
     const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)

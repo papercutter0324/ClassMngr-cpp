@@ -857,118 +857,143 @@ void PersonalDetailsPage::loadStoredSettings()
         );
     m_nameEdit->setText(QString::fromUtf8(storedName));
 
-    const QByteArray storedCampus = QByteArray::fromStdString(
-        ClassMngr::Next::Platform::
-            ApplicationServicesCurrentCampusPreferencesPort(
-                m_services
-                ).read()
-        );
-    const QString campus = QString::fromUtf8(storedCampus);
-
-    m_campusCombo->clear();
-
-    const auto campuses =
-        ClassMngr::Next::Platform::
-            MyInfoCampusDirectoryQueryAdapter().loadCampuses();
-
-    for (const auto& campusInfo : campuses)
+    ClassMngr::Next::Platform::
+        ApplicationServicesCurrentCampusPreferencesPort
+        currentCampusPreferencesPort(m_services);
+    const auto currentCampusResult = currentCampusPreferencesPort.read();
+    if (!currentCampusResult)
     {
-        const QString displayName = QString::fromUtf8(
-            campusInfo.displayName.data(),
-            static_cast<qsizetype>(campusInfo.displayName.size())
+        const auto& error = currentCampusResult.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
             );
-        const QString campusId = QString::fromUtf8(
-            campusInfo.id.data(),
-            static_cast<qsizetype>(campusInfo.id.size())
-            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic =
+                tr("No additional error details are available.");
+        }
 
-        m_campusCombo->addItem(
-            displayName,
-            campusId
+        DialogServices::showWarning(
+            this,
+            tr("Campus Preference Could Not Be Loaded"),
+            tr(
+                "The current campus could not be read. Your displayed "
+                "campus selection has been preserved. Refresh this page to "
+                "try again."
+                ),
+            diagnostic
             );
     }
+    else
+    {
+        const QByteArray storedCampus = QByteArray::fromStdString(
+            currentCampusResult.value()
+            );
+        const QString campus = QString::fromUtf8(storedCampus);
 
-    const int campusIndex =
-        findCampusIndex(
-            m_campusCombo,
-            campus
+        m_campusCombo->clear();
+
+        const auto campuses =
+            ClassMngr::Next::Platform::
+                MyInfoCampusDirectoryQueryAdapter().loadCampuses();
+
+        for (const auto& campusInfo : campuses)
+        {
+            const QString displayName = QString::fromUtf8(
+                campusInfo.displayName.data(),
+                static_cast<qsizetype>(campusInfo.displayName.size())
+                );
+            const QString campusId = QString::fromUtf8(
+                campusInfo.id.data(),
+                static_cast<qsizetype>(campusInfo.id.size())
+                );
+
+            m_campusCombo->addItem(
+                displayName,
+                campusId
+                );
+        }
+
+        const int campusIndex =
+            findCampusIndex(
+                m_campusCombo,
+                campus
+                );
+
+        m_campusCombo->setCurrentIndex(
+            campusIndex >= 0
+                ? campusIndex
+                : 0
             );
 
-    m_campusCombo->setCurrentIndex(
-        campusIndex >= 0
-            ? campusIndex
-            : 0
-        );
-
-    if (
-        m_campusCombo->currentIndex() >= 0
-        && m_campusCombo->currentText().compare(
-            campus.trimmed(),
-            Qt::CaseInsensitive
-            ) != 0
-        )
-    {
-        const QString selectedCampus =
-            m_campusCombo->currentText();
-        const auto campusSaved =
-            ClassMngr::Next::Platform::
-                ApplicationServicesCurrentCampusPreferencesPort(
-                    m_services
-                    ).write(
-                        selectedCampus
-                            .toUtf8()
-                            .toStdString()
-                        );
-
-        if (campusSaved)
+        if (
+            m_campusCombo->currentIndex() >= 0
+            && m_campusCombo->currentText().compare(
+                campus.trimmed(),
+                Qt::CaseInsensitive
+                ) != 0
+            )
         {
+            const QString selectedCampus =
+                m_campusCombo->currentText();
+            const auto campusSaved =
+                currentCampusPreferencesPort.write(
+                    selectedCampus
+                        .toUtf8()
+                        .toStdString()
+                    );
+
+            if (campusSaved)
+            {
+                m_failedCampusCorrectionStoredValue.clear();
+                m_failedCampusCorrectionSelectedCampus.clear();
+                m_hasFailedCampusCorrection = false;
+            }
+            else
+            {
+                const bool sameFailedCorrection =
+                    m_hasFailedCampusCorrection
+                    && m_failedCampusCorrectionStoredValue == campus
+                    && m_failedCampusCorrectionSelectedCampus == selectedCampus;
+
+                if (!sameFailedCorrection)
+                {
+                    const auto& error = campusSaved.error();
+                    QString diagnostic = QString::fromUtf8(
+                        error.message.data(),
+                        static_cast<qsizetype>(error.message.size())
+                        );
+                    if (diagnostic.isEmpty())
+                    {
+                        diagnostic =
+                            tr("No additional error details are available.");
+                    }
+
+                    DialogServices::showWarning(
+                        this,
+                        tr("Unable to Save Preference"),
+                        tr(
+                            "The campus preference could not be updated. The "
+                            "selected campus remains in place."
+                            ),
+                        diagnostic
+                        );
+                }
+
+                m_failedCampusCorrectionStoredValue = campus;
+                m_failedCampusCorrectionSelectedCampus = selectedCampus;
+                m_hasFailedCampusCorrection = true;
+            }
+        }
+        else
+        {
+            // A matching stored value ends any earlier correction failure
+            // episode.
             m_failedCampusCorrectionStoredValue.clear();
             m_failedCampusCorrectionSelectedCampus.clear();
             m_hasFailedCampusCorrection = false;
         }
-        else
-        {
-            const bool sameFailedCorrection =
-                m_hasFailedCampusCorrection
-                && m_failedCampusCorrectionStoredValue == campus
-                && m_failedCampusCorrectionSelectedCampus == selectedCampus;
-
-            if (!sameFailedCorrection)
-            {
-                const auto& error = campusSaved.error();
-                QString diagnostic = QString::fromUtf8(
-                    error.message.data(),
-                    static_cast<qsizetype>(error.message.size())
-                    );
-                if (diagnostic.isEmpty())
-                {
-                    diagnostic =
-                        tr("No additional error details are available.");
-                }
-
-                DialogServices::showWarning(
-                    this,
-                    tr("Unable to Save Preference"),
-                    tr(
-                        "The campus preference could not be updated. The "
-                        "selected campus remains in place."
-                        ),
-                    diagnostic
-                    );
-            }
-
-            m_failedCampusCorrectionStoredValue = campus;
-            m_failedCampusCorrectionSelectedCampus = selectedCampus;
-            m_hasFailedCampusCorrection = true;
-        }
-    }
-    else
-    {
-        // A matching stored value ends any earlier correction failure
-        // episode.
-        m_failedCampusCorrectionStoredValue.clear();
-        m_failedCampusCorrectionSelectedCampus.clear();
-        m_hasFailedCampusCorrection = false;
     }
 
     ClassMngr::Next::Platform::

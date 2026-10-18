@@ -152,6 +152,7 @@ private slots:
     void blankTeacherEntrySkipsWhenTeachersExist();
     void teacherChoiceReadFailuresBehaveAsEmptyWithoutWarnings();
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
+    void campusReadFailureBlocksAggregateSaveAndCanRetry();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
     void aggregateSaveComposesTypedReadsWithoutDataLoss();
@@ -820,6 +821,91 @@ aggregateSavePreservesAllPersonalDetailsWithoutDataLoss()
             QString::fromUtf8(UnrelatedKey), QVariant()
             ).toString(),
         QStringLiteral("preserved")
+        );
+}
+
+void InitialSetupWizardTests::
+campusReadFailureBlocksAggregateSaveAndCanRetry()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Old Name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("Bundang")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old-password")}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    showPersonalDetailsPage(wizard);
+
+    auto* const name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* const next = wizard.button(QWizard::NextButton);
+    QVERIFY(name);
+    QVERIFY(next);
+    name->setText(QStringLiteral("New Name"));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "ALTER TABLE app_settings RENAME TO app_settings_preserved"
+            )
+        ));
+
+    next->click();
+    QApplication::processEvents();
+
+    QCOMPARE(wizard.currentId(), InitialSetupWizard::PersonalDetailsPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.title, QStringLiteral("Initial Setup"));
+    QVERIFY(warning.message.contains(QStringLiteral("Retry by selecting Next")));
+    QVERIFY(warning.details.contains(
+        QStringLiteral("Loading application setting")
+        ));
+
+    QSqlQuery preservedSettings(services.databaseSession()->database());
+    QVERIFY(preservedSettings.exec(QStringLiteral(
+        "SELECT value FROM app_settings_preserved WHERE key='myInfo/name'"
+        )));
+    QVERIFY(preservedSettings.next());
+    QCOMPARE(preservedSettings.value(0).toString(), QStringLiteral("Old Name"));
+    QVERIFY(preservedSettings.exec(QStringLiteral(
+        "SELECT value FROM app_settings_preserved WHERE key='myInfo/campus'"
+        )));
+    QVERIFY(preservedSettings.next());
+    QCOMPARE(preservedSettings.value(0).toString(), QStringLiteral("Bundang"));
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "ALTER TABLE app_settings_preserved RENAME TO app_settings"
+            )
+        ));
+    next->click();
+    QApplication::processEvents();
+
+    QVERIFY(wizard.currentId() != InitialSetupWizard::PersonalDetailsPage);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(DisplayNameKey), QVariant()
+            ).toString(),
+        QStringLiteral("New Name")
+        );
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(CampusKey), QVariant()
+            ).toString(),
+        QStringLiteral("Bundang")
         );
 }
 

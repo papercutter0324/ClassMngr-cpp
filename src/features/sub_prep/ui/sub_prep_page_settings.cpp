@@ -4,6 +4,7 @@
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
 #include "next/platform/application_services_sub_prep_preferences_port.h"
 #include "next/platform/sub_prep_campus_directory_query_adapter.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <string>
 
@@ -170,11 +171,42 @@ void SubPrepPage::loadCampuses()
         ClassMngr::Next::Platform::
             SubPrepCampusDirectoryQueryAdapter().loadCampuses();
 
-    const std::string storedCampus =
+    const auto storedCampus =
         currentCampusPreferencesPort.read();
+    if (!storedCampus)
+    {
+        m_campuses.clear();
+        loadCampusFields(QString());
+
+        const auto& error = storedCampus.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic =
+                tr("No additional error details are available.");
+        }
+
+        DialogServices::showWarning(
+            this,
+            tr("Campus Details Unavailable"),
+            tr(
+                "Campus details could not be loaded because the current "
+                "campus preference could not be read. Refresh this page to "
+                "try again."
+                ),
+            diagnostic
+            );
+
+        m_loading = wasLoading;
+        return;
+    }
+
     const QString savedCampus = QString::fromUtf8(
-        storedCampus.data(),
-        static_cast<qsizetype>(storedCampus.size())
+        storedCampus.value().data(),
+        static_cast<qsizetype>(storedCampus.value().size())
         );
 
     QString campusId;

@@ -949,13 +949,20 @@ CalendarPage::calendarEventDisplayOptions() const
                 ? displayPreferences.value().use24HourTime
                 : false;
 
-        const QString currentName =
-            projectionText(currentCampusPreferencesPort.read());
+        const auto currentCampus = currentCampusPreferencesPort.read();
+        const QString currentName = currentCampus
+            ? projectionText(currentCampus.value())
+            : QString();
         ClassMngr::Next::Platform::
             CalendarPageCampusDirectoryQueryAdapter campusDirectoryQueryAdapter;
         const auto campuses = campusDirectoryQueryAdapter.loadCampuses();
 
-        options.currentCampusCodes.append(currentName);
+        // An empty or unreadable current-campus value keeps the existing
+        // all-events fallback. Do not infer a campus from the directory.
+        if (!currentName.isEmpty())
+        {
+            options.currentCampusCodes.append(currentName);
+        }
 
         for (const auto& campus : campuses)
         {
@@ -968,12 +975,15 @@ CalendarPage::calendarEventDisplayOptions() const
             options.allCampusCodes.append(projectionText(campus.id));
 
             if (
+                !currentName.isEmpty()
+                && (
                 projectionText(campus.id)
                     .compare(currentName, Qt::CaseInsensitive) == 0
                 || campusDisplayName(campus).compare(currentName, Qt::CaseInsensitive) == 0
                 || projectionText(campus.campusName)
                     .compare(currentName, Qt::CaseInsensitive) == 0
                 )
+            )
             {
                 if (campus.campusCode)
                 {

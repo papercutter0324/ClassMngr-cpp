@@ -13,6 +13,7 @@
 #include "next/application/sub_prep_print_source_query.h"
 #include "ui/shared/widgets/sectioncards/class_info_section_card.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "next/platform/application_services_current_campus_preferences_port.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -405,6 +406,7 @@ private slots:
     void freshAndExistingGradingSettingsResolveWithoutDataLoss();
     void savedCampusSelectionUsesTypedRead();
     void emptyCampusDetailsDisplayNotAvailable();
+    void campusReadFailureShowsUnavailableDetailsAndWarning();
     void zoomUnavailableHidesStoredCredentials();
     void unavailablePreferenceLoadsPreservePageValues();
     void unavailablePreferenceSaveHasNoSideEffects();
@@ -1456,6 +1458,65 @@ void SubPrepPageTests::emptyCampusDetailsDisplayNotAvailable()
         QVERIFY(field);
         QCOMPARE(field->text(), QStringLiteral("N/A"));
     }
+}
+
+void SubPrepPageTests::campusReadFailureShowsUnavailableDetailsAndWarning()
+{
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
+    ApplicationServices services;
+    saveSettingOrFail(
+        services.dataService(),
+        QStringLiteral("myInfo/campus"),
+        QStringLiteral("Yongtong")
+        );
+    ScheduleWidgetTestStubs::setSettingsRepositoryAvailable(false);
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesCurrentCampusPreferencesPort campusPort(&services);
+    QVERIFY(campusPort.isAvailable());
+    const auto campusRead = campusPort.read();
+    QVERIFY(!campusRead);
+    QCOMPARE(
+        campusRead.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(campusRead.error().recoverable);
+    QVERIFY(campusRead.error().message.find("settings repository")
+        != std::string::npos);
+
+    SubPrepPageHarness harness(&services);
+    SubPrepPage& page = harness.page;
+    activatePage(page);
+
+    for (const QString& objectName : {
+             QStringLiteral("subPrepOfficeNumberEdit"),
+             QStringLiteral("subPrepOfficeWifiEdit"),
+             QStringLiteral("subPrepOfficeWifiPasswordEdit"),
+             QStringLiteral("subPrepPhotocopierCodeEdit")
+             })
+    {
+        auto* field = page.findChild<QLineEdit*>(objectName);
+        QVERIFY(field);
+        QCOMPARE(field->text(), QStringLiteral("N/A"));
+    }
+
+    QCOMPARE(promptService.messages.size(), 1);
+    const PromptRequest& warning = promptService.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Campus Details Unavailable"));
+    QVERIFY(warning.message.contains(QStringLiteral("Refresh this page")));
+    QVERIFY(warning.details.contains(
+        QStringLiteral("settings repository is unavailable")
+        ));
 }
 
 void SubPrepPageTests

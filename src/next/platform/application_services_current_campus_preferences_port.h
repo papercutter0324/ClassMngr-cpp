@@ -55,21 +55,26 @@ public:
         return m_session && m_session->isOpen();
     }
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]] Domain::Result<std::string> read() const override
     {
         if (!isAvailable())
         {
-            return {};
+            return Domain::Result<std::string>::success({});
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return {};
+            return Domain::Result<std::string>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message =
+                    "The settings repository is unavailable while reading "
+                    "the current campus preference.",
+                .recoverable = true
+            });
         }
 
         const auto stored = repository->loadSetting(key());
-        QVariant campus = QString();
         if (!stored)
         {
             qWarning()
@@ -77,17 +82,28 @@ public:
                 << key()
                 << ':'
                 << stored.error();
+
+            const QByteArray errorBytes = stored.error().toUtf8();
+            return Domain::Result<std::string>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = errorBytes.isEmpty()
+                    ? "The current campus preference could not be read."
+                    : errorBytes.toStdString(),
+                .recoverable = true
+            });
         }
-        else if (stored->isValid())
-        {
-            campus = *stored;
-        }
+
+        const QVariant campus = stored->isValid()
+            ? *stored
+            : QVariant(QString());
 
         const QByteArray storedCampus = campus.toString().toUtf8();
 
-        return std::string(
-            storedCampus.constData(),
-            static_cast<std::size_t>(storedCampus.size())
+        return Domain::Result<std::string>::success(
+            std::string(
+                storedCampus.constData(),
+                static_cast<std::size_t>(storedCampus.size())
+                )
             );
     }
 

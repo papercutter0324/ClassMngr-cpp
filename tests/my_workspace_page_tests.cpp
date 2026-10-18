@@ -318,6 +318,7 @@ private slots:
     void storedCampusPrefillsAndCorrectsThroughTypedPort();
     void failedCampusCorrectionRetriesAndSuppressesRepeatedWarnings();
     void failedMatchedCampusIdCorrectionWarnsAndRecovers();
+    void campusReadFailurePreservesDisplayedAndStoredChoice();
     void storedDisplayNamePrefillsWithUtf8AndWhitespace();
     void missingAndUnavailableDisplayNamePrefillEmpty();
     void storedZoomCredentialsPrefillAndRespectUnavailableState();
@@ -1179,6 +1180,73 @@ void MyWorkspacePageTests::failedMatchedCampusIdCorrectionWarnsAndRecovers()
     QCOMPARE(campus->currentData().toString(), QStringLiteral("j"));
     QCOMPARE(campus->currentText(), QStringLiteral("Jeongja"));
     QCOMPARE(prompts.messages.size(), 1);
+}
+
+void MyWorkspacePageTests::campusReadFailurePreservesDisplayedAndStoredChoice()
+{
+    FakeUserPromptService prompts;
+    ScopedUserPromptService promptScope(prompts);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QVERIFY(services.dataService());
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        QStringLiteral("j")
+        ));
+
+    MyWorkspacePage page(&services);
+    refreshPersonalDetails(page);
+
+    PersonalDetailsPage* const details = page.personalDetailsPage();
+    QVERIFY(details);
+    auto* const campus = details->findChild<QComboBox*>();
+    QVERIFY(campus);
+    QVERIFY(campus->count() > 1);
+
+    const int displayedIndex = campus->count() - 1;
+    QVERIFY(displayedIndex > 0);
+    const QString displayedCampus = campus->itemText(displayedIndex);
+    QVERIFY(services.dataService()->saveSetting(
+        QString::fromUtf8(CurrentCampusKey),
+        displayedCampus
+        ));
+    details->discardChanges();
+    QCOMPARE(campus->currentIndex(), displayedIndex);
+    QCOMPARE(campus->currentText(), displayedCampus);
+
+    QVERIFY(executeSql(
+        services,
+        QStringLiteral(
+            "ALTER TABLE app_settings RENAME TO app_settings_preserved"
+            )
+        ));
+
+    details->refresh();
+
+    QCOMPARE(campus->currentIndex(), displayedIndex);
+    QCOMPARE(campus->currentText(), displayedCampus);
+    QCOMPARE(prompts.messages.size(), 1);
+    const PromptRequest& warning = prompts.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(
+        warning.title,
+        QStringLiteral("Campus Preference Could Not Be Loaded")
+        );
+    QVERIFY(warning.message.contains(QStringLiteral("preserved")));
+    QVERIFY(warning.details.contains(
+        QStringLiteral("Loading application setting")
+        ));
+
+    QSqlQuery query(services.databaseSession()->database());
+    QVERIFY(query.exec(QStringLiteral(
+        "SELECT value FROM app_settings_preserved WHERE key='myInfo/campus'"
+        )));
+    QVERIFY(query.next());
+    QCOMPARE(query.value(0).toString(), displayedCampus);
 }
 
 void MyWorkspacePageTests::storedDisplayNamePrefillsWithUtf8AndWhitespace()

@@ -554,11 +554,36 @@ public:
                 );
         };
 
-        const std::string campus =
-            ClassMngr::Next::Platform::
-                ApplicationServicesCurrentCampusPreferencesPort(
-                    setup->services()
-                    ).read();
+        ClassMngr::Next::Platform::
+            ApplicationServicesCurrentCampusPreferencesPort
+            currentCampusPreferencesPort(setup->services());
+        const auto campusResult = currentCampusPreferencesPort.read();
+        if (!campusResult)
+        {
+            const auto& error = campusResult.error();
+            QString diagnostic = QString::fromUtf8(
+                error.message.data(),
+                static_cast<qsizetype>(error.message.size())
+                );
+            if (diagnostic.isEmpty())
+            {
+                diagnostic =
+                    tr("No additional error details are available.");
+            }
+
+            DialogServices::showWarning(
+                this,
+                tr("Initial Setup"),
+                tr(
+                    "The current campus preference could not be read. "
+                    "Your information was not saved. Retry by selecting "
+                    "Next again."
+                    ),
+                diagnostic
+                );
+            return false;
+        }
+        const std::string campus = campusResult.value();
 
         const auto zoomResult =
             ClassMngr::Next::Platform::

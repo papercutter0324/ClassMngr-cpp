@@ -931,6 +931,7 @@ private slots:
     void currentMonthUpcomingRowsMatchVisibleCalendarRange();
     void currentMonthNavigationEvictsPriorMonthResources();
     void next30DaysIncludesBoundariesAndFiltersEventTypes();
+    void campusReadFailureKeepsAllEventsVisible();
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
     void completedEmptyNextTenSearchShowsItsEmptyLabel();
     void completedEmptyUpcomingRangeShowsItsEmptyLabel();
@@ -2251,6 +2252,67 @@ next30DaysIncludesBoundariesAndFiltersEventTypes()
         {QStringLiteral("before_filter"), transcriptRows(actualBeforeFilter)},
         {QStringLiteral("after_filter"), transcriptRows(actualAfterFilter)}
     });
+}
+
+void CalendarPageEventMutationParityTests::
+campusReadFailureKeepsAllEventsVisible()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    SettingsRepository* const settings =
+        workspace.services.databaseSession()->settingsRepository();
+    QVERIFY(settings);
+    QVERIFY(settings->saveSetting(
+        QStringLiteral("myInfo/campus"),
+        QStringLiteral("j")
+        ));
+
+    const QDate eventDate = QDate::currentDate().addDays(2);
+    CalendarEvent otherCampusEvent;
+    otherCampusEvent.title = QStringLiteral("F1066 Bundang Campus Event");
+    otherCampusEvent.eventType = QStringLiteral("Workshop");
+    otherCampusEvent.timeStatus = QStringLiteral("Timed");
+    otherCampusEvent.startDate = eventDate;
+    otherCampusEvent.startTime = QTime(9, 0);
+    otherCampusEvent.endDate = eventDate;
+    otherCampusEvent.endTime = QTime(10, 0);
+    QVERIFY2(
+        saveFixtureEvent(workspace, otherCampusEvent, &setupError) > 0,
+        qPrintable(setupError)
+        );
+
+    QVERIFY2(
+        executeWorkspaceSql(
+            workspace,
+            QStringLiteral(
+                "ALTER TABLE app_settings "
+                "RENAME TO app_settings_temporarily_unavailable"
+                ),
+            &setupError
+            ),
+        qPrintable(setupError)
+        );
+
+    CalendarPage page(&workspace.services);
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(1);
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget())
+            .join(QLatin1Char('\n'))
+            .contains(otherCampusEvent.title),
+        15000
+        );
 }
 
 void CalendarPageEventMutationParityTests::
