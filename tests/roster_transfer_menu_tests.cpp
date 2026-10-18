@@ -460,6 +460,7 @@ private slots:
     void targetRosterReadFailureBehavesLikeEmptyRoster();
     void targetRosterCellReadFailureBehavesLikeEmptyRoster();
     void menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths();
+    void rejectedTargetQuestionableNameConfirmationIsSilent();
     void applyFailureKeepsSourceAndAutosaveState_data();
     void applyFailureKeepsSourceAndAutosaveState();
     void workflowProjectionMatchesRosterModel();
@@ -1024,6 +1025,79 @@ menuTransferUsesFreshTargetRosterAndPreservesCustomColumnsAndWidths()
     QCOMPARE(targetAfter->rows.at(1), expectedTransferredRow);
 }
 
+void RosterTransferMenuTests::rejectedTargetQuestionableNameConfirmationIsSilent()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    int targetId = 0;
+    QVERIFY2(fixture.createClass("Source", "E4", "Perseus", -1, &sourceId, &error), qPrintable(error));
+    QVERIFY2(fixture.createClass("Target", "E4", "Theseus", -1, &targetId, &error), qPrintable(error));
+
+    const QStringList sourceRow{
+        QStringLiteral("Transferred Student"), QString::fromUtf16(u"\uAE40\uBBFC\uC9C0"),
+        QString(), QString(), QString(), QString()
+    };
+    Roster sourceRoster;
+    sourceRoster.columns = Roster::BaseColumns;
+    sourceRoster.rows.append(sourceRow);
+    QVERIFY(fixture.services.rosterService()->saveRoster(sourceId, sourceRoster));
+
+    Roster targetRosterAfterMenuSnapshot;
+    targetRosterAfterMenuSnapshot.columns = Roster::BaseColumns;
+    targetRosterAfterMenuSnapshot.rows.append({
+        QStringLiteral("Existing Student"), QString::fromUtf16(u"\uD64D\uAE38\uB3D9"),
+        QString(), QString(), QString(), QString()
+    });
+    Roster questionableTarget = targetRosterAfterMenuSnapshot;
+    questionableTarget.rows[0][1] = QString::fromUtf16(u"\uAE40");
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom("Source", sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(QStringLiteral("rosterTable"));
+    QVERIFY(table);
+
+    bool questionableTargetUpdated = false;
+    QString questionableTargetUpdateError;
+    const TransferMenuActionSnapshot action = triggerTransferMenuAction(
+        editor, table, displayLabel("E4", "Theseus"), fixture.services, targetId,
+        targetRosterAfterMenuSnapshot,
+        [&]
+        {
+            const Status updated = fixture.services.rosterService()->saveRoster(
+                targetId, questionableTarget, true);
+            questionableTargetUpdated = static_cast<bool>(updated);
+            if (!updated)
+                questionableTargetUpdateError = updated.error();
+        });
+    QVERIFY(action.targetActionTriggered);
+    QVERIFY2(questionableTargetUpdated, qPrintable(questionableTargetUpdateError));
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QCOMPARE(prompts.confirmations.constFirst().title,
+        QStringLiteral("Verify Korean Name Lengths"));
+    QVERIFY(prompts.confirmations.constFirst().message.contains(
+        QStringLiteral("Row 1: \uAE40")));
+    QVERIFY(prompts.messages.isEmpty());
+    QVERIFY(prompts.asynchronousMessages.isEmpty());
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    const auto sourceAfter = fixture.services.rosterService()->roster(sourceId);
+    const auto targetAfter = fixture.services.rosterService()->roster(targetId);
+    QVERIFY(sourceAfter);
+    QVERIFY(targetAfter);
+    QCOMPARE(sourceAfter->rows.size(), 1);
+    QCOMPARE(sourceAfter->rows.at(0), sourceRow);
+    QCOMPARE(targetAfter->rows.size(), 1);
+    QCOMPARE(targetAfter->rows.at(0), questionableTarget.rows.at(0));
+}
+
 
 void RosterTransferMenuTests::applyFailureKeepsSourceAndAutosaveState_data()
 {
@@ -1133,6 +1207,14 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
         Domain::Result<void> saveTransfer(const RosterRowTransferSaveRequest& request) const override
         { saved = request; return Domain::Result<void>::success(); }
     } ports;
+    struct AcceptConfirmation final : RosterRowTransferConfirmationPort
+    {
+        bool confirmTargetQuestionableKoreanNameLengths(
+            const RosterSnapshot&,
+            const std::vector<RosterSaveIssue>&
+            ) const override
+        { return true; }
+    } confirmation;
     const auto snapshot = [](const Roster& roster)
     {
         RosterSnapshot result;
@@ -1159,9 +1241,11 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
     // Unicode whitespace differences in Korean names and malformed text.
     stored.rows = {
         {" note\t with  spaces ", QString::fromUtf16(u" \uBC15 \uC9C0\uBBFC(a) "), " fall\t value ", " oTHER  STUDENT ", "ignored", " preserve  me "},
-        {"", QString::fromUtf16(u"\uAE40\u00a0\uBBFC\uC9C0"), "", QString::fromUtf16(u"\u00e9 bad"), "", ""},
+        {"\u00e9 bad", QString::fromUtf16(u"\uAE40 \uBBFC\uC9C0"), "", "Other Student", "", ""},
         {"", "", "", "", "", ""}
     };
+    while (stored.rows.size() < 25)
+        stored.rows.append({"", "", "", "", "", ""});
     while (stored.rows.size() < 27)
         stored.rows.append({"tail", "", "", "", "", ""});
     stored.rows[0][5] = Ui::QtTextAdapter::fromUtf16String(u"\uFEFF\uFEFF keep  BOM ");
@@ -1184,7 +1268,8 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
     source.rows = {sourceRow};
     const auto result = RosterRowTransferUseCase::execute({
         *Domain::ClassId::fromString("1"), *Domain::ClassId::fromString("2"),
-        snapshot(source), 0, snapshot(source).columns}, ports, ports, equals);
+        snapshot(source), 0, snapshot(source).columns}, ports, ports, equals,
+        &confirmation);
     QVERIFY(std::holds_alternative<RosterRowTransferSuccess>(result));
     QVERIFY(ports.saved);
     QCOMPARE(ports.saved->targetRoster.columns, expectedRoster.columns);

@@ -48,6 +48,24 @@ struct Ports final : RosterReadPort, RosterRowTransferSavePort
     }
 };
 
+struct Confirmation final : RosterRowTransferConfirmationPort
+{
+    bool accepted = false;
+    mutable int calls = 0;
+    mutable std::optional<RosterSnapshot> target;
+    mutable std::vector<RosterSaveIssue> issues;
+
+    bool confirmTargetQuestionableKoreanNameLengths(
+        const RosterSnapshot& preparedTarget,
+        const std::vector<RosterSaveIssue>& questionableIssues) const override
+    {
+        ++calls;
+        target = preparedTarget;
+        issues = questionableIssues;
+        return accepted;
+    }
+};
+
 RosterRowTransferRequest request()
 {
     RosterSnapshot source{.columns = base, .columnWidths = {101,102,103,104,105,106},
@@ -59,8 +77,10 @@ RosterRowTransferRequest request()
 bool successProjectsAndCompactsWithoutMutatingInputs()
 {
     auto req = request();
-    req.sourceRoster.columns.push_back(u"Advisor Notes");
+    req.sourceRoster.columns.push_back(u" Advisor\tNotes ");
     req.sourceRoster.rows[0].push_back(u"  source\t note ");
+    req.sourceRoster.rows[1][0] = u"  Next\t Name  ";
+    req.sourceRoster.rows[1][1] = u" \uBC15 \uC9C0\uBBFC ";
     req.sourceRoster.columnWidths.push_back(107);
     const auto sourceBefore = req.sourceRoster;
     Ports ports;
@@ -74,14 +94,22 @@ bool successProjectsAndCompactsWithoutMutatingInputs()
     const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
     if (!ok || ok->destinationRow != 1 || !ports.saved) return false;
     const auto& saved = *ports.saved;
+    const auto removedSource = removeRosterRow(sourceBefore, 0);
+    if (!std::holds_alternative<RosterSnapshot>(removedSource)) return false;
+    const auto preparedSource = prepareRosterSaveText(
+        std::get<RosterSnapshot>(removedSource), true,
+        RosterSaveCaseInsensitiveEquals{equals});
     auto columns = base;
     columns.push_back(u"Advisor Notes"); columns.push_back(u"Extra Notes");
     return ports.calls == std::vector<std::string>{"read", "save"}
         && ports.readId == req.targetClassId
         && saved.sourceClassId == req.sourceClassId && saved.targetClassId == req.targetClassId
-        && saved.sourceRoster.columns == sourceBefore.columns
+        && !preparedSource.hasErrors()
+        && saved.sourceRoster == preparedSource.roster
+        && saved.sourceRoster.columns.back() == u"Advisor Notes"
         && saved.sourceRoster.columnWidths == sourceBefore.columnWidths
-        && saved.sourceRoster.rows[0] == sourceBefore.rows[1]
+        && saved.sourceRoster.rows[0] == std::vector<std::u16string>{
+            u"Next Name", u"\uBC15\uC9C0\uBBFC"}
         && saved.sourceRoster.rows.back() == std::vector<std::u16string>(7)
         && saved.targetRoster.columns == columns
         && saved.targetRoster.columnWidths == std::vector<int>{240,220,0,0,0,230,210,0}
@@ -261,11 +289,23 @@ bool emptyTargetUsesCanonicalBaseAndRowZero()
 bool warningOnlySnapshotPreparationStillSaves()
 {
     auto req = request();
+    req.sourceQuestionableKoreanNameLengthsConfirmed = true;
     req.sourceRoster.rows[0][1] = u"\uAE40";
     Ports ports;
-    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    Confirmation confirmation;
+    confirmation.accepted = true;
+    const auto result = RosterRowTransferUseCase::execute(
+        req, ports, ports, equals, &confirmation);
     const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
-    if (!ok || !ports.saved || ports.calls != std::vector<std::string>{"read", "save"})
+    if (!ok || !ports.saved || ports.calls != std::vector<std::string>{"read", "save"}
+        || confirmation.calls != 1 || !confirmation.target
+        || confirmation.issues.size() != 1)
+        return false;
+    const auto& issue = confirmation.issues.front();
+    if (issue.code != "student_name.korean.too_short" || issue.row != 0
+        || issue.column != 1 || issue.severity != RosterSaveIssueSeverity::Warning
+        || confirmation.target->rows[0][1] != u"\uAE40"
+        || *confirmation.target != ports.saved->targetRoster)
         return false;
     if (ok->destinationRow >= ports.saved->targetRoster.rows.size()
         || ports.saved->targetRoster.rows[ok->destinationRow][1] != u"\uAE40")
@@ -274,6 +314,56 @@ bool warningOnlySnapshotPreparationStillSaves()
     const auto prepared = prepareRosterSaveText(
         ports.saved->targetRoster, true, RosterSaveCaseInsensitiveEquals{equals});
     return !prepared.issues.empty() && !prepared.hasErrors();
+}
+
+bool rejectedTargetQuestionableKoreanLengthCancelsBeforeSave()
+{
+    auto req = request();
+    req.sourceQuestionableKoreanNameLengthsConfirmed = true;
+    req.sourceRoster.rows[0][1] = u"\uAE40";
+    Ports ports;
+    Confirmation confirmation;
+
+    const auto result = RosterRowTransferUseCase::execute(
+        req, ports, ports, equals, &confirmation);
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error && error->code == Domain::ErrorCode::Canceled
+        && error->recoverable
+        && confirmation.calls == 1
+        && confirmation.issues.size() == 1
+        && confirmation.issues.front().code == "student_name.korean.too_short"
+        && confirmation.target
+        && ports.calls == std::vector<std::string>{"read"}
+        && !ports.saved;
+}
+
+bool missingTargetConfirmationPortCancelsBeforeSave()
+{
+    auto req = request();
+    req.sourceQuestionableKoreanNameLengthsConfirmed = true;
+    req.sourceRoster.rows[0][1] = u"\uAE40";
+    Ports ports;
+
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error && error->code == Domain::ErrorCode::Canceled
+        && error->recoverable
+        && ports.calls == std::vector<std::string>{"read"}
+        && !ports.saved;
+}
+
+bool rejectsQuestionableKoreanLengthWithoutConfirmation()
+{
+    auto req = request();
+    req.sourceRoster.rows[1][1] = u"\uAE40";
+    Ports ports;
+
+    const auto result = RosterRowTransferUseCase::execute(req, ports, ports, equals);
+    const auto* error = std::get_if<Domain::OperationError>(&result);
+    return error && error->code == Domain::ErrorCode::Validation
+        && !error->recoverable
+        && error->message == "Source roster failed validation before transfer."
+        && ports.calls.empty() && !ports.saved;
 }
 
 bool legacyCollisionStillRejectsWithoutWriting()
@@ -319,6 +409,9 @@ int main()
         {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},
         {"empty target base columns and row zero",emptyTargetUsesCanonicalBaseAndRowZero},
         {"warning-only roster preparation",warningOnlySnapshotPreparationStillSaves},
+        {"rejected target name lengths cancel before saving",rejectedTargetQuestionableKoreanLengthCancelsBeforeSave},
+        {"missing target confirmation cancels before saving",missingTargetConfirmationPortCancelsBeforeSave},
+        {"questionable Korean length requires confirmation",rejectsQuestionableKoreanLengthWithoutConfirmation},
         {"ordered preparation rejections",rejectsPreparationWithoutSave},
         {"read and save failures",propagatesPortErrorsAndKeepsSnapshots},
         {"legacy name-pair collision",legacyCollisionStillRejectsWithoutWriting}};

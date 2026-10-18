@@ -7,7 +7,9 @@
 #include "domain/validation/roster_validator.h"
 #include "features/roster/ui/roster_save_validation_adapter.h"
 #include <random>
+#include "next/application/roster_row_transfer_use_case.h"
 #include "next/platform/application_services_roster_save_port.h"
+#include "next/platform/application_services_roster_read_port.h"
 #include "next/platform/application_services_roster_row_transfer_save_port.h"
 
 #include <QSqlError>
@@ -32,6 +34,53 @@ QString databasePath(QTemporaryDir& directory)
             )
         );
 }
+
+const std::vector<std::u16string> transferBaseColumns{
+    u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
+};
+
+Application::RosterSnapshot transferSnapshot(
+    const std::vector<std::u16string>& firstRow,
+    const std::vector<std::u16string>& secondRow = {})
+{
+    Application::RosterSnapshot snapshot;
+    snapshot.columns = transferBaseColumns;
+    snapshot.columnWidths = {101, 102, 103, 104, 105, 106};
+    snapshot.rows.resize(25, std::vector<std::u16string>(transferBaseColumns.size()));
+    snapshot.rows[0] = firstRow;
+    if (!secondRow.empty())
+        snapshot.rows[1] = secondRow;
+    return snapshot;
+}
+
+Roster legacyTransferRoster(const Application::RosterSnapshot& snapshot)
+{
+    Roster roster;
+    for (const auto& column : snapshot.columns)
+        roster.columns.append(QString::fromStdU16String(column));
+    for (const int width : snapshot.columnWidths)
+        roster.columnWidths.append(width);
+    for (const auto& sourceRow : snapshot.rows)
+    {
+        QStringList row;
+        for (const auto& cell : sourceRow)
+            row.append(QString::fromStdU16String(cell));
+        roster.rows.append(std::move(row));
+    }
+    return roster;
+}
+
+struct AcceptRosterTransferConfirmation final
+    : Application::RosterRowTransferConfirmationPort
+{
+    bool confirmTargetQuestionableKoreanNameLengths(
+        const Application::RosterSnapshot&,
+        const std::vector<Application::RosterSaveIssue>&
+        ) const override
+    {
+        return true;
+    }
+};
 
 Application::RosterSaveRequest request(
     const int classId,
@@ -98,6 +147,8 @@ private slots:
     void repositoryFailureMapsTechnicalAndRollsBack();
     void closedSessionReturnsFailureWithoutDataServiceFallback();
     void rowTransferClosedSessionReturnsRecoverableUnavailableFailure();
+    void rowTransferPersistsPreparedRostersAndConfirmedKoreanLength();
+    void rowTransferSecondRosterFailureRollsBackBothWrites();
 };
 
 void NextPlatformApplicationServicesRosterSavePortTests::
@@ -413,6 +464,147 @@ rowTransferClosedSessionReturnsRecoverableUnavailableFailure()
     QCOMPARE(result.error().code, Domain::ErrorCode::NotFound);
     QCOMPARE(result.error().message, std::string("The roster service is unavailable."));
     QVERIFY(result.error().recoverable);
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+rowTransferPersistsPreparedRostersAndConfirmedKoreanLength()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto sourceClass = services.classService()->create(
+        QStringLiteral("Roster Transfer Source")
+        );
+    const auto targetClass = services.classService()->create(
+        QStringLiteral("Roster Transfer Target")
+        );
+    QVERIFY(sourceClass);
+    QVERIFY(targetClass);
+
+    const auto sourceId = Domain::ClassId::fromString(std::to_string(*sourceClass));
+    const auto targetId = Domain::ClassId::fromString(std::to_string(*targetClass));
+    QVERIFY(sourceId);
+    QVERIFY(targetId);
+
+    const Application::RosterSnapshot source = transferSnapshot(
+        {u"  Alice\t ", u" \uAE40 ", u"", u"", u"", u""},
+        {u"  Bob\t Jones  ", u" \uBC15 \uC9C0\uBBFC ", u"", u"", u"", u""}
+        );
+    const Application::RosterSnapshot originalTarget = transferSnapshot(
+        {u"Current", u"\uD64D\uAE38\uB3D9", u"", u"", u"", u""}
+        );
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveRoster(*sourceClass, legacyTransferRoster(source)));
+    QVERIFY(repository->saveRoster(*targetClass, legacyTransferRoster(originalTarget)));
+
+    Platform::ApplicationServicesRosterReadPort readPort(services);
+    Platform::ApplicationServicesRosterRowTransferSavePort savePort(&services);
+    const AcceptRosterTransferConfirmation confirmation;
+    const auto result = Application::RosterRowTransferUseCase::execute(
+        {
+            .sourceClassId = *sourceId,
+            .targetClassId = *targetId,
+            .sourceRoster = source,
+            .sourceRow = 0,
+            .baseColumnNames = transferBaseColumns,
+            .sourceQuestionableKoreanNameLengthsConfirmed = true
+        },
+        readPort,
+        savePort,
+        Platform::rosterSaveCaseInsensitiveEquals,
+        &confirmation
+        );
+    const auto* transferred =
+        std::get_if<Application::RosterRowTransferSuccess>(&result);
+    QVERIFY(transferred);
+    QCOMPARE(transferred->destinationRow, std::size_t{1});
+
+    const auto savedSource = repository->loadRoster(*sourceClass);
+    const auto savedTarget = repository->loadRoster(*targetClass);
+    QVERIFY(savedSource);
+    QVERIFY(savedTarget);
+    QCOMPARE(savedSource->rows.size(), 1);
+    QCOMPARE(savedSource->rows.at(0).at(0), QStringLiteral("Bob Jones"));
+    QCOMPARE(savedSource->rows.at(0).at(1), QString::fromStdU16String(u"\uBC15\uC9C0\uBBFC"));
+    QCOMPARE(savedTarget->rows.size(), 2);
+    QCOMPARE(savedTarget->rows.at(1).at(0), QStringLiteral("Alice"));
+    // A one-syllable Korean name is permitted by the UI only after its
+    // questionable-length confirmation; the prepared text is persisted.
+    QCOMPARE(savedTarget->rows.at(1).at(1), QString::fromStdU16String(u"\uAE40"));
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+rowTransferSecondRosterFailureRollsBackBothWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto sourceClass = services.classService()->create(
+        QStringLiteral("Roster Transfer Rollback Source")
+        );
+    const auto targetClass = services.classService()->create(
+        QStringLiteral("Roster Transfer Rollback Target")
+        );
+    QVERIFY(sourceClass);
+    QVERIFY(targetClass);
+
+    const auto sourceId = Domain::ClassId::fromString(std::to_string(*sourceClass));
+    const auto targetId = Domain::ClassId::fromString(std::to_string(*targetClass));
+    QVERIFY(sourceId);
+    QVERIFY(targetId);
+    const Application::RosterSnapshot originalSource = transferSnapshot(
+        {u"Original Source", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u""}
+        );
+    const Application::RosterSnapshot originalTarget = transferSnapshot(
+        {u"Original Target", u"\uBC15\uC9C0\uBBFC", u"", u"", u"", u""}
+        );
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    QVERIFY(repository->saveRoster(*sourceClass, legacyTransferRoster(originalSource)));
+    QVERIFY(repository->saveRoster(*targetClass, legacyTransferRoster(originalTarget)));
+    const auto originalSourceStored = repository->loadRoster(*sourceClass);
+    const auto originalTargetStored = repository->loadRoster(*targetClass);
+    QVERIFY(originalSourceStored);
+    QVERIFY(originalTargetStored);
+
+    QSqlQuery trigger(services.databaseSession()->database());
+    const QString createTrigger = QStringLiteral(
+        "CREATE TRIGGER reject_second_transfer_roster_column "
+        "BEFORE INSERT ON roster_columns WHEN NEW.class_id=%1 "
+        "BEGIN SELECT RAISE(ABORT, 'injected second roster failure'); END"
+        ).arg(*targetClass);
+    QVERIFY2(trigger.exec(createTrigger), qPrintable(trigger.lastError().text()));
+
+    Platform::ApplicationServicesRosterRowTransferSavePort port(&services);
+    const auto failed = port.saveTransfer({
+        .sourceClassId = *sourceId,
+        .targetClassId = *targetId,
+        .sourceRoster = transferSnapshot(
+            {u"Changed Source", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u""}),
+        .targetRoster = transferSnapshot(
+            {u"Changed Target", u"\uC774\uC601\uC218", u"", u"", u"", u""})
+    });
+    QVERIFY(!failed);
+    QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(!failed.error().message.empty());
+
+    const auto persistedSource = repository->loadRoster(*sourceClass);
+    const auto persistedTarget = repository->loadRoster(*targetClass);
+    QVERIFY(persistedSource);
+    QVERIFY(persistedTarget);
+    QCOMPARE(persistedSource->columns, originalSourceStored->columns);
+    QCOMPARE(persistedSource->columnWidths, originalSourceStored->columnWidths);
+    QCOMPARE(persistedSource->rows, originalSourceStored->rows);
+    QCOMPARE(persistedTarget->columns, originalTargetStored->columns);
+    QCOMPARE(persistedTarget->columnWidths, originalTargetStored->columnWidths);
+    QCOMPARE(persistedTarget->rows, originalTargetStored->rows);
 }
 
 

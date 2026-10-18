@@ -94,6 +94,55 @@ QString classesListErrorMessage(const std::string& message)
         );
 }
 
+class RosterRowTransferConfirmationAdapter final
+    : public ClassMngr::Next::Application::RosterRowTransferConfirmationPort
+{
+public:
+    explicit RosterRowTransferConfirmationAdapter(QWidget* parent) noexcept
+        : m_parent(parent)
+    {
+    }
+
+    [[nodiscard]] bool confirmTargetQuestionableKoreanNameLengths(
+        const ClassMngr::Next::Application::RosterSnapshot& preparedTarget,
+        const std::vector<ClassMngr::Next::Application::RosterSaveIssue>& issues
+        ) const override
+    {
+        QStringList names;
+        for (const auto& issue : issues)
+        {
+            if (issue.row < 0 || issue.column < 0
+                || static_cast<std::size_t>(issue.row) >= preparedTarget.rows.size()
+                || static_cast<std::size_t>(issue.column)
+                    >= preparedTarget.rows[static_cast<std::size_t>(issue.row)].size())
+            {
+                continue;
+            }
+
+            const auto& name = preparedTarget.rows[static_cast<std::size_t>(issue.row)]
+                [static_cast<std::size_t>(issue.column)];
+            names.append(RosterModel::tr("Row %1: %2")
+                .arg(issue.row + 1)
+                .arg(Ui::QtTextAdapter::fromUtf16String(name)));
+        }
+        if (names.isEmpty())
+            return false;
+
+        return DialogServices::confirm(
+            m_parent,
+            RosterModel::tr("Verify Korean Name Lengths"),
+            RosterModel::tr(
+                "These Korean names have 1 or 5+ syllables and may be incorrect:\n%1\n\nSave them anyway?")
+                .arg(names.join(QLatin1Char('\n'))),
+            RosterModel::tr("Save Anyway"),
+            RosterModel::tr("Go Back")
+            ) == PromptChoice::Accepted;
+    }
+
+private:
+    QWidget* m_parent = nullptr;
+};
+
 ClassMngr::Next::Application::RosterSnapshot applicationSnapshot(const Roster& roster)
 {
     ClassMngr::Next::Application::RosterSnapshot snapshot;
@@ -540,11 +589,13 @@ void RosterEditorWidget::transferRosterRow(
         .targetClassId = *targetId,
         .sourceRoster = applicationSnapshot(currentRosterForSave()),
         .sourceRow = row,
-        .baseColumnNames = std::move(baseColumns)
+        .baseColumnNames = std::move(baseColumns),
+        .sourceQuestionableKoreanNameLengthsConfirmed = true
     };
     ClassMngr::Next::Platform::ApplicationServicesRosterReadPort readPort(m_services);
     ClassMngr::Next::Platform::ApplicationServicesRosterRowTransferSavePort savePort(
         m_services);
+    const RosterRowTransferConfirmationAdapter confirmationPort(this);
     const auto transferred =
         ClassMngr::Next::Application::RosterRowTransferUseCase::execute(
             request, readPort, savePort,
@@ -553,10 +604,19 @@ void RosterEditorWidget::transferRosterRow(
                 return Ui::QtTextAdapter::fromUtf16String(left).compare(
                     Ui::QtTextAdapter::fromUtf16String(right),
                     Qt::CaseInsensitive) == 0;
-            });
+            },
+            &confirmationPort);
     if (!std::holds_alternative<
             ClassMngr::Next::Application::RosterRowTransferSuccess>(transferred))
     {
+        if (const auto* operationError =
+                std::get_if<ClassMngr::Next::Domain::OperationError>(&transferred);
+            operationError
+            && operationError->code == ClassMngr::Next::Domain::ErrorCode::Canceled)
+        {
+            return;
+        }
+
         reason = transferFailureMessage(transferred);
         DialogServices::showWarning(this, tr("Cannot Transfer Student"),
             reason.isEmpty() ? tr("The student could not be transferred.") : reason);

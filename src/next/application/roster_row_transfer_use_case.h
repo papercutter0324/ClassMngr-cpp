@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 namespace ClassMngr::Next::Application
 {
@@ -22,6 +23,7 @@ struct RosterRowTransferRequest final
     RosterSnapshot sourceRoster;
     int sourceRow = -1;
     std::vector<std::u16string> baseColumnNames;
+    bool sourceQuestionableKoreanNameLengthsConfirmed = false;
 };
 
 struct RosterRowTransferSaveRequest final
@@ -40,6 +42,17 @@ public:
     // Both snapshots must be saved in one transaction, or neither is saved.
     [[nodiscard]] virtual Domain::Result<void> saveTransfer(
         const RosterRowTransferSaveRequest& request
+        ) const = 0;
+};
+
+class RosterRowTransferConfirmationPort
+{
+public:
+    virtual ~RosterRowTransferConfirmationPort() = default;
+
+    [[nodiscard]] virtual bool confirmTargetQuestionableKoreanNameLengths(
+        const RosterSnapshot& preparedTarget,
+        const std::vector<RosterSaveIssue>& issues
         ) const = 0;
 };
 
@@ -63,7 +76,8 @@ public:
         const RosterRowTransferRequest& request,
         const RosterReadPort& readPort,
         const RosterRowTransferSavePort& savePort,
-        CaseInsensitiveEquals&& caseInsensitiveEquals
+        CaseInsensitiveEquals&& caseInsensitiveEquals,
+        const RosterRowTransferConfirmationPort* confirmationPort = nullptr
         )
     {
         if (!isCanonicalPositiveDecimalId(request.sourceClassId.value())
@@ -94,8 +108,9 @@ public:
                 return std::invoke(equals, left, right);
             };
         const auto& source = std::get<RosterSnapshot>(removed);
-        const auto preparedSource = prepareRosterSaveText(
-            source, true, validationEquals);
+        auto preparedSource = prepareRosterSaveText(
+            source, request.sourceQuestionableKoreanNameLengthsConfirmed,
+            validationEquals);
         if (preparedSource.hasErrors())
             return validationError("Source");
 
@@ -117,16 +132,35 @@ public:
         auto& insertion = std::get<RosterRowTransferPreparation>(prepared);
         const std::size_t destinationRow = insertion.destinationRow;
         target.rows[destinationRow] = std::move(insertion.mappedRow);
-        const auto preparedTarget = prepareRosterSaveText(
+        auto preparedTarget = prepareRosterSaveText(
             target, true, validationEquals);
         if (preparedTarget.hasErrors())
             return validationError("Target");
 
+        std::vector<RosterSaveIssue> questionableKoreanNameIssues;
+        for (const auto& issue : preparedTarget.issues)
+        {
+            if (issue.code == "student_name.korean.too_short"
+                || issue.code == "student_name.korean.too_long")
+                questionableKoreanNameIssues.push_back(issue);
+        }
+        if (!questionableKoreanNameIssues.empty()
+            && (!confirmationPort
+                || !confirmationPort->confirmTargetQuestionableKoreanNameLengths(
+                    preparedTarget.roster, questionableKoreanNameIssues)))
+        {
+            return Domain::OperationError{
+                .code = Domain::ErrorCode::Canceled,
+                .message = "Target Korean name lengths were not confirmed.",
+                .recoverable = true
+            };
+        }
+
         const auto saved = savePort.saveTransfer({
             .sourceClassId = request.sourceClassId,
             .targetClassId = request.targetClassId,
-            .sourceRoster = std::move(std::get<RosterSnapshot>(removed)),
-            .targetRoster = std::move(target)
+            .sourceRoster = std::move(preparedSource.roster),
+            .targetRoster = std::move(preparedTarget.roster)
         });
         if (!saved)
             return saved.error();

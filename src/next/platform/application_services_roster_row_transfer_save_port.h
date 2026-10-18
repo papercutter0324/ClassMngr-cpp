@@ -2,6 +2,9 @@
 
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "data/database/database_session.h"
+#include "data/repositories/roster_repository.h"
+#include "domain/models/roster.h"
 #include "next/application/roster_row_transfer_use_case.h"
 
 #include <QString>
@@ -29,13 +32,20 @@ public:
         if (!sourceId || !targetId || *sourceId == *targetId)
             return failure(Domain::ErrorCode::InvalidInput,
                 "Transfer requires distinct canonical positive class IDs.");
-        if (!m_services || !m_services->hasOpenDatabase()
-            || !m_services->rosterService())
+        DatabaseSession* const session =
+            m_services ? m_services->databaseSession() : nullptr;
+        if (!session || !session->isOpen())
             return failure(Domain::ErrorCode::NotFound,
                 "The roster service is unavailable.", true);
+
+        RosterRepository* const repository = session->rosterRepository();
+        if (!repository)
+            return failure(Domain::ErrorCode::Technical,
+                "Roster repository is unavailable.");
+
         try
         {
-            const Status saved = m_services->rosterService()->saveRosters({
+            const Status saved = repository->saveRosters({
                 {*sourceId, legacyRoster(request.sourceRoster)},
                 {*targetId, legacyRoster(request.targetRoster)}
             });
