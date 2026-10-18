@@ -45595,6 +45595,27 @@ test rejects ASCII whitespace, U+00A0, and U+3000 without changing the running
 snapshot, preserves the 4,096/4,097-byte boundary, accepts valid references,
 and confirms malformed UTF-8 remains nonblank. The independent target build
 passed, the focused CTest passed (1/1), and `git diff --check` passed. Batch446's
-F1054 and F1055 slice commits are complete; push Batch446 before starting
-F1056. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
-and Phase 2 remains open.
+F1054 and F1055 slice commits are complete and pushed before F1056 begins.
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+Phase 2 remains open.
+
+### Batch446 push - 2026-10-18
+
+Pushed `5a336fe5` to `origin/Qt-Rewrite`, advancing it from `bed2cfd3`. The
+push includes F1054 (`f7e6dc4a`), F1055 (`a317783d`), and the Batch446 plan and
+progress record. F1056 is now the current Batch447 slice. Gates 1/2 remain
+Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
+open.
+
+### F1056 completion - 2026-10-18
+
+F1056 is committed as `acaec587` (`Phase2 - Reject updates to missing
+campuses`). The typed Campus Dashboard Update adapter now returns recoverable
+`NotFound` before calling the legacy upsert when the target JSON file is absent.
+Tests cover the absent-file adapter result, preserved Create/Update behavior,
+and a stale page draft that remains dirty while showing the error. The
+independent Debug build passed for both affected targets; their focused CTests
+passed (2/2), and `git diff --check` passed. No full suite was run. Batch447
+consists of F1056. Batch448 discovery starts before the next implementation.
+Gates 1/2 remain Partial, F1007 remains pending policy reconciliation, and
+Phase 2 remains open.
