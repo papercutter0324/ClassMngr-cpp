@@ -350,6 +350,10 @@ void NavigationController::handleNavigation(
                 && !m_pages->confirmCurrentPageCanLeave()
                 )
             {
+                if (m_sidebar)
+                {
+                    m_sidebar->restorePreviousSelection();
+                }
                 return;
             }
 
