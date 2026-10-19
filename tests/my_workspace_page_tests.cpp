@@ -424,6 +424,7 @@ private slots:
     void legacyZoomValuesMigrateDuringPersonalDetailsLoad();
     void zoomPreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload();
     void storedSignaturePreferencesPopulateModeTextAndFont();
+    void signatureFontChoicesMapToPersistedValuesThroughMyWorkspace();
     void signaturePreferenceReadFailurePreservesControlsAndBlocksSaveUntilReload();
     void signatureImageReadFailurePreservesImageAndBlocksSaveUntilReload();
     void unavailableSettingsLeavePersonalDetailsFieldsUnchangedOnLoad();
@@ -1857,6 +1858,51 @@ void MyWorkspacePageTests::storedSignaturePreferencesPopulateModeTextAndFont()
     for (int index = 0; index < fontButtons.size(); ++index)
     {
         QCOMPARE(fontButtons.at(index)->isChecked(), index == 2);
+    }
+}
+
+void MyWorkspacePageTests::
+signatureFontChoicesMapToPersistedValuesThroughMyWorkspace()
+{
+    for (int storedValue = 0; storedValue < 4; ++storedValue)
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, directory));
+        QVERIFY(services.dataService());
+        QVERIFY(
+            services.dataService()->saveSetting(
+                QString::fromUtf8(TypedSignatureFontKey),
+                storedValue
+                )
+            );
+
+        MyWorkspacePage page(&services);
+        refreshPersonalDetails(page);
+        PersonalDetailsPage* const details = page.personalDetailsPage();
+        QVERIFY(details);
+        const QList<QPushButton*> fontButtons =
+            details->findChildren<QPushButton*>(
+                QStringLiteral("typedSignatureFontButton")
+                );
+        QCOMPARE(fontButtons.size(), 4);
+        for (int index = 0; index < fontButtons.size(); ++index)
+        {
+            QCOMPARE(fontButtons.at(index)->isChecked(), index == storedValue);
+        }
+
+        const int selectedValue = (storedValue + 1) % 4;
+        fontButtons.at(selectedValue)->click();
+        QVERIFY(fontButtons.at(selectedValue)->isChecked());
+        QVERIFY(details->saveChanges());
+
+        const auto savedFont = services.dataService()->loadSetting(
+            QString::fromUtf8(TypedSignatureFontKey)
+            );
+        QVERIFY(savedFont);
+        QCOMPARE(savedFont->toInt(), selectedValue);
     }
 }
 

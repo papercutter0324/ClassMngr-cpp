@@ -18,7 +18,8 @@ struct PersonalDetailsSaveRequest final
     std::string signatureImage;
     PersonalSignatureMode signatureMode = PersonalSignatureMode::Image;
     std::string typedSignatureText;
-    int typedSignatureFont = 0;
+    PersonalSignatureFontChoice typedSignatureFont =
+        PersonalSignatureFontChoice::JustAnotherHand;
 };
 
 using PersonalDetailsSaveResult = Domain::Result<void>;

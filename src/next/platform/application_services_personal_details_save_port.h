@@ -218,11 +218,23 @@ private:
             : 0;
     }
 
-    [[nodiscard]] static int normalizedSignatureFont(int font)
+    [[nodiscard]] static int normalizedSignatureFont(
+        Application::PersonalSignatureFontChoice font
+        )
     {
-        return font >= 0 && font <= 3
-            ? font
-            : 0;
+        switch (font)
+        {
+        case Application::PersonalSignatureFontChoice::JustAnotherHand:
+            return 0;
+        case Application::PersonalSignatureFontChoice::DancingScript:
+            return 1;
+        case Application::PersonalSignatureFontChoice::GreatVibes:
+            return 2;
+        case Application::PersonalSignatureFontChoice::Caveat:
+            return 3;
+        default:
+            return 0;
+        }
     }
 
     DatabaseSession* m_session = nullptr;

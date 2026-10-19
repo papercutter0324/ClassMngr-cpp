@@ -13,11 +13,20 @@ enum class PersonalSignatureMode
     Type
 };
 
+enum class PersonalSignatureFontChoice
+{
+    JustAnotherHand = 0,
+    DancingScript = 1,
+    GreatVibes = 2,
+    Caveat = 3
+};
+
 struct PersonalSignaturePreferences final
 {
     PersonalSignatureMode mode = PersonalSignatureMode::Image;
     std::string typedSignatureText;
-    int typedSignatureFont = 0;
+    PersonalSignatureFontChoice typedSignatureFont =
+        PersonalSignatureFontChoice::JustAnotherHand;
 
     friend bool operator==(
         const PersonalSignaturePreferences&,

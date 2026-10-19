@@ -2,6 +2,7 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "features/my_info/data/signature_image_processor.h"
+#include "next/application/personal_details_save.h"
 #include "next/platform/application_services_personal_details_save_port.h"
 
 #include <QBuffer>
@@ -12,8 +13,11 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <array>
 #include <cstddef>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Platform;
@@ -84,6 +88,16 @@ std::string utf8(const QString& value)
     return bytes(value.toUtf8());
 }
 
+static_assert(std::is_same_v<
+              decltype(PersonalDetailsSaveRequest::typedSignatureFont),
+              PersonalSignatureFontChoice
+              >);
+static_assert(!std::is_same_v<
+              decltype(PersonalDetailsSaveRequest::typedSignatureFont),
+              int
+              >);
+static_assert(!std::is_convertible_v<PersonalSignatureFontChoice, int>);
+
 QString expectedUtf8Text()
 {
     return QString::fromUtf8(
@@ -120,7 +134,7 @@ PersonalDetailsSaveRequest replacementRequest(
         .signatureImage = bytes(image),
         .signatureMode = PersonalSignatureMode::Type,
         .typedSignatureText = utf8(expectedUtf8Text()),
-        .typedSignatureFont = 2
+        .typedSignatureFont = PersonalSignatureFontChoice::GreatVibes
     };
 }
 
@@ -134,6 +148,7 @@ class NextPlatformApplicationServicesPersonalDetailsSavePortTests final
 private slots:
     void initTestCase();
     void savesAllNineExactKeysWithUtf8AndPreparedImage();
+    void savesAllFourFontChoicesWithTheirExactStoredValues();
     void normalizesModeAndFontValues();
     void saveFailureRollsBackAllKeysAndPreservesUnrelatedSettings();
     void unavailableSettingsReturnFailureWithoutPartialWrites();
@@ -248,7 +263,7 @@ normalizesModeAndFontValues()
 
     PersonalDetailsSaveRequest request;
     request.signatureMode = static_cast<PersonalSignatureMode>(99);
-    request.typedSignatureFont = 99;
+    request.typedSignatureFont = static_cast<PersonalSignatureFontChoice>(99);
 
     ApplicationServicesPersonalDetailsSavePort port(services);
     QVERIFY(port.save(request));
@@ -265,6 +280,35 @@ normalizesModeAndFontValues()
             ->toInt(),
         0
         );
+}
+
+void NextPlatformApplicationServicesPersonalDetailsSavePortTests::
+savesAllFourFontChoicesWithTheirExactStoredValues()
+{
+    constexpr std::array choices = {
+        std::pair{0, PersonalSignatureFontChoice::JustAnotherHand},
+        std::pair{1, PersonalSignatureFontChoice::DancingScript},
+        std::pair{2, PersonalSignatureFontChoice::GreatVibes},
+        std::pair{3, PersonalSignatureFontChoice::Caveat}
+    };
+
+    for (const auto& [expectedValue, choice] : choices)
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.dataService());
+
+        PersonalDetailsSaveRequest request;
+        request.typedSignatureFont = choice;
+        ApplicationServicesPersonalDetailsSavePort port(services);
+        QVERIFY(port.save(request));
+
+        const auto stored = services.dataService()->loadSetting(
+            QString::fromUtf8(TypedSignatureFontKey)
+            );
+        QVERIFY(stored);
+        QCOMPARE(stored->toInt(), expectedValue);
+    }
 }
 
 void NextPlatformApplicationServicesPersonalDetailsSavePortTests::

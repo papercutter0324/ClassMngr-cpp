@@ -253,6 +253,7 @@ private slots:
     void signatureImageReadFailureBlocksAggregateSaveAndCanRetry();
     void zoomPreferenceReadFailureBlocksAggregateSaveAndCanRetry();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
+    void aggregateSetupSavePreservesAllFourSignatureFontValues();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
     void aggregateSaveComposesTypedReadsWithoutDataLoss();
 
@@ -1292,6 +1293,42 @@ zoomPreferenceReadFailureBlocksAggregateSaveAndCanRetry()
                 ),
             setting.value()
             );
+    }
+}
+
+void InitialSetupWizardTests::
+aggregateSetupSavePreservesAllFourSignatureFontValues()
+{
+    for (int fontValue = 0; fontValue < 4; ++fontValue)
+    {
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.settingsService());
+        QVERIFY(
+            services.settingsService()->save(
+                QString::fromUtf8(TypedSignatureFontKey),
+                fontValue
+                )
+            );
+
+        InitialSetupWizard wizard(&services);
+        QWizardPage* const personalDetailsPage =
+            wizard.page(InitialSetupWizard::PersonalDetailsPage);
+        QVERIFY(personalDetailsPage);
+        personalDetailsPage->initializePage();
+        auto* const name = wizard.findChild<QLineEdit*>(
+            QStringLiteral("setupUserName")
+            );
+        QVERIFY(name);
+        name->setText(QStringLiteral("Setup Teacher"));
+
+        QVERIFY(personalDetailsPage->validatePage());
+
+        const QVariant savedFont = services.settingsService()->loadOrDefault(
+            QString::fromUtf8(TypedSignatureFontKey), QVariant()
+            );
+        QVERIFY(savedFont.isValid());
+        QCOMPARE(savedFont.toInt(), fontValue);
     }
 }
 

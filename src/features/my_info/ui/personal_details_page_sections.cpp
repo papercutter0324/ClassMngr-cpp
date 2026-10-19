@@ -177,6 +177,49 @@ void matchFieldHeights(
     applyHeight(fourth);
 }
 
+TypedSignatureFont typedSignatureFontFromApplicationChoice(
+    ClassMngr::Next::Application::PersonalSignatureFontChoice choice
+    )
+{
+    using ApplicationFontChoice =
+        ClassMngr::Next::Application::PersonalSignatureFontChoice;
+
+    switch (choice)
+    {
+    case ApplicationFontChoice::JustAnotherHand:
+        return TypedSignatureFont::JustAnotherHand;
+    case ApplicationFontChoice::DancingScript:
+        return TypedSignatureFont::DancingScript;
+    case ApplicationFontChoice::GreatVibes:
+        return TypedSignatureFont::GreatVibes;
+    case ApplicationFontChoice::Caveat:
+        return TypedSignatureFont::Caveat;
+    default:
+        return TypedSignatureFont::JustAnotherHand;
+    }
+}
+
+ClassMngr::Next::Application::PersonalSignatureFontChoice
+applicationChoiceFromTypedSignatureFont(TypedSignatureFont font)
+{
+    using ApplicationFontChoice =
+        ClassMngr::Next::Application::PersonalSignatureFontChoice;
+
+    switch (font)
+    {
+    case TypedSignatureFont::JustAnotherHand:
+        return ApplicationFontChoice::JustAnotherHand;
+    case TypedSignatureFont::DancingScript:
+        return ApplicationFontChoice::DancingScript;
+    case TypedSignatureFont::GreatVibes:
+        return ApplicationFontChoice::GreatVibes;
+    case TypedSignatureFont::Caveat:
+        return ApplicationFontChoice::Caveat;
+    default:
+        return ApplicationFontChoice::JustAnotherHand;
+    }
+}
+
 }
 
 bool PersonalDetailsPage::eventFilter(
@@ -1150,7 +1193,7 @@ bool PersonalDetailsPage::loadStoredSettings()
             ? SignatureMode::Type
             : SignatureMode::Image;
         m_typedSignatureFont =
-            TypedSignature::fontFromStoredValue(
+            typedSignatureFontFromApplicationChoice(
                 preferences.typedSignatureFont
                 );
         m_typedSignatureEdit->setText(
@@ -1268,7 +1311,6 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
     details.signatureImage = m_signatureImageData;
     details.signatureMode = m_signatureMode;
     details.typedSignatureText = m_typedSignatureEdit->text();
-    details.typedSignatureFont = static_cast<int>(m_typedSignatureFont);
 
     const auto toUtf8 = [](const QString& value)
     {
@@ -1308,7 +1350,10 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
                         : ClassMngr::Next::Application::
                             PersonalSignatureMode::Image,
                     .typedSignatureText = toUtf8(details.typedSignatureText),
-                    .typedSignatureFont = details.typedSignatureFont
+                    .typedSignatureFont =
+                        applicationChoiceFromTypedSignatureFont(
+                            m_typedSignatureFont
+                            )
                 });
     if (!saved)
     {

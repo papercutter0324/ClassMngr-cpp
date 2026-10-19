@@ -110,7 +110,6 @@ public:
             ? *storedText
             : QVariant(QString());
         const int mode = modeValue.toInt();
-        const int font = fontValue.toInt();
         const QByteArray text = textValue.toString().toUtf8();
 
         return Application::PersonalSignaturePreferencesResult::success({
@@ -121,11 +120,42 @@ public:
                 text.constData(),
                 static_cast<std::size_t>(text.size())
                 ),
-            .typedSignatureFont = font
+            .typedSignatureFont = signatureFontChoice(fontValue)
         });
     }
 
 private:
+    [[nodiscard]] static Application::PersonalSignatureFontChoice
+    signatureFontChoice(const QVariant& value)
+    {
+        bool integerConversionSucceeded = false;
+        const int font = value.toInt(&integerConversionSucceeded);
+        bool numericConversionSucceeded = false;
+        const double numericValue = value.toDouble(&numericConversionSucceeded);
+        if (
+            !integerConversionSucceeded
+            || !numericConversionSucceeded
+            || numericValue != static_cast<double>(font)
+            )
+        {
+            return Application::PersonalSignatureFontChoice::JustAnotherHand;
+        }
+
+        switch (font)
+        {
+        case 0:
+            return Application::PersonalSignatureFontChoice::JustAnotherHand;
+        case 1:
+            return Application::PersonalSignatureFontChoice::DancingScript;
+        case 2:
+            return Application::PersonalSignatureFontChoice::GreatVibes;
+        case 3:
+            return Application::PersonalSignatureFontChoice::Caveat;
+        default:
+            return Application::PersonalSignatureFontChoice::JustAnotherHand;
+        }
+    }
+
     [[nodiscard]] static Domain::OperationError settingLoadError(
         const QString& key,
         const QString& diagnostic
