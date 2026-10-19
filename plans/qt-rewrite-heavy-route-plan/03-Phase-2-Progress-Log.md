@@ -49787,3 +49787,21 @@ and correspondence; and stable JSON/legacy mappings. Run the three focused CTest
 `git diff --check`; no full-suite or Windows run is expected. F1135 is next for
 acceptance. Batch485 remains unpushed; F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1134 Class Transfer export correlation keys complete - 2026-10-20
+
+F1134 completed at source/test commit
+`d0d51ffcda20b55340acd2792a040bc929787083`, following acceptance
+`edc9bb9b`. Export packages now use exact-value UTF-16
+`ClassExportClassKey` and `ClassExportTeacherKey` for class `key`, teacher
+`key`, and class `teacherKey`. These key types remain separate from
+`ClassExportText` payload and UTF-8 apply keys. Key generation and correspondence,
+JSON schema/serialization, legacy mappings, source IDs, and UTF-8 apply
+semantics—including blank teacher-key behavior—remain preserved.
+
+`ClassMngr` and the three focused F1134 targets built; the export-query,
+Platform export-source, and legacy apply-package adapter CTests passed 3/3.
+`git diff --check` passed. The full suite and Windows verification were not
+run. Batch485 has seven complete slices and three discovered; F1135 is next for
+acceptance. The batch remains unpushed; F629 and the Phase 0 and Phase 2 gates
+remain open.

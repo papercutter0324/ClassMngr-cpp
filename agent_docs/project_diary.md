@@ -8035,3 +8035,18 @@ keys and keep payload, source IDs, key generation, correspondence, JSON
 serialization, legacy package mapping, and apply semantics intact. Generated
 class keys follow selected order; generated teacher keys reuse the first
 reference for each typed teacher identity.
+
+## 2026-10-20 - F1134 complete
+
+F1134 completed at source/test commit
+`d0d51ffcda20b55340acd2792a040bc929787083`, following acceptance `edc9bb9b`.
+Dedicated UTF-16 value types now identify Class Transfer export class and
+teacher keys in the portable package; exact code units survive legacy package
+conversion. JSON field names and output, key generation/correspondence, and
+separate UTF-8 apply-key behavior remain intact.
+
+The existing macOS Debug tree built `ClassMngr` and three focused targets;
+their CTests passed 3/3, and `git diff --check` passed. The full suite and
+Windows were not run. Batch485 now has seven complete slices and three
+discovered, with F1135 next. The batch remains unpushed; F629 and both phase
+gates remain open.
