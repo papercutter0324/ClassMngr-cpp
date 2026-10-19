@@ -49309,10 +49309,97 @@ digest, size, and unrelated fields; this slice types only the Application
 boundary.
 
 Focused targets: `ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
-`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`, and the startup and
-manual platform adapter result-mapping tests. Include update controller and
-`UpdateDialog` consumers in a build/check as appropriate; existing
-`ClassMngrUpdaterTests` or controller tests may provide compatibility coverage,
-while core updater production stays unchanged. Batch484 remains active with
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`, and
+`ClassMngrUpdateControllerAutomaticStartupTests`, which covers both startup
+and manual platform adapter flows. Include the `UpdateDialog` consumer in a
+build/check as appropriate; `ClassMngrUpdaterTests` may provide compatibility
+coverage, while core updater production stays unchanged. Batch484 remains active with
 nine complete candidates, F1127 accepted/in progress, and no remaining
 discoveries. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1127 Update Artifact platform keys complete - 2026-10-20
+
+F1127 is complete at production/test commit `6021d04a`, following acceptance
+`a080d89a`. Permissive exact-byte UTF-8 `UpdateArtifactPlatformKey` now types
+only `platformKey` in Application `StartupUpdateArtifact` and
+`ManualUpdateArtifact`; the ports and consumers preserve the existing UTF-8
+and QString boundary conversions. Exact-case parser behavior, unknown-key
+errors, Linux aliases, and adapter byte mapping remain intact.
+
+Built `ClassMngr`, `ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`,
+`ClassMngrUpdateControllerAutomaticStartupTests`, and
+`ClassMngrUpdaterTests`. Focused CTest passed 3/3 for the Application startup,
+Application manual, and update-controller targets; `ClassMngrUpdaterTests`
+passed 1/1. `git diff --check` passed.
+Windows verification and the full suite were not run.
+
+### Batch484 close and Batch485 discovery - 2026-10-20
+
+Batch484's ten slices, F1118–F1127, are complete locally; the batch has not
+been pushed. Two complementary Explorer reports informed the selected
+Batch485 list below. All ten Batch485 candidates remain discovered and
+unaccepted; F1128 is next for acceptance. No Batch485 implementation has
+started. F629 and the Phase 0 and Phase 2 gates remain open.
+
+1. **F1128 — Speaking Evaluation elementary-grade result.**
+   `SpeakingEvaluationReportContent.grade` and AI batch eligibility use
+   integer/sentinel zero although valid grades are E4–E6. Preserve accepted
+   text forms, invalid-to-zero behavior, report template, and failure order;
+   screen reuse of `CourseGradeBand`.
+   Evidence: `src/next/application/speaking_evaluation_report_content.h` and
+   `src/next/application/speaking_evaluation_ai_batch_eligibility.h`.
+   Tests: `tests/next_application_speaking_evaluation_report_content_tests.cpp`
+   and `tests/next_application_speaking_evaluation_ai_batch_eligibility_tests.cpp`.
+2. **F1129 — Class Details validation-context teacher identity.** Type the raw
+   `int64` context/snapshot identity that later converts to `TeacherId`;
+   preserve the `-1` fallback, explicit `-2`, and wide `2147483648`, without
+   positive-ID validation. Test:
+   `tests/next_application_class_details_validation_context_query_tests.cpp`.
+3. **F1130 — Schedule-slot start minute.** Type the integer constrained to
+   `[0,1440)` and formatted as `HH:mm`; preserve `-1`/`1440` rejection, `09:05`,
+   and no port call on failure. Tests:
+   `tests/next_application_schedule_slot_state_save_tests.cpp` and
+   `tests/next_platform_application_services_schedule_slot_state_save_port_tests.cpp`.
+4. **F1131 — Sub Prep meeting second-of-day.** Type the `int32` constrained to
+   `[0,86400)`; preserve exact-second grouping/sort, selected-day behavior,
+   canonical order, cross-day grouping, and invalid skip. Test:
+   `tests/next_application_sub_prep_meeting_time_grouping_policy_tests.cpp`.
+5. **F1132 — Teacher Import latest source date.** Type the optional string
+   representing a canonical ISO date as `GregorianDate`; preserve
+   missing/malformed setting behavior, invalid request rejection, and
+   save-only-if-later. Tests:
+   `tests/next_application_teacher_import_latest_source_date_read_query_tests.cpp`,
+   `tests/next_application_teacher_import_use_case_tests.cpp`, and the
+   matching platform read-port test.
+6. **F1133 — Remembered directory preference paths.** Type the raw strings in
+   file-dialog directory and last-database-directory ports; preserve empty
+   fallback and normalization at existing owners. Avoid repeating F689
+   persistence behavior. Tests cover the file-dialog QSettings adapter,
+   `LastDatabaseDirectoryPort`, DialogServices, and FileController workspace
+   lifecycle.
+7. **F1134 — Class Transfer export package correlation keys.** Type generated
+   UTF-16 class/teacher fields separately from existing UTF-8 apply keys;
+   preserve exact payload and correspondence. Tests:
+   `tests/next_application_class_transfer_export_query_tests.cpp`,
+   `tests/next_platform_class_transfer_export_source_tests.cpp`, and
+   `tests/class_transfer_apply_package_adapter_tests.cpp`.
+8. **F1135 — Class Analytics rounded averages.** Consider a fixed-scale type
+   for double averages/ranks rounded to thousandths; preserve positive half-up
+   rounding, the 2.4 advance threshold, weighting, ties, locale formatting,
+   and current clamping. Test:
+   `tests/next_application_class_analytics_dashboard_read_query_tests.cpp`.
+9. **F1136 — Skipped-update stored version text.** Preserve the deliberate
+   literal comparison of raw optional string/string-view values, including
+   missing/invalid/clear/suppression behavior and the distinction between
+   `01.2.3` and `1.2.3`. This is adjacent to F1127 but a distinct version-text
+   contract. Tests:
+   `tests/next_application_skipped_update_version_policy_tests.cpp`, matching
+   platform preferences-port tests, and
+   `tests/update_controller_automatic_startup_tests.cpp`.
+10. **F1137 — Course catalog identity.** Consider a closed catalog identity
+    because `Course` stores grade/level as `string_view` while `fromNames()`
+    validates a fixed 25-entry catalog; preserve exact spelling/case and
+    weekly-day rules. At acceptance, check the relationship to F1128
+    `CourseGradeBand` reuse. Tests: `tests/next_domain_contract_tests.cpp` and
+    Schedule Import plan validation tests.

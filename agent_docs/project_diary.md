@@ -7933,3 +7933,11 @@ Type only the Application startup/manual update artifact platform keys as
 permissive UTF-8 values. Preserve arbitrary bytes, aliases, exact-case keys,
 and unknown architecture-derived values through the existing adapters; leave
 OS detection, archive matching, and downloader persistence unchanged.
+
+## 2026-10-20 - F1127 complete
+
+F1127 completed at source/test commit `6021d04a`, following acceptance
+`a080d89a`. The startup and manual Application artifacts now carry a
+permissive `UpdateArtifactPlatformKey`; existing adapters preserve the
+platform bytes across Qt conversions. Focused Application, controller, and
+updater compatibility CTests passed. Windows and the full suite were not run.

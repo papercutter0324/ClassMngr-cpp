@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1126 complete, and final slice F1127 accepted/in progress with no remaining discoveries; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch484 is complete locally and not yet pushed (see [closeout and Batch485 discovery](03-Phase-2-Progress-Log.md#batch484-close-and-batch485-discovery-2026-10-20)); Batch485 is active with ten discovered candidates, none accepted, and F1128 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,20 +68,20 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch484 (10 candidates; 9 complete; 1 accepted/in progress; 0 discovered)
+#### Active batch: Batch485 (10 candidates; 0 complete; 0 accepted/in progress; 10 discovered)
 
-1. F1118 - Complete at `f3f0b46e`: type generated `CalendarEventSeriesEditOccurrenceUpdate` dates as `Domain::GregorianDate`, converting to Qt at the platform adapter; preserve date and occurrence behavior. Raw request and snapshot date strings remain unchanged by design (verification in the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20)).
-2. F1119 - Complete at `4f19554d`: preserve opaque exact UTF-8 state keys and UTF-16 apply keys using separate Application values; retain current validation and identity behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1119-schedule-import-teacher-keys-complete-2026-10-20).
-3. F1120 - Complete at `1e9263a3`: reuse `ImportSourceKey` for UTF-8 validation keys across plan/use-case inputs, source records, and review groups; preserve exact per-source correspondence and validation behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1120-teacher-import-source-validation-keys-complete-2026-10-20).
-4. F1121 - Complete at `dbef700b`: type only `CampusSummary::key` as byte-preserving `CampusDirectoryKey`; preserve byte limit, blank check, uniqueness, lookups, order, and error behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1121-campus-directory-key-complete-2026-10-20).
-5. F1122 - Complete at `93f38196`: type the Application issue code, field, and argument key as distinct opaque values; preserve payload, limits, order, and adapter mapping. See the [completion record](03-Phase-2-Progress-Log.md#f1122-teacher-profile-validation-identifiers-complete-2026-10-20).
-6. F1123 - Complete at `e21fb087`: use opaque byte-preserving `DocumentCatalogPath` for folder paths, parent paths, and document paths in catalog metadata; preserve projection validation and path behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1123-document-catalog-path-complete-2026-10-20).
-7. F1124 - Complete at `812692c6`: type `RosterSaveIssue.code` as a separate closed `RosterSaveIssueCode` with stable outward-key mapping; preserve validation, serialization, and UI behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1124-roster-save-validation-codes-complete-2026-10-20).
-8. F1125 - Complete at `7775df86`: use permissive `UpcomingBirthdayMonthDayInput` for the candidate's UTF-8 month/day value, retaining parser validation and existing schedule behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1125-upcoming-birthday-month-day-input-complete-2026-10-20).
-9. F1126 - Complete at `a87bb612`: type the supported 30/60/120/300-second choices while preserving integer compatibility, validation, 120-second fallback, and settings persistence. See the [completion record](03-Phase-2-Progress-Log.md#f1126-excel-import-timeout-choice-complete-2026-10-20).
-10. F1127 - Accepted/in progress, final slice: add a permissive UTF-8 `UpdateArtifactPlatformKey` only at the Application artifact boundary; preserve exact parser behavior and existing platform conversions. See the [acceptance record](03-Phase-2-Progress-Log.md#f1127-update-artifact-platform-keys-accepted-before-implementation-2026-10-20).
+1. F1128 - Discovered: type the elementary-grade result shared by Speaking Evaluation report content and AI batch eligibility; preserve accepted text forms, invalid-to-zero, report template, and failure order. Screen reuse of `CourseGradeBand` (details in the [Batch485 discovery record](03-Phase-2-Progress-Log.md#batch484-close-and-batch485-discovery-2026-10-20)).
+2. F1129 - Discovered: type Class Details validation-context teacher identity while preserving `-1` fallback, explicit `-2`, wide `2147483648`, and current non-positive behavior.
+3. F1130 - Discovered: type schedule-slot start minute while preserving `[0,1440)` bounds, `HH:mm` conversion, and no port call on failure.
+4. F1131 - Discovered: type Sub Prep meeting second-of-day while preserving `[0,86400)` bounds, exact-second grouping/sort, day selection, canonical order, and invalid skip.
+5. F1132 - Discovered: type Teacher Import latest source date while preserving optional ISO-date parsing, missing/malformed setting behavior, invalid request rejection, and save-only-if-later.
+6. F1133 - Discovered: type remembered directory paths while preserving empty fallback and normalization at existing owners; do not repeat F689 persistence behavior.
+7. F1134 - Discovered: type Class Transfer export UTF-16 class/teacher correlation keys separately from UTF-8 apply keys; preserve payload and correspondence.
+8. F1135 - Discovered: type rounded Class Analytics averages while preserving positive half-up thousandth rounding, the 2.4 threshold, weighting, ties, locale formatting, and clamping.
+9. F1136 - Discovered: type skipped-update stored version text while preserving literal comparisons, missing/invalid/clear/suppression behavior, and `01.2.3` versus `1.2.3`; distinct from F1127.
+10. F1137 - Discovered: type Course catalog identity while preserving exact case/spelling and weekly-day rules; screen relation to F1128 `CourseGradeBand` reuse.
 
-F1118–F1126 are complete and final slice F1127 is accepted/in progress; no candidates remain discovered. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+All Batch485 candidates remain discovered and unaccepted; F1128 is next for acceptance. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

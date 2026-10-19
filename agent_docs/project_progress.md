@@ -5613,3 +5613,16 @@ archive matching, downloader JSON persistence, and other artifact fields
 unchanged. Focused Application and platform mapping targets are recorded in
 the Phase 2 plan. Implementation has not started. F629 and both phase gates
 remain open.
+
+## Phase 2 update - Batch484 complete; Batch485 active - 2026-10-20
+
+F1127 completed at source/test commit `6021d04a`, following acceptance
+`a080d89a`. `UpdateArtifactPlatformKey` now types only the Application startup
+and manual artifact keys, retaining exact bytes, case, aliases, and unknown
+values through existing adapters. The `ClassMngr` app build and startup/manual
+Application and controller tests passed; focused CTest passed 3/3. The
+`ClassMngrUpdaterTests` target built and passed 1/1 after updating its stale
+typed-key fixture. Controller tests pin exact case, unknown-key errors, and
+Linux aliases. Windows and the full suite were not run. Batch484 is complete;
+Batch485 has ten discovered candidates F1128–F1137, with F1128 next for
+acceptance. F629 and both phase gates remain open.
