@@ -50038,3 +50038,27 @@ passed. The full suite and Windows verification were not run. Batch486 has six
 candidates: one complete (F1138), none accepted/in progress, and five
 discovered; F1139 is next for acceptance. F629 and the Phase 0 and Phase 2
 gates remain open.
+
+### F1139 Calendar import campus-code identity accepted before implementation - 2026-10-20
+
+F1139 is accepted/in progress. Add a distinct Application campus-import code
+value that owns the existing UTF-8 text as exact bytes, with no trimming,
+validation, or case folding in the value. Change
+`CalendarEventImportCampusCodeQueryPort` to return a vector of this value.
+Do not reuse Application `CalendarEventCampusCode`: that value is a
+visibility-policy projection containing normalized and case-folded text,
+whereas the import query needs only the trimmed raw code.
+
+Preserve `CampusJsonRepository` order and the existing skip/error-to-empty
+behavior for unavailable, missing, malformed, and default records. Keep Qt
+trimming, blank skipping, UTF-8 conversion, and first-seen, case-sensitive
+exact duplicate removal in Platform. Preserve service conversion back to
+`QString` and the parser's normalization, matching, and suffix behavior.
+
+Focused verification: build `ClassMngr`,
+`NextPlatformCalendarEventImportCampusCodeQuery`, and
+`ClassMngrCalendarImportTests`; run the two focused CTests and
+`git diff --check`. Implementation and verification are pending. Full-suite
+and Windows runs are not expected. Batch486 has six candidates: F1138
+complete, F1139 accepted/in progress, and F1140–F1143 discovered. F1140 is
+next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.

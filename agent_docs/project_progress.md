@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1138 complete; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1139 accepted; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -224,15 +224,15 @@ Import plan-validation CTests (2/2; 38 Domain cases). F1138 is complete at
 source/test commit `fd3c0462`; focused macOS Debug verification passed the
 Domain and Platform CTests (2/2) and the selected Calendar Page color-picker
 failure/resync/retry case. `ClassMngr` and the affected targets built, and
-`git diff --check` passed. Batch486 remains active with one complete slice and
-five discovered; F1139 is next. Batch485 was pushed to `origin/Qt-Rewrite` at
-`192f676a`. F629 remains active but awaits source-bound Windows layout evidence,
-which is unavailable in this session; the Phase 0 and Phase 2 gates remain
-open.
+`git diff --check` passed. Batch486 remains active with one complete slice,
+F1139 accepted/in progress, and four discovered. Batch485 was pushed to
+`origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
+Windows layout evidence, which is unavailable in this session; the Phase 0 and
+Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with F1139. F629 remains active and awaits a
+Continue Batch486 with accepted F1139. F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -5973,3 +5973,23 @@ exact setting keys, invalid-enum fallback, UI normalization, and the existing
 save failure flow. `git diff --check` passed. The full suite and Windows
 verification were not run. Batch486 has one complete slice and five discovered;
 F1139 is next. F629 and both phase gates remain open.
+
+## Phase 2 update - F1139 accepted; Batch486 active - 2026-10-20
+
+F1139 is accepted to replace the calendar-import campus-code query's raw
+`std::string` elements with a distinct owning Application value carrying the
+same UTF-8 bytes. Do not reuse `Application::CalendarEventCampusCode`: that
+visibility-policy input carries both normalized and case-folded forms, while
+this importer needs only trimmed code text. Preserve repository order,
+Platform-side Qt trimming, blank filtering, UTF-8 conversion, and first-seen
+case-sensitive duplicate removal. Preserve the query's empty-list behavior for
+missing/unavailable/malformed/default campus records, the service's UTF-8 to
+QString conversion, and parser normalization, matching, and suffix behavior.
+
+Focused verification will build `ClassMngr`,
+`NextPlatformCalendarEventImportCampusCodeQuery`, and
+`ClassMngrCalendarImportTests`; run the two focused CTests and
+`git diff --check`. Full-suite and Windows verification are not expected.
+Batch486 has one complete slice, one accepted/in-progress F1139, and four
+discovered candidates; F1140 is next for acceptance. F629 and both phase gates
+remain open.

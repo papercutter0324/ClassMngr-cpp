@@ -8154,3 +8154,16 @@ case `eventTypeColorPickerFailureResyncsAndRetries` passed. `git diff --check`
 passed. Full-suite and Windows verification were not run. Batch486 has one
 complete slice and five discovered, with F1139 next; F629 and both phase gates
 remain open.
+
+## 2026-10-20 - F1139 accepted
+
+Type the campus-code elements returned by the calendar-import query port as a
+distinct owning Application value preserving the adapter's UTF-8 text. Keep
+`Application::CalendarEventCampusCode` separate because it also carries a
+case-folded representation for visibility matching. The Platform adapter
+continues to own repository ordering, Qt trimming, blank filtering, UTF-8
+conversion, and case-sensitive first-seen duplicate removal. The service's
+QString conversion and parser behavior remain unchanged. Focused adapter and
+calendar-import verification is planned; implementation and verification are
+pending. Batch486 has F1138 complete, F1139 accepted/in progress, and four
+discovered candidates. F629 and both phase gates remain open.
