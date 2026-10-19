@@ -394,6 +394,7 @@ private slots:
     void applyRejectsReplacementOutsideCurrentPreviewMatches_data();
     void applyRejectsReplacementOutsideCurrentPreviewMatches();
     void typedApplyRevalidatesStaleTeacherAndMakesNoWrites();
+    void applyCandidateAdapterPreservesDialogAndRepositoryBlankKeyRules();
     void typedDialogRequestMatchesCompatibilityPlanAndGating();
     void featureServiceApplyNormalizesAndRejectsInvalidPayload_data();
     void featureServiceApplyNormalizesAndRejectsInvalidPayload();
@@ -1540,13 +1541,13 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
 
     ClassTransferPackage package;
     ClassTransferTeacher sourceTeacher;
-    sourceTeacher.key = QStringLiteral("source-teacher");
+    sourceTeacher.key = QStringLiteral("teacher-교-É");
     sourceTeacher.teacher.teacherEn = QStringLiteral("  ÉLODIE\tKIM  ");
     sourceTeacher.teacher.teacherKr = QStringLiteral(" 김\t민수 ");
     package.teachers.append(sourceTeacher);
 
     ClassTransferClass sourceClass;
-    sourceClass.key = QStringLiteral("source-class");
+    sourceClass.key = QStringLiteral("class-班-α");
     sourceClass.teacherKey = sourceTeacher.key;
     sourceClass.info.classGrade = QStringLiteral(" E4\t");
     sourceClass.info.classLevel = QStringLiteral(" PERSEUS  ");
@@ -1555,8 +1556,8 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
     const auto request =
         ClassMngr::Next::Platform::classTransferPreviewRequest(package);
     QCOMPARE(request.teachers.size(), std::size_t{1});
-    QCOMPARE(request.teachers.front().sourceKey,
-        std::string("source-teacher"));
+    QCOMPARE(request.teachers.front().sourceKey.value(),
+        sourceTeacher.key.toStdString());
     QCOMPARE(request.teachers.front().names.english,
         QString(sourceTeacher.teacher.teacherEn).simplified()
             .toCaseFolded().toStdString());
@@ -1565,8 +1566,10 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
             .toCaseFolded().toStdString());
     QCOMPARE(request.classes.size(), std::size_t{1});
     QCOMPARE(request.classes.front().packageClassIndex, std::size_t{0});
-    QCOMPARE(request.classes.front().teacherSourceKey,
-        std::string("source-teacher"));
+    QCOMPARE(request.classes.front().teacherSourceKey.value(),
+        sourceTeacher.key.toStdString());
+    QCOMPARE(request.classes.front().sourceKey.value(),
+        sourceClass.key.toStdString());
     QCOMPARE(request.classes.front().grade,
         QString(sourceClass.info.classGrade).simplified()
             .toCaseFolded().toStdString());
@@ -1584,8 +1587,8 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
     QVERIFY(result.hasValue());
     const auto& typedPreview = result.value();
     QCOMPARE(typedPreview.teachers.size(), std::size_t{1});
-    QCOMPARE(typedPreview.teachers.front().teacherKey,
-        std::string("source-teacher"));
+    QCOMPARE(typedPreview.teachers.front().teacherKey.value(),
+        sourceTeacher.key.toStdString());
     QCOMPARE(typedPreview.teachers.front().matchingTeacherIds,
         std::vector<ClassMngr::Next::Domain::TeacherId>{
             *ClassMngr::Next::Domain::TeacherId::fromString(
@@ -1593,11 +1596,20 @@ void ClassTransferTests::typedPreviewQueryNormalizesAndReturnsTypedCandidates()
         });
     QCOMPARE(typedPreview.classes.size(), std::size_t{1});
     QCOMPARE(typedPreview.classes.front().packageClassIndex, 0);
+    QCOMPARE(typedPreview.classes.front().sourceKey.value(),
+        sourceClass.key.toStdString());
     QCOMPARE(typedPreview.classes.front().matchingClassIds,
         std::vector<ClassMngr::Next::Domain::ClassId>{
             *ClassMngr::Next::Domain::ClassId::fromString(
                 std::to_string(destinationClassId))
         });
+
+    const auto legacyPreview =
+        ClassMngr::Next::Platform::legacyClassTransferPreview(typedPreview);
+    QCOMPARE(legacyPreview.teachers.size(), 1);
+    QCOMPARE(legacyPreview.teachers.front().teacherKey, sourceTeacher.key);
+    QCOMPARE(legacyPreview.classes.size(), 1);
+    QCOMPARE(legacyPreview.classes.front().packageClassIndex, 0);
 
     QSqlQuery schemaQuery(session->database());
     QVERIFY2(schemaQuery.exec(QStringLiteral(
@@ -1668,7 +1680,7 @@ void ClassTransferTests::typedPreviewMatchesKoreanOnlyTeacherName()
         ClassTransferPreviewQuery(*repository).execute(request);
     QVERIFY(result.hasValue());
     QCOMPARE(result.value().teachers.size(), std::size_t{1});
-    QCOMPARE(result.value().teachers.front().teacherKey,
+    QCOMPARE(result.value().teachers.front().teacherKey.value(),
         std::string("korean-only-source"));
     QCOMPARE(result.value().teachers.front().matchingTeacherIds,
         std::vector<ClassMngr::Next::Domain::TeacherId>{
@@ -5563,6 +5575,44 @@ void ClassTransferTests::typedApplyRevalidatesStaleTeacherAndMakesNoWrites()
     QCOMPARE(*changesAfter, *changesBefore);
 }
 
+void ClassTransferTests::applyCandidateAdapterPreservesDialogAndRepositoryBlankKeyRules()
+{
+    const QString blankKey = QStringLiteral(" \t ");
+    ClassTransferPackage package;
+    package.teachers.append({blankKey, completeTeacher()});
+
+    ClassImportPreview preview;
+    preview.teachers.append({blankKey, {}});
+
+    const auto dialogCandidates =
+        ClassMngr::Next::Platform::classTransferApplyCandidates(package, preview);
+    const auto repositoryCandidates =
+        ClassMngr::Next::Platform::classTransferApplyCandidates(
+            package, preview, true);
+    QVERIFY(dialogCandidates);
+    QVERIFY(repositoryCandidates);
+    QCOMPARE(dialogCandidates->teachers.size(), std::size_t{1});
+    QCOMPARE(repositoryCandidates->teachers.size(), std::size_t{1});
+    QCOMPARE(dialogCandidates->teachers.front().teacherKey.value(),
+        blankKey.toStdString());
+    QVERIFY(!dialogCandidates->teachers.front().teacherKey.empty());
+    QVERIFY(repositoryCandidates->teachers.front().teacherKey.empty());
+    QCOMPARE(repositoryCandidates->teachers.front().teacherKey.value(),
+        std::string{});
+    QVERIFY(dialogCandidates->teachers.front().matchingTeacherIds.empty());
+    QVERIFY(repositoryCandidates->teachers.front().matchingTeacherIds.empty());
+
+    ClassMngr::Next::Application::ClassTransferApplyRequest dialogChoices;
+    dialogChoices.teachers.push_back({
+        ClassMngr::Next::Application::ClassTransferTeacherKey(
+            blankKey.toStdString()),
+        ClassMngr::Next::Application::ClassTransferReviewTeacherAction::Create,
+        std::nullopt
+    });
+    QVERIFY(ClassMngr::Next::Application::validateClassTransferApplyRequest(
+        dialogChoices, *dialogCandidates).accepted());
+}
+
 void ClassTransferTests::typedDialogRequestMatchesCompatibilityPlanAndGating()
 {
     const auto package = ClassTransferJsonCodec::loadFile(
@@ -5586,7 +5636,7 @@ void ClassTransferTests::typedDialogRequestMatchesCompatibilityPlanAndGating()
     }
     for (std::size_t index = 0; index < typed.teachers.size(); ++index)
     {
-        QCOMPARE(typed.teachers[index].teacherKey, legacy.teachers[index].teacherKey.toStdString());
+        QCOMPARE(typed.teachers[index].teacherKey.value(), legacy.teachers[index].teacherKey.toStdString());
         QCOMPARE(typed.teachers[index].action, ClassMngr::Next::Application::ClassTransferReviewTeacherAction::Create);
         QVERIFY(!typed.teachers[index].targetTeacherId);
     }

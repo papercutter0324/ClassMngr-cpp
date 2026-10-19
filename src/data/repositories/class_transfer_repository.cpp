@@ -537,8 +537,9 @@ Result<ValidatedPlan> validatePlan(
         return std::unexpected(candidates.error());
     auto request = choices;
     for (auto& resolution : request.teachers)
-        if (QString::fromStdString(resolution.teacherKey).trimmed().isEmpty())
-            resolution.teacherKey.clear();
+        if (QString::fromStdString(resolution.teacherKey.value()).trimmed().isEmpty())
+            resolution.teacherKey =
+                ClassMngr::Next::Application::ClassTransferTeacherKey{};
     const auto decision = ClassMngr::Next::Application::validateClassTransferApplyRequest(
         request, *candidates);
     if (!decision.accepted())

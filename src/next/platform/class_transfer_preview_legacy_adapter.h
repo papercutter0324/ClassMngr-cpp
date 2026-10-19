@@ -19,7 +19,7 @@ classTransferPreviewRequest(const ::ClassTransferPackage& package)
     for (const ::ClassTransferTeacher& teacher : package.teachers)
     {
         request.teachers.push_back({
-            teacher.key.toStdString(),
+            Application::ClassTransferTeacherKey(teacher.key.toStdString()),
             {
                 QString(teacher.teacher.teacherEn)
                     .simplified().toCaseFolded().toStdString(),
@@ -35,11 +35,13 @@ classTransferPreviewRequest(const ::ClassTransferPackage& package)
         const ::ClassTransferClass& transferClass = package.classes.at(index);
         request.classes.push_back({
             static_cast<std::size_t>(index),
-            transferClass.teacherKey.toStdString(),
+            Application::ClassTransferTeacherKey(
+                transferClass.teacherKey.toStdString()),
             transferClass.info.classGrade.simplified()
                 .toCaseFolded().toStdString(),
             transferClass.info.classLevel.simplified()
-                .toCaseFolded().toStdString()
+                .toCaseFolded().toStdString(),
+            Application::ClassTransferClassKey(transferClass.key.toStdString())
         });
     }
 
@@ -55,8 +57,9 @@ classTransferPreviewRequest(const ::ClassTransferPackage& package)
     for (const auto& candidate : result.teachers)
     {
         ::ClassImportTeacherPreview teacher;
-        teacher.teacherKey = QString::fromUtf8(candidate.teacherKey.data(),
-            static_cast<qsizetype>(candidate.teacherKey.size()));
+        const std::string& key = candidate.teacherKey.value();
+        teacher.teacherKey = QString::fromUtf8(key.data(),
+            static_cast<qsizetype>(key.size()));
         teacher.matchingTeacherIds.reserve(
             static_cast<qsizetype>(candidate.matchingTeacherIds.size()));
         for (const auto& id : candidate.matchingTeacherIds)

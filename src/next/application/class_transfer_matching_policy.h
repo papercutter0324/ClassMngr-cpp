@@ -1,11 +1,12 @@
 #pragma once
 
+#include "next/application/class_transfer_keys.h"
 #include "next/domain/domain_types.h"
 
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -28,7 +29,7 @@ struct ClassTransferMatchingTeacherNames final
 
 struct ClassTransferMatchingSourceTeacher final
 {
-    std::string sourceKey;
+    ClassTransferTeacherKey sourceKey;
     ClassTransferMatchingTeacherNames names;
 };
 
@@ -41,9 +42,10 @@ struct ClassTransferMatchingDestinationTeacher final
 struct ClassTransferMatchingSourceClass final
 {
     std::size_t packageClassIndex = 0;
-    std::string teacherSourceKey;
+    ClassTransferTeacherKey teacherSourceKey;
     std::string grade;
     std::string level;
+    ClassTransferClassKey sourceKey;
 };
 
 struct ClassTransferMatchingDestinationClass final
@@ -56,7 +58,7 @@ struct ClassTransferMatchingDestinationClass final
 
 struct ClassTransferTeacherMatchList final
 {
-    std::string teacherSourceKey;
+    ClassTransferTeacherKey teacherSourceKey;
     std::vector<Domain::TeacherId> matchingTeacherIds;
 };
 
@@ -64,6 +66,7 @@ struct ClassTransferClassMatchList final
 {
     std::size_t packageClassIndex = 0;
     std::vector<Domain::ClassId> matchingClassIds;
+    ClassTransferClassKey sourceKey;
 };
 
 struct ClassTransferMatchingRequest final
@@ -110,10 +113,9 @@ struct ClassTransferMatchingResult final
     const ClassTransferMatchingRequest& request
     )
 {
-    std::unordered_map<
-        std::string,
+    std::map<
+        ClassTransferTeacherKey,
         const ClassTransferMatchingSourceTeacher*> sourceTeachersByKey;
-    sourceTeachersByKey.reserve(request.sourceTeachers.size());
     for (const auto& teacher : request.sourceTeachers)
     {
         sourceTeachersByKey.try_emplace(teacher.sourceKey, &teacher);
@@ -140,6 +142,7 @@ struct ClassTransferMatchingResult final
     {
         ClassTransferClassMatchList matches;
         matches.packageClassIndex = source.packageClassIndex;
+        matches.sourceKey = source.sourceKey;
 
         if (source.grade.empty() || source.level.empty())
         {

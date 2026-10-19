@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/class_transfer_keys.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -244,7 +245,7 @@ findClassTransferScheduleConflicts(
 // an external owner.
 struct TransferTeacher final
 {
-    std::string sourceKey;
+    ClassTransferTeacherKey sourceKey;
     std::string displayName;
     std::string summary;
     std::string notes;
@@ -274,10 +275,10 @@ struct TransferClassTime final
 // class has no teacher. A present key must resolve in the teacher collection.
 struct TransferClass final
 {
-    std::string sourceKey;
+    ClassTransferClassKey sourceKey;
     std::string name;
     std::string summary;
-    std::optional<std::string> teacherSourceKey;
+    std::optional<ClassTransferTeacherKey> teacherSourceKey;
     std::string grade;
     std::string level;
     std::string readingBook;
@@ -399,9 +400,10 @@ namespace ClassTransferProjectionDetail
     return Domain::Result<void>::failure(invalidInput(message));
 }
 
+template <typename Key>
 [[nodiscard]] inline bool contains(
-    const std::vector<std::string>& values,
-    const std::string_view candidate
+    const std::vector<Key>& values,
+    const Key& candidate
     ) noexcept
 {
     return std::find(
@@ -453,10 +455,10 @@ namespace ClassTransferProjectionDetail
 
 [[nodiscard]] inline Domain::Result<void> validateTeacher(
     const TransferTeacher& teacher,
-    const std::vector<std::string>& existingKeys
+    const std::vector<ClassTransferTeacherKey>& existingKeys
     )
 {
-    if (!isValidKey(teacher.sourceKey))
+    if (!isValidKey(teacher.sourceKey.value()))
     {
         return invalid(
             "Transfer teacher source key must be non-blank and bounded."
@@ -491,11 +493,11 @@ namespace ClassTransferProjectionDetail
 
 [[nodiscard]] inline Domain::Result<void> validateClass(
     const TransferClass& transferClass,
-    const std::vector<std::string>& existingKeys,
-    const std::vector<std::string>& teacherKeys
+    const std::vector<ClassTransferClassKey>& existingKeys,
+    const std::vector<ClassTransferTeacherKey>& teacherKeys
     )
 {
-    if (!isValidKey(transferClass.sourceKey))
+    if (!isValidKey(transferClass.sourceKey.value()))
     {
         return invalid(
             "Transfer class source key must be non-blank and bounded."
@@ -555,7 +557,7 @@ namespace ClassTransferProjectionDetail
 
     if (transferClass.teacherSourceKey.has_value())
     {
-        if (!isValidKey(*transferClass.teacherSourceKey))
+        if (!isValidKey(transferClass.teacherSourceKey->value()))
         {
             return invalid(
                 "Optional transfer teacher source key must be non-blank and bounded."
@@ -625,7 +627,7 @@ namespace ClassTransferProjectionDetail
             );
     }
 
-    std::vector<std::string> teacherKeys;
+    std::vector<ClassTransferTeacherKey> teacherKeys;
     teacherKeys.reserve(input.teachers.size());
     for (const auto& teacher : input.teachers)
     {
@@ -638,7 +640,7 @@ namespace ClassTransferProjectionDetail
         teacherKeys.push_back(teacher.sourceKey);
     }
 
-    std::vector<std::string> classKeys;
+    std::vector<ClassTransferClassKey> classKeys;
     classKeys.reserve(input.classes.size());
     std::size_t totalTimes = 0;
     for (const auto& transferClass : input.classes)
@@ -772,7 +774,7 @@ public:
     }
 
     [[nodiscard]] std::optional<Teacher> findTeacher(
-        const std::string_view sourceKey
+        const ClassTransferTeacherKey& sourceKey
         ) const
     {
         const auto teacher = std::find_if(
@@ -792,14 +794,14 @@ public:
     }
 
     [[nodiscard]] std::optional<Teacher> lookupTeacher(
-        const std::string_view sourceKey
+        const ClassTransferTeacherKey& sourceKey
         ) const
     {
         return findTeacher(sourceKey);
     }
 
     [[nodiscard]] std::optional<Class> findClass(
-        const std::string_view sourceKey
+        const ClassTransferClassKey& sourceKey
         ) const
     {
         const auto transferClass = std::find_if(
@@ -819,14 +821,14 @@ public:
     }
 
     [[nodiscard]] std::optional<Class> lookupClass(
-        const std::string_view sourceKey
+        const ClassTransferClassKey& sourceKey
         ) const
     {
         return findClass(sourceKey);
     }
 
     [[nodiscard]] std::optional<std::vector<Time>> findTimes(
-        const std::string_view sourceKey,
+        const ClassTransferClassKey& sourceKey,
         const TransferTimeCategory category
         ) const
     {
@@ -845,7 +847,7 @@ public:
     }
 
     [[nodiscard]] std::optional<std::vector<Time>> lookupTimes(
-        const std::string_view sourceKey,
+        const ClassTransferClassKey& sourceKey,
         const TransferTimeCategory category
         ) const
     {
@@ -908,11 +910,12 @@ struct ClassTransferReviewClassCandidate final
 {
     int packageClassIndex = -1;
     std::vector<Domain::ClassId> matchingClassIds;
+    ClassTransferClassKey sourceKey;
 };
 
 struct ClassTransferReviewTeacherCandidate final
 {
-    std::string teacherKey;
+    ClassTransferTeacherKey teacherKey;
     std::vector<Domain::TeacherId> matchingTeacherIds;
 };
 
@@ -926,7 +929,7 @@ struct ClassTransferReviewClassResolution final
 
 struct ClassTransferReviewTeacherResolution final
 {
-    std::string teacherKey;
+    ClassTransferTeacherKey teacherKey;
     ClassTransferReviewTeacherAction action =
         ClassTransferReviewTeacherAction::Unselected;
     std::optional<Domain::TeacherId> targetTeacherId = std::nullopt;
@@ -967,7 +970,7 @@ struct ClassTransferReviewDecisionIssue final
 {
     ClassTransferReviewDecisionIssueCode code;
     int packageClassIndex = -1;
-    std::string teacherKey;
+    ClassTransferTeacherKey teacherKey;
     std::optional<Domain::ClassId> targetClassId = std::nullopt;
     std::optional<Domain::TeacherId> targetTeacherId = std::nullopt;
 };
@@ -1009,7 +1012,7 @@ validateClassTransferReviewDecisions(
         &result
     ](
         const IssueCode code,
-        const std::string& teacherKey,
+        const ClassTransferTeacherKey& teacherKey,
         const std::optional<Domain::TeacherId>& target
         )
     {
@@ -1032,7 +1035,7 @@ validateClassTransferReviewDecisions(
         classCandidates.emplace(candidate.packageClassIndex, &candidate);
     }
 
-    std::map<std::string, const ClassTransferReviewTeacherCandidate*>
+    std::map<ClassTransferTeacherKey, const ClassTransferReviewTeacherCandidate*>
         teacherCandidates;
     for (const auto& candidate : request.teachers)
     {
@@ -1171,9 +1174,9 @@ validateClassTransferReviewDecisions(
         }
     }
 
-    std::map<std::string, const ClassTransferReviewTeacherResolution*>
+    std::map<ClassTransferTeacherKey, const ClassTransferReviewTeacherResolution*>
         teacherResolutions;
-    std::map<Domain::TeacherId, std::vector<std::string>>
+    std::map<Domain::TeacherId, std::vector<ClassTransferTeacherKey>>
         teacherReplacementClaimants;
     for (const auto& resolution : request.teacherResolutions)
     {

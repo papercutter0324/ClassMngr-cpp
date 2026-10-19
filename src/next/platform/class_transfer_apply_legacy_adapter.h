@@ -38,6 +38,8 @@ template <typename TypedId>
     {
         ClassTransferReviewClassCandidate candidate;
         candidate.packageClassIndex = index;
+        candidate.sourceKey = ClassTransferClassKey(
+            package.classes.at(index).key.toStdString());
         const auto previewEntry = std::find_if(
             preview.classes.cbegin(),
             preview.classes.cend(),
@@ -68,8 +70,11 @@ template <typename TypedId>
     for (const ClassTransferTeacher& transferTeacher : package.teachers)
     {
         ClassTransferReviewTeacherCandidate candidate;
-        candidate.teacherKey = (normalizeBlankTeacherKeys && transferTeacher.key.trimmed().isEmpty()
-            ? std::string{} : transferTeacher.key.toStdString());
+        candidate.teacherKey = ClassTransferTeacherKey(
+            normalizeBlankTeacherKeys
+                    && transferTeacher.key.trimmed().isEmpty()
+                ? std::string{}
+                : transferTeacher.key.toStdString());
         const auto previewEntry = std::find_if(
             preview.teachers.cbegin(),
             preview.teachers.cend(),
@@ -127,7 +132,9 @@ template <typename TypedId>
         case TeacherImportAction::KeepExisting: action = ClassTransferReviewTeacherAction::KeepExisting; break;
         case TeacherImportAction::ReplaceExisting: action = ClassTransferReviewTeacherAction::ReplaceExisting; break;
         }
-        request.teachers.push_back({resolution.teacherKey.toStdString(), action,
+        request.teachers.push_back({
+            Application::ClassTransferTeacherKey(
+                resolution.teacherKey.toStdString()), action,
             resolution.targetTeacherId == -1 ? std::nullopt
                 : Domain::TeacherId::fromString(std::to_string(resolution.targetTeacherId))});
     }
@@ -153,7 +160,7 @@ template <typename TypedId>
         const auto action = choice.action == ClassTransferReviewTeacherAction::Create
             ? TeacherImportAction::Create : choice.action == ClassTransferReviewTeacherAction::KeepExisting
                 ? TeacherImportAction::KeepExisting : TeacherImportAction::ReplaceExisting;
-        plan.teachers.append({QString::fromStdString(choice.teacherKey), action,
+        plan.teachers.append({QString::fromStdString(choice.teacherKey.value()), action,
             choice.targetTeacherId
                 ? *classTransferApplyTeacherDestinationId(*choice.targetTeacherId)
                 : -1});

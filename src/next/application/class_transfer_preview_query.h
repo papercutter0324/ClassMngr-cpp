@@ -118,6 +118,7 @@ public:
             candidate.packageClassIndex = static_cast<int>(
                 source.packageClassIndex);
             candidate.matchingClassIds = source.matchingClassIds;
+            candidate.sourceKey = source.sourceKey;
             result.classes.push_back(std::move(candidate));
         }
 

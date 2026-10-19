@@ -46,7 +46,7 @@ TransferTeacher transferTeacher(
     )
 {
     return TransferTeacher{
-        std::move(sourceKey),
+        ClassTransferTeacherKey(std::move(sourceKey)),
         std::move(displayName),
         std::move(summary),
         std::move(notes)
@@ -60,10 +60,14 @@ TransferClass transferClass(
     )
 {
     TransferClass result;
-    result.sourceKey = std::move(sourceKey);
+    result.sourceKey = ClassTransferClassKey(std::move(sourceKey));
     result.name = "Stored Class";
     result.summary = "Class summary";
-    result.teacherSourceKey = std::move(teacherSourceKey);
+    if (teacherSourceKey)
+    {
+        result.teacherSourceKey.emplace(
+            ClassTransferTeacherKey(std::move(*teacherSourceKey)));
+    }
     result.grade = "E4";
     result.level = "Perseus";
     result.readingBook = "Reading Explorer 3";
@@ -104,15 +108,19 @@ ClassTransferReviewDecisionRequest validReviewRequest()
 {
     ClassTransferReviewDecisionRequest request;
     request.classes = {
-        {0, {reviewClassId(41), reviewClassId(42)}},
-        {1, {reviewClassId(41), reviewClassId(43)}},
-        {2, {}}
+        {0, {reviewClassId(41), reviewClassId(42)},
+            ClassTransferClassKey("class-review-0")},
+        {1, {reviewClassId(41), reviewClassId(43)},
+            ClassTransferClassKey("class-review-1")},
+        {2, {}, ClassTransferClassKey("class-review-2")}
     };
     request.teachers = {
-        {"teacher-ambiguous", {reviewTeacherId(11), reviewTeacherId(12)}},
-        {"teacher-two", {reviewTeacherId(12), reviewTeacherId(13)}},
-        {"teacher-unique", {reviewTeacherId(14)}},
-        {"teacher-new", {}}
+        {ClassTransferTeacherKey("teacher-ambiguous"),
+            {reviewTeacherId(11), reviewTeacherId(12)}},
+        {ClassTransferTeacherKey("teacher-two"),
+            {reviewTeacherId(12), reviewTeacherId(13)}},
+        {ClassTransferTeacherKey("teacher-unique"), {reviewTeacherId(14)}},
+        {ClassTransferTeacherKey("teacher-new"), {}}
     };
     request.classResolutions = {
         {0, ClassTransferReviewClassAction::Replace, reviewClassId(41)},
@@ -120,13 +128,17 @@ ClassTransferReviewDecisionRequest validReviewRequest()
         {2, ClassTransferReviewClassAction::Skip, std::nullopt}
     };
     request.teacherResolutions = {
-        {"teacher-ambiguous", ClassTransferReviewTeacherAction::Create,
+        {ClassTransferTeacherKey("teacher-ambiguous"),
+         ClassTransferReviewTeacherAction::Create,
          std::nullopt},
-        {"teacher-two", ClassTransferReviewTeacherAction::KeepExisting,
+        {ClassTransferTeacherKey("teacher-two"),
+         ClassTransferReviewTeacherAction::KeepExisting,
          reviewTeacherId(13)},
-        {"teacher-unique", ClassTransferReviewTeacherAction::ReplaceExisting,
+        {ClassTransferTeacherKey("teacher-unique"),
+         ClassTransferReviewTeacherAction::ReplaceExisting,
          reviewTeacherId(14)},
-        {"teacher-new", ClassTransferReviewTeacherAction::Create, std::nullopt}
+        {ClassTransferTeacherKey("teacher-new"),
+         ClassTransferReviewTeacherAction::Create, std::nullopt}
     };
     return request;
 }
@@ -239,8 +251,11 @@ private slots:
     void lookupsReturnIndependentValueCopies();
     void recordsAndProjectionAreCopyableEqualAndReleasable();
     void contractHasNoExternalOwnersOrRawSourceAccessors();
+    void keyTypesPreserveDistinctNamespacesAndExactBytes();
+    void projectionAcceptsMaximumLengthKeysAndExactReferences();
     void reviewDecisionsPreserveMatchChoiceSemantics();
     void reviewDecisionMatrixRejectsIncompleteDuplicateAndInvalidChoices();
+    void reviewUsesEmptyOnlyKeysFirstDuplicateCandidateAndStableIssueOrder();
     void teacherMatchingUsesBothOrEitherNameAndRequiresOneName();
     void classMatchingRequiresCourseAndTeacherIdentityOrUnassignedFallback();
     void classAndTeacherMatchListsRetainDestinationOrder();
@@ -271,9 +286,9 @@ void NextApplicationClassTransferTests::validBoundedPackageRetainsCompactFieldsA
     QCOMPARE(projection.timeCount(), std::size_t(2));
     QCOMPARE(projection.teachers().size(), std::size_t(2));
     QCOMPARE(projection.classes().size(), std::size_t(2));
-    QCOMPARE(projection.teachers().front().sourceKey, std::string("teacher-1"));
+    QCOMPARE(projection.teachers().front().sourceKey.value(), std::string("teacher-1"));
     QCOMPARE(projection.teachers().front().displayName, std::string("Alex Kim"));
-    QCOMPARE(projection.classes().front().sourceKey, std::string("class-1"));
+    QCOMPARE(projection.classes().front().sourceKey.value(), std::string("class-1"));
     QCOMPARE(projection.classes().front().name, std::string("Stored Class"));
     QCOMPARE(projection.classes().front().grade, std::string("E4"));
     QCOMPARE(projection.classes().front().notes, std::string("Class notes"));
@@ -289,11 +304,11 @@ void NextApplicationClassTransferTests::regularAndIntensiveTimesRemainExplicitly
     QVERIFY(result);
     const auto& projection = result.value();
     const auto regular = projection.findTimes(
-        "class-1",
+        ClassTransferClassKey("class-1"),
         TransferTimeCategory::Regular
         );
     const auto intensive = projection.lookupTimes(
-        "class-1",
+        ClassTransferClassKey("class-1"),
         TransferTimeCategory::Intensive
         );
 
@@ -306,7 +321,9 @@ void NextApplicationClassTransferTests::regularAndIntensiveTimesRemainExplicitly
     QCOMPARE(intensive->front().startTime, std::string("10:00 AM"));
     QCOMPARE(intensive->front().endTime, std::string("10:55 AM"));
     QVERIFY(
-        projection.findTimes("not-present", TransferTimeCategory::Regular)
+        projection.findTimes(
+            ClassTransferClassKey("not-present"),
+            TransferTimeCategory::Regular)
             .has_value()
             == false
         );
@@ -332,14 +349,16 @@ void NextApplicationClassTransferTests::missingTeacherAndEmptyOptionalFieldsAreE
     const auto result = ClassTransferProjection::create(std::move(input));
 
     QVERIFY(result);
-    const auto classCopy = result.value().findClass("class-2");
+    const auto classCopy = result.value().findClass(
+        ClassTransferClassKey("class-2"));
     QVERIFY(classCopy.has_value());
     QVERIFY(!classCopy->hasTeacher());
     QVERIFY(!classCopy->teacherSourceKey.has_value());
     QVERIFY(classCopy->summary.empty());
     QVERIFY(classCopy->regularTimes.empty());
     QVERIFY(classCopy->intensiveTimes.empty());
-    QVERIFY(result.value().findTeacher("teacher-1")->summary.empty());
+    QVERIFY(result.value().findTeacher(
+        ClassTransferTeacherKey("teacher-1"))->summary.empty());
 }
 
 void NextApplicationClassTransferTests::duplicateAndUnknownReferencesAreRejected()
@@ -357,11 +376,13 @@ void NextApplicationClassTransferTests::duplicateAndUnknownReferencesAreRejected
     verifyInvalid(ClassTransferProjection::create(std::move(duplicateClasses)));
 
     auto unknownTeacher = validInput();
-    unknownTeacher.classes.front().teacherSourceKey = "teacher-404";
+    unknownTeacher.classes.front().teacherSourceKey =
+        ClassTransferTeacherKey("teacher-404");
     verifyInvalid(ClassTransferProjection::create(std::move(unknownTeacher)));
 
     auto blankTeacherReference = validInput();
-    blankTeacherReference.classes.front().teacherSourceKey = " \t";
+    blankTeacherReference.classes.front().teacherSourceKey =
+        ClassTransferTeacherKey(" \t");
     verifyInvalid(
         ClassTransferProjection::create(std::move(blankTeacherReference))
         );
@@ -369,8 +390,23 @@ void NextApplicationClassTransferTests::duplicateAndUnknownReferencesAreRejected
 
 void NextApplicationClassTransferTests::blankAndOversizedKeysAndTextAreRejected()
 {
+    auto emptyTeacherKey = validInput();
+    emptyTeacherKey.teachers.front().sourceKey = ClassTransferTeacherKey{};
+    verifyInvalid(ClassTransferProjection::create(std::move(emptyTeacherKey)));
+
+    auto emptyClassKey = validInput();
+    emptyClassKey.classes.front().sourceKey = ClassTransferClassKey{};
+    verifyInvalid(ClassTransferProjection::create(std::move(emptyClassKey)));
+
+    auto emptyTeacherReference = validInput();
+    emptyTeacherReference.classes.front().teacherSourceKey =
+        ClassTransferTeacherKey{};
+    verifyInvalid(
+        ClassTransferProjection::create(std::move(emptyTeacherReference)));
+
     auto blankTeacherKey = validInput();
-    blankTeacherKey.teachers.front().sourceKey = " \t";
+    blankTeacherKey.teachers.front().sourceKey =
+        ClassTransferTeacherKey(" \t");
     verifyInvalid(ClassTransferProjection::create(std::move(blankTeacherKey)));
 
     auto blankTeacherName = validInput();
@@ -378,7 +414,7 @@ void NextApplicationClassTransferTests::blankAndOversizedKeysAndTextAreRejected(
     verifyInvalid(ClassTransferProjection::create(std::move(blankTeacherName)));
 
     auto blankClassKey = validInput();
-    blankClassKey.classes.front().sourceKey = "\n";
+    blankClassKey.classes.front().sourceKey = ClassTransferClassKey("\n");
     verifyInvalid(ClassTransferProjection::create(std::move(blankClassKey)));
 
     auto blankClassName = validInput();
@@ -398,10 +434,8 @@ void NextApplicationClassTransferTests::blankAndOversizedKeysAndTextAreRejected(
     verifyInvalid(ClassTransferProjection::create(std::move(blankTimeEnd)));
 
     auto oversizedTeacherKey = validInput();
-    oversizedTeacherKey.teachers.front().sourceKey = std::string(
-        kClassTransferMaxSourceKeyLength + 1,
-        't'
-        );
+    oversizedTeacherKey.teachers.front().sourceKey = ClassTransferTeacherKey(
+        std::string(kClassTransferMaxSourceKeyLength + 1, 't'));
     verifyInvalid(
         ClassTransferProjection::create(std::move(oversizedTeacherKey))
         );
@@ -434,10 +468,8 @@ void NextApplicationClassTransferTests::blankAndOversizedKeysAndTextAreRejected(
         );
 
     auto oversizedClassKey = validInput();
-    oversizedClassKey.classes.front().sourceKey = std::string(
-        kClassTransferMaxSourceKeyLength + 1,
-        'c'
-        );
+    oversizedClassKey.classes.front().sourceKey = ClassTransferClassKey(
+        std::string(kClassTransferMaxSourceKeyLength + 1, 'c'));
     verifyInvalid(ClassTransferProjection::create(std::move(oversizedClassKey)));
 
     auto oversizedClassName = validInput();
@@ -604,27 +636,30 @@ void NextApplicationClassTransferTests::lookupsReturnIndependentValueCopies()
     QVERIFY(result);
     const ClassTransferProjection projection = result.value();
 
-    auto teacherCopy = projection.findTeacher("teacher-1");
+    auto teacherCopy = projection.findTeacher(
+        ClassTransferTeacherKey("teacher-1"));
     QVERIFY(teacherCopy.has_value());
     teacherCopy->displayName = "Changed outside projection";
     teacherCopy->notes = "Changed notes";
 
-    auto classCopy = projection.lookupClass("class-1");
+    auto classCopy = projection.lookupClass(ClassTransferClassKey("class-1"));
     QVERIFY(classCopy.has_value());
     classCopy->name = "Changed class";
     classCopy->regularTimes.front().day = "Changed day";
 
     auto timesCopy = projection.findTimes(
-        "class-1",
+        ClassTransferClassKey("class-1"),
         TransferTimeCategory::Regular
         );
     QVERIFY(timesCopy.has_value());
     timesCopy->front().startTime = "Changed time";
 
-    const auto storedTeacher = projection.findTeacher("teacher-1");
-    const auto storedClass = projection.findClass("class-1");
+    const auto storedTeacher = projection.findTeacher(
+        ClassTransferTeacherKey("teacher-1"));
+    const auto storedClass = projection.findClass(
+        ClassTransferClassKey("class-1"));
     const auto storedTimes = projection.findTimes(
-        "class-1",
+        ClassTransferClassKey("class-1"),
         TransferTimeCategory::Regular
         );
     QVERIFY(storedTeacher.has_value());
@@ -635,8 +670,10 @@ void NextApplicationClassTransferTests::lookupsReturnIndependentValueCopies()
     QCOMPARE(storedClass->name, std::string("Stored Class"));
     QCOMPARE(storedClass->regularTimes.front().day, std::string("Monday"));
     QCOMPARE(storedTimes->front().startTime, std::string("4:00 PM"));
-    QVERIFY(!projection.findTeacher("not-present").has_value());
-    QVERIFY(!projection.findClass("not-present").has_value());
+    QVERIFY(!projection.findTeacher(
+        ClassTransferTeacherKey("not-present")).has_value());
+    QVERIFY(!projection.findClass(
+        ClassTransferClassKey("not-present")).has_value());
 }
 
 void NextApplicationClassTransferTests::recordsAndProjectionAreCopyableEqualAndReleasable()
@@ -674,14 +711,18 @@ void NextApplicationClassTransferTests::recordsAndProjectionAreCopyableEqualAndR
 void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAccessors()
 {
     static_assert(
-        std::is_same_v<decltype(TransferTeacher::sourceKey), std::string>
+        std::is_same_v<
+            decltype(TransferTeacher::sourceKey),
+            ClassTransferTeacherKey>
         );
     static_assert(
         std::is_same_v<
             decltype(TransferClass::teacherSourceKey),
-            std::optional<std::string>
+            std::optional<ClassTransferTeacherKey>
             >
         );
+    static_assert(std::is_same_v<
+        decltype(TransferClass::sourceKey), ClassTransferClassKey>);
     static_assert(
         std::is_same_v<
             decltype(TransferClass::regularTimes),
@@ -691,7 +732,7 @@ void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAc
     static_assert(
         std::is_same_v<
             decltype(std::declval<const ClassTransferProjection>().findTeacher(
-                std::string_view{}
+                ClassTransferTeacherKey{}
                 )),
             std::optional<TransferTeacher>
             >
@@ -699,7 +740,7 @@ void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAc
     static_assert(
         std::is_same_v<
             decltype(std::declval<const ClassTransferProjection>().findClass(
-                std::string_view{}
+                ClassTransferClassKey{}
                 )),
             std::optional<TransferClass>
             >
@@ -719,7 +760,7 @@ void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAc
     static_assert(
         !std::is_pointer_v<
             decltype(std::declval<const ClassTransferProjection>().findTeacher(
-                std::string_view{}
+                ClassTransferTeacherKey{}
                 ))
             >
         );
@@ -727,6 +768,80 @@ void NextApplicationClassTransferTests::contractHasNoExternalOwnersOrRawSourceAc
     static_assert(!HasRawSourceAccessor<ClassTransferStagingPackage>);
 
     QVERIFY(true);
+}
+
+void NextApplicationClassTransferTests::keyTypesPreserveDistinctNamespacesAndExactBytes()
+{
+    static_assert(!std::is_same_v<ClassTransferTeacherKey, ClassTransferClassKey>);
+    static_assert(std::is_constructible_v<ClassTransferTeacherKey, std::string>);
+    static_assert(std::is_constructible_v<ClassTransferClassKey, std::string>);
+    static_assert(!std::is_convertible_v<std::string, ClassTransferTeacherKey>);
+    static_assert(!std::is_convertible_v<std::string, ClassTransferClassKey>);
+
+    const ClassTransferTeacherKey emptyTeacherKey;
+    const ClassTransferClassKey emptyClassKey;
+    QVERIFY(emptyTeacherKey.empty());
+    QVERIFY(emptyClassKey.empty());
+    QCOMPARE(emptyTeacherKey.value(), std::string{});
+    QCOMPARE(emptyClassKey.value(), std::string{});
+
+    const std::string exactBytes{
+        static_cast<char>(0xC3), static_cast<char>(0xA9), '\0', 'X'};
+    const ClassTransferTeacherKey teacherKey(exactBytes);
+    const ClassTransferClassKey classKey(exactBytes);
+    QVERIFY(!teacherKey.empty());
+    QVERIFY(!classKey.empty());
+    QCOMPARE(teacherKey.value(), exactBytes);
+    QCOMPARE(classKey.value(), exactBytes);
+    QVERIFY(teacherKey == ClassTransferTeacherKey(exactBytes));
+    QVERIFY(classKey == ClassTransferClassKey(exactBytes));
+    QVERIFY(ClassTransferTeacherKey("A") < ClassTransferTeacherKey("B"));
+    QVERIFY(ClassTransferClassKey("A") < ClassTransferClassKey("B"));
+
+    auto input = validInput();
+    input.teachers[0].sourceKey = teacherKey;
+    input.classes[0].sourceKey = classKey;
+    input.classes[0].teacherSourceKey = teacherKey;
+    input.classes[1].sourceKey = ClassTransferClassKey(exactBytes + "-class");
+    input.teachers[1].sourceKey = ClassTransferTeacherKey(exactBytes + "-teacher");
+    const auto projection = ClassTransferProjection::create(std::move(input));
+    QVERIFY(projection);
+    QCOMPARE(projection.value().findTeacher(teacherKey)->sourceKey.value(), exactBytes);
+    QCOMPARE(projection.value().findClass(classKey)->sourceKey.value(), exactBytes);
+
+    auto wrongNamespaceReference = validInput();
+    wrongNamespaceReference.teachers[0].sourceKey =
+        ClassTransferTeacherKey("shared");
+    wrongNamespaceReference.classes[0].sourceKey =
+        ClassTransferClassKey("shared");
+    wrongNamespaceReference.classes[0].teacherSourceKey =
+        ClassTransferTeacherKey("Shared");
+    verifyInvalid(ClassTransferProjection::create(std::move(wrongNamespaceReference)));
+}
+
+void NextApplicationClassTransferTests::projectionAcceptsMaximumLengthKeysAndExactReferences()
+{
+    const std::string maximumKey(kClassTransferMaxSourceKeyLength, 'k');
+    auto input = validInput();
+    input.teachers[0].sourceKey = ClassTransferTeacherKey(maximumKey);
+    input.teachers[1].sourceKey = ClassTransferTeacherKey("K" + maximumKey.substr(1));
+    input.classes[0].sourceKey = ClassTransferClassKey(maximumKey);
+    input.classes[0].teacherSourceKey = ClassTransferTeacherKey(maximumKey);
+
+    const auto projection = ClassTransferProjection::create(std::move(input));
+    QVERIFY(projection);
+    QVERIFY(projection.value().findTeacher(
+        ClassTransferTeacherKey(maximumKey)).has_value());
+    QVERIFY(projection.value().findClass(
+        ClassTransferClassKey(maximumKey)).has_value());
+    QCOMPARE(projection.value().findClass(
+        ClassTransferClassKey(maximumKey))->teacherSourceKey->value(), maximumKey);
+
+    auto caseMismatch = validInput();
+    caseMismatch.teachers[0].sourceKey = ClassTransferTeacherKey("Teacher");
+    caseMismatch.classes[0].teacherSourceKey =
+        ClassTransferTeacherKey("teacher");
+    verifyInvalid(ClassTransferProjection::create(std::move(caseMismatch)));
 }
 
 void NextApplicationClassTransferTests::reviewDecisionsPreserveMatchChoiceSemantics()
@@ -910,7 +1025,8 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
 
     request = validReviewRequest();
     request.teacherResolutions[0] = {
-        "teacher-ambiguous", TeacherAction::Create, reviewTeacherId(11)};
+        ClassTransferTeacherKey("teacher-ambiguous"),
+        TeacherAction::Create, reviewTeacherId(11)};
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::CreateTeacherHasTarget
@@ -918,14 +1034,75 @@ void NextApplicationClassTransferTests::reviewDecisionMatrixRejectsIncompleteDup
 
     request = validReviewRequest();
     request.teacherResolutions[0] = {
-        "teacher-ambiguous", TeacherAction::ReplaceExisting,
+        ClassTransferTeacherKey("teacher-ambiguous"),
+        TeacherAction::ReplaceExisting,
         reviewTeacherId(12)};
     request.teacherResolutions[1] = {
-        "teacher-two", TeacherAction::ReplaceExisting, reviewTeacherId(12)};
+        ClassTransferTeacherKey("teacher-two"),
+        TeacherAction::ReplaceExisting, reviewTeacherId(12)};
     QVERIFY(hasReviewIssue(
         validateClassTransferReviewDecisions(request),
         IssueCode::DuplicateTeacherReplacementTarget
         ));
+}
+
+void NextApplicationClassTransferTests::reviewUsesEmptyOnlyKeysFirstDuplicateCandidateAndStableIssueOrder()
+{
+    using IssueCode = ClassTransferReviewDecisionIssueCode;
+    using TeacherAction = ClassTransferReviewTeacherAction;
+
+    ClassTransferReviewDecisionRequest duplicateCandidates;
+    duplicateCandidates.teachers = {
+        {ClassTransferTeacherKey("same-key"), {reviewTeacherId(11)}},
+        {ClassTransferTeacherKey("same-key"), {reviewTeacherId(12)}}
+    };
+    duplicateCandidates.teacherResolutions = {
+        {ClassTransferTeacherKey("same-key"), TeacherAction::KeepExisting,
+            reviewTeacherId(11)}
+    };
+    QVERIFY(validateClassTransferReviewDecisions(duplicateCandidates).accepted());
+
+    duplicateCandidates.teacherResolutions[0].targetTeacherId =
+        reviewTeacherId(12);
+    const auto secondCandidateOnly =
+        validateClassTransferReviewDecisions(duplicateCandidates);
+    QCOMPARE(secondCandidateOnly.issues.size(), std::size_t(1));
+    QCOMPARE(secondCandidateOnly.issues[0].code,
+        IssueCode::TeacherTargetNotInMatchSet);
+
+    ClassTransferReviewDecisionRequest whitespaceKey;
+    whitespaceKey.teachers = {{ClassTransferTeacherKey(" \t "), {}}};
+    whitespaceKey.teacherResolutions = {
+        {ClassTransferTeacherKey(" \t "), TeacherAction::Create, std::nullopt}
+    };
+    QVERIFY(validateClassTransferReviewDecisions(whitespaceKey).accepted());
+
+    ClassTransferReviewDecisionRequest orderedIssues;
+    orderedIssues.teachers = {
+        {ClassTransferTeacherKey{}, {}},
+        {ClassTransferTeacherKey(" \t "), {}}
+    };
+    orderedIssues.teacherResolutions = {
+        {ClassTransferTeacherKey{}, TeacherAction::Invalid, std::nullopt},
+        {ClassTransferTeacherKey("unknown"), TeacherAction::Invalid,
+            std::nullopt},
+        {ClassTransferTeacherKey(" \t "), TeacherAction::KeepExisting,
+            std::nullopt}
+    };
+    const auto issues = validateClassTransferReviewDecisions(orderedIssues);
+    const std::vector<IssueCode> expectedOrder = {
+        IssueCode::EmptyTeacherKey,
+        IssueCode::InvalidTeacherAction,
+        IssueCode::EmptyTeacherKey,
+        IssueCode::InvalidTeacherAction,
+        IssueCode::UnknownTeacherResolution,
+        IssueCode::TeacherActionMissingTarget
+    };
+    QCOMPARE(issues.issues.size(), expectedOrder.size());
+    for (std::size_t index = 0; index < expectedOrder.size(); ++index)
+    {
+        QCOMPARE(issues.issues[index].code, expectedOrder[index]);
+    }
 }
 
 void NextApplicationClassTransferTests::teacherMatchingUsesBothOrEitherNameAndRequiresOneName()
@@ -957,14 +1134,20 @@ void NextApplicationClassTransferTests::classMatchingRequiresCourseAndTeacherIde
         "alex kim", "김 알렉스"};
     const ClassTransferMatchingRequest request{
         .sourceTeachers = {
-            {"teacher-1", sourceNames}
+            {ClassTransferTeacherKey("teacher-1"), sourceNames}
         },
         .destinationTeachers = {},
         .sourceClasses = {
-            {0, "teacher-1", "e4", "perseus"},
-            {1, "teacher-1", "", "perseus"},
-            {2, "teacher-1", "e4", ""},
-            {3, "missing-teacher", "e4", "perseus"}
+            {0, ClassTransferTeacherKey("teacher-1"), "e4", "perseus",
+                ClassTransferClassKey("class-0")},
+            {1, ClassTransferTeacherKey("teacher-1"), "", "perseus",
+                ClassTransferClassKey("class-1")},
+            {2, ClassTransferTeacherKey("teacher-1"), "e4", "",
+                ClassTransferClassKey("class-2")},
+            {3, ClassTransferTeacherKey("missing-teacher"), "e4", "perseus",
+                ClassTransferClassKey("class-3")},
+            {4, ClassTransferTeacherKey{}, "e4", "perseus",
+                ClassTransferClassKey("class-4")}
         },
         .destinationClasses = {
             {
@@ -1013,7 +1196,7 @@ void NextApplicationClassTransferTests::classMatchingRequiresCourseAndTeacherIde
     };
 
     const auto result = matchClassTransferCandidates(request);
-    QCOMPARE(result.classes.size(), std::size_t(4));
+    QCOMPARE(result.classes.size(), std::size_t(5));
     QCOMPARE(result.classes[0].matchingClassIds.size(), std::size_t(1));
     QCOMPARE(
         result.classes[0].matchingClassIds[0].value(),
@@ -1034,6 +1217,8 @@ void NextApplicationClassTransferTests::classMatchingRequiresCourseAndTeacherIde
         result.classes[3].matchingClassIds[0].value(),
         std::string("unassigned-match")
         );
+    QCOMPARE(result.classes[4].matchingClassIds,
+        std::vector<ClassId>{matchingClassId("unassigned-match")});
 }
 
 void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinationOrder()
@@ -1041,14 +1226,15 @@ void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinati
     const ClassTransferMatchingTeacherNames names{"alex kim", "김 알렉스"};
     const ClassTransferMatchingRequest request{
         .sourceTeachers = {
-            {"teacher-1", names}
+            {ClassTransferTeacherKey("teacher-1"), names}
         },
         .destinationTeachers = {
             {matchingTeacherId("teacher-later"), names},
             {matchingTeacherId("teacher-earlier"), names}
         },
         .sourceClasses = {
-            {0, "teacher-1", "e4", "perseus"}
+            {0, ClassTransferTeacherKey("teacher-1"), "e4", "perseus",
+                ClassTransferClassKey("source-class")}
         },
         .destinationClasses = {
             {
@@ -1089,6 +1275,9 @@ void NextApplicationClassTransferTests::classAndTeacherMatchListsRetainDestinati
         result.classes[0].matchingClassIds[1].value(),
         std::string("class-earlier")
     );
+    QCOMPARE(result.teachers[0].teacherSourceKey.value(),
+        std::string("teacher-1"));
+    QCOMPARE(result.classes[0].sourceKey.value(), std::string("source-class"));
 }
 
 void NextApplicationClassTransferTests::
@@ -1370,9 +1559,9 @@ void NextApplicationClassTransferTests::applyValidationRetainsDecisionIssuesAndO
     value = baseline; value.classResolutions[1].targetClassId = reviewClassId(43); cases.push_back(value);
     value = baseline; value.teacherResolutions[3].targetTeacherId = reviewTeacherId(13); cases.push_back(value);
     value = baseline; value.classResolutions.push_back({99,ClassTransferReviewClassAction::Create,{}});
-    value.teacherResolutions.push_back({"unknown",ClassTransferReviewTeacherAction::Create,{}}); cases.push_back(value);
+    value.teacherResolutions.push_back({ClassTransferTeacherKey("unknown"),ClassTransferReviewTeacherAction::Create,{}}); cases.push_back(value);
     value = baseline; value.classResolutions[0].packageClassIndex = -1;
-    value.teacherResolutions[0].teacherKey.clear(); cases.push_back(value);
+    value.teacherResolutions[0].teacherKey = ClassTransferTeacherKey{}; cases.push_back(value);
     value = baseline; value.classResolutions.clear(); value.teacherResolutions.clear(); cases.push_back(value);
     for (const auto& review : cases)
     {
@@ -1432,7 +1621,7 @@ applyValidationReportsInvalidActionsWithInvalidResolutionKeys()
     QCOMPARE(result.issues[1].code, IssueCode::UnknownClassResolution);
 
     auto emptyTeacherKey = baseline;
-    emptyTeacherKey.teacherResolutions[0].teacherKey.clear();
+    emptyTeacherKey.teacherResolutions[0].teacherKey = ClassTransferTeacherKey{};
     emptyTeacherKey.teacherResolutions[0].action =
         static_cast<ClassTransferReviewTeacherAction>(99);
     result = validateClassTransferApplyRequest(
@@ -1443,11 +1632,12 @@ applyValidationReportsInvalidActionsWithInvalidResolutionKeys()
     QVERIFY(hasReviewIssue(result, IssueCode::EmptyTeacherKey));
     QVERIFY(result.issues.size() >= 2);
     QCOMPARE(result.issues[0].code, IssueCode::InvalidTeacherAction);
-    QCOMPARE(result.issues[0].teacherKey, std::string{});
+    QCOMPARE(result.issues[0].teacherKey.value(), std::string{});
     QCOMPARE(result.issues[1].code, IssueCode::EmptyTeacherKey);
 
     auto unknownTeacherKey = baseline;
-    unknownTeacherKey.teacherResolutions[0].teacherKey = "unknown";
+    unknownTeacherKey.teacherResolutions[0].teacherKey =
+        ClassTransferTeacherKey("unknown");
     unknownTeacherKey.teacherResolutions[0].action =
         static_cast<ClassTransferReviewTeacherAction>(99);
     result = validateClassTransferApplyRequest(
@@ -1458,7 +1648,7 @@ applyValidationReportsInvalidActionsWithInvalidResolutionKeys()
     QVERIFY(hasReviewIssue(result, IssueCode::UnknownTeacherResolution));
     QVERIFY(result.issues.size() >= 2);
     QCOMPARE(result.issues[0].code, IssueCode::InvalidTeacherAction);
-    QCOMPARE(result.issues[0].teacherKey, std::string("unknown"));
+    QCOMPARE(result.issues[0].teacherKey.value(), std::string("unknown"));
     QCOMPARE(result.issues[1].code, IssueCode::UnknownTeacherResolution);
 }
 
