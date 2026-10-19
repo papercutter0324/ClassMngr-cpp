@@ -7639,3 +7639,12 @@ values, direct arbitrary Unicode keys, exact grouping, and existing validation
 and issue order. Limit this slice to the review validator and its feature and
 apply-review adapters. Apply-request and state-validation keys are distinct
 contracts and remain unchanged.
+
+## 2026-10-20 - F1112 complete
+
+F1112 completed at source/test commit `9110a8c8`, following acceptance commit
+`17aadcb1`. Focused review-decision, apply-review projection, and plan
+validation CTests passed 3/3, and the dialog feature-adapter selector passed.
+Exact Unicode bytes, distinct keys, issue payload and order, first-seen
+candidate order, room aggregation, default-empty behavior, and supplementary
+UTF-16 conversion are covered. The full suite and Windows were not run.

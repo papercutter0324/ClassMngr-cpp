@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active with F1112 accepted before implementation; its next action is to add the Application review-key value type and update only its validator and construction adapters. F1113 and F1114 remain discovered, not accepted. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-1-accepted-2-discovered) for the full ordered list.
+- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`. F1113 is next for acceptance reassessment, and F1114 remains discovered, not accepted. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-1-complete-2-discovered) for the full ordered list.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,10 +38,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch482 — Active; three candidates, one accepted and two discovered:**
+**Batch482 — Active; three candidates, one complete and two discovered:**
 
-1. **F1112 — Type Schedule Import teacher review correlation keys.** Accepted before implementation. Next: add `ScheduleImportReviewTeacherKey` to the Application review-decision contract and update its validator grouping/lookups plus the feature and apply-review construction adapters; leave apply-request and state key fields unchanged.
-2. **F1113 — Type Class Transfer source correlation keys.** Discovered, not accepted; preserve package-key validation, matching, missing-teacher semantics, and order.
+1. **F1112 — Type Schedule Import teacher review correlation keys.** Complete at `9110a8c8` following acceptance `17aadcb1`; typed the review decision keys while preserving exact bytes, validation/order behavior, and existing conversions.
+2. **F1113 — Type Class Transfer source correlation keys.** Discovered, not accepted; next for acceptance reassessment, preserving package-key validation, matching, missing-teacher semantics, and order.
 3. **F1114 — Type generic import-review source keys.** Discovered, not accepted; preserve blank/256-byte validation, exact bytes, category tagging, and validation outcomes.
 
 No other slices were found.

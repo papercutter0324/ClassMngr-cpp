@@ -5243,3 +5243,16 @@ feature/apply-review construction adapters; leave apply-request and state
 validation keys unchanged. F1113 and F1114 remain discovered, not accepted.
 F629 still needs source-bound Windows x64 layout evidence, which is not
 available now; the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1112 complete; Batch482 active - 2026-10-20
+
+F1112 completed at source/test commit `9110a8c8`, following acceptance commit
+`17aadcb1`. The Application review-decision candidate, teacher-resolution,
+and issue keys now use `ScheduleImportReviewTeacherKey`, preserving exact
+bytes, empty values, validation, grouping, issue order, and room aggregation.
+The validator and feature/apply-review adapters retain the existing UTF
+conversions; apply-request and state-validation contracts remain unchanged.
+Focused review-decision, apply-projection, and plan-validation CTests passed
+3/3; the Schedule Import dialog adapter selector also passed. No full suite or
+Windows run occurred. F1113 is next for acceptance review; F1114 remains
+discovered. F629 and the Phase 0 and Phase 2 gates remain open.

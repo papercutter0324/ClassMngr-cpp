@@ -48270,3 +48270,33 @@ Batch482 remains active with F1112 accepted before implementation and F1113
 and F1114 discovered, not accepted. F629 still awaits Windows x64 layout
 evidence; the Phase 0 and Phase 2 gates remain open. No implementation,
 verification, or commit has occurred for F1112.
+
+### F1112 complete - 2026-10-20
+
+F1112 is complete at source/test commit `9110a8c8`, following acceptance
+commit `17aadcb1`. Application now uses `ScheduleImportReviewTeacherKey` for
+the review-decision candidate, teacher-resolution, and issue keys. It
+preserves exact `std::string` bytes, default-empty values, equality/order,
+validation and issue sequencing, candidate order, and room aggregation. The
+review validator and feature/apply-review construction adapters use the new
+type; existing `QString::toStdString()` and UTF-16-to-UTF-8 conversions remain
+unchanged. Apply-request and state-validation keys remain unchanged, and
+`Domain::KoreanTeacherKey` is not reused.
+
+The independent Tester built
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`, and
+`ClassMngrScheduleImportDialogTests` in the existing
+`build/macos-clang-debug` tree. Focused CTests passed 3/3, and QTest selector
+`featureValidatorMatchesQStringTeacherKeyConstruction` passed with 0
+failed/skipped. Coverage includes exact Unicode and normalization-sensitive
+keys, issue payload/order, first-seen order, room aggregation, default empty,
+and supplementary UTF-16 conversion.
+
+Verification used macOS 27.0.1 arm64, Apple Clang, and Qt 6.12.0. This is
+focused verification; no full suite or Windows run was performed. Batch482
+remains active with all three candidates: F1112 complete, F1113 next for
+acceptance reassessment, and F1114 discovered. F629 still awaits Windows x64
+layout evidence, and the Phase 0 and Phase 2 gates remain open. Batch483 has
+not been added while its independent discovery review continues.

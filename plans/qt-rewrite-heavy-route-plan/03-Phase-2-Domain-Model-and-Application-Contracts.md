@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is active; F1112 is accepted before implementation, with F1113 and F1114 still discovered, not accepted; implement the review-key type, validator grouping/lookups, and construction adapters while keeping F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`, F1113 is next for acceptance reassessment, and F1114 remains discovered; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch482 (3 candidates; 1 accepted; 2 discovered)
+#### Active batch: Batch482 (3 candidates; 1 complete; 2 discovered)
 
-1. F1112 - Type Schedule Import teacher review correlation keys: accepted before implementation. Add Application `ScheduleImportReviewTeacherKey` to the candidate, resolution, and issue contracts; update validator grouping/lookups and feature/apply-review construction adapters. Preserve exact bytes and behavior; leave apply-request and state key fields unchanged and do not use `Domain::KoreanTeacherKey`.
-2. F1113 - Type Class Transfer source correlation keys: discovered, not accepted. Preserve nonblank/bounded validation, uniqueness, exact teacher-reference mapping, missing-teacher semantics, and ordering.
+1. F1112 - Type Schedule Import teacher review correlation keys: complete at `9110a8c8`, following acceptance `17aadcb1`. `ScheduleImportReviewTeacherKey` types the candidate, resolution, and issue keys; exact bytes, default-empty/equality/order, validation and issue sequencing, candidate order, room aggregation, and existing conversions are preserved. Apply-request and state keys remain unchanged; no `Domain::KoreanTeacherKey` reuse.
+2. F1113 - Type Class Transfer source correlation keys: discovered, not accepted; next for acceptance reassessment. Preserve nonblank/bounded validation, uniqueness, exact teacher-reference mapping, missing-teacher semantics, and ordering.
 3. F1114 - Type generic import-review source keys: discovered, not accepted. Preserve blank/256-byte validation, exact bytes, category tagging, and current validation outcomes.
 
 #### Deferred candidates
