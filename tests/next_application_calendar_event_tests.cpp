@@ -415,6 +415,11 @@ public:
     }
 };
 
+static_assert(std::is_same_v<
+    decltype(CalendarEventByIdQueryRequest::eventId),
+    std::optional<CalendarEventId>
+    >);
+
 }
 
 class NextApplicationCalendarEventTests final : public QObject
@@ -808,7 +813,8 @@ void NextApplicationCalendarEventTests::emptyProjectionAndMissingLookupAreExplic
 void NextApplicationCalendarEventTests::
 calendarEventByIdQueryUseCaseForwardsIdAndResultOnce()
 {
-    const CalendarEventByIdQueryRequest request{"0042"};
+    const CalendarEventId requestedId = calendarEventId("0042");
+    const CalendarEventByIdQueryRequest request{requestedId};
     const CalendarEventSummary expected = calendarEventSummary("0042");
     FakeCalendarEventByIdQueryPort port;
     port.response = CalendarEventByIdQueryResult::success(expected);
@@ -819,14 +825,16 @@ calendarEventByIdQueryUseCaseForwardsIdAndResultOnce()
     QVERIFY(result);
     QCOMPARE(port.loadCalls, 1);
     QVERIFY(port.receivedEventId.has_value());
-    QCOMPARE(port.receivedEventId->value(), std::string("0042"));
+    QCOMPARE(port.receivedEventId->value(), requestedId.value());
+    QCOMPARE(result.value().id.value(), std::string("0042"));
     QVERIFY(result.value() == expected);
 }
 
 void NextApplicationCalendarEventTests::
 calendarEventByIdQueryUseCaseRejectsMismatchedReturnedId()
 {
-    const CalendarEventByIdQueryRequest request{"requested-event"};
+    const CalendarEventId requestedId = calendarEventId("requested-event");
+    const CalendarEventByIdQueryRequest request{requestedId};
     FakeCalendarEventByIdQueryPort port;
     port.response = CalendarEventByIdQueryResult::success(
         calendarEventSummary("returned-event")
@@ -844,13 +852,14 @@ calendarEventByIdQueryUseCaseRejectsMismatchedReturnedId()
     QVERIFY(!result.error().recoverable);
     QCOMPARE(port.loadCalls, 1);
     QVERIFY(port.receivedEventId.has_value());
-    QCOMPARE(port.receivedEventId->value(), std::string("requested-event"));
+    QCOMPARE(port.receivedEventId->value(), requestedId.value());
 }
 
 void NextApplicationCalendarEventTests::
 calendarEventByIdQueryUseCasePropagatesPortFailure()
 {
-    const CalendarEventByIdQueryRequest request{"missing-event"};
+    const CalendarEventId requestedId = calendarEventId("missing-event");
+    const CalendarEventByIdQueryRequest request{requestedId};
     FakeCalendarEventByIdQueryPort port;
     port.response = CalendarEventByIdQueryResult::failure({
         .code = ErrorCode::NotFound,
@@ -864,7 +873,7 @@ calendarEventByIdQueryUseCasePropagatesPortFailure()
     QVERIFY(!result);
     QCOMPARE(port.loadCalls, 1);
     QVERIFY(port.receivedEventId.has_value());
-    QCOMPARE(port.receivedEventId->value(), std::string("missing-event"));
+    QCOMPARE(port.receivedEventId->value(), requestedId.value());
     QCOMPARE(result.error().code, ErrorCode::NotFound);
     QCOMPARE(
         result.error().message,
@@ -878,11 +887,14 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
 {
     FakeCalendarEventByIdQueryPort port;
     const std::vector<CalendarEventByIdQueryRequest> invalidRequests = {
-        {""},
-        {" \t\r\n"},
-        {"\xC2\xA0"},
-        {"\xE3\x80\x80"},
-        {std::string(kCalendarEventByIdQueryMaxIdentifierLength + 1, 'x')}
+        {std::nullopt},
+        {calendarEventId(" \t\r\n")},
+        {calendarEventId("\xC2\xA0")},
+        {calendarEventId("\xE3\x80\x80")},
+        {calendarEventId(std::string(
+            kCalendarEventByIdQueryMaxIdentifierLength + 1,
+            'x'
+            ))}
     };
 
     for (const CalendarEventByIdQueryRequest& request : invalidRequests)
@@ -902,11 +914,14 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
     QCOMPARE(port.loadCalls, 0);
     QVERIFY(!port.receivedEventId.has_value());
 
-    const CalendarEventByIdQueryRequest exactLimitRequest{
+    const CalendarEventId exactLimitId = calendarEventId(
         std::string(kCalendarEventByIdQueryMaxIdentifierLength, 'x')
+        );
+    const CalendarEventByIdQueryRequest exactLimitRequest{
+        exactLimitId
     };
     port.response = CalendarEventByIdQueryResult::success(
-        calendarEventSummary(exactLimitRequest.eventId)
+        calendarEventSummary(exactLimitId.value())
         );
     const CalendarEventByIdQueryResult exactLimitResult =
         CalendarEventByIdQueryUseCase::execute(port, exactLimitRequest);
@@ -916,16 +931,19 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
     QVERIFY(port.receivedEventId.has_value());
     QCOMPARE(
         port.receivedEventId->value(),
-        exactLimitRequest.eventId
+        exactLimitId.value()
         );
 
     // Malformed UTF-8 remains nonblank here; identifier byte validity belongs
     // to the typed identifier contract, which accepts opaque nonempty bytes.
-    const CalendarEventByIdQueryRequest malformedUtf8Request{
+    const CalendarEventId malformedUtf8Id = calendarEventId(
         std::string("\xFF", 1)
+        );
+    const CalendarEventByIdQueryRequest malformedUtf8Request{
+        malformedUtf8Id
     };
     port.response = CalendarEventByIdQueryResult::success(
-        calendarEventSummary(malformedUtf8Request.eventId)
+        calendarEventSummary(malformedUtf8Id.value())
         );
     const CalendarEventByIdQueryResult malformedUtf8Result =
         CalendarEventByIdQueryUseCase::execute(port, malformedUtf8Request);
@@ -933,7 +951,7 @@ calendarEventByIdQueryUseCaseRejectsInvalidRequestWithoutCallingPort()
     QVERIFY(malformedUtf8Result);
     QCOMPARE(port.loadCalls, 2);
     QVERIFY(port.receivedEventId.has_value());
-    QCOMPARE(port.receivedEventId->value(), malformedUtf8Request.eventId);
+    QCOMPARE(port.receivedEventId->value(), malformedUtf8Id.value());
 }
 
 void NextApplicationCalendarEventTests::orderingAndSafeValueLookupsAreDeterministic()

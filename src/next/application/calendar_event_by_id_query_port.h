@@ -6,6 +6,7 @@
 #include "next/domain/operation_result.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 
 namespace ClassMngr::Next::Application
@@ -16,7 +17,7 @@ inline constexpr std::size_t kCalendarEventByIdQueryMaxIdentifierLength =
 
 struct CalendarEventByIdQueryRequest final
 {
-    std::string eventId;
+    std::optional<Domain::CalendarEventId> eventId;
 
     [[nodiscard]] Domain::Result<void> validate() const;
 
@@ -53,10 +54,13 @@ validateCalendarEventByIdQueryRequest(
     const CalendarEventByIdQueryRequest& request
     )
 {
-    if (CalendarEventByIdQueryRequestDetail::isBlank(request.eventId)
-        || request.eventId.size()
+    if (!request.eventId.has_value()
+        || CalendarEventByIdQueryRequestDetail::isBlank(
+            request.eventId->value()
+            )
+        || request.eventId->value().size()
             > kCalendarEventByIdQueryMaxIdentifierLength
-        || !Domain::CalendarEventId::fromString(request.eventId).has_value())
+        )
     {
         return CalendarEventByIdQueryRequestDetail::invalidRequest();
     }

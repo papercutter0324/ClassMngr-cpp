@@ -22,24 +22,14 @@ public:
                 );
         }
 
-        const auto eventId = Domain::CalendarEventId::fromString(
-            request.eventId
-            );
-        if (!eventId)
-        {
-            return CalendarEventByIdQueryResult::failure(
-                CalendarEventByIdQueryRequestDetail::invalidRequest().error()
-                );
-        }
-
         CalendarEventByIdQueryResult result =
-            queryPort.loadEventById(*eventId);
+            queryPort.loadEventById(*request.eventId);
         if (!result)
         {
             return CalendarEventByIdQueryResult::failure(result.error());
         }
 
-        if (result.value().id != *eventId)
+        if (result.value().id != *request.eventId)
         {
             return CalendarEventByIdQueryResult::failure({
                 .code = Domain::ErrorCode::Validation,

@@ -55,6 +55,8 @@ using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
 using CalendarEventSaveRequest =
     ClassMngr::Next::Application::CalendarEventSaveRequest;
+using CalendarEventId =
+    ClassMngr::Next::Domain::CalendarEventId;
 using CalendarEventSeriesId =
     ClassMngr::Next::Domain::CalendarEventSeriesId;
 using ApplicationCalendarEventRepeatFrequency =
@@ -187,8 +189,11 @@ void CalendarPage::handleCalendarEventActivated(
         return;
     }
 
-    const ClassMngr::Next::Application::CalendarEventByIdQueryRequest request{
+    const auto typedEventId = CalendarEventId::fromString(
         eventId.toStdString()
+        );
+    const ClassMngr::Next::Application::CalendarEventByIdQueryRequest request{
+        typedEventId
     };
     ClassMngr::Next::Platform::ApplicationServicesCalendarEventPort port(
         *m_services
