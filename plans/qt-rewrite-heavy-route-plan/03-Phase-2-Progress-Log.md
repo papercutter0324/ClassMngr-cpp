@@ -48031,3 +48031,36 @@ noncanonical, and overflow ID cases in
 and verify the typed-to-int adapter without UI changes. No production or
 test execution has occurred for F1110. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1110 complete; Batch480 closed; Batch481 active - 2026-10-20
+
+F1110 is complete at source/test commit `0a7bb774`, following acceptance
+commit `4b79475d`. The roster-transfer Application eligibility helpers now
+take typed `Domain::ClassId` values and validate canonical positive decimal
+IDs before target metadata reads. The feature boundary wraps the source int,
+keeps candidate IDs typed through filtering and the subtitle batch request,
+and unwraps them at the existing int-based menu/action/display edge. Invalid
+IDs and the current class are rejected without a target read. Qt-whitespace
+grade trimming, blank-grade rejection, case-sensitive trimmed-grade equality,
+candidate order and duplicates, labels, menu sorting, and int transfer actions
+are preserved.
+
+The Executor incrementally built `ClassMngr` in the existing
+`build/macos-clang-debug` tree with
+`cmake --build build/macos-clang-debug --target ClassMngr --parallel 4`,
+including the roster-transfer UI source and successful link. The Tester built
+the focused Application eligibility and `RosterTransferMenu` targets in that
+tree. The exact CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationRosterTransferTargetEligibilityTests|ClassMngrRosterTransferMenuTests)$'`
+passed 2/2. Coverage includes canonical `INT_MAX`, zero/negative/leading-zero/
+partial/trailing/overflow IDs, pre-read guards, Qt whitespace, case-sensitive
+grades, ordering and duplicates, current-class exclusion from subtitle batches,
+invalid-ID no-read behavior, menu labels/sorting, and int transfer actions.
+`git diff --check` passed. This was focused local macOS Debug validation; no
+full suite or Windows x64 run was performed.
+
+Batch480 is closed with F1109 and F1110 complete. Its closeout is ready for
+push; it has not been pushed. Batch481 is active with one discovered candidate,
+F1111 - Type Teacher Import review-group correlation keys, next for acceptance
+reassessment. F629 still awaits Windows x64 layout evidence, and the Phase 0
+and Phase 2 gates remain Open.

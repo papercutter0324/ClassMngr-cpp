@@ -7601,3 +7601,13 @@ positive-int contract. Keep integer UI/action state at the feature edge,
 retain typed class-list IDs through the Application pre-read guard, and
 preserve grade trimming, case-sensitive matching, candidate order, and
 duplicates.
+
+## 2026-10-20 - F1110 complete
+
+F1110 completed at source/test commit `0a7bb774`, following acceptance commit
+`4b79475d`. The roster-transfer policy carries typed class IDs but validates
+canonical positive decimal ints before eligibility; `TypedId` alone would
+accept invalid text and weaken the old positive-ID guard. The feature keeps
+snapshot IDs typed through the pre-read and batch-read path, while the
+existing menu/action edge remains integer-based. Focused policy and menu
+CTests passed 2/2; no full suite ran.

@@ -6109,15 +6109,14 @@ pushed to `origin/Qt-Rewrite`; the remote matched and the worktree is clean.
 F1109 is complete at source/test commit `d39a2cb1`, following acceptance
 commit `1fb1ef6d`; its completion and Batch481 discovery notes are committed
 at `2565f323`. Focused policy/model tests passed 2/2 on the existing macOS
-Debug tree; no full suite ran. F1110 is accepted for implementation, with
-implementation and tests not started. Type the roster-transfer Application
-eligibility IDs and retain the typed class-list IDs through the pre-read
-guard and subtitle batch query. Validate canonical positive decimal int IDs
-so malformed typed text cannot bypass current positive-ID behavior; preserve
-no-read rejection for invalid/current IDs, Qt whitespace trimming,
-case-sensitive grade matching, candidate order/duplicates, and int-based
-menu/action IDs. Batch481 discovery recorded F1111 as a transient Teacher
-Import review-group correlation-key value, discovered but not accepted. The
-combined Phase 0 gate remains open because F629 still needs source-bound
-Windows x64 layout evidence, which the user cannot run right now; the Phase 2
-gate also remains open.
+Debug tree; no full suite ran. F1110 is complete at source/test commit
+`0a7bb774`, following acceptance commit `4b79475d`. The Application
+eligibility helpers use typed IDs with canonical positive-int validation; the
+menu keeps typed snapshot IDs through the pre-read guard and subtitle batch
+query while retaining integer action IDs. The focused eligibility and menu
+CTests passed 2/2 on macOS; no full suite ran. Batch480 closeout docs are in
+progress and must be pushed before starting F1111. Batch481 has one discovered
+candidate, F1111, a transient Teacher Import review-group correlation-key
+value, not yet accepted. The combined Phase 0 gate remains open because F629
+still needs source-bound Windows x64 layout evidence, which the user cannot
+run right now; the Phase 2 gate also remains open.

@@ -5166,3 +5166,24 @@ order and duplicates, and int-based menu/action IDs. Focused targets are the
 Application eligibility tests and Roster Transfer Menu tests. Batch481's
 F1111 Teacher Import correlation-key value remains discovered, not accepted.
 F629 and the Phase 0 and Phase 2 gates remain open pending Windows x64 evidence.
+
+## Phase 2 update - F1110 complete; Batch480 closeout pending - 2026-10-20
+
+F1110 completed at source/test commit `0a7bb774`, following acceptance commit
+`4b79475d`. The roster-transfer Application eligibility helpers now accept
+`Domain::ClassId` and enforce canonical positive decimal int values before
+eligibility or target metadata reads. The feature retains typed IDs from the
+class-list snapshot through the pre-read guard and subtitle batch request;
+menu/action IDs remain integers. Qt-compatible whitespace trimming,
+case-sensitive trimmed-grade equality, candidate order/duplicates, menu
+sorting, and existing labels remain unchanged.
+
+The incremental `ClassMngr` build succeeded in `build/macos-clang-debug`.
+Focused eligibility and Roster Transfer Menu CTests passed 2/2. Coverage
+includes invalid/noncanonical/overflow IDs, current and invalid no-read cases,
+grade matching, order/duplicates, and unchanged integer transfer behavior.
+`git diff --check` passed. No full suite or Windows x64 run occurred. Batch480
+is complete; its closeout documentation is being committed before the
+authorized push. Batch481 has one discovered candidate, F1111, a transient
+Teacher Import review-group correlation-key value. F629 and the Phase 0 and
+Phase 2 gates remain open pending Windows x64 evidence.
