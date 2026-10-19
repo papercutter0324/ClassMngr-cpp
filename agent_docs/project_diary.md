@@ -7941,3 +7941,14 @@ F1127 completed at source/test commit `6021d04a`, following acceptance
 permissive `UpdateArtifactPlatformKey`; existing adapters preserve the
 platform bytes across Qt conversions. Focused Application, controller, and
 updater compatibility CTests passed. Windows and the full suite were not run.
+
+## 2026-10-20 - F1128 complete
+
+Reused `CourseGradeBand` for Speaking Evaluation's E4-E6 result and eligibility
+contract, while preserving its broader M1-M3/Other values as unsupported. Keep
+the feature's permissive grade parser separate from `Course::gradeBandForName`,
+whose exact uppercase catalog parsing accepts a different input contract.
+When the macOS application link reported broad missing symbols despite compiled
+objects defining them, the existing generated build tree was inconsistent;
+clearing and reconfiguring the same preset restored the archive and link. This
+avoided an unnecessary source or CMake change.

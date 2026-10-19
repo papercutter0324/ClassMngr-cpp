@@ -5626,3 +5626,22 @@ typed-key fixture. Controller tests pin exact case, unknown-key errors, and
 Linux aliases. Windows and the full suite were not run. Batch484 is complete;
 Batch485 has ten discovered candidates F1128–F1137, with F1128 next for
 acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1128 complete - 2026-10-20
+
+F1128 completed at source/test commit `63fff147`, following acceptance
+`2a95f68e`. `CourseGradeBand` now types the Speaking Evaluation report result
+and AI batch eligibility input. Existing permissive report-grade parsing,
+trimmed-original template selection, legacy integer mapping, prompt wording,
+and eligibility failure order remain intact. `Other` and non-elementary bands
+remain unsupported for AI eligibility; the report adapter maps them to legacy
+sentinel 0.
+
+In the existing macOS arm64 Debug preset tree, a clean reconfiguration using
+Qt 6.12.0 restored the `ClassMngr` link after the generated runtime archive
+proved inconsistent. `ClassMngr` and four affected test targets built. The
+three focused Application CTests passed 3/3; report-projection adapter CTest
+passed 1/1; both offscreen UI selectors passed, 3/0 each. `git diff --check`
+passed. Windows and the full suite were not run. Batch485 has one complete
+slice and nine discovered; F1129 is next for acceptance. F629 and both phase
+gates remain open.
