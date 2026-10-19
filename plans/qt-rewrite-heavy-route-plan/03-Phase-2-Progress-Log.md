@@ -50579,3 +50579,34 @@ open on Windows layout evidence because the user cannot run Windows now.
 Batch487 has ten candidates: one complete (F1144), one accepted/in progress
 (F1145), and eight discovered (F1146–F1153); F1146 is next after F1145
 completes. The Phase 0 and Phase 2 gates remain open.
+
+### F1145 Sub Prep normalized CalendarEventType query output complete - 2026-10-20
+
+F1145 completed at source/test commit
+`119b961e1225a5828cbef4640c1e1f9360313d03`, following acceptance commit
+`19a1b2d5aeedfe1a21caab9df758371bf4eb5f72`. The narrowed scope splits the
+Sub Prep raw text read DTO from the normalized query-result DTO using
+`Domain::CalendarEventType`. Platform QString trimming and Vacation/Holiday
+prefilter behavior remain; Application ASCII trim, exact classification,
+Vacation/Holiday and invalid/reversed/out-of-window filtering, interval
+ordering, no-ceiling behavior, and failures are preserved. The UI converts
+the enum to its canonical name before building the legacy `CalendarEvent`.
+
+Calendar save, edit, and repeat-series raw string contracts remain unchanged:
+padded text, raw 64-byte bounds, trimmed-view classification, and legacy
+fallback are observable, and the contracts already use the shared enum
+classifier. The incremental build in the existing `build/macos-clang-debug`
+tree passed for `ClassMngr`,
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. Both
+focused CTests passed (2/2); Query QtTest passed 10/10 and Platform QtTest
+passed 73/73. Query tests exercise padded/case-sensitive trimming and
+filtering. Platform fixtures use canonical labels, so Platform's unchanged
+trim/prefilter path was source-reviewed rather than covered by those fixtures.
+`git diff --check` passed. No fresh build, full suite, or Windows run was
+performed. F629 remains open on source-bound Windows evidence because the user
+cannot run Windows now.
+
+Batch487 has ten candidates: two complete (F1144–F1145), zero accepted/in
+progress, and eight discovered (F1146–F1153); F1146 is next for acceptance.
+The Phase 0 and Phase 2 gates remain open.

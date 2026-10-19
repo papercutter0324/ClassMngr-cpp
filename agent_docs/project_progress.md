@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1143 complete; Batch486 complete locally; F1144 accepted; F629 open)
+### Current checkpoint - 2026-10-20 (F1145 complete; Batch486 complete locally; F1146 next; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -246,17 +246,21 @@ completed at source/test commit `e523001d`, following acceptance commit
 focused CTests passed, and the My Workspace save selector passed. The two
 focused Initial Setup selectors aborted before assertions with the known
 offscreen QWizard `NSBundle initWithURL: nil URL argument` exception, so those
-behaviors remain unverified. F1145 is accepted/in progress with a narrowed
-scope: type Sub Prep's normalized interval output while preserving its raw
-read input and Calendar create/edit text contracts. Batch485 was pushed to
+behaviors remain unverified. F1145 completed at source/test commit `119b961e`,
+following acceptance commit `19a1b2d5`. The narrowed change splits Sub Prep's
+raw read input from its normalized `CalendarEventType` query result; Calendar
+create/edit text contracts remain unchanged. Three targets built
+incrementally, and both focused CTests passed (Query 10/10, Platform 73/73).
+The query suite covers padded labels and exact filtering; Platform trim and
+prefilter code remained unchanged and was source-reviewed, while its fixtures
+use canonical labels. F1146 is next for acceptance. Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
 0 and Phase 2 gates remain open.
 
 ## Next Milestone
 
-Complete F1145, then accept F1146. F1145 types only normalized Sub Prep
-interval results; Calendar create/edit raw text contracts remain unchanged.
+Accept F1146, then implement and verify its repeat-series edit-date contract.
 Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
 exact-payload approval request. F629 remains active and awaits source-bound
 Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows
