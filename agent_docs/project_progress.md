@@ -5735,3 +5735,22 @@ dates by day number for save-only-if-later, and convert to/from Qt date values
 only at existing UI/Platform edges. Implementation and verification are
 pending; F1133 is next for acceptance. Batch485 remains unpushed. F629 and both
 phase gates remain open.
+
+## Phase 2 update - F1132 complete - 2026-10-20
+
+F1132 completed at source/test commit
+`ab07b25a93358448408c0cac4c39fd76ef23279a`, following acceptance `32a23569`.
+The latest-date query now returns `optional<GregorianDate>`, and the
+transactional snapshot stores a typed date. The raw read port still reports
+malformed present values through the existing Validation error, and the import
+request retains raw ISO text and its supplied validation flag. Save-only-if-
+later compares typed day numbers; the existing settings key, canonical ISO
+write, transaction order, and UI prompt behavior remain intact.
+
+`ClassMngr` and the four focused targets built in the existing macOS build
+tree; the four focused CTests passed 4/4. Coverage includes typed query output,
+exact malformed-port error, invalid requests before persistence, malformed
+settings as absence, and equal/older/newer date behavior. `git diff --check`
+passed. The full suite and Windows verification were not run. Batch485 has
+five complete slices and five discovered; F1133 is next for acceptance. The
+batch remains unpushed. F629 and both phase gates remain open.

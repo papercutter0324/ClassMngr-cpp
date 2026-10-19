@@ -49660,3 +49660,65 @@ retaining `0` and `86399`, skipping `-1` and `86400`, compact label
 Windows verification were not run. Batch485 has four complete slices and six
 discovered; F1132 is next for acceptance. The batch remains unpushed; F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1132 Teacher Import latest source date accepted before implementation - 2026-10-20
+
+F1132 is accepted/in progress. Reuse `Domain::GregorianDate` for valid
+latest-source-date values. `TeacherImportLatestSourceDateReadQuery` returns
+`Result<std::optional<GregorianDate>>`; keep the read port's raw
+`Result<std::optional<std::string>>` under a distinct alias so a malformed
+present port value still produces the existing Validation error. The real
+Platform settings reader continues mapping missing, null, empty, malformed,
+impossible, and noncanonical stored values to absence; the query continues to
+reject malformed present output from a port.
+
+Change `TeacherImportPersistenceSnapshot::latestSourceDateIso` to typed
+`std::optional<Domain::GregorianDate>` and rename the field
+`latestSourceDate`. The SQL adapter keeps missing/malformed settings absent
+and converts valid dates only after normalizing them to canonical ISO. Keep
+`TeacherImportUseCaseRequest::sourceDateIso`, its supplied `sourceDateValid`
+flag, invalid-request rejection and precedence unchanged. After validation,
+compare the requested date with the stored date by `.dayNumber()` and save the
+original canonical ISO string at the existing persistence boundary. Preserve
+save-only-if-later behavior, persistence order, transaction behavior, and no
+calls on invalid requests; do not add date restrictions or change the stored
+key/schema.
+
+At `SidebarController::importTeachers`, convert the typed query result to
+`QDate` at the UI boundary. Preserve equal/older prompt behavior and text, as
+well as legacy `QDate` parsing and ISO serialization. `GregorianDate` supports
+canonical fixed-width years 0001–9999 and exact ISO parsing; keep Qt date types
+at Platform/UI boundaries.
+
+Focused verification: build `ClassMngr`,
+`ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests`, the
+Application `TeacherImportUseCase` target,
+`ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests`,
+and `ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`.
+Run the four focused CTests and `git diff --check`. Preserve coverage for
+optional canonical dates, missing/read failure, malformed or impossible port
+output, missing/null/empty/malformed/impossible/canonical stored settings,
+invalid-request rejection without persistence, leap-day forwarding,
+latest-date policy, and advancing/retaining the latest date. Batch485 remains
+unpushed; F1133 is next for acceptance. F629 and the Phase 0 and Phase 2 gates
+remain open.
+
+### F1132 Teacher Import latest source date complete - 2026-10-20
+
+F1132 completed at source/test commit `ab07b25a`. `GregorianDate` now types
+valid latest-source-date query and persistence-snapshot values. The raw query
+port retains its optional string result so malformed present output still
+produces the existing Validation error; the Platform settings reader continues
+mapping missing and malformed settings to absence. Request validation and
+precedence, save-only-if-later comparison, canonical ISO persistence, and the
+UI prompt behavior remain unchanged.
+
+In the existing macOS build tree, `ClassMngr` and four focused targets built:
+`ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests`, the
+Application `TeacherImportUseCase` target,
+`ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests`,
+and `ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`.
+The four focused CTests passed 4/4. `git diff --check` passed. The full suite
+and Windows verification were not run. Batch485 has five complete slices and
+five discovered; F1133 is next for acceptance. The batch remains unpushed;
+F629 and the Phase 0 and Phase 2 gates remain open.

@@ -7991,3 +7991,13 @@ query validates raw port strings before returning `GregorianDate`; and the
 transaction snapshot can store `optional<GregorianDate>` because its Platform
 adapter already maps missing or malformed settings to absence. This retains
 the malformed-port error while typing validated latest-date state.
+
+## 2026-10-20 - F1132 complete
+
+F1132 completed at source/test commit
+`ab07b25a93358448408c0cac4c39fd76ef23279a`, following acceptance `32a23569`.
+The query and transactional snapshot now use `GregorianDate`; raw request and
+port strings remain at the validation boundaries. The focused macOS build and
+four CTests passed. Tests preserve malformed-port errors, malformed setting
+absence, invalid-request rejection before persistence, and equal/older/newer
+date policy. The full suite and Windows verification were not run.

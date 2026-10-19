@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with F1128–F1131 complete, no accepted/in-progress slice, six discovered candidates, and F1132 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with F1128–F1132 complete, no accepted/in-progress slice, five discovered candidates, and F1133 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,20 +68,20 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch485 (10 candidates; 4 complete; 0 accepted/in progress; 6 discovered)
+#### Active batch: Batch485 (10 candidates; 5 complete; 0 accepted/in progress; 5 discovered)
 
 1. F1128 - Complete at `63fff147`: reuse `CourseGradeBand` in Speaking Evaluation report content and AI batch eligibility while preserving parsing, template selection, legacy conversion, and failure order. See the [completion record](03-Phase-2-Progress-Log.md#f1128-speaking-evaluation-elementary-grade-result-complete-2026-10-20).
 2. F1129 - Complete at `596ed1f6`: use permissive `ClassDetailsValidationContextTeacherId` for the context data/snapshot identity, preserving `-1`, `-2`, wide values, and current query/save behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1129-class-details-validation-context-teacher-identity-complete-2026-10-20).
 3. F1130 - Complete at `08d614e`: add permissive Application `ScheduleSlotStartMinute` to `ScheduleSlotStateSaveRequest::startMinute`; preserve validation, parsing, and persistence behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1130-schedule-slot-start-minute-complete-2026-10-20).
 4. F1131 - Complete at `4976bc2e`: add Application `SubPrepMeetingSecondsOfDay` to meeting facts and groups while preserving invalid skip, exact-second grouping, canonical weekday order, and current display/navigation behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1131-sub-prep-meeting-second-of-day-complete-2026-10-20).
-5. F1132 - Discovered: type Teacher Import latest source date while preserving optional ISO-date parsing, missing/malformed setting behavior, invalid request rejection, and save-only-if-later.
+5. F1132 - Complete at `ab07b25a`: use `Domain::GregorianDate` for latest-source-date values while preserving raw-port malformed-date errors, request validation precedence, settings semantics, and save-only-if-later behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1132-teacher-import-latest-source-date-complete-2026-10-20).
 6. F1133 - Discovered: type remembered directory paths while preserving empty fallback and normalization at existing owners; do not repeat F689 persistence behavior.
 7. F1134 - Discovered: type Class Transfer export UTF-16 class/teacher correlation keys separately from UTF-8 apply keys; preserve payload and correspondence.
 8. F1135 - Discovered: type rounded Class Analytics averages while preserving positive half-up thousandth rounding, the 2.4 threshold, weighting, ties, locale formatting, and clamping.
 9. F1136 - Discovered: type skipped-update stored version text while preserving literal comparisons, missing/invalid/clear/suppression behavior, and `01.2.3` versus `1.2.3`; distinct from F1127.
 10. F1137 - Discovered: type Course catalog identity while preserving exact case/spelling and weekly-day rules; screen relation to F1128 `CourseGradeBand` reuse.
 
-F1128–F1131 are complete, and the other six candidates remain discovered, with F1132 next for acceptance. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1128–F1132 are complete, and the other five candidates remain discovered, with F1133 next for acceptance. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 
