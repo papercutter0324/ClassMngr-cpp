@@ -49412,3 +49412,64 @@ verification, `git rev-parse HEAD` matched `origin/Qt-Rewrite`, and the
 working tree was clean. Batch484 is complete and pushed. Batch485 remains
 active with ten discovered candidates, none accepted, and F1128 next for
 acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1128 Speaking Evaluation elementary-grade result accepted before implementation - 2026-10-20
+
+F1128 is accepted/in progress; implementation and tests have not started.
+Reuse `ClassMngr::Next::Domain::CourseGradeBand` in
+`SpeakingEvaluationReportContent.grade` and
+`SpeakingEvaluationAiBatchEligibilityInput.grade`.
+
+In report projection, preserve the current permissive UTF-16 parser exactly:
+Qt-compatible Unicode trimming; ASCII case folding; optional one leading `E`;
+optional leading `+`; ASCII digit parsing including accepted leading zeroes;
+and only numeric 4, 5, and 6 supported. Empty, malformed, out-of-range, and
+M1–M3 inputs map to `CourseGradeBand::Other`. Do not use
+`Course::gradeBandForName()` as the parser because its exact uppercase-name
+rules differ.
+
+Keep raw `SpeakingEvaluationReportClassValues.grade` unchanged for
+`classLabel` and template selection. Advanced template selection continues
+to use the trimmed original text and only case-insensitive exact E5+Athena or
+E6+Song's; bare `5` stays Standard even though it maps to E5. At the existing
+`speaking_eval_report_dialog.cpp` projection adapter, convert E4/E5/E6 to
+legacy integers 4/5/6 and `Other` or other bands to sentinel 0. Preserve
+report output, row filtering, and failure behavior.
+
+AI eligibility supports only E4/E5/E6; `Other` and M1–M3 remain
+`UnsupportedGrade`. Preserve first-failure order: `MissingName`,
+`UnsupportedGrade`, `MissingDidWellItem`, `MissingNeedsImprovementItem`, then
+`Eligible`. Keep integer prompt request/student fields unchanged. At the
+existing Application eligibility call boundary, map prompt integers 4/5/6 to
+the matching band and all other integers to `Other`. Convert legacy UI report
+integers to bands at the existing dialog eligibility call boundaries.
+Preserve ordinal prompt wording and invalid-input behavior.
+
+Do not alter the unrelated C/B/A `SpeakingEvaluationGrade` scoring model,
+legacy report data contract, `Course` catalog, or F1137 scope.
+
+Focused targets/selectors:
+
+- `ClassMngrNextApplicationSpeakingEvaluationReportContentTests`:
+  `filtersOnlyRowsWithBothNamesBlankAndPreservesRawContent`,
+  `classClassificationAndElementaryGradeMappingMatchTheExistingRules`, and
+  `shortRowsDefaultMissingColumnsAndThereIsNoArbitraryRowCap`.
+- `ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests`:
+  `reportsMissingNameBeforeOtherFailures`,
+  `reportsUnsupportedGradeBeforeMissingObservations`,
+  `reportsDidWellBeforeNeedsImprovement`,
+  `reportsMissingNeedsImprovementAfterDidWellExists`,
+  `acceptsSupportedGradesWhenAllInputsExist`, and
+  `rejectsGradesOutsideSupportedRange`; extend coverage for raw-int-to-band
+  adapter mapping as appropriate.
+- `ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests`:
+  `elementaryGradeConversionPreservesLegacyAcceptedForms` and relevant
+  prompt-validation cases.
+- Build `ClassMngr` for report and batch-dialog typed adapter consumers.
+  If feasible, run `aiBatchDialogDisplaysEligibilityReasonsAndCheckState` and
+  `aiPromptButtonsRequireCompleteInput` in
+  `speaking_eval_batch_report_service_tests.cpp`.
+
+Batch485 remains active with F1128 accepted/in progress and nine discovered
+candidates; F1129 is next for acceptance. F629 and the Phase 0 and Phase 2
+gates remain open.

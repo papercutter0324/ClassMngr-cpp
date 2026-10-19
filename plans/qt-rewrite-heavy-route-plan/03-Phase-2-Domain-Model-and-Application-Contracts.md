@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with ten discovered candidates, none accepted, and F1128 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with F1128 accepted/in progress, nine discovered candidates, and F1129 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch485 (10 candidates; 0 complete; 0 accepted/in progress; 10 discovered)
+#### Active batch: Batch485 (10 candidates; 0 complete; 1 accepted/in progress; 9 discovered)
 
-1. F1128 - Discovered: type the elementary-grade result shared by Speaking Evaluation report content and AI batch eligibility; preserve accepted text forms, invalid-to-zero, report template, and failure order. Screen reuse of `CourseGradeBand` (details in the [Batch485 discovery record](03-Phase-2-Progress-Log.md#batch484-close-and-batch485-discovery-2026-10-20)).
+1. F1128 - Accepted/in progress: reuse `CourseGradeBand` in Speaking Evaluation report content and AI batch eligibility while preserving existing parsing, template selection, legacy conversion, and eligibility ordering. See the [acceptance record](03-Phase-2-Progress-Log.md#f1128-speaking-evaluation-elementary-grade-result-accepted-before-implementation-2026-10-20).
 2. F1129 - Discovered: type Class Details validation-context teacher identity while preserving `-1` fallback, explicit `-2`, wide `2147483648`, and current non-positive behavior.
 3. F1130 - Discovered: type schedule-slot start minute while preserving `[0,1440)` bounds, `HH:mm` conversion, and no port call on failure.
 4. F1131 - Discovered: type Sub Prep meeting second-of-day while preserving `[0,86400)` bounds, exact-second grouping/sort, day selection, canonical order, and invalid skip.
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 9. F1136 - Discovered: type skipped-update stored version text while preserving literal comparisons, missing/invalid/clear/suppression behavior, and `01.2.3` versus `1.2.3`; distinct from F1127.
 10. F1137 - Discovered: type Course catalog identity while preserving exact case/spelling and weekly-day rules; screen relation to F1128 `CourseGradeBand` reuse.
 
-All Batch485 candidates remain discovered and unaccepted; F1128 is next for acceptance. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1128 is accepted/in progress; the other nine candidates remain discovered, with F1129 next for acceptance. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

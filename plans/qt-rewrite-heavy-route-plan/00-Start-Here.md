@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is active with ten discovered candidates and none accepted; F1128 is next for acceptance. See the [active Batch485 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch485-10-candidates-0-complete-0-acceptedin-progress-10-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is active with ten candidates: F1128 is accepted/in progress and nine remain discovered; F1129 is next for acceptance. See the [active Batch485 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch485-10-candidates-0-complete-1-acceptedin-progress-9-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch485 — Active; ten candidates, all discovered and not accepted:**
+**Batch485 — Active; ten candidates, zero complete, one accepted/in progress, and nine discovered:**
 
-1. **F1128 — Type Speaking Evaluation elementary-grade result.** Preserve accepted text forms, invalid-to-zero behavior, report template, and failure order; screen reuse of `CourseGradeBand`.
+1. **F1128 — Type Speaking Evaluation elementary-grade result (accepted/in progress).** Reuse `CourseGradeBand` in report and AI eligibility contracts while preserving report parsing/template and eligibility behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1128-speaking-evaluation-elementary-grade-result-accepted-before-implementation-2026-10-20).
 2. **F1129 — Type Class Details validation-context teacher identity.** Preserve `-1` fallback, explicit `-2`, wide `2147483648`, and avoid positive-ID validation.
 3. **F1130 — Type Schedule-slot start minute.** Preserve `[0,1440)` validation, `HH:mm` output, and no port call on failure.
 4. **F1131 — Type Sub Prep meeting second-of-day.** Preserve `[0,86400)` bounds, exact-second grouping/sort, selected-day behavior, and invalid skip.
@@ -51,7 +51,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 9. **F1136 — Type skipped-update stored version text.** Preserve literal comparison, suppression behavior, and `01.2.3` versus `1.2.3`; this is distinct from F1127.
 10. **F1137 — Type Course catalog identity.** Preserve exact catalog spelling/case and weekly-day rules; screen relation to F1128 `CourseGradeBand` reuse.
 
-Detailed evidence, preservation constraints, and focused test references for all ten candidates are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1129 is next for acceptance. Detailed evidence, preservation constraints, and focused test references for all ten candidates are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 
