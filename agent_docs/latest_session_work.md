@@ -5961,7 +5961,7 @@ case and unchanged Discard behavior, commit the slice, then close and push
 Batch463. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-19 (F1099 complete; F1100 accepted)
+## Current continuation - 2026-10-19 (F1099-F1100 complete; F1101 reassessment)
 
 Active deployment ID: `phase2-f1094-20261019`. Heavy remains the Phase 2 route.
 Batch477 is complete and pushed to `origin/Qt-Rewrite` at
@@ -5977,16 +5977,25 @@ and Calendar Page mutation parity tests. The three focused CTests passed 3/3;
 `git diff --check` passed. This was local macOS arm64/Qt 6.12 evidence; no fresh
 configure or full suite ran.
 
-Batch478 remains active with five entries: F1099 is complete; F1100 is accepted
-for typed `ClassId` through Sub Prep visible-class ordering; F1101 remains a
-lower-confidence CampusId snapshot typing decision under F23; F1102 remains
-discovered with the unassigned sentinel and wide teacher IDs to preserve; F1103
-is deferred pending parity/policy reconciliation. F1100 acceptance preserves
-the F1017 tuple order, lexical ID tie-break, literal sentinels, stable ties,
-model-owned label/rank/filtering, and sorted-first selection fallback. Its
-focused targets are the app-less ordering policy, model, and page tests. Two
-independent read-only explorers found no newly actionable Deferred/Gate-derived
-slice.
+F1100 acceptance was committed at `a49536c4`; its source/test commit is
+`820f54a2872b197001485f93d8eb91ba801ca2bb`. It keeps `ClassId` typed through
+Sub Prep visible-class ordering. The incremental macOS Debug build succeeded
+for `ClassMngr` and the ordering policy, class-information model, and Sub Prep
+page targets. The policy CTest passed 1/1, and the model CTest passed 1/1
+(QtTest 7/7). The page selector did not finish cleanly: its F1017 sorted-first
+fallback regression passed, but a warning-count assertion failed and
+`unavailablePreferenceLoadsPreservePageValues()` stalled. Both observations
+reproduced after restoring the pre-F1100 production files, so they are
+documented as existing page-target limitations. No full suite ran;
+`git diff --check` passed.
+
+Batch478 remains active with five entries: F1099 and F1100 are complete; F1101
+is selected for reassessment and remains a lower-confidence CampusId snapshot
+typing decision under F23; F1102 remains discovered with the unassigned
+sentinel and wide teacher IDs to preserve; F1103 is deferred pending
+parity/policy reconciliation. Two independent read-only explorers are
+reassessing F1101. The prior batch discovery review found no newly actionable
+Deferred/Gate-derived slice.
 
 Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2

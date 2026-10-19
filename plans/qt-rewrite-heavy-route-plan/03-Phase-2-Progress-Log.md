@@ -47320,3 +47320,42 @@ F1103 remains deferred pending parity/policy reconciliation. The combined
 Phase 0 gate remains Open while Windows x64 evidence is unavailable; the
 Phase 2 exit gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains
 pending policy reconciliation.
+
+### F1100 complete - 2026-10-19
+
+F1100 is complete at source/test commit
+`820f54a2872b197001485f93d8eb91ba801ca2bb`; its acceptance record is commit
+`a49536c45da407aabe60c65b43b0104620cd5223`. The production change carries
+`Domain::ClassId` through `SubPrepVisibleClassOrderingFact`, and the Qt model
+passes `summary.id` directly. Tuple order, lexical tie-break, literal numeric
+sentinels, stable ties, and UI-owned filtering, rank calculation, label
+preparation, and locale comparison remain unchanged.
+
+The incremental `build/macos-clang-debug` build succeeded for `ClassMngr` and
+the ordering policy, model, and page targets; `ClassMngr` was up to date. The
+environment was macOS 27.0.1, Apple Clang 21.0, arm64+x86_64, Qt 6.12.0; no
+reconfigure or full suite ran. The focused policy CTest passed 1/1, and the
+model CTest passed 1/1 (QtTest 7/7).
+
+The page selector did not complete: verbose CTest timed out after 120 seconds
+following 15 passing cases. The targeted
+`removedSelectionFallsBackToSortedFirstClassAndLoadsItsDetails()` case passed.
+The same run showed `campusReadFailureShowsUnavailableDetailsAndWarning()`
+expected one warning but observed two, then stopped at
+`unavailablePreferenceLoadsPreservePageValues()`. The Tester isolated the
+latter; it stalled after the offscreen plugin warning and hit a 30-second
+alarm. The Executor temporarily restored both production files to their
+pre-F1100 HEAD versions, rebuilt `ClassMngr` and the page target, and confirmed
+both observations reproduce unchanged. The exact F1100 source diff was
+restored byte-for-byte; `git diff --check` passed. The page CTest is therefore
+not reported as passed; these observations reproduce on the pre-F1100
+baseline.
+
+Batch478 remains active and unpushed. F1099 and F1100 are complete; F1101 is
+selected for reassessment and remains unaccepted under the F23 owning UTF-8
+snapshot contract. F1102 remains discovered for reassessment after preceding
+items, preserving the `-1` unassigned-teacher sentinel and wide teacher IDs;
+F1103 remains deferred pending parity/policy reconciliation. The combined
+Phase 0 gate remains Open while Windows x64 evidence is unavailable; the
+Phase 2 exit gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains
+pending policy reconciliation.

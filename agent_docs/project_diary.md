@@ -7417,3 +7417,19 @@ The incremental macOS Debug build passed for `ClassMngr` and the Application,
 Platform, and Calendar Page mutation parity targets. Their focused CTests
 passed 3/3; `git diff --check` passed. No full suite ran. F1100 is selected as
 the next Batch478 candidate. Windows x64 evidence remains unavailable.
+
+## 2026-10-19 - F1100 Sub Prep ordering identity
+
+F1100 completed at source/test commit `820f54a2`, after acceptance commit
+`a49536c4`. Keeping `Domain::ClassId` in the Qt-free ordering fact preserves
+the lexical tie-break because `TypedId` orders its underlying string. The
+existing tuple priority, literal sentinels, stable ties, UI-owned label/rank
+work, and sorted-first selection fallback remain unchanged.
+
+The incremental macOS build passed for `ClassMngr` and the ordering policy,
+model, and page targets. Policy CTest passed 1/1; model CTest passed 1/1
+(QtTest 7/7). In the page target, the F1017 fallback case passed, while a
+warning-count assertion failed and a later case stalled. Both issues
+reproduced with pre-F1100 production code, so they were documented as
+existing page-target limitations rather than attributed to the typed-ID
+change. No full suite ran. F1101 is next for reassessment.

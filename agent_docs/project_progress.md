@@ -4830,3 +4830,24 @@ implementation. F1101 remains lower-confidence, F1102 remains to be
 reassessed, and F1103 remains deferred. The combined Phase 0 and Phase 2 exit
 gates remain open; Gates 1/2 remain Partial, and F1007 awaits policy
 reconciliation.
+
+## Phase 2 update - F1100 complete; F1101 reassessment started - 2026-10-19
+
+F1100 completed at source/test commit `820f54a2`, after acceptance commit
+`a49536c4`. `Domain::ClassId` now remains typed through the Sub Prep visible
+class ordering fact; its existing lexical comparison and the F1017 ordering
+and sorted-first fallback behavior are preserved.
+
+The incremental `build/macos-clang-debug` build succeeded for `ClassMngr` and
+the ordering policy, visible-class model, and Sub Prep page targets. The
+policy CTest passed 1/1; the model CTest passed 1/1 (QtTest 7/7). The page
+selector did not finish cleanly: the F1017 sorted-first fallback case passed,
+but the page target had one warning-count assertion failure and one hanging
+case. Both observations reproduced with pre-F1100 production files, so they
+are existing page-target limitations. No full suite ran; `git diff --check`
+passed. Verification was incremental macOS arm64/x86_64 with Qt 6.12.
+
+Batch478 remains active; F1099 and F1100 are complete. F1101 is selected for
+reassessment and remains lower-confidence; F1102 remains discovered and
+F1103 remains deferred. The combined Phase 0 and Phase 2 exit gates remain
+open, Gates 1/2 remain Partial, and F1007 awaits policy reconciliation.
