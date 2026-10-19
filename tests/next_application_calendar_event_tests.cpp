@@ -3528,8 +3528,20 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
         CalendarEventId
         >);
     static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditOccurrenceSnapshot>().startDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().eventId),
         CalendarEventId
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().startDate),
+        GregorianDate
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().endDate),
+        GregorianDate
         >);
 
     CalendarEventSeriesEditRequest request = validSeriesEditRequest();
@@ -3558,14 +3570,20 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
     QVERIFY(plan);
     QCOMPARE(plan.value().size(), std::size_t(3));
     QVERIFY(plan.value().at(0).eventId == firstOccurrenceId);
-    QCOMPARE(plan.value().at(0).startDate, std::string("2026-09-23"));
-    QCOMPARE(plan.value().at(0).endDate, std::string("2026-09-26"));
+    QVERIFY(plan.value().at(0).startDate ==
+        *GregorianDate::fromIsoString("2026-09-23"));
+    QVERIFY(plan.value().at(0).endDate ==
+        *GregorianDate::fromIsoString("2026-09-26"));
     QVERIFY(plan.value().at(1).eventId == secondOccurrenceId);
-    QCOMPARE(plan.value().at(1).startDate, std::string("2026-10-03"));
-    QCOMPARE(plan.value().at(1).endDate, std::string("2026-10-06"));
+    QVERIFY(plan.value().at(1).startDate ==
+        *GregorianDate::fromIsoString("2026-10-03"));
+    QVERIFY(plan.value().at(1).endDate ==
+        *GregorianDate::fromIsoString("2026-10-06"));
     QVERIFY(plan.value().at(2).eventId == thirdOccurrenceId);
-    QCOMPARE(plan.value().at(2).startDate, std::string("2026-09-27"));
-    QCOMPARE(plan.value().at(2).endDate, std::string("2026-09-30"));
+    QVERIFY(plan.value().at(2).startDate ==
+        *GregorianDate::fromIsoString("2026-09-27"));
+    QVERIFY(plan.value().at(2).endDate ==
+        *GregorianDate::fromIsoString("2026-09-30"));
 
     for (const CalendarEventSeriesEditOccurrenceUpdate& update : plan.value())
     {

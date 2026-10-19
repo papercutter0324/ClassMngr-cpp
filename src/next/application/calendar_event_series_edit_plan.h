@@ -33,8 +33,8 @@ struct CalendarEventSeriesEditOccurrenceSnapshot final
 struct CalendarEventSeriesEditOccurrenceUpdate final
 {
     Domain::CalendarEventId eventId;
-    std::string startDate;
-    std::string endDate;
+    Domain::GregorianDate startDate;
+    Domain::GregorianDate endDate;
     Domain::CalendarEventSeriesId repeatSeriesId;
     std::string title;
     std::string eventType;
@@ -152,8 +152,8 @@ planCalendarEventSeriesEditSuffix(
 
         plan.push_back({
             .eventId = occurrence.eventId,
-            .startDate = shiftedStart->toIsoString(),
-            .endDate = shiftedEnd->toIsoString(),
+            .startDate = *shiftedStart,
+            .endDate = *shiftedEnd,
             .repeatSeriesId = *repeatSeriesId,
             .title = request.title,
             .eventType = request.eventType,

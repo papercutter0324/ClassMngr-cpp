@@ -7,6 +7,7 @@
 #include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_edit_plan.h"
+#include "next/domain/gregorian_date.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
@@ -328,6 +329,13 @@ private:
                 && parsed.toString(Qt::ISODate) == date
             ? parsed
             : QDate();
+    }
+
+    [[nodiscard]] static QDate legacyDate(
+        const Domain::GregorianDate& value
+        )
+    {
+        return QDate(value.year(), value.month(), value.day());
     }
 
     [[nodiscard]] static QTime legacyTime(
