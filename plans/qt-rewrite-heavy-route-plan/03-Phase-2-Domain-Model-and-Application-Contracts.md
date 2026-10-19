@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch480 is complete and push is pending; Batch481 is active with F1111 next for acceptance reassessment; F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
+- Current note: Batch480 is closed and pushed; its receipt is in the [progress log](03-Phase-2-Progress-Log.md). Batch481 is active with F1111 next for acceptance reassessment; F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
 
 ### Slice discovery batches
 

@@ -6114,8 +6114,10 @@ Debug tree; no full suite ran. F1110 is complete at source/test commit
 eligibility helpers use typed IDs with canonical positive-int validation; the
 menu keeps typed snapshot IDs through the pre-read guard and subtitle batch
 query while retaining integer action IDs. The focused eligibility and menu
-CTests passed 2/2 on macOS; no full suite ran. Batch480 closeout docs are in
-progress and must be pushed before starting F1111. Batch481 has one discovered
+CTests passed 2/2 on macOS; no full suite ran. Batch480 closeout was pushed
+without force to `origin/Qt-Rewrite` at
+`7acd5fac0646b9868c7b66659f617e5cf300926d`; the remote SHA matched, the
+worktree is clean, and the branch is up to date. Batch481 has one discovered
 candidate, F1111, a transient Teacher Import review-group correlation-key
 value, not yet accepted. The combined Phase 0 gate remains open because F629
 still needs source-bound Windows x64 layout evidence, which the user cannot

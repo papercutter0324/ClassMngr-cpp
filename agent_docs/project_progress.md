@@ -5187,3 +5187,12 @@ is complete; its closeout documentation is being committed before the
 authorized push. Batch481 has one discovered candidate, F1111, a transient
 Teacher Import review-group correlation-key value. F629 and the Phase 0 and
 Phase 2 gates remain open pending Windows x64 evidence.
+
+## Phase 2 update - Batch480 pushed; Batch481 active - 2026-10-20
+
+Batch480 closeout commit `7acd5fac0646b9868c7b66659f617e5cf300926d` was
+pushed without force to `origin/Qt-Rewrite`. The remote SHA matched, the
+worktree was clean, and the branch was up to date. Batch481 is active with
+F1111 discovered and next for acceptance reassessment. F629 still needs
+source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain
+open.

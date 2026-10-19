@@ -48059,8 +48059,15 @@ invalid-ID no-read behavior, menu labels/sorting, and int transfer actions.
 `git diff --check` passed. This was focused local macOS Debug validation; no
 full suite or Windows x64 run was performed.
 
-Batch480 is closed with F1109 and F1110 complete. Its closeout is ready for
-push; it has not been pushed. Batch481 is active with one discovered candidate,
-F1111 - Type Teacher Import review-group correlation keys, next for acceptance
-reassessment. F629 still awaits Windows x64 layout evidence, and the Phase 0
-and Phase 2 gates remain Open.
+Batch480 is closed with F1109 and F1110 complete. Batch481 is active with one
+discovered candidate, F1111 - Type Teacher Import review-group correlation
+keys, next for acceptance reassessment. F629 still awaits Windows x64 layout
+evidence, and the Phase 0 and Phase 2 gates remain Open.
+
+### Batch480 closeout push receipt - 2026-10-20
+
+Closeout commit `7acd5fac0646b9868c7b66659f617e5cf300926d` was pushed to
+`origin/Qt-Rewrite` without force. `git ls-remote origin refs/heads/Qt-Rewrite`
+returned the same SHA. The worktree is clean and `Qt-Rewrite` is up to date
+with `origin/Qt-Rewrite`. Batch481 remains active with F1111 next for
+acceptance reassessment; F629 and the Phase 0 and Phase 2 gates remain open.
