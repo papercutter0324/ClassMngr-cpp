@@ -49403,3 +49403,12 @@ started. F629 and the Phase 0 and Phase 2 gates remain open.
     weekly-day rules. At acceptance, check the relationship to F1128
     `CourseGradeBand` reuse. Tests: `tests/next_domain_contract_tests.cpp` and
     Schedule Import plan validation tests.
+
+### Batch484 push receipt - 2026-10-20
+
+Batch484 closeout commit `c7c3e6153744f517172fc16cc7c5613d9c6b294e` was
+pushed to `origin/Qt-Rewrite`; the remote advanced from `2d0cfae4`. At
+verification, `git rev-parse HEAD` matched `origin/Qt-Rewrite`, and the
+working tree was clean. Batch484 is complete and pushed. Batch485 remains
+active with ten discovered candidates, none accepted, and F1128 next for
+acceptance. F629 and the Phase 0 and Phase 2 gates remain open.

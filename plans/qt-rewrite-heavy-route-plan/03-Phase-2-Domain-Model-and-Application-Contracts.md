@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch484 is complete locally and not yet pushed (see [closeout and Batch485 discovery](03-Phase-2-Progress-Log.md#batch484-close-and-batch485-discovery-2026-10-20)); Batch485 is active with ten discovered candidates, none accepted, and F1128 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with ten discovered candidates, none accepted, and F1128 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
