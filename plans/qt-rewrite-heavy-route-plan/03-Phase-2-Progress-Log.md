@@ -51086,3 +51086,33 @@ source-bound Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
 
 Batch487 has ten candidates: seven complete (F1144–F1150), one accepted/in
 progress (F1151), and two discovered (F1152–F1153); F1152 is next.
+
+### F1151 Schedule Testing assignment key complete - 2026-10-20
+
+F1151 completed at source/test commit
+`7aa21f36c553933545829bc5e6873db263c3625a`, following acceptance commit
+`106ca0cf2924992a6fa62055fd6c3f27303f85cf`. The exact owning
+`ScheduleTestingAssignmentKey` carries raw UTF-16 `day` and `startTime`; the
+adapter preserves row text and order, and the widget reads the key accessors
+while keeping the same separator-based lookup. Save rules, repository order,
+and the `-1` unassigned sentinel remain unchanged.
+
+All four incremental targets passed in the existing `build/macos-clang-debug`
+tree: `ClassMngr`,
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. Application and Platform focused CTests
+passed 2/2; their direct QtTest runs passed 9/9 and 6/6. Widget selectors
+`testingModeDisplaysAssignedTestingClassCard` and
+`missingTestingClassWarnsAndSkipsOnlyThatAssignment` each passed 3/3.
+`testingAssignmentWritesMapActionsAndReloadSuccessfulState` stalled after
+70.547 seconds with `initTestCase` passed and no assertion result; Qt offscreen/
+plugin warnings and a `QSqlQuery` database-not-open warning were logged, then
+the Tester interrupted it. No assertion failure was observed; mark this
+selector unverified. `git diff --check` passed. No full, clean, or Windows
+build was run.
+
+Batch487 has ten candidates: eight complete (F1144–F1151), none accepted/in
+progress, and two discovered (F1152–F1153); F1152 is next. The batch remains
+open, so no push is due. F629 remains active pending source-bound Windows x64
+evidence; the Phase 0 and Phase 2 gates remain open.

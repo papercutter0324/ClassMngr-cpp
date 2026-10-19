@@ -8353,15 +8353,25 @@ cases); `git diff --check` passed. No full suite or Windows build ran. F1148 is
 next in Batch487; F629 and both phase gates remain open. Batch486's push is
 still pending exact-payload approval.
 
-## 2026-10-20 - F1151 accepted
+## 2026-10-20 - F1151 complete
 
-Type Schedule Testing assignment identity as an exact owning
-`Application::ScheduleTestingAssignmentKey` containing the raw UTF-16 weekday
-and start-time pair. Preserve read-row text and repository ordering, and keep
-the class ID `-1` unassigned sentinel separate. The widget may continue using
-its existing U+001F lookup projection through the key accessors; do not alter
-save-request validation/canonicalization or generated schedule labels. Focused
-Application, Platform, and Schedule widget verification is pending. Batch487
-has seven complete slices, F1151 accepted/in progress, and F1152/F1153
-discovered. F629 and both phase gates remain open; Batch486's push still awaits
-exact-payload approval.
+F1151 completed at source/test commit
+`7aa21f36c553933545829bc5e6873db263c3625a`, following acceptance commit
+`106ca0cf2924992a6fa62055fd6c3f27303f85cf`. Schedule Testing read rows now use
+an exact owning `Application::ScheduleTestingAssignmentKey` for raw UTF-16
+weekday and start-time values. The adapter preserves stored text and row
+order, the widget unwraps the key into its existing U+001F lookup projection,
+and the `-1` class ID sentinel and save behavior remain unchanged.
+
+The four assigned incremental macOS targets built successfully. The focused
+Application and Platform CTests passed 2/2; direct QtTest results were 9/9 and
+6/6. `testingModeDisplaysAssignedTestingClassCard` and
+`missingTestingClassWarnsAndSkipsOnlyThatAssignment` passed 3/3 each. The
+`testingAssignmentWritesMapActionsAndReloadSuccessfulState` selector timed
+out after 70.547 seconds with only `initTestCase` reported; it was interrupted
+and remains unverified. No assertion failure was observed. `git diff --check`
+passed. No full suite, Windows run, fresh configure, or clean build ran.
+
+Batch487 now has eight complete slices and two discovered candidates; F1152
+is next. F629 and both phase gates remain open. Batch486's push remains
+pending exact-payload approval.
