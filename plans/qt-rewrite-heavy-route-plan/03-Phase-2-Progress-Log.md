@@ -47951,3 +47951,52 @@ model regression using reversed input with equal earlier tuple fields and IDs
 `ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests` and
 `ClassMngrClassTabNavigationModelTests`. Do not change UI/persistence models
 or unrelated sorting behavior. No execution results are recorded.
+
+### Batch481 discovery - 2026-10-20
+
+Two independent Explorer reports and source review identified one eligible
+candidate, discovered but not accepted. Discovery began when F1109 started;
+Batch480 remains active until its closeout.
+
+1. **F1111 - Type Teacher Import review-group correlation keys.** The
+   candidate and decision fields in
+   `src/next/application/import_review_session.h` are `std::string` values
+   sourced from the exact UTF-8 bytes of the `level` label. This is transient
+   correlation data, not durable entity identity. `Domain::TypedId` is
+   unsuitable because it rejects empty input; any future wrapper must be an
+   Application value type that permits empty representation and leaves
+   rejection to the resolver. Preserve exact matching and ordering, field
+   semantics, and adapter behavior without trimming or normalization. F44
+   already owns empty, duplicate, unknown, and missing review validation, so
+   no validation behavior change is authorized. Related paths include
+   `src/next/application/teacher_import_use_case.h`,
+   `src/data/repositories/teacher_import_legacy_plan_adapter.h`,
+   `src/features/teacher/ui/teacher_import_dialog.cpp`, and the existing
+   Teacher Import Application/UI tests.
+
+No other slices were found.
+
+No tests were run for Batch481 discovery.
+
+### F1109 complete; Batch480 active - 2026-10-20
+
+F1109 is complete at source/test commit `d39a2cb1`, following acceptance
+record `1fb1ef6d`. The Class Tab ordering fact now carries `Domain::ClassId`,
+constructed canonically from the existing int at the feature adapter; legacy
+models and persistence remain int-based. The final ID comparison preserves
+numeric ordering: full `int32_t` parses sort before malformed/out-of-range
+values, parsed IDs compare numerically, numeric aliases break ties
+lexically, and malformed/out-of-range values compare lexically. The policy
+preserves tuple priorities, exact-tie behavior, signed boundaries and the
+typed `-1` default, including the `UnknownOrder=1000` collision fallthrough.
+
+Focused coverage includes a strict-order matrix for boundaries, aliases,
+malformed values and exact ties, plus a reversed-input model regression that
+keeps output IDs as ints and orders 2 before 10 when earlier tuple fields
+match. The Tester incrementally built
+`ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests` and
+`ClassMngrClassTabNavigationModelTests` in the existing
+`build/macos-clang-debug`; both focused CTests passed (2/2). `git diff --check`
+passed. No full suite or Windows x64 run was performed. Batch480
+remains active with F1110 next for acceptance reassessment. F629 still awaits
+Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.

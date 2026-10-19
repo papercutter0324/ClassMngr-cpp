@@ -6106,15 +6106,15 @@ suite, fresh configure, or clean build ran.
 
 Batch479 closeout commit `8a2f11318b54425c58bfadc83fa1526af1d69091` was
 pushed to `origin/Qt-Rewrite`; the remote matched and the worktree is clean.
-Batch480 has two
-ordered candidates recorded: F1109 for typed Class Tab ordering facts, then
-F1110 for typed roster-transfer eligibility. F1109 is accepted for
-implementation; implementation has not started. Type only the Application
-ordering fact ID and adapt the feature boundary; preserve signed numeric ID
-comparison, tuple priorities, and exact ties. Parse arbitrary typed text fully
-as `int32_t`, sorting valid IDs numerically before malformed text with
-deterministic lexical handling. Keep `-1` as the typed default and leave
-UI/persistence IDs as integers. Batch481 discovery is underway. The combined
-Phase 0 gate remains open because F629 still needs source-bound Windows x64
-layout evidence, which the user cannot run right now; the Phase 2 gate also
-remains open.
+F1109 is complete at source/test commit `d39a2cb1`, following acceptance
+commit `1fb1ef6d`. The Class Tab Application ordering fact carries
+`Domain::ClassId`; the feature adapter still consumes and emits integer IDs.
+The comparator preserves the existing tuple and numeric signed-int32 tie-break,
+with typed `-1` default and deterministic ordering for aliases and malformed
+text. Independent focused policy and model CTests passed 2/2 on the existing
+macOS Debug tree; no full suite ran. Batch480 remains active with F1110 next
+for acceptance reassessment. Batch481 discovery recorded F1111 as the
+Application correlation-key value candidate for Teacher Import review groups;
+it was discovered, not accepted. The combined Phase 0 gate remains open
+because F629 still needs source-bound Windows x64 layout evidence, which the
+user cannot run right now; the Phase 2 gate also remains open.

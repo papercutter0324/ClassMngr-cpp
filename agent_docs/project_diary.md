@@ -7582,3 +7582,12 @@ locale-aware label comparison. Keep the `-1` default and exact-tie behavior.
 Because typed IDs allow arbitrary text, compare full `int32_t` parses
 numerically and order malformed/out-of-range values deterministically, while
 keeping UI and persistence models integer-based.
+
+## 2026-10-20 - F1109 complete
+
+F1109 completed at source/test commit `d39a2cb1`, following acceptance commit
+`1fb1ef6d`. The ordering fact carries `Domain::ClassId` while the feature
+boundary remains integer-based. Preserve signed numeric tie-break behavior by
+fully parsing to int32; compare numeric aliases lexically and use deterministic
+lexical ordering for malformed or out-of-range typed text. The focused policy
+and feature-model CTests passed 2/2; no full suite ran.

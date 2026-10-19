@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch479 is complete and its closeout was pushed to `origin/Qt-Rewrite` at `8a2f11318b54425c58bfadc83fa1526af1d69091`; Batch480 is active with F1109 accepted but not implemented and F1110 discovered; F629 remains active pending Windows x64 layout evidence (the user cannot run it now), and the Phase 0 and Phase 2 gates remain Open.
+- Current note: Batch480 remains active with F1109 complete at `d39a2cb1` and F1110 next for acceptance reassessment; F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch480 (2 candidates; 1 accepted, 1 discovered)
+#### Active batch: Batch480 (2 candidates; 1 complete, 1 discovered)
 
-1. F1109 - Carry typed `ClassId` through Class Tab ordering facts: accepted, implementation not started; preserve tuple priorities, numeric final ID tie-break, and exact-tie semantics.
-2. F1110 - Carry typed `ClassId` through roster-transfer eligibility: discovered; preserve positive numeric validity, no reads for invalid/current targets, Qt-whitespace grade trimming, case-sensitive grade equality, candidate order, and duplicates.
+1. F1109 - Carry typed `ClassId` through Class Tab ordering facts: complete at `d39a2cb1`; preserve tuple priorities, numeric final ID tie-break, and exact-tie semantics.
+2. F1110 - Carry typed `ClassId` through roster-transfer eligibility: discovered, next for acceptance reassessment; preserve positive numeric validity, no reads for invalid/current targets, Qt-whitespace grade trimming, case-sensitive grade equality, candidate order, and duplicates.
 
 No other slices were found.
 

@@ -5129,3 +5129,25 @@ behavior. Parse full numeric strings and provide deterministic ordering for
 malformed/out-of-range typed values; keep UI and persistence IDs unchanged.
 Batch480 remains active with F1109 accepted and F1110 discovered. Batch481
 discovery is underway.
+
+## Phase 2 update - F1109 complete; Batch480 active - 2026-10-20
+
+F1109 completed at source/test commit `d39a2cb1`, following acceptance commit
+`1fb1ef6d`. The Class Tab Application ordering fact now carries
+`Domain::ClassId`; the feature adapter canonicalizes the existing integer ID,
+and output/UI/persistence IDs remain integers. Numeric signed-int32 tie-break,
+tuple priority, injected label comparison, exact ties, and typed `-1` default
+are preserved. Full int32 parses compare numerically, equal numeric spellings
+compare lexically, and malformed or out-of-range typed text receives a
+deterministic lexical order.
+
+The independent Tester built the focused policy and model targets in the
+existing `build/macos-clang-debug` tree; both focused CTests passed 2/2.
+Coverage includes signed boundaries, aliases, malformed/partial/out-of-range
+IDs, strict ordering across representative facts, and a reversed-input 2/10
+model case with integer output preserved. `git diff --check` passed. No full
+suite or Windows x64 run occurred. Batch480 remains active with F1110 next for
+acceptance reassessment. Batch481 discovery identified F1111, an Application
+value type for Teacher Import's transient review-group correlation key; it
+remains discovered, not accepted. F629 and the Phase 0 and Phase 2 gates
+remain open pending Windows x64 evidence.
