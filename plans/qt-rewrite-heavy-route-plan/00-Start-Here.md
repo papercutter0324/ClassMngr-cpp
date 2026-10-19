@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch473 is closed, with F1086-F1090 complete and reactivated F629 complete in source commit `31a71e90`. The clean macOS universal run8 built and signed a fresh Release app plus Debug harness, passed the 93-file arm64/x86_64 package audit, and completed all 24/24 routes; strict output parity matched all 12 Sub Prep pages and all 5 roster pages. The Windows x64 full matrix is still missing, so the combined Phase 0 exit gate remains Open; the Phase 2 exit gate also remains Open. Batch474 is active with four discovered slices, F1091 selected first, and F1092-F1094 provisional. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch474-4-discovered-candidates) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch473 is closed and pushed, with F1086-F1090 complete and reactivated F629 complete at source commit `31a71e90`. The clean macOS universal run8 built and signed a fresh Release app plus Debug harness, passed the 93-file arm64/x86_64 package audit, and completed all 24/24 routes; strict output parity matched all 12 Sub Prep pages and all 5 roster pages. The Windows x64 full matrix is still missing, so the combined Phase 0 exit gate remains Open; the Phase 2 exit gate also remains Open. Batch474 is active: F1091 is complete at source commit `cd2e7a68`, F1092 is selected for read-error reproduction, and F1093-F1094 remain provisional. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch474-4-discovered-candidates) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -40,8 +40,8 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 **Batch474 — Active; four discovered candidates, in current work order:**
 
-1. **F1091 — Preserve the saved signature image after a technical read failure.** Selected for implementation. Return a structured error from the signature-image read port, preserve the current image draft, and block aggregate personal-details saves in Initial Setup and My Details until a successful reload. Keep missing/corrupt-image fallback behavior and report generation behavior unchanged.
-2. **F1092 — Preserve Sidebar Display settings when their settings file cannot be read.** Provisional; reproduce the QSettings access-error path before implementation.
+1. **F1091 — Preserve the saved signature image after a technical read failure.** Complete at source commit `cd2e7a68`.
+2. **F1092 — Preserve Sidebar Display settings when their settings file cannot be read.** Selected for bounded reproduction of the QSettings access-error path; implementation is not accepted until the read failure and preservation hazard are demonstrated.
 3. **F1093 — Preserve Class Visibility scope after a technical read failure.** Provisional; define page behavior and verify the read-error path before implementation.
 4. **F1094 — Preserve both Classes page reset preferences after technical read failures.** Provisional; define page behavior and verify the read-error paths before implementation.
 

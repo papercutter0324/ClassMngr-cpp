@@ -11798,72 +11798,6 @@ Batch 7, ranked as follows:
 
 No other slices were found.
 
-### F629 complete; Batch473 closed - 2026-10-19
-
-F629 is complete at source commit `31a71e90`. The renderer now adds a manual
-page break before a teacher card when the preceding card crosses a page and
-the next card begins within the configured page-start clearance. The rule is
-based on layout bounds and the existing page margin; it does not name a
-teacher index or inspect teacher/class text. The Phase 0 startup-profiler
-single-shot timers now use `Qt::PreciseTimer`, preventing the unchanged
-five-second settle assertion from observing a timer up to 5% early. No test
-threshold or parity assertion was weakened.
-
-Fresh evidence is in
-`/private/tmp/classmngr-f629-macos-universal-20261019-run8`. The Release app
-and Debug harness were configured and built from a clean temporary source
-snapshot based on `07aa1f00` plus the F629 changes; the snapshot commit is
-`53616271959bea224e1efbb2e454b3205159227e`. The app and harness are universal
-`arm64`/`x86_64`, with deployment target and plist minimum 14.4. Package
-signature verification and the embedded-Mach-O audit passed for 93 files. The
-full macOS matrix completed all 24/24 routes, and the evidence validator
-reported `status=pass` with no failed route IDs. `output-sub-prep` completed in
-13.188 seconds. Its strict semantic comparison matched all 12 Sub Prep pages
-and all five roster pages by normalized text and dimensions; generated output
-is 17 pages across the two PDFs. The comparator remains semantic because byte
-equality is not required, and the historical reference remains
-`sourceBound=false`/`semanticOracleOnly=true`.
-
-The output-route workflow recorded `workflow-complete=6642 ms`,
-`settled-1s=7646 ms`, and `settled-5s=11645 ms`, so the final interval is
-5003 ms. Run8 began with 36.7 GiB free, above the 18 GiB runner preflight
-minimum. The supplied Windows x64 Sub Prep route at `07aa1f00` remains the
-cross-platform comparison for the same fixture; the F629 production change
-was not built or run on Windows because no Windows host was available. Thus
-F629's macOS universal route-matrix slice is complete, but the combined Phase
-0 exit gate remains Open pending Windows x64 full-matrix evidence. The Phase 2
-exit gate remains Open; Gates 1/2 are Partial and F1007 awaits policy
-reconciliation. Batch473 is closed after F1086-F1090 and F629 completed.
-
-### F1091 accepted and selected - 2026-10-19
-
-F1091 covers the shared signature-image read port and both aggregate personal
-details writers. The current adapter logs and returns empty bytes when
-`SettingsRepository::loadSetting("myInfo/signatureImage")` returns a
-technical error. Initial Setup may then submit those empty bytes through
-`PersonalDetailsSavePort`; My Details has the same image field in its
-aggregate save and does not track whether the image read succeeded. Existing
-port tests lock the empty fallback on repository failure, and existing
-Initial Setup/My Details tests cover typed-signature-preference read failures
-but not signature-image read failures. A SQLite view can inject an error only
-for the image key while other preference reads remain successful, providing a
-deterministic regression seam.
-
-Accepted behavior: return a structured `Technical` error from the signature
-image port for repository read failures while preserving the current
-success-with-empty behavior for missing/corrupt image data and unavailable
-service/session cases. Initial Setup must stop before aggregate save and keep
-its draft when the image read fails; retry after the repository recovers must
-save the stored image. My Details must preserve the displayed image/draft,
-report the read error, and block aggregate save until refresh successfully
-reloads the image. Speaking Evaluation report callers retain their existing
-empty-image fallback on read failure. Do not change signature encoding,
-save-port transaction behavior, or report rendering. Build `ClassMngr` and the
-existing signature-image port, Initial Setup wizard, and My Workspace tests;
-run the matching focused CTests and `git diff --check`. Batch474 is active in
-its recorded order with F1091 selected; F1092-F1094 remain provisional, and
-no other slices were found.
-
 ### F332 accepted / F333 selected - 2026-10-05
 
 F332, committed as
@@ -46711,3 +46645,102 @@ The pass also reviewed other remaining `loadSetting()` call sites. Calendar
 event-type color is only written after an explicit valid color-picker choice,
 so the fallback alone does not establish an accidental aggregate overwrite.
 No other slices were found.
+
+### F629 complete; Batch473 closed - 2026-10-19
+
+F629 is complete at source commit `31a71e90`. The renderer now adds a manual
+page break before a teacher card when the preceding card crosses a page and
+the next card begins within the configured page-start clearance. The rule is
+based on layout bounds and the existing page margin; it does not name a
+teacher index or inspect teacher/class text. The Phase 0 startup-profiler
+single-shot timers now use `Qt::PreciseTimer`, preventing the unchanged
+five-second settle assertion from observing a timer up to 5% early. No test
+threshold or parity assertion was weakened.
+
+Fresh evidence is in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run8`. The Release app
+and Debug harness were configured and built from a clean temporary source
+snapshot based on `07aa1f00` plus the F629 changes; the snapshot commit is
+`53616271959bea224e1efbb2e454b3205159227e`. The app and harness are universal
+`arm64`/`x86_64`, with deployment target and plist minimum 14.4. Package
+signature verification and the embedded-Mach-O audit passed for 93 files. The
+full macOS matrix completed all 24/24 routes, and the evidence validator
+reported `status=pass` with no failed route IDs. `output-sub-prep` completed in
+13.188 seconds. Its strict semantic comparison matched all 12 Sub Prep pages
+and all five roster pages by normalized text and dimensions; generated output
+is 17 pages across the two PDFs. The comparator remains semantic because byte
+equality is not required, and the historical reference remains
+`sourceBound=false`/`semanticOracleOnly=true`.
+
+The output-route workflow recorded `workflow-complete=6642 ms`,
+`settled-1s=7646 ms`, and `settled-5s=11645 ms`, so the final interval is
+5003 ms. Run8 began with 36.7 GiB free, above the 18 GiB runner preflight
+minimum. The supplied Windows x64 Sub Prep route at `07aa1f00` remains the
+cross-platform comparison for the same fixture; the F629 production change
+was not built or run on Windows because no Windows host was available. Thus
+F629's macOS universal route-matrix slice is complete, but the combined Phase
+0 exit gate remains Open pending Windows x64 full-matrix evidence. The Phase 2
+exit gate remains Open; Gates 1/2 are Partial and F1007 awaits policy
+reconciliation. Batch473 is closed after F1086-F1090 and F629 completed.
+
+### F1091 accepted and selected - 2026-10-19
+
+F1091 covers the shared signature-image read port and both aggregate personal
+details writers. The current adapter logs and returns empty bytes when
+`SettingsRepository::loadSetting("myInfo/signatureImage")` returns a
+technical error. Initial Setup may then submit those empty bytes through
+`PersonalDetailsSavePort`; My Details has the same image field in its
+aggregate save and does not track whether the image read succeeded. Existing
+port tests lock the empty fallback on repository failure, and existing
+Initial Setup/My Details tests cover typed-signature-preference read failures
+but not signature-image read failures. A SQLite view can inject an error only
+for the image key while other preference reads remain successful, providing a
+deterministic regression seam.
+
+Accepted behavior: return a structured `Technical` error from the signature
+image port for repository read failures while preserving the current
+success-with-empty behavior for missing/corrupt image data and unavailable
+service/session cases. Initial Setup must stop before aggregate save and keep
+its draft when the image read fails; retry after the repository recovers must
+save the stored image. My Details must preserve the displayed image/draft,
+report the read error, and block aggregate save until refresh successfully
+reloads the image. Speaking Evaluation report callers retain their existing
+empty-image fallback on read failure. Do not change signature encoding,
+save-port transaction behavior, or report rendering. Build `ClassMngr` and the
+existing signature-image port, Initial Setup wizard, and My Workspace tests;
+run the matching focused CTests and `git diff --check`. Batch474 is active in
+its recorded order with F1091 selected; F1092-F1094 remain provisional, and
+no other slices were found.
+
+### F1091 complete; F1092 selected - 2026-10-19
+
+F1091 is complete at source commit `cd2e7a68`. The Qt-free
+`PersonalSignatureImagePort::read()` contract now returns a structured result.
+The platform adapter returns `Technical` for repository errors while missing
+keys, corrupt/invalid image data, and unavailable service/session cases retain
+their successful empty-image behavior. Initial Setup stops before the
+aggregate save on an image read error. My Details retains the displayed image,
+tracks whether the stored image was read, and blocks aggregate saves until a
+successful reload. Speaking Evaluation retains the existing empty-image
+fallback if the result is an error.
+
+Incremental `macos-clang-debug` built `ClassMngr`,
+`ClassMngrInitialSetupWizardTests`, `ClassMngrMyWorkspacePageTests`, and
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`.
+The signature-image port and full My Workspace CTests passed. The isolated
+Initial Setup F1091 case
+`signatureImageReadFailureBlocksAggregateSaveAndCanRetry` passed 3/3, but the
+full Initial Setup CTest aborts in its first, unrelated
+`keyboardIsAvailableAtTextEntryStages` case with the existing macOS Qt
+`NSBundle initWithURL: nil URL argument` failure before reaching F1091. The
+Speaking Evaluation page-save parity CTest passed. The broader page-save CTest
+had 34/35 cases pass; its only failure is the existing normalized output
+directory expectation in `outputReportsUsesProjectedRegularSchedule`, which
+also fails when run alone with the offscreen platform. `git diff --check`
+passed. No full suite ran.
+
+Batch474 remains active in recorded order. F1091 is complete; F1092 is
+selected for bounded reproduction of the Sidebar Display QSettings read-error
+path. Do not implement F1092 unless a technical read failure and the
+aggregate-save preservation hazard are demonstrated. F1093-F1094 remain
+provisional; no other slices were found.

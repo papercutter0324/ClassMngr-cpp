@@ -4706,3 +4706,14 @@ remains open. Batch473 is closed. Batch474 is active, with F1091 selected to
 propagate signature-image technical read failures and prevent aggregate saves
 from replacing the stored image; F1092-F1094 remain provisional. Details and
 evidence paths are in the Phase 2 plan and progress log.
+
+## Phase 2 update - F1091 complete; F1092 selected - 2026-10-19
+
+F1091 source commit `cd2e7a68` propagates signature-image technical read
+failures and blocks aggregate personal-details saves in Initial Setup and My
+Details until the image reloads. Missing, corrupt, or unavailable images retain
+the existing empty fallback, including Speaking Evaluation reports. The
+focused port and My Workspace CTests passed; the isolated Initial Setup F1091
+case passed. The full Initial Setup class still aborts before that case in a
+pre-existing macOS Qt wizard path. Batch474 continues at F1092, which is under
+read-error reproduction before implementation acceptance.

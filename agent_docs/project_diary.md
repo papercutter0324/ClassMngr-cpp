@@ -7319,3 +7319,17 @@ Details include those bytes in aggregate personal-information saves. A
 key-specific SQLite-view fault seam exists in the current UI test setup, so
 the preservation and retry behavior can be exercised without making other
 preference reads fail. F1092-F1094 remain provisional.
+
+## Phase 2 F1091 complete; F1092 active - 2026-10-19
+
+F1091 is implemented and committed at `cd2e7a68`. The signature-image port
+now returns a structured error for settings read failures. Initial Setup keeps
+its draft and blocks aggregate save until retry succeeds; My Details keeps the
+loaded image and blocks save until the image is known; Speaking Evaluation
+retains its empty-image fallback. Focused verification and known broader test
+limitations are recorded in the Phase 2 progress log.
+
+I am starting F1092 with reproduction only. Its current risk depends on whether
+a real QSettings read error can be produced and whether toggling one sidebar
+preference then overwrites the other unknown value. No F1092 code change is
+planned until both parts are demonstrated.
