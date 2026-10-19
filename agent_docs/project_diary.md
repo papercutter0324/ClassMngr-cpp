@@ -8299,3 +8299,19 @@ fixtures to valid `GregorianDate` values, the same incremental build passed.
 `git diff --check` passed. No full suite or Windows build ran. F1147 is next in
 Batch487; F629 and both phase gates remain open. Batch486's push remains
 pending exact-payload approval.
+
+## 2026-10-20 - F1147 accepted
+
+Use a shared exact-text `Application::CampusCode` value for Calendar Page and
+Calendar Import query outputs. Keep it as an owning UTF-8 byte string with no
+validation, trimming, or case folding. Calendar Page keeps the code optional,
+omits only empty source values, preserves whitespace and repository order, and
+does not normalize at the query boundary. Calendar Import keeps its existing
+Platform trimming, blank filtering, first exact duplicate, and ordering rules.
+Keep the separate normalized/case-folded `CalendarEventCampusCode`
+visibility-policy type unchanged.
+
+F1147 verification is pending. The focused gate builds `ClassMngr`, both
+campus-query adapter targets, and `ClassMngrCalendarImportTests`; it runs the
+two adapter CTests and Calendar Import CTest plus `git diff --check`. F629 and
+both phase gates remain open; Batch486's push is pending exact-payload approval.

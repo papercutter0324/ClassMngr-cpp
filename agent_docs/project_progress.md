@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1146 complete; Batch487 active; F1147 next; F629 open)
+### Current checkpoint - 2026-10-20 (F1146 complete; F1147 accepted; Batch487 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -269,12 +269,16 @@ incomplete slices, and seven discovered slices; F1147 is next. Batch485 was
 pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
-0 and Phase 2 gates remain open. Batch486's completed-batch push is still
+0 and Phase 2 gates remain open. F1147 is accepted to share exact raw campus
+code text across the Calendar Page and Calendar Import Application query
+ports, while preserving their different Platform normalization behavior.
+Batch487 has three complete, one accepted/in progress, and six discovered
+candidates; F1148 follows F1147. Batch486's completed-batch push is still
 pending the user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Accept and complete F1147, then continue Batch487 in its recorded order.
+Complete F1147, then accept F1148 and continue Batch487 in its recorded order.
 Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
 exact-payload approval request. F629 remains active and awaits source-bound
 Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows

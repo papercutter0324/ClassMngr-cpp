@@ -50684,3 +50684,49 @@ Batch487 has ten candidates: three complete (F1144–F1146), none accepted/in
 progress, and seven discovered (F1147–F1153); F1147 is next. F629 remains
 active pending source-bound Windows x64 layout evidence. The Phase 0 and Phase
 2 gates remain open.
+
+### F1147 Shared campus code and Calendar Page metadata accepted before implementation - 2026-10-20
+
+F1147 is accepted/in progress. Add `Application::CampusCode` in
+`src/next/application/campus_code.h` as an owning `std::string` value with
+explicit construction, `value()`, and equality. It represents exact bytes and
+does not validate, trim, or case-fold them.
+
+Preserve these boundaries and behaviors in order:
+
+1. Replace F1139's importer-specific `CalendarEventImportCampusCode` with the
+   shared value in its query port, adapter, service, and tests. Keep the import
+   adapter's trimming, blank filtering, first exact case-sensitive duplicate
+   removal, repository order, and error behavior.
+2. Change only `CalendarPageCampusMetadata::campusCode` to
+   `std::optional<CampusCode>`, constructing a value only for a nonempty source
+   `QString`. Preserve exact UTF-8 bytes, whitespace, embedded-NUL length,
+   optional omission for empty/missing/non-string values as currently decoded,
+   and repository order. Do not add query filtering or deduplication.
+3. Leave all other metadata and downstream UI conversion/filter behavior
+   unchanged. Keep `CalendarEventCampusCode`, the normalized and case-folded
+   visibility-policy projection, separate; do not reuse it for this data.
+
+Evidence: `src/next/application/calendar_page_campus_directory_query_port.h`,
+`src/next/platform/calendar_page_campus_directory_query_adapter.h`,
+`src/features/calendar/ui/calendar_page_upcoming_events.cpp:929-1018`,
+`src/features/campus/data/campus_json_repository.cpp`,
+`src/features/campus/data/campus_json_codec.cpp`,
+`src/next/application/calendar_event_import_campus_code_query_port.h`,
+`src/next/platform/calendar_event_import_campus_code_query_adapter.h`,
+`src/features/calendar/calendar_event_import_service.cpp`, and current tests
+`tests/next_platform_calendar_page_campus_directory_query_adapter_tests.cpp`
+and `tests/next_platform_calendar_event_import_campus_code_query_adapter_tests.cpp`.
+
+Focused verification acceptance: incrementally build `ClassMngr`,
+`ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests`,
+`ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests`, and
+`ClassMngrCalendarImportTests` in the existing `build/macos-clang-debug` tree.
+Run those three CTests and `git diff --check`. The manifest is
+`cmake/next.cmake`. No implementation or test results are recorded yet; full
+suite and Windows runs are not part of this focused gate. No push is due for
+this slice. F629 remains active pending source-bound Windows x64 evidence, and
+the Phase 0 and Phase 2 gates remain open.
+
+Batch487 has ten candidates: three complete (F1144–F1146), one accepted/in
+progress (F1147), and six discovered (F1148–F1153); F1148 is next.
