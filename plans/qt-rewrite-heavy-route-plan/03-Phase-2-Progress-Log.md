@@ -50058,7 +50058,23 @@ exact duplicate removal in Platform. Preserve service conversion back to
 Focused verification: build `ClassMngr`,
 `NextPlatformCalendarEventImportCampusCodeQuery`, and
 `ClassMngrCalendarImportTests`; run the two focused CTests and
-`git diff --check`. Implementation and verification are pending. Full-suite
-and Windows runs are not expected. Batch486 has six candidates: F1138
-complete, F1139 accepted/in progress, and F1140–F1143 discovered. F1140 is
-next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+`git diff --check`. F1139 completed; see the completion record below.
+Full-suite and Windows runs were not expected.
+
+### F1139 Calendar import campus-code identity complete - 2026-10-20
+
+F1139 completed at source/test commit
+`05c9de8cccc4929a90b72362d6a3112f7e1f8a00`. The Application query port
+returns a distinct exact-byte campus-import code value rather than reusing the
+visibility-policy `CalendarEventCampusCode`. Platform retains repository
+order, trimming, blank filtering, UTF-8 conversion, case-sensitive exact
+duplicate removal, and existing skip/error-to-empty behavior; service
+conversion and parser normalization, matching, and suffix behavior remain.
+
+The incremental macOS Debug build passed for `ClassMngr`,
+`ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests`, and
+`ClassMngrCalendarImportTests`. The two focused CTests passed (2/2), and
+`git diff --check` passed. The full suite and Windows verification were not
+run. Batch486 has six candidates: two complete (F1138 and F1139), none
+accepted/in progress, and four discovered; F1140 is next for acceptance.
+F629 and the Phase 0 and Phase 2 gates remain open.

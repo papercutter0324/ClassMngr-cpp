@@ -8167,3 +8167,17 @@ QString conversion and parser behavior remain unchanged. Focused adapter and
 calendar-import verification is planned; implementation and verification are
 pending. Batch486 has F1138 complete, F1139 accepted/in progress, and four
 discovered candidates. F629 and both phase gates remain open.
+
+## 2026-10-20 - F1139 complete
+
+F1139 completed at source/test commit
+`05c9de8cccc4929a90b72362d6a3112f7e1f8a00`. Calendar import now receives
+campus codes through an owning Application value that preserves the Platform
+adapter's UTF-8 bytes. Repository ordering, trimming, blank filtering,
+case-sensitive duplicate removal, and service/parser behavior remain intact.
+
+The macOS Debug build of `ClassMngr` and two focused targets passed; their
+focused CTests passed 2/2. The fixture covers order, Unicode, trimming, blank
+and exact duplicate removal, and case variants. `git diff --check` passed. Full
+suite and Windows were not run. Batch486 now has two complete slices and four
+discovered, with F1140 next; F629 and both phase gates remain open.
