@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1107 accepted; Batch479 active)
+## Current continuation - 2026-10-20 (F1108 next for reassessment; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6072,12 +6072,20 @@ parity passed 3, and the wide page selector passed 3. The page's default-port
 save/readback and manual-failure selectors also passed. `git diff --check`
 passed; no full suite ran.
 
-F1107 is accepted for implementation; no implementation has started. Type
-the teacher and class IDs in the Sub Prep print-order facts, constructing
-them at the existing positive-int feature-model boundary. Preserve teacher
-grouping, name ordering, the numeric teacher-ID tie-break, class-key ordering,
-and the numeric class-ID tie-break; do not rely on TypedId's lexical string
-ordering. Keep renderer and persistence models unchanged. Batch479 remains
-active and unpushed: F1104-F1106 are complete, F1107 is accepted, and F1108
-is discovered. The combined Phase 0 and Phase 2 gates remain open; Windows
-x64 evidence remains unavailable.
+F1107 completed at source/test commit
+`600c119cc912dd0c713c95e8acbd68639a4a85f5`, following acceptance commit
+`dd1a650b9e3aa58266f16bee21dce6da80538a86`. The print-order facts carry
+typed teacher and class IDs; the feature model constructs them from existing
+positive integer values after filtering. Numeric teacher and class tie-breaks
+remain numeric, with nonthrowing handling for unexpected typed text.
+
+Focused verification on macOS arm64 passed the Application policy and
+class-information model CTests 2/2. Coverage includes 2-versus-10 ordering
+for both IDs, existing name/key/grouping/sentinel/input-order cases, malformed
+typed IDs without throwing, and numeric model output. The incremental build
+reported no work after the Executor built both targets. `git diff --check`
+passed; no full suite ran.
+
+F1108 is next for acceptance reassessment. Batch479 remains active and
+unpushed: F1104-F1107 are complete, F1108 is under review. The combined Phase
+0 and Phase 2 gates remain open; Windows x64 evidence remains unavailable.

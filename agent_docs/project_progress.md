@@ -5062,3 +5062,21 @@ models, and persistence unchanged. Batch479 remains active and unpushed:
 F1104-F1106 are complete, F1107 is accepted, and F1108 is discovered.
 Windows x64 evidence remains unavailable; the Phase 0 and Phase 2 gates
 remain open.
+
+## Phase 2 update - F1107 complete; F1108 next - 2026-10-20
+
+F1107 is complete at source/test commit
+`600c119cc912dd0c713c95e8acbd68639a4a85f5`, following acceptance commit
+`dd1a650b9e3aa58266f16bee21dce6da80538a86`. The Sub Prep print-order facts
+now carry typed teacher/class IDs; the feature model constructs them at its
+existing positive-int boundary. The policy preserves grouping and numeric
+teacher/class tie-breaks, including deterministic nonthrowing fallback for
+unexpected typed text.
+
+The focused Application policy and class-information model CTests passed
+2/2 on macOS arm64. Regression coverage includes 2-versus-10 ordering for
+both ID tie-breaks, malformed typed IDs without throwing, and existing
+grouping/name/key/sentinel/input-order behavior. `git diff --check` passed;
+no full suite ran. Batch479 remains active and unpushed: F1104-F1107 are
+complete, and F1108 is next for acceptance reassessment. Windows x64 evidence
+remains unavailable; Phase 0 and Phase 2 gates remain open.

@@ -7541,3 +7541,12 @@ policy boundary. Keep existing grouping and tie-break semantics: teacher and
 class IDs sort numerically after their other keys, even though `TypedId`'s
 default comparison is lexical. Build these facts only from the existing
 positive-int inputs; leave the renderer and persistence models unchanged.
+
+## 2026-10-20 - F1107 complete
+
+F1107 completed at source/test commit
+`600c119cc912dd0c713c95e8acbd68639a4a85f5`, following acceptance commit
+`dd1a650b9e3aa58266f16bee21dce6da80538a86`. Typed print-order facts retain
+numeric ID ordering through an explicit integer comparison; malformed typed
+text has a deterministic fallback without throwing. Focused policy and model
+tests passed 2/2; no full suite ran.

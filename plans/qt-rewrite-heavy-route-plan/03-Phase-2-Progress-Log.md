@@ -47790,3 +47790,29 @@ feature-boundary behavior. Focused verification targets are
 `ClassMngrNextApplicationSubPrepPrintOrderPolicyTests` and
 `ClassMngrSubPrepClassInformationModelTests`; no full suite is planned. No
 implementation or test changes have started.
+
+### F1107 complete; F1108 next for acceptance reassessment - 2026-10-20
+
+F1107 is complete at source/test commit
+`600c119cc912dd0c713c95e8acbd68639a4a85f`; its acceptance commit is
+`dd1a650b9e3aa58266f16bee21dce6da80538a86`. The policy facts now carry
+typed identities, and the feature model constructs them from existing
+positive integer IDs after the existing filtering. Teacher grouping keeps
+exact stored ID strings. Numeric tie-breaks use full-consumption
+`from_chars` with a deterministic nonthrowing fallback for arbitrary text,
+preserving numeric order for valid integer IDs. The policy tests cover 2 vs.
+10 for both teacher and class ordering, malformed nonempty IDs without
+throwing, and existing name, grouping, key, sentinel, and input-order
+behavior. The model test confirms 2-before-10 feature output.
+
+On local macOS arm64 with Ninja Debug and Qt 6.12.0, both focused CTest
+targets passed (2/2):
+`ClassMngrNextApplicationSubPrepPrintOrderPolicyTests` and
+`ClassMngrSubPrepClassInformationModelTests`. The incremental build reported
+no work because Executor had already built the exact delta. Executor and
+Tester `git diff --check` both passed; no full suite ran.
+
+Batch479 remains active and unpushed: F1104-F1107 are complete and F1108 is
+next for acceptance reassessment. The Phase 0 and Phase 2 gates remain Open;
+Batch478's pushed closeout remains
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`.
