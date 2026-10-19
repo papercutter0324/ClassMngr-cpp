@@ -58,14 +58,18 @@ public:
     {
         if (!m_session || !m_session->isOpen())
         {
-            return Application::PersonalSignatureImageResult::success({});
+            return Application::PersonalSignatureImageResult::success(
+                Domain::PreparedPersonalSignatureImageBytes{}
+                );
         }
 
         SettingsRepository* const repository =
             m_session->settingsRepository();
         if (!repository)
         {
-            return Application::PersonalSignatureImageResult::success({});
+            return Application::PersonalSignatureImageResult::success(
+                Domain::PreparedPersonalSignatureImageBytes{}
+                );
         }
 
         const auto stored = repository->loadSetting(key());
@@ -90,13 +94,17 @@ public:
 
         if (preparedImage.isEmpty())
         {
-            return Application::PersonalSignatureImageResult::success({});
+            return Application::PersonalSignatureImageResult::success(
+                Domain::PreparedPersonalSignatureImageBytes{}
+                );
         }
 
         return Application::PersonalSignatureImageResult::success(
-            std::string(
-                preparedImage.constData(),
-                static_cast<std::size_t>(preparedImage.size())
+            Domain::PreparedPersonalSignatureImageBytes(
+                std::string(
+                    preparedImage.constData(),
+                    static_cast<std::size_t>(preparedImage.size())
+                    )
                 )
             );
     }

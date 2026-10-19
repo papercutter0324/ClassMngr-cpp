@@ -1141,7 +1141,7 @@ bool PersonalDetailsPage::loadStoredSettings()
     {
         m_signatureImageKnown = true;
         m_signatureImageData = QByteArray::fromStdString(
-            storedSignatureImage.value()
+            storedSignatureImage.value().bytes()
             );
     }
     else

@@ -14,6 +14,8 @@
 
 #include <cstddef>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 using namespace ClassMngr::Next::Platform;
 
@@ -73,10 +75,10 @@ QByteArray sourcePng()
 }
 
 QByteArray preparedBytes(
-    const std::string& value
+    const ClassMngr::Next::Domain::PreparedPersonalSignatureImageBytes& value
     )
 {
-    return QByteArray::fromStdString(value);
+    return QByteArray::fromStdString(value.bytes());
 }
 
 } // namespace
@@ -89,8 +91,10 @@ class NextPlatformApplicationServicesPersonalSignatureImagePortTests final
 private slots:
     void initTestCase();
     void validBase64ImageIsPreparedOnceForTheExactKey();
+    void portReturnsTypedPreparedBytes();
     void missingAndUnavailableSettingsReturnEmpty();
     void corruptBase64ReturnsEmpty();
+    void unsupportedImageReturnsEmpty();
     void preservesUnrelatedSettingsAndDoesNotWrite();
     void closedSessionReturnsEmptyAndPreservesSettingsOnReopen();
     void repositoryReadFailureReturnsTechnicalError();
@@ -145,6 +149,28 @@ validBase64ImageIsPreparedOnceForTheExactKey()
 }
 
 void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
+portReturnsTypedPreparedBytes()
+{
+    using Port =
+        ClassMngr::Next::Application::PersonalSignatureImagePort;
+    using Result =
+        ClassMngr::Next::Application::PersonalSignatureImageResult;
+    using PreparedBytes =
+        ClassMngr::Next::Domain::PreparedPersonalSignatureImageBytes;
+
+    static_assert(
+        std::is_same_v<decltype(std::declval<const Port&>().read()), Result>
+        );
+    static_assert(
+        std::is_same_v<
+            decltype(std::declval<const Result&>().value()),
+            const PreparedBytes&
+            >
+        );
+    QVERIFY(true);
+}
+
+void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
 missingAndUnavailableSettingsReturnEmpty()
 {
     ApplicationServices services;
@@ -193,6 +219,25 @@ corruptBase64ReturnsEmpty()
     const auto corruptImage = port.read();
     QVERIFY(corruptImage);
     QVERIFY(corruptImage.value().empty());
+}
+
+void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
+unsupportedImageReturnsEmpty()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    QVERIFY(
+        services.dataService()->saveSetting(
+            QString::fromUtf8(SignatureImageKey),
+            QString::fromLatin1(QByteArrayLiteral("not an image").toBase64())
+            )
+        );
+
+    ApplicationServicesPersonalSignatureImagePort port(services);
+    const auto unsupportedImage = port.read();
+    QVERIFY(unsupportedImage);
+    QVERIFY(unsupportedImage.value().empty());
 }
 
 void NextPlatformApplicationServicesPersonalSignatureImagePortTests::

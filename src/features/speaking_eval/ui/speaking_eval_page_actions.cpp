@@ -320,7 +320,7 @@ void SpeakingEvalPage::showReports()
         if (signatureImageResult)
         {
             signatureImage = QByteArray::fromStdString(
-                signatureImageResult.value()
+                signatureImageResult.value().bytes()
                 );
         }
     }
@@ -468,7 +468,7 @@ void SpeakingEvalPage::outputReports(
         if (signatureImageResult)
         {
             signatureImage = QByteArray::fromStdString(
-                signatureImageResult.value()
+                signatureImageResult.value().bytes()
                 );
         }
     }

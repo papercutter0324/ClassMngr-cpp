@@ -1,17 +1,17 @@
 #pragma once
 
 #include "next/domain/operation_result.h"
-
-#include <string>
+#include "next/domain/prepared_personal_signature_image_bytes.h"
 
 namespace ClassMngr::Next::Application
 {
 
 // The application boundary carries prepared signature-image bytes as an
-// opaque binary string. Base64, image decoding, and image normalization stay
-// in the Qt-boundary adapter. Repository failures remain distinguishable
-// from a missing or invalid image, which is represented by empty bytes.
-using PersonalSignatureImageResult = Domain::Result<std::string>;
+// opaque Domain value. Base64, image decoding, and image normalization stay in
+// the Qt-boundary adapter. Repository failures remain distinguishable from a
+// missing or invalid image, which is represented by empty bytes.
+using PersonalSignatureImageResult =
+    Domain::Result<Domain::PreparedPersonalSignatureImageBytes>;
 
 class PersonalSignatureImagePort
 {

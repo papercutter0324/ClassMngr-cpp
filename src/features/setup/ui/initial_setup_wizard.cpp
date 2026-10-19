@@ -507,7 +507,7 @@ public:
         if (storedSignatureResult && m_signature.isEmpty())
         {
             const QByteArray storedSignature = QByteArray::fromStdString(
-                storedSignatureResult.value()
+                storedSignatureResult.value().bytes()
                 );
             if (!storedSignature.isEmpty())
             {
@@ -656,7 +656,7 @@ public:
             return false;
         }
         const QByteArray storedSignature = QByteArray::fromStdString(
-            storedSignatureResult.value()
+            storedSignatureResult.value().bytes()
             );
         const QByteArray signatureImage =
             m_signature.isEmpty()

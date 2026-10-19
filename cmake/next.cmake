@@ -38,6 +38,7 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
     src/next/domain/native_english_teacher_id.h
     src/next/domain/gs_team_member_id.h
     src/next/domain/operation_result.h
+    src/next/domain/prepared_personal_signature_image_bytes.h
     src/next/domain/schedule_entry.h
     src/next/domain/schedule_time.h
     src/next/domain/speaking_evaluation_grade.h
