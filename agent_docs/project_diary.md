@@ -7570,4 +7570,5 @@ typed through selection while the feature adapter preserves its legacy
 integer API. Parsing through `int` retains the existing positive and numeric
 identity rules; returning canonical IDs prevents text aliases from leaking
 past the policy. Focused policy and service projection tests passed; no full
-suite ran.
+suite ran. Batch479 closeout was pushed to `origin/Qt-Rewrite` at
+`8a2f11318b54425c58bfadc83fa1526af1d69091`; the remote matched.

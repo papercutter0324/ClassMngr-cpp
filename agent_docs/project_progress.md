@@ -5112,6 +5112,8 @@ On macOS arm64 with Apple Clang 21, Qt 6.12.0, and Ninja Debug, the incremental
 service projection CTests passed 2/2; `git diff --check` passed. No full suite,
 fresh configure, or clean build ran. Batch479 is complete. Batch480 has two
 ordered candidates, with F1109 next for acceptance reassessment and F1110
-discovered. The closeout is being prepared for push to GitHub. F629 and the
+discovered. Batch479 closeout commit
+`8a2f11318b54425c58bfadc83fa1526af1d69091` was pushed to
+`origin/Qt-Rewrite`; the remote matched and the worktree is clean. F629 and the
 combined Phase 0 gate remain open pending Windows x64 evidence; Phase 2 also
 remains open.

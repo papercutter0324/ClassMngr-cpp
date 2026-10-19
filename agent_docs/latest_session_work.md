@@ -6104,7 +6104,9 @@ On macOS arm64, Apple Clang 21, Qt 6.12.0, and Ninja Debug, the incremental
 service projection selector passed 2/2. `git diff --check` passed. No full
 suite, fresh configure, or clean build ran.
 
-Batch479 is complete; its closeout and push are in progress. Batch480 has two
+Batch479 closeout commit `8a2f11318b54425c58bfadc83fa1526af1d69091` was
+pushed to `origin/Qt-Rewrite`; the remote matched and the worktree is clean.
+Batch480 has two
 ordered candidates recorded: F1109 for typed Class Tab ordering facts, then
 F1110 for typed roster-transfer eligibility. F1109 is next for acceptance
 reassessment. The combined Phase 0 gate remains open because F629 still needs

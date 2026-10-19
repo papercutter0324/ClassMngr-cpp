@@ -47912,8 +47912,10 @@ Qt 6.12.0, Ninja Debug, the exact CTest expression
 passed 2/2. `git diff --check` passed. No full suite, clean build, or fresh
 configure ran.
 
-Batch479 is complete. Its closeout commit and push are the next operation; no
-closeout SHA is recorded yet. Batch480 is now active from the discovery record
-above, with F1109 next for acceptance reassessment and F1110 discovered. F629
-remains active pending Windows x64 layout evidence, which the user cannot run
-now. The Phase 0 and Phase 2 gates remain Open.
+Batch479 closeout was committed as `Phase2 - Close Batch479 and open Batch480`
+at `8a2f11318b54425c58bfadc83fa1526af1d69091` and pushed to
+`origin/Qt-Rewrite` without force. The remote SHA matched, the worktree was
+clean, and the branch was up to date. Batch480 is active from the discovery
+record above, with F1109 next for acceptance reassessment and F1110 discovered.
+F629 remains active pending Windows x64 layout evidence, which the user cannot
+run now. The Phase 0 and Phase 2 gates remain Open.

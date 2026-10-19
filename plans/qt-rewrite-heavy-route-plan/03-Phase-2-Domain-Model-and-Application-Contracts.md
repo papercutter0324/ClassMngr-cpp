@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch479 is complete at F1108 source/test commit `ef431808` and its closeout commit/push is next; Batch480 is active with F1109 next for acceptance reassessment and F1110 discovered; F629 remains active pending Windows x64 layout evidence (the user cannot run it now), and the Phase 0 and Phase 2 gates remain Open.
+- Current note: Batch479 is complete and its closeout was pushed to `origin/Qt-Rewrite` at `8a2f11318b54425c58bfadc83fa1526af1d69091`; Batch480 is active with F1109 next for acceptance reassessment and F1110 discovered; F629 remains active pending Windows x64 layout evidence (the user cannot run it now), and the Phase 0 and Phase 2 gates remain Open.
 
 ### Slice discovery batches
 
