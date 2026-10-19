@@ -50924,3 +50924,31 @@ evidence; the Phase 0 and Phase 2 gates remain open.
 
 Batch487 has ten candidates: five complete (F1144–F1148), one accepted/in
 progress (F1149), and four discovered (F1150–F1153); F1150 is next.
+
+### F1149 Class Transfer exported-at-UTC value complete - 2026-10-20
+
+F1149 completed at source/test commit
+`91306a8473628064974b2956a803b2b8f0b1af25`, following acceptance commit
+`127df8c24e375dc432853ae53387d4a8abf35697`. Application
+`ClassTransferExportedAtUtc` now types
+`ClassTransferPortablePackage::exportedAtUtc`; the export query returns the
+typed canonical text, while portable JSON and legacy adapters unwrap or wrap
+at their existing boundaries. Raw import parsing, QDateTime sources, invalid
+legacy codec fallback, and the millisecond source DTO remain unchanged.
+
+The incremental build in the existing `build/macos-clang-debug` tree passed
+for `ClassMngr`, `ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`,
+`ClassMngrClassTransferApplyPackageAdapterTests`, and
+`ClassMngrClassTransferExportCodecParityTests`. Four focused CTests passed
+4/4. QtTest counts: export query 11,
+export source 14, apply adapter 5, and codec parity 12 passed. The exact
+`1970-01-01T00:00:01.234Z` output, +09:00-to-UTC-Z normalization,
+invalid/empty legacy round-trip, schema, and UTC validity passed.
+`git diff --check` passed. No full suite, fresh configure, clean build,
+Windows run, or push was performed.
+
+Batch487 has ten candidates: six complete (F1144–F1149), none accepted/in
+progress, and four discovered (F1150–F1153); F1150 is next. The batch remains
+open, so no push is due. F629 remains active pending source-bound Windows x64
+evidence; the Phase 0 and Phase 2 gates remain open.

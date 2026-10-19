@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1148 complete; F1149 accepted; Batch487 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1148-F1149 complete; Batch487 active; F1150 next; F629 open)
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
@@ -68,14 +68,20 @@ QtTest cases), Sub Prep 3 selectors (5 cases), and Calendar 3 selectors
 Calendar behavior. `git diff --check` passed. Both Initial Setup selectors
 abort before assertions in the known macOS QWizard/NSBundle harness and remain
 unverified; no full suite, Windows run, fresh configure, or clean build was
-performed. Batch487 has five complete slices, no accepted/in-progress slice,
-and five discovered candidates; F1149 is accepted/in progress, with F1150
-next. F1149 types the canonical Class Transfer exported UTC timestamp text in
-the portable package while leaving raw input, epoch-millisecond source, and
-QDateTime boundaries unchanged. Its incremental macOS build and focused export,
-adapter, and codec checks are now defined; implementation and results are not
-yet recorded. F629 remains active pending source-bound Windows layout
-evidence; Phase 0 and Phase 2 gates remain open.
+performed. F1149 completed at source/test commit
+`91306a8473628064974b2956a803b2b8f0b1af25`, following acceptance commit
+`127df8c24e375dc432853ae53387d4a8abf35697`. The portable package now carries
+`Application::ClassTransferExportedAtUtc`; the query formats exact canonical
+UTC text, and the JSON serializer and legacy adapter unwrap/wrap it at their
+existing boundaries. Incremental builds passed for all five assigned targets;
+the four focused CTests passed 4/4. Direct QtTest results were export query
+11, export source 14, apply adapter 5, and codec parity 12 passed. Exact
+`1970-01-01T00:00:01.234Z` output, offset import normalization, and the
+invalid/empty legacy adapter round-trip passed. `git diff --check` passed. No
+full suite, Windows run, fresh configure, or clean build was performed.
+Batch487 has six complete slices and four discovered candidates; F1150 is
+next. F629 remains active pending source-bound Windows layout evidence; Phase
+0 and Phase 2 gates remain open.
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
