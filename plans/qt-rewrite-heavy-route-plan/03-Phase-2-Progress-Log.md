@@ -49606,3 +49606,37 @@ precedence, and persisted `00:00`, `09:05`, and `23:59`. `git diff --check`
 passed. The full suite and Windows verification were not run. Batch485 has
 three complete slices and seven discovered; F1131 is next for acceptance. The
 batch remains unpushed; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1131 Sub Prep meeting second-of-day accepted before implementation - 2026-10-20
+
+F1131 is accepted/in progress. Add permissive Application
+`SubPrepMeetingSecondsOfDay`, backed by `std::int32_t`, with an explicit value
+constructor, default `0`, `.value()`, and equality. Use it for both
+`SubPrepMeetingTimeFact::secondsOfDay` and
+`SubPrepMeetingTimeGroup::secondsOfDay`; keep arbitrary raw int32 values
+constructible so policy-level invalid skipping remains observable.
+
+In the grouping policy, use `.value()` while preserving filtering and ordering:
+skip invalid weekdays, unselected weekdays, and seconds outside `[0,86400)`;
+group by exact seconds across days; deduplicate repeated weekdays within a
+group; keep weekdays Monday–Sunday and groups ordered by first weekday then
+exact seconds. Do not change the separate navigation schedule-order path,
+which remains minute-of-day (`09:30:59` maps to `570`).
+
+At the platform adapter, wrap parsed `QTime`-derived seconds when constructing
+facts and unwrap only for `QTime::fromMSecsSinceStartOfDay(seconds * 1000)`.
+Preserve `compactTime()`'s lowercase 12-hour labels without seconds, including
+the possibility that distinct second groups display the same minute label.
+Do not reuse `Domain::ScheduleTime`, which models a weekday interval in
+minutes, or move Qt types into Application.
+
+Focused verification: build affected `ClassMngr` and
+`ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests`; retain
+selected-day filtering, canonical order, cross-day equal-second grouping,
+duplicate-day deduplication, empty results, and exact-second ordering, and add
+invalid-value skip plus valid `0`/`86399` coverage. Build and run
+`ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests`,
+preserving compact summary labels and the `09:30:59`-to-minute-navigation
+assertion. Run both focused CTests and `git diff --check`; no full-suite or
+Windows run is required. F1132 is next for acceptance. Batch485 remains
+unpushed; F629 and the Phase 0 and Phase 2 gates remain open.
