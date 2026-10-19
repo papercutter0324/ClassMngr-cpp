@@ -33,7 +33,7 @@ Application::ScheduleSlotStateSaveRequest validRequest()
 {
     return {
         .weekday = Application::ScheduleWeekday::Saturday,
-        .startMinute = 9 * 60 + 5,
+        .startMinute = Application::ScheduleSlotStartMinute(9 * 60 + 5),
         .selectedState = Application::ScheduleSlotState::Lunch,
         .defaultState = Application::ScheduleSlotState::Essay
     };
@@ -47,6 +47,7 @@ class NextApplicationScheduleSlotStateSaveTests final : public QObject
 
 private slots:
     void forwardsValidTypedChoiceToPort();
+    void forwardsValidMinuteBoundariesToPort();
     void rejectsInvalidWeekdayAndStartMinuteWithoutPortCall();
     void rejectsUnknownStateValuesWithoutPortCall();
     void preservesPortFailure();
@@ -68,27 +69,72 @@ forwardsValidTypedChoiceToPort()
 }
 
 void NextApplicationScheduleSlotStateSaveTests::
+forwardsValidMinuteBoundariesToPort()
+{
+    QCOMPARE(Application::ScheduleSlotStartMinute().value(), 0);
+    QCOMPARE(
+        Application::ScheduleSlotStartMinute(9 * 60 + 5).value(),
+        9 * 60 + 5
+        );
+    QVERIFY(
+        Application::ScheduleSlotStartMinute(9 * 60 + 5)
+        == Application::ScheduleSlotStartMinute(9 * 60 + 5)
+        );
+
+    RecordingSavePort port;
+    auto request = validRequest();
+    const int validMinutes[] = {0, 24 * 60 - 1};
+    for (const int minute : validMinutes)
+    {
+        request.startMinute = Application::ScheduleSlotStartMinute(minute);
+        const auto result =
+            Application::ScheduleSlotStateSaveUseCase::execute(request, port);
+
+        QVERIFY(result);
+        QVERIFY(port.lastRequest.has_value());
+        QCOMPARE(port.lastRequest->startMinute.value(), minute);
+    }
+    QCOMPARE(port.callCount, 2);
+}
+
+void NextApplicationScheduleSlotStateSaveTests::
 rejectsInvalidWeekdayAndStartMinuteWithoutPortCall()
 {
     RecordingSavePort port;
 
     auto request = validRequest();
     request.weekday = static_cast<Application::ScheduleWeekday>(7);
+    request.startMinute = Application::ScheduleSlotStartMinute(-1);
+    request.selectedState = static_cast<Application::ScheduleSlotState>(3);
     auto result =
         Application::ScheduleSlotStateSaveUseCase::execute(request, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(result.error().message, std::string("Schedule weekday is invalid."));
+    QVERIFY(!result.error().recoverable);
 
     request = validRequest();
-    request.startMinute = -1;
+    request.startMinute = Application::ScheduleSlotStartMinute(-1);
+    request.selectedState = static_cast<Application::ScheduleSlotState>(3);
     result = Application::ScheduleSlotStateSaveUseCase::execute(request, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Schedule slot start minute must be within the day.")
+        );
+    QVERIFY(!result.error().recoverable);
 
-    request.startMinute = 24 * 60;
+    request = validRequest();
+    request.startMinute = Application::ScheduleSlotStartMinute(24 * 60);
     result = Application::ScheduleSlotStateSaveUseCase::execute(request, port);
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    QCOMPARE(
+        result.error().message,
+        std::string("Schedule slot start minute must be within the day.")
+        );
+    QVERIFY(!result.error().recoverable);
 
     QCOMPARE(port.callCount, 0);
     QVERIFY(!port.lastRequest.has_value());

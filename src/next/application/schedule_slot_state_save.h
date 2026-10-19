@@ -23,12 +23,36 @@ enum class ScheduleSlotState
     Lunch
 };
 
+class ScheduleSlotStartMinute final
+{
+public:
+    ScheduleSlotStartMinute() = default;
+
+    explicit constexpr ScheduleSlotStartMinute(const int value) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr int value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ScheduleSlotStartMinute&,
+        const ScheduleSlotStartMinute&
+        ) = default;
+
+private:
+    int m_value = 0;
+};
+
 // This command describes the selected state for one globally keyed schedule
 // slot. The view model owns the state transition and supplies the default.
 struct ScheduleSlotStateSaveRequest final
 {
     ScheduleWeekday weekday = ScheduleWeekday::Monday;
-    int startMinute = 0;
+    ScheduleSlotStartMinute startMinute;
     ScheduleSlotState selectedState = ScheduleSlotState::Empty;
     ScheduleSlotState defaultState = ScheduleSlotState::Empty;
 
@@ -69,7 +93,8 @@ validateScheduleSlotStateSaveRequest(
         });
     }
 
-    if (request.startMinute < 0 || request.startMinute >= 24 * 60)
+    if (request.startMinute.value() < 0
+        || request.startMinute.value() >= 24 * 60)
     {
         return Domain::Result<void>::failure({
             .code = Domain::ErrorCode::InvalidInput,

@@ -88,7 +88,9 @@ using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
     return std::nullopt;
 }
 
-[[nodiscard]] std::optional<int> scheduleStartMinute(
+[[nodiscard]] std::optional<
+    ClassMngr::Next::Application::ScheduleSlotStartMinute
+    > scheduleStartMinute(
     const QString& value
     )
 {
@@ -141,7 +143,9 @@ using ScheduleWidgetDelegates::TimeColumnDelegateObjectName;
         return std::nullopt;
     }
 
-    return hour * 60 + minute;
+    return ClassMngr::Next::Application::ScheduleSlotStartMinute{
+        hour * 60 + minute
+    };
 }
 
 [[nodiscard]] std::optional<

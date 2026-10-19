@@ -151,12 +151,13 @@ private:
     }
 
     [[nodiscard]] static QString legacyStartTime(
-        const int startMinute
+        const Application::ScheduleSlotStartMinute startMinute
         )
     {
+        const int minuteOfDay = startMinute.value();
         return QStringLiteral("%1:%2")
-            .arg(startMinute / 60, 2, 10, QLatin1Char('0'))
-            .arg(startMinute % 60, 2, 10, QLatin1Char('0'));
+            .arg(minuteOfDay / 60, 2, 10, QLatin1Char('0'))
+            .arg(minuteOfDay % 60, 2, 10, QLatin1Char('0'));
     }
 
     [[nodiscard]] static QString legacyState(

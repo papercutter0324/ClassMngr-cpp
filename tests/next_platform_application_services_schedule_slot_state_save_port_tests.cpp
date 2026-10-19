@@ -9,6 +9,8 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <algorithm>
+
 using namespace ClassMngr::Next;
 
 namespace
@@ -38,7 +40,7 @@ Application::ScheduleSlotStateSaveRequest request(
 {
     return {
         .weekday = Application::ScheduleWeekday::Thursday,
-        .startMinute = 10 * 60 + 5,
+        .startMinute = Application::ScheduleSlotStartMinute(9 * 60 + 5),
         .selectedState = selectedState,
         .defaultState = Application::ScheduleSlotState::Essay
     };
@@ -54,6 +56,7 @@ class NextPlatformApplicationServicesScheduleSlotStateSavePortTests final
 private slots:
     void initTestCase();
     void savesNondefaultStateUsingTypedDayAndMinute();
+    void savesMinuteOfDayBoundaries();
     void selectingDefaultStateDeletesStoredOverride();
     void invalidInputDoesNotWrite();
     void repositoryWriteFailureIsTechnicalAndLeavesNoOverride();
@@ -86,8 +89,50 @@ savesNondefaultStateUsingTypedDayAndMinute()
     QVERIFY(loaded);
     QCOMPARE(loaded->size(), 1);
     QCOMPARE(loaded->first().day, QStringLiteral("Thursday"));
-    QCOMPARE(loaded->first().startTime, QStringLiteral("10:05"));
+    QCOMPARE(loaded->first().startTime, QStringLiteral("09:05"));
     QCOMPARE(loaded->first().state, QStringLiteral("lunch"));
+}
+
+void NextPlatformApplicationServicesScheduleSlotStateSavePortTests::
+savesMinuteOfDayBoundaries()
+{
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(m_directory)));
+
+    Platform::ApplicationServicesScheduleSlotStateSavePort port(services);
+    auto midnight = request(Application::ScheduleSlotState::Lunch);
+    midnight.weekday = Application::ScheduleWeekday::Monday;
+    midnight.startMinute = Application::ScheduleSlotStartMinute(0);
+    QVERIFY(port.saveSlotState(midnight));
+
+    auto lastMinute = request(Application::ScheduleSlotState::Lunch);
+    lastMinute.weekday = Application::ScheduleWeekday::Friday;
+    lastMinute.startMinute = Application::ScheduleSlotStartMinute(24 * 60 - 1);
+    QVERIFY(port.saveSlotState(lastMinute));
+
+    const auto loaded = loadSlotStates(services);
+    QVERIFY(loaded);
+    QCOMPARE(loaded->size(), 2);
+    QVERIFY(std::any_of(
+        loaded->cbegin(),
+        loaded->cend(),
+        [](const IntensiveSlotState& state)
+        {
+            return state.day == QStringLiteral("Monday")
+                && state.startTime == QStringLiteral("00:00")
+                && state.state == QStringLiteral("lunch");
+        }
+        ));
+    QVERIFY(std::any_of(
+        loaded->cbegin(),
+        loaded->cend(),
+        [](const IntensiveSlotState& state)
+        {
+            return state.day == QStringLiteral("Friday")
+                && state.startTime == QStringLiteral("23:59")
+                && state.state == QStringLiteral("lunch");
+        }
+        ));
 }
 
 void NextPlatformApplicationServicesScheduleSlotStateSavePortTests::
@@ -128,12 +173,20 @@ invalidInputDoesNotWrite()
     QVERIFY(services.openDatabase(databasePath(m_directory)));
 
     Platform::ApplicationServicesScheduleSlotStateSavePort port(services);
-    auto invalid = request(Application::ScheduleSlotState::Lunch);
-    invalid.startMinute = 24 * 60;
-    const auto result = port.saveSlotState(invalid);
-    QVERIFY(!result);
-    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
-    QVERIFY(!result.error().recoverable);
+    const int invalidMinutes[] = {-1, 24 * 60};
+    for (const int minute : invalidMinutes)
+    {
+        auto invalid = request(Application::ScheduleSlotState::Lunch);
+        invalid.startMinute = Application::ScheduleSlotStartMinute(minute);
+        const auto result = port.saveSlotState(invalid);
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string("Schedule slot start minute must be within the day.")
+            );
+        QVERIFY(!result.error().recoverable);
+    }
 
     const auto loaded = loadSlotStates(services);
     QVERIFY(loaded);
