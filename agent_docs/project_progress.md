@@ -5304,3 +5304,13 @@ Windows run occurred. Batch482 was pushed without force to
 matched local HEAD, and the worktree was clean and up to date. Batch483 is
 active with F1115 next for acceptance review. F629 and the Phase 0 and Phase 2
 gates remain open.
+
+## Phase 2 update - F1115 accepted; Batch483 active - 2026-10-20
+
+F1115 is accepted before implementation. Replace the Next Application
+personal-signature font integers with a Qt-free closed choice type matching
+the existing persisted values 0–3. Preserve the setting key, defaults,
+invalid-value fallback to the first choice, exact save values, and existing
+My Workspace and Initial Setup behavior. Keep the renderer enum, legacy
+repository integer, and storage schema unchanged. F1116 and F1117 remain
+discovered. F629 and the Phase 0 and Phase 2 gates remain open.

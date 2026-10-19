@@ -48521,3 +48521,31 @@ verification with `git ls-remote origin refs/heads/Qt-Rewrite` returned
 worktree. Batch482 is closed and pushed. Batch483 remains active with three
 discovered candidates and F1115 next for acceptance review. No other slices
 were found. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1115 personal-signature font choice accepted before implementation - 2026-10-20
+
+F1115 is accepted for Batch483; implementation and tests have not started.
+Add the Qt-free Application closed choice `PersonalSignatureFontChoice` for
+exactly `0=JustAnotherHand`, `1=DancingScript`, `2=GreatVibes`, and `3=Caveat`.
+Replace both `int typedSignatureFont` fields in
+`personal_signature_preferences.h` and `personal_details_save.h`, with
+explicit safe conversions to and from persisted integers at adapter
+boundaries. Preserve `myInfo/typedSignatureFont`, stored values 0–3, default
+0, and invalid, nonnumeric, or out-of-range read fallback to choice 0. On
+save, invalid enum casts still normalize to stored 0.
+
+Update the preference and save Platform adapters and My Workspace/Initial
+Setup conversion points as needed. Keep the Application layer free of Qt;
+retain the separate Qt-bearing UI enum, fonts/assets/labels/rendering, legacy
+`PersonalDetailsRepository` integer representation, database setting schema,
+and error behavior.
+
+Focused tests should cover distinction from `int`, exact mapping of all four
+numeric values, read defaults/invalid fallback, exact save values and invalid
+fallback, and existing page/setup behavior. Use
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrMyWorkspacePageTests`, and
+`ClassMngrInitialSetupWizardTests`. F1115 remains unimplemented and
+unverified. F1116 and F1117 remain discovered; no other slices were found.
+F629 and the Phase 0 and Phase 2 gates remain open.

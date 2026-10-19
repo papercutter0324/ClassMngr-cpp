@@ -7689,3 +7689,11 @@ suite and Windows were not run. Batch482 was pushed without force to
 `origin/Qt-Rewrite`; remote SHA `d973d82f3a93f4fde94b0a10fc3d5943439f591f`
 matched local HEAD, and the worktree was clean and up to date. Batch483 is
 active with F1115 next for acceptance review.
+
+## 2026-10-20 - F1115 accepted
+
+Type the Next Application personal-signature font choice while preserving
+the existing four persisted values, setting key, default, and fallback to
+choice 0 for invalid values. Keep the Application contract Qt-free and map
+between it and the existing renderer enum at the adapter boundary. The
+legacy repository integer and database setting schema remain unchanged.

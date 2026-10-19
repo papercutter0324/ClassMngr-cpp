@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is active with three discovered candidates; F1115 is next for acceptance. See the [active Batch483 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch483-3-candidates-3-discovered). F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is active with three candidates: F1115 accepted and next for implementation, and F1116/F1117 discovered. See the [active Batch483 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch483-3-candidates-1-accepted-2-discovered). F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch483 — Active; three candidates, all discovered:**
+**Batch483 — Active; three candidates, one accepted and two discovered:**
 
-1. **F1115 — Type personal-signature font choice.** Discovered, not accepted; next for acceptance. Preserve persisted integers, keys, defaults, and invalid-value fallback to font 0.
+1. **F1115 — Type personal-signature font choice.** Accepted before implementation; next for implementation. Add a Qt-free closed Application choice for the four current fonts while preserving persisted integers, key, default, and fallback behavior.
 2. **F1116 — Type closed Speaking Evaluation validation codes.** Discovered, not accepted. Preserve exact validation keys, order, fields, row/column, severity, and arguments.
 3. **F1117 — Type Calendar event query database path.** Discovered, not accepted. Preserve UTF-8 path bytes and query-port behavior.
 
