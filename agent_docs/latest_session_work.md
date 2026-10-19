@@ -5961,7 +5961,7 @@ case and unchanged Discard behavior, commit the slice, then close and push
 Batch463. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-19 (F1099-F1100 complete; F1101 reassessment)
+## Current continuation - 2026-10-19 (F1099-F1100 complete; F1101 accepted)
 
 Active deployment ID: `phase2-f1094-20261019`. Heavy remains the Phase 2 route.
 Batch477 is complete and pushed to `origin/Qt-Rewrite` at
@@ -5989,13 +5989,18 @@ reproduced after restoring the pre-F1100 production files, so they are
 documented as existing page-target limitations. No full suite ran;
 `git diff --check` passed.
 
+F1101 is accepted before implementation, following two independent read-only
+reviews and direct source reconciliation. It replaces the three feature
+campus metadata `id` strings with `Domain::CampusId`, while keeping all
+existing text matching, display fallback, alias, ordering, and optional-code
+behavior at current boundaries. The repository codec supplies a nonempty ID
+for blank inputs and preserves padded IDs.
+
 Batch478 remains active with five entries: F1099 and F1100 are complete; F1101
-is selected for reassessment and remains a lower-confidence CampusId snapshot
-typing decision under F23; F1102 remains discovered with the unassigned
-sentinel and wide teacher IDs to preserve; F1103 is deferred pending
-parity/policy reconciliation. Two independent read-only explorers are
-reassessing F1101. The prior batch discovery review found no newly actionable
-Deferred/Gate-derived slice.
+is accepted and selected for implementation; F1102 remains discovered with
+the unassigned sentinel and wide teacher IDs to preserve; F1103 is deferred
+pending parity/policy reconciliation. The prior batch discovery review found
+no newly actionable Deferred/Gate-derived slice.
 
 Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2

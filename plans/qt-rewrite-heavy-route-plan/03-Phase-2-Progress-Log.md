@@ -47325,7 +47325,8 @@ pending policy reconciliation.
 
 F1100 is complete at source/test commit
 `820f54a2872b197001485f93d8eb91ba801ca2bb`; its acceptance record is commit
-`a49536c45da407aabe60c65b43b0104620cd5223`. The production change carries
+`a49536c45da407aabe60c65b43b0104620cd5223`, and its completion commit is
+`40912507441e62fbb64b7ffdd46fd103c0b68e5a`. The production change carries
 `Domain::ClassId` through `SubPrepVisibleClassOrderingFact`, and the Qt model
 passes `summary.id` directly. Tuple order, lexical tie-break, literal numeric
 sentinels, stable ties, and UI-owned filtering, rank calculation, label
@@ -47359,3 +47360,69 @@ F1103 remains deferred pending parity/policy reconciliation. The combined
 Phase 0 gate remains Open while Windows x64 evidence is unavailable; the
 Phase 2 exit gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains
 pending policy reconciliation.
+
+### F1101 feature campus metadata identity acceptance - recorded before implementation - 2026-10-19
+
+F1101 is accepted and selected for implementation as the next Batch478 slice.
+Two independent read-only reviews and main-agent source reconciliation found
+the three feature campus metadata contracts can use `Domain::CampusId` as a
+replacement for their raw `std::string` IDs without changing consumer
+behavior. `CampusId` remains an owning `std::string` wrapper;
+`CampusId::fromString` preserves exact text and does not trim or normalize.
+The three existing Platform adapters currently copy repository IDs into
+owning UTF-8 strings.
+
+F23 specifically covered the CalendarPage campus query; MyInfo and Sub Prep
+have separate history. Existing consumers use the IDs for preference
+selection/matching or Calendar filter aliases. Preserve trimmed,
+case-insensitive textual comparisons, ID/name matching and display-name
+fallbacks, MyInfo correction to display text, Calendar ID/name/code aliases,
+alias order, and optional-code behavior. Do not replace these behaviors with
+exact typed-ID equality or move matching into Domain. Source review of
+`CampusJsonCodec::fromJson()` and `campusIdFromName()` confirmed blank or
+whitespace repository IDs are generated from the campus name and fall back
+to `"campus"`; repository-loaded metadata IDs are nonempty, and padded IDs
+remain unchanged. The reviews found no support for changing alias semantics
+and found typed IDs viable only as replacement fields, not parallel
+string-plus-typed fields.
+
+Acceptance criteria:
+
+1. Change `id` in `MyInfoCampusMetadata`, `SubPrepCampusMetadata`, and
+   `CalendarPageCampusMetadata` to `Domain::CampusId`. Construct typed IDs in
+   their existing Platform adapters from the exact repository ID bytes,
+   without trimming, normalization, or an additional raw identity field.
+   Cover CalendarPage metadata through its existing Platform adapter contract
+   test; there is no dedicated Application port test.
+2. Unwrap `.value()` only at existing string/`QString` UI boundaries. Preserve
+   MyInfo and Sub Prep trimmed case-insensitive preference matching,
+   ID/name matching and fallback, MyInfo's correction to display text, and
+   Calendar's ID/name/code aliases and case-insensitive matching, ordering,
+   and optional-code behavior. Do not change schema, repository,
+   `CampusInfo`, preference storage, or codec normalization.
+3. Update only tests for corresponding production changes: Application
+   contract static assertions and the three adapter tests for typed identity,
+   exact UTF-8 ownership, and padded text. Retain MyInfo's
+   `storedCampusPrefillsAndCorrectsThroughTypedPort` and Sub Prep's
+   `savedCampusSelectionUsesTypedRead`. Add one focused successful Calendar
+   campus-ID alias case to the existing CalendarPage parity test only if no
+   positive case exists. Add no test-only slice or CMake target.
+4. Build `ClassMngr`,
+   `ClassMngrNextApplicationMyInfoCampusDirectoryQueryPortTests`,
+   `ClassMngrNextApplicationSubPrepCampusDirectoryQueryTests`,
+   `ClassMngrNextPlatformMyInfoCampusDirectoryQueryAdapterTests`,
+   `ClassMngrNextPlatformSubPrepCampusDirectoryQueryAdapterTests`,
+   `ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests`,
+   `ClassMngrMyWorkspacePageTests`, `ClassMngrSubPrepPageTests`, and
+   `ClassMngrCalendarPageEventMutationParityTests`. Run exact CTest selectors
+   for the five Application/Platform contract and adapter targets, and only
+   the named relevant QtTest cases for the three UI targets. Do not run a full
+   suite.
+
+F1101 acceptance is recorded before implementation. F1099 and F1100 remain
+complete; F1102 remains discovered for reassessment after preceding Batch478
+items, preserving the `-1` unassigned-teacher sentinel and wide teacher IDs;
+F1103 remains deferred pending parity/policy reconciliation. Batch478 remains
+active and unpushed. The combined Phase 0 gate remains Open while Windows x64
+evidence is unavailable; the Phase 2 exit gate remains Open, Gates 1 and 2
+remain Partial, and F1007 remains pending policy reconciliation.

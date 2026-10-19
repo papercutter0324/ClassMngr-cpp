@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch478 remains active and unpushed: F1099 and F1100 are complete, and F1101 is next for reassessment, not accepted; the combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
+- Current note: Batch478 remains active and unpushed: F1099 and F1100 are complete, and F1101 is accepted, not yet implemented, and selected; the combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,13 +68,13 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch478 (5 candidates; 2 complete)
+#### Active batch: Batch478 (5 candidates; 2 complete, 1 accepted)
 
 Batch477 is complete with F1098 at source/test commit `fb92cddd`; its closeout was pushed to `origin/Qt-Rewrite` at `60e7bc42`. Batch478's complete ordered list is:
 
 1. F1099 - Type Calendar event-by-ID query request: complete at source/test commit `a942daab`; acceptance recorded before implementation.
-2. F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering: complete at source/test commit `820f54a2`; see the progress log for page-target verification limits.
-3. F1101 - Carry `CampusId` in feature campus metadata contracts: next for reassessment; remains unaccepted and lower confidence under F23's owning UTF-8 snapshot contract.
+2. F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering: complete at source/test commit `820f54a2` and completion commit `40912507`; see the progress log for page-target verification limits.
+3. F1101 - Carry `CampusId` in feature campus metadata contracts: accepted, not yet implemented, and selected for implementation; acceptance recorded before implementation.
 4. F1102 - Type identity in Class Details validation contract: discovered; reassess after preceding Batch478 items, preserving the unassigned sentinel and wide teacher IDs.
 5. F1103 - Surface Class Details validation-context read failures: deferred pending explicit parity/policy reconciliation; do not change behavior before that decision.
 
@@ -120,10 +120,6 @@ No other slices were found.
 - Sidebar Add/post-create wide-ID transition - deferred under F285: blank-draft
   Add is rejected before persistence, so revisit create-path identity propagation
   only after the draft-creation contract is clarified.
-- F1101 - Lower-confidence typing follow-up for the MyInfo, Sub Prep, and
-  Calendar Page campus metadata contracts. Resolve whether `CampusId` belongs
-  in these intentionally owning UTF-8 snapshots without changing their
-  established normalization or matching behavior.
 - F1103 - Deferred pending explicit parity/policy reconciliation: the Class
   Details save workflow ignores a failed validation-context read and applies
   sentinel/default values; an existing test asserts that fallback. Do not

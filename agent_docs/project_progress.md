@@ -4851,3 +4851,20 @@ Batch478 remains active; F1099 and F1100 are complete. F1101 is selected for
 reassessment and remains lower-confidence; F1102 remains discovered and
 F1103 remains deferred. The combined Phase 0 and Phase 2 exit gates remain
 open, Gates 1/2 remain Partial, and F1007 awaits policy reconciliation.
+
+## Phase 2 update - F1101 accepted before implementation - 2026-10-19
+
+F1101 is accepted to replace the owning string `id` fields in the MyInfo,
+Sub Prep, and Calendar Page campus metadata contracts with `Domain::CampusId`.
+This value type preserves the exact string and performs no normalization;
+feature consumers must continue using their existing trimmed,
+case-insensitive preference matching, display-name fallback, and Calendar
+alias behavior. The campus codec generates a nonempty ID for blank input,
+while padded IDs remain unchanged. F23 applies specifically to CalendarPage;
+MyInfo and Sub Prep have separate UTF-8 snapshot history.
+
+F1101 is accepted, not implemented. Its focused scope covers the existing
+Application contracts, three Platform adapters, and relevant MyInfo, Sub
+Prep, and Calendar Page UI paths. Batch478 remains active; F1099/F1100 are
+complete, F1102 remains discovered, and F1103 remains deferred. The combined
+Phase 0 and Phase 2 exit gates remain open.

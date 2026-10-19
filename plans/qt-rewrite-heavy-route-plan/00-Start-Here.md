@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch477 is pushed to `origin/Qt-Rewrite` at `60e7bc42`; Batch478 remains active and unpushed, with F1099 and F1100 complete and F1101 next for reassessment, not accepted. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch478-5-candidates-2-complete) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch478 remains active and unpushed; F1099 and F1100 are complete, and F1101 is accepted, not yet implemented, and selected. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch478-5-candidates-2-complete-1-accepted) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,11 +38,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch478 — Active; five candidates, two complete:**
+**Batch478 — Active; five candidates, two complete and one accepted:**
 
 1. **F1099 — Type Calendar event-by-ID query request.** Complete at source/test commit `a942daab`; acceptance was recorded before implementation.
-2. **F1100 — Keep `ClassId` typed through Sub Prep visible-class ordering.** Complete at source/test commit `820f54a2`; see the progress log for page-target verification limits.
-3. **F1101 — Carry `CampusId` in feature campus metadata contracts.** Next for reassessment; remains unaccepted and lower confidence under F23's owning UTF-8 snapshot contract.
+2. **F1100 — Keep `ClassId` typed through Sub Prep visible-class ordering.** Complete at source/test commit `820f54a2` and completion commit `40912507`; see the progress log for page-target verification limits.
+3. **F1101 — Carry `CampusId` in feature campus metadata contracts.** Accepted, not yet implemented, and selected for implementation; acceptance was recorded before implementation.
 4. **F1102 — Type identity in Class Details validation contract.** Discovered; reassess and accept after earlier Batch478 items, preserving the unassigned sentinel and wide teacher IDs.
 5. **F1103 — Surface Class Details validation-context read failures.** Deferred pending explicit parity/policy reconciliation.
 
