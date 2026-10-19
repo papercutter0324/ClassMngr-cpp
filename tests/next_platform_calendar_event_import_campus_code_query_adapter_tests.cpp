@@ -118,6 +118,24 @@ void NextPlatformCalendarEventImportCampusCodeQueryTests::codesPreserveRepositor
         );
     writeFile(
         directory.path(),
+        QStringLiteral("eta.json"),
+        campusRecord(
+            QStringLiteral("eta"),
+            QStringLiteral("Eta Campus"),
+            QStringLiteral("Same")
+            )
+        );
+    writeFile(
+        directory.path(),
+        QStringLiteral("iota.json"),
+        campusRecord(
+            QStringLiteral("iota"),
+            QStringLiteral("Iota Campus"),
+            QStringLiteral("SAME")
+            )
+        );
+    writeFile(
+        directory.path(),
         QStringLiteral("default.json"),
         campusRecord(
             QStringLiteral("default"),
@@ -143,11 +161,21 @@ void NextPlatformCalendarEventImportCampusCodeQueryTests::codesPreserveRepositor
     const ClassMngr::Next::Platform::
         CalendarEventImportCampusCodeQueryAdapter adapter(directory.path());
 
-    const std::vector<std::string> codes = adapter.loadCampusCodes();
-    QCOMPARE(codes.size(), std::size_t(3));
-    QCOMPARE(codes.at(0), QStringLiteral("서울-01").toUtf8().toStdString());
-    QCOMPARE(codes.at(1), std::string("same"));
-    QCOMPARE(codes.at(2), QStringLiteral("마지막-code").toUtf8().toStdString());
+    using CampusCode =
+        ClassMngr::Next::Application::CalendarEventImportCampusCode;
+    const std::vector<CampusCode> codes = adapter.loadCampusCodes();
+    QCOMPARE(codes.size(), std::size_t(5));
+    QCOMPARE(
+        codes.at(0).value(),
+        QStringLiteral("서울-01").toUtf8().toStdString()
+        );
+    QCOMPARE(codes.at(1).value(), std::string("same"));
+    QCOMPARE(codes.at(2).value(), std::string("Same"));
+    QCOMPARE(codes.at(3).value(), std::string("SAME"));
+    QCOMPARE(
+        codes.at(4).value(),
+        QStringLiteral("마지막-code").toUtf8().toStdString()
+        );
 }
 
 void NextPlatformCalendarEventImportCampusCodeQueryTests::emptyAndMissingDirectoriesReturnNoCodes()
@@ -175,7 +203,9 @@ void NextPlatformCalendarEventImportCampusCodeQueryTests::portReturnsOwningUtf8V
     static_assert(
         std::is_same_v<
             decltype(std::declval<const Port&>().loadCampusCodes()),
-            std::vector<std::string>
+            std::vector<
+                ClassMngr::Next::Application::CalendarEventImportCampusCode
+                >
             >
         );
 

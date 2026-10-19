@@ -47,9 +47,11 @@ public:
         CalendarEventImportCampusCodeQueryAdapter&&
         ) = delete;
 
-    [[nodiscard]] std::vector<std::string> loadCampusCodes() const override
+    [[nodiscard]] std::vector<Application::CalendarEventImportCampusCode>
+    loadCampusCodes() const override
     {
-        std::vector<std::string> codes;
+        using CampusCode = Application::CalendarEventImportCampusCode;
+        std::vector<CampusCode> codes;
 
         for (const CampusInfo& campus : m_repository.loadCampuses())
         {
@@ -61,9 +63,9 @@ public:
 
             const std::string utf8Code = code.toUtf8().toStdString();
             bool duplicate = false;
-            for (const std::string& existingCode : codes)
+            for (const CampusCode& existingCode : codes)
             {
-                if (existingCode == utf8Code)
+                if (existingCode.value() == utf8Code)
                 {
                     duplicate = true;
                     break;
@@ -72,7 +74,7 @@ public:
 
             if (!duplicate)
             {
-                codes.push_back(utf8Code);
+                codes.emplace_back(utf8Code);
             }
         }
 

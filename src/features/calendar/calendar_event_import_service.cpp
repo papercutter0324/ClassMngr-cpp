@@ -69,14 +69,17 @@ QStringList calendarImportCampusCodes(
         CalendarEventImportCampusCodeQueryPort& campusCodeQueryPort
     )
 {
+    using CampusCode =
+        ClassMngr::Next::Application::CalendarEventImportCampusCode;
     QStringList codes;
-    for (const std::string& campusCode :
+    for (const CampusCode& campusCode :
          campusCodeQueryPort.loadCampusCodes())
     {
+        const std::string& text = campusCode.value();
         codes.append(
             QString::fromUtf8(
-                campusCode.data(),
-                static_cast<qsizetype>(campusCode.size())
+                text.data(),
+                static_cast<qsizetype>(text.size())
                 )
             );
     }
