@@ -5050,3 +5050,15 @@ ran.
 Batch479 remains active and unpushed: F1104-F1106 are complete, F1107 is next
 for acceptance reassessment, and F1108 remains discovered. The Phase 0 and
 Phase 2 gates remain open; Windows x64 evidence is unavailable.
+
+## Phase 2 update - F1107 accepted; Batch479 active - 2026-10-20
+
+F1107 is accepted for implementation; no implementation has started. Type
+the teacher and class identity fields in the Sub Prep print-order facts and
+adapt their existing positive-int feature-model boundary. Preserve grouping,
+name/key priorities, and numeric teacher-ID and class-ID tie-breaks because
+typed IDs compare lexically by default. Keep source filtering, renderer
+models, and persistence unchanged. Batch479 remains active and unpushed:
+F1104-F1106 are complete, F1107 is accepted, and F1108 is discovered.
+Windows x64 evidence remains unavailable; the Phase 0 and Phase 2 gates
+remain open.

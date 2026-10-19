@@ -47755,3 +47755,38 @@ no full suite ran.
 Batch479 remains active and unpushed: F1104-F1106 are complete, F1107 is next
 for acceptance reassessment, and F1108 remains discovered. Batch478's pushed
 closeout remains `5877b296c0c9a032adeeeb9cbfb807e19765e40a`.
+
+### F1107 Sub Prep print-order fact identities accepted before implementation - 2026-10-20
+
+F1107 is accepted for Batch479 and implementation has not started, based on
+main-agent source review and Explorer's `F1107_ACCEPTANCE_SURFACE` report.
+In `src/next/application/sub_prep_print_order_policy.h`, type
+`SubPrepPrintTeacherOrderFact.teacherId` as `Domain::TeacherId`, and type
+`SubPrepPrintClassOrderFact.teacherId` as `Domain::TeacherId` and
+`classId` as `Domain::ClassId`. Adapt
+`SubPrepClassInformation::build` in
+`src/features/sub_prep/ui/sub_prep_class_information_model.cpp` at the
+legacy feature-model boundary, constructing IDs only from existing positive
+`int` IDs after its current filtering. The upstream
+`SubPrepPrintTeacher`/`SubPrepPrintClass` are already typed; `build` currently
+filters nonpositive and duplicate IDs before creating raw-int facts.
+
+Preserve grouping and source-index mapping. Keep teacher order by English-name
+presence, injected English comparison, injected Korean comparison, then
+**numeric** teacher ID; keep class order by grade, level, weekday, start
+minute, then **numeric** class ID. `TypedId` compares its underlying text
+lexically by default, so do not use default typed-ID ordering for these
+numeric tie-breaks. Preserve unknown-order sentinels, duplicate/filtering
+semantics, and input-order-independent output. Do not expand the existing
+positive-`int` input range or add validation or normalization. Keep class and
+teacher output models, source mapper/query, persistence, PDF renderer, and
+all non-ID fact fields unchanged.
+
+Existing tests use tie IDs such as 1/90 and 4/90, which do not distinguish
+numeric from lexical ordering. Focused coverage must adapt the policy tests to
+typed facts and exercise 2 versus 10 for both numeric tie-breaks while
+retaining name, grouping, and order cases. The model test must preserve the
+feature-boundary behavior. Focused verification targets are
+`ClassMngrNextApplicationSubPrepPrintOrderPolicyTests` and
+`ClassMngrSubPrepClassInformationModelTests`; no full suite is planned. No
+implementation or test changes have started.

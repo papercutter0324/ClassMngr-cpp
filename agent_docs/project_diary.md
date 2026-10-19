@@ -7533,3 +7533,11 @@ validation and the exact `-1` sentinel. Focused Application, Platform,
 persistence parity, and page verification passed; no full suite ran. Updating
 direct test callers kept the typed-only application entry without changing
 Platform production code.
+
+## 2026-10-20 - F1107 accepted
+
+Type the Sub Prep print-order facts' teacher and class IDs at the Application
+policy boundary. Keep existing grouping and tie-break semantics: teacher and
+class IDs sort numerically after their other keys, even though `TypedId`'s
+default comparison is lexical. Build these facts only from the existing
+positive-int inputs; leave the renderer and persistence models unchanged.
