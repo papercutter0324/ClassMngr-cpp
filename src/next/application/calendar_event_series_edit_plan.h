@@ -2,9 +2,9 @@
 
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/domain/gregorian_date.h"
+#include "next/domain/domain_types.h"
 
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -19,7 +19,7 @@ namespace ClassMngr::Next::Application
 // occurrences; the repository query already returns the requested suffix.
 struct CalendarEventSeriesEditOccurrenceSnapshot final
 {
-    std::int64_t eventId = -1;
+    Domain::CalendarEventId eventId;
     std::string startDate;
 
     friend bool operator==(
@@ -32,7 +32,7 @@ struct CalendarEventSeriesEditOccurrenceSnapshot final
 // the adapter verify that each update is applied to its original event.
 struct CalendarEventSeriesEditOccurrenceUpdate final
 {
-    std::int64_t eventId = -1;
+    Domain::CalendarEventId eventId;
     std::string startDate;
     std::string endDate;
     std::string repeatSeriesId;

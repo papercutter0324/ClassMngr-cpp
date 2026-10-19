@@ -129,8 +129,17 @@ public:
                 );
             for (const CalendarEvent& seriesEvent : *seriesEvents)
             {
+                const auto eventId = typedEventId(seriesEvent.id);
+                if (!eventId)
+                {
+                    return failure(
+                        Domain::ErrorCode::Technical,
+                        "A calendar repeat-series occurrence has an invalid identifier."
+                        );
+                }
+
                 occurrences.push_back({
-                    .eventId = seriesEvent.id,
+                    .eventId = *eventId,
                     .startDate = seriesEvent.startDate
                         .toString(Qt::ISODate)
                         .toStdString()
@@ -171,7 +180,8 @@ public:
                     );
                 const Application::CalendarEventSeriesEditOccurrenceUpdate& update =
                     updates.at(index);
-                if (update.eventId != seriesEvent.id)
+                const auto originalEventId = typedEventId(seriesEvent.id);
+                if (!originalEventId || update.eventId != *originalEventId)
                 {
                     return failure(
                         Domain::ErrorCode::Technical,
@@ -269,6 +279,13 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::optional<Domain::CalendarEventId> typedEventId(
+        const qint64 value
+        )
+    {
+        return Domain::CalendarEventId::fromString(std::to_string(value));
+    }
+
     [[nodiscard]] static std::string validationError(
         const ValidationResult& validation
         )
