@@ -2,14 +2,18 @@
 
 #include "domain/rules/schedule_key_rules.h"
 #include "next/application/qt_compatible_text.h"
+#include "next/domain/domain_types.h"
 
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -25,8 +29,8 @@ struct ClassDetailsScheduleValidationRow final
 
 struct ClassDetailsValidationInput final
 {
-    int classId = -1;
-    std::int64_t teacherId = -1;
+    Domain::ClassId classId = Domain::ClassId::fromString("-1").value();
+    Domain::TeacherId teacherId = Domain::TeacherId::fromString("-1").value();
     std::u16string classGrade;
     std::u16string classLevel;
     std::u16string readingBook;
@@ -146,6 +150,23 @@ public:
     }
 
 private:
+    [[nodiscard]] static std::optional<std::int64_t> integerIdValue(
+        std::string_view value
+        )
+    {
+        std::int64_t parsedValue = 0;
+        const auto parsed = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            parsedValue
+            );
+        if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size())
+        {
+            return std::nullopt;
+        }
+        return parsedValue;
+    }
+
     struct ParsedTime final
     {
         int minutes = 0;
@@ -537,22 +558,25 @@ private:
         )
     {
         const ClassDetailsValidationInput& input = output.normalized;
-        if (input.classId <= 0)
+        const auto classIdValue = integerIdValue(input.classId.value());
+        const auto teacherIdValue = integerIdValue(input.teacherId.value());
+        if (!classIdValue || *classIdValue <= 0
+            || *classIdValue > std::numeric_limits<int>::max())
         {
             add(
                 output,
                 ClassDetailsValidationCode::ClassIdInvalid,
                 ClassDetailsValidationField::ClassId,
-                input.classId
+                classIdValue
                 );
         }
-        if (input.teacherId == 0 || input.teacherId < -1)
+        if (!teacherIdValue || *teacherIdValue == 0 || *teacherIdValue < -1)
         {
             add(
                 output,
                 ClassDetailsValidationCode::TeacherIdInvalid,
                 ClassDetailsValidationField::TeacherId,
-                input.teacherId
+                teacherIdValue
                 );
         }
 
@@ -650,13 +674,14 @@ private:
                 );
         }
 
-        if (input.classId <= 0)
+        if (!classIdValue || *classIdValue <= 0
+            || *classIdValue > std::numeric_limits<int>::max())
         {
             add(
                 output,
                 ClassDetailsValidationCode::ClassIdInvalid,
                 ClassDetailsValidationField::ClassId,
-                input.classId
+                classIdValue
                 );
         }
         validateTextLength(

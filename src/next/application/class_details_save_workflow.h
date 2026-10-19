@@ -7,6 +7,7 @@
 #include "next/application/class_details_validation_policy.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -67,11 +68,14 @@ public:
         )
     {
         ClassDetailsValidationInput input = request.input;
-        const auto classId = *Domain::ClassId::fromString(std::to_string(input.classId));
+        const Domain::ClassId& classId = input.classId;
         const auto context = ClassDetailsValidationContextQuery::execute(classId, contextPort);
         // The form historically continued with default hidden fields if the
         // fresh context was unavailable or belonged to another class.
-        input.teacherId = context ? context.value().teacherId : -1;
+        const std::int64_t teacherId = context ? context.value().teacherId : -1;
+        input.teacherId = Domain::TeacherId::fromString(
+            std::to_string(teacherId)
+            ).value();
         input.notes = context ? contextText(context.value().notes) : std::u16string{};
         input.timeFillerActivities = context
             ? contextText(context.value().timeFillerActivities) : std::u16string{};

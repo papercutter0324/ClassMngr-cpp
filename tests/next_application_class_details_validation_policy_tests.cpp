@@ -3,12 +3,25 @@
 #include <QtTest/QtTest>
 
 #include <cstdint>
+#include <string>
 #include <type_traits>
+#include <utility>
 
 using namespace ClassMngr::Next::Application;
+namespace Domain = ClassMngr::Next::Domain;
 
 namespace
 {
+Domain::ClassId classId(const std::string& value)
+{
+    return *Domain::ClassId::fromString(value);
+}
+
+Domain::TeacherId teacherId(const std::string& value)
+{
+    return *Domain::TeacherId::fromString(value);
+}
+
 ClassDetailsValidationCatalog catalog()
 {
     return {
@@ -40,8 +53,8 @@ ClassDetailsValidationCatalog catalog()
 ClassDetailsValidationInput validInput()
 {
     ClassDetailsValidationInput input;
-    input.classId = 21;
-    input.teacherId = -1;
+    input.classId = classId("21");
+    input.teacherId = teacherId("-1");
     input.classGrade = u" e4 ";
     input.classLevel = u"theseus";
     input.readingBook = u"reading explorer 1";
@@ -69,6 +82,7 @@ private slots:
     void reportsDuplicateGroupsInDeterministicFirstSeenOrder();
     void reportsBooksWithoutGradeAndLevelInBookOrder();
     void acceptsWideTeacherIdsAndRejectsInvalidTeacherIds();
+    void keepsClassIdsWithinPositiveIntRange();
 };
 
 void NextApplicationClassDetailsValidationPolicyTests::
@@ -163,8 +177,8 @@ void NextApplicationClassDetailsValidationPolicyTests::
 preservesLegacyValidationIssueOrderAndMalformedRowDetails()
 {
     ClassDetailsValidationInput input;
-    input.classId = 0;
-    input.teacherId = -2;
+    input.classId = classId("0");
+    input.teacherId = teacherId("-2");
     input.classGrade = u"E4";
     input.classColor = u"blue";
     input.fontColor = u"not-a-color";
@@ -337,7 +351,7 @@ void NextApplicationClassDetailsValidationPolicyTests::
 reportsDisallowedGradeAndLevelAgainstTheCatalog()
 {
     ClassDetailsValidationInput input;
-    input.classId = 3;
+    input.classId = classId("3");
     input.classGrade = u"E9";
     input.classLevel = u"Unknown";
 
@@ -359,7 +373,7 @@ void NextApplicationClassDetailsValidationPolicyTests::
 reportsBooksWithoutGradeAndLevelInBookOrder()
 {
     ClassDetailsValidationInput input;
-    input.classId = 2;
+    input.classId = classId("2");
     input.readingBook = u" Reading Explorer 1 ";
     input.essayBook = u" 4A ";
 
@@ -390,15 +404,40 @@ acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
 {
     static_assert(std::is_same_v<
         decltype(ClassDetailsValidationInput::teacherId),
-        std::int64_t
+        Domain::TeacherId
+        >);
+    static_assert(std::is_same_v<
+        decltype(ClassDetailsValidationInput::classId),
+        Domain::ClassId
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassDetailsValidationOutput>().normalized.teacherId),
+        Domain::TeacherId
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<ClassDetailsValidationOutput>().normalized.classId),
+        Domain::ClassId
         >);
 
     ClassDetailsValidationInput wideInput = validInput();
-    wideInput.teacherId = 2147483648LL;
+    wideInput.teacherId = teacherId("2147483648");
     const ClassDetailsValidationOutput wideOutput =
         ClassDetailsValidationPolicy::normalizeAndValidate(wideInput, catalog());
     QVERIFY(!wideOutput.hasErrors());
-    QCOMPARE(wideOutput.normalized.teacherId, std::int64_t{2147483648LL});
+    QCOMPARE(
+        wideOutput.normalized.teacherId.value(),
+        std::string("2147483648")
+        );
+
+    ClassDetailsValidationInput unassignedInput = validInput();
+    unassignedInput.teacherId = teacherId("-1");
+    const ClassDetailsValidationOutput unassignedOutput =
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            unassignedInput,
+            catalog()
+            );
+    QVERIFY(!unassignedOutput.hasErrors());
+    QCOMPARE(unassignedOutput.normalized.teacherId.value(), std::string("-1"));
 
     for (const std::int64_t teacherId : {
              std::int64_t{0},
@@ -407,7 +446,9 @@ acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
          })
     {
         ClassDetailsValidationInput invalidInput = validInput();
-        invalidInput.teacherId = teacherId;
+        invalidInput.teacherId = Domain::TeacherId::fromString(
+            std::to_string(teacherId)
+            ).value();
         const ClassDetailsValidationOutput invalidOutput =
             ClassDetailsValidationPolicy::normalizeAndValidate(
                 invalidInput,
@@ -427,6 +468,49 @@ acceptsWideTeacherIdsAndRejectsInvalidTeacherIds()
             invalidOutput.issues.front().integerValue.value(),
             teacherId
             );
+    }
+}
+
+void NextApplicationClassDetailsValidationPolicyTests::
+keepsClassIdsWithinPositiveIntRange()
+{
+    ClassDetailsValidationInput maximumInput = validInput();
+    maximumInput.classId = classId("2147483647");
+    const ClassDetailsValidationOutput maximumOutput =
+        ClassDetailsValidationPolicy::normalizeAndValidate(
+            maximumInput,
+            catalog()
+            );
+    QVERIFY(!maximumOutput.hasErrors());
+    QCOMPARE(
+        maximumOutput.normalized.classId.value(),
+        std::string("2147483647")
+        );
+
+    for (const std::int64_t invalidClassId : {
+             std::int64_t{0},
+             std::int64_t{-2},
+             std::int64_t{-2147483649LL},
+             std::int64_t{2147483648LL}
+         })
+    {
+        ClassDetailsValidationInput invalidInput = validInput();
+        invalidInput.classId = Domain::ClassId::fromString(
+            std::to_string(invalidClassId)
+            ).value();
+        const ClassDetailsValidationOutput invalidOutput =
+            ClassDetailsValidationPolicy::normalizeAndValidate(
+                invalidInput,
+                catalog()
+                );
+
+        QCOMPARE(invalidOutput.issues.size(), std::size_t(2));
+        for (const auto& issue : invalidOutput.issues)
+        {
+            QCOMPARE(issue.code, ClassDetailsValidationCode::ClassIdInvalid);
+            QCOMPARE(issue.field, ClassDetailsValidationField::ClassId);
+            QCOMPARE(issue.integerValue.value(), invalidClassId);
+        }
     }
 }
 

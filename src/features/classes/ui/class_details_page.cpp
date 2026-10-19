@@ -127,8 +127,12 @@ classDetailsValidationInput(const ClassInfo& info)
     using namespace ClassMngr::Next::Application;
 
     ClassDetailsValidationInput input;
-    input.classId = info.classId;
-    input.teacherId = info.teacherId;
+    input.classId = ClassMngr::Next::Domain::ClassId::fromString(
+        std::to_string(info.classId)
+        ).value();
+    input.teacherId = ClassMngr::Next::Domain::TeacherId::fromString(
+        std::to_string(info.teacherId)
+        ).value();
     input.classGrade = info.classGrade.toStdU16String();
     input.classLevel = info.classLevel.toStdU16String();
     input.readingBook = info.readingBook.toStdU16String();

@@ -12,6 +12,16 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+Domain::ClassId typedClassId(const std::string& value)
+{
+    return *Domain::ClassId::fromString(value);
+}
+
+Domain::TeacherId typedTeacherId(const std::string& value)
+{
+    return *Domain::TeacherId::fromString(value);
+}
+
 Application::ClassDetailsSaveRequest request(std::string classId)
 {
     return {
@@ -91,8 +101,8 @@ public:
 Application::ClassDetailsSaveWorkflowRequest workflowRequest()
 {
     Application::ClassDetailsValidationInput input;
-    input.classId = 42;
-    input.teacherId = 0; // Fresh context must replace stale input hidden fields.
+    input.classId = typedClassId("42");
+    input.teacherId = typedTeacherId("0"); // Fresh context must replace stale input hidden fields.
     input.notes = std::u16string(10001, u'x');
     input.classGrade = u" e4 ";
     input.classLevel = u" theseus ";
@@ -304,7 +314,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowSuccessNormalizesAndPr
     QCOMPARE(ports.saved->readingBook, std::u16string(u"Reading Explorer 1"));
     QCOMPARE(ports.saved->essayBook, std::u16string(u"4A"));
     QCOMPARE(ports.saved->classColor, std::u16string(u"#AABBCC"));
-    QCOMPARE(success->normalized.teacherId, -1);
+    QCOMPARE(success->normalized.teacherId.value(), std::string("-1"));
     QCOMPARE(success->normalized.notes, std::u16string(u"Fresh notes"));
     QCOMPARE(success->normalized.timeFillerActivities, std::u16string(u"Fresh activities"));
     QCOMPARE(success->normalized.regularTimes.front().day, std::u16string(u"Monday"));
@@ -313,7 +323,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowSuccessNormalizesAndPr
     QCOMPARE(ports.saved->intensiveTimes, std::optional(ports.conflicts[1].candidateTimes));
     QCOMPARE(ports.saved->regularTimes->front().startMinute(), 9 * 60);
     QCOMPARE(ports.saved->intensiveTimes->front().startMinute(), 0);
-    QCOMPARE(input.input.teacherId, 0);
+    QCOMPARE(input.input.teacherId.value(), std::string("0"));
     QCOMPARE(input.input.notes.size(), std::size_t(10001));
 }
 
@@ -354,7 +364,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowContextFailureAndMisma
         const auto* success = std::get_if<Application::ClassDetailsSaveWorkflowSuccess>(&result);
         QVERIFY(success);
         QCOMPARE(ports.calls, (std::vector<std::string>{"context","regular","intensive","save"}));
-        QCOMPARE(success->normalized.teacherId, -1);
+        QCOMPARE(success->normalized.teacherId.value(), std::string("-1"));
         QVERIFY(success->normalized.notes.empty());
         QVERIFY(success->normalized.timeFillerActivities.empty());
     }
@@ -533,7 +543,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowRawTimeConversionPrese
     WorkflowPorts ports; auto input = workflowRequest();
     (intensive ? input.input.intensiveTimes : input.input.regularTimes)[0].endTime = time.toStdU16String();
     auto validationInput = input.input;
-    validationInput.teacherId = -1; validationInput.notes.clear();
+    validationInput.teacherId = typedTeacherId("-1"); validationInput.notes.clear();
     QVERIFY(!Application::ClassDetailsValidationPolicy::normalizeAndValidate(
         validationInput, workflowCatalog()).hasErrors());
     const auto result = runWorkflow(input, ports);
@@ -551,7 +561,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowInvalidIdsDoNotReachPo
 {
     for (int classId : {-1,0})
     {
-        WorkflowPorts ports; auto input = workflowRequest(); input.input.classId = classId;
+        WorkflowPorts ports; auto input = workflowRequest(); input.input.classId = typedClassId(std::to_string(classId));
         const auto result = runWorkflow(input, ports);
         const auto* validation = std::get_if<Application::ClassDetailsValidationOutput>(&result);
         QVERIFY(validation && validation->hasErrors());
