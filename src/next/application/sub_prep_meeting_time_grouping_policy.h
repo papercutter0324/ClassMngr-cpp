@@ -10,13 +10,39 @@
 namespace ClassMngr::Next::Application
 {
 
+class SubPrepMeetingSecondsOfDay final
+{
+public:
+    SubPrepMeetingSecondsOfDay() = default;
+
+    explicit constexpr SubPrepMeetingSecondsOfDay(
+        const std::int32_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int32_t value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const SubPrepMeetingSecondsOfDay&,
+        const SubPrepMeetingSecondsOfDay&
+        ) = default;
+
+private:
+    std::int32_t m_value = 0;
+};
+
 // A meeting time fact has already passed platform parsing and canonical
 // weekday checks. Seconds preserve distinctions in parsed time values that
 // share the same hour and minute.
 struct SubPrepMeetingTimeFact final
 {
     SubPrepWeekday weekday = SubPrepWeekday::Monday;
-    std::int32_t secondsOfDay = 0;
+    SubPrepMeetingSecondsOfDay secondsOfDay;
 
     friend bool operator==(
         const SubPrepMeetingTimeFact&,
@@ -26,7 +52,7 @@ struct SubPrepMeetingTimeFact final
 
 struct SubPrepMeetingTimeGroup final
 {
-    std::int32_t secondsOfDay = 0;
+    SubPrepMeetingSecondsOfDay secondsOfDay;
     std::vector<SubPrepWeekday> weekdays;
 
     friend bool operator==(
@@ -57,8 +83,8 @@ groupSelectedSubPrepMeetingTimes(
     {
         if (!isValidSubPrepWeekday(meeting.weekday)
             || !selected.contains(meeting.weekday)
-            || meeting.secondsOfDay < 0
-            || meeting.secondsOfDay >= 24 * 60 * 60)
+            || meeting.secondsOfDay.value() < 0
+            || meeting.secondsOfDay.value() >= 24 * 60 * 60)
         {
             continue;
         }
@@ -99,7 +125,7 @@ groupSelectedSubPrepMeetingTimes(
             {
                 return left.weekdays.front() < right.weekdays.front();
             }
-            return left.secondsOfDay < right.secondsOfDay;
+            return left.secondsOfDay.value() < right.secondsOfDay.value();
         }
         );
     return groups;

@@ -3154,6 +3154,7 @@ ordersAllCanonicalWeekdaysInSummariesAndNavigation()
 
     const auto& secondPrecisionSummary = result.value().classes.back();
     QCOMPARE(secondPrecisionSummary.id, classId(classWithSecondPrecisionStart));
+    QCOMPARE(secondPrecisionSummary.meetingText, std::string("Mon 9:30am"));
     QCOMPARE(
         secondPrecisionSummary.navigationLabel,
         utf8(QStringLiteral("Perseus \u2022 M 9:30"))

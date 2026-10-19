@@ -9,13 +9,15 @@ using namespace ClassMngr::Next::Application;
 namespace
 {
 
-constexpr std::int32_t seconds(
+constexpr SubPrepMeetingSecondsOfDay seconds(
     const int hour,
     const int minute,
     const int second = 0
     ) noexcept
 {
-    return ((hour * 60) + minute) * 60 + second;
+    return SubPrepMeetingSecondsOfDay{
+        static_cast<std::int32_t>(((hour * 60) + minute) * 60 + second)
+    };
 }
 
 bool selectedDayFilteringKeepsOnlyTypedSelectedWeekdays()
@@ -132,6 +134,29 @@ bool timesThatDifferOnlyBySecondsRemainSeparateAndOrdered()
     };
 }
 
+bool validDayBoundariesSurviveAndOutOfRangeTimesAreSkipped()
+{
+    const auto groups = groupSelectedSubPrepMeetingTimes(
+        {
+            {SubPrepWeekday::Monday, seconds(0, 0)},
+            {SubPrepWeekday::Tuesday, seconds(23, 59, 59)},
+            {SubPrepWeekday::Wednesday, SubPrepMeetingSecondsOfDay{-1}},
+            {SubPrepWeekday::Thursday, SubPrepMeetingSecondsOfDay{86400}}
+        },
+        {
+            SubPrepWeekday::Monday,
+            SubPrepWeekday::Tuesday,
+            SubPrepWeekday::Wednesday,
+            SubPrepWeekday::Thursday
+        }
+        );
+
+    return groups == std::vector<SubPrepMeetingTimeGroup>{
+        {SubPrepMeetingSecondsOfDay{0}, {SubPrepWeekday::Monday}},
+        {SubPrepMeetingSecondsOfDay{86399}, {SubPrepWeekday::Tuesday}}
+    };
+}
+
 } // namespace
 
 int main()
@@ -164,6 +189,11 @@ int main()
     if (!timesThatDifferOnlyBySecondsRemainSeparateAndOrdered())
     {
         std::cerr << "Sub Prep meeting grouping should preserve exact seconds.\n";
+        return EXIT_FAILURE;
+    }
+    if (!validDayBoundariesSurviveAndOutOfRangeTimesAreSkipped())
+    {
+        std::cerr << "Sub Prep meeting grouping should keep only in-day seconds.\n";
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

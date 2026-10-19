@@ -934,7 +934,12 @@ private:
             }
             meetings.push_back({
                 *weekday,
-                ((time.hour() * 60) + time.minute()) * 60 + time.second()
+                Application::SubPrepMeetingSecondsOfDay(
+                    static_cast<std::int32_t>(
+                        ((time.hour() * 60) + time.minute()) * 60
+                        + time.second()
+                        )
+                    )
             });
         }
 
@@ -959,7 +964,7 @@ private:
                 }
             }
             const QTime time = QTime::fromMSecsSinceStartOfDay(
-                group.secondsOfDay * 1000
+                group.secondsOfDay.value() * 1000
                 );
             labels.append(QStringLiteral("%1 %2")
                 .arg(days.join(QString()), compactTime(time)));
