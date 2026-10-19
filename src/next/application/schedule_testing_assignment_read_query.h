@@ -1,9 +1,12 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
+#include <charconv>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -32,7 +35,7 @@ struct ScheduleTestingAssignmentReadRow final
     std::u16string day;
     std::u16string startTime;
     std::u16string room;
-    int classId{-1};
+    Domain::ClassId classId = Domain::ClassId::fromString("-1").value();
     std::optional<ScheduleTestingAssignmentSpecialClass> specialClass;
 
     friend bool operator==(
@@ -92,7 +95,7 @@ public:
 
         for (const ScheduleTestingAssignmentReadRow& row : loaded.value().rows)
         {
-            if (row.classId == -1 || row.classId > 0)
+            if (isValidClassId(row.classId))
             {
                 continue;
             }
@@ -105,6 +108,30 @@ public:
         }
 
         return loaded;
+    }
+
+private:
+    [[nodiscard]] static bool isValidClassId(
+        const Domain::ClassId& classId
+        )
+    {
+        const std::string& value = classId.value();
+        if (value == "-1")
+        {
+            return true;
+        }
+
+        int parsedClassId = 0;
+        const std::from_chars_result parsed = std::from_chars(
+            value.data(),
+            value.data() + value.size(),
+            parsedClassId,
+            10
+            );
+
+        return parsed.ec == std::errc{}
+            && parsed.ptr == value.data() + value.size()
+            && parsedClassId > 0;
     }
 };
 

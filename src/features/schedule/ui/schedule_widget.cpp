@@ -1160,7 +1160,8 @@ void ScheduleWidget::reloadTestingBlocks()
 
     for (const auto& row : loaded.value().rows)
     {
-        if (row.classId > 0 && !row.specialClass)
+        const int classId = std::stoi(row.classId.value());
+        if (classId > 0 && !row.specialClass)
         {
             qWarning()
                 << "Failed to load assigned testing class:"
@@ -1174,16 +1175,16 @@ void ScheduleWidget::reloadTestingBlocks()
             QString::fromStdU16String(row.startTime);
         view.assignment.day = day;
         view.assignment.startTime = startTime;
-        view.assignment.kind = row.classId > 0
+        view.assignment.kind = classId > 0
             ? TestingAssignmentKind::SpecialClass
             : TestingAssignmentKind::PlainTesting;
         view.assignment.room = QString::fromStdU16String(row.room);
-        view.assignment.classId = row.classId;
+        view.assignment.classId = classId;
 
-        if (row.classId > 0 && row.specialClass)
+        if (classId > 0 && row.specialClass)
         {
             ScheduleEntry entry;
-            entry.classId = row.classId;
+            entry.classId = classId;
             entry.kind = ScheduleEntryKind::TestingClass;
             entry.className = QString::fromStdU16String(
                 row.specialClass->name

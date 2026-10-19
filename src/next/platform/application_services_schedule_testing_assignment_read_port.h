@@ -72,7 +72,9 @@ public:
                     .day = source.day.toStdU16String(),
                     .startTime = source.startTime.toStdU16String(),
                     .room = source.room.toStdU16String(),
-                    .classId = source.classId
+                    .classId = Domain::ClassId::fromString(
+                        std::to_string(source.classId)
+                        ).value()
                 };
 
                 if (source.classId > 0 && source.hasSpecialClass)

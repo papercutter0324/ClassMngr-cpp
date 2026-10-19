@@ -212,11 +212,14 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
     QCOMPARE(result.value().rows[0].day, std::u16string(u"Monday"));
     QCOMPARE(result.value().rows[0].startTime, std::u16string(u"09:00"));
     QCOMPARE(result.value().rows[0].room, std::u16string(u"Room 4"));
-    QCOMPARE(result.value().rows[0].classId, -1);
+    QCOMPARE(result.value().rows[0].classId.value(), std::string("-1"));
     QVERIFY(!result.value().rows[0].specialClass);
 
     QCOMPARE(result.value().rows[1].startTime, std::u16string(u"10:00"));
-    QCOMPARE(result.value().rows[1].classId, fullMetadataClass);
+    QCOMPARE(
+        result.value().rows[1].classId.value(),
+        std::to_string(fullMetadataClass)
+        );
     QVERIFY(result.value().rows[1].specialClass.has_value());
     QCOMPARE(
         result.value().rows[1].specialClass->name,
@@ -257,7 +260,10 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
 
     QCOMPARE(result.value().rows[2].day, std::u16string(u"Tuesday "));
     QCOMPARE(result.value().rows[2].startTime, std::u16string(u"09:05 "));
-    QCOMPARE(result.value().rows[2].classId, missingInfoClass);
+    QCOMPARE(
+        result.value().rows[2].classId.value(),
+        std::to_string(missingInfoClass)
+        );
     QVERIFY(result.value().rows[2].specialClass.has_value());
     QCOMPARE(result.value().rows[2].specialClass->name,
              std::u16string(u"Missing Details"));
@@ -272,7 +278,10 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
     QCOMPARE(result.value().rows[2].specialClass->fontColor,
              std::u16string(u"#000000"));
     QCOMPARE(result.value().rows[3].day, std::u16string(u"Wednesday"));
-    QCOMPARE(result.value().rows[3].classId, missingTestingClass);
+    QCOMPARE(
+        result.value().rows[3].classId.value(),
+        std::to_string(missingTestingClass)
+        );
     QVERIFY(!result.value().rows[3].specialClass);
 
     const TestingAssignmentDisplayReadMetrics& metrics = services

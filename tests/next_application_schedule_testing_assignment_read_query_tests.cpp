@@ -2,11 +2,20 @@
 
 #include <QtTest/QtTest>
 
+#include <limits>
+#include <string>
+#include <vector>
+
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
 
 namespace
 {
+
+Domain::ClassId typedClassId(const std::string& value)
+{
+    return Domain::ClassId::fromString(value).value();
+}
 
 class RecordingScheduleTestingAssignmentReadPort final
     : public ScheduleTestingAssignmentReadPort
@@ -38,6 +47,7 @@ private slots:
     void preservesOrderedRawAssignmentsAndDisplayFields();
     void preservesAssignmentsWithoutSpecialClassMetadata();
     void acceptsAnEmptySuccessfulSnapshot();
+    void acceptsMaximumPositiveIntClassId();
     void rejectsInvalidClassIdentifiers();
     void propagatesStructuredReadFailures();
 };
@@ -53,13 +63,13 @@ preservesOrderedRawAssignmentsAndDisplayFields()
                 .day = u"Monday ",
                 .startTime = u"09:05 ",
                 .room = u"Room 4",
-                .classId = -1
+                .classId = typedClassId("-1")
             },
             {
                 .day = u"Tuesday",
                 .startTime = u"10:00",
                 .room = u"",
-                .classId = 42,
+                .classId = typedClassId("42"),
                 .specialClass = ScheduleTestingAssignmentSpecialClass{
                     .name = u"Oral Testing",
                     .teacherKoreanName = u"김선생",
@@ -76,7 +86,7 @@ preservesOrderedRawAssignmentsAndDisplayFields()
                 .day = u"Wednesday",
                 .startTime = u"11:00",
                 .room = u"",
-                .classId = -1
+                .classId = typedClassId("-1")
             }
         }
     };
@@ -89,6 +99,8 @@ preservesOrderedRawAssignmentsAndDisplayFields()
     QCOMPARE(port.readCount, 1);
     QVERIFY(port.lastQuery == query);
     QCOMPARE(result.value(), expected);
+    QCOMPARE(result.value().rows[0].classId.value(), std::string("-1"));
+    QCOMPARE(result.value().rows[1].classId.value(), std::string("42"));
     QCOMPARE(result.value().rows[0].day, std::u16string(u"Monday "));
     QCOMPARE(result.value().rows[0].startTime, std::u16string(u"09:05 "));
     QCOMPARE(result.value().rows[1].day, std::u16string(u"Tuesday"));
@@ -109,12 +121,12 @@ preservesAssignmentsWithoutSpecialClassMetadata()
                 .day = u"Monday",
                 .startTime = u"09:00",
                 .room = u"Room 4",
-                .classId = -1
+                .classId = typedClassId("-1")
             },
             {
                 .day = u"Tuesday",
                 .startTime = u"10:00",
-                .classId = 43
+                .classId = typedClassId("43")
             }
         }
     });
@@ -126,7 +138,7 @@ preservesAssignmentsWithoutSpecialClassMetadata()
     QCOMPARE(result.value().rows.size(), std::size_t(2));
     QCOMPARE(result.value().rows[0].day, std::u16string(u"Monday"));
     QCOMPARE(result.value().rows[1].day, std::u16string(u"Tuesday"));
-    QCOMPARE(result.value().rows[1].classId, 43);
+    QCOMPARE(result.value().rows[1].classId.value(), std::string("43"));
     QVERIFY(!result.value().rows[1].specialClass);
 }
 
@@ -143,9 +155,43 @@ acceptsAnEmptySuccessfulSnapshot()
 }
 
 void NextApplicationScheduleTestingAssignmentReadQueryTests::
+acceptsMaximumPositiveIntClassId()
+{
+    const std::string maximumClassId =
+        std::to_string(std::numeric_limits<int>::max());
+    RecordingScheduleTestingAssignmentReadPort port;
+    port.result = ScheduleTestingAssignmentReadResult::success({
+        .rows = {
+            {
+                .day = u"Monday",
+                .startTime = u"09:00",
+                .classId = typedClassId(maximumClassId)
+            }
+        }
+    });
+
+    const auto result =
+        ScheduleTestingAssignmentReadQueryHandler::execute({}, port);
+
+    QVERIFY(result);
+    QCOMPARE(result.value().rows[0].classId.value(), maximumClassId);
+}
+
+void NextApplicationScheduleTestingAssignmentReadQueryTests::
 rejectsInvalidClassIdentifiers()
 {
-    for (const int classId : {0, -2, -17})
+    const std::vector<std::string> invalidClassIds{
+        "0",
+        "-2",
+        "-17",
+        "-01",
+        "not-an-id",
+        "42tail",
+        "+1",
+        std::to_string(std::numeric_limits<int>::max()) + "0",
+        std::to_string(std::numeric_limits<int>::min()) + "0"
+    };
+    for (const std::string& classId : invalidClassIds)
     {
         RecordingScheduleTestingAssignmentReadPort port;
         port.result = ScheduleTestingAssignmentReadResult::success({
@@ -154,7 +200,7 @@ rejectsInvalidClassIdentifiers()
                     .day = u"Monday",
                     .startTime = u"09:00",
                     .room = u"Room 4",
-                    .classId = classId
+                    .classId = typedClassId(classId)
                 }
             }
         });
