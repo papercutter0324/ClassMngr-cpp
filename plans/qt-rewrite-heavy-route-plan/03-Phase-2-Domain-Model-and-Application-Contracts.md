@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`, F1113 is accepted and next for implementation, and F1114 remains discovered; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`, F1113 is complete at `d2e81f6c` following acceptance `67cd2da0`, and F1114 is next for acceptance review; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch482 (3 candidates; 1 complete; 1 accepted; 1 discovered)
+#### Active batch: Batch482 (3 candidates; 2 complete; 1 discovered)
 
 1. F1112 - Type Schedule Import teacher review correlation keys: complete at `9110a8c8`, following acceptance `17aadcb1`. `ScheduleImportReviewTeacherKey` types the candidate, resolution, and issue keys; exact bytes, default-empty/equality/order, validation and issue sequencing, candidate order, room aggregation, and existing conversions are preserved. Apply-request and state keys remain unchanged; no `Domain::KoreanTeacherKey` reuse.
-2. F1113 - Type Class Transfer source correlation keys: accepted before implementation; next action is implementation. Preserve distinct exact teacher/class key namespaces, path-specific validation and matching behavior, review issue payload/order, apply blank-key modes, UTF-8 conversions, and unchanged UTF-16 wire fields.
-3. F1114 - Type generic import-review source keys: discovered, not accepted. Preserve blank/256-byte validation, exact bytes, category tagging, and current validation outcomes.
+2. F1113 - Type Class Transfer source correlation keys: complete at `d2e81f6c`, following acceptance `67cd2da0`. Distinct exact teacher/class key types cover projection, preview matching, review/apply records, and typed lookups; path-specific validation, matching, issue order, blank-key modes, UTF-8 conversions, and UTF-16 wire fields remain unchanged.
+3. F1114 - Type generic import-review source keys: discovered, not accepted; next for acceptance review. Preserve blank/256-byte validation, exact bytes, category tagging, and current validation outcomes.
 
 #### Deferred candidates
 

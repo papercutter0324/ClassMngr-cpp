@@ -7659,3 +7659,12 @@ projection creation, preview matching, review validation, and the repository
 and dialog apply adapters do not share one blank-key rule. Keep portable
 package serialization, legacy models, and database persistence outside this
 slice.
+
+## 2026-10-20 - F1113 complete
+
+F1113 completed at source/test commit `d2e81f6c`, following acceptance commit
+`67cd2da0`. Separate class and teacher key types preserve exact package-key
+bytes while preventing cross-role use. Projection validation, preview's
+unknown/absent-teacher fallback, review's empty-only rule and first duplicate
+candidate, and adapter-specific blank normalization remained distinct.
+Focused macOS checks passed; the full suite and Windows were not run.

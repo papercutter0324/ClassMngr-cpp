@@ -5268,3 +5268,15 @@ Preserve the repository-versus-dialog blank-key normalization boundary and
 legacy UTF-8 conversions; leave portable-package wire fields, JSON, legacy
 models, and persistence maps unchanged. F1114 remains discovered. F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1113 complete; Batch482 active - 2026-10-20
+
+F1113 completed at source/test commit `d2e81f6c`, following acceptance commit
+`67cd2da0`. Separate exact Application `ClassTransferTeacherKey` and
+`ClassTransferClassKey` types now cover projection, preview matching, review,
+apply, and typed projection lookup paths. Existing projection validation,
+preview fallback/order, review issues, UTF-8 adapters, and the dialog versus
+repository blank-key behavior remain intact. Focused verification built three
+targets; the preview CTest passed 1/1 and selected Application and feature
+QTest cases passed. No full suite or Windows run occurred. F1114 is next for
+acceptance review; F629 and the Phase 0 and Phase 2 gates remain open.

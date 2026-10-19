@@ -48390,3 +48390,40 @@ blank paths. Intended targets are
 `ClassMngrClassTransferTests`, using selected focused CTests/QTest selectors
 in the existing `build/macos-clang-debug` tree. No full-suite or Windows
 verification is requested. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1113 complete - 2026-10-20
+
+F1113 completed at source/test commit `d2e81f6c`, following acceptance commit
+`67cd2da0`. `ClassTransferTeacherKey` and `ClassTransferClassKey` are separate
+permissive Application wrappers over exact bytes. Typed keys now cover
+projection, preview matching, review/apply records, and lookup parameters;
+class keys are carried through preview/review candidates. Platform adapters
+and the two repository source-teacher comparisons were updated. The new key
+header was added to `cmake/next.cmake` after configure regeneration identified
+the missing source ownership entry.
+
+The implementation preserves projection blank/all-whitespace and 256-byte
+validation, separate exact uniqueness, exact optional teacher references,
+preview absent/unknown fallback and source/destination order, review's
+empty-only and duplicate-first behavior and issue order, dialog/repository
+blank normalization differences, and UTF-8 conversions. UTF-16 portable
+package/export/codec fields, JSON, legacy models, and persistence maps remain
+unchanged.
+
+The independent Tester used the existing `build/macos-clang-debug` tree on
+macOS 27.0.1 arm64 with Apple Clang and Qt 6.12.0. Build command:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextApplicationClassTransferTests ClassMngrNextApplicationClassTransferPreviewQueryTests ClassMngrClassTransferTests -j 8
+```
+
+All three targets built. Focused CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextApplicationClassTransferPreviewQueryTests$'`
+passed 1/1. Direct offscreen QTest selectors passed 17 Application methods
+and 5 feature methods (19 and 7 cases including init/cleanup). Coverage
+included type separation and exact bytes, empty/default and 256-byte/blank
+rules, typed lookup, preview duplicate/fallback order, review duplicate-first
+and issue order, UTF-8 adapter round-trip, and dialog-versus-repository
+normalization. `git diff --check` passed. No full suite or Windows run was
+performed. F1114 is next for acceptance review; Batch483 remains provisional
+until Batch482 closes. F629 and the Phase 0 and Phase 2 gates remain open.
