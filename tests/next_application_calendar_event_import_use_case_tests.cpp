@@ -118,7 +118,7 @@ CalendarEventSaveRequest saveRequest(std::string title)
     request.startDate = "2026-02-03";
     request.endDate = "2026-02-03";
     request.eventType = "Other";
-    request.timeStatus = "Unknown";
+    request.timeStatus = Domain::CalendarEventTimeStatus::Unknown;
     return request;
 }
 
@@ -565,7 +565,7 @@ signatureIncludesEveryIdentityFieldButExcludesTimes()
     CalendarEventSaveRequest baseRequest = saveRequest("Identity");
     baseRequest.startDate = "2026-02-03";
     baseRequest.endDate = "2026-02-05";
-    baseRequest.timeStatus = "Timed";
+    baseRequest.timeStatus = Domain::CalendarEventTimeStatus::Timed;
     baseRequest.startTime = "09:00";
     baseRequest.endTime = "10:00";
     const CalendarEventImportSignature original =
@@ -594,7 +594,7 @@ signatureIncludesEveryIdentityFieldButExcludesTimes()
     QVERIFY(candidate(changed).signature != original);
 
     changed = baseRequest;
-    changed.timeStatus = "Unconfirmed";
+    changed.timeStatus = Domain::CalendarEventTimeStatus::Unconfirmed;
     changed.startTime.reset();
     changed.endTime.reset();
     QVERIFY(candidate(changed).signature != original);

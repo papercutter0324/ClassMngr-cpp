@@ -38,7 +38,8 @@ struct CalendarEventSeriesEditOccurrenceUpdate final
     std::string repeatSeriesId;
     std::string title;
     std::string eventType;
-    std::string timeStatus;
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
     std::optional<std::string> startTime;
     std::optional<std::string> endTime;
     bool allDay = false;

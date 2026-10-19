@@ -24,7 +24,6 @@ inline constexpr std::size_t kCalendarEventSeriesEditIsoDateLength =
     kCalendarEventSeriesEditMaxDateLength;
 inline constexpr std::size_t kCalendarEventSeriesEditMaxTimeLength = 5;
 inline constexpr std::size_t kCalendarEventSeriesEditMaxEventTypeLength = 64;
-inline constexpr std::size_t kCalendarEventSeriesEditMaxTimeStatusLength = 64;
 
 // A bounded, adapter-neutral request for editing the suffix of one repeat
 // series. startDate selects the first existing occurrence to edit;
@@ -42,7 +41,8 @@ struct CalendarEventSeriesEditRequest final
     std::optional<std::string> endTime;
     bool allDay = false;
     std::string eventType = "Other";
-    std::string timeStatus = "Timed";
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
 
     [[nodiscard]] Domain::Result<void> validate() const;
 
@@ -167,12 +167,7 @@ validateCalendarEventSeriesEditRequest(
                 trimAscii(request.eventType)
                 ).has_value()
         || request.eventType.size()
-            > kCalendarEventSeriesEditMaxEventTypeLength
-        || !Domain::calendarEventTimeStatusFromName(
-                trimAscii(request.timeStatus)
-                ).has_value()
-        || request.timeStatus.size()
-            > kCalendarEventSeriesEditMaxTimeStatusLength)
+            > kCalendarEventSeriesEditMaxEventTypeLength)
     {
         return invalid(
             "Calendar repeat-series edit text fields must be non-blank and bounded."
@@ -186,17 +181,13 @@ validateCalendarEventSeriesEditRequest(
             );
     }
 
-    const Domain::CalendarEventTimeStatus domainTimeStatus =
-        Domain::calendarEventTimeStatusFromName(
-            trimAscii(request.timeStatus)
-            ).value();
     const Domain::CalendarEventTiming timing(
         request.editedStartDate,
         request.editedEndDate,
         request.startTime,
         request.endTime,
         request.allDay,
-        domainTimeStatus
+        request.timeStatus
         );
     if (const auto issue = timing.validate())
     {

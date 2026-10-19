@@ -5,6 +5,7 @@
 #include "data/repositories/calendar_event_repository.h"
 #include "next/application/calendar_event_by_id_query_port.h"
 #include "next/application/calendar_event_projection.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -345,10 +346,8 @@ private:
             source.eventType,
             Application::kCalendarEventSummaryMaxEventTypeLength
             );
-        const auto timeStatus = boundedUtf8(
-            source.timeStatus,
-            Application::kCalendarEventSummaryMaxTimeStatusLength
-            );
+        const Domain::CalendarEventTimeStatus timeStatus =
+            calendarEventTimeStatusFromLegacyText(source.timeStatus);
         const QString normalizedRepeatSeriesId =
             source.repeatSeriesId.trimmed();
         std::optional<std::string> repeatSeriesId;
@@ -371,8 +370,7 @@ private:
             || !title
             || !startDateText
             || !endDateText
-            || !eventType
-            || !timeStatus)
+            || !eventType)
         {
             return failureSummary(
                 Domain::ErrorCode::InvalidInput,
@@ -419,7 +417,7 @@ private:
             order,
             source.allDay,
             *eventType,
-            *timeStatus,
+            timeStatus,
             std::move(repeatSeriesId)
         };
 

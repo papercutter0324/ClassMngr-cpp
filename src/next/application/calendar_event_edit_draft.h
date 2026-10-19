@@ -24,7 +24,6 @@ inline constexpr std::size_t kCalendarEventEditDraftMaxTitleLength =
 inline constexpr std::size_t kCalendarEventEditDraftMaxDateLength = 10;
 inline constexpr std::size_t kCalendarEventEditDraftMaxTimeLength = 5;
 inline constexpr std::size_t kCalendarEventEditDraftMaxEventTypeLength = 64;
-inline constexpr std::size_t kCalendarEventEditDraftMaxTimeStatusLength = 64;
 
 // A bounded, value-like snapshot of the fields edited by the calendar event
 // dialog. The dialog owns conversion from its legacy Qt value; consumers can
@@ -40,7 +39,8 @@ struct CalendarEventEditDraft final
     std::optional<std::string> endTime;
     bool allDay = false;
     std::string eventType = "Other";
-    std::string timeStatus = "Timed";
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
 
     [[nodiscard]] Domain::Result<void> validate() const;
 
@@ -190,29 +190,20 @@ validateCalendarEventEditDraft(
         || !Domain::calendarEventTypeFromName(
                 trimAscii(draft.eventType)
                 ).has_value()
-        || draft.eventType.size() > kCalendarEventEditDraftMaxEventTypeLength
-        || !Domain::calendarEventTimeStatusFromName(
-                trimAscii(draft.timeStatus)
-                ).has_value()
-        || draft.timeStatus.size()
-            > kCalendarEventEditDraftMaxTimeStatusLength)
+        || draft.eventType.size() > kCalendarEventEditDraftMaxEventTypeLength)
     {
         return invalid(
             "Calendar event draft text fields must be non-blank and bounded."
             );
     }
 
-    const Domain::CalendarEventTimeStatus domainTimeStatus =
-        Domain::calendarEventTimeStatusFromName(
-            trimAscii(draft.timeStatus)
-            ).value();
     const Domain::CalendarEventTiming timing(
         draft.startDate,
         draft.endDate,
         draft.startTime,
         draft.endTime,
         draft.allDay,
-        domainTimeStatus
+        draft.timeStatus
         );
     if (const auto issue = timing.validate())
     {

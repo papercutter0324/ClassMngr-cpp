@@ -21,7 +21,6 @@ inline constexpr std::size_t kCalendarEventSaveMaxTitleLength =
 inline constexpr std::size_t kCalendarEventSaveMaxDateLength = 10;
 inline constexpr std::size_t kCalendarEventSaveMaxTimeLength = 5;
 inline constexpr std::size_t kCalendarEventSaveMaxEventTypeLength = 64;
-inline constexpr std::size_t kCalendarEventSaveMaxTimeStatusLength = 64;
 
 // A bounded, adapter-neutral request for saving one non-repeat calendar
 // event. An absent identifier requests creation; a present identifier requests
@@ -37,7 +36,8 @@ struct CalendarEventSaveRequest final
     std::optional<std::string> endTime;
     bool allDay = false;
     std::string eventType = "Other";
-    std::string timeStatus = "Timed";
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
 
     [[nodiscard]] Domain::Result<void> validate() const;
 
@@ -178,28 +178,20 @@ namespace CalendarEventSaveRequestDetail
         || !Domain::calendarEventTypeFromName(
                 trimAscii(request.eventType)
                 ).has_value()
-        || request.eventType.size() > kCalendarEventSaveMaxEventTypeLength
-        || !Domain::calendarEventTimeStatusFromName(
-                trimAscii(request.timeStatus)
-                ).has_value()
-        || request.timeStatus.size() > kCalendarEventSaveMaxTimeStatusLength)
+        || request.eventType.size() > kCalendarEventSaveMaxEventTypeLength)
     {
         return invalid(
             "Calendar event text fields must be non-blank and bounded."
             );
     }
 
-    const Domain::CalendarEventTimeStatus domainTimeStatus =
-        Domain::calendarEventTimeStatusFromName(
-            trimAscii(request.timeStatus)
-            ).value();
     const Domain::CalendarEventTiming timing(
         request.startDate,
         request.endDate,
         request.startTime,
         request.endTime,
         request.allDay,
-        domainTimeStatus
+        request.timeStatus
         );
     if (const auto issue = timing.validate())
     {

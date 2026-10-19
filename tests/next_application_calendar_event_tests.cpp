@@ -103,7 +103,7 @@ CalendarEventSaveRequest validSaveRequest()
         std::string("10:00"),
         false,
         "Meeting",
-        "Timed"
+        CalendarEventTimeStatus::Timed
     };
 }
 
@@ -119,7 +119,7 @@ CalendarEventEditDraft validEditDraft()
         std::string("10:00"),
         false,
         "Meeting",
-        "Timed"
+        CalendarEventTimeStatus::Timed
     };
 }
 
@@ -143,7 +143,7 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
         std::string("10:00"),
         false,
         "Meeting",
-        "Timed"
+        CalendarEventTimeStatus::Timed
     };
 }
 
@@ -160,7 +160,7 @@ CalendarEventProjectionInput validInput()
     input.events[0].startDate = "2026-09-20";
     input.events[0].endDate = "2026-09-20";
     input.events[0].eventType = "Meeting";
-    input.events[0].timeStatus = "Timed";
+    input.events[0].timeStatus = CalendarEventTimeStatus::Timed;
     input.events[0].repeatSeriesId = "series-1";
     input.events[0].location = "Main campus";
     input.events[0].notes = "Bring the agenda";
@@ -168,7 +168,7 @@ CalendarEventProjectionInput validInput()
     input.events[1].startDate = "2026-09-21";
     input.events[1].endDate = "2026-09-22";
     input.events[1].eventType = "Holiday";
-    input.events[1].timeStatus = "Timed";
+    input.events[1].timeStatus = CalendarEventTimeStatus::Timed;
     input.events[1].repeatSeriesId.reset();
     input.events[1].location.clear();
     input.events[1].notes.clear();
@@ -435,7 +435,7 @@ private slots:
     void calendarEventSaveUseCasePropagatesPortFailure();
     void calendarEventSaveUseCaseRejectsInvalidRequestWithoutCallingPort();
     void timingErrorsKeepFeatureMessagesAndValidationPrecedence();
-    void calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText();
+    void calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText();
     void timingAcceptsFullGregorianRangeAndCrossDayClocks();
     void gregorianDateParsesAndFormatsOnlyCanonicalDates();
     void gregorianDateUsesGregorianLeapAndMonthRules();
@@ -575,7 +575,23 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().timeStatus),
-        std::string
+        CalendarEventTimeStatus
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSaveRequest>().timeStatus),
+        CalendarEventTimeStatus
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventEditDraft>().timeStatus),
+        CalendarEventTimeStatus
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().timeStatus),
+        CalendarEventTimeStatus
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().timeStatus),
+        CalendarEventTimeStatus
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSummary>().repeatSeriesId),
@@ -596,7 +612,7 @@ void NextApplicationCalendarEventTests::typedReferencesAndTemporalFieldsRemainEx
     QCOMPARE(event->startTime.value(), std::string("09:00"));
     QCOMPARE(event->endTime.value(), std::string("10:00"));
     QCOMPARE(event->eventType, std::string("Meeting"));
-    QCOMPARE(event->timeStatus, std::string("Timed"));
+    QCOMPARE(event->timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(event->hasRepeatSeries());
     QVERIFY(event->hasRepeatSeriesId());
     QCOMPARE(event->repeatSeriesId.value(), std::string("series-1"));
@@ -630,11 +646,26 @@ void NextApplicationCalendarEventTests::allDayAndOptionalTimePolicyIsDeterminist
         );
 
     auto unknownTimedEvent = calendarEventSummary("unknown-time");
-    unknownTimedEvent.timeStatus = "Unknown";
+    unknownTimedEvent.timeStatus = CalendarEventTimeStatus::Unknown;
     unknownTimedEvent.startTime.reset();
     unknownTimedEvent.endTime.reset();
     QVERIFY(CalendarEventProjection::validate(unknownTimedEvent));
     QVERIFY(CalendarEventProjection::create({{std::move(unknownTimedEvent)}}));
+
+    auto legacyAllDayUnknown = calendarEventSummary("all-day-unknown", 1, true);
+    legacyAllDayUnknown.timeStatus = CalendarEventTimeStatus::Unknown;
+    QVERIFY(CalendarEventProjection::validate(legacyAllDayUnknown));
+    const auto legacyAllDayProjection =
+        CalendarEventProjection::create({{legacyAllDayUnknown}});
+    QVERIFY(legacyAllDayProjection);
+    QCOMPARE(
+        legacyAllDayProjection.value().events().front().timeStatus,
+        CalendarEventTimeStatus::Unknown
+        );
+
+    auto invalidStatus = calendarEventSummary("invalid-status");
+    invalidStatus.timeStatus = static_cast<CalendarEventTimeStatus>(99);
+    verifyInvalid(CalendarEventProjection::create({{invalidStatus}}));
 }
 
 void NextApplicationCalendarEventTests::
@@ -644,7 +675,7 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
     QVERIFY(result);
     const auto event = result.value().events().front();
     QCOMPARE(event.eventType, std::string("Meeting"));
-    QCOMPARE(event.timeStatus, std::string("Timed"));
+    QCOMPARE(event.timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(event.repeatSeriesId.value(), std::string("series-1"));
 
     auto exactFields = validInput();
@@ -653,10 +684,7 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
         kCalendarEventSummaryMaxEventTypeLength,
         'e'
         );
-    exactEvent.timeStatus = std::string(
-        kCalendarEventSummaryMaxTimeStatusLength,
-        's'
-        );
+    exactEvent.timeStatus = CalendarEventTimeStatus::Unconfirmed;
     exactEvent.repeatSeriesId = std::string(
         kCalendarEventSummaryMaxRepeatSeriesIdLength,
         'r'
@@ -670,8 +698,8 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
         kCalendarEventSummaryMaxEventTypeLength
         );
     QCOMPARE(
-        exactResult.value().events().front().timeStatus.size(),
-        kCalendarEventSummaryMaxTimeStatusLength
+        exactResult.value().events().front().timeStatus,
+        CalendarEventTimeStatus::Unconfirmed
         );
     QCOMPARE(
         exactResult.value().events().front().repeatSeriesId->size(),
@@ -683,15 +711,6 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
         input.events.front().eventType = std::string(
             kCalendarEventSummaryMaxEventTypeLength + 1,
             'e'
-            );
-        verifyInvalid(CalendarEventProjection::create(std::move(input)));
-    }
-
-    {
-        auto input = validInput();
-        input.events.front().timeStatus = std::string(
-            kCalendarEventSummaryMaxTimeStatusLength + 1,
-            's'
             );
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
@@ -713,7 +732,9 @@ eventClassificationAndRepeatSeriesFieldsRemainBounded()
 
     {
         auto input = validInput();
-        input.events.front().timeStatus = "\n";
+        input.events.front().timeStatus = static_cast<CalendarEventTimeStatus>(
+            99
+            );
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
 
@@ -1025,7 +1046,9 @@ void NextApplicationCalendarEventTests::duplicateAndInvalidValuesReturnStructure
 
     {
         auto input = validInput();
-        input.events.front().timeStatus = " ";
+        input.events.front().timeStatus = static_cast<CalendarEventTimeStatus>(
+            99
+            );
         verifyInvalid(CalendarEventProjection::create(std::move(input)));
     }
 
@@ -1109,10 +1132,7 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
         kCalendarEventSummaryMaxEventTypeLength,
         'y'
         );
-    event.timeStatus = std::string(
-        kCalendarEventSummaryMaxTimeStatusLength,
-        'z'
-        );
+    event.timeStatus = CalendarEventTimeStatus::Unknown;
     event.repeatSeriesId = std::string(
         kCalendarEventSummaryMaxRepeatSeriesIdLength,
         'r'
@@ -1136,10 +1156,7 @@ void NextApplicationCalendarEventTests::exactCapsAreAcceptedAndOverflowIsRejecte
         exactEvent.eventType.size(),
         kCalendarEventSummaryMaxEventTypeLength
         );
-    QCOMPARE(
-        exactEvent.timeStatus.size(),
-        kCalendarEventSummaryMaxTimeStatusLength
-        );
+    QCOMPARE(exactEvent.timeStatus, CalendarEventTimeStatus::Unknown);
     QCOMPARE(
         exactEvent.repeatSeriesId->size(),
         kCalendarEventSummaryMaxRepeatSeriesIdLength
@@ -1273,13 +1290,6 @@ saveRequestBoundsAndOptionalIdRemainTyped()
         );
     QVERIFY(!oversizedEventType.validate());
 
-    auto oversizedTimeStatus = createRequest;
-    oversizedTimeStatus.timeStatus = std::string(
-        kCalendarEventSaveMaxTimeStatusLength + 1,
-        's'
-        );
-    QVERIFY(!oversizedTimeStatus.validate());
-
     auto invalidDate = createRequest;
     invalidDate.startDate = "2026-02-30";
     QVERIFY(!invalidDate.validate());
@@ -1294,7 +1304,7 @@ saveRequestAllDayAndTimeStatusPolicyIsExplicit()
 {
     auto allDay = validSaveRequest();
     allDay.allDay = true;
-    allDay.timeStatus = "Timed";
+    allDay.timeStatus = CalendarEventTimeStatus::Timed;
     allDay.startTime.reset();
     allDay.endTime.reset();
     QVERIFY(allDay.validate());
@@ -1305,7 +1315,7 @@ saveRequestAllDayAndTimeStatusPolicyIsExplicit()
     QVERIFY(!allDayWithTime.validate());
 
     auto allDayUnknown = allDay;
-    allDayUnknown.timeStatus = "Unknown";
+    allDayUnknown.timeStatus = CalendarEventTimeStatus::Unknown;
     QVERIFY(!allDayUnknown.validate());
 
     auto timedWithoutTimes = validSaveRequest();
@@ -1322,13 +1332,13 @@ saveRequestAllDayAndTimeStatusPolicyIsExplicit()
     QVERIFY(!reversedTimedRange.validate());
 
     auto unknownTime = validSaveRequest();
-    unknownTime.timeStatus = "Unknown";
+    unknownTime.timeStatus = CalendarEventTimeStatus::Unknown;
     unknownTime.startTime.reset();
     unknownTime.endTime.reset();
     QVERIFY(unknownTime.validate());
 
     auto unconfirmedTime = unknownTime;
-    unconfirmedTime.timeStatus = "Unconfirmed";
+    unconfirmedTime.timeStatus = CalendarEventTimeStatus::Unconfirmed;
     QVERIFY(unconfirmedTime.validate());
 
     auto unknownWithTime = unknownTime;
@@ -1442,7 +1452,7 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         [](auto& request)
         {
             request.allDay = true;
-            request.timeStatus = "Unknown";
+            request.timeStatus = CalendarEventTimeStatus::Unknown;
             request.startTime.reset();
             request.endTime.reset();
         },
@@ -1461,7 +1471,10 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         "Calendar event end time must be after its start time."
         );
     addSaveCase(
-        [](auto& request) { request.timeStatus = "Unknown"; },
+        [](auto& request)
+        {
+            request.timeStatus = CalendarEventTimeStatus::Unknown;
+        },
         "Unknown or unconfirmed calendar events require no times."
         );
     for (const auto& [request, message] : saveCases)
@@ -1502,12 +1515,13 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         );
 
     auto saveInvalidTimeStatus = validSaveRequest();
-    saveInvalidTimeStatus.timeStatus = "Pending";
+    saveInvalidTimeStatus.timeStatus =
+        static_cast<CalendarEventTimeStatus>(99);
     saveInvalidTimeStatus.startTime.reset();
     saveInvalidTimeStatus.endTime.reset();
     verifyInvalidValidation(
         saveInvalidTimeStatus.validate(),
-        "Calendar event text fields must be non-blank and bounded."
+        "Calendar event time status must be Timed, Unknown, or Unconfirmed."
         );
     QCOMPARE(
         std::string(
@@ -1551,7 +1565,7 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         [](auto& draft)
         {
             draft.allDay = true;
-            draft.timeStatus = "Unknown";
+            draft.timeStatus = CalendarEventTimeStatus::Unknown;
             draft.startTime.reset();
             draft.endTime.reset();
         },
@@ -1570,7 +1584,10 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         "Calendar event draft end time must be after its start time."
         );
     addDraftCase(
-        [](auto& draft) { draft.timeStatus = "Unknown"; },
+        [](auto& draft)
+        {
+            draft.timeStatus = CalendarEventTimeStatus::Unknown;
+        },
         "Unknown or unconfirmed calendar event drafts require no times."
         );
     for (const auto& [draft, message] : draftCases)
@@ -1611,12 +1628,13 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         );
 
     auto draftInvalidTimeStatus = validEditDraft();
-    draftInvalidTimeStatus.timeStatus = "Pending";
+    draftInvalidTimeStatus.timeStatus =
+        static_cast<CalendarEventTimeStatus>(99);
     draftInvalidTimeStatus.startTime.reset();
     draftInvalidTimeStatus.endTime.reset();
     verifyInvalidValidation(
         draftInvalidTimeStatus.validate(),
-        "Calendar event draft text fields must be non-blank and bounded."
+        "Calendar event draft time status must be Timed, Unknown, or Unconfirmed."
         );
     QCOMPARE(
         std::string(
@@ -1663,7 +1681,7 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         [](auto& request)
         {
             request.allDay = true;
-            request.timeStatus = "Unknown";
+            request.timeStatus = CalendarEventTimeStatus::Unknown;
             request.startTime.reset();
             request.endTime.reset();
         },
@@ -1686,7 +1704,10 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         "Calendar repeat-series edit end time must be after its start time."
         );
     addSeriesCase(
-        [](auto& request) { request.timeStatus = "Unknown"; },
+        [](auto& request)
+        {
+            request.timeStatus = CalendarEventTimeStatus::Unknown;
+        },
         "Unknown or unconfirmed repeat-series edits require no times."
         );
     for (const auto& [request, message] : seriesCases)
@@ -1729,12 +1750,13 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         );
 
     auto seriesInvalidTimeStatus = validSeriesEditRequest();
-    seriesInvalidTimeStatus.timeStatus = "Pending";
+    seriesInvalidTimeStatus.timeStatus =
+        static_cast<CalendarEventTimeStatus>(99);
     seriesInvalidTimeStatus.startTime.reset();
     seriesInvalidTimeStatus.endTime.reset();
     verifyInvalidValidation(
         seriesInvalidTimeStatus.validate(),
-        "Calendar repeat-series edit text fields must be non-blank and bounded."
+        "Calendar repeat-series edit time status must be Timed, Unknown, or Unconfirmed."
         );
     QCOMPARE(
         std::string(
@@ -1750,25 +1772,22 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
 }
 
 void NextApplicationCalendarEventTests::
-calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText()
+calendarEventTypeValidationUsesDomainClassifiersAndPreservesRawText()
 {
     const auto acceptsTrimmedNamesAndPreservesInput = [](auto request)
     {
         request.eventType = " \tWorkshop \n";
-        request.timeStatus = " \tTimed \n";
         if (!request.validate())
         {
             return false;
         }
 
-        return request.eventType == " \tWorkshop \n"
-            && request.timeStatus == " \tTimed \n";
+        return request.eventType == " \tWorkshop \n";
     };
 
     const auto acceptsRawLimitsAndRejectsOverflow = [](
         auto request,
         const std::size_t eventTypeLimit,
-        const std::size_t timeStatusLimit,
         const std::string_view errorMessage
         )
     {
@@ -1777,31 +1796,15 @@ calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText()
             eventTypeLimit - request.eventType.size(),
             ' '
             );
-        request.timeStatus = "Timed";
-        request.timeStatus.append(
-            timeStatusLimit - request.timeStatus.size(),
-            ' '
-            );
-        if (request.eventType.size() != eventTypeLimit
-            || request.timeStatus.size() != timeStatusLimit
-            || !request.validate())
+        if (request.eventType.size() != eventTypeLimit || !request.validate())
         {
             return false;
         }
 
         request.eventType.push_back(' ');
         auto oversizedEventType = request.validate();
-        if (oversizedEventType
-            || oversizedEventType.error().message != errorMessage)
-        {
-            return false;
-        }
-
-        request.eventType.pop_back();
-        request.timeStatus.push_back(' ');
-        const auto oversizedTimeStatus = request.validate();
-        return !oversizedTimeStatus
-            && oversizedTimeStatus.error().message == errorMessage;
+        return !oversizedEventType
+            && oversizedEventType.error().message == errorMessage;
     };
 
     const auto rejectsUnknownNamesWithFeatureMessage = [](
@@ -1817,11 +1820,7 @@ calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText()
             return false;
         }
 
-        request.eventType = "Workshop";
-        request.timeStatus = "Pending";
-        const auto invalidTimeStatus = request.validate();
-        return !invalidTimeStatus
-            && invalidTimeStatus.error().message == errorMessage;
+        return true;
     };
 
     QVERIFY(acceptsTrimmedNamesAndPreservesInput(validSaveRequest()));
@@ -1831,19 +1830,16 @@ calendarEventNameValidationUsesDomainClassifiersAndPreservesRawText()
     QVERIFY(acceptsRawLimitsAndRejectsOverflow(
         validSaveRequest(),
         kCalendarEventSaveMaxEventTypeLength,
-        kCalendarEventSaveMaxTimeStatusLength,
         "Calendar event text fields must be non-blank and bounded."
         ));
     QVERIFY(acceptsRawLimitsAndRejectsOverflow(
         validEditDraft(),
         kCalendarEventEditDraftMaxEventTypeLength,
-        kCalendarEventEditDraftMaxTimeStatusLength,
         "Calendar event draft text fields must be non-blank and bounded."
         ));
     QVERIFY(acceptsRawLimitsAndRejectsOverflow(
         validSeriesEditRequest(),
         kCalendarEventSeriesEditMaxEventTypeLength,
-        kCalendarEventSeriesEditMaxTimeStatusLength,
         "Calendar repeat-series edit text fields must be non-blank and bounded."
         ));
 
@@ -1869,7 +1865,7 @@ timingAcceptsFullGregorianRangeAndCrossDayClocks()
     save.endDate = "9999-12-31";
     save.startTime = "23:59";
     save.endTime = "00:00";
-    save.timeStatus = " \tTimed \n";
+    save.timeStatus = CalendarEventTimeStatus::Timed;
     QVERIFY(save.validate());
 
     auto draft = validEditDraft();
@@ -1877,7 +1873,7 @@ timingAcceptsFullGregorianRangeAndCrossDayClocks()
     draft.endDate = "9999-12-31";
     draft.startTime = "23:59";
     draft.endTime = "00:00";
-    draft.timeStatus = " \tTimed \n";
+    draft.timeStatus = CalendarEventTimeStatus::Timed;
     QVERIFY(draft.validate());
 
     auto series = validSeriesEditRequest();
@@ -1886,7 +1882,7 @@ timingAcceptsFullGregorianRangeAndCrossDayClocks()
     series.editedEndDate = "9999-12-31";
     series.startTime = "23:59";
     series.endTime = "00:00";
-    series.timeStatus = " \tTimed \n";
+    series.timeStatus = CalendarEventTimeStatus::Timed;
     QVERIFY(series.validate());
 }
 
@@ -2152,7 +2148,7 @@ importSaveRequestRejectsUpdatesAndInvalidEvents()
     verifyInvalidValidation(request.validate());
 
     request.events.front().id.reset();
-    request.events.front().timeStatus = "Unknown";
+    request.events.front().timeStatus = CalendarEventTimeStatus::Unknown;
     request.events.front().startTime = "09:00";
     request.events.front().endTime = "10:00";
     verifyInvalidValidation(request.validate());
@@ -2334,7 +2330,7 @@ editDraftBoundsAndTimeStatusPolicyIsExplicit()
     QVERIFY(!allDayWithTime.validate());
 
     auto unconfirmed = draft;
-    unconfirmed.timeStatus = "Unconfirmed";
+    unconfirmed.timeStatus = CalendarEventTimeStatus::Unconfirmed;
     unconfirmed.startTime.reset();
     unconfirmed.endTime.reset();
     QVERIFY(unconfirmed.validate());
@@ -2682,7 +2678,7 @@ repeatOccurrencePlanPreservesSeedFieldsAndDateDuration()
     seed.endTime = "15:45";
     seed.allDay = false;
     seed.eventType = "Workshop";
-    seed.timeStatus = "Timed";
+    seed.timeStatus = CalendarEventTimeStatus::Timed;
 
     const auto plan = planCalendarEventRepeatOccurrences(
         seed,
@@ -2847,7 +2843,7 @@ repeatSeriesCreateUseCasePlansAndForwardsExactlyOnce()
     seed.startTime = "08:30";
     seed.endTime = "10:15";
     seed.eventType = "Workshop";
-    seed.timeStatus = "Timed";
+    seed.timeStatus = CalendarEventTimeStatus::Timed;
 
     FakeCalendarEventSeriesCreatePort port;
     const CalendarEventId firstId = calendarEventId("event-101");
@@ -3230,12 +3226,12 @@ seriesEditRequestBoundsAndDatesRemainTyped()
         );
     QVERIFY(!oversizedEventType.validate());
 
-    auto oversizedTimeStatus = request;
-    oversizedTimeStatus.timeStatus = std::string(
-        kCalendarEventSeriesEditMaxTimeStatusLength + 1,
-        's'
+    auto invalidTimeStatus = request;
+    invalidTimeStatus.timeStatus = static_cast<CalendarEventTimeStatus>(99);
+    verifyInvalidValidation(
+        invalidTimeStatus.validate(),
+        "Calendar repeat-series edit time status must be Timed, Unknown, or Unconfirmed."
         );
-    QVERIFY(!oversizedTimeStatus.validate());
 
     auto invalidTime = request;
     invalidTime.startTime = "9:00";
@@ -3248,7 +3244,7 @@ seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit()
 {
     auto allDay = validSeriesEditRequest();
     allDay.allDay = true;
-    allDay.timeStatus = "Timed";
+    allDay.timeStatus = CalendarEventTimeStatus::Timed;
     allDay.startTime.reset();
     allDay.endTime.reset();
     QVERIFY(allDay.validate());
@@ -3259,7 +3255,7 @@ seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit()
     QVERIFY(!allDayWithTime.validate());
 
     auto allDayUnknown = allDay;
-    allDayUnknown.timeStatus = "Unknown";
+    allDayUnknown.timeStatus = CalendarEventTimeStatus::Unknown;
     QVERIFY(!allDayUnknown.validate());
 
     auto timedWithoutTimes = validSeriesEditRequest();
@@ -3277,13 +3273,13 @@ seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit()
     QVERIFY(!reversedTimedRange.validate());
 
     auto unknownTime = validSeriesEditRequest();
-    unknownTime.timeStatus = "Unknown";
+    unknownTime.timeStatus = CalendarEventTimeStatus::Unknown;
     unknownTime.startTime.reset();
     unknownTime.endTime.reset();
     QVERIFY(unknownTime.validate());
 
     auto unconfirmedTime = unknownTime;
-    unconfirmedTime.timeStatus = "Unconfirmed";
+    unconfirmedTime.timeStatus = CalendarEventTimeStatus::Unconfirmed;
     QVERIFY(unconfirmedTime.validate());
 
     auto unknownWithTime = unknownTime;
@@ -3428,7 +3424,7 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
     request.editedEndDate = "2026-09-25";
     request.title = "Updated workshop";
     request.eventType = "Workshop";
-    request.timeStatus = "Timed";
+    request.timeStatus = CalendarEventTimeStatus::Timed;
     request.startTime = "08:30";
     request.endTime = "10:15";
     request.allDay = false;

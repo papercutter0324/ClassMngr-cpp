@@ -4,6 +4,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_repeat_occurrence_plan.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/utils/widget_sizing.h"
 #include "ui/shared/validation/form_validation_binder.h"
@@ -90,7 +91,10 @@ CalendarEvent legacyEventFromDraft(
 
     event.title = draftText(draft.title);
     event.eventType = draftText(draft.eventType);
-    event.timeStatus = draftText(draft.timeStatus);
+    event.timeStatus =
+        ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText(
+            draft.timeStatus
+            );
     event.repeatSeriesId = draft.repeatSeriesId
         ? draftText(*draft.repeatSeriesId)
         : QString();
@@ -244,15 +248,16 @@ CalendarEventDialog::eventData() const
         !draft.allDay
         && m_unconfirmedTimeCheck
         && m_unconfirmedTimeCheck->isChecked()
-            ? "Unconfirmed"
-            : "Timed";
+            ? ClassMngr::Next::Domain::CalendarEventTimeStatus::Unconfirmed
+            : ClassMngr::Next::Domain::CalendarEventTimeStatus::Timed;
 
     if (draft.allDay)
     {
         draft.startTime.reset();
         draft.endTime.reset();
     }
-    else if (draft.timeStatus == "Unconfirmed")
+    else if (draft.timeStatus
+             == ClassMngr::Next::Domain::CalendarEventTimeStatus::Unconfirmed)
     {
         draft.startTime.reset();
         draft.endTime.reset();

@@ -139,6 +139,23 @@ QString projectionText(
         );
 }
 
+QString projectionTimeStatusText(
+    const ClassMngr::Next::Domain::CalendarEventTimeStatus value
+    )
+{
+    const auto name =
+        ClassMngr::Next::Domain::calendarEventTimeStatusName(value);
+    if (!name)
+    {
+        return {};
+    }
+
+    return QString::fromLatin1(
+        name->data(),
+        static_cast<qsizetype>(name->size())
+        );
+}
+
 QString repeatedHangulTitle(const int count)
 {
     return QString(count, QChar(0xAC00));
@@ -208,7 +225,7 @@ ClassMngr::Next::Application::CalendarEventProjection injectedProjection(
         0,
         false,
         "Meeting",
-        "Timed",
+        ClassMngr::Next::Domain::CalendarEventTimeStatus::Timed,
         std::string("series-injected")
     });
     const auto projection =
@@ -624,7 +641,7 @@ void CalendarEventCacheTests::injectedInvalidTimesAreFilteredByCacheAndModel()
             order,
             false,
             "Meeting",
-            "Timed",
+            ClassMngr::Next::Domain::CalendarEventTimeStatus::Timed,
             std::nullopt
         };
     };
@@ -768,7 +785,10 @@ void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCle
         );
     QVERIFY(repeat);
     QCOMPARE(repeat->eventType, std::string("Holiday"));
-    QCOMPARE(repeat->timeStatus, std::string("Unknown"));
+    QCOMPARE(
+        repeat->timeStatus,
+        ClassMngr::Next::Domain::CalendarEventTimeStatus::Unknown
+        );
     QCOMPARE(
         repeat->repeatSeriesId,
         std::optional<std::string>(std::string("series-1"))
@@ -1467,7 +1487,10 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
 
     const auto& unknown = projection.events().at(1);
     QVERIFY(!unknown.allDay);
-    QCOMPARE(unknown.timeStatus, std::string("Unknown"));
+    QCOMPARE(
+        unknown.timeStatus,
+        ClassMngr::Next::Domain::CalendarEventTimeStatus::Unknown
+        );
     QCOMPARE(
         unknown.repeatSeriesId,
         std::optional<std::string>(std::string("series-repeat"))
@@ -1534,7 +1557,7 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
         const CalendarEvent& legacy = legacyEvents.at(index);
         QCOMPARE(legacy.title, projectionText(summary.title));
         QCOMPARE(legacy.eventType, projectionText(summary.eventType));
-        QCOMPARE(legacy.timeStatus, projectionText(summary.timeStatus));
+        QCOMPARE(legacy.timeStatus, projectionTimeStatusText(summary.timeStatus));
         QCOMPARE(legacy.startDate, QDate::fromString(
             projectionText(summary.startDate),
             Qt::ISODate

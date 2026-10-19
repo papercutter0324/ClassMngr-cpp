@@ -2,6 +2,7 @@
 
 #include "domain/rules/schedule_value_parser.h"
 #include "features/calendar/calendar_event_projection_query.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QSet>
 #include <QtConcurrentRun>
@@ -203,7 +204,10 @@ std::optional<CalendarEvent> legacyEventFromProjection(
     event.id = *id;
     event.title = projectionText(summary.title);
     event.eventType = projectionText(summary.eventType);
-    event.timeStatus = projectionText(summary.timeStatus);
+    event.timeStatus =
+        ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText(
+            summary.timeStatus
+            );
     event.repeatSeriesId = summary.repeatSeriesId
         ? projectionText(*summary.repeatSeriesId)
         : QString();

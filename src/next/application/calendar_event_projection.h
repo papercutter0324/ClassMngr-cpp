@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/calendar_event_title_validation.h"
+#include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
@@ -29,7 +30,6 @@ inline constexpr std::size_t kCalendarEventSummaryMaxTitleUtf8Bytes =
 inline constexpr std::size_t kCalendarEventSummaryMaxDateLength = 32;
 inline constexpr std::size_t kCalendarEventSummaryMaxTimeLength = 32;
 inline constexpr std::size_t kCalendarEventSummaryMaxEventTypeLength = 64;
-inline constexpr std::size_t kCalendarEventSummaryMaxTimeStatusLength = 64;
 inline constexpr std::size_t kCalendarEventSummaryMaxRepeatSeriesIdLength =
     128;
 inline constexpr std::size_t kCalendarEventSummaryMaxLocationLength = 256;
@@ -55,8 +55,6 @@ inline constexpr std::size_t kCalendarEventMaxTimeLength =
     kCalendarEventSummaryMaxTimeLength;
 inline constexpr std::size_t kCalendarEventMaxEventTypeLength =
     kCalendarEventSummaryMaxEventTypeLength;
-inline constexpr std::size_t kCalendarEventMaxTimeStatusLength =
-    kCalendarEventSummaryMaxTimeStatusLength;
 inline constexpr std::size_t kCalendarEventMaxRepeatSeriesIdLength =
     kCalendarEventSummaryMaxRepeatSeriesIdLength;
 inline constexpr std::size_t kCalendarEventMaxLocationLength =
@@ -88,7 +86,8 @@ struct CalendarEventSummary final
     std::int32_t order = 0;
     bool allDay = false;
     std::string eventType = "Other";
-    std::string timeStatus = "Timed";
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
     std::optional<std::string> repeatSeriesId;
 
     [[nodiscard]] bool hasClass() const noexcept
@@ -264,14 +263,11 @@ template <typename TypedId>
             );
     }
 
-    if (!isRequiredText(
-            event.timeStatus,
-            kCalendarEventSummaryMaxTimeStatusLength
-            ))
+    if (!Domain::calendarEventTimeStatusName(event.timeStatus).has_value())
     {
         return Domain::Result<void>::failure(
             invalidInput(
-                "Calendar event time status must be non-blank and bounded."
+                "Calendar event time status is invalid."
                 )
             );
     }

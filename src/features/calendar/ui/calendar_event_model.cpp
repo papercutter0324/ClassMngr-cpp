@@ -4,6 +4,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "next/application/calendar_event_visibility_policy.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QDateTime>
 #include <QVariantMap>
@@ -183,7 +184,9 @@ QVariantList CalendarEventModel::eventsForDate(
             );
         value.insert(
             QStringLiteral("timeStatus"),
-            projectionText(event.timeStatus)
+            ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText(
+                event.timeStatus
+                )
             );
         value.insert(
             QStringLiteral("allDay"),

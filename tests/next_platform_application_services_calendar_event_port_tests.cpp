@@ -23,6 +23,7 @@
 #include "next/platform/application_services_calendar_event_series_edit_port.h"
 #include "next/platform/application_services_calendar_event_series_delete_port.h"
 #include "next/platform/application_services_calendar_event_port.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 #include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
 #include "features/calendar/academic_calendar_event_parser.h"
 
@@ -129,7 +130,7 @@ CalendarEventSaveRequest validSaveRequest()
         std::string("10:00"),
         false,
         "Meeting",
-        "Timed"
+        CalendarEventTimeStatus::Timed
     };
 }
 
@@ -153,7 +154,7 @@ CalendarEventImportSaveRequest validImportSaveRequest()
     laterEvent.startTime.reset();
     laterEvent.endTime.reset();
     laterEvent.eventType = "Workshop";
-    laterEvent.timeStatus = "Unknown";
+    laterEvent.timeStatus = CalendarEventTimeStatus::Unknown;
 
     CalendarEventSaveRequest earlierAllDayEvent = validSaveRequest();
     earlierAllDayEvent.title = "Earlier imported event";
@@ -196,7 +197,10 @@ CalendarEventSeriesCreateRequest seriesCreateRequest(
             ).toStdString();
         occurrence.allDay = allDay;
         occurrence.eventType = eventType.toUtf8().toStdString();
-        occurrence.timeStatus = timeStatus.toUtf8().toStdString();
+        occurrence.timeStatus =
+            ClassMngr::Next::Platform::calendarEventTimeStatusFromLegacyText(
+                timeStatus
+                );
         if (!allDay && timeStatus == QStringLiteral("Timed"))
         {
             occurrence.startTime = "09:15";
@@ -220,7 +224,7 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
         std::string("14:45"),
         false,
         "Workshop",
-        "Timed"
+        CalendarEventTimeStatus::Timed
     };
 }
 
@@ -294,6 +298,7 @@ class NextPlatformApplicationServicesCalendarEventPortTests final
     Q_OBJECT
 
 private slots:
+    void statusAdapterPreservesLegacyNormalizationAndCanonicalNames();
     void initTestCase();
     void widePersistedIdentity_data();
     void widePersistedIdentity();
@@ -362,6 +367,53 @@ private slots:
 private:
     QTemporaryDir m_directory;
 };
+
+void NextPlatformApplicationServicesCalendarEventPortTests::
+statusAdapterPreservesLegacyNormalizationAndCanonicalNames()
+{
+    using ClassMngr::Next::Platform::calendarEventTimeStatusFromLegacyText;
+    using ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText;
+
+    QCOMPARE(
+        calendarEventTimeStatusFromLegacyText(QStringLiteral(" Timed \t")),
+        CalendarEventTimeStatus::Timed
+        );
+    QCOMPARE(
+        calendarEventTimeStatusFromLegacyText(QStringLiteral("\nUnknown  ")),
+        CalendarEventTimeStatus::Unknown
+        );
+    QCOMPARE(
+        calendarEventTimeStatusFromLegacyText(
+            QStringLiteral(" \tUnconfirmed\n")
+            ),
+        CalendarEventTimeStatus::Unconfirmed
+        );
+    QCOMPARE(
+        calendarEventTimeStatusFromLegacyText(QStringLiteral("unknown")),
+        CalendarEventTimeStatus::Timed
+        );
+    QCOMPARE(
+        calendarEventTimeStatusFromLegacyText(
+            QStringLiteral("not-a-time-status")
+            ),
+        CalendarEventTimeStatus::Timed
+        );
+
+    QCOMPARE(
+        calendarEventTimeStatusToLegacyText(CalendarEventTimeStatus::Timed),
+        QStringLiteral("Timed")
+        );
+    QCOMPARE(
+        calendarEventTimeStatusToLegacyText(CalendarEventTimeStatus::Unknown),
+        QStringLiteral("Unknown")
+        );
+    QCOMPARE(
+        calendarEventTimeStatusToLegacyText(
+            CalendarEventTimeStatus::Unconfirmed
+            ),
+        QStringLiteral("Unconfirmed")
+        );
+}
 
 void NextPlatformApplicationServicesCalendarEventPortTests::widePersistedIdentity_data()
 {
@@ -878,7 +930,7 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(0).startTime.value(), std::string("08:05"));
     QCOMPARE(events.at(0).endTime.value(), std::string("09:35"));
     QCOMPARE(events.at(0).eventType, std::string("Workshop"));
-    QCOMPARE(events.at(0).timeStatus, std::string("Timed"));
+    QCOMPARE(events.at(0).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(events.at(0).repeatSeriesId.has_value());
     QCOMPARE(events.at(0).repeatSeriesId.value(), std::string("series-july"));
     QCOMPARE(events.at(0).order, std::int32_t(0));
@@ -894,14 +946,14 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(1).startTime.value(), std::string("10:00"));
     QCOMPARE(events.at(1).endTime.value(), std::string("11:30"));
     QCOMPARE(events.at(1).eventType, std::string("Meeting"));
-    QCOMPARE(events.at(1).timeStatus, std::string("Timed"));
+    QCOMPARE(events.at(1).timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(events.at(1).repeatSeriesId.value(), std::string("series-july"));
     QCOMPARE(events.at(1).order, std::int32_t(1));
 
     QCOMPARE(events.at(2).id.value(), std::to_string(overlapsEndId));
     QCOMPARE(events.at(2).title, std::string("Overlap end"));
     QCOMPARE(events.at(2).eventType, std::string("Holiday"));
-    QCOMPARE(events.at(2).timeStatus, std::string("Timed"));
+    QCOMPARE(events.at(2).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(!events.at(2).repeatSeriesId.has_value());
     QCOMPARE(events.at(2).order, std::int32_t(2));
     QVERIFY(!result.value().findEvent(calendarEventId(outsideId)).has_value());
@@ -961,7 +1013,7 @@ projectsByIdAsOwnedTypedMetadata()
     QCOMPARE(projected.id.value(), std::to_string(eventId));
     QCOMPARE(projected.title, std::string("Activation event"));
     QCOMPARE(projected.eventType, std::string("Workshop"));
-    QCOMPARE(projected.timeStatus, std::string("Unconfirmed"));
+    QCOMPARE(projected.timeStatus, CalendarEventTimeStatus::Unconfirmed);
     QCOMPARE(projected.repeatSeriesId, std::optional<std::string>(
         std::string("series-activation")
         ));
@@ -1339,7 +1391,7 @@ savesOrderedCalendarImportBatchWithTypedIdsAndParity()
     CalendarEventImportSaveRequest request = validImportSaveRequest();
     request.events.front().title = "  Later   imported event  ";
     request.events.front().eventType = "  Workshop  ";
-    request.events.front().timeStatus = "  Unknown  ";
+    request.events.front().timeStatus = CalendarEventTimeStatus::Unknown;
     CalendarEventSaveRequest timedEvent = validSaveRequest();
     timedEvent.title = "Timed imported event";
     timedEvent.startDate = "2026-12-11";
@@ -1748,7 +1800,7 @@ reportsInvalidSaveRequestStructurally()
     verifyFailure(port.saveEvent(invalidDate), ErrorCode::InvalidInput);
 
     auto invalidStatus = validSaveRequest();
-    invalidStatus.timeStatus = "Unknown";
+    invalidStatus.timeStatus = static_cast<CalendarEventTimeStatus>(99);
     verifyFailure(port.saveEvent(invalidStatus), ErrorCode::InvalidInput);
 
     auto allDayWithTimes = validSaveRequest();
@@ -2114,7 +2166,6 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
     requests[0].repeatSeriesId = " \tseries-daily \t";
     requests[0].occurrences[0].title = "  Daily   title  ";
     requests[0].occurrences[0].eventType = "  Meeting  ";
-    requests[0].occurrences[0].timeStatus = "  Timed  ";
     for (CalendarEventSaveRequest& occurrence : requests[1].occurrences)
     {
         occurrence.eventType = "  Other  ";
@@ -2204,9 +2255,9 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
                 );
             QCOMPARE(
                 loaded->timeStatus,
-                QString::fromStdString(
+                ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText(
                     occurrences.at(occurrenceIndex).timeStatus
-                    ).trimmed()
+                    )
                 );
 
             if (requestIndex == 0)
@@ -2867,7 +2918,7 @@ propagatesAllDayAndUnknownTimePolicy()
         std::nullopt,
         true,
         "Holiday",
-        "Timed"
+        CalendarEventTimeStatus::Timed
     };
     QVERIFY(port.editRepeatSeriesFromDate(allDayRequest));
 
@@ -2896,7 +2947,7 @@ propagatesAllDayAndUnknownTimePolicy()
         std::nullopt,
         false,
         "Vacation",
-        "Unknown"
+        CalendarEventTimeStatus::Unknown
     };
     QVERIFY(port.editRepeatSeriesFromDate(unknownRequest));
 
@@ -3651,6 +3702,23 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(allDayId > 0);
     QVERIFY(unknownTimeId > 0);
 
+    QSqlQuery legacyAllDayInsert(
+        services.dataService()->databaseSession()->database()
+        );
+    QVERIFY2(
+        legacyAllDayInsert.exec(QStringLiteral(
+            "INSERT INTO calendar_events ("
+            "title, event_type, time_status, repeat_series_id, all_day, "
+            "start_date, start_time, end_date, end_time) "
+            "VALUES ('All-day unconfirmed legacy row', 'Other', "
+            "'Unconfirmed', NULL, 1, '2026-09-20', NULL, "
+            "'2026-09-21', NULL)"
+            )),
+        qPrintable(legacyAllDayInsert.lastError().text())
+        );
+    const int allDayUnconfirmedId = legacyAllDayInsert.lastInsertId().toInt();
+    QVERIFY(allDayUnconfirmedId > 0);
+
     ApplicationServicesCalendarEventPort port(services);
     const auto result = port.projection(
         QDate(2026, 9, 20),
@@ -3666,7 +3734,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!allDayProjection->startTime.has_value());
     QVERIFY(!allDayProjection->endTime.has_value());
     QCOMPARE(allDayProjection->eventType, std::string("Vacation"));
-    QCOMPARE(allDayProjection->timeStatus, std::string("Timed"));
+    QCOMPARE(allDayProjection->timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(
         allDayProjection->repeatSeriesId.value(),
         std::string("series-all-day")
@@ -3680,7 +3748,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!unknownProjection->startTime.has_value());
     QVERIFY(!unknownProjection->endTime.has_value());
     QCOMPARE(unknownProjection->eventType, std::string("Holiday"));
-    QCOMPARE(unknownProjection->timeStatus, std::string("Unknown"));
+    QCOMPARE(unknownProjection->timeStatus, CalendarEventTimeStatus::Unknown);
     QVERIFY(!unknownProjection->repeatSeriesId.has_value());
 
     const auto allDayById = port.projectionById(allDayId);
@@ -3692,7 +3760,7 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!allDayById.value().startTime.has_value());
     QVERIFY(!allDayById.value().endTime.has_value());
     QCOMPARE(allDayById.value().eventType, std::string("Vacation"));
-    QCOMPARE(allDayById.value().timeStatus, std::string("Timed"));
+    QCOMPARE(allDayById.value().timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(
         allDayById.value().repeatSeriesId,
         std::optional<std::string>(std::string("series-all-day"))
@@ -3704,8 +3772,29 @@ preservesAllDayAndUnknownTimePolicy()
     QVERIFY(!unknownById.value().startTime.has_value());
     QVERIFY(!unknownById.value().endTime.has_value());
     QCOMPARE(unknownById.value().eventType, std::string("Holiday"));
-    QCOMPARE(unknownById.value().timeStatus, std::string("Unknown"));
+    QCOMPARE(unknownById.value().timeStatus, CalendarEventTimeStatus::Unknown);
     QVERIFY(!unknownById.value().repeatSeriesId.has_value());
+
+    const auto legacyAllDayUnknown = result.value().findEvent(
+        calendarEventId(allDayUnconfirmedId)
+        );
+    QVERIFY(legacyAllDayUnknown.has_value());
+    QVERIFY(legacyAllDayUnknown->allDay);
+    QVERIFY(!legacyAllDayUnknown->startTime.has_value());
+    QVERIFY(!legacyAllDayUnknown->endTime.has_value());
+    QCOMPARE(
+        legacyAllDayUnknown->timeStatus,
+        CalendarEventTimeStatus::Unconfirmed
+        );
+    const auto legacyAllDayUnknownById = port.projectionById(
+        allDayUnconfirmedId
+        );
+    QVERIFY(legacyAllDayUnknownById);
+    QVERIFY(legacyAllDayUnknownById.value().allDay);
+    QCOMPARE(
+        legacyAllDayUnknownById.value().timeStatus,
+        CalendarEventTimeStatus::Unconfirmed
+        );
 }
 
 void NextPlatformApplicationServicesCalendarEventPortTests::
@@ -4469,7 +4558,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventSummary>().timeStatus),
-        std::string
+        CalendarEventTimeStatus
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventSummary>().repeatSeriesId),

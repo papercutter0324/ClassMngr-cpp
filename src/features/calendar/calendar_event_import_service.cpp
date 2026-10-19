@@ -10,6 +10,7 @@
 #include "next/application/calendar_event_import_signature_query_port.h"
 #include "next/platform/calendar_event_import_campus_code_query_adapter.h"
 #include "next/platform/application_services_calendar_event_import_save_port.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 #include "next/platform/application_services_calendar_event_import_signature_query_port.h"
 
 #include <QDate>
@@ -98,7 +99,10 @@ calendarEventImportSaveRequest(const CalendarEvent& event)
     request.endDate = event.endDate.toString(Qt::ISODate).toStdString();
     request.allDay = event.allDay;
     request.eventType = event.eventType.toUtf8().toStdString();
-    request.timeStatus = event.timeStatus.toUtf8().toStdString();
+    request.timeStatus =
+        ClassMngr::Next::Platform::calendarEventTimeStatusFromLegacyText(
+            event.timeStatus
+            );
     if (event.startTime.isValid())
     {
         request.startTime =

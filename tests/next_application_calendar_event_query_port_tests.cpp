@@ -31,7 +31,7 @@ CalendarEventSummary testSummary()
         0,
         false,
         "Meeting",
-        "Timed",
+        CalendarEventTimeStatus::Timed,
         std::string("series-1")
     };
 }

@@ -40,6 +40,8 @@ using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
 using CalendarEventId =
     ClassMngr::Next::Domain::CalendarEventId;
+using CalendarEventTimeStatus =
+    ClassMngr::Next::Domain::CalendarEventTimeStatus;
 
 static_assert(std::is_base_of_v<DialogShell, CalendarEventDialog>);
 static_assert(std::is_constructible_v<
@@ -170,7 +172,7 @@ CalendarEventEditDraft timedCalendarEventDraft()
     draft.startTime = "09:15";
     draft.endTime = "10:45";
     draft.eventType = "Meeting";
-    draft.timeStatus = "Timed";
+    draft.timeStatus = CalendarEventTimeStatus::Timed;
     return draft;
 }
 
@@ -377,7 +379,10 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QCOMPARE(timedDraft.endTime.value(), std::string("10:45"));
     QVERIFY(!timedDraft.allDay);
     QCOMPARE(timedDraft.eventType, std::string("Meeting"));
-    QCOMPARE(timedDraft.timeStatus, std::string("Timed"));
+    QCOMPARE(
+        timedDraft.timeStatus,
+        CalendarEventTimeStatus::Timed
+        );
 
     auto* timedStartTime = timedDialog.findChild<QTimeEdit*>(
         QStringLiteral("calendarEventStartTimeEdit")
@@ -389,6 +394,35 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QVERIFY(timedEndTime);
     QCOMPARE(timedStartTime->displayFormat(), QStringLiteral("HH:mm"));
     QCOMPARE(timedEndTime->displayFormat(), QStringLiteral("HH:mm"));
+
+    QCheckBox* unconfirmedCheck = nullptr;
+    for (QCheckBox* check : timedDialog.findChildren<QCheckBox*>())
+    {
+        if (check->text() == QStringLiteral("Unconfirmed Time"))
+        {
+            unconfirmedCheck = check;
+            break;
+        }
+    }
+    QVERIFY(unconfirmedCheck);
+    QVERIFY(!unconfirmedCheck->isChecked());
+    unconfirmedCheck->click();
+    const auto selectedUnconfirmedDraft = timedDialog.eventData();
+    QCOMPARE(
+        selectedUnconfirmedDraft.timeStatus,
+        CalendarEventTimeStatus::Unconfirmed
+        );
+    QVERIFY(!selectedUnconfirmedDraft.startTime.has_value());
+    QVERIFY(!selectedUnconfirmedDraft.endTime.has_value());
+    QVERIFY(!timedStartTime->isEnabled());
+    QVERIFY(!timedEndTime->isEnabled());
+    unconfirmedCheck->click();
+    const auto selectedTimedDraft = timedDialog.eventData();
+    QCOMPARE(selectedTimedDraft.timeStatus, CalendarEventTimeStatus::Timed);
+    QVERIFY(selectedTimedDraft.startTime.has_value());
+    QVERIFY(selectedTimedDraft.endTime.has_value());
+    QVERIFY(timedStartTime->isEnabled());
+    QVERIFY(timedEndTime->isEnabled());
 
     QRadioButton* thisAndFollowingButton = nullptr;
     QRadioButton* meetingButton = nullptr;
@@ -432,7 +466,10 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QVERIFY(!allDayDraft.startTime.has_value());
     QVERIFY(!allDayDraft.endTime.has_value());
     QCOMPARE(allDayDraft.eventType, std::string("Holiday"));
-    QCOMPARE(allDayDraft.timeStatus, std::string("Timed"));
+    QCOMPARE(
+        allDayDraft.timeStatus,
+        CalendarEventTimeStatus::Timed
+        );
 
     auto* allDayStartTime = allDayDialog.findChild<QTimeEdit*>(
         QStringLiteral("calendarEventStartTimeEdit")
@@ -447,12 +484,23 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QVERIFY(!allDayStartTime->isEnabled());
     QVERIFY(!allDayEndTime->isEnabled());
 
+    bool hasAllDayLabel = false;
+    for (QCheckBox* check : allDayDialog.findChildren<QCheckBox*>())
+    {
+        if (check->text() == QStringLiteral("All Day Event"))
+        {
+            hasAllDayLabel = check->isChecked();
+            break;
+        }
+    }
+    QVERIFY(hasAllDayLabel);
+
     CalendarEventEditDraft unconfirmed = timed;
     unconfirmed.id.reset();
     unconfirmed.repeatSeriesId.reset();
     unconfirmed.startTime.reset();
     unconfirmed.endTime.reset();
-    unconfirmed.timeStatus = "Unconfirmed";
+    unconfirmed.timeStatus = CalendarEventTimeStatus::Unconfirmed;
     unconfirmed.eventType = "Workshop";
     CalendarEventDialog unconfirmedDialog(unconfirmed, false, true);
     const auto unconfirmedDraft = unconfirmedDialog.eventData();
@@ -460,7 +508,21 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QVERIFY(!unconfirmedDraft.startTime.has_value());
     QVERIFY(!unconfirmedDraft.endTime.has_value());
     QCOMPARE(unconfirmedDraft.eventType, std::string("Workshop"));
-    QCOMPARE(unconfirmedDraft.timeStatus, std::string("Unconfirmed"));
+    QCOMPARE(
+        unconfirmedDraft.timeStatus,
+        CalendarEventTimeStatus::Unconfirmed
+        );
+
+    bool hasUnconfirmedLabel = false;
+    for (QCheckBox* check : unconfirmedDialog.findChildren<QCheckBox*>())
+    {
+        if (check->text() == QStringLiteral("Unconfirmed Time"))
+        {
+            hasUnconfirmedLabel = check->isChecked();
+            break;
+        }
+    }
+    QVERIFY(hasUnconfirmedLabel);
 
     auto* unconfirmedStartTime = unconfirmedDialog.findChild<QTimeEdit*>(
         QStringLiteral("calendarEventStartTimeEdit")
@@ -596,7 +658,7 @@ void DialogShellTests::calendarEventDialogAppliesTypedDefaults()
     QCOMPARE(draft.endTime.value(), std::string("10:00"));
     QVERIFY(!draft.allDay);
     QCOMPARE(draft.eventType, std::string("Other"));
-    QCOMPARE(draft.timeStatus, std::string("Timed"));
+    QCOMPARE(draft.timeStatus, CalendarEventTimeStatus::Timed);
 }
 
 void DialogShellTests::calendarEventDialogRepeatUntilDefaultTracksStartDate()

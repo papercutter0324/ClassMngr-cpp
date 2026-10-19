@@ -2,6 +2,7 @@
 
 #include "data/database/database_schema_manager.h"
 #include "data/repositories/calendar_event_repository.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
 #include <QSqlDatabase>
@@ -150,10 +151,10 @@ SummaryConversionResult summaryFromEvent(
         source.eventType,
         ClassMngr::Next::Application::kCalendarEventSummaryMaxEventTypeLength
         );
-    const auto timeStatus = boundedUtf8(
-        source.timeStatus,
-        ClassMngr::Next::Application::kCalendarEventSummaryMaxTimeStatusLength
-        );
+    const auto timeStatus =
+        ClassMngr::Next::Platform::calendarEventTimeStatusFromLegacyText(
+            source.timeStatus
+            );
 
     const QString normalizedRepeatSeriesId =
         source.repeatSeriesId.trimmed();
@@ -172,7 +173,6 @@ SummaryConversionResult summaryFromEvent(
         || !startDate
         || !endDate
         || !eventType
-        || !timeStatus
         || (
             !normalizedRepeatSeriesId.isEmpty()
             && !repeatSeriesId
@@ -242,7 +242,7 @@ SummaryConversionResult summaryFromEvent(
         order,
         source.allDay,
         *eventType,
-        *timeStatus,
+        timeStatus,
         std::move(repeatSeriesId)
     });
 }

@@ -139,15 +139,11 @@ fromSaveRequest(const CalendarEventSaveRequest& request)
     const auto eventType = Domain::calendarEventTypeFromName(
         CalendarEventSaveRequestDetail::trimAscii(request.eventType)
         );
-    const auto timeStatus = Domain::calendarEventTimeStatusFromName(
-        CalendarEventSaveRequestDetail::trimAscii(request.timeStatus)
-        );
     const auto canonicalType = eventType
         ? Detail::canonicalEventType(*eventType)
         : std::nullopt;
-    const auto canonicalStatus = timeStatus
-        ? Detail::canonicalTimeStatus(*timeStatus)
-        : std::nullopt;
+    const auto canonicalStatus =
+        Detail::canonicalTimeStatus(request.timeStatus);
     const auto startDate = Domain::GregorianDate::fromIsoString(
         request.startDate
         );

@@ -84,6 +84,24 @@ calendarEventTimeStatusFromName(
     return std::nullopt;
 }
 
+[[nodiscard]] inline std::optional<std::string_view>
+calendarEventTimeStatusName(
+    const CalendarEventTimeStatus status
+    ) noexcept
+{
+    switch (status)
+    {
+    case CalendarEventTimeStatus::Timed:
+        return "Timed";
+    case CalendarEventTimeStatus::Unknown:
+        return "Unknown";
+    case CalendarEventTimeStatus::Unconfirmed:
+        return "Unconfirmed";
+    }
+
+    return std::nullopt;
+}
+
 enum class CalendarEventTimingIssue
 {
     InvalidDate,

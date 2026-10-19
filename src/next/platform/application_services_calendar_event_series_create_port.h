@@ -6,6 +6,7 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_series_create_port.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -318,7 +319,9 @@ private:
 
         event.title = legacyText(request.title);
         event.eventType = legacyText(request.eventType);
-        event.timeStatus = legacyText(request.timeStatus);
+        event.timeStatus = calendarEventTimeStatusToLegacyText(
+            request.timeStatus
+            );
         event.repeatSeriesId = repeatSeriesId;
         event.allDay = request.allDay;
         event.startDate = startDate;

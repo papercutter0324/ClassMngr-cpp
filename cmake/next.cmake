@@ -388,6 +388,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_academic_calendar_schedule_preferences_port.h
     src/next/platform/application_services_document_catalog_port.h
     src/next/platform/application_services_calendar_event_port.h
+    src/next/platform/calendar_event_time_status_adapter.h
     src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h
     src/next/platform/calendar_event_import_campus_code_query_adapter.h
     src/next/platform/calendar_page_campus_directory_query_adapter.h

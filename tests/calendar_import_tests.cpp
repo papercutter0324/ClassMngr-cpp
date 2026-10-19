@@ -781,6 +781,17 @@ importSignatureNormalizesTitleTypeAndTimeStatus()
             CalendarImport::calendarEventImportSignature(canonical).value()
             )
         );
+
+    normalized.timeStatus = QStringLiteral("unknown");
+    canonical.timeStatus = QStringLiteral("Timed");
+    QCOMPARE(
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(normalized).value()
+            ),
+        QString::fromStdU16String(
+            CalendarImport::calendarEventImportSignature(canonical).value()
+            )
+        );
 }
 
 void CalendarImportTests::

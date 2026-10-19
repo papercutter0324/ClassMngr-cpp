@@ -7,6 +7,7 @@
 #include "domain/validation/calendar_event_validator.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_edit_plan.h"
+#include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -181,7 +182,9 @@ public:
                 CalendarEvent updatedEvent = seriesEvent;
                 updatedEvent.title = legacyText(update.title);
                 updatedEvent.eventType = legacyText(update.eventType);
-                updatedEvent.timeStatus = legacyText(update.timeStatus);
+                updatedEvent.timeStatus = calendarEventTimeStatusToLegacyText(
+                    update.timeStatus
+                    );
                 updatedEvent.allDay = update.allDay;
                 updatedEvent.startTime = update.startTime.has_value()
                     ? legacyTime(*update.startTime)

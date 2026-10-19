@@ -1332,17 +1332,14 @@ QString CalendarPage::upcomingEventTimeText(
         return tr("All day");
     }
 
-    const QString timeStatus =
-        normalizedCalendarEventTimeStatus(
-            projectionText(event.timeStatus)
-            );
-
-    if (timeStatus == QStringLiteral("Unknown"))
+    if (event.timeStatus
+        == ClassMngr::Next::Domain::CalendarEventTimeStatus::Unknown)
     {
         return tr("Unknown Time");
     }
 
-    if (timeStatus == QStringLiteral("Unconfirmed"))
+    if (event.timeStatus
+        == ClassMngr::Next::Domain::CalendarEventTimeStatus::Unconfirmed)
     {
         return tr("Unconfirmed Time");
     }
