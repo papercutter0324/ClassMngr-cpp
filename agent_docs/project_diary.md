@@ -78,6 +78,9 @@
 - A semantic-only historical PDF can establish a page-assignment mismatch but
   cannot attribute it to a platform or source change. Keep strict parity checks
   intact and obtain matched source/layout evidence before changing pagination.
+- Keep signature-image save-request bytes distinct from prepared read-result
+  bytes: preparation and Base64 encoding stay in Platform, while the typed
+  save-request value preserves the caller's exact opaque byte sequence.
 - When native desktop automation is unavailable, a small in-process Qt
   controller can drive real modal dialogs and capture the packaged offscreen
   state. The Sub Prep route now retains both valid-generation and disabled-OK

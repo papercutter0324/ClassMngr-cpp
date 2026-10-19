@@ -50455,3 +50455,43 @@ discovered candidates, zero complete and zero accepted/in progress; F1144 is
 next for acceptance. Its ordered candidate list and screening rationale remain
 as recorded in the [Batch487 discovery entry](#batch487-discovery-at-f1142-start-2026-10-20).
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1144 Personal signature image save-request bytes accepted before implementation - 2026-10-20
+
+F1144 is accepted/in progress. Add the Qt-free owning Domain value
+`PersonalSignatureImageSaveBytes` for the unprepared opaque bytes in
+`Application::PersonalDetailsSaveRequest::signatureImage`. It has an empty
+default, explicit `std::string` constructor, `value() const&`, `empty()`, and
+equality, and preserves exact bytes including embedded NULs. The type performs
+no image preparation, validation, trimming, or canonicalization. This
+write-request value remains distinct from F1140's
+`Domain::PreparedPersonalSignatureImageBytes`, which represents a prepared
+read result.
+
+My Details and Initial Setup remain the producers: each converts its
+`QByteArray` to `std::string` with an explicit length, then constructs the
+value. The Platform adapter retains `myInfo/signatureImage`, explicit-length
+`QByteArray` conversion, `SignatureImage::prepareForEmbedding`, Base64
+encoding, and the nine-key atomic save. Preserve existing errors, rollback,
+and fallback behavior. Evidence includes
+`src/next/application/personal_details_save.h:11,18`,
+`src/next/platform/application_services_personal_details_save_port.h:95,154-156,193-209`,
+`src/features/my_info/ui/personal_details_page_sections.cpp:1323-1346`, and
+`src/features/setup/ui/initial_setup_wizard.cpp:552,709`.
+
+Acceptance verification: incrementally build `ClassMngr` and affected
+Platform, My Workspace, and Initial Setup targets in the existing
+`build/macos-clang-debug` tree; run the focused Platform save-port CTest and
+suitable focused existing My Workspace and Initial Setup CTests. The tester
+will select the exact affected targets and test cases from the existing tests.
+Also run `git diff --check`. Full-suite and Windows runs are not expected. The
+offscreen Initial Setup Qt Widgets/QWizard test has a known macOS
+`NSBundle initWithURL: nil URL argument` failure from F1141; report that
+limitation if reproduced without weakening the check. No implementation or
+test results are recorded here. F629's source-bound Windows evidence remains
+open and is unrelated to F1144.
+
+Batch487 has ten candidates: zero complete, one accepted/in progress (F1144),
+and nine discovered (F1145–F1153); F1145 is next after F1144 completes. Keep
+the full ordered list visible. F629 and the Phase 0 and Phase 2 gates remain
+open.

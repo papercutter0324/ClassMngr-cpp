@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet; see [local closeout record](03-Phase-2-Progress-Log.md#batch486-local-closeout-and-batch487-activation-2026-10-20)); Batch487 is active with ten discovered candidates and F1144 next for acceptance; F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch487 is active with F1144 accepted/in progress and F1145 next after it completes; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,20 +68,20 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch487 (10 candidates; 0 complete; 0 accepted/in progress; 10 discovered)
+#### Active batch: Batch487 (10 candidates; 0 complete; 1 accepted/in progress; 9 discovered)
 
-1. F1144 - Type personal-signature image save-request bytes, separate from F1140's read-result value.
-2. F1145 - Use `Domain::CalendarEventType` consistently for Sub Prep interval and Calendar create/edit contracts while preserving each boundary's own normalization.
-3. F1146 - Type Calendar repeat-series edit dates; preserve ISO/Gregorian validation, range order, and start-date suffix selection.
-4. F1147 - Type Calendar Page campus-code query output while preserving optionality, exact text, UTF-8, empty-only omission, whitespace, and order.
-5. F1148 - Type the current-campus display name distinctly from campus IDs/codes; preserve fallbacks, errors, retry/correction, and Calendar all-events behavior.
-6. F1149 - Type Class Transfer's canonical exported UTC timestamp (`YYYY-MM-DDTHH:mm:ss.sssZ`).
-7. F1150 - Type Schedule Import room values and selected-room membership; preserve normalization, first-seen order, exact membership, and diagnostics.
-8. F1151 - Type Schedule Testing's weekday/start-time assignment key; preserve accepted forms, row order, and unassigned sentinel.
-9. F1152 - Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
-10. F1153 - Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
+1. F1144 - **Accepted/in progress.** Type personal-signature image save-request bytes, separate from F1140's read-result value.
+2. F1145 - **Discovered; next after F1144 completes.** Use `Domain::CalendarEventType` consistently for Sub Prep interval and Calendar create/edit contracts while preserving each boundary's own normalization.
+3. F1146 - **Discovered.** Type Calendar repeat-series edit dates; preserve ISO/Gregorian validation, range order, and start-date suffix selection.
+4. F1147 - **Discovered.** Type Calendar Page campus-code query output while preserving optionality, exact text, UTF-8, empty-only omission, whitespace, and order.
+5. F1148 - **Discovered.** Type the current-campus display name distinctly from campus IDs/codes; preserve fallbacks, errors, retry/correction, and Calendar all-events behavior.
+6. F1149 - **Discovered.** Type Class Transfer's canonical exported UTC timestamp (`YYYY-MM-DDTHH:mm:ss.sssZ`).
+7. F1150 - **Discovered.** Type Schedule Import room values and selected-room membership; preserve normalization, first-seen order, exact membership, and diagnostics.
+8. F1151 - **Discovered.** Type Schedule Testing's weekday/start-time assignment key; preserve accepted forms, row order, and unassigned sentinel.
+9. F1152 - **Discovered.** Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
+10. F1153 - **Discovered.** Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-All ten Batch487 entries remain discovered candidates, none is accepted, and F1144 is next for acceptance. Detailed evidence and screening rationale are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
+F1144 is the only accepted/in-progress candidate; F1145 is next after it completes. Detailed evidence and screening rationale are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20) and [F1144 acceptance record](03-Phase-2-Progress-Log.md#f1144-personal-signature-image-save-request-bytes-accepted-before-implementation-2026-10-20).
 
 #### Deferred candidates
 

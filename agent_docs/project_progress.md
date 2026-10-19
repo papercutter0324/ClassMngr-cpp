@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1142 complete; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1143 complete; Batch486 complete locally; F1144 accepted; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -238,19 +238,22 @@ Initial Setup target compiled, but behavior remains unverified. F1142 is
 complete at source/test commit `67f7277a`; the focused Platform and ColorUtils
 CTests passed 2/2 after the incremental macOS Debug build. F1143 completed at
 `686bdc2a`; the incremental macOS Debug build passed, all nine focused CTests
-passed, and `git diff --check` passed. Batch486 is complete locally; Batch487
-is active with ten discovered candidates and F1144 next for acceptance.
-Batch485 was pushed to
-`origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
-Windows layout evidence, which is unavailable in this session; the Phase 0 and
-Phase 2 gates remain open.
+passed, and `git diff --check` passed. Batch486 is complete locally; its
+closure commit `d048f231` remains unpushed while exact-payload approval is
+pending after automatic review rejected the push. Batch487 is active with ten
+discovered candidates and F1144 accepted/in progress; its opaque save-request
+bytes remain separate from F1140's prepared read-result bytes. Batch485 was
+pushed to `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
+source-bound Windows layout evidence, which the user cannot run now; the Phase
+0 and Phase 2 gates remain open.
 
 ## Next Milestone
 
-Push the Batch486 closure commit, then accept F1144 as Batch487's first
-candidate. F629 remains active
-and awaits source-bound Windows x64 layout evidence for commit `667ff54e`; the
-user cannot run Windows now. The Phase 0 and Phase 2 exit gates remain open.
+Complete F1144, commit its production/test slice, then accept F1145. Batch486's
+push to `origin/Qt-Rewrite` is pending the user's response to the exact-payload
+approval request. F629 remains active and awaits source-bound Windows x64
+layout evidence for commit `667ff54e`; the user cannot run Windows now. The
+Phase 0 and Phase 2 exit gates remain open.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
