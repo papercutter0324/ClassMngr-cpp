@@ -7677,3 +7677,13 @@ retains exact bytes, default-empty behavior, equality/order, and the owning
 validator's current blank and 256-byte rules. Diagnostic category remains
 separate; existing entity IDs, validation outcomes, error precedence, and
 collection order stay in scope for preservation.
+
+## 2026-10-20 - F1114 complete
+
+F1114 completed at source/test commit `124d6b82`, following acceptance commit
+`824ad280`. The typed `ImportSourceKey` now covers match indexes, both
+decision types, and diagnostics. Focused macOS build and CTest passed 1/1;
+tests cover exact byte retention including NUL and non-ASCII bytes, the
+whitespace and 256-byte boundaries, typed APIs, and input order. The full
+suite and Windows were not run. Batch482 is complete locally; its push is
+pending. Batch483 is active with F1115 next for acceptance review.

@@ -48460,3 +48460,54 @@ exact-byte/default-empty/equality/order behavior, and valid 256-byte, invalid
 retaining existing assertions. No tests or implementation have run for
 F1114. Batch483 remains provisional until Batch482 closes. F629 and the Phase
 0 and Phase 2 gates remain open.
+
+### F1114 generic import-review source keys complete - 2026-10-20
+
+F1114 completed at source/test commit `124d6b82`, following acceptance commit
+`824ad280`. Application now uses the final `ImportSourceKey` value wrapper
+through `TeacherMatchIndex`, `ClassMatchIndex`, `ImportWarning`,
+`ImportUnmatchedValue`, `ImportConflict`, and the create/accessor/constructor
+boundaries of `TeacherImportDecision` and `ClassImportDecision`. It preserves
+exact `std::string` bytes, including NUL and non-ASCII data, and provides
+default-empty construction, explicit string construction, `value()`,
+`empty()`, equality, and lexicographic ordering without validation,
+normalization, or implicit raw-string conversion.
+
+Validation still rejects empty and all-byte-whitespace keys under the
+existing unsigned-char `std::isspace` rule, accepts 256 bytes, and rejects
+257 bytes. Existing error code/message/precedence, category/action/target
+rules, collection/candidate caps, order, and UTF-8/source bytes are preserved;
+category remains independent of the key. Candidate Domain IDs and unrelated
+source strings remain unchanged.
+
+Focused verification in the existing `build/macos-clang-debug` tree built
+`ClassMngrNextApplicationImportReviewTests` with:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextApplicationImportReviewTests -j 8
+```
+
+The focused CTest passed 1/1:
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextApplicationImportReviewTests$'`.
+Coverage includes typed boundaries, byte-exact NUL/non-ASCII preservation,
+default-empty/empty(), equality/order, all six key-bearing records and
+decision APIs, input order, and empty/whitespace/256-byte/257-byte validation
+across decision and session records. `git diff --check` passed. Verification
+was focused on macOS; no full suite or Windows run occurred.
+
+### Batch482 complete locally - 2026-10-20
+
+All three Batch482 candidates are complete locally. The F1112, F1113, and
+F1114 acceptance, source/test, and completion-documentation commits are:
+
+| Slice | Acceptance | Source/test | Completion docs |
+|---|---|---|---|
+| F1112 | `17aadcb1` | `9110a8c8` | `af941cd3` |
+| F1113 | `67cd2da0` | `d2e81f6c` | `93707de5` |
+| F1114 | `824ad280` | `124d6b82` | This Batch482 closeout commit |
+
+This closeout commit completes Batch482's documentation; the batch is ready
+to push. Batch483 is now active with its three previously discovered
+candidates, all still discovered and F1115 next for acceptance review. No
+other slices were found. F629 still awaits Windows x64 layout evidence, and
+the Phase 0 and Phase 2 gates remain open.

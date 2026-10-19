@@ -5290,3 +5290,15 @@ explicit construction, equality/order, and the existing empty/all-whitespace
 and 256-byte validation rules. Keep category independent from the key and
 preserve issue/error behavior, collection order, and existing typed entity
 IDs. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1114 complete; Batch482 closed locally - 2026-10-20
+
+F1114 completed at source/test commit `124d6b82`, following acceptance commit
+`824ad280`. Generic import-review `ImportSourceKey` now types the match-index,
+decision, and diagnostic keys while preserving exact bytes, default-empty,
+equality/order, error behavior, category separation, and collection order.
+The focused macOS build passed and
+`ClassMngrNextApplicationImportReviewTests` passed 1/1. No full suite or
+Windows run occurred. Batch482 is complete locally and its push is pending;
+Batch483 is active with F1115 next for acceptance review. F629 and the Phase 0
+and Phase 2 gates remain open.
