@@ -246,14 +246,17 @@ completed at source/test commit `e523001d`, following acceptance commit
 focused CTests passed, and the My Workspace save selector passed. The two
 focused Initial Setup selectors aborted before assertions with the known
 offscreen QWizard `NSBundle initWithURL: nil URL argument` exception, so those
-behaviors remain unverified. F1145 is next for acceptance. Batch485 was pushed
-to `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
+behaviors remain unverified. F1145 is accepted/in progress with a narrowed
+scope: type Sub Prep's normalized interval output while preserving its raw
+read input and Calendar create/edit text contracts. Batch485 was pushed to
+`origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
 0 and Phase 2 gates remain open.
 
 ## Next Milestone
 
-Accept F1145, then implement and verify its Calendar event-type contract.
+Complete F1145, then accept F1146. F1145 types only normalized Sub Prep
+interval results; Calendar create/edit raw text contracts remain unchanged.
 Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
 exact-payload approval request. F629 remains active and awaits source-bound
 Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows

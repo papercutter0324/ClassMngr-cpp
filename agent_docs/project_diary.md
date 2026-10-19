@@ -81,6 +81,9 @@
 - Keep signature-image save-request bytes distinct from prepared read-result
   bytes: preparation and Base64 encoding stay in Platform, while the typed
   save-request value preserves the caller's exact opaque byte sequence.
+- Keep Calendar event-type text at raw input and edit boundaries where padded
+  labels and the raw byte limit are observable. Split Sub Prep's raw read DTO
+  from its normalized query result before using the shared event-type enum.
 - When native desktop automation is unavailable, a small in-process Qt
   controller can drive real modal dialogs and capture the packaged offscreen
   state. The Sub Prep route now retains both valid-generation and disabled-OK

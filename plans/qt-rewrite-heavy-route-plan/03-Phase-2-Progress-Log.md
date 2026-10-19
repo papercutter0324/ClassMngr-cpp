@@ -50534,3 +50534,48 @@ F629 remains open on source-bound Windows x64 evidence. Batch487 has ten
 candidates: one complete (F1144), zero accepted/in progress, and nine
 discovered (F1145–F1153); F1145 is next for acceptance. The Phase 0 and Phase 2
 gates remain open.
+
+### F1145 Sub Prep normalized CalendarEventType query output accepted before implementation - 2026-10-20
+
+F1145 is accepted/in progress with a narrower scope than the Batch487
+discovery candidate: type only Sub Prep's normalized calendar-interval query
+output with existing `Domain::CalendarEventType`, and split the raw text
+read-port input DTO from the typed query-result DTO. Keep Platform's QString
+trimming/prefilter and Application's ASCII trim, exact classification,
+Vacation/Holiday filtering, invalid/reversed/out-of-window filtering,
+ordering, errors, and no-ceiling behavior unchanged. At the UI boundary,
+format the enum to its canonical name with the existing Domain formatter
+before constructing the legacy `CalendarEvent`.
+
+Keep `CalendarEventSaveRequest.eventType` and
+`CalendarEventEditDraft.eventType` as raw strings: those contracts preserve
+padded text, bound the raw 64-byte length, and classify a trimmed view; their
+validators already use `Domain::CalendarEventType`. Do not type Calendar
+create/edit or repeat-series inputs, because doing so would change observable
+compatibility. This corrects the broader discovery wording; no code has
+changed yet. Evidence: `src/next/domain/calendar_event_timing.h:14-86`,
+`src/next/application/sub_prep_calendar_event_intervals_query.h:20-58,220-259`,
+`src/next/platform/application_services_sub_prep_calendar_event_intervals_port.h:130-149`,
+`src/features/sub_prep/ui/sub_prep_page.cpp:578-596`,
+`src/next/application/calendar_event_save_port.h:29-40,173-185`,
+`src/next/application/calendar_event_edit_draft.h:31-43,185-198`,
+`tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp:85-152`,
+and `tests/next_application_calendar_event_tests.cpp:1803-1886`.
+
+Focused verification acceptance: incrementally build `ClassMngr`,
+`ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` in the
+existing `build/macos-clang-debug` tree. Run the Query and CalendarEventPort
+CTests `ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, including
+existing Sub Prep selectors
+`filtersByTrimmedExactTypesAndKeepsFullInclusiveIntervals`,
+`readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation`, and
+`readsTwoYearSubPrepIntervalsThroughApplicationServices` where target
+selection permits; run `git diff --check`. No implementation or test results
+are recorded yet. Full-suite and Windows runs are not expected. F629 remains
+open on Windows layout evidence because the user cannot run Windows now.
+
+Batch487 has ten candidates: one complete (F1144), one accepted/in progress
+(F1145), and eight discovered (F1146–F1153); F1146 is next after F1145
+completes. The Phase 0 and Phase 2 gates remain open.
