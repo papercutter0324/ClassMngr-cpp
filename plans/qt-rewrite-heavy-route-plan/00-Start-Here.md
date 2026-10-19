@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch478 is complete; its closeout was pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 is active and unpushed: F1104 is complete at `ddcb8bbb`, F1105 is accepted but not implemented, and F1106-F1108 are discovered. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [active Batch479 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch479-5-candidates-1-complete-1-accepted-3-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification and acceptance evidence.
+- Current milestone: Batch478 is complete; its closeout was pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 is active and unpushed: F1104 and F1105 are complete, F1106 is next for acceptance reassessment, and F1107-F1108 are discovered. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [active Batch479 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch479-5-candidates-2-complete-1-next-for-reassessment-2-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,11 +38,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch479 — Active and unpushed; five candidates, one complete, one accepted, three discovered:**
+**Batch479 — Active and unpushed; five candidates, two complete, one next for reassessment, two discovered:**
 
 1. **F1104 — Type class identity in Schedule testing-assignment reads.** Complete at source/test commit `ddcb8bbb`; see the progress log for focused verification and limits.
-2. **F1105 — Type the Campus Dashboard selected-campus read request.** Accepted, not implemented; preserve the UTF-8 page boundary and existing matching behavior.
-3. **F1106 — Keep Co-Teacher assignment identity typed at use-case entry.** Discovered; preserve `-1` semantics and wide teacher IDs.
+2. **F1105 — Type the Campus Dashboard selected-campus read request.** Complete at source/test commit `1d86cc57`; see the progress log for focused verification and limits.
+3. **F1106 — Keep Co-Teacher assignment identity typed at use-case entry.** Next for acceptance reassessment; preserve `-1` semantics and wide teacher IDs.
 4. **F1107 — Carry typed IDs through Sub Prep print-order facts.** Discovered; preserve grouping and numeric class-ID tie-break order.
 5. **F1108 — Keep Sub Prep selected-class IDs typed through its selection policy.** Discovered; preserve positive filtering, first-seen deduplication, exact day match, schedule order, and both entry kinds.
 

@@ -47682,3 +47682,25 @@ Focused coverage must exercise non-ASCII IDs at both the Application and page
 boundaries, Unicode whitespace, the exact/over 256-byte boundary, and the
 existing empty-selection behavior. No implementation or test execution has
 started.
+
+### F1105 complete; F1106 next for reassessment - 2026-10-20
+
+F1105 is complete at source/test commit
+`1d86cc57f1884915880dce544fd453743aadf4bb`; its acceptance commit is
+`c4e933fd8d8f1b5e456cedbcdddadddc3190ff8c`. On macOS 27.0.1 arm64 with
+CMake 4.3.3/Ninja, Apple Clang 21, and Qt 6.12.0, focused builds succeeded
+for `ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests`
+and `ClassMngrCampusDashboardPageTests`. The assert-based Application test
+executable passed with exit 0, covering whitespace and 257-byte rejection,
+exact 256-byte acceptance, non-ASCII byte preservation, surrounding
+whitespace preservation, malformed-byte handling, failures/absence, and the
+case-sensitive mismatch with nonrecoverable `Technical` error. Page selectors
+`selectedCampusReadPreservesUtf8IdBytes` and
+`cleanRefreshWithNoCampusesClearsCurrentCampus` passed (4 QtTest passes,
+including init/cleanup). `git diff --check` passed; no full suite ran.
+
+The worktree was clean after the source/test commit; Qt-Rewrite was five
+commits ahead of origin. Batch479 remains active and unpushed: F1104-F1105
+are complete, F1106 is next for acceptance reassessment, and F1107-F1108
+remain discovered. Batch478's pushed closeout remains
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`.

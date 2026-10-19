@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1105 accepted; Batch479 active)
+## Current continuation - 2026-10-20 (F1105 complete; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6045,13 +6045,17 @@ modal case and was interrupted; no full widget suite result is claimed. Batch479
 remains active with F1104 complete, F1105 accepted but not implemented, and
 F1106-F1108 discovered.
 
-F1105 types `CampusDashboardSelectedCampusReadRequest.campusId` as
-`Domain::CampusId`. Keep the page's empty-selection early return and encode the
-selected `QString` through `toUtf8()` before constructing the ID. The query
-continues rejecting Qt whitespace-only values and values over 256 UTF-8 bytes;
-exactly 256 bytes remains valid. Empty IDs are unrepresentable in the request,
-so the page boundary retains the empty-selection behavior. Preserve exact
-typed-ID result matching, the existing mismatch error, port failures, and
-successful absence. Do not trim, normalize, case-fold, or add new malformed
-UTF-8 rejection. No F1105 implementation has started. The combined Phase 0 and
-Phase 2 gates remain open; Windows x64 evidence remains unavailable.
+F1105 completed at source/test commit
+`1d86cc57f1884915880dce544fd453743aadf4bb`, following acceptance commit
+`c4e933fd8d8f1b5e456cedbcdddadddc3190ff8c`. The request now carries
+`Domain::CampusId`; the page keeps its empty-selection guard and explicit
+`toUtf8()` conversion. The query retains Qt whitespace rejection, the
+256-byte UTF-8 limit, exact ID matching, and current errors, without
+normalization or new malformed-UTF-8 rejection.
+
+Independent checks passed: the Application query executable exited 0, the
+non-ASCII UTF-8 and empty-list page selectors passed 4 QTest cases total, and
+`git diff --check` passed. No full suite ran. Batch479 remains active and
+unpushed: F1104-F1105 are complete, F1106 is next for acceptance reassessment,
+and F1107-F1108 are discovered. The combined Phase 0 and Phase 2 gates remain
+open; Windows x64 evidence remains unavailable.

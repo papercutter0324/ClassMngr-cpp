@@ -7505,3 +7505,12 @@ the query still applies Qt-compatible whitespace checks and a 256-byte limit
 to the typed value. Empty IDs cannot be constructed, so the existing page
 guard preserves that case. Keep exact result-ID matching and do not add
 normalization or new UTF-8 rejection.
+
+## 2026-10-20 - F1105 complete
+
+F1105 completed at source/test commit
+`1d86cc57f1884915880dce544fd453743aadf4bb`, following acceptance commit
+`c4e933fd8d8f1b5e456cedbcdddadddc3190ff8c`. The Application query and
+focused page boundary tests passed. The UTF-8 byte limit and exact ID matching
+remain on the typed value; conversion stays explicit at the Qt boundary.
+F1106 is next for reassessment in Batch479.

@@ -4991,3 +4991,22 @@ behavior. Preserve exact returned-ID matching and the nonrecoverable Technical
 mismatch error, port failures, successful absence, and current handling of
 malformed UTF-8. Do not trim, normalize, or case-fold. F1106-F1108 remain
 discovered; Batch479 is unpushed and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1105 complete; Batch479 active - 2026-10-20
+
+F1105 is complete at source/test commit
+`1d86cc57f1884915880dce544fd453743aadf4bb`, following acceptance commit
+`c4e933fd8d8f1b5e456cedbcdddadddc3190ff8c`. The selected-campus read request
+now carries `Domain::CampusId`; the page preserves its empty-selection early
+return and encodes the selected `QString` via `toUtf8()`. The query validates
+the typed value's UTF-8 bytes against the same Qt-compatible whitespace rule
+and 256-byte limit, and preserves exact result-ID matching and existing error
+behavior. It does not trim, normalize, case-fold, or reject malformed UTF-8
+that previously passed through.
+
+Focused independent verification built the Application query and Campus
+Dashboard page targets. The Application query executable passed; the
+non-ASCII UTF-8 and empty-list page selectors passed 4 QTest cases total.
+`git diff --check` passed. No full suite ran. Batch479 remains active and
+unpushed, with F1104-F1105 complete, F1106 next for acceptance reassessment,
+and F1107-F1108 discovered. The Phase 0 and Phase 2 gates remain open.
