@@ -49539,3 +49539,50 @@ Focused targets/selectors:
 Build affected consumers as needed. Batch485 remains active with F1128
 complete, F1129 accepted/in progress, eight discovered candidates, and F1130
 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1129 Class Details validation-context teacher identity complete - 2026-10-20
+
+F1129 completed at source/test commit `596ed1f6`, following acceptance
+`53115d66`. The permissive Application `ClassDetailsValidationContextTeacherId`
+types both context identity fields and preserves raw `-1`, `-2`, and wide
+int64 values. The platform adapter wraps `qint64`; the save workflow unwraps
+at its existing `TeacherId` conversion. `ClassMngr` and the three focused
+targets built; the context-query, platform-port, and save-use-case CTests
+passed 3/3. Windows verification and the full suite were not run. Batch485
+has two complete slices and eight discovered; F1130 is next for acceptance.
+F629 and both phase gates remain open.
+
+### F1130 Schedule-slot start minute accepted before implementation - 2026-10-20
+
+F1130 is accepted/in progress; implementation and verification have not
+started. Add Application `ScheduleSlotStartMinute`, a dedicated wrapper around
+`int` with an explicit raw-value constructor, default value `0`, `.value()`
+accessor, and equality. Construction remains permissive; only
+`ScheduleSlotStateSaveRequest::startMinute` changes from `int` to this type.
+Keep `validate()` as the invariant boundary: weekday, minute, then selected or
+default state; minute bounds remain `[0,1440)`, and the invalid-input code,
+message (`Schedule slot start minute must be within the day.`), recoverability,
+and no-port-call behavior remain unchanged. The use
+case validates before calling the port; the platform port validates before
+session/repository lookup or write.
+
+Adapt the UI request builder while preserving strict ASCII `H:mm`/`HH:mm`
+parsing, no surrounding whitespace, and existing 24-hour minute rules. The
+platform adapter formats `.value()` as zero-padded `HH:mm`, preserving `09:05`
+and the repository string contract. Do not reuse `Domain::ScheduleTime`, which
+models a weekday start/end interval and cannot represent a standalone 23:59;
+do not change other schedule fields or policies.
+
+Focused coverage: build `ClassMngr` and
+`ClassMngrNextApplicationScheduleSlotStateSaveTests` (CTest
+`NextApplicationScheduleSlotStateSave`; selectors
+`forwardsValidTypedChoiceToPort`,
+`rejectsInvalidWeekdayAndStartMinuteWithoutPortCall`,
+`rejectsUnknownStateValuesWithoutPortCall`, and `preservesPortFailure`). Also
+build `ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests`
+(CTest `NextPlatformApplicationServicesScheduleSlotStateSave`; selectors
+`savesNondefaultStateUsingTypedDayAndMinute` and `invalidInputDoesNotWrite`,
+plus relevant existing failure/default selectors). Pin the typed value and
+`09:05` conversion; cover `0` and `1439` or the practical range edges without
+weakening existing checks. F1131 is next for acceptance. Batch485 remains
+unpushed; F629 and the Phase 0 and Phase 2 gates remain open.
