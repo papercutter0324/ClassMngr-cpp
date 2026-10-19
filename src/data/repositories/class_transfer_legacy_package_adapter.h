@@ -68,7 +68,9 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
     using namespace ClassTransferPackageDetail;
     Application::ClassTransferPortablePackage result;
     result.version = package.version;
-    result.exportedAtUtc = package.exportedAtUtc.toUTC().toString(Qt::ISODateWithMs).toStdString();
+    result.exportedAtUtc = Application::ClassTransferExportedAtUtc(
+        package.exportedAtUtc.toUTC().toString(Qt::ISODateWithMs).toStdString()
+        );
     result.teachers.reserve(package.teachers.size());
     for (const auto& source : package.teachers)
     {
@@ -127,7 +129,7 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
     ::ClassTransferPackage result;
     result.version = package.version;
     result.exportedAtUtc = QDateTime::fromString(
-        QString::fromStdString(package.exportedAtUtc), Qt::ISODateWithMs).toUTC();
+        QString::fromStdString(package.exportedAtUtc.value()), Qt::ISODateWithMs).toUTC();
     result.teachers.reserve(package.teachers.size());
     for (const auto& source : package.teachers)
     {

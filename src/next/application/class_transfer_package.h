@@ -3,6 +3,7 @@
 #include "next/application/class_transfer_export_keys.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -42,10 +43,37 @@ struct ClassExportClass
     ClassExportRoster roster;
     std::vector<ClassExportEvaluation> evaluations;
 };
+
+// Canonical serialized UTC timestamp text for exported packages. This owns
+// exact text and deliberately does not parse or normalize it.
+class ClassTransferExportedAtUtc final
+{
+public:
+    ClassTransferExportedAtUtc() = default;
+
+    explicit ClassTransferExportedAtUtc(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const ClassTransferExportedAtUtc&,
+        const ClassTransferExportedAtUtc&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 struct ClassTransferPortablePackage
 {
     int version = 1;
-    std::string exportedAtUtc;
+    ClassTransferExportedAtUtc exportedAtUtc;
     std::vector<ClassExportTeacher> teachers;
     std::vector<ClassExportClass> classes;
 };

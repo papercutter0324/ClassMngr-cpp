@@ -91,7 +91,9 @@ inline ClassExportTeacherKey teacherKey(const std::size_t index)
 {
     return ClassExportTeacherKey{key(u"teacher-", index)};
 }
-inline std::string utcTimestamp(const std::int64_t milliseconds)
+inline ClassTransferExportedAtUtc utcTimestamp(
+    const std::int64_t milliseconds
+    )
 {
     using namespace std::chrono;
     const sys_time<std::chrono::milliseconds> point{std::chrono::milliseconds{milliseconds}};
@@ -104,7 +106,7 @@ inline std::string utcTimestamp(const std::int64_t milliseconds)
         << std::setw(2) << unsigned(date.month()) << '-' << std::setw(2) << unsigned(date.day())
         << 'T' << std::setw(2) << time.hours().count() << ':' << std::setw(2) << time.minutes().count()
         << ':' << std::setw(2) << time.seconds().count() << '.' << std::setw(3) << time.subseconds().count() << 'Z';
-    return stream.str();
+    return ClassTransferExportedAtUtc(stream.str());
 }
 }
 

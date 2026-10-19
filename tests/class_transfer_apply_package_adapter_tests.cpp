@@ -127,7 +127,10 @@ void ClassTransferApplyPackageAdapterTests::preservesEveryImportedFieldAndOrderi
     QVERIFY2(parsed, parsed ? "" : qPrintable(parsed.error()));
     auto portable = Legacy::toPortableClassTransferPackage(std::move(*parsed));
     QCOMPARE(portable.version, 1);
-    QCOMPARE(portable.exportedAtUtc, std::string("2026-10-14T00:23:45.678Z"));
+    QCOMPARE(
+        portable.exportedAtUtc.value(),
+        std::string("2026-10-14T00:23:45.678Z")
+        );
     QCOMPARE(portable.teachers.size(), std::size_t(2));
     QCOMPARE(portable.classes.size(), std::size_t(2));
     for (std::size_t index = 0; index < 2; ++index)
@@ -264,7 +267,7 @@ void ClassTransferApplyPackageAdapterTests::preservesVersionAndInvalidTimestamp(
     package.version = 37;
     auto portable = Legacy::toPortableClassTransferPackage(std::move(package));
     QCOMPARE(portable.version, 37);
-    QVERIFY(portable.exportedAtUtc.empty());
+    QVERIFY(portable.exportedAtUtc.value().empty());
     const auto legacy = Legacy::toLegacyClassTransferPackage(std::move(portable));
     QCOMPARE(legacy.version, 37);
     QVERIFY(!legacy.exportedAtUtc.isValid());

@@ -14,6 +14,12 @@ static_assert(!std::is_same_v<ClassExportTeacherKey, ClassTransferTeacherKey>);
 static_assert(!std::is_same_v<ClassExportClassKey, ClassTransferClassKey>);
 static_assert(!std::is_convertible_v<ClassExportTeacherKey, ClassTransferTeacherKey>);
 static_assert(!std::is_convertible_v<ClassExportClassKey, ClassTransferClassKey>);
+static_assert(std::is_same_v<
+    decltype(std::declval<ClassTransferPortablePackage>().exportedAtUtc),
+    ClassTransferExportedAtUtc>);
+static_assert(std::is_same_v<
+    decltype(std::declval<ClassTransferExportedAtUtc>().value()),
+    const std::string&>);
 namespace
 {
 Domain::ClassId id(int value) { return *Domain::ClassId::fromString(std::to_string(value)); }
@@ -74,7 +80,7 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     auto result = ClassTransferExportQuery(port).execute(request);
     QVERIFY(result); QCOMPARE(port.calls, 1); QVERIFY(port.seen.classIds == request.classIds);
     const auto& output = result.value();
-    QCOMPARE(output.version, 1); QVERIFY(output.exportedAtUtc == "1970-01-01T00:00:01.234Z");
+    QCOMPARE(output.version, 1); QVERIFY(output.exportedAtUtc.value() == "1970-01-01T00:00:01.234Z");
     QCOMPARE(output.teachers.size(), std::size_t(2));
     QVERIFY(output.teachers[0].key.value() == u"teacher-1" && output.teachers[0].teacher.teacherEn == u"First");
     QVERIFY(output.teachers[1].key.value() == u"teacher-2" && output.teachers[1].teacher.teacherEn == u"Second");
