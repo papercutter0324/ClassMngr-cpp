@@ -47426,3 +47426,22 @@ F1103 remains deferred pending parity/policy reconciliation. Batch478 remains
 active and unpushed. The combined Phase 0 gate remains Open while Windows x64
 evidence is unavailable; the Phase 2 exit gate remains Open, Gates 1 and 2
 remain Partial, and F1007 remains pending policy reconciliation.
+
+### F1101 pre-implementation scope addendum - 2026-10-19
+
+F1101 acceptance was committed at `8bf9d5908990011023b9fa6c6ed32c07148c72e9`;
+implementation has not started. A bounded production use-site scan found one
+additional consumer of `CalendarPageCampusMetadata.id` in
+`src/features/campus/ui/campus_dashboard_page_data.cpp`. It converts the
+adapter ID to `QString`/`CampusInfo` and exact-compares it with the current
+selection during dirty refresh. Include this propagation path in F1101 while
+preserving exact string equality, dirty-selection and draft behavior, and the
+missing-selected-campus fallback.
+
+Extend the existing
+`dirtyRefreshWithMissingSelectedCampusPreservesDraftUntilDiscarded` case to
+first refresh with the selected ID still present and assert that the selection
+and draft survive; then retain its existing missing-selection refresh
+assertions. Add `ClassMngrCampusDashboardPageTests` to the existing focused
+build targets. Run only this named QtTest case directly because CMake
+registers no standalone CTest selector for it. No full suite is planned.

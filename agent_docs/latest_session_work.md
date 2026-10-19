@@ -5991,10 +5991,12 @@ documented as existing page-target limitations. No full suite ran;
 
 F1101 is accepted before implementation, following two independent read-only
 reviews and direct source reconciliation. It replaces the three feature
-campus metadata `id` strings with `Domain::CampusId`, while keeping all
-existing text matching, display fallback, alias, ordering, and optional-code
-behavior at current boundaries. The repository codec supplies a nonempty ID
-for blank inputs and preserves padded IDs.
+campus metadata `id` strings with `Domain::CampusId`. A pre-implementation
+use-site scan also found Campus Dashboard consuming Calendar metadata; its
+exact dirty-selection ID comparison is included in scope. Existing text
+matching, display fallback, alias, ordering, and optional-code behavior stay
+at their current boundaries. The repository codec supplies a nonempty ID for
+blank inputs and preserves padded IDs.
 
 Batch478 remains active with five entries: F1099 and F1100 are complete; F1101
 is accepted and selected for implementation; F1102 remains discovered with
