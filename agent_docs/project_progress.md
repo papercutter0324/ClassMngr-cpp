@@ -5299,6 +5299,8 @@ decision, and diagnostic keys while preserving exact bytes, default-empty,
 equality/order, error behavior, category separation, and collection order.
 The focused macOS build passed and
 `ClassMngrNextApplicationImportReviewTests` passed 1/1. No full suite or
-Windows run occurred. Batch482 is complete locally and its push is pending;
-Batch483 is active with F1115 next for acceptance review. F629 and the Phase 0
-and Phase 2 gates remain open.
+Windows run occurred. Batch482 was pushed without force to
+`origin/Qt-Rewrite`; remote SHA `d973d82f3a93f4fde94b0a10fc3d5943439f591f`
+matched local HEAD, and the worktree was clean and up to date. Batch483 is
+active with F1115 next for acceptance review. F629 and the Phase 0 and Phase 2
+gates remain open.

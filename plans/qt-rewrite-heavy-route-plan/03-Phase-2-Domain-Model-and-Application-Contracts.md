@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is complete locally with push pending; Batch483 is active with three discovered candidates, and F1115 is next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is active with three discovered candidates, and F1115 is next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 

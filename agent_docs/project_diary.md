@@ -7685,5 +7685,7 @@ F1114 completed at source/test commit `124d6b82`, following acceptance commit
 decision types, and diagnostics. Focused macOS build and CTest passed 1/1;
 tests cover exact byte retention including NUL and non-ASCII bytes, the
 whitespace and 256-byte boundaries, typed APIs, and input order. The full
-suite and Windows were not run. Batch482 is complete locally; its push is
-pending. Batch483 is active with F1115 next for acceptance review.
+suite and Windows were not run. Batch482 was pushed without force to
+`origin/Qt-Rewrite`; remote SHA `d973d82f3a93f4fde94b0a10fc3d5943439f591f`
+matched local HEAD, and the worktree was clean and up to date. Batch483 is
+active with F1115 next for acceptance review.
