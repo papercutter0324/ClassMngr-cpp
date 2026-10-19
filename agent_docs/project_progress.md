@@ -5722,3 +5722,16 @@ built; both focused CTests passed 2/2. Coverage includes 0/86399 retention,
 order 570. `git diff --check` passed. Windows and full-suite verification were
 not run. Batch485 has four complete slices and six discovered; F1132 is next
 for acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1132 accepted; Batch485 active - 2026-10-20
+
+F1132 is accepted to reuse `Domain::GregorianDate` for typed latest-date
+results and persistence snapshots. Keep the read-port string so the query
+still rejects malformed present port output; the real adapter's missing or
+malformed stored values remain absent. Type the use-case snapshot date, but
+retain raw `sourceDateIso` and `sourceDateValid` at the request boundary so
+invalid-request behavior and precedence remain unchanged. Compare validated
+dates by day number for save-only-if-later, and convert to/from Qt date values
+only at existing UI/Platform edges. Implementation and verification are
+pending; F1133 is next for acceptance. Batch485 remains unpushed. F629 and both
+phase gates remain open.

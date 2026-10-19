@@ -7984,3 +7984,10 @@ F1131 verification pins these as separate contracts: two meeting times that
 differ by seconds remain separate and ordered in Application, compact display
 labels continue omitting seconds, and navigation still reduces its own time
 to minutes.
+
+F1132 keeps three date boundaries distinct: a raw import request must remain
+representable until Application validation rejects malformed input; the read
+query validates raw port strings before returning `GregorianDate`; and the
+transaction snapshot can store `optional<GregorianDate>` because its Platform
+adapter already maps missing or malformed settings to absence. This retains
+the malformed-port error while typing validated latest-date state.
