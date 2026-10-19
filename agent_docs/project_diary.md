@@ -7788,3 +7788,23 @@ correlation contract: it filters to Hangul code units, while state keys allow
 arbitrary exact values and apply validation must retain malformed raw payloads
 for its existing diagnostics. Leave Hangul-only filtering and name matching
 at their existing parser/validation edges.
+
+## 2026-10-20 - F1119 complete
+
+F1119 completed at source/test commit `4f19554d`, following acceptance
+`011d807e`. State keys use the existing exact UTF-8 wrapper; apply keys use a
+separate opaque UTF-16 wrapper so their native payloads remain intact. The
+first broad build found missed `.value()` conversions in the eligibility
+adapter; explicit boundary accesses fixed the compile errors. Test fixtures
+were updated without changing assertions, and the focused suite passed 9/9.
+No full-suite run occurred.
+
+## 2026-10-20 - F1120 accepted
+
+Use the existing opaque exact-byte `ImportSourceKey` for Teacher Import's
+UTF-8 source-validation fields across the validator, use-case request, source
+records, and review candidate lists. Keep the wrapper permissive so current
+empty-key validation and malformed-byte representability remain at their
+owners. Preserve adapter normalization, per-source vector alignment, order,
+duplicate namespaces, and error precedence. Leave the native-English
+name-policy's UTF-16 derived values unchanged.

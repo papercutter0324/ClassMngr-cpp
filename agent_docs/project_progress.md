@@ -5416,3 +5416,25 @@ bytes/code units, state exact-match behavior, Hangul-only validation at its
 current edges, conversion behavior, ordering, and diagnostic payloads. No
 implementation or tests have started. F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+## Phase 2 update - F1119 complete; Batch484 active - 2026-10-20
+
+F1119 completed at source/test commit `4f19554d`, following acceptance
+`011d807e`. State correlation records now use the existing exact UTF-8
+`ScheduleImportReviewTeacherKey`; apply records use a separate opaque exact
+UTF-16 `ScheduleImportApplyTeacherKey`. The focused state validation, plan
+validation, review decision, apply projection/use-case, platform port, data
+repository, dialog, and `ClassMngr` targets built; 9/9 selected CTests passed.
+The full suite was not run. F1120 is next for acceptance; F629 and the Phase 0
+and Phase 2 gates remain open.
+
+## Phase 2 update - F1120 accepted; Batch484 active - 2026-10-20
+
+F1120 is accepted to type the UTF-8 source-validation key fields in the
+Teacher Import plan validator, use-case validation input, Korean and GS source
+records, and review candidate lists with the existing opaque exact-byte
+`ImportSourceKey`. Preserve empty/malformed values until existing validation,
+normalization at adapter edges, exact per-index correspondence, source order,
+duplicate rules, GS namespace separation, and error precedence. The native
+English name-policy result remains a UTF-16 internal value outside scope. No
+implementation or tests have started. F629 and both phase gates remain open.

@@ -48910,3 +48910,57 @@ validation, resolution correspondence/order, and existing diagnostics/errors.
 Implementation and tests have not started. Batch484 remains active with
 F1118 complete, F1119 accepted/in progress, and eight discovered candidates;
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1119 Schedule Import teacher keys complete - 2026-10-20
+
+F1119 is complete at source/test commit `4f19554d`, following acceptance
+`011d807e`. State records use the existing opaque UTF-8
+`ScheduleImportReviewTeacherKey`; apply candidate, teacher, and target-issue
+fields use the new opaque UTF-16 `ScheduleImportApplyTeacherKey`. Exact bytes
+and code units, ordering, state matching, Hangul-only validation edges, and
+diagnostics remain intact.
+
+The independent Tester built `ClassMngr` and the five Application test
+targets: `ClassMngrNextApplicationScheduleImportStateValidationTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`, and
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`. The Tester also
+built `ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests`,
+`ClassMngrScheduleImportTests`, and `ClassMngrScheduleImportDialogTests`;
+selected focused CTests passed 9/9. `git diff --check` passed. The full suite
+and Windows verification were not run. Batch484 remains active with two
+complete candidates, eight discovered, and F1120 next for acceptance. F629
+and the Phase 0 and Phase 2 gates remain open.
+
+### F1120 Teacher Import source validation keys accepted before implementation - 2026-10-20
+
+F1120 is accepted/in progress. Reuse existing `ImportSourceKey`—opaque exact
+UTF-8 bytes, empty allowed, no normalization—for all per-source validation
+fields in `TeacherImportPlanValidationInput` (reviewed Korean, Korean,
+native-English validator strings, and GS English/Korean pairs),
+`TeacherImportUseCaseValidationInput` (reviewed Korean, Korean, and GS pairs),
+`TeacherImportKoreanSource.validationKey`,
+`TeacherImportGsTeamSource.englishValidationKey` and
+`.koreanValidationKey`, and
+`TeacherImportReviewGroup.candidateValidationKeys`.
+
+Keep `TeacherImportNativeEnglishNameKeyPolicy` and its internal derived
+UTF-16 values unchanged. Do not type group IDs, source names,
+`TeacherImportGroupKey`, `KoreanTeacherKey`, or unrelated fields. Preserve
+empty/malformed bytes until existing validation; exact per-index key/source
+correspondence and mismatch precedence; source order; exact duplicate rules;
+GS English/Korean namespace separation; parser and adapter normalization;
+review candidate selection/order; validation errors; and no-persistence
+failure behavior.
+
+Focused verification targets, as applicable:
+`ClassMngrNextApplicationTeacherImportPlanValidationTests`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`,
+`ClassMngrTeacherImportTests`, and `ClassMngrTeacherImportDialogTests`.
+Implementation and tests have not started. Batch484 remains active with two
+complete candidates, F1120 accepted/in progress, and seven discovered;
+F1121 is next after this slice. F629 and the Phase 0 and Phase 2 gates remain
+open.
