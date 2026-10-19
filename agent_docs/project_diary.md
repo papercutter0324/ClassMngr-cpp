@@ -7926,3 +7926,10 @@ Application port preferences and stored user-preference snapshot, with
 seconds conversion at persistence and UI boundaries. Focused Application,
 platform, menu, and legacy settings tests passed 4/4. Windows and the full
 suite were not run.
+
+## 2026-10-20 - F1127 accepted
+
+Type only the Application startup/manual update artifact platform keys as
+permissive UTF-8 values. Preserve arbitrary bytes, aliases, exact-case keys,
+and unknown architecture-derived values through the existing adapters; leave
+OS detection, archive matching, and downloader persistence unchanged.

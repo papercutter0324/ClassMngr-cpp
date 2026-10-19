@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1126 complete, and F1127 discovered and next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1126 complete, and final slice F1127 accepted/in progress with no remaining discoveries; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,7 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch484 (10 candidates; 9 complete; 0 accepted/in progress; 1 discovered)
+#### Active batch: Batch484 (10 candidates; 9 complete; 1 accepted/in progress; 0 discovered)
 
 1. F1118 - Complete at `f3f0b46e`: type generated `CalendarEventSeriesEditOccurrenceUpdate` dates as `Domain::GregorianDate`, converting to Qt at the platform adapter; preserve date and occurrence behavior. Raw request and snapshot date strings remain unchanged by design (verification in the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20)).
 2. F1119 - Complete at `4f19554d`: preserve opaque exact UTF-8 state keys and UTF-16 apply keys using separate Application values; retain current validation and identity behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1119-schedule-import-teacher-keys-complete-2026-10-20).
@@ -79,9 +79,9 @@ Treat this plan as an operational summary, not a history:
 7. F1124 - Complete at `812692c6`: type `RosterSaveIssue.code` as a separate closed `RosterSaveIssueCode` with stable outward-key mapping; preserve validation, serialization, and UI behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1124-roster-save-validation-codes-complete-2026-10-20).
 8. F1125 - Complete at `7775df86`: use permissive `UpcomingBirthdayMonthDayInput` for the candidate's UTF-8 month/day value, retaining parser validation and existing schedule behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1125-upcoming-birthday-month-day-input-complete-2026-10-20).
 9. F1126 - Complete at `a87bb612`: type the supported 30/60/120/300-second choices while preserving integer compatibility, validation, 120-second fallback, and settings persistence. See the [completion record](03-Phase-2-Progress-Log.md#f1126-excel-import-timeout-choice-complete-2026-10-20).
-10. F1127 - Type update-artifact platform keys (lower confidence): screen aliases and enum suitability during acceptance.
+10. F1127 - Accepted/in progress, final slice: add a permissive UTF-8 `UpdateArtifactPlatformKey` only at the Application artifact boundary; preserve exact parser behavior and existing platform conversions. See the [acceptance record](03-Phase-2-Progress-Log.md#f1127-update-artifact-platform-keys-accepted-before-implementation-2026-10-20).
 
-F1118–F1126 are complete, and F1127 remains discovered and next for acceptance. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1118–F1126 are complete and final slice F1127 is accepted/in progress; no candidates remain discovered. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

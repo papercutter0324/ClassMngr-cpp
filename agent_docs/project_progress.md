@@ -5600,3 +5600,16 @@ invalid combo item-data restoration/warning and no-write behavior. The import
 dialog timer call sites were compiled and still multiply the selected seconds
 by 1,000. Windows and full-suite verification were not run. F1127 is next for
 acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1127 accepted; Batch484 active - 2026-10-20
+
+F1127 is accepted to type only `platformKey` in the Application startup and
+manual update artifacts as permissive opaque UTF-8 `UpdateArtifactPlatformKey`.
+Keep bytes and exact case unchanged; unknown keys and architecture-derived
+strings remain representable so existing asset matching and failures continue.
+Wrap at the two platform service ports and convert to QString at the existing
+controller/dialog boundary via `.value()`. Keep OS/architecture detection,
+archive matching, downloader JSON persistence, and other artifact fields
+unchanged. Focused Application and platform mapping targets are recorded in
+the Phase 2 plan. Implementation has not started. F629 and both phase gates
+remain open.

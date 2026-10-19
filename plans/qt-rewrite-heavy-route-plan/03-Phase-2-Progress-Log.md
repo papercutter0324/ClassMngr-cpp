@@ -49287,3 +49287,32 @@ exercised. `git diff --check` passed. Verification used macOS arm64 Debug with
 Qt 6.12.0; Windows and the full suite were not run. Batch484 remains active
 with nine complete candidates and F1127 discovered and next for acceptance.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1127 Update Artifact platform keys accepted before implementation - 2026-10-20
+
+F1127 is accepted/in progress as Batch484's final slice; implementation and
+tests have not started. Add permissive opaque UTF-8 `UpdateArtifactPlatformKey`
+with unchanged bytes and `.value()` access, used only for `platformKey` in
+Application `StartupUpdateArtifact` and `ManualUpdateArtifact`. Update the two
+platform ports to wrap their existing QString-to-UTF-8-to-`std::string`
+values. Update the Startup controller and manual `UpdateDialog` to convert
+back to QString at their existing boundaries through `.value()`.
+
+Do not validate, canonicalize, lowercase, or enum-map the key. Preserve
+unknown keys, exact-case distinctions, unknown architecture-derived strings,
+and both Linux aliases as representable values; current exact parser behavior
+must continue leaving unknown keys without an asset and returning existing
+errors. Keep `currentPlatformKeys()` and OS/architecture discovery, core
+parser/archive aliases, downloader Qt key and JSON persistence, and artifact
+URL/file/version/hash/size unchanged. Scope excludes version, URL, name,
+digest, size, and unrelated fields; this slice types only the Application
+boundary.
+
+Focused targets: `ClassMngrNextApplicationStartupUpdateCheckUseCaseTests`,
+`ClassMngrNextApplicationManualUpdateCheckUseCaseTests`, and the startup and
+manual platform adapter result-mapping tests. Include update controller and
+`UpdateDialog` consumers in a build/check as appropriate; existing
+`ClassMngrUpdaterTests` or controller tests may provide compatibility coverage,
+while core updater production stays unchanged. Batch484 remains active with
+nine complete candidates, F1127 accepted/in progress, and no remaining
+discoveries. F629 and the Phase 0 and Phase 2 gates remain open.
