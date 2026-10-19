@@ -1,6 +1,7 @@
 #include "app/mainwindow.h"
 #include "core/language_service.h"
 #include "core/settingsmanager.h"
+#include "next/application/sidebar_display_preferences.h"
 #include "next/domain/operation_result.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -50,6 +51,68 @@ public:
 private:
     MainWindow& m_window;
 };
+
+class SidebarDisplayReadFailureThenRecoveryPort final
+    : public ClassMngr::Next::Application::SidebarDisplayPreferencesPort
+{
+public:
+    [[nodiscard]]
+    ClassMngr::Next::Application::SidebarDisplayPreferencesResult load()
+        const override
+    {
+        ++m_loadCount;
+        if (m_loadCount <= 2)
+        {
+            return ClassMngr::Next::Application::
+                SidebarDisplayPreferencesResult::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+                    .message = "simulated QSettings AccessError",
+                    .recoverable = true
+                });
+        }
+
+        return ClassMngr::Next::Application::
+            SidebarDisplayPreferencesResult::success(m_preferences);
+    }
+
+    [[nodiscard]]
+    ClassMngr::Next::Application::SidebarDisplayPreferencesSaveResult save(
+        const ClassMngr::Next::Application::
+            SidebarDisplayPreferencesSaveRequest& request
+        ) override
+    {
+        ++m_saveCount;
+        m_preferences = request;
+        m_lastSaved = request;
+        return ClassMngr::Next::Application::
+            SidebarDisplayPreferencesSaveResult::success();
+    }
+
+    [[nodiscard]] int loadCount() const noexcept
+    {
+        return m_loadCount;
+    }
+
+    [[nodiscard]] int saveCount() const noexcept
+    {
+        return m_saveCount;
+    }
+
+    [[nodiscard]] const ClassMngr::Next::Application::
+        SidebarDisplayPreferences& lastSaved() const noexcept
+    {
+        return m_lastSaved;
+    }
+
+private:
+    mutable int m_loadCount = 0;
+    int m_saveCount = 0;
+    ClassMngr::Next::Application::SidebarDisplayPreferences m_preferences{
+        .sidebarTooltipsEnabled = false,
+        .sidebarMarqueeEnabled = false
+    };
+    ClassMngr::Next::Application::SidebarDisplayPreferences m_lastSaved;
+};
 }
 
 class SidebarMarqueeRestorer final
@@ -90,6 +153,7 @@ private slots:
     void initTestCase();
     void actionUpdatesOverflowTooltipAndPersistsPreference();
     void actionUpdatesMarqueeDelegateAndPersistsPreference();
+    void actionReloadsUnknownPairBeforeSavingToggle();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -395,6 +459,140 @@ actionUpdatesMarqueeDelegateAndPersistsPreference()
         );
     QVERIFY(disabledPreference.isValid());
     QVERIFY(!disabledPreference.toBool());
+}
+
+void MainWindowSidebarOverflowTooltipsActionParityTests::
+actionReloadsUnknownPairBeforeSavingToggle()
+{
+    LanguageService languageService;
+    QVERIFY(languageService.setLanguage(Language::English));
+
+    auto preferencesPort =
+        std::make_shared<SidebarDisplayReadFailureThenRecoveryPort>();
+    int diagnosticCount = 0;
+    ClassMngr::Next::Domain::OperationError lastDiagnostic;
+
+    MainWindowStartupOptions startupOptions;
+    startupOptions.loadMostRecentDatabase = false;
+    startupOptions.sidebarDisplayPreferencesPort = preferencesPort;
+    startupOptions.sidebarDisplayPreferencesErrorHandler =
+        [&diagnosticCount, &lastDiagnostic](
+            const ClassMngr::Next::Domain::OperationError& error
+            )
+        {
+            ++diagnosticCount;
+            lastDiagnostic = error;
+        };
+
+    MainWindow window(
+        [](const QString&) {},
+        false,
+        &languageService,
+        nullptr,
+        std::move(startupOptions)
+        );
+    QCOMPARE(preferencesPort->loadCount(), 1);
+    QCOMPARE(preferencesPort->saveCount(), 0);
+
+    QAction* const tooltipsAction = window.actions().showSidebarTooltips;
+    QAction* const marqueeAction = window.actions().animateSidebarText;
+    QVERIFY(tooltipsAction);
+    QVERIFY(marqueeAction);
+    QVERIFY(tooltipsAction->isChecked());
+    QVERIFY(marqueeAction->isChecked());
+
+    auto* const sidebar = window.findChild<Sidebar*>(
+        QStringLiteral("sidebarWidget")
+        );
+    QVERIFY(sidebar);
+    const QString teacherName = QStringLiteral(
+        "Synthetic Teacher With A Deliberately Extremely Long Name "
+        "For Sidebar Overflow Tooltip Read Failure Recovery"
+        );
+    sidebar->addTeacherNode(teacherName, 987654322, false);
+    sidebar->setDatabaseSectionsVisible(true);
+
+    QTreeWidget* const tree = sidebar->findChild<QTreeWidget*>(
+        QStringLiteral("sidebarTree")
+        );
+    QVERIFY(tree);
+    const QList<QTreeWidgetItem*> matchingItems = tree->findItems(
+        teacherName,
+        Qt::MatchExactly | Qt::MatchRecursive,
+        0
+        );
+    QCOMPARE(matchingItems.size(), 1);
+    QTreeWidgetItem* const teacherItem = matchingItems.constFirst();
+    for (
+        QTreeWidgetItem* parent = teacherItem->parent();
+        parent;
+        parent = parent->parent()
+        )
+    {
+        parent->setExpanded(true);
+    }
+
+    sidebar->setFixedWidth(150);
+    tree->setFixedWidth(130);
+    window.show();
+    QCoreApplication::processEvents();
+    QVERIFY(tree->viewport());
+    const QRect itemRect = tree->visualItemRect(teacherItem);
+    QVERIFY(itemRect.isValid());
+    const int textWidth = QFontMetrics(tree->font()).horizontalAdvance(
+        teacherName
+        );
+    const int availableTextWidth = tree->viewport()->width()
+        - qMax(0, itemRect.left())
+        - 8;
+    QVERIFY(textWidth > availableTextWidth);
+    QCOMPARE(teacherItem->toolTip(0), teacherName);
+
+    auto* const delegate = dynamic_cast<SidebarMarqueeDelegate*>(
+        tree->itemDelegate()
+        );
+    QVERIFY(delegate);
+    QVERIFY(delegate->marqueeEnabled());
+
+    // The first retry still fails. The visible action and both live Sidebar
+    // behaviors return to their fallback state without writing either key.
+    tooltipsAction->trigger();
+    QCOMPARE(preferencesPort->loadCount(), 2);
+    QCOMPARE(preferencesPort->saveCount(), 0);
+    QCOMPARE(diagnosticCount, 1);
+    QCOMPARE(
+        lastDiagnostic.code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(lastDiagnostic.recoverable);
+    QVERIFY(tooltipsAction->isChecked());
+    QVERIFY(marqueeAction->isChecked());
+    QCOMPARE(teacherItem->toolTip(0), teacherName);
+    QVERIFY(delegate->marqueeEnabled());
+
+    // The next retry reads the persisted false/false pair, applies the
+    // requested tooltip change, and keeps the untouched marquee value.
+    tooltipsAction->trigger();
+    QCOMPARE(preferencesPort->loadCount(), 3);
+    QCOMPARE(preferencesPort->saveCount(), 1);
+    QVERIFY(!preferencesPort->lastSaved().sidebarTooltipsEnabled);
+    QVERIFY(!preferencesPort->lastSaved().sidebarMarqueeEnabled);
+    QVERIFY(!tooltipsAction->isChecked());
+    QVERIFY(!marqueeAction->isChecked());
+    QVERIFY(teacherItem->toolTip(0).isEmpty());
+    QVERIFY(!delegate->marqueeEnabled());
+    QCOMPARE(diagnosticCount, 1);
+
+    marqueeAction->trigger();
+    QCOMPARE(preferencesPort->loadCount(), 3);
+    QCOMPARE(preferencesPort->saveCount(), 2);
+    QVERIFY(!preferencesPort->lastSaved().sidebarTooltipsEnabled);
+    QVERIFY(preferencesPort->lastSaved().sidebarMarqueeEnabled);
+    QVERIFY(!tooltipsAction->isChecked());
+    QVERIFY(marqueeAction->isChecked());
+    QVERIFY(teacherItem->toolTip(0).isEmpty());
+    QVERIFY(delegate->marqueeEnabled());
+    QCOMPARE(diagnosticCount, 1);
 }
 
 QTEST_MAIN(MainWindowSidebarOverflowTooltipsActionParityTests)

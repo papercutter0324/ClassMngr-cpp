@@ -46744,3 +46744,40 @@ selected for bounded reproduction of the Sidebar Display QSettings read-error
 path. Do not implement F1092 unless a technical read failure and the
 aggregate-save preservation hazard are demonstrated. F1093-F1094 remain
 provisional; no other slices were found.
+
+### F1092 read-error reproduction and acceptance matrix - recorded before implementation - 2026-10-19
+
+A macOS probe against the real `SettingsManagerSidebarDisplayPreferencesPort`
+reproduced the read-error and paired-write hazard. With an INI file containing
+both Sidebar Display settings set to `false` and owner write permission but no
+read permission, `load()` returned success with both enabled defaults. After
+read permission was restored, `save({true, true})` returned a recoverable
+`Technical` `AccessError`, but the file was truncated and a fresh load returned
+both enabled defaults. This demonstrates that the current status-blind read
+can lose both persisted settings even though the paired writer reports an
+error.
+
+1. Add a Sidebar-specific SettingsManager read that returns the QSettings
+   status alongside both raw values. Map file-level read errors to recoverable
+   `Technical` results; retain enabled defaults for missing/invalid values and
+   legacy `QVariant` boolean coercion.
+2. In `ActionRegistry`, retain the existing enabled action defaults when the
+   initial load fails, but mark the pair unknown. Never save those fallback
+   values. On the first user toggle, retry the load; merge only the toggled
+   action's requested value with the successfully reloaded pair, update the
+   companion action and live Sidebar behavior, then save the pair. If the
+   retry read or save fails, restore the last known pair and report one
+   diagnostic. A later user retry may load and save successfully.
+3. Ensure a stale QSettings error from an earlier read does not prevent a
+   fresh, recovered paired write. Preserve F681's paired rollback, exact
+   prior values/absence, unrelated settings, and save retry behavior.
+4. Extend the existing Sidebar Display port test with an actual QSettings
+   read-access failure and recovery. Extend
+   `ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests` to verify an
+   initially unknown pair is reloaded before a toggle is saved and that the
+   untouched preference and both live Sidebar behaviors match the recovered
+   pair. Build `ClassMngr` and the two existing targets; run exactly their two
+   CTests and `git diff --check`. Add no CMake target.
+
+F1092 is accepted for implementation. Batch474 remains active; F1093-F1094
+remain provisional.

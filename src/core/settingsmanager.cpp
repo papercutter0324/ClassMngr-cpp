@@ -809,6 +809,22 @@ QSettings::Status SettingsManager::writeSidebarDisplayPreferences(
     const SidebarDisplayPreferencesSync& synchronize
     )
 {
+    if (m_settings->status() != QSettings::NoError)
+    {
+        // Do not sync a failed reader: QSettings may hold only the fallback
+        // view from a partial read and could replace the recoverable file.
+        std::unique_ptr<QSettings> recoveredSettings = createSettings();
+        (void) recoveredSettings->value(Keys::SIDEBAR_TOOLTIPS_ENABLED);
+        (void) recoveredSettings->value(Keys::SIDEBAR_MARQUEE_ENABLED);
+        const QSettings::Status readStatus = recoveredSettings->status();
+        if (readStatus != QSettings::NoError)
+        {
+            return readStatus;
+        }
+
+        m_settings = std::move(recoveredSettings);
+    }
+
     const bool hadPreviousTooltips =
         m_settings->contains(Keys::SIDEBAR_TOOLTIPS_ENABLED);
     const QVariant previousTooltips =
@@ -873,6 +889,21 @@ QSettings::Status SettingsManager::writeSidebarDisplayPreferences(
     }
 
     return status;
+}
+
+QSettings::Status SettingsManager::readSidebarDisplayPreferences(
+    QVariant& sidebarTooltipsEnabled,
+    QVariant& sidebarMarqueeEnabled
+    ) const
+{
+    const std::unique_ptr<QSettings> readSettings = createSettings();
+    sidebarTooltipsEnabled = readSettings->value(
+        Keys::SIDEBAR_TOOLTIPS_ENABLED
+        );
+    sidebarMarqueeEnabled = readSettings->value(
+        Keys::SIDEBAR_MARQUEE_ENABLED
+        );
+    return readSettings->status();
 }
 
 bool SettingsManager::sidebarMarqueeEnabled() const

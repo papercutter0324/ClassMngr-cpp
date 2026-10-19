@@ -320,6 +320,13 @@ public:
     using SidebarDisplayPreferencesSync =
         std::function<QSettings::Status(QSettings&)>;
 
+    // Reads both Sidebar Display values through a fresh QSettings view so the
+    // caller can distinguish missing keys from a file-level read failure.
+    [[nodiscard]] QSettings::Status readSidebarDisplayPreferences(
+        QVariant& sidebarTooltipsEnabled,
+        QVariant& sidebarMarqueeEnabled
+        ) const;
+
     [[nodiscard]] QSettings::Status writeSidebarDisplayPreferences(
         bool sidebarTooltipsEnabled,
         bool sidebarMarqueeEnabled,

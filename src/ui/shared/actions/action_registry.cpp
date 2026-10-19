@@ -2255,9 +2255,12 @@ void ActionRegistry::createOptionActions(
             >();
     }
 
-    if (const auto loaded = sidebarDisplayPreferencesPort->load(); loaded)
+    const auto loadedSidebarDisplayPreferences =
+        sidebarDisplayPreferencesPort->load();
+    if (loadedSidebarDisplayPreferences)
     {
-        sidebarDisplayPreferences = loaded.value();
+        sidebarDisplayPreferences =
+            loadedSidebarDisplayPreferences.value();
     }
 
     showSidebarTooltips->setChecked(
@@ -2272,18 +2275,81 @@ void ActionRegistry::createOptionActions(
         std::make_shared<
             ClassMngr::Next::Application::SidebarDisplayPreferences
             >(sidebarDisplayPreferences);
+    const auto sidebarDisplayPreferencesKnown =
+        std::make_shared<bool>(
+            static_cast<bool>(loadedSidebarDisplayPreferences)
+            );
     const auto skipSidebarDisplaySaveForRollback =
         std::make_shared<bool>(false);
     const auto saveSidebarDisplayPreferences =
         [this, sidebarDisplayPreferencesPort,
             sidebarDisplayPreferencesErrorHandler,
             lastSavedSidebarDisplayPreferences,
+            sidebarDisplayPreferencesKnown,
             skipSidebarDisplaySaveForRollback](QAction* triggeringAction)
     {
         if (*skipSidebarDisplaySaveForRollback)
         {
             *skipSidebarDisplaySaveForRollback = false;
             return;
+        }
+
+        const auto restoreTriggeringAction = [
+            this,
+            triggeringAction,
+            lastSavedSidebarDisplayPreferences,
+            skipSidebarDisplaySaveForRollback
+            ]
+        {
+            const bool previousChecked = triggeringAction == showSidebarTooltips
+                ? lastSavedSidebarDisplayPreferences
+                    ->sidebarTooltipsEnabled
+                : lastSavedSidebarDisplayPreferences
+                    ->sidebarMarqueeEnabled;
+            *skipSidebarDisplaySaveForRollback = true;
+            triggeringAction->setChecked(previousChecked);
+            if (*skipSidebarDisplaySaveForRollback)
+            {
+                *skipSidebarDisplaySaveForRollback = false;
+            }
+        };
+
+        if (!*sidebarDisplayPreferencesKnown)
+        {
+            const auto reloaded = sidebarDisplayPreferencesPort->load();
+            if (!reloaded)
+            {
+                restoreTriggeringAction();
+
+                if (sidebarDisplayPreferencesErrorHandler)
+                {
+                    sidebarDisplayPreferencesErrorHandler(
+                        reloaded.error()
+                        );
+                }
+                return;
+            }
+
+            *lastSavedSidebarDisplayPreferences = reloaded.value();
+            *sidebarDisplayPreferencesKnown = true;
+
+            QAction* const companionAction =
+                triggeringAction == showSidebarTooltips
+                ? animateSidebarText
+                : showSidebarTooltips;
+            const bool companionEnabled =
+                triggeringAction == showSidebarTooltips
+                ? reloaded.value().sidebarMarqueeEnabled
+                : reloaded.value().sidebarTooltipsEnabled;
+            if (companionAction->isChecked() != companionEnabled)
+            {
+                *skipSidebarDisplaySaveForRollback = true;
+                companionAction->setChecked(companionEnabled);
+                if (*skipSidebarDisplaySaveForRollback)
+                {
+                    *skipSidebarDisplaySaveForRollback = false;
+                }
+            }
         }
 
         const ClassMngr::Next::Application::SidebarDisplayPreferences candidate{
@@ -2297,17 +2363,9 @@ void ActionRegistry::createOptionActions(
             return;
         }
 
-        const bool previousChecked = triggeringAction == showSidebarTooltips
-            ? lastSavedSidebarDisplayPreferences->sidebarTooltipsEnabled
-            : lastSavedSidebarDisplayPreferences->sidebarMarqueeEnabled;
-        *skipSidebarDisplaySaveForRollback = true;
-        triggeringAction->setChecked(previousChecked);
         // setChecked emits toggled synchronously when it changes the value;
         // the nested handler consumes the flag. Clear it if it did not emit.
-        if (*skipSidebarDisplaySaveForRollback)
-        {
-            *skipSidebarDisplaySaveForRollback = false;
-        }
+        restoreTriggeringAction();
 
         if (sidebarDisplayPreferencesErrorHandler)
         {

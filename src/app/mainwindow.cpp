@@ -652,7 +652,10 @@ void MainWindow::createActions()
                 DialogServices::showWarning(
                     this,
                     tr("Unable to Save Preference"),
-                    tr("The Sidebar Display preferences could not be saved."),
+                    tr(
+                        "The Sidebar Display preferences could not be loaded "
+                        "or saved."
+                        ),
                     QString::fromStdString(error.message)
                     );
             };

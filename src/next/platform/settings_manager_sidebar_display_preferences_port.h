@@ -3,7 +3,6 @@
 #include "core/settingsmanager.h"
 #include "next/application/sidebar_display_preferences.h"
 
-#include <QString>
 #include <QVariant>
 
 #include <string>
@@ -29,22 +28,30 @@ public:
     [[nodiscard]] Application::SidebarDisplayPreferencesResult load()
         const override
     {
-        const SettingsManager& settings = SettingsManager::instance();
+        QVariant sidebarTooltipsEnabled;
+        QVariant sidebarMarqueeEnabled;
+        const QSettings::Status status =
+            SettingsManager::instance().readSidebarDisplayPreferences(
+                sidebarTooltipsEnabled,
+                sidebarMarqueeEnabled
+                );
+        if (status != QSettings::NoError)
+        {
+            const char* statusName = status == QSettings::AccessError
+                ? "AccessError (settings could not be read)"
+                : "FormatError (settings contain invalid data)";
+            return Application::SidebarDisplayPreferencesResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = std::string(
+                    "Unable to read Sidebar Display preferences: QSettings "
+                    ) + statusName + ".",
+                .recoverable = true
+            });
+        }
+
         return Application::SidebarDisplayPreferencesResult::success({
-            .sidebarTooltipsEnabled = readEnabled(
-                settings.get(
-                    QString::fromUtf8(
-                        SettingsManager::Keys::SIDEBAR_TOOLTIPS_ENABLED
-                        )
-                    )
-                ),
-            .sidebarMarqueeEnabled = readEnabled(
-                settings.get(
-                    QString::fromUtf8(
-                        SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED
-                        )
-                    )
-                )
+            .sidebarTooltipsEnabled = readEnabled(sidebarTooltipsEnabled),
+            .sidebarMarqueeEnabled = readEnabled(sidebarMarqueeEnabled)
         });
     }
 
@@ -60,14 +67,11 @@ public:
                 );
         if (status != QSettings::NoError)
         {
-            const char* statusName = status == QSettings::AccessError
-                ? "AccessError (settings could not be written)"
-                : "FormatError (settings contain invalid data)";
             return Application::SidebarDisplayPreferencesSaveResult::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message = std::string(
                     "Unable to save Sidebar Display preferences: QSettings "
-                    ) + statusName + ".",
+                    ) + saveStatusName(status) + ".",
                 .recoverable = true
             });
         }
@@ -78,9 +82,18 @@ public:
 private:
     SettingsManager::SidebarDisplayPreferencesSync m_synchronize;
 
+    [[nodiscard]] static const char* saveStatusName(
+        const QSettings::Status status
+        )
+    {
+        return status == QSettings::AccessError
+            ? "AccessError (settings could not be written)"
+            : "FormatError (settings contain invalid data)";
+    }
+
     [[nodiscard]] static bool readEnabled(const QVariant& value)
     {
-        // Invalid or unavailable legacy values retain the enabled default.
+        // Missing or invalid legacy values retain the enabled default.
         // Valid values use QVariant's legacy bool coercion unchanged.
         return value.isValid()
             ? value.toBool()

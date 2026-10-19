@@ -2,6 +2,8 @@
 #include "next/application/sidebar_display_preferences.h"
 #include "next/platform/settings_manager_sidebar_display_preferences_port.h"
 
+#include <QDir>
+#include <QFile>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
@@ -32,6 +34,36 @@ QString sidebarMarqueeKey()
     return settingsKey(SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED);
 }
 
+class SettingsRootRestorer final
+{
+public:
+    explicit SettingsRootRestorer(QByteArray originalRoot)
+        : m_originalRoot(std::move(originalRoot))
+    {
+    }
+
+    ~SettingsRootRestorer()
+    {
+        qputenv("CLASSMNGR_SETTINGS_ROOT", m_originalRoot);
+        const QSettings::Status status =
+            SettingsManager::instance().writeSidebarDisplayPreferences(
+                false,
+                false,
+                [](QSettings&)
+                {
+                    return QSettings::AccessError;
+                }
+                );
+        Q_UNUSED(status);
+    }
+
+    SettingsRootRestorer(const SettingsRootRestorer&) = delete;
+    SettingsRootRestorer& operator=(const SettingsRootRestorer&) = delete;
+
+private:
+    QByteArray m_originalRoot;
+};
+
 } // namespace
 
 class NextPlatformSettingsManagerSidebarDisplayPreferencesPortTests final
@@ -46,6 +78,7 @@ private slots:
     void readsBothLegacyKeys();
     void preservesLegacyQVariantCoercion();
     void invalidSettingsUseEnabledDefaults();
+    void readAccessErrorReturnsTechnicalAndCanRetry();
     void roundTripsBothValuesAndKeys();
     void syncFailureRestoresPreviousValuesAndAllowsRetry();
     void syncFailureRestoresBothAbsentKeysAndPreservesUnrelatedSetting();
@@ -158,6 +191,100 @@ invalidSettingsUseEnabledDefaults()
     QVERIFY(result);
     QVERIFY(result.value().sidebarTooltipsEnabled);
     QVERIFY(result.value().sidebarMarqueeEnabled);
+}
+
+void NextPlatformSettingsManagerSidebarDisplayPreferencesPortTests::
+readAccessErrorReturnsTechnicalAndCanRetry()
+{
+    QTemporaryDir unreadableSettingsRoot;
+    QVERIFY(unreadableSettingsRoot.isValid());
+    const QByteArray originalRoot = qgetenv("CLASSMNGR_SETTINGS_ROOT");
+    SettingsRootRestorer settingsRootRestorer(originalRoot);
+
+    QDir settingsDirectory(unreadableSettingsRoot.path());
+    QVERIFY(settingsDirectory.mkpath(QStringLiteral("PaperCloud")));
+    const QString settingsPath = settingsDirectory.filePath(
+        QStringLiteral("PaperCloud/ClassMngr.ini")
+        );
+    QFile settingsFile(settingsPath);
+    QVERIFY(settingsFile.open(QIODevice::WriteOnly | QIODevice::Text));
+    const QByteArray initialContents =
+        "[options]\n"
+        "sidebarTooltipsEnabled=false\n"
+        "sidebarMarqueeEnabled=false\n"
+        "unrelatedValue=keep\n";
+    QCOMPARE(
+        settingsFile.write(initialContents),
+        qint64(initialContents.size())
+        );
+    settingsFile.close();
+
+    QVERIFY(
+        qputenv(
+            "CLASSMNGR_SETTINGS_ROOT",
+            unreadableSettingsRoot.path().toUtf8()
+            )
+        );
+    QVERIFY(
+        QFile::setPermissions(
+            settingsPath,
+            QFileDevice::WriteOwner
+            )
+        );
+    const QSettings::Status switchedToTemporaryRoot =
+        SettingsManager::instance().writeSidebarDisplayPreferences(
+            true,
+            true,
+            [](QSettings&)
+            {
+                return QSettings::AccessError;
+            }
+            );
+    QCOMPARE(switchedToTemporaryRoot, QSettings::AccessError);
+
+    QVERIFY(
+        !SettingsManager::instance().get(sidebarTooltipsKey()).isValid()
+        );
+    SettingsManagerSidebarDisplayPreferencesPort port;
+    const auto failedRead = port.load();
+    QVERIFY(!failedRead);
+    QCOMPARE(failedRead.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(failedRead.error().recoverable);
+    QVERIFY(
+        failedRead.error().message.find("AccessError")
+        != std::string::npos
+        );
+
+    QVERIFY(
+        QFile::setPermissions(
+            settingsPath,
+            QFileDevice::ReadOwner | QFileDevice::WriteOwner
+            )
+        );
+    const auto retry = port.load();
+    QVERIFY(retry);
+    QVERIFY(!retry.value().sidebarTooltipsEnabled);
+    QVERIFY(!retry.value().sidebarMarqueeEnabled);
+
+    const auto savedAfterRecovery = port.save({
+        .sidebarTooltipsEnabled = false,
+        .sidebarMarqueeEnabled = true
+    });
+    QVERIFY(savedAfterRecovery);
+    const auto reloadedAfterSave = port.load();
+    QVERIFY(reloadedAfterSave);
+    QVERIFY(!reloadedAfterSave.value().sidebarTooltipsEnabled);
+    QVERIFY(reloadedAfterSave.value().sidebarMarqueeEnabled);
+
+    QSettings persistedSettings(settingsPath, QSettings::IniFormat);
+    persistedSettings.sync();
+    QCOMPARE(persistedSettings.status(), QSettings::NoError);
+    QVERIFY(!persistedSettings.value(sidebarTooltipsKey()).toBool());
+    QVERIFY(persistedSettings.value(sidebarMarqueeKey()).toBool());
+    QCOMPARE(
+        persistedSettings.value(QStringLiteral("options/unrelatedValue")),
+        QVariant(QStringLiteral("keep"))
+        );
 }
 
 void NextPlatformSettingsManagerSidebarDisplayPreferencesPortTests::
