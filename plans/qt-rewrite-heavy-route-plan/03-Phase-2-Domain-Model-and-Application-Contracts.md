@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch487 is active with F1144 accepted/in progress and F1145 next after it completes; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch487 is active with F1144 complete at source/test commit `e523001d` and F1145 next for acceptance; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch487 (10 candidates; 0 complete; 1 accepted/in progress; 9 discovered)
+#### Active batch: Batch487 (10 candidates; 1 complete; 0 accepted/in progress; 9 discovered)
 
-1. F1144 - **Accepted/in progress.** Type personal-signature image save-request bytes, separate from F1140's read-result value.
-2. F1145 - **Discovered; next after F1144 completes.** Use `Domain::CalendarEventType` consistently for Sub Prep interval and Calendar create/edit contracts while preserving each boundary's own normalization.
+1. F1144 - **Complete at `e523001d`.** Type personal-signature image save-request bytes, separate from F1140's read-result value.
+2. F1145 - **Discovered; next for acceptance.** Use `Domain::CalendarEventType` consistently for Sub Prep interval and Calendar create/edit contracts while preserving each boundary's own normalization.
 3. F1146 - **Discovered.** Type Calendar repeat-series edit dates; preserve ISO/Gregorian validation, range order, and start-date suffix selection.
 4. F1147 - **Discovered.** Type Calendar Page campus-code query output while preserving optionality, exact text, UTF-8, empty-only omission, whitespace, and order.
 5. F1148 - **Discovered.** Type the current-campus display name distinctly from campus IDs/codes; preserve fallbacks, errors, retry/correction, and Calendar all-events behavior.
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 9. F1152 - **Discovered.** Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
 10. F1153 - **Discovered.** Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-F1144 is the only accepted/in-progress candidate; F1145 is next after it completes. Detailed evidence and screening rationale are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20) and [F1144 acceptance record](03-Phase-2-Progress-Log.md#f1144-personal-signature-image-save-request-bytes-accepted-before-implementation-2026-10-20).
+Batch487 has one complete candidate (F1144), zero accepted/in progress, and nine discovered; F1145 is next for acceptance. Detailed discovery and completion evidence are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20) and [F1144 completion record](03-Phase-2-Progress-Log.md#f1144-personal-signature-image-save-request-bytes-complete-2026-10-20).
 
 #### Deferred candidates
 

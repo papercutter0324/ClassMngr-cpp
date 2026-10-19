@@ -50495,3 +50495,42 @@ Batch487 has ten candidates: zero complete, one accepted/in progress (F1144),
 and nine discovered (F1145–F1153); F1145 is next after F1144 completes. Keep
 the full ordered list visible. F629 and the Phase 0 and Phase 2 gates remain
 open.
+
+### F1144 Personal signature image save-request bytes complete - 2026-10-20
+
+F1144 completed at source/test commit
+`e523001d108264e71448c33fd45a00a39a30043f`, following acceptance commit
+`f648d367ca87d9608942f83397ed02bfb6cec19c`. The Qt-free
+`Domain::PersonalSignatureImageSaveBytes` owns the opaque Application
+save-request bytes and preserves embedded NULs. The Application request is
+typed; Platform still prepares and encodes the image and retains existing save
+semantics.
+
+The incremental macOS Debug build in the existing
+`build/macos-clang-debug` tree passed for six targets:
+`ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrMyWorkspacePageTests`,
+`ClassMngrInitialSetupWizardTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
+and
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`.
+Focused CTests
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
+and
+`ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests`
+passed 3/3. My Workspace selector
+`aggregateSavePersistsAllPersonalDetailsKeys` passed 3 QtTest entries.
+
+Initial Setup selectors
+`storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement` and
+`aggregateSavePreservesAllPersonalDetailsWithoutDataLoss` each aborted with
+exit 134 before assertions due to the known macOS offscreen Qt Widgets/QWizard
+`NSBundle initWithURL: nil URL argument` exception; neither produced behavior
+results. `git diff --check` passed. No fresh build, configure, or full suite
+was run. No Windows run was possible because the user cannot run Windows now;
+F629 remains open on source-bound Windows x64 evidence. Batch487 has ten
+candidates: one complete (F1144), zero accepted/in progress, and nine
+discovered (F1145–F1153); F1145 is next for acceptance. The Phase 0 and Phase 2
+gates remain open.

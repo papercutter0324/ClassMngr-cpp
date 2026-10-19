@@ -240,20 +240,24 @@ CTests passed 2/2 after the incremental macOS Debug build. F1143 completed at
 `686bdc2a`; the incremental macOS Debug build passed, all nine focused CTests
 passed, and `git diff --check` passed. Batch486 is complete locally; its
 closure commit `d048f231` remains unpushed while exact-payload approval is
-pending after automatic review rejected the push. Batch487 is active with ten
-discovered candidates and F1144 accepted/in progress; its opaque save-request
-bytes remain separate from F1140's prepared read-result bytes. Batch485 was
-pushed to `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
+pending after automatic review rejected the push. Batch487 is active. F1144
+completed at source/test commit `e523001d`, following acceptance commit
+`f648d367`; the six affected targets built incrementally on macOS, three
+focused CTests passed, and the My Workspace save selector passed. The two
+focused Initial Setup selectors aborted before assertions with the known
+offscreen QWizard `NSBundle initWithURL: nil URL argument` exception, so those
+behaviors remain unverified. F1145 is next for acceptance. Batch485 was pushed
+to `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
 0 and Phase 2 gates remain open.
 
 ## Next Milestone
 
-Complete F1144, commit its production/test slice, then accept F1145. Batch486's
-push to `origin/Qt-Rewrite` is pending the user's response to the exact-payload
-approval request. F629 remains active and awaits source-bound Windows x64
-layout evidence for commit `667ff54e`; the user cannot run Windows now. The
-Phase 0 and Phase 2 exit gates remain open.
+Accept F1145, then implement and verify its Calendar event-type contract.
+Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
+exact-payload approval request. F629 remains active and awaits source-bound
+Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows
+now. The Phase 0 and Phase 2 exit gates remain open.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
