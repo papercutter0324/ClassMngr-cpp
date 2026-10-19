@@ -7473,5 +7473,16 @@ allowed the validation-context snapshot and its F1103 fallback to stay
 unchanged. Wide IDs and numeric invalid-value diagnostics remain covered.
 
 Focused verification passed on macOS; no full suite ran. Batch478 is resolved
-with F1103 deferred. Batch479 starts with F1104 after the Batch478 closeout
-push.
+with F1103 deferred, and its closeout was pushed to `origin/Qt-Rewrite` at
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`. F1104 is next for Batch479
+acceptance reassessment.
+
+## 2026-10-19 - F1104 accepted
+
+F1104 types the Schedule testing-assignment read row's class identity as
+`Domain::ClassId`. Keep the query and legacy persistence/UI records unchanged;
+convert at the Platform and Schedule widget boundaries. Since `TypedId` only
+rejects empty text, retain the handler's numeric int-range validation, exact
+`-1` unassigned sentinel, and existing error for zero, other negatives, and
+invalid values. This keeps a small typed application contract without
+expanding the slice into legacy models.

@@ -4931,7 +4931,25 @@ invalid save blocking, fresh invalid context, wide teacher UI save, and
 no full suite ran.
 
 All Batch478 candidates are resolved: F1099-F1102 are complete and F1103
-remains deferred. Batch478's closeout documentation and push are pending;
-Batch479 is next, with F1104 selected for acceptance reassessment. The
+remains deferred. Batch478's closeout was pushed to `origin/Qt-Rewrite` at
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 is active, with F1104
+selected for acceptance reassessment. The
 combined Phase 0 gate remains open while Windows x64 evidence is unavailable;
 the Phase 2 exit gate remains open.
+
+## Phase 2 update - F1104 accepted; Batch479 active - 2026-10-19
+
+F1104 is accepted for implementation; no implementation has started. Type
+`ScheduleTestingAssignmentReadRow.classId` as `Domain::ClassId`, adapting the
+existing repository `int` in the Platform port and converting back at the
+Schedule widget's legacy UI boundary. Keep the empty read query, repository
+records, and legacy view models unchanged. Preserve row order, display fields,
+special-class metadata behavior, read failures, and unassigned rendering.
+
+The handler must continue accepting only exact `-1` or positive IDs in the
+existing `int` range, rejecting zero, other negatives, malformed/trailing
+text, and overflow with the same nonrecoverable Validation error. This
+validation remains necessary because `TypedId::fromString` accepts any
+nonempty string. F1105-F1108 remain discovered. Batch478's closeout push is
+recorded at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`; the combined Phase 0
+gate and Phase 2 exit gate remain open.

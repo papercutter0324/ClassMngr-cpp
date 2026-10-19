@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-19 (F1102 complete; Batch478 closeout)
+## Current continuation - 2026-10-19 (F1104 accepted; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6025,7 +6025,16 @@ wide-teacher UI-save, and context-fallback cases passed. `git diff --check`
 passed; no full suite ran.
 
 Batch478 is resolved: F1099-F1102 are complete and F1103 remains deferred.
-The closeout documentation and push are pending. Batch479 has five discovered
-candidates and will begin with F1104 after that push. The full Batch479 list
-and preservation notes are in the Phase 2 plan and progress log. The combined
-Phase 0 and Phase 2 gates remain open; Windows x64 evidence remains unavailable.
+Its closeout was pushed to `origin/Qt-Rewrite` at
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 has five candidates;
+F1104 is accepted for implementation, while F1105-F1108 remain discovered.
+
+F1104 types `ScheduleTestingAssignmentReadRow.classId` as `Domain::ClassId`.
+Keep the read query, repository record, and legacy UI models unchanged; adapt
+IDs at the Platform and Schedule widget boundaries. Preserve the exact `-1`
+unassigned sentinel, positive int-range IDs, rejection of zero, other
+negatives, malformed/trailing text, and overflow with the existing
+nonrecoverable Validation error. Row order, display fields, special-class
+metadata, read failures, and unassigned rendering stay the same. No F1104
+implementation has started. The combined Phase 0 and Phase 2 gates remain
+open; Windows x64 evidence remains unavailable.

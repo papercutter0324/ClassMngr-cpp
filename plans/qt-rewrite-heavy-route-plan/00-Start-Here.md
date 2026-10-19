@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch478 is complete; its closeout push remains pending. Batch479 is active, with F1104 next for acceptance reassessment and F1105-F1108 discovered. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [active Batch479 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch479-5-candidates-1-next-for-reassessment-4-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for Batch478 closeout evidence.
+- Current milestone: Batch478 is complete; its closeout was pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 is active, with F1104 accepted but not implemented and F1105-F1108 discovered. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [active Batch479 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch479-5-candidates-1-accepted-4-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for Batch478 closeout evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch479 — Active; five candidates, one next for reassessment, four discovered:**
+**Batch479 — Active; five candidates, one accepted, four discovered:**
 
-1. **F1104 — Type class identity in Schedule testing-assignment reads.** Next for acceptance reassessment; preserve `-1` unassigned and positive IDs, while continuing to reject zero and other negative values.
+1. **F1104 — Type class identity in Schedule testing-assignment reads.** Accepted, not implemented; preserve `-1` unassigned and positive IDs, while continuing to reject zero and other negative values.
 2. **F1105 — Type the Campus Dashboard selected-campus read request.** Discovered; preserve the UTF-8 page boundary and existing matching behavior.
 3. **F1106 — Keep Co-Teacher assignment identity typed at use-case entry.** Discovered; preserve `-1` semantics and wide teacher IDs.
 4. **F1107 — Carry typed IDs through Sub Prep print-order facts.** Discovered; preserve grouping and numeric class-ID tie-break order.

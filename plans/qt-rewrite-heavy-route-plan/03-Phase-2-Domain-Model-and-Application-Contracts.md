@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch478 is complete with its closeout push pending; Batch479 is active, F1104 is next for acceptance reassessment, and F1105-F1108 are discovered, while the Phase 0 and Phase 2 gates remain Open.
+- Current note: Batch478 is complete with its closeout pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`; Batch479 is active with F1104 accepted but not implemented and F1105-F1108 discovered, while the Phase 0 and Phase 2 gates remain Open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch479 (5 candidates; 1 next for reassessment, 4 discovered)
+#### Active batch: Batch479 (5 candidates; 1 accepted, 4 discovered)
 
-1. F1104 - Type class identity in Schedule testing-assignment reads: next for acceptance reassessment, not accepted; preserve `-1` unassigned and positive IDs, and continue rejecting zero and other negative values.
+1. F1104 - Type class identity in Schedule testing-assignment reads: accepted, not implemented; preserve `-1` unassigned and positive IDs, and continue rejecting zero and other negative values.
 2. F1105 - Type the Campus Dashboard selected-campus read request: discovered; preserve the UTF-8 page boundary and existing matching behavior.
 3. F1106 - Keep Co-Teacher assignment identity typed at use-case entry: discovered; preserve `-1` semantics and wide teacher IDs.
 4. F1107 - Carry typed IDs through Sub Prep print-order facts: discovered; preserve grouping and numeric class-ID tie-break order.

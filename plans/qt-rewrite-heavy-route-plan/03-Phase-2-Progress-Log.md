@@ -47609,9 +47609,32 @@ selectors passed 2/2. Named UI cases
 passed. No full suite, fresh configure, or Windows build ran.
 
 Batch478 is complete: F1099-F1102 are complete and F1103 remains deferred
-pending explicit parity/policy reconciliation. Its documentation closeout
-commit and push remain pending. Batch479 is now active with the five ordered
-candidates listed in the Phase 2 plan; F1104 is next for acceptance
-reassessment and has not been accepted. The combined Phase 0 gate remains Open
-while Windows x64 evidence is unavailable; the Phase 2 gate remains Open,
-Gates 1 and 2 remain Partial, and F1007 remains pending policy reconciliation.
+pending explicit parity/policy reconciliation. Batch479 is now active with
+the five ordered candidates listed in the Phase 2 plan; F1104 is next for
+acceptance reassessment and has not been accepted. The combined Phase 0 gate
+remains Open while Windows x64 evidence is unavailable; the Phase 2 gate
+remains Open, Gates 1 and 2 remain Partial, and F1007 remains pending policy
+reconciliation.
+
+Batch478 closeout was committed as `Phase2 - Close Batch478 and discover
+Batch479` and pushed to `origin/Qt-Rewrite` at
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`; the remote matched and the tree
+was clean.
+
+### F1104 Schedule testing-assignment read identity accepted before implementation - 2026-10-19
+
+F1104 is accepted for Batch479 and implementation has not started, based on
+main-agent source review and the Explorer's read-only report. Type only
+`ScheduleTestingAssignmentReadRow.classId` as `Domain::ClassId`; leave the
+query empty and unchanged. The Platform read adapter wraps the repository's
+existing `int` at this boundary, and the Schedule widget converts the typed
+value back to the existing `int`-based view and UI models at the legacy edge.
+Do not type persistence/repository records or legacy view models.
+
+Retain explicit numeric validation because `TypedId::fromString` accepts any
+nonempty text: permit exact unassigned `-1` and positive `int`-range IDs;
+reject zero, all other negative values, malformed or trailing text, and
+`int` overflow with the existing nonrecoverable `Validation` error and
+message. Preserve row order, display fields, special-class metadata behavior,
+read failures, and `-1` rendering. No implementation or test execution has
+begun.
