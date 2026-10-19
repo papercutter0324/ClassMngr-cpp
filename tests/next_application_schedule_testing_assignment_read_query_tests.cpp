@@ -4,6 +4,7 @@
 
 #include <limits>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace ClassMngr::Next;
@@ -11,6 +12,11 @@ using namespace ClassMngr::Next::Application;
 
 namespace
 {
+
+static_assert(std::is_same_v<
+    decltype(ScheduleTestingAssignmentReadRow::assignmentKey),
+    ScheduleTestingAssignmentKey
+    >);
 
 Domain::ClassId typedClassId(const std::string& value)
 {
@@ -44,6 +50,7 @@ class NextApplicationScheduleTestingAssignmentReadQueryTests final
     Q_OBJECT
 
 private slots:
+    void keyPreservesExactPairValuesAndEquality();
     void preservesOrderedRawAssignmentsAndDisplayFields();
     void preservesAssignmentsWithoutSpecialClassMetadata();
     void acceptsAnEmptySuccessfulSnapshot();
@@ -53,6 +60,24 @@ private slots:
 };
 
 void NextApplicationScheduleTestingAssignmentReadQueryTests::
+keyPreservesExactPairValuesAndEquality()
+{
+    const ScheduleTestingAssignmentKey exact(u"Monday ", u"09:05 ");
+    const ScheduleTestingAssignmentKey samePair(u"Monday ", u"09:05 ");
+    const ScheduleTestingAssignmentKey differentDay(u"Monday", u"09:05 ");
+    const ScheduleTestingAssignmentKey differentTime(u"Monday ", u"09:05");
+    const ScheduleTestingAssignmentKey empty;
+
+    QCOMPARE(exact.day(), std::u16string(u"Monday "));
+    QCOMPARE(exact.startTime(), std::u16string(u"09:05 "));
+    QVERIFY(exact == samePair);
+    QVERIFY(!(exact == differentDay));
+    QVERIFY(!(exact == differentTime));
+    QVERIFY(empty.day().empty());
+    QVERIFY(empty.startTime().empty());
+}
+
+void NextApplicationScheduleTestingAssignmentReadQueryTests::
 preservesOrderedRawAssignmentsAndDisplayFields()
 {
     RecordingScheduleTestingAssignmentReadPort port;
@@ -60,14 +85,18 @@ preservesOrderedRawAssignmentsAndDisplayFields()
     const ScheduleTestingAssignmentReadSnapshot expected{
         .rows = {
             {
-                .day = u"Monday ",
-                .startTime = u"09:05 ",
+                .assignmentKey = ScheduleTestingAssignmentKey(
+                    u"Monday ",
+                    u"09:05 "
+                    ),
                 .room = u"Room 4",
                 .classId = typedClassId("-1")
             },
             {
-                .day = u"Tuesday",
-                .startTime = u"10:00",
+                .assignmentKey = ScheduleTestingAssignmentKey(
+                    u"Tuesday",
+                    u"10:00"
+                    ),
                 .room = u"",
                 .classId = typedClassId("42"),
                 .specialClass = ScheduleTestingAssignmentSpecialClass{
@@ -83,8 +112,10 @@ preservesOrderedRawAssignmentsAndDisplayFields()
                 }
             },
             {
-                .day = u"Wednesday",
-                .startTime = u"11:00",
+                .assignmentKey = ScheduleTestingAssignmentKey(
+                    u"Wednesday",
+                    u"11:00"
+                    ),
                 .room = u"",
                 .classId = typedClassId("-1")
             }
@@ -101,10 +132,22 @@ preservesOrderedRawAssignmentsAndDisplayFields()
     QCOMPARE(result.value(), expected);
     QCOMPARE(result.value().rows[0].classId.value(), std::string("-1"));
     QCOMPARE(result.value().rows[1].classId.value(), std::string("42"));
-    QCOMPARE(result.value().rows[0].day, std::u16string(u"Monday "));
-    QCOMPARE(result.value().rows[0].startTime, std::u16string(u"09:05 "));
-    QCOMPARE(result.value().rows[1].day, std::u16string(u"Tuesday"));
-    QCOMPARE(result.value().rows[1].startTime, std::u16string(u"10:00"));
+    QCOMPARE(
+        result.value().rows[0].assignmentKey.day(),
+        std::u16string(u"Monday ")
+        );
+    QCOMPARE(
+        result.value().rows[0].assignmentKey.startTime(),
+        std::u16string(u"09:05 ")
+        );
+    QCOMPARE(
+        result.value().rows[1].assignmentKey.day(),
+        std::u16string(u"Tuesday")
+        );
+    QCOMPARE(
+        result.value().rows[1].assignmentKey.startTime(),
+        std::u16string(u"10:00")
+        );
     QCOMPARE(
         result.value().rows[1].specialClass->teacherPreferredName,
         std::u16string(u"Kim")
@@ -118,14 +161,18 @@ preservesAssignmentsWithoutSpecialClassMetadata()
     port.result = ScheduleTestingAssignmentReadResult::success({
         .rows = {
             {
-                .day = u"Monday",
-                .startTime = u"09:00",
+                .assignmentKey = ScheduleTestingAssignmentKey(
+                    u"Monday",
+                    u"09:00"
+                    ),
                 .room = u"Room 4",
                 .classId = typedClassId("-1")
             },
             {
-                .day = u"Tuesday",
-                .startTime = u"10:00",
+                .assignmentKey = ScheduleTestingAssignmentKey(
+                    u"Tuesday",
+                    u"10:00"
+                    ),
                 .classId = typedClassId("43")
             }
         }
@@ -136,8 +183,14 @@ preservesAssignmentsWithoutSpecialClassMetadata()
 
     QVERIFY(result);
     QCOMPARE(result.value().rows.size(), std::size_t(2));
-    QCOMPARE(result.value().rows[0].day, std::u16string(u"Monday"));
-    QCOMPARE(result.value().rows[1].day, std::u16string(u"Tuesday"));
+    QCOMPARE(
+        result.value().rows[0].assignmentKey.day(),
+        std::u16string(u"Monday")
+        );
+    QCOMPARE(
+        result.value().rows[1].assignmentKey.day(),
+        std::u16string(u"Tuesday")
+        );
     QCOMPARE(result.value().rows[1].classId.value(), std::string("43"));
     QVERIFY(!result.value().rows[1].specialClass);
 }
@@ -163,8 +216,10 @@ acceptsMaximumPositiveIntClassId()
     port.result = ScheduleTestingAssignmentReadResult::success({
         .rows = {
             {
-                .day = u"Monday",
-                .startTime = u"09:00",
+                .assignmentKey = ScheduleTestingAssignmentKey(
+                    u"Monday",
+                    u"09:00"
+                    ),
                 .classId = typedClassId(maximumClassId)
             }
         }
@@ -197,8 +252,10 @@ rejectsInvalidClassIdentifiers()
         port.result = ScheduleTestingAssignmentReadResult::success({
             .rows = {
                 {
-                    .day = u"Monday",
-                    .startTime = u"09:00",
+                    .assignmentKey = ScheduleTestingAssignmentKey(
+                        u"Monday",
+                        u"09:00"
+                        ),
                     .room = u"Room 4",
                     .classId = typedClassId(classId)
                 }

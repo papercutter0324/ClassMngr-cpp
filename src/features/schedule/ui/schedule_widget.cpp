@@ -1174,9 +1174,11 @@ void ScheduleWidget::reloadTestingBlocks()
         }
 
         TestingAssignmentView view;
-        const QString day = QString::fromStdU16String(row.day);
+        const QString day = QString::fromStdU16String(
+            row.assignmentKey.day()
+            );
         const QString startTime =
-            QString::fromStdU16String(row.startTime);
+            QString::fromStdU16String(row.assignmentKey.startTime());
         view.assignment.day = day;
         view.assignment.startTime = startTime;
         view.assignment.kind = classId > 0

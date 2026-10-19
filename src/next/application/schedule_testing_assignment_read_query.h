@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -30,10 +31,45 @@ struct ScheduleTestingAssignmentSpecialClass final
         ) = default;
 };
 
+// An exact owning key for a testing assignment's raw weekday and start-time
+// values. These UTF-16 strings are not parsed or normalized on the read path.
+class ScheduleTestingAssignmentKey final
+{
+public:
+    ScheduleTestingAssignmentKey() = default;
+
+    explicit ScheduleTestingAssignmentKey(
+        std::u16string day,
+        std::u16string startTime
+        )
+        : m_day(std::move(day))
+        , m_startTime(std::move(startTime))
+    {
+    }
+
+    [[nodiscard]] const std::u16string& day() const noexcept
+    {
+        return m_day;
+    }
+
+    [[nodiscard]] const std::u16string& startTime() const noexcept
+    {
+        return m_startTime;
+    }
+
+    friend bool operator==(
+        const ScheduleTestingAssignmentKey&,
+        const ScheduleTestingAssignmentKey&
+        ) = default;
+
+private:
+    std::u16string m_day;
+    std::u16string m_startTime;
+};
+
 struct ScheduleTestingAssignmentReadRow final
 {
-    std::u16string day;
-    std::u16string startTime;
+    ScheduleTestingAssignmentKey assignmentKey;
     std::u16string room;
     Domain::ClassId classId = Domain::ClassId::fromString("-1").value();
     std::optional<ScheduleTestingAssignmentSpecialClass> specialClass;

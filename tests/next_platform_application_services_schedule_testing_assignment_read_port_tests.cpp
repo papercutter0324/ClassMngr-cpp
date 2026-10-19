@@ -209,13 +209,26 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
 
     QVERIFY(result);
     QCOMPARE(result.value().rows.size(), std::size_t(4));
-    QCOMPARE(result.value().rows[0].day, std::u16string(u"Monday"));
-    QCOMPARE(result.value().rows[0].startTime, std::u16string(u"09:00"));
+    QCOMPARE(
+        result.value().rows[0].assignmentKey.day(),
+        std::u16string(u"Monday")
+        );
+    QCOMPARE(
+        result.value().rows[0].assignmentKey.startTime(),
+        std::u16string(u"09:00")
+        );
     QCOMPARE(result.value().rows[0].room, std::u16string(u"Room 4"));
     QCOMPARE(result.value().rows[0].classId.value(), std::string("-1"));
     QVERIFY(!result.value().rows[0].specialClass);
 
-    QCOMPARE(result.value().rows[1].startTime, std::u16string(u"10:00"));
+    QCOMPARE(
+        result.value().rows[1].assignmentKey.day(),
+        std::u16string(u"Monday")
+        );
+    QCOMPARE(
+        result.value().rows[1].assignmentKey.startTime(),
+        std::u16string(u"10:00")
+        );
     QCOMPARE(
         result.value().rows[1].classId.value(),
         std::to_string(fullMetadataClass)
@@ -258,8 +271,14 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
         std::u16string(u"#FFFFFF")
         );
 
-    QCOMPARE(result.value().rows[2].day, std::u16string(u"Tuesday "));
-    QCOMPARE(result.value().rows[2].startTime, std::u16string(u"09:05 "));
+    QCOMPARE(
+        result.value().rows[2].assignmentKey.day(),
+        std::u16string(u"Tuesday ")
+        );
+    QCOMPARE(
+        result.value().rows[2].assignmentKey.startTime(),
+        std::u16string(u"09:05 ")
+        );
     QCOMPARE(
         result.value().rows[2].classId.value(),
         std::to_string(missingInfoClass)
@@ -277,7 +296,14 @@ readsOrderedRawAssignmentsAndJoinedSpecialMetadata()
              std::u16string(u"#FFFFFF"));
     QCOMPARE(result.value().rows[2].specialClass->fontColor,
              std::u16string(u"#000000"));
-    QCOMPARE(result.value().rows[3].day, std::u16string(u"Wednesday"));
+    QCOMPARE(
+        result.value().rows[3].assignmentKey.day(),
+        std::u16string(u"Wednesday")
+        );
+    QCOMPARE(
+        result.value().rows[3].assignmentKey.startTime(),
+        std::u16string(u"11:00")
+        );
     QCOMPARE(
         result.value().rows[3].classId.value(),
         std::to_string(missingTestingClass)

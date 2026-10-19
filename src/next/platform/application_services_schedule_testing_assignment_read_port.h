@@ -69,8 +69,11 @@ public:
             for (const TestingAssignmentDisplayRecord& source : *loaded)
             {
                 Application::ScheduleTestingAssignmentReadRow row{
-                    .day = source.day.toStdU16String(),
-                    .startTime = source.startTime.toStdU16String(),
+                    .assignmentKey =
+                        Application::ScheduleTestingAssignmentKey(
+                            source.day.toStdU16String(),
+                            source.startTime.toStdU16String()
+                            ),
                     .room = source.room.toStdU16String(),
                     .classId = Domain::ClassId::fromString(
                         std::to_string(source.classId)
