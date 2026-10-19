@@ -7867,3 +7867,12 @@ validation at the projection; preserve empty root parents, the 4,096-byte
 limit, exact hierarchy matching, failure order, and catalog vector order.
 Leave filesystem parsing/normalization and document-content references with
 their existing owners.
+
+## 2026-10-20 - F1123 complete
+
+F1123 completed at source/test commit `e21fb087`, following acceptance
+`6f147f8d`. The Document Catalog projection now uses `DocumentCatalogPath`
+for folder paths, parent paths, and document paths; validation, hierarchy,
+platform conversion, and sidebar behavior remain intact. Focused Application,
+platform, sidebar, and navigation verification passed 4/4. Windows and
+full-suite verification were not run.

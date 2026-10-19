@@ -49101,3 +49101,23 @@ Focused targets: `ClassMngrNextApplicationDocumentCatalogTests`,
 have not started. Batch484 remains active with five complete candidates,
 F1123 accepted/in progress, and four discovered; F1124 is next after this
 slice. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1123 Document Catalog path complete - 2026-10-20
+
+F1123 is complete at source/test commit `e21fb087`, following acceptance
+`6f147f8d`. `DocumentCatalogPath` now types folder `path`, folder
+`parentPath`, and document `path`. Existing 4,096-byte limits, blankness and
+root-parent rules, hierarchy and input order, and platform/sidebar conversions
+remain intact.
+
+Build passed for `ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`,
+`ClassMngrSidebarStructureTests`, and
+`ClassMngrDocumentCatalogNavigationParityTests`; focused CTest passed 4/4.
+Coverage retains exact byte limits, malformed UTF-8 handling, Unicode
+blankness, hierarchy, ordering, and port/sidebar behavior. No test file was
+needed for navigation parity: its test source was unchanged while its target
+passed. `git diff --check` passed. Windows verification and the full suite were
+not run. Batch484 remains active with six complete candidates, four
+discovered, and F1124 next for acceptance. F629 and the Phase 0 and Phase 2
+gates remain open.

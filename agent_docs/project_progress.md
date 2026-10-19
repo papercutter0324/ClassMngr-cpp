@@ -5512,3 +5512,13 @@ document-content references, and resource paths outside scope. Focused
 Application, platform port, sidebar, and navigation parity targets are
 recorded in the Phase 2 plan. Implementation has not started. F629 and both
 phase gates remain open.
+
+## Phase 2 update - F1123 complete; Batch484 active - 2026-10-20
+
+F1123 completed at source/test commit `e21fb087`, following acceptance
+`6f147f8d`. `DocumentCatalogPath` now types the three accepted catalog
+metadata path fields, with projection validation and exact hierarchy behavior
+preserved. The Application, platform port, sidebar, and navigation parity
+targets built; focused CTest passed 4/4. Windows and full-suite verification
+were not run. F1124 is next for acceptance. F629 and both phase gates remain
+open.
