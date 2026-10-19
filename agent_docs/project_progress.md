@@ -5475,3 +5475,17 @@ passed 1/1, including 64/65-byte UTF-8 boundaries and raw malformed-byte plus
 embedded-NUL representation. Windows verification was unavailable and not
 run; the full suite was not run. F1122 is next for acceptance. F629 and both
 phase gates remain open.
+
+## Phase 2 update - F1122 accepted; Batch484 active - 2026-10-20
+
+F1122 is accepted to type the Teacher Profile validation issue code, field,
+and argument key as distinct opaque byte-preserving values:
+`TeacherProfileValidationCode`, `TeacherProfileValidationField`, and
+`TeacherProfileValidationArgumentKey`. Preserve empty, unknown, duplicate,
+and arbitrary-byte representations; issue and argument order; severity and
+failure payload behavior; the eight-argument, 64-byte key, and 256 UTF-16
+code-unit limits; and current Qt adapter conversion/mapping. Keep legacy
+validation logic, profile IDs/fields, and persistence out of scope. Focused
+Application, Teacher Info Page, and persistence parity targets are recorded
+in the Phase 2 plan. Implementation has not started. F629 and both phase
+gates remain open.

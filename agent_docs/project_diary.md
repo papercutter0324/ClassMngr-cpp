@@ -7839,3 +7839,13 @@ F1121 completed at source/test commit `dbef700b`, following acceptance
 bytewise blank handling, exact uniqueness/lookups, order, and errors. Focused
 macOS verification passed 1/1, including multibyte boundaries and raw byte
 preservation. Windows and full-suite verification were not run.
+
+## 2026-10-20 - F1122 accepted
+
+Type Teacher Profile validation issue codes, field identifiers, and argument
+keys as three distinct opaque values. Keep them permissive so empty or
+unknown diagnostics and duplicate argument keys remain representable. Keep
+issue/argument order, current severity and failure behavior, argument count,
+64-byte key and 256 UTF-16 code-unit limits, and Qt conversion/mapping at the
+existing adapter. Leave `TeacherId`, profile fields, legacy validation logic,
+and persistence unchanged.

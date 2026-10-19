@@ -49032,3 +49032,28 @@ ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextA
 was unavailable and not run. Batch484 remains active with four complete
 candidates, six discovered, and F1122 next for acceptance. F629 and the Phase
 0 and Phase 2 gates remain open.
+
+### F1122 Teacher Profile validation identifiers accepted before implementation - 2026-10-20
+
+F1122 is accepted/in progress. Add distinct opaque byte-preserving string
+values `TeacherProfileValidationCode`, `TeacherProfileValidationField`, and
+`TeacherProfileValidationArgumentKey` for only
+`TeacherProfileValidationIssue.code`, `.field`, and
+`TeacherProfileValidationArgument.key`; each exposes `.value()`. Preserve
+empty, unknown, duplicate, and arbitrary-byte representations until existing
+validation or adapter handling.
+
+Keep issue and argument vector order, severity blocking rule, complete payload
+and error behavior, argument maximum of 8, key maximum of 64 bytes, value
+maximum of 256 UTF-16 code units, and existing `add()` rejection conditions.
+Empty and duplicate keys remain accepted. Preserve Qt adapter conversions and
+mapping, including duplicate collapse only when mapping to `QVariantMap`. Do
+not change `TeacherId`, profile fields, `TeacherValidator`, persistence, or
+unrelated UI identifiers.
+
+Focused targets: `ClassMngrNextApplicationTeacherProfileEditTests`,
+`ClassMngrTeacherInfoPageTests`, and
+`ClassMngrTeacherInfoPagePersistenceParityTests`. Implementation and tests
+have not started. Batch484 remains active with four complete candidates,
+F1122 accepted/in progress, and five discovered; F1123 is next after this
+slice. F629 and the Phase 0 and Phase 2 gates remain open.
