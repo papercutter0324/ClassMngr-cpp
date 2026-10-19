@@ -5080,3 +5080,17 @@ grouping/name/key/sentinel/input-order behavior. `git diff --check` passed;
 no full suite ran. Batch479 remains active and unpushed: F1104-F1107 are
 complete, and F1108 is next for acceptance reassessment. Windows x64 evidence
 remains unavailable; Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1108 accepted; Batch479 active - 2026-10-20
+
+F1107 closeout documentation is committed at
+`114cc86cdc7cd2262dbb5869187cc0a6fa58ff34`. F1108 is accepted for
+implementation; no implementation or tests have started. Type the
+Sub Prep selected-class schedule fact and Application policy result with
+`Domain::ClassId`, retaining `QList<int>` at the existing feature/UI
+boundary. The policy will parse full decimal `int` values, retain only
+positive IDs, deduplicate numerically, and emit canonical typed IDs. The
+adapter bridges legacy integer IDs without changing exact day matching,
+schedule order, or inclusion of both entry kinds. Batch479 remains active
+and unpushed; Windows x64 evidence is unavailable and the Phase 0 and Phase 2
+gates remain open.

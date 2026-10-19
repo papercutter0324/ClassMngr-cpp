@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1108 next for reassessment; Batch479 active)
+## Current continuation - 2026-10-20 (F1108 accepted; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6086,6 +6086,14 @@ typed IDs without throwing, and numeric model output. The incremental build
 reported no work after the Executor built both targets. `git diff --check`
 passed; no full suite ran.
 
-F1108 is next for acceptance reassessment. Batch479 remains active and
-unpushed: F1104-F1107 are complete, F1108 is under review. The combined Phase
-0 and Phase 2 gates remain open; Windows x64 evidence remains unavailable.
+F1107 closeout documentation was committed as
+`114cc86cdc7cd2262dbb5869187cc0a6fa58ff34`; Batch479 remains active and
+unpushed. F1108 is accepted for implementation, which has not started. Type
+the selected-class schedule fact and Application projection result as
+`Domain::ClassId`, while retaining the legacy `QList<int>` dialog/service API.
+Parse only full base-10 `int` values; keep positive values, deduplicate by
+numeric ID, and return canonical decimal typed IDs. Skip malformed, trailing,
+overflow, zero, and negative IDs without throwing. Preserve first-seen
+schedule order, exact UTF-16 day matching, and both entry kinds. The feature
+adapter owns the int-to-typed-to-int bridge. The combined Phase 0 and Phase 2
+gates remain open; Windows x64 evidence remains unavailable.

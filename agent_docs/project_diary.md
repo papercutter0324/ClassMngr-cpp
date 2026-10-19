@@ -7550,3 +7550,13 @@ F1107 completed at source/test commit
 numeric ID ordering through an explicit integer comparison; malformed typed
 text has a deterministic fallback without throwing. Focused policy and model
 tests passed 2/2; no full suite ran.
+
+## 2026-10-20 - F1108 accepted
+
+Keep selected-class identities typed across the Sub Prep Application policy,
+with the existing integer dialog/service API as the legacy edge. Since
+`TypedId` accepts arbitrary nonempty text, explicitly parse full base-10 `int`
+values, preserve the positive-only rule and numeric deduplication, and return
+canonical decimal IDs. Invalid, nonpositive, or out-of-range values are
+skipped without throwing; preserve traversal order, exact day matching, and
+both schedule entry kinds.

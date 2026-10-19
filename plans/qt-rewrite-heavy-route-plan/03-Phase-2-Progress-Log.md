@@ -47816,3 +47816,33 @@ Batch479 remains active and unpushed: F1104-F1107 are complete and F1108 is
 next for acceptance reassessment. The Phase 0 and Phase 2 gates remain Open;
 Batch478's pushed closeout remains
 `5877b296c0c9a032adeeeb9cbfb807e19765e40a`.
+
+### F1108 Sub Prep selected-class policy identity accepted before implementation - 2026-10-20
+
+F1108 is accepted for Batch479 and implementation/tests have not started,
+based on Explorer's `F1108_ACCEPTANCE_SURFACE` report and main-agent review.
+Type `SubPrepSelectedClassScheduleEntry.classId` as `Domain::ClassId` and the
+policy result as `std::vector<Domain::ClassId>`. Keep
+`SubPrepPackageService::classIdsForDays`,
+`SubPrepPrintDialog::selectedClassIds`, and page APIs as `QList<int>`; bridge
+only in the existing feature adapter.
+
+Preserve the raw-int contract by fully parsing typed values as base-10 `int`
+with `std::from_chars`: accept only positive values, and skip nonnumeric,
+trailing-text, overflow, and nonpositive values without throwing. Deduplicate
+by parsed numeric `int`, preserve first-seen schedule order, and return
+canonical decimal typed IDs. The legacy adapter wraps raw integers in
+canonical decimal `Domain::ClassId` values and unwraps policy results to
+`QList<int>`. Preserve exact UTF-16 day matching, selected-day membership,
+row/cell/entry traversal order, both entry kinds, and empty-input behavior.
+Do not expand UI/page APIs, change persistence, or add arbitrary string
+normalization.
+
+Focused coverage must verify typed fact/result contracts, positive filtering,
+malformed/overflow/nonpositive handling, numeric-alias deduplication and
+canonical output, schedule order, and exact-day behavior. Retain the existing
+package-service projection case `SubPrepPackageServiceClassIdsForDaysProjection`
+to cover the int/typed/int adapter bridge. Focused targets are
+`ClassMngrNextApplicationSubPrepSelectedClassIdsTests` and
+`ClassMngrSubPrepClassInformationModelTests`; no execution results are
+recorded yet.
