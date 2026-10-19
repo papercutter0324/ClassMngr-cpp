@@ -7333,3 +7333,17 @@ I am starting F1092 with reproduction only. Its current risk depends on whether
 a real QSettings read error can be produced and whether toggling one sidebar
 preference then overwrites the other unknown value. No F1092 code change is
 planned until both parts are demonstrated.
+
+## Phase 2 F1092 complete; F1093 active - 2026-10-19
+
+F1092 is complete at source commit `ec07d16e`. A macOS QSettings probe
+reproduced an unreadable settings file returning enabled defaults and a later
+paired write truncating the file. The port now returns a recoverable technical
+read error; ActionRegistry retries the read before saving, merges only the
+requested toggle with the recovered pair, and updates the companion Sidebar
+behavior. The real port and MainWindow parity CTests passed after building
+`ClassMngr` and both existing targets.
+
+F1093 is selected to define and reproduce Class Visibility behavior after a
+technical preference-read error. The required next-batch discovery pass found
+no additional eligible candidates and no newly met Deferred triggers.

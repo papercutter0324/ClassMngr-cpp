@@ -46781,3 +46781,45 @@ error.
 
 F1092 is accepted for implementation. Batch474 remains active; F1093-F1094
 remain provisional.
+
+### F1092 complete; F1093 selected; Batch475 discovery - 2026-10-19
+
+F1092 is complete at source/test commit `ec07d16e`. The Sidebar Display port
+now reads through a status-aware QSettings view and returns a recoverable
+`Technical` error for AccessError or FormatError. Missing/invalid values keep
+the enabled default and legacy QVariant coercion. ActionRegistry tracks whether
+the pair is known; after an initial read error it never saves the fallback pair.
+The first user toggle retries the read, combines only that action's requested
+value with the stored pair, and updates the companion action and live Sidebar
+behavior before saving. A failed retry restores the last known action state and
+reports one diagnostic. The paired writer reopens settings after a stale read
+error without syncing the failed view.
+
+A macOS QSettings probe with owner write permission and no read permission
+reproduced the original failure: load returned both enabled defaults, and a
+subsequent paired save reported AccessError while truncating the backing INI
+file. Regression coverage now injects the same file-level read failure, checks
+Technical mapping, restores access, and verifies that retry reads both prior
+values and that a subsequent paired save preserves the untouched value and an
+unrelated setting. The MainWindow regression verifies a failed retry performs
+no write, a later retry saves only the requested toggle with the recovered
+pair, and both live Sidebar behaviors follow the recovered values.
+
+`macos-clang-debug` built `ClassMngr`,
+`ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests`, and
+`ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests`. Both selected
+CTests passed 1/1; `git diff --check` passed. No full suite ran.
+
+A read-only Batch475 discovery recheck covered remaining settings-backed read
+ports and their consumers, current paired preference writers, and the official
+Deferred list. The remaining identified failure candidates are F1093 and F1094,
+already ordered in Batch474. Other typed callers preserve read errors or do not
+aggregate-save an unknown value; Calendar event-type color is saved only after
+an explicit valid color choice. No Deferred trigger changed. Batch475 is a
+discovery shortfall; no additional eligible slice was found.
+
+Batch474 remains active in its recorded order: F1091 and F1092 are complete;
+F1093 is selected to define and reproduce Classes page behavior after a
+technical Class Visibility preference-read error; F1094 remains provisional.
+The combined Phase 0 and Phase 2 exit gates remain Open. Push remains deferred
+until Batch474 closes.

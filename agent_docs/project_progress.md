@@ -4717,3 +4717,14 @@ focused port and My Workspace CTests passed; the isolated Initial Setup F1091
 case passed. The full Initial Setup class still aborts before that case in a
 pre-existing macOS Qt wizard path. Batch474 continues at F1092, which is under
 read-error reproduction before implementation acceptance.
+
+## Phase 2 update - F1092 complete; F1093 selected - 2026-10-19
+
+F1092 source commit `ec07d16e` returns a technical error for Sidebar Display
+settings read failures and prevents an unknown pair of defaults from being
+written. A real macOS QSettings access error reproduced the data-loss path; the
+recovery path now reloads both stored values, merges only the toggled action,
+and keeps the companion action and live Sidebar behavior aligned. `ClassMngr`
+and both selected test targets built, and both focused CTests passed. Batch474
+continues at F1093. A read-only Batch475 discovery recheck found no additional
+eligible candidates or newly met Deferred triggers.

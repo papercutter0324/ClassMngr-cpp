@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1092 is selected to reproduce the Sidebar Display QSettings read-error path before acceptance; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
+- Current note: F1093 is selected to define and reproduce Class Visibility behavior after a technical preference-read error; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -70,11 +70,11 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch474 (4 discovered candidates)
 
-Batch473 is closed and pushed with F1086-F1090 complete and reactivated F629 complete at source commit `31a71e90`. Its macOS universal evidence and the still-open combined Phase 0 gate are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch474 contains four candidates; F1091 is complete and F1092 is selected next:
+Batch473 is closed and pushed with F1086-F1090 complete and reactivated F629 complete at source commit `31a71e90`. Its macOS universal evidence and the still-open combined Phase 0 gate are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch474 contains four candidates; F1091 and F1092 are complete, and F1093 is selected next:
 
 1. F1091 - Preserve the saved signature image after a technical read failure: complete at source commit `cd2e7a68`.
-2. F1092 - Preserve Sidebar Display settings when their settings file cannot be read: selected for bounded reproduction of the QSettings read-error path; implementation acceptance depends on demonstrating the technical error and the aggregate-save preservation hazard.
-3. F1093 - Preserve Class Visibility scope after a technical read failure: provisional; define page behavior and verify the read-error path before implementation.
+2. F1092 - Preserve Sidebar Display settings when their settings file cannot be read: complete at source commit `ec07d16e`.
+3. F1093 - Preserve Class Visibility scope after a technical read failure: selected to define and reproduce the read-error path and page behavior before implementation.
 4. F1094 - Preserve both Classes page reset preferences after technical read failures: provisional; define page behavior and verify the read-error paths before implementation.
 
 No other slices were found.
