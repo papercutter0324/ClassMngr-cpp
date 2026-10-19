@@ -64,10 +64,13 @@ QString assetName(
 }
 
 QByteArray validReleaseResponse(
-    const QString& versionText = QStringLiteral("1.0.0")
+    const QString& versionText = QStringLiteral("1.0.0"),
+    const QString& requestedPlatformKey = QString()
     )
 {
-    const QString platformKey = GitHubRelease::currentPlatformKeys().first();
+    const QString platformKey = requestedPlatformKey.isEmpty()
+        ? GitHubRelease::currentPlatformKeys().first()
+        : requestedPlatformKey;
     const QString fileName = assetName(platformKey, versionText);
 
     QJsonObject asset;
@@ -279,12 +282,22 @@ bool writeStaleUpdaterOrphan(const QString& path)
     {
         return false;
     }
+    if (!file.flush())
+    {
+        return false;
+    }
+    const QDateTime staleModificationTime =
+        QDateTime::currentDateTimeUtc().addDays(-31);
     const bool timestampSet = file.setFileTime(
-        QDateTime::currentDateTimeUtc().addDays(-31),
+        staleModificationTime,
         QFileDevice::FileModificationTime
         );
     file.close();
-    return timestampSet;
+    const QDateTime persistedModificationTime =
+        QFileInfo(path).lastModified().toUTC();
+    return timestampSet
+        && persistedModificationTime.isValid()
+        && persistedModificationTime <= staleModificationTime;
 }
 
 } // namespace
@@ -306,6 +319,7 @@ private slots:
     void failedAutomaticSkipKeepsDialogOpenAndAllowsRetry();
     void bridgeMapsSuccessAndForcesFreshCheck_data();
     void bridgeMapsSuccessAndForcesFreshCheck();
+    void parserMatchesPlatformKeysExactlyAndKeepsLinuxAliases();
     void bridgeMapsFailures_data();
     void bridgeMapsFailures();
     void bridgeAndControllerDestructionSuppressDelivery();
@@ -955,7 +969,8 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsSuccessAndForcesFreshCheck
     const auto legacy = service.lastResult();
     QVERIFY(legacy.has_value());
     QCOMPARE(result.currentVersion.major, legacy->currentVersion.majorVersion());
-    QCOMPARE(result.artifact.platformKey, legacy->artifact.platformKey.toStdString());
+    QCOMPARE(result.artifact.platformKey.value(),
+        legacy->artifact.platformKey.toUtf8().toStdString());
     QCOMPARE(result.artifact.url, legacy->artifact.url.toEncoded().toStdString());
     QCOMPARE(result.artifact.fileName, legacy->artifact.fileName.toStdString());
     QCOMPARE(result.artifact.sha256, legacy->artifact.sha256.toStdString());
@@ -987,6 +1002,49 @@ void UpdateControllerAutomaticStartupTests::bridgeMapsFailures_data()
     QTest::newRow("invalid-response") << 2;
     QTest::newRow("invalid-current-version") << 3;
     QTest::newRow("network") << 4;
+}
+
+void UpdateControllerAutomaticStartupTests::
+parserMatchesPlatformKeysExactlyAndKeepsLinuxAliases()
+{
+    const QString knownPlatformKey = GitHubRelease::currentPlatformKeys().first();
+    const QString wrongCasePlatformKey = knownPlatformKey.toUpper();
+    QVERIFY(wrongCasePlatformKey != knownPlatformKey);
+
+    const auto knownResponse = validReleaseResponse(
+        QStringLiteral("2.0.0"), knownPlatformKey);
+    const auto exactMatch = GitHubRelease::latestCompatibleFromJson(
+        knownResponse, {knownPlatformKey});
+    QVERIFY(exactMatch);
+    QCOMPARE(exactMatch->artifact().platformKey, knownPlatformKey);
+
+    const auto caseDistinctThenExact = GitHubRelease::latestCompatibleFromJson(
+        knownResponse, {wrongCasePlatformKey, knownPlatformKey});
+    QVERIFY(caseDistinctThenExact);
+    QCOMPARE(caseDistinctThenExact->artifact().platformKey, knownPlatformKey);
+
+    const auto wrongCaseOnly = GitHubRelease::latestCompatibleFromJson(
+        knownResponse, {wrongCasePlatformKey});
+    QVERIFY(!wrongCaseOnly);
+    QCOMPARE(wrongCaseOnly.error(), QStringLiteral(
+        "No published stable GitHub release contains a valid update asset for this platform."));
+
+    const auto unknownKeyOnly = GitHubRelease::latestCompatibleFromJson(
+        knownResponse, {QStringLiteral("unknown-architecture-key")});
+    QVERIFY(!unknownKeyOnly);
+    QCOMPARE(unknownKeyOnly.error(), QStringLiteral(
+        "No published stable GitHub release contains a valid update asset for this platform."));
+
+    const auto linuxAliasResponse = validReleaseResponse(
+        QStringLiteral("2.0.0"), QStringLiteral("linux-x86_64"));
+    for (const auto& alias : {QStringLiteral("linux-x86_64"),
+            QStringLiteral("linux-x64")})
+    {
+        const auto aliasMatch = GitHubRelease::latestCompatibleFromJson(
+            linuxAliasResponse, {alias});
+        QVERIFY(aliasMatch);
+        QCOMPARE(aliasMatch->artifact().platformKey, alias);
+    }
 }
 
 void UpdateControllerAutomaticStartupTests::bridgeMapsFailures()
@@ -1109,11 +1167,14 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort port(&service);
     int completions = 0;
     int busyCompletions = 0;
+    std::optional<ManualUpdateCheckResult> lastResult;
     QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
         [&](ManualUpdateCheckOutcome outcome)
         {
             ++completions;
-            QVERIFY(std::holds_alternative<ManualUpdateCheckResult>(outcome));
+            const auto* result = std::get_if<ManualUpdateCheckResult>(&outcome);
+            QVERIFY(result);
+            lastResult = *result;
         }), ManualUpdateCheckDispatch::Started);
     QCOMPARE(port.check(ManualUpdateCheckPolicy::Force,
         [&](ManualUpdateCheckOutcome) { ++busyCompletions; }),
@@ -1122,6 +1183,13 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
     QTRY_COMPARE(completions, 1);
     QVERIFY(port.snapshot().resultFresh);
     QVERIFY(port.snapshot().cachedResult.has_value());
+    const auto firstLegacyResult = service.lastResult();
+    QVERIFY(firstLegacyResult.has_value());
+    QVERIFY(lastResult.has_value());
+    QCOMPARE(lastResult->artifact.platformKey.value(),
+        firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
+    QCOMPARE(port.snapshot().cachedResult->artifact.platformKey.value(),
+        firstLegacyResult->artifact.platformKey.toUtf8().toStdString());
 
     QCOMPARE(port.check(ManualUpdateCheckPolicy::IfStale,
         [&](ManualUpdateCheckOutcome) { ++busyCompletions; }),
@@ -1133,10 +1201,17 @@ void UpdateControllerAutomaticStartupTests::manualAdapterDistinguishesFreshBusyF
         [&](ManualUpdateCheckOutcome outcome)
         {
             ++completions;
-            QVERIFY(std::holds_alternative<ManualUpdateCheckResult>(outcome));
+            const auto* result = std::get_if<ManualUpdateCheckResult>(&outcome);
+            QVERIFY(result);
+            lastResult = *result;
         }), ManualUpdateCheckDispatch::Started);
     QTRY_COMPARE(completions, 2);
     QCOMPARE(server.requestCount(), 2);
+    const auto secondLegacyResult = service.lastResult();
+    QVERIFY(secondLegacyResult.has_value());
+    QVERIFY(lastResult.has_value());
+    QCOMPARE(lastResult->artifact.platformKey.value(),
+        secondLegacyResult->artifact.platformKey.toUtf8().toStdString());
 
     UpdateService unconfigured(UpdateConfiguration{});
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort failedPort(&unconfigured);

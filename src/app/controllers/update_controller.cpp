@@ -94,7 +94,7 @@ void UpdateController::handleCheckSucceeded(
 {
     const bool latestVersionIsSkipped = reconcileSkippedVersion(result);
     const UpdateArtifact artifact{
-        .platformKey = QString::fromStdString(result.artifact.platformKey),
+        .platformKey = QString::fromStdString(result.artifact.platformKey.value()),
         .url = QUrl::fromEncoded(QByteArray::fromStdString(result.artifact.url)),
         .fileName = QString::fromStdString(result.artifact.fileName),
         .sha256 = QString::fromStdString(result.artifact.sha256),

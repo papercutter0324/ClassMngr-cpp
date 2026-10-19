@@ -814,7 +814,7 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
         .currentVersion = {1, 0, 0},
         .latestVersion = {2, 0, 0},
         .artifact = {
-            .platformKey = "windows-x64",
+            .platformKey = ManualUpdate::UpdateArtifactPlatformKey("windows-x64"),
             .url = "https://example.com/ClassMngr-2.0.0-win-x64.exe",
             .fileName = "ClassMngr-2.0.0-win-x64.exe",
             .sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",

@@ -4,6 +4,8 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 using namespace ClassMngr::Next::Application;
 
@@ -51,6 +53,48 @@ bool require(bool condition, const char* message)
 
 int main()
 {
+    // Platform keys are opaque bytes at the Application boundary. Preserve
+    // empty, unknown, case-distinct, alias, malformed UTF-8, and embedded-NUL
+    // values through successful startup results.
+    const std::vector<std::string> platformKeys{
+        "",
+        "windows-x64",
+        "Windows-x64",
+        "linux-x86_64",
+        "linux-x64",
+        "unknown-architecture-key",
+        std::string{"\xC3\x28", 2},
+        std::string{"x\0y", 3}
+    };
+    for (const auto& platformKey : platformKeys)
+    {
+        FakePort port;
+        StartupUpdateCheckUseCase useCase(port);
+        bool preserved = false;
+        const auto disposition = useCase.start(Eligible,
+            [&](StartupUpdateCheckOutcome outcome)
+            {
+                const auto* result = std::get_if<StartupUpdateCheckResult>(&outcome);
+                preserved = result
+                    && result->artifact.platformKey.value() == platformKey;
+            });
+        if (!require(disposition == StartupUpdateCheckDisposition::Started,
+                "Opaque-key startup check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        port.pending(StartupUpdateCheckResult{
+            .artifact = {
+                .platformKey = UpdateArtifactPlatformKey(platformKey)
+            }
+        });
+        if (!require(preserved, "Startup result changed an opaque platform key"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     // Each gate is independently required, and a corrected ineligible input
     // must leave the one eligible dispatch available.
     for (int missingGate = 0; missingGate < 4; ++missingGate)

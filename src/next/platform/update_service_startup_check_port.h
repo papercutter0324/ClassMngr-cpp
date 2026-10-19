@@ -23,7 +23,9 @@ namespace ClassMngr::Next::Platform
         .currentVersion = version(result.currentVersion),
         .latestVersion = version(result.latestVersion),
         .artifact = {
-            .platformKey = result.artifact.platformKey.toUtf8().toStdString(),
+            .platformKey = Application::UpdateArtifactPlatformKey(
+                result.artifact.platformKey.toUtf8().toStdString()
+                ),
             .url = result.artifact.url.toEncoded().toStdString(),
             .fileName = result.artifact.fileName.toUtf8().toStdString(),
             .sha256 = result.artifact.sha256.toUtf8().toStdString(),

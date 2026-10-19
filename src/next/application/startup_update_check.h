@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/skipped_update_version_policy.h"
+#include "next/application/update_artifact_platform_key.h"
 
 #include <cstdint>
 #include <functional>
@@ -12,7 +13,7 @@ namespace ClassMngr::Next::Application
 
 struct StartupUpdateArtifact final
 {
-    std::string platformKey;
+    UpdateArtifactPlatformKey platformKey;
     std::string url;
     std::string fileName;
     std::string sha256;

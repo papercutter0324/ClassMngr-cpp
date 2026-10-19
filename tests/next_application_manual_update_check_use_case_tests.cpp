@@ -127,6 +127,50 @@ std::vector<std::string> eventNames(const std::vector<ManualUpdateCheckEvent>& e
 
 int main()
 {
+    // Manual success results keep platform keys opaque, including empty,
+    // unknown, case-distinct, alias, malformed UTF-8, and embedded-NUL bytes.
+    const std::vector<std::string> platformKeys{
+        "",
+        "windows-x64",
+        "Windows-x64",
+        "linux-x86_64",
+        "linux-x64",
+        "unknown-architecture-key",
+        std::string{"\xC3\x28", 2},
+        std::string{"x\0y", 3}
+    };
+    for (const auto& platformKey : platformKeys)
+    {
+        FakePort port;
+        ManualUpdateCheckUseCase useCase(port);
+        std::vector<std::string> observedPlatformKeys;
+        useCase.setObserver([&](ManualUpdateCheckEvent event)
+        {
+            if (const auto* result = std::get_if<ManualUpdateCheckResult>(&event))
+            {
+                observedPlatformKeys.push_back(result->artifact.platformKey.value());
+            }
+        });
+
+        if (!require(useCase.retry() == ManualUpdateCheckDispatch::Started,
+                "Opaque-key manual check did not start"))
+        {
+            return EXIT_FAILURE;
+        }
+
+        ManualUpdateCheckResult result{
+            .artifact = {
+                .platformKey = UpdateArtifactPlatformKey(platformKey)
+            }
+        };
+        port.finish(result);
+        if (!require(observedPlatformKeys == std::vector<std::string>{platformKey},
+                "Manual result changed or duplicated an opaque platform key"))
+        {
+            return EXIT_FAILURE;
+        }
+    }
+
     // Fresh cache is presented without dispatch; retry still forces a request.
     {
         FakePort port;
