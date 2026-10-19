@@ -12,6 +12,38 @@
 namespace ClassMngr::Next::Application
 {
 
+// An owned UTF-8 database path passed unchanged from the platform boundary.
+class CalendarEventDatabasePath final
+{
+public:
+    CalendarEventDatabasePath() = default;
+
+    explicit CalendarEventDatabasePath(
+        std::string value
+        )
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return m_value.empty();
+    }
+
+    friend bool operator==(
+        const CalendarEventDatabasePath&,
+        const CalendarEventDatabasePath&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 // A copied, adapter-neutral calendar date. The query port deliberately keeps
 // date text opaque to the application layer; the persistence adapter validates
 // and interprets it at its own boundary.
@@ -80,7 +112,7 @@ private:
 
 struct CalendarEventRangeRequest final
 {
-    std::string databasePath;
+    CalendarEventDatabasePath databasePath;
     CalendarEventDate startDate;
     CalendarEventDate endDate;
 
@@ -92,7 +124,7 @@ struct CalendarEventRangeRequest final
 
 struct CalendarEventNextEventRequest final
 {
-    std::string databasePath;
+    CalendarEventDatabasePath databasePath;
     CalendarEventDate afterDate;
 
     friend bool operator==(

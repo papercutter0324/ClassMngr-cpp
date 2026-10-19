@@ -415,6 +415,7 @@ private slots:
     void wideIdsSurviveCacheAndModel();
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
+    void injectedQueryFactoryPreservesUtf8DatabasePath();
     void injectedInvalidTimesAreFilteredByCacheAndModel();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
     void projectionQueryAndCacheUseUtf16TitleBounds();
@@ -545,7 +546,7 @@ void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
     QCOMPARE(state->createCalls, 1);
     QCOMPARE(state->rangeCalls, 1);
     QCOMPARE(
-        state->lastRangeRequest->databasePath,
+        state->lastRangeRequest->databasePath.value(),
         std::string("worker-calendar.db")
         );
     QCOMPARE(
@@ -619,6 +620,54 @@ void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
     QCOMPARE(nextEventSpy.at(0).at(0).toDate(), QDate(2026, 7, 10));
     QCOMPARE(state->createCalls, 2);
     QCOMPARE(state->nextEventCalls, 1);
+}
+
+void CalendarEventCacheTests::injectedQueryFactoryPreservesUtf8DatabasePath()
+{
+    const QString databasePath = QString::fromUtf8(
+        "\xEC\xBA\x98\xEB\xA6\xB0\xEB\x8D\x94-\xEC\x9D\xBC\xEC\xA0\x95.db"
+        );
+    const std::string expectedDatabasePathBytes =
+        databasePath.toUtf8().toStdString();
+    QCOMPARE(
+        expectedDatabasePathBytes,
+        std::string(
+            "\xEC\xBA\x98\xEB\xA6\xB0\xEB\x8D\x94-\xEC\x9D\xBC\xEC\xA0\x95.db"
+            )
+        );
+
+    const auto state = std::make_shared<InjectedQueryState>();
+    CalendarEventCache cache(
+        std::make_shared<InjectedQueryFactory>(state)
+        );
+    cache.setDatabasePath(databasePath);
+
+    const QDate rangeStart(2026, 7, 1);
+    const QDate rangeEnd(2026, 7, 31);
+    cache.requestRange(rangeStart, rangeEnd);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        cache.isRangeLoaded(rangeStart, rangeEnd),
+        5000
+        );
+    QCOMPARE(state->rangeCalls, 1);
+    QVERIFY(state->lastRangeRequest.has_value());
+    QCOMPARE(
+        state->lastRangeRequest->databasePath.value(),
+        expectedDatabasePathBytes
+        );
+
+    QSignalSpy nextEventSpy(
+        &cache,
+        &CalendarEventCache::nextEventMonthFound
+        );
+    cache.requestNextEventMonth(QDate(2026, 7, 1));
+    QTRY_COMPARE_WITH_TIMEOUT(nextEventSpy.count(), 1, 5000);
+    QCOMPARE(state->nextEventCalls, 1);
+    QVERIFY(state->lastNextEventRequest.has_value());
+    QCOMPARE(
+        state->lastNextEventRequest->databasePath.value(),
+        expectedDatabasePathBytes
+        );
 }
 
 void CalendarEventCacheTests::injectedInvalidTimesAreFilteredByCacheAndModel()

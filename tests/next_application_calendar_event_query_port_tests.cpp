@@ -32,7 +32,7 @@ CalendarEventSummary testSummary()
         false,
         "Meeting",
         CalendarEventTimeStatus::Timed,
-        std::string("series-1")
+        CalendarEventSeriesId::fromString("series-1")
     };
 }
 
@@ -121,6 +121,8 @@ private slots:
 
 void NextApplicationCalendarEventQueryPortTests::dateAndRequestsAreOwnedValueTypes()
 {
+    static_assert(std::is_copy_constructible_v<CalendarEventDatabasePath>);
+    static_assert(std::is_copy_assignable_v<CalendarEventDatabasePath>);
     static_assert(std::is_copy_constructible_v<CalendarEventDate>);
     static_assert(std::is_copy_assignable_v<CalendarEventDate>);
     static_assert(std::is_copy_constructible_v<CalendarEventRangeRequest>);
@@ -133,25 +135,52 @@ void NextApplicationCalendarEventQueryPortTests::dateAndRequestsAreOwnedValueTyp
     QVERIFY(start.has_value());
     QVERIFY(end.has_value());
     QVERIFY(!CalendarEventDate::fromString(" ").has_value());
+    QVERIFY(CalendarEventDatabasePath().empty());
+
+    const std::string expectedDatabasePath(
+        "\xEC\xBA\x98\xEB\xA6\xB0\xEB\x8D\x94-\xEC\x9D\xBC\xEC\xA0\x95.db"
+        );
+    std::string sourcePathBytes = expectedDatabasePath;
+    const CalendarEventDatabasePath databasePath(sourcePathBytes);
+    sourcePathBytes.assign("changed.db");
+    QCOMPARE(databasePath.value(), expectedDatabasePath);
 
     CalendarEventRangeRequest request{
-        "calendar.db",
+        databasePath,
         *start,
         *end
     };
     const CalendarEventRangeRequest copy = request;
-    request.databasePath.clear();
+    request.databasePath = CalendarEventDatabasePath("changed.db");
     request.startDate = CalendarEventDate();
 
-    QCOMPARE(copy.databasePath, std::string("calendar.db"));
+    QCOMPARE(copy.databasePath.value(), expectedDatabasePath);
     QCOMPARE(copy.startDate.value(), std::string("2026-07-01"));
     QCOMPARE(copy.endDate.value(), std::string("2026-07-31"));
     const CalendarEventRangeRequest expected{
-        "calendar.db",
+        databasePath,
         CalendarEventDate("2026-07-01"),
         CalendarEventDate("2026-07-31")
     };
     QVERIFY(copy == expected);
+
+    static_assert(std::is_copy_constructible_v<CalendarEventNextEventRequest>);
+    static_assert(std::is_copy_assignable_v<CalendarEventNextEventRequest>);
+    CalendarEventNextEventRequest nextRequest{
+        databasePath,
+        *start
+    };
+    const CalendarEventNextEventRequest nextCopy = nextRequest;
+    nextRequest.databasePath = CalendarEventDatabasePath("changed-next.db");
+    nextRequest.afterDate = CalendarEventDate();
+
+    QCOMPARE(nextCopy.databasePath.value(), expectedDatabasePath);
+    QCOMPARE(nextCopy.afterDate.value(), std::string("2026-07-01"));
+    const CalendarEventNextEventRequest expectedNextRequest{
+        databasePath,
+        CalendarEventDate("2026-07-01")
+    };
+    QVERIFY(nextCopy == expectedNextRequest);
 }
 
 void NextApplicationCalendarEventQueryPortTests::
@@ -180,7 +209,7 @@ portSurfaceReturnsTypedProjectionDateAndErrors()
     auto state = std::make_shared<FakeState>();
     FakePort port(state);
     const auto projection = port.loadRange({
-        "calendar.db",
+        CalendarEventDatabasePath("calendar.db"),
         CalendarEventDate("2026-07-01"),
         CalendarEventDate("2026-07-31")
     });
@@ -188,7 +217,7 @@ portSurfaceReturnsTypedProjectionDateAndErrors()
     QCOMPARE(projection.value().eventCount(), std::size_t(1));
 
     const auto nextDate = port.findNextEventDate({
-        "calendar.db",
+        CalendarEventDatabasePath("calendar.db"),
         CalendarEventDate("2026-07-01")
     });
     QVERIFY(nextDate);
@@ -218,18 +247,18 @@ factoryCreatesIndependentWorkerPorts()
     QCOMPARE(state->createCalls, 2);
 
     const auto firstResult = first->findNextEventDate({
-        "first.db",
+        CalendarEventDatabasePath("first.db"),
         CalendarEventDate("2026-07-01")
     });
     const auto secondResult = second->findNextEventDate({
-        "second.db",
+        CalendarEventDatabasePath("second.db"),
         CalendarEventDate("2026-08-01")
     });
     QVERIFY(firstResult);
     QVERIFY(secondResult);
     QCOMPARE(state->nextEventCalls, 2);
     QCOMPARE(
-        state->lastNextEventRequest->databasePath,
+        state->lastNextEventRequest->databasePath.value(),
         std::string("second.db")
         );
 }

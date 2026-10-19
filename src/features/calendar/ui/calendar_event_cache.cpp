@@ -730,8 +730,10 @@ CalendarEventCache::LoadResult CalendarEventCache::load(
         return result;
     }
 
-    const std::string databasePathValue =
-        databasePath.toUtf8().toStdString();
+    const ClassMngr::Next::Application::CalendarEventDatabasePath
+        databasePathValue(
+            databasePath.toUtf8().toStdString()
+        );
 
     if (request.kind == RequestKind::Range)
     {

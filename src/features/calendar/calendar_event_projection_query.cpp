@@ -421,7 +421,7 @@ CalendarEventProjectionQuery::loadRange(
     )
 {
     return CalendarEventProjectionQuery::loadRange(
-        fromUtf8(request.databasePath),
+        fromUtf8(request.databasePath.value()),
         QDate::fromString(fromUtf8(request.startDate.value()), Qt::ISODate),
         QDate::fromString(fromUtf8(request.endDate.value()), Qt::ISODate)
         );
@@ -434,7 +434,7 @@ CalendarEventProjectionQuery::findNextEventDate(
 {
     const NextEventDateResult result =
         CalendarEventProjectionQuery::findNextEventDate(
-            fromUtf8(request.databasePath),
+            fromUtf8(request.databasePath.value()),
             QDate::fromString(fromUtf8(request.afterDate.value()), Qt::ISODate)
             );
     if (!result)
