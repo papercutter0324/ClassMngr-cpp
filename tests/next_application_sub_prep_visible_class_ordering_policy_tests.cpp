@@ -11,6 +11,12 @@ namespace
 {
 
 using Fact = SubPrepVisibleClassOrderingFact;
+using ClassId = ClassMngr::Next::Domain::ClassId;
+
+ClassId classId(const std::string_view value)
+{
+    return ClassId::fromString(value).value();
+}
 
 int compareUtf8(
     const std::string_view left,
@@ -31,9 +37,9 @@ int compareUtf8(
 bool configuredLevelRankHasHighestPriority()
 {
     const std::vector<Fact> rows{
-        {3, 0, 100, "A", "1"},
-        {2, 6, 1'300, "Z", "9"},
-        {1, 6, 1'300, "Z", "8"}
+        {3, 0, 100, "A", classId("1")},
+        {2, 6, 1'300, "Z", classId("9")},
+        {1, 6, 1'300, "Z", classId("8")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -43,8 +49,8 @@ bool configuredLevelRankHasHighestPriority()
 bool navigationDayPrecedesMinuteLabelAndClassId()
 {
     const std::vector<Fact> rows{
-        {1, 1, 0, "A", "1"},
-        {1, 0, 1'300, "Z", "9"}
+        {1, 1, 0, "A", classId("1")},
+        {1, 0, 1'300, "Z", classId("9")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -54,8 +60,8 @@ bool navigationDayPrecedesMinuteLabelAndClassId()
 bool navigationMinutePrecedesLabelAndClassId()
 {
     const std::vector<Fact> rows{
-        {1, 0, 600, "A", "1"},
-        {1, 0, 500, "Z", "9"}
+        {1, 0, 600, "A", classId("1")},
+        {1, 0, 500, "Z", classId("9")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -65,8 +71,8 @@ bool navigationMinutePrecedesLabelAndClassId()
 bool injectedLabelComparisonPrecedesClassId()
 {
     const std::vector<Fact> rows{
-        {1, 0, 500, "A", "1"},
-        {1, 0, 500, "Z", "9"}
+        {1, 0, 500, "A", classId("1")},
+        {1, 0, 500, "Z", classId("9")}
     };
     bool comparatorWasCalled = false;
     const auto reverseLabels = [&comparatorWasCalled](
@@ -86,8 +92,8 @@ bool injectedLabelComparisonPrecedesClassId()
 bool classIdBreaksEqualEarlierTupleFields()
 {
     const std::vector<Fact> rows{
-        {1, 0, 500, "Same", "2"},
-        {1, 0, 500, "Same", "1"}
+        {1, 0, 500, "Same", classId("2")},
+        {1, 0, 500, "Same", classId("10")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -97,8 +103,8 @@ bool classIdBreaksEqualEarlierTupleFields()
 bool numericUnknownTimeSentinelPrecedesLargerValidMinute()
 {
     const std::vector<Fact> rows{
-        {1, 0, 1'020, "A", "1"},
-        {1, 0, kClassSummaryUnknownNavigationOrder, "Z", "9"}
+        {1, 0, 1'020, "A", classId("1")},
+        {1, 0, kClassSummaryUnknownNavigationOrder, "Z", classId("9")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)
@@ -108,9 +114,9 @@ bool numericUnknownTimeSentinelPrecedesLargerValidMinute()
 bool exactTupleTiesRetainInputOrder()
 {
     const std::vector<Fact> rows{
-        {1, 0, 500, "Same", "same-id"},
-        {1, 0, 500, "Same", "same-id"},
-        {1, 0, 500, "Same", "same-id"}
+        {1, 0, 500, "Same", classId("same-id")},
+        {1, 0, 500, "Same", classId("same-id")},
+        {1, 0, 500, "Same", classId("same-id")}
     };
 
     return orderSubPrepVisibleClassRows(rows, compareUtf8)

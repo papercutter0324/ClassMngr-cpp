@@ -26,7 +26,7 @@ struct SubPrepVisibleClassOrderingFact final
     std::int32_t navigationFirstTimeOrder =
         kClassSummaryUnknownNavigationOrder;
     std::string baseLabel;
-    std::string classId;
+    Domain::ClassId classId;
 };
 
 using SubPrepVisibleClassLabelComparator =

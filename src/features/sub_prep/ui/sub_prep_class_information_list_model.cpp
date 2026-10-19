@@ -320,7 +320,7 @@ void SubPrepClassInformationListModel::rebuildVisibleRows()
             .navigationFirstDayOrder = summary.navigationFirstDayOrder,
             .navigationFirstTimeOrder = summary.navigationFirstTimeOrder,
             .baseLabel = baseLabel.toUtf8().toStdString(),
-            .classId = summary.id.value()
+            .classId = summary.id
         });
         unsortedBaseLabels.append(baseLabel);
     }
