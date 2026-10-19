@@ -6076,12 +6076,14 @@ read-error warning and field-retention behavior.
 
 Focused verification will build `ClassMngr`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
-`ClassMngrSubPrepPageTests`, and `ClassMngrMyWorkspacePageTests`; run the
-Platform CTest and selected UI cases `zoomUnavailableHidesStoredCredentials`,
-`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`, and
-`storedZoomCredentialsPrefillAndRespectUnavailableState`. The My Workspace
-case will use UTF-8 credentials with surrounding spaces and assert exact
-display text and unavailable-field behavior. Run `git diff --check`.
+`ClassMngrSubPrepPageTests`, `ClassMngrMyWorkspacePageTests`, and
+`ClassMngrInitialSetupWizardTests`; run the Platform CTest and selected UI
+cases `zoomUnavailableHidesStoredCredentials`,
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`,
+`storedZoomCredentialsPrefillAndRespectUnavailableState`, and
+`aggregateSaveComposesTypedReadsWithoutDataLoss`. The My Workspace case will
+use UTF-8 credentials with surrounding spaces and assert exact display text
+and unavailable-field behavior. Run `git diff --check`.
 Full-suite and Windows verification are not expected.
 Batch486 has three complete slices, one accepted/in-progress F1141, and two
 discovered candidates; F1142 is next for acceptance. F629 and both phase gates

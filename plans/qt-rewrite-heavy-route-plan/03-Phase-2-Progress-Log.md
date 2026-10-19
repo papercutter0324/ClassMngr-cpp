@@ -50150,6 +50150,9 @@ and read-failure field-preservation behavior. In My Info
 length-aware UTF-8 decoding and exact display of nonblank decoded text,
 including surrounding spaces; trim only to detect blank text for `N/A`.
 Keep credentials visible while unavailable and disable their fields.
+In Initial Setup (`src/features/setup/ui/initial_setup_wizard.cpp`), preserve
+forwarding both typed values' exact `.value()` strings into the existing
+personal-details save request.
 
 Focused verification: add exact-byte and embedded-NUL coverage for both
 values; build `ClassMngr`,
@@ -50160,7 +50163,9 @@ Platform CTest and selected UI cases
 `zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`. Strengthen
 `MyWorkspacePageTests::storedZoomCredentialsPrefillAndRespectUnavailableState`
 with UTF-8 values containing surrounding spaces, asserting exact displayed
-text while checking unavailable state. Run
+text while checking unavailable state. Include
+`InitialSetupWizardTests::aggregateSaveComposesTypedReadsWithoutDataLoss` to
+verify the Initial Setup handoff. Run
 `git diff --check`. Implementation and verification are pending. Full-suite
 and Windows runs are not expected. Batch486 has six candidates: F1138–F1140
 complete, F1141 accepted/in progress, and F1142–F1143 discovered. F1142 is

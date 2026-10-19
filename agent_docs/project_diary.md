@@ -8228,3 +8228,8 @@ its length-aware decode, exact nonblank display text (including surrounding
 spaces), blank-to-`N/A` presentation, and stored values while unavailable. Its
 existing My Workspace page case will cover spaced UTF-8 display and unavailable
 field behavior.
+
+Initial Setup is the third consumer: it forwards the typed values' exact
+payloads into the existing personal-details save request. Preserve that path
+and include `aggregateSaveComposesTypedReadsWithoutDataLoss` in focused
+verification.
