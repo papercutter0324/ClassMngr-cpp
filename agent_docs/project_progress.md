@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1139 complete; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1140 accepted; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -226,7 +226,8 @@ Domain and Platform CTests (2/2) and the selected Calendar Page color-picker
 failure/resync/retry case. `ClassMngr` and the affected targets built, and
 `git diff --check` passed. F1139 completed at source/test commit `05c9de8c`;
 the focused Platform adapter and Calendar Import CTests passed 2/2. Batch486
-remains active with two complete slices and four discovered; F1140 is next.
+remains active with two complete slices, F1140 accepted/in progress, and three
+discovered.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -234,7 +235,7 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with F1140. F629 remains active and awaits a
+Continue Batch486 with accepted F1140. F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -6012,3 +6013,26 @@ The macOS Debug build of `ClassMngr`,
 `git diff --check` passed. Full-suite and Windows verification were not run.
 Batch486 now has two complete slices and four discovered; F1140 is next for
 acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1140 accepted; Batch486 active - 2026-10-20
+
+F1140 is accepted to introduce a Qt-free Domain value for prepared personal-
+signature image bytes, preserving the exact byte sequence with no decoding,
+validation, or normalization in the value. Keep the existing result wrapper
+so empty bytes remain a successful absence and a repository read failure
+remains a nonrecoverable `Technical` error. Base64 decoding and image
+preparation stay in Platform, and the exact settings key and successful empty
+behavior for missing, unavailable, closed, invalid, corrupt, or unsupported
+images remain. Preserve Initial Setup's save-time retry/blocking behavior, My
+Workspace's image preservation and save blocking on read errors, and Speaking
+Evaluation's no-signature fallback. The separate personal-details write
+request remains outside this slice.
+
+Focused verification will build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`,
+`ClassMngrInitialSetupWizardTests`, and `ClassMngrMyWorkspacePageTests`. Run the
+focused adapter CTest and the two selected UI read-error cases, then
+`git diff --check`. Full-suite and Windows verification are not expected.
+Batch486 has two complete slices, one accepted/in-progress F1140, and three
+discovered candidates; F1141 is next for acceptance. F629 and both phase gates
+remain open.

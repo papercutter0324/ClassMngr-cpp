@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is active with F1138 and F1139 complete and F1140–F1143 discovered; F1140 is next for acceptance, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is active with F1138 and F1139 complete, F1140 accepted/in progress, and F1141–F1143 discovered; F1141 is next for acceptance, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,16 +68,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch486 (6 candidates; 2 complete; 0 accepted/in progress; 4 discovered)
+#### Active batch: Batch486 (6 candidates; 2 complete; 1 accepted/in progress; 3 discovered)
 
 1. F1138 - Complete at `fd3c0462`; typed the Application preference-port event identity and preserved key/read/write behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-complete-2026-10-20).
 2. F1139 - Complete at `05c9de8c`; added a distinct exact-byte Application campus-import value and returned it from the query port. Platform filtering/order and parser behavior remain; see the [acceptance record](03-Phase-2-Progress-Log.md#f1139-calendar-import-campus-code-identity-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1139-calendar-import-campus-code-identity-complete-2026-10-20).
-3. F1140 - Discovered; next for acceptance: assess a prepared personal-signature image-byte value while preserving exact bytes and empty-success versus read-error behavior.
-4. F1141 - Discovered: distinguish Sub Prep Zoom login ID and password values while preserving exact permissive UTF-8, defaults, preference precedence and migration, and errors.
+3. F1140 - Accepted/in progress: add Qt-free Domain `PreparedPersonalSignatureImageBytes` for exact image bytes, change only the read result, and preserve empty-success/read-failure distinction and consumer fallbacks. Keep decoding and embedding preparation in Platform and the separate save-request write field unchanged; see the [acceptance record](03-Phase-2-Progress-Log.md#f1140-prepared-personal-signature-image-bytes-accepted-before-implementation-2026-10-20).
+4. F1141 - Discovered; next for acceptance: distinguish Sub Prep Zoom login ID and password values while preserving exact permissive UTF-8, defaults, preference precedence and migration, and errors.
 5. F1142 - Discovered: assess a custom palette color-entry type while preserving all 16 entries, legacy encodings, read canonicalization/fallback, and exact write input.
 6. F1143 - Discovered: assess an opaque academic-calendar schedule JSON string while preserving UTF-8 round trip, fallback, key, and repository/write errors.
 
-Batch486 has two complete candidates and four discovered candidates. Detailed discovery evidence, acceptance criteria, and verification references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+Batch486 has two complete candidates, one accepted/in-progress candidate, and three discovered candidates. Detailed discovery evidence, acceptance criteria, and verification references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

@@ -8181,3 +8181,16 @@ focused CTests passed 2/2. The fixture covers order, Unicode, trimming, blank
 and exact duplicate removal, and case variants. `git diff --check` passed. Full
 suite and Windows were not run. Batch486 now has two complete slices and four
 discovered, with F1140 next; F629 and both phase gates remain open.
+
+## 2026-10-20 - F1140 accepted
+
+Add a Qt-free Domain value for the exact prepared personal-signature image
+bytes. Keep decoding and image preparation in Platform, preserve successful
+empty bytes for missing or invalid images, and preserve repository failures as
+nonrecoverable `Technical` errors. Initial Setup retry/save blocking, My
+Workspace preservation/save blocking, and Speaking Evaluation's empty-image
+fallback remain. The separate personal-details write field is outside this
+slice. Focused Platform and selected UI verification is planned; implementation
+and verification are pending. Batch486 has F1138 and F1139 complete, F1140
+accepted/in progress, and three discovered candidates. F629 and both phase
+gates remain open.

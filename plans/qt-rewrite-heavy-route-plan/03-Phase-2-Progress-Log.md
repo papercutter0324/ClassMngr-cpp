@@ -50078,3 +50078,31 @@ The incremental macOS Debug build passed for `ClassMngr`,
 run. Batch486 has six candidates: two complete (F1138 and F1139), none
 accepted/in progress, and four discovered; F1140 is next for acceptance.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1140 Prepared personal-signature image bytes accepted before implementation - 2026-10-20
+
+F1140 is accepted/in progress. Add Qt-free Domain
+`PreparedPersonalSignatureImageBytes`, owning the exact existing byte
+sequence without decoding, validation, or normalization. Change only the
+personal-signature image read result to
+`Result<PreparedPersonalSignatureImageBytes>`, preserving the distinction
+between a successful empty value and a Technical read failure.
+
+Keep Base64 decoding and `SignatureImage::prepareForEmbedding` in Platform;
+preserve the existing key. Missing, unavailable, closed, no-repository,
+invalid, corrupt, and unsupported input must remain successful empty bytes;
+a repository read failure remains a nonrecoverable Technical error. Preserve
+Initial Setup, My Workspace, and Speaking Evaluation fallback and retry
+behavior. Do not change the separate `PersonalDetailsSaveRequest` write field.
+
+Focused verification: build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`,
+`ClassMngrInitialSetupWizardTests`, and `ClassMngrMyWorkspacePageTests`; run
+the focused adapter CTest and selected UI tests
+`signatureImageReadFailureBlocksAggregateSaveAndCanRetry` and
+`signatureImageReadFailurePreservesImageAndBlocksSaveUntilReload`; run
+`git diff --check`. Implementation and verification are pending. Full-suite
+and Windows runs are not expected. Batch486 has six candidates: F1138 and
+F1139 complete, F1140 accepted/in progress, and F1141–F1143 discovered.
+F1141 is next for acceptance; F629 and the Phase 0 and Phase 2 gates remain
+open.
