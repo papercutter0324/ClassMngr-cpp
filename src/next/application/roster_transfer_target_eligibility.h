@@ -1,22 +1,47 @@
 #pragma once
 
 #include "next/application/qt_compatible_text.h"
+#include "next/domain/domain_types.h"
 
+#include <charconv>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace ClassMngr::Next::Application
 {
 
-[[nodiscard]] inline bool hasValidRosterTransferSourceId(
-    const int sourceClassId
+[[nodiscard]] inline bool hasValidRosterTransferClassId(
+    const Domain::ClassId& classId
     ) noexcept
 {
-    return sourceClassId > 0;
+    // ClassId can wrap arbitrary text; enforce canonical positive int syntax.
+    const std::string& value = classId.value();
+    if (value.empty() || value.front() < '1' || value.front() > '9')
+    {
+        return false;
+    }
+
+    int parsed = 0;
+    const auto [end, error] = std::from_chars(
+        value.data(),
+        value.data() + value.size(),
+        parsed
+        );
+    return error == std::errc{}
+        && end == value.data() + value.size()
+        && parsed > 0;
+}
+
+[[nodiscard]] inline bool hasValidRosterTransferSourceId(
+    const Domain::ClassId& sourceClassId
+    ) noexcept
+{
+    return hasValidRosterTransferClassId(sourceClassId);
 }
 
 [[nodiscard]] inline bool isRosterTransferSourceEligible(
-    const int sourceClassId,
+    const Domain::ClassId& sourceClassId,
     const std::u16string_view sourceGrade
     )
 {
@@ -27,19 +52,19 @@ namespace ClassMngr::Next::Application
 // Call before loading candidate class details so invalid and current IDs do
 // not cause a classInfo lookup.
 [[nodiscard]] inline bool shouldReadRosterTransferTargetClassInfo(
-    const int sourceClassId,
-    const int targetClassId
+    const Domain::ClassId& sourceClassId,
+    const Domain::ClassId& targetClassId
     ) noexcept
 {
     return hasValidRosterTransferSourceId(sourceClassId)
-        && targetClassId > 0
+        && hasValidRosterTransferClassId(targetClassId)
         && targetClassId != sourceClassId;
 }
 
 [[nodiscard]] inline bool isRosterTransferTargetEligible(
-    const int sourceClassId,
+    const Domain::ClassId& sourceClassId,
     const std::u16string_view sourceGrade,
-    const int targetClassId,
+    const Domain::ClassId& targetClassId,
     const std::u16string_view targetGrade
     )
 {

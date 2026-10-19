@@ -1,6 +1,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/class_info_repository.h"
 #include "domain/models/class_info.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
@@ -453,6 +454,7 @@ class RosterTransferMenuTests final : public QObject
 private slots:
     void cleanup();
     void sameGradeTargetsAreSortedAndDifferentOrEmptyGradesAreExcluded();
+    void invalidClassIdListDoesNotReadSubtitleMetadata();
     void classListReadFailureWarnsAndShowsNoSameGradeTargets();
     void teacherReadFailureKeepsClassFieldsInDisplayLabel();
     void classFieldsReadFailureShowsNoSameGradeTargets();
@@ -538,6 +540,11 @@ sameGradeTargetsAreSortedAndDifferentOrEmptyGradesAreExcluded()
         );
     QVERIFY(table);
 
+    ClassInfoRepository* const classInfoRepository =
+        fixture.services.databaseSession()->classInfoRepository();
+    QVERIFY(classInfoRepository);
+    const ClassSubtitleBatchReadMetrics metricsBefore =
+        classInfoRepository->classSubtitleBatchReadMetrics();
     const TransferMenuSnapshot menu = openTransferMenu(editor, table);
     QVERIFY(menu.invocationSucceeded);
     QVERIFY(menu.transferMenuFound);
@@ -549,6 +556,76 @@ sameGradeTargetsAreSortedAndDifferentOrEmptyGradesAreExcluded()
         })
         );
     QCOMPARE(menu.enabled, QList<bool>({true, true}));
+
+    const ClassSubtitleBatchReadMetrics metricsAfter =
+        classInfoRepository->classSubtitleBatchReadMetrics();
+    QCOMPARE(metricsAfter.callCount - metricsBefore.callCount, 1);
+    // Four non-source classes are candidates for grade/label reads. The
+    // current class must be removed before the subtitle batch read.
+    QCOMPARE(metricsAfter.requestedClassCount - metricsBefore.requestedClassCount, 4);
+}
+
+void RosterTransferMenuTests::invalidClassIdListDoesNotReadSubtitleMetadata()
+{
+    RosterTransferMenuFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+
+    int sourceId = 0;
+    QVERIFY2(fixture.createClass(
+                 QStringLiteral("Source database name"),
+                 QStringLiteral("E4"),
+                 QStringLiteral("Perseus"),
+                 -1,
+                 &sourceId,
+                 &error
+                 ), qPrintable(error));
+    QVERIFY2(fixture.addRosterRow(sourceId, &error), qPrintable(error));
+
+    QSqlQuery insertInvalidClassId(
+        fixture.services.databaseSession()->database()
+        );
+    insertInvalidClassId.prepare(
+        QStringLiteral("INSERT INTO classes (id, name) VALUES (0, ?)")
+        );
+    insertInvalidClassId.addBindValue(QStringLiteral("Invalid ID target"));
+    QVERIFY2(insertInvalidClassId.exec(),
+             qPrintable(insertInvalidClassId.lastError().text()));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    RosterEditorWidget editor(&fixture.services);
+    editor.loadClass(Classroom(QStringLiteral("Source page name"), sourceId));
+    editor.show();
+    QApplication::processEvents();
+    auto* const table = editor.findChild<RosterTableView*>(
+        QStringLiteral("rosterTable")
+        );
+    QVERIFY(table);
+
+    ClassInfoRepository* const classInfoRepository =
+        fixture.services.databaseSession()->classInfoRepository();
+    QVERIFY(classInfoRepository);
+    const ClassSubtitleBatchReadMetrics metricsBefore =
+        classInfoRepository->classSubtitleBatchReadMetrics();
+    const TransferMenuSnapshot menu = openTransferMenu(editor, table);
+    QVERIFY(menu.invocationSucceeded);
+    QVERIFY(menu.transferMenuFound);
+    QCOMPARE(menu.labels, QStringList({QStringLiteral("No same-grade classes")}));
+    QCOMPARE(menu.enabled, QList<bool>({false}));
+
+    const ClassSubtitleBatchReadMetrics metricsAfter =
+        classInfoRepository->classSubtitleBatchReadMetrics();
+    QCOMPARE(metricsAfter.callCount, metricsBefore.callCount);
+    QCOMPARE(metricsAfter.requestedClassCount, metricsBefore.requestedClassCount);
+    QCOMPARE(metricsAfter.metadataStatementCount,
+             metricsBefore.metadataStatementCount);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().severity, PromptSeverity::Warning);
+    QCOMPARE(
+        prompts.messages.constFirst().message,
+        QStringLiteral("Transfer classes could not be loaded.")
+        );
 }
 
 void RosterTransferMenuTests::

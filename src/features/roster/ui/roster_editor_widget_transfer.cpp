@@ -51,12 +51,19 @@ struct TransferClassMetadata
     QString displayName;
 };
 
-QList<Classroom> classroomsFromListSnapshot(
+struct TransferClassCandidate
+{
+    ClassMngr::Next::Domain::ClassId classId;
+    int legacyClassId = -1;
+    QString name;
+};
+
+QList<TransferClassCandidate> transferClassCandidatesFromListSnapshot(
     const ClassMngr::Next::Application::ClassesListSnapshot& snapshot
     )
 {
-    QList<Classroom> classrooms;
-    classrooms.reserve(static_cast<qsizetype>(snapshot.classes.size()));
+    QList<TransferClassCandidate> candidates;
+    candidates.reserve(static_cast<qsizetype>(snapshot.classes.size()));
     for (const auto& entry : snapshot.classes)
     {
         int classId = 0;
@@ -78,12 +85,13 @@ QList<Classroom> classroomsFromListSnapshot(
             continue;
         }
 
-        Classroom classroom;
-        classroom.id = classId;
-        classroom.name = QString::fromStdU16String(entry.className);
-        classrooms.append(std::move(classroom));
+        candidates.append(TransferClassCandidate{
+            entry.classId,
+            classId,
+            QString::fromStdU16String(entry.className)
+        });
     }
-    return classrooms;
+    return candidates;
 }
 
 QString classesListErrorMessage(const std::string& message)
@@ -238,19 +246,10 @@ std::optional<TransferClassMetadata> transferClassMetadataFromSnapshot(
 
 TransferClassMetadata readTransferClassMetadata(
     ApplicationServices* services,
-    int classId
+    const ClassMngr::Next::Domain::ClassId& classId
     )
 {
-    if (!services || classId <= 0)
-    {
-        return {};
-    }
-
-    const auto selectedClassId =
-        ClassMngr::Next::Domain::ClassId::fromString(
-            std::to_string(classId)
-            );
-    if (!selectedClassId)
+    if (!services)
     {
         return {};
     }
@@ -260,7 +259,7 @@ TransferClassMetadata readTransferClassMetadata(
     const ClassMngr::Next::Application::SelectedClassSubtitleReadQuery query(
         readPort
         );
-    const auto loadedSubtitle = query.execute(*selectedClassId);
+    const auto loadedSubtitle = query.execute(classId);
     if (!loadedSubtitle)
     {
         return {};
@@ -311,12 +310,19 @@ void RosterEditorWidget::showRosterContextMenu(
     auto* classService = m_services ? m_services->classService() : nullptr;
     auto* rosterService = m_services ? m_services->rosterService() : nullptr;
 
+    const auto sourceClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_classroom.id)
+            );
+    const bool hasValidSourceClassId =
+        sourceClassId
+        && ClassMngr::Next::Application::hasValidRosterTransferSourceId(
+            *sourceClassId
+            );
     const TransferClassMetadata sourceMetadata =
         classService
-            && ClassMngr::Next::Application::hasValidRosterTransferSourceId(
-                m_classroom.id
-                )
-            ? readTransferClassMetadata(m_services, m_classroom.id)
+            && hasValidSourceClassId
+            ? readTransferClassMetadata(m_services, *sourceClassId)
             : TransferClassMetadata{};
     const QString currentGrade = sourceMetadata.grade;
     QList<TransferClassTarget> targets;
@@ -324,8 +330,9 @@ void RosterEditorWidget::showRosterContextMenu(
     if (canRemove
         && classService
         && rosterService
+        && hasValidSourceClassId
         && ClassMngr::Next::Application::isRosterTransferSourceEligible(
-            m_classroom.id,
+            *sourceClassId,
             Ui::QtTextAdapter::toUtf16String(currentGrade)
             ))
     {
@@ -335,7 +342,7 @@ void RosterEditorWidget::showRosterContextMenu(
             readPort
             );
         const auto classes = query.execute();
-        QList<Classroom> availableClasses;
+        QList<TransferClassCandidate> availableClasses;
         if (!classes)
         {
             DialogServices::showWarning(
@@ -348,35 +355,28 @@ void RosterEditorWidget::showRosterContextMenu(
         }
         else
         {
-            availableClasses = classroomsFromListSnapshot(classes.value());
+            availableClasses = transferClassCandidatesFromListSnapshot(
+                classes.value()
+                );
         }
-        QList<Classroom> candidateClasses;
+        QList<TransferClassCandidate> candidateClasses;
         std::vector<ClassMngr::Next::Domain::ClassId> candidateClassIds;
         candidateClasses.reserve(availableClasses.size());
         candidateClassIds.reserve(
             static_cast<std::size_t>(availableClasses.size())
             );
-        for (const Classroom& classroom : availableClasses)
+        for (const TransferClassCandidate& candidate : availableClasses)
         {
             if (!ClassMngr::Next::Application::shouldReadRosterTransferTargetClassInfo(
-                    m_classroom.id,
-                    classroom.id
+                    *sourceClassId,
+                    candidate.classId
                     ))
             {
                 continue;
             }
 
-            const auto typedClassId =
-                ClassMngr::Next::Domain::ClassId::fromString(
-                    std::to_string(classroom.id)
-                    );
-            if (!typedClassId)
-            {
-                continue;
-            }
-
-            candidateClasses.append(classroom);
-            candidateClassIds.push_back(*typedClassId);
+            candidateClasses.append(candidate);
+            candidateClassIds.push_back(candidate.classId);
         }
 
         if (!candidateClassIds.empty())
@@ -395,7 +395,7 @@ void RosterEditorWidget::showRosterContextMenu(
                      index < candidateClasses.size();
                      ++index)
                 {
-                    const Classroom& classroom = candidateClasses.at(
+                    const TransferClassCandidate& candidate = candidateClasses.at(
                         static_cast<qsizetype>(index)
                         );
                     const auto targetMetadata =
@@ -405,9 +405,9 @@ void RosterEditorWidget::showRosterContextMenu(
                     if (!targetMetadata
                         || !ClassMngr::Next::Application::
                             isRosterTransferTargetEligible(
-                                m_classroom.id,
+                                *sourceClassId,
                                 Ui::QtTextAdapter::toUtf16String(currentGrade),
-                                classroom.id,
+                                candidate.classId,
                                 Ui::QtTextAdapter::toUtf16String(
                                     targetMetadata->grade
                                     )
@@ -417,13 +417,13 @@ void RosterEditorWidget::showRosterContextMenu(
                     }
 
                     TransferClassTarget target;
-                    target.classId = classroom.id;
+                    target.classId = candidate.legacyClassId;
                     target.label = targetMetadata->displayName;
                     if (target.label.trimmed().isEmpty())
                     {
-                        target.label = classroom.name.trimmed().isEmpty()
-                            ? tr("Class %1").arg(classroom.id)
-                            : classroom.name.trimmed();
+                        target.label = candidate.name.trimmed().isEmpty()
+                            ? tr("Class %1").arg(candidate.legacyClassId)
+                            : candidate.name.trimmed();
                     }
                     targets.append(std::move(target));
                 }
