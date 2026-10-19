@@ -81,12 +81,12 @@ public:
         }
 
         return AcademicCalendarSchedulePreferencesReadResult::success(
-            m_state->scheduleJson
+            AcademicCalendarScheduleJsonText{m_state->scheduleJson}
             );
     }
 
     [[nodiscard]] AcademicCalendarSchedulePreferencesSaveResult write(
-        const std::string& payload
+        const AcademicCalendarScheduleJsonText& payload
         ) const override
     {
         ++m_state->scheduleWriteAttemptCount;
@@ -99,7 +99,7 @@ public:
             });
         }
 
-        m_state->scheduleJson = payload;
+        m_state->scheduleJson = payload.value();
         ++m_state->scheduleWriteCount;
         return AcademicCalendarSchedulePreferencesSaveResult::success();
     }

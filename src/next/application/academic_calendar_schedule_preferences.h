@@ -3,15 +3,45 @@
 #include "next/domain/operation_result.h"
 
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Application
 {
 
 // The application boundary carries the academic-calendar schedule as an
-// opaque UTF-8 JSON payload. JSON parsing and schema ownership remain with
-// the calendar feature.
+// opaque UTF-8 JSON payload. This value preserves supplied text unchanged;
+// JSON parsing and schema ownership remain with the calendar feature.
+class AcademicCalendarScheduleJsonText final
+{
+public:
+    AcademicCalendarScheduleJsonText() = default;
+
+    explicit AcademicCalendarScheduleJsonText(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const& noexcept
+    {
+        return m_value;
+    }
+
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return m_value.empty();
+    }
+
+    friend bool operator==(
+        const AcademicCalendarScheduleJsonText&,
+        const AcademicCalendarScheduleJsonText&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 using AcademicCalendarSchedulePreferencesReadResult =
-    Domain::Result<std::string>;
+    Domain::Result<AcademicCalendarScheduleJsonText>;
 using AcademicCalendarSchedulePreferencesSaveResult = Domain::Result<void>;
 
 class AcademicCalendarSchedulePreferencesPort
@@ -23,7 +53,7 @@ public:
         const = 0;
 
     [[nodiscard]] virtual AcademicCalendarSchedulePreferencesSaveResult write(
-        const std::string& payload
+        const AcademicCalendarScheduleJsonText& payload
         ) const = 0;
 };
 

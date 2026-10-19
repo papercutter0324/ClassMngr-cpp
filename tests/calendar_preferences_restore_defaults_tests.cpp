@@ -69,6 +69,7 @@ private:
 };
 
 using ClassMngr::Next::Application::AcademicCalendarSchedulePreferencesPort;
+using ClassMngr::Next::Application::AcademicCalendarScheduleJsonText;
 using ClassMngr::Next::Application::CalendarFirstDayOfWeek;
 using ClassMngr::Next::Application::CalendarFirstDayOfWeekPreferencesPort;
 
@@ -121,14 +122,14 @@ public:
 
         return ClassMngr::Next::Application::
             AcademicCalendarSchedulePreferencesReadResult::success(
-                m_state->scheduleJson
+                AcademicCalendarScheduleJsonText{m_state->scheduleJson}
                 );
     }
 
     [[nodiscard]]
     ClassMngr::Next::Application::
         AcademicCalendarSchedulePreferencesSaveResult write(
-            const std::string& payload
+            const AcademicCalendarScheduleJsonText& payload
             ) const override
     {
         ++m_state->scheduleWriteAttemptCount;
@@ -142,7 +143,7 @@ public:
                 });
         }
 
-        m_state->scheduleJson = payload;
+        m_state->scheduleJson = payload.value();
         ++m_state->scheduleWriteCount;
         return ClassMngr::Next::Application::
             AcademicCalendarSchedulePreferencesSaveResult::success();

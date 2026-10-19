@@ -307,7 +307,7 @@ void AcademicCalendarProvider::reload()
     m_schedule.clear();
     loadOptions();
 
-    const std::string& json = stored.value();
+    const std::string& json = stored.value().value();
     if (!json.empty())
     {
         QJsonParseError error;
@@ -483,5 +483,9 @@ AcademicCalendarProvider::persist(
     const QByteArray json =
         QJsonDocument(schedule.toJson())
             .toJson(QJsonDocument::Compact);
-    return m_schedulePreferences->write(json.toStdString());
+    return m_schedulePreferences->write(
+        ClassMngr::Next::Application::AcademicCalendarScheduleJsonText(
+            json.toStdString()
+            )
+        );
 }

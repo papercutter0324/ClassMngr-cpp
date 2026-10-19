@@ -84,15 +84,19 @@ public:
 
         return Application::AcademicCalendarSchedulePreferencesReadResult::
             success(
-                std::string(
-                    payload.constData(),
-                    static_cast<std::size_t>(payload.size())
+                Application::AcademicCalendarScheduleJsonText(
+                    std::string(
+                        payload.constData(),
+                        static_cast<std::size_t>(payload.size())
+                        )
                     )
                 );
     }
 
     [[nodiscard]] Application::AcademicCalendarSchedulePreferencesSaveResult
-    write(const std::string& payload) const override
+    write(
+        const Application::AcademicCalendarScheduleJsonText& payload
+        ) const override
     {
         if (!m_session || !m_session->isOpen())
         {
@@ -109,9 +113,10 @@ public:
                 );
         }
 
+        const std::string& payloadText = payload.value();
         const QString storedPayload = QString::fromUtf8(
-            payload.data(),
-            static_cast<qsizetype>(payload.size())
+            payloadText.data(),
+            static_cast<qsizetype>(payloadText.size())
             );
         if (const Status saved = repository->saveSetting(
                 key(),

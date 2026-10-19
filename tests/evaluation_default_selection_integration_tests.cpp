@@ -76,7 +76,11 @@ bool saveSchedule(ApplicationServices& services)
         ApplicationServicesAcademicCalendarSchedulePreferencesPort port(
             services
             );
-    const auto saved = port.write(serialized.toStdString());
+    const auto saved = port.write(
+        ClassMngr::Next::Application::AcademicCalendarScheduleJsonText{
+            serialized.toStdString()
+        }
+        );
     return saved && schedule.hasSavedSchedules();
 }
 

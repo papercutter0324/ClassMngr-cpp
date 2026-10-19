@@ -11,9 +11,20 @@
 
 #include <cstddef>
 #include <string>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Platform;
 using namespace ClassMngr::Next;
+using ClassMngr::Next::Application::AcademicCalendarScheduleJsonText;
+
+static_assert(!std::is_convertible_v<
+    AcademicCalendarScheduleJsonText,
+    std::string
+    >);
+static_assert(!std::is_convertible_v<
+    std::string,
+    AcademicCalendarScheduleJsonText
+    >);
 
 namespace
 {
@@ -74,6 +85,7 @@ private slots:
     void missingAndUnavailableReadEmptyAndReportWriteFailure();
     void readErrorsReturnTechnicalFailure();
     void roundTripsThroughTheExactKey();
+    void roundTripsNonAsciiUtf8JsonTextVerbatim();
     void preservesStoredPayloadAndUnrelatedSettings();
     void saveFailureReturnsTechnicalErrorAndPreservesStoredPayload();
 
@@ -122,7 +134,9 @@ missingAndUnavailableReadEmptyAndReportWriteFailure()
     const auto unavailable = unavailablePort.read();
     QVERIFY(unavailable);
     QVERIFY(unavailable.value().empty());
-    const auto unavailableSave = unavailablePort.write(R"({"version":1})");
+    const auto unavailableSave = unavailablePort.write(
+        AcademicCalendarScheduleJsonText{R"({"version":1})"}
+        );
     QVERIFY(!unavailableSave);
     QCOMPARE(unavailableSave.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!unavailableSave.error().message.empty());
@@ -158,7 +172,9 @@ missingAndUnavailableReadEmptyAndReportWriteFailure()
     QVERIFY(closed);
     QVERIFY(closed.value().empty());
     const auto closedSave = closedPort.write(
-        R"({"version":1,"profiles":{"new":true}})"
+        AcademicCalendarScheduleJsonText{
+            R"({"version":1,"profiles":{"new":true}})"
+        }
         );
     QVERIFY(!closedSave);
     QCOMPARE(closedSave.error().code, Domain::ErrorCode::Technical);
@@ -184,7 +200,9 @@ missingAndUnavailableReadEmptyAndReportWriteFailure()
     const auto nullRead = nullPort.read();
     QVERIFY(nullRead);
     QVERIFY(nullRead.value().empty());
-    const auto nullSave = nullPort.write(R"({"version":1})");
+    const auto nullSave = nullPort.write(
+        AcademicCalendarScheduleJsonText{R"({"version":1})"}
+        );
     QVERIFY(!nullSave);
     QCOMPARE(nullSave.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!nullSave.error().message.empty());
@@ -233,17 +251,53 @@ roundTripsThroughTheExactKey()
     ApplicationServicesAcademicCalendarSchedulePreferencesPort port(
         servicesPointer
         );
-    QVERIFY(port.write(expected));
+    QVERIFY(port.write(
+        AcademicCalendarScheduleJsonText{expected}
+        ));
 
     const auto readBack = port.read();
     QVERIFY(readBack);
-    QCOMPARE(readBack.value(), expected);
+    QCOMPARE(readBack.value().value(), expected);
 
     const auto stored = repository->loadSetting(
         QString::fromUtf8(AcademicCalendarScheduleKey)
         );
     QVERIFY(stored);
     QCOMPARE(stored->toString(), fromUtf8(expected));
+}
+
+void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
+roundTripsNonAsciiUtf8JsonTextVerbatim()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    DatabaseSession* const session = services.databaseSession();
+    QVERIFY(session);
+    QVERIFY(session->isOpen());
+    SettingsRepository* const repository = session->settingsRepository();
+    QVERIFY(repository);
+
+    const std::string expected =
+        R"({"version":1,"profiles":{"elementary":{},"middle":{}},"note":")"
+        "\xED\x95\x99\xEA\xB5\x90 \xEC\x84\x9C\xEC\x9A\xB8"
+        R"("})";
+    ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
+    const auto saved = port.write(
+        AcademicCalendarScheduleJsonText{expected}
+        );
+    QVERIFY(saved);
+
+    const auto readBack = port.read();
+    QVERIFY(readBack);
+    QCOMPARE(readBack.value().value(), expected);
+
+    const auto stored = repository->loadSetting(
+        QString::fromUtf8(AcademicCalendarScheduleKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), fromUtf8(expected));
+    QCOMPARE(stored->toString().toUtf8().toStdString(), expected);
 }
 
 void NextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests::
@@ -277,14 +331,16 @@ preservesStoredPayloadAndUnrelatedSettings()
     ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
     const auto stored = port.read();
     QVERIFY(stored);
-    QCOMPARE(fromUtf8(stored.value()), storedPayload);
+    QCOMPARE(fromUtf8(stored.value().value()), storedPayload);
 
     const std::string replacement =
         R"({"version":1,"profiles":{"replacement":true}})";
-    QVERIFY(port.write(replacement));
+    QVERIFY(port.write(
+        AcademicCalendarScheduleJsonText{replacement}
+        ));
     const auto replacementRead = port.read();
     QVERIFY(replacementRead);
-    QCOMPARE(replacementRead.value(), replacement);
+    QCOMPARE(replacementRead.value().value(), replacement);
 
     const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
@@ -309,7 +365,9 @@ saveFailureReturnsTechnicalErrorAndPreservesStoredPayload()
     SettingsRepository* const repository = session->settingsRepository();
     QVERIFY(repository);
     ApplicationServicesAcademicCalendarSchedulePreferencesPort port(services);
-    QVERIFY(port.write(initial));
+    QVERIFY(port.write(
+        AcademicCalendarScheduleJsonText{initial}
+        ));
     QVERIFY(repository->saveSetting(
         QString::fromUtf8(UnrelatedKey),
         QStringLiteral("preserved")
@@ -326,7 +384,9 @@ saveFailureReturnsTechnicalErrorAndPreservesStoredPayload()
         )")
         ));
 
-    const auto failed = port.write(replacement);
+    const auto failed = port.write(
+        AcademicCalendarScheduleJsonText{replacement}
+        );
     QVERIFY(!failed);
     QCOMPARE(failed.error().code, Domain::ErrorCode::Technical);
     QVERIFY(QString::fromStdString(failed.error().message).contains(
@@ -335,7 +395,7 @@ saveFailureReturnsTechnicalErrorAndPreservesStoredPayload()
 
     const auto persisted = port.read();
     QVERIFY(persisted);
-    QCOMPARE(persisted.value(), initial);
+    QCOMPARE(persisted.value().value(), initial);
     const auto unrelated = repository->loadSetting(
         QString::fromUtf8(UnrelatedKey)
         );
