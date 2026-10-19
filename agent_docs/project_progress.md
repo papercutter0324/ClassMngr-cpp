@@ -5586,3 +5586,17 @@ synchronized-write rollback, the integer QSettings key
 conversion and other preference settings stay unchanged. Focused Application,
 platform port, menu, and legacy settings targets are recorded in the Phase 2
 plan. Implementation has not started. F629 and both phase gates remain open.
+
+## Phase 2 update - F1126 complete; Batch484 active - 2026-10-20
+
+F1126 completed at source/test commit `a87bb612`, following acceptance
+`a281a774`. Closed `ExcelImportTimeoutChoice` now types
+`ExcelImportTimeoutPreferences` and stored user-preference state. Explicit
+conversion keeps the 30/60/120/300-second values at integer settings and UI
+boundaries; invalid integer inputs, unknown enum writes, 120-second fallback,
+the existing setting key, and save-failure behavior remain intact. `ClassMngr`
+and all four focused test targets built; focused CTest passed 4/4, including
+invalid combo item-data restoration/warning and no-write behavior. The import
+dialog timer call sites were compiled and still multiply the selected seconds
+by 1,000. Windows and full-suite verification were not run. F1127 is next for
+acceptance. F629 and both phase gates remain open.

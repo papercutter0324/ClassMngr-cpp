@@ -7917,3 +7917,12 @@ value and stored user-preference snapshot, with explicit seconds conversion at
 platform, UI, and legacy numeric boundaries. Keep unsupported integer inputs
 rejected by Application setters and writes, and preserve 120-second fallback,
 the four supported values, persistence key, and save-failure recovery.
+
+## 2026-10-20 - F1126 complete
+
+F1126 completed at source/test commit `a87bb612`, following acceptance
+`a281a774`. The four-value `ExcelImportTimeoutChoice` now types both the
+Application port preferences and stored user-preference snapshot, with
+seconds conversion at persistence and UI boundaries. Focused Application,
+platform, menu, and legacy settings tests passed 4/4. Windows and the full
+suite were not run.

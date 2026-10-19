@@ -49261,3 +49261,29 @@ Focused evidence targets: `ClassMngrNextApplicationUserPreferencesTests`,
 dialog consumers as needed. Batch484 remains active with eight complete,
 F1126 accepted/in progress, and F1127 discovered and next for acceptance.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1126 Excel Import timeout choice complete - 2026-10-20
+
+F1126 is complete at production/test commit `a87bb612`, following acceptance
+`a281a774`. `ExcelImportTimeoutChoice` now has explicit mappings for 30, 60,
+120, and 300 seconds and types `ExcelImportTimeoutPreferences` and the stored
+`UserPreferencesSnapshot` value. Integer compatibility getters and the
+validated integer setter remain; preference/platform boundaries retain the
+`imports/excelTimeoutSeconds` integer setting. Invalid integer inputs retain
+nonrecoverable `InvalidInput` without changing state. Invalid enum writes
+retain the same error text and severity; malformed or unsupported stored
+values fall back to 120 without overwriting the raw setting. Failed
+synchronized writes still roll back and retry.
+
+Menu coverage confirms unsupported combo data warns, restores the selection,
+and makes no settings write. `ClassMngr` and the four focused targets
+`ClassMngrNextApplicationUserPreferencesTests`,
+`ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests`,
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+`ClassMngrAiCommentOptionsTests` built; their focused CTests passed 4/4. The
+import menu and Teacher/Schedule Import dialog consumers compiled. Timer
+seconds-to-milliseconds conversion was inspected but not dynamically
+exercised. `git diff --check` passed. Verification used macOS arm64 Debug with
+Qt 6.12.0; Windows and the full suite were not run. Batch484 remains active
+with nine complete candidates and F1127 discovered and next for acceptance.
+F629 and the Phase 0 and Phase 2 gates remain open.
