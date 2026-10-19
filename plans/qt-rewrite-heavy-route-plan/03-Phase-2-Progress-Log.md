@@ -49586,3 +49586,23 @@ plus relevant existing failure/default selectors). Pin the typed value and
 `09:05` conversion; cover `0` and `1439` or the practical range edges without
 weakening existing checks. F1131 is next for acceptance. Batch485 remains
 unpushed; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1130 Schedule-slot start minute complete - 2026-10-20
+
+F1130 completed at source/test commit `08d614eed4e385e9a2f2007d115b04bd1f3d2262`,
+following acceptance `849dd0fb`. Permissive Application
+`ScheduleSlotStartMinute` now types the request field, with explicit `int`
+construction, default `0`, `.value()`, and equality. Existing validation
+order, bounds, error, and no-port-call behavior remain; strict UI parsing and
+zero-padded platform persistence are preserved.
+
+The following build passed:
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationScheduleSlotStateSaveTests ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests -j 4`.
+Focused CTest passed 2/2:
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNext(Application|PlatformApplicationServices)ScheduleSlotStateSave(Port)?Tests'`.
+Coverage includes wrapper default/value/equality, valid `0` and `1439`, invalid
+`-1`/`1440` without a use-case port call or platform write, validation error
+precedence, and persisted `00:00`, `09:05`, and `23:59`. `git diff --check`
+passed. The full suite and Windows verification were not run. Batch485 has
+three complete slices and seven discovered; F1131 is next for acceptance. The
+batch remains unpushed; F629 and the Phase 0 and Phase 2 gates remain open.
