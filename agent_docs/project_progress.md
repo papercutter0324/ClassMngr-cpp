@@ -5645,3 +5645,13 @@ passed 1/1; both offscreen UI selectors passed, 3/0 each. `git diff --check`
 passed. Windows and the full suite were not run. Batch485 has one complete
 slice and nine discovered; F1129 is next for acceptance. F629 and both phase
 gates remain open.
+
+## Phase 2 update - F1129 accepted; Batch485 active - 2026-10-20
+
+F1129 is accepted/in progress. Add permissive Application value
+`ClassDetailsValidationContextTeacherId` around the raw `std::int64_t` used by
+the Class Details validation context and snapshot, preserving `-1` fallback,
+explicit `-2`, and `2147483648`. Keep the later `TeacherId` conversion and
+downstream validation unchanged. Implementation and tests have not started.
+Batch485 has one complete slice, one accepted/in progress, and eight discovered;
+F1130 is next. F629 and both phase gates remain open.

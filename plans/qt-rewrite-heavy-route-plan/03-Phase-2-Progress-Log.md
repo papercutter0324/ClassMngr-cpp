@@ -49473,3 +49473,69 @@ Focused targets/selectors:
 Batch485 remains active with F1128 accepted/in progress and nine discovered
 candidates; F1129 is next for acceptance. F629 and the Phase 0 and Phase 2
 gates remain open.
+
+### F1128 Speaking Evaluation elementary-grade result complete - 2026-10-20
+
+F1128 is complete at source/test commit `63fff147`, following acceptance
+`2a95f68e`. `Domain::CourseGradeBand` now types the report result and AI
+eligibility input; the existing permissive parser, raw-text template rules,
+legacy integer adapters, prompt wording, and eligibility failure order remain
+preserved.
+
+A clean reconfiguration of the existing `build/macos-clang-debug` tree with
+Qt 6.12.0 restored an inconsistent generated archive; no CMake or source
+repair was needed. `ClassMngr` and the affected targets
+`ClassMngrNextApplicationSpeakingEvaluationReportContentTests`,
+`ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests`,
+`ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests`, and
+`ClassMngrSpeakingEvalBatchReportServiceTests` built. The three Application
+CTests passed 3/3. `ClassMngrSpeakingEvalReportProjectionAdapterTests` passed
+1/1, including the M1-to-legacy-zero assertion. Direct offscreen selectors
+`aiBatchDialogDisplaysEligibilityReasonsAndCheckState` and
+`aiPromptButtonsRequireCompleteInput` each passed with 3 passed and 0 failed.
+`git diff --check` passed. Windows verification and the full suite were not
+run. Batch485 remains active with one complete candidate, F1129 accepted/in
+progress, eight discovered, and F1130 next. F629 and the Phase 0 and Phase 2
+gates remain open.
+
+### F1129 Class Details validation-context teacher identity accepted before implementation - 2026-10-20
+
+F1129 is accepted/in progress; implementation and tests have not started. Add
+permissive Application value `ClassDetailsValidationContextTeacherId` around
+`std::int64_t`, with `.value()` access and default `-1`; do not validate,
+truncate, or narrow it. Use it only for
+`ClassDetailsValidationContextData::teacherId` and
+`ClassDetailsValidationContextSnapshot::teacherId`.
+
+Preserve unchanged-copy query behavior. At the platform adapter, wrap the
+repository `qint64`; at the existing save-workflow conversion to
+`Domain::TeacherId`, unwrap and retain the current `std::to_string` /
+`TeacherId::fromString` path. Preserve absent-row and query-failure `-1`
+fallback, explicit `-2`, and wide `2147483648`. Add no positive-ID validation
+to the context query/adapter; keep downstream validation policy and save
+stage order unchanged. Do not change class identity, class ID, repository
+storage type/defaults, the `TeacherId` contract, raw text, or unrelated
+Class Details paths.
+
+The evidence supports a dedicated wrapper: current `std::int64_t` context
+fields already preserve the raw values, while `Domain::TeacherId` is a later
+string-valued ID and does not encode these sentinel/range semantics. Do not
+substitute `TeacherId` for this context value.
+
+Focused targets/selectors:
+
+- `NextApplicationClassDetailsValidationContextQuery`:
+  `contractUsesTypedQtFreeContextValues`,
+  `callsPortOnceAndPreservesIdentitySentinelsAndRawText`, and
+  `preservesWideTeacherIdThroughContextQuery`.
+- `NextPlatformApplicationServicesClassDetailsValidationContextPort`:
+  `readsSentinelTeacherIdAndExactTextFromActiveRepository`,
+  `preservesWideTeacherIdFromActiveRepository`, and
+  `missingClassInfoRowPreservesRepositoryDefaults`.
+- `NextApplicationClassDetailsSaveUseCase`:
+  `workflowContextFailureAndMismatchFallBack` and
+  `workflowSuccessNormalizesAndPreservesStageOrder`.
+
+Build affected consumers as needed. Batch485 remains active with F1128
+complete, F1129 accepted/in progress, eight discovered candidates, and F1130
+next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
