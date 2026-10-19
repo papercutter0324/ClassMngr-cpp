@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1095 is accepted to carry Calendar event time status as a domain enum through Application contracts while preserving legacy text behavior; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
+- Current note: Batch475 closed with F1095 complete; F1097 is the sole Batch476 discovery and is next for acceptance, not yet accepted. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch475 (1 discovered candidate)
+#### Active batch: Batch476 (1 discovered candidate)
 
-Batch474 is complete with F1091-F1094 committed; its closeout and push are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch475 has one candidate:
+Batch475 is closed with F1095 complete at `fc53804`; its source/test commit and verification are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch476 has one discovered candidate:
 
-1. F1095 - Carry Calendar event time status as a domain enum across Application contracts: accepted; implement the typed flow and preserve legacy conversion behavior.
+1. F1097 - Use typed IDs for repeat-series occurrence contracts: discovered; next for acceptance; not yet accepted.
 
 No other slices were found.
 

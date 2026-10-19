@@ -46953,3 +46953,49 @@ Batch474 is pushed to `origin/Qt-Rewrite` at `fbcbb6c987eb21196d8e0fd0b87583f853
 5. Build `ClassMngr` and the existing Next Calendar event, query-port, import-use-case, platform-port, cache, dialog, repository, import-parity, page-mutation-parity, and import test targets. Run their focused CTests and `git diff --check`.
 
 The boundary audit confirmed persisted text and all-day repository writes remain unchanged. It identified the canonical status mapping in legacy model/repository code, the UI/import/cache/QML conversions, and existing source assertions that rely on string construction, whitespace acceptance, length checks, or invalid-name validation. F1095 is accepted for implementation. Batch475 contains only F1095; no other slices were found.
+
+### F1095 complete; Batch475 closed; Batch476 discovered - 2026-10-19
+
+F1095 is complete at source/test commit
+`fc538404ee2e9eaaa2947bfa09fb80608ff838d6`; its prior acceptance record is
+commit `2886af0f7d0106bcbbdfa5e6f921ed6f394e6a1c`. The Calendar summary, save,
+edit-draft, series-edit, and series occurrence update contracts now use
+`Domain::CalendarEventTimeStatus`. Legacy text conversion remains at the
+boundary; canonical persisted names, legacy normalization, all-day read
+projection behavior, and the explicit six-field import signature remain
+unchanged.
+
+The tester built `ClassMngr` and the ten existing affected Next Calendar event,
+query-port, import-use-case, platform-port, cache, dialog, repository,
+import-parity, page-mutation-parity, and import test targets. Nine focused
+CTests passed in the restricted run; import-parity could not bind
+`QTcpServer::listen(LocalHost, 0)` there, then passed 1/1 when rerun with
+loopback access. All ten focused CTests passed in total. `git diff --check`
+passed. This is local macOS arm64/Qt 6.12 evidence; no full suite ran and
+Windows was unavailable.
+
+Batch475 is closed with F1095 complete. Its closeout documentation still needs
+the Git operator to commit and push it.
+
+Batch476 discovery used two independent read-only reviews. Both identified one
+candidate, F1097: `CalendarEventSeriesEditOccurrenceSnapshot.eventId` and
+`CalendarEventSeriesEditOccurrenceUpdate.eventId` are `std::int64_t` in
+`src/next/application/calendar_event_series_edit_plan.h`, while the domain
+already defines `Domain::CalendarEventId`; the platform repository boundary
+uses legacy `qint64` in
+`src/next/platform/application_services_calendar_event_series_edit_port.h`.
+F1097 is discovered and next for acceptance, not yet accepted. Likely existing
+coverage is in `NextApplicationCalendarEventTests` and
+`NextPlatformApplicationServicesCalendarEventPortTests`.
+
+F1096 was reviewed as a near-miss and is not an active slice. Phase 2.1 calls
+for typed enums generally, but the explicit F54 decision on 2026-09-25
+preserves Calendar event type request strings and raw fields while using the
+classifiers, including trim and 64-character behavior. No superseding
+requirement was found, so F54 is not reopened. No other actionable candidate
+or newly triggered Deferred item was found.
+
+F629 is separately complete as a macOS route-matrix slice. The combined Phase
+0 gate remains Open while Windows x64 evidence is unavailable. The Phase 2
+exit gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains pending
+policy reconciliation. Batch476 has one candidate; no other slices were found.
