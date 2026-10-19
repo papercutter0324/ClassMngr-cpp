@@ -1,14 +1,14 @@
 #pragma once
 
+#include "next/application/skipped_update_version_text.h"
 #include "next/domain/operation_result.h"
 
 #include <optional>
-#include <string>
 
 namespace ClassMngr::Next::Application
 {
 
-using SkippedUpdateVersion = std::optional<std::string>;
+using SkippedUpdateVersion = std::optional<SkippedUpdateVersionText>;
 
 // The skipped update version is an optional UTF-8 value. Empty or unavailable
 // legacy storage is represented as an empty optional at this boundary.

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/application/skipped_update_version_text.h"
+
 #include <compare>
 #include <string_view>
 
@@ -31,7 +33,7 @@ struct SkippedUpdateVersionPolicyInput final
     UpdateVersion currentVersion;
     UpdateVersion latestVersion;
     UpdateVersion skippedVersion;
-    std::string_view storedVersionText;
+    SkippedUpdateVersionText storedVersionText;
     std::string_view latestVersionText;
 };
 
@@ -63,7 +65,7 @@ decideSkippedUpdateVersion(
 
     const bool exactMatchToLatest =
         !input.latestVersionText.empty()
-        && input.storedVersionText == input.latestVersionText;
+        && input.storedVersionText.value() == input.latestVersionText;
 
     if (
         input.skippedVersion <= input.currentVersion

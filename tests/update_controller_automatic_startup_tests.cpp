@@ -35,8 +35,15 @@
 #include <string>
 #include <utility>
 
+using ClassMngr::Next::Application::SkippedUpdateVersionText;
+
 namespace
 {
+
+SkippedUpdateVersionText skippedVersionText(std::string value)
+{
+    return SkippedUpdateVersionText(std::move(value));
+}
 
 QString assetName(
     const QString& platformKey,
@@ -239,7 +246,7 @@ void setAutomaticChecksEnabled(const bool enabled)
         SettingsManagerSkippedUpdateVersionPort
         skippedUpdateVersionPort;
     const auto result = skippedUpdateVersionPort.write({
-        .skippedVersion = version
+        .skippedVersion = skippedVersionText(version)
     });
     return static_cast<bool>(result);
 }
@@ -542,7 +549,9 @@ exactSkippedVersionIsKeptAndSuppressesPrompt()
         skippedUpdateVersionPort;
     QCOMPARE(
         skippedUpdateVersionPort.read().skippedVersion,
-        std::optional<std::string>("2.0.0")
+        std::optional<SkippedUpdateVersionText>(
+            skippedVersionText("2.0.0")
+            )
         );
     QVERIFY(!controller.hasVisibleDialog());
 }
@@ -631,7 +640,9 @@ failedUserUnskipRetainsStateAndAllowsRetry()
     QCOMPARE(settings.get(skippedVersionKey), QVariant(QStringLiteral("02.0.0")));
     QCOMPARE(
         skippedUpdateVersionPreferences->read().skippedVersion,
-        std::optional<std::string>("02.0.0")
+        std::optional<SkippedUpdateVersionText>(
+            skippedVersionText("02.0.0")
+            )
         );
     QCOMPARE(synchronizationAttempts, 1);
     QVERIFY(
@@ -740,7 +751,9 @@ failedStaleCleanupRetainsValueAndDisplayAndAllowsPrompt()
     QCOMPARE(settings.get(skippedVersionKey), QVariant(QStringLiteral("1.5.0")));
     QCOMPARE(
         skippedUpdateVersionPreferences->read().skippedVersion,
-        std::optional<std::string>("1.5.0")
+        std::optional<SkippedUpdateVersionText>(
+            skippedVersionText("1.5.0")
+            )
         );
 
     UpdateDialog* const dialog = automaticUpdateDialog();
@@ -898,7 +911,9 @@ failedAutomaticSkipKeepsDialogOpenAndAllowsRetry()
     QCOMPARE(settings.get(skippedVersionKey), QVariant(QStringLiteral("2.0.0")));
     QCOMPARE(
         skippedUpdateVersionPreferences->read().skippedVersion,
-        std::optional<std::string>("2.0.0")
+        std::optional<SkippedUpdateVersionText>(
+            skippedVersionText("2.0.0")
+            )
         );
     QSettings persistedSettings(
         QDir(m_settingsRoot->path()).filePath(

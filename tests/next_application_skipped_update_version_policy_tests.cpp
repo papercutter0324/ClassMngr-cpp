@@ -2,8 +2,10 @@
 
 #include <array>
 #include <cstdlib>
+#include <string>
 #include <string_view>
 
+using ClassMngr::Next::Application::SkippedUpdateVersionText;
 using ClassMngr::Next::Application::SkippedUpdateVersionPolicyInput;
 using ClassMngr::Next::Application::SkippedUpdateVersionState;
 using ClassMngr::Next::Application::UpdateVersion;
@@ -80,7 +82,9 @@ int main()
                 .currentVersion = testCase.current,
                 .latestVersion = testCase.latest,
                 .skippedVersion = testCase.skipped,
-                .storedVersionText = testCase.storedText,
+                .storedVersionText = SkippedUpdateVersionText(
+                    std::string(testCase.storedText)
+                    ),
                 .latestVersionText = testCase.latestText
             }
             );
@@ -93,6 +97,29 @@ int main()
         {
             return EXIT_FAILURE;
         }
+    }
+
+    const SkippedUpdateVersionText emptyText;
+    if (!emptyText.empty() || !emptyText.value().empty())
+    {
+        return EXIT_FAILURE;
+    }
+
+    const std::string arbitraryBytes{" \0\xff \t", 5};
+    const SkippedUpdateVersionText byteText(arbitraryBytes);
+    const SkippedUpdateVersionText equalByteText(arbitraryBytes);
+    const SkippedUpdateVersionText differentByteText(
+        std::string{" \0\xff \n", 5}
+        );
+    if (
+        byteText.empty()
+        || byteText.value() != arbitraryBytes
+        || byteText != equalByteText
+        || byteText == differentByteText
+        || emptyText != SkippedUpdateVersionText(std::string{})
+        )
+    {
+        return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;

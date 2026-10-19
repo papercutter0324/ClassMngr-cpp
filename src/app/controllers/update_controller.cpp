@@ -154,9 +154,9 @@ bool UpdateController::reconcileSkippedVersion(
     }
     else
     {
-        input.storedVersionText = std::string_view(*storedSkippedVersion);
+        input.storedVersionText = *storedSkippedVersion;
         const auto parsedSkippedVersion = Version::parse(
-            QString::fromStdString(*storedSkippedVersion)
+            QString::fromStdString(storedSkippedVersion->value())
             );
         if (parsedSkippedVersion)
         {
@@ -206,7 +206,10 @@ ClassMngr::Next::Domain::Result<void> UpdateController::skipVersion(
     }
 
     const auto saved = m_skippedUpdateVersionPreferencesPort->write({
-        .skippedVersion = parsed->toString().toUtf8().toStdString()
+        .skippedVersion =
+            ClassMngr::Next::Application::SkippedUpdateVersionText(
+                parsed->toString().toUtf8().toStdString()
+                )
     });
     if (!saved)
     {
@@ -389,7 +392,7 @@ UpdateDialog* UpdateController::ensureDialog(
     const auto skipped =
         m_skippedUpdateVersionPreferencesPort->read().skippedVersion;
     const QString skippedText = skipped.has_value()
-        ? QString::fromStdString(*skipped)
+        ? QString::fromStdString(skipped->value())
         : QString();
 
     if (m_dialog)

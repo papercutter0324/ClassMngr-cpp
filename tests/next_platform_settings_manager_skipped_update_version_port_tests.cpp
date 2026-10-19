@@ -10,6 +10,7 @@
 
 #include <optional>
 #include <string>
+#include <utility>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -23,6 +24,11 @@ QString skippedUpdateVersionKey()
     return QString::fromUtf8(
         SettingsManager::Keys::SKIPPED_UPDATE_VERSION
         );
+}
+
+SkippedUpdateVersionText skippedVersionText(std::string value)
+{
+    return SkippedUpdateVersionText(std::move(value));
 }
 
 } // namespace
@@ -82,6 +88,14 @@ missingAndEmptySettingsReadAsEmpty()
     settings.set(key, QStringLiteral("   "));
     QVERIFY(!port.read().skippedVersion.has_value());
     QVERIFY(settings.get(key).isValid());
+
+    const auto emptyWrite = port.write({
+        .skippedVersion = skippedVersionText(std::string{})
+    });
+    QVERIFY(emptyWrite);
+    QVERIFY(settings.get(key).isValid());
+    QVERIFY(settings.get(key).toString().isEmpty());
+    QVERIFY(!port.read().skippedVersion.has_value());
 }
 
 void NextPlatformSettingsManagerSkippedUpdateVersionPortTests::
@@ -94,16 +108,16 @@ trimsOnReadAndWrite()
     settings.set(key, QStringLiteral(" 1.2.3 "));
     const auto loaded = port.read();
     QVERIFY(loaded.skippedVersion.has_value());
-    QCOMPARE(*loaded.skippedVersion, std::string("1.2.3"));
+    QCOMPARE(*loaded.skippedVersion, skippedVersionText("1.2.3"));
 
     const auto writeResult = port.write({
-        .skippedVersion = std::string(" 2.3.4 ")
+        .skippedVersion = skippedVersionText(" 2.3.4 ")
     });
     QVERIFY(writeResult);
     QCOMPARE(settings.get(key).toString(), QStringLiteral("2.3.4"));
     QCOMPARE(
         *port.read().skippedVersion,
-        std::string("2.3.4")
+        skippedVersionText("2.3.4")
         );
 }
 
@@ -113,7 +127,7 @@ roundTripsThroughSettingsManager()
     SettingsManager& settings = SettingsManager::instance();
     const QString key = skippedUpdateVersionKey();
     const SettingsManagerSkippedUpdateVersionPort port;
-    const std::string expected = "9.10.11";
+    const SkippedUpdateVersionText expected = skippedVersionText("9.10.11");
 
     const auto writeResult = port.write({.skippedVersion = expected});
     QVERIFY(writeResult);
@@ -131,7 +145,9 @@ clearRemovesSetting()
     const QString key = skippedUpdateVersionKey();
     const SettingsManagerSkippedUpdateVersionPort port;
 
-    const auto writeResult = port.write({.skippedVersion = std::string("1.2.3")});
+    const auto writeResult = port.write({
+        .skippedVersion = skippedVersionText("1.2.3")
+    });
     QVERIFY(writeResult);
     QVERIFY(settings.get(key).isValid());
 
@@ -184,7 +200,7 @@ failedClearRestoresExactPreviousValueAndAllowsRetry()
     QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
     QCOMPARE(
         faultablePort.read().skippedVersion,
-        std::optional<std::string>("1.2.3")
+        std::optional<SkippedUpdateVersionText>(skippedVersionText("1.2.3"))
         );
 
     QSettings persistedSettings(
@@ -304,7 +320,7 @@ failedWriteRestoresExactPreviousValueAndAllowsRetry()
         );
 
     const auto failedWrite = faultablePort.write({
-        .skippedVersion = std::string("2.3.4")
+        .skippedVersion = skippedVersionText("2.3.4")
     });
     QVERIFY(!failedWrite);
     QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
@@ -319,7 +335,7 @@ failedWriteRestoresExactPreviousValueAndAllowsRetry()
     QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
     QCOMPARE(
         faultablePort.read().skippedVersion,
-        std::optional<std::string>("1.2.3")
+        std::optional<SkippedUpdateVersionText>(skippedVersionText("1.2.3"))
         );
 
     QSettings persistedSettings(
@@ -337,7 +353,7 @@ failedWriteRestoresExactPreviousValueAndAllowsRetry()
 
     injectAccessError = false;
     const auto retry = faultablePort.write({
-        .skippedVersion = std::string("2.3.4")
+        .skippedVersion = skippedVersionText("2.3.4")
     });
     QVERIFY(retry);
     QCOMPARE(synchronizationAttempts, 2);
@@ -345,7 +361,7 @@ failedWriteRestoresExactPreviousValueAndAllowsRetry()
     QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
     QCOMPARE(
         faultablePort.read().skippedVersion,
-        std::optional<std::string>("2.3.4")
+        std::optional<SkippedUpdateVersionText>(skippedVersionText("2.3.4"))
         );
     persistedSettings.sync();
     QCOMPARE(persistedSettings.status(), QSettings::NoError);
@@ -381,7 +397,7 @@ failedWriteRestoresAbsentKeyAndPreservesUnrelatedSetting()
         );
 
     const auto failedWrite = faultablePort.write({
-        .skippedVersion = std::string("3.4.5")
+        .skippedVersion = skippedVersionText("3.4.5")
     });
     QVERIFY(!failedWrite);
     QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
@@ -406,7 +422,7 @@ failedWriteRestoresAbsentKeyAndPreservesUnrelatedSetting()
 
     injectAccessError = false;
     const auto retry = faultablePort.write({
-        .skippedVersion = std::string("3.4.5")
+        .skippedVersion = skippedVersionText("3.4.5")
     });
     QVERIFY(retry);
     QCOMPARE(synchronizationAttempts, 2);
@@ -414,7 +430,7 @@ failedWriteRestoresAbsentKeyAndPreservesUnrelatedSetting()
     QCOMPARE(settings.get(unrelatedKey), unrelatedValue);
     QCOMPARE(
         faultablePort.read().skippedVersion,
-        std::optional<std::string>("3.4.5")
+        std::optional<SkippedUpdateVersionText>(skippedVersionText("3.4.5"))
         );
     persistedSettings.sync();
     QCOMPARE(persistedSettings.status(), QSettings::NoError);

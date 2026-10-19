@@ -42,7 +42,9 @@ public:
         }
 
         return {
-            .skippedVersion = storedVersion.toStdString()
+            .skippedVersion = Application::SkippedUpdateVersionText(
+                storedVersion.toStdString()
+                )
         };
     }
 
@@ -51,7 +53,9 @@ public:
         ) const override
     {
         const QString version = preferences.skippedVersion.has_value()
-            ? QString::fromStdString(*preferences.skippedVersion).trimmed()
+            ? QString::fromStdString(
+                preferences.skippedVersion->value()
+                ).trimmed()
             : QString();
 
         const QSettings::Status status =
