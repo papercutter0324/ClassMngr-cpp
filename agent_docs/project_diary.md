@@ -7629,3 +7629,13 @@ markers, so arbitrary Unicode cannot reach its private projection; the
 existing dialog flow covers supported levels, while UTF-8 exactness is tested
 at the resolver, use-case, and data adapter. No production seam was added for
 an unreachable UI input. No full suite ran.
+
+## 2026-10-20 - F1112 accepted
+
+Schedule Import review correlation keys are an exact Application contract,
+separate from F84's Hangul-normalized matching key. Use an opaque value type on
+the review-decision candidate, resolution, and issue fields; preserve empty
+values, direct arbitrary Unicode keys, exact grouping, and existing validation
+and issue order. Limit this slice to the review validator and its feature and
+apply-review adapters. Apply-request and state-validation keys are distinct
+contracts and remain unchanged.

@@ -5232,3 +5232,14 @@ worktree was clean and up to date. Batch482 is active with F1112 next for
 acceptance reassessment; F1113 and F1114 remain discovered, not accepted.
 F629 still needs source-bound Windows x64 layout evidence; the Phase 0 and
 Phase 2 gates remain open.
+
+## Phase 2 update - F1112 accepted; Batch482 active - 2026-10-20
+
+F1112 is accepted before implementation. Add Application
+`ScheduleImportReviewTeacherKey` to the three Schedule Import review-decision
+key fields and preserve exact `std::string` bytes, empty/default values,
+grouping, validation, and issue order. Update only the review validator and
+feature/apply-review construction adapters; leave apply-request and state
+validation keys unchanged. F1113 and F1114 remain discovered, not accepted.
+F629 still needs source-bound Windows x64 layout evidence, which is not
+available now; the Phase 0 and Phase 2 gates remain open.

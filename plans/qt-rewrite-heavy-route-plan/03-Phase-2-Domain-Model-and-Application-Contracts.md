@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is active with F1112 next for acceptance reassessment; keep F1113 and F1114 discovered, not accepted, and keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is active; F1112 is accepted before implementation, with F1113 and F1114 still discovered, not accepted; implement the review-key type, validator grouping/lookups, and construction adapters while keeping F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch482 (3 candidates; 3 discovered)
+#### Active batch: Batch482 (3 candidates; 1 accepted; 2 discovered)
 
-1. F1112 - Type Schedule Import teacher review correlation keys: discovered, not accepted; next for acceptance reassessment. Preserve exact key bytes and matching, empty/error behavior and ordering, and conversion across review/apply/state contracts; do not conflate the key with `Domain::KoreanTeacherKey`.
+1. F1112 - Type Schedule Import teacher review correlation keys: accepted before implementation. Add Application `ScheduleImportReviewTeacherKey` to the candidate, resolution, and issue contracts; update validator grouping/lookups and feature/apply-review construction adapters. Preserve exact bytes and behavior; leave apply-request and state key fields unchanged and do not use `Domain::KoreanTeacherKey`.
 2. F1113 - Type Class Transfer source correlation keys: discovered, not accepted. Preserve nonblank/bounded validation, uniqueness, exact teacher-reference mapping, missing-teacher semantics, and ordering.
 3. F1114 - Type generic import-review source keys: discovered, not accepted. Preserve blank/256-byte validation, exact bytes, category tagging, and current validation outcomes.
 

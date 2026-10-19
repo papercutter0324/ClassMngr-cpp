@@ -48219,3 +48219,54 @@ verification, `git status --short --branch` showed a clean worktree and
 `Qt-Rewrite...origin/Qt-Rewrite`. Batch482 is active with F1112 next for
 acceptance reassessment; F1113 and F1114 remain discovered and not accepted.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1112 Schedule Import teacher review correlation keys accepted before implementation - 2026-10-20
+
+F1112 is accepted for Batch482; implementation and tests have not started.
+Define the Application opaque value type `ScheduleImportReviewTeacherKey` to
+preserve the exact current `std::string` bytes, allow default-empty values,
+and provide exact equality and ordering for existing set/map grouping. Use it
+for the key fields of `ScheduleImportReviewDecisionCandidate`,
+`ScheduleImportReviewTeacherResolution`, and
+`ScheduleImportReviewDecisionIssue`. Update only the review-decision
+validator's grouping/lookups and the feature/apply-review adapters that
+construct these decision contracts.
+
+Preserve exact matching, candidate first-seen order, issue emission order and
+payloads, empty-key behavior, duplicate/unknown/missing-resolution behavior,
+invalid-action ordering, and imported-room aggregation per exact key. Retain
+the existing UTF-16-to-UTF-8 and `QString::toStdString()` conversions. Do not
+trim, filter, normalize, use `KoreanTeacherKey::fromName`, or otherwise alter
+keys. Do not reuse `Domain::KoreanTeacherKey`: F84 removes non-Hangul code
+units for a distinct matching projection, while this review correlation
+contract accepts and exactly matches arbitrary direct strings such as
+`teacher-a`. Do not type `ScheduleImportApplyRequest` or
+`ScheduleImportState*` key fields in this slice; leave those data/state
+contracts, UI representation, and persistence representation unchanged.
+
+Evidence reviewed: `src/next/application/schedule_import_review_decisions.h`
+declares the three string keys and their exact grouping and validation;
+`src/next/domain/korean_teacher_key.h` defines the separate normalized key.
+Although the valid parser currently assigns `teacherKey` using
+`TeacherImportNameUtils::hangulOnly(prefix)`, the review contract is also
+called directly with arbitrary strings by existing tests. Construction
+boundaries are `src/features/schedule/services/schedule_import_plan_validator.cpp`
+and `src/next/application/schedule_import_apply_review_decisions.h`; the
+apply-request and state projections remain outside this slice.
+
+Acceptance verification should check that all three decision key fields use
+the same type and can represent empty/default values; arbitrary non-Hangul and
+Unicode keys remain exact in lookup and issue payloads; and existing empty,
+duplicate, unknown, missing-resolution, invalid-action-order, room-aggregation,
+candidate-order, and issue-order behavior remains intact. Exercise the
+apply-review UTF-16-to-UTF-8 projection and feature `QString::toStdString()`
+adapter without changing conversion behavior, including supplementary-plane
+coverage. Build relevant Application/feature targets in
+`build/macos-clang-debug` and run only focused existing review-decision,
+apply-projection, readiness, and/or Schedule Import tests selected by the
+independent Tester. No full-suite or Windows x64 claim is requested.
+
+Batch482 remains active with F1112 accepted before implementation and F1113
+and F1114 discovered, not accepted. F629 still awaits Windows x64 layout
+evidence; the Phase 0 and Phase 2 gates remain open. No implementation,
+verification, or commit has occurred for F1112.
