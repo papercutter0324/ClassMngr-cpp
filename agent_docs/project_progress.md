@@ -5383,3 +5383,14 @@ Batch483 closeout commit `0f47ad32` is pushed to `origin/Qt-Rewrite` and
 verified at `0f47ad3241c727002c2cdb68a81c38145141dc03`; the worktree was
 clean after the push. Batch484 is active with ten discovered candidates and
 F1118 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1118 accepted; Batch484 active - 2026-10-20
+
+F1118 is accepted to type only the generated repeat-series occurrence update
+dates as `Domain::GregorianDate`, retaining typed valid dates through the
+Application plan and converting to Qt at the platform adapter. Keep request
+dates as raw strings for unchanged `InvalidInput` behavior and persisted
+snapshot dates raw so invalid database dates still return `Technical` before
+persistence. Preserve inclusive suffix selection, occurrence order, date
+offset/duration, supported range, and projection behavior. Implementation and
+tests have not started. F629 and the Phase 0 and Phase 2 gates remain open.

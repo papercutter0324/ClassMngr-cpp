@@ -7758,3 +7758,13 @@ Pushed Batch483 closeout commit `0f47ad3241c727002c2cdb68a81c38145141dc03`
 to `origin/Qt-Rewrite`. `git ls-remote` returned the same SHA, and the local
 worktree was clean after the push. Batch484 is active with F1118 next for
 acceptance.
+
+## 2026-10-20 - F1118 accepted
+
+Type the planner-generated repeat-series occurrence update dates as
+`GregorianDate`, retaining valid dates across the Application boundary and
+converting to Qt in the platform adapter. Keep untrusted request text raw so
+validation retains its current `InvalidInput` behavior, and keep persisted
+snapshot text raw so corrupt stored dates still produce `Technical` failures
+before persistence. This avoids a wrapper with mutable raw text and parsed
+state that could drift out of sync.

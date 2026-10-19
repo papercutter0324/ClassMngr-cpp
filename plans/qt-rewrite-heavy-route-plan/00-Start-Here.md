@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is active with ten discovered candidates, none accepted; F1118 is next for acceptance. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-0-complete-10-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is active with ten candidates: F1118 is accepted/in progress and nine remain discovered. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-0-complete-1-acceptedin-progress-9-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch484 — Active; ten candidates, all discovered and none accepted:**
+**Batch484 — Active; ten candidates, one accepted/in progress and nine discovered:**
 
-1. **F1118 — Type Calendar repeat-series edit dates.** Preserve date behavior and occurrence shifting.
+1. **F1118 — Type Calendar repeat-series edit dates (accepted/in progress).** Type generated occurrence updates as `GregorianDate`; preserve date behavior and occurrence shifting. Acceptance boundaries are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-accepted-before-implementation-2026-10-20).
 2. **F1119 — Type Schedule Import apply/state teacher correlation keys.** Preserve exact identity across state and apply requests.
 3. **F1120 — Type Teacher Import source validation keys.** Preserve per-source exact/parallel keys, normalization, and order.
 4. **F1121 — Type Campus Directory key/code.** Preserve exact code, byte length, and uniqueness.

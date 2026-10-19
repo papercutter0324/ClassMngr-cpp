@@ -48826,6 +48826,30 @@ pushed to `origin/Qt-Rewrite`. Read-only remote verification with
 `git ls-remote origin refs/heads/Qt-Rewrite` returned the same SHA.
 Immediately after the push, `git status --short --branch` reported
 `## Qt-Rewrite...origin/Qt-Rewrite` with no modified files. Batch483 is closed
-and pushed; Batch484 remains active with ten discovered candidates, none
-accepted, and F1118 next for acceptance. F629 and the Phase 0 and Phase 2
-gates remain open.
+and pushed; Batch484 remains active with ten candidates, F1118 accepted/in
+progress and nine discovered. F629 and the Phase 0 and Phase 2 gates remain
+open.
+
+### F1118 Calendar repeat-series generated dates accepted before implementation - 2026-10-20
+
+F1118 is accepted/in progress. Scope is limited to the generated date fields
+in `CalendarEventSeriesEditOccurrenceUpdate`: replace serialized strings with
+`Domain::GregorianDate` and convert to Qt only at the platform adapter. The
+three raw request date strings (`startDate`, `editedStartDate`, and
+`editedEndDate`) and snapshot `startDate` remain strings by design. This keeps
+malformed or impossible request dates on their current `InvalidInput` codes,
+messages, and precedence, and keeps invalid persisted snapshot dates failing
+as `Technical` before persistence.
+
+Preserve valid planner output, inclusive suffix selection, occurrence order,
+date offset and duration, the full `0001-01-01` through `9999-12-31` range,
+existing errors, persistence, and UI projection. The adapter must decode the
+typed generated dates without changing Qt behavior. Relevant contracts are in
+`src/next/application/calendar_event_series_edit_plan.h` and
+`src/next/platform/application_services_calendar_event_series_edit_port.h`.
+
+After implementation, verify with `ClassMngrNextApplicationCalendarEventTests`
+and CTest `NextApplicationCalendarEvent`, plus
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` and its
+registered CTest. Run `ClassMngrCalendarPageEventMutationParityTests` if API
+integration requires it. Implementation and tests have not started.
