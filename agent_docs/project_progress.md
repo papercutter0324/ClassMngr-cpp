@@ -4898,3 +4898,19 @@ and wide teacher IDs, and F1103 remains deferred pending parity/policy
 reconciliation. Starting F1102 also triggers the next-batch discovery required
 by the Phase 2 plan. The combined Phase 0 gate remains open while Windows x64
 evidence is unavailable; the Phase 2 exit gate remains open.
+
+## Phase 2 update - F1102 accepted; Batch479 discovered - 2026-10-19
+
+F1102 is accepted before implementation. Type both IDs in
+`ClassDetailsValidationInput` and its normalized result as `Domain::ClassId`
+and `Domain::TeacherId`; keep the teacher `-1` sentinel and 64-bit range,
+invalid numeric diagnostics, and policy issue ordering. Keep the validation
+context snapshot's teacher field as `std::int64_t`; context-read fallback
+policy remains deferred under F1103. No F1102 source or test changes have
+started.
+
+The required next-batch discovery is complete. Batch479 has five ordered
+candidates and is queued behind Batch478. Batch478 remains active and
+unpushed: F1099-F1101 are complete, F1102 is accepted, and F1103 remains
+deferred. The combined Phase 0 gate remains open while Windows x64 evidence is
+unavailable; the Phase 2 exit gate remains open.

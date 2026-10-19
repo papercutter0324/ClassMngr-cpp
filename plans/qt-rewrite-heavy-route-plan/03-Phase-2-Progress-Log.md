@@ -47496,3 +47496,90 @@ F1103 remains deferred pending parity/policy reconciliation. No other slices
 were found. The combined Phase 0 gate remains Open while Windows x64 evidence
 is unavailable; the Phase 2 gate remains Open, Gates 1 and 2 remain Partial,
 and F1007 remains pending policy reconciliation.
+
+### F1102 Class Details validation identity acceptance - recorded before implementation - 2026-10-19
+
+F1102 is accepted and selected for implementation in Batch478. Type both
+`classId` and `teacherId` in `ClassDetailsValidationInput` and its normalized
+value as `Domain::ClassId` and `Domain::TeacherId`. The smallest production
+scope is `src/next/application/class_details_validation_policy.h`,
+`src/next/application/class_details_save_workflow.h`, and the existing feature
+producer `src/features/classes/ui/class_details_page.cpp`.
+
+`ClassDetailsSaveRequest` already uses typed IDs. Keep
+`ClassDetailsValidationContextData` and
+`ClassDetailsValidationContextSnapshot.teacherId` as `std::int64_t`; do not
+change the context port, query, or adapter. Construct typed IDs from existing
+numeric fields at the feature boundary, but retain numeric checks in the
+validation policy because `TypedId::fromString` rejects only empty values.
+Preserve teacher `-1` as the unassigned sentinel and valid 64-bit values,
+including `2147483648`; reject teacher `0` and values below `-1`. Reject
+non-positive class IDs and values exceeding the existing `int` range. Keep
+exact numeric `integerValue` diagnostics for invalid numeric inputs, existing
+validation issue ordering, and the repeated `ClassIdInvalid` issue path.
+F1103's context-read failure and mismatch fallback behavior is expressly
+outside F1102.
+
+Focused acceptance scope: build `ClassMngr`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrClassDetailsSavePageTests`, and
+`ClassMngrClassDetailsPageSaveParityTests`. Run exact CTest selectors for the
+two Application targets and only named relevant QtTest cases for the UI
+targets. Preserve coverage for numeric values `-1`, `0`, `-2`, `-2147483649`,
+and `2147483648`, including wide teacher saves through the UI, workflow
+fallback, numeric diagnostics, and issue order. No implementation or test
+execution has started.
+
+F1102 acceptance is recorded before implementation. F1099-F1101 remain
+complete; F1103 remains deferred pending parity/policy reconciliation. The
+combined Phase 0 gate remains Open while Windows x64 evidence is unavailable;
+the Phase 2 gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains
+pending policy reconciliation.
+
+### Batch479 discovery - 2026-10-19
+
+Two independent read-only lanes were compared and reconciled into five unique
+ordered candidates. The complementary passes found no additional candidate
+and no changed F1103 trigger. These candidates are discovered for later
+reassessment, not accepted:
+
+1. **F1104 - Type class identity in Schedule testing-assignment reads.**
+   `ScheduleTestingAssignmentReadRow.classId` remains `int` with `-1`
+   unassigned while paired save uses optional typed `ClassId`. Preserve `-1`
+   and positive IDs and reject zero/other negative values. Source locations:
+   `src/next/application/schedule_testing_assignment_read_query.h`,
+   `src/next/platform/application_services_schedule_testing_assignment_read_port.h`,
+   and `src/features/schedule/ui/schedule_widget.cpp`; existing Application,
+   Platform, and Schedule widget test targets cover the path.
+2. **F1105 - Type the Campus Dashboard selected-campus read request.**
+   `CampusDashboardSelectedCampusReadRequest.campusId` is `std::string` and
+   the query validates and wraps it before its typed port. Preserve the UTF-8
+   page boundary and current matching behavior. Source locations:
+   `src/next/application/campus_dashboard_selected_campus_read_query.h`,
+   `src/next/application/campus_dashboard_selected_campus_read_port.h`, and
+   `src/features/campus/ui/campus_dashboard_page.cpp`.
+3. **F1106 - Keep Co-Teacher assignment identity typed at use-case entry.**
+   The use-case entry takes raw `int`/`std::int64_t` before constructing a
+   typed request. Preserve `-1` semantics and wide teacher IDs. Source
+   locations: `src/next/application/class_co_teacher_assignment_use_case.h`
+   and `src/features/classes/ui/class_co_teacher_page.cpp`.
+4. **F1107 - Carry typed IDs through Sub Prep print-order facts.** The facts
+   and policy use raw teacher/class integers. Preserve grouping and numeric
+   class-ID tie-break order; do not switch to lexical `TypedId` ordering.
+   Source locations: `src/next/application/sub_prep_print_order_policy.h`
+   and `src/features/sub_prep/ui/sub_prep_class_information_model.cpp`.
+5. **F1108 - Keep Sub Prep selected-class IDs typed through its selection
+   policy.** F1005's policy still accepts and returns raw `int` before the
+   feature converts to `Domain::ClassId`. Preserve positive filtering,
+   first-seen deduplication, exact day match, schedule order, and both entry
+   kinds. Source locations: `src/next/application/sub_prep_selected_class_ids.h`,
+   `src/features/sub_prep/services/sub_prep_package_service.cpp`, and
+   `src/features/sub_prep/ui/sub_prep_page_class_information.cpp`.
+
+No other slices were found.
+
+Batch478 remains active and unpushed. The required discovery pass at F1102
+start produced Batch479; no candidates beyond the five listed above were
+found. The combined Phase 0 gate remains Open while Windows x64
+evidence is unavailable, and the Phase 2 gate remains Open.

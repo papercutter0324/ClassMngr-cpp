@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch478 remains active and unpushed: F1099-F1101 are complete, and F1102 is next for acceptance reassessment; the combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
+- Current note: Batch478 remains active and unpushed: F1099-F1101 are complete, F1102 is accepted but not implemented, and F1103 is deferred; the required F1102 start-time discovery queued Batch479, while the Phase 0 and Phase 2 gates remain Open.
 
 ### Slice discovery batches
 
@@ -68,15 +68,27 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch478 (5 candidates; 3 complete)
+#### Active batch: Batch478 (5 candidates; 3 complete, 1 accepted, 1 deferred)
 
 Batch477 is complete with F1098 at source/test commit `fb92cddd`; its closeout was pushed to `origin/Qt-Rewrite` at `60e7bc42`. Batch478's complete ordered list is:
 
 1. F1099 - Type Calendar event-by-ID query request: complete at source/test commit `a942daab`; acceptance recorded before implementation.
 2. F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering: complete at source/test commit `820f54a2` and completion commit `40912507`; see the progress log for page-target verification limits.
 3. F1101 - Carry `CampusId` in feature campus metadata contracts: complete at source/test commit `cd64b46b`; see the progress log for verification evidence.
-4. F1102 - Type identity in Class Details validation contract: next for acceptance reassessment; preserve the unassigned sentinel and wide teacher IDs. Starting F1102 triggers next-batch discovery.
+4. F1102 - Type identity in Class Details validation contract: accepted, not yet implemented; preserve the `-1` unassigned sentinel, wide teacher IDs, and existing numeric validation diagnostics. Batch479 was discovered at F1102 start.
 5. F1103 - Surface Class Details validation-context read failures: deferred pending explicit parity/policy reconciliation; do not change behavior before that decision.
+
+No other slices were found.
+
+#### Next discovered batch: Batch479 (5 candidates)
+
+Discovered in the required next-batch pass triggered as F1102 was started; these candidates are queued, not yet accepted.
+
+1. F1104 - Type class identity in Schedule testing-assignment reads: preserve `-1` unassigned and positive IDs; continue rejecting zero and other negative values.
+2. F1105 - Type the Campus Dashboard selected-campus read request: preserve the UTF-8 page boundary and existing matching behavior.
+3. F1106 - Keep Co-Teacher assignment identity typed at use-case entry: preserve `-1` and wide teacher IDs.
+4. F1107 - Carry typed IDs through Sub Prep print-order facts: preserve grouping and numeric class-ID tie-break order.
+5. F1108 - Keep Sub Prep selected-class IDs typed through its selection policy: preserve positive filtering, first-seen deduplication, exact day match, schedule order, and both entry kinds.
 
 No other slices were found.
 

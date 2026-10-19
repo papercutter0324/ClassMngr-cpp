@@ -7448,3 +7448,17 @@ the draft, while a missing ID preserves it.
 The incremental macOS build and focused contract, adapter, and named UI checks
 passed. No full suite ran. F1102 is next for reassessment, which also triggers
 the required next-batch discovery.
+
+## 2026-10-19 - F1102 validation identity boundary
+
+F1102 is accepted to type both Class Details validation identities while
+keeping the validation-context teacher snapshot numeric. `TypedId::fromString`
+only rejects empty text, so the validation policy must continue parsing and
+checking values; `-1` remains the literal unassigned-teacher sentinel, and
+teacher diagnostics must preserve 64-bit values. Keep the save workflow's
+context-failure fallback unchanged under deferred F1103.
+
+The next-batch review found five distinct candidates. The Schedule testing
+assignment read, Campus Dashboard selected-campus read, Co-Teacher assignment
+entry, Sub Prep print ordering, and Sub Prep selected-class policy boundaries
+are queued for Batch479. No implementation or tests have started for F1102.
