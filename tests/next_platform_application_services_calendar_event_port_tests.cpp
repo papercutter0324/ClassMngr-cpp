@@ -119,6 +119,11 @@ CalendarEventId calendarEventId(const qint64 id)
     return *CalendarEventId::fromString(std::to_string(id));
 }
 
+CalendarEventSeriesId calendarEventSeriesId(const std::string& id)
+{
+    return *CalendarEventSeriesId::fromString(id);
+}
+
 CalendarEventSaveRequest validSaveRequest()
 {
     return CalendarEventSaveRequest{
@@ -183,7 +188,7 @@ CalendarEventSeriesCreateRequest seriesCreateRequest(
     )
 {
     CalendarEventSeriesCreateRequest request;
-    request.repeatSeriesId = seriesId;
+    request.repeatSeriesId = calendarEventSeriesId(seriesId);
     request.occurrences.reserve(static_cast<std::size_t>(dateRanges.size()));
     for (const QPair<QDate, QDate>& dateRange : dateRanges)
     {
@@ -215,7 +220,7 @@ CalendarEventSeriesCreateRequest seriesCreateRequest(
 CalendarEventSeriesEditRequest validSeriesEditRequest()
 {
     return CalendarEventSeriesEditRequest{
-        "series-edit",
+        calendarEventSeriesId("series-edit"),
         "2026-12-08",
         "2026-12-10",
         "2026-12-12",
@@ -932,7 +937,7 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(0).eventType, std::string("Workshop"));
     QCOMPARE(events.at(0).timeStatus, CalendarEventTimeStatus::Timed);
     QVERIFY(events.at(0).repeatSeriesId.has_value());
-    QCOMPARE(events.at(0).repeatSeriesId.value(), std::string("series-july"));
+    QCOMPARE(events.at(0).repeatSeriesId->value(), std::string("series-july"));
     QCOMPARE(events.at(0).order, std::int32_t(0));
     QVERIFY(!events.at(0).classId.has_value());
     QVERIFY(!events.at(0).campusId.has_value());
@@ -947,7 +952,7 @@ projectsOverlappingRangeAsOwnedTypedMetadata()
     QCOMPARE(events.at(1).endTime.value(), std::string("11:30"));
     QCOMPARE(events.at(1).eventType, std::string("Meeting"));
     QCOMPARE(events.at(1).timeStatus, CalendarEventTimeStatus::Timed);
-    QCOMPARE(events.at(1).repeatSeriesId.value(), std::string("series-july"));
+    QCOMPARE(events.at(1).repeatSeriesId->value(), std::string("series-july"));
     QCOMPARE(events.at(1).order, std::int32_t(1));
 
     QCOMPARE(events.at(2).id.value(), std::to_string(overlapsEndId));
@@ -1014,8 +1019,8 @@ projectsByIdAsOwnedTypedMetadata()
     QCOMPARE(projected.title, std::string("Activation event"));
     QCOMPARE(projected.eventType, std::string("Workshop"));
     QCOMPARE(projected.timeStatus, CalendarEventTimeStatus::Unconfirmed);
-    QCOMPARE(projected.repeatSeriesId, std::optional<std::string>(
-        std::string("series-activation")
+    QCOMPARE(projected.repeatSeriesId, std::optional<CalendarEventSeriesId>(
+        calendarEventSeriesId("series-activation")
         ));
     QVERIFY(!projected.allDay);
     QCOMPARE(projected.startDate, std::string("2026-12-24"));
@@ -1988,7 +1993,9 @@ rejectsPaddedAndMalformedTypedTimesAtPublicBoundary()
     case CalendarEventWriteOperation::SeriesEdit:
     {
         CalendarEventSeriesEditRequest request = validSeriesEditRequest();
-        request.repeatSeriesId = repeatSeriesId.toStdString();
+        request.repeatSeriesId = calendarEventSeriesId(
+            repeatSeriesId.toStdString()
+            );
         if (startTime)
         {
             request.startTime = invalidTime.toStdString();
@@ -2163,7 +2170,7 @@ createsDailyWeeklyMonthlySeriesWithTypedIdsAndParity()
             true
             )
     };
-    requests[0].repeatSeriesId = " \tseries-daily \t";
+    requests[0].repeatSeriesId = calendarEventSeriesId(" \tseries-daily \t");
     requests[0].occurrences[0].title = "  Daily   title  ";
     requests[0].occurrences[0].eventType = "  Meeting  ";
     for (CalendarEventSaveRequest& occurrence : requests[1].occurrences)
@@ -2330,9 +2337,16 @@ reportsInvalidSeriesCreateRequestStructurally()
         QStringLiteral("Meeting"),
         QStringLiteral("Timed")
         );
-    blankSeries.repeatSeriesId = " \t";
+    blankSeries.repeatSeriesId = calendarEventSeriesId(" \t");
     verifyFailure(
         port.createRepeatSeries(blankSeries),
+        ErrorCode::InvalidInput
+        );
+
+    auto absentSeriesId = blankSeries;
+    absentSeriesId.repeatSeriesId = CalendarEventSeriesId::fromString("");
+    verifyFailure(
+        port.createRepeatSeries(absentSeriesId),
         ErrorCode::InvalidInput
         );
 
@@ -2352,7 +2366,7 @@ reportsInvalidSeriesCreateRequestStructurally()
         );
 
     auto emptySeries = blankSeries;
-    emptySeries.repeatSeriesId = "series-empty";
+    emptySeries.repeatSeriesId = calendarEventSeriesId("series-empty");
     emptySeries.occurrences.clear();
     verifyFailure(
         port.createRepeatSeries(emptySeries),
@@ -2488,7 +2502,7 @@ reportsUnavailableSeriesCreateSessionStructurally()
         QStringLiteral("Meeting"),
         QStringLiteral("Timed")
         );
-    invalidRequest.repeatSeriesId = " \t";
+    invalidRequest.repeatSeriesId = calendarEventSeriesId(" \t");
     verifyFailure(
         port.createRepeatSeries(invalidRequest),
         ErrorCode::InvalidInput
@@ -2642,7 +2656,7 @@ editsValidRepeatSeriesSuffixWithTypedParity()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto request = validSeriesEditRequest();
-    request.repeatSeriesId = " series-edit ";
+    request.repeatSeriesId = calendarEventSeriesId(" series-edit ");
     const auto edited = port.editRepeatSeriesFromDate(request);
     QVERIFY(edited);
 
@@ -2727,7 +2741,9 @@ acceptsEmptyRepeatSeriesEditSuffixAsNoOp()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto request = validSeriesEditRequest();
-    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    request.repeatSeriesId = calendarEventSeriesId(
+        repeatSeriesId.toUtf8().toStdString()
+        );
     const auto edited = port.editRepeatSeriesFromDate(request);
 
     QVERIFY(edited);
@@ -2797,7 +2813,9 @@ reportsInvalidRepeatSeriesSourceDateBeforePersistence()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto request = validSeriesEditRequest();
-    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    request.repeatSeriesId = calendarEventSeriesId(
+        repeatSeriesId.toUtf8().toStdString()
+        );
     const auto edited = port.editRepeatSeriesFromDate(request);
 
     verifyFailure(edited, ErrorCode::Technical);
@@ -2847,7 +2865,9 @@ reportsRepeatSeriesDateOverflowBeforePersistence()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto request = validSeriesEditRequest();
-    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    request.repeatSeriesId = calendarEventSeriesId(
+        repeatSeriesId.toUtf8().toStdString()
+        );
     request.startDate = "9999-12-30";
     request.editedStartDate = "9999-12-30";
     request.editedEndDate = "9999-12-31";
@@ -2909,7 +2929,7 @@ propagatesAllDayAndUnknownTimePolicy()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     CalendarEventSeriesEditRequest allDayRequest{
-        repeatSeriesId.toUtf8().toStdString(),
+        calendarEventSeriesId(repeatSeriesId.toUtf8().toStdString()),
         "2027-01-05",
         "2027-01-06",
         "2027-01-08",
@@ -2938,7 +2958,7 @@ propagatesAllDayAndUnknownTimePolicy()
     }
 
     CalendarEventSeriesEditRequest unknownRequest{
-        repeatSeriesId.toUtf8().toStdString(),
+        calendarEventSeriesId(repeatSeriesId.toUtf8().toStdString()),
         "2027-01-12",
         "2027-01-14",
         "2027-01-15",
@@ -2981,7 +3001,14 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto invalid = validSeriesEditRequest();
-    invalid.repeatSeriesId = " \t";
+    invalid.repeatSeriesId = calendarEventSeriesId(" \t");
+    verifyFailure(
+        port.editRepeatSeriesFromDate(invalid),
+        ErrorCode::InvalidInput
+        );
+
+    invalid = validSeriesEditRequest();
+    invalid.repeatSeriesId = CalendarEventSeriesId::fromString("");
     verifyFailure(
         port.editRepeatSeriesFromDate(invalid),
         ErrorCode::InvalidInput
@@ -2994,7 +3021,7 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
     for (const std::string& repeatSeriesId : unicodeWhitespaceIds)
     {
         invalid = validSeriesEditRequest();
-        invalid.repeatSeriesId = repeatSeriesId;
+        invalid.repeatSeriesId = calendarEventSeriesId(repeatSeriesId);
         const auto result = port.editRepeatSeriesFromDate(invalid);
         verifyFailure(result, ErrorCode::InvalidInput);
         QCOMPARE(
@@ -3039,7 +3066,7 @@ reportsUnavailableRepeatSeriesEditSessionStructurally()
     ApplicationServicesCalendarEventSeriesEditPort port(services);
 
     auto invalid = validSeriesEditRequest();
-    invalid.repeatSeriesId = " \t";
+    invalid.repeatSeriesId = calendarEventSeriesId(" \t");
     verifyFailure(
         port.editRepeatSeriesFromDate(invalid),
         ErrorCode::InvalidInput
@@ -3350,7 +3377,9 @@ reportsRepeatSeriesEditSaveFailureStructurally()
 
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     auto request = validSeriesEditRequest();
-    request.repeatSeriesId = repeatSeriesId.toUtf8().toStdString();
+    request.repeatSeriesId = calendarEventSeriesId(
+        repeatSeriesId.toUtf8().toStdString()
+        );
     const auto edited = port.editRepeatSeriesFromDate(request);
 
     verifyFailure(edited, ErrorCode::Technical);
@@ -3443,7 +3472,9 @@ deletesValidRepeatSeriesSuffix()
 
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const CalendarEventSeriesDeleteRequest request{
-        QStringLiteral("  series-delete-suffix  ").toUtf8().toStdString(),
+        calendarEventSeriesId(
+            QStringLiteral("  series-delete-suffix  ").toUtf8().toStdString()
+            ),
         QStringLiteral("2026-12-08").toStdString()
     };
     const auto deleted = port.deleteRepeatSeriesFromDate(request);
@@ -3486,7 +3517,7 @@ deletesMissingRepeatSeriesSuffixSuccessfully()
 
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const auto deleted = port.deleteRepeatSeriesFromDate({
-        repeatSeriesId.toUtf8().toStdString(),
+        calendarEventSeriesId(repeatSeriesId.toUtf8().toStdString()),
         "2026-12-08"
     });
 
@@ -3505,42 +3536,51 @@ reportsInvalidRepeatSeriesDeleteRequestStructurally()
         );
     const auto invalidBeforeServiceLookup =
         unavailablePort.deleteRepeatSeriesFromDate({
-            "   ",
+            calendarEventSeriesId("   "),
             "2026-12-08"
         });
     verifyFailure(invalidBeforeServiceLookup, ErrorCode::InvalidInput);
     QCOMPARE(invalidBeforeServiceLookup.error().message, diagnostic);
+    const auto emptyId = CalendarEventSeriesId::fromString("");
+    QVERIFY(!emptyId);
+    const auto absentBeforeServiceLookup =
+        unavailablePort.deleteRepeatSeriesFromDate({
+            emptyId,
+            "2026-12-08"
+        });
+    verifyFailure(absentBeforeServiceLookup, ErrorCode::InvalidInput);
+    QCOMPARE(absentBeforeServiceLookup.error().message, diagnostic);
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
 
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const auto blankSeriesId = port.deleteRepeatSeriesFromDate({
-        "   ",
+        calendarEventSeriesId("   "),
         "2026-12-08"
     });
     verifyFailure(blankSeriesId, ErrorCode::InvalidInput);
     QCOMPARE(blankSeriesId.error().message, diagnostic);
     verifyFailure(
         port.deleteRepeatSeriesFromDate({
-            "series-delete-invalid",
+            calendarEventSeriesId("series-delete-invalid"),
             "2026-13-08"
         }),
         ErrorCode::InvalidInput
         );
     verifyFailure(
         port.deleteRepeatSeriesFromDate({
-            std::string(
+            calendarEventSeriesId(std::string(
                 kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength + 1,
                 'r'
-                ),
+                )),
             "2026-12-08"
         }),
         ErrorCode::InvalidInput
         );
     verifyFailure(
         port.deleteRepeatSeriesFromDate({
-            "series-delete-impossible-date",
+            calendarEventSeriesId("series-delete-impossible-date"),
             "2026-04-31"
         }),
         ErrorCode::InvalidInput
@@ -3559,7 +3599,7 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
 
     verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
-            "series-delete-unavailable",
+            calendarEventSeriesId("series-delete-unavailable"),
             "2026-12-08"
         }),
         ErrorCode::NotFound,
@@ -3575,7 +3615,7 @@ reportsUnavailableRepeatSeriesDeleteSessionStructurally()
     QVERIFY(!session->isOpen());
     verifyRecoverableFailure(
         port.deleteRepeatSeriesFromDate({
-            "series-delete-unavailable",
+            calendarEventSeriesId("series-delete-unavailable"),
             "2026-12-08"
         }),
         ErrorCode::NotFound,
@@ -3620,7 +3660,7 @@ reportsRepeatSeriesDeleteServiceFailureStructurally()
 
     ApplicationServicesCalendarEventSeriesDeletePort port(services);
     const auto deleted = port.deleteRepeatSeriesFromDate({
-        "series-delete-failure",
+        calendarEventSeriesId("series-delete-failure"),
         "2026-12-02"
     });
 
@@ -3736,7 +3776,7 @@ preservesAllDayAndUnknownTimePolicy()
     QCOMPARE(allDayProjection->eventType, std::string("Vacation"));
     QCOMPARE(allDayProjection->timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(
-        allDayProjection->repeatSeriesId.value(),
+        allDayProjection->repeatSeriesId->value(),
         std::string("series-all-day")
         );
 
@@ -3763,7 +3803,9 @@ preservesAllDayAndUnknownTimePolicy()
     QCOMPARE(allDayById.value().timeStatus, CalendarEventTimeStatus::Timed);
     QCOMPARE(
         allDayById.value().repeatSeriesId,
-        std::optional<std::string>(std::string("series-all-day"))
+        std::optional<CalendarEventSeriesId>(
+            calendarEventSeriesId("series-all-day")
+            )
         );
 
     const auto unknownById = port.projectionById(unknownTimeId);
@@ -4486,7 +4528,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesDeleteRequest>().repeatSeriesId),
-        std::string
+        std::optional<CalendarEventSeriesId>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesDeleteRequest>().startDate),
@@ -4515,7 +4557,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesCreateRequest>()
                      .repeatSeriesId),
-        std::string
+        std::optional<CalendarEventSeriesId>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesCreateRequest>()
@@ -4524,7 +4566,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().repeatSeriesId),
-        std::string
+        std::optional<CalendarEventSeriesId>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
@@ -4562,7 +4604,7 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventSummary>().repeatSeriesId),
-        std::optional<std::string>
+        std::optional<CalendarEventSeriesId>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<const CalendarEventProjection>().events()),

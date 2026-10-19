@@ -158,13 +158,21 @@ SummaryConversionResult summaryFromEvent(
 
     const QString normalizedRepeatSeriesId =
         source.repeatSeriesId.trimmed();
-    std::optional<std::string> repeatSeriesId;
+    std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>
+        repeatSeriesId;
     if (!normalizedRepeatSeriesId.isEmpty())
     {
-        repeatSeriesId = boundedUtf8(
+        const auto boundedRepeatSeriesId = boundedUtf8(
             normalizedRepeatSeriesId,
             ClassMngr::Next::Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
             );
+        if (boundedRepeatSeriesId)
+        {
+            repeatSeriesId =
+                ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+                    *boundedRepeatSeriesId
+                    );
+        }
     }
 
     if (

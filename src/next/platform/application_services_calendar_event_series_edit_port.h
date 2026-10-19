@@ -89,7 +89,7 @@ public:
             }
 
             const QString repeatSeriesId = legacyText(
-                request.repeatSeriesId
+                request.repeatSeriesId->value()
                 ).trimmed();
             CalendarEventRepository* const repository =
                 session->calendarEventRepository();
@@ -203,7 +203,7 @@ public:
                     ? legacyTime(*update.endTime)
                     : QTime();
                 updatedEvent.repeatSeriesId = legacyText(
-                    update.repeatSeriesId
+                    update.repeatSeriesId.value()
                     ).trimmed();
                 updatedEvent.startDate = legacyDate(update.startDate);
                 updatedEvent.endDate = legacyDate(update.endDate);

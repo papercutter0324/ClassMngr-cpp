@@ -350,13 +350,19 @@ private:
             calendarEventTimeStatusFromLegacyText(source.timeStatus);
         const QString normalizedRepeatSeriesId =
             source.repeatSeriesId.trimmed();
-        std::optional<std::string> repeatSeriesId;
+        std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
         if (!normalizedRepeatSeriesId.isEmpty())
         {
-            repeatSeriesId = boundedUtf8(
+            const auto boundedRepeatSeriesId = boundedUtf8(
                 normalizedRepeatSeriesId,
                 Application::kCalendarEventSummaryMaxRepeatSeriesIdLength
                 );
+            if (boundedRepeatSeriesId)
+            {
+                repeatSeriesId = Domain::CalendarEventSeriesId::fromString(
+                    *boundedRepeatSeriesId
+                    );
+            }
             if (!repeatSeriesId)
             {
                 return failureSummary(

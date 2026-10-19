@@ -209,7 +209,7 @@ std::optional<CalendarEvent> legacyEventFromProjection(
             summary.timeStatus
             );
     event.repeatSeriesId = summary.repeatSeriesId
-        ? projectionText(*summary.repeatSeriesId)
+        ? projectionText(summary.repeatSeriesId->value())
         : QString();
     event.allDay = summary.allDay;
     event.startDate = startDate;

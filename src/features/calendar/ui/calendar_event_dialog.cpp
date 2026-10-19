@@ -96,7 +96,7 @@ CalendarEvent legacyEventFromDraft(
             draft.timeStatus
             );
     event.repeatSeriesId = draft.repeatSeriesId
-        ? draftText(*draft.repeatSeriesId)
+        ? draftText(draft.repeatSeriesId->value())
         : QString();
     event.allDay = draft.allDay;
     event.startDate = QDate::fromString(

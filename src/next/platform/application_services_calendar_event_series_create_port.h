@@ -77,7 +77,7 @@ public:
             }
 
             const QString repeatSeriesId = legacyText(
-                request.repeatSeriesId
+                request.repeatSeriesId->value()
                 ).trimmed();
             QList<CalendarEvent> normalizedEvents;
             normalizedEvents.reserve(

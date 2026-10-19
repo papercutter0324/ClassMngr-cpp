@@ -2,8 +2,10 @@
 
 #include "next/application/calendar_event_save_port.h"
 #include "next/application/qt_compatible_text.h"
+#include "next/domain/domain_types.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -22,7 +24,7 @@ inline constexpr std::size_t kCalendarEventSeriesCreateMaxOccurrences = 366;
 // supplied once and applied by the platform adapter to every occurrence.
 struct CalendarEventSeriesCreateRequest final
 {
-    std::string repeatSeriesId;
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
     std::vector<CalendarEventSaveRequest> occurrences;
 
     [[nodiscard]] Domain::Result<void> validate() const;
@@ -67,8 +69,9 @@ validateCalendarEventSeriesCreateRequest(
 {
     using namespace CalendarEventSeriesCreateRequestDetail;
 
-    if (isBlank(request.repeatSeriesId)
-        || request.repeatSeriesId.size()
+    if (!request.repeatSeriesId.has_value()
+        || isBlank(request.repeatSeriesId->value())
+        || request.repeatSeriesId->value().size()
             > kCalendarEventSeriesCreateMaxRepeatSeriesIdLength)
     {
         return invalid(

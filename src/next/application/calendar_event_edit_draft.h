@@ -31,7 +31,7 @@ inline constexpr std::size_t kCalendarEventEditDraftMaxEventTypeLength = 64;
 struct CalendarEventEditDraft final
 {
     std::optional<Domain::CalendarEventId> id;
-    std::optional<std::string> repeatSeriesId;
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
     std::string title;
     std::string startDate;
     std::string endDate;
@@ -173,7 +173,7 @@ validateCalendarEventEditDraft(
 
     if (draft.repeatSeriesId.has_value()
         && !isRequiredText(
-            *draft.repeatSeriesId,
+            draft.repeatSeriesId->value(),
             kCalendarEventEditDraftMaxRepeatSeriesIdLength
             ))
     {

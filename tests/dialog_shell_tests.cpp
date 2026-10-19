@@ -33,6 +33,7 @@
 #include <QTranslator>
 #include <QVBoxLayout>
 
+#include <optional>
 #include <string>
 #include <type_traits>
 
@@ -40,8 +41,15 @@ using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
 using CalendarEventId =
     ClassMngr::Next::Domain::CalendarEventId;
+using CalendarEventSeriesId =
+    ClassMngr::Next::Domain::CalendarEventSeriesId;
 using CalendarEventTimeStatus =
     ClassMngr::Next::Domain::CalendarEventTimeStatus;
+
+static_assert(std::is_same_v<
+    decltype(std::declval<CalendarEventEditDraft>().repeatSeriesId),
+    std::optional<CalendarEventSeriesId>
+    >);
 
 static_assert(std::is_base_of_v<DialogShell, CalendarEventDialog>);
 static_assert(std::is_constructible_v<
@@ -161,11 +169,18 @@ CalendarEventId calendarEventId(
     return *CalendarEventId::fromString(value);
 }
 
+CalendarEventSeriesId calendarEventSeriesId(
+    const char* value
+    )
+{
+    return *CalendarEventSeriesId::fromString(value);
+}
+
 CalendarEventEditDraft timedCalendarEventDraft()
 {
     CalendarEventEditDraft draft;
     draft.id = calendarEventId("42");
-    draft.repeatSeriesId = "series-42";
+    draft.repeatSeriesId = calendarEventSeriesId("series-42");
     draft.title = "Timed event";
     draft.startDate = "2026-09-20";
     draft.endDate = "2026-09-20";
@@ -367,7 +382,7 @@ void DialogShellTests::calendarEventDialogMapsTypedEditDraft()
     QCOMPARE(timedDraft.id->value(), std::string("42"));
     QVERIFY(timedDraft.repeatSeriesId.has_value());
     QCOMPARE(
-        timedDraft.repeatSeriesId.value(),
+        timedDraft.repeatSeriesId->value(),
         std::string("series-42")
         );
     QCOMPARE(timedDraft.title, std::string("Timed event"));

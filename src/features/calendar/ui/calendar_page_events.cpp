@@ -55,6 +55,8 @@ using CalendarEventEditDraft =
     ClassMngr::Next::Application::CalendarEventEditDraft;
 using CalendarEventSaveRequest =
     ClassMngr::Next::Application::CalendarEventSaveRequest;
+using CalendarEventSeriesId =
+    ClassMngr::Next::Domain::CalendarEventSeriesId;
 using ApplicationCalendarEventRepeatFrequency =
     ClassMngr::Next::Application::CalendarEventRepeatFrequency;
 
@@ -148,11 +150,12 @@ bool isRepeatSeriesEvent(
     return draft.repeatSeriesId.has_value();
 }
 
-QString newRepeatSeriesId()
+std::optional<CalendarEventSeriesId> newRepeatSeriesId()
 {
-    return QUuid::createUuid().toString(
+    const std::string value = QUuid::createUuid().toString(
         QUuid::WithoutBraces
-        );
+        ).toUtf8().toStdString();
+    return CalendarEventSeriesId::fromString(value);
 }
 
 }
@@ -788,7 +791,7 @@ void CalendarPage::openCalendarDialog(
             {
                 const ClassMngr::Next::Application::
                     CalendarEventSeriesDeleteRequest request{
-                        *draft.repeatSeriesId,
+                        draft.repeatSeriesId,
                         draft.startDate
                     };
                 ClassMngr::Next::Platform::
@@ -843,9 +846,10 @@ void CalendarPage::openCalendarDialog(
 
             if (thisAndFollowing)
             {
-                const std::string repeatSeriesId = savedDraft.repeatSeriesId
-                    ? *savedDraft.repeatSeriesId
-                    : *draft.repeatSeriesId;
+                const std::optional<CalendarEventSeriesId> repeatSeriesId =
+                    savedDraft.repeatSeriesId
+                        ? savedDraft.repeatSeriesId
+                        : draft.repeatSeriesId;
                 ClassMngr::Next::Application::CalendarEventSeriesEditRequest
                     request{
                         repeatSeriesId,
@@ -946,7 +950,7 @@ void CalendarPage::openCalendarDialog(
                             CalendarEventSeriesCreateUseCase::execute(
                                 createPort,
                                 saveRequestFromDraft(savedDraft),
-                                newRepeatSeriesId().toUtf8().toStdString(),
+                                newRepeatSeriesId(),
                                 applicationRepeatFrequency(
                                     dialog.repeatFrequency()
                                     ),

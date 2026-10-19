@@ -72,9 +72,11 @@ public:
                     ),
                 Qt::ISODate
                 );
+            const std::string& repeatSeriesIdValue =
+                request.repeatSeriesId->value();
             const QString repeatSeriesId = QString::fromUtf8(
-                request.repeatSeriesId.data(),
-                static_cast<qsizetype>(request.repeatSeriesId.size())
+                repeatSeriesIdValue.data(),
+                static_cast<qsizetype>(repeatSeriesIdValue.size())
                 );
             CalendarEventRepository* const repository =
                 session->calendarEventRepository();

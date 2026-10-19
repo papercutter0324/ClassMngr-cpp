@@ -226,7 +226,9 @@ ClassMngr::Next::Application::CalendarEventProjection injectedProjection(
         false,
         "Meeting",
         ClassMngr::Next::Domain::CalendarEventTimeStatus::Timed,
-        std::string("series-injected")
+        *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+            "series-injected"
+            )
     });
     const auto projection =
         ClassMngr::Next::Application::CalendarEventProjection::create(
@@ -572,7 +574,11 @@ void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
     QCOMPARE(projection.events().front().id.value(), std::string("42"));
     QCOMPARE(
         projection.events().front().repeatSeriesId,
-        std::optional<std::string>(std::string("series-injected"))
+        std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>(
+            *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+                "series-injected"
+                )
+            )
         );
 
     CalendarEventModel model(&cache);
@@ -791,7 +797,11 @@ void CalendarEventCacheTests::projectionMappingPreservesRichCalendarFieldsAndCle
         );
     QCOMPARE(
         repeat->repeatSeriesId,
-        std::optional<std::string>(std::string("series-1"))
+        std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>(
+            *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+                "series-1"
+                )
+            )
         );
     QVERIFY(!repeat->startTime);
     QVERIFY(!repeat->endTime);
@@ -1275,7 +1285,11 @@ void CalendarEventCacheTests::typedDateProjectionPreservesModelParityAndFilterin
     QVERIFY(!projection.events().at(1).startTime.has_value());
     QCOMPARE(
         projection.events().at(3).repeatSeriesId,
-        std::optional<std::string>(std::string("series-bdg"))
+        std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>(
+            *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+                "series-bdg"
+                )
+            )
         );
 
     const QList<CalendarEvent> legacyEvents =
@@ -1480,7 +1494,11 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
     QCOMPARE(allDay.eventType, std::string("Vacation"));
     QCOMPARE(
         allDay.repeatSeriesId,
-        std::optional<std::string>(std::string("series-all-day"))
+        std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>(
+            *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+                "series-all-day"
+                )
+            )
         );
     QVERIFY(!allDay.startTime);
     QVERIFY(!allDay.endTime);
@@ -1493,7 +1511,11 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
         );
     QCOMPARE(
         unknown.repeatSeriesId,
-        std::optional<std::string>(std::string("series-repeat"))
+        std::optional<ClassMngr::Next::Domain::CalendarEventSeriesId>(
+            *ClassMngr::Next::Domain::CalendarEventSeriesId::fromString(
+                "series-repeat"
+                )
+            )
         );
     QVERIFY(!unknown.startTime);
     QVERIFY(!unknown.endTime);
@@ -1570,7 +1592,7 @@ void CalendarEventCacheTests::typedRangeProjectionPreservesOrderingMetadataAndLe
         QCOMPARE(
             legacy.repeatSeriesId,
             summary.repeatSeriesId
-                ? projectionText(*summary.repeatSeriesId)
+                ? projectionText(summary.repeatSeriesId->value())
                 : QString()
             );
 

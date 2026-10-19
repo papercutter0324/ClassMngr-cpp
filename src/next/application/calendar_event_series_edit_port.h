@@ -4,6 +4,7 @@
 #include "next/application/qt_compatible_text.h"
 
 #include "next/domain/calendar_event_timing.h"
+#include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
 #include <cctype>
@@ -32,7 +33,7 @@ inline constexpr std::size_t kCalendarEventSeriesEditMaxEventTypeLength = 64;
 // ISO text so conversion to legacy Qt values stays in the platform adapter.
 struct CalendarEventSeriesEditRequest final
 {
-    std::string repeatSeriesId;
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
     std::string startDate;
     std::string editedStartDate;
     std::string editedEndDate;
@@ -148,8 +149,9 @@ validateCalendarEventSeriesEditRequest(
 {
     using namespace CalendarEventSeriesEditRequestDetail;
 
-    if (!isRequiredText(
-            request.repeatSeriesId,
+    if (!request.repeatSeriesId.has_value()
+        || !isRequiredText(
+            request.repeatSeriesId->value(),
             kCalendarEventSeriesEditMaxRepeatSeriesIdLength
             ))
     {

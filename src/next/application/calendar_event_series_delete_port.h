@@ -2,9 +2,11 @@
 
 #include "next/application/qt_compatible_text.h"
 #include "next/domain/calendar_event_timing.h"
+#include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -20,7 +22,7 @@ inline constexpr std::size_t kCalendarEventSeriesDeleteIsoDateLength = 10;
 // contract validates it and the platform adapter converts it to a native date.
 struct CalendarEventSeriesDeleteRequest final
 {
-    std::string repeatSeriesId;
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
     std::string startDate;
 
     [[nodiscard]] Domain::Result<void> validate() const;
@@ -50,10 +52,11 @@ validateCalendarEventSeriesDeleteRequest(
 {
     using CalendarEventSeriesDeleteRequestDetail::isBlank;
 
-    if (request.repeatSeriesId.empty()
-        || request.repeatSeriesId.size()
+    if (!request.repeatSeriesId.has_value()
+        || request.repeatSeriesId->value().empty()
+        || request.repeatSeriesId->value().size()
             > kCalendarEventSeriesDeleteMaxRepeatSeriesIdLength
-        || isBlank(request.repeatSeriesId)
+        || isBlank(request.repeatSeriesId->value())
         || !Domain::CalendarEventTiming::isCanonicalDate(request.startDate))
     {
         return Domain::Result<void>::failure({

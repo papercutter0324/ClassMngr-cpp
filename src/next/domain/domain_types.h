@@ -59,6 +59,7 @@ struct TeacherIdTag;
 struct ClassIdTag;
 struct CampusIdTag;
 struct CalendarEventIdTag;
+struct CalendarEventSeriesIdTag;
 struct DocumentIdTag;
 struct DocumentFolderIdTag;
 
@@ -67,6 +68,7 @@ using TeacherId = TypedId<TeacherIdTag>;
 using ClassId = TypedId<ClassIdTag>;
 using CampusId = TypedId<CampusIdTag>;
 using CalendarEventId = TypedId<CalendarEventIdTag>;
+using CalendarEventSeriesId = TypedId<CalendarEventSeriesIdTag>;
 using DocumentId = TypedId<DocumentIdTag>;
 using DocumentFolderId = TypedId<DocumentFolderIdTag>;
 

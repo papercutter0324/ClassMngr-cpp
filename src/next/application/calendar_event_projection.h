@@ -88,7 +88,7 @@ struct CalendarEventSummary final
     std::string eventType = "Other";
     Domain::CalendarEventTimeStatus timeStatus =
         Domain::CalendarEventTimeStatus::Timed;
-    std::optional<std::string> repeatSeriesId;
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
 
     [[nodiscard]] bool hasClass() const noexcept
     {
@@ -274,7 +274,7 @@ template <typename TypedId>
 
     if (event.repeatSeriesId.has_value()
         && !isRequiredText(
-            *event.repeatSeriesId,
+            event.repeatSeriesId->value(),
             kCalendarEventSummaryMaxRepeatSeriesIdLength
             ))
     {

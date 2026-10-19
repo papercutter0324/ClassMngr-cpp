@@ -35,7 +35,7 @@ struct CalendarEventSeriesEditOccurrenceUpdate final
     Domain::CalendarEventId eventId;
     std::string startDate;
     std::string endDate;
-    std::string repeatSeriesId;
+    Domain::CalendarEventSeriesId repeatSeriesId;
     std::string title;
     std::string eventType;
     Domain::CalendarEventTimeStatus timeStatus =
@@ -110,11 +110,20 @@ planCalendarEventSeriesEditSuffix(
         editedStartDate->dayNumber() - selectedStartDate->dayNumber();
     const DayNumber durationDays =
         editedEndDate->dayNumber() - editedStartDate->dayNumber();
-    const std::string repeatSeriesId(
-        CalendarEventSeriesEditRequestDetail::trimAscii(
-            request.repeatSeriesId
-            )
-        );
+    const std::optional<Domain::CalendarEventSeriesId> repeatSeriesId =
+        Domain::CalendarEventSeriesId::fromString(
+            CalendarEventSeriesEditRequestDetail::trimAscii(
+                request.repeatSeriesId->value()
+                )
+            );
+    if (!repeatSeriesId)
+    {
+        return CalendarEventSeriesEditPlanResult::failure({
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Calendar repeat-series identifier must be non-blank and bounded.",
+            .recoverable = false
+        });
+    }
     CalendarEventSeriesEditPlan plan;
     plan.reserve(occurrences.size());
     for (const CalendarEventSeriesEditOccurrenceSnapshot& occurrence : occurrences)
@@ -145,7 +154,7 @@ planCalendarEventSeriesEditSuffix(
             .eventId = occurrence.eventId,
             .startDate = shiftedStart->toIsoString(),
             .endDate = shiftedEnd->toIsoString(),
-            .repeatSeriesId = repeatSeriesId,
+            .repeatSeriesId = *repeatSeriesId,
             .title = request.title,
             .eventType = request.eventType,
             .timeStatus = request.timeStatus,

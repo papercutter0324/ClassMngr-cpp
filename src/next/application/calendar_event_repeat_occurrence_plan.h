@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/calendar_event_series_create_port.h"
+#include "next/domain/domain_types.h"
 #include "next/domain/gregorian_date.h"
 
 #include <algorithm>
@@ -128,7 +129,7 @@ defaultCalendarEventRepeatUntilDate(
 [[nodiscard]] inline Domain::Result<CalendarEventSeriesCreateRequest>
 planCalendarEventRepeatOccurrences(
     const CalendarEventSaveRequest& seed,
-    std::string repeatSeriesId,
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId,
     const CalendarEventRepeatFrequency frequency,
     const std::string_view untilDate
     )
