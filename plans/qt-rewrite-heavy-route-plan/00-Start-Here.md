@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch480 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch481/F1111 is complete, and Batch482 is active with F1112 next for acceptance reassessment. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-3-discovered) for the next action.
+- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active with F1112 next for acceptance reassessment. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-3-discovered) for the next action.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and

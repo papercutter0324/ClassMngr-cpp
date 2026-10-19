@@ -6129,7 +6129,10 @@ non-ASCII data adapter projection. The checked-in workbook dialog test covers
 supported M1/M2/H1 levels. The parser emits only fixed ASCII group markers, so
 arbitrary non-ASCII cannot reach the private UI projection; no test-only
 production helper was added. No full suite or Windows x64 run occurred.
-Batch481 closeout is pending, with Batch482 discovered as F1112-F1114 and
-F1112 next for acceptance reassessment. The combined Phase 0 gate remains open
-because F629 still needs source-bound Windows x64 layout evidence, which the
-user cannot run right now; the Phase 2 gate also remains open.
+Batch481 closeout commit `b79aa10d657ccfdfaa09d1458a5d1c6b2d13034d` was
+pushed without force to `origin/Qt-Rewrite`; the remote SHA matched and the
+worktree is clean and up to date. Batch482 is active with F1112 next for
+acceptance reassessment; F1113 and F1114 remain discovered, not accepted. The
+combined Phase 0 gate remains open because F629 still needs source-bound
+Windows x64 layout evidence, which the user cannot run right now; the Phase 2
+gate also remains open.

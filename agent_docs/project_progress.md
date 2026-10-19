@@ -5223,3 +5223,12 @@ levels because the parser cannot emit arbitrary non-ASCII group levels. No
 full suite or Windows x64 run occurred. Batch481 closeout documentation is
 pending; Batch482 has F1112-F1114 discovered, with F1112 next for acceptance.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - Batch481 pushed; Batch482 active - 2026-10-20
+
+Batch481 closeout commit `b79aa10d657ccfdfaa09d1458a5d1c6b2d13034d` was
+pushed without force to `origin/Qt-Rewrite`. The remote SHA matched, and the
+worktree was clean and up to date. Batch482 is active with F1112 next for
+acceptance reassessment; F1113 and F1114 remain discovered, not accepted.
+F629 still needs source-bound Windows x64 layout evidence; the Phase 0 and
+Phase 2 gates remain open.

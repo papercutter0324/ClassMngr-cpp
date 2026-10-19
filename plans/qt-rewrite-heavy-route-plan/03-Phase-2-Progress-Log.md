@@ -48208,3 +48208,14 @@ closed. Batch482 is active with three discovered candidates; F1112 is next
 for acceptance reassessment, while F1113 and F1114 remain discovered and not
 accepted. F629 still awaits external Windows x64 layout evidence, and the
 Phase 0 and Phase 2 gates remain open. The Batch481 closeout push is pending.
+
+### Batch481 closeout push receipt - 2026-10-20
+
+Closeout commit `b79aa10d657ccfdfaa09d1458a5d1c6b2d13034d`, containing F1111
+acceptance commit `5515158a`, source/test commit `4a9dfd44`, and Batch481
+closeout docs, was pushed to `origin/Qt-Rewrite` without force.
+`git ls-remote origin refs/heads/Qt-Rewrite` returned the same SHA. At
+verification, `git status --short --branch` showed a clean worktree and
+`Qt-Rewrite...origin/Qt-Rewrite`. Batch482 is active with F1112 next for
+acceptance reassessment; F1113 and F1114 remain discovered and not accepted.
+F629 and the Phase 0 and Phase 2 gates remain open.
