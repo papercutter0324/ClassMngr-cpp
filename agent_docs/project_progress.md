@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 2 — Domain Model and Application Contracts.
-Current deployment: `qt-rewrite-phase2-resume-20260928`. Route: Heavy.
+Current deployment: `phase2-b486-resume-20261020`. Route: Heavy.
 Phase 1 hosted acceptance is closed on commit `0883009d`; the local branch adds
 continued Phase 2 domain and application-contract work on top of that verified
 baseline.
@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1142 accepted; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1142 complete; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -234,9 +234,11 @@ the selected Sub Prep and My Workspace cases passed. The Initial Setup case
 could not reach its assertions because the registered offscreen Qt Widgets /
 QWizard test aborts with an `NSBundle initWithURL: nil URL argument` exception
 in both the Phase 0 and standard preset trees; its cause is unresolved. The
-Initial Setup target compiled, but behavior remains unverified. Batch486 has
-four complete slices, F1142 accepted/in progress, and F1143 discovered.
-Batch487 is discovered with ten candidates and is not active.
+Initial Setup target compiled, but behavior remains unverified. F1142 is now
+complete at source/test commit `67f7277a`; the focused Platform and ColorUtils
+CTests passed 2/2 after the incremental macOS Debug build. Batch486 has five
+complete slices and one discovered candidate, F1143. Batch487 is discovered
+with ten candidates and is not active.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -244,16 +246,10 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with accepted F1142; Batch487 has ten discovered candidates.
-F629 remains active and awaits a
-Windows x64 host or retained source-bound output
-for commit `667ff54e` so the layout inputs and page assignments can be compared
-with the Mac trace. If that evidence establishes a product defect, make an
-evidence-supported renderer change and rerun the macOS universal matrix without
-weakening the comparator. The user cannot run Windows in this session. F628's
-full Windows evidence root is also unavailable, so the combined Phase 0 exit
-gate cannot be claimed. Keep the Phase 2 exit gate and policy reconciliation
-open.
+Accept and complete F1143 to close Batch486, then commit and push the completed
+batch before starting Batch487's first candidate, F1144. F629 remains active
+and awaits source-bound Windows x64 layout evidence for commit `667ff54e`; the
+user cannot run Windows now. The Phase 0 and Phase 2 exit gates remain open.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
@@ -6104,7 +6100,7 @@ four complete slices and two discovered candidates; F1142 is next. F629 and
 both phase gates remain open. Batch487 is discovered with ten ordered
 candidates (F1144–F1153).
 
-## Phase 2 update - F1142 accepted; Batch486 active - 2026-10-20
+## Phase 2 update - F1142 complete; Batch486 active - 2026-10-20
 
 F1142 is accepted to add a Qt-free Application `CustomColorPaletteEntry` that
 owns exact UTF-8 text, with no validation, trimming, or canonicalization in the
@@ -6115,11 +6111,14 @@ truncation, and write serialization. Writes preserve exactly all 16 supplied
 strings in compact JSON under `custom_colors`; do not normalize caller input.
 Keep current unavailable/missing/error and UI read/write behavior.
 
-Focused verification will build `ClassMngr`,
-`ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`,
-and `ClassMngrColorUtilsCustomColorPaletteTests`; run both focused CTests and
-`git diff --check`. Add a Platform assertion that deliberately noncanonical
-text is stored exactly and then canonicalized or defaulted on read. Full-suite
-and Windows verification are not expected. Batch486 has four complete slices,
-one accepted/in-progress F1142, and one discovered F1143. Batch487 is discovered
-with ten candidates, not active. F629 and both phase gates remain open.
+F1142 completed at source/test commit
+`67f7277a20d5950ad85f9e6fc655f80f118bb2d2`, following acceptance
+`977ca6c4f6f6aeffb39e872b3f775afa1fd3ce66`. A focused incremental build in
+the existing `macos-clang-debug` tree passed for `ClassMngr`, the Platform
+custom-color-palette preferences port tests, and the ColorUtils palette tests.
+Both focused CTests passed (Platform 12/12 QtTest entries; ColorUtils 11/11).
+The Platform regression stores `  #abcdef  ` exactly in compact JSON, then
+confirms that the next read applies existing normalization. `git diff --check`
+passed. Full-suite and Windows verification were not run. Batch486 has five
+complete slices and one discovered candidate; F1143 is next. Batch487 has ten
+discovered candidates and is not active. F629 and both phase gates remain open.

@@ -50325,3 +50325,27 @@ the existing canonicalization or fallback. Run both focused CTests and
 six candidates: four complete, one accepted/in progress (F1142), and one
 discovered (F1143); F1143 is next after F1142 completes. F629 and the Phase 0
 and Phase 2 gates remain open.
+
+### F1142 Custom Color Palette entry complete - 2026-10-20
+
+F1142 completed at source/test commit
+`67f7277a20d5950ad85f9e6fc655f80f118bb2d2`, following acceptance commit
+`977ca6c4f6f6aeffb39e872b3f775afa1fd3ce66`. The Qt-free owning Application
+`CustomColorPaletteEntry` preserves exact supplied UTF-8 text and has an
+explicit string constructor and equality. The palette remains fixed at 16
+entries with the same defaults. Platform read normalization and the exact
+compact-JSON write contract remain; ColorUtils uses the typed wrappers.
+
+The incremental build in the existing `build/macos-clang-debug` tree passed
+for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`,
+and `ClassMngrColorUtilsCustomColorPaletteTests`; no configure or clean build
+was run. Both focused CTests passed. Direct QtTest results were Platform
+12/12 entries and ColorUtils 11/11. The Platform regression stored exact
+`"  #abcdef  "` text in compact JSON and confirmed that a later read applies
+the existing normalization. `git diff --check` passed. The full suite and
+Windows verification were not run.
+
+Batch486 has six candidates: five complete (F1138–F1142), none accepted/in
+progress, and one discovered (F1143); F1143 is next. Batch487 remains
+discovered and inactive. F629 and the Phase 0 and Phase 2 gates remain open.

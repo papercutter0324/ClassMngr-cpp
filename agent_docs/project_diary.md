@@ -8255,13 +8255,13 @@ signature-image save bytes appeared in both scans; the candidate list keeps
 those as cohesive contract slices. Batch486 remains active with F1142 next for
 acceptance and F1143 discovered. Batch487 is discovered, not active.
 
-## 2026-10-20 - F1142 accepted
+## 2026-10-20 - F1142 complete
 
-Use a distinct Qt-free Application `CustomColorPaletteEntry` for each of the
-16 custom palette entries. Preserve exact caller text on writes, while the
-Platform read path retains its legacy decoding, trimming, color validation,
-HexRgb canonicalization, defaults, padding, and truncation. Keep compact JSON
-serialization, errors, closed-session behavior, and ColorUtils dialog behavior.
-Focused Platform and ColorUtils verification is planned. Batch486 has F1142
-accepted/in progress and F1143 discovered; Batch487 has ten discovered
-candidates and is not active. F629 and both phase gates remain open.
+`CustomColorPaletteEntry` owns the exact supplied UTF-8 text, while the
+Platform boundary retains legacy read-time trimming, validation,
+HexRgb canonicalization, fallback, padding, truncation, and compact-JSON writes.
+The focused Platform regression confirms that noncanonical caller text is
+stored verbatim and normalized only by a later read. The incremental macOS
+Debug build and both focused CTests passed; full-suite and Windows verification
+were not run. F1143 is next to close Batch486. F629 and both phase gates remain
+open.
