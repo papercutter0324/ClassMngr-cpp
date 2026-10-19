@@ -50287,3 +50287,41 @@ may be revisited later. Speaking Evaluation's dynamic name showed no stronger
 semantics than exact text. Class Details grade/level may reject historical
 values through the closed Course catalog and needs compatibility discovery.
 These exclusions are not repo-wide exhaustion claims.
+
+### F1142 Custom Color Palette entry accepted before implementation - 2026-10-20
+
+F1142 is accepted/in progress. Add the Qt-free owning Application value
+`CustomColorPaletteEntry`, containing the exact UTF-8 text, and change the
+fixed 16-entry `CustomColorPalette::hexColors` array to hold that type. The
+value must not validate, trim, canonicalize, implicitly convert from a string,
+or depend on Qt. Preserve palette equality and the exact defaults:
+`#F94144`, `#F3722C`, `#F8961E`, `#F9C74F`, `#90BE6D`, `#43AA8B`, `#577590`,
+`#277DA1`, `#9B5DE5`, `#F15BB5`, `#00BBF9`, `#00F5D4`, `#FFFFFF`, `#D9D9D9`,
+`#808080`, `#000000`.
+
+Keep Platform read behavior at its boundary: preserve the `custom_colors` key,
+QStringList and JSON-array inputs, and legacy text splitting with newline,
+semicolon, then comma precedence. Reads continue per-entry trimming, QColor
+validity checks, HexRgb canonicalization, invalid-entry fallback, default
+padding, and truncation to 16. Missing, invalid, unavailable, or closed reads
+remain successful defaults; repository absence and read errors remain
+nonrecoverable Technical errors. Keep entry-value pass-through distinct from
+this read-time normalization.
+
+Writes must serialize all 16 supplied strings as compact JSON without
+trimming, validating, or canonicalizing; invalid text is stored verbatim and
+falls back only on a later read. Preserve the no-open-session successful
+no-op and write-error behavior. Leave ColorUtils and UI conversions at their
+existing boundaries, including default display/read-error/write-skipping and
+dialog-save behavior.
+
+Focused verification: build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`,
+and `ClassMngrColorUtilsCustomColorPaletteTests`; add a Platform case that
+writes noncanonical text (for example lowercase hex with surrounding spaces),
+asserts the compact JSON stores it exactly, then confirms a later read applies
+the existing canonicalization or fallback. Run both focused CTests and
+`git diff --check`. Full-suite and Windows runs are not expected. Batch486 has
+six candidates: four complete, one accepted/in progress (F1142), and one
+discovered (F1143); F1143 is next after F1142 completes. F629 and the Phase 0
+and Phase 2 gates remain open.

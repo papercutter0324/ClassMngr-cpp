@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1141 complete; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1142 accepted; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -235,8 +235,8 @@ could not reach its assertions because the registered offscreen Qt Widgets /
 QWizard test aborts with an `NSBundle initWithURL: nil URL argument` exception
 in both the Phase 0 and standard preset trees; its cause is unresolved. The
 Initial Setup target compiled, but behavior remains unverified. Batch486 has
-four complete slices and two discovered candidates, with F1142 next for
-acceptance. Batch487 is now discovered with ten candidates.
+four complete slices, F1142 accepted/in progress, and F1143 discovered.
+Batch487 is discovered with ten candidates and is not active.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -244,7 +244,7 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 by accepting F1142; Batch487 has ten discovered candidates.
+Continue Batch486 with accepted F1142; Batch487 has ten discovered candidates.
 F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
@@ -6103,3 +6103,23 @@ The cause is unresolved and no behavior conclusion is available for this case.
 four complete slices and two discovered candidates; F1142 is next. F629 and
 both phase gates remain open. Batch487 is discovered with ten ordered
 candidates (F1144–F1153).
+
+## Phase 2 update - F1142 accepted; Batch486 active - 2026-10-20
+
+F1142 is accepted to add a Qt-free Application `CustomColorPaletteEntry` that
+owns exact UTF-8 text, with no validation, trimming, or canonicalization in the
+value. Store all 16 entries in the existing palette array and preserve the 16
+defaults and equality. The Platform adapter continues to own legacy decoding,
+read-time trim/validation/HexRgb canonicalization, invalid fallback, padding,
+truncation, and write serialization. Writes preserve exactly all 16 supplied
+strings in compact JSON under `custom_colors`; do not normalize caller input.
+Keep current unavailable/missing/error and UI read/write behavior.
+
+Focused verification will build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests`,
+and `ClassMngrColorUtilsCustomColorPaletteTests`; run both focused CTests and
+`git diff --check`. Add a Platform assertion that deliberately noncanonical
+text is stored exactly and then canonicalized or defaulted on read. Full-suite
+and Windows verification are not expected. Batch486 has four complete slices,
+one accepted/in-progress F1142, and one discovered F1143. Batch487 is discovered
+with ten candidates, not active. F629 and both phase gates remain open.

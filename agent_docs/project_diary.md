@@ -8254,3 +8254,14 @@ recorded in the Phase 2 plan and progress log. Calendar event-type contracts and
 signature-image save bytes appeared in both scans; the candidate list keeps
 those as cohesive contract slices. Batch486 remains active with F1142 next for
 acceptance and F1143 discovered. Batch487 is discovered, not active.
+
+## 2026-10-20 - F1142 accepted
+
+Use a distinct Qt-free Application `CustomColorPaletteEntry` for each of the
+16 custom palette entries. Preserve exact caller text on writes, while the
+Platform read path retains its legacy decoding, trimming, color validation,
+HexRgb canonicalization, defaults, padding, and truncation. Keep compact JSON
+serialization, errors, closed-session behavior, and ColorUtils dialog behavior.
+Focused Platform and ColorUtils verification is planned. Batch486 has F1142
+accepted/in progress and F1143 discovered; Batch487 has ten discovered
+candidates and is not active. F629 and both phase gates remain open.
