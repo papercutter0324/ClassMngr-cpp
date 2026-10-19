@@ -32,19 +32,45 @@ inline constexpr std::size_t kDocumentCatalogMaxReferenceLength =
 inline constexpr std::size_t kDocumentCatalogMaxFolderEntries = 4'096;
 inline constexpr std::size_t kDocumentCatalogMaxDocumentEntries = 4'096;
 
+// Catalog paths preserve their adapter-provided bytes. The projection owns
+// path validation; constructing this value does not validate or normalize it.
+class DocumentCatalogPath final
+{
+public:
+    DocumentCatalogPath() = default;
+
+    explicit DocumentCatalogPath(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const DocumentCatalogPath&,
+        const DocumentCatalogPath&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 // A folder is copied metadata only. Its identifier is intentionally a
 // different type from a document identifier, so a document cannot
 // accidentally use a folder id at a call site.
 struct DocumentFolderMetadata final
 {
     Domain::DocumentFolderId id;
-    std::string path;
+    DocumentCatalogPath path;
     std::string key;
     std::string displayName;
     std::int32_t order = 0;
     // Empty for a root folder; non-root folders carry their bounded parent
     // path. Appended to preserve existing aggregate construction.
-    std::string parentPath;
+    DocumentCatalogPath parentPath;
 
     friend bool operator==(
         const DocumentFolderMetadata&,
@@ -61,7 +87,7 @@ struct DocumentEntryMetadata final
 {
     Domain::DocumentId id;
     Domain::DocumentFolderId folderId;
-    std::string path;
+    DocumentCatalogPath path;
     std::string key;
     std::string displayName;
     std::int32_t order = 0;
@@ -117,18 +143,18 @@ namespace DocumentCatalogProjectionDetail
 }
 
 [[nodiscard]] inline bool isValidPath(
-    const std::string& value
+    const DocumentCatalogPath& value
     ) noexcept
 {
-    return !isBlank(value)
-        && value.size() <= kDocumentCatalogMaxPathLength;
+    return !isBlank(value.value())
+        && value.value().size() <= kDocumentCatalogMaxPathLength;
 }
 
 [[nodiscard]] inline bool isValidParentPath(
-    const std::string& value
+    const DocumentCatalogPath& value
     ) noexcept
 {
-    return value.empty() || isValidPath(value);
+    return value.value().empty() || isValidPath(value);
 }
 
 [[nodiscard]] inline bool isValidKey(
@@ -313,7 +339,10 @@ template <typename TypedId>
     folderIndexesByPath.reserve(folders.size());
     for (std::size_t index = 0; index < folders.size(); ++index)
     {
-        if (!folderIndexesByPath.emplace(folders[index].path, index).second)
+        if (!folderIndexesByPath.emplace(
+                folders[index].path.value(),
+                index
+                ).second)
         {
             return Domain::Result<void>::failure(
                 invalidInput("Document folder paths must be unique.")
@@ -360,7 +389,7 @@ template <typename TypedId>
             chain.push_back(current);
 
             const auto& parentPath = folders[current].parentPath;
-            if (parentPath.empty())
+            if (parentPath.value().empty())
             {
                 for (const auto index : chain)
                 {
@@ -369,7 +398,7 @@ template <typename TypedId>
                 break;
             }
 
-            const auto parent = folderIndexesByPath.find(parentPath);
+            const auto parent = folderIndexesByPath.find(parentPath.value());
             if (parent == folderIndexesByPath.cend())
             {
                 return Domain::Result<void>::failure(

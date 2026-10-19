@@ -27,7 +27,7 @@ QList<TreeNodeSpec> documentChildren(
 
     for (const auto& folder : projection.folders())
     {
-        if (QString::fromUtf8(folder.parentPath.c_str()) != parentPath)
+        if (QString::fromUtf8(folder.parentPath.value().c_str()) != parentPath)
         {
             continue;
         }
@@ -35,7 +35,7 @@ QList<TreeNodeSpec> documentChildren(
         QList<TreeNodeSpec> children =
             documentChildren(
                 projection,
-                QString::fromUtf8(folder.path.c_str()),
+                QString::fromUtf8(folder.path.value().c_str()),
                 folder.id
                 );
 

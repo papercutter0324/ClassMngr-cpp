@@ -120,11 +120,11 @@ public:
 
                 input.folders.push_back({
                     *folderId,
-                    *path,
+                    Application::DocumentCatalogPath(*path),
                     *key,
                     *displayName,
                     folder.order,
-                    *parentPath
+                    Application::DocumentCatalogPath(*parentPath)
                 });
             }
 
@@ -215,7 +215,7 @@ public:
                 input.documents.push_back({
                     *documentId,
                     *folderId,
-                    *path,
+                    Application::DocumentCatalogPath(*path),
                     *key,
                     *displayName,
                     document.order,

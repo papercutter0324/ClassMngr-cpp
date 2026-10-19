@@ -25,6 +25,8 @@ using DocumentCatalogProjection =
     ClassMngr::Next::Application::DocumentCatalogProjection;
 using DocumentCatalogProjectionInput =
     ClassMngr::Next::Application::DocumentCatalogProjectionInput;
+using DocumentCatalogPath =
+    ClassMngr::Next::Application::DocumentCatalogPath;
 using DocumentContentReference =
     ClassMngr::Next::Domain::DocumentContentReference;
 
@@ -154,12 +156,12 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
 
         input.folders.push_back({
             *folderId,
-            folder.path.toUtf8().toStdString(),
+            DocumentCatalogPath(folder.path.toUtf8().toStdString()),
             folder.id.toUtf8().toStdString(),
             folder.sidebarNames.forLocale(localeName)
                 .toUtf8().toStdString(),
             folder.order,
-            folder.parentPath.toUtf8().toStdString()
+            DocumentCatalogPath(folder.parentPath.toUtf8().toStdString())
         });
     }
 
@@ -216,7 +218,7 @@ std::optional<DocumentCatalogProjection> projectionFromCatalog(
         input.documents.push_back({
             *documentId,
             *folderId,
-            relativePdfPath.toUtf8().toStdString(),
+            DocumentCatalogPath(relativePdfPath.toUtf8().toStdString()),
             document.id.toUtf8().toStdString(),
             document.sidebarNames.forLocale(localeName)
                 .toUtf8().toStdString(),
@@ -275,34 +277,34 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
     input.folders = {
         {
             *rootFolderId,
-            "synthetic/root",
+            DocumentCatalogPath("synthetic/root"),
             "document_test_root",
             korean ? "깊은 폴더" : "Deep Folder",
             0,
-            ""
+            DocumentCatalogPath()
         },
         {
             *nestedFolderId,
-            "synthetic/root/nested",
+            DocumentCatalogPath("synthetic/root/nested"),
             "document_test_nested",
             korean ? "중첩 폴더" : "Nested Folder",
             0,
-            "synthetic/root"
+            DocumentCatalogPath("synthetic/root")
         },
         {
             *siblingFolderId,
-            "synthetic/root/sibling",
+            DocumentCatalogPath("synthetic/root/sibling"),
             "document_test_sibling",
             korean ? "접힌 형제 폴더" : "Collapsed Sibling",
             1,
-            "synthetic/root"
+            DocumentCatalogPath("synthetic/root")
         }
     };
     input.documents = {
         {
             *nestedDocumentId,
             *nestedFolderId,
-            "synthetic/nested.pdf",
+            DocumentCatalogPath("synthetic/nested.pdf"),
             "document_test_nested_leaf",
             korean ? "중첩 문서" : "Nested Document",
             0,
@@ -316,7 +318,7 @@ std::optional<DocumentCatalogProjection> recursiveExpansionProjection(
         {
             *siblingDocumentId,
             *siblingFolderId,
-            "synthetic/sibling.pdf",
+            DocumentCatalogPath("synthetic/sibling.pdf"),
             "document_test_sibling_leaf",
             korean ? "형제 문서" : "Sibling Document",
             0,
