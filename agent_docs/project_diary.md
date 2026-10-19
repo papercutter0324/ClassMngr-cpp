@@ -14,6 +14,9 @@
   distinct from raw imported timestamp text, Qt date-time values, and epoch
   milliseconds; typing the output must preserve import normalization and empty
   legacy sentinels.
+- Keep Schedule Import review room membership values separate from display
+  labels and simplified, case-folded match keys. The adapter owns trimming;
+  Application membership remains exact and case-sensitive.
 - The repository is intentionally layered: domain models and validation are
   separate from SQLite repositories, feature services, and shared Qt UI. Keep
   new work at the narrowest appropriate layer.

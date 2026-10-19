@@ -50952,3 +50952,56 @@ Batch487 has ten candidates: six complete (F1144–F1149), none accepted/in
 progress, and four discovered (F1150–F1153); F1150 is next. The batch remains
 open, so no push is due. F629 remains active pending source-bound Windows x64
 evidence; the Phase 0 and Phase 2 gates remain open.
+
+### F1150 Schedule Import review room value accepted before implementation - 2026-10-20
+
+F1150 is accepted/in progress. Add owning
+`Application::ScheduleImportReviewRoomValue` with default empty state,
+explicit `std::string` construction, `.value()`, `.empty()`, and equality. Do
+not trim, simplify whitespace, case-fold, validate, or reject empty values.
+Use it for both `ScheduleImportReviewDecisionCandidate::importedRooms` and
+`ScheduleImportReviewTeacherResolution::selectedRoom`, since both represent
+the same normalized review-membership value. Do not use it for parser/display
+source text, normalized/case-folded `roomMatchKeys`, or UTF-16
+`ScheduleImportApplyRequest` fields.
+
+Preserve these normalization and decision boundaries:
+
+1. Keep adapter/UI normalization where it already occurs: the review model
+   trims outer room whitespace before creating `ApplyRequest`, and the legacy
+   plan validator trims before creating review decisions. Keep the Application
+   UTF-16-to-UTF-8 projection exact and empty-filtering, with no new trim.
+2. Decision validation retains first-seen aggregation across candidates,
+   drops empty imported-room values, and uses exact case-sensitive deduplication
+   and membership. A required empty selection remains `MissingTeacherRoom`; a
+   nonmember remains `ForeignTeacherRoom`.
+3. Preserve action-specific rules (including Reuse requiring a selection only
+   when there are multiple rooms), diagnostics, and persistence trimming.
+   Keep `roomMatchKeys` normalization independent.
+
+Evidence: `src/next/application/schedule_import_review_decisions.h:76,157-170,420-441`,
+`src/next/application/schedule_import_apply_review_decisions.h:63`,
+`src/next/application/schedule_import_apply_request.h:61,90`,
+`src/features/schedule/services/schedule_import_review_model.cpp:87,137-146`,
+`src/features/schedule/services/schedule_import_plan_validator.cpp:286,424`,
+and `src/next/application/schedule_import_matching_projection.h:65`.
+
+Focused verification acceptance: incrementally build in the existing
+`build/macos-clang-debug` tree `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`, and
+`ClassMngrScheduleImportDialogTests`. Add field-type/accessor compile-time
+assertions in both Application test files and one minimal exact-membership case
+showing a case-only mismatch returns `ForeignTeacherRoom`. Preserve existing
+first-seen, empty, missing/foreign, order, and normalized review-model tests.
+Run the two Application CTests and dialog selectors
+`resolutionChoicesUseTypedSnapshotAndPreserveOrdering`,
+`reviewModelBuildsTypedApplyRequest`, and
+`reviewMatchingUsesNormalizedSnapshotFields` (all three names are present in
+the current test file). Run `git diff --check`. No implementation or test
+results are recorded yet; no full suite, fresh/clean configure, Windows run,
+or push is expected before Batch487 closes. F629 remains active pending
+source-bound Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
+
+Batch487 has ten candidates: six complete (F1144–F1149), one accepted/in
+progress (F1150), and three discovered (F1151–F1153); F1151 is next.

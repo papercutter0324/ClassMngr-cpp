@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1148-F1149 complete; Batch487 active; F1150 next; F629 open)
+### Current checkpoint - 2026-10-20 (F1148-F1149 complete; F1150 accepted; Batch487 active; F629 open)
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
@@ -79,9 +79,15 @@ the four focused CTests passed 4/4. Direct QtTest results were export query
 `1970-01-01T00:00:01.234Z` output, offset import normalization, and the
 invalid/empty legacy adapter round-trip passed. `git diff --check` passed. No
 full suite, Windows run, fresh configure, or clean build was performed.
-Batch487 has six complete slices and four discovered candidates; F1150 is
-next. F629 remains active pending source-bound Windows layout evidence; Phase
-0 and Phase 2 gates remain open.
+Batch487 has six complete slices, F1150 accepted/in progress, and three
+discovered candidates; F1151 is next. F1150 types only Schedule Import's
+normalized Application review-decision room values and selected membership.
+The feature's display text, case-folded match keys, and raw ApplyRequest values
+stay separate. Exact case-sensitive membership, first-seen order, empty and
+foreign diagnostics, and adapter-owned trimming are preserved. Incremental
+macOS build and focused Application/UI checks are defined; implementation and
+results are not recorded yet. F629 remains active pending source-bound Windows
+layout evidence; Phase 0 and Phase 2 gates remain open.
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
