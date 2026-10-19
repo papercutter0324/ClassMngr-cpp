@@ -50208,3 +50208,82 @@ behavior conclusion is available for this case.
 run. Batch486 has six candidates: four complete (F1138–F1141), none
 accepted/in progress, and two discovered (F1142–F1143); F1142 is next for
 acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### Batch487 discovery at F1142 start - 2026-10-20
+
+Two independent read-only sweeps returned five Domain/Application/Platform
+leads and ten Feature/UI leads. The sweeps overlapped on calendar event-type
+contracts and signature-image write bytes. The main selected the following
+ten ordered candidates based on distinct data boundaries and available
+focused test surfaces. This is discovery only; no Batch487 slice is accepted.
+
+1. **F1144 - Type personal-signature image save-request bytes.** This is
+   separate from F1140's read-result value. Evidence: Application
+   `src/next/application/personal_details_save.h:11`; Platform conversion,
+   preparation, and Base64 handling at
+   `src/next/platform/application_services_personal_details_save_port.h:194`.
+   Focused evidence: `NextPlatformApplicationServicesPersonalDetailsSavePort`,
+   case `savesAllNineExactKeysWithUtf8AndPreparedImage`.
+2. **F1145 - Share `Domain::CalendarEventType` across related Calendar
+   contracts.** Cover Sub Prep calendar intervals and Calendar event
+   create/edit while preserving each boundary's own trimming, validation,
+   and canonicalization. Evidence:
+   `src/next/application/sub_prep_calendar_event_intervals_query.h:20`,
+   `src/next/application/calendar_event_save_port.h:29`, and
+   `src/next/application/calendar_event_series_edit_port.h:34`. Focused
+   evidence: `NextApplicationSubPrepCalendarEventIntervalsQuery`,
+   `NextPlatformApplicationServicesCalendarEventPort`,
+   `NextApplicationCalendarEvent`, and Calendar parity cases.
+3. **F1146 - Type Calendar repeat-series edit dates.** Preserve canonical ISO
+   validation, Gregorian validity, range ordering, and start-date suffix
+   selection. Evidence: `src/next/application/calendar_event_series_edit_port.h:34`.
+   Focused evidence: `NextApplicationCalendarEvent`, Platform event port, and
+   Calendar mutation parity.
+4. **F1147 - Type Calendar Page campus-code query output.** Preserve
+   optionality, exact text, empty-only omission, UTF-8, whitespace values,
+   and order; assess reuse versus F1139's import code. Evidence:
+   `src/next/application/calendar_page_campus_directory_query_port.h:15` and
+   `src/next/platform/calendar_page_campus_directory_query_adapter.h:71`.
+   Focused evidence: `NextPlatformCalendarPageCampusDirectoryQuery`.
+5. **F1148 - Type the current-campus preference as a display name.** Keep it
+   distinct from campus IDs/codes; preserve empty fallback, read-error/retry/
+   correction behavior, and Calendar's all-events fallback. Evidence:
+   `src/next/application/current_campus_preferences.h:11`,
+   `src/features/my_info/ui/personal_details_page_sections.cpp:970`, and
+   `src/features/calendar/ui/calendar_page_upcoming_events.cpp:962`.
+   Focused evidence: Platform CurrentCampus port, MyWorkspacePage, SubPrepPage,
+   and Calendar parity.
+6. **F1149 - Type Class Transfer's canonical exported UTC timestamp.** Keep
+   serialization as `YYYY-MM-DDTHH:mm:ss.sssZ`. Evidence:
+   `src/next/application/class_transfer_package.h:45` and
+   `src/next/application/class_transfer_export_query.h:94`. Focused evidence:
+   Application export query and Platform export source.
+7. **F1150 - Type Schedule Import room values and selected-room membership.**
+   Preserve adapter normalization, first-seen list, exact membership, and
+   empty/foreign-room diagnostics. Evidence:
+   `src/next/application/schedule_import_review_decisions.h:76,420`.
+   Focused evidence: Application review-decision and Schedule Import dialog.
+8. **F1151 - Type the Schedule Testing Assignment weekday/start-time key.**
+   Preserve accepted weekday/time forms, row order, and unassigned sentinel.
+   Evidence:
+   `src/next/application/schedule_testing_assignment_read_query.h:33`,
+   `src/next/application/schedule_testing_assignment_save.h:23`, and
+   `src/features/schedule/ui/schedule_widget.cpp:612`. Focused evidence:
+   Application read/save, Platform, and ScheduleWidget.
+9. **F1152 - Type Class Analytics evaluation selection.** Distinguish All
+   mode from a dynamic exact evaluation name; preserve blank/All and exact
+   dynamic-name behavior. Evidence:
+   `src/next/application/class_analytics_dashboard_read_query.h:27,530` and
+   `src/features/classes/ui/class_analytics_page.cpp:647`. Focused evidence:
+   Class Analytics read query and page parity.
+10. **F1153 - Type Class Analytics closed grade-label output.** Preserve the
+    C/B/B+/A/A+ mapping and unknown-to-C fallback. Evidence:
+    `src/next/application/class_analytics_dashboard_read_query.h:63,129`.
+    Focused evidence: Class Analytics read query, page, and ranking model.
+
+Three lower-confidence leads were screened out of this batch. Campus Dashboard
+schema-specific JSON fields overlap with F1143's opaque-payload direction and
+may be revisited later. Speaking Evaluation's dynamic name showed no stronger
+semantics than exact text. Class Details grade/level may reject historical
+values through the closed Course catalog and needs compatibility discovery.
+These exclusions are not repo-wide exhaustion claims.

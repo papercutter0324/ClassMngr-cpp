@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is active with F1138–F1141 complete and F1142–F1143 discovered; F1142 is next for acceptance, while F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 remains active with F1142 next for acceptance, while discovered Batch487 has ten candidates and is not active until Batch486 closes; F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -78,6 +78,21 @@ Treat this plan as an operational summary, not a history:
 6. F1143 - Discovered: assess an opaque academic-calendar schedule JSON string while preserving UTF-8 round trip, fallback, key, and repository/write errors.
 
 Batch486 has four complete candidates and two discovered candidates. Detailed discovery evidence, acceptance criteria, and verification references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+
+#### Discovered next batch: Batch487 (10 candidates; discovered, not active)
+
+1. F1144 - Type personal-signature image save-request bytes, separate from F1140's read-result value.
+2. F1145 - Use `Domain::CalendarEventType` consistently for Sub Prep interval and Calendar create/edit contracts while preserving each boundary's own normalization.
+3. F1146 - Type Calendar repeat-series edit dates; preserve ISO/Gregorian validation, range order, and start-date suffix selection.
+4. F1147 - Type Calendar Page campus-code query output while preserving optionality, exact text, UTF-8, empty-only omission, whitespace, and order.
+5. F1148 - Type the current-campus display name distinctly from campus IDs/codes; preserve fallbacks, errors, retry/correction, and Calendar all-events behavior.
+6. F1149 - Type Class Transfer's canonical exported UTC timestamp (`YYYY-MM-DDTHH:mm:ss.sssZ`).
+7. F1150 - Type Schedule Import room values and selected-room membership; preserve normalization, first-seen order, exact membership, and diagnostics.
+8. F1151 - Type Schedule Testing's weekday/start-time assignment key; preserve accepted forms, row order, and unassigned sentinel.
+9. F1152 - Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
+10. F1153 - Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
+
+All Batch487 entries are discovery candidates, not accepted slices. Detailed evidence and screening rationale are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
 
 #### Deferred candidates
 

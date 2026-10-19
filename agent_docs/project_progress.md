@@ -236,7 +236,7 @@ QWizard test aborts with an `NSBundle initWithURL: nil URL argument` exception
 in both the Phase 0 and standard preset trees; its cause is unresolved. The
 Initial Setup target compiled, but behavior remains unverified. Batch486 has
 four complete slices and two discovered candidates, with F1142 next for
-acceptance.
+acceptance. Batch487 is now discovered with ten candidates.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -244,7 +244,8 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 by accepting F1142. F629 remains active and awaits a
+Continue Batch486 by accepting F1142; Batch487 has ten discovered candidates.
+F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -6100,4 +6101,5 @@ in Qt Widgets / QWizard with `NSInvalidArgumentException` from
 The cause is unresolved and no behavior conclusion is available for this case.
 `git diff --check` passed. Full suite and Windows were not run. Batch486 has
 four complete slices and two discovered candidates; F1142 is next. F629 and
-both phase gates remain open.
+both phase gates remain open. Batch487 is discovered with ten ordered
+candidates (F1144–F1153).

@@ -8246,3 +8246,11 @@ Qt Widgets / QWizard path with an `NSBundle initWithURL: nil URL argument`
 exception before assertions, in both the previous Phase 0 tree and the standard
 preset tree. The cause is unresolved and no behavior result is available for
 that case. `git diff --check` passed; full suite and Windows were not run.
+
+## 2026-10-20 - Batch487 discovered
+
+Two independent scans produced the next ten-slice candidate list, F1144–F1153,
+recorded in the Phase 2 plan and progress log. Calendar event-type contracts and
+signature-image save bytes appeared in both scans; the candidate list keeps
+those as cohesive contract slices. Batch486 remains active with F1142 next for
+acceptance and F1143 discovered. Batch487 is discovered, not active.
