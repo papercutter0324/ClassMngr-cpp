@@ -41,6 +41,32 @@ inline constexpr std::size_t kCampusSummaryMaxAddressLength =
 inline constexpr std::size_t kCampusSummaryMaxNotesLength =
     kCampusDirectoryMaxNotesLength;
 
+// The directory key preserves its source bytes. The projection owns the
+// validation rules; constructing this value does not validate or normalize it.
+class CampusDirectoryKey final
+{
+public:
+    CampusDirectoryKey() = default;
+
+    explicit CampusDirectoryKey(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const CampusDirectoryKey&,
+        const CampusDirectoryKey&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 // This is flat navigation metadata only. It intentionally does not retain
 // building services, map objects, image bytes, repositories, or other rich
 // campus/location records. A missing notes value is distinct from present
@@ -49,7 +75,7 @@ struct CampusSummary final
 {
     Domain::CampusId id;
     std::string displayName;
-    std::string key;
+    CampusDirectoryKey key;
     std::string address;
     std::optional<std::string> notes;
     std::int32_t order = 0;
@@ -57,12 +83,12 @@ struct CampusSummary final
 
     // These names make the adapter-neutral key/address terminology usable by
     // callers that refer to the legacy concepts as code/location.
-    [[nodiscard]] const std::string& code() const noexcept
+    [[nodiscard]] const CampusDirectoryKey& code() const noexcept
     {
         return key;
     }
 
-    [[nodiscard]] const std::string& shortCode() const noexcept
+    [[nodiscard]] const CampusDirectoryKey& shortCode() const noexcept
     {
         return key;
     }
@@ -181,7 +207,7 @@ template <typename Value>
 [[nodiscard]] inline Domain::Result<void> validateCampus(
     const CampusSummary& campus,
     const std::vector<Domain::CampusId>& existingIds,
-    const std::vector<std::string>& existingKeys
+    const std::vector<CampusDirectoryKey>& existingKeys
     )
 {
     if (!isValidId(campus.id))
@@ -200,7 +226,7 @@ template <typename Value>
             );
     }
 
-    if (!isRequiredText(campus.key, kCampusDirectoryMaxKeyLength))
+    if (!isRequiredText(campus.key.value(), kCampusDirectoryMaxKeyLength))
     {
         return Domain::Result<void>::failure(
             invalidInput("Campus key must be non-blank and bounded.")
@@ -261,7 +287,7 @@ template <typename Value>
 
     std::vector<Domain::CampusId> existingIds;
     existingIds.reserve(input.campuses.size());
-    std::vector<std::string> existingKeys;
+    std::vector<CampusDirectoryKey> existingKeys;
     existingKeys.reserve(input.campuses.size());
 
     for (const auto& campus : input.campuses)
@@ -396,7 +422,7 @@ public:
             m_campuses.cend(),
             [key](const Summary& candidate)
             {
-                return candidate.key == key;
+                return candidate.key.value() == key;
             }
             );
         if (campus == m_campuses.cend())

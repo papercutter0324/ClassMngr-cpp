@@ -34,7 +34,7 @@ CampusSummary campusSummary(
     CampusSummary campus{
         campusId(std::move(id)),
         "Campus display name",
-        std::move(key),
+        CampusDirectoryKey(std::move(key)),
         "123 Campus Street",
         std::move(notes),
         order,
@@ -97,6 +97,7 @@ private slots:
     void lookupsByIdAndKeyReturnIndependentValueCopies();
     void duplicateIdsAndKeysAreRejected();
     void exactIdentifierAndTextCapsAreAccepted();
+    void utf8KeyLimitCountsBytes();
     void exactNotesCapIsAcceptedByCreateAndRetained();
     void blankAndOversizedFieldsAreRejected();
     void negativeOrderAndOptionalNotesBoundsAreRejected();
@@ -141,8 +142,12 @@ void NextApplicationCampusDirectoryTests::valid96ScaleDirectoryRetainsTypedMetad
         projection.campuses().front().id.value(),
         std::string("campus-1")
         );
-    QCOMPARE(projection.campuses().front().key, std::string("code-1"));
-    QCOMPARE(projection.campuses().front().code(), std::string("code-1"));
+    const auto& firstCampus = projection.campuses().front();
+    QCOMPARE(firstCampus.key.value(), std::string("code-1"));
+    QCOMPARE(firstCampus.code().value(), std::string("code-1"));
+    QCOMPARE(firstCampus.shortCode().value(), std::string("code-1"));
+    QVERIFY(&firstCampus.key == &firstCampus.code());
+    QVERIFY(&firstCampus.key == &firstCampus.shortCode());
     QCOMPARE(projection.campuses().front().location(), std::string("Address 1"));
     QCOMPARE(projection.campuses().front().order, std::int32_t(0));
     QVERIFY(!projection.campuses().front().active);
@@ -158,6 +163,13 @@ void NextApplicationCampusDirectoryTests::campusIdentifierAndRecordFieldsRemainT
     static_assert(!std::is_convertible_v<CampusId, ClassId>);
     static_assert(!std::is_convertible_v<ClassId, CampusId>);
     static_assert(std::is_same_v<decltype(CampusSummary::id), CampusId>);
+    static_assert(std::is_same_v<decltype(CampusSummary::key), CampusDirectoryKey>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const CampusSummary&>().code()),
+        const CampusDirectoryKey&>);
+    static_assert(std::is_same_v<
+        decltype(std::declval<const CampusSummary&>().shortCode()),
+        const CampusDirectoryKey&>);
     static_assert(std::is_same_v<decltype(CampusSummary::notes), std::optional<std::string>>);
     static_assert(std::is_same_v<decltype(CampusSummary::order), std::int32_t>);
     static_assert(std::is_same_v<decltype(CampusSummary::active), bool>);
@@ -169,7 +181,11 @@ void NextApplicationCampusDirectoryTests::campusIdentifierAndRecordFieldsRemainT
     QVERIFY(campus.has_value());
     QCOMPARE(campus->id.value(), std::string("campus-1"));
     QCOMPARE(campus->displayName, std::string("Main Campus"));
-    QCOMPARE(campus->key, std::string("main"));
+    QCOMPARE(campus->key.value(), std::string("main"));
+    QCOMPARE(campus->code().value(), std::string("main"));
+    QCOMPARE(campus->shortCode().value(), std::string("main"));
+    QVERIFY(&campus->key == &campus->code());
+    QVERIFY(&campus->key == &campus->shortCode());
     QCOMPARE(campus->address, std::string("1 Main Campus Road"));
     QCOMPARE(campus->notes.value(), std::string("Main notes"));
     QCOMPARE(campus->order, std::int32_t(4));
@@ -209,7 +225,7 @@ void NextApplicationCampusDirectoryTests::lookupsByIdAndKeyReturnIndependentValu
     auto idCopy = projection.findCampus(campusId("campus-1"));
     QVERIFY(idCopy.has_value());
     idCopy->displayName = "Changed outside projection";
-    idCopy->key = "changed-key";
+    idCopy->key = CampusDirectoryKey("changed-key");
     idCopy->notes = "Changed notes";
     idCopy->active = false;
 
@@ -223,7 +239,7 @@ void NextApplicationCampusDirectoryTests::lookupsByIdAndKeyReturnIndependentValu
     QVERIFY(storedById.has_value());
     QVERIFY(storedByKey.has_value());
     QCOMPARE(storedById->displayName, std::string("Main Campus"));
-    QCOMPARE(storedById->key, std::string("main"));
+    QCOMPARE(storedById->key.value(), std::string("main"));
     QCOMPARE(storedById->notes.value(), std::string("Main notes"));
     QVERIFY(storedById->active);
     QCOMPARE(storedByKey->address, std::string("2 West Campus Road"));
@@ -263,7 +279,8 @@ void NextApplicationCampusDirectoryTests::exactIdentifierAndTextCapsAreAccepted(
     campus.id = campusId(
         std::string(kCampusDirectoryMaxIdentifierLength, 'i')
         );
-    campus.key = std::string(kCampusDirectoryMaxKeyLength, 'k');
+    campus.key = CampusDirectoryKey(
+        std::string(kCampusDirectoryMaxKeyLength, 'k'));
     campus.displayName = std::string(
         kCampusDirectoryMaxDisplayNameLength,
         'd'
@@ -281,12 +298,48 @@ void NextApplicationCampusDirectoryTests::exactIdentifierAndTextCapsAreAccepted(
         storedCampus.id.value().size(),
         kCampusDirectoryMaxIdentifierLength
         );
-    QCOMPARE(storedCampus.key.size(), kCampusDirectoryMaxKeyLength);
+    QCOMPARE(storedCampus.key.value().size(), kCampusDirectoryMaxKeyLength);
     QCOMPARE(
         storedCampus.displayName.size(),
         kCampusDirectoryMaxDisplayNameLength
         );
     QCOMPARE(storedCampus.address.size(), kCampusDirectoryMaxAddressLength);
+}
+
+void NextApplicationCampusDirectoryTests::utf8KeyLimitCountsBytes()
+{
+    const std::string opaqueBytes("\xFF\0\xC3", 3);
+    const CampusDirectoryKey opaqueKey(opaqueBytes);
+    QCOMPARE(opaqueKey.value(), opaqueBytes);
+
+    std::string exactUtf8Key;
+    for (int index = 0; index < 16; ++index)
+    {
+        exactUtf8Key.append("\xF0\x9F\x8C\x8D", 4);
+    }
+    QCOMPARE(exactUtf8Key.size(), std::size_t(64));
+    QCOMPARE(exactUtf8Key.size(), kCampusDirectoryMaxKeyLength);
+
+    auto exactInput = validInput();
+    exactInput.campuses.front().key = CampusDirectoryKey(exactUtf8Key);
+    const auto exactResult = CampusDirectoryProjection::create(
+        std::move(exactInput));
+    QVERIFY(exactResult);
+    QCOMPARE(exactResult.value().campuses().front().key.value(), exactUtf8Key);
+    const auto exactLookup = exactResult.value().lookupByKey(exactUtf8Key);
+    QVERIFY(exactLookup.has_value());
+    QCOMPARE(exactLookup->key.value(), exactUtf8Key);
+
+    auto oversizedInput = validInput();
+    const std::string oversizedUtf8Key = exactUtf8Key + "x";
+    QCOMPARE(oversizedUtf8Key.size(), std::size_t(65));
+    oversizedInput.campuses.front().key = CampusDirectoryKey(oversizedUtf8Key);
+    const auto oversizedResult = CampusDirectoryProjection::create(
+        std::move(oversizedInput));
+    verifyInvalid(oversizedResult);
+    QCOMPARE(
+        oversizedResult.error().message,
+        std::string("Campus key must be non-blank and bounded."));
 }
 
 void NextApplicationCampusDirectoryTests::exactNotesCapIsAcceptedByCreateAndRetained()
@@ -314,8 +367,12 @@ void NextApplicationCampusDirectoryTests::blankAndOversizedFieldsAreRejected()
         CampusDirectoryProjection::create(std::move(blankDisplayName))
         );
 
+    auto emptyKey = validInput();
+    emptyKey.campuses.front().key = CampusDirectoryKey{};
+    verifyInvalid(CampusDirectoryProjection::create(std::move(emptyKey)));
+
     auto blankKey = validInput();
-    blankKey.campuses.front().key = "\n";
+    blankKey.campuses.front().key = CampusDirectoryKey("\n");
     verifyInvalid(CampusDirectoryProjection::create(std::move(blankKey)));
 
     auto blankAddress = validInput();
@@ -335,10 +392,10 @@ void NextApplicationCampusDirectoryTests::blankAndOversizedFieldsAreRejected()
         );
 
     auto oversizedKey = validInput();
-    oversizedKey.campuses.front().key = std::string(
+    oversizedKey.campuses.front().key = CampusDirectoryKey(std::string(
         kCampusDirectoryMaxKeyLength + 1,
         'k'
-        );
+        ));
     verifyInvalid(CampusDirectoryProjection::create(std::move(oversizedKey)));
 
     auto oversizedDisplayName = validInput();
