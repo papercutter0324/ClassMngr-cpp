@@ -623,7 +623,9 @@ ClassMngr::Next::Application::ClassTabNavigationOrderingFact orderingFact(
         .earliestScheduleDayRank = firstDayOrder(entry),
         .earliestStartMinuteRank = firstTimeOrder(entry),
         .baseLabel = baseLabel(entry, true).toStdU16String(),
-        .classId = entry.classId
+        .classId = ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(entry.classId)
+            ).value()
     };
 }
 

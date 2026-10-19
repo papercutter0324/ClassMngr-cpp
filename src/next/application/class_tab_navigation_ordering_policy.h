@@ -1,8 +1,12 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
+
+#include <charconv>
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace ClassMngr::Next::Application
 {
@@ -17,8 +21,44 @@ struct ClassTabNavigationOrderingFact final
     std::int32_t earliestScheduleDayRank = 1'000;
     std::int32_t earliestStartMinuteRank = 1'000;
     std::u16string baseLabel;
-    std::int32_t classId = -1;
+    Domain::ClassId classId = Domain::ClassId::fromString("-1").value();
 };
+
+[[nodiscard]] inline bool classTabNavigationClassIdLessThan(
+    const Domain::ClassId& left,
+    const Domain::ClassId& right
+    )
+{
+    const std::string_view leftValue(left.value());
+    const std::string_view rightValue(right.value());
+    std::int32_t leftNumber = 0;
+    std::int32_t rightNumber = 0;
+    const auto leftResult = std::from_chars(
+        leftValue.data(),
+        leftValue.data() + leftValue.size(),
+        leftNumber
+        );
+    const auto rightResult = std::from_chars(
+        rightValue.data(),
+        rightValue.data() + rightValue.size(),
+        rightNumber
+        );
+    const bool leftParsed = leftResult.ec == std::errc{}
+        && leftResult.ptr == leftValue.data() + leftValue.size();
+    const bool rightParsed = rightResult.ec == std::errc{}
+        && rightResult.ptr == rightValue.data() + rightValue.size();
+
+    if (leftParsed != rightParsed)
+    {
+        return leftParsed;
+    }
+    if (leftParsed && leftNumber != rightNumber)
+    {
+        return leftNumber < rightNumber;
+    }
+
+    return leftValue < rightValue;
+}
 
 // The caller supplies a label comparator that returns a negative, zero, or
 // positive result. Exact tuple ties compare false in both directions.
@@ -63,7 +103,7 @@ template <typename CompareBaseLabels>
         return labelComparison < 0;
     }
 
-    return left.classId < right.classId;
+    return classTabNavigationClassIdLessThan(left.classId, right.classId);
 }
 
 } // namespace ClassMngr::Next::Application

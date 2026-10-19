@@ -3,6 +3,8 @@
 
 #include <QtTest>
 
+#include <type_traits>
+
 namespace
 {
 ClassTime classTime(
@@ -68,6 +70,7 @@ private slots:
     void moreThanSixClassesUseOrderedGradeGroups();
     void gradeModeLabelsUseLevelAndSchedule();
     void classTabsSortByLevelThenDay();
+    void equalClassTabLabelsUseNumericIntIdsAsFinalTieBreaker();
     void unknownWeekdayWithValidTimeKeepsTimeRank();
     void unknownWeekdaySixFortyCollidesWithUnknownTimeSentinel();
     void malformedNonemptyRegularScheduleDoesNotUseIntensiveFallback();
@@ -388,6 +391,33 @@ void ClassTabNavigationTests::classTabsSortByLevelThenDay()
             );
     QCOMPARE(unknownWeekdayModel.gradeGroups.size(), 1);
     QCOMPARE(classIds(unknownWeekdayModel), QList<int>({30, 31, 32, 33}));
+}
+
+void ClassTabNavigationTests::
+equalClassTabLabelsUseNumericIntIdsAsFinalTieBreaker()
+{
+    static_assert(
+        std::is_same_v<decltype(ClassTabNavigation::ClassTab::classId), int>
+        );
+
+    // These entries have equal grade, level, schedule ranks, and base labels.
+    // Reversed input makes the integer ID final tie-break observable.
+    const QList<ClassTabNavigation::ClassEntry> reversedEntries{
+        classEntry(10, QStringLiteral("E4"), QStringLiteral("Perseus")),
+        classEntry(2, QStringLiteral("E4"), QStringLiteral("Perseus"))
+    };
+
+    const ClassTabNavigation::Model model =
+        ClassTabNavigation::build(
+            reversedEntries,
+            ClassTabNavigation::GroupingPolicy::AlwaysGradeGrouped
+            );
+
+    QCOMPARE(model.gradeGroups.size(), 1);
+    QCOMPARE(model.gradeGroups.first().classes.size(), 2);
+    QCOMPARE(classIds(model), QList<int>({2, 10}));
+    QCOMPARE(model.gradeGroups.first().classes.first().classId, 2);
+    QCOMPARE(model.gradeGroups.first().classes.at(1).classId, 10);
 }
 
 void ClassTabNavigationTests::unknownWeekdayWithValidTimeKeepsTimeRank()
