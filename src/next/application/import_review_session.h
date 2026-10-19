@@ -45,6 +45,30 @@ enum class ImportDecisionAction
 
 using ImportReviewAction = ImportDecisionAction;
 
+class TeacherImportGroupKey final
+{
+public:
+    TeacherImportGroupKey() = default;
+
+    explicit TeacherImportGroupKey(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const TeacherImportGroupKey&,
+        const TeacherImportGroupKey&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 enum class ImportWarningKind
 {
     General,
@@ -844,13 +868,13 @@ enum class TeacherImportGroupMode
 
 struct TeacherImportCandidateGroup
 {
-    std::string id;
+    TeacherImportGroupKey id;
     std::size_t candidateCount = 0;
 };
 
 struct TeacherImportGroupDecision
 {
-    std::string groupId;
+    TeacherImportGroupKey groupId;
     TeacherImportGroupMode mode = TeacherImportGroupMode::All;
     std::vector<std::int64_t> selectedCandidateIndexes;
 };
@@ -890,8 +914,8 @@ struct TeacherImportReviewResolution
 
     for (std::size_t groupIndex = 0; groupIndex < candidateGroups.size(); ++groupIndex)
     {
-        const std::string& id = candidateGroups[groupIndex].id;
-        if (id.empty())
+        const TeacherImportGroupKey& id = candidateGroups[groupIndex].id;
+        if (id.value().empty())
         {
             result.issue = TeacherImportReviewIssue::EmptyGroupId;
             return result;

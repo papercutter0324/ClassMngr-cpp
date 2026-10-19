@@ -13,6 +13,7 @@
 namespace ClassMngr::Data::Legacy
 {
 using ClassMngr::Next::Application::TeacherImportGroupDecision;
+using ClassMngr::Next::Application::TeacherImportGroupKey;
 using ClassMngr::Next::Application::TeacherImportGroupMode;
 using ClassMngr::Next::Application::TeacherImportReviewGroup;
 using ClassMngr::Next::Application::TeacherImportUseCaseRequest;
@@ -135,7 +136,7 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
         for (const KoreanTeacherImportGroup& group : plan.review->candidateGroups)
         {
             TeacherImportReviewGroup projected;
-            projected.id = group.level.toUtf8().toStdString();
+            projected.id = TeacherImportGroupKey(group.level.toUtf8().toStdString());
             projected.candidateValidationKeys.reserve(
                 static_cast<std::size_t>(group.candidates.size()));
             for (const KoreanTeacherImportCandidate& candidate : group.candidates)
@@ -169,7 +170,7 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
                 break;
             }
             TeacherImportGroupDecision decision{
-                selection.level.toUtf8().toStdString(), mode, {}};
+                TeacherImportGroupKey(selection.level.toUtf8().toStdString()), mode, {}};
             decision.selectedCandidateIndexes.reserve(
                 static_cast<std::size_t>(selection.selectedCandidateIndexes.size()));
             for (const int index : selection.selectedCandidateIndexes)

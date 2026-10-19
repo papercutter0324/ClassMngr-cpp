@@ -46,7 +46,7 @@ TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
     for (const KoreanTeacherImportGroup& group : review.candidateGroups)
     {
         request.groups.push_back({
-            group.level.toUtf8().toStdString(),
+            TeacherImportGroupKey(group.level.toUtf8().toStdString()),
             static_cast<std::size_t>(group.candidates.size())
         });
     }
@@ -69,7 +69,7 @@ TeacherImportReviewRequest reviewRequest(const TeacherImportReview& review)
             break;
         }
         TeacherImportGroupDecision decision{
-            selection.level.toUtf8().toStdString(), mode, {}};
+            TeacherImportGroupKey(selection.level.toUtf8().toStdString()), mode, {}};
         decision.selectedCandidateIndexes.reserve(
             static_cast<std::size_t>(selection.selectedCandidateIndexes.size()));
         for (const int index : selection.selectedCandidateIndexes)

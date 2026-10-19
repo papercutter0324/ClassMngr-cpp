@@ -43,6 +43,7 @@ private slots:
     void unreadableDataFailsValidation();
     void reviewContractAcceptsAllSelectedAndNone();
     void reviewContractRejectsInvalidDecisions();
+    void reviewContractPreservesExactUtf8KeysAndEmptyPrecedence();
     void matchesStoredKoreanTeacherAfterRemovingSuffix();
     void updatesKoreanTeacherWithWideId();
     void updatesNativeEnglishTeacherWithWideId();
@@ -330,7 +331,7 @@ ClassMngr::Next::Application::TeacherImportReviewResolution resolveReview(
     decisions.reserve(static_cast<std::size_t>(review.groupSelections.size()));
     for (const KoreanTeacherImportGroup& group : review.candidateGroups)
     {
-        groups.push_back({group.level.toUtf8().toStdString(),
+        groups.push_back({TeacherImportGroupKey(group.level.toUtf8().toStdString()),
                           static_cast<std::size_t>(group.candidates.size())});
     }
     for (const TeacherImportGroupSelection& selection : review.groupSelections)
@@ -352,7 +353,7 @@ ClassMngr::Next::Application::TeacherImportReviewResolution resolveReview(
             break;
         }
         TeacherImportGroupDecision decision{
-            selection.level.toUtf8().toStdString(), mode, {}};
+            TeacherImportGroupKey(selection.level.toUtf8().toStdString()), mode, {}};
         for (const int index : selection.selectedCandidateIndexes)
         {
             decision.selectedCandidateIndexes.push_back(index);
@@ -915,11 +916,13 @@ void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
 {
     using namespace ClassMngr::Next::Application;
     const std::vector<TeacherImportCandidateGroup> groups{
-        {"M1", 3}, {"M2", 2}, {"H1", 1}};
+        {TeacherImportGroupKey("M1"), 3},
+        {TeacherImportGroupKey("M2"), 2},
+        {TeacherImportGroupKey("H1"), 1}};
     const std::vector<TeacherImportGroupDecision> decisions{
-        {"H1", TeacherImportGroupMode::All, {}},
-        {"M1", TeacherImportGroupMode::Selected, {2, 0}},
-        {"M2", TeacherImportGroupMode::None, {}}
+        {TeacherImportGroupKey("H1"), TeacherImportGroupMode::All, {}},
+        {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {2, 0}},
+        {TeacherImportGroupKey("M2"), TeacherImportGroupMode::None, {}}
     };
 
     const auto resolution = resolveTeacherImportReview(groups, decisions);
@@ -936,7 +939,20 @@ void TeacherImportTests::reviewContractAcceptsAllSelectedAndNone()
 void TeacherImportTests::reviewContractRejectsInvalidDecisions()
 {
     using namespace ClassMngr::Next::Application;
-    const std::vector<TeacherImportCandidateGroup> groups{{"M1", 2}, {"H1", 1}};
+    const std::vector<TeacherImportCandidateGroup> groups{
+        {TeacherImportGroupKey("M1"), 2},
+        {TeacherImportGroupKey("H1"), 1}};
+    const auto candidate = [](std::string id, const std::size_t count) {
+        return TeacherImportCandidateGroup{
+            TeacherImportGroupKey(std::move(id)), count};
+    };
+    const auto decision = [](
+                              std::string id,
+                              const TeacherImportGroupMode mode,
+                              std::vector<std::int64_t> indexes = {}) {
+        return TeacherImportGroupDecision{
+            TeacherImportGroupKey(std::move(id)), mode, std::move(indexes)};
+    };
     const auto issueFor = [&groups](
                               const std::vector<TeacherImportGroupDecision>& decisions,
                               const std::vector<TeacherImportCandidateGroup>& candidates = {}) {
@@ -946,46 +962,85 @@ void TeacherImportTests::reviewContractRejectsInvalidDecisions()
     };
 
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::All, {}},
-                 {"H1", TeacherImportGroupMode::All, {}}},
-                 {{"M1", 2}, {"M1", 1}})),
+                 decision("M1", TeacherImportGroupMode::All),
+                 decision("H1", TeacherImportGroupMode::All)},
+                 {candidate("M1", 2), candidate("M1", 1)})),
              static_cast<int>(TeacherImportReviewIssue::DuplicateCandidateGroup));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::All, {}},
-                 {"H1", TeacherImportGroupMode::All, {}}},
-                 {{"", 2}, {"H1", 1}})),
+                 decision("M1", TeacherImportGroupMode::All),
+                 decision("H1", TeacherImportGroupMode::All)},
+                 {candidate("", 2), candidate("H1", 1)})),
              static_cast<int>(TeacherImportReviewIssue::EmptyGroupId));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::All, {}},
-                 {"M1", TeacherImportGroupMode::None, {}}})),
+                 decision("M1", TeacherImportGroupMode::All),
+                 decision("M1", TeacherImportGroupMode::None)})),
              static_cast<int>(TeacherImportReviewIssue::DuplicateDecisionGroup));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::All, {}},
-                 {"Unknown", TeacherImportGroupMode::None, {}}})),
+                 decision("M1", TeacherImportGroupMode::All),
+                 decision("Unknown", TeacherImportGroupMode::None)})),
              static_cast<int>(TeacherImportReviewIssue::UnknownDecisionGroup));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::All, {}}})),
+                 decision("M1", TeacherImportGroupMode::All)})),
              static_cast<int>(TeacherImportReviewIssue::MissingDecisionGroup));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", static_cast<TeacherImportGroupMode>(99), {}},
-                 {"H1", TeacherImportGroupMode::All, {}}})),
+                 decision("M1", static_cast<TeacherImportGroupMode>(99)),
+                 decision("H1", TeacherImportGroupMode::All)})),
              static_cast<int>(TeacherImportReviewIssue::InvalidMode));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::All, {0}},
-                 {"H1", TeacherImportGroupMode::All, {}}})),
+                 decision("M1", TeacherImportGroupMode::All, {0}),
+                 decision("H1", TeacherImportGroupMode::All)})),
              static_cast<int>(TeacherImportReviewIssue::UnexpectedCandidateIndexes));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::Selected, {1, 1}},
-                 {"H1", TeacherImportGroupMode::All, {}}})),
+                 decision("M1", TeacherImportGroupMode::Selected, {1, 1}),
+                 decision("H1", TeacherImportGroupMode::All)})),
              static_cast<int>(TeacherImportReviewIssue::DuplicateCandidateIndex));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::Selected, {-1}},
-                 {"H1", TeacherImportGroupMode::All, {}}})),
+                 decision("M1", TeacherImportGroupMode::Selected, {-1}),
+                 decision("H1", TeacherImportGroupMode::All)})),
              static_cast<int>(TeacherImportReviewIssue::CandidateIndexOutOfRange));
     QCOMPARE(static_cast<int>(issueFor({
-                 {"M1", TeacherImportGroupMode::Selected, {2}},
-                 {"H1", TeacherImportGroupMode::All, {}}})),
+                 decision("M1", TeacherImportGroupMode::Selected, {2}),
+                 decision("H1", TeacherImportGroupMode::All)})),
              static_cast<int>(TeacherImportReviewIssue::CandidateIndexOutOfRange));
+}
+
+void TeacherImportTests::reviewContractPreservesExactUtf8KeysAndEmptyPrecedence()
+{
+    using namespace ClassMngr::Next::Application;
+
+    const TeacherImportGroupKey emptyKey;
+    QVERIFY(emptyKey.value().empty());
+    const TeacherImportGroupKey composedKey(std::string("M1-\xC3\xA9"));
+    const TeacherImportGroupKey decomposedKey(std::string("M1-e\xCC\x81"));
+    QCOMPARE(composedKey.value(), std::string("M1-\xC3\xA9"));
+    QCOMPARE(decomposedKey.value(), std::string("M1-e\xCC\x81"));
+    QVERIFY(composedKey != decomposedKey);
+
+    const auto emptyBeforeDuplicate = resolveTeacherImportReview(
+        {{emptyKey, 1}, {composedKey, 1}, {composedKey, 1}},
+        {{composedKey, TeacherImportGroupMode::All, {}}});
+    QCOMPARE(static_cast<int>(emptyBeforeDuplicate.issue),
+             static_cast<int>(TeacherImportReviewIssue::EmptyGroupId));
+
+    const std::vector<TeacherImportCandidateGroup> groups{
+        {composedKey, 3}, {decomposedKey, 1}};
+    const std::vector<TeacherImportGroupDecision> decisions{
+        {decomposedKey, TeacherImportGroupMode::Selected, {0}},
+        {composedKey, TeacherImportGroupMode::Selected, {2, 0}}
+    };
+    const auto resolution = resolveTeacherImportReview(groups, decisions);
+    QVERIFY(resolution.accepted());
+    QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(2));
+    QCOMPARE(resolution.selectedCandidateIndexes[0],
+             (std::vector<std::size_t>{0, 2}));
+    QCOMPARE(resolution.selectedCandidateIndexes[1],
+             (std::vector<std::size_t>{0}));
+
+    const auto normalizationWouldBeUnknown = resolveTeacherImportReview(
+        {{composedKey, 1}},
+        {{decomposedKey, TeacherImportGroupMode::All, {}}});
+    QCOMPARE(static_cast<int>(normalizationWouldBeUnknown.issue),
+             static_cast<int>(TeacherImportReviewIssue::UnknownDecisionGroup));
 }
 
 void TeacherImportTests::matchesStoredKoreanTeacherAfterRemovingSuffix()

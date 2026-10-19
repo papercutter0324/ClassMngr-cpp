@@ -70,7 +70,7 @@ struct TeacherImportGsTeamSource final
 
 struct TeacherImportReviewGroup final
 {
-    std::string id;
+    TeacherImportGroupKey id;
     std::vector<std::string> candidateValidationKeys;
 };
 

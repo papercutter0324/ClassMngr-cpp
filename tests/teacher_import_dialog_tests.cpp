@@ -1,5 +1,6 @@
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "data/database/database_schema_manager.h"
+#include "data/repositories/teacher_import_legacy_plan_adapter.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "fakes/fake_file_dialog_service.h"
 
@@ -21,6 +22,9 @@
 #include <QUuid>
 #include <QtTest>
 
+#include <string>
+#include <vector>
+
 class TeacherImportDialogTests : public QObject
 {
     Q_OBJECT
@@ -31,6 +35,7 @@ private slots:
     void browseUsesTypedFileDialogRequest();
     void suppliedWorkbookBuildsDynamicSelectionUi();
     void checkedInWorkbookProductionDialogPlanAppliesToRepository();
+    void legacyPlanAdapterPreservesExactUtf8ReviewKeys();
 };
 
 namespace
@@ -432,6 +437,46 @@ void TeacherImportDialogTests::checkedInWorkbookProductionDialogPlanAppliesToRep
         database.close();
     }
     QSqlDatabase::removeDatabase(connectionName);
+}
+
+void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
+{
+    const QString composedLevel = QString::fromUtf8("M1-\xC3\xA9");
+    const QString decomposedLevel = QString::fromUtf8("M1-e\xCC\x81");
+    TeacherImportPlan plan;
+    plan.review.emplace();
+    plan.review->candidateGroups = {
+        {composedLevel, {}}, {decomposedLevel, {}}
+    };
+    plan.review->groupSelections = {
+        {decomposedLevel, TeacherImportSelectionMode::All, {}},
+        {composedLevel, TeacherImportSelectionMode::All, {}}
+    };
+
+    const auto request =
+        ClassMngr::Data::Legacy::teacherImportPlanToUseCaseRequest(plan);
+    QVERIFY(request.review.has_value());
+    QCOMPARE(request.review->candidateGroups.size(), std::size_t(2));
+    QCOMPARE(request.review->candidateGroups[0].id.value(),
+             std::string("M1-\xC3\xA9"));
+    QCOMPARE(request.review->candidateGroups[1].id.value(),
+             std::string("M1-e\xCC\x81"));
+    QCOMPARE(request.review->decisions[0].groupId.value(),
+             std::string("M1-e\xCC\x81"));
+    QCOMPARE(request.review->decisions[1].groupId.value(),
+             std::string("M1-\xC3\xA9"));
+
+    std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
+    for (const auto& group : request.review->candidateGroups)
+    {
+        groups.push_back({
+            group.id, group.candidateValidationKeys.size()});
+    }
+    const auto resolution =
+        ClassMngr::Next::Application::resolveTeacherImportReview(
+            groups, request.review->decisions);
+    QVERIFY(resolution.accepted());
+    QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(2));
 }
 
 QTEST_MAIN(TeacherImportDialogTests)

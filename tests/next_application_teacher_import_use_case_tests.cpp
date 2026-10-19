@@ -399,12 +399,12 @@ void successfulOrchestrationAcrossNamespaces()
     request.validation.koreanTeacherKeys = {"selected-korean", "new-korean"};
     request.review = TeacherImportReview{
         .candidateGroups = {
-            {"M1", {"not-selected", "selected-korean"}},
-            {"M2", {"new-korean"}}
+            {TeacherImportGroupKey("M1"), {"not-selected", "selected-korean"}},
+            {TeacherImportGroupKey("M2"), {"new-korean"}}
         },
         .decisions = {
-            {"M1", TeacherImportGroupMode::Selected, {1}},
-            {"M2", TeacherImportGroupMode::All, {}}
+            {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}},
+            {TeacherImportGroupKey("M2"), TeacherImportGroupMode::All, {}}
         }
     };
 
@@ -511,6 +511,42 @@ void successfulOrchestrationAcrossNamespaces()
             "reads, writes, and date update did not share one transaction");
 }
 
+void exactUtf8ReviewKeysKeepCandidateOrderInUseCase()
+{
+    TeacherImportUseCaseRequest request = emptyValidRequest();
+    request.koreanTeachers = {
+        koreanSource("selected-one", u"김하늘"),
+        koreanSource("selected-two", u"이서연")
+    };
+    request.validation.koreanTeacherKeys = {"selected-one", "selected-two"};
+
+    const TeacherImportGroupKey composedKey(std::string("M1-\xC3\xA9"));
+    const TeacherImportGroupKey decomposedKey(std::string("M1-e\xCC\x81"));
+    request.review = TeacherImportReview{
+        .candidateGroups = {
+            {composedKey, {"unselected", "selected-one"}},
+            {decomposedKey, {"selected-two"}}
+        },
+        // Decisions arrive in reverse order; selected Korean sources must
+        // still follow candidate-group order.
+        .decisions = {
+            {decomposedKey, TeacherImportGroupMode::Selected, {0}},
+            {composedKey, TeacherImportGroupMode::Selected, {1}}
+        }
+    };
+
+    FakeTeacherImportPersistence persistence;
+    const auto result = runUseCase(request, persistence);
+    require(result.has_value(),
+            "exact non-ASCII review keys were rejected by the use case");
+    require(result->koreanTeachers == TeacherImportCounts{2, 0, 0},
+            "reviewed Korean sources were not both created");
+    require(persistence.state.koreanTeachers.size() == 2
+                && persistence.state.koreanTeachers[0].teacherKr == u"김하늘"
+                && persistence.state.koreanTeachers[1].teacherKr == u"이서연",
+            "use case did not retain candidate-group order after matching reversed decisions");
+}
+
 void noMatchCreatesAcrossAllNamespaces()
 {
     TeacherImportUseCaseRequest request = emptyValidRequest();
@@ -536,8 +572,8 @@ void reviewAndPlanRejectionPrecedePersistence()
         request.koreanTeachers = {koreanSource("selected", u"김하늘")};
         request.validation.koreanTeacherKeys = {"selected"};
         request.review = TeacherImportReview{
-            .candidateGroups = {{"M1", {"different"}}},
-            .decisions = {{"M1", TeacherImportGroupMode::All, {}}}
+            .candidateGroups = {{TeacherImportGroupKey("M1"), {"different"}}},
+            .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::All, {}}}
         };
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -554,8 +590,8 @@ void reviewAndPlanRejectionPrecedePersistence()
         request.koreanTeachers = {koreanSource("selected", u"김하늘")};
         request.validation.koreanTeacherKeys = {"selected"};
         request.review = TeacherImportReview{
-            .candidateGroups = {{"M1", {"selected"}}},
-            .decisions = {{"M1", TeacherImportGroupMode::Selected, {4}}}
+            .candidateGroups = {{TeacherImportGroupKey("M1"), {"selected"}}},
+            .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {4}}}
         };
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -823,8 +859,8 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
     {
         TeacherImportUseCaseRequest request = duplicateDerivedRequest();
         request.review = TeacherImportReview{
-            .candidateGroups = {{"M1", {"kim-a"}}},
-            .decisions = {{"M1", TeacherImportGroupMode::Selected, {1}}}
+            .candidateGroups = {{TeacherImportGroupKey("M1"), {"kim-a"}}},
+            .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}}}
         };
 
         FakeTeacherImportPersistence persistence;
@@ -1016,6 +1052,7 @@ int main()
     try
     {
         successfulOrchestrationAcrossNamespaces();
+        exactUtf8ReviewKeysKeepCandidateOrderInUseCase();
         noMatchCreatesAcrossAllNamespaces();
         reviewAndPlanRejectionPrecedePersistence();
         nativeEnglishSourceNameOwnsValidationAndMatching();
