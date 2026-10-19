@@ -49121,3 +49121,41 @@ passed. `git diff --check` passed. Windows verification and the full suite were
 not run. Batch484 remains active with six complete candidates, four
 discovered, and F1124 next for acceptance. F629 and the Phase 0 and Phase 2
 gates remain open.
+
+### F1124 Roster Save validation codes accepted before implementation - 2026-10-20
+
+F1124 is accepted/in progress. Replace only `RosterSaveIssue.code` with a
+separate closed Application enum, `RosterSaveIssueCode`; it is distinct from
+F1116's `SpeakingEvaluationValidationCode`. Explicitly map all 15 enum codes
+to these unchanged externally serialized keys:
+
+- `validation.length.out_of_bounds`
+- `student_name.english.too_long`
+- `student_name.english.non_ascii`
+- `student_name.english.invalid_characters`
+- `student_name.korean.invalid_characters`
+- `student_name.korean.too_short`
+- `student_name.korean.too_long`
+- `student_name.korean.unusual_length`
+- `roster.column.required`
+- `roster.column.duplicate`
+- `roster.column_widths.invalid_count`
+- `roster.rows.too_many`
+- `roster.row.too_many_cells`
+- `roster.student_name.required`
+- `student_name.duplicate_pair`
+
+Update the direct Application comparisons for the two Korean length codes.
+Serialize/map the enum only at existing message and Qt adapter boundaries.
+Preserve issue order and severity, error-message text/order, warning-skip
+behavior, and the existing UI `.required` suffix and `duplicate` substring
+mapping. Do not type `.field`, arguments/map keys, class/student identifiers,
+generic Qt `ValidationIssue.code`, or reuse/alter F1116.
+
+Focused targets: `ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrRosterModelTests`, `ClassMngrRosterEditorWidgetSaveTests`, and
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`. Implementation and
+tests have not started. Batch484 remains active with six complete candidates,
+F1124 accepted/in progress, and three discovered; F1125 is next after this
+slice. F629 and the Phase 0 and Phase 2 gates remain open.

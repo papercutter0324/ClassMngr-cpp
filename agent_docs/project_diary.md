@@ -7876,3 +7876,11 @@ for folder paths, parent paths, and document paths; validation, hierarchy,
 platform conversion, and sidebar behavior remain intact. Focused Application,
 platform, sidebar, and navigation verification passed 4/4. Windows and
 full-suite verification were not run.
+
+## 2026-10-20 - F1124 accepted
+
+Type `RosterSaveIssue.code` with a dedicated closed `RosterSaveIssueCode`
+enum and explicit mappings to the existing 15 dotted keys. Preserve issue
+order, serialized error text, warning behavior, and UI suffix/substring
+matching. Keep it separate from the Speaking Evaluation code enum in F1116;
+leave issue fields, argument keys, and identifiers unchanged.

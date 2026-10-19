@@ -5522,3 +5522,16 @@ preserved. The Application, platform port, sidebar, and navigation parity
 targets built; focused CTest passed 4/4. Windows and full-suite verification
 were not run. F1124 is next for acceptance. F629 and both phase gates remain
 open.
+
+## Phase 2 update - F1124 accepted; Batch484 active - 2026-10-20
+
+F1124 is accepted to replace only `RosterSaveIssue.code` with a separate
+closed `RosterSaveIssueCode` enum covering the 15 current codes, with an
+explicit mapping to their unchanged dotted keys. Preserve issue order,
+severity, serialized error text, and the UI `.required` suffix and `duplicate`
+substring behavior. Type-check the Korean length-code comparisons in the
+Application use cases. Keep this enum separate from F1116's Speaking
+Evaluation codes and leave other issue fields, arguments, IDs, and generic Qt
+validation codes unchanged. Focused Application, platform, model, editor,
+and row-transfer targets are recorded in the Phase 2 plan. Implementation
+has not started. F629 and both phase gates remain open.
