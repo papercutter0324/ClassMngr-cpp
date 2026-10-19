@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1140 accepted; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1140 complete; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -225,9 +225,10 @@ source/test commit `fd3c0462`; focused macOS Debug verification passed the
 Domain and Platform CTests (2/2) and the selected Calendar Page color-picker
 failure/resync/retry case. `ClassMngr` and the affected targets built, and
 `git diff --check` passed. F1139 completed at source/test commit `05c9de8c`;
-the focused Platform adapter and Calendar Import CTests passed 2/2. Batch486
-remains active with two complete slices, F1140 accepted/in progress, and three
-discovered.
+the focused Platform adapter and Calendar Import CTests passed 2/2. F1140
+completed at source/test commit `230f7a00`; its Platform CTest passed 1/1 and
+both selected UI read-error cases passed. Batch486 remains active with three
+complete slices and three discovered; F1141 is next.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -235,7 +236,7 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with accepted F1140. F629 remains active and awaits a
+Continue Batch486 with F1141. F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -6036,3 +6037,22 @@ focused adapter CTest and the two selected UI read-error cases, then
 Batch486 has two complete slices, one accepted/in-progress F1140, and three
 discovered candidates; F1141 is next for acceptance. F629 and both phase gates
 remain open.
+
+## Phase 2 update - F1140 complete; Batch486 active - 2026-10-20
+
+F1140 completed at source/test commit
+`230f7a0052679864856eaff4b2eea47b4a5554e3`. A Qt-free Domain
+`PreparedPersonalSignatureImageBytes` now owns the exact prepared bytes; the
+read result retains `Domain::Result` so an empty value remains successful and
+repository read failures remain nonrecoverable `Technical` errors. Base64 and
+image preparation remain in Platform, and all callers retain their existing
+retry, preserve, and no-signature behavior. The separate write-side field was
+not changed.
+
+The macOS Debug build passed for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`,
+`ClassMngrInitialSetupWizardTests`, and `ClassMngrMyWorkspacePageTests`. The
+focused Platform CTest passed 1/1, and the two selected UI read-error cases
+passed. `git diff --check` passed. Full-suite and Windows verification were not
+run. Batch486 has three complete slices and three discovered; F1141 is next for
+acceptance. F629 and both phase gates remain open.

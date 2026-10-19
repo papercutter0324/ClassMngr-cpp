@@ -50056,7 +50056,7 @@ exact duplicate removal in Platform. Preserve service conversion back to
 `QString` and the parser's normalization, matching, and suffix behavior.
 
 Focused verification: build `ClassMngr`,
-`NextPlatformCalendarEventImportCampusCodeQuery`, and
+`ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests`, and
 `ClassMngrCalendarImportTests`; run the two focused CTests and
 `git diff --check`. F1139 completed; see the completion record below.
 Full-suite and Windows runs were not expected.
@@ -50101,8 +50101,27 @@ Focused verification: build `ClassMngr`,
 the focused adapter CTest and selected UI tests
 `signatureImageReadFailureBlocksAggregateSaveAndCanRetry` and
 `signatureImageReadFailurePreservesImageAndBlocksSaveUntilReload`; run
-`git diff --check`. Implementation and verification are pending. Full-suite
-and Windows runs are not expected. Batch486 has six candidates: F1138 and
-F1139 complete, F1140 accepted/in progress, and F1141–F1143 discovered.
-F1141 is next for acceptance; F629 and the Phase 0 and Phase 2 gates remain
-open.
+`git diff --check`. F1140 completed; see the completion record below.
+Full-suite and Windows runs were not expected.
+
+### F1140 Prepared personal-signature image bytes complete - 2026-10-20
+
+F1140 completed at source/test commit
+`230f7a0052679864856eaff4b2eea47b4a5554e`. The Qt-free Domain value
+`PreparedPersonalSignatureImageBytes` owns the exact existing image bytes,
+and only the read result is typed. Platform retains Base64 decoding and
+embedding preparation, the existing key, successful empty results for
+missing or unsupported input, and nonrecoverable Technical errors for read
+failures. Initial Setup, My Workspace, and Speaking Evaluation fallback and
+retry behavior remain; the separate save-request write field is unchanged.
+
+The incremental macOS Debug build passed for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests`,
+`ClassMngrInitialSetupWizardTests`, and `ClassMngrMyWorkspacePageTests`. The
+focused adapter CTest passed (1/1); selected UI cases
+`signatureImageReadFailureBlocksAggregateSaveAndCanRetry` and
+`signatureImageReadFailurePreservesImageAndBlocksSaveUntilReload` passed.
+`git diff --check` passed. The full suite and Windows verification were not
+run. Batch486 has six candidates: three complete (F1138–F1140), none
+accepted/in progress, and three discovered (F1141–F1143); F1141 is next for
+acceptance. F629 and the Phase 0 and Phase 2 gates remain open.

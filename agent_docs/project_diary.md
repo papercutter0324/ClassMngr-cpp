@@ -8194,3 +8194,19 @@ slice. Focused Platform and selected UI verification is planned; implementation
 and verification are pending. Batch486 has F1138 and F1139 complete, F1140
 accepted/in progress, and three discovered candidates. F629 and both phase
 gates remain open.
+
+## 2026-10-20 - F1140 complete
+
+F1140 completed at source/test commit
+`230f7a0052679864856eaff4b2eea47b4a5554e3`. The personal-signature read
+contract now returns `Domain::PreparedPersonalSignatureImageBytes`, preserving
+the exact prepared image bytes while keeping empty success distinct from a
+repository read error. Platform still owns Base64 decoding and preparation;
+Initial Setup, My Workspace, and Speaking Evaluation keep their existing
+failure behavior. The separate write-side field remains unchanged.
+
+The macOS Debug build passed for `ClassMngr` and three focused targets. The
+Platform CTest passed 1/1, and both selected Initial Setup and My Workspace
+read-error cases passed. `git diff --check` passed. Full suite and Windows were
+not run. Batch486 now has three complete slices and three discovered, with
+F1141 next; F629 and both phase gates remain open.
