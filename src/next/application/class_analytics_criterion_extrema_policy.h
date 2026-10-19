@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -14,16 +15,45 @@ struct ClassAnalyticsCriterionExtremaSelection final
     std::vector<std::size_t> focusIndices;
 };
 
-// Criteria must already contain the hasData and rounded average facts. Keep
-// the strict tolerance aligned with the existing Class Analytics selection.
+// Criteria must already contain the hasData and rounded average facts.
+// Thousandths values compare exactly; legacy floating projections retain the
+// existing strict tie tolerance.
 template <typename Criteria>
 [[nodiscard]] inline ClassAnalyticsCriterionExtremaSelection
 selectClassAnalyticsCriterionExtrema(const Criteria& criteria)
 {
-    constexpr double tieTolerance = 1e-9;
+    using Average = std::remove_cvref_t<
+        decltype((*criteria.begin()).average3)>;
+    constexpr bool hasThousandths = requires(const Average& average) {
+        average.thousandths();
+    };
+    using Key = std::conditional_t<hasThousandths, int, double>;
 
-    std::optional<double> strongestAverage;
-    std::optional<double> focusAverage;
+    const auto keyFor = [](const Average& average) -> Key
+    {
+        if constexpr (hasThousandths)
+        {
+            return average.thousandths();
+        }
+        else
+        {
+            return average;
+        }
+    };
+    const auto tied = [](const Key left, const Key right)
+    {
+        if constexpr (hasThousandths)
+        {
+            return left == right;
+        }
+        else
+        {
+            return std::abs(left - right) < 1e-9;
+        }
+    };
+
+    std::optional<Key> strongestAverage;
+    std::optional<Key> focusAverage;
     for (const auto& criterion : criteria)
     {
         if (!criterion.hasData)
@@ -31,13 +61,14 @@ selectClassAnalyticsCriterionExtrema(const Criteria& criteria)
             continue;
         }
 
-        if (!strongestAverage || criterion.average3 > *strongestAverage)
+        const Key average = keyFor(criterion.average3);
+        if (!strongestAverage || average > *strongestAverage)
         {
-            strongestAverage = criterion.average3;
+            strongestAverage = average;
         }
-        if (!focusAverage || criterion.average3 < *focusAverage)
+        if (!focusAverage || average < *focusAverage)
         {
-            focusAverage = criterion.average3;
+            focusAverage = average;
         }
     }
 
@@ -52,12 +83,12 @@ selectClassAnalyticsCriterionExtrema(const Criteria& criteria)
     {
         if (criterion.hasData)
         {
-            if (std::abs(criterion.average3 - *strongestAverage)
-                < tieTolerance)
+            const Key average = keyFor(criterion.average3);
+            if (tied(average, *strongestAverage))
             {
                 selection.strongestIndices.push_back(index);
             }
-            if (std::abs(criterion.average3 - *focusAverage) < tieTolerance)
+            if (tied(average, *focusAverage))
             {
                 selection.focusIndices.push_back(index);
             }

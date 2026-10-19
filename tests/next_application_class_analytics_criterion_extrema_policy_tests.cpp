@@ -1,4 +1,5 @@
 #include "next/application/class_analytics_criterion_extrema_policy.h"
+#include "next/application/class_analytics_average_thousandths.h"
 
 #include <cassert>
 #include <cstddef>
@@ -13,6 +14,12 @@ struct CriterionFacts final
 {
     bool hasData = false;
     double average3 = 0.0;
+};
+
+struct ThousandthsCriterionFacts final
+{
+    bool hasData = false;
+    ClassAnalyticsAverageThousandths average3;
 };
 
 void strongestAndFocusTiesPreserveInputOrderAndSkipMissing()
@@ -59,6 +66,20 @@ void adjacentThousandthsRemainDistinct()
     assert((selection.focusIndices == std::vector<std::size_t>{ 0 }));
 }
 
+void equalThousandthsPreserveCriterionOrder()
+{
+    const std::vector<ThousandthsCriterionFacts> criteria{
+        { true, ClassAnalyticsAverageThousandths{ 3001 } },
+        { true, ClassAnalyticsAverageThousandths{ 2399 } },
+        { true, ClassAnalyticsAverageThousandths{ 3001 } },
+        { true, ClassAnalyticsAverageThousandths{ 2399 } }
+    };
+
+    const auto selection = selectClassAnalyticsCriterionExtrema(criteria);
+    assert((selection.strongestIndices == std::vector<std::size_t>{ 0, 2 }));
+    assert((selection.focusIndices == std::vector<std::size_t>{ 1, 3 }));
+}
+
 void strictToleranceKeepsOnlyNearTies()
 {
     const std::vector<CriterionFacts> criteria{
@@ -91,6 +112,7 @@ int main()
     strongestAndFocusTiesPreserveInputOrderAndSkipMissing();
     emptyAndAllMissingInputsHaveNoSelections();
     adjacentThousandthsRemainDistinct();
+    equalThousandthsPreserveCriterionOrder();
     strictToleranceKeepsOnlyNearTies();
     strictToleranceExcludesTheExactBoundary();
     return 0;

@@ -150,6 +150,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/roster_row_removal.h
     src/next/application/student_korean_name_suffix_suggestion.h
     src/next/application/roster_read_query.h
+    src/next/application/class_analytics_average_thousandths.h
     src/next/application/class_analytics_dashboard_read_port.h
     src/next/application/class_analytics_criterion_extrema_policy.h
     src/next/application/class_analytics_numeric_policy.h

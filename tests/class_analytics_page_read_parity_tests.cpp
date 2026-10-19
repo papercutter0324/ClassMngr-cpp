@@ -28,10 +28,10 @@ namespace
 class DefaultLocaleScope final
 {
 public:
-    DefaultLocaleScope()
+    explicit DefaultLocaleScope(const QLocale& locale = QLocale::c())
         : m_previous(QLocale())
     {
-        QLocale::setDefault(QLocale::c());
+        QLocale::setDefault(locale);
     }
 
     ~DefaultLocaleScope()
@@ -290,6 +290,7 @@ class ClassAnalyticsPageReadParityTests final : public QObject
 
 private slots:
     void visibleSummaryShapeAndYearToDateMatchFixture();
+    void visibleAverageUsesLocaleWithOneDecimal();
     void noScoredDataShowsEmptyStateAndBlankCharts();
 };
 
@@ -367,6 +368,25 @@ visibleSummaryShapeAndYearToDateMatchFixture()
     QCOMPARE(readPort.rosterReadCount, 2);
     QCOMPARE(readPort.evaluationBatchReadCount, 2);
     logTranscript();
+}
+
+void ClassAnalyticsPageReadParityTests::visibleAverageUsesLocaleWithOneDecimal()
+{
+    const DefaultLocaleScope localeScope(
+        QLocale(QLocale::German, QLocale::Germany));
+    ApplicationServices services;
+    InMemoryDashboardReadPort readPort = populatedReadPort();
+    const TestNameSemantics names;
+    ClassAnalyticsPage page(
+        &services,
+        { .readPort = &readPort, .nameSemantics = &names });
+    page.resize(1100, 1000);
+    page.loadClass(Classroom(QStringLiteral("Localized Analytics"), 44));
+    page.show();
+    QCoreApplication::processEvents();
+
+    QCOMPARE(visibleLabelsWithText(page, QStringLiteral("A · 3,5")).size(), 1);
+    QCOMPARE(visibleLabelsWithText(page, QStringLiteral("A · 3,50")).size(), 0);
 }
 
 void ClassAnalyticsPageReadParityTests::

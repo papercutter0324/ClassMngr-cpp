@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 using namespace ClassMngr::Next;
@@ -205,6 +206,51 @@ public:
         port, names);
 }
 
+void appendScoresForAverage(
+    ClassAnalyticsEvaluationRows& rows,
+    const std::u16string_view englishName,
+    const int scoredCellCount,
+    const int higherGradeCellCount
+    )
+{
+    int scoreCell = 0;
+    while (scoreCell < scoredCellCount)
+    {
+        ClassAnalyticsEvaluationRow current;
+        current.englishName = englishName;
+        for (std::size_t criterion = 0;
+             criterion < current.scores.size()
+                 && scoreCell < scoredCellCount;
+             ++criterion, ++scoreCell)
+        {
+            current.scores[criterion] = scoreCell < higherGradeCellCount
+                ? u"B+" : u"B";
+        }
+        rows.push_back(std::move(current));
+    }
+}
+
+void averageThousandthsValueSemantics()
+{
+    using Average = ClassAnalyticsAverageThousandths;
+    static_assert(std::is_constructible_v<Average, int>);
+    static_assert(!std::is_convertible_v<int, Average>);
+
+    const Average zero{};
+    assert(zero.thousandths() == 0);
+    assert(zero.toDouble() == 0.0);
+
+    const Average value(2399);
+    assert(value.thousandths() == 2399);
+    assert(value.toDouble() == 2.399);
+    assert(value == Average(2399));
+    assert(value != Average(2400));
+
+    // Construction preserves values outside the analytics display range.
+    assert(Average(-125).thousandths() == -125);
+    assert(Average(6000).thousandths() == 6000);
+}
+
 void canonicalOrderLatestClassShapeAndYtd()
 {
     FakeReadPort port;
@@ -222,7 +268,8 @@ void canonicalOrderLatestClassShapeAndYtd()
     assert(result.value().selectedSnapshot.hasData);
     assert(result.value().selectedSnapshot.rankings.size() == 1);
     // All aggregates every current score, including Fall's partial score.
-    assert(result.value().selectedSnapshot.rankings.front().overall3 == 2.615);
+    assert(result.value().selectedSnapshot.rankings.front().overall3
+        .thousandths() == 2615);
     assert(result.value().classShapeEvaluationName == u"Speech Contest");
     assert(result.value().classShapeSnapshot.fullyScoredCount == 1);
     assert(result.value().yearToDatePoints.size() == 2);
@@ -281,7 +328,8 @@ void currentRosterUsesNormalizedEnglishAndKoreanIdentities()
     assert(selected.rankings[1].englishName == u"Mary-Jane");
     assert(result.value().yearToDatePoints.size() == 1);
     // Historical YTD is global and still includes the Former row.
-    assert(result.value().yearToDatePoints.front().classAverage3 > 3.0);
+    assert(result.value().yearToDatePoints.front().classAverage3
+        .thousandths() > 3000);
 }
 
 void duplicateRowsConsolidateAndRankingTiesUseNamePort()
@@ -300,8 +348,8 @@ void duplicateRowsConsolidateAndRankingTiesUseNamePort()
     assert(selected.rankings.size() == 2);
     assert(selected.rankings[0].englishName == u"Bee");
     assert(selected.rankings[1].englishName == u"J. P. Kim");
-    assert(selected.rankings[0].overall3 == 3.0);
-    assert(selected.rankings[1].overall3 == 3.0);
+    assert(selected.rankings[0].overall3.thousandths() == 3000);
+    assert(selected.rankings[1].overall3.thousandths() == 3000);
 }
 
 void adjacentRoundedScoresRankBeforeNamePort()
@@ -324,10 +372,10 @@ void adjacentRoundedScoresRankBeforeNamePort()
     const auto& rankings = result.value().selectedSnapshot.rankings;
     assert(rankings.size() == 2);
     assert(rankings[0].englishName == u"Zed");
-    assert(rankings[0].overall3 == 3.001);
+    assert(rankings[0].overall3.thousandths() == 3001);
     assert(rankings[0].overallLetter == u"B+");
     assert(rankings[1].englishName == u"Amy");
-    assert(rankings[1].overall3 == 3.0);
+    assert(rankings[1].overall3.thousandths() == 3000);
     assert(rankings[1].overallLetter == u"B+");
 }
 
@@ -449,6 +497,71 @@ void numericPolicyBoundaries()
         roundAverageToGrade(2.400)) == u"B+");
 }
 
+void partialScoringPreservesWeightedAveragesAndYtdInputs()
+{
+    FakeReadPort port;
+    ClassAnalyticsEvaluationRow alexFirst;
+    alexFirst.englishName = u"Alex";
+    alexFirst.scores[0] = u"A";
+    alexFirst.scores[1] = u"B";
+    ClassAnalyticsEvaluationRow alexSecond;
+    alexSecond.englishName = u"Alex";
+    alexSecond.scores[0] = u"C";
+    port.evaluations[0] = {
+        std::move(alexFirst),
+        std::move(alexSecond),
+        row(u"Blair", u"", u"B")
+    };
+    const TestNameSemantics names;
+
+    const auto result = run(port, names, u"Winter");
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert(selected.rankings.size() == 2);
+    assert(selected.rankings[0].englishName == u"Alex");
+    assert(selected.rankings[0].overall3.thousandths() == 2333);
+    assert(!selected.rankings[0].fullyScored);
+    assert(selected.rankings[1].englishName == u"Blair");
+    assert(selected.rankings[1].overall3.thousandths() == 2000);
+    assert(selected.rankings[1].fullyScored);
+
+    // Criterion scores are weighted by their scored cell counts; class
+    // average keeps the existing equal weighting of each student's overall.
+    assert(selected.criteria[0].average3.thousandths() == 2333);
+    assert(selected.criteria[1].average3.thousandths() == 2000);
+    assert(selected.classAverage3.thousandths() == 2167);
+    assert(selected.classAverageLetter == u"B");
+
+    assert(result.value().yearToDatePoints.size() == 1);
+    assert(result.value().yearToDatePoints[0].evaluationName == u"Winter");
+    assert(result.value().yearToDatePoints[0].classAverage3
+        .thousandths() == 2000);
+    assert(result.value().yearToDatePoints[0].classAverageLetter == u"B");
+}
+
+void queryGradeBoundaryRoundsPositiveHalfUpAtThousandths()
+{
+    FakeReadPort port;
+    // 399 B+ and 601 B cells average exactly 2.399; 799 B+ and 1201 B
+    // cells average exactly 2.3995. Both sets span six-column rows.
+    appendScoresForAverage(port.evaluations[0], u"Below", 1000, 399);
+    appendScoresForAverage(port.evaluations[0], u"HalfUp", 2000, 799);
+    const TestNameSemantics names;
+
+    const auto result = run(port, names, u"Winter");
+    assert(result);
+    const auto& selected = result.value().selectedSnapshot;
+    assert(selected.rankings.size() == 2);
+    assert(selected.rankings[0].englishName == u"HalfUp");
+    assert(selected.rankings[0].overall3.thousandths() == 2400);
+    assert(selected.rankings[0].overallLetter == u"B+");
+    assert(selected.rankings[1].englishName == u"Below");
+    assert(selected.rankings[1].overall3.thousandths() == 2399);
+    assert(selected.rankings[1].overallLetter == u"B");
+    assert(selected.classAverage3.thousandths() == 2400);
+    assert(selected.classAverageLetter == u"B+");
+}
+
 void roundedClassAverageAtGradeBoundaryAdvances()
 {
     FakeReadPort port;
@@ -463,7 +576,7 @@ void roundedClassAverageAtGradeBoundaryAdvances()
 
     const auto result = run(port, names, u"Winter");
     assert(result);
-    assert(result.value().selectedSnapshot.classAverage3 == 2.4);
+    assert(result.value().selectedSnapshot.classAverage3.thousandths() == 2400);
     assert(result.value().selectedSnapshot.classAverageLetter == u"B+");
 }
 
@@ -471,7 +584,10 @@ void roundedClassAverageAtGradeBoundaryAdvances()
 
 int main()
 {
+    averageThousandthsValueSemantics();
     numericPolicyBoundaries();
+    partialScoringPreservesWeightedAveragesAndYtdInputs();
+    queryGradeBoundaryRoundsPositiveHalfUpAtThousandths();
     roundedClassAverageAtGradeBoundaryAdvances();
     canonicalOrderLatestClassShapeAndYtd();
     strongestAndFocusCriteriaPreserveOrderAndLabels();

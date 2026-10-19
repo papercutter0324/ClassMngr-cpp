@@ -1,5 +1,6 @@
 #include "features/classes/services/speaking_analytics.h"
 
+#include <QLocale>
 #include <QtTest/QtTest>
 
 namespace
@@ -34,6 +35,24 @@ QStringList makeRow(
     };
 }
 
+class DefaultLocaleScope final
+{
+public:
+    explicit DefaultLocaleScope(const QLocale& locale)
+        : m_previous(QLocale())
+    {
+        QLocale::setDefault(locale);
+    }
+
+    ~DefaultLocaleScope()
+    {
+        QLocale::setDefault(m_previous);
+    }
+
+private:
+    QLocale m_previous;
+};
+
 } // namespace
 
 class SpeakingAnalyticsTests
@@ -43,10 +62,12 @@ class SpeakingAnalyticsTests
 private slots:
     void gradeNumberRoundTrip();
     void roundingRule();
+    void formatAverageUsesLocaleWithOneDecimal();
     void roundedClassAverageAtGradeBoundaryAdvances();
     void strongestAndFocusTies();
     void computeFullMatrix();
     void rankingUsesScoreThenLocaleAwareName();
+    void equalScoreRankingUsesLocaleAwareOrdering();
     void computePartialCriterion();
     void consolidatesStudentsAcrossEvaluations();
     void computeEmpty();
@@ -74,6 +95,15 @@ void SpeakingAnalyticsTests::gradeNumberRoundTrip()
     QCOMPARE(SpeakingAnalytics::numberToGrade(1), QStringLiteral("C"));
     QCOMPARE(SpeakingAnalytics::numberToGrade(0), QStringLiteral("C"));
     QCOMPARE(SpeakingAnalytics::numberToGrade(9), QStringLiteral("A+"));
+}
+
+void SpeakingAnalyticsTests::formatAverageUsesLocaleWithOneDecimal()
+{
+    const DefaultLocaleScope localeScope(
+        QLocale(QLocale::German, QLocale::Germany));
+
+    QCOMPARE(SpeakingAnalytics::formatAverage(3.833), QStringLiteral("3,8"));
+    QCOMPARE(SpeakingAnalytics::formatAverage(2.0), QStringLiteral("2,0"));
 }
 
 void SpeakingAnalyticsTests::roundingRule()
@@ -288,6 +318,30 @@ void SpeakingAnalyticsTests::rankingUsesScoreThenLocaleAwareName()
         QCOMPARE(rank.overallLetter, QStringLiteral("B+"));
         QCOMPARE(rank.fullyScored, true);
     }
+}
+
+void SpeakingAnalyticsTests::equalScoreRankingUsesLocaleAwareOrdering()
+{
+    const DefaultLocaleScope localeScope(
+        QLocale(QLocale::German, QLocale::Germany));
+    const QString localeFirst = QStringLiteral("Änne");
+    const QString localeSecond = QStringLiteral("Zoe");
+    QVERIFY(localeFirst.localeAwareCompare(localeSecond) < 0);
+
+    SpeakingEvalRows matrix;
+    matrix.append(makeRow(
+        localeSecond, QString(), QStringLiteral("B"), QStringLiteral("B"),
+        QStringLiteral("B"), QStringLiteral("B"), QStringLiteral("B"),
+        QStringLiteral("B")));
+    matrix.append(makeRow(
+        localeFirst, QString(), QStringLiteral("B"), QStringLiteral("B"),
+        QStringLiteral("B"), QStringLiteral("B"), QStringLiteral("B"),
+        QStringLiteral("B")));
+
+    const auto snapshot = SpeakingAnalytics::compute({ matrix }, 2);
+    QCOMPARE(snapshot.rankings.size(), 2);
+    QCOMPARE(snapshot.rankings.at(0).englishName, localeFirst);
+    QCOMPARE(snapshot.rankings.at(1).englishName, localeSecond);
 }
 
 void SpeakingAnalyticsTests::computePartialCriterion()

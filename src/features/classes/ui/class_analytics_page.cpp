@@ -62,7 +62,7 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
 {
     SpeakingAnalytics::Snapshot snapshot;
     snapshot.hasData = source.hasData;
-    snapshot.classAverage3 = source.classAverage3;
+    snapshot.classAverage3 = source.classAverage3.toDouble();
     snapshot.classAverageLetter = toQString(source.classAverageLetter);
     snapshot.rosterStudentCount = static_cast<int>(source.rosterStudentCount);
     snapshot.fullyScoredCount = static_cast<int>(source.fullyScoredCount);
@@ -72,7 +72,7 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         slice.order = static_cast<int>(snapshot.criteria.size());
         slice.name = toQString(sourceSlice.name);
         slice.students = sourceSlice.students;
-        slice.average3 = sourceSlice.average3;
+        slice.average3 = sourceSlice.average3.toDouble();
         slice.hasData = sourceSlice.hasData;
         for (int grade = 1; grade <= 5; ++grade)
         {
@@ -101,7 +101,7 @@ SpeakingAnalytics::Snapshot toUiSnapshot(
         SpeakingAnalytics::StudentRank rank;
         rank.englishName = toQString(sourceRank.englishName);
         rank.koreanName = toQString(sourceRank.koreanName);
-        rank.overall3 = sourceRank.overall3;
+        rank.overall3 = sourceRank.overall3.toDouble();
         rank.overallLetter = toQString(sourceRank.overallLetter);
         for (const std::u16string& letter : sourceRank.criterionLetters)
             rank.criterionLetters.append(toQString(letter));
@@ -124,7 +124,7 @@ SpeakingEvaluationDashboard toUiDashboard(
     {
         dashboard.yearToDatePoints.append({
             .evaluationName = toQString(sourcePoint.evaluationName),
-            .classAverage3 = sourcePoint.classAverage3,
+            .classAverage3 = sourcePoint.classAverage3.toDouble(),
             .classAverageLetter = toQString(sourcePoint.classAverageLetter)
         });
     }

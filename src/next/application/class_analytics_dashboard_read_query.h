@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/class_analytics_average_thousandths.h"
 #include "next/application/class_analytics_dashboard_read_port.h"
 #include "next/application/class_analytics_criterion_extrema_policy.h"
 #include "next/application/class_analytics_numeric_policy.h"
@@ -11,6 +12,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <ranges>
 #include <string>
@@ -54,7 +56,7 @@ struct ClassAnalyticsCriterionSlice final
     std::u16string name;
     int students = 0;
     std::array<int, 5> distribution{};
-    double average3 = 0.0;
+    ClassAnalyticsAverageThousandths average3;
     bool hasData = false;
 };
 
@@ -62,7 +64,7 @@ struct ClassAnalyticsStudentRank final
 {
     std::u16string englishName;
     std::u16string koreanName;
-    double overall3 = 0.0;
+    ClassAnalyticsAverageThousandths overall3;
     std::u16string overallLetter;
     std::array<std::u16string, kClassAnalyticsCriterionCount>
         criterionLetters;
@@ -72,7 +74,7 @@ struct ClassAnalyticsStudentRank final
 struct ClassAnalyticsSnapshot final
 {
     bool hasData = false;
-    double classAverage3 = 0.0;
+    ClassAnalyticsAverageThousandths classAverage3;
     std::u16string classAverageLetter;
     std::size_t rosterStudentCount = 0;
     std::size_t fullyScoredCount = 0;
@@ -88,7 +90,7 @@ struct ClassAnalyticsSnapshot final
 struct ClassAnalyticsYearToDatePoint final
 {
     std::u16string evaluationName;
-    double classAverage3 = 0.0;
+    ClassAnalyticsAverageThousandths classAverage3;
     std::u16string classAverageLetter;
 };
 
@@ -154,6 +156,13 @@ namespace ClassAnalyticsDashboardReadDetail
 }
 
 [[nodiscard]] inline int roundAverageToGrade(const double average) noexcept
+{
+    return ClassAnalyticsNumericPolicy::roundAverageToGrade(average);
+}
+
+[[nodiscard]] inline int roundAverageToGrade(
+    const ClassAnalyticsAverageThousandths average
+    ) noexcept
 {
     return ClassAnalyticsNumericPolicy::roundAverageToGrade(average);
 }
@@ -312,7 +321,7 @@ namespace ClassAnalyticsDashboardReadDetail
     std::array<int, kClassAnalyticsCriterionCount> criterionCounts{};
     std::array<int, kClassAnalyticsCriterionCount> criterionStudentCounts{};
     std::array<std::array<int, 5>, kClassAnalyticsCriterionCount> distributions{};
-    double classSum = 0.0;
+    std::int64_t classSumThousandths = 0;
     int classCount = 0;
 
     for (const StudentAccumulator& student : students)
@@ -348,14 +357,17 @@ namespace ClassAnalyticsDashboardReadDetail
         ClassAnalyticsStudentRank rank;
         rank.englishName = student.englishName;
         rank.koreanName = student.koreanName;
-        rank.overall3 = roundTo3(scoreSum / scoreCount);
+        rank.overall3 = ClassAnalyticsAverageThousandths{
+            ClassAnalyticsNumericPolicy::roundToThousandths(
+                scoreSum / scoreCount)
+        };
         rank.overallLetter = numberToGrade(
             roundAverageToGrade(rank.overall3));
         rank.criterionLetters = std::move(letters);
         rank.fullyScored = fullyScored;
         snapshot.rankings.push_back(rank);
         snapshot.overallLetters.push_back(rank.overallLetter);
-        classSum += rank.overall3;
+        classSumThousandths += rank.overall3.thousandths();
         ++classCount;
         if (fullyScored) ++snapshot.fullyScoredCount;
     }
@@ -363,7 +375,10 @@ namespace ClassAnalyticsDashboardReadDetail
     snapshot.hasData = classCount > 0;
     if (!snapshot.hasData) return snapshot;
 
-    snapshot.classAverage3 = roundTo3(classSum / classCount);
+    snapshot.classAverage3 = ClassAnalyticsAverageThousandths{
+        ClassAnalyticsNumericPolicy::roundMeanOfThousandths(
+            classSumThousandths, static_cast<std::size_t>(classCount))
+    };
     snapshot.classAverageLetter = numberToGrade(
         roundAverageToGrade(snapshot.classAverage3));
 
@@ -378,8 +393,10 @@ namespace ClassAnalyticsDashboardReadDetail
         slice.hasData = criterionCounts[criterion] > 0;
         if (slice.hasData)
         {
-            slice.average3 = roundTo3(
-                criterionSums[criterion] / criterionCounts[criterion]);
+            slice.average3 = ClassAnalyticsAverageThousandths{
+                ClassAnalyticsNumericPolicy::roundToThousandths(
+                    criterionSums[criterion] / criterionCounts[criterion])
+            };
         }
         snapshot.criteria.push_back(std::move(slice));
     }
@@ -405,8 +422,7 @@ namespace ClassAnalyticsDashboardReadDetail
         snapshot.rankings.begin(), snapshot.rankings.end(),
         [](const ClassAnalyticsStudentRank& rank)
         {
-            return ClassAnalyticsNumericPolicy::roundToThousandths(
-                rank.overall3);
+            return rank.overall3.thousandths();
         },
         [&names](const ClassAnalyticsStudentRank& left,
                  const ClassAnalyticsStudentRank& right)
@@ -432,16 +448,19 @@ yearToDatePoint(
     )
 {
     if (snapshot.fullyScoredCount == 0) return std::nullopt;
-    double sum = 0.0;
+    std::int64_t sumThousandths = 0;
     std::size_t count = 0;
     for (const ClassAnalyticsStudentRank& rank : snapshot.rankings)
     {
         if (!rank.fullyScored) continue;
-        sum += rank.overall3;
+        sumThousandths += rank.overall3.thousandths();
         ++count;
     }
     if (count == 0) return std::nullopt;
-    const double average = roundTo3(sum / static_cast<double>(count));
+    const ClassAnalyticsAverageThousandths average{
+        ClassAnalyticsNumericPolicy::roundMeanOfThousandths(
+            sumThousandths, count)
+    };
     return ClassAnalyticsYearToDatePoint{
         .evaluationName = std::u16string(evaluationName),
         .classAverage3 = average,
