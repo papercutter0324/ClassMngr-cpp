@@ -2,9 +2,11 @@
 
 #include <QtTest/QtTest>
 
+#include <array>
 #include <optional>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -18,6 +20,7 @@ private slots:
     void defaultsMatchVerifiedLegacyDefaults();
     void enumPreferencesAcceptEveryDeclaredValue();
     void flagsAcceptBothValues();
+    void timeoutChoiceConversionsAreClosedAndExplicit();
     void validTimeoutsUpdateTheSnapshot();
     void invalidTimeoutPreservesSnapshotAndReturnsDeterministicError();
     void invalidEnumsPreserveSnapshotAndReturnDeterministicErrors();
@@ -43,6 +46,10 @@ void NextApplicationUserPreferencesTests::defaultsMatchVerifiedLegacyDefaults()
     QCOMPARE(
         snapshot.excelImportTimeoutSeconds(),
         kDefaultExcelImportTimeoutSeconds
+        );
+    QCOMPARE(
+        snapshot.excelImportTimeoutChoice(),
+        kDefaultExcelImportTimeoutChoice
         );
     QVERIFY(!snapshot.lastSelectedCampusId().has_value());
 }
@@ -102,6 +109,46 @@ void NextApplicationUserPreferencesTests::flagsAcceptBothValues()
     QVERIFY(state.snapshot().automaticUpdateChecksEnabled());
 }
 
+void NextApplicationUserPreferencesTests::
+timeoutChoiceConversionsAreClosedAndExplicit()
+{
+    const std::array<std::pair<int, ExcelImportTimeoutChoice>, 4> choices = {{
+        {30, ExcelImportTimeoutChoice::Seconds30},
+        {60, ExcelImportTimeoutChoice::Seconds60},
+        {120, ExcelImportTimeoutChoice::Seconds120},
+        {300, ExcelImportTimeoutChoice::Seconds300}
+    }};
+
+    for (const auto& [seconds, choice] : choices)
+    {
+        QVERIFY(isValidExcelImportTimeoutChoice(choice));
+        QCOMPARE(excelImportTimeoutChoiceToSeconds(choice), seconds);
+        QCOMPARE(excelImportTimeoutSecondsToChoice(seconds), choice);
+        const auto strictChoice = tryExcelImportTimeoutSecondsToChoice(seconds);
+        QVERIFY(strictChoice.has_value());
+        QCOMPARE(*strictChoice, choice);
+    }
+
+    const auto invalidChoice = static_cast<ExcelImportTimeoutChoice>(99);
+    QVERIFY(!isValidExcelImportTimeoutChoice(invalidChoice));
+    QCOMPARE(
+        excelImportTimeoutChoiceToSeconds(invalidChoice),
+        kDefaultExcelImportTimeoutSeconds
+        );
+    QCOMPARE(
+        excelImportTimeoutSecondsToChoice(90),
+        kDefaultExcelImportTimeoutChoice
+        );
+    QVERIFY(!tryExcelImportTimeoutSecondsToChoice(90).has_value());
+
+    for (const int unsupportedSeconds : {29, 31, 59, 61, 90, 119, 121, 299, 301})
+    {
+        QVERIFY(!tryExcelImportTimeoutSecondsToChoice(
+            unsupportedSeconds
+            ).has_value());
+    }
+}
+
 void NextApplicationUserPreferencesTests::validTimeoutsUpdateTheSnapshot()
 {
     UserPreferencesState state;
@@ -111,12 +158,27 @@ void NextApplicationUserPreferencesTests::validTimeoutsUpdateTheSnapshot()
     QCOMPARE(kMinExcelImportTimeoutSeconds, kMinimumExcelImportTimeoutSeconds);
     QCOMPARE(kMaxExcelImportTimeoutSeconds, kMaximumExcelImportTimeoutSeconds);
 
-    for (const int seconds : {30, 60, 120, 300})
+    const std::array<std::pair<int, ExcelImportTimeoutChoice>, 4> choices = {{
+        {30, ExcelImportTimeoutChoice::Seconds30},
+        {60, ExcelImportTimeoutChoice::Seconds60},
+        {120, ExcelImportTimeoutChoice::Seconds120},
+        {300, ExcelImportTimeoutChoice::Seconds300}
+    }};
+
+    for (const auto& [seconds, choice] : choices)
     {
         QVERIFY(state.setExcelImportTimeoutSeconds(seconds));
+        QCOMPARE(state.snapshot().excelImportTimeoutChoice(), choice);
         QCOMPARE(state.snapshot().excelImportTimeoutSeconds(), seconds);
         QCOMPARE(state.snapshot().importTimeoutSeconds(), seconds);
     }
+
+    QVERIFY(state.setImportTimeoutSeconds(30));
+    QCOMPARE(
+        state.snapshot().excelImportTimeoutChoice(),
+        ExcelImportTimeoutChoice::Seconds30
+        );
+    QCOMPARE(state.snapshot().importTimeoutSeconds(), 30);
 }
 
 void NextApplicationUserPreferencesTests::invalidTimeoutPreservesSnapshotAndReturnsDeterministicError()
@@ -128,6 +190,7 @@ void NextApplicationUserPreferencesTests::invalidTimeoutPreservesSnapshotAndRetu
     const auto first = state.setExcelImportTimeoutSeconds(29);
     QVERIFY(!first);
     QCOMPARE(first.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!first.error().recoverable);
     QVERIFY(
         first.error().message
         == "Excel import timeout must be 30, 60, 120, or 300 seconds."
@@ -137,12 +200,14 @@ void NextApplicationUserPreferencesTests::invalidTimeoutPreservesSnapshotAndRetu
     const auto second = state.setImportTimeoutSeconds(301);
     QVERIFY(!second);
     QCOMPARE(second.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!second.error().recoverable);
     QVERIFY(second.error().message == first.error().message);
     QVERIFY(state.snapshot() == before);
 
     const auto unsupported = state.setExcelImportTimeoutSeconds(90);
     QVERIFY(!unsupported);
     QCOMPARE(unsupported.error().code, ErrorCode::InvalidInput);
+    QVERIFY(!unsupported.error().recoverable);
     QVERIFY(unsupported.error().message == first.error().message);
     QVERIFY(state.snapshot() == before);
 }

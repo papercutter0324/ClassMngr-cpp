@@ -464,7 +464,10 @@ bool ScheduleImportDialog::loadWorkbook()
     const ClassMngr::Next::Platform::
         SettingsManagerExcelImportTimeoutPort excelImportTimeoutPort;
     const int timeoutSeconds =
-        excelImportTimeoutPort.read().seconds;
+        ClassMngr::Next::Application::
+            excelImportTimeoutChoiceToSeconds(
+                excelImportTimeoutPort.read().choice
+                );
     setLoading(true);
 
     auto* watcher =

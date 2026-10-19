@@ -27,7 +27,9 @@ public:
         const override
     {
         return {
-            .seconds = SettingsManager::instance().excelImportTimeoutSeconds()
+            .choice = Application::excelImportTimeoutSecondsToChoice(
+                SettingsManager::instance().excelImportTimeoutSeconds()
+                )
         };
     }
 
@@ -35,8 +37,8 @@ public:
         const Application::ExcelImportTimeoutPreferences& preferences
         ) const override
     {
-        if (!Application::isSupportedExcelImportTimeoutSeconds(
-                preferences.seconds
+        if (!Application::isValidExcelImportTimeoutChoice(
+                preferences.choice
                 ))
         {
             return Domain::Result<void>::failure({
@@ -49,7 +51,9 @@ public:
 
         const QSettings::Status status =
             SettingsManager::instance().writeExcelImportTimeoutPreference(
-                preferences.seconds,
+                Application::excelImportTimeoutChoiceToSeconds(
+                    preferences.choice
+                    ),
                 m_synchronize
                 );
         if (status != QSettings::NoError)

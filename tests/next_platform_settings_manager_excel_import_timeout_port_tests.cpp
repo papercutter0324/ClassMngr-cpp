@@ -7,6 +7,8 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
+#include <utility>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -33,6 +35,7 @@ private slots:
     void initTestCase();
     void cleanup();
     void missingSettingUsesDefault();
+    void unsupportedAndMalformedStoredValuesUseDefault();
     void supportedValuesAreAcceptedByContract();
     void invalidInputReturnsErrorAndPreservesStoredValue();
     void preservesLegacySettingsKey();
@@ -73,25 +76,62 @@ missingSettingUsesDefault()
     const SettingsManagerExcelImportTimeoutPort port;
     const ExcelImportTimeoutPreferences preferences = port.read();
 
-    QCOMPARE(preferences.seconds, kDefaultExcelImportTimeoutSeconds);
+    QCOMPARE(preferences.choice, kDefaultExcelImportTimeoutChoice);
+    QCOMPARE(preferences.normalizedSeconds(), kDefaultExcelImportTimeoutSeconds);
     QVERIFY(!settings.get(timeoutSettingsKey()).isValid());
+}
+
+void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
+unsupportedAndMalformedStoredValuesUseDefault()
+{
+    SettingsManager& settings = SettingsManager::instance();
+    const QString key = timeoutSettingsKey();
+    const SettingsManagerExcelImportTimeoutPort port;
+    const std::array<QVariant, 2> invalidStoredValues = {
+        QVariant(90),
+        QVariant(QStringLiteral("not-an-integer"))
+    };
+
+    for (const QVariant& invalidValue : invalidStoredValues)
+    {
+        settings.set(key, invalidValue);
+
+        const ExcelImportTimeoutPreferences preferences = port.read();
+        QCOMPARE(preferences.choice, kDefaultExcelImportTimeoutChoice);
+        QCOMPARE(
+            preferences.normalizedSeconds(),
+            kDefaultExcelImportTimeoutSeconds
+            );
+        QCOMPARE(settings.get(key), invalidValue);
+    }
 }
 
 void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
 supportedValuesAreAcceptedByContract()
 {
-    for (const int seconds : {30, 60, 120, 300})
+    const std::array<std::pair<int, ExcelImportTimeoutChoice>, 4> choices = {{
+        {30, ExcelImportTimeoutChoice::Seconds30},
+        {60, ExcelImportTimeoutChoice::Seconds60},
+        {120, ExcelImportTimeoutChoice::Seconds120},
+        {300, ExcelImportTimeoutChoice::Seconds300}
+    }};
+
+    for (const auto& [seconds, choice] : choices)
     {
+        QVERIFY(isValidExcelImportTimeoutChoice(choice));
+        QCOMPARE(excelImportTimeoutChoiceToSeconds(choice), seconds);
+        QCOMPARE(excelImportTimeoutSecondsToChoice(seconds), choice);
         QVERIFY(isSupportedExcelImportTimeoutSeconds(seconds));
         QCOMPARE(
             normalizeExcelImportTimeoutSeconds(seconds),
             seconds
             );
 
-        const ExcelImportTimeoutPreferences preferences{.seconds = seconds};
+        const ExcelImportTimeoutPreferences preferences{.choice = choice};
         QCOMPARE(preferences.normalizedSeconds(), seconds);
     }
 
+    QVERIFY(!isSupportedExcelImportTimeoutSeconds(90));
     QCOMPARE(
         normalizeExcelImportTimeoutSeconds(90),
         kDefaultExcelImportTimeoutSeconds
@@ -105,19 +145,24 @@ invalidInputReturnsErrorAndPreservesStoredValue()
     const QString key = timeoutSettingsKey();
     const SettingsManagerExcelImportTimeoutPort port;
 
-    settings.set(key, 90);
-    QCOMPARE(port.read().seconds, kDefaultExcelImportTimeoutSeconds);
-    QCOMPARE(settings.get(key).toInt(), 90);
+    settings.set(key, 60);
+    QCOMPARE(port.read().normalizedSeconds(), 60);
 
-    const auto invalidWrite = port.write({.seconds = 90});
+    const auto invalidWrite = port.write({
+        .choice = static_cast<ExcelImportTimeoutChoice>(90)
+    });
     QVERIFY(!invalidWrite);
     QCOMPARE(
         invalidWrite.error().code,
         ClassMngr::Next::Domain::ErrorCode::InvalidInput
         );
     QVERIFY(!invalidWrite.error().recoverable);
-    QCOMPARE(settings.get(key).toInt(), 90);
-    QCOMPARE(port.read().seconds, kDefaultExcelImportTimeoutSeconds);
+    QCOMPARE(
+        invalidWrite.error().message,
+        std::string("Excel import timeout must be 30, 60, 120, or 300 seconds.")
+        );
+    QCOMPARE(settings.get(key).toInt(), 60);
+    QCOMPARE(port.read().normalizedSeconds(), 60);
 }
 
 void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
@@ -130,9 +175,10 @@ preservesLegacySettingsKey()
     QCOMPARE(key, QStringLiteral("imports/excelTimeoutSeconds"));
     settings.set(QStringLiteral("imports/unrelatedValue"), 17);
 
-    QVERIFY(port.write({.seconds = 300}));
+    QVERIFY(port.write({.choice = ExcelImportTimeoutChoice::Seconds300}));
 
     QCOMPARE(settings.get(key).toInt(), 300);
+    QCOMPARE(settings.get(key).metaType().id(), QMetaType::Int);
     QCOMPARE(
         settings.get(QStringLiteral("imports/unrelatedValue")).toInt(),
         17
@@ -143,17 +189,30 @@ void NextPlatformSettingsManagerExcelImportTimeoutPortTests::
 supportedValuesRoundTripThroughSettingsManager()
 {
     const SettingsManagerExcelImportTimeoutPort port;
-    const std::array<int, 4> supportedValues = {30, 60, 120, 300};
+    const std::array<std::pair<int, ExcelImportTimeoutChoice>, 4> supportedValues = {{
+        {30, ExcelImportTimeoutChoice::Seconds30},
+        {60, ExcelImportTimeoutChoice::Seconds60},
+        {120, ExcelImportTimeoutChoice::Seconds120},
+        {300, ExcelImportTimeoutChoice::Seconds300}
+    }};
 
-    for (const int seconds : supportedValues)
+    for (const auto& [seconds, choice] : supportedValues)
     {
-        QVERIFY(port.write({.seconds = seconds}));
-        QCOMPARE(port.read().seconds, seconds);
+        QVERIFY(port.write({.choice = choice}));
+        QCOMPARE(port.read().choice, choice);
+        QCOMPARE(port.read().normalizedSeconds(), seconds);
         QCOMPARE(
             SettingsManager::instance()
                 .get(timeoutSettingsKey())
                 .toInt(),
             seconds
+            );
+        QCOMPARE(
+            SettingsManager::instance()
+                .get(timeoutSettingsKey())
+                .metaType()
+                .id(),
+            QMetaType::Int
             );
     }
 }
@@ -184,7 +243,9 @@ syncFailurePreservesPreviousValueAndAllowsRetry()
         }
         );
 
-    const auto failedWrite = faultablePort.write({.seconds = 300});
+    const auto failedWrite = faultablePort.write({
+        .choice = ExcelImportTimeoutChoice::Seconds300
+    });
     QVERIFY(!failedWrite);
     QCOMPARE(
         failedWrite.error().code,
@@ -197,15 +258,17 @@ syncFailurePreservesPreviousValueAndAllowsRetry()
         );
     QCOMPARE(synchronizationAttempts, 1);
     QCOMPARE(settings.get(key).toInt(), 60);
-    QCOMPARE(faultablePort.read().seconds, 60);
+    QCOMPARE(faultablePort.read().normalizedSeconds(), 60);
     QCOMPARE(settings.get(unrelatedKey).toInt(), 17);
 
     injectAccessError = false;
-    const auto retryResult = faultablePort.write({.seconds = 300});
+    const auto retryResult = faultablePort.write({
+        .choice = ExcelImportTimeoutChoice::Seconds300
+    });
     QVERIFY(retryResult);
     QCOMPARE(synchronizationAttempts, 2);
     QCOMPARE(settings.get(key).toInt(), 300);
-    QCOMPARE(faultablePort.read().seconds, 300);
+    QCOMPARE(faultablePort.read().normalizedSeconds(), 300);
     QCOMPARE(settings.get(unrelatedKey).toInt(), 17);
 }
 
@@ -226,7 +289,9 @@ syncFailurePreservesMissingValueAndUnrelatedSettings()
         }
         );
 
-    const auto failedWrite = faultablePort.write({.seconds = 30});
+    const auto failedWrite = faultablePort.write({
+        .choice = ExcelImportTimeoutChoice::Seconds30
+    });
     QVERIFY(!failedWrite);
     QCOMPARE(
         failedWrite.error().code,
@@ -235,7 +300,7 @@ syncFailurePreservesMissingValueAndUnrelatedSettings()
     QVERIFY(failedWrite.error().recoverable);
     QVERIFY(!settings.get(key).isValid());
     QCOMPARE(
-        faultablePort.read().seconds,
+        faultablePort.read().normalizedSeconds(),
         kDefaultExcelImportTimeoutSeconds
         );
     QCOMPARE(settings.get(unrelatedKey).toInt(), 29);

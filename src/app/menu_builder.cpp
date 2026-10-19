@@ -1187,7 +1187,10 @@ void populatePreferencesDialog(
         preferencesText("5 Minutes"), 300);
     excelImportTimeout->setCurrentIndex(
         excelImportTimeout->findData(
-            excelImportTimeoutPreferencesPort->read().seconds
+            ClassMngr::Next::Application::
+                excelImportTimeoutChoiceToSeconds(
+                    excelImportTimeoutPreferencesPort->read().choice
+                    )
             )
         );
     excelImportTimeout->setToolTip(
@@ -1213,8 +1216,19 @@ void populatePreferencesDialog(
          excelImportTimeoutPreferencesPort,
          lastSavedTimeoutIndex](const int index) mutable
         {
-            const auto saved = excelImportTimeoutPreferencesPort->write({
-                .seconds = excelImportTimeout->itemData(index).toInt()
+            const auto choice = ClassMngr::Next::Application::
+                tryExcelImportTimeoutSecondsToChoice(
+                    excelImportTimeout->itemData(index).toInt()
+                    );
+            const auto saved = choice
+                ? excelImportTimeoutPreferencesPort->write({
+                    .choice = *choice
+                })
+                : ClassMngr::Next::Domain::Result<void>::failure({
+                    .code = ClassMngr::Next::Domain::ErrorCode::InvalidInput,
+                    .message =
+                        "Excel import timeout must be 30, 60, 120, or 300 seconds.",
+                    .recoverable = false
                 });
             if (!saved)
             {

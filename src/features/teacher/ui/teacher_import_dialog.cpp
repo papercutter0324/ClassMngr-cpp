@@ -214,7 +214,10 @@ void TeacherImportDialog::validateSelectedFile()
     const ClassMngr::Next::Platform::
         SettingsManagerExcelImportTimeoutPort excelImportTimeoutPort;
     const int timeoutSeconds =
-        excelImportTimeoutPort.read().seconds;
+        ClassMngr::Next::Application::
+            excelImportTimeoutChoiceToSeconds(
+                excelImportTimeoutPort.read().choice
+                );
 
     clearOptions();
     m_valid = false;

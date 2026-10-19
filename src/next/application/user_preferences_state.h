@@ -139,9 +139,14 @@ public:
         return m_automaticUpdateChecksEnabled;
     }
 
+    [[nodiscard]] ExcelImportTimeoutChoice excelImportTimeoutChoice() const noexcept
+    {
+        return m_excelImportTimeoutChoice;
+    }
+
     [[nodiscard]] int excelImportTimeoutSeconds() const noexcept
     {
-        return m_excelImportTimeoutSeconds;
+        return excelImportTimeoutChoiceToSeconds(m_excelImportTimeoutChoice);
     }
 
     [[nodiscard]] int importTimeoutSeconds() const noexcept
@@ -176,7 +181,8 @@ private:
     bool m_showAllTeachers = true;
     bool m_showPowerPointDataAccessNotice = true;
     bool m_automaticUpdateChecksEnabled = true;
-    int m_excelImportTimeoutSeconds = kDefaultExcelImportTimeoutSeconds;
+    ExcelImportTimeoutChoice m_excelImportTimeoutChoice =
+        kDefaultExcelImportTimeoutChoice;
     std::optional<Domain::CampusId> m_lastSelectedCampusId;
 };
 
@@ -302,7 +308,8 @@ public:
                 );
         }
 
-        m_snapshot.m_excelImportTimeoutSeconds = seconds;
+        m_snapshot.m_excelImportTimeoutChoice =
+            excelImportTimeoutSecondsToChoice(seconds);
         return Domain::Result<void>::success();
     }
 
