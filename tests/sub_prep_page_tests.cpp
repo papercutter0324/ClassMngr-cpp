@@ -1512,12 +1512,27 @@ void SubPrepPageTests::campusReadFailureShowsUnavailableDetailsAndWarning()
         QCOMPARE(field->text(), QStringLiteral("N/A"));
     }
 
-    QCOMPARE(promptService.messages.size(), 1);
-    const PromptRequest& warning = promptService.messages.constFirst();
-    QCOMPARE(warning.severity, PromptSeverity::Warning);
-    QCOMPARE(warning.title, QStringLiteral("Campus Details Unavailable"));
-    QVERIFY(warning.message.contains(QStringLiteral("Refresh this page")));
-    QVERIFY(warning.details.contains(
+    const auto campusWarnings = std::count_if(
+        promptService.messages.cbegin(),
+        promptService.messages.cend(),
+        [](const PromptRequest& prompt)
+        {
+            return prompt.title == QStringLiteral("Campus Details Unavailable");
+        }
+        );
+    QCOMPARE(campusWarnings, 1);
+    const auto warning = std::find_if(
+        promptService.messages.cbegin(),
+        promptService.messages.cend(),
+        [](const PromptRequest& prompt)
+        {
+            return prompt.title == QStringLiteral("Campus Details Unavailable");
+        }
+        );
+    QVERIFY(warning != promptService.messages.cend());
+    QCOMPARE(warning->severity, PromptSeverity::Warning);
+    QVERIFY(warning->message.contains(QStringLiteral("Refresh this page")));
+    QVERIFY(warning->details.contains(
         QStringLiteral("settings repository is unavailable")
         ));
 }

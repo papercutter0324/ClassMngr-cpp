@@ -55,17 +55,20 @@ public:
         return m_session && m_session->isOpen();
     }
 
-    [[nodiscard]] Domain::Result<std::string> read() const override
+    [[nodiscard]] Domain::Result<Application::CurrentCampusPreferenceValue>
+    read() const override
     {
+        using Value = Application::CurrentCampusPreferenceValue;
+
         if (!isAvailable())
         {
-            return Domain::Result<std::string>::success({});
+            return Domain::Result<Value>::success(Value{});
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return Domain::Result<std::string>::failure({
+            return Domain::Result<Value>::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message =
                     "The settings repository is unavailable while reading "
@@ -84,7 +87,7 @@ public:
                 << stored.error();
 
             const QByteArray errorBytes = stored.error().toUtf8();
-            return Domain::Result<std::string>::failure({
+            return Domain::Result<Value>::failure({
                 .code = Domain::ErrorCode::Technical,
                 .message = errorBytes.isEmpty()
                     ? "The current campus preference could not be read."
@@ -99,16 +102,16 @@ public:
 
         const QByteArray storedCampus = campus.toString().toUtf8();
 
-        return Domain::Result<std::string>::success(
-            std::string(
+        return Domain::Result<Value>::success(
+            Value(std::string(
                 storedCampus.constData(),
                 static_cast<std::size_t>(storedCampus.size())
-                )
+                ))
             );
     }
 
     [[nodiscard]] Domain::Result<void> write(
-        const std::string& campus
+        const Application::CurrentCampusPreferenceValue& campus
         ) const override
     {
         if (!isAvailable())
@@ -129,8 +132,8 @@ public:
         const Status saved = repository->saveSetting(
             key(),
             QString::fromUtf8(
-                campus.data(),
-                static_cast<qsizetype>(campus.size())
+                campus.value().data(),
+                static_cast<qsizetype>(campus.value().size())
                 )
             );
         if (!saved)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/current_campus_preferences.h"
 #include "next/application/personal_signature_preferences.h"
 #include "next/domain/operation_result.h"
 #include "next/domain/personal_signature_image_save_bytes.h"
@@ -12,7 +13,7 @@ namespace ClassMngr::Next::Application
 struct PersonalDetailsSaveRequest final
 {
     std::string name;
-    std::string campus;
+    CurrentCampusPreferenceValue campus;
     std::string zoomLoginId;
     std::string zoomPassword;
     bool zoomNotAvailable = true;

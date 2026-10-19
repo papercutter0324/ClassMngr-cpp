@@ -592,7 +592,8 @@ public:
                 );
             return false;
         }
-        const std::string campus = campusResult.value();
+        const ClassMngr::Next::Application::CurrentCampusPreferenceValue campus =
+            campusResult.value();
 
         const auto zoomResult =
             ClassMngr::Next::Platform::

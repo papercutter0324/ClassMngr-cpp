@@ -961,7 +961,7 @@ CalendarPage::calendarEventDisplayOptions() const
 
         const auto currentCampus = currentCampusPreferencesPort.read();
         const QString currentName = currentCampus
-            ? projectionText(currentCampus.value())
+            ? projectionText(currentCampus.value().value())
             : QString();
         ClassMngr::Next::Platform::
             CalendarPageCampusDirectoryQueryAdapter campusDirectoryQueryAdapter;

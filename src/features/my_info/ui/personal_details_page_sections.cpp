@@ -969,7 +969,7 @@ bool PersonalDetailsPage::loadStoredSettings()
     else
     {
         const QByteArray storedCampus = QByteArray::fromStdString(
-            currentCampusResult.value()
+            currentCampusResult.value().value()
             );
         const QString campus = QString::fromUtf8(storedCampus);
 
@@ -1020,9 +1020,10 @@ bool PersonalDetailsPage::loadStoredSettings()
                 m_campusCombo->currentText();
             const auto campusSaved =
                 currentCampusPreferencesPort.write(
-                    selectedCampus
-                        .toUtf8()
-                        .toStdString()
+                    ClassMngr::Next::Application::
+                        CurrentCampusPreferenceValue(
+                            selectedCampus.toUtf8().toStdString()
+                            )
                     );
 
             if (campusSaved)
@@ -1340,7 +1341,10 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
                 m_services
                 ).save({
                     .name = toUtf8(details.name),
-                    .campus = toUtf8(details.campus),
+                    .campus = ClassMngr::Next::Application::
+                        CurrentCampusPreferenceValue(
+                            toUtf8(details.campus)
+                            ),
                     .zoomLoginId = toUtf8(details.zoomLoginId),
                     .zoomPassword = toUtf8(details.zoomPassword),
                     .zoomNotAvailable = details.zoomNotAvailable,

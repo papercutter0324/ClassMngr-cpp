@@ -77,7 +77,7 @@ public:
             },
             {
                 campusKey(),
-                fromUtf8(request.campus)
+                fromUtf8(request.campus.value())
             },
             {
                 zoomLoginIdKey(),

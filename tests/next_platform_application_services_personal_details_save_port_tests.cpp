@@ -93,6 +93,10 @@ static_assert(std::is_same_v<
               PersonalSignatureFontChoice
               >);
 static_assert(std::is_same_v<
+              decltype(PersonalDetailsSaveRequest::campus),
+              CurrentCampusPreferenceValue
+              >);
+static_assert(std::is_same_v<
               decltype(PersonalDetailsSaveRequest::signatureImage),
               ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes
               >);
@@ -139,7 +143,9 @@ PersonalDetailsSaveRequest replacementRequest(
 {
     return {
         .name = utf8(QString::fromUtf8("  \xEA\xB0\x80\xEB\x82\x98  ")),
-        .campus = utf8(QStringLiteral("  Jeongja  ")),
+        .campus = CurrentCampusPreferenceValue(
+            utf8(QStringLiteral("  Jeongja  "))
+            ),
         .zoomLoginId = utf8(QStringLiteral(" teacher@example.com ")),
         .zoomPassword = utf8(QStringLiteral(" secret ")),
         .zoomNotAvailable = false,
@@ -162,6 +168,7 @@ class NextPlatformApplicationServicesPersonalDetailsSavePortTests final
 private slots:
     void initTestCase();
     void savesAllNineExactKeysWithUtf8AndPreparedImage();
+    void savesOpaqueCampusBytesIncludingEmbeddedNul();
     void savesAllFourFontChoicesWithTheirExactStoredValues();
     void normalizesModeAndFontValues();
     void saveFailureRollsBackAllKeysAndPreservesUnrelatedSettings();
@@ -210,6 +217,7 @@ savesAllNineExactKeysWithUtf8AndPreparedImage()
 
     ApplicationServicesPersonalDetailsSavePort port(services);
     const auto request = replacementRequest(source);
+    QCOMPARE(request.campus.value(), utf8(QStringLiteral("  Jeongja  ")));
     QCOMPARE(request.signatureImage.value(), exactSourceBytes);
     const auto saved = port.save(request);
     QVERIFY(saved);
@@ -282,6 +290,34 @@ savesAllNineExactKeysWithUtf8AndPreparedImage()
         );
     QVERIFY(unrelated);
     QCOMPARE(unrelated->toString(), QStringLiteral("preserved"));
+}
+
+void NextPlatformApplicationServicesPersonalDetailsSavePortTests::
+savesOpaqueCampusBytesIncludingEmbeddedNul()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+
+    const std::string expectedCampus("legacy\0campus alias", 19);
+    PersonalDetailsSaveRequest request;
+    request.campus = CurrentCampusPreferenceValue(expectedCampus);
+    QCOMPARE(request.campus.value().size(), expectedCampus.size());
+    QCOMPARE(request.campus.value(), expectedCampus);
+
+    ApplicationServicesPersonalDetailsSavePort port(services);
+    QVERIFY(port.save(request));
+
+    const auto stored = services.dataService()->loadSetting(
+        QString::fromUtf8(CampusKey)
+        );
+    QVERIFY(stored);
+    QVERIFY(stored->isValid());
+    const QByteArray encoded = stored->toString().toUtf8();
+    QCOMPARE(
+        std::string(encoded.constData(), static_cast<std::size_t>(encoded.size())),
+        expectedCampus
+        );
 }
 
 void NextPlatformApplicationServicesPersonalDetailsSavePortTests::

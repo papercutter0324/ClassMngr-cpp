@@ -275,8 +275,8 @@ void SubPrepPage::loadCampuses()
     }
 
     const QString savedCampus = QString::fromUtf8(
-        storedCampus.value().data(),
-        static_cast<qsizetype>(storedCampus.value().size())
+        storedCampus.value().value().data(),
+        static_cast<qsizetype>(storedCampus.value().value().size())
         );
 
     QString campusId;
