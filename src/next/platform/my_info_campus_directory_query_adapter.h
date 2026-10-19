@@ -73,7 +73,9 @@ public:
 
             campuses.push_back(
                 Application::MyInfoCampusMetadata{
-                    campus.id.toUtf8().toStdString(),
+                    Domain::CampusId::fromString(
+                        campus.id.toUtf8().toStdString()
+                        ).value(),
                     displayName.toUtf8().toStdString()
                 }
                 );

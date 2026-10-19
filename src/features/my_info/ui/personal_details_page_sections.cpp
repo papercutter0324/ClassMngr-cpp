@@ -942,8 +942,8 @@ bool PersonalDetailsPage::loadStoredSettings()
                 static_cast<qsizetype>(campusInfo.displayName.size())
                 );
             const QString campusId = QString::fromUtf8(
-                campusInfo.id.data(),
-                static_cast<qsizetype>(campusInfo.id.size())
+                campusInfo.id.value().data(),
+                static_cast<qsizetype>(campusInfo.id.value().size())
                 );
 
             m_campusCombo->addItem(

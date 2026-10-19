@@ -1,4 +1,5 @@
 #include "next/application/my_info_campus_directory_query_port.h"
+#include "next/domain/domain_types.h"
 #include "next/platform/my_info_campus_directory_query_adapter.h"
 
 #include <QDir>
@@ -15,6 +16,16 @@
 
 namespace
 {
+ClassMngr::Next::Domain::CampusId campusId(const std::string& value)
+{
+    const auto parsed = ClassMngr::Next::Domain::CampusId::fromString(value);
+    if (!parsed)
+    {
+        qFatal("Invalid campus ID in test fixture");
+    }
+    return *parsed;
+}
+
 void writeFile(
     const QString& directory,
     const QString& fileName,
@@ -90,11 +101,11 @@ campusesPreserveRepositoryOrderAndOwningUtf8Metadata()
     const auto campuses = adapter.loadCampuses();
 
     QCOMPARE(campuses.size(), std::size_t(3));
-    QCOMPARE(
-        campuses.at(0).id,
+    const std::string paddedUtf8Id =
         QString::fromUtf8(" id-\xEC\x84\x9C\xEC\x9A\xB8-01 ")
-            .toUtf8().toStdString()
-        );
+            .toUtf8().toStdString();
+    QVERIFY(campuses.at(0).id == campusId(paddedUtf8Id));
+    QCOMPARE(campuses.at(0).id.value(), paddedUtf8Id);
     QCOMPARE(
         campuses.at(0).displayName,
         (
@@ -104,9 +115,11 @@ campusesPreserveRepositoryOrderAndOwningUtf8Metadata()
                 )
             ).toUtf8().toStdString()
         );
-    QCOMPARE(campuses.at(1).id, std::string("id-beta"));
+    QVERIFY(campuses.at(1).id == campusId("id-beta"));
+    QCOMPARE(campuses.at(1).id.value(), std::string("id-beta"));
     QCOMPARE(campuses.at(1).displayName, std::string("Beta Campus"));
-    QCOMPARE(campuses.at(2).id, std::string("id-zulu"));
+    QVERIFY(campuses.at(2).id == campusId("id-zulu"));
+    QCOMPARE(campuses.at(2).id.value(), std::string("id-zulu"));
     QCOMPARE(campuses.at(2).displayName, std::string("Zulu Campus"));
 }
 
@@ -129,7 +142,8 @@ blankNamesFallbackToTrimmedIds()
     const auto campuses = adapter.loadCampuses();
 
     QCOMPARE(campuses.size(), std::size_t(1));
-    QCOMPARE(campuses.front().id, std::string("  fallback-id  "));
+    QVERIFY(campuses.front().id == campusId("  fallback-id  "));
+    QCOMPARE(campuses.front().id.value(), std::string("  fallback-id  "));
     QCOMPARE(campuses.front().displayName, std::string("fallback-id"));
 }
 
@@ -165,7 +179,8 @@ malformedAndDefaultRecordsFollowRepositoryBehavior()
     const auto campuses = adapter.loadCampuses();
 
     QCOMPARE(campuses.size(), std::size_t(1));
-    QCOMPARE(campuses.front().id, std::string("id-valid"));
+    QVERIFY(campuses.front().id == campusId("id-valid"));
+    QCOMPARE(campuses.front().id.value(), std::string("id-valid"));
     QCOMPARE(campuses.front().displayName, std::string("Valid Campus"));
 }
 
@@ -199,7 +214,12 @@ adapterImplementsQtFreeOwningMetadataPort()
             std::vector<Metadata>
             >
         );
-    static_assert(std::is_same_v<decltype(Metadata::id), std::string>);
+    static_assert(
+        std::is_same_v<
+            decltype(Metadata::id),
+            ClassMngr::Next::Domain::CampusId
+            >
+        );
     static_assert(
         std::is_same_v<decltype(Metadata::displayName), std::string>
         );

@@ -1625,6 +1625,7 @@ private slots:
     void currentMonthNavigationEvictsPriorMonthResources();
     void next30DaysIncludesBoundariesAndFiltersEventTypes();
     void campusReadFailureKeepsAllEventsVisible();
+    void currentCampusIdAliasShowsMatchingCampusEvents();
     void nextTenUpcomingEventsUseStableVisibleOrderAndLimit();
     void completedEmptyNextTenSearchShowsItsEmptyLabel();
     void completedEmptyUpcomingRangeShowsItsEmptyLabel();
@@ -4248,6 +4249,78 @@ campusReadFailureKeepsAllEventsVisible()
         visibleUpcomingRows(tabs->currentWidget())
             .join(QLatin1Char('\n'))
             .contains(otherCampusEvent.title),
+        15000
+        );
+}
+
+void CalendarPageEventMutationParityTests::
+currentCampusIdAliasShowsMatchingCampusEvents()
+{
+    CalendarWorkspace workspace;
+    QString setupError;
+    QVERIFY2(
+        initializeWorkspace(workspace, &setupError),
+        qPrintable(setupError)
+        );
+    QVERIFY2(
+        removePreservedFixtureEvent(workspace, &setupError),
+        qPrintable(setupError)
+        );
+
+    SettingsRepository* const settings =
+        workspace.services.databaseSession()->settingsRepository();
+    QVERIFY(settings);
+    QVERIFY(settings->saveSetting(
+        QStringLiteral("myInfo/campus"),
+        QStringLiteral("Dongtan 2")
+        ));
+
+    const QDate eventDate = QDate::currentDate().addDays(2);
+    const QString selectedCampusAliasTitle =
+        QStringLiteral("F1101 dongtan_2 DAE Campus ID Alias");
+    CalendarEvent selectedCampusAliasEvent;
+    selectedCampusAliasEvent.title = selectedCampusAliasTitle;
+    selectedCampusAliasEvent.eventType = QStringLiteral("Workshop");
+    selectedCampusAliasEvent.timeStatus = QStringLiteral("Timed");
+    selectedCampusAliasEvent.startDate = eventDate;
+    selectedCampusAliasEvent.startTime = QTime(9, 0);
+    selectedCampusAliasEvent.endDate = eventDate;
+    selectedCampusAliasEvent.endTime = QTime(10, 0);
+    QVERIFY2(
+        saveFixtureEvent(workspace, selectedCampusAliasEvent, &setupError) > 0,
+        qPrintable(setupError)
+        );
+
+    const QString otherCampusTitle =
+        QStringLiteral("F1101 DAE Other Campus");
+    CalendarEvent otherCampusEvent;
+    otherCampusEvent.title = otherCampusTitle;
+    otherCampusEvent.eventType = QStringLiteral("Workshop");
+    otherCampusEvent.timeStatus = QStringLiteral("Timed");
+    otherCampusEvent.startDate = eventDate;
+    otherCampusEvent.startTime = QTime(11, 0);
+    otherCampusEvent.endDate = eventDate;
+    otherCampusEvent.endTime = QTime(12, 0);
+    QVERIFY2(
+        saveFixtureEvent(workspace, otherCampusEvent, &setupError) > 0,
+        qPrintable(setupError)
+        );
+
+    CalendarPage page(&workspace.services);
+    NavigationTabWidget* const tabs = upcomingTabs(page);
+    QVERIFY(tabs);
+    tabs->setCurrentIndex(1);
+
+    QTRY_VERIFY_WITH_TIMEOUT(
+        visibleUpcomingRows(tabs->currentWidget())
+            .join(QLatin1Char('\n'))
+            .contains(selectedCampusAliasTitle),
+        15000
+        );
+    QTRY_VERIFY_WITH_TIMEOUT(
+        !visibleUpcomingRows(tabs->currentWidget())
+             .join(QLatin1Char('\n'))
+             .contains(otherCampusTitle),
         15000
         );
 }

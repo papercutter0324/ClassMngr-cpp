@@ -283,7 +283,7 @@ void SubPrepPage::loadCampuses()
 
     for (const auto& campus : std::as_const(m_campuses))
     {
-        const QString candidateId = campusMetadataText(campus.id);
+        const QString candidateId = campusMetadataText(campus.id.value());
         if (
             candidateId.compare(
                 savedCampus.trimmed(),
@@ -302,7 +302,7 @@ void SubPrepPage::loadCampuses()
 
     if (campusId.isEmpty() && !m_campuses.empty())
     {
-        campusId = campusMetadataText(m_campuses.front().id);
+        campusId = campusMetadataText(m_campuses.front().id.value());
     }
 
     loadCampusFields(campusId);
@@ -321,7 +321,7 @@ void SubPrepPage::loadCampusFields(
     for (const auto& candidate : std::as_const(m_campuses))
     {
         if (
-            campusMetadataText(candidate.id).compare(
+            campusMetadataText(candidate.id.value()).compare(
                 campusId,
                 Qt::CaseInsensitive
                 ) == 0

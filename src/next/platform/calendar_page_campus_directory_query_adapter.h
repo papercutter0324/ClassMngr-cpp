@@ -60,9 +60,13 @@ public:
 
         for (const CampusInfo& campus : repositoryCampuses)
         {
-            Application::CalendarPageCampusMetadata metadata;
-            metadata.id = campus.id.toUtf8().toStdString();
-            metadata.campusName = campus.campusName.toUtf8().toStdString();
+            Application::CalendarPageCampusMetadata metadata{
+                .id = Domain::CampusId::fromString(
+                    campus.id.toUtf8().toStdString()
+                    ).value(),
+                .campusName =
+                    campus.campusName.toUtf8().toStdString()
+            };
 
             if (!campus.campusCode.isEmpty())
             {

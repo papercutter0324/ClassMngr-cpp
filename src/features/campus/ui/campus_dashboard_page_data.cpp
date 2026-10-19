@@ -116,7 +116,7 @@ void CampusDashboardPage::loadCampuses()
         for (const auto& campusMetadata : campuses)
         {
             if (
-                QString::fromStdString(campusMetadata.id)
+                QString::fromStdString(campusMetadata.id.value())
                 == currentCampusId
                 )
             {
@@ -137,7 +137,7 @@ void CampusDashboardPage::loadCampuses()
     for (const auto& campusMetadata : campuses)
     {
         CampusInfo campus;
-        campus.id = QString::fromStdString(campusMetadata.id);
+        campus.id = QString::fromStdString(campusMetadata.id.value());
         campus.campusName =
             QString::fromStdString(campusMetadata.campusName);
         if (campusMetadata.campusCode.has_value())

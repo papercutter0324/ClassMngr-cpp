@@ -215,7 +215,7 @@ QString campusDisplayName(
 {
     const QString campusName = projectionText(campus.campusName);
     return campusName.trimmed().isEmpty()
-        ? projectionText(campus.id).trimmed()
+        ? projectionText(campus.id.value()).trimmed()
         : campusName.trimmed();
 }
 
@@ -972,12 +972,14 @@ CalendarPage::calendarEventDisplayOptions() const
                     projectionText(*campus.campusCode)
                     );
             }
-            options.allCampusCodes.append(projectionText(campus.id));
+            options.allCampusCodes.append(
+                projectionText(campus.id.value())
+                );
 
             if (
                 !currentName.isEmpty()
                 && (
-                projectionText(campus.id)
+                projectionText(campus.id.value())
                     .compare(currentName, Qt::CaseInsensitive) == 0
                 || campusDisplayName(campus).compare(currentName, Qt::CaseInsensitive) == 0
                 || projectionText(campus.campusName)
@@ -991,7 +993,9 @@ CalendarPage::calendarEventDisplayOptions() const
                         projectionText(*campus.campusCode)
                         );
                 }
-                options.currentCampusCodes.append(projectionText(campus.id));
+                options.currentCampusCodes.append(
+                    projectionText(campus.id.value())
+                    );
                 options.currentCampusCodes.append(campusDisplayName(campus));
             }
         }

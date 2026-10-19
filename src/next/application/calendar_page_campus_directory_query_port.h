@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -7,12 +9,12 @@
 namespace ClassMngr::Next::Application
 {
 
-// The campus metadata CalendarPage needs to build campus filter aliases.
-// Strings are owning UTF-8 values; unrelated campus record fields stay outside
-// this query contract.
+// The campus metadata CalendarPage needs to build campus filter aliases. The
+// identifier is typed and remaining text fields are owning UTF-8 values;
+// unrelated campus record fields stay outside this query contract.
 struct CalendarPageCampusMetadata final
 {
-    std::string id;
+    Domain::CampusId id;
     std::string campusName;
     std::optional<std::string> campusCode;
 };

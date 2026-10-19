@@ -67,7 +67,9 @@ public:
 
             campuses.push_back(
                 Application::SubPrepCampusMetadata{
-                    campus.id.toUtf8().toStdString(),
+                    Domain::CampusId::fromString(
+                        campus.id.toUtf8().toStdString()
+                        ).value(),
                     displayName.toUtf8().toStdString(),
                     campus.officeNumber.toUtf8().toStdString(),
                     campus.officeWifi.toUtf8().toStdString(),

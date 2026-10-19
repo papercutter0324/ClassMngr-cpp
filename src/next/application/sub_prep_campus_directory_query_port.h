@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
+
 #include <string>
 #include <vector>
 
@@ -7,10 +9,11 @@ namespace ClassMngr::Next::Application
 {
 
 // The Sub Prep page needs campus selection metadata and a few office details.
-// Values are owning UTF-8 strings; unrelated campus record fields are excluded.
+// The identifier is typed and remaining values are owning UTF-8 strings;
+// unrelated campus record fields are excluded.
 struct SubPrepCampusMetadata final
 {
-    std::string id;
+    Domain::CampusId id;
     std::string displayName;
     std::string officeNumber;
     std::string wifiName;

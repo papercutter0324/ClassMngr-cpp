@@ -1,4 +1,5 @@
 #include "next/application/sub_prep_campus_directory_query_port.h"
+#include "next/domain/domain_types.h"
 
 #include <QtTest/QtTest>
 
@@ -9,6 +10,16 @@
 
 namespace
 {
+ClassMngr::Next::Domain::CampusId campusId(const std::string& value)
+{
+    const auto parsed = ClassMngr::Next::Domain::CampusId::fromString(value);
+    if (!parsed)
+    {
+        qFatal("Invalid campus ID in test fixture");
+    }
+    return *parsed;
+}
+
 class FakeSubPrepCampusDirectoryQuery final
     : public ClassMngr::Next::Application::
           SubPrepCampusDirectoryQueryPort
@@ -58,7 +69,12 @@ portExposesOnlyOwningUtf8CampusMetadata()
             std::vector<Metadata>
             >
         );
-    static_assert(std::is_same_v<decltype(Metadata::id), std::string>);
+    static_assert(
+        std::is_same_v<
+            decltype(Metadata::id),
+            ClassMngr::Next::Domain::CampusId
+            >
+        );
     static_assert(
         std::is_same_v<decltype(Metadata::displayName), std::string>
         );
@@ -76,7 +92,7 @@ portExposesOnlyOwningUtf8CampusMetadata()
         );
 
     const Metadata expected{
-        "campus-id",
+        campusId("campus-id"),
         "Campus Name",
         "Office 418",
         "Campus Wi-Fi",
@@ -87,7 +103,8 @@ portExposesOnlyOwningUtf8CampusMetadata()
     const auto campuses = query.loadCampuses();
 
     QCOMPARE(campuses.size(), std::size_t(1));
-    QCOMPARE(campuses.front().id, expected.id);
+    QVERIFY(campuses.front().id == expected.id);
+    QCOMPARE(campuses.front().id.value(), expected.id.value());
     QCOMPARE(campuses.front().displayName, expected.displayName);
     QCOMPARE(campuses.front().officeNumber, expected.officeNumber);
     QCOMPARE(campuses.front().wifiName, expected.wifiName);

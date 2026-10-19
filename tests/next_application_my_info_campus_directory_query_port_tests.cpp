@@ -1,4 +1,5 @@
 #include "next/application/my_info_campus_directory_query_port.h"
+#include "next/domain/domain_types.h"
 
 #include <QtTest/QtTest>
 
@@ -9,6 +10,16 @@
 
 namespace
 {
+ClassMngr::Next::Domain::CampusId campusId(const std::string& value)
+{
+    const auto parsed = ClassMngr::Next::Domain::CampusId::fromString(value);
+    if (!parsed)
+    {
+        qFatal("Invalid campus ID in test fixture");
+    }
+    return *parsed;
+}
+
 class FakeMyInfoCampusDirectoryQuery final
     : public ClassMngr::Next::Application::
           MyInfoCampusDirectoryQueryPort
@@ -58,7 +69,12 @@ portUsesOnlyOwningUtf8CampusMetadata()
             std::vector<Metadata>
             >
         );
-    static_assert(std::is_same_v<decltype(Metadata::id), std::string>);
+    static_assert(
+        std::is_same_v<
+            decltype(Metadata::id),
+            ClassMngr::Next::Domain::CampusId
+            >
+        );
     static_assert(
         std::is_same_v<decltype(Metadata::displayName), std::string>
         );
@@ -66,11 +82,13 @@ portUsesOnlyOwningUtf8CampusMetadata()
     const std::string id = "id-\xEC\x84\x9C\xEC\x9A\xB8";
     const std::string displayName =
         "\xEC\x84\x9C\xEC\x9A\xB8 \xEC\xBA\xA0\xED\x8D\xBC\xEC\x8A\xA4";
-    const FakeMyInfoCampusDirectoryQuery query({{id, displayName}});
+    const auto typedId = campusId(id);
+    const FakeMyInfoCampusDirectoryQuery query({{typedId, displayName}});
     const auto campuses = query.loadCampuses();
 
     QCOMPARE(campuses.size(), std::size_t(1));
-    QCOMPARE(campuses.front().id, id);
+    QVERIFY(campuses.front().id == typedId);
+    QCOMPARE(campuses.front().id.value(), id);
     QCOMPARE(campuses.front().displayName, displayName);
 }
 
