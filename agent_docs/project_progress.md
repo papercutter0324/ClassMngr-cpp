@@ -4764,9 +4764,9 @@ MainWindow tests cover a successful policy switch followed by a save and
 reload failure. `git diff --check` passed. This was focused macOS arm64
 verification; Windows x64 execution is unavailable, and no full suite ran.
 
-Batch475 discovery found one concrete contract gap, F1095: the existing
-Calendar event time-status domain enum is still exposed as strings in several
-Application contracts. It is selected for compatibility-boundary and
-acceptance definition before implementation. No other slices were found in
-the reviewed work-package and settings-read surfaces. The Phase 0 and Phase 2
-exit gates remain open.
+Batch474 was pushed to `origin/Qt-Rewrite` at `fbcbb6c9`. Batch475 has one
+accepted slice, F1095: carry the existing Calendar event time-status enum
+through Application contracts while preserving canonical legacy text and
+normalization behavior. Its acceptance is recorded before implementation.
+No other slices were found in the reviewed work-package and settings-read
+surfaces. The Phase 0 and Phase 2 exit gates remain open.

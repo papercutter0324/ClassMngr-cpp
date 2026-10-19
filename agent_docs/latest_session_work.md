@@ -4,11 +4,12 @@
 
 - Active deployment: `phase2-f1094-20261019`; Heavy route; branch `Qt-Rewrite`;
   current checkpoint 2026-10-19.
-- Batch474 is complete with F1091-F1094 committed. F1094 source/test commit is
-  `5c4201aedbcc47e55e4b095e3b4066bbb07423a6`; the documentation closeout is
-  committed next and the batch push is pending. Batch475 has one discovered
-  candidate, F1095, selected to define compatibility and acceptance for using
-  `CalendarEventTimeStatus` across the Calendar Application contracts.
+- Batch474 is complete with F1091-F1094 committed and pushed to
+  `origin/Qt-Rewrite` at `fbcbb6c987eb21196d8e0fd0b87583f85335a9d3`. F1094
+  source/test commit is `5c4201aedbcc47e55e4b095e3b4066bbb07423a6`.
+  Batch475 has one accepted slice, F1095, to use `CalendarEventTimeStatus`
+  through Calendar Application contracts while retaining legacy serialization
+  and UI behavior.
 - F1094 makes both reset-policy ports distinguish technical repository errors
   from missing/invalid values. ClassesPage applies each hide-time reset only
   after that policy loads successfully; Navigation Preferences avoids hydration
@@ -19,9 +20,14 @@
   the ClassesPage regression and two MainWindow failure/retry cases passed;
   `git diff --check` passed. Evidence is macOS arm64 only; no full suite ran.
   The user cannot currently run Windows, so Windows x64 remains unavailable.
+- F1095 acceptance is recorded before implementation. It covers five typed
+  Application contracts, boundary-only text conversion, canonical persisted
+  values, legacy normalization, existing all-day write rules, and unchanged
+  read projection semantics. The next action is implementation followed by
+  focused existing-target verification.
 - The combined Phase 0 gate remains Open pending Windows x64 full-matrix
   evidence. Phase 2 remains Open; Gates 1/2 are Partial and F1007 awaits policy
-  reconciliation. Continue with F1095 after pushing Batch474.
+  reconciliation.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

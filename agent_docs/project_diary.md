@@ -7379,5 +7379,9 @@ later double failure restores the latest successful choice.
 
 F1094 is committed at source/test commit `5c4201ae`. Focused macOS arm64 build
 and regressions passed; Windows x64 was unavailable and no full suite ran.
-Batch475 begins with F1095, an Application contract gap where an existing
-Calendar event time-status domain enum is still exposed as strings.
+Batch474 was pushed to `origin/Qt-Rewrite` at `fbcbb6c9`. Batch475 begins with
+F1095, an Application contract gap where an existing Calendar event time-status
+domain enum is still exposed as strings. Keep persisted canonical names and
+legacy text normalization at the boundary; do not impose save-only all-day
+validation on read projections, because existing rows may contain valid
+non-Timed status alongside an all-day flag.

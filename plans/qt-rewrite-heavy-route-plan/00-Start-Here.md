@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch473 is closed and pushed, with F1086-F1090 and reactivated F629 complete. Batch474 is complete: F1091-F1094 are committed, with F1094 source/test commit `5c4201ae`; this closeout is being pushed after the documentation commit. Batch475 has one discovered candidate, F1095, to carry Calendar event time status as a domain enum across Application contracts. The combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch475-1-discovered-candidate) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch474 is closed and pushed to `origin/Qt-Rewrite` at `fbcbb6c9`, with F1091-F1094 complete. Batch475 has one discovered slice, F1095, accepted to carry Calendar event time status as a domain enum across Application contracts; its acceptance is recorded before implementation. The combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch475-1-discovered-candidate) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -40,7 +40,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 **Batch475 — Discovered; one candidate, in current work order:**
 
-1. **F1095 — Carry Calendar event time status as a domain enum across Application contracts.** Selected to define the compatibility boundary and acceptance before implementation. The existing domain enum is still represented as strings in the summary, save, edit-draft, and series-edit contracts.
+1. **F1095 — Carry Calendar event time status as a domain enum across Application contracts.** Accepted for implementation. Type the summary, save, edit-draft, series-edit, and series occurrence update contracts; keep canonical status strings at legacy and presentation boundaries.
 
 No other slices were found.
 

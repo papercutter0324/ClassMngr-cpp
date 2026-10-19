@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1095 is selected to define the Calendar event time-status enum boundary before implementation; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
+- Current note: F1095 is accepted to carry Calendar event time status as a domain enum through Application contracts while preserving legacy text behavior; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -72,7 +72,7 @@ Treat this plan as an operational summary, not a history:
 
 Batch474 is complete with F1091-F1094 committed; its closeout and push are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch475 has one candidate:
 
-1. F1095 - Carry Calendar event time status as a domain enum across Application contracts: selected to define the compatibility boundary and acceptance before implementation.
+1. F1095 - Carry Calendar event time status as a domain enum across Application contracts: accepted; implement the typed flow and preserve legacy conversion behavior.
 
 No other slices were found.
 
