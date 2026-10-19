@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is active with five complete candidates and F1143 accepted/in progress, while discovered Batch487 has ten candidates and remains inactive until Batch486 closes; F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet; see [local closeout record](03-Phase-2-Progress-Log.md#batch486-local-closeout-and-batch487-activation-2026-10-20)); Batch487 is active with ten discovered candidates and F1144 next for acceptance; F629 awaits source-bound Windows x64 layout evidence and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,18 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch486 (6 candidates; 5 complete; 1 accepted/in progress; 0 discovered)
-
-1. F1138 - Complete at `fd3c0462`; typed the Application preference-port event identity and preserved key/read/write behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-complete-2026-10-20).
-2. F1139 - Complete at `05c9de8c`; added a distinct exact-byte Application campus-import value and returned it from the query port. Platform filtering/order and parser behavior remain; see the [acceptance record](03-Phase-2-Progress-Log.md#f1139-calendar-import-campus-code-identity-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1139-calendar-import-campus-code-identity-complete-2026-10-20).
-3. F1140 - Complete at `230f7a00`; added Qt-free Domain `PreparedPersonalSignatureImageBytes` and changed only the image-read result, preserving empty success/read failure and consumer fallback behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1140-prepared-personal-signature-image-bytes-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1140-prepared-personal-signature-image-bytes-complete-2026-10-20).
-4. F1141 - Complete at `73b9a8e7`; added distinct owning Application values for the Sub Prep Zoom credentials while preserving their exact text and UI consumers. The Initial Setup test case could not be verified in the current macOS environment; see the [acceptance record](03-Phase-2-Progress-Log.md#f1141-sub-prep-personal-zoom-credential-values-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1141-sub-prep-personal-zoom-credential-values-complete-2026-10-20).
-5. F1142 - Complete at `67f7277a20d5950ad85f9e6fc655f80f118bb2d2`; added Qt-free Application `CustomColorPaletteEntry` for exact UTF-8 text and used it in the fixed 16-entry palette; preserved value permissiveness, defaults/equality, Platform read normalization/fallback, and exact compact-JSON writes. See the [acceptance record](03-Phase-2-Progress-Log.md#f1142-custom-color-palette-entry-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1142-custom-color-palette-entry-complete-2026-10-20).
-6. F1143 - Accepted/in progress: add academic-calendar-specific `AcademicCalendarScheduleJsonText`; keep JSON parsing and compact serialization in the provider while preserving UTF-8 round trips and existing adapter/provider fallback and error behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1143-academic-calendar-schedule-json-text-accepted-before-implementation-2026-10-20).
-
-Batch486 has five complete, one accepted/in-progress, and no discovered candidates. Detailed discovery evidence, acceptance criteria, and verification references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
-
-#### Discovered next batch: Batch487 (10 candidates; discovered, not active)
+#### Active batch: Batch487 (10 candidates; 0 complete; 0 accepted/in progress; 10 discovered)
 
 1. F1144 - Type personal-signature image save-request bytes, separate from F1140's read-result value.
 2. F1145 - Use `Domain::CalendarEventType` consistently for Sub Prep interval and Calendar create/edit contracts while preserving each boundary's own normalization.
@@ -92,7 +81,7 @@ Batch486 has five complete, one accepted/in-progress, and no discovered candidat
 9. F1152 - Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
 10. F1153 - Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-All Batch487 entries are discovery candidates, not accepted slices. Detailed evidence and screening rationale are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
+All ten Batch487 entries remain discovered candidates, none is accepted, and F1144 is next for acceptance. Detailed evidence and screening rationale are in the [progress log](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
 
 #### Deferred candidates
 

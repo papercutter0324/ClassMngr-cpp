@@ -8264,5 +8264,8 @@ The focused Platform regression confirms that noncanonical caller text is
 stored verbatim and normalized only by a later read. The incremental macOS
 Debug build and both focused CTests passed; full-suite and Windows verification
 were not run. F1143 is accepted to type academic-calendar schedule JSON text
-without moving parsing from `AcademicCalendarProvider`; F629 and both phase
+without moving parsing from `AcademicCalendarProvider`. Its incremental
+macOS Debug build and all nine focused CTests passed, including the missing
+Calendar Preferences parent CTest rerun; the full suite and Windows were not
+run. Batch486 is closed locally and its push is pending. F629 and both phase
 gates remain open.

@@ -236,11 +236,10 @@ QWizard test aborts with an `NSBundle initWithURL: nil URL argument` exception
 in both the Phase 0 and standard preset trees; its cause is unresolved. The
 Initial Setup target compiled, but behavior remains unverified. F1142 is
 complete at source/test commit `67f7277a`; the focused Platform and ColorUtils
-CTests passed 2/2 after the incremental macOS Debug build. F1143 is
-accepted/in progress to add an opaque Application value for academic-calendar
-schedule JSON text while preserving the Platform and provider boundaries.
-Batch486 has five complete slices and F1143 accepted/in progress; Batch487 is
-discovered with ten candidates and remains inactive.
+CTests passed 2/2 after the incremental macOS Debug build. F1143 completed at
+`686bdc2a`; the incremental macOS Debug build passed, all nine focused CTests
+passed, and `git diff --check` passed. Batch486 is complete locally; Batch487
+is active with ten discovered candidates and F1144 next for acceptance.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -248,8 +247,8 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Complete F1143 to close Batch486, then commit and push the completed batch
-before starting Batch487's first candidate, F1144. F629 remains active
+Push the Batch486 closure commit, then accept F1144 as Batch487's first
+candidate. F629 remains active
 and awaits source-bound Windows x64 layout evidence for commit `667ff54e`; the
 user cannot run Windows now. The Phase 0 and Phase 2 exit gates remain open.
 Detailed historical slice evidence remains in
@@ -6125,19 +6124,25 @@ passed. Full-suite and Windows verification were not run. Batch486 has five
 complete slices and one discovered candidate; F1143 is next. Batch487 has ten
 discovered candidates and is not active. F629 and both phase gates remain open.
 
-## Phase 2 update - F1143 accepted; Batch486 active - 2026-10-20
+## Phase 2 update - F1143 complete; Batch486 closed locally - 2026-10-20
 
-F1143 is accepted to add Qt-free Application `AcademicCalendarScheduleJsonText`
-for exact JSON text. The value owns its text and does not parse, validate,
-trim, or canonicalize it; Platform retains the existing settings key and
-length-aware UTF-8 conversions, while `AcademicCalendarProvider` retains
-compact serialization and parsing. Preserve successful empty reads and
-invalid/schema fallback, Technical read errors and provider state retention,
-and write-error propagation and provider rollback behavior. Add non-ASCII
-valid UTF-8 adapter round-trip coverage; update direct ports and fakes. Focused
-verification will build `ClassMngr` and the Platform port, Academic Calendar,
-Calendar Preferences Restore Defaults, and Evaluation Default Selection test
-targets, then run their CTests and `git diff --check`. Full-suite and Windows
-verification are not expected. Batch486 has five complete and F1143
-accepted/in progress; Batch487 remains discovered and inactive. F629 and both
-phase gates remain open.
+F1143 added Qt-free Application `AcademicCalendarScheduleJsonText` for exact
+JSON text. The value owns its text and does not parse, validate, trim, or
+canonicalize it; Platform retains the existing settings key and length-aware
+UTF-8 conversions, while `AcademicCalendarProvider` retains compact
+serialization and parsing. Successful empty reads, invalid/schema fallback,
+Technical read errors and provider state retention, and write-error
+propagation and provider rollback remain covered. The Platform regression
+round-trips Korean valid UTF-8 JSON text and confirms its stored UTF-8 bytes.
+
+The incremental build in the existing `macos-clang-debug` tree passed for
+`ClassMngr` and four affected targets; no configure or clean was run. All nine
+focused registered CTests passed, including the Calendar Preferences parent
+target and its two selectors; `git diff --check` passed. The first build
+attempt caught two test-edit errors, which were corrected before the passing
+retry. Full-suite and Windows verification were not run. F1143 completed at
+source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`, following
+acceptance `c6b6eadb8a2c6901e85bc26961b8b1332c02cbb6`. Batch486 has six
+complete candidates and is closed locally; Batch487 is active with ten
+discovered candidates, and F1144 is next for acceptance. Its closure commit is
+awaiting push. F629 and both phase gates remain open.

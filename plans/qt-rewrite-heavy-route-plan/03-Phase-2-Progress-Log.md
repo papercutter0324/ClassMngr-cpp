@@ -50414,3 +50414,44 @@ F1144–F1153; keep Batch487's ten candidates unchanged and inactive. Evidence:
 `tests/evaluation_default_selection_integration_tests.cpp`. Batch486 has six
 candidates: five complete, one accepted/in progress (F1143), and none
 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1143 Academic calendar schedule JSON text complete - 2026-10-20
+
+F1143 completed at source/test commit
+`686bdc2a5000709c6b5ab6cd6b632552d62577d6`, following acceptance commit
+`c6b6eadb8a2c6901e85bc26961b8b1332c02cbb6`. The Qt-free owning Application
+`AcademicCalendarScheduleJsonText` now owns the academic-calendar payload at
+the preferences port read/write boundary. The adapter retains
+`calendar/academicSchedule/v1` and length-aware Platform UTF-8 conversions;
+JSON parsing and compact serialization remain at the provider boundary.
+
+The incremental build in the existing `build/macos-clang-debug` tree passed
+after two test-edit errors from the first attempt were corrected. No configure
+or clean build was run. All nine registered focused CTests passed (9/9):
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`,
+`ClassMngrAcademicCalendarTests`, `AcademicCalendarScheduleValidityPolicy`,
+`AcademicCalendarJsonRoundTripAndMalformedFallback`,
+`AcademicCalendarInvalidWinterContinuityIsAtomic`,
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`,
+`CalendarPreferencesRejectsOutOfRangeWinterStart`,
+`CalendarPreferencesRejectsOutOfRangeInternalTermStart`, and
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`.
+
+QtTest entry counts were Platform 8; Academic Calendar target 21 and its
+three selectors 3 each; Calendar Preferences parent 13 and its two selectors
+3 each; Evaluation integration 6. The new Platform test round-trips Korean
+valid UTF-8 JSON text verbatim and confirms exact stored UTF-8 bytes with
+length-aware conversion. Existing fallback, Technical error, provider
+retention/save-blocking, and write-rollback behavior remains covered.
+`git diff --check` passed. The full suite and Windows verification were not
+run.
+
+### Batch486 local closeout and Batch487 activation - 2026-10-20
+
+Batch486 is complete locally with F1138–F1143 complete. This update records
+Batch486's local closure; the completed-batch push follows this closure
+commit, and no push receipt exists yet. Batch487 is now active with ten
+discovered candidates, zero complete and zero accepted/in progress; F1144 is
+next for acceptance. Its ordered candidate list and screening rationale remain
+as recorded in the [Batch487 discovery entry](#batch487-discovery-at-f1142-start-2026-10-20).
+F629 and the Phase 0 and Phase 2 gates remain open.
