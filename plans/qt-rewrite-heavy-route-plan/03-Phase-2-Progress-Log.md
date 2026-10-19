@@ -48985,3 +48985,24 @@ workbook test was skipped because `CLASSMNGR_TEACHER_IMPORT_SAMPLE` was unset.
 `git diff --check` passed; the full suite was not run. Batch484 remains active
 with three complete candidates, seven discovered, and F1121 next for
 acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1121 Campus Directory key accepted before implementation - 2026-10-20
+
+F1121 is accepted/in progress. Type only `CampusSummary::key` as an opaque,
+byte-preserving `CampusDirectoryKey` with accessor `.value()`. Its
+representation must allow empty and arbitrary bytes until projection
+validation. Keep `code()` and `shortCode()` as aliases for the same key,
+returning the new value type.
+
+Preserve the current 64-byte `std::string` limit and byte count, including a
+multibyte value totaling 64 bytes being accepted and one totaling 65 rejected.
+Keep the byte-wise `std::isspace` blank check without Unicode normalization;
+exact byte equality for uniqueness and lookups; vector order; validation
+first-failure order; and existing `InvalidInput` behavior and messages. Keep
+lookup input APIs and comparisons exact. Do not change `CampusId`, display,
+address, notes, neighboring campus code surfaces, or adapters.
+
+Focused target: `ClassMngrNextApplicationCampusDirectoryTests`. Implementation
+and tests have not started. Batch484 remains active with three complete
+candidates, F1121 accepted/in progress, and six discovered. F629 and the Phase
+0 and Phase 2 gates remain open.

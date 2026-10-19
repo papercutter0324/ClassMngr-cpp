@@ -7818,3 +7818,15 @@ validation ownership. The tester built `ClassMngr` and ran six focused CTests
 successfully. The dialog ran with Qt offscreen; its optional external sample
 case remained skipped because no sample path was configured. No full-suite
 run occurred.
+
+## 2026-10-20 - F1121 accepted
+
+Type only `CampusSummary::key` as an opaque `CampusDirectoryKey` that
+preserves exact bytes and permits empty or arbitrary-byte values until
+projection validation. Preserve the 64-byte limit, bytewise blank handling,
+exact key uniqueness and lookups, vector order, first-failure order, and
+existing `InvalidInput` behavior. Keep the `code()` and `shortCode()` aliases
+on the same typed key; leave other campus identifiers, metadata, adapters,
+and similarly named code fields unchanged. Cover the UTF-8 64-byte and
+65-byte boundaries in the focused Application test target. F629 and both
+phase gates remain open.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is active with ten candidates: F1118, F1119, and F1120 are complete, and seven remain discovered; F1121 is next for acceptance. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-3-complete-0-acceptedin-progress-7-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is active with ten candidates: F1118–F1120 are complete, F1121 is accepted/in progress, and six remain discovered. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-3-complete-1-acceptedin-progress-6-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch484 — Active; ten candidates, three complete and seven discovered:**
+**Batch484 — Active; ten candidates, three complete, one accepted/in progress, and six discovered:**
 
 1. **F1118 — Type Calendar repeat-series edit dates (complete).** Type generated occurrence updates as `GregorianDate`; preserve date behavior and occurrence shifting. See the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20).
 2. **F1119 — Type Schedule Import apply/state teacher correlation keys (complete).** Preserve exact UTF-8 state-key and UTF-16 apply-key identity. See the [completion record](03-Phase-2-Progress-Log.md#f1119-schedule-import-teacher-keys-complete-2026-10-20).
 3. **F1120 — Type Teacher Import source validation keys (complete).** Reuse exact opaque `ImportSourceKey` values across per-source validation records; preserve correspondence, normalization, and order. See the [completion record](03-Phase-2-Progress-Log.md#f1120-teacher-import-source-validation-keys-complete-2026-10-20).
-4. **F1121 — Type Campus Directory key/code.** Preserve exact code, byte length, and uniqueness.
+4. **F1121 — Type Campus Directory key/code (accepted/in progress).** Type only the summary key as an opaque byte-preserving value; preserve byte limits and exact lookup/validation behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1121-campus-directory-key-accepted-before-implementation-2026-10-20).
 5. **F1122 — Type Teacher Profile validation identifiers.** Preserve diagnostic values/order and adapter mapping.
 6. **F1123 — Type Document Catalog paths.** Preserve hierarchy, parent resolution, and path limits.
 7. **F1124 — Type Roster Save validation codes.** Preserve UI suffix/substring keys and issue order; this is distinct from F1116.

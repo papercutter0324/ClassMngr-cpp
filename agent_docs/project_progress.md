@@ -5450,3 +5450,17 @@ built; 6/6 selected CTests passed. The dialog ran offscreen, and its optional
 external-workbook case was skipped because no sample path was set. The full
 suite was not run. F1121 is next for acceptance; F629 and both phase gates
 remain open.
+
+## Phase 2 update - F1121 accepted; Batch484 active - 2026-10-20
+
+F1121 is accepted to type only `CampusSummary::key` as an opaque,
+byte-preserving `CampusDirectoryKey`, while allowing empty and arbitrary-byte
+values to reach existing projection validation. Preserve its 64-byte limit,
+bytewise blank check, exact uniqueness and lookups, projection order,
+first-failure order, and existing `InvalidInput` behavior. Keep `code()` and
+`shortCode()` as aliases for the same typed key. Add focused multibyte UTF-8
+boundary coverage for 64 bytes accepted and 65 bytes rejected. Other campus
+identifiers, metadata, adapters, and similarly named code fields remain out
+of scope. Implementation has not started; the focused target is
+`ClassMngrNextApplicationCampusDirectoryTests`. F629 and both phase gates
+remain open.
