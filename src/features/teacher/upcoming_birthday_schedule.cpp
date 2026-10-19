@@ -14,6 +14,7 @@ namespace
 
 using ClassMngr::Next::Application::UpcomingBirthdayCandidate;
 using ClassMngr::Next::Application::UpcomingBirthdayDate;
+using ClassMngr::Next::Application::UpcomingBirthdayMonthDayInput;
 using ClassMngr::Next::Application::UpcomingBirthdayOccurrence;
 using ClassMngr::Next::Application::UpcomingBirthdayStaffGroup;
 using ClassMngr::Next::Application::UpcomingBirthdayScheduleUseCase;
@@ -122,7 +123,9 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
     for (const Teacher& teacher : teachers)
     {
         candidates.push_back({
-            .birthdayMonthDay = utf8(teacher.birthday.trimmed()),
+            .birthdayMonthDay = UpcomingBirthdayMonthDayInput(
+                utf8(teacher.birthday.trimmed())
+                ),
             .displayName = utf16(teacher.preferredDisplayName().trimmed()),
             .group = UpcomingBirthdayStaffGroup::KoreanTeacher
         });
@@ -131,7 +134,9 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
     for (const NativeEnglishTeacher& teacher : nativeEnglishTeachers)
     {
         candidates.push_back({
-            .birthdayMonthDay = utf8(teacher.birthday.trimmed()),
+            .birthdayMonthDay = UpcomingBirthdayMonthDayInput(
+                utf8(teacher.birthday.trimmed())
+                ),
             .displayName = utf16(teacher.name.trimmed()),
             .position = utf16(teacher.position.trimmed()),
             .group = UpcomingBirthdayStaffGroup::NativeEnglishTeacher
@@ -144,7 +149,9 @@ UpcomingBirthdaySchedule UpcomingBirthdaySchedule::build(
             ? member.koreanName.trimmed()
             : member.name.trimmed();
         candidates.push_back({
-            .birthdayMonthDay = utf8(member.birthday.trimmed()),
+            .birthdayMonthDay = UpcomingBirthdayMonthDayInput(
+                utf8(member.birthday.trimmed())
+                ),
             .displayName = utf16(displayName),
             .position = utf16(member.position.trimmed()),
             .group = UpcomingBirthdayStaffGroup::GsTeam

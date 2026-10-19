@@ -35,9 +35,35 @@ enum class UpcomingBirthdayStaffGroup
     GsTeam
 };
 
+// Preserve the adapter-provided UTF-8 birthday text unchanged. Parsing and
+// validation belong to the schedule use case after this boundary.
+class UpcomingBirthdayMonthDayInput final
+{
+public:
+    UpcomingBirthdayMonthDayInput() = default;
+
+    explicit UpcomingBirthdayMonthDayInput(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const UpcomingBirthdayMonthDayInput&,
+        const UpcomingBirthdayMonthDayInput&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 struct UpcomingBirthdayCandidate final
 {
-    std::string birthdayMonthDay;
+    UpcomingBirthdayMonthDayInput birthdayMonthDay;
     std::u16string displayName;
     std::u16string position;
     UpcomingBirthdayStaffGroup group = UpcomingBirthdayStaffGroup::KoreanTeacher;
@@ -117,7 +143,7 @@ public:
             }
 
             const std::optional<Domain::BirthdayMonthDay> birthday =
-                parseBirthday(candidate.birthdayMonthDay);
+                parseBirthday(candidate.birthdayMonthDay.value());
             if (!birthday)
             {
                 continue;

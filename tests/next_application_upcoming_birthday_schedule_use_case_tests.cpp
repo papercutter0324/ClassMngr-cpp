@@ -48,7 +48,7 @@ UpcomingBirthdayCandidate birthday(
     )
 {
     return {
-        .birthdayMonthDay = std::move(monthDay),
+        .birthdayMonthDay = UpcomingBirthdayMonthDayInput(std::move(monthDay)),
         .displayName = std::move(displayName),
         .position = std::move(position),
         .group = group
@@ -65,6 +65,7 @@ private slots:
     void bucketsTodayThisWeekAndNextWeekThroughSunday();
     void selectsOccurrencesAcrossCalendarYearRollover();
     void mapsLeapDayToFebruaryTwentyEighthInNonLeapYear();
+    void acceptsOpaqueBirthdayBytesAndSkipsThem();
     void omitsInvalidBirthdaysAndBlankNames();
     void trimsOnlyAsciiWhitespaceAtBirthdayEdges();
     void omitsCandidatesWithUnknownStaffGroups();
@@ -139,6 +140,35 @@ mapsLeapDayToFebruaryTwentyEighthInNonLeapYear()
 
     QCOMPARE(schedule.thisWeek.size(), std::size_t{1});
     QVERIFY((schedule.thisWeek.front().date == gregorianDate(2027, 2, 28)));
+}
+
+void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
+acceptsOpaqueBirthdayBytesAndSkipsThem()
+{
+    const std::string malformedUtf8("\xC3\x28", 2);
+    const UpcomingBirthdayCandidate blankBirthday{
+        .birthdayMonthDay = UpcomingBirthdayMonthDayInput(std::string{}),
+        .displayName = u"Blank birthday"
+    };
+    const UpcomingBirthdayCandidate malformedBirthday{
+        .birthdayMonthDay = UpcomingBirthdayMonthDayInput(malformedUtf8),
+        .displayName = u"Malformed birthday"
+    };
+
+    QCOMPARE(blankBirthday.birthdayMonthDay.value(), std::string{});
+    QCOMPARE(malformedBirthday.birthdayMonthDay.value(), malformedUtf8);
+
+    const UpcomingBirthdaySchedule schedule = buildSchedule(
+        {
+            blankBirthday,
+            malformedBirthday,
+            birthday("08-18", u"Valid birthday")
+        },
+        {2026, 8, 18}
+        );
+
+    QCOMPARE(schedule.today.size(), std::size_t{1});
+    QCOMPARE(schedule.today.front().displayName, std::u16string(u"Valid birthday"));
 }
 
 void NextApplicationUpcomingBirthdayScheduleUseCaseTests::
