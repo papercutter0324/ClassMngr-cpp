@@ -5855,7 +5855,10 @@ void ScheduleImportDialogTests::reviewModelBuildsTypedApplyRequest()
     QVERIFY(request.saveProfileNameIfBlank && request.updateProfileName
         && request.diagnosticsAcknowledged);
     QCOMPARE(request.candidates.size(), std::size_t(1));
-    QCOMPARE(request.candidates.at(0).teacherKey, std::u16string(u"Kim"));
+    QCOMPARE(
+        request.candidates.at(0).teacherKey.value(),
+        std::u16string(u"Kim")
+        );
     QCOMPARE(request.candidates.at(0).teacherName, std::u16string(u"Kim"));
     QCOMPARE(request.candidates.at(0).rooms.at(0), std::u16string(u"413"));
     QCOMPARE(request.candidates.at(0).importedColors.at(0),

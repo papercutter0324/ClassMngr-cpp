@@ -87,7 +87,9 @@ ScheduleImportReviewModel::buildApplyRequest(
     for (const ScheduleImportClassCandidate& candidate : context.candidates)
     {
         ScheduleImportApplyCandidate item;
-        item.teacherKey = candidate.teacherKey.toStdU16String();
+        item.teacherKey = ScheduleImportApplyTeacherKey{
+            candidate.teacherKey.toStdU16String()
+        };
         item.teacherName = candidate.teacherKr.toStdU16String();
         for (const QString& room : candidate.rooms)
         {
@@ -135,7 +137,9 @@ ScheduleImportReviewModel::buildApplyRequest(
     for (const ScheduleImportTeacherResolution& teacher : teachers)
     {
         request.teachers.push_back({
-            teacher.teacherKey.toStdU16String(),
+            ScheduleImportApplyTeacherKey{
+                teacher.teacherKey.toStdU16String()
+            },
             applyTeacherAction(teacher.action),
             targetId<Domain::TeacherId>(teacher.targetTeacherId),
             teacher.selectedRoom.trimmed().toStdU16String()

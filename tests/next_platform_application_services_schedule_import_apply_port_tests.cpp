@@ -26,7 +26,9 @@ Application::ScheduleImportApplyRequest typedRequest()
     });
 
     Application::ScheduleImportApplyCandidate candidate;
-    candidate.teacherKey = u"\uAE40";
+    candidate.teacherKey = Application::ScheduleImportApplyTeacherKey{
+        u"\uAE40"
+    };
     candidate.teacherName = u"\uAE40";
     candidate.rooms = {u"413"};
     candidate.importedColors = {u"#123456"};
@@ -39,7 +41,7 @@ Application::ScheduleImportApplyRequest typedRequest()
     candidate.sourceCells = {u"B12"};
     request.candidates.push_back(std::move(candidate));
     request.teachers.push_back({
-        u"\uAE40",
+        Application::ScheduleImportApplyTeacherKey{u"\uAE40"},
         Application::ScheduleImportReviewTeacherAction::Create,
         std::nullopt,
         u"413"
@@ -455,7 +457,7 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
             ExistingTeacherMissingTarget
         );
     QCOMPARE(
-        teacherFailure.error().teacherTargetIssue->teacherKey,
+        teacherFailure.error().teacherTargetIssue->teacherKey.value(),
         std::u16string(u"\uAE40")
         );
     QVERIFY(!teacherFailure.error().policyIssue.has_value());
@@ -463,13 +465,15 @@ void ScheduleImportApplyPortTests::preservesStructuredRepositoryFailures()
 
     auto overlappingRequest = typedRequest();
     auto secondCandidate = overlappingRequest.candidates.front();
-    secondCandidate.teacherKey = u"\uBC15";
+    secondCandidate.teacherKey = Application::ScheduleImportApplyTeacherKey{
+        u"\uBC15"
+    };
     secondCandidate.teacherName = u"\uBC15";
     secondCandidate.grade = u"E5";
     secondCandidate.level = u"Apollo";
     overlappingRequest.candidates.push_back(secondCandidate);
     overlappingRequest.teachers.push_back({
-        u"\uBC15",
+        Application::ScheduleImportApplyTeacherKey{u"\uBC15"},
         Application::ScheduleImportReviewTeacherAction::Create,
         std::nullopt,
         u"413"

@@ -4,8 +4,26 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplyCandidate{}.teacherKey),
+    ScheduleImportApplyTeacherKey
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplyTeacher{}.teacherKey),
+    ScheduleImportApplyTeacherKey
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportApplyTeacherTargetIssue{}.teacherKey),
+    ScheduleImportApplyTeacherKey
+    >);
+static_assert(!std::is_convertible_v<
+    std::u16string,
+    ScheduleImportApplyTeacherKey
+    >);
 
 namespace
 {
@@ -26,19 +44,43 @@ int main()
         "\xEA\xB9\x80\xF0\x9F\xA7\xAA";
     constexpr char Rocket[] = "\xF0\x9F\x9A\x80";
 
+    const ScheduleImportApplyTeacherKey defaultKey;
+    require(defaultKey.empty());
+    require(defaultKey.value().empty());
+    const std::u16string exactKey = u"\uAE40\U0001F9EA";
+    const ScheduleImportApplyTeacherKey wrappedKey{exactKey};
+    require(!wrappedKey.empty());
+    require(wrappedKey.value() == exactKey);
+    require(wrappedKey == ScheduleImportApplyTeacherKey{exactKey});
+    const ScheduleImportApplyTeacherKey composedKey{u"\u00E9"};
+    const ScheduleImportApplyTeacherKey decomposedKey{u"e\u0301"};
+    require(composedKey.value() == u"\u00E9");
+    require(decomposedKey.value() == u"e\u0301");
+    require(composedKey != decomposedKey);
+    require(
+        ScheduleImportApplyTeacherKey{u"A"}
+        < ScheduleImportApplyTeacherKey{u"B"}
+        );
+
     ScheduleImportApplyRequest request;
     ScheduleImportApplyCandidate firstCandidate;
-    firstCandidate.teacherKey = u"\uAE40\U0001F9EA";
+    firstCandidate.teacherKey = ScheduleImportApplyTeacherKey{
+        u"\uAE40\U0001F9EA"
+    };
     firstCandidate.rooms = {u"", u"414", u"\U0001F680"};
     request.candidates.push_back(firstCandidate);
 
     ScheduleImportApplyCandidate secondCandidate;
-    secondCandidate.teacherKey = u"\uC774\uC120\uC0DD";
+    secondCandidate.teacherKey = ScheduleImportApplyTeacherKey{
+        u"\uC774\uC120\uC0DD"
+    };
     secondCandidate.rooms = {u"", u"502"};
     request.candidates.push_back(secondCandidate);
 
     ScheduleImportApplyCandidate thirdCandidate;
-    thirdCandidate.teacherKey = u"\uBC15\uC0DD";
+    thirdCandidate.teacherKey = ScheduleImportApplyTeacherKey{
+        u"\uBC15\uC0DD"
+    };
     thirdCandidate.rooms = {u""};
     request.candidates.push_back(thirdCandidate);
 
@@ -57,19 +99,19 @@ int main()
 
     request.teachers = {
         {
-            u"\uC774\uC120\uC0DD",
+            ScheduleImportApplyTeacherKey{u"\uC774\uC120\uC0DD"},
             ScheduleImportReviewTeacherAction::Skip,
             std::nullopt,
             u""
         },
         {
-            u"\uAE40\U0001F9EA",
+            ScheduleImportApplyTeacherKey{u"\uAE40\U0001F9EA"},
             ScheduleImportReviewTeacherAction::UpdateRoom,
             teacherId,
             u"\U0001F680"
         },
         {
-            u"\uBC15\uC0DD",
+            ScheduleImportApplyTeacherKey{u"\uBC15\uC0DD"},
             ScheduleImportReviewTeacherAction::Create,
             std::nullopt,
             u""

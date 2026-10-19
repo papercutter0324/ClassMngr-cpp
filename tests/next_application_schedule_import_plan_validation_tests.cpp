@@ -5,6 +5,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -18,6 +19,11 @@ using ReviewIssueCode = ScheduleImportReviewDecisionIssueCode;
 using ReviewTeacherAction = ScheduleImportReviewTeacherAction;
 using ReviewTeacherKey = ScheduleImportReviewTeacherKey;
 using Request = ScheduleImportPlanEligibilityRequest;
+
+static_assert(std::is_same_v<
+    decltype(ScheduleImportPlanEligibilityCandidate{}.teacherKey),
+    std::u16string
+    >);
 
 void require(bool condition, const std::string& message)
 {

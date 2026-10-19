@@ -10,11 +10,22 @@
 using namespace ClassMngr::Next::Application;
 using ClassMngr::Next::Domain::Weekday;
 namespace Domain = ClassMngr::Next::Domain;
+using ReviewTeacherKey = ScheduleImportReviewTeacherKey;
 
 static_assert(!std::is_convertible_v<Domain::TeacherId, Domain::ClassId>);
 static_assert(!std::is_convertible_v<Domain::ClassId, Domain::TeacherId>);
 static_assert(!std::is_assignable_v<Domain::TeacherId&, Domain::ClassId>);
 static_assert(!std::is_assignable_v<Domain::ClassId&, Domain::TeacherId>);
+static_assert(std::is_same_v<
+              decltype(ScheduleImportStateCandidate{}.teacherKey),
+              ReviewTeacherKey>);
+static_assert(std::is_same_v<
+              decltype(ScheduleImportStateTeacherResolution{}.teacherKey),
+              ReviewTeacherKey>);
+static_assert(std::is_same_v<
+              decltype(std::declval<ScheduleImportStateTeacherSnapshot>().teacherKey),
+              ReviewTeacherKey>);
+static_assert(!std::is_convertible_v<std::string, ReviewTeacherKey>);
 static_assert(std::is_same_v<
               decltype(ScheduleImportStateTeacherResolution{}.targetTeacherId),
               std::optional<Domain::TeacherId>>);
@@ -38,6 +49,11 @@ static_assert(std::is_same_v<
 
 namespace
 {
+ReviewTeacherKey reviewTeacherKey(std::string value)
+{
+    return ReviewTeacherKey{std::move(value)};
+}
+
 Domain::TeacherId teacherId(int id)
 {
     return Domain::TeacherId::fromString(std::to_string(id)).value();
@@ -97,7 +113,7 @@ ScheduleImportStateCandidate candidate(
     )
 {
     return {
-        std::move(teacherKey),
+        reviewTeacherKey(std::move(teacherKey)),
         std::move(grade),
         std::move(level),
         "E5 Zeus",
@@ -117,7 +133,12 @@ void addNewCandidate(
                  std::move(times))
         );
     request.teacherResolutions.push_back(
-        {teacherKey, ScheduleImportStateTeacherAction::Create, std::nullopt, true}
+        {
+            reviewTeacherKey(teacherKey),
+            ScheduleImportStateTeacherAction::Create,
+            std::nullopt,
+            true
+        }
         );
     request.classResolutions.push_back(
         {
@@ -155,6 +176,7 @@ private slots:
     void requiresSelectedClassAndAllowsUntargetedSkip();
     void rejectsCreateNewClassWithTarget();
     void requiresUniqueExactSkipTarget();
+    void preservesArbitraryExactTeacherKeys();
     void rejectsSkippedClassWithMismatchedTeacherKey();
     void rejectsOutOfRangeCandidateIndexesForCreateAndUpdate();
     void rejectsUnknownStateKindBeforeProjectionConsumption();
@@ -270,9 +292,14 @@ void NextApplicationScheduleImportStateValidationTests::
 rejectsStaleTeacherTargetsAndIdentity()
 {
     ScheduleImportStateValidationRequest request;
-    request.existingTeachers = {{teacherId(7), "teacher-a"}};
+    request.existingTeachers = {{teacherId(7), reviewTeacherKey("teacher-a")}};
     request.teacherResolutions = {
-        {"teacher-a", ScheduleImportStateTeacherAction::Reuse, teacherId(8), true}
+        {
+            reviewTeacherKey("teacher-a"),
+            ScheduleImportStateTeacherAction::Reuse,
+            teacherId(8),
+            true
+        }
     };
     QCOMPARE(
         errorCode(request),
@@ -282,7 +309,7 @@ rejectsStaleTeacherTargetsAndIdentity()
         );
 
     request.teacherResolutions[0].targetTeacherId = teacherId(7);
-    request.teacherResolutions[0].teacherKey = "teacher-b";
+    request.teacherResolutions[0].teacherKey = reviewTeacherKey("teacher-b");
     QCOMPARE(
         errorCode(request),
         std::optional{
@@ -295,15 +322,20 @@ void NextApplicationScheduleImportStateValidationTests::
 requiresSelectedTeacherAndAllowsAbsentActionTarget()
 {
     ScheduleImportStateValidationRequest request;
-    request.existingTeachers = {{teacherId(7), "teacher-a"}};
+    request.existingTeachers = {{teacherId(7), reviewTeacherKey("teacher-a")}};
     request.teacherResolutions = {
-        {"teacher-a", ScheduleImportStateTeacherAction::Reuse, teacherId(7), true}
+        {
+            reviewTeacherKey("teacher-a"),
+            ScheduleImportStateTeacherAction::Reuse,
+            teacherId(7),
+            true
+        }
     };
     QVERIFY(!errorCode(request).has_value());
 
     request.teacherResolutions = {
         {
-            "teacher-a",
+            reviewTeacherKey("teacher-a"),
             ScheduleImportStateTeacherAction::UpdateRoom,
             teacherId(7),
             true
@@ -320,8 +352,18 @@ requiresSelectedTeacherAndAllowsAbsentActionTarget()
         );
 
     request.teacherResolutions = {
-        {"teacher-a", ScheduleImportStateTeacherAction::Create, std::nullopt, true},
-        {"teacher-b", ScheduleImportStateTeacherAction::Skip, std::nullopt, false}
+        {
+            reviewTeacherKey("teacher-a"),
+            ScheduleImportStateTeacherAction::Create,
+            std::nullopt,
+            true
+        },
+        {
+            reviewTeacherKey("teacher-b"),
+            ScheduleImportStateTeacherAction::Skip,
+            std::nullopt,
+            false
+        }
     };
     QVERIFY(!errorCode(request).has_value());
 }
@@ -393,10 +435,15 @@ void NextApplicationScheduleImportStateValidationTests::
 requiresUniqueExactSkipTarget()
 {
     ScheduleImportStateValidationRequest request;
-    request.existingTeachers = {{teacherId(3), "teacher-a"}};
+    request.existingTeachers = {{teacherId(3), reviewTeacherKey("teacher-a")}};
     request.candidates = {candidate("teacher-a")};
     request.teacherResolutions = {
-        {"teacher-a", ScheduleImportStateTeacherAction::Reuse, teacherId(3), true}
+        {
+            reviewTeacherKey("teacher-a"),
+            ScheduleImportStateTeacherAction::Reuse,
+            teacherId(3),
+            true
+        }
     };
     request.classResolutions = {
         {0, ScheduleImportStateClassAction::Skip, classId(11)}
@@ -427,10 +474,60 @@ requiresUniqueExactSkipTarget()
 }
 
 void NextApplicationScheduleImportStateValidationTests::
+preservesArbitraryExactTeacherKeys()
+{
+    const std::string composed = "teacher-\xC3\xA9-\xF0\x9F\xA7\xAA";
+    const std::string decomposed = "teacher-e\xCC\x81-\xF0\x9F\xA7\xAA";
+    const ReviewTeacherKey composedKey{composed};
+    const ReviewTeacherKey decomposedKey{decomposed};
+    QVERIFY(composedKey.value() == composed);
+    QVERIFY(decomposedKey.value() == decomposed);
+    QVERIFY(composedKey != decomposedKey);
+
+    ScheduleImportStateValidationRequest request;
+    request.existingTeachers = {{teacherId(3), composedKey}};
+    request.candidates = {candidate(composed, "e5", "zeus")};
+    request.teacherResolutions = {
+        {
+            composedKey,
+            ScheduleImportStateTeacherAction::Reuse,
+            teacherId(3),
+            true
+        }
+    };
+    request.classResolutions = {
+        {0, ScheduleImportStateClassAction::Skip, classId(11)}
+    };
+    request.existingClasses = {
+        {classId(11), teacherId(3), "e5", "zeus", "E5 Zeus", {}, {}}
+    };
+
+    QVERIFY(!errorCode(request).has_value());
+
+    request.teacherResolutions[0].teacherKey = decomposedKey;
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::SelectedTeacherUnavailable
+        }
+        );
+
+    request.teacherResolutions[0].teacherKey = composedKey;
+    request.candidates[0].teacherKey = decomposedKey;
+    QCOMPARE(
+        errorCode(request),
+        std::optional{
+            ScheduleImportStateValidationErrorCode::
+                SkippedClassNotUniqueExactMatch
+        }
+        );
+}
+
+void NextApplicationScheduleImportStateValidationTests::
 rejectsSkippedClassWithMismatchedTeacherKey()
 {
     ScheduleImportStateValidationRequest request;
-    request.existingTeachers = {{teacherId(3), "teacher-b"}};
+    request.existingTeachers = {{teacherId(3), reviewTeacherKey("teacher-b")}};
     request.candidates = {candidate("teacher-a", "e5", "zeus")};
     request.classResolutions = {
         {0, ScheduleImportStateClassAction::Skip, classId(11)}
@@ -564,7 +661,7 @@ rejectsUnknownTeacherActionBeforeActionValidation()
     ScheduleImportStateValidationRequest request;
     request.teacherResolutions = {
         {
-            "teacher-a",
+            reviewTeacherKey("teacher-a"),
             static_cast<ScheduleImportStateTeacherAction>(99),
             teacherId(7),
             false
@@ -689,7 +786,7 @@ normalProjectionIncludesSkippedButDropsAbsentClasses()
 {
     ScheduleImportStateValidationRequest request;
     request.kind = ScheduleImportStateKind::Normal;
-    request.existingTeachers = {{teacherId(3), "teacher-a"}};
+    request.existingTeachers = {{teacherId(3), reviewTeacherKey("teacher-a")}};
     request.existingClasses = {
         {
             classId(11),
@@ -712,7 +809,12 @@ normalProjectionIncludesSkippedButDropsAbsentClasses()
     request.candidates.insert(request.candidates.begin(), candidate("teacher-a"));
     request.teacherResolutions.insert(
         request.teacherResolutions.begin(),
-        {"teacher-a", ScheduleImportStateTeacherAction::Reuse, teacherId(3), true}
+        {
+            reviewTeacherKey("teacher-a"),
+            ScheduleImportStateTeacherAction::Reuse,
+            teacherId(3),
+            true
+        }
         );
     request.classResolutions.insert(
         request.classResolutions.begin(),
@@ -825,7 +927,7 @@ intensiveSkippedClassKeepsItsScheduleInBothModes()
 {
     ScheduleImportStateValidationRequest request;
     request.kind = ScheduleImportStateKind::Intensive;
-    request.existingTeachers = {{teacherId(3), "teacher-a"}};
+    request.existingTeachers = {{teacherId(3), reviewTeacherKey("teacher-a")}};
     request.existingClasses = {
         {
             classId(11),

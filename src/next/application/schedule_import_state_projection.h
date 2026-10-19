@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/schedule_import_overlap_projection.h"
+#include "next/application/schedule_import_review_decisions.h"
 #include "next/domain/domain_types.h"
 
 #include <algorithm>
@@ -46,7 +47,7 @@ enum class ScheduleImportStateClassAction
 
 struct ScheduleImportStateCandidate
 {
-    std::string teacherKey;
+    ScheduleImportReviewTeacherKey teacherKey;
     std::string normalizedGrade;
     std::string normalizedLevel;
     std::string classLabel;
@@ -55,7 +56,7 @@ struct ScheduleImportStateCandidate
 
 struct ScheduleImportStateTeacherResolution
 {
-    std::string teacherKey;
+    ScheduleImportReviewTeacherKey teacherKey;
     ScheduleImportStateTeacherAction action =
         ScheduleImportStateTeacherAction::Create;
     std::optional<Domain::TeacherId> targetTeacherId;
@@ -83,7 +84,7 @@ struct ScheduleImportStateClassResolution
 struct ScheduleImportStateTeacherSnapshot
 {
     Domain::TeacherId id;
-    std::string teacherKey;
+    ScheduleImportReviewTeacherKey teacherKey;
 };
 
 struct ScheduleImportStateClassSnapshot

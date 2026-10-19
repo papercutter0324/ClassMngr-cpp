@@ -104,7 +104,7 @@ ClassMngr::Next::Application::ScheduleImportApplyCandidate typedCandidate(
     using namespace ClassMngr::Next::Application;
 
     ScheduleImportApplyCandidate candidate;
-    candidate.teacherKey = teacherKey;
+    candidate.teacherKey = ScheduleImportApplyTeacherKey{teacherKey};
     candidate.teacherName = teacherKey;
     candidate.rooms = {u"413"};
     candidate.grade = grade;
@@ -186,7 +186,9 @@ ScheduleImportPlan legacyPlanFromTypedRequest(
     for (const ScheduleImportApplyCandidate& source : request.candidates)
     {
         ScheduleImportClassCandidate candidate;
-        candidate.teacherKey = QString::fromStdU16String(source.teacherKey);
+        candidate.teacherKey = QString::fromStdU16String(
+            source.teacherKey.value()
+            );
         candidate.teacherKr = QString::fromStdU16String(source.teacherName);
         candidate.classGrade = QString::fromStdU16String(source.grade);
         candidate.classLevel = QString::fromStdU16String(source.level);
@@ -254,7 +256,7 @@ ScheduleImportPlan legacyPlanFromTypedRequest(
             Q_UNREACHABLE();
         }
         plan.teachers.push_back({
-            QString::fromStdU16String(source.teacherKey),
+            QString::fromStdU16String(source.teacherKey.value()),
             action,
             legacyTestId(source.targetTeacherId),
             QString::fromStdU16String(source.selectedRoom)

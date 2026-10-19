@@ -30,7 +30,7 @@ validateScheduleImportApplyRequest(
         ScheduleImportPlanEligibilityCandidate item;
         item.grade = scheduleImportApplyUtf8(candidate.grade);
         item.level = scheduleImportApplyUtf8(candidate.level);
-        item.teacherKey = candidate.teacherKey;
+        item.teacherKey = candidate.teacherKey.value();
         item.teacherName = candidate.teacherName;
         for (const auto& time : candidate.times)
         {

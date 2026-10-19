@@ -31,11 +31,16 @@ ScheduleImportApplyRequest validRequest()
 {
     ScheduleImportApplyRequest request;
     request.candidates.push_back({
-        u"\uAE40\uC120\uC0DD", u"\uAE40\uC120\uC0DD", {u"413"}, {}, u"E4", u"Hercules",
+        ScheduleImportApplyTeacherKey{u"\uAE40\uC120\uC0DD"},
+        u"\uAE40\uC120\uC0DD", {u"413"}, {}, u"E4", u"Hercules",
         {{u"Monday", u"4:00 PM", u"4:50 PM"},
          {u"Wednesday", u"4:00 PM", u"4:50 PM"}}, {}, {}});
-    request.teachers.push_back({u"\uAE40\uC120\uC0DD", ScheduleImportReviewTeacherAction::Create,
-        std::nullopt, u"413"});
+    request.teachers.push_back({
+        ScheduleImportApplyTeacherKey{u"\uAE40\uC120\uC0DD"},
+        ScheduleImportReviewTeacherAction::Create,
+        std::nullopt,
+        u"413"
+    });
     request.classes.push_back({0, ScheduleImportReviewClassAction::CreateNew,
         std::nullopt, u"#FFFFFF", u"#000000"});
     return request;

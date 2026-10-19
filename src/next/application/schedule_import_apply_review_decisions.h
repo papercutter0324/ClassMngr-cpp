@@ -64,7 +64,7 @@ projectScheduleImportApplyReviewDecisions(const ApplyRequest& request)
     {
         ScheduleImportReviewDecisionCandidate item;
         item.teacherKey = ScheduleImportReviewTeacherKey{
-            scheduleImportApplyUtf8(candidate.teacherKey)
+            scheduleImportApplyUtf8(candidate.teacherKey.value())
         };
         item.importedRooms.reserve(candidate.rooms.size());
         for (const auto& room : candidate.rooms)
@@ -82,7 +82,7 @@ projectScheduleImportApplyReviewDecisions(const ApplyRequest& request)
     {
         result.teachers.push_back({
             ScheduleImportReviewTeacherKey{
-                scheduleImportApplyUtf8(teacher.teacherKey)
+                scheduleImportApplyUtf8(teacher.teacherKey.value())
             },
             teacher.action,
             scheduleImportApplyUtf8(teacher.selectedRoom)

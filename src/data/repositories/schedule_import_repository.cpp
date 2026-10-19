@@ -136,7 +136,9 @@ ScheduleImportApplyRequest applyRequestFromLegacyPlan(
     for (const ScheduleImportClassCandidate& source : plan.candidates)
     {
         ScheduleImportApplyCandidate candidate;
-        candidate.teacherKey = source.teacherKey.toStdU16String();
+        candidate.teacherKey = ScheduleImportApplyTeacherKey{
+            source.teacherKey.toStdU16String()
+        };
         candidate.teacherName = source.teacherKr.toStdU16String();
         candidate.grade = source.classGrade.toStdU16String();
         candidate.level = source.classLevel.toStdU16String();
@@ -190,7 +192,9 @@ ScheduleImportApplyRequest applyRequestFromLegacyPlan(
     for (const ScheduleImportTeacherResolution& source : plan.teachers)
     {
         ScheduleImportApplyTeacher teacher;
-        teacher.teacherKey = source.teacherKey.toStdU16String();
+        teacher.teacherKey = ScheduleImportApplyTeacherKey{
+            source.teacherKey.toStdU16String()
+        };
         teacher.action = applyTeacherAction(source.action);
         teacher.selectedRoom = source.selectedRoom.toStdU16String();
         const bool needsTarget =
@@ -598,7 +602,9 @@ ScheduleImportStateValidationRequest stateValidationRequest(
         }
         request.candidates.push_back(
             {
-                scheduleImportApplyUtf8(candidate.teacherKey),
+                ScheduleImportReviewTeacherKey{
+                    scheduleImportApplyUtf8(candidate.teacherKey.value())
+                },
                 utf8String(normalizedIdentity(grade)),
                 utf8String(normalizedIdentity(level)),
                 utf8String(label),
@@ -611,7 +617,7 @@ ScheduleImportStateValidationRequest stateValidationRequest(
     for (const ScheduleImportApplyTeacher& resolution : applyRequest.teachers)
     {
         teacherResolutions.insert(
-            QString::fromStdU16String(resolution.teacherKey),
+            QString::fromStdU16String(resolution.teacherKey.value()),
             resolution
             );
     }
@@ -643,7 +649,9 @@ ScheduleImportStateValidationRequest stateValidationRequest(
         }
         request.teacherResolutions.push_back(
             {
-                scheduleImportApplyUtf8(resolution.teacherKey),
+                ScheduleImportReviewTeacherKey{
+                    scheduleImportApplyUtf8(resolution.teacherKey.value())
+                },
                 action,
                 resolution.targetTeacherId,
                 !QString::fromStdU16String(resolution.selectedRoom)
@@ -697,7 +705,9 @@ ScheduleImportStateValidationRequest stateValidationRequest(
         request.existingTeachers.push_back(
             {
                 teacherDomainId(teacher.teacherId),
-                utf8String(teacherKey(teacher.teacherKr))
+                ScheduleImportReviewTeacherKey{
+                    utf8String(teacherKey(teacher.teacherKr))
+                }
             }
             );
     }
@@ -1252,7 +1262,7 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
     for (const ScheduleImportApplyTeacher& resolution : request.teachers)
     {
         teacherResolutions.insert(
-            QString::fromStdU16String(resolution.teacherKey),
+            QString::fromStdU16String(resolution.teacherKey.value()),
             resolution
             );
     }
@@ -1295,7 +1305,7 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
             QString teacherName;
             for (const ScheduleImportApplyCandidate& candidate : request.candidates)
             {
-                if (QString::fromStdU16String(candidate.teacherKey)
+                if (QString::fromStdU16String(candidate.teacherKey.value())
                     == iterator.key())
                 {
                     teacherName = QString::fromStdU16String(candidate.teacherName);
@@ -1404,7 +1414,7 @@ ScheduleImportRepository::ApplyCoreResult ScheduleImportRepository::applyCore(
 
         const qint64 teacherId =
             resolvedTeacherIds.value(
-                QString::fromStdU16String(candidate.teacherKey),
+                QString::fromStdU16String(candidate.teacherKey.value()),
                 -1
                 );
         if (teacherId <= 0)

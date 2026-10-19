@@ -6,10 +6,50 @@
 #include <expected>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
 {
+
+// Preserve the exact UTF-16 teacher-key code units supplied by the review
+// adapter. The key is opaque here; workflow validation owns any interpretation.
+class ScheduleImportApplyTeacherKey final
+{
+public:
+    ScheduleImportApplyTeacherKey() = default;
+
+    explicit ScheduleImportApplyTeacherKey(std::u16string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return m_value.empty();
+    }
+
+    [[nodiscard]] const std::u16string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const ScheduleImportApplyTeacherKey&,
+        const ScheduleImportApplyTeacherKey&
+        ) = default;
+
+    friend bool operator<(
+        const ScheduleImportApplyTeacherKey& left,
+        const ScheduleImportApplyTeacherKey& right
+        )
+    {
+        return left.m_value < right.m_value;
+    }
+
+private:
+    std::u16string m_value;
+};
 
 struct ScheduleImportApplyTime final
 {
@@ -20,7 +60,7 @@ struct ScheduleImportApplyTime final
 
 struct ScheduleImportApplyCandidate final
 {
-    std::u16string teacherKey;
+    ScheduleImportApplyTeacherKey teacherKey;
     std::u16string teacherName;
     std::vector<std::u16string> rooms;
     std::vector<std::u16string> importedColors;
@@ -49,7 +89,7 @@ struct ScheduleImportApplyDiagnostic final
 
 struct ScheduleImportApplyTeacher final
 {
-    std::u16string teacherKey;
+    ScheduleImportApplyTeacherKey teacherKey;
     ScheduleImportReviewTeacherAction action = ScheduleImportReviewTeacherAction::Unselected;
     std::optional<Domain::TeacherId> targetTeacherId;
     std::u16string selectedRoom;
@@ -101,7 +141,7 @@ enum class ScheduleImportApplyTeacherTargetIssueCode
 struct ScheduleImportApplyTeacherTargetIssue final
 {
     ScheduleImportApplyTeacherTargetIssueCode code;
-    std::u16string teacherKey;
+    ScheduleImportApplyTeacherKey teacherKey;
     std::optional<Domain::TeacherId> targetTeacherId;
 };
 

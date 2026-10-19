@@ -1669,7 +1669,9 @@ void ScheduleImportReviewDialog::updateReviewState()
                 .arg(candidate.classGrade, candidate.classLevel);
             stateRequest.candidates.push_back(
                 {
-                    utf8String(candidate.teacherKey),
+                    ImportState::ScheduleImportReviewTeacherKey{
+                        utf8String(candidate.teacherKey)
+                    },
                     utf8String(normalizedIdentity(candidate.classGrade)),
                     utf8String(normalizedIdentity(candidate.classLevel)),
                     utf8String(label),
@@ -1699,7 +1701,9 @@ void ScheduleImportReviewDialog::updateReviewState()
             }
             stateRequest.teacherResolutions.push_back(
                 {
-                    utf8String(control.teacherKey),
+                    ImportState::ScheduleImportReviewTeacherKey{
+                        utf8String(control.teacherKey)
+                    },
                     action,
                     std::move(targetTeacherId),
                     !control.selectedRoom.trimmed().isEmpty()
@@ -1742,11 +1746,13 @@ void ScheduleImportReviewDialog::updateReviewState()
             stateRequest.existingTeachers.push_back(
                 {
                     teacher.id,
-                    utf8String(
-                        TeacherImportNameUtils::hangulOnly(
-                            snapshotText(teacher.koreanName)
+                    ImportState::ScheduleImportReviewTeacherKey{
+                        utf8String(
+                            TeacherImportNameUtils::hangulOnly(
+                                snapshotText(teacher.koreanName)
+                                )
                             )
-                        )
+                    }
                 }
                 );
         }

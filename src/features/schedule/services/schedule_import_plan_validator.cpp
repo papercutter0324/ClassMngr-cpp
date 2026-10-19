@@ -266,7 +266,7 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
             QString::fromStdU16String(candidate.grade).toStdString();
         item.level =
             QString::fromStdU16String(candidate.level).toStdString();
-        item.teacherKey = candidate.teacherKey;
+        item.teacherKey = candidate.teacherKey.value();
         item.teacherName = candidate.teacherName;
         for (const auto& time : candidate.times)
         {
@@ -279,7 +279,9 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
         ScheduleImportReviewDecisionCandidate decisionCandidate;
         decisionCandidate.teacherKey =
             ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
-                QString::fromStdU16String(candidate.teacherKey).toStdString()
+                QString::fromStdU16String(
+                    candidate.teacherKey.value()
+                    ).toStdString()
             };
         for (const auto& room : candidate.rooms)
         {
@@ -296,7 +298,9 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
     {
         request.reviewDecisions.teachers.push_back({
             ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
-                QString::fromStdU16String(teacher.teacherKey).toStdString()
+                QString::fromStdU16String(
+                    teacher.teacherKey.value()
+                    ).toStdString()
             },
             teacher.action,
             QString::fromStdU16String(teacher.selectedRoom).toStdString()
