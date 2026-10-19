@@ -46999,3 +46999,32 @@ F629 is separately complete as a macOS route-matrix slice. The combined Phase
 0 gate remains Open while Windows x64 evidence is unavailable. The Phase 2
 exit gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains pending
 policy reconciliation. Batch476 has one candidate; no other slices were found.
+
+### F1097 repeat-series occurrence IDs acceptance - recorded before implementation - 2026-10-19
+
+Batch475 closeout was committed and pushed to `origin/Qt-Rewrite` at
+`a532cde25dd70b60e6dff0966436c43ec475be16`. F1097 is accepted and selected as
+the sole active Batch476 slice. The acceptance criteria are:
+
+1. Replace raw `std::int64_t eventId` in
+   `CalendarEventSeriesEditOccurrenceSnapshot` and
+   `CalendarEventSeriesEditOccurrenceUpdate` with `Domain::CalendarEventId`.
+   Require the typed ID as identity and remove the `-1` numeric default; do not
+   introduce a replacement sentinel.
+2. `planCalendarEventSeriesEditSuffix` preserves each typed input ID exactly
+   and preserves repository occurrence order while shifting dates and copying
+   request fields. It does not sort or reinterpret identity.
+3. `ApplicationServicesCalendarEventSeriesEditPort` converts legacy repository
+   `qint64` IDs to `Domain::CalendarEventId` at the platform boundary, then
+   verifies each planned typed ID against its original event before applying
+   updates. Preserve the existing `Technical` failure and no-partial-update
+   behavior on an identity mismatch. Do not change schema or persisted numeric
+   ID representation.
+4. Extend existing `NextApplicationCalendarEventTests` and
+   `NextPlatformApplicationServicesCalendarEventPortTests` for typed contracts,
+   ID preservation and order, successful suffix edit, and identity mismatch.
+   Build `ClassMngr` and both existing targets, run exactly their focused CTests
+   and `git diff --check`, and add no CMake target.
+
+F1096 remains a reviewed non-active near-miss under the explicit F54 event-type
+compatibility decision; F1097 does not broaden that scope.

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch475 is closed with F1095 complete at `fc53804`; its closeout documentation still needs the Git operator to commit and push it. Batch476 has one discovered candidate, F1097, next for acceptance and not yet accepted. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch476-1-discovered-candidate) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch475 is closed with F1095 complete and its closeout pushed to `origin/Qt-Rewrite` at `a532cde2`. Batch476 has one accepted and selected slice, F1097; its acceptance was recorded before implementation. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch476-1-accepted-slice) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch476 — Discovered; one candidate, next for acceptance:**
+**Batch476 — Active; one accepted slice, selected for implementation:**
 
-1. **F1097 — Use typed IDs for repeat-series occurrence contracts.** Discovered; next for acceptance; not yet accepted.
+1. **F1097 — Use typed IDs for repeat-series occurrence contracts.** Accepted and selected for implementation.
 
 No other slices were found.
 
