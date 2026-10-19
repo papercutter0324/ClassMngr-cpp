@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1105 complete; Batch479 active)
+## Current continuation - 2026-10-20 (F1106 accepted; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6041,9 +6041,7 @@ Independent focused verification built the Application, Platform, and Schedule
 widget test targets. Application and Platform read tests passed 8/8 and 6/6;
 the unassigned and assigned widget selectors passed 3/3 each.
 `git diff --check` passed. The broader widget interaction run stalled in a
-modal case and was interrupted; no full widget suite result is claimed. Batch479
-remains active with F1104 complete, F1105 accepted but not implemented, and
-F1106-F1108 discovered.
+modal case and was interrupted; no full widget suite result is claimed.
 
 F1105 completed at source/test commit
 `1d86cc57f1884915880dce544fd453743aadf4bb`, following acceptance commit
@@ -6056,6 +6054,16 @@ normalization or new malformed-UTF-8 rejection.
 Independent checks passed: the Application query executable exited 0, the
 non-ASCII UTF-8 and empty-list page selectors passed 4 QTest cases total, and
 `git diff --check` passed. No full suite ran. Batch479 remains active and
-unpushed: F1104-F1105 are complete, F1106 is next for acceptance reassessment,
+unpushed: F1104-F1105 are complete, F1106 is accepted but not implemented,
 and F1107-F1108 are discovered. The combined Phase 0 and Phase 2 gates remain
 open; Windows x64 evidence remains unavailable.
+
+F1106 types the Co-Teacher assignment use-case entry as `Domain::ClassId` and
+`Domain::TeacherId`. The page adapts its existing numeric values with
+`std::to_string`, keeping literal `-1` as the teacher sentinel; the use case
+maps that sentinel to an absent port teacher ID. Retain full decimal parsing
+and current ranges (positive `int` class IDs and positive `int64_t` teacher
+IDs), rejecting zero, other negatives, malformed/trailing values, and
+overflow before the port. Keep current recoverable `InvalidInput` messages,
+wide IDs, and existing Platform/persistence contracts. No F1106
+implementation has started.

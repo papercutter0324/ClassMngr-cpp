@@ -7514,3 +7514,11 @@ F1105 completed at source/test commit
 focused page boundary tests passed. The UTF-8 byte limit and exact ID matching
 remain on the typed value; conversion stays explicit at the Qt boundary.
 F1106 is next for reassessment in Batch479.
+
+## 2026-10-20 - F1106 accepted
+
+Type both Co-Teacher assignment IDs at the use-case entry and adapt the
+legacy page's numeric values at the caller boundary. Keep the literal
+`TeacherId("-1")` sentinel and map it to no assigned teacher in the typed
+port request. The use case still owns integer-range validation because typed
+IDs hold arbitrary nonempty text; preserve the wide `int64_t` teacher range.

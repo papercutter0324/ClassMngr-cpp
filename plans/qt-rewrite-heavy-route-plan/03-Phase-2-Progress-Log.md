@@ -47704,3 +47704,29 @@ commits ahead of origin. Batch479 remains active and unpushed: F1104-F1105
 are complete, F1106 is next for acceptance reassessment, and F1107-F1108
 remain discovered. Batch478's pushed closeout remains
 `5877b296c0c9a032adeeeb9cbfb807e19765e40a`.
+
+### F1106 Co-Teacher assignment identity accepted before implementation - 2026-10-20
+
+F1106 is accepted for Batch479 and implementation has not started, following
+main-agent source review and the Explorer's read-only report. Change the
+public `ClassCoTeacherAssignmentUseCase::execute` entry to accept
+`Domain::ClassId` and `Domain::TeacherId`; its existing port and request are
+already typed. At the `ClassCoTeacherPage` legacy/UI boundary, convert the
+existing integer class ID and stable `qint64` teacher ID to canonical decimal
+strings with `std::to_string`. Preserve the literal teacher `-1` at entry and
+translate it to `std::nullopt` only when constructing the typed port request.
+
+Because `TypedId::fromString` accepts any nonempty text, fully parse both
+values as base-10 numbers and retain their current ranges and semantics
+before calling the port: class ID must be positive and fit `int`; teacher ID
+must be positive and fit `std::int64_t`, or be the exact literal `-1` for
+unassigned. Reject zero, all other negatives (including `-01`), malformed or
+trailing text, and overflow before port invocation. Preserve current
+recoverable `InvalidInput` behavior and messages, valid wide teacher IDs such
+as `2147483648`, and typed IDs in the existing port request. Do not alter the
+Platform adapter, persistence, or legacy view models.
+
+Focused tests must cover UI-boundary decimal conversion, mapping teacher
+`-1` to `std::nullopt`, wide teacher IDs, invalid numeric and malformed
+values, preserved `InvalidInput` messages, and no port call for rejected
+input. No implementation or test execution has started.

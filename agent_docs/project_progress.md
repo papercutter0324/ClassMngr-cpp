@@ -5010,3 +5010,20 @@ non-ASCII UTF-8 and empty-list page selectors passed 4 QTest cases total.
 `git diff --check` passed. No full suite ran. Batch479 remains active and
 unpushed, with F1104-F1105 complete, F1106 next for acceptance reassessment,
 and F1107-F1108 discovered. The Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1106 accepted; Batch479 active - 2026-10-20
+
+F1106 is accepted for implementation; no implementation has started. Change
+`ClassCoTeacherAssignmentUseCase::execute` to accept `Domain::ClassId` and
+`Domain::TeacherId`, converting the page's legacy numeric values to decimal
+strings at the caller boundary. Preserve literal `-1` as the unassigned
+teacher sentinel and map it to `std::nullopt` only in the typed port request.
+The use case retains full decimal parsing, positive `int` class-ID and
+positive `int64_t` teacher-ID ranges, rejection of zero, other negatives,
+malformed/trailing text and overflow, current recoverable `InvalidInput`
+messages, and wide teacher IDs. Platform, persistence, and legacy view
+models stay unchanged.
+
+Batch479 remains active and unpushed: F1104-F1105 are complete, F1106 is
+accepted, and F1107-F1108 are discovered. The combined Phase 0 gate and
+Phase 2 exit gate remain open; Windows x64 evidence remains unavailable.
