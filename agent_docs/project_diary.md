@@ -8010,3 +8010,18 @@ preference and last-database-directory ports. Use a dedicated permissive
 and normalization in `QtFileDialogService` and `FileController`. Keep
 `WorkspaceLocation` scoped to workspace file paths and leave F688/F689 checked
 persistence behavior unchanged.
+
+## 2026-10-20 - F1133 complete
+
+F1133 completed at source/test commit `7800f471`, following acceptance
+`693f9494`. Both remembered-directory ports now carry a permissive
+`DirectoryPreferencePath` that preserves exact UTF-8 bytes and represents an
+unset value as empty. Path selection, fallback, and canonicalization remain in
+their existing owners; the existing checked persistence behavior is covered
+by focused tests.
+
+The macOS build of `ClassMngr` and four focused targets passed; all four
+focused CTests and `git diff --check` passed. The full suite and Windows
+verification were not run. Batch485 now has six complete slices and four
+discovered, with F1134 next. The batch remains unpushed, and F629 and both
+phase gates remain open.

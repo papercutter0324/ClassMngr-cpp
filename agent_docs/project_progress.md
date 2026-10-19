@@ -5766,3 +5766,21 @@ and `FileController`. Do not repeat or alter F688/F689 checked persistence,
 keys, rollback, or retry behavior. Implementation and verification are
 pending; F1134 is next for acceptance. Batch485 remains unpushed. F629 and both
 phase gates remain open.
+
+## Phase 2 update - F1133 complete - 2026-10-20
+
+F1133 completed at source/test commit `7800f471`, following acceptance
+`693f9494`. `DirectoryPreferencePath` now carries the exact UTF-8 bytes for
+both remembered-directory ports, including the empty default; Qt conversion
+remains at the Platform and UI boundaries. Existing fallback, path
+canonicalization, checked persistence, rollback, and retry behavior remain
+covered and unchanged.
+
+`ClassMngr` and all four focused targets built in the existing macOS debug
+tree; the four focused CTests passed 4/4. Coverage includes default empty and
+exact unnormalized UTF-8 values, all eight dialog preference keys, fallback
+and precedence, canonical path handling, persistence failure rollback/retry,
+and FileController startup/fallback behavior. `git diff --check` passed.
+The full suite and Windows verification were not run. Batch485 has six
+complete slices and four discovered; F1134 is next for acceptance. The batch
+remains unpushed. F629 and both phase gates remain open.

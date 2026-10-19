@@ -49743,3 +49743,21 @@ Focused verification after implementation: build `ClassMngr` and
 and `git diff --check`; no full-suite or Windows run is expected. F1134 is next
 for acceptance. Batch485 remains unpushed; F629 and the Phase 0 and Phase 2
 gates remain open.
+
+### F1133 Remembered directory preference paths complete - 2026-10-20
+
+F1133 completed at source/test commit `7800f471`. Application
+`DirectoryPreferencePath` now represents exact UTF-8 path bytes with an empty
+value default, `.value()`, `.empty()`, and equality; it does not trim, validate,
+or normalize paths. The file-dialog and last-database-directory ports use the
+type, while empty fallback and cleanup remain at `QtFileDialogService` and
+`FileController`. Qt conversion stays in Platform; F688/F689 persistence and
+`WorkspaceLocation`'s workspace-file scope remain unchanged.
+
+`ClassMngr` and four focused targets built: the QSettings file-dialog
+directory-preferences adapter, DialogServices, the settings-manager
+last-database-directory port, and FileController workspace lifecycle. All four
+focused CTests passed 4/4. `git diff --check` passed. The full suite and Windows
+verification were not run. Batch485 has six complete slices and four
+discovered; F1134 is next for acceptance. The batch remains unpushed; F629 and
+the Phase 0 and Phase 2 gates remain open.
