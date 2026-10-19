@@ -191,7 +191,7 @@ private:
     }
 
     [[nodiscard]] static QString encodedSignatureImage(
-        const std::string& image
+        const Domain::PersonalSignatureImageSaveBytes& image
         )
     {
         if (image.empty())
@@ -202,8 +202,8 @@ private:
         const QByteArray prepared =
             SignatureImage::prepareForEmbedding(
                 QByteArray(
-                    image.data(),
-                    static_cast<qsizetype>(image.size())
+                    image.value().data(),
+                    static_cast<qsizetype>(image.value().size())
                     )
                 );
         return QString::fromLatin1(prepared.toBase64());

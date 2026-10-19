@@ -92,6 +92,18 @@ static_assert(std::is_same_v<
               decltype(PersonalDetailsSaveRequest::typedSignatureFont),
               PersonalSignatureFontChoice
               >);
+static_assert(std::is_same_v<
+              decltype(PersonalDetailsSaveRequest::signatureImage),
+              ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes
+              >);
+static_assert(!std::is_convertible_v<
+              std::string,
+              ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes
+              >);
+static_assert(std::is_constructible_v<
+              ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes,
+              std::string
+              >);
 static_assert(!std::is_same_v<
               decltype(PersonalDetailsSaveRequest::typedSignatureFont),
               int
@@ -131,7 +143,9 @@ PersonalDetailsSaveRequest replacementRequest(
         .zoomLoginId = utf8(QStringLiteral(" teacher@example.com ")),
         .zoomPassword = utf8(QStringLiteral(" secret ")),
         .zoomNotAvailable = false,
-        .signatureImage = bytes(image),
+        .signatureImage = ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes(
+            bytes(image)
+            ),
         .signatureMode = PersonalSignatureMode::Type,
         .typedSignatureText = utf8(expectedUtf8Text()),
         .typedSignatureFont = PersonalSignatureFontChoice::GreatVibes
@@ -180,8 +194,24 @@ savesAllNineExactKeysWithUtf8AndPreparedImage()
             )
         );
 
+    using SignatureImageSaveBytes =
+        ClassMngr::Next::Domain::PersonalSignatureImageSaveBytes;
+    const SignatureImageSaveBytes emptyImage;
+    QVERIFY(emptyImage.empty());
+    QVERIFY(emptyImage.value().empty());
+    QVERIFY(emptyImage == SignatureImageSaveBytes{});
+
+    const std::string exactSourceBytes = bytes(source);
+    QVERIFY(exactSourceBytes.find('\0') != std::string::npos);
+    const SignatureImageSaveBytes ownedImage(exactSourceBytes);
+    QVERIFY(!ownedImage.empty());
+    QCOMPARE(ownedImage.value(), exactSourceBytes);
+    QVERIFY(ownedImage == SignatureImageSaveBytes(exactSourceBytes));
+
     ApplicationServicesPersonalDetailsSavePort port(services);
-    const auto saved = port.save(replacementRequest(source));
+    const auto request = replacementRequest(source);
+    QCOMPARE(request.signatureImage.value(), exactSourceBytes);
+    const auto saved = port.save(request);
     QVERIFY(saved);
 
     QCOMPARE(

@@ -26,6 +26,7 @@
 #include "next/platform/application_services_personal_signature_image_port.h"
 #include "next/platform/application_services_personal_signature_preferences_port.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
+#include "next/domain/personal_signature_image_save_bytes.h"
 #include "core/utils/colorutils.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -706,7 +707,11 @@ public:
                         .zoomLoginId = zoom.loginId.value(),
                         .zoomPassword = zoom.password.value(),
                         .zoomNotAvailable = zoom.unavailable,
-                        .signatureImage = toOpaqueBytes(signatureImage),
+                        .signatureImage =
+                            ClassMngr::Next::Domain::
+                                PersonalSignatureImageSaveBytes(
+                                    toOpaqueBytes(signatureImage)
+                                    ),
                         .signatureMode = signaturePreferences.mode ==
                                 ClassMngr::Next::Application::
                                     PersonalSignatureMode::Type

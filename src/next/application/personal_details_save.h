@@ -2,6 +2,7 @@
 
 #include "next/application/personal_signature_preferences.h"
 #include "next/domain/operation_result.h"
+#include "next/domain/personal_signature_image_save_bytes.h"
 
 #include <string>
 
@@ -15,7 +16,7 @@ struct PersonalDetailsSaveRequest final
     std::string zoomLoginId;
     std::string zoomPassword;
     bool zoomNotAvailable = true;
-    std::string signatureImage;
+    Domain::PersonalSignatureImageSaveBytes signatureImage;
     PersonalSignatureMode signatureMode = PersonalSignatureMode::Image;
     std::string typedSignatureText;
     PersonalSignatureFontChoice typedSignatureFont =

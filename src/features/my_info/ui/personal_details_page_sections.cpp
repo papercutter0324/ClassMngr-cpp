@@ -13,6 +13,7 @@
 #include "next/platform/application_services_personal_signature_image_port.h"
 #include "next/platform/application_services_personal_signature_preferences_port.h"
 #include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
+#include "next/domain/personal_signature_image_save_bytes.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/styles/roles.h"
@@ -1343,7 +1344,11 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
                     .zoomLoginId = toUtf8(details.zoomLoginId),
                     .zoomPassword = toUtf8(details.zoomPassword),
                     .zoomNotAvailable = details.zoomNotAvailable,
-                    .signatureImage = toOpaqueBytes(details.signatureImage),
+                    .signatureImage =
+                        ClassMngr::Next::Domain::
+                            PersonalSignatureImageSaveBytes(
+                                toOpaqueBytes(details.signatureImage)
+                                ),
                     .signatureMode = details.signatureMode == SignatureMode::Type
                         ? ClassMngr::Next::Application::
                             PersonalSignatureMode::Type
