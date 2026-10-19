@@ -7462,3 +7462,16 @@ The next-batch review found five distinct candidates. The Schedule testing
 assignment read, Campus Dashboard selected-campus read, Co-Teacher assignment
 entry, Sub Prep print ordering, and Sub Prep selected-class policy boundaries
 are queued for Batch479. No implementation or tests have started for F1102.
+
+## 2026-10-19 - F1102 complete
+
+F1102 completed at source/test commit
+`b5e5a1628b7e0fc7606a4b314b90e03719750171`. Typed IDs now cross the Class
+Details validation input and normalized result, while the policy still parses
+and validates their values. Keeping `-1` as the literal TeacherId sentinel
+allowed the validation-context snapshot and its F1103 fallback to stay
+unchanged. Wide IDs and numeric invalid-value diagnostics remain covered.
+
+Focused verification passed on macOS; no full suite ran. Batch478 is resolved
+with F1103 deferred. Batch479 starts with F1104 after the Batch478 closeout
+push.

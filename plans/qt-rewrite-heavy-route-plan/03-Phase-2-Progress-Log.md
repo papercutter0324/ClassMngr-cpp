@@ -47579,7 +47579,39 @@ reassessment, not accepted:
 
 No other slices were found.
 
-Batch478 remains active and unpushed. The required discovery pass at F1102
-start produced Batch479; no candidates beyond the five listed above were
-found. The combined Phase 0 gate remains Open while Windows x64
-evidence is unavailable, and the Phase 2 gate remains Open.
+At discovery time, Batch478 remained active and unpushed. The required
+discovery pass at F1102 start produced Batch479; no candidates beyond the five
+listed above were found. The combined Phase 0 gate remains Open while Windows
+x64 evidence is unavailable, and the Phase 2 gate remains Open.
+
+### F1102 complete; Batch478 resolved; Batch479 active - 2026-10-19
+
+F1102 is complete at source/test commit
+`b5e5a1628b7e0fc7606a4b314b90e03719750171`; its acceptance-before-implementation
+record is `e5c03e174949a4001ed5b8af45e9a794d80ea1e0`. The Class Details
+validation input and normalized values now carry `Domain::ClassId` and
+`Domain::TeacherId`. Numeric validation, exact invalid-value diagnostics,
+positive/int-range class checks, the teacher `-1` sentinel, wide valid teacher
+IDs, and validation issue ordering are preserved. The context snapshot teacher
+remains `std::int64_t`; F1103 behavior is unchanged.
+
+The incremental `build/macos-clang-debug` build succeeded on Darwin arm64,
+Apple Clang 21, and Qt 6.12.0 for `ClassMngr`,
+`ClassMngrNextApplicationClassDetailsValidationPolicyTests`,
+`ClassMngrNextApplicationClassDetailsSaveUseCaseTests`,
+`ClassMngrClassDetailsSavePageTests`, and
+`ClassMngrClassDetailsPageSaveParityTests`. The two exact Application CTest
+selectors passed 2/2. Named UI cases
+`invalidFieldsBlockTheSavePort`,
+`freshInvalidContextBlocksBeforeConflictAndSave`, and
+`wideAssignedTeacherIdSurvivesRegularEditSave` passed; direct Application case
+`workflowContextFailureAndMismatchFallBack` also passed. `git diff --check`
+passed. No full suite, fresh configure, or Windows build ran.
+
+Batch478 is complete: F1099-F1102 are complete and F1103 remains deferred
+pending explicit parity/policy reconciliation. Its documentation closeout
+commit and push remain pending. Batch479 is now active with the five ordered
+candidates listed in the Phase 2 plan; F1104 is next for acceptance
+reassessment and has not been accepted. The combined Phase 0 gate remains Open
+while Windows x64 evidence is unavailable; the Phase 2 gate remains Open,
+Gates 1 and 2 remain Partial, and F1007 remains pending policy reconciliation.

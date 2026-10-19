@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch478 remains active and unpushed; F1099-F1101 are complete, F1102 is accepted and not implemented, and F1103 is deferred. The required discovery pass at F1102 start produced the Batch479 queue. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch478-5-candidates-3-complete-1-accepted-1-deferred) for current status and the [Batch479 queue](03-Phase-2-Domain-Model-and-Application-Contracts.md#next-discovered-batch-batch479-5-candidates).
+- Current milestone: Batch478 is complete; its closeout push remains pending. Batch479 is active, with F1104 next for acceptance reassessment and F1105-F1108 discovered. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [active Batch479 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch479-5-candidates-1-next-for-reassessment-4-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for Batch478 closeout evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,17 +38,15 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch478 — Active; five candidates, three complete, one accepted, one deferred:**
+**Batch479 — Active; five candidates, one next for reassessment, four discovered:**
 
-1. **F1099 — Type Calendar event-by-ID query request.** Complete at source/test commit `a942daab`; acceptance was recorded before implementation.
-2. **F1100 — Keep `ClassId` typed through Sub Prep visible-class ordering.** Complete at source/test commit `820f54a2` and completion commit `40912507`; see the progress log for page-target verification limits.
-3. **F1101 — Carry `CampusId` in feature campus metadata contracts.** Complete at source/test commit `cd64b46b`; see the progress log for verification evidence.
-4. **F1102 — Type identity in Class Details validation contract.** Accepted, not yet implemented; preserve the unassigned sentinel and wide teacher IDs. The F1102 start triggered Batch479 discovery.
-5. **F1103 — Surface Class Details validation-context read failures.** Deferred pending explicit parity/policy reconciliation.
+1. **F1104 — Type class identity in Schedule testing-assignment reads.** Next for acceptance reassessment; preserve `-1` unassigned and positive IDs, while continuing to reject zero and other negative values.
+2. **F1105 — Type the Campus Dashboard selected-campus read request.** Discovered; preserve the UTF-8 page boundary and existing matching behavior.
+3. **F1106 — Keep Co-Teacher assignment identity typed at use-case entry.** Discovered; preserve `-1` semantics and wide teacher IDs.
+4. **F1107 — Carry typed IDs through Sub Prep print-order facts.** Discovered; preserve grouping and numeric class-ID tie-break order.
+5. **F1108 — Keep Sub Prep selected-class IDs typed through its selection policy.** Discovered; preserve positive filtering, first-seen deduplication, exact day match, schedule order, and both entry kinds.
 
 No other slices were found.
-
-Batch479's five discovered candidates are queued to follow Batch478 in the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#next-discovered-batch-batch479-5-candidates); discovery was completed when F1102 work started.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 

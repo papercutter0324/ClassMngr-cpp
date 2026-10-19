@@ -6008,28 +6008,24 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-19 (F1101 complete; F1102 accepted; Batch479 discovered)
+## Current continuation - 2026-10-19 (F1102 complete; Batch478 closeout)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
-`35ea66b2faab67cea4adb8352240869236e776c3`. Its incremental macOS arm64/Qt
-6.12 build succeeded for `ClassMngr` and nine affected test targets; five
-Application/Platform CTests passed 5/5, and the named MyInfo, Sub Prep,
-Calendar ID-alias, and two Dashboard dirty-refresh cases passed. No fresh
-configure or full suite ran.
+`35ea66b2faab67cea4adb8352240869236e776c3`. F1102 completed at source/test
+commit `b5e5a1628b7e0fc7606a4b314b90e03719750171`.
 
-Batch478 remains active and unpushed. F1099-F1101 are complete, F1102 is
-accepted before implementation, and F1103 remains deferred. The F1102
-acceptance types `ClassDetailsValidationInput.classId` and `.teacherId`, and
-the normalized values, as `Domain::ClassId` and `Domain::TeacherId`. Preserve
-the `-1` sentinel, wide teacher IDs, numeric diagnostic values, and issue
-ordering. Keep the validation-context snapshot teacher as `std::int64_t`; do
-not alter F1103's context-failure fallback. No source or test edits have
-started.
+F1102 types both IDs in the Class Details validation input and normalized
+result, while keeping numeric parsing, invalid diagnostics, the `-1` teacher
+sentinel, wide IDs, and issue ordering. The validation-context teacher stays
+`std::int64_t`; F1103 fallback behavior is unchanged. Incremental macOS
+arm64/Qt 6.12 verification built `ClassMngr` and four existing targets. Both
+Application CTests passed 2/2, and named invalid-save, fresh-context,
+wide-teacher UI-save, and context-fallback cases passed. `git diff --check`
+passed; no full suite ran.
 
-The required next-batch discovery is complete; Batch479 has five ordered
-candidates and is queued behind Batch478. Its full list and evidence are in
-the Phase 2 plan and progress log. Acceptance/discovery documentation is
-being committed before F1102 implementation. The branch was clean after
-F1101 documentation commit and was 11 commits ahead of `origin/Qt-Rewrite`;
-no push is due until Batch478 closes.
+Batch478 is resolved: F1099-F1102 are complete and F1103 remains deferred.
+The closeout documentation and push are pending. Batch479 has five discovered
+candidates and will begin with F1104 after that push. The full Batch479 list
+and preservation notes are in the Phase 2 plan and progress log. The combined
+Phase 0 and Phase 2 gates remain open; Windows x64 evidence remains unavailable.

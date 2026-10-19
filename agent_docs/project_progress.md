@@ -4914,3 +4914,24 @@ candidates and is queued behind Batch478. Batch478 remains active and
 unpushed: F1099-F1101 are complete, F1102 is accepted, and F1103 remains
 deferred. The combined Phase 0 gate remains open while Windows x64 evidence is
 unavailable; the Phase 2 exit gate remains open.
+
+## Phase 2 update - F1102 complete; Batch478 closeout - 2026-10-19
+
+F1102 is complete at source/test commit
+`b5e5a1628b7e0fc7606a4b314b90e03719750171`. The validation input and normalized
+result now carry `Domain::ClassId` and `Domain::TeacherId`; the policy keeps
+numeric validation and diagnostics, the `-1` teacher sentinel, wide teacher
+IDs, and existing issue ordering. The validation-context snapshot remains
+numeric, and F1103's fallback behavior is unchanged.
+
+Incremental macOS arm64/Qt 6.12 verification built `ClassMngr` and four
+existing test targets. Both Application CTests passed 2/2. Named cases for
+invalid save blocking, fresh invalid context, wide teacher UI save, and
+`workflowContextFailureAndMismatchFallBack` passed. `git diff --check` passed;
+no full suite ran.
+
+All Batch478 candidates are resolved: F1099-F1102 are complete and F1103
+remains deferred. Batch478's closeout documentation and push are pending;
+Batch479 is next, with F1104 selected for acceptance reassessment. The
+combined Phase 0 gate remains open while Windows x64 evidence is unavailable;
+the Phase 2 exit gate remains open.
