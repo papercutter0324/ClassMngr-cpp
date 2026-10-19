@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with F1128–F1135 complete, two discovered candidates, and F1136 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e` (see [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20)); Batch485 is active with F1128–F1135 complete, F1136 accepted/in progress, one discovered candidate, and F1137 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,7 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch485 (10 candidates; 8 complete; 0 accepted/in progress; 2 discovered)
+#### Active batch: Batch485 (10 candidates; 8 complete; 1 accepted/in progress; 1 discovered)
 
 1. F1128 - Complete at `63fff147`: reuse `CourseGradeBand` in Speaking Evaluation report content and AI batch eligibility while preserving parsing, template selection, legacy conversion, and failure order. See the [completion record](03-Phase-2-Progress-Log.md#f1128-speaking-evaluation-elementary-grade-result-complete-2026-10-20).
 2. F1129 - Complete at `596ed1f6`: use permissive `ClassDetailsValidationContextTeacherId` for the context data/snapshot identity, preserving `-1`, `-2`, wide values, and current query/save behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1129-class-details-validation-context-teacher-identity-complete-2026-10-20).
@@ -78,10 +78,10 @@ Treat this plan as an operational summary, not a history:
 6. F1133 - Complete at `7800f471`: use Application `DirectoryPreferencePath` for both remembered-directory ports; preserve empty fallback and cleanup at `QtFileDialogService`/`FileController`, keep Qt conversion in Platform, and leave F688/F689 persistence unchanged. `WorkspaceLocation` remains for workspace file locations. See the [completion record](03-Phase-2-Progress-Log.md#f1133-remembered-directory-preference-paths-complete-2026-10-20).
 7. F1134 - Complete at `d0d51ffc`: add export-only UTF-16 class and teacher key types, distinct from package payload text and UTF-8 apply keys. Preserve exact code units, generation/reuse, correspondence, JSON schema, and legacy mappings. See the [completion record](03-Phase-2-Progress-Log.md#f1134-class-transfer-export-correlation-keys-complete-2026-10-20).
 8. F1135 - Complete at `f8831620`: use Application `ClassAnalyticsAverageThousandths` for rounded average outputs. Class and YTD means round integer-thousandths means half-up to handle the 2399/2400 midpoint; weighting, eligibility, grade threshold, ranking/extrema ties, locale formatting, and chart clamping remain preserved. See the [completion record](03-Phase-2-Progress-Log.md#f1135-class-analytics-rounded-averages-complete-2026-10-20).
-9. F1136 - Discovered: type skipped-update stored version text while preserving literal comparisons, missing/invalid/clear/suppression behavior, and `01.2.3` versus `1.2.3`; distinct from F1127.
+9. F1136 - Accepted/in progress: add permissive Application `SkippedUpdateVersionText` (empty default, explicit `std::string` constructor, `.value()`, `.empty()`, equality), used as an optional in the existing preferences contract and as the typed stored text passed to policy. Keep trimming and blank-to-nullopt in the Platform adapter; preserve separate numeric parsing and literal comparison, including `01.2.3` parsing as numeric 1.2.3 without suppressing canonical `1.2.3`. Preserve missing/invalid/stale-clear/exact-match policy, canonical text on user Skip, controller suppression, clear/write rollback and retry, and prompt behavior. Distinct from F1127 `UpdateArtifactPlatformKey`. See the [acceptance record](03-Phase-2-Progress-Log.md#f1136-skipped-update-stored-version-text-accepted-before-implementation-2026-10-20).
 10. F1137 - Discovered: type Course catalog identity while preserving exact case/spelling and weekly-day rules; screen relation to F1128 `CourseGradeBand` reuse.
 
-F1128–F1135 are complete, and the other two candidates remain discovered, with F1136 next for acceptance. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1128–F1135 are complete, F1136 is accepted/in progress, and F1137 remains discovered. Detailed evidence, preservation constraints, and focused test references are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

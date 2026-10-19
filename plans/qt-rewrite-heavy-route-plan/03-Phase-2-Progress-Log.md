@@ -49857,3 +49857,27 @@ and UI behavior. `git diff --check` passed. The full suite and Windows
 verification were not run. Batch485 has eight complete slices and two
 discovered; F1136 is next for acceptance. The batch remains unpushed; F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1136 Skipped-update stored version text accepted before implementation - 2026-10-20
+
+F1136 is accepted/in progress; implementation and tests have not started. Add
+permissive Application `SkippedUpdateVersionText`, owning exact bytes with an
+empty default, explicit `std::string` constructor, `.value()`, `.empty()`, and
+equality. Use `std::optional<SkippedUpdateVersionText>` in the existing
+preferences type and pass typed stored text to the policy. The value itself
+does not trim, parse, canonicalize, or validate; retain trimming and
+blank-to-`nullopt` behavior in the Platform adapter.
+
+Keep numeric version parsing separate from literal comparison: stored
+`01.2.3` parses numerically as 1.2.3 but must not suppress canonical `1.2.3`.
+Preserve missing/invalid/stale-clear/exact-match policy, canonical text saved
+on user Skip, controller suppression flag, clear/write rollback and retry,
+and prompt behavior. Keep this distinct from F1127 `UpdateArtifactPlatformKey`.
+
+Focused verification after implementation: Application skipped-update policy,
+Platform preferences port, and automatic-startup `UpdateController` tests.
+Build affected targets, run these focused CTests, and run `git diff --check`;
+no full-suite or Windows run is expected. F1137 is next for acceptance.
+Batch485 has eight complete slices, one accepted/in progress, and one
+discovered; it remains unpushed. F629 and the Phase 0 and Phase 2 gates remain
+open.

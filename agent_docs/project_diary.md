@@ -7831,6 +7831,16 @@ and similarly named code fields unchanged. Cover the UTF-8 64-byte and
 65-byte boundaries in the focused Application test target. F629 and both
 phase gates remain open.
 
+## 2026-10-20 - F1136 accepted
+
+Skipped-update persistence carries raw text for a reason: numeric version
+comparison controls stale cleanup, but automatic suppression uses literal
+text equality. Keep both semantics by typing only the stored spelling as an
+exact-byte Application value; retain the adapter's existing trimming and
+blank-to-missing boundary. `Version::parse` accepting `01.2.3` as numeric
+`1.2.3` must not make those spellings suppress each other. The controller's
+prompt suppression flag and write/clear recovery remain independent.
+
 ## 2026-10-20 - F1121 complete
 
 F1121 completed at source/test commit `dbef700b`, following acceptance

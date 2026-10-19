@@ -5847,3 +5847,23 @@ and German-locale one-decimal display. `git diff --check` passed. The full
 suite and Windows verification were not run. Batch485 has eight complete
 slices and two discovered; F1136 is next for acceptance. The batch remains
 unpushed. F629 and both phase gates remain open.
+
+## Phase 2 update - F1136 accepted; Batch485 active - 2026-10-20
+
+F1136 is accepted for `SkippedUpdateVersionText`, an exact-byte Application
+value with empty default, explicit construction, `.value()`, `.empty()`, and
+equality. Use `optional<SkippedUpdateVersionText>` in the existing preferences
+contract and the policy's stored-text input. The value does not parse, trim,
+validate, canonicalize, or normalize text. Preserve the Platform adapter's
+existing trimming and blank-to-missing behavior.
+
+Keep numeric parsing and raw-text equality as separate policy checks:
+`Version::parse` may accept leading zeros, but suppression still requires a
+literal match, so `01.2.3` does not suppress latest `1.2.3`. Preserve missing,
+invalid, stale-clear, exact-match, and prompt-suppression outcomes, the separate
+controller suppression flag, write/clear failure recovery, and canonical text
+written by a user Skip action. F1127 `UpdateArtifactPlatformKey` remains
+unrelated. Focused policy, platform port, and automatic-startup controller
+tests are expected; implementation and verification are pending. F1137 is
+next for acceptance. Batch485 remains unpushed; F629 and both phase gates
+remain open.
