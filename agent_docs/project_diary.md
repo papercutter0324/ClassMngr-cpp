@@ -7909,3 +7909,11 @@ month/day input, preserving arbitrary bytes for the existing parser to skip.
 Focused macOS Application and feature targets built; the three relevant CTests
 and direct edge-case selectors passed. Windows and full-suite verification
 were not run.
+
+## 2026-10-20 - F1126 accepted
+
+Use one closed `ExcelImportTimeoutChoice` across the Application preference
+value and stored user-preference snapshot, with explicit seconds conversion at
+platform, UI, and legacy numeric boundaries. Keep unsupported integer inputs
+rejected by Application setters and writes, and preserve 120-second fallback,
+the four supported values, persistence key, and save-failure recovery.

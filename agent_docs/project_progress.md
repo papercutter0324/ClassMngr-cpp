@@ -5572,3 +5572,17 @@ focused CTests passed 3/3, as did direct selectors for invalid skipping,
 trimming, leap fallback, invalid reference dates, buckets, year rollover,
 range cap, and feature mapping. Windows and the full suite were not run. F1126
 is next for acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1126 accepted; Batch484 active - 2026-10-20
+
+F1126 is accepted to add one closed `ExcelImportTimeoutChoice` for 30, 60,
+120, and 300 seconds, with explicit conversions to/from integer seconds. Use
+it in `ExcelImportTimeoutPreferences` and in `UserPreferencesSnapshot` while
+preserving the legacy numeric getters and validated integer setter. Keep the
+120-second default/fallback for unsupported stored values; reject invalid
+Application inputs without changing state; preserve platform write errors,
+synchronized-write rollback, the integer QSettings key
+`imports/excelTimeoutSeconds`, and menu save-failure recovery. UI timer
+conversion and other preference settings stay unchanged. Focused Application,
+platform port, menu, and legacy settings targets are recorded in the Phase 2
+plan. Implementation has not started. F629 and both phase gates remain open.

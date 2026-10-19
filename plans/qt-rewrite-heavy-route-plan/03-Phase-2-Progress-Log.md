@@ -49230,3 +49230,34 @@ passed. Verification used the existing macOS arm64 Debug tree with Qt 6.12.0.
 `git diff --check` passed. Windows verification and the full suite were not
 run. Batch484 remains active with eight complete and two discovered; F1126 is
 next. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1126 Excel Import timeout choice accepted before implementation - 2026-10-20
+
+F1126 is accepted/in progress; implementation and tests have not started.
+Introduce a closed Application `ExcelImportTimeoutChoice` for 30, 60, 120, and
+300 seconds, with explicit conversions to and from seconds. Use it in
+`ExcelImportTimeoutPreferences` and as the stored value in
+`UserPreferencesSnapshot`, exposing a typed snapshot accessor. Keep numeric
+conversions at compatibility, presentation, and platform-persistence
+boundaries. Preserve existing integer compatibility getters and the integer
+`setExcelImportTimeoutSeconds` validation path; unsupported input must retain
+the same nonrecoverable `InvalidInput` and leave state unchanged.
+
+Preserve default and unsupported/malformed stored-value fallbacks at 120
+seconds, the exact supported set, QSettings key
+`imports/excelTimeoutSeconds`, integer storage, and read/write round trips.
+The platform write path must reject invalid or unrecognized enum values with
+the same error text and severity; retain synchronized-write rollback, menu
+selection restore and warning after failed save, and seconds-to-milliseconds
+timer behavior in import dialogs. Keep the raw SettingsManager integer API,
+key/storage, bounds constants, default/fallback policy, and unrelated
+preferences unchanged. Do not alter timer units elsewhere, UI wording, or
+other preference settings.
+
+Focused evidence targets: `ClassMngrNextApplicationUserPreferencesTests`,
+`ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests`,
+`ClassMngrMainWindowClassVisibilityPreferencesFailureTests`, and
+`ClassMngrAiCommentOptionsTests`; compile the menu and Teacher/Schedule Import
+dialog consumers as needed. Batch484 remains active with eight complete,
+F1126 accepted/in progress, and F1127 discovered and next for acceptance.
+F629 and the Phase 0 and Phase 2 gates remain open.
