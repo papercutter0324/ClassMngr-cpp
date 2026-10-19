@@ -2,6 +2,7 @@
 
 #include "next/application/campus_dashboard_selected_campus_read_port.h"
 #include "next/application/qt_compatible_text.h"
+#include "next/domain/domain_types.h"
 
 #include <string>
 
@@ -12,9 +13,7 @@ inline constexpr std::size_t kCampusDashboardCampusIdMaxLength = 256;
 
 struct CampusDashboardSelectedCampusReadRequest final
 {
-    // Kept as UTF-8 input so malformed blank/oversized identifiers can be
-    // rejected before constructing the typed ID or invoking the port.
-    std::string campusId;
+    Domain::CampusId campusId;
 };
 
 namespace CampusDashboardSelectedCampusReadDetail
@@ -50,9 +49,10 @@ public:
     {
         using namespace CampusDashboardSelectedCampusReadDetail;
 
+        const std::string& campusId = request.campusId.value();
         if (
-            isBlankUtf8Text(request.campusId)
-            || request.campusId.size() > kCampusDashboardCampusIdMaxLength
+            isBlankUtf8Text(campusId)
+            || campusId.size() > kCampusDashboardCampusIdMaxLength
             )
         {
             return CampusDashboardSelectedCampusReadResult::failure(
@@ -60,16 +60,8 @@ public:
                 );
         }
 
-        const auto campusId = Domain::CampusId::fromString(request.campusId);
-        if (!campusId.has_value())
-        {
-            return CampusDashboardSelectedCampusReadResult::failure(
-                invalidCampusId()
-                );
-        }
-
         CampusDashboardSelectedCampusReadResult result =
-            port.loadCampus(campusId.value());
+            port.loadCampus(request.campusId);
         if (!result)
         {
             return result;
@@ -77,7 +69,7 @@ public:
 
         if (
             result.value().has_value()
-            && result.value()->id != campusId.value()
+            && result.value()->id != request.campusId
             )
         {
             return CampusDashboardSelectedCampusReadResult::failure(

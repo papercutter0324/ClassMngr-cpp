@@ -10,6 +10,11 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+Domain::CampusId typedCampusId(const std::string& id)
+{
+    return Domain::CampusId::fromString(id).value();
+}
+
 class FakeCampusDashboardSelectedCampusReadPort final
     : public Application::CampusDashboardSelectedCampusReadPort
 {
@@ -20,6 +25,7 @@ public:
     std::optional<Application::CampusDashboardSelectedCampusSnapshot> result;
     bool fail = false;
     bool returnDifferentId = false;
+    std::string differentId = "other";
 
     [[nodiscard]] Application::CampusDashboardSelectedCampusReadResult
     loadCampus(const Domain::CampusId& campusId) const override
@@ -37,7 +43,7 @@ public:
 
         if (returnDifferentId)
         {
-            auto mismatched = snapshotFor("other");
+            auto mismatched = snapshotFor(differentId);
             return Application::CampusDashboardSelectedCampusReadResult::success(
                 std::move(mismatched)
                 );
@@ -63,7 +69,6 @@ void rejectsBlankAndOversizedIdsBeforeCallingPort()
 {
     FakeCampusDashboardSelectedCampusReadPort port;
     for (const std::string id : {
-             std::string(),
              std::string(" \t\r\n"),
              std::string("\xC2\xA0"),
              std::string("\xE3\x80\x80"),
@@ -75,7 +80,7 @@ void rejectsBlankAndOversizedIdsBeforeCallingPort()
     {
         const auto result =
             Application::CampusDashboardSelectedCampusReadQuery::execute(
-                {.campusId = id},
+                {.campusId = typedCampusId(id)},
                 port
                 );
         assert(!result);
@@ -89,6 +94,88 @@ void rejectsBlankAndOversizedIdsBeforeCallingPort()
     assert(port.callCount == 0);
 }
 
+void acceptsIdentifierAtExactByteLimit()
+{
+    FakeCampusDashboardSelectedCampusReadPort port;
+    std::string id(
+        Application::kCampusDashboardCampusIdMaxLength - 4,
+        'x'
+        );
+    id += "\xF0\x9F\x8C\x8D";
+    assert(id.size() == Application::kCampusDashboardCampusIdMaxLength);
+    port.result = FakeCampusDashboardSelectedCampusReadPort::snapshotFor(id);
+
+    const auto result =
+        Application::CampusDashboardSelectedCampusReadQuery::execute(
+            {.campusId = typedCampusId(id)},
+            port
+            );
+
+    assert(result);
+    assert(port.callCount == 1);
+    assert(port.lastCampusId.value() == id);
+    assert(result.value().has_value());
+    assert(result.value()->id.value() == id);
+}
+
+void preservesNonAsciiCampusIdBytes()
+{
+    FakeCampusDashboardSelectedCampusReadPort port;
+    const std::string id(
+        "\xEC\x84\x9C\xEC\x9A\xB8\x20"
+        "\xEC\xBA\xA0\xED\x8D\xBC\xEC\x8A\xA4"
+        );
+    port.result = FakeCampusDashboardSelectedCampusReadPort::snapshotFor(id);
+
+    const auto result =
+        Application::CampusDashboardSelectedCampusReadQuery::execute(
+            {.campusId = typedCampusId(id)},
+            port
+            );
+
+    assert(result);
+    assert(port.callCount == 1);
+    assert(port.lastCampusId.value() == id);
+    assert(result.value().has_value());
+    assert(result.value()->id.value() == id);
+}
+
+void preservesSurroundingWhitespaceInCampusId()
+{
+    FakeCampusDashboardSelectedCampusReadPort port;
+    const std::string id = " Alpha ";
+    port.result = FakeCampusDashboardSelectedCampusReadPort::snapshotFor(id);
+
+    const auto result =
+        Application::CampusDashboardSelectedCampusReadQuery::execute(
+            {.campusId = typedCampusId(id)},
+            port
+            );
+
+    assert(result);
+    assert(port.callCount == 1);
+    assert(port.lastCampusId.value() == id);
+    assert(result.value().has_value());
+    assert(result.value()->id.value() == id);
+}
+
+void doesNotRejectMalformedUtf8CampusIdBytes()
+{
+    FakeCampusDashboardSelectedCampusReadPort port;
+    const std::string id("\xC3", 1);
+    port.result = FakeCampusDashboardSelectedCampusReadPort::snapshotFor(id);
+
+    const auto result =
+        Application::CampusDashboardSelectedCampusReadQuery::execute(
+            {.campusId = typedCampusId(id)},
+            port
+            );
+
+    assert(result);
+    assert(port.callCount == 1);
+    assert(port.lastCampusId.value() == id);
+}
+
 void callsPortOnceAndReturnsTypedSnapshot()
 {
     FakeCampusDashboardSelectedCampusReadPort port;
@@ -96,7 +183,7 @@ void callsPortOnceAndReturnsTypedSnapshot()
 
     const auto result =
         Application::CampusDashboardSelectedCampusReadQuery::execute(
-            {.campusId = "alpha"},
+            {.campusId = typedCampusId("alpha")},
             port
             );
 
@@ -115,7 +202,7 @@ void propagatesPortErrorAndSuccessfulAbsence()
 
     const auto failed =
         Application::CampusDashboardSelectedCampusReadQuery::execute(
-            {.campusId = "alpha"},
+            {.campusId = typedCampusId("alpha")},
             port
             );
     assert(!failed);
@@ -127,7 +214,7 @@ void propagatesPortErrorAndSuccessfulAbsence()
     port.fail = false;
     const auto missing =
         Application::CampusDashboardSelectedCampusReadQuery::execute(
-            {.campusId = "alpha"},
+            {.campusId = typedCampusId("alpha")},
             port
             );
     assert(missing);
@@ -139,15 +226,21 @@ void rejectsMismatchedReturnedId()
 {
     FakeCampusDashboardSelectedCampusReadPort port;
     port.returnDifferentId = true;
+    port.differentId = "alpha";
 
     const auto result =
         Application::CampusDashboardSelectedCampusReadQuery::execute(
-            {.campusId = "alpha"},
+            {.campusId = typedCampusId("Alpha")},
             port
             );
 
     assert(!result);
     assert(result.error().code == Domain::ErrorCode::Technical);
+    assert(!result.error().recoverable);
+    assert(
+        result.error().message
+        == "Campus detail result did not match the requested campus."
+        );
     assert(port.callCount == 1);
 }
 
@@ -156,6 +249,10 @@ void rejectsMismatchedReturnedId()
 int main()
 {
     rejectsBlankAndOversizedIdsBeforeCallingPort();
+    acceptsIdentifierAtExactByteLimit();
+    preservesNonAsciiCampusIdBytes();
+    preservesSurroundingWhitespaceInCampusId();
+    doesNotRejectMalformedUtf8CampusIdBytes();
     callsPortOnceAndReturnsTypedSnapshot();
     propagatesPortErrorAndSuccessfulAbsence();
     rejectsMismatchedReturnedId();

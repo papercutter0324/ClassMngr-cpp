@@ -364,6 +364,7 @@ private slots:
     void campusSelectionIsPersistedThroughTypedPort();
     void campusPreferenceWriteFailureKeepsLoadedCampusAndCanRetry();
     void selectedCampusDetailUsesQueryAndSavesDirtyRecordFirst();
+    void selectedCampusReadPreservesUtf8IdBytes();
     void manualSaveWaitsForActionAndPersistsNormalizedFields();
     void automaticSaveUsesDebounceAndPersistsOnce();
     void manualSaveFailureRetainsDirtyForm();
@@ -773,6 +774,47 @@ selectedCampusDetailUsesQueryAndSavesDirtyRecordFirst()
 
 }
 
+void CampusDashboardPageTests::selectedCampusReadPreservesUtf8IdBytes()
+{
+    using ClassMngr::Next::Platform::SettingsManagerLastSelectedCampusPort;
+
+    QTemporaryDir campusDirectory;
+    QVERIFY(campusDirectory.isValid());
+    const QString campusId = QStringLiteral("서울 캠퍼스");
+    const std::string expectedUtf8Id(
+        "\xEC\x84\x9C\xEC\x9A\xB8\x20"
+        "\xEC\xBA\xA0\xED\x8D\xBC\xEC\x8A\xA4"
+        );
+    saveCampus(
+        campusDirectory.path(),
+        campusId,
+        QStringLiteral("Seoul Campus"),
+        QStringLiteral("Seoul Hall")
+        );
+
+    QVERIFY(SettingsManagerLastSelectedCampusPort().write(std::nullopt));
+    RecordingCampusReadPort readPort(campusDirectory.path());
+    CampusDashboardPage page(
+        true,
+        CampusDashboardPageDependencies{
+            .campusDirectory = campusDirectory.path(),
+            .selectedCampusReadPort = &readPort
+        }
+        );
+    page.refresh();
+
+    auto* selector = page.findChild<QComboBox*>();
+    auto* campusName = page.findChild<QLineEdit*>(
+        QStringLiteral("campusNameEdit")
+        );
+    QVERIFY(selector);
+    QVERIFY(campusName);
+    QCOMPARE(selector->currentData().toString(), campusId);
+    QCOMPARE(readPort.readIds.size(), std::size_t(1));
+    QCOMPARE(readPort.readIds.front(), expectedUtf8Id);
+    QCOMPARE(campusName->text(), QStringLiteral("Seoul Campus"));
+}
+
 void CampusDashboardPageTests::
 manualSaveWaitsForActionAndPersistsNormalizedFields()
 {
@@ -1061,11 +1103,17 @@ void CampusDashboardPageTests::cleanRefreshWithNoCampusesClearsCurrentCampus()
         QVERIFY(QFile::remove(campusPath));
     }
 
+    const std::size_t readCountBeforeEmptyRefresh =
+        fixture.readPort.readIds.size();
     page.refresh();
 
     QCOMPARE(selector->count(), 0);
     QCOMPARE(selector->currentIndex(), -1);
     QVERIFY(selector->currentData().toString().isEmpty());
+    QCOMPARE(
+        fixture.readPort.readIds.size(),
+        readCountBeforeEmptyRefresh
+        );
     QCOMPARE(nameEdit->text(), QString());
     QCOMPARE(codeEdit->text(), QString());
     QCOMPARE(buildingEdit->text(), QString());

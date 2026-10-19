@@ -557,7 +557,9 @@ void CampusDashboardPage::loadSelectedCampus()
 
     const ClassMngr::Next::Application::
         CampusDashboardSelectedCampusReadRequest request{
-            .campusId = campusId.toUtf8().toStdString()
+            .campusId = ClassMngr::Next::Domain::CampusId::fromString(
+                campusId.toUtf8().toStdString()
+                ).value()
         };
 
     ClassMngr::Next::Application::
