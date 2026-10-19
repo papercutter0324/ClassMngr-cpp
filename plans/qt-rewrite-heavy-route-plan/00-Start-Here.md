@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is active with F1128–F1130 complete, F1131 accepted/in progress, and six discovered; F1132 is next for acceptance. See the [active Batch485 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch485-10-candidates-3-complete-1-acceptedin-progress-6-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is active with F1128–F1131 complete, no accepted/in-progress slice, and six discovered; F1132 is next for acceptance. See the [active Batch485 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch485-10-candidates-4-complete-0-acceptedin-progress-6-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,12 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch485 — Active; ten candidates, three complete, one accepted/in progress, and six discovered:**
+**Batch485 — Active; ten candidates, four complete, none accepted/in progress, and six discovered:**
 
 1. **F1128 — Type Speaking Evaluation elementary-grade result (complete).** Reuse `CourseGradeBand` in report and AI eligibility contracts while preserving report parsing/template and eligibility behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1128-speaking-evaluation-elementary-grade-result-complete-2026-10-20).
 2. **F1129 — Type Class Details validation-context teacher identity (complete).** Preserve `-1`, `-2`, and wide int64 values through the permissive context wrapper; downstream `TeacherId` conversion remains unchanged. See the [completion record](03-Phase-2-Progress-Log.md#f1129-class-details-validation-context-teacher-identity-complete-2026-10-20).
 3. **F1130 — Type Schedule-slot start minute (complete).** Preserve `[0,1440)` validation, strict UI parsing, zero-padded `HH:mm` persistence, and no port call on failure with a permissive Application wrapper. See the [completion record](03-Phase-2-Progress-Log.md#f1130-schedule-slot-start-minute-complete-2026-10-20).
-4. **F1131 — Type Sub Prep meeting second-of-day (accepted/in progress).** Type seconds while preserving invalid-input skip, exact-second grouping across days, weekday deduplication and order, and existing display and navigation behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1131-sub-prep-meeting-second-of-day-accepted-before-implementation-2026-10-20).
+4. **F1131 — Type Sub Prep meeting second-of-day (complete).** Preserve invalid-value skip, exact-second grouping and ordering, selected-day filtering, cross-day grouping, weekday deduplication, and existing display/navigation behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1131-sub-prep-meeting-second-of-day-complete-2026-10-20).
 5. **F1132 — Type Teacher Import latest source date.** Preserve optional ISO-date parsing, missing/malformed setting behavior, request rejection, and save-only-if-later.
 6. **F1133 — Type remembered directory preference paths.** Preserve empty fallback and normalization at existing owners; avoid repeating F689 persistence work.
 7. **F1134 — Type Class Transfer export correlation keys.** Preserve exact UTF-16 payload/correspondence separately from UTF-8 apply keys.

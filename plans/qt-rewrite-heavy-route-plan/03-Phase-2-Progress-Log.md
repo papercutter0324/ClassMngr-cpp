@@ -49640,3 +49640,23 @@ preserving compact summary labels and the `09:30:59`-to-minute-navigation
 assertion. Run both focused CTests and `git diff --check`; no full-suite or
 Windows run is required. F1132 is next for acceptance. Batch485 remains
 unpushed; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1131 Sub Prep meeting second-of-day complete - 2026-10-20
+
+F1131 completed at source/test commit
+`4976bc2e121fd70ede48e24424dac1e3b2f68f50`, following acceptance
+`1b2e1d99`. Permissive Application `SubPrepMeetingSecondsOfDay`, backed by
+`std::int32_t`, now types both the meeting facts and grouping results. Invalid
+value skipping, exact-second grouping and ordering, selected-day filtering,
+cross-day grouping, weekday deduplication, and canonical order remain. The
+Platform adapter wraps parsed `QTime` seconds and unwraps only for conversion;
+compact labels still omit seconds, and minute-based navigation remains separate.
+
+The following build passed:
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests --parallel 4`.
+Both focused CTests passed 2/2. `git diff --check` passed. Coverage includes
+retaining `0` and `86399`, skipping `-1` and `86400`, compact label
+`Mon 9:30am`, and the existing navigation assertion of `570`. The full suite and
+Windows verification were not run. Batch485 has four complete slices and six
+discovered; F1132 is next for acceptance. The batch remains unpushed; F629 and
+the Phase 0 and Phase 2 gates remain open.
