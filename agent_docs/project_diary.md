@@ -7433,3 +7433,18 @@ warning-count assertion failed and a later case stalled. Both issues
 reproduced with pre-F1100 production code, so they were documented as
 existing page-target limitations rather than attributed to the typed-ID
 change. No full suite ran. F1101 is next for reassessment.
+
+## 2026-10-19 - F1101 typed campus metadata
+
+F1101 completed at source/test commit `cd64b46becee89c10faec37194482615fe1876d5`.
+`Domain::CampusId` can replace the feature metadata ID strings while preserving
+exact repository bytes; construct it at the Platform adapter and unwrap it
+only where existing UI code performs string matching or projection. Tests
+need a distinct Calendar ID alias, since case-only overlap with a display name
+would not establish that the ID alias remains active. The Campus Dashboard
+dirty refresh has two separate cases: a present selected ID saves and reloads
+the draft, while a missing ID preserves it.
+
+The incremental macOS build and focused contract, adapter, and named UI checks
+passed. No full suite ran. F1102 is next for reassessment, which also triggers
+the required next-batch discovery.

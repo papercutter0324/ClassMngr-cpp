@@ -47465,3 +47465,34 @@ persisted and reloaded, one Update save occurs, `hasUnsavedChanges()` clears,
 and the save timer stops. Build `ClassMngrCampusDashboardPageTests` as before,
 and run only these two named QtTest cases directly; CMake registers no
 standalone CTest selector for this target.
+
+### F1101 complete - 2026-10-19
+
+F1101 is complete at source/test commit
+`cd64b46becee89c10faec37194482615fe1876d5`. Its acceptance commit is
+`8bf9d5908990011023b9fa6c6ed32c07148c72e9`, scope addendum
+`a0cf9a5c06d39479559d5b418927ceb4c955312e`, and Campus Dashboard test-policy
+clarification `b288969482a375056f5244e74282e8e94d672a08`. The three feature
+metadata contracts now use `Domain::CampusId`; the existing Platform adapters
+construct it from exact UTF-8 repository ID bytes, and UI consumers unwrap it
+at their existing string boundaries. Preference matching, Calendar ID/name/
+code aliases and optional-code handling, and exact-ID Campus Dashboard dirty
+refresh behavior remain intact.
+
+The incremental `build/macos-clang-debug` build passed for `ClassMngr` and
+nine affected test targets on macOS arm64/Qt 6.12; no fresh configure ran.
+Five focused Application/Platform CTest selectors passed 5/5. The named
+MyInfo case `storedCampusPrefillsAndCorrectsThroughTypedPort`, Sub Prep case
+`savedCampusSelectionUsesTypedRead`, Calendar case
+`currentCampusIdAliasShowsMatchingCampusEvents` (using the distinct
+`dongtan_2` ID alias), and both Campus Dashboard dirty-refresh cases passed.
+The Dashboard cases were run directly because CMake has no standalone CTest
+selector. `git diff --check` passed. No full suite ran.
+
+Batch478 remains active and unpushed: F1099-F1101 are complete; F1102 is next
+for acceptance reassessment, preserving the `-1` unassigned-teacher sentinel
+and wide teacher IDs, and starting F1102 triggers discovery of the next batch.
+F1103 remains deferred pending parity/policy reconciliation. No other slices
+were found. The combined Phase 0 gate remains Open while Windows x64 evidence
+is unavailable; the Phase 2 gate remains Open, Gates 1 and 2 remain Partial,
+and F1007 remains pending policy reconciliation.

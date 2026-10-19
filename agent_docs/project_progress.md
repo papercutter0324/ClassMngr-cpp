@@ -4875,3 +4875,26 @@ its exact ID equality check during dirty refresh. Existing behavior saves and
 reloads the dirty draft when that ID remains present; a missing-ID refresh
 preserves the dirty draft. A separate focused regression covers the
 present-ID save path, while the existing missing-ID regression stays intact.
+
+## Phase 2 update - F1101 complete; F1102 next - 2026-10-19
+
+F1101 is complete at source/test commit `cd64b46becee89c10faec37194482615fe1876d5`.
+The MyInfo, Sub Prep, and Calendar Page metadata contracts now carry
+`Domain::CampusId`; their Platform adapters preserve exact UTF-8 ID bytes, and
+UI consumers unwrap only at existing text boundaries. Existing preference
+matching, Calendar aliases, optional campus-code handling, and Campus Dashboard
+dirty-refresh behavior remain intact.
+
+The incremental `build/macos-clang-debug` build succeeded for `ClassMngr` and
+nine affected test targets. The five Application/Platform CTest selectors
+passed 5/5. Focused MyInfo and Sub Prep selection cases, the refined Calendar
+ID-alias case, and both Campus Dashboard present-ID and missing-ID dirty-refresh
+cases passed. `git diff --check` passed. Verification was local macOS arm64 with
+Qt 6.12; no fresh configure or full suite ran.
+
+Batch478 remains active and unpushed: F1099-F1101 are complete, F1102 is next
+for acceptance reassessment while preserving the unassigned-teacher sentinel
+and wide teacher IDs, and F1103 remains deferred pending parity/policy
+reconciliation. Starting F1102 also triggers the next-batch discovery required
+by the Phase 2 plan. The combined Phase 0 gate remains open while Windows x64
+evidence is unavailable; the Phase 2 exit gate remains open.
