@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is active with F1115 complete at `a455d24c` following acceptance `e10d9e11`, F1116 accepted/in progress before implementation, and F1117 discovered; Batch484 discovery is provisional, with candidate scans running and no list recorded; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is active with F1115 complete at `a455d24c` following acceptance `e10d9e11`, F1116 complete at `edd09fdf` following acceptance `f744a03b`, and F1117 next for acceptance; Batch484's ten-candidate discovery list is recorded in the progress log but remains provisional and inactive, with none accepted; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch483 (3 candidates; 1 complete; 1 accepted/in progress; 1 discovered)
+#### Active batch: Batch483 (3 candidates; 2 complete; 1 discovered)
 
 1. F1115 - Type personal-signature font choice: complete at `a455d24c` following acceptance `e10d9e11`. The Qt-free Application `PersonalSignatureFontChoice` represents exactly 0=`JustAnotherHand`, 1=`DancingScript`, 2=`GreatVibes`, and 3=`Caveat`; explicit persistence-boundary conversion preserves stored values, default 0, invalid-value fallback, and invalid-enum save normalization. Focused verification and its Initial Setup CTest limitation are recorded in the progress log.
-2. F1116 - Type closed Speaking Evaluation validation codes: accepted/in progress before implementation. Use a closed typed Application code for validation issues and producers, update direct persistence comparisons, and map exhaustively to unchanged UI keys. Preserve all 14 keys, order, fields, row/column, severity, arguments, and validation behavior. Acceptance scope and focused verification are in the progress log.
-3. F1117 - Type Calendar event query database path: discovered, not accepted. Preserve existing UTF-8 bytes and query-port behavior. Focused targets: Next Application CalendarEventQueryPort tests and `ClassMngrCalendarEventCacheTests`.
+2. F1116 - Type closed Speaking Evaluation validation codes: complete at `edd09fdf` following acceptance `f744a03b`; typed all 14 Application codes, changed producers and direct code comparisons, and added exhaustive UI mapping. Focused verification is recorded in the progress log.
+3. F1117 - Type Calendar event query database path: discovered, not accepted; next for acceptance. Preserve existing UTF-8 bytes and query-port behavior. Focused targets: Next Application CalendarEventQueryPort tests and `ClassMngrCalendarEventCacheTests`.
 
 #### Deferred candidates
 

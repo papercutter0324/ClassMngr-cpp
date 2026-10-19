@@ -5337,3 +5337,23 @@ Cover every emitted code in the Application tests, including row and cell
 overflow, and test the explicit UI adapter mapping and payload preservation.
 F1115 is complete, F1117 remains discovered, and Batch484 discovery is
 underway. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1116 active; Batch484 discovery recorded - 2026-10-20
+
+F1116 was accepted at `f744a03b`; production and focused test work are
+underway. Two independent early-discovery scans identified ten provisional
+Batch484 candidates, now recorded in the Phase 2 progress log. Batch484 stays
+provisional until Batch483 closes. F1115 is complete, F1117 remains
+discovered, and F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1116 complete; F1117 next - 2026-10-20
+
+F1116 completed at source/test commit `edd09fdf`, following acceptance
+`f744a03b`. The Application now uses a closed typed code for all 14 Speaking
+Evaluation validation issues; the UI adapter preserves exact legacy keys and
+payload order. Both focused targets built and both CTests passed 2/2. The
+malformed-matrix use-case assertions preserve its existing `InvalidInput`
+result while direct validator checks cover row and cell overflow. No full
+suite or Windows run occurred. F1117 is next for acceptance. Batch484's ten
+provisional candidates are recorded; F629 and the Phase 0 and Phase 2 gates
+remain open.

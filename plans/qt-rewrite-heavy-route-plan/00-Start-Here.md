@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is active: F1115 is complete at `a455d24c` following acceptance `e10d9e11`, F1116 is accepted/in progress before implementation, and F1117 remains discovered. See the [active Batch483 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch483-3-candidates-1-complete-1-acceptedin-progress-1-discovered). Batch484 discovery is provisional; candidate scans are running and its list is not yet recorded. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is active: F1115 is complete at `a455d24c` following acceptance `e10d9e11`, F1116 is complete at `edd09fdf` following acceptance `f744a03b`, and F1117 is next for acceptance. See the [active Batch483 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch483-3-candidates-2-complete-1-discovered). Batch484 has a ten-candidate provisional discovery list recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md); it is not active and none of its candidates is accepted. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,11 +38,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch483 — Active; three candidates, one complete, one accepted/in progress, and one discovered:**
+**Batch483 — Active; three candidates, two complete and one discovered:**
 
 1. **F1115 — Type personal-signature font choice.** Complete at `a455d24c` following acceptance `e10d9e11`; the Qt-free Application choice maps the four current fonts while preserving persistence and fallback behavior.
-2. **F1116 — Type closed Speaking Evaluation validation codes.** Accepted/in progress before implementation. Use a closed typed Application code for issues and producers, update direct persistence comparisons, and map exhaustively to the unchanged UI keys. Preserve all 14 exact keys, issue order, fields, row/column, severity, arguments, and validation behavior. Acceptance criteria are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
-3. **F1117 — Type Calendar event query database path.** Discovered, not accepted. Preserve UTF-8 path bytes and query-port behavior.
+2. **F1116 — Type closed Speaking Evaluation validation codes.** Complete at `edd09fdf` following acceptance `f744a03b`; typed all 14 Application codes, updated producers and direct comparisons, and added exhaustive UI mapping. Focused verification is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+3. **F1117 — Type Calendar event query database path.** Discovered, not accepted; next for acceptance. Preserve UTF-8 path bytes and query-port behavior.
 
 No other slices were found.
 

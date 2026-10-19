@@ -7716,3 +7716,20 @@ closed enum and map them explicitly back to the existing UI keys. Keep the
 shared `validation.length.out_of_bounds` key and issue order, location,
 severity, and arguments unchanged; the adapter boundary is where the typed
 codes become UI strings.
+
+## 2026-10-20 - Batch484 early discovery
+
+Started discovery when F1116 was the second-last Batch483 candidate. Two
+independent scans returned ten distinct provisional candidates across
+Application/domain and adapter surfaces. The list is recorded in the Phase 2
+progress log; Batch484 remains provisional until Batch483 closes.
+
+## 2026-10-20 - F1116 complete
+
+F1116 completed at source/test commit `edd09fdf`, following acceptance
+`f744a03b`. The closed Application code enum maps through the UI adapter to
+the same 14 string keys, with issue order and payload preserved. Both focused
+targets built and both CTests passed 2/2. The first test run caught an
+expectation mismatch: malformed matrix shape is rejected as existing
+`InvalidInput` before validation-code reporting. The test now asserts that
+contract and separately checks the new row/cell overflow codes.

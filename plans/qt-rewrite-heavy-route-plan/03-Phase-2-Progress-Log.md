@@ -48591,8 +48591,8 @@ and Phase 2 gates remain open.
 
 ### F1116 Speaking Evaluation validation codes accepted before implementation - 2026-10-20
 
-F1116 is accepted/in progress for Batch483; implementation and tests have not
-started. In `src/next/application/speaking_evaluation_validation.h`, replace
+At acceptance, F1116 was accepted for Batch483; implementation and tests had
+not started. In `src/next/application/speaking_evaluation_validation.h`, replace
 string issue codes and `appendIssue` codes with a closed typed Application
 enum, and use that enum at every producer. Update the two direct comparisons
 of `SpeakingEvaluationValidationIssue.code` in
@@ -48634,8 +48634,114 @@ results as focused. Evidence: the F1116 discovery record above and the
 Application producers at `speaking_evaluation_validation.h:622-997`, UI
 mapping at `src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.cpp:118`.
 
-Batch483 remains active: F1115 is complete, F1116 is accepted/in progress, and
-F1117 remains discovered. Batch484 discovery is provisional; its candidate
-scans are running and the list is not recorded. The Batch483 discovery record
-supports that no other slices were found. F629 and the Phase 0 and Phase 2
-gates remain open.
+Batch483 remains active: F1115 and F1116 are complete, and F1117 is discovered
+and next for acceptance. Batch484's ten-candidate discovery list is
+provisional and inactive; none of its candidates is accepted. The Batch483
+discovery record supports that no other slices were found. F629 and the Phase
+0 and Phase 2 gates remain open.
+
+### Batch484 early discovery — provisional, not active — 2026-10-20
+
+Two independent bounded scans completed while F1116 was the second-last
+Batch483 candidate. The domain/Application scan returned six leads and the
+adapter scan returned four distinct leads. Reconciliation against the Phase 2
+active/deferred list found no duplicates, and the scans found no more within
+their respective surfaces. These ten are provisional discovery candidates:
+Batch484 is not active, none is accepted, and no implementation or tests have
+occurred.
+
+1. **F1118 — Type Calendar repeat-series edit dates.** The three date strings
+   in `CalendarEventSeriesEditRequest` are parsed as `GregorianDate` by the
+   edit plan. Preserve selected-occurrence and date-shift behavior. Evidence:
+   `src/next/application/calendar_event_series_edit_port.h` and
+   `src/next/application/calendar_event_series_edit_plan.h`. Focused target:
+   `NextApplicationCalendarEvent`. This date contract is separate from
+   F1117's database path.
+2. **F1119 — Type Schedule Import apply/state teacher correlation keys.**
+   Teacher keys cross state and apply record fields; preserve exact identity
+   correspondence. Evidence:
+   `src/next/application/schedule_import_state_projection.h` and
+   `src/next/application/schedule_import_apply_request.h`. Focused targets:
+   `NextApplicationScheduleImportStateValidation` and
+   `ClassMngrNextApplicationScheduleImportApplyUseCaseTests`.
+3. **F1120 — Type Teacher Import source validation keys.** Preserve exact and
+   parallel per-source key correspondence, normalization, and source order.
+   Evidence: `src/next/application/teacher_import_plan_validation.h` and
+   `src/next/application/teacher_import_use_case.h`. Focused targets:
+   `ClassMngrNextApplicationTeacherImportUseCaseTests`,
+   `ClassMngrNextApplicationTeacherImportPlanValidationTests`, the Platform
+   apply-port target `NextPlatformApplicationServicesTeacherImportApplyPort`,
+   and dialog target `ClassMngrTeacherImportDialogTests`.
+4. **F1121 — Type Campus Directory key/code.** Preserve the exact code, byte
+   length limit, and uniqueness behavior. Evidence:
+   `src/next/application/campus_directory_projection.h`. Focused target:
+   `NextApplicationCampusDirectory`.
+5. **F1122 — Type Teacher Profile validation identifiers.** Preserve
+   diagnostic values, order, and adapter mapping. Evidence:
+   `src/next/application/teacher_profile_edit_use_case.h` and
+   `src/features/teacher/ui/teacher_info_page.cpp`. Focused target:
+   `ClassMngrNextApplicationTeacherProfileEditTests`.
+6. **F1123 — Type Document Catalog paths.** Preserve relative hierarchy,
+   parent resolution, and path limits. Evidence:
+   `src/next/application/document_catalog_projection.h` and
+   `src/next/platform/application_services_document_catalog_port.h`.
+   Focused targets: `NextApplicationDocumentCatalog` and
+   `NextPlatformApplicationServicesDocumentCatalogPort` if needed.
+7. **F1124 — Type Roster Save validation codes.** This is a distinct
+   `RosterSaveIssue` contract from F1116 Speaking Evaluation issues, despite
+   overlapping key vocabulary. Preserve UI suffix/substring keys and issue
+   order. Evidence: code/type and producers in
+   `src/next/application/roster_save_preparation.h`, adapter in
+   `src/features/roster/ui/roster_save_validation_adapter.h`, and UI parsing
+   in `src/features/roster/ui/roster_model.cpp`. Focused targets:
+   `NextApplicationRosterSaveUseCase` and `ClassMngrRosterModelTests`.
+8. **F1125 — Type Upcoming Birthday schedule date inputs.** Preserve invalid
+   date/skip behavior, the leap-day rule, and ordering. Evidence:
+   `src/next/application/upcoming_birthday_schedule_use_case.h`. Focused
+   targets: `NextApplicationUpcomingBirthdayScheduleUseCase` and
+   `NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`.
+9. **F1126 — Type Excel Import timeout choice.** Preserve 30/60/120/300-second
+   choices, default and fallback 120, and the setting key. Evidence:
+   `src/next/application/excel_import_timeout_preferences.h` and
+   `src/next/platform/settings_manager_excel_import_timeout_port.h`. Focused
+   targets:
+   `NextApplicationUserPreferences` and
+   `NextPlatformSettingsManagerExcelImportTimeoutPort`.
+10. **F1127 — Type update-artifact platform keys (lower confidence).**
+    Screen aliases and whether a closed enum suits both Application contracts
+    before acceptance. Evidence: `src/next/application/startup_update_check.h`,
+    `src/next/application/manual_update_check.h`, and
+    `src/core/updater/github_release.cpp`. Focused targets:
+    `ClassMngrNextApplicationStartupUpdateCheckUseCaseTests` and
+    `ClassMngrNextApplicationManualUpdateCheckUseCaseTests`.
+
+### F1116 Speaking Evaluation validation codes complete - 2026-10-20
+
+F1116 completed at source/test commit `edd09fdf`, following acceptance commit
+`f744a03b`. The closed Application code now covers all 14 accepted keys;
+issues, append calls, and producers use it, the two persistence comparisons
+use typed codes, and the UI adapter maps every value explicitly to its
+unchanged outward key. Validation order, shared length-code semantics, issue
+payload, and behavior remain preserved.
+
+The focused build completed:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests ClassMngrSpeakingEvalPageSaveParityTests -j 4
+```
+
+The focused CTest selection passed 2/2:
+
+```sh
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests|ClassMngrSpeakingEvalPageSaveParityTests)$'
+```
+
+The initial run exposed that a malformed 25x11 matrix returns the existing
+`InvalidInput` structural error before validator issue reporting. The test
+was corrected to expect `InvalidInput`; direct validator assertions cover
+both new overflow codes. Final focused verification passed.
+`git diff --check` passed. No full suite or Windows run occurred.
+
+Batch483 remains active with F1115 and F1116 complete and F1117 next for
+acceptance. Batch484 remains provisional and inactive with its ten candidates
+recorded, none accepted. F629 and the Phase 0 and Phase 2 gates remain open.
