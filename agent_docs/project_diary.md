@@ -7751,3 +7751,10 @@ Both focused targets built and both CTests passed 2/2. The focused target
 needed a test fixture update to construct its existing optional
 `CalendarEventSeriesId` using `fromString`; the intended series identity was
 preserved.
+
+## 2026-10-20 - Batch483 push receipt
+
+Pushed Batch483 closeout commit `0f47ad3241c727002c2cdb68a81c38145141dc03`
+to `origin/Qt-Rewrite`. `git ls-remote` returned the same SHA, and the local
+worktree was clean after the push. Batch484 is active with F1118 next for
+acceptance.

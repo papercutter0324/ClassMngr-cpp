@@ -5376,3 +5376,10 @@ series ID with `CalendarEventSeriesId::fromString`; no full suite or Windows
 run occurred. Batch483 is complete and its closeout is ready to push.
 Batch484 is active with ten discovered candidates; F1118 is next for
 acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - Batch483 pushed; Batch484 active - 2026-10-20
+
+Batch483 closeout commit `0f47ad32` is pushed to `origin/Qt-Rewrite` and
+verified at `0f47ad3241c727002c2cdb68a81c38145141dc03`; the worktree was
+clean after the push. Batch484 is active with ten discovered candidates and
+F1118 next for acceptance. F629 and the Phase 0 and Phase 2 gates remain open.

@@ -48818,3 +48818,14 @@ still discovered and not accepted; F1118 is next for acceptance. The two
 bounded scans found no further candidates within their respective scanned
 surfaces; F1127 remains lower confidence pending acceptance screening. F629
 and the Phase 0 and Phase 2 gates remain open.
+
+### Batch483 push receipt 2026-10-20
+
+Batch483 closeout commit `0f47ad3241c727002c2cdb68a81c38145141dc03` was
+pushed to `origin/Qt-Rewrite`. Read-only remote verification with
+`git ls-remote origin refs/heads/Qt-Rewrite` returned the same SHA.
+Immediately after the push, `git status --short --branch` reported
+`## Qt-Rewrite...origin/Qt-Rewrite` with no modified files. Batch483 is closed
+and pushed; Batch484 remains active with ten discovered candidates, none
+accepted, and F1118 next for acceptance. F629 and the Phase 0 and Phase 2
+gates remain open.
