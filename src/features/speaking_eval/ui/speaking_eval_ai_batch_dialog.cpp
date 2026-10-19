@@ -155,7 +155,10 @@ QString unavailableReason(
                 .hasTrimmedStudentName =
                     !report.report.englishName.trimmed().isEmpty()
                     || !report.report.koreanName.trimmed().isEmpty(),
-                .grade = report.report.grade,
+                .grade = ClassMngr::Next::Application::
+                    speakingEvaluationCourseGradeBandFromInteger(
+                        report.report.grade
+                        ),
                 .hasDidWellItem =
                     !ClassMngr::Next::Application::
                         speakingEvaluationAiObservationItems(

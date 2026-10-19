@@ -11,6 +11,7 @@ using ClassMngr::Next::Application::SpeakingEvaluationReportClassValues;
 using ClassMngr::Next::Application::SpeakingEvaluationReportContentRequest;
 using ClassMngr::Next::Application::SpeakingEvaluationReportTemplate;
 using ClassMngr::Next::Application::projectSpeakingEvaluationReportContent;
+using ClassMngr::Next::Domain::CourseGradeBand;
 
 namespace
 {
@@ -87,7 +88,7 @@ bool filtersOnlyRowsWithBothNamesBlankAndPreservesRawContent()
         || result.classLabel != u"e5 aTHENA"
         || result.nativeTeacher != u" Teacher En "
         || result.koreanTeacher != u"Teacher Kr"
-        || result.grade != 5
+        || result.grade != CourseGradeBand::E5
         || result.reportTemplate != SpeakingEvaluationReportTemplate::Advanced)
     {
         return false;
@@ -106,7 +107,7 @@ bool classClassificationAndElementaryGradeMappingMatchTheExistingRules()
     request.classValues.grade = u" e6 ";
     request.classValues.level = u" sOnG's ";
     auto result = projectSpeakingEvaluationReportContent(request);
-    if (result.grade != 6
+    if (result.grade != CourseGradeBand::E6
         || result.reportTemplate != SpeakingEvaluationReportTemplate::Advanced)
     {
         return false;
@@ -119,16 +120,25 @@ bool classClassificationAndElementaryGradeMappingMatchTheExistingRules()
         return false;
     }
 
-    const std::vector<std::pair<std::u16string, int>> gradeCases{
-        {u"E4", 4},
-        {u"e5", 5},
-        {u" E6 ", 6},
-        {u"4", 4},
-        {u"+6", 6},
-        {u"E3", 0},
-        {u"E7", 0},
-        {u"EE5", 0},
-        {u"not a grade", 0}
+    const std::vector<std::pair<std::u16string, CourseGradeBand>> gradeCases{
+        {u"E4", CourseGradeBand::E4},
+        {u"e5", CourseGradeBand::E5},
+        {u" E6 ", CourseGradeBand::E6},
+        {u"4", CourseGradeBand::E4},
+        {u"+6", CourseGradeBand::E6},
+        {u"\u3000e+0005\u00A0", CourseGradeBand::E5},
+        {u"", CourseGradeBand::Other},
+        {u"\u2003", CourseGradeBand::Other},
+        {u"E3", CourseGradeBand::Other},
+        {u"E7", CourseGradeBand::Other},
+        {u"M1", CourseGradeBand::Other},
+        {u"M2", CourseGradeBand::Other},
+        {u"M3", CourseGradeBand::Other},
+        {u"EE5", CourseGradeBand::Other},
+        {u"E++5", CourseGradeBand::Other},
+        {u"5.0", CourseGradeBand::Other},
+        {u"\u0664", CourseGradeBand::Other},
+        {u"not a grade", CourseGradeBand::Other}
     };
     for (const auto& [grade, expected] : gradeCases)
     {
@@ -141,8 +151,23 @@ bool classClassificationAndElementaryGradeMappingMatchTheExistingRules()
 
     request.classValues.grade = u"E5";
     request.classValues.level = u"ATHENA";
+    if (projectSpeakingEvaluationReportContent(request).reportTemplate
+        != SpeakingEvaluationReportTemplate::Advanced)
+    {
+        return false;
+    }
+
+    request.classValues.grade = u"5";
+    if (projectSpeakingEvaluationReportContent(request).reportTemplate
+        != SpeakingEvaluationReportTemplate::Standard)
+    {
+        return false;
+    }
+
+    request.classValues.grade = u"E5";
+    request.classValues.level = u"Song's";
     return projectSpeakingEvaluationReportContent(request).reportTemplate
-        == SpeakingEvaluationReportTemplate::Advanced;
+        == SpeakingEvaluationReportTemplate::Standard;
 }
 
 bool shortRowsDefaultMissingColumnsAndThereIsNoArbitraryRowCap()

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
@@ -206,6 +207,63 @@ bool singlePromptTextAndVoiceAreExact()
         );
 }
 
+bool singlePromptKeepsIntegerGradesAndOrdinalWording()
+{
+    const AsciiTextMatcher matcher;
+    SpeakingEvaluationAiCommentPromptRequest request;
+    request.didWell = u"Strong vocabulary";
+    request.needsImprovement = u"Use details";
+
+    for (const auto& [grade, ordinal] : {
+             std::pair{4, std::u16string_view(u"4th-grade")},
+             std::pair{5, std::u16string_view(u"5th-grade")},
+             std::pair{6, std::u16string_view(u"6th-grade")}
+         })
+    {
+        request.grade = grade;
+        const auto result = buildSpeakingEvaluationAiCommentPrompt(
+            request,
+            matcher
+            );
+        const std::u16string expectedPrefix =
+            u"Write one polished speaking-evaluation comment for a "
+            + std::u16string(ordinal)
+            + u" elementary ESL student.\n\nRequirements:\n";
+        if (!result.valid || !result.prompt.starts_with(expectedPrefix))
+        {
+            std::fprintf(
+                stderr,
+                "Integer grade %d did not produce the expected ordinal prefix.\n",
+                grade
+                );
+            if (!result.valid)
+            {
+                std::fprintf(stderr, "Prompt was rejected.\n");
+            }
+            else
+            {
+                std::fprintf(stderr, "Actual prefix: ");
+                const std::size_t prefixLength = std::min<std::size_t>(
+                    result.prompt.size(),
+                    expectedPrefix.size()
+                    );
+                for (std::size_t index = 0; index < prefixLength; ++index)
+                {
+                    std::fputc(static_cast<char>(result.prompt[index]), stderr);
+                }
+                std::fprintf(stderr, "\nExpected prefix: ");
+                for (const char16_t character : expectedPrefix)
+                {
+                    std::fputc(static_cast<char>(character), stderr);
+                }
+                std::fputc('\n', stderr);
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
 bool batchRedactionUsesAliasesAndLongestFirstWithoutBoundaries()
 {
     const AsciiTextMatcher matcher;
@@ -398,6 +456,7 @@ int main()
     if (!observationsNormalizeLineEndingsAndRepeatedPrefixes()
         || !elementaryGradeConversionPreservesLegacyAcceptedForms()
         || !singlePromptTextAndVoiceAreExact()
+        || !singlePromptKeepsIntegerGradesAndOrdinalWording()
         || !batchRedactionUsesAliasesAndLongestFirstWithoutBoundaries()
         || !batchPromptHasNoStudentCountCap()
         || !invalidInputsFollowTheExistingEligibilityPolicy())

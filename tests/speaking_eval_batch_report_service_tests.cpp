@@ -1873,6 +1873,15 @@ void SpeakingEvalBatchReportServiceTests::
         );
     QCOMPARE(report.signatureImage, signatureImage);
     QCOMPARE(report.scores[0], QStringLiteral("A+"));
+
+    classInfo.classGrade = QStringLiteral("M1");
+    const auto unsupportedGradeReports = buildSpeakingEvalStudentReports(
+        model.rows(),
+        classInfo,
+        signatureImage
+        );
+    QCOMPARE(unsupportedGradeReports.size(), 1);
+    QCOMPARE(unsupportedGradeReports.front().report.grade, 0);
 }
 
 void SpeakingEvalBatchReportServiceTests::

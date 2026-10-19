@@ -3,6 +3,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <initializer_list>
+#include <limits>
+#include <utility>
+#include <vector>
 
 using ClassMngr::Next::Application::
     SpeakingEvaluationAiBatchEligibilityInput;
@@ -10,6 +13,9 @@ using ClassMngr::Next::Application::
     SpeakingEvaluationAiBatchEligibilityReason;
 using ClassMngr::Next::Application::
     speakingEvaluationAiBatchEligibilityReason;
+using ClassMngr::Next::Application::
+    speakingEvaluationCourseGradeBandFromInteger;
+using ClassMngr::Next::Domain::CourseGradeBand;
 
 namespace
 {
@@ -18,7 +24,7 @@ bool reportsMissingNameBeforeOtherFailures()
 {
     return speakingEvaluationAiBatchEligibilityReason({
         .hasTrimmedStudentName = false,
-        .grade = 0,
+        .grade = CourseGradeBand::Other,
         .hasDidWellItem = false,
         .hasNeedsImprovementItem = false
     }) == SpeakingEvaluationAiBatchEligibilityReason::MissingName;
@@ -28,7 +34,7 @@ bool reportsUnsupportedGradeBeforeMissingObservations()
 {
     const SpeakingEvaluationAiBatchEligibilityInput input{
         .hasTrimmedStudentName = true,
-        .grade = 7,
+        .grade = CourseGradeBand::Other,
         .hasDidWellItem = false,
         .hasNeedsImprovementItem = false
     };
@@ -40,7 +46,7 @@ bool reportsDidWellBeforeNeedsImprovement()
 {
     const SpeakingEvaluationAiBatchEligibilityInput input{
         .hasTrimmedStudentName = true,
-        .grade = 5,
+        .grade = CourseGradeBand::E5,
         .hasDidWellItem = false,
         .hasNeedsImprovementItem = false
     };
@@ -52,7 +58,7 @@ bool reportsMissingNeedsImprovementAfterDidWellExists()
 {
     const SpeakingEvaluationAiBatchEligibilityInput input{
         .hasTrimmedStudentName = true,
-        .grade = 5,
+        .grade = CourseGradeBand::E5,
         .hasDidWellItem = true,
         .hasNeedsImprovementItem = false
     };
@@ -63,7 +69,11 @@ bool reportsMissingNeedsImprovementAfterDidWellExists()
 
 bool acceptsSupportedGradesWhenAllInputsExist()
 {
-    for (const int grade : {4, 5, 6})
+    for (const CourseGradeBand grade : {
+             CourseGradeBand::E4,
+             CourseGradeBand::E5,
+             CourseGradeBand::E6
+         })
     {
         const SpeakingEvaluationAiBatchEligibilityInput input{
             .hasTrimmedStudentName = true,
@@ -80,9 +90,14 @@ bool acceptsSupportedGradesWhenAllInputsExist()
     return true;
 }
 
-bool rejectsGradesOutsideSupportedRange()
+bool rejectsOtherAndMiddleSchoolBands()
 {
-    for (const int grade : {3, 7})
+    for (const CourseGradeBand grade : {
+             CourseGradeBand::Other,
+             CourseGradeBand::M1,
+             CourseGradeBand::M2,
+             CourseGradeBand::M3
+         })
     {
         const SpeakingEvaluationAiBatchEligibilityInput input{
             .hasTrimmedStudentName = true,
@@ -92,6 +107,29 @@ bool rejectsGradesOutsideSupportedRange()
         };
         if (speakingEvaluationAiBatchEligibilityReason(input)
             != SpeakingEvaluationAiBatchEligibilityReason::UnsupportedGrade)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool integerBoundaryMapsOnlyElementaryGradesToBands()
+{
+    const std::vector<std::pair<int, CourseGradeBand>> cases{
+        {4, CourseGradeBand::E4},
+        {5, CourseGradeBand::E5},
+        {6, CourseGradeBand::E6},
+        {-1, CourseGradeBand::Other},
+        {0, CourseGradeBand::Other},
+        {3, CourseGradeBand::Other},
+        {7, CourseGradeBand::Other},
+        {std::numeric_limits<int>::min(), CourseGradeBand::Other},
+        {std::numeric_limits<int>::max(), CourseGradeBand::Other}
+    };
+    for (const auto& [grade, expected] : cases)
+    {
+        if (speakingEvaluationCourseGradeBandFromInteger(grade) != expected)
         {
             return false;
         }
@@ -128,9 +166,14 @@ int main()
         std::fprintf(stderr, "An eligible supported-grade input was rejected.\n");
         return EXIT_FAILURE;
     }
-    if (!rejectsGradesOutsideSupportedRange())
+    if (!rejectsOtherAndMiddleSchoolBands())
     {
-        std::fprintf(stderr, "A grade outside E4 through E6 was accepted.\n");
+        std::fprintf(stderr, "An unsupported grade band was accepted.\n");
+        return EXIT_FAILURE;
+    }
+    if (!integerBoundaryMapsOnlyElementaryGradesToBands())
+    {
+        std::fprintf(stderr, "Integer-to-grade-band mapping was incorrect.\n");
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

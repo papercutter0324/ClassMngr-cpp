@@ -381,7 +381,7 @@ inline void appendDecimal(std::u16string& destination, const int value)
         .hasTrimmedStudentName =
             !trimQtWhitespace(englishName).empty()
             || !trimQtWhitespace(koreanName).empty(),
-        .grade = grade,
+        .grade = speakingEvaluationCourseGradeBandFromInteger(grade),
         .hasDidWellItem = !speakingEvaluationAiObservationItems(didWell).empty(),
         .hasNeedsImprovementItem =
             !speakingEvaluationAiObservationItems(needsImprovement).empty()
@@ -398,7 +398,7 @@ inline void appendDecimal(std::u16string& destination, const int value)
     // shared eligibility policy still requires a name before enabling it.
     return speakingEvaluationAiBatchEligibilityReason({
         .hasTrimmedStudentName = true,
-        .grade = grade,
+        .grade = speakingEvaluationCourseGradeBandFromInteger(grade),
         .hasDidWellItem = !speakingEvaluationAiObservationItems(didWell).empty(),
         .hasNeedsImprovementItem =
             !speakingEvaluationAiObservationItems(needsImprovement).empty()

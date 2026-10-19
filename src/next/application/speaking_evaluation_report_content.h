@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/domain/course.h"
+
 #include <array>
 #include <cstddef>
 #include <string>
@@ -62,7 +64,7 @@ struct SpeakingEvaluationReportContent final
     std::u16string classLabel;
     std::u16string nativeTeacher;
     std::u16string koreanTeacher;
-    int grade = 0;
+    Domain::CourseGradeBand grade = Domain::CourseGradeBand::Other;
     SpeakingEvaluationReportTemplate reportTemplate =
         SpeakingEvaluationReportTemplate::Standard;
     std::vector<SpeakingEvaluationReportStudentContent> students;
@@ -139,7 +141,9 @@ inline bool equalsAsciiCaseInsensitive(
     return true;
 }
 
-inline int elementaryGrade(const std::u16string_view rawGrade)
+inline Domain::CourseGradeBand elementaryGrade(
+    const std::u16string_view rawGrade
+    )
 {
     std::u16string value = trim(rawGrade);
     for (char16_t& character : value)
@@ -154,7 +158,7 @@ inline int elementaryGrade(const std::u16string_view rawGrade)
 
     if (value.empty())
     {
-        return 0;
+        return Domain::CourseGradeBand::Other;
     }
 
     std::size_t position = 0;
@@ -164,7 +168,7 @@ inline int elementaryGrade(const std::u16string_view rawGrade)
     }
     if (position == value.size())
     {
-        return 0;
+        return Domain::CourseGradeBand::Other;
     }
 
     int grade = 0;
@@ -173,17 +177,27 @@ inline int elementaryGrade(const std::u16string_view rawGrade)
         const char16_t character = value[position];
         if (character < u'0' || character > u'9')
         {
-            return 0;
+            return Domain::CourseGradeBand::Other;
         }
 
         grade = grade * 10 + static_cast<int>(character - u'0');
         if (grade > 6)
         {
-            return 0;
+            return Domain::CourseGradeBand::Other;
         }
     }
 
-    return grade >= 4 && grade <= 6 ? grade : 0;
+    switch (grade)
+    {
+    case 4:
+        return Domain::CourseGradeBand::E4;
+    case 5:
+        return Domain::CourseGradeBand::E5;
+    case 6:
+        return Domain::CourseGradeBand::E6;
+    default:
+        return Domain::CourseGradeBand::Other;
+    }
 }
 
 inline std::u16string_view cell(

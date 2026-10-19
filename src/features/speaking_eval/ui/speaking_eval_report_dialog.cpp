@@ -5,6 +5,7 @@
 #include "next/application/speaking_evaluation_ai_comment_prompt.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/application/speaking_evaluation_report_content.h"
+#include "next/domain/course.h"
 #include "next/platform/speaking_evaluation_qt_text_match_port.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
@@ -56,6 +57,27 @@ namespace
 {
 
 namespace Application = ClassMngr::Next::Application;
+
+int toLegacySpeakingEvaluationGrade(
+    const ClassMngr::Next::Domain::CourseGradeBand grade
+    )
+{
+    switch (grade)
+    {
+    case ClassMngr::Next::Domain::CourseGradeBand::E4:
+        return 4;
+    case ClassMngr::Next::Domain::CourseGradeBand::E5:
+        return 5;
+    case ClassMngr::Next::Domain::CourseGradeBand::E6:
+        return 6;
+    case ClassMngr::Next::Domain::CourseGradeBand::M1:
+    case ClassMngr::Next::Domain::CourseGradeBand::M2:
+    case ClassMngr::Next::Domain::CourseGradeBand::M3:
+    case ClassMngr::Next::Domain::CourseGradeBand::Other:
+        return 0;
+    }
+    return 0;
+}
 
 AiCommentProvider preferredAiCommentProvider()
 {
@@ -305,7 +327,7 @@ buildSpeakingEvalStudentReports(
         report.koreanTeacher = fromApplicationString(projected.koreanTeacher);
         report.comments = fromApplicationString(student.comments);
         report.notes = fromApplicationString(student.notes);
-        report.grade = projected.grade;
+        report.grade = toLegacySpeakingEvaluationGrade(projected.grade);
         report.reportTemplate =
             projected.reportTemplate
                     == Application::SpeakingEvaluationReportTemplate::Advanced
@@ -793,7 +815,9 @@ QString SpeakingEvalReportDialog::aiPromptUnavailableReason() const
                 .hasTrimmedStudentName =
                     !report->report.englishName.trimmed().isEmpty()
                     || !report->report.koreanName.trimmed().isEmpty(),
-                .grade = report->report.grade,
+                .grade = Application::speakingEvaluationCourseGradeBandFromInteger(
+                    report->report.grade
+                    ),
                 .hasDidWellItem =
                     m_notesFields
                     && !ClassMngr::Next::Application::
