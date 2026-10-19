@@ -5314,3 +5314,15 @@ invalid-value fallback to the first choice, exact save values, and existing
 My Workspace and Initial Setup behavior. Keep the renderer enum, legacy
 repository integer, and storage schema unchanged. F1116 and F1117 remain
 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1115 complete; Batch483 active - 2026-10-20
+
+F1115 completed at source/test commit `a455d24c`, following acceptance commit
+`e10d9e11`. The Qt-free `PersonalSignatureFontChoice` now types both Next
+Application fields and maps the four existing values through preference and
+save adapters. Three focused CTests passed 3/3, and the new Initial Setup
+four-value selector passed. The full Initial Setup target aborted in its
+existing keyboard-availability test with a Qt/macOS `NSBundle initWithURL:`
+exception; no full suite or Windows run occurred. F1116 is next for acceptance,
+F1117 remains discovered, and Batch484 discovery has started. F629 and the
+Phase 0 and Phase 2 gates remain open.

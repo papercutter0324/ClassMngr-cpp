@@ -7697,3 +7697,14 @@ the existing four persisted values, setting key, default, and fallback to
 choice 0 for invalid values. Keep the Application contract Qt-free and map
 between it and the existing renderer enum at the adapter boundary. The
 legacy repository integer and database setting schema remain unchanged.
+
+## 2026-10-20 - F1115 complete
+
+F1115 completed at source/test commit `a455d24c`, following acceptance commit
+`e10d9e11`. The Application choice covers the four persisted font values,
+and the adapters preserve exact storage mappings and invalid-value fallback.
+Three focused CTests passed 3/3, and the new Initial Setup four-value
+selector passed. The broader Initial Setup target aborted in its existing
+keyboard-availability test with a Qt/macOS `NSBundle initWithURL:` exception.
+No full suite or Windows run occurred. Batch484 discovery has started while
+F1116 is next for acceptance.

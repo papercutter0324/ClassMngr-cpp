@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is active with F1115 accepted and next for implementation and F1116/F1117 discovered; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is active with F1115 complete at `a455d24c` following acceptance `e10d9e11`, F1116 next for acceptance, and F1117 discovered; Batch484 discovery has started without a candidate list; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,10 +68,10 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch483 (3 candidates; 1 accepted; 2 discovered)
+#### Active batch: Batch483 (3 candidates; 1 complete; 2 discovered)
 
-1. F1115 - Type personal-signature font choice: accepted before implementation; next for implementation. Add a Qt-free Application `PersonalSignatureFontChoice` for exactly 0=`JustAnotherHand`, 1=`DancingScript`, 2=`GreatVibes`, and 3=`Caveat`; replace the two Next Application integer fields and convert explicitly at persistence adapters. Preserve key/default/stored values and invalid-value fallback to choice 0. Focused targets: `ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`, `ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`, `ClassMngrMyWorkspacePageTests`, and `ClassMngrInitialSetupWizardTests`.
-2. F1116 - Type closed Speaking Evaluation validation codes: discovered, not accepted. Preserve exact keys, order, fields, row/column, severity, and arguments. Focused target: `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`.
+1. F1115 - Type personal-signature font choice: complete at `a455d24c` following acceptance `e10d9e11`. The Qt-free Application `PersonalSignatureFontChoice` represents exactly 0=`JustAnotherHand`, 1=`DancingScript`, 2=`GreatVibes`, and 3=`Caveat`; explicit persistence-boundary conversion preserves stored values, default 0, invalid-value fallback, and invalid-enum save normalization. Focused verification and its Initial Setup CTest limitation are recorded in the progress log.
+2. F1116 - Type closed Speaking Evaluation validation codes: discovered, not accepted; next for acceptance review. Preserve exact keys, order, fields, row/column, severity, and arguments. Focused target: `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`.
 3. F1117 - Type Calendar event query database path: discovered, not accepted. Preserve existing UTF-8 bytes and query-port behavior. Focused targets: Next Application CalendarEventQueryPort tests and `ClassMngrCalendarEventCacheTests`.
 
 #### Deferred candidates

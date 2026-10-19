@@ -48549,3 +48549,42 @@ fallback, and existing page/setup behavior. Use
 `ClassMngrInitialSetupWizardTests`. F1115 remains unimplemented and
 unverified. F1116 and F1117 remain discovered; no other slices were found.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1115 personal-signature font choice complete - 2026-10-20
+
+F1115 completed at source/test commit `a455d24c`, following acceptance commit
+`e10d9e11`. The Qt-free Application `PersonalSignatureFontChoice` replaces
+both Next Application integer preference/save fields and represents exactly
+0=`JustAnotherHand`, 1=`DancingScript`, 2=`GreatVibes`, and 3=`Caveat`.
+Explicit adapter conversions preserve `myInfo/typedSignatureFont`, persisted
+values 0–3, default 0, invalid/nonnumeric/out-of-range read fallback to
+choice 0, and invalid-enum save normalization to stored 0. The separate
+Qt-bearing UI enum, fonts/assets/labels/rendering, legacy repository integer
+representation, database schema, and error behavior remain unchanged.
+
+The final build command completed successfully in the existing
+`build/macos-clang-debug` tree (Ninja reported no work):
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests ClassMngrMyWorkspacePageTests ClassMngrInitialSetupWizardTests -j 8
+```
+
+Focused CTest for
+`ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`, and
+`ClassMngrMyWorkspacePageTests` passed 3/3. Direct offscreen QTest
+`QT_QPA_PLATFORM=offscreen ./build/macos-clang-debug/ClassMngrInitialSetupWizardTests aggregateSetupSavePreservesAllFourSignatureFontValues`
+passed. A broader CTest selection of all four targets aborted in the existing
+`keyboardIsAvailableAtTextEntryStages()` case with Qt/macOS
+`NSInvalidArgumentException: -[NSBundle initWithURL:]: nil URL argument`
+through `QWizard::page/pixmap`; this is a target-level verification
+limitation, separate from the passing focused Initial Setup selector. Coverage
+includes type distinction from `int`, exact mapping of all four values, read
+defaults/invalid fallback, exact save values and invalid fallback, and page
+and setup behavior. `git diff --check` passed. No full suite or Windows run
+occurred.
+
+Batch483 remains active with F1116 next for acceptance and F1117 discovered.
+Batch484 discovery has started under the early-discovery rule; its candidate
+list is not recorded yet. No other slices were found. F629 and the Phase 0
+and Phase 2 gates remain open.
