@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1141 accepted; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1141 complete; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -227,8 +227,16 @@ failure/resync/retry case. `ClassMngr` and the affected targets built, and
 `git diff --check` passed. F1139 completed at source/test commit `05c9de8c`;
 the focused Platform adapter and Calendar Import CTests passed 2/2. F1140
 completed at source/test commit `230f7a00`; its Platform CTest passed 1/1 and
-both selected UI read-error cases passed. Batch486 remains active with three
-complete slices, F1141 accepted/in progress, and two discovered.
+both selected UI read-error cases passed. F1141 completed at source/test
+commit `73b9a8e7`; all five affected targets built in the documented macOS
+Debug preset, the Platform CTest passed 1/1 with 11 direct QtTest entries, and
+the selected Sub Prep and My Workspace cases passed. The Initial Setup case
+could not reach its assertions because the registered offscreen Qt Widgets /
+QWizard test aborts with an `NSBundle initWithURL: nil URL argument` exception
+in both the Phase 0 and standard preset trees; its cause is unresolved. The
+Initial Setup target compiled, but behavior remains unverified. Batch486 has
+four complete slices and two discovered candidates, with F1142 next for
+acceptance.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -236,7 +244,7 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with accepted F1141. F629 remains active and awaits a
+Continue Batch486 by accepting F1142. F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -6057,7 +6065,7 @@ passed. `git diff --check` passed. Full-suite and Windows verification were not
 run. Batch486 has three complete slices and three discovered; F1141 is next for
 acceptance. F629 and both phase gates remain open.
 
-## Phase 2 update - F1141 accepted; Batch486 active - 2026-10-20
+## Phase 2 update - F1141 complete; Batch486 active - 2026-10-20
 
 F1141 is accepted to distinguish the Sub Prep Zoom login ID and password with
 two Qt-free owning Application values. Preserve exact permissive UTF-8 bytes,
@@ -6070,21 +6078,26 @@ only for missing or invalid primary values, length-aware UTF-8 conversion, and
 best-effort migration only after all three settings read successfully. Ignore
 migration-write failures as before; repository read failures remain
 nonrecoverable `Technical` errors and do not trigger fallback or migration.
-The UI continues to decode by explicit length, hide values when unavailable,
-and trim/map blank values to `N/A` only for presentation. Preserve current
-read-error warning and field-retention behavior.
+Sub Prep and My Info continue to decode by explicit length and trim only for
+presentation; Sub Prep hides values when unavailable, while My Info retains
+them and disables the fields. Initial Setup forwards the exact payloads to its
+existing save request. Preserve read-error warning and field-retention behavior.
 
-Focused verification will build `ClassMngr`,
+The incremental build in the existing documented `macos-clang-debug` tree
+passed for `ClassMngr`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
 `ClassMngrSubPrepPageTests`, `ClassMngrMyWorkspacePageTests`, and
-`ClassMngrInitialSetupWizardTests`; run the Platform CTest and selected UI
-cases `zoomUnavailableHidesStoredCredentials`,
+`ClassMngrInitialSetupWizardTests`. Platform CTest passed 1/1 and the direct
+Platform run passed all 11 entries. Selected cases
+`zoomUnavailableHidesStoredCredentials`,
 `zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`,
-`storedZoomCredentialsPrefillAndRespectUnavailableState`, and
-`aggregateSaveComposesTypedReadsWithoutDataLoss`. The My Workspace case will
-use UTF-8 credentials with surrounding spaces and assert exact display text
-and unavailable-field behavior. Run `git diff --check`.
-Full-suite and Windows verification are not expected.
-Batch486 has three complete slices, one accepted/in-progress F1141, and two
-discovered candidates; F1142 is next for acceptance. F629 and both phase gates
-remain open.
+and `storedZoomCredentialsPrefillAndRespectUnavailableState` passed; the latter
+asserted exact UTF-8 display text with surrounding spaces and unavailable
+field behavior. `aggregateSaveComposesTypedReadsWithoutDataLoss` could not
+reach its assertions: the selected launch and registered offscreen CTest abort
+in Qt Widgets / QWizard with `NSInvalidArgumentException` from
+`NSBundle initWithURL: nil URL argument`, also in the documented preset tree.
+The cause is unresolved and no behavior conclusion is available for this case.
+`git diff --check` passed. Full suite and Windows were not run. Batch486 has
+four complete slices and two discovered candidates; F1142 is next. F629 and
+both phase gates remain open.

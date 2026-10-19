@@ -8233,3 +8233,16 @@ Initial Setup is the third consumer: it forwards the typed values' exact
 payloads into the existing personal-details save request. Preserve that path
 and include `aggregateSaveComposesTypedReadsWithoutDataLoss` in focused
 verification.
+
+## 2026-10-20 - F1141 complete
+
+F1141 completed at source/test commit `73b9a8e7`. Distinct Qt-free Application
+values now carry Sub Prep Zoom login ID and password bytes through the Platform
+adapter and all three consumers. The exact-value Platform checks, both selected
+Sub Prep cases, and the strengthened My Workspace UTF-8 display/unavailable
+case passed in the documented macOS Debug preset. The Initial Setup target
+built, but its selected and registered offscreen test launches abort in the
+Qt Widgets / QWizard path with an `NSBundle initWithURL: nil URL argument`
+exception before assertions, in both the previous Phase 0 tree and the standard
+preset tree. The cause is unresolved and no behavior result is available for
+that case. `git diff --check` passed; full suite and Windows were not run.

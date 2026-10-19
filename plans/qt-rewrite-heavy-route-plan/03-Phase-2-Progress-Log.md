@@ -50165,8 +50165,46 @@ Platform CTest and selected UI cases
 with UTF-8 values containing surrounding spaces, asserting exact displayed
 text while checking unavailable state. Include
 `InitialSetupWizardTests::aggregateSaveComposesTypedReadsWithoutDataLoss` to
-verify the Initial Setup handoff. Run
-`git diff --check`. Implementation and verification are pending. Full-suite
-and Windows runs are not expected. Batch486 has six candidates: F1138–F1140
-complete, F1141 accepted/in progress, and F1142–F1143 discovered. F1142 is
-next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
+verify the Initial Setup handoff. Run `git diff --check`. F1141 completed;
+see the completion record below. Full-suite and Windows runs were not run.
+
+### F1141 Sub Prep personal Zoom credential values complete - 2026-10-20
+
+F1141 completed at source/test commit
+`73b9a8e7dcab0551b3de1189b0c268600c98f313`. The preference struct now uses
+distinct owning Application values for login ID and password, preserving exact
+permissive UTF-8 bytes including embedded NUL. Existing primary/legacy keys,
+precedence and migration rules, `N/A` defaults, `unavailable` behavior, and
+nonrecoverable Technical read failures remain. Sub Prep and My Info retain
+their respective fallback/display rules, and Initial Setup forwards exact
+value strings into its existing save request.
+
+The standard `build/macos-clang-debug` Debug/Ninja tree (macOS deployment
+14.4, Qt 6.12.0) built `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
+`ClassMngrSubPrepPageTests`, `ClassMngrMyWorkspacePageTests`, and
+`ClassMngrInitialSetupWizardTests` incrementally with exit 0. The Platform
+CTest passed 1/1; direct Platform QtTest reported all 11 entries passed,
+including embedded-NUL preservation in both values. The target also passed
+its compile-time type-distinction static assertion. The selected Sub Prep cases
+`zoomUnavailableHidesStoredCredentials` and
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic` passed. The
+strengthened My Workspace case
+`storedZoomCredentialsPrefillAndRespectUnavailableState` passed with UTF-8
+credentials containing surrounding spaces and assertions for exact display
+and unavailable/disabled state.
+
+Initial Setup case
+`aggregateSaveComposesTypedReadsWithoutDataLoss` remains unverified. A direct
+selected launch and the registered CTest abort before its behavior assertions
+with `NSInvalidArgumentException` (`-[NSBundle initWithURL:]: nil URL
+argument`) through Qt Widgets `QWizard`; the registered offscreen CTest aborts
+earlier in `keyboardIsAvailableAtTextEntryStages`. This reproduces in the
+documented `macos-clang-debug` preset and the earlier Phase 0 tree; no
+supported alternate launch mode was found. The cause is unresolved, so no
+behavior conclusion is available for this case.
+
+`git diff --check` passed. The full suite and Windows verification were not
+run. Batch486 has six candidates: four complete (F1138–F1141), none
+accepted/in progress, and two discovered (F1142–F1143); F1142 is next for
+acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
