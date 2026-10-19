@@ -50730,3 +50730,37 @@ the Phase 0 and Phase 2 gates remain open.
 
 Batch487 has ten candidates: three complete (F1144–F1146), one accepted/in
 progress (F1147), and six discovered (F1148–F1153); F1148 is next.
+
+### F1147 Shared campus code and Calendar Page metadata complete - 2026-10-20
+
+F1147 completed at source/test commit
+`6a89aa0f6459fc949fe4858ac164deffe619bbe5`, following acceptance commit
+`7ebab48b47599a66079edc361146869064e05982`. Shared
+`Application::CampusCode` replaces F1139's importer-specific wrapper and types
+`CalendarPageCampusMetadata::campusCode` as optional. F1139 retains trimming,
+blank filtering, first exact case-sensitive duplicate removal, repository
+order, and errors. Calendar Page retains exact optional values, whitespace,
+UTF-8 and embedded-NUL bytes, and repository order, without query filtering or
+deduplication. Both
+`CalendarPage` and `CampusDashboard` UI consumers convert through
+`CampusCode::value()` under their existing optional guards, leaving downstream
+behavior unchanged.
+
+The first incremental build triggered automatic CMake/Ninja regeneration when
+the new header was detected, then failed at
+`src/features/campus/ui/campus_dashboard_page_data.cpp:146` because that
+consumer still expected a raw `std::string`. The Executor changed it to read
+`CampusCode::value()` under the unchanged optional guard. The retry passed for
+`ClassMngr`,
+`ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests`,
+`ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests`, and
+`ClassMngrCalendarImportTests`. Focused CTests passed 3/3 with 32 QtTest cases:
+Calendar Import 21, import adapter 5, and Calendar Page adapter 6; there were
+no failures, skips, or blacklisted cases. `git diff --check` passed. There was
+no standalone configure or clean build, full-suite run, or Windows run. The
+compile issue was fixed without a production behavior change.
+
+Batch487 has ten candidates: four complete (F1144–F1147), none accepted/in
+progress, and six discovered (F1148–F1153); F1148 is next. The batch is
+incomplete, so no push has occurred. F629 remains active pending source-bound
+Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.

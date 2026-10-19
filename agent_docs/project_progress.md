@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1146 complete; F1147 accepted; Batch487 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1147 complete; Batch487 active; F1148 next; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -269,16 +269,30 @@ incomplete slices, and seven discovered slices; F1147 is next. Batch485 was
 pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
-0 and Phase 2 gates remain open. F1147 is accepted to share exact raw campus
-code text across the Calendar Page and Calendar Import Application query
-ports, while preserving their different Platform normalization behavior.
-Batch487 has three complete, one accepted/in progress, and six discovered
-candidates; F1148 follows F1147. Batch486's completed-batch push is still
-pending the user's response to the exact-payload approval request.
+0 and Phase 2 gates remain open. F1147 completed at source/test commit
+`6a89aa0f6459fc949fe4858ac164deffe619bbe5`, following acceptance commit
+`7ebab48b47599a66079edc361146869064e05982`. The shared exact-byte
+`Application::CampusCode` now types both Calendar Page metadata output and
+Calendar Import's campus-code query; the importer retains its existing trim,
+blank filtering, first exact duplicate, and order behavior. Calendar Page
+preserves its optional nonempty codes, UTF-8, whitespace, embedded NUL bytes,
+and repository order. Both Calendar Page and Campus Dashboard convert the
+value at their UI boundary without changing downstream behavior.
+
+The incremental build passed for `ClassMngr`, both campus-query adapter test
+targets, and `ClassMngrCalendarImportTests`. The first attempt automatically
+regenerated CMake/Ninja for the new header, then found a stale raw-string
+conversion in Campus Dashboard; the Executor fixed it to read `CampusCode::value()`
+under the existing optional guard, and the retry passed. The three focused
+CTests passed 3/3 with 32 QtTest cases total (21, 5, and 6). `git diff --check`
+passed. No standalone configure, clean build, full suite, or Windows build ran.
+Batch487 has four complete, no accepted/in progress, and six discovered
+candidates; F1148 is next. Batch486's completed-batch push remains pending the
+user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete F1147, then accept F1148 and continue Batch487 in its recorded order.
+Accept and complete F1148, then continue Batch487 in its recorded order.
 Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
 exact-payload approval request. F629 remains active and awaits source-bound
 Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows

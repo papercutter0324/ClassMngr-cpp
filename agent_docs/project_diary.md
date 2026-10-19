@@ -8315,3 +8315,25 @@ F1147 verification is pending. The focused gate builds `ClassMngr`, both
 campus-query adapter targets, and `ClassMngrCalendarImportTests`; it runs the
 two adapter CTests and Calendar Import CTest plus `git diff --check`. F629 and
 both phase gates remain open; Batch486's push is pending exact-payload approval.
+
+## 2026-10-20 - F1147 complete
+
+F1147 completed at source/test commit
+`6a89aa0f6459fc949fe4858ac164deffe619bbe5`, following acceptance
+`7ebab48b47599a66079edc361146869064e05982`. A shared exact-byte
+`Application::CampusCode` now serves Calendar Page and Calendar Import query
+outputs. Calendar Page preserves optional nonempty codes, UTF-8, whitespace,
+embedded NUL bytes, and repository order; Calendar Import keeps its existing
+Platform trim, blank filtering, first exact duplicate, and ordering rules.
+Calendar Page and Campus Dashboard convert the shared value at their UI
+boundaries, preserving their behavior.
+
+The incremental build passed for `ClassMngr`, the Calendar Page campus query
+adapter tests, the Calendar Import campus-code adapter tests, and the Calendar
+Import tests. CMake/Ninja automatically regenerated after detecting the new
+header; the first compile then exposed a stale raw-string conversion in Campus
+Dashboard, which was fixed to use `CampusCode::value()` under the same optional
+guard before the passing retry. Focused CTests passed 3/3 (21, 5, and 6 QtTest
+cases); `git diff --check` passed. No full suite or Windows build ran. F1148 is
+next in Batch487; F629 and both phase gates remain open. Batch486's push is
+still pending exact-payload approval.
