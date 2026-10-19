@@ -10,8 +10,12 @@
 
 #include <array>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 using ClassMngr::Next::Application::FileDialogPurpose;
+using ClassMngr::Next::Application::DirectoryPreferencePath;
+using ClassMngr::Next::Application::FileDialogDirectoryPreferencesPort;
 using ClassMngr::Next::Platform::
     QSettingsFileDialogDirectoryPreferencesAdapter;
 
@@ -133,6 +137,25 @@ void resetCustomSettingsStore()
     customSettingsFailuresRemaining = 0;
 }
 
+DirectoryPreferencePath preferencePath(const QString& value)
+{
+    const QByteArray encoded = value.toUtf8();
+    return DirectoryPreferencePath(
+        std::string(
+            encoded.constData(),
+            static_cast<std::size_t>(encoded.size())
+            )
+        );
+}
+
+static_assert(
+    std::is_same_v<
+        decltype(std::declval<const FileDialogDirectoryPreferencesPort&>()
+                     .readDirectory(FileDialogPurpose::General)),
+        DirectoryPreferencePath
+        >
+    );
+
 }
 
 class NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests final
@@ -142,6 +165,7 @@ class NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests final
 
 private slots:
     void mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8();
+    void directoryPreferencePathIsDefaultEmptyAndPreservesExactBytes();
     void invalidPurposeWriteIsRejectedWithoutChangingSettings();
     void missingAndEmptyValuesReadAsAbsent();
     void failedWriteRestoresExactPriorValueAndLeavesOtherKeysUntouched();
@@ -191,7 +215,7 @@ mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8()
         const QByteArray expectedUtf8 = value.toUtf8();
         const std::string actual = adapter.readDirectory(
             mappings[index].purpose
-            );
+            ).value();
         QVERIFY(
             actual
                 == std::string(
@@ -209,17 +233,14 @@ mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8()
         const QByteArray expectedUtf8 = expected.toUtf8();
         const auto writeResult = adapter.writeDirectory(
             mappings[index].purpose,
-            std::string_view(
-                expectedUtf8.constData(),
-                static_cast<std::size_t>(expectedUtf8.size())
-                )
+            preferencePath(expected)
             );
         QVERIFY(writeResult);
         QCOMPARE(settings.value(mappings[index].key).toString(), expected);
 
         const std::string actual = adapter.readDirectory(
             mappings[index].purpose
-            );
+            ).value();
         QVERIFY(
             actual
                 == std::string(
@@ -238,6 +259,50 @@ mapsEveryPurposeToItsStableKeyAndRoundTripsUtf8()
     QStringList actualKeys = settings.allKeys();
     actualKeys.sort();
     QCOMPARE(actualKeys, expectedKeys);
+}
+
+void NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests::
+directoryPreferencePathIsDefaultEmptyAndPreservesExactBytes()
+{
+    const DirectoryPreferencePath empty;
+    QVERIFY(empty.empty());
+    QVERIFY(empty.value().empty());
+
+    const QString unnormalized = QString::fromUtf8(
+        "D:/保存/../課程//資料/"
+        );
+    const QByteArray expectedBytes = unnormalized.toUtf8();
+    const std::string expected(
+        expectedBytes.constData(),
+        static_cast<std::size_t>(expectedBytes.size())
+        );
+    const DirectoryPreferencePath path(expected);
+    QCOMPARE(path.value(), expected);
+    QVERIFY(!path.empty());
+    QVERIFY(path == DirectoryPreferencePath(expected));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    QSettings settings(
+        temporaryDirectory.filePath(QStringLiteral("settings.ini")),
+        QSettings::IniFormat
+        );
+    const QSettingsFileDialogDirectoryPreferencesAdapter adapter(&settings);
+    const auto writeResult = adapter.writeDirectory(
+        FileDialogPurpose::TeacherProfile,
+        path
+        );
+    QVERIFY(writeResult);
+    const DirectoryPreferencePath actual = adapter.readDirectory(
+        FileDialogPurpose::TeacherProfile
+        );
+    QCOMPARE(actual.value(), expected);
+    QCOMPARE(
+        settings.value(
+            QStringLiteral("file-dialog/directories/teacher-profile")
+            ).toString(),
+        unnormalized
+        );
 }
 
 void NextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests::
@@ -268,10 +333,10 @@ invalidPurposeWriteIsRejectedWithoutChangingSettings()
     const QByteArray newDirectory = QStringLiteral("D:/new invalid").toUtf8();
     const auto result = adapter.writeDirectory(
         static_cast<FileDialogPurpose>(17),
-        std::string_view(
+        DirectoryPreferencePath(std::string(
             newDirectory.constData(),
             static_cast<std::size_t>(newDirectory.size())
-            )
+            ))
         );
 
     QVERIFY(!result);
@@ -287,7 +352,7 @@ invalidPurposeWriteIsRejectedWithoutChangingSettings()
     actualKeys.sort();
     QCOMPARE(actualKeys, expectedKeys);
     QCOMPARE(
-        adapter.readDirectory(static_cast<FileDialogPurpose>(17)),
+        adapter.readDirectory(static_cast<FileDialogPurpose>(17)).value(),
         std::string("D:/old general")
         );
     QCOMPARE(settings.status(), QSettings::NoError);
@@ -345,10 +410,7 @@ failedWriteRestoresExactPriorValueAndLeavesOtherKeysUntouched()
     const QByteArray newDirectory = QStringLiteral("D:/new directory").toUtf8();
     const auto result = adapter.writeDirectory(
         FileDialogPurpose::TeacherProfile,
-        std::string_view(
-            newDirectory.constData(),
-            static_cast<std::size_t>(newDirectory.size())
-            )
+        preferencePath(QString::fromUtf8(newDirectory))
         );
 
     QVERIFY(!result);
@@ -393,10 +455,7 @@ failedWriteRestoresAnAbsentPurposeKey()
     const QByteArray newDirectory = QStringLiteral("D:/new").toUtf8();
     const auto result = adapter.writeDirectory(
         FileDialogPurpose::General,
-        std::string_view(
-            newDirectory.constData(),
-            static_cast<std::size_t>(newDirectory.size())
-            )
+        preferencePath(QString::fromUtf8(newDirectory))
         );
 
     QVERIFY(!result);
@@ -424,10 +483,7 @@ aLaterDefaultSettingsOperationCanRetry()
     const QByteArray failedDirectory = QStringLiteral("D:/first").toUtf8();
     const auto firstResult = adapter.writeDirectory(
         FileDialogPurpose::ImportWorkbook,
-        std::string_view(
-            failedDirectory.constData(),
-            static_cast<std::size_t>(failedDirectory.size())
-            )
+        preferencePath(QString::fromUtf8(failedDirectory))
         );
     QVERIFY(!firstResult);
     QCOMPARE(
@@ -439,10 +495,7 @@ aLaterDefaultSettingsOperationCanRetry()
     const QByteArray retryDirectory = QStringLiteral("D:/retry").toUtf8();
     const auto retryResult = adapter.writeDirectory(
         FileDialogPurpose::ImportWorkbook,
-        std::string_view(
-            retryDirectory.constData(),
-            static_cast<std::size_t>(retryDirectory.size())
-            )
+        preferencePath(QString::fromUtf8(retryDirectory))
         );
     QVERIFY(retryResult);
     QCOMPARE(customSettingsWriteAttempts, 2);

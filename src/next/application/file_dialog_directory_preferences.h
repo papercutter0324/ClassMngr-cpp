@@ -1,9 +1,7 @@
 #pragma once
 
+#include "next/application/directory_preference_path.h"
 #include "next/domain/operation_result.h"
-
-#include <string>
-#include <string_view>
 
 namespace ClassMngr::Next::Application
 {
@@ -27,13 +25,13 @@ class FileDialogDirectoryPreferencesPort
 public:
     virtual ~FileDialogDirectoryPreferencesPort() = default;
 
-    [[nodiscard]] virtual std::string readDirectory(
+    [[nodiscard]] virtual DirectoryPreferencePath readDirectory(
         FileDialogPurpose purpose
         ) const = 0;
 
     [[nodiscard]] virtual Domain::Result<void> writeDirectory(
         FileDialogPurpose purpose,
-        std::string_view utf8Directory
+        const DirectoryPreferencePath& directory
         ) const = 0;
 };
 

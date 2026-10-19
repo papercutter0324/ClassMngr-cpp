@@ -1,8 +1,7 @@
 #pragma once
 
+#include "next/application/directory_preference_path.h"
 #include "next/domain/operation_result.h"
-
-#include <string>
 
 namespace ClassMngr::Next::Application
 {
@@ -14,10 +13,10 @@ class LastDatabaseDirectoryPort
 public:
     virtual ~LastDatabaseDirectoryPort() = default;
 
-    [[nodiscard]] virtual std::string read() const = 0;
+    [[nodiscard]] virtual DirectoryPreferencePath read() const = 0;
 
     [[nodiscard]] virtual Domain::Result<void> write(
-        const std::string& directory
+        const DirectoryPreferencePath& directory
         ) const = 0;
 };
 

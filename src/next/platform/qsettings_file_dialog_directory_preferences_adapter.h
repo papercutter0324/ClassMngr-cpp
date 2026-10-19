@@ -8,7 +8,6 @@
 
 #include <cstddef>
 #include <string>
-#include <string_view>
 
 namespace ClassMngr::Next::Platform
 {
@@ -27,7 +26,7 @@ public:
     {
     }
 
-    [[nodiscard]] std::string readDirectory(
+    [[nodiscard]] Application::DirectoryPreferencePath readDirectory(
         const Application::FileDialogPurpose purpose
         ) const override
     {
@@ -36,15 +35,17 @@ public:
             ? m_settings->value(key).toString()
             : defaultSettingsValue(key);
         const QByteArray encodedDirectory = directory.toUtf8();
-        return std::string(
-            encodedDirectory.constData(),
-            static_cast<std::size_t>(encodedDirectory.size())
+        return Application::DirectoryPreferencePath(
+            std::string(
+                encodedDirectory.constData(),
+                static_cast<std::size_t>(encodedDirectory.size())
+                )
             );
     }
 
     [[nodiscard]] Domain::Result<void> writeDirectory(
         const Application::FileDialogPurpose purpose,
-        const std::string_view utf8Directory
+        const Application::DirectoryPreferencePath& directory
         ) const override
     {
         if (!isKnownPurpose(purpose))
@@ -57,20 +58,20 @@ public:
         }
 
         const QString key = settingsKey(purpose);
-        const QString directory = QString::fromUtf8(
-            utf8Directory.data(),
-            static_cast<qsizetype>(utf8Directory.size())
+        const QString qtDirectory = QString::fromUtf8(
+            directory.value().data(),
+            static_cast<qsizetype>(directory.value().size())
             );
 
         if (m_settings)
         {
-            return writeChecked(*m_settings, key, directory);
+            return writeChecked(*m_settings, key, qtDirectory);
         }
 
         // Keep default operations isolated so each accepted dialog operation
         // gets a fresh QSettings instance and can retry after a failed write.
         QSettings settings;
-        return writeChecked(settings, key, directory);
+        return writeChecked(settings, key, qtDirectory);
     }
 
 private:

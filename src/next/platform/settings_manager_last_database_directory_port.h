@@ -27,7 +27,7 @@ public:
     {
     }
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]] Application::DirectoryPreferencePath read() const override
     {
         const QString storedDirectory =
             SettingsManager::instance().get(
@@ -35,16 +35,18 @@ public:
                 QString()
                 ).toString();
 
-        return toUtf8(storedDirectory);
+        return Application::DirectoryPreferencePath(
+            toUtf8(storedDirectory)
+            );
     }
 
     [[nodiscard]] Domain::Result<void> write(
-        const std::string& directory
+        const Application::DirectoryPreferencePath& directory
         ) const override
     {
         const QSettings::Status status =
             SettingsManager::instance().writeLastDatabaseDirectoryPreference(
-                fromUtf8(directory),
+                fromUtf8(directory.value()),
                 m_synchronize
                 );
         if (status == QSettings::NoError)

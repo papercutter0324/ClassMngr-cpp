@@ -100,7 +100,7 @@ usesTheExactCanonicalLegacyKey()
 
     const SettingsManagerLastDatabaseDirectoryPort port;
     QCOMPARE(
-        fromUtf8(port.read()),
+        fromUtf8(port.read().value()),
         QStringLiteral("legacy-directory")
         );
 }
@@ -125,14 +125,15 @@ void NextPlatformSettingsManagerLastDatabaseDirectoryPortTests::
 roundTripsUnicodeUtf8Paths()
 {
     const QString expectedPath = QString::fromUtf8(
-        "profiles/\xED\x95\x99\xEA\xB5\x90-\xF0\x9F\x93\x9A/database"
+        "profiles/\xED\x95\x99\xEA\xB5\x90/../\xEC\x9E\x90\xEB\xA3\x8C//"
+        "\xF0\x9F\x93\x9A/database/"
         );
 
     const SettingsManagerLastDatabaseDirectoryPort port;
-    const auto written = port.write(utf8(expectedPath));
+    const auto written = port.write(DirectoryPreferencePath(utf8(expectedPath)));
     QVERIFY(written);
 
-    QCOMPARE(fromUtf8(port.read()), expectedPath);
+    QCOMPARE(fromUtf8(port.read().value()), expectedPath);
     QCOMPARE(
         SettingsManager::instance()
             .get(directoryKey())
@@ -148,7 +149,7 @@ persistsThroughTheSynchronizedLegacySetter()
         QStringLiteral("C:/persisted/database-directory");
 
     const SettingsManagerLastDatabaseDirectoryPort port;
-    const auto written = port.write(utf8(expectedPath));
+    const auto written = port.write(DirectoryPreferencePath(utf8(expectedPath)));
     QVERIFY(written);
 
     QSettings persistedSettings(
@@ -210,7 +211,9 @@ failedWriteRestoresExactPreviousValuePreservesOtherSettingsAndRetries()
 
     const QString replacementPath =
         QStringLiteral("C:/replacement/database-directory");
-    const auto failedWrite = faultablePort.write(utf8(replacementPath));
+    const auto failedWrite = faultablePort.write(
+        DirectoryPreferencePath(utf8(replacementPath))
+        );
     QVERIFY(!failedWrite);
     QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
     QVERIFY(failedWrite.error().recoverable);
@@ -241,7 +244,9 @@ failedWriteRestoresExactPreviousValuePreservesOtherSettingsAndRetries()
     QCOMPARE(persistedSettings.value(lastFileKey), lastFileValue);
 
     injectAccessError = false;
-    const auto retry = faultablePort.write(utf8(replacementPath));
+    const auto retry = faultablePort.write(
+        DirectoryPreferencePath(utf8(replacementPath))
+        );
     QVERIFY(retry);
     QCOMPARE(synchronizationAttempts, 2);
     QCOMPARE(settings.get(key), QVariant(replacementPath));
@@ -299,7 +304,9 @@ failedWriteRestoresAbsentKeyAndAllowsRetry()
 
     const QString replacementPath =
         QStringLiteral("C:/new/database-directory");
-    const auto failedWrite = faultablePort.write(utf8(replacementPath));
+    const auto failedWrite = faultablePort.write(
+        DirectoryPreferencePath(utf8(replacementPath))
+        );
     QVERIFY(!failedWrite);
     QCOMPARE(failedWrite.error().code, Domain::ErrorCode::Technical);
     QVERIFY(failedWrite.error().recoverable);
@@ -323,7 +330,9 @@ failedWriteRestoresAbsentKeyAndAllowsRetry()
     QCOMPARE(persistedSettings.value(lastFileKey), lastFileValue);
 
     injectAccessError = false;
-    const auto retry = faultablePort.write(utf8(replacementPath));
+    const auto retry = faultablePort.write(
+        DirectoryPreferencePath(utf8(replacementPath))
+        );
     QVERIFY(retry);
     QCOMPARE(synchronizationAttempts, 2);
     QCOMPARE(settings.get(key), QVariant(replacementPath));

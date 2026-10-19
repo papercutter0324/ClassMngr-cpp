@@ -13,7 +13,7 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include <string_view>
+#include <string>
 
 namespace
 {
@@ -142,11 +142,11 @@ QString QtFileDialogService::initialDirectory(
         return QDir::cleanPath(requestedDirectory);
     }
 
-    const std::string rememberedUtf8 =
+    const auto rememberedPath =
         m_directoryPreferences.readDirectory(purpose);
     const QString remembered = QString::fromUtf8(
-        rememberedUtf8.data(),
-        static_cast<qsizetype>(rememberedUtf8.size())
+        rememberedPath.value().data(),
+        static_cast<qsizetype>(rememberedPath.value().size())
         );
     return remembered.isEmpty()
         ? defaultDirectory(purpose)
@@ -166,9 +166,11 @@ void QtFileDialogService::rememberDirectory(
     const QByteArray encodedDirectory = directory.toUtf8();
     const auto result = m_directoryPreferences.writeDirectory(
         purpose,
-        std::string_view(
-            encodedDirectory.constData(),
-            static_cast<std::size_t>(encodedDirectory.size())
+        ClassMngr::Next::Application::DirectoryPreferencePath(
+            std::string(
+                encodedDirectory.constData(),
+                static_cast<std::size_t>(encodedDirectory.size())
+                )
             )
         );
     if (!result)

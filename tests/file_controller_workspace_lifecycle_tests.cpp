@@ -649,7 +649,9 @@ storedDirectoryFallbackIsUsedByFileDialogs()
     ClassMngr::Next::Platform::
         SettingsManagerLastDatabaseDirectoryPort directoryPort;
     const auto stored = directoryPort.write(
-        storedDirectory.path().toUtf8().toStdString()
+        ClassMngr::Next::Application::DirectoryPreferencePath(
+            storedDirectory.path().toUtf8().toStdString()
+            )
         );
     QVERIFY(stored);
 
@@ -689,7 +691,7 @@ startupPersistsDirectoryThroughTypedPort()
 
     ClassMngr::Next::Platform::
         SettingsManagerLastDatabaseDirectoryPort directoryPort;
-    const std::string storedDirectory = directoryPort.read();
+    const std::string storedDirectory = directoryPort.read().value();
     QCOMPARE(
         QString::fromUtf8(
             storedDirectory.data(),

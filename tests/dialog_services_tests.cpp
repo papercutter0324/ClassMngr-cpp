@@ -19,34 +19,37 @@
 #include <QWidget>
 
 #include <map>
-#include <string>
-#include <string_view>
 
 namespace
 {
+
+using ClassMngr::Next::Application::DirectoryPreferencePath;
+using ClassMngr::Next::Application::FileDialogPurpose;
 
 class InMemoryFileDialogDirectoryPreferences final
     : public ClassMngr::Next::Application::
           FileDialogDirectoryPreferencesPort
 {
 public:
-    [[nodiscard]] std::string readDirectory(
+    [[nodiscard]] DirectoryPreferencePath readDirectory(
         const FileDialogPurpose purpose
         ) const override
     {
         ++readCount;
         const auto it = directories.find(purpose);
-        return it == directories.end() ? std::string() : it->second;
+        return it == directories.end()
+            ? DirectoryPreferencePath{}
+            : it->second;
     }
 
     [[nodiscard]] ClassMngr::Next::Domain::Result<void> writeDirectory(
         const FileDialogPurpose purpose,
-        const std::string_view utf8Directory
+        const DirectoryPreferencePath& directory
         ) const override
     {
         ++writeCount;
         lastWrittenPurpose = purpose;
-        lastWrittenDirectory = std::string(utf8Directory);
+        lastWrittenDirectory = directory;
         if (failWrites)
         {
             return ClassMngr::Next::Domain::Result<void>::failure({
@@ -56,15 +59,15 @@ public:
             });
         }
 
-        directories[purpose] = std::string(utf8Directory);
+        directories[purpose] = directory;
         return ClassMngr::Next::Domain::Result<void>::success();
     }
 
-    mutable std::map<FileDialogPurpose, std::string> directories;
+    mutable std::map<FileDialogPurpose, DirectoryPreferencePath> directories;
     mutable int readCount = 0;
     mutable int writeCount = 0;
     mutable FileDialogPurpose lastWrittenPurpose = FileDialogPurpose::General;
-    mutable std::string lastWrittenDirectory;
+    mutable DirectoryPreferencePath lastWrittenDirectory;
     bool failWrites = false;
 };
 
@@ -788,7 +791,7 @@ qtFileDialogRestoresStoredDirectoryForBlankRequest()
 
     InMemoryFileDialogDirectoryPreferences preferences;
     preferences.directories[FileDialogPurpose::ImportWorkbook] =
-        storedDirectory.toUtf8().toStdString();
+        DirectoryPreferencePath(storedDirectory.toUtf8().toStdString());
     QtFileDialogService service(preferences, FileDialogBackend::Qt);
 
     bool inspected = false;
@@ -834,7 +837,7 @@ void DialogServicesTests::qtFileDialogExplicitDirectoryTakesPrecedence()
 
     InMemoryFileDialogDirectoryPreferences preferences;
     preferences.directories[FileDialogPurpose::ImportWorkbook] =
-        storedDirectory.toUtf8().toStdString();
+        DirectoryPreferencePath(storedDirectory.toUtf8().toStdString());
     QtFileDialogService service(preferences, FileDialogBackend::Qt);
 
     bool inspected = false;
@@ -1012,7 +1015,7 @@ void DialogServicesTests::openFileCanonicalizesAndRemembersPurposeDirectory()
     QVERIFY(result.has_value());
     QCOMPARE(*result, QFileInfo(filePath).canonicalFilePath());
     QCOMPARE(
-        preferences.directories.at(FileDialogPurpose::ImportWorkbook),
+        preferences.directories.at(FileDialogPurpose::ImportWorkbook).value(),
         QFileInfo(temporaryDirectory.path())
             .canonicalFilePath()
             .toUtf8()
@@ -1058,7 +1061,7 @@ selectedDirectoryCanonicalizesAndRemembersPurposeDirectory()
         QFileInfo(selectedDirectory).canonicalFilePath();
     QCOMPARE(*result, canonicalDirectory);
     QCOMPARE(
-        preferences.directories.at(FileDialogPurpose::ClassTransfer),
+        preferences.directories.at(FileDialogPurpose::ClassTransfer).value(),
         canonicalDirectory.toUtf8().toStdString()
         );
 }
@@ -1143,7 +1146,7 @@ void DialogServicesTests::qtFileDialogPreferenceFailurePreservesAcceptedSelectio
             );
         QVERIFY(result.has_value());
         QCOMPARE(*result, QFileInfo(openPath).canonicalFilePath());
-        expectedRememberedDirectory = temporaryDirectory.path();
+        expectedRememberedDirectory = QFileInfo(openPath).canonicalPath();
     }
     else if (operation == QStringLiteral("open-files"))
     {
@@ -1156,7 +1159,7 @@ void DialogServicesTests::qtFileDialogPreferenceFailurePreservesAcceptedSelectio
             );
         QCOMPARE(result.size(), 1);
         QCOMPARE(result.first(), QFileInfo(openPath).canonicalFilePath());
-        expectedRememberedDirectory = temporaryDirectory.path();
+        expectedRememberedDirectory = QFileInfo(openPath).canonicalPath();
     }
     else if (operation == QStringLiteral("save-file"))
     {
@@ -1169,8 +1172,15 @@ void DialogServicesTests::qtFileDialogPreferenceFailurePreservesAcceptedSelectio
             }
             );
         QVERIFY(result.has_value());
-        QCOMPARE(*result, QDir::cleanPath(savePath));
-        expectedRememberedDirectory = temporaryDirectory.path();
+        const QString canonicalSaveDirectory =
+            QFileInfo(savePath).absoluteDir().canonicalPath();
+        QCOMPARE(
+            *result,
+            QDir(canonicalSaveDirectory).filePath(
+                QFileInfo(savePath).fileName()
+                )
+            );
+        expectedRememberedDirectory = canonicalSaveDirectory;
     }
     else
     {
@@ -1190,7 +1200,7 @@ void DialogServicesTests::qtFileDialogPreferenceFailurePreservesAcceptedSelectio
     QCOMPARE(preferences.writeCount, 1);
     QCOMPARE(preferences.lastWrittenPurpose, purpose);
     QCOMPARE(
-        preferences.lastWrittenDirectory,
+        preferences.lastWrittenDirectory.value(),
         expectedRememberedDirectory.toUtf8().toStdString()
         );
     QCOMPARE(prompts.messages.size(), 1);

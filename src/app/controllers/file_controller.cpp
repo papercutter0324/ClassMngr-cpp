@@ -1442,12 +1442,12 @@ QString FileController::databaseDialogDirectory() const
         }
     }
 
-    const std::string lastDirectoryValue =
+    const auto lastDirectoryValue =
         m_lastDatabaseDirectoryPort->read();
     const QString lastDirectory =
         QString::fromUtf8(
-            lastDirectoryValue.data(),
-            static_cast<qsizetype>(lastDirectoryValue.size())
+            lastDirectoryValue.value().data(),
+            static_cast<qsizetype>(lastDirectoryValue.value().size())
             );
 
     if (
@@ -1516,7 +1516,9 @@ void FileController::rememberDatabaseDirectory(
 
     const auto result =
         m_lastDatabaseDirectoryPort->write(
-            utf8Path(directoryPath)
+            ClassMngr::Next::Application::DirectoryPreferencePath(
+                utf8Path(directoryPath)
+                )
             );
     if (!result)
     {
