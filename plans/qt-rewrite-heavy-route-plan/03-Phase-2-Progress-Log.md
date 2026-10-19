@@ -49159,3 +49159,24 @@ Focused targets: `ClassMngrNextApplicationRosterSaveUseCaseTests`,
 tests have not started. Batch484 remains active with six complete candidates,
 F1124 accepted/in progress, and three discovered; F1125 is next after this
 slice. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1124 Roster Save validation codes complete - 2026-10-20
+
+F1124 is complete at source/test commit `812692c6`, following acceptance
+`241af2eb`. `RosterSaveIssue.code` now uses a separate closed
+`RosterSaveIssueCode`, with explicit mappings for all 15 unchanged dotted
+keys listed in the acceptance record. F1116's `SpeakingEvaluationValidationCode`
+remains a separate contract. Existing issue order/severity, error text,
+`.required` and `duplicate` UI matching, and Korean length comparisons are
+preserved.
+
+Build passed for `ClassMngrNextApplicationRosterSaveUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`,
+`ClassMngrRosterModelTests`, `ClassMngrRosterEditorWidgetSaveTests`, and
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`; focused CTest passed
+5/5. After removing a non-contract enum-ordinal assertion,
+`ClassMngrNextApplicationRosterSaveUseCaseTests` was rebuilt and its focused
+CTest passed 1/1. `git diff --check` passed. Windows verification and the full
+suite were not run. Batch484 remains active with seven complete candidates,
+three discovered, and F1125 next for acceptance. F629 and the Phase 0 and
+Phase 2 gates remain open.

@@ -7884,3 +7884,11 @@ enum and explicit mappings to the existing 15 dotted keys. Preserve issue
 order, serialized error text, warning behavior, and UI suffix/substring
 matching. Keep it separate from the Speaking Evaluation code enum in F1116;
 leave issue fields, argument keys, and identifiers unchanged.
+
+## 2026-10-20 - F1124 complete
+
+F1124 completed at source/test commit `812692c6`, following acceptance
+`241af2eb`. Roster Save codes now use a distinct closed enum with explicit
+keys, while the existing Qt adapter emits the same dotted strings for UI
+matching. Focused Application, platform, model, editor, and transfer tests
+passed 5/5. Windows and full-suite verification were not run.

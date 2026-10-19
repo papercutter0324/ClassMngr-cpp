@@ -5535,3 +5535,14 @@ Evaluation codes and leave other issue fields, arguments, IDs, and generic Qt
 validation codes unchanged. Focused Application, platform, model, editor,
 and row-transfer targets are recorded in the Phase 2 plan. Implementation
 has not started. F629 and both phase gates remain open.
+
+## Phase 2 update - F1124 complete; Batch484 active - 2026-10-20
+
+F1124 completed at source/test commit `812692c6`, following acceptance
+`241af2eb`. Roster Save codes now use a separate closed enum with explicit
+mappings to the same 15 dotted keys; issue order, severity, UI matching, and
+error serialization remain intact. The Application, platform, model, editor,
+and row-transfer targets built; focused CTest passed 5/5. The Application
+target was rerun after a test-only cleanup and passed 1/1. Windows and
+full-suite verification were not run. F1125 is next for acceptance. F629 and
+both phase gates remain open.
