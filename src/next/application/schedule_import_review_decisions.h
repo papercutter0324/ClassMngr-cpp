@@ -54,6 +54,37 @@ private:
     std::string m_value;
 };
 
+// A normalized review-membership room value with exact owning text. It does
+// not interpret, validate, or normalize its bytes.
+class ScheduleImportReviewRoomValue final
+{
+public:
+    ScheduleImportReviewRoomValue() = default;
+
+    explicit ScheduleImportReviewRoomValue(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return m_value.empty();
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const ScheduleImportReviewRoomValue&,
+        const ScheduleImportReviewRoomValue&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 enum class ScheduleImportReviewTeacherAction
 {
     Unselected,
@@ -76,9 +107,7 @@ enum class ScheduleImportReviewClassAction
 struct ScheduleImportReviewDecisionCandidate final
 {
     ScheduleImportReviewTeacherKey teacherKey;
-    // Room values are normalized by the owning adapter before they cross the
-    // Application boundary.
-    std::vector<std::string> importedRooms;
+    std::vector<ScheduleImportReviewRoomValue> importedRooms;
 };
 
 struct ScheduleImportReviewTeacherResolution final
@@ -86,7 +115,7 @@ struct ScheduleImportReviewTeacherResolution final
     ScheduleImportReviewTeacherKey teacherKey;
     ScheduleImportReviewTeacherAction action =
         ScheduleImportReviewTeacherAction::Unselected;
-    std::string selectedRoom;
+    ScheduleImportReviewRoomValue selectedRoom;
 };
 
 struct ScheduleImportReviewClassResolution final
@@ -169,10 +198,12 @@ validateScheduleImportReviewDecisions(
         auto& rooms = importedRooms[candidate.teacherKey];
         for (const auto& room : candidate.importedRooms)
         {
-            if (!room.empty()
-                && std::find(rooms.begin(), rooms.end(), room) == rooms.end())
+            const std::string& roomValue = room.value();
+            if (!roomValue.empty()
+                && std::find(rooms.begin(), rooms.end(), roomValue)
+                    == rooms.end())
             {
-                rooms.push_back(room);
+                rooms.push_back(roomValue);
             }
         }
     }
@@ -432,8 +463,11 @@ validateScheduleImportReviewDecisions(
                 Issue{IssueCode::MissingTeacherRoom, teacherKey}
                 );
         }
-        else if (std::find(rooms.begin(), rooms.end(), resolution.selectedRoom)
-                 == rooms.end())
+        else if (std::find(
+                     rooms.begin(),
+                     rooms.end(),
+                     resolution.selectedRoom.value()
+                     ) == rooms.end())
         {
             result.issues.push_back(
                 Issue{IssueCode::ForeignTeacherRoom, teacherKey}

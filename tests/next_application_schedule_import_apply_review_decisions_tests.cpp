@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 using namespace ClassMngr::Next::Application;
 
@@ -23,6 +25,22 @@ static_assert(std::is_same_v<
 static_assert(!std::is_convertible_v<
     std::u16string,
     ScheduleImportApplyTeacherKey
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionCandidate{}.importedRooms),
+    std::vector<ScheduleImportReviewRoomValue>
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewTeacherResolution{}.selectedRoom),
+    ScheduleImportReviewRoomValue
+    >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const ScheduleImportReviewRoomValue&>().value()),
+    const std::string&
+    >);
+static_assert(!std::is_convertible_v<
+    std::string,
+    ScheduleImportReviewRoomValue
     >);
 
 namespace
@@ -149,14 +167,14 @@ int main()
         decisions.candidates[0].teacherKey.value() == KoreanTeacherAndTestTube
         );
     require(decisions.candidates[0].importedRooms.size() == 2);
-    require(decisions.candidates[0].importedRooms[0] == "414");
-    require(decisions.candidates[0].importedRooms[1] == Rocket);
+    require(decisions.candidates[0].importedRooms[0].value() == "414");
+    require(decisions.candidates[0].importedRooms[1].value() == Rocket);
     require(
         decisions.candidates[1].teacherKey.value()
         == "\xEC\x9D\xB4\xEC\x84\xA0\xEC\x83\x9D"
         );
     require(decisions.candidates[1].importedRooms.size() == 1);
-    require(decisions.candidates[1].importedRooms[0] == "502");
+    require(decisions.candidates[1].importedRooms[0].value() == "502");
     require(
         decisions.candidates[2].teacherKey.value() == "\xEB\xB0\x95\xEC\x83\x9D"
         );
@@ -176,7 +194,7 @@ int main()
         decisions.teachers[1].action
         == ScheduleImportReviewTeacherAction::UpdateRoom
         );
-    require(decisions.teachers[1].selectedRoom == Rocket);
+    require(decisions.teachers[1].selectedRoom.value() == Rocket);
     require(decisions.teachers[2].teacherKey.value() == "\xEB\xB0\x95\xEC\x83\x9D");
     require(decisions.teachers[2].action == ScheduleImportReviewTeacherAction::Create);
 

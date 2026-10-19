@@ -20,6 +20,7 @@ using ClassAction = ScheduleImportReviewClassAction;
 using IssueCode = ScheduleImportReviewDecisionIssueCode;
 using Request = ScheduleImportReviewDecisionRequest;
 using TeacherKey = ScheduleImportReviewTeacherKey;
+using ReviewRoom = ScheduleImportReviewRoomValue;
 using ClassId = ClassMngr::Next::Domain::ClassId;
 using TeacherId = ClassMngr::Next::Domain::TeacherId;
 
@@ -36,6 +37,19 @@ static_assert(std::is_same_v<
     TeacherKey
     >);
 static_assert(!std::is_convertible_v<std::string, TeacherKey>);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionCandidate{}.importedRooms),
+    std::vector<ReviewRoom>
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewTeacherResolution{}.selectedRoom),
+    ReviewRoom
+    >);
+static_assert(std::is_same_v<
+    decltype(std::declval<const ReviewRoom&>().value()),
+    const std::string&
+    >);
+static_assert(!std::is_convertible_v<std::string, ReviewRoom>);
 
 static_assert(std::is_same_v<
     decltype(ScheduleImportReviewClassResolution{}.targetClassId),
@@ -51,6 +65,22 @@ static_assert(!std::is_assignable_v<
     std::optional<TeacherId>
     >);
 
+ReviewRoom room(std::string value)
+{
+    return ReviewRoom(std::move(value));
+}
+
+std::vector<ReviewRoom> rooms(std::initializer_list<std::string> values)
+{
+    std::vector<ReviewRoom> result;
+    result.reserve(values.size());
+    for (const std::string& value : values)
+    {
+        result.push_back(room(value));
+    }
+    return result;
+}
+
 ClassId classId(int numericId)
 {
     return *ClassId::fromString(std::to_string(numericId));
@@ -60,11 +90,11 @@ Request validRequest()
 {
     Request request;
     request.candidates = {
-        {TeacherKey{"teacher-a"}, {"415", "416"}},
-        {TeacherKey{"teacher-a"}, {"416"}}
+        {TeacherKey{"teacher-a"}, rooms({"415", "416"})},
+        {TeacherKey{"teacher-a"}, rooms({"416"})}
     };
     request.teachers = {
-        {TeacherKey{"teacher-a"}, TeacherAction::Reuse, "415"}
+        {TeacherKey{"teacher-a"}, TeacherAction::Reuse, room("415")}
     };
     request.classes = {
         {0, ClassAction::UpdateExisting, classId(21)},
@@ -131,12 +161,12 @@ int main()
 
             Request request;
             request.candidates = {
-                {first, {"room-a"}},
-                {second, {"room-b"}}
+                {first, rooms({"room-a"})},
+                {second, rooms({"room-b"})}
             };
             request.teachers = {
-                {first, TeacherAction::Reuse, {}},
-                {second, TeacherAction::Reuse, {}}
+                {first, TeacherAction::Reuse, ReviewRoom{}},
+                {second, TeacherAction::Reuse, ReviewRoom{}}
             };
             request.classes = {
                 {0, ClassAction::CreateNew, std::nullopt},
@@ -175,17 +205,17 @@ int main()
             const TeacherKey unknown{"unknown-\xC3\xA9"};
             Request request;
             request.candidates = {
-                {teacherB, {"", "502", "502"}},
-                {teacherA, {"", "414", "414"}},
-                {teacherC, {"530"}},
-                {teacherA, {"900"}},
-                {teacherB, {"502"}}
+                {teacherB, rooms({"", "502", "502"})},
+                {teacherA, rooms({"", "414", "414"})},
+                {teacherC, rooms({"530"})},
+                {teacherA, rooms({"900"})},
+                {teacherB, rooms({"502"})}
             };
             request.teachers = {
-                {TeacherKey{}, TeacherAction::Invalid, {}},
-                {unknown, TeacherAction::Invalid, {}},
-                {teacherA, TeacherAction::Reuse, {}},
-                {teacherA, TeacherAction::Invalid, {}}
+                {TeacherKey{}, TeacherAction::Invalid, ReviewRoom{}},
+                {unknown, TeacherAction::Invalid, ReviewRoom{}},
+                {teacherA, TeacherAction::Reuse, ReviewRoom{}},
+                {teacherA, TeacherAction::Invalid, ReviewRoom{}}
             };
             request.classes = {
                 {0, ClassAction::Invalid, std::nullopt},
@@ -235,11 +265,11 @@ int main()
             const TeacherKey teacher{"teacher-room-aggregation"};
             Request request;
             request.candidates = {
-                {teacher, {"", "414", "414"}},
-                {teacher, {"414", ""}}
+                {teacher, rooms({"", "414", "414"})},
+                {teacher, rooms({"414", ""})}
             };
             request.teachers = {
-                {teacher, TeacherAction::Reuse, {}}
+                {teacher, TeacherAction::Reuse, ReviewRoom{}}
             };
             request.classes = {
                 {0, ClassAction::CreateNew, std::nullopt},
@@ -250,14 +280,14 @@ int main()
                 "empty or repeated imported rooms changed single-room behavior"
                 );
 
-            request.candidates[1].importedRooms.push_back("502");
+            request.candidates[1].importedRooms.push_back(room("502"));
             auto result = validateScheduleImportReviewDecisions(request);
             require(
                 result.issues.size() == 1
                     && result.issues[0].code == IssueCode::MissingTeacherRoom,
                 "distinct rooms across candidates were not aggregated"
                 );
-            request.teachers[0].selectedRoom = "502";
+            request.teachers[0].selectedRoom = room("502");
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "room selection from a later candidate was rejected"
@@ -293,7 +323,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers.push_back({
-                TeacherKey{"teacher-a"}, TeacherAction::Reuse, "416"
+                TeacherKey{"teacher-a"}, TeacherAction::Reuse, room("416")
             });
             expectRejected(
                 "duplicate teacher decision",
@@ -304,7 +334,9 @@ int main()
         }
         {
             auto request = validRequest();
-            request.teachers.push_back({TeacherKey{}, TeacherAction::Skip, {}});
+            request.teachers.push_back({
+                TeacherKey{}, TeacherAction::Skip, ReviewRoom{}
+            });
             expectRejected(
                 "empty teacher key",
                 request,
@@ -510,7 +542,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::Create;
-            request.teachers[0].selectedRoom.clear();
+            request.teachers[0].selectedRoom = ReviewRoom{};
             expectRejected(
                 "create without imported room",
                 request,
@@ -521,7 +553,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::Create;
-            request.teachers[0].selectedRoom = "999";
+            request.teachers[0].selectedRoom = room("999");
             expectRejected(
                 "create with foreign room",
                 request,
@@ -532,7 +564,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::UpdateRoom;
-            request.teachers[0].selectedRoom.clear();
+            request.teachers[0].selectedRoom = ReviewRoom{};
             expectRejected(
                 "room update without imported room",
                 request,
@@ -543,7 +575,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::UpdateRoom;
-            request.teachers[0].selectedRoom = "999";
+            request.teachers[0].selectedRoom = room("999");
             expectRejected(
                 "room update with foreign room",
                 request,
@@ -553,7 +585,7 @@ int main()
         }
         {
             auto request = validRequest();
-            request.teachers[0].selectedRoom.clear();
+            request.teachers[0].selectedRoom = ReviewRoom{};
             expectRejected(
                 "reuse with multiple rooms and no selection",
                 request,
@@ -563,7 +595,7 @@ int main()
         }
         {
             auto request = validRequest();
-            request.teachers[0].selectedRoom = "999";
+            request.teachers[0].selectedRoom = room("999");
             expectRejected(
                 "reuse with multiple rooms and foreign selection",
                 request,
@@ -573,7 +605,19 @@ int main()
         }
         {
             auto request = validRequest();
-            request.teachers[0].selectedRoom = "416";
+            request.candidates[0].importedRooms = rooms({"Room 413"});
+            request.candidates[1].importedRooms = rooms({"Room 414"});
+            request.teachers[0].selectedRoom = room("room 413");
+            expectRejected(
+                "case-only difference is a foreign room selection",
+                request,
+                IssueCode::ForeignTeacherRoom
+                );
+            ++cases;
+        }
+        {
+            auto request = validRequest();
+            request.teachers[0].selectedRoom = room("416");
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "reuse with selected imported room rejected"
@@ -584,7 +628,7 @@ int main()
             auto request = validRequest();
             request.candidates[0].importedRooms.clear();
             request.candidates[1].importedRooms.clear();
-            request.teachers[0].selectedRoom.clear();
+            request.teachers[0].selectedRoom = ReviewRoom{};
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "reuse with zero imported rooms changed meaning"
@@ -593,9 +637,9 @@ int main()
         }
         {
             auto request = validRequest();
-            request.candidates[0].importedRooms = {"415"};
-            request.candidates[1].importedRooms = {"415"};
-            request.teachers[0].selectedRoom.clear();
+            request.candidates[0].importedRooms = rooms({"415"});
+            request.candidates[1].importedRooms = rooms({"415"});
+            request.teachers[0].selectedRoom = ReviewRoom{};
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "reuse with one imported room changed meaning"
@@ -604,9 +648,9 @@ int main()
         }
         {
             auto request = validRequest();
-            request.candidates[0].importedRooms = {"415"};
-            request.candidates[1].importedRooms = {"415"};
-            request.teachers[0].selectedRoom = "999";
+            request.candidates[0].importedRooms = rooms({"415"});
+            request.candidates[1].importedRooms = rooms({"415"});
+            request.teachers[0].selectedRoom = room("999");
             require(
                 validateScheduleImportReviewDecisions(request).accepted(),
                 "reuse with one imported room began validating an optional choice"
@@ -616,7 +660,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers[0].action = TeacherAction::Skip;
-            request.teachers[0].selectedRoom = "foreign";
+            request.teachers[0].selectedRoom = room("foreign");
             request.classes[0] = {
                 0,
                 ClassAction::CreateNew,

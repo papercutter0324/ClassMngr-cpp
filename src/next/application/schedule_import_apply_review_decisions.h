@@ -71,7 +71,9 @@ projectScheduleImportApplyReviewDecisions(const ApplyRequest& request)
         {
             if (!room.empty())
             {
-                item.importedRooms.push_back(scheduleImportApplyUtf8(room));
+                item.importedRooms.emplace_back(
+                    scheduleImportApplyUtf8(room)
+                    );
             }
         }
         result.candidates.push_back(std::move(item));
@@ -85,7 +87,9 @@ projectScheduleImportApplyReviewDecisions(const ApplyRequest& request)
                 scheduleImportApplyUtf8(teacher.teacherKey.value())
             },
             teacher.action,
-            scheduleImportApplyUtf8(teacher.selectedRoom)
+            ScheduleImportReviewRoomValue(
+                scheduleImportApplyUtf8(teacher.selectedRoom)
+                )
         });
     }
 

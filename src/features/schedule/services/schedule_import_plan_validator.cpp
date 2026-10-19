@@ -289,7 +289,7 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
                 QString::fromStdU16String(room).toStdString();
             if (!value.empty())
             {
-                decisionCandidate.importedRooms.push_back(value);
+                decisionCandidate.importedRooms.emplace_back(value);
             }
         }
         request.reviewDecisions.candidates.push_back(std::move(decisionCandidate));
@@ -303,7 +303,9 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
                     ).toStdString()
             },
             teacher.action,
-            QString::fromStdU16String(teacher.selectedRoom).toStdString()
+            ClassMngr::Next::Application::ScheduleImportReviewRoomValue(
+                QString::fromStdU16String(teacher.selectedRoom).toStdString()
+                )
         });
     }
     for (const auto& candidateClass : applyRequest.classes)
@@ -430,7 +432,10 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
             if (!normalizedRoom.isEmpty())
             {
                 decisionCandidate.importedRooms.push_back(
-                    normalizedRoom.toStdString()
+                    ClassMngr::Next::Application::
+                        ScheduleImportReviewRoomValue(
+                            normalizedRoom.toStdString()
+                            )
                     );
             }
         }
@@ -450,7 +455,10 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
                     resolution.teacherKey.toStdString()
                 },
                 decisionAction(resolution.action),
-                resolution.selectedRoom.trimmed().toStdString()
+                ClassMngr::Next::Application::
+                    ScheduleImportReviewRoomValue(
+                        resolution.selectedRoom.trimmed().toStdString()
+                        )
             }
             );
     }
