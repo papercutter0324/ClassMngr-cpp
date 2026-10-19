@@ -5357,3 +5357,10 @@ result while direct validator checks cover row and cell overflow. No full
 suite or Windows run occurred. F1117 is next for acceptance. Batch484's ten
 provisional candidates are recorded; F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+## Phase 2 update - F1117 accepted; Batch483 active - 2026-10-20
+
+F1117 is accepted before implementation: type the Calendar event query path
+while preserving exact UTF-8 bytes through both query requests. F1115 and
+F1116 are complete; Batch484's ten candidates remain provisional and
+inactive. F629 and the Phase 0 and Phase 2 gates remain open.

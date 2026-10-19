@@ -48745,3 +48745,33 @@ both new overflow codes. Final focused verification passed.
 Batch483 remains active with F1115 and F1116 complete and F1117 next for
 acceptance. Batch484 remains provisional and inactive with its ten candidates
 recorded, none accepted. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1117 Calendar event query database path accepted before implementation - 2026-10-20
+
+F1117 is accepted/in progress for Batch483; implementation and tests have not
+started. Add a Qt-free Application value `CalendarEventDatabasePath` that
+owns the UTF-8 bytes, and replace `std::string databasePath` in both
+`CalendarEventRangeRequest` and `CalendarEventNextEventRequest`. Keep request
+shapes and `CalendarEventQueryPort` methods intact. Preserve empty, copy, and
+equality semantics; add no path validation or normalization. Do not reuse
+`WorkspaceLocation` for this calendar query contract.
+
+At the existing Calendar page → cache → query-port boundary, wrap the cache's
+`QString::toUtf8().toStdString()` bytes in both request constructions. The
+query adapter unwraps `.value()` and performs the same UTF-8 decode as before.
+Preserve the whitespace-only cache guards without trimming nonempty paths,
+nonempty path bytes, date behavior, asynchronous worker ownership, SQLite
+behavior, and event identity. Evidence: `CalendarEventDate` and request
+contracts in `src/next/application/calendar_event_query_port.h`, conversions
+in `src/features/calendar/ui/calendar_event_cache.cpp`, and query adapter in
+`src/features/calendar/calendar_event_projection_query.cpp`.
+
+Focused tests should cover value copying/equality and exact non-ASCII UTF-8
+bytes through both request types in `ClassMngrCalendarEventCacheTests`; current
+fixtures use ASCII paths. Build and run `NextApplicationCalendarEventQueryPort`
+and `ClassMngrCalendarEventCacheTests` after implementation, reporting focused
+results as focused.
+
+Batch483 remains active with F1115 and F1116 complete and F1117 accepted/in
+progress. Batch484 remains provisional and inactive with its ten candidates
+recorded, none accepted. F629 and the Phase 0 and Phase 2 gates remain open.

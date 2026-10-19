@@ -7733,3 +7733,11 @@ targets built and both CTests passed 2/2. The first test run caught an
 expectation mismatch: malformed matrix shape is rejected as existing
 `InvalidInput` before validation-code reporting. The test now asserts that
 contract and separately checks the new row/cell overflow codes.
+
+## 2026-10-20 - F1117 accepted
+
+Add an Application-owned `CalendarEventDatabasePath` value to type the two
+Calendar query request fields. Keep it as an owning UTF-8 byte value with no
+new normalization or path validation; preserve the bytes produced by the
+existing `QString::toUtf8()` conversion and leave workspace location and event
+identity contracts separate.
