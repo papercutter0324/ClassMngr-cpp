@@ -48775,3 +48775,46 @@ results as focused.
 Batch483 remains active with F1115 and F1116 complete and F1117 accepted/in
 progress. Batch484 remains provisional and inactive with its ten candidates
 recorded, none accepted. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1117 Calendar event query database path complete - 2026-10-20
+
+F1117 completed at source/test commit `98018322`, following acceptance commit
+`3addf82e`. The Application `CalendarEventDatabasePath` replaces both raw
+request path strings and preserves their exact UTF-8 bytes through the cache
+and query adapter. Existing request shapes, port methods, cache guards, date
+behavior, worker ownership, SQLite behavior, and event identity remain intact.
+
+The focused build succeeded:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextApplicationCalendarEventQueryPortTests ClassMngrCalendarEventCacheTests --parallel 2
+```
+
+Both focused CTests passed 2/2:
+
+```sh
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrNextApplicationCalendarEventQueryPortTests|ClassMngrCalendarEventCacheTests)$'
+```
+
+The initial build found an existing `testSummary()` fixture passing
+`std::string` where `CalendarEventSeriesId` is optional. The fixture was
+minimally corrected to `CalendarEventSeriesId::fromString("series-1")`,
+preserving the same identity. `git diff --check` passed. No full suite or
+Windows run occurred.
+
+### Batch483 complete locally; Batch484 active - 2026-10-20
+
+Batch483 is complete locally and ready to push. Its acceptance and source/test
+commits are:
+
+| Slice | Acceptance | Source/test |
+|---|---|---|
+| F1115 | `e10d9e11` | `a455d24c` |
+| F1116 | `f744a03b` | `edd09fdf` |
+| F1117 | `3addf82e` | `98018322` |
+
+Batch484 is now active with its ten previously discovered candidates, all
+still discovered and not accepted; F1118 is next for acceptance. The two
+bounded scans found no further candidates within their respective scanned
+surfaces; F1127 remains lower confidence pending acceptance screening. F629
+and the Phase 0 and Phase 2 gates remain open.

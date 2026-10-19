@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is active: F1115 is complete at `a455d24c` following acceptance `e10d9e11`, F1116 is complete at `edd09fdf` following acceptance `f744a03b`, and F1117 is accepted/in progress before implementation. See the [active Batch483 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch483-3-candidates-2-complete-1-acceptedin-progress). Batch484 has a ten-candidate provisional discovery list recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md); it is not active and none of its candidates is accepted. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is locally complete and ready to push: F1115 at `a455d24c`, F1116 at `edd09fdf`, and F1117 completed at `98018322` following acceptance `3addf82e`. Batch484 is active with ten discovered candidates, none accepted; F1118 is next for acceptance. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-0-complete-10-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,13 +38,20 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch483 — Active; three candidates, two complete and one accepted/in progress:**
+**Batch484 — Active; ten candidates, all discovered and none accepted:**
 
-1. **F1115 — Type personal-signature font choice.** Complete at `a455d24c` following acceptance `e10d9e11`; the Qt-free Application choice maps the four current fonts while preserving persistence and fallback behavior.
-2. **F1116 — Type closed Speaking Evaluation validation codes.** Complete at `edd09fdf` following acceptance `f744a03b`; typed all 14 Application codes, updated producers and direct comparisons, and added exhaustive UI mapping. Focused verification is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
-3. **F1117 — Type Calendar event query database path.** Accepted/in progress before implementation. Use a typed Application path value for both query requests and preserve exact UTF-8 bytes and query behavior. Acceptance scope is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+1. **F1118 — Type Calendar repeat-series edit dates.** Preserve date behavior and occurrence shifting.
+2. **F1119 — Type Schedule Import apply/state teacher correlation keys.** Preserve exact identity across state and apply requests.
+3. **F1120 — Type Teacher Import source validation keys.** Preserve per-source exact/parallel keys, normalization, and order.
+4. **F1121 — Type Campus Directory key/code.** Preserve exact code, byte length, and uniqueness.
+5. **F1122 — Type Teacher Profile validation identifiers.** Preserve diagnostic values/order and adapter mapping.
+6. **F1123 — Type Document Catalog paths.** Preserve hierarchy, parent resolution, and path limits.
+7. **F1124 — Type Roster Save validation codes.** Preserve UI suffix/substring keys and issue order; this is distinct from F1116.
+8. **F1125 — Type Upcoming Birthday schedule date inputs.** Preserve invalid-date skipping, leap-day rule, and ordering.
+9. **F1126 — Type Excel Import timeout choice.** Preserve supported values, default/fallback, and setting key.
+10. **F1127 — Type update-artifact platform keys (lower confidence).** Screen aliases and enum suitability during acceptance.
 
-No other slices were found.
+Detailed evidence and focused targets for all ten candidates are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 

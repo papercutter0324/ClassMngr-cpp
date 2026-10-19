@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is active with F1115 complete at `a455d24c` following acceptance `e10d9e11`, F1116 complete at `edd09fdf` following acceptance `f744a03b`, and F1117 accepted/in progress before implementation; Batch484's ten-candidate discovery list is recorded in the progress log but remains provisional and inactive, with none accepted; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is locally complete and ready to push with F1115 at `a455d24c`, F1116 at `edd09fdf`, and F1117 at `98018322` following acceptance `3addf82e`; Batch484 is active with ten discovered candidates, none accepted and F1118 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,20 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch483 (3 candidates; 2 complete; 1 accepted/in progress)
+#### Active batch: Batch484 (10 candidates; 0 complete; 10 discovered)
 
-1. F1115 - Type personal-signature font choice: complete at `a455d24c` following acceptance `e10d9e11`. The Qt-free Application `PersonalSignatureFontChoice` represents exactly 0=`JustAnotherHand`, 1=`DancingScript`, 2=`GreatVibes`, and 3=`Caveat`; explicit persistence-boundary conversion preserves stored values, default 0, invalid-value fallback, and invalid-enum save normalization. Focused verification and its Initial Setup CTest limitation are recorded in the progress log.
-2. F1116 - Type closed Speaking Evaluation validation codes: complete at `edd09fdf` following acceptance `f744a03b`; typed all 14 Application codes, changed producers and direct code comparisons, and added exhaustive UI mapping. Focused verification is recorded in the progress log.
-3. F1117 - Type Calendar event query database path: accepted/in progress before implementation. Introduce a typed Qt-free Application path value for both requests; preserve existing UTF-8 bytes and query-port behavior. Focused targets: `NextApplicationCalendarEventQueryPort` and `ClassMngrCalendarEventCacheTests`; acceptance scope is in the progress log.
+1. F1118 - Type Calendar repeat-series edit dates: preserve date behavior and occurrence shifting.
+2. F1119 - Type Schedule Import apply/state teacher correlation keys: preserve exact identity across state and apply requests.
+3. F1120 - Type Teacher Import source validation keys: preserve per-source exact/parallel keys, normalization, and order.
+4. F1121 - Type Campus Directory key/code: preserve exact code, byte length, and uniqueness.
+5. F1122 - Type Teacher Profile validation identifiers: preserve diagnostic values/order and adapter mapping.
+6. F1123 - Type Document Catalog paths: preserve hierarchy, parent resolution, and path limits.
+7. F1124 - Type Roster Save validation codes: preserve UI suffix/substring keys and issue order; distinct from F1116.
+8. F1125 - Type Upcoming Birthday schedule date inputs: preserve invalid-date skipping, leap-day rule, and ordering.
+9. F1126 - Type Excel Import timeout choice: preserve supported values, default/fallback, and setting key.
+10. F1127 - Type update-artifact platform keys (lower confidence): screen aliases and enum suitability during acceptance.
+
+All ten are discovered and not accepted; F1118 is next for acceptance. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

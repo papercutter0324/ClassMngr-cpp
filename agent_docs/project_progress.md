@@ -5364,3 +5364,15 @@ F1117 is accepted before implementation: type the Calendar event query path
 while preserving exact UTF-8 bytes through both query requests. F1115 and
 F1116 are complete; Batch484's ten candidates remain provisional and
 inactive. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - Batch483 complete; Batch484 active - 2026-10-20
+
+F1117 completed at source/test commit `98018322`, following acceptance
+`3addf82e`. Both Calendar query request fields now use the Application
+`CalendarEventDatabasePath` value, and focused tests preserve exact UTF-8
+bytes through range and next-event requests. Both focused targets built and
+both CTests passed 2/2. The test fixture now constructs the existing typed
+series ID with `CalendarEventSeriesId::fromString`; no full suite or Windows
+run occurred. Batch483 is complete and its closeout is ready to push.
+Batch484 is active with ten discovered candidates; F1118 is next for
+acceptance. F629 and the Phase 0 and Phase 2 gates remain open.

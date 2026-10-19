@@ -7741,3 +7741,13 @@ Calendar query request fields. Keep it as an owning UTF-8 byte value with no
 new normalization or path validation; preserve the bytes produced by the
 existing `QString::toUtf8()` conversion and leave workspace location and event
 identity contracts separate.
+
+## 2026-10-20 - F1117 complete
+
+F1117 completed at source/test commit `98018322`, following acceptance
+`3addf82e`. The owning Application path value preserves the cache's UTF-8
+bytes in both query requests; the adapter decodes the same bytes for SQLite.
+Both focused targets built and both CTests passed 2/2. The focused target
+needed a test fixture update to construct its existing optional
+`CalendarEventSeriesId` using `fromString`; the intended series identity was
+preserved.
