@@ -48071,3 +48071,38 @@ Closeout commit `7acd5fac0646b9868c7b66659f617e5cf300926d` was pushed to
 returned the same SHA. The worktree is clean and `Qt-Rewrite` is up to date
 with `origin/Qt-Rewrite`. Batch481 remains active with F1111 next for
 acceptance reassessment; F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1111 Teacher Import review-group correlation keys accepted before implementation - 2026-10-20
+
+F1111 is accepted for Batch481, with implementation and tests not started,
+following source review. Define the Application-level opaque value type
+`TeacherImportGroupKey` for the existing plain-string review correlation key,
+and replace the string fields in `TeacherImportCandidateGroup.id`,
+`TeacherImportGroupDecision.groupId`, and `TeacherImportReviewGroup.id` with
+that type. Preserve the exact `std::string` bytes and equality; default
+construction and the empty value remain valid representations.
+
+Keep empty candidate IDs, duplicate IDs, unknown and missing groups, decision
+indices, and their existing error precedence in F44's resolver. Do not add
+validation in the wrapper. Preserve candidate-group order, selected candidate
+index behavior, and exact key matching. Do not trim, normalize, or parse keys;
+do not use `Domain::TypedId`. Keep legacy `QString level`, persistence, and UI
+model semantics unchanged. Existing UTF-8 adapter boundaries remain in place,
+and focused verification must prove non-ASCII bytes survive each boundary.
+
+Source evidence: `src/next/application/import_review_session.h:845-990`
+declares the resolver keys and existing validation; empty candidate IDs fail
+there before exact duplicate/matching checks. The third key is carried and
+forwarded without normalization by `src/next/application/teacher_import_use_case.h:71-81,424-447`.
+The UI projection in `src/features/teacher/ui/teacher_import_dialog.cpp:35-72`
+and the repository adapter in
+`src/data/repositories/teacher_import_legacy_plan_adapter.h:130-173` derive
+keys from `QString level` using UTF-8.
+
+Focused verification should cover the three typed fields; default/empty
+preservation and unchanged resolver ownership, errors, and precedence; exact
+UTF-8 byte preservation with no normalization; candidate order and selected
+index behavior; and application resolver/use-case plus UI adapter behavior.
+No full-suite or Windows verification is claimed. F629 still requires
+external Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain
+Open.

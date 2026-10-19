@@ -7611,3 +7611,11 @@ accept invalid text and weaken the old positive-ID guard. The feature keeps
 snapshot IDs typed through the pre-read and batch-read path, while the
 existing menu/action edge remains integer-based. Focused policy and menu
 CTests passed 2/2; no full suite ran.
+
+## 2026-10-20 - F1111 accepted
+
+Teacher Import review-group strings are transient correlation keys, not
+Domain entity IDs. Use an Application value type while allowing empty keys to
+reach F44, which owns the established structured validation and its error
+ordering. Preserve UTF-8 bytes and exact equality at the legacy adapters; do
+not trim or normalize the source level text.

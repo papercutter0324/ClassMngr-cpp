@@ -6117,8 +6117,11 @@ query while retaining integer action IDs. The focused eligibility and menu
 CTests passed 2/2 on macOS; no full suite ran. Batch480 closeout was pushed
 without force to `origin/Qt-Rewrite` at
 `7acd5fac0646b9868c7b66659f617e5cf300926d`; the remote SHA matched, the
-worktree is clean, and the branch is up to date. Batch481 has one discovered
-candidate, F1111, a transient Teacher Import review-group correlation-key
-value, not yet accepted. The combined Phase 0 gate remains open because F629
-still needs source-bound Windows x64 layout evidence, which the user cannot
-run right now; the Phase 2 gate also remains open.
+worktree is clean, and the branch is up to date. Batch481's F1111 review has
+now accepted an Application `TeacherImportGroupKey` for the transient Teacher
+Import group correlation key. The type must preserve exact bytes and permit
+empty values so F44 retains its established validation. Phase-plan acceptance
+documentation is being recorded; implementation and tests have not started.
+Batch482 discovery is underway. The combined Phase 0 gate remains open because
+F629 still needs source-bound Windows x64 layout evidence, which the user
+cannot run right now; the Phase 2 gate also remains open.

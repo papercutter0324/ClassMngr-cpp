@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch480 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch481 is active with F1111 next for acceptance reassessment. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch481 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch481-1-candidate-1-discovered) for the current candidate.
+- Current milestone: Batch480 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch481 is active with F1111 accepted before implementation. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch481 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch481-1-candidate-1-discovered) for the next action.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -40,7 +40,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 **Batch481 — Active; one candidate, one discovered:**
 
-1. **F1111 — Type Teacher Import review-group correlation keys.** Discovered; next for acceptance reassessment. Preserve exact correlation matching and ordering, including empty values, without trimming or normalization.
+1. **F1111 — Type Teacher Import review-group correlation keys.** Accepted before implementation; add an Application value type for the three review-group keys while preserving exact matching, ordering, empty-value resolver behavior, and UTF-8 adapter semantics.
 
 No other slices were found.
 

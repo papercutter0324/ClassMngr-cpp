@@ -5196,3 +5196,15 @@ worktree was clean, and the branch was up to date. Batch481 is active with
 F1111 discovered and next for acceptance reassessment. F629 still needs
 source-bound Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain
 open.
+
+## Phase 2 update - F1111 accepted; Batch481 active - 2026-10-20
+
+F1111 is accepted; implementation and tests have not started. Add an
+Application `TeacherImportGroupKey` value type for the candidate-group,
+decision, and use-case review keys. Preserve exact string bytes and matching,
+including default-empty values, and leave empty, duplicate, unknown, and
+missing-key validation with the existing F44 resolver. Keep ordering, UTF-8
+adapter boundaries, and legacy UI/persistence representations unchanged; do
+not normalize or use `Domain::TypedId`. Batch482 discovery is underway.
+F629 still needs source-bound Windows x64 layout evidence; the Phase 0 and
+Phase 2 gates remain open.

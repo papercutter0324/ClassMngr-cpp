@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch480 is closed and pushed; its receipt is in the [progress log](03-Phase-2-Progress-Log.md). Batch481 is active with F1111 next for acceptance reassessment; F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
+- Current note: Batch481 is active with F1111 accepted before implementation; implement the Application review-group key value type while preserving F44 resolver behavior, and keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -70,7 +70,7 @@ Treat this plan as an operational summary, not a history:
 
 #### Active batch: Batch481 (1 candidate; 1 discovered)
 
-1. F1111 - Type Teacher Import review-group correlation keys: discovered, not accepted; next for acceptance reassessment. Preserve exact matching and ordering, field semantics, and adapter behavior without trimming or normalization.
+1. F1111 - Type Teacher Import review-group correlation keys: accepted before implementation; add the Application value type for candidate, decision, and review keys, preserving exact matching, order, resolver validation, and UTF-8 adapter behavior.
 
 #### Deferred candidates
 
