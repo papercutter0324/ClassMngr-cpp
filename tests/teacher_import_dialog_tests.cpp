@@ -23,6 +23,7 @@
 #include <QtTest>
 
 #include <string>
+#include <cstdint>
 #include <vector>
 
 class TeacherImportDialogTests : public QObject
@@ -444,13 +445,32 @@ void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
     const QString composedLevel = QString::fromUtf8("M1-\xC3\xA9");
     const QString decomposedLevel = QString::fromUtf8("M1-e\xCC\x81");
     TeacherImportPlan plan;
+    plan.sourceDate = QDate(2026, 10, 1);
+    Teacher firstTeacher;
+    firstTeacher.teacherKr = QString::fromUtf8(" 김 하늘 A ");
+    Teacher secondTeacher;
+    secondTeacher.teacherKr = QString::fromUtf8(" 박 민 준 B ");
+    plan.koreanTeachers = {firstTeacher, secondTeacher};
+
+    GsTeamMember firstGsMember;
+    firstGsMember.name = QStringLiteral("  Front   Desk\t");
+    firstGsMember.koreanName = QString::fromUtf8("김  하늘");
+    GsTeamMember secondGsMember;
+    secondGsMember.koreanName = QString::fromUtf8("박 민준");
+    plan.gsTeamMembers = {firstGsMember, secondGsMember};
+
+    Teacher firstCandidate;
+    firstCandidate.teacherKr = QString::fromUtf8(" 김 하늘 A ");
+    Teacher secondCandidate;
+    secondCandidate.teacherKr = QString::fromUtf8(" 박 민 준 B ");
     plan.review.emplace();
     plan.review->candidateGroups = {
-        {composedLevel, {}}, {decomposedLevel, {}}
+        {composedLevel, {{firstCandidate, true}, {secondCandidate, false}}},
+        {decomposedLevel, {{secondCandidate, false}}}
     };
     plan.review->groupSelections = {
-        {decomposedLevel, TeacherImportSelectionMode::All, {}},
-        {composedLevel, TeacherImportSelectionMode::All, {}}
+        {decomposedLevel, TeacherImportSelectionMode::Selected, {0}},
+        {composedLevel, TeacherImportSelectionMode::Selected, {1, 0}}
     };
 
     const auto request =
@@ -466,6 +486,55 @@ void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
     QCOMPARE(request.review->decisions[1].groupId.value(),
              std::string("M1-\xC3\xA9"));
 
+    const std::string firstKoreanKey =
+        QString::fromUtf8("김하늘").toUtf8().toStdString();
+    const std::string secondKoreanKey =
+        QString::fromUtf8("박민준").toUtf8().toStdString();
+    QCOMPARE(request.validation.koreanTeacherKeys.size(), std::size_t(2));
+    QCOMPARE(request.koreanTeachers.size(), std::size_t(2));
+    QCOMPARE(request.validation.koreanTeacherKeys[0].value(), firstKoreanKey);
+    QCOMPARE(request.validation.koreanTeacherKeys[1].value(), secondKoreanKey);
+    QCOMPARE(request.koreanTeachers[0].validationKey.value(), firstKoreanKey);
+    QCOMPARE(request.koreanTeachers[1].validationKey.value(), secondKoreanKey);
+
+    QCOMPARE(request.validation.gsTeamMemberKeys.size(), std::size_t(2));
+    QCOMPARE(request.gsTeamMembers.size(), std::size_t(2));
+    QCOMPARE(request.validation.gsTeamMemberKeys[0].english.value(),
+             std::string("front desk"));
+    QCOMPARE(request.validation.gsTeamMemberKeys[0].korean.value(),
+             QString::fromUtf8("김 하늘").toUtf8().toStdString());
+    QCOMPARE(request.gsTeamMembers[0].englishValidationKey.value(),
+             request.validation.gsTeamMemberKeys[0].english.value());
+    QCOMPARE(request.gsTeamMembers[0].koreanValidationKey.value(),
+             request.validation.gsTeamMemberKeys[0].korean.value());
+    QCOMPARE(request.gsTeamMembers[0].normalizedEnglishMatchKey,
+             std::u16string(u"front desk"));
+    QCOMPARE(request.gsTeamMembers[0].normalizedKoreanMatchKey,
+             std::u16string(u"김 하늘"));
+    QVERIFY(request.validation.gsTeamMemberKeys[1].english.empty());
+    QVERIFY(request.gsTeamMembers[1].englishValidationKey.empty());
+    QCOMPARE(request.validation.gsTeamMemberKeys[1].korean.value(),
+             QString::fromUtf8("박 민준").toUtf8().toStdString());
+    QCOMPARE(request.gsTeamMembers[1].englishValidationKey.value(),
+             request.validation.gsTeamMemberKeys[1].english.value());
+    QCOMPARE(request.gsTeamMembers[1].koreanValidationKey.value(),
+             request.validation.gsTeamMemberKeys[1].korean.value());
+    QCOMPARE(request.gsTeamMembers[1].normalizedKoreanMatchKey,
+             std::u16string(u"박 민준"));
+
+    QCOMPARE(request.review->candidateGroups[0].candidateValidationKeys.size(),
+             std::size_t(2));
+    QCOMPARE(request.review->candidateGroups[0].candidateValidationKeys[0].value(),
+             firstKoreanKey);
+    QCOMPARE(request.review->candidateGroups[0].candidateValidationKeys[1].value(),
+             secondKoreanKey);
+    QCOMPARE(request.review->candidateGroups[1].candidateValidationKeys[0].value(),
+             secondKoreanKey);
+    QVERIFY(request.review->decisions[0].selectedCandidateIndexes
+            == std::vector<std::int64_t>{0});
+    QVERIFY((request.review->decisions[1].selectedCandidateIndexes
+             == std::vector<std::int64_t>{1, 0}));
+
     std::vector<ClassMngr::Next::Application::TeacherImportCandidateGroup> groups;
     for (const auto& group : request.review->candidateGroups)
     {
@@ -477,6 +546,10 @@ void TeacherImportDialogTests::legacyPlanAdapterPreservesExactUtf8ReviewKeys()
             groups, request.review->decisions);
     QVERIFY(resolution.accepted());
     QCOMPARE(resolution.selectedCandidateIndexes.size(), std::size_t(2));
+    QVERIFY(resolution.selectedCandidateIndexes[0]
+            == (std::vector<std::size_t>{0, 1}));
+    QVERIFY(resolution.selectedCandidateIndexes[1]
+            == (std::vector<std::size_t>{0}));
 }
 
 QTEST_MAIN(TeacherImportDialogTests)

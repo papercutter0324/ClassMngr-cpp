@@ -25,7 +25,7 @@ namespace ClassMngr::Next::Application
 
 struct TeacherImportKoreanSource final
 {
-    std::string validationKey;
+    ImportSourceKey validationKey;
     std::u16string teacherKr;
     std::u16string teacherEn;
     std::u16string preferredRomanization;
@@ -55,8 +55,8 @@ struct TeacherImportNativeEnglishSource final
 
 struct TeacherImportGsTeamSource final
 {
-    std::string englishValidationKey;
-    std::string koreanValidationKey;
+    ImportSourceKey englishValidationKey;
+    ImportSourceKey koreanValidationKey;
     std::u16string normalizedEnglishMatchKey;
     std::u16string normalizedKoreanMatchKey;
     std::u16string diagnosticEnglishName;
@@ -71,7 +71,7 @@ struct TeacherImportGsTeamSource final
 struct TeacherImportReviewGroup final
 {
     TeacherImportGroupKey id;
-    std::vector<std::string> candidateValidationKeys;
+    std::vector<ImportSourceKey> candidateValidationKeys;
 };
 
 struct TeacherImportReview final
@@ -86,8 +86,8 @@ struct TeacherImportReview final
 struct TeacherImportUseCaseValidationInput final
 {
     bool sourceDateValid = false;
-    std::optional<std::vector<std::string>> reviewedKoreanTeacherKeys;
-    std::vector<std::string> koreanTeacherKeys;
+    std::optional<std::vector<ImportSourceKey>> reviewedKoreanTeacherKeys;
+    std::vector<ImportSourceKey> koreanTeacherKeys;
     std::vector<TeacherImportGsTeamNameKeys> gsTeamMemberKeys;
 };
 

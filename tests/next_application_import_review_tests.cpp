@@ -137,7 +137,7 @@ void NextApplicationImportReviewTests::sourceKeysAreExplicitExactValueTypes()
     QVERIFY(emptyKey.empty());
     QVERIFY(emptyKey.value().empty());
 
-    const std::string exactBytes(" \t\0\xC3\xA9! ", 7);
+    const std::string exactBytes(" \t\0\xC3\xA9\xFF! ", 8);
     const auto key = importSourceKey(exactBytes);
     const auto equalKey = importSourceKey(exactBytes);
     const auto differentKey = importSourceKey(exactBytes + "x");

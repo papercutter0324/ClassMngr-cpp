@@ -1,15 +1,43 @@
 #include "next/application/teacher_import_use_case.h"
 
 #include <cstdlib>
+#include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportKoreanSource>().validationKey),
+    ImportSourceKey>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportGsTeamSource>().englishValidationKey),
+    ImportSourceKey>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportGsTeamSource>().koreanValidationKey),
+    ImportSourceKey>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportReviewGroup>().candidateValidationKeys),
+    std::vector<ImportSourceKey>>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportUseCaseValidationInput>().reviewedKoreanTeacherKeys),
+    std::optional<std::vector<ImportSourceKey>>>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportUseCaseValidationInput>().koreanTeacherKeys),
+    std::vector<ImportSourceKey>>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportUseCaseValidationInput>().gsTeamMemberKeys),
+    std::vector<TeacherImportGsTeamNameKeys>>);
+static_assert(std::is_same_v<
+    TeacherImportNativeEnglishNameKeyPolicy,
+    std::function<std::u16string(std::u16string_view)>>);
 
 namespace
 {
@@ -20,6 +48,38 @@ void require(const bool condition, const char* message)
     {
         throw std::runtime_error(message);
     }
+}
+
+std::vector<ImportSourceKey> sourceKeys(
+    std::initializer_list<std::string> values
+    )
+{
+    std::vector<ImportSourceKey> keys;
+    keys.reserve(values.size());
+    for (const std::string& value : values)
+    {
+        keys.emplace_back(value);
+    }
+    return keys;
+}
+
+TeacherImportGsTeamNameKeys gsKeys(
+    std::string english,
+    std::string korean
+    )
+{
+    return {
+        ImportSourceKey(std::move(english)),
+        ImportSourceKey(std::move(korean))
+    };
+}
+
+TeacherImportReviewGroup reviewGroup(
+    TeacherImportGroupKey id,
+    std::initializer_list<std::string> candidateKeys
+    )
+{
+    return {std::move(id), sourceKeys(candidateKeys)};
 }
 
 std::u16string nativeEnglishNameKeyForTest(const std::u16string_view value)
@@ -304,7 +364,7 @@ TeacherImportKoreanSource koreanSource(
     )
 {
     return {
-        .validationKey = validationKey,
+        .validationKey = ImportSourceKey(validationKey),
         .teacherKr = std::move(teacherKr)
     };
 }
@@ -334,8 +394,8 @@ TeacherImportGsTeamSource gsSource(
     )
 {
     return {
-        .englishValidationKey = englishValidationKey,
-        .koreanValidationKey = koreanValidationKey,
+        .englishValidationKey = ImportSourceKey(englishValidationKey),
+        .koreanValidationKey = ImportSourceKey(koreanValidationKey),
         .normalizedEnglishMatchKey = std::move(englishMatchKey),
         .normalizedKoreanMatchKey = std::move(koreanMatchKey),
         .diagnosticEnglishName = name,
@@ -350,7 +410,7 @@ void appendKoreanValidation(
     const std::string& key
     )
 {
-    request.validation.koreanTeacherKeys.push_back(key);
+    request.validation.koreanTeacherKeys.emplace_back(key);
 }
 
 void appendGsValidation(
@@ -359,7 +419,7 @@ void appendGsValidation(
     const std::string& korean
     )
 {
-    request.validation.gsTeamMemberKeys.push_back({english, korean});
+    request.validation.gsTeamMemberKeys.push_back(gsKeys(english, korean));
 }
 
 std::expected<TeacherImportUseCaseResult, TeacherImportUseCaseError> runUseCase(
@@ -396,11 +456,14 @@ void successfulOrchestrationAcrossNamespaces()
     koreanUpdate.roomNumber = u"M3";
     auto koreanCreate = koreanSource("new-korean", u"이서연");
     request.koreanTeachers = {koreanUpdate, koreanCreate};
-    request.validation.koreanTeacherKeys = {"selected-korean", "new-korean"};
+    request.validation.koreanTeacherKeys =
+        sourceKeys({"selected-korean", "new-korean"});
     request.review = TeacherImportReview{
         .candidateGroups = {
-            {TeacherImportGroupKey("M1"), {"not-selected", "selected-korean"}},
-            {TeacherImportGroupKey("M2"), {"new-korean"}}
+            reviewGroup(
+                TeacherImportGroupKey("M1"),
+                {"not-selected", "selected-korean"}),
+            reviewGroup(TeacherImportGroupKey("M2"), {"new-korean"})
         },
         .decisions = {
             {TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}},
@@ -422,7 +485,8 @@ void successfulOrchestrationAcrossNamespaces()
     auto gsUnchanged = gsSource("casey", "", u"casey", {}, u"Casey");
     request.gsTeamMembers = {gsUpdate, gsCreate, gsUnchanged};
     request.validation.gsTeamMemberKeys = {
-        {"taylor", "kim"}, {"jordan", ""}, {"casey", ""}};
+        gsKeys("taylor", "kim"), gsKeys("jordan", ""),
+        gsKeys("casey", "")};
 
     FakeTeacherImportPersistence persistence;
     persistence.state.koreanTeachers = {
@@ -513,19 +577,21 @@ void successfulOrchestrationAcrossNamespaces()
 
 void exactUtf8ReviewKeysKeepCandidateOrderInUseCase()
 {
+    const std::string exactBytes("\xFF\0\xC3\xA9", 4);
     TeacherImportUseCaseRequest request = emptyValidRequest();
     request.koreanTeachers = {
-        koreanSource("selected-one", u"김하늘"),
+        koreanSource(exactBytes, u"김하늘"),
         koreanSource("selected-two", u"이서연")
     };
-    request.validation.koreanTeacherKeys = {"selected-one", "selected-two"};
+    request.validation.koreanTeacherKeys =
+        sourceKeys({exactBytes, "selected-two"});
 
     const TeacherImportGroupKey composedKey(std::string("M1-\xC3\xA9"));
     const TeacherImportGroupKey decomposedKey(std::string("M1-e\xCC\x81"));
     request.review = TeacherImportReview{
         .candidateGroups = {
-            {composedKey, {"unselected", "selected-one"}},
-            {decomposedKey, {"selected-two"}}
+            reviewGroup(composedKey, {"unselected", exactBytes}),
+            reviewGroup(decomposedKey, {"selected-two"})
         },
         // Decisions arrive in reverse order; selected Korean sources must
         // still follow candidate-group order.
@@ -541,6 +607,10 @@ void exactUtf8ReviewKeysKeepCandidateOrderInUseCase()
             "exact non-ASCII review keys were rejected by the use case");
     require(result->koreanTeachers == TeacherImportCounts{2, 0, 0},
             "reviewed Korean sources were not both created");
+    require(request.koreanTeachers[0].validationKey.value() == exactBytes
+                && request.review->candidateGroups[0]
+                    .candidateValidationKeys[1].value() == exactBytes,
+            "opaque source bytes changed in source or review candidate records");
     require(persistence.state.koreanTeachers.size() == 2
                 && persistence.state.koreanTeachers[0].teacherKr == u"김하늘"
                 && persistence.state.koreanTeachers[1].teacherKr == u"이서연",
@@ -551,10 +621,10 @@ void noMatchCreatesAcrossAllNamespaces()
 {
     TeacherImportUseCaseRequest request = emptyValidRequest();
     request.koreanTeachers = {koreanSource("kim", u"김하늘")};
-    request.validation.koreanTeacherKeys = {"kim"};
+    request.validation.koreanTeacherKeys = sourceKeys({"kim"});
     request.nativeEnglishTeachers = {nativeSource(u"Alex")};
     request.gsTeamMembers = {gsSource("taylor", "", u"taylor", {}, u"Taylor")};
-    request.validation.gsTeamMemberKeys = {{"taylor", ""}};
+    request.validation.gsTeamMemberKeys = {gsKeys("taylor", "")};
 
     FakeTeacherImportPersistence persistence;
     const auto result = runUseCase(request, persistence);
@@ -568,11 +638,31 @@ void noMatchCreatesAcrossAllNamespaces()
 void reviewAndPlanRejectionPrecedePersistence()
 {
     {
+        const std::string composed("\xC3\xA9");
+        const std::string decomposed("e\xCC\x81");
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2023-02-29";
+        request.koreanTeachers = {koreanSource(composed, u"김하늘")};
+        request.validation.koreanTeacherKeys = sourceKeys({decomposed});
+
+        FakeTeacherImportPersistence persistence;
+        const auto result = runUseCase(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::ReviewSelectionMismatch,
+                "byte-distinct source keys did not produce the request mismatch first");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "byte-distinct request mismatch reached persistence");
+    }
+
+    {
         TeacherImportUseCaseRequest request = emptyValidRequest();
         request.koreanTeachers = {koreanSource("selected", u"김하늘")};
-        request.validation.koreanTeacherKeys = {"selected"};
+        request.validation.koreanTeacherKeys = sourceKeys({"selected"});
         request.review = TeacherImportReview{
-            .candidateGroups = {{TeacherImportGroupKey("M1"), {"different"}}},
+            .candidateGroups = {
+                reviewGroup(TeacherImportGroupKey("M1"), {"different"})},
             .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::All, {}}}
         };
         FakeTeacherImportPersistence persistence;
@@ -588,9 +678,10 @@ void reviewAndPlanRejectionPrecedePersistence()
     {
         TeacherImportUseCaseRequest request = emptyValidRequest();
         request.koreanTeachers = {koreanSource("selected", u"김하늘")};
-        request.validation.koreanTeacherKeys = {"selected"};
+        request.validation.koreanTeacherKeys = sourceKeys({"selected"});
         request.review = TeacherImportReview{
-            .candidateGroups = {{TeacherImportGroupKey("M1"), {"selected"}}},
+            .candidateGroups = {
+                reviewGroup(TeacherImportGroupKey("M1"), {"selected"})},
             .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {4}}}
         };
         FakeTeacherImportPersistence persistence;
@@ -672,7 +763,8 @@ void nativeEnglishSourceNameOwnsValidationAndMatching()
         request.gsTeamMembers = {
             gsSource("same", "", u"same", {}, u"Same"),
             gsSource("same", "", u"same", {}, u"Same duplicate")};
-        request.validation.gsTeamMemberKeys = {{"same", ""}, {"same", ""}};
+        request.validation.gsTeamMemberKeys = {
+            gsKeys("same", ""), gsKeys("same", "")};
 
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -798,7 +890,7 @@ void derivedKoreanIdentitiesAreValidatedBeforePersistence()
             koreanSource("kim-a", u"김하늘 A"),
             koreanSource("kim-b", u"김하늘 B")
         };
-        request.validation.koreanTeacherKeys = {"kim-a", "kim-b"};
+        request.validation.koreanTeacherKeys = sourceKeys({"kim-a", "kim-b"});
 
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -814,7 +906,8 @@ void derivedKoreanIdentitiesAreValidatedBeforePersistence()
     {
         TeacherImportUseCaseRequest request = emptyValidRequest();
         request.koreanTeachers = {koreanSource("nonempty-validation-key", u"Teacher A")};
-        request.validation.koreanTeacherKeys = {"nonempty-validation-key"};
+        request.validation.koreanTeacherKeys =
+            sourceKeys({"nonempty-validation-key"});
 
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -837,13 +930,13 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
             koreanSource("kim-a", u"김하늘 A"),
             koreanSource("kim-b", u"김하늘 B")
         };
-        request.validation.koreanTeacherKeys = {"kim-a", "kim-b"};
+        request.validation.koreanTeacherKeys = sourceKeys({"kim-a", "kim-b"});
         return request;
     };
 
     {
         TeacherImportUseCaseRequest request = duplicateDerivedRequest();
-        request.validation.koreanTeacherKeys[1] = "other-key";
+        request.validation.koreanTeacherKeys[1] = ImportSourceKey("other-key");
 
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
@@ -859,7 +952,8 @@ void derivedKoreanIdentityValidationPreservesPrecedence()
     {
         TeacherImportUseCaseRequest request = duplicateDerivedRequest();
         request.review = TeacherImportReview{
-            .candidateGroups = {{TeacherImportGroupKey("M1"), {"kim-a"}}},
+            .candidateGroups = {
+                reviewGroup(TeacherImportGroupKey("M1"), {"kim-a"})},
             .decisions = {{TeacherImportGroupKey("M1"), TeacherImportGroupMode::Selected, {1}}}
         };
 
@@ -954,7 +1048,7 @@ void ambiguousMatchRollsBackEarlierWrites()
 {
     TeacherImportUseCaseRequest request = emptyValidRequest();
     request.koreanTeachers = {koreanSource("new", u"이서연")};
-    request.validation.koreanTeacherKeys = {"new"};
+    request.validation.koreanTeacherKeys = sourceKeys({"new"});
     request.nativeEnglishTeachers = {
         nativeSource(u"Jamie", u"Original Jamie diagnostic")};
 
@@ -983,7 +1077,7 @@ void queryWriteAndCommitFailuresRollBack()
 {
     TeacherImportUseCaseRequest request = emptyValidRequest();
     request.koreanTeachers = {koreanSource("kim", u"김하늘")};
-    request.validation.koreanTeacherKeys = {"kim"};
+    request.validation.koreanTeacherKeys = sourceKeys({"kim"});
 
     {
         FakeTeacherImportPersistence persistence;

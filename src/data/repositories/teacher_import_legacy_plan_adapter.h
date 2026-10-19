@@ -17,6 +17,7 @@ using ClassMngr::Next::Application::TeacherImportGroupKey;
 using ClassMngr::Next::Application::TeacherImportGroupMode;
 using ClassMngr::Next::Application::TeacherImportReviewGroup;
 using ClassMngr::Next::Application::TeacherImportUseCaseRequest;
+using ClassMngr::Next::Application::ImportSourceKey;
 
 namespace Detail
 {
@@ -64,8 +65,10 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
         static_cast<std::size_t>(plan.koreanTeachers.size()));
     for (const Teacher& teacher : plan.koreanTeachers)
     {
-        const std::string validationKey =
-            Detail::koreanTeacherNameKey(teacher.teacherKr).toUtf8().toStdString();
+        const ImportSourceKey validationKey{
+            Detail::koreanTeacherNameKey(teacher.teacherKr)
+                .toUtf8().toStdString()
+        };
         request.validation.koreanTeacherKeys.push_back(validationKey);
         request.koreanTeachers.push_back({
             .validationKey = validationKey,
@@ -109,13 +112,19 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
     {
         const QString englishKey = Detail::normalizedName(member.name);
         const QString koreanKey = Detail::normalizedName(member.koreanName);
-        request.validation.gsTeamMemberKeys.push_back({
-            englishKey.toUtf8().toStdString(),
+        const ImportSourceKey englishValidationKey{
+            englishKey.toUtf8().toStdString()
+        };
+        const ImportSourceKey koreanValidationKey{
             koreanKey.toUtf8().toStdString()
+        };
+        request.validation.gsTeamMemberKeys.push_back({
+            englishValidationKey,
+            koreanValidationKey
         });
         request.gsTeamMembers.push_back({
-            .englishValidationKey = englishKey.toUtf8().toStdString(),
-            .koreanValidationKey = koreanKey.toUtf8().toStdString(),
+            .englishValidationKey = englishValidationKey,
+            .koreanValidationKey = koreanValidationKey,
             .normalizedEnglishMatchKey = englishKey.toStdU16String(),
             .normalizedKoreanMatchKey = koreanKey.toStdU16String(),
             .diagnosticEnglishName = member.name.toStdU16String(),
@@ -142,8 +151,11 @@ inline TeacherImportUseCaseRequest teacherImportPlanToUseCaseRequest(const Teach
             for (const KoreanTeacherImportCandidate& candidate : group.candidates)
             {
                 projected.candidateValidationKeys.push_back(
-                    Detail::koreanTeacherNameKey(candidate.teacher.teacherKr)
-                        .toUtf8().toStdString());
+                    ImportSourceKey{
+                        Detail::koreanTeacherNameKey(
+                            candidate.teacher.teacherKr
+                            ).toUtf8().toStdString()
+                    });
             }
             review.candidateGroups.push_back(std::move(projected));
         }

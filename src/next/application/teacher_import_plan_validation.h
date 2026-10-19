@@ -1,8 +1,9 @@
 #pragma once
 
+#include "next/application/import_review_session.h"
+
 #include <optional>
-#include <string>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -23,8 +24,8 @@ enum class TeacherImportPlanValidationIssue
 
 struct TeacherImportGsTeamNameKeys
 {
-    std::string english;
-    std::string korean;
+    ImportSourceKey english;
+    ImportSourceKey korean;
 };
 
 // The adapter supplies normalized identity keys and preserves source order.
@@ -33,9 +34,9 @@ struct TeacherImportGsTeamNameKeys
 struct TeacherImportPlanValidationInput
 {
     bool sourceDateValid = false;
-    std::optional<std::vector<std::string>> reviewedKoreanTeacherKeys;
-    std::vector<std::string> koreanTeacherKeys;
-    std::vector<std::string> nativeEnglishTeacherKeys;
+    std::optional<std::vector<ImportSourceKey>> reviewedKoreanTeacherKeys;
+    std::vector<ImportSourceKey> koreanTeacherKeys;
+    std::vector<ImportSourceKey> nativeEnglishTeacherKeys;
     std::vector<TeacherImportGsTeamNameKeys> gsTeamMemberKeys;
 };
 
@@ -54,8 +55,8 @@ struct TeacherImportPlanValidationInput
         return TeacherImportPlanValidationIssue::InvalidSourceDate;
     }
 
-    std::unordered_set<std::string> koreanTeacherKeys;
-    for (const std::string& key : input.koreanTeacherKeys)
+    std::set<ImportSourceKey> koreanTeacherKeys;
+    for (const ImportSourceKey& key : input.koreanTeacherKeys)
     {
         if (key.empty())
         {
@@ -67,8 +68,8 @@ struct TeacherImportPlanValidationInput
         }
     }
 
-    std::unordered_set<std::string> nativeEnglishTeacherKeys;
-    for (const std::string& key : input.nativeEnglishTeacherKeys)
+    std::set<ImportSourceKey> nativeEnglishTeacherKeys;
+    for (const ImportSourceKey& key : input.nativeEnglishTeacherKeys)
     {
         if (key.empty())
         {
@@ -80,8 +81,8 @@ struct TeacherImportPlanValidationInput
         }
     }
 
-    std::unordered_set<std::string> gsEnglishKeys;
-    std::unordered_set<std::string> gsKoreanKeys;
+    std::set<ImportSourceKey> gsEnglishKeys;
+    std::set<ImportSourceKey> gsKoreanKeys;
     for (const TeacherImportGsTeamNameKeys& member : input.gsTeamMemberKeys)
     {
         if (member.english.empty() && member.korean.empty())
