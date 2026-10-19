@@ -710,7 +710,7 @@ readsTwoCalendarYearsOfSubPrepIntervalsWithoutProjectionTruncation()
         result.value().cend(),
         [](const SubPrepCalendarEventInterval& interval)
         {
-            return interval.eventType == "Holiday"
+            return interval.eventType == CalendarEventType::Holiday
                 && interval.startDate.value() == "2027-12-31"
                 && interval.endDate.value() == "2028-01-07";
         }
@@ -797,13 +797,13 @@ readsTwoYearSubPrepIntervalsThroughApplicationServices()
 
     QVERIFY(result);
     QCOMPARE(result.value().size(), std::size_t(3));
-    QCOMPARE(result.value()[0].eventType, std::string("Vacation"));
+    QVERIFY(result.value()[0].eventType == CalendarEventType::Vacation);
     QCOMPARE(result.value()[0].startDate.value(), std::string("2025-12-20"));
     QCOMPARE(result.value()[0].endDate.value(), std::string("2026-01-01"));
-    QCOMPARE(result.value()[1].eventType, std::string("Vacation"));
+    QVERIFY(result.value()[1].eventType == CalendarEventType::Vacation);
     QCOMPARE(result.value()[1].startDate.value(), std::string("2026-07-10"));
     QCOMPARE(result.value()[1].endDate.value(), std::string("2026-07-12"));
-    QCOMPARE(result.value()[2].eventType, std::string("Holiday"));
+    QVERIFY(result.value()[2].eventType == CalendarEventType::Holiday);
     QCOMPARE(result.value()[2].startDate.value(), std::string("2027-12-31"));
     QCOMPARE(result.value()[2].endDate.value(), std::string("2028-01-07"));
 }

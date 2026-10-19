@@ -33,7 +33,7 @@ public:
 
     int calls = 0;
     SubPrepCalendarEventIntervalsReadRequest lastRequest;
-    SubPrepCalendarEventIntervals intervals;
+    SubPrepCalendarEventIntervalReads intervals;
     std::optional<OperationError> failure;
 };
 
@@ -59,8 +59,12 @@ void NextApplicationSubPrepCalendarEventIntervalsQueryTests::
 contractContainsOnlyTheThreeRequiredIntervalValues()
 {
     static_assert(std::is_same_v<
-        decltype(SubPrepCalendarEventInterval::eventType),
+        decltype(SubPrepCalendarEventIntervalRead::eventType),
         std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(SubPrepCalendarEventInterval::eventType),
+        CalendarEventType
         >);
     static_assert(std::is_same_v<
         decltype(SubPrepCalendarEventInterval::startDate),
@@ -120,10 +124,10 @@ filtersByTrimmedExactTypesAndKeepsFullInclusiveIntervals()
     QCOMPARE(readPort.calls, 1);
     QCOMPARE(readPort.lastRequest, expectedRange);
     QCOMPARE(result.value().size(), std::size_t(2));
-    QCOMPARE(result.value()[0].eventType, std::string("Vacation"));
+    QVERIFY(result.value()[0].eventType == CalendarEventType::Vacation);
     QCOMPARE(result.value()[0].startDate.value(), std::string("2025-12-28"));
     QCOMPARE(result.value()[0].endDate.value(), std::string("2026-07-08"));
-    QCOMPARE(result.value()[1].eventType, std::string("Holiday"));
+    QVERIFY(result.value()[1].eventType == CalendarEventType::Holiday);
     QCOMPARE(result.value()[1].startDate.value(), std::string("2027-12-29"));
     QCOMPARE(result.value()[1].endDate.value(), std::string("2028-01-05"));
 }

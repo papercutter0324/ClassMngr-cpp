@@ -17,15 +17,30 @@
 namespace ClassMngr::Next::Application
 {
 
+// A normalized query result with its canonical event type represented in the
+// domain model.
 struct SubPrepCalendarEventInterval final
 {
-    std::string eventType;
+    Domain::CalendarEventType eventType;
     CalendarEventDate startDate;
     CalendarEventDate endDate;
 
     friend bool operator==(
         const SubPrepCalendarEventInterval&,
         const SubPrepCalendarEventInterval&
+        ) = default;
+};
+
+// Raw event-type text from the read boundary; the query classifies it.
+struct SubPrepCalendarEventIntervalRead final
+{
+    std::string eventType;
+    CalendarEventDate startDate;
+    CalendarEventDate endDate;
+
+    friend bool operator==(
+        const SubPrepCalendarEventIntervalRead&,
+        const SubPrepCalendarEventIntervalRead&
         ) = default;
 };
 
@@ -52,8 +67,10 @@ struct SubPrepCalendarEventIntervalsReadRequest final
 
 using SubPrepCalendarEventIntervals =
     std::vector<SubPrepCalendarEventInterval>;
+using SubPrepCalendarEventIntervalReads =
+    std::vector<SubPrepCalendarEventIntervalRead>;
 using SubPrepCalendarEventIntervalsReadResult =
-    Domain::Result<SubPrepCalendarEventIntervals>;
+    Domain::Result<SubPrepCalendarEventIntervalReads>;
 using SubPrepCalendarEventIntervalsQueryResult =
     Domain::Result<SubPrepCalendarEventIntervals>;
 
@@ -218,7 +235,9 @@ public:
             }
 
             SubPrepCalendarEventIntervals result;
-            for (SubPrepCalendarEventInterval& interval : loaded.value())
+            for (
+                const SubPrepCalendarEventIntervalRead& interval : loaded.value()
+                )
             {
                 const std::string_view normalizedType =
                     SubPrepCalendarEventIntervalsQueryDetail::trim(
@@ -250,8 +269,11 @@ public:
                     continue;
                 }
 
-                interval.eventType.assign(normalizedType);
-                result.push_back(std::move(interval));
+                result.push_back({
+                    .eventType = *eventType,
+                    .startDate = interval.startDate,
+                    .endDate = interval.endDate
+                });
             }
 
             return SubPrepCalendarEventIntervalsQueryResult::success(

@@ -127,7 +127,7 @@ public:
                     );
             }
 
-            Application::SubPrepCalendarEventIntervals intervals;
+            Application::SubPrepCalendarEventIntervalReads intervals;
             for (const CalendarEventDateInterval& source : loaded.value())
             {
                 const QString eventType = source.eventType.trimmed();
@@ -138,15 +138,17 @@ public:
                 }
 
                 const QByteArray eventTypeBytes = eventType.toUtf8();
-                intervals.push_back({
-                    .eventType = eventTypeBytes.toStdString(),
-                    .startDate = Application::CalendarEventDate(
-                        source.startDate.toString(Qt::ISODate).toStdString()
-                        ),
-                    .endDate = Application::CalendarEventDate(
-                        source.endDate.toString(Qt::ISODate).toStdString()
-                        )
-                });
+                intervals.push_back(
+                    Application::SubPrepCalendarEventIntervalRead{
+                        .eventType = eventTypeBytes.toStdString(),
+                        .startDate = Application::CalendarEventDate(
+                            source.startDate.toString(Qt::ISODate).toStdString()
+                            ),
+                        .endDate = Application::CalendarEventDate(
+                            source.endDate.toString(Qt::ISODate).toStdString()
+                            )
+                    }
+                    );
             }
 
             return Application::SubPrepCalendarEventIntervalsReadResult::success(

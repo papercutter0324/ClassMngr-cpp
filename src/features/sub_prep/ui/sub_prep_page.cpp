@@ -579,7 +579,11 @@ void SubPrepPage::generateSubPrep()
                     {
                         CalendarEvent event;
                         event.eventType = QString::fromStdString(
-                            interval.eventType
+                            std::string(
+                                ClassMngr::Next::Domain::calendarEventTypeName(
+                                    interval.eventType
+                                    )
+                                )
                             );
                         event.startDate = QDate::fromString(
                             QString::fromStdString(
