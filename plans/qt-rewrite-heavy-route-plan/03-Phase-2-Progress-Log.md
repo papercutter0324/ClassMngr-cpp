@@ -47445,3 +47445,23 @@ and draft survive; then retain its existing missing-selection refresh
 assertions. Add `ClassMngrCampusDashboardPageTests` to the existing focused
 build targets. Run only this named QtTest case directly because CMake
 registers no standalone CTest selector for it. No full suite is planned.
+
+### F1101 Campus Dashboard test-policy clarification - 2026-10-19
+
+This clarification supersedes only the test-shape instruction in the preceding
+F1101 scope addendum; it does not change F1101 production acceptance or
+user-visible policy. Main's review of `loadCampuses()`,
+`loadSelectedCampus()`, and `saveCurrentCampus()` confirmed two distinct dirty
+refresh paths. If the same selected ID remains available, refresh saves the
+draft, reloads that selected campus, clears the dirty flag, and stops the save
+timer. If the selected ID is absent, the existing early return preserves the
+unsaved draft. F1101 acceptance confines the change to adding `.value()` at
+the text boundary and preserves exact equality.
+
+Leave `dirtyRefreshWithMissingSelectedCampusPreservesDraftUntilDiscarded`
+unchanged. Add a separate `dirtyRefreshWithPresentSelectedCampusSavesDraft`
+case asserting that the exact selection remains, edited field values are
+persisted and reloaded, one Update save occurs, `hasUnsavedChanges()` clears,
+and the save timer stops. Build `ClassMngrCampusDashboardPageTests` as before,
+and run only these two named QtTest cases directly; CMake registers no
+standalone CTest selector for this target.

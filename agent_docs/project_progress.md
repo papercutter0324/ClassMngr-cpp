@@ -4871,6 +4871,7 @@ Phase 0 and Phase 2 exit gates remain open.
 
 Before implementation, a bounded use-site scan found Campus Dashboard also
 consumes `CalendarPageCampusMetadata`. F1101's acceptance scope now includes
-its exact ID equality check during dirty refresh and a focused regression for
-retaining the selected campus and draft when it remains present. No source or
-test implementation has started.
+its exact ID equality check during dirty refresh. Existing behavior saves and
+reloads the dirty draft when that ID remains present; a missing-ID refresh
+preserves the dirty draft. A separate focused regression covers the
+present-ID save path, while the existing missing-ID regression stays intact.
