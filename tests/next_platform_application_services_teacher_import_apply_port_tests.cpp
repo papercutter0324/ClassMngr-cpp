@@ -1,6 +1,7 @@
 #include "core/application_services.h"
 #include "app/services/feature_services.h"
 #include "data/database/database_session.h"
+#include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_import_repository.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 
@@ -66,6 +67,7 @@ class NextPlatformApplicationServicesTeacherImportApplyPortTests final
 
 private slots:
     void appliesAllGroupsAndKeepsNewestDate();
+    void treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates();
     void preservesTeacherServiceValidationText();
     void rollsBackEarlierGroupWritesWhenLateWriteFails();
     void rejectsUnavailableSession();
@@ -123,6 +125,46 @@ appliesAllGroupsAndKeepsNewestDate()
     QVERIFY2(older, qPrintable(older ? QString() : older.error()));
     QCOMPARE(latestSourceDate(services.databaseSession()->database()),
         QStringLiteral("2026-10-02"));
+}
+
+void NextPlatformApplicationServicesTeacherImportApplyPortTests::
+treatsMalformedSnapshotDateAsAbsentAndDoesNotRewriteEqualOrOlderDates()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+        QString::fromLatin1(TeacherImportRepository::LatestSourceDateSetting),
+        QStringLiteral("not-a-date")));
+    Platform::ApplicationServicesTeacherImportApplyPort port(&services);
+
+    TeacherImportPlan initial;
+    initial.sourceDate = QDate(2026, 10, 1);
+    const auto imported = port.apply(initial);
+    QVERIFY2(imported, qPrintable(imported ? QString() : imported.error()));
+    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+        QStringLiteral("2026-10-01"));
+
+    QSqlQuery rejectDateWrite(services.databaseSession()->database());
+    QVERIFY2(rejectDateWrite.exec(QStringLiteral(
+        "CREATE TRIGGER reject_teacher_import_date_update "
+        "BEFORE UPDATE ON app_settings "
+        "WHEN OLD.key='teacher_import/latest_source_date' "
+        "BEGIN SELECT RAISE(ABORT, 'unexpected date rewrite'); END")),
+        qPrintable(rejectDateWrite.lastError().text()));
+
+    TeacherImportPlan equalDate;
+    equalDate.sourceDate = QDate(2026, 10, 1);
+    const auto equal = port.apply(equalDate);
+    QVERIFY2(equal, qPrintable(equal ? QString() : equal.error()));
+
+    TeacherImportPlan olderDate;
+    olderDate.sourceDate = QDate(2026, 9, 30);
+    const auto older = port.apply(olderDate);
+    QVERIFY2(older, qPrintable(older ? QString() : older.error()));
+    QCOMPARE(latestSourceDate(services.databaseSession()->database()),
+        QStringLiteral("2026-10-01"));
 }
 
 void NextPlatformApplicationServicesTeacherImportApplyPortTests::

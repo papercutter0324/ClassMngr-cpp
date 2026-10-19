@@ -1,5 +1,6 @@
 #include "next/application/teacher_import_use_case.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <functional>
 #include <initializer_list>
@@ -13,6 +14,13 @@
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportUseCaseRequest>().sourceDateIso),
+    std::string>);
+static_assert(std::is_same_v<
+    decltype(std::declval<TeacherImportPersistenceSnapshot>().latestSourceDate),
+    std::optional<ClassMngr::Next::Domain::GregorianDate>>);
 
 static_assert(std::is_same_v<
     decltype(std::declval<TeacherImportKoreanSource>().validationKey),
@@ -48,6 +56,16 @@ void require(const bool condition, const char* message)
     {
         throw std::runtime_error(message);
     }
+}
+
+ClassMngr::Next::Domain::GregorianDate gregorianDate(const std::string_view iso)
+{
+    const auto parsed = ClassMngr::Next::Domain::GregorianDate::fromIsoString(iso);
+    if (!parsed)
+    {
+        throw std::runtime_error("test supplied an invalid Gregorian date");
+    }
+    return *parsed;
 }
 
 std::vector<ImportSourceKey> sourceKeys(
@@ -302,7 +320,7 @@ public:
             return std::unexpected(failure(
                 TeacherImportPersistenceOperation::SaveLatestSourceDate));
         }
-        state.latestSourceDateIso = std::string(sourceDateIso);
+        state.latestSourceDate = gregorianDate(sourceDateIso);
         return {};
     }
 
@@ -519,7 +537,7 @@ void successfulOrchestrationAcrossNamespaces()
             .normalizedKoreanMatchKey = {}
         }
     };
-    persistence.state.latestSourceDateIso = "2026-08-01";
+    persistence.state.latestSourceDate = gregorianDate("2026-08-01");
 
     require(persistence.state.koreanTeachers[0].key
                 == ClassMngr::Next::Domain::KoreanTeacherKey::fromName(
@@ -565,7 +583,8 @@ void successfulOrchestrationAcrossNamespaces()
                 && persistence.state.gsTeamMembers[0].profile.koreanName == u"김하늘"
                 && persistence.state.gsTeamMembers[0].profile.phoneNumber == u"010-3333",
             "GS Team merge did not use Korean identity preference or preserve blanks");
-    require(persistence.state.latestSourceDateIso == "2026-09-27",
+    require(persistence.state.latestSourceDate
+                && persistence.state.latestSourceDate->toIsoString() == "2026-09-27",
             "latest source date was not advanced");
     require(persistence.commitCount == 1 && persistence.rollbackCount == 0,
             "successful apply did not commit exactly once");
@@ -1024,8 +1043,65 @@ void sourceDateValidationPrecedesPersistenceAndPreservesIsoDate()
         FakeTeacherImportPersistence persistence;
         const auto result = runUseCase(request, persistence);
         require(result.has_value(), "valid leap-day source date was rejected");
-        require(persistence.state.latestSourceDateIso == "2024-02-29",
+        require(persistence.state.latestSourceDate
+                    && persistence.state.latestSourceDate->toIsoString() == "2024-02-29",
                 "valid leap-day source date was not forwarded unchanged");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2026-09-1";
+        FakeTeacherImportPersistence persistence;
+        const auto result = runUseCase(request, persistence);
+        require(!result
+                    && result.error().kind == TeacherImportUseCaseErrorKind::InvalidPlan
+                    && result.error().validationIssue
+                        == TeacherImportPlanValidationIssue::InvalidSourceDate,
+                "noncanonical raw source date was not rejected");
+        require(persistence.calls.empty() && persistence.beginCount == 0,
+                "noncanonical raw source date reached persistence");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2024-02-29";
+        FakeTeacherImportPersistence persistence;
+        persistence.state.latestSourceDate = gregorianDate("2024-02-29");
+        const auto result = runUseCase(request, persistence);
+        require(result.has_value(), "equal source date was rejected");
+        require(persistence.state.latestSourceDate
+                    && persistence.state.latestSourceDate->toIsoString() == "2024-02-29",
+                "equal source date changed the snapshot date");
+        require(std::find(persistence.calls.begin(), persistence.calls.end(), "save-date")
+                    == persistence.calls.end(),
+                "equal source date unnecessarily wrote the latest date");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2024-02-28";
+        FakeTeacherImportPersistence persistence;
+        persistence.state.latestSourceDate = gregorianDate("2024-02-29");
+        const auto result = runUseCase(request, persistence);
+        require(result.has_value(), "older source date was rejected");
+        require(persistence.state.latestSourceDate
+                    && persistence.state.latestSourceDate->toIsoString() == "2024-02-29",
+                "older source date downgraded the snapshot date");
+        require(std::find(persistence.calls.begin(), persistence.calls.end(), "save-date")
+                    == persistence.calls.end(),
+                "older source date unnecessarily wrote the latest date");
+    }
+
+    {
+        TeacherImportUseCaseRequest request = emptyValidRequest();
+        request.sourceDateIso = "2024-03-01";
+        FakeTeacherImportPersistence persistence;
+        persistence.state.latestSourceDate = gregorianDate("2024-02-29");
+        const auto result = runUseCase(request, persistence);
+        require(result.has_value(), "newer source date was rejected");
+        require(persistence.state.latestSourceDate
+                    && persistence.state.latestSourceDate->toIsoString() == "2024-03-01",
+                "newer source date did not advance the snapshot date");
     }
 
     {
@@ -1067,7 +1143,7 @@ void ambiguousMatchRollsBackEarlierWrites()
             "Native English ambiguity lost the original diagnostic label");
     require(persistence.state.koreanTeachers.empty()
                 && persistence.state.nativeEnglishTeachers.size() == 2
-                && !persistence.state.latestSourceDateIso,
+                && !persistence.state.latestSourceDate,
             "ambiguous match did not roll back an earlier Korean create");
     require(persistence.rollbackCount == 1 && persistence.commitCount == 0,
             "ambiguous match did not roll back exactly once");
@@ -1092,7 +1168,7 @@ void queryWriteAndCommitFailuresRollBack()
         require(persistence.state.koreanTeachers.empty()
                     && persistence.state.nativeEnglishTeachers.empty()
                     && persistence.state.gsTeamMembers.empty()
-                    && !persistence.state.latestSourceDateIso
+                    && !persistence.state.latestSourceDate
                     && persistence.rollbackCount == 1,
                 "query failure did not roll back");
     }
@@ -1126,14 +1202,15 @@ void queryWriteAndCommitFailuresRollBack()
     {
         FakeTeacherImportPersistence persistence;
         persistence.failAt = TeacherImportPersistenceOperation::CommitTransaction;
-        persistence.state.latestSourceDateIso = "2026-01-01";
+        persistence.state.latestSourceDate = gregorianDate("2026-01-01");
         const auto result = runUseCase(request, persistence);
         require(!result
                     && result.error().persistenceFailure.operation
                         == TeacherImportPersistenceOperation::CommitTransaction,
                 "commit failure was hidden from the caller");
         require(persistence.state.koreanTeachers.empty()
-                    && persistence.state.latestSourceDateIso == "2026-01-01"
+                    && persistence.state.latestSourceDate
+                    && persistence.state.latestSourceDate->toIsoString() == "2026-01-01"
                     && persistence.rollbackCount == 1,
                 "commit failure did not restore writes and source date");
     }

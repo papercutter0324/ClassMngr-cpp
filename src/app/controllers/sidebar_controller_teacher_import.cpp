@@ -8,12 +8,12 @@ using namespace SidebarControllerPrivate;
 #include "features/teacher/ui/staff_directory_page.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
 #include "next/application/teacher_import_latest_source_date_read_query.h"
+#include "next/domain/gregorian_date.h"
 #include "next/platform/application_services_teacher_profile_read_port.h"
 #include "next/platform/application_services_teacher_import_latest_source_date_read_port.h"
 #include "next/platform/application_services_teacher_import_apply_port.h"
 
 #include <optional>
-#include <string>
 
 
 void SidebarController::importTeachers()
@@ -52,14 +52,13 @@ void SidebarController::importTeachers()
         return;
     }
 
-    const std::optional<std::string>& previousDateText =
+    const std::optional<ClassMngr::Next::Domain::GregorianDate>& previousDateValue =
         previousDateResult.value();
-    const QDate previousDate = previousDateText
-        ? QDate::fromString(
-              QString::fromUtf8(
-                  previousDateText->data(),
-                  static_cast<qsizetype>(previousDateText->size())),
-              Qt::ISODate)
+    const QDate previousDate = previousDateValue
+        ? QDate(
+              previousDateValue->year(),
+              previousDateValue->month(),
+              previousDateValue->day())
         : QDate();
     if (previousDate.isValid()
         && plan.sourceDate.isValid()

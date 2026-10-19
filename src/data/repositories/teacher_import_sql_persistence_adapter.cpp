@@ -216,7 +216,11 @@ public:
                 query.value(0).toString(), Qt::ISODate);
             if (current.isValid())
             {
-                snapshot.latestSourceDateIso = current.toString(Qt::ISODate).toStdString();
+                const std::string currentIso =
+                    current.toString(Qt::ISODate).toStdString();
+                snapshot.latestSourceDate =
+                    ClassMngr::Next::Domain::GregorianDate::fromIsoString(
+                        currentIso);
             }
         }
         if (query.lastError().isValid())

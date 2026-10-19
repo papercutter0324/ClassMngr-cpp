@@ -6,6 +6,9 @@
 namespace ClassMngr::Next::Application
 {
 
+using TeacherImportLatestSourceDateReadResult =
+    Domain::Result<std::optional<Domain::GregorianDate>>;
+
 class TeacherImportLatestSourceDateReadQuery final
 {
 public:
@@ -18,7 +21,7 @@ public:
 
     [[nodiscard]] TeacherImportLatestSourceDateReadResult execute() const
     {
-        TeacherImportLatestSourceDateReadResult result =
+        TeacherImportLatestSourceDateReadPortResult result =
             m_port.readLatestTeacherImportSourceDate();
         if (!result)
         {
@@ -27,9 +30,15 @@ public:
                 );
         }
 
-        const std::optional<std::string>& sourceDate = result.value();
-        if (sourceDate.has_value()
-            && !Domain::GregorianDate::fromIsoString(*sourceDate).has_value())
+        const std::optional<std::string>& sourceDateText = result.value();
+        if (!sourceDateText)
+        {
+            return TeacherImportLatestSourceDateReadResult::success(std::nullopt);
+        }
+
+        const std::optional<Domain::GregorianDate> sourceDate =
+            Domain::GregorianDate::fromIsoString(*sourceDateText);
+        if (!sourceDate)
         {
             return TeacherImportLatestSourceDateReadResult::failure({
                 .code = Domain::ErrorCode::Validation,
@@ -39,7 +48,7 @@ public:
             });
         }
 
-        return result;
+        return TeacherImportLatestSourceDateReadResult::success(sourceDate);
     }
 
 private:

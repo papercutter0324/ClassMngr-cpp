@@ -4,9 +4,15 @@
 
 #include <optional>
 #include <string>
+#include <type_traits>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
+
+static_assert(std::is_same_v<
+    TeacherImportLatestSourceDateReadResult,
+    ClassMngr::Next::Domain::Result<std::optional<
+        ClassMngr::Next::Domain::GregorianDate>>>);
 
 namespace
 {
@@ -14,7 +20,7 @@ namespace
 class RecordingReadPort final : public TeacherImportLatestSourceDateReadPort
 {
 public:
-    [[nodiscard]] TeacherImportLatestSourceDateReadResult
+    [[nodiscard]] TeacherImportLatestSourceDateReadPortResult
         readLatestTeacherImportSourceDate() const override
     {
         ++callCount;
@@ -22,8 +28,8 @@ public:
     }
 
     mutable int callCount = 0;
-    TeacherImportLatestSourceDateReadResult result =
-        TeacherImportLatestSourceDateReadResult::success(std::nullopt);
+    TeacherImportLatestSourceDateReadPortResult result =
+        TeacherImportLatestSourceDateReadPortResult::success(std::nullopt);
 };
 
 }
@@ -43,7 +49,7 @@ void NextApplicationTeacherImportLatestSourceDateReadQueryTests::
 returnsOptionalCanonicalDateAndReadsPortOnce()
 {
     RecordingReadPort port;
-    port.result = TeacherImportLatestSourceDateReadResult::success(
+    port.result = TeacherImportLatestSourceDateReadPortResult::success(
         std::string("2026-09-01"));
     const TeacherImportLatestSourceDateReadQuery query(port);
 
@@ -51,7 +57,7 @@ returnsOptionalCanonicalDateAndReadsPortOnce()
 
     QVERIFY(result);
     QVERIFY(result.value().has_value());
-    QCOMPARE(*result.value(), std::string("2026-09-01"));
+    QCOMPARE(result.value()->toIsoString(), std::string("2026-09-01"));
     QCOMPARE(port.callCount, 1);
 }
 
@@ -72,7 +78,7 @@ preservesAbsentDateAndReadFailure()
         .message = "settings read failed",
         .recoverable = false
     };
-    port.result = TeacherImportLatestSourceDateReadResult::failure(expectedError);
+    port.result = TeacherImportLatestSourceDateReadPortResult::failure(expectedError);
     result = query.execute();
 
     QVERIFY(!result);
@@ -88,18 +94,22 @@ rejectsMalformedAndImpossibleDates()
 
     const std::string invalidDates[] = {
         "2026-2-01",
-        "2026-02-30"
+        "2026-02-30",
+        "2026-09-1",
+        "2026/09/01"
     };
     int expectedCallCount = 0;
     for (const std::string& invalidDate : invalidDates)
     {
-        port.result = TeacherImportLatestSourceDateReadResult::success(
+        port.result = TeacherImportLatestSourceDateReadPortResult::success(
             invalidDate);
 
         const TeacherImportLatestSourceDateReadResult result = query.execute();
 
         QVERIFY(!result);
         QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+        QCOMPARE(result.error().message,
+            std::string("Teacher import source date must be a valid Gregorian ISO date."));
         QVERIFY(!result.error().recoverable);
         QCOMPARE(port.callCount, ++expectedCallCount);
     }

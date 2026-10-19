@@ -31,7 +31,7 @@ QString settingKey()
         TeacherImportRepository::LatestSourceDateSetting);
 }
 
-Application::TeacherImportLatestSourceDateReadResult readDate(
+Application::TeacherImportLatestSourceDateReadPortResult readDate(
     Platform::ApplicationServicesTeacherImportLatestSourceDateReadPort& port
     )
 {
@@ -83,6 +83,18 @@ readsCanonicalDateAndTreatsMissingOrMalformedValuesAsAbsent()
 
     QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
         settingKey(), QStringLiteral("not-a-date")));
+    result = readDate(port);
+    QVERIFY(result);
+    QVERIFY(!result.value().has_value());
+
+    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+        settingKey(), QStringLiteral("2026-9-01")));
+    result = readDate(port);
+    QVERIFY(result);
+    QVERIFY(!result.value().has_value());
+
+    QVERIFY(services.databaseSession()->settingsRepository()->saveSetting(
+        settingKey(), QStringLiteral(" 2026-09-01")));
     result = readDate(port);
     QVERIFY(result);
     QVERIFY(!result.value().has_value());

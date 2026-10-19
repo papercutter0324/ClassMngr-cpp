@@ -124,9 +124,9 @@ struct TeacherImportPersistenceSnapshot final
     std::vector<KoreanTeacherImportProfile> koreanTeachers;
     std::vector<TeacherImportNativeEnglishStoredRecord> nativeEnglishTeachers;
     std::vector<TeacherImportGsTeamStoredRecord> gsTeamMembers;
-    // The adapter returns only a valid ISO date, or nullopt for a missing or
+    // The adapter returns only a valid date, or nullopt for a missing or
     // malformed setting. The use case decides whether it must be advanced.
-    std::optional<std::string> latestSourceDateIso;
+    std::optional<Domain::GregorianDate> latestSourceDate;
 };
 
 enum class TeacherImportPersistenceOperation
@@ -453,10 +453,10 @@ public:
             }
         }
 
+        const std::optional<Domain::GregorianDate> requestSourceDate =
+            Domain::GregorianDate::fromIsoString(request.sourceDateIso);
         validation.sourceDateValid = validation.sourceDateValid
-            && Domain::GregorianDate::fromIsoString(
-                request.sourceDateIso
-                ).has_value();
+            && requestSourceDate.has_value();
 
         // Preserve review, source-date, and supplied Korean-key validation
         // precedence before validating the canonical identity used to match
@@ -748,8 +748,9 @@ public:
             }
         }
 
-        if (!existing.latestSourceDateIso
-            || request.sourceDateIso > *existing.latestSourceDateIso)
+        if (!existing.latestSourceDate
+            || requestSourceDate->dayNumber()
+                > existing.latestSourceDate->dayNumber())
         {
             const auto saved = persistence.saveLatestSourceDate(request.sourceDateIso);
             if (!saved)

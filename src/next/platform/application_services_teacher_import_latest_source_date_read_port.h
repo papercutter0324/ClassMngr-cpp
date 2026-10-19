@@ -30,21 +30,21 @@ public:
     {
     }
 
-    [[nodiscard]] Application::TeacherImportLatestSourceDateReadResult
+    [[nodiscard]] Application::TeacherImportLatestSourceDateReadPortResult
         readLatestTeacherImportSourceDate() const override
     {
         DatabaseSession* const session =
             m_services ? m_services->databaseSession() : nullptr;
         if (!session || !session->isOpen())
         {
-            return Application::TeacherImportLatestSourceDateReadResult::failure(
+            return Application::TeacherImportLatestSourceDateReadPortResult::failure(
                 unavailableError());
         }
 
         SettingsRepository* const repository = session->settingsRepository();
         if (!repository)
         {
-            return Application::TeacherImportLatestSourceDateReadResult::failure(
+            return Application::TeacherImportLatestSourceDateReadPortResult::failure(
                 unavailableError());
         }
 
@@ -55,20 +55,20 @@ public:
                     TeacherImportRepository::LatestSourceDateSetting));
             if (!setting)
             {
-                return Application::TeacherImportLatestSourceDateReadResult::failure(
+                return Application::TeacherImportLatestSourceDateReadPortResult::failure(
                     repositoryError(setting.error()));
             }
 
             if (!setting->isValid() || setting->isNull())
             {
-                return Application::TeacherImportLatestSourceDateReadResult::success(
+                return Application::TeacherImportLatestSourceDateReadPortResult::success(
                     std::nullopt);
             }
 
             const QString sourceDateText = setting->toString();
             if (sourceDateText.isEmpty())
             {
-                return Application::TeacherImportLatestSourceDateReadResult::success(
+                return Application::TeacherImportLatestSourceDateReadPortResult::success(
                     std::nullopt);
             }
 
@@ -78,26 +78,26 @@ public:
             if (!sourceDate.isValid()
                 || sourceDate.toString(Qt::ISODate) != sourceDateText)
             {
-                return Application::TeacherImportLatestSourceDateReadResult::success(
+                return Application::TeacherImportLatestSourceDateReadPortResult::success(
                     std::nullopt);
             }
 
             const QByteArray canonicalDate =
                 sourceDate.toString(Qt::ISODate).toUtf8();
-            return Application::TeacherImportLatestSourceDateReadResult::success(
+            return Application::TeacherImportLatestSourceDateReadPortResult::success(
                 std::string(
                     canonicalDate.constData(),
                     static_cast<std::size_t>(canonicalDate.size())));
         }
         catch (const std::exception&)
         {
-            return Application::TeacherImportLatestSourceDateReadResult::failure(
+            return Application::TeacherImportLatestSourceDateReadPortResult::failure(
                 technicalError(
                     "The latest teacher import source date could not be read."));
         }
         catch (...)
         {
-            return Application::TeacherImportLatestSourceDateReadResult::failure(
+            return Application::TeacherImportLatestSourceDateReadPortResult::failure(
                 technicalError(
                     "The latest teacher import source date could not be read."));
         }

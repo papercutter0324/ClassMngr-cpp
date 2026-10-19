@@ -8,7 +8,7 @@
 namespace ClassMngr::Next::Application
 {
 
-using TeacherImportLatestSourceDateReadResult =
+using TeacherImportLatestSourceDateReadPortResult =
     Domain::Result<std::optional<std::string>>;
 
 class TeacherImportLatestSourceDateReadPort
@@ -18,7 +18,7 @@ public:
 
     // A present value is the canonical ISO date (YYYY-MM-DD) of the latest
     // imported workbook. An absent value means no usable prior date exists.
-    [[nodiscard]] virtual TeacherImportLatestSourceDateReadResult
+    [[nodiscard]] virtual TeacherImportLatestSourceDateReadPortResult
         readLatestTeacherImportSourceDate() const = 0;
 };
 
