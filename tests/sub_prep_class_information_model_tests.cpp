@@ -537,6 +537,13 @@ void SubPrepClassInformationModelTests::unknownConfiguredRanksSortAfterKnownRank
                 {meeting(QStringLiteral("Monday"), QStringLiteral("4:00 PM"))}
                 ),
             sourceClass(
+                10,
+                teacher,
+                QStringLiteral("E4"),
+                QStringLiteral("Theseus"),
+                {meeting(QStringLiteral("Monday"), QStringLiteral("5:00 PM"))}
+                ),
+            sourceClass(
                 2,
                 teacher,
                 QStringLiteral("E4"),
@@ -552,16 +559,17 @@ void SubPrepClassInformationModelTests::unknownConfiguredRanksSortAfterKnownRank
                 )
         },
         {
-            .visibleClassIds = {1, 2, 3},
+            .visibleClassIds = {1, 2, 3, 10},
             .visibleDays = {QStringLiteral("Monday")}
         }
         );
 
     QCOMPARE(groups.size(), 1);
-    QCOMPARE(groups.first().classes.size(), 3);
+    QCOMPARE(groups.first().classes.size(), 4);
     QCOMPARE(groups.first().classes.at(0).classId, 2);
-    QCOMPARE(groups.first().classes.at(1).classId, 1);
-    QCOMPARE(groups.first().classes.at(2).classId, 3);
+    QCOMPARE(groups.first().classes.at(1).classId, 10);
+    QCOMPARE(groups.first().classes.at(2).classId, 1);
+    QCOMPARE(groups.first().classes.at(3).classId, 3);
 }
 
 void SubPrepClassInformationModelTests

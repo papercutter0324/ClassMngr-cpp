@@ -1,11 +1,16 @@
 #pragma once
 
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <functional>
 #include <limits>
+#include <string>
+#include <system_error>
 #include <unordered_map>
 #include <vector>
+
+#include "next/domain/domain_types.h"
 
 namespace ClassMngr::Next::Application
 {
@@ -23,19 +28,63 @@ enum class SubPrepPrintTeacherNameField
 // text and supplies its locale-aware comparison through the callback.
 struct SubPrepPrintTeacherOrderFact final
 {
-    int teacherId = 0;
+    Domain::TeacherId teacherId = *Domain::TeacherId::fromString("0");
     bool hasEnglishName = false;
 };
 
 struct SubPrepPrintClassOrderFact final
 {
-    int teacherId = 0;
+    Domain::TeacherId teacherId = *Domain::TeacherId::fromString("0");
     int gradeOrder = kSubPrepPrintUnknownOrder;
     int levelOrder = kSubPrepPrintUnknownOrder;
     int weekdayOrder = kSubPrepPrintUnknownOrder;
     int startMinute = kSubPrepPrintUnknownOrder;
-    int classId = 0;
+    Domain::ClassId classId = *Domain::ClassId::fromString("0");
 };
+
+namespace SubPrepPrintOrderPolicyDetail
+{
+
+template <typename TypedId>
+[[nodiscard]] inline bool tryParseNumericId(
+    const TypedId& id,
+    int& numericId
+    ) noexcept
+{
+    const std::string& value = id.value();
+    const char* const begin = value.data();
+    const char* const end = begin + value.size();
+    const auto parsed = std::from_chars(begin, end, numericId);
+    return parsed.ec == std::errc{} && parsed.ptr == end;
+}
+
+template <typename TypedId>
+[[nodiscard]] inline bool numericIdLess(
+    const TypedId& left,
+    const TypedId& right
+    ) noexcept
+{
+    int leftNumericId = 0;
+    int rightNumericId = 0;
+    const bool leftIsNumeric = tryParseNumericId(left, leftNumericId);
+    const bool rightIsNumeric = tryParseNumericId(right, rightNumericId);
+
+    if (leftIsNumeric && rightIsNumeric)
+    {
+        if (leftNumericId != rightNumericId)
+        {
+            return leftNumericId < rightNumericId;
+        }
+        return left.value() < right.value();
+    }
+    if (leftIsNumeric != rightIsNumeric)
+    {
+        return leftIsNumeric;
+    }
+    return left.value() < right.value();
+}
+
+} // namespace SubPrepPrintOrderPolicyDetail
 
 using SubPrepPrintTeacherNameComparator = std::function<int(
     std::size_t,
@@ -66,11 +115,11 @@ orderSubPrepPrintGroups(
     const SubPrepPrintTeacherNameComparator& compareTeacherNames
     )
 {
-    std::unordered_map<int, std::size_t> teacherIndexesById;
+    std::unordered_map<std::string, std::size_t> teacherIndexesById;
     teacherIndexesById.reserve(teachers.size());
     for (std::size_t index = 0; index < teachers.size(); ++index)
     {
-        teacherIndexesById.emplace(teachers[index].teacherId, index);
+        teacherIndexesById.emplace(teachers[index].teacherId.value(), index);
     }
 
     std::vector<SubPrepPrintGroupOrder> groups;
@@ -83,7 +132,7 @@ orderSubPrepPrintGroups(
     for (std::size_t classIndex = 0; classIndex < classes.size(); ++classIndex)
     {
         const auto teacher = teacherIndexesById.find(
-            classes[classIndex].teacherId
+            classes[classIndex].teacherId.value()
             );
         if (teacher == teacherIndexesById.end())
         {
@@ -130,7 +179,10 @@ orderSubPrepPrintGroups(
                 return koreanComparison < 0;
             }
 
-            return left.teacherId < right.teacherId;
+            return SubPrepPrintOrderPolicyDetail::numericIdLess(
+                left.teacherId,
+                right.teacherId
+                );
         }
         );
 
@@ -159,7 +211,10 @@ orderSubPrepPrintGroups(
                 {
                     return left.startMinute < right.startMinute;
                 }
-                return left.classId < right.classId;
+                return SubPrepPrintOrderPolicyDetail::numericIdLess(
+                    left.classId,
+                    right.classId
+                    );
             }
             );
     }

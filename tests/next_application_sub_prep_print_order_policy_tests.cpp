@@ -8,9 +8,41 @@
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+using ClassMngr::Next::Domain::ClassId;
+using ClassMngr::Next::Domain::TeacherId;
 
 namespace
 {
+
+TeacherId teacherKey(const int value)
+{
+    return *TeacherId::fromString(std::to_string(value));
+}
+
+ClassId classKey(const int value)
+{
+    return *ClassId::fromString(std::to_string(value));
+}
+
+TeacherId teacherTextKey(const std::string_view value)
+{
+    return *TeacherId::fromString(value);
+}
+
+ClassId classTextKey(const std::string_view value)
+{
+    return *ClassId::fromString(value);
+}
+
+int numericId(const TeacherId& id)
+{
+    return std::stoi(id.value());
+}
+
+int numericId(const ClassId& id)
+{
+    return std::stoi(id.value());
+}
 
 int compareText(
     const std::string_view left,
@@ -59,7 +91,7 @@ std::vector<int> orderedTeacherIds(
     ids.reserve(groups.size());
     for (const SubPrepPrintGroupOrder& group : groups)
     {
-        ids.push_back(teachers[group.teacherIndex].teacherId);
+        ids.push_back(numericId(teachers[group.teacherIndex].teacherId));
     }
     return ids;
 }
@@ -73,7 +105,7 @@ std::vector<int> orderedClassIds(
     ids.reserve(group.classIndexes.size());
     for (const std::size_t index : group.classIndexes)
     {
-        ids.push_back(classes[index].classId);
+        ids.push_back(numericId(classes[index].classId));
     }
     return ids;
 }
@@ -81,10 +113,10 @@ std::vector<int> orderedClassIds(
 bool englishPresenceAndInjectedNameOrderTeachers()
 {
     const std::vector<SubPrepPrintTeacherOrderFact> teachers{
-        {20, true},
-        {10, true},
-        {5, false},
-        {30, true}
+        {teacherKey(20), true},
+        {teacherKey(10), true},
+        {teacherKey(5), false},
+        {teacherKey(30), true}
     };
     const std::vector<std::string> englishNames{
         "Zoe",
@@ -137,10 +169,10 @@ bool englishPresenceAndInjectedNameOrderTeachers()
 bool teacherIdBreaksCompleteNameTies()
 {
     const std::vector<SubPrepPrintTeacherOrderFact> teachers{
-        {90, true},
-        {4, true},
-        {37, false},
-        {12, false}
+        {teacherKey(10), true},
+        {teacherKey(2), true},
+        {teacherKey(37), false},
+        {teacherKey(12), false}
     };
     const std::vector<std::string> englishNames{
         "Same",
@@ -162,12 +194,12 @@ bool teacherIdBreaksCompleteNameTies()
         );
 
     return orderedTeacherIds(groups, teachers)
-        == std::vector<int>{4, 90, 12, 37};
+        == std::vector<int>{2, 10, 12, 37};
 }
 
 bool eachClassKeyPrecedesTheFollowingKeys()
 {
-    const std::vector<SubPrepPrintTeacherOrderFact> teachers{{1, true}};
+    const std::vector<SubPrepPrintTeacherOrderFact> teachers{{teacherKey(1), true}};
     const std::vector<std::string> englishNames{"Teacher"};
     const std::vector<std::string> koreanNames{""};
     const auto comparator = compareNames(englishNames, koreanNames);
@@ -175,77 +207,123 @@ bool eachClassKeyPrecedesTheFollowingKeys()
     const auto grade = orderSubPrepPrintGroups(
         teachers,
         {
-            {1, 1, 9, 6, 1'300, 90},
-            {1, 2, 0, 0, 0, 1}
+            {teacherKey(1), 1, 9, 6, 1'300, classKey(90)},
+            {teacherKey(1), 2, 0, 0, 0, classKey(1)}
         },
         comparator
         );
     const auto level = orderSubPrepPrintGroups(
         teachers,
         {
-            {1, 1, 1, 6, 1'300, 90},
-            {1, 1, 2, 0, 0, 1}
+            {teacherKey(1), 1, 1, 6, 1'300, classKey(90)},
+            {teacherKey(1), 1, 2, 0, 0, classKey(1)}
         },
         comparator
         );
     const auto weekday = orderSubPrepPrintGroups(
         teachers,
         {
-            {1, 1, 1, 0, 1'300, 90},
-            {1, 1, 1, 1, 0, 1}
+            {teacherKey(1), 1, 1, 0, 1'300, classKey(90)},
+            {teacherKey(1), 1, 1, 1, 0, classKey(1)}
         },
         comparator
         );
     const auto minute = orderSubPrepPrintGroups(
         teachers,
         {
-            {1, 1, 1, 0, 500, 90},
-            {1, 1, 1, 0, 600, 1}
+            {teacherKey(1), 1, 1, 0, 500, classKey(90)},
+            {teacherKey(1), 1, 1, 0, 600, classKey(1)}
         },
         comparator
         );
     const auto classId = orderSubPrepPrintGroups(
         teachers,
         {
-            {1, 1, 1, 0, 500, 90},
-            {1, 1, 1, 0, 500, 1}
+            {teacherKey(1), 1, 1, 0, 500, classKey(10)},
+            {teacherKey(1), 1, 1, 0, 500, classKey(2)}
         },
         comparator
         );
 
     return orderedClassIds(grade.front(), {
-               {1, 1, 9, 6, 1'300, 90},
-               {1, 2, 0, 0, 0, 1}
+               {teacherKey(1), 1, 9, 6, 1'300, classKey(90)},
+               {teacherKey(1), 2, 0, 0, 0, classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(level.front(), {
-               {1, 1, 1, 6, 1'300, 90},
-               {1, 1, 2, 0, 0, 1}
+               {teacherKey(1), 1, 1, 6, 1'300, classKey(90)},
+               {teacherKey(1), 1, 2, 0, 0, classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(weekday.front(), {
-               {1, 1, 1, 0, 1'300, 90},
-               {1, 1, 1, 1, 0, 1}
+               {teacherKey(1), 1, 1, 0, 1'300, classKey(90)},
+               {teacherKey(1), 1, 1, 1, 0, classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(minute.front(), {
-               {1, 1, 1, 0, 500, 90},
-               {1, 1, 1, 0, 600, 1}
+               {teacherKey(1), 1, 1, 0, 500, classKey(90)},
+               {teacherKey(1), 1, 1, 0, 600, classKey(1)}
            }) == std::vector<int>{90, 1}
         && orderedClassIds(classId.front(), {
-               {1, 1, 1, 0, 500, 90},
-               {1, 1, 1, 0, 500, 1}
-           }) == std::vector<int>{1, 90};
+               {teacherKey(1), 1, 1, 0, 500, classKey(10)},
+               {teacherKey(1), 1, 1, 0, 500, classKey(2)}
+           }) == std::vector<int>{2, 10};
+}
+
+bool malformedTypedIdsUseDeterministicTieBreaks()
+{
+    try
+    {
+        const std::vector<SubPrepPrintTeacherOrderFact> teachers{
+            {teacherTextKey("2x"), true},
+            {teacherTextKey("10x"), true}
+        };
+        const std::vector<std::string> englishNames{"Same", "Same"};
+        const std::vector<std::string> koreanNames{"Same", "Same"};
+        const auto teacherGroups = orderSubPrepPrintGroups(
+            teachers,
+            {},
+            compareNames(englishNames, koreanNames)
+            );
+
+        const std::vector<SubPrepPrintTeacherOrderFact> oneTeacher{
+            {teacherKey(1), true}
+        };
+        const std::vector<SubPrepPrintClassOrderFact> classes{
+            {teacherKey(1), 1, 1, 1, 500, classTextKey("2x")},
+            {teacherKey(1), 1, 1, 1, 500, classTextKey("10x")}
+        };
+        const std::vector<std::string> oneEnglishName{"Teacher"};
+        const std::vector<std::string> oneKoreanName{""};
+        const auto classGroups = orderSubPrepPrintGroups(
+            oneTeacher,
+            classes,
+            compareNames(oneEnglishName, oneKoreanName)
+            );
+
+        return teachers[teacherGroups.at(0).teacherIndex].teacherId.value()
+                == "10x"
+            && teachers[teacherGroups.at(1).teacherIndex].teacherId.value()
+                == "2x"
+            && classes[classGroups.at(0).classIndexes.at(0)].classId.value()
+                == "10x"
+            && classes[classGroups.at(0).classIndexes.at(1)].classId.value()
+                == "2x";
+    }
+    catch (...)
+    {
+        return false;
+    }
 }
 
 bool unknownRanksAndMeetingsKeepTheNumericSentinelOrder()
 {
-    const std::vector<SubPrepPrintTeacherOrderFact> teachers{{1, true}};
+    const std::vector<SubPrepPrintTeacherOrderFact> teachers{{teacherKey(1), true}};
     const std::vector<std::string> englishNames{"Teacher"};
     const std::vector<std::string> koreanNames{""};
     const std::vector<SubPrepPrintClassOrderFact> classes{
-        {1, kSubPrepPrintUnknownOrder, 1, 0, 500, 1},
-        {1, 1, kSubPrepPrintUnknownOrder, 0, 500, 2},
-        {1, 1, 1, kSubPrepPrintUnknownOrder, 400, 3},
-        {1, 1, 1, 0, kSubPrepPrintUnknownOrder, 4},
-        {1, 1, 1, 0, 500, 5}
+        {teacherKey(1), kSubPrepPrintUnknownOrder, 1, 0, 500, classKey(1)},
+        {teacherKey(1), 1, kSubPrepPrintUnknownOrder, 0, 500, classKey(2)},
+        {teacherKey(1), 1, 1, kSubPrepPrintUnknownOrder, 400, classKey(3)},
+        {teacherKey(1), 1, 1, 0, kSubPrepPrintUnknownOrder, classKey(4)},
+        {teacherKey(1), 1, 1, 0, 500, classKey(5)}
     };
 
     const auto groups = orderSubPrepPrintGroups(
@@ -261,30 +339,30 @@ bool unknownRanksAndMeetingsKeepTheNumericSentinelOrder()
 bool validUniqueIdsMakeOrderIndependentOfInputOrder()
 {
     const std::vector<SubPrepPrintTeacherOrderFact> teachersA{
-        {20, true},
-        {10, true},
-        {30, false}
+        {teacherKey(20), true},
+        {teacherKey(10), true},
+        {teacherKey(30), false}
     };
     const std::vector<std::string> englishA{"Bob", "Alice", ""};
     const std::vector<std::string> koreanA{"B", "A", "C"};
     const std::vector<SubPrepPrintClassOrderFact> classesA{
-        {20, 2, 0, 0, 500, 8},
-        {10, 1, 0, 0, 600, 4},
-        {30, 1, 0, 1, 300, 7},
-        {10, 1, 0, 0, 500, 2}
+        {teacherKey(20), 2, 0, 0, 500, classKey(8)},
+        {teacherKey(10), 1, 0, 0, 600, classKey(4)},
+        {teacherKey(30), 1, 0, 1, 300, classKey(7)},
+        {teacherKey(10), 1, 0, 0, 500, classKey(2)}
     };
     const std::vector<SubPrepPrintTeacherOrderFact> teachersB{
-        {30, false},
-        {20, true},
-        {10, true}
+        {teacherKey(30), false},
+        {teacherKey(20), true},
+        {teacherKey(10), true}
     };
     const std::vector<std::string> englishB{"", "Bob", "Alice"};
     const std::vector<std::string> koreanB{"C", "B", "A"};
     const std::vector<SubPrepPrintClassOrderFact> classesB{
-        {10, 1, 0, 0, 500, 2},
-        {30, 1, 0, 1, 300, 7},
-        {10, 1, 0, 0, 600, 4},
-        {20, 2, 0, 0, 500, 8}
+        {teacherKey(10), 1, 0, 0, 500, classKey(2)},
+        {teacherKey(30), 1, 0, 1, 300, classKey(7)},
+        {teacherKey(10), 1, 0, 0, 600, classKey(4)},
+        {teacherKey(20), 2, 0, 0, 500, classKey(8)}
     };
 
     const auto groupsA = orderSubPrepPrintGroups(
@@ -303,14 +381,14 @@ bool validUniqueIdsMakeOrderIndependentOfInputOrder()
     for (const SubPrepPrintGroupOrder& group : groupsA)
     {
         normalizedA.emplace_back(
-            teachersA[group.teacherIndex].teacherId,
+            numericId(teachersA[group.teacherIndex].teacherId),
             orderedClassIds(group, classesA)
             );
     }
     for (const SubPrepPrintGroupOrder& group : groupsB)
     {
         normalizedB.emplace_back(
-            teachersB[group.teacherIndex].teacherId,
+            numericId(teachersB[group.teacherIndex].teacherId),
             orderedClassIds(group, classesB)
             );
     }
@@ -341,6 +419,11 @@ int main()
     if (!eachClassKeyPrecedesTheFollowingKeys())
     {
         std::cerr << "Class order keys should take priority in configured order.\n";
+        return EXIT_FAILURE;
+    }
+    if (!malformedTypedIdsUseDeterministicTieBreaks())
+    {
+        std::cerr << "Malformed typed IDs should use deterministic, nonthrowing tie-breaks.\n";
         return EXIT_FAILURE;
     }
     if (!unknownRanksAndMeetingsKeepTheNumericSentinelOrder())

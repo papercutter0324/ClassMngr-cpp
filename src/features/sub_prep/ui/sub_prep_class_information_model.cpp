@@ -3,9 +3,11 @@
 #include "domain/rules/schedule_value_parser.h"
 #include "features/classes/config/class_info_config.h"
 #include "next/application/sub_prep_print_order_policy.h"
+#include "next/domain/domain_types.h"
 
 #include <algorithm>
 #include <limits>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -16,9 +18,20 @@
 namespace
 {
 namespace PrintOrder = ClassMngr::Next::Application;
+namespace Domain = ClassMngr::Next::Domain;
 
 constexpr int UnknownOrder =
     std::numeric_limits<int>::max();
+
+Domain::TeacherId typedTeacherId(const int teacherId)
+{
+    return Domain::TeacherId::fromString(std::to_string(teacherId)).value();
+}
+
+Domain::ClassId typedClassId(const int classId)
+{
+    return Domain::ClassId::fromString(std::to_string(classId)).value();
+}
 
 int dayOrder(
     const QString& day
@@ -431,12 +444,12 @@ SubPrepClassInformation::build(
         classes.append(std::move(details));
         classOrderFacts.push_back(
             {
-                teacherId,
+                typedTeacherId(teacherId),
                 gradeOrder(source.info.classGrade),
                 levelOrder(source.info),
                 meetingOrder.first,
                 meetingOrder.second,
-                classId
+                typedClassId(classId)
             }
             );
     }
@@ -457,7 +470,7 @@ SubPrepClassInformation::build(
             teacher.teacherEn.trimmed();
         teacherOrderFacts.push_back(
             {
-                teacher.id,
+                typedTeacherId(teacher.id),
                 !englishName.isEmpty()
             }
             );
