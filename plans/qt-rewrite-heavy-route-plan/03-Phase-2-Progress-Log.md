@@ -47038,3 +47038,46 @@ guard. No seam or API will be added solely to force that branch.
 
 F1096 remains a reviewed non-active near-miss under the explicit F54 event-type
 compatibility decision; F1097 does not broaden that scope.
+
+### F1097 complete; Batch476 closed; Batch477 discovered - 2026-10-19
+
+F1097 acceptance was recorded before implementation in commits
+`17a1ef1ce43e1ce6103ad20b2d18cc0ef106063f` and
+`4e189ab056f9e4fa2ea9d7b113e56a27beeb0cbf`. The slice is complete at
+source/test commit `a7074fc53cdfa8bb17f5f5fab86c25dec810e010`. The repeat-series
+occurrence snapshot and update now use `Domain::CalendarEventId`; legacy
+`qint64` conversion stays at the platform boundary, and planning preserves
+occurrence order and identity. The existing identity-mismatch guard remains
+before persistence. The independent Tester source-reviewed this guard because
+there is no existing seam to inject a mismatch without adding an API or
+test-only branch; no such seam was added.
+
+The Tester built `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`, and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`. Both focused
+CTests passed 2/2, and `git diff --check` passed. This is local macOS arm64
+evidence; no full suite ran. Batch476 is complete, with its closeout commit and
+push pending these documentation edits.
+
+Batch477 discovery had two independent read-only reviews and one credible
+candidate, F1098: `Domain::CalendarEventId` exists but there is no distinct
+series ID type. Series identity remains `std::string` in
+`CalendarEventSeriesCreateRequest`, `CalendarEventSeriesDeleteRequest`,
+`CalendarEventSeriesEditRequest`, `CalendarEventSeriesEditOccurrenceUpdate`,
+and some use-case/plan paths; adapters carry it as text. Likely existing tests
+are `NextApplicationCalendarEventTests` and
+`NextPlatformApplicationServicesCalendarEventPortTests`. F1098 is discovered
+and next for acceptance, not yet accepted.
+
+The same repeat-series ID concern was recorded as a near-miss in Batch276 on
+2026-10-14: `CalendarEventTiming` repeat-series IDs remained strings and no
+production behavior defect was observed. F1098 is being reconsidered under the
+explicit Phase 2.1 typed-ID objective after F1097 added typed occurrence IDs;
+its acceptance design remains open for Main. No other actionable Batch477
+candidate or newly triggered Deferred item was found, and no Gate 1/2
+status-derived implementation gap was identified.
+
+F629 remains separate Phase 0 work. The combined Phase 0 gate remains Open
+pending Windows x64 evidence; the Phase 2 exit gate remains Open, Gates 1 and 2
+remain Partial, and F1007 remains pending policy reconciliation. Batch477 has
+one candidate; no other slices were found.
