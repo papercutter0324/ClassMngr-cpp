@@ -11327,6 +11327,7 @@ int main(int argc, char *argv[])
             {
                 QTimer::singleShot(
                     1000,
+                    Qt::PreciseTimer,
                     &app,
                     [&startupProfiler]()
                     {
@@ -11340,6 +11341,7 @@ int main(int argc, char *argv[])
             {
                 QTimer::singleShot(
                     5000,
+                    Qt::PreciseTimer,
                     &app,
                     [&startupProfiler]()
                     {
@@ -11353,6 +11355,7 @@ int main(int argc, char *argv[])
             {
                 QTimer::singleShot(
                     30000,
+                    Qt::PreciseTimer,
                     &app,
                     [&startupProfiler]()
                     {
@@ -11366,6 +11369,7 @@ int main(int argc, char *argv[])
             {
                 QTimer::singleShot(
                     StartupFiveMinuteIdleMilliseconds,
+                    Qt::PreciseTimer,
                     &app,
                     [&startupProfiler]()
                     {
@@ -11382,6 +11386,7 @@ int main(int argc, char *argv[])
                     : 0;
             QTimer::singleShot(
                 completionDelayMilliseconds,
+                Qt::PreciseTimer,
                 &app,
                 [
                     &startupProfiler,

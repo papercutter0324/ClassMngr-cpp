@@ -905,9 +905,10 @@ QList<QTextTable*> teacherCardTables(
     return cards;
 }
 
-QSet<int> teacherSectionsThatSpanPages(
+QSet<int> teacherSectionsRequiringPageBreak(
     QTextDocument& document,
-    qreal pageHeight
+    qreal pageHeight,
+    int resolutionDpi
     )
 {
     QSet<int> groups;
@@ -919,6 +920,10 @@ QSet<int> teacherSectionsThatSpanPages(
 
     const QList<QTextTable*> cards =
         teacherCardTables(document);
+    const qreal pageStartClearance =
+        SubPrepPdfMarginInches * std::max(1, resolutionDpi);
+    bool previousCardSpansPages = false;
+    int previousLastPage = -1;
 
     for (int index = 0; index < cards.size(); ++index)
     {
@@ -927,6 +932,8 @@ QSet<int> teacherSectionsThatSpanPages(
 
         if (bounds.isEmpty() || bounds.height() >= pageHeight)
         {
+            previousCardSpansPages = false;
+            previousLastPage = -1;
             continue;
         }
 
@@ -937,10 +944,21 @@ QSet<int> teacherSectionsThatSpanPages(
                 (bounds.bottom() - 0.01) / pageHeight
                 ));
 
-        if (firstPage != lastPage)
+        const bool cardSpansPages = firstPage != lastPage;
+        const qreal offsetFromPageStart =
+            bounds.top() - (firstPage * pageHeight);
+        const bool followsCrossingCardNearPageStart =
+            previousCardSpansPages
+            && firstPage == previousLastPage
+            && offsetFromPageStart < pageStartClearance;
+
+        if (cardSpansPages || followsCrossingCardNearPageStart)
         {
             groups.insert(index);
         }
+
+        previousCardSpansPages = cardSpansPages;
+        previousLastPage = lastPage;
     }
 
     return groups;
@@ -1416,10 +1434,14 @@ Result renderPdf(
             scheduleLayout
             );
 
-        const QSet<int> spanningGroups =
-            teacherSectionsThatSpanPages(document, body.height());
+        const QSet<int> groupsRequiringPageBreak =
+            teacherSectionsRequiringPageBreak(
+                document,
+                body.height(),
+                writer.resolution()
+                );
         const QSet<int> newPageBreaks =
-            spanningGroups - pageBreakBeforeTeacherGroups;
+            groupsRequiringPageBreak - pageBreakBeforeTeacherGroups;
         const bool moveSubNotesToNewPage =
             !startSubNotesOnNewPage
             && shouldStartSubNotesOnNewPage(
