@@ -84,6 +84,10 @@
 - Keep Calendar event-type text at raw input and edit boundaries where padded
   labels and the raw byte limit are observable. Split Sub Prep's raw read DTO
   from its normalized query result before using the shared event-type enum.
+- Keep repeat-series edit dates raw at the UI input boundary for structured
+  `InvalidInput` reporting, then convert them to valid `GregorianDate` values
+  before crossing the Application port; persisted occurrence dates remain raw
+  so corrupt stored data continues to report `Technical`.
 - When native desktop automation is unavailable, a small in-process Qt
   controller can drive real modal dialogs and capture the packaged offscreen
   state. The Sub Prep route now retains both valid-generation and disabled-OK

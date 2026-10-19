@@ -253,14 +253,17 @@ create/edit text contracts remain unchanged. Three targets built
 incrementally, and both focused CTests passed (Query 10/10, Platform 73/73).
 The query suite covers padded labels and exact filtering; Platform trim and
 prefilter code remained unchanged and was source-reviewed, while its fixtures
-use canonical labels. F1146 is next for acceptance. Batch485 was pushed to
+use canonical labels. F1146 is accepted/in progress: raw ISO input is converted
+to typed `GregorianDate` request fields after validation, while persisted
+occurrence dates remain raw for Technical failure reporting. Batch485 was
+pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
 0 and Phase 2 gates remain open.
 
 ## Next Milestone
 
-Accept F1146, then implement and verify its repeat-series edit-date contract.
+Complete F1146, then accept F1147.
 Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
 exact-payload approval request. F629 remains active and awaits source-bound
 Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows

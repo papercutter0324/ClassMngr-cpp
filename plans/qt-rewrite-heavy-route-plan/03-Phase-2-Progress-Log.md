@@ -50610,3 +50610,50 @@ cannot run Windows now.
 Batch487 has ten candidates: two complete (F1144–F1145), zero accepted/in
 progress, and eight discovered (F1146–F1153); F1146 is next for acceptance.
 The Phase 0 and Phase 2 gates remain open.
+
+### F1146 Calendar series edit date boundary accepted before implementation - 2026-10-20
+
+F1146 is accepted/in progress. Keep raw `startDate`, `editedStartDate`, and
+`editedEndDate` strings in an Application input/draft type, then parse with
+the existing strict `GregorianDate` parser into three
+`Domain::GregorianDate` fields in `CalendarEventSeriesEditRequest` before the
+Application port. Preserve current validation code, messages, and order;
+malformed input must prevent a port call. Port validation remains a
+direct-call guard for text, time, and status plus edited-range ordering. Use
+typed dates in the planner and Platform adapter.
+
+Keep `CalendarEventSeriesEditOccurrenceSnapshot::startDate` raw so corrupt
+persisted values still produce `Technical`. `startDate` remains the suffix
+selector; never substitute `editedStartDate`. Preserve repository selection
+and ordering, planner shift/duration, empty-suffix success, overflow as
+`Technical`, and currently allowed negative shifts. Do not change event type,
+IDs, title, time/status, or suffix policy. Evidence: `src/next/domain/gregorian_date.h`,
+`src/next/application/calendar_event_series_edit_port.h`,
+`src/next/application/calendar_event_series_edit_use_case.h`,
+`src/next/application/calendar_event_series_edit_plan.h`,
+`src/next/platform/application_services_calendar_event_series_edit_port.h`,
+and `src/features/calendar/ui/calendar_page_events.cpp:858`.
+
+Focused verification acceptance: incrementally build `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests` in the existing
+`build/macos-clang-debug` tree. Run focused Application and Platform calendar
+event CTests and UI selector
+`repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection`.
+Application selectors:
+`seriesEditRequestBoundsAndDatesRemainTyped`,
+`seriesEditPlanPreservesOrderAndPropagatesRequestFields`, and
+`seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates`. Platform selectors:
+`editsValidRepeatSeriesSuffixWithTypedParity`,
+`reportsInvalidRepeatSeriesEditRequestStructurally`,
+`reportsInvalidRepeatSeriesSourceDateBeforePersistence`, and
+`reportsRepeatSeriesDateOverflowBeforePersistence`. Assert raw input fields
+remain distinct from typed request fields and existing validation errors and
+precedence remain unchanged. Run `git diff --check`. No implementation or
+test results are recorded yet. Full-suite and Windows runs are not expected;
+F629 remains open because the user cannot run Windows now.
+
+Batch487 has ten candidates: two complete (F1144–F1145), one accepted/in
+progress (F1146), and seven discovered (F1147–F1153); F1147 is next after
+F1146 completes. The Phase 0 and Phase 2 gates remain open.
