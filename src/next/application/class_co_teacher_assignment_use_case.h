@@ -3,9 +3,11 @@
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
-#include <optional>
+#include <charconv>
 #include <cstdint>
+#include <optional>
 #include <string>
+#include <system_error>
 #include <utility>
 
 namespace ClassMngr::Next::Application
@@ -31,40 +33,63 @@ class ClassCoTeacherAssignmentUseCase final
 {
 public:
     // The legacy page uses -1 for an unassigned co-teacher. Translate that
-    // sentinel here so it does not cross the application port.
+    // typed sentinel here so it does not cross the application port.
     [[nodiscard]] static Domain::Result<void> execute(
-        const int classId,
-        const std::int64_t teacherId,
+        const Domain::ClassId& classId,
+        const Domain::TeacherId& teacherId,
         const ClassCoTeacherAssignmentPort& port
         )
     {
-        if (classId <= 0)
+        const std::string& classValue = classId.value();
+        int parsedClassId = 0;
+        const auto [classEnd, classError] = std::from_chars(
+            classValue.data(),
+            classValue.data() + classValue.size(),
+            parsedClassId,
+            10
+            );
+        if (classError == std::errc{}
+            && classEnd == classValue.data() + classValue.size()
+            && parsedClassId <= 0)
         {
             return invalidInput("Class ID must be positive.");
         }
-
-        if (teacherId <= 0 && teacherId != -1)
-        {
-            return invalidInput(
-                "Teacher ID must be positive or unassigned."
-                );
-        }
-
-        const auto typedClassId = Domain::ClassId::fromString(
-            std::to_string(classId)
-            );
-        const std::optional<Domain::TeacherId> typedTeacherId =
-            teacherId == -1
-                ? std::nullopt
-                : Domain::TeacherId::fromString(std::to_string(teacherId));
-        if (!typedClassId || (teacherId > 0 && !typedTeacherId))
+        if (classError != std::errc{}
+            || classEnd != classValue.data() + classValue.size())
         {
             return invalidInput("Class or teacher ID is invalid.");
         }
 
+        const std::string& teacherValue = teacherId.value();
+        std::optional<Domain::TeacherId> requestTeacherId;
+        if (teacherValue != "-1")
+        {
+            std::int64_t parsedTeacherId = 0;
+            const auto [teacherEnd, teacherError] = std::from_chars(
+                teacherValue.data(),
+                teacherValue.data() + teacherValue.size(),
+                parsedTeacherId,
+                10
+                );
+            if (teacherError == std::errc{}
+                && teacherEnd == teacherValue.data() + teacherValue.size()
+                && parsedTeacherId <= 0)
+            {
+                return invalidInput(
+                    "Teacher ID must be positive or unassigned."
+                    );
+            }
+            if (teacherError != std::errc{}
+                || teacherEnd != teacherValue.data() + teacherValue.size())
+            {
+                return invalidInput("Class or teacher ID is invalid.");
+            }
+            requestTeacherId = teacherId;
+        }
+
         return port.assignClassCoTeacher({
-            .classId = *typedClassId,
-            .teacherId = typedTeacherId
+            .classId = classId,
+            .teacherId = requestTeacherId
         });
     }
 

@@ -14,6 +14,9 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <cstdint>
+#include <string>
+
 using namespace ClassMngr::Next;
 
 namespace
@@ -42,6 +45,16 @@ int createTeacher(ApplicationServices& services, const QString& name)
     teacher.preferredName = name;
     const auto created = services.teacherService()->save(teacher);
     return created ? *created : -1;
+}
+
+Domain::ClassId typedClassId(const int value)
+{
+    return *Domain::ClassId::fromString(std::to_string(value));
+}
+
+Domain::TeacherId typedTeacherId(const std::int64_t value)
+{
+    return *Domain::TeacherId::fromString(std::to_string(value));
 }
 
 ClassInfo basicInfo(const int classId)
@@ -176,8 +189,8 @@ emitsBaselineCompatiblePersistenceTranscripts()
 
         Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
         const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-            classId,
-            teacherId,
+            typedClassId(classId),
+            typedTeacherId(teacherId),
             port
             );
         QVERIFY(result);
@@ -215,8 +228,8 @@ emitsBaselineCompatiblePersistenceTranscripts()
 
         Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
         const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-            classId,
-            -1,
+            typedClassId(classId),
+            typedTeacherId(-1),
             port
             );
         QVERIFY(result);
@@ -264,8 +277,8 @@ emitsBaselineCompatiblePersistenceTranscripts()
 
         Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
         const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-            classId,
-            teacherId,
+            typedClassId(classId),
+            typedTeacherId(teacherId),
             port
             );
         QVERIFY(!result);
@@ -327,8 +340,8 @@ emitsBaselineCompatiblePersistenceTranscripts()
 
         Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
         const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-            selectedClassId,
-            teacherId,
+            typedClassId(selectedClassId),
+            typedTeacherId(teacherId),
             port
             );
         QVERIFY(!result);
@@ -360,8 +373,8 @@ emitsBaselineCompatiblePersistenceTranscripts()
 
         Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
         const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-            classId,
-            teacherId,
+            typedClassId(classId),
+            typedTeacherId(teacherId),
             port
             );
         QVERIFY(result);

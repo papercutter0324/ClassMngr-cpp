@@ -489,10 +489,19 @@ bool ClassCoTeacherPage::saveCoTeacherInternal(
     const ClassMngr::Next::Application::
         ClassCoTeacherAssignmentPort& assignmentPort =
             m_assignmentPort ? *m_assignmentPort : defaultAssignmentPort;
+    const auto typedClassId =
+        ClassMngr::Next::Domain::ClassId::fromString(
+            std::to_string(m_classroom.id)
+            );
+    const auto typedTeacherId =
+        ClassMngr::Next::Domain::TeacherId::fromString(
+            std::to_string(selectedTeacherIdFromUi())
+            );
+    Q_ASSERT(typedClassId && typedTeacherId);
     const ClassMngr::Next::Domain::Result<void> saved =
         ClassMngr::Next::Application::ClassCoTeacherAssignmentUseCase::execute(
-            m_classroom.id,
-            selectedTeacherIdFromUi(),
+            *typedClassId,
+            *typedTeacherId,
             assignmentPort
             );
     if (!saved)

@@ -14,6 +14,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
@@ -45,6 +46,16 @@ int createTeacher(ApplicationServices& services, const QString& name)
     teacher.preferredName = name;
     const auto saved = services.teacherService()->save(teacher);
     return saved ? *saved : -1;
+}
+
+Domain::ClassId asClassId(const std::int64_t value)
+{
+    return *Domain::ClassId::fromString(std::to_string(value));
+}
+
+Domain::TeacherId asTeacherId(const std::int64_t value)
+{
+    return *Domain::TeacherId::fromString(std::to_string(value));
 }
 
 ClassInfo newClassInfo(
@@ -436,8 +447,8 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto assigned = Application::ClassCoTeacherAssignmentUseCase::execute(
-        *createdClass,
-        secondTeacherId,
+        asClassId(*createdClass),
+        asTeacherId(secondTeacherId),
         port
         );
     QVERIFY(assigned);
@@ -461,8 +472,8 @@ assignmentUpdatesOnlyTeacherAndSupportsUnassignedState()
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     const auto unassigned =
         Application::ClassCoTeacherAssignmentUseCase::execute(
-            *createdClass,
-            -1,
+            asClassId(*createdClass),
+            asTeacherId(-1),
             port
             );
     QVERIFY(unassigned);
@@ -581,8 +592,8 @@ malformedClassIdIsRejectedWithoutChangingPersistedFields()
 
     const auto unknownClass =
         Application::ClassCoTeacherAssignmentUseCase::execute(
-            unknownClassId,
-            assignedTeacherId,
+            asClassId(unknownClassId),
+            asTeacherId(assignedTeacherId),
             port
             );
     QVERIFY(!unknownClass);
@@ -676,8 +687,8 @@ invalidLoadedClassInfoIsRejectedWithoutWriting()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        classId,
-        assignedTeacherId,
+        asClassId(classId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -737,8 +748,8 @@ regularScheduleConflictUsesLegacyMessageAndPreservesState()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -808,8 +819,8 @@ intensiveScheduleConflictUsesLegacyMessageAndPreservesState()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -881,8 +892,8 @@ regularConflictPrecedesIntensiveConflict()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -1028,8 +1039,8 @@ assignmentPreservesRawMetadataAndScheduleRows()
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(result);
@@ -1060,8 +1071,8 @@ assignmentPreservesRawMetadataAndScheduleRows()
     const int readsBeforeUnassignment = repository
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     const auto unassigned = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        -1,
+        asClassId(selectedClassId),
+        asTeacherId(-1),
         port
         );
     QVERIFY(unassigned);
@@ -1123,8 +1134,8 @@ assignmentCreatesMissingClassInfoRowWithDefaults()
         ->scheduleClassInfoReadMetrics().singleClassInfoReadCount;
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto assigned = Application::ClassCoTeacherAssignmentUseCase::execute(
-        classId,
-        assignedTeacherId,
+        asClassId(classId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(assigned);
@@ -1270,8 +1281,8 @@ missingTeacherReturnsRecoverableNotFoundWithoutMutation()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        missingTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(missingTeacherId),
         port
         );
     QVERIFY(!result);
@@ -1359,8 +1370,8 @@ teacherIdStatementFailurePreservesClassInfoAndSchedules()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -1431,8 +1442,8 @@ validationSnapshotScheduleQueryFailureReturnsTechnicalWithoutMutation()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -1535,8 +1546,8 @@ regularScheduleLateFetchFailureReturnsTechnicalWithoutMutation()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -1669,8 +1680,8 @@ intensiveScheduleLateFetchFailureReturnsTechnicalWithoutMutation()
 
     Platform::ApplicationServicesClassCoTeacherAssignmentPort port(services);
     const auto result = Application::ClassCoTeacherAssignmentUseCase::execute(
-        selectedClassId,
-        assignedTeacherId,
+        asClassId(selectedClassId),
+        asTeacherId(assignedTeacherId),
         port
         );
     QVERIFY(!result);
@@ -1709,8 +1720,8 @@ unavailableSessionReturnsStructuredFailure()
 
     const auto unavailable =
         Application::ClassCoTeacherAssignmentUseCase::execute(
-        1,
-        -1,
+        asClassId(1),
+        asTeacherId(-1),
         port
         );
     QVERIFY(!unavailable);
@@ -1727,8 +1738,8 @@ unavailableSessionReturnsStructuredFailure()
     services.closeDatabase();
 
     const auto closed = Application::ClassCoTeacherAssignmentUseCase::execute(
-        1,
-        -1,
+        asClassId(1),
+        asTeacherId(-1),
         port
         );
     QVERIFY(!closed);
