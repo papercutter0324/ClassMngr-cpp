@@ -4746,3 +4746,27 @@ behaviors; F1093's test passed. No full application suite ran. Batch474
 continues at F1094, selected to reproduce and define the two Classes page reset
 preference read-error behaviors. The combined Phase 0 and Phase 2 exit gates
 remain open.
+
+## Phase 2 update - F1094 complete; Batch475 selected - 2026-10-19
+
+F1094 source/test commit `5c4201ae` makes both Classes page reset-policy reads
+return structured results. Repository errors remain recoverable Technical
+failures and do not materialize an `OnApplicationClose` default. `ClassesPage`
+applies each hide-time reset only after its own successful read, and Navigation
+Preferences restores the last known radio selection after a save and follow-up
+read both fail. Batch474 is complete; its documentation closeout is being
+committed before the batch push.
+
+Incremental `macos-clang-debug` built `ClassMngr` and the two port, ClassesPage,
+and MainWindow failure targets. The focused port CTests passed 2/2; the
+ClassesPage regression and both MainWindow reset-policy cases passed. The
+MainWindow tests cover a successful policy switch followed by a save and
+reload failure. `git diff --check` passed. This was focused macOS arm64
+verification; Windows x64 execution is unavailable, and no full suite ran.
+
+Batch475 discovery found one concrete contract gap, F1095: the existing
+Calendar event time-status domain enum is still exposed as strings in several
+Application contracts. It is selected for compatibility-boundary and
+acceptance definition before implementation. No other slices were found in
+the reviewed work-package and settings-read surfaces. The Phase 0 and Phase 2
+exit gates remain open.

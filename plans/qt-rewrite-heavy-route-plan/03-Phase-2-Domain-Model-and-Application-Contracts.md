@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1094 is selected to reproduce Classes page reset-preference read failures and define page behavior; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
+- Current note: F1095 is selected to define the Calendar event time-status enum boundary before implementation; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,14 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch474 (4 discovered candidates)
+#### Active batch: Batch475 (1 discovered candidate)
 
-Batch473 is closed and pushed with F1086-F1090 complete and reactivated F629 complete at source commit `31a71e90`. Its macOS universal evidence and the still-open combined Phase 0 gate are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch474 contains four candidates; F1091-F1093 are complete, and F1094 is selected next:
+Batch474 is complete with F1091-F1094 committed; its closeout and push are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch475 has one candidate:
 
-1. F1091 - Preserve the saved signature image after a technical read failure: complete at source commit `cd2e7a68`.
-2. F1092 - Preserve Sidebar Display settings when their settings file cannot be read: complete at source commit `ec07d16e`.
-3. F1093 - Preserve Class Visibility scope after a technical read failure: complete at source commit `45c9aba9`.
-4. F1094 - Preserve both Classes page reset preferences after technical read failures: selected to reproduce both read-error paths and define page behavior before implementation.
+1. F1095 - Carry Calendar event time status as a domain enum across Application contracts: selected to define the compatibility boundary and acceptance before implementation.
 
 No other slices were found.
 

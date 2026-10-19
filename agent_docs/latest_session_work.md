@@ -2,55 +2,26 @@
 
 ## Current Deployment Handoff
 
-- Active deployment: `qt-rewrite-phase2-resume-20260928`; Heavy route; branch
-  `Qt-Rewrite`; current checkpoint 2026-10-19.
-- Batch472 is complete and pushed. Batch473's five discovered slices are
-  F1086-F1090; all five are complete. F629 was separately reactivated from
-  Deferred and inserted after F1086 in active work order; it remains
-  open/unaccepted, and Batch473 remains open. The Phase 2 plan contains the
-  complete active order. Gates 1/2 remain Partial; F1007 remains pending policy
-  reconciliation; Phase 2 exit remains Open.
-- F629's clean macOS universal revalidation ran from source commit `667ff54e`
-  under `/private/tmp/classmngr-f629-macos-universal-20261019-run4` and `run5`.
-  Build/package audit passed (116 arm64+x86_64 Mach-O files, deployment
-  target 14.4), signature checks and runner self-check passed. Run5 attempted
-  all 24 routes: 23 completed and only `output-sub-prep` failed strict
-  page-by-page PDF parity on pages 9-10. The Mac had about 48 GiB free before
-  run4 and 44 GiB after; 18 GiB is the preflight minimum.
-- The mismatch is repeatable but not yet attributable to a renderer defect:
-  run5's historical PDF reference is marked `sourceBound=false` and
-  `semanticOracleOnly=true`. The Mac trace shows breaks before Teachers 18 and
-  21, and the packaged app loaded bundled Inter and Pretendard; no effective
-  cross-platform glyph metrics are recorded. The retained Windows summary has
-  no source identity and omits route artifacts; there is no source-bound Windows
-  result for `667ff54e` or Windows route runner on this Mac. Keep the comparator
-  strict and F629 active. Next obtain source-bound Windows layout evidence at
-  the same commit/fixture/fonts, or another evidence-backed resolution, then
-  rerun Mac parity. Push only after Batch473 closes.
-
-- F1087 source/test commit `7ec8ba7a` changes the Middle School Analytics
-  preference read to `Result<bool>`, propagates technical errors without a
-  false fallback, and preserves the known in-memory visibility in ClassesPage
-  and Preferences. Missing/invalid/unavailable defaults and QVariant coercion
-  remain unchanged. Independent verification built both affected targets and
-  passed the port and MainWindow failure CTests (2/2), including save-failure
-  rollback/retry. `git diff --check` passed. The read-failure test drops
-  `app_settings`, so it cannot directly count write attempts during that fault;
-  the adapter error path returns before writing.
-
-- F1088 source/test commit `53c43e75` gives Evaluation default policy reads a
-  typed result, stops technical errors from materializing `All`, and preserves
-  existing defaults and unsupported-value behavior. Preferences surfaces an
-  unknown initial value and disables the two radios; a failed save/reload
-  restores the last known policy. Class Analytics does not auto-select a term
-  when the policy read fails. The port, selection integration, and MainWindow
-  failure CTests passed 3/3; `git diff --check` passed. The SQLite missing-table
-  fault's diagnostic is generic and cannot count writes while the table is
-  absent; the adapter returns before writing. No full suite ran.
-
-- Push remains deferred until Batch473 closes. F629 and the Phase 0/Phase 2
-  exit gates remain open; Gates 1/2 remain Partial and F1007 remains pending
-  policy reconciliation.
+- Active deployment: `phase2-f1094-20261019`; Heavy route; branch `Qt-Rewrite`;
+  current checkpoint 2026-10-19.
+- Batch474 is complete with F1091-F1094 committed. F1094 source/test commit is
+  `5c4201aedbcc47e55e4b095e3b4066bbb07423a6`; the documentation closeout is
+  committed next and the batch push is pending. Batch475 has one discovered
+  candidate, F1095, selected to define compatibility and acceptance for using
+  `CalendarEventTimeStatus` across the Calendar Application contracts.
+- F1094 makes both reset-policy ports distinguish technical repository errors
+  from missing/invalid values. ClassesPage applies each hide-time reset only
+  after that policy loads successfully; Navigation Preferences avoids hydration
+  writes and restores the latest known radio choice after a save and follow-up
+  read both fail.
+- Incremental `build/macos-clang-debug` built `ClassMngr` and both port,
+  ClassesPage, and MainWindow failure targets. Focused port CTests passed 2/2;
+  the ClassesPage regression and two MainWindow failure/retry cases passed;
+  `git diff --check` passed. Evidence is macOS arm64 only; no full suite ran.
+  The user cannot currently run Windows, so Windows x64 remains unavailable.
+- The combined Phase 0 gate remains Open pending Windows x64 full-matrix
+  evidence. Phase 2 remains Open; Gates 1/2 are Partial and F1007 awaits policy
+  reconciliation. Continue with F1095 after pushing Batch474.
 
 ## Historical handoff - phase2_resume_20260929 (F384)
 

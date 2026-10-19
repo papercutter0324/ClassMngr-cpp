@@ -46888,3 +46888,56 @@ Batch474 remains active in order: F1091-F1093 are complete; F1094 is selected
 to reproduce both Classes page reset-preference read errors and record its
 acceptance criteria before implementation. The combined Phase 0 and Phase 2
 exit gates remain Open. Push remains deferred until Batch474 closes.
+
+### F1094 reset-policy read-error reproduction and acceptance - recorded before implementation - 2026-10-19
+
+`ClassesPageTests` links `ScheduleWidgetTestStubs`, whose settings repository
+can inject a key-specific read error while keeping writes available. With both
+reset policies stored as `on_page_leave`, a simulated day-filter policy read
+error during `ClassesPage::hideEvent()` made the current port save
+`on_application_close` over the stored value. The new page regression failed
+at that persisted-value assertion, reproducing the overwrite. The sibling
+class-selection port has the same status-blind load/default-save implementation
+and uses the same settings repository path; coverage will inject its failure
+independently during the second hide.
+
+1. Change the Class Day Filter and Class Selection reset-policy `load()` ports
+   to return structured results. A repository read error returns recoverable
+   `Technical` and must not save `on_application_close`. Preserve the successful
+   `OnApplicationClose` fallback and materialization for missing/invalid values
+   and unavailable-session behavior; preserve both valid encodings and keys.
+2. In `ClassesPage::hideEvent()`, discard the day-filter state only after a
+   successful `OnPageLeave` read; independently apply the same rule to class
+   selection. A technical read error preserves that preference and the related
+   in-memory page state while a successful sibling policy still applies.
+3. Navigation Preferences uses `OnApplicationClose` only as the initial display
+   fallback when a policy is unknown; hydration does not write after a read
+   error. An explicit user choice may be saved. If that save and its follow-up
+   read fail, restore the last known radio selection independently for each
+   policy.
+4. Update both existing reset-policy port tests to assert technical error
+   mapping and no default materialization on repository read failure. Extend
+   ClassesPage coverage to fault each key independently, verify the other
+   policy still applies, and verify neither stored value is overwritten.
+   Extend MainWindow coverage for reset-policy radio restoration after a failed
+   save and failed follow-up read. Build `ClassMngr`, the two port targets,
+   `ClassMngrClassesPageTests`, and
+   `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`; run their
+   focused cases/CTests and `git diff --check`. Add no CMake target.
+
+F1094 is accepted for implementation. Batch474 remains active at F1094; push
+remains deferred until the batch closes.
+
+### F1094 complete; Batch474 closed; Batch475 discovered - 2026-10-19
+
+F1094 is complete at source/test commit `5c4201aedbcc47e55e4b095e3b4066bbb07423a6`. Both Classes page reset-policy ports now return structured results: repository read errors are recoverable `Technical` failures and do not materialize `OnApplicationClose`; unavailable sessions and missing or invalid values retain the successful fallback. `ClassesPage::hideEvent()` applies each reset only after its own successful `OnPageLeave` read. Navigation Preferences avoids hydration writes and restores each policy's last known radio selection after a save and follow-up read both fail.
+
+The incremental `build/macos-clang-debug` build passed for `ClassMngr`, both reset-policy port tests, `ClassMngrClassesPageTests`, and `ClassMngrMainWindowClassVisibilityPreferencesFailureTests`. Both focused port CTests passed 2/2. The focused ClassesPage read-failure regression passed, and the two MainWindow cases passed after a successful switch followed by a save and follow-up read failure. `git diff --check` passed. This is focused macOS arm64 evidence; no full suite ran, and Windows x64 execution was unavailable.
+
+Batch474 is complete with F1091-F1094 committed. The closeout documentation is committed separately, and the batch is ready to push to `origin/Qt-Rewrite`.
+
+Batch475 discovery covered the remaining settings-read paths, Phase 2 work-package contracts, recent open-gate evidence, and Deferred prerequisites. No newly actionable Deferred item or additional settings-read overwrite was found. One concrete Application contract mismatch was found and selected:
+
+1. F1095 - Carry Calendar event time status as a domain enum across Application contracts. The domain already defines `CalendarEventTimeStatus`, but `CalendarEventSummary`, `CalendarEventSaveRequest`, `CalendarEventEditDraft`, and `CalendarEventSeriesEditRequest` expose status as strings and parse it later. Define the compatibility boundary and acceptance before implementation; preserve the existing timed, unknown, and unconfirmed behavior.
+
+No other slices were found.

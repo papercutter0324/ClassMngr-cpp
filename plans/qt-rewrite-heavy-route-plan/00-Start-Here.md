@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch473 is closed and pushed, with F1086-F1090 complete and reactivated F629 complete at source commit `31a71e90`. The clean macOS universal run8 built and signed a fresh Release app plus Debug harness, passed the 93-file arm64/x86_64 package audit, and completed all 24/24 routes; strict output parity matched all 12 Sub Prep pages and all 5 roster pages. The Windows x64 full matrix is still missing, so the combined Phase 0 exit gate remains Open; the Phase 2 exit gate also remains Open. Batch474 is active: F1091 is complete at `cd2e7a68`, F1092 is complete at `ec07d16e`, F1093 is complete at `45c9aba9`, and F1094 is selected for read-error reproduction and acceptance definition. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch474-4-discovered-candidates) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch473 is closed and pushed, with F1086-F1090 and reactivated F629 complete. Batch474 is complete: F1091-F1094 are committed, with F1094 source/test commit `5c4201ae`; this closeout is being pushed after the documentation commit. Batch475 has one discovered candidate, F1095, to carry Calendar event time status as a domain enum across Application contracts. The combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch475-1-discovered-candidate) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,12 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch474 — Active; four discovered candidates, in current work order:**
+**Batch475 — Discovered; one candidate, in current work order:**
 
-1. **F1091 — Preserve the saved signature image after a technical read failure.** Complete at source commit `cd2e7a68`.
-2. **F1092 — Preserve Sidebar Display settings when their settings file cannot be read.** Complete at source commit `ec07d16e`.
-3. **F1093 — Preserve Class Visibility scope after a technical read failure.** Complete at source commit `45c9aba9`.
-4. **F1094 — Preserve both Classes page reset preferences after technical read failures.** Selected to reproduce the read-error paths and define acceptance before implementation.
+1. **F1095 — Carry Calendar event time status as a domain enum across Application contracts.** Selected to define the compatibility boundary and acceptance before implementation. The existing domain enum is still represented as strings in the summary, save, edit-draft, and series-edit contracts.
 
 No other slices were found.
 

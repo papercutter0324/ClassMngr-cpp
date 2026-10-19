@@ -7366,3 +7366,18 @@ recorded with their test names in the Phase 2 progress log. `git diff --check`
 passed and no full application suite ran. I am continuing Batch474 with F1094,
 which covers technical read failures in the two Classes page reset preferences;
 its behavior and acceptance are next to be reproduced and recorded.
+
+## Phase 2 F1094 complete; Batch475 selected - 2026-10-19
+
+Repository read failures must remain distinct from missing or invalid
+preferences all the way into the UI decision that mutates in-memory state.
+F1094 confirmed that each independent reset policy can fail separately: the
+successful sibling still applies, the failed preference and its page state
+remain intact, and no fallback is written. For radio groups with callbacks on
+both choices, last-known rollback state must be shared by those callbacks so a
+later double failure restores the latest successful choice.
+
+F1094 is committed at source/test commit `5c4201ae`. Focused macOS arm64 build
+and regressions passed; Windows x64 was unavailable and no full suite ran.
+Batch475 begins with F1095, an Application contract gap where an existing
+Calendar event time-status domain enum is still exposed as strings.
