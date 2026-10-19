@@ -47108,12 +47108,14 @@ focused occurrence-identity contract make F1098 actionable now.
    in these Application contracts.
 3. Preserve current boundaries and validation: blank, whitespace-only, or
    oversized IDs remain `InvalidInput` with existing validation order and
-   messages. Projection keeps Qt `trimmed()` normalization and UTF-8/bounds
-   behavior; create/delete preserve their current ID text exactly without new
-   trimming; edit planning keeps its existing ASCII trim. Preserve optional
-   no-series behavior and event order. Convert legacy `QString` and stored
-   values to/from the type at existing UI/platform boundaries. Do not change
-   schema or persisted text format.
+   messages. Projections keep Qt `trimmed()` normalization and UTF-8/bounds
+   behavior; create keeps `QString::trimmed()` before storing; delete passes
+   the exact series-ID text without trimming; the edit adapter keeps Qt
+   trimming for repository lookup, and edit planning keeps its existing ASCII
+   trim for updated occurrence values. Preserve optional no-series behavior
+   and event order. Convert legacy `QString` and stored values to/from the type
+   at existing UI/platform boundaries. Do not change schema or persisted text
+   format.
 4. Extend existing tests for typed series identity, absent/blank/oversized
    validation, legacy normalization and preservation, and create/delete/edit,
    projection, and UI behavior through current targets. Build `ClassMngr`,
@@ -47122,6 +47124,10 @@ focused occurrence-identity contract make F1098 actionable now.
    `ClassMngrCalendarEventCacheTests`, `ClassMngrDialogShellTests`, and
    `ClassMngrCalendarPageEventMutationParityTests`; run their focused CTests
    and `git diff --check`. Add no CMake target.
+
+Clarification (2026-10-19): The independent Tester confirmed from source and
+test that create uses `QString::trimmed()` before storage; criterion 3 keeps
+this distinct from delete's exact-text behavior.
 
 F1098 acceptance design was recorded before implementation. F54 and F1096
 event-type decisions are unchanged.
