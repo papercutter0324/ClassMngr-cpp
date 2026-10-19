@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch477 is complete and pushed to `origin/Qt-Rewrite` at `60e7bc42`; F1099 is accepted and selected for implementation in Batch478. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
+- Current note: Batch477 is complete and pushed to `origin/Qt-Rewrite` at `60e7bc42`; F1099 completed Batch478, and F1100 is selected next with acceptance pending. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,14 +68,14 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch478 (5 candidates; 1 accepted)
+#### Active batch: Batch478 (5 candidates; 1 complete)
 
 Batch477 is complete with F1098 at source/test commit `fb92cddd`; its closeout was pushed to `origin/Qt-Rewrite` at `60e7bc42`. Batch478's complete ordered list is:
 
-1. F1099 - Type Calendar event-by-ID query request: accepted and selected for implementation; acceptance recorded before implementation.
-2. F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering: discovered; reassess and accept after F1099.
+1. F1099 - Type Calendar event-by-ID query request: complete at source/test commit `a942daab`; acceptance recorded before implementation.
+2. F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering: selected next; reassess and record acceptance before implementation.
 3. F1101 - Carry `CampusId` in feature campus metadata contracts: unresolved, lower confidence; decide whether identity typing applies without changing the established owning UTF-8 snapshot contract.
-4. F1102 - Type identity in Class Details validation contract: discovered; reassess and accept after earlier Batch478 items, preserving the unassigned sentinel and wide teacher IDs.
+4. F1102 - Type identity in Class Details validation contract: discovered; reassess after preceding Batch478 items, preserving the unassigned sentinel and wide teacher IDs.
 5. F1103 - Surface Class Details validation-context read failures: deferred pending explicit parity/policy reconciliation; do not change behavior before that decision.
 
 No other slices were found.

@@ -7402,3 +7402,18 @@ candidate list is in `00-Start-Here.md` and the Phase 2 plan. F1099 is selected
 next after closeout; F1101 remains a low-confidence contract decision, and
 F1103 stays deferred pending parity/policy reconciliation. The Windows x64
 evidence for the combined Phase 0 gate is still unavailable.
+
+## 2026-10-19 - F1099 Calendar event-by-ID request
+
+F1099 completed at source/test commit `a942daab`, following acceptance commit
+`2721941c`. The event-by-ID request now carries an optional typed
+`CalendarEventId`; CalendarPage constructs it at the QString boundary and the
+Application use case forwards the exact value without reparsing. The
+nonrecoverable invalid-input result, validation bounds, opaque ID text,
+Platform canonical-decimal behavior, and returned-summary mismatch check were
+preserved.
+
+The incremental macOS Debug build passed for `ClassMngr` and the Application,
+Platform, and Calendar Page mutation parity targets. Their focused CTests
+passed 3/3; `git diff --check` passed. No full suite ran. F1100 is selected as
+the next Batch478 candidate. Windows x64 evidence remains unavailable.

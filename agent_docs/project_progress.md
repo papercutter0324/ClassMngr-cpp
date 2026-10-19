@@ -4793,3 +4793,24 @@ The combined Phase 0 gate remains open because Windows x64 evidence is
 unavailable and the user cannot run Windows at present. The Phase 2 exit gate
 remains open, Gates 1/2 remain Partial, and F1007 remains pending policy
 reconciliation.
+
+## Phase 2 update - F1099 complete; F1100 selected - 2026-10-19
+
+F1099 is complete at source/test commit `a942daab`, after pre-implementation
+acceptance commit `2721941c`. The Calendar event-by-ID request now carries an
+optional `CalendarEventId`; the UI constructs it at the QString boundary and
+the Application use case forwards it unchanged. Existing validation, exact
+identifier text, Platform decimal parsing, and returned-ID mismatch behavior
+remain intact.
+
+The incremental `macos-clang-debug` build passed for `ClassMngr` and all three
+requested test targets. The focused Application Calendar Event, Platform
+Application Services Calendar Event Port, and Calendar Page mutation parity
+CTests passed 3/3. `git diff --check` passed. This is local macOS arm64/Qt 6.12
+verification; no fresh configure or full suite ran. Batch478 remains active;
+F1100 is selected next. F1101 remains lower-confidence, F1102 awaits
+reassessment after earlier entries, and F1103 remains deferred.
+
+The combined Phase 0 gate remains open because Windows x64 evidence is
+unavailable. The Phase 2 exit gate remains open, Gates 1/2 remain Partial, and
+F1007 remains pending policy reconciliation.

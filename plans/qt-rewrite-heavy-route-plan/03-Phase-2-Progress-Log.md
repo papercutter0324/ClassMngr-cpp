@@ -47230,8 +47230,43 @@ port and returned summary use `Domain::CalendarEventId`. Acceptance criteria:
    and `git diff --check`. Add no CMake target and run no full suite.
 
 F1099 acceptance was recorded before implementation. F1100 remains next for
-reassessment after F1099; F1101 remains unresolved at lower confidence under
+reassessment; F1101 remains unresolved at lower confidence under
 the F23 owning UTF-8 snapshot contract; F1102 remains for reassessment with
 the `-1` sentinel and wide teacher IDs preserved; F1103 remains deferred
 pending parity/policy reconciliation. Batch478's five-item list and
 discovery evidence remain above.
+
+### F1099 complete - 2026-10-19
+
+F1099 is complete at source/test commit
+`a942daaba186079ab17893f0b8350c2ffec77aae`; its acceptance record is commit
+`2721941c2c40442f5ff9be091f3544de26da2370`. The Calendar event-by-ID request
+now carries an optional typed `Domain::CalendarEventId`; the use case no
+longer reparses it, and `CalendarPage::handleCalendarEventActivated` converts
+the legacy `QString` at the UI boundary without trimming. Existing invalid
+input message and bounds, exact forwarding, port-error propagation, ID
+mismatch guard, silent UI failure, Platform canonical-decimal handling, and
+storage/schema behavior are preserved.
+
+The Tester changed only `tests/next_application_calendar_event_tests.cpp` and
+verified the optional typed request, leading-zero forwarding, missing/ASCII
+and Unicode whitespace/oversize rejection, exact 256-byte acceptance,
+malformed opaque byte acceptance, port-error propagation, and ID mismatch.
+The incremental `build/macos-clang-debug` build passed for `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. The three focused CTests
+passed 3/3: Next Application Calendar Event, Platform Application Services
+Calendar Event Port, and Calendar Page Event Mutation Parity. `git diff
+--check` passed. This is local macOS arm64/Qt 6.12 evidence; there was no
+fresh configure or full-suite run.
+
+F1099 completes its Batch478 work. F1100 is selected next; reassess the typed
+class-ID ordering gap and record acceptance before implementation. F1101
+remains a lower-confidence unresolved follow-up under F23's owning UTF-8
+snapshot contract. F1102 remains discovered for reassessment after preceding
+Batch478 items, preserving the `-1` unassigned-teacher sentinel and wide
+teacher IDs. F1103 remains deferred pending parity/policy reconciliation.
+The combined Phase 0 gate remains Open while Windows x64 evidence is
+unavailable; the Phase 2 exit gate remains Open, Gates 1 and 2 remain Partial,
+and F1007 remains pending policy reconciliation.
