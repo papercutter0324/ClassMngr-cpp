@@ -46823,3 +46823,68 @@ F1093 is selected to define and reproduce Classes page behavior after a
 technical Class Visibility preference-read error; F1094 remains provisional.
 The combined Phase 0 and Phase 2 exit gates remain Open. Push remains deferred
 until Batch474 closes.
+
+### F1093 Class Visibility read-error acceptance matrix - recorded before implementation - 2026-10-19
+
+The existing `repositoryReadFailureDefaultsAndRemainsSilent` port case
+reproduces the technical failure by dropping `app_settings`; the port currently
+returns `ActiveSchedule` as if the setting were missing. The Classes page and
+Speaking Evaluation page both apply this fallback when loading or refreshing
+the visible class projection.
+
+1. Change `ClassVisibilityPreferencesPort::load()` to return a structured
+   result. Repository errors return recoverable `Technical` without attempting
+   to materialize `active_schedule`; unavailable session/repository and
+   missing/invalid-value behavior retain their existing successful
+   `ActiveSchedule` default. Preserve parsing and persistence of both valid
+   stored scopes.
+2. ClassesPage and SpeakingEvalPage apply a loaded scope only on success. A
+   read error preserves the current in-memory scope and visible class
+   projection during initial-load follow-up and refresh. Their existing
+   `ActiveSchedule` default remains for an unknown initial scope.
+3. Navigation Preferences hydration performs no save on a read error. An
+   explicit user radio selection may still be saved. If a save fails and a
+   follow-up read also fails, restore the last known selection rather than
+   deriving one from a technical-error fallback.
+4. Extend the existing class-visibility port test to assert Technical mapping
+   on repository read error. Extend ClassesPage and SpeakingEvalPage coverage to
+   retain an already applied AllClasses view after a read error, then apply a
+   successful recovered value. Keep existing missing/invalid, save, retry, and
+   preference-radio behavior. Build `ClassMngr` and the four existing port,
+   ClassesPage, SpeakingEvalPage, and MainWindow class-visibility test targets;
+   run their focused cases/CTests and `git diff --check`. Add no CMake target.
+
+F1093 is accepted for implementation. Batch474 remains active at F1093; F1094
+remains provisional.
+
+### F1093 complete; F1094 selected - 2026-10-19
+
+F1093 is complete at source/test commit `45c9aba9`. The application port now
+returns a structured result: repository read errors become recoverable
+`Technical` failures without writing a default, while unavailable sessions and
+missing or invalid values retain the successful `ActiveSchedule` default.
+ClassesPage and SpeakingEvalPage retain their applied scope on a failed read
+and use a recovered value after storage becomes readable. Navigation Preferences
+keeps its last known radio selection when both the user's save and the follow-up
+read fail.
+
+Incremental `macos-clang-debug` built `ClassMngr`, the Class Visibility port,
+ClassesPage, SpeakingEvalPage, and MainWindow class-visibility test targets.
+The port and MainWindow class-visibility CTests passed 2/2. The focused
+ClassesPage and SpeakingEvalPage read-failure cases passed 3/3 each, including
+setup and cleanup, and `git diff --check` passed. The full
+`ClassMngrClassesPageTests` CTest was not clean: 40 cases passed and 8 unrelated
+cases failed (`middleSchoolAnalyticsAndEvaluationsTabsFollowPreference`,
+`selectedClassGradeFailureFailsOpenWithoutDataServiceFallback`,
+`sectionSelectionSurvivesGradeTabRebuilds`,
+`navigationReleaseCachesSnapshotAndEditorsAcrossReentry`,
+`selectedClassSubtitleUsesIndependentReadOutcomesAndRefreshes`,
+`rosterEditorSubtitleUsesSelectedClassSubtitleRead`,
+`classInfoShowsInlineValidationAndBlocksManualSave`, and
+`headerKeyboardReplacesEmbeddedRosterButton`). The F1093 case passed in that
+run. No full application suite was run.
+
+Batch474 remains active in order: F1091-F1093 are complete; F1094 is selected
+to reproduce both Classes page reset-preference read errors and record its
+acceptance criteria before implementation. The combined Phase 0 and Phase 2
+exit gates remain Open. Push remains deferred until Batch474 closes.

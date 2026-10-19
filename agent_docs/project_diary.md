@@ -7347,3 +7347,22 @@ behavior. The real port and MainWindow parity CTests passed after building
 F1093 is selected to define and reproduce Class Visibility behavior after a
 technical preference-read error. The required next-batch discovery pass found
 no additional eligible candidates and no newly met Deferred triggers.
+
+## Phase 2 F1093 complete; F1094 selected - 2026-10-19
+
+F1093 is complete at source/test commit `45c9aba9`. The Class Visibility port
+now returns a structured result for repository reads; technical failures
+surface as recoverable errors and do not materialize `active_schedule`.
+ClassesPage and SpeakingEvalPage retain their currently applied class scope
+after a failed read and adopt the recovered value when it becomes readable.
+Navigation Preferences also restores its last saved radio selection when a
+user-triggered save fails and the subsequent read fails.
+
+The incremental macOS Debug build covered `ClassMngr` and the four existing
+Class Visibility-dependent test targets. Port and MainWindow CTests passed
+2/2; focused ClassesPage and SpeakingEvalPage regressions passed. The full
+ClassesPage target had 8 unrelated failures (40 passing cases), which are
+recorded with their test names in the Phase 2 progress log. `git diff --check`
+passed and no full application suite ran. I am continuing Batch474 with F1094,
+which covers technical read failures in the two Classes page reset preferences;
+its behavior and acceptance are next to be reproduced and recorded.

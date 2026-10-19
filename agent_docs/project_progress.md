@@ -4728,3 +4728,21 @@ and keeps the companion action and live Sidebar behavior aligned. `ClassMngr`
 and both selected test targets built, and both focused CTests passed. Batch474
 continues at F1093. A read-only Batch475 discovery recheck found no additional
 eligible candidates or newly met Deferred triggers.
+
+## Phase 2 update - F1093 complete; F1094 selected - 2026-10-19
+
+F1093 source/test commit `45c9aba9` makes Class Visibility preference reads
+status-aware. Technical repository failures no longer become defaults or
+overwrite the active Classes page projection. ClassesPage and SpeakingEvalPage
+retain the applied scope during failed reads, while a recovered value is
+applied after storage recovers. Navigation Preferences restores its last known
+radio selection if both an explicit save and its follow-up read fail.
+
+`ClassMngr` and the existing port, ClassesPage, SpeakingEvalPage, and MainWindow
+class-visibility test targets built incrementally. The port and MainWindow
+focused CTests passed 2/2; the focused ClassesPage and SpeakingEvalPage cases
+passed. The full ClassesPage CTest had 40 passes and 8 failures in other page
+behaviors; F1093's test passed. No full application suite ran. Batch474
+continues at F1094, selected to reproduce and define the two Classes page reset
+preference read-error behaviors. The combined Phase 0 and Phase 2 exit gates
+remain open.
