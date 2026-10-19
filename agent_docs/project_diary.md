@@ -7979,3 +7979,8 @@ summary converts the group back to `QTime` and formats a compact label without
 seconds. Keep the typed value across both Application fact and result, preserve
 invalid-fact skipping at the policy boundary, and leave the separate
 minute-based navigation-order contract unchanged.
+
+F1131 verification pins these as separate contracts: two meeting times that
+differ by seconds remain separate and ordered in Application, compact display
+labels continue omitting seconds, and navigation still reduces its own time
+to minutes.

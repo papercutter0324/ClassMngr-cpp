@@ -5706,3 +5706,19 @@ Platform adapter continues compact labels that omit seconds, while the
 separate navigation path continues minute-based ordering. Implementation and
 verification are pending; F1132 is next for acceptance. Batch485 remains
 unpushed. F629 and both phase gates remain open.
+
+## Phase 2 update - F1131 complete - 2026-10-20
+
+F1131 completed at source/test commit
+`4976bc2e121fd70ede48e24424dac1e3b2f68f50`, following acceptance
+`1b2e1d99`. The permissive `SubPrepMeetingSecondsOfDay` now types both
+Application meeting facts and grouping results. Policy-level invalid skipping,
+exact-second grouping/order, selected-day filtering, cross-day grouping,
+weekday de-duplication, and canonical ordering remain intact. The Platform
+adapter unwraps only for `QTime` conversion; compact labels still omit seconds,
+and navigation remains minute-based. `ClassMngr` and both focused test targets
+built; both focused CTests passed 2/2. Coverage includes 0/86399 retention,
+-1/86400 skipping, exact-second ordering, compact `Mon 9:30am`, and navigation
+order 570. `git diff --check` passed. Windows and full-suite verification were
+not run. Batch485 has four complete slices and six discovered; F1132 is next
+for acceptance. F629 and both phase gates remain open.
