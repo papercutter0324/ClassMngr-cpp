@@ -5960,3 +5960,30 @@ teacher identity, verify the full target including the duplicate-occurrence
 case and unchanged Discard behavior, commit the slice, then close and push
 Batch463. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and the Phase 2 exit gate remains Open.
+
+## Current continuation - 2026-10-19 (F1098 complete; Batch477 closeout pending)
+
+Active deployment ID: `phase2-f1094-20261019`. Heavy remains the Phase 2 route.
+F1098 is complete at source/test commit `fb92cdd`; the acceptance and
+normalization clarification commits are `478d1799` and `6f713932`. Independent
+focused verification built `ClassMngr` and the five existing Calendar targets
+(Application event, Platform event port, event cache, DialogShell, and Calendar
+Page mutation parity); their focused CTests passed 5/5. `git diff --check`
+passed. This was local macOS arm64/Qt 6.12 evidence; no full suite ran.
+
+Batch477 is complete. `00-Start-Here.md`, the Phase 2 plan, and the progress log
+now contain the closeout and full Batch478 list. The Git worker attempted the
+authorized exact-path closeout twice, but the automatic approval reviewer
+reported “Selected model is at capacity”; no staging, commit, or push action
+ran. The working tree contains the F1098/Batch478 operational-doc updates and
+the main-owned progress, diary, and session-note updates. Do not begin F1099
+implementation until the Batch477 closeout is committed and pushed.
+
+Batch478 has five entries: F1099 is selected next, pending closeout; F1100 is
+the Sub Prep visible-ordering `ClassId` contract; F1101 is a lower-confidence
+campus snapshot typing decision; F1102 is Class Details validation identity;
+F1103 is deferred pending parity/policy reconciliation. Two independent
+read-only explorers found no newly actionable Deferred/Gate-derived slice.
+Windows x64 evidence remains unavailable and the user cannot run Windows now;
+the combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
+remain Partial, and F1007 awaits policy reconciliation.

@@ -7385,3 +7385,20 @@ domain enum is still exposed as strings. Keep persisted canonical names and
 legacy text normalization at the boundary; do not impose save-only all-day
 validation on read projections, because existing rows may contain valid
 non-Timed status alongside an all-day flag.
+
+## 2026-10-19 - F1098 complete; Batch478 discovered
+
+F1098 gives repeat-series identity its own `CalendarEventSeriesId` and carries
+that type through the Calendar Application contracts and existing UI/Platform
+boundaries. The change preserves the distinct legacy trim rules for projection,
+create, delete, and edit, as well as event ordering and the stored text/schema.
+Focused macOS arm64 verification passed five existing Calendar CTests after
+building `ClassMngr` and their targets; no full suite ran.
+
+Batch477 is complete at source/test commit `fb92cdd`; the operational document
+closeout is prepared but Git staging and push are blocked because the automatic
+approval reviewer twice reported model capacity exhaustion. Batch478's five
+candidate list is in `00-Start-Here.md` and the Phase 2 plan. F1099 is selected
+next after closeout; F1101 remains a low-confidence contract decision, and
+F1103 stays deferred pending parity/policy reconciliation. The Windows x64
+evidence for the combined Phase 0 gate is still unavailable.

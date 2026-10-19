@@ -47131,3 +47131,68 @@ this distinct from delete's exact-text behavior.
 
 F1098 acceptance design was recorded before implementation. F54 and F1096
 event-type decisions are unchanged.
+
+### F1098 complete; Batch477 work complete; Batch478 discovered - 2026-10-19
+
+F1098 is complete at source/test commit
+`fb92cdddcf5be106f915636c17aebc95468db914`; acceptance was recorded in
+`478d1799ea012454bc1ff3a2263521193da0953c` and clarified in
+`6f7139320df8b67408533038e19cbf81cf3cb695`. `CalendarEventSeriesId` now
+carries repeat-series identity through the Application contracts and relevant
+UI/platform boundaries while preserving the existing trim, validation, event
+ordering, persistence text, and schema behavior.
+
+The Tester built `ClassMngr` and the five existing focused Calendar targets:
+Next Application event, Next Platform event port, Calendar event cache,
+DialogShell, and Calendar Page mutation parity. All five focused CTests passed
+(5/5), and `git diff --check` passed. This is local macOS arm64/Qt 6.12
+evidence; no full suite ran. Batch477 is complete; its closeout commit and push
+remain pending.
+
+Batch478 discovery used two independent read-only reviews of current
+Application/domain identity contracts and deferred/gate items. Five candidates
+were recorded in this order; F1099 is selected next, but its acceptance record
+will follow Batch477 closeout:
+
+1. **F1099 - Type Calendar event-by-ID query request.**
+   `CalendarEventByIdQueryRequest.eventId` is text in
+   `src/next/application/calendar_event_by_id_query_port.h`, while its port
+   and returned summary use `Domain::CalendarEventId`; the use case validates
+   and reparses the request. Existing coverage is in
+   `tests/next_application_calendar_event_tests.cpp` and
+   `tests/next_platform_application_services_calendar_event_port_tests.cpp`.
+2. **F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering.**
+   `SubPrepClassInformationListModel` converts the typed class ID to a raw
+   string fact used by the ordering policy's final tie-break. Existing policy,
+   model, and page tests cover this path, including
+   `tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp`.
+3. **F1101 - Carry `CampusId` in feature campus metadata contracts.**
+   `MyInfoCampusMetadata`, `SubPrepCampusMetadata`, and
+   `CalendarPageCampusMetadata` still expose string IDs. Existing feature
+   tests cover these projections. This remains lower-confidence and
+   unresolved: F23 deliberately established owning UTF-8 campus-directory
+   snapshots with legacy matching, order, and trim behavior, so decide whether
+   this typing follow-up applies without changing that contract.
+4. **F1102 - Type identity in Class Details validation contract.**
+   `ClassDetailsValidationInput` carries numeric `classId` and `teacherId`
+   although related query/save contracts use typed IDs. Existing coverage is
+   in `tests/next_application_class_details_validation_policy_tests.cpp` and
+   `tests/next_application_class_details_save_use_case_tests.cpp`. Any
+   acceptance must preserve the `-1` unassigned-teacher sentinel, invalid
+   numeric handling, and wide teacher IDs.
+5. **F1103 - Surface Class Details validation-context read failures.**
+   `ClassDetailsSaveWorkflow::execute` ignores the structured context failure
+   and applies `-1`/default values; the existing
+   `workflowContextFailureAndMismatchFallBack` test explicitly asserts this
+   fallback. Defer pending explicit parity/policy reconciliation; do not alter
+   behavior yet.
+
+No other slices were found.
+
+No newly actionable Deferred/Gate-derived candidate was found, and no
+status-derived implementation gap was identified. The discovery was limited
+to the current contract and deferred/gate review; it does not establish a
+runtime defect for F1100, F1101, or F1102. The combined Phase 0 gate remains
+Open because Windows x64 evidence is unavailable; the Phase 2 exit gate
+remains Open, Gates 1 and 2 remain Partial, and F1007 remains pending policy
+reconciliation.

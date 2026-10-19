@@ -4770,3 +4770,26 @@ through Application contracts while preserving canonical legacy text and
 normalization behavior. Its acceptance is recorded before implementation.
 No other slices were found in the reviewed work-package and settings-read
 surfaces. The Phase 0 and Phase 2 exit gates remain open.
+
+## Phase 2 update - F1098 complete; Batch477 closeout pending - 2026-10-19
+
+F1098 is complete at source/test commit `fb92cdd`; its acceptance and
+clarification are recorded in `478d1799` and `6f713932`. Calendar repeat-series
+identity now remains typed through the Application contracts and relevant
+boundaries. The focused macOS arm64 verification built `ClassMngr` and five
+existing Calendar targets; all five focused CTests passed, and
+`git diff --check` passed. No full suite ran.
+
+Batch477 is complete, but its documentation closeout and push are pending. The
+Git handoff could not stage the documentation because the automatic approval
+reviewer twice reported that its selected model was at capacity; no Git action
+ran. Batch478 has five discovered candidates: F1099 is selected next, pending
+Batch477 closeout; F1100 is a typed `ClassId` ordering follow-up; F1101 is a
+lower-confidence `CampusId` snapshot decision; F1102 is a Class Details
+validation identity follow-up; F1103 remains deferred pending parity/policy
+reconciliation. No newly actionable Deferred/Gate-derived item was found.
+
+The combined Phase 0 gate remains open because Windows x64 evidence is
+unavailable and the user cannot run Windows at present. The Phase 2 exit gate
+remains open, Gates 1/2 remain Partial, and F1007 remains pending policy
+reconciliation.
