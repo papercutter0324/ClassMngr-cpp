@@ -1,7 +1,19 @@
 #include "next/application/class_transfer_export_query.h"
+#include "next/application/class_transfer_keys.h"
 #include <QtTest/QtTest>
+#include <type_traits>
+#include <utility>
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
+static_assert(std::is_same_v<decltype(std::declval<ClassExportTeacher>().key), ClassExportTeacherKey>);
+static_assert(std::is_same_v<decltype(std::declval<ClassExportClass>().key), ClassExportClassKey>);
+static_assert(std::is_same_v<decltype(std::declval<ClassExportClass>().teacherKey), ClassExportTeacherKey>);
+static_assert(!std::is_same_v<ClassExportTeacherKey, ClassExportText>);
+static_assert(!std::is_same_v<ClassExportClassKey, ClassExportText>);
+static_assert(!std::is_same_v<ClassExportTeacherKey, ClassTransferTeacherKey>);
+static_assert(!std::is_same_v<ClassExportClassKey, ClassTransferClassKey>);
+static_assert(!std::is_convertible_v<ClassExportTeacherKey, ClassTransferTeacherKey>);
+static_assert(!std::is_convertible_v<ClassExportClassKey, ClassTransferClassKey>);
 namespace
 {
 Domain::ClassId id(int value) { return *Domain::ClassId::fromString(std::to_string(value)); }
@@ -51,6 +63,9 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     port.source.exportedAtUtcMilliseconds = 1'234;
     port.source.classes = {item(2, teacherId(9)), item(1, teacherId(3)), item(4, teacherId(9)), item(3)};
     for (std::size_t i = 0; i < port.source.classes.size(); ++i) port.source.classes[i].selectedIndex = i;
+    const std::u16string exactPayload{u'A', char16_t(0), char16_t(0xD800), u'B',
+        char16_t(0xDC00), char16_t(0xD83D), char16_t(0xDE80), u'\n'};
+    port.source.classes[0].name = exactPayload;
     ClassExportTeacherProfile first; first.teacherEn = u"First"; first.notes = u"all profile fields stay owned";
     ClassExportTeacherProfile second; second.teacherEn = u"Second";
     port.source.teachers = {{teacherId(3), ClassExportStage<ClassExportTeacherProfile>::value(second)},
@@ -61,16 +76,20 @@ void ClassTransferExportQueryTests::preservesRequestAndAssemblesFirstSeenKeysAnd
     const auto& output = result.value();
     QCOMPARE(output.version, 1); QVERIFY(output.exportedAtUtc == "1970-01-01T00:00:01.234Z");
     QCOMPARE(output.teachers.size(), std::size_t(2));
-    QVERIFY(output.teachers[0].key == u"teacher-1" && output.teachers[0].teacher.teacherEn == u"First");
-    QVERIFY(output.teachers[1].key == u"teacher-2" && output.teachers[1].teacher.teacherEn == u"Second");
-    QVERIFY(output.classes[0].teacherKey == u"teacher-1" && output.classes[1].teacherKey == u"teacher-2");
-    QVERIFY(output.classes[2].teacherKey == u"teacher-1" && output.classes[3].teacherKey.empty());
-    QVERIFY(output.classes[3].key == u"class-4");
+    QVERIFY(output.teachers[0].key.value() == u"teacher-1" && output.teachers[0].teacher.teacherEn == u"First");
+    QVERIFY(output.teachers[1].key.value() == u"teacher-2" && output.teachers[1].teacher.teacherEn == u"Second");
+    QVERIFY(output.classes[0].teacherKey.value() == output.teachers[0].key.value());
+    QVERIFY(output.classes[1].teacherKey.value() == output.teachers[1].key.value());
+    QVERIFY(output.classes[2].teacherKey.value() == output.teachers[0].key.value());
+    QVERIFY(output.classes[3].teacherKey.value().empty());
+    for (std::size_t i = 0; i < output.classes.size(); ++i)
+        QVERIFY(output.classes[i].key.value() == (u"class-" + std::u16string(1, char16_t(u'1' + i))));
+    QVERIFY(output.classes[0].name == exactPayload);
     QVERIFY(output.classes[0].roster.columnWidths == std::vector<int>({70, 80, 90}));
     QVERIFY(output.classes[0].roster.rows[0][2] == u"full cell");
     QVERIFY(output.classes[0].evaluations[0].name == u"Second" && output.classes[0].evaluations[1].name == u"First");
     port.source.classes[0].name = u"mutated";
-    QVERIFY(output.classes[0].name == u"Class");
+    QVERIFY(output.classes[0].name == exactPayload);
 }
 void ClassTransferExportQueryTests::sourceFailuresPropagate()
 {

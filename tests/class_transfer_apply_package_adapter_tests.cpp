@@ -12,6 +12,20 @@ namespace Application = ClassMngr::Next::Application;
 namespace Legacy = ClassMngr::Data::Legacy;
 static_assert(std::is_same_v<decltype(Application::ClassTransferApplyCommand::package),
     Application::ClassTransferPortablePackage>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportTeacher>().key),
+    Application::ClassExportTeacherKey>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportClass>().key),
+    Application::ClassExportClassKey>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportClass>().teacherKey),
+    Application::ClassExportTeacherKey>);
+static_assert(!std::is_same_v<Application::ClassExportTeacherKey, Application::ClassExportText>);
+static_assert(!std::is_same_v<Application::ClassExportClassKey, Application::ClassExportText>);
+static_assert(!std::is_same_v<Application::ClassExportTeacherKey, Application::ClassTransferTeacherKey>);
+static_assert(!std::is_same_v<Application::ClassExportClassKey, Application::ClassTransferClassKey>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferTeacherKey>().value()),
+    const std::string&>);
+static_assert(std::is_same_v<decltype(std::declval<Application::ClassTransferClassKey>().value()),
+    const std::string&>);
 
 namespace
 {
@@ -120,7 +134,7 @@ void ClassTransferApplyPackageAdapterTests::preservesEveryImportedFieldAndOrderi
     {
         const int item = index == 0 ? 2 : 1;
         const auto& teacher = portable.teachers[index];
-        QCOMPARE(QString::fromStdU16String(teacher.key), QStringLiteral("teacher-%1").arg(item));
+        QCOMPARE(QString::fromStdU16String(teacher.key.value()), QStringLiteral("teacher-%1").arg(item));
         QCOMPARE(QString::fromStdU16String(teacher.teacher.teacherKr), marker(QStringLiteral("teacher_kr"), item));
         QCOMPARE(QString::fromStdU16String(teacher.teacher.teacherEn), marker(QStringLiteral("teacher_en"), item));
         QCOMPARE(QString::fromStdU16String(teacher.teacher.preferredRomanization), marker(QStringLiteral("preferred_romanization"), item));
@@ -136,9 +150,9 @@ void ClassTransferApplyPackageAdapterTests::preservesEveryImportedFieldAndOrderi
         QCOMPARE(QString::fromStdU16String(teacher.teacher.projectionType), marker(QStringLiteral("projection_type"), item));
         QCOMPARE(QString::fromStdU16String(teacher.teacher.notes), marker(QStringLiteral("notes"), item));
         const auto& output = portable.classes[index];
-        QCOMPARE(QString::fromStdU16String(output.key), QStringLiteral("class-%1").arg(item));
+        QCOMPARE(QString::fromStdU16String(output.key.value()), QStringLiteral("class-%1").arg(item));
         QCOMPARE(QString::fromStdU16String(output.name), marker(QStringLiteral("class_name"), item));
-        QCOMPARE(QString::fromStdU16String(output.teacherKey), QStringLiteral("teacher-%1").arg(item));
+        QCOMPARE(QString::fromStdU16String(output.teacherKey.value()), QStringLiteral("teacher-%1").arg(item));
         QCOMPARE(QString::fromStdU16String(output.info.classGrade), marker(QStringLiteral("class_grade"), item));
         QCOMPARE(QString::fromStdU16String(output.info.classLevel), marker(QStringLiteral("class_level"), item));
         QCOMPARE(QString::fromStdU16String(output.info.readingBook), marker(QStringLiteral("reading_book"), item));
@@ -222,10 +236,11 @@ void ClassTransferApplyPackageAdapterTests::preservesUtf16CodeUnitsAndUnboundedR
     output.evaluations.append({teacher.key, {{}, {teacher.key}}});
     source.classes.append(output);
     auto portable = Legacy::toPortableClassTransferPackage(std::move(source));
-    QVERIFY(portable.teachers.front().key == units);
+    QVERIFY(portable.teachers.front().key.value() == units);
     QVERIFY(portable.teachers.front().teacher.notes == units);
     const auto& value = portable.classes.front();
-    QVERIFY(value.key == units && value.name == units && value.teacherKey == units && value.info.notes == units);
+    QVERIFY(value.key.value() == units && value.name == units
+        && value.teacherKey.value() == units && value.info.notes == units);
     QVERIFY(value.roster.columns.front() == units);
     QVERIFY(value.roster.columnWidths == std::vector<int>({-1, 400}));
     QVERIFY(value.roster.rows == Application::ClassExportRows({{units, {}}, {}, {units}}));

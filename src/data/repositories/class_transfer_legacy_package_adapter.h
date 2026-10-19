@@ -73,7 +73,7 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
     for (const auto& source : package.teachers)
     {
         Application::ClassExportTeacher output;
-        output.key = source.key.toStdU16String();
+        output.key = Application::ClassExportTeacherKey{source.key.toStdU16String()};
         output.teacher.teacherKr = source.teacher.teacherKr.toStdU16String();
         output.teacher.teacherEn = source.teacher.teacherEn.toStdU16String();
         output.teacher.preferredRomanization = source.teacher.preferredRomanization.toStdU16String();
@@ -94,9 +94,9 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
     for (const auto& source : package.classes)
     {
         Application::ClassExportClass output;
-        output.key = source.key.toStdU16String();
+        output.key = Application::ClassExportClassKey{source.key.toStdU16String()};
         output.name = source.name.toStdU16String();
-        output.teacherKey = source.teacherKey.toStdU16String();
+        output.teacherKey = Application::ClassExportTeacherKey{source.teacherKey.toStdU16String()};
         output.info.classGrade = source.info.classGrade.toStdU16String();
         output.info.classLevel = source.info.classLevel.toStdU16String();
         output.info.readingBook = source.info.readingBook.toStdU16String();
@@ -132,7 +132,7 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
     for (const auto& source : package.teachers)
     {
         ::ClassTransferTeacher output;
-        output.key = QString::fromStdU16String(source.key);
+        output.key = QString::fromStdU16String(source.key.value());
         output.teacher.teacherKr = QString::fromStdU16String(source.teacher.teacherKr);
         output.teacher.teacherEn = QString::fromStdU16String(source.teacher.teacherEn);
         output.teacher.preferredRomanization = QString::fromStdU16String(source.teacher.preferredRomanization);
@@ -153,9 +153,9 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
     for (const auto& source : package.classes)
     {
         ::ClassTransferClass output;
-        output.key = QString::fromStdU16String(source.key);
+        output.key = QString::fromStdU16String(source.key.value());
         output.name = QString::fromStdU16String(source.name);
-        output.teacherKey = QString::fromStdU16String(source.teacherKey);
+        output.teacherKey = QString::fromStdU16String(source.teacherKey.value());
         output.info.classGrade = QString::fromStdU16String(source.info.classGrade);
         output.info.classLevel = QString::fromStdU16String(source.info.classLevel);
         output.info.readingBook = QString::fromStdU16String(source.info.readingBook);

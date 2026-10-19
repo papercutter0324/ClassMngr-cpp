@@ -653,6 +653,8 @@ Result<ClassTransferClass> classFromJson(
 }
 using namespace ClassMngr::Next::Application;
 QString exportText(const ClassExportText& value) { return QString::fromStdU16String(value); }
+QString exportKey(const ClassExportClassKey& value) { return QString::fromStdU16String(value.value()); }
+QString exportKey(const ClassExportTeacherKey& value) { return QString::fromStdU16String(value.value()); }
 QJsonArray exportRows(const ClassExportRows& rows)
 {
     QJsonArray result;
@@ -676,7 +678,7 @@ QJsonArray timesToJson(const std::vector<ClassExportTime>& times)
 }
 QJsonObject teacherToJson(const ClassExportTeacher& value)
 {
-    return {{QStringLiteral("key"), exportText(value.key)},
+    return {{QStringLiteral("key"), exportKey(value.key)},
         {QStringLiteral("teacher_kr"), exportText(value.teacher.teacherKr)},
         {QStringLiteral("teacher_en"), exportText(value.teacher.teacherEn)},
         {QStringLiteral("preferred_romanization"), exportText(value.teacher.preferredRomanization)},
@@ -720,8 +722,8 @@ QJsonObject classToJson(const ClassExportClass& value)
     for (const auto& evaluation : value.evaluations)
         evaluations.append(QJsonObject{{QStringLiteral("name"), exportText(evaluation.name)},
             {QStringLiteral("rows"), exportRows(evaluation.rows)}});
-    return {{QStringLiteral("key"), exportText(value.key)}, {QStringLiteral("name"), exportText(value.name)},
-        {QStringLiteral("teacher_ref"), exportText(value.teacherKey)},
+    return {{QStringLiteral("key"), exportKey(value.key)}, {QStringLiteral("name"), exportText(value.name)},
+        {QStringLiteral("teacher_ref"), exportKey(value.teacherKey)},
         {QStringLiteral("info"), classInfoToJson(value.info)},
         {QStringLiteral("roster"), rosterToJson(value.roster)},
         {QStringLiteral("speaking_evaluations"), evaluations}};

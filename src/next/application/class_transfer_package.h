@@ -1,5 +1,7 @@
 #pragma once
 
+#include "next/application/class_transfer_export_keys.h"
+
 #include <string>
 #include <vector>
 
@@ -30,10 +32,12 @@ struct ClassExportTeacherProfile
     ClassExportText roomNumber, birthday, phoneNumber, wifiName, wifiPassword, internetType;
     ClassExportText zoomId, zoomPassword, projectionType, notes;
 };
-struct ClassExportTeacher { ClassExportText key; ClassExportTeacherProfile teacher; };
+struct ClassExportTeacher { ClassExportTeacherKey key; ClassExportTeacherProfile teacher; };
 struct ClassExportClass
 {
-    ClassExportText key, name, teacherKey;
+    ClassExportClassKey key;
+    ClassExportText name;
+    ClassExportTeacherKey teacherKey;
     ClassExportInfo info;
     ClassExportRoster roster;
     std::vector<ClassExportEvaluation> evaluations;

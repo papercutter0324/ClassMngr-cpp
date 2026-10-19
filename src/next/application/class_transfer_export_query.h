@@ -78,10 +78,18 @@ public:
 
 namespace ClassTransferExportDetail
 {
-inline ClassExportText key(const char16_t* prefix, const std::size_t index)
+inline std::u16string key(const char16_t* prefix, const std::size_t index)
 {
     const std::string digits = std::to_string(index);
-    return ClassExportText(prefix) + ClassExportText(digits.begin(), digits.end());
+    return std::u16string(prefix) + std::u16string(digits.begin(), digits.end());
+}
+inline ClassExportClassKey classKey(const std::size_t index)
+{
+    return ClassExportClassKey{key(u"class-", index)};
+}
+inline ClassExportTeacherKey teacherKey(const std::size_t index)
+{
+    return ClassExportTeacherKey{key(u"teacher-", index)};
 }
 inline std::string utcTimestamp(const std::int64_t milliseconds)
 {
@@ -138,11 +146,11 @@ public:
         // performs no additional validation or reads after the transaction.
         ClassTransferPortablePackage result;
         result.exportedAtUtc = ClassTransferExportDetail::utcTimestamp(source.exportedAtUtcMilliseconds);
-        std::map<Domain::TeacherId, ClassExportText> teacherKeys;
+        std::map<Domain::TeacherId, ClassExportTeacherKey> teacherKeys;
         for (const auto& item : source.classes)
         {
             ClassExportClass output;
-            output.key = ClassTransferExportDetail::key(u"class-", item.selectedIndex + 1);
+            output.key = ClassTransferExportDetail::classKey(item.selectedIndex + 1);
             output.name = item.name;
             output.info = static_cast<const ClassExportInfo&>(item.info.value());
             output.roster = item.roster.value();
@@ -154,7 +162,7 @@ public:
                     for (const auto& teacher : source.teachers)
                         if (teacher.id == id)
                         {
-                            const auto key = ClassTransferExportDetail::key(u"teacher-", result.teachers.size() + 1);
+                            const auto key = ClassTransferExportDetail::teacherKey(result.teachers.size() + 1);
                             teacherKeys.emplace(id, key);
                             result.teachers.push_back({key, teacher.profile.value()});
                             break;

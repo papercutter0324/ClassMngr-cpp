@@ -51,7 +51,7 @@ void ClassTransferExportSourceTests::successfulSourceHasEveryRequiredStageAndSan
     QCOMPARE(item.evaluations.state(), ClassExportStageState::Value);
     QVERIFY(!item.teacher.value()); QVERIFY(source.value().teachers.empty());
     auto package = ClassTransferExportQuery(port).execute({{id(value)}}); QVERIFY(package);
-    QVERIFY(package.value().classes[0].teacherKey.empty());
+    QVERIFY(package.value().classes[0].teacherKey.value().empty());
     QVERIFY(package.value().classes[0].info.classColor == u"#FFFFFF");
     auto legacy = repository->buildPackage({value}); QVERIFY(legacy);
     QCOMPARE(legacy->classes[0].info.classId, -1); QCOMPARE(legacy->classes[0].info.teacherId, -1);
@@ -333,7 +333,9 @@ void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndShare
     insertTeacher.addBindValue(QString::fromStdU16String(expected.notes));
     QVERIFY2(insertTeacher.exec(), qPrintable(insertTeacher.lastError().text()));
     QList<int> classes;
-    for (const auto& name : {QStringLiteral("First wide class"), QStringLiteral("Second wide class")})
+    for (const auto& name : {
+             QStringLiteral("First wide class \U0001F393"),
+             QStringLiteral("Second wide class \U0001F393")})
     {
         QSqlQuery insertClass(database);
         insertClass.prepare(QStringLiteral("INSERT INTO classes(name) VALUES (?)"));
@@ -406,14 +408,14 @@ void ClassTransferExportSourceTests::wideTeacherIdentityKeepsFullProfileAndShare
     auto package = ClassTransferExportQuery(port).execute(request); QVERIFY(package);
     QCOMPARE(package.value().teachers.size(), std::size_t(1));
     QCOMPARE(package.value().classes.size(), std::size_t(2));
-    QCOMPARE(package.value().teachers[0].key, std::u16string(u"teacher-1"));
+    QCOMPARE(package.value().teachers[0].key.value(), std::u16string(u"teacher-1"));
     verifyProfile(package.value().teachers[0].teacher);
-    QCOMPARE(package.value().classes[0].key, std::u16string(u"class-1"));
-    QCOMPARE(package.value().classes[1].key, std::u16string(u"class-2"));
-    QCOMPARE(package.value().classes[0].name, std::u16string(u"Second wide class"));
-    QCOMPARE(package.value().classes[1].name, std::u16string(u"First wide class"));
+    QCOMPARE(package.value().classes[0].key.value(), std::u16string(u"class-1"));
+    QCOMPARE(package.value().classes[1].key.value(), std::u16string(u"class-2"));
+    QCOMPARE(package.value().classes[0].name, std::u16string(u"Second wide class \U0001F393"));
+    QCOMPARE(package.value().classes[1].name, std::u16string(u"First wide class \U0001F393"));
     for (const auto& item : package.value().classes)
-        QCOMPARE(item.teacherKey, package.value().teachers[0].key);
+        QCOMPARE(item.teacherKey.value(), package.value().teachers[0].key.value());
     const auto json = ClassTransferJsonCodec::toJson(package.value());
     const auto teachersJson = json.value(QStringLiteral("teachers")).toArray();
     const auto classesJson = json.value(QStringLiteral("classes")).toArray();
