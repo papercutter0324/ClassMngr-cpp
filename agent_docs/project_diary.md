@@ -8001,3 +8001,12 @@ port strings remain at the validation boundaries. The focused macOS build and
 four CTests passed. Tests preserve malformed-port errors, malformed setting
 absence, invalid-request rejection before persistence, and equal/older/newer
 date policy. The full suite and Windows verification were not run.
+
+## 2026-10-20 - F1133 accepted
+
+The F1133 boundary is the raw UTF-8 directory value carried by the file-dialog
+preference and last-database-directory ports. Use a dedicated permissive
+`DirectoryPreferencePath` with an empty value; leave path selection, fallback,
+and normalization in `QtFileDialogService` and `FileController`. Keep
+`WorkspaceLocation` scoped to workspace file paths and leave F688/F689 checked
+persistence behavior unchanged.

@@ -5754,3 +5754,15 @@ settings as absence, and equal/older/newer date behavior. `git diff --check`
 passed. The full suite and Windows verification were not run. Batch485 has
 five complete slices and five discovered; F1133 is next for acceptance. The
 batch remains unpushed. F629 and both phase gates remain open.
+
+## Phase 2 update - F1133 accepted; Batch485 active - 2026-10-20
+
+F1133 is accepted for a permissive Application `DirectoryPreferencePath` used
+by both remembered-directory ports. It owns the exact UTF-8 bytes and retains
+an empty default; construction must not trim, validate, or normalize paths.
+Keep conversions in the Platform adapters and preserve the existing empty
+fallback, canonicalization, and absolute-path rules in `QtFileDialogService`
+and `FileController`. Do not repeat or alter F688/F689 checked persistence,
+keys, rollback, or retry behavior. Implementation and verification are
+pending; F1134 is next for acceptance. Batch485 remains unpushed. F629 and both
+phase gates remain open.
