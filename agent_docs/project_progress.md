@@ -5499,3 +5499,16 @@ ordering, adapter conversion, and argument limits remain intact. The focused
 Application, Teacher Info Page, and persistence parity targets built and
 their CTests passed 3/3. Windows and full-suite verification were not run.
 F1123 is next for acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1123 accepted; Batch484 active - 2026-10-20
+
+F1123 is accepted to type only the Document Catalog metadata path fields:
+folder `path`, folder `parentPath`, and document `path`, using one opaque
+byte-preserving `DocumentCatalogPath`. Preserve unvalidated/un-normalized
+construction, existing blankness and 4,096-byte checks, empty root parent
+paths, exact uniqueness and parent matching, missing-parent/cycle behavior,
+validation order, and vector order. Keep filesystem parsing and normalization,
+document-content references, and resource paths outside scope. Focused
+Application, platform port, sidebar, and navigation parity targets are
+recorded in the Phase 2 plan. Implementation has not started. F629 and both
+phase gates remain open.

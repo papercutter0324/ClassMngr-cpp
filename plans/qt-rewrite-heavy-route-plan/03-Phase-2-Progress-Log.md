@@ -49077,3 +49077,27 @@ keys; the 256 UTF-16 code-unit value cap; and UI mapping. `git diff --check`
 passed. Windows verification and the full suite were not run. Batch484 remains
 active with five complete candidates, five discovered, and F1123 next for
 acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1123 Document Catalog path accepted before implementation - 2026-10-20
+
+F1123 is accepted/in progress. Add one opaque byte-preserving
+`DocumentCatalogPath` with `.value()` and use it only for folder `path`, folder
+`parentPath`, and document `path` in Application catalog metadata. Its
+constructor must not validate or normalize; empty and malformed-byte values
+remain intact until existing projection validation.
+
+Preserve the existing blankness rule and 4,096-byte `std::string::size()`
+bounds, including the empty `parentPath` root exception; exact path uniqueness
+and parent matching; missing-parent and cycle behavior/errors; validation
+precedence; and input-vector order. Keep platform and sidebar conversions
+exact. Exclude document IDs/keys/display names, `DocumentContentReference`,
+filesystem/resource paths, parser trimming/slash normalization/safety checks,
+content loading, and unrelated catalog behavior.
+
+Focused targets: `ClassMngrNextApplicationDocumentCatalogTests`,
+`ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests`,
+`ClassMngrSidebarStructureTests`, and
+`ClassMngrDocumentCatalogNavigationParityTests`. Implementation and tests
+have not started. Batch484 remains active with five complete candidates,
+F1123 accepted/in progress, and four discovered; F1124 is next after this
+slice. F629 and the Phase 0 and Phase 2 gates remain open.

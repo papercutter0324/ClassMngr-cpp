@@ -7858,3 +7858,12 @@ field names, and argument keys; the Qt adapter remains the conversion owner.
 Focused Application and UI verification passed 3/3, including ordering,
 limits, and empty, duplicate, unknown, and arbitrary-byte values. Windows
 and full-suite verification were not run.
+
+## 2026-10-20 - F1123 accepted
+
+Type only Document Catalog folder paths, folder parent paths, and document
+paths as one opaque `DocumentCatalogPath`. Keep raw path bytes unchanged and
+validation at the projection; preserve empty root parents, the 4,096-byte
+limit, exact hierarchy matching, failure order, and catalog vector order.
+Leave filesystem parsing/normalization and document-content references with
+their existing owners.
