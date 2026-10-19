@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1104 complete; Batch479 active)
+## Current continuation - 2026-10-20 (F1105 accepted; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6042,6 +6042,16 @@ widget test targets. Application and Platform read tests passed 8/8 and 6/6;
 the unassigned and assigned widget selectors passed 3/3 each.
 `git diff --check` passed. The broader widget interaction run stalled in a
 modal case and was interrupted; no full widget suite result is claimed. Batch479
-remains active with F1105 next for acceptance reassessment and F1106-F1108
-discovered. The combined Phase 0 and Phase 2 gates remain open; Windows x64
-evidence remains unavailable.
+remains active with F1104 complete, F1105 accepted but not implemented, and
+F1106-F1108 discovered.
+
+F1105 types `CampusDashboardSelectedCampusReadRequest.campusId` as
+`Domain::CampusId`. Keep the page's empty-selection early return and encode the
+selected `QString` through `toUtf8()` before constructing the ID. The query
+continues rejecting Qt whitespace-only values and values over 256 UTF-8 bytes;
+exactly 256 bytes remains valid. Empty IDs are unrepresentable in the request,
+so the page boundary retains the empty-selection behavior. Preserve exact
+typed-ID result matching, the existing mismatch error, port failures, and
+successful absence. Do not trim, normalize, case-fold, or add new malformed
+UTF-8 rejection. No F1105 implementation has started. The combined Phase 0 and
+Phase 2 gates remain open; Windows x64 evidence remains unavailable.

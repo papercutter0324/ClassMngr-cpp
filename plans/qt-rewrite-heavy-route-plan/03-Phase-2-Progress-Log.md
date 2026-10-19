@@ -47657,3 +47657,28 @@ stalled; no full widget suite result is claimed. `git diff --check` passed.
 Batch479 remains active and unpushed: F1104 is complete, F1105 is next for
 acceptance reassessment, and F1106-F1108 remain discovered. Batch478's pushed
 closeout remains `5877b296c0c9a032adeeeb9cbfb807e19765e40a`.
+
+### F1105 Campus Dashboard selected-campus request accepted before implementation - 2026-10-20
+
+F1105 is accepted for Batch479 and implementation has not started, following
+main-agent source review and the Explorer's read-only report. Change
+`CampusDashboardSelectedCampusReadRequest.campusId` from `std::string` to
+`Domain::CampusId`; at the Campus Dashboard page boundary, construct it from
+the selected `QString` via `toUtf8()`. The existing read port, adapter,
+result, and snapshot already use `Domain::CampusId`; include them only if
+compile integration requires it, without semantic changes.
+
+Preserve the empty-selection early return; empty IDs become unrepresentable
+in the typed request because `TypedId::fromString` rejects empty input. Keep
+the query's Qt-compatible whitespace-only rejection and 256-byte UTF-8 limit
+measured from `request.campusId.value()`: exactly 256 bytes is allowed and
+more than 256 is rejected. Preserve exact UTF-8 bytes at the page boundary;
+do not trim, normalize, case-fold, or add malformed-UTF-8 rejection. Keep
+exact typed-ID result matching, the existing nonrecoverable `Technical`
+mismatch error/message, port errors, and successful absence. Do not broaden
+the slice into snapshots, repositories, or unrelated UI fields.
+
+Focused coverage must exercise non-ASCII IDs at both the Application and page
+boundaries, Unicode whitespace, the exact/over 256-byte boundary, and the
+existing empty-selection behavior. No implementation or test execution has
+started.

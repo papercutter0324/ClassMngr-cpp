@@ -7496,3 +7496,12 @@ passed 3/3 each. The strict literal `-1` check preserves the sentinel after
 typing the ID; `-01` remains invalid. The broader widget interaction run
 stalled in a modal case and was interrupted, so no full widget suite result is
 claimed. F1105 is next for reassessment in Batch479.
+
+## 2026-10-20 - F1105 accepted
+
+F1105 types the selected-campus read request as `Domain::CampusId`. Keep the
+page's empty-selection guard and its explicit `QString::toUtf8()` boundary;
+the query still applies Qt-compatible whitespace checks and a 256-byte limit
+to the typed value. Empty IDs cannot be constructed, so the existing page
+guard preserves that case. Keep exact result-ID matching and do not add
+normalization or new UTF-8 rejection.

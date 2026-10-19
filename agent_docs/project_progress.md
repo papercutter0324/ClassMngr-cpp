@@ -4974,3 +4974,20 @@ run stalled in a modal case and was interrupted; no full widget suite result
 is claimed. Batch479 remains active, with F1105 next for acceptance
 reassessment and F1106-F1108 discovered. Batch479 has not been pushed; the
 Phase 0 gate and Phase 2 exit gate remain open.
+
+## Phase 2 update - F1105 accepted; Batch479 active - 2026-10-20
+
+F1105 is accepted for implementation; no implementation has started. Type
+`CampusDashboardSelectedCampusReadRequest.campusId` as `Domain::CampusId`,
+keeping the existing typed port, adapter, result, and snapshot. The Campus
+Dashboard page keeps its empty-selection early return and explicitly encodes
+the selected value through `QString::toUtf8()` before constructing the typed
+ID.
+
+The query continues rejecting Qt-compatible whitespace-only IDs and values
+over 256 UTF-8 bytes; exactly 256 bytes remains valid. Empty values cannot be
+represented in the typed request, so the existing page guard preserves that
+behavior. Preserve exact returned-ID matching and the nonrecoverable Technical
+mismatch error, port failures, successful absence, and current handling of
+malformed UTF-8. Do not trim, normalize, or case-fold. F1106-F1108 remain
+discovered; Batch479 is unpushed and the Phase 0 and Phase 2 gates remain open.
