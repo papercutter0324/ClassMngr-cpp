@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch476 is complete with F1097; F1098 is the sole Batch477 discovery and is next for acceptance, not yet accepted. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
+- Current note: Batch476 is complete and pushed with F1097 complete; F1098 is the sole Batch477 slice, accepted and selected for implementation. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch477 (1 discovered candidate)
+#### Active batch: Batch477 (1 accepted slice)
 
-Batch476 is complete with F1097 at source/test commit `a7074fc`; its closeout commit and push remain pending these documentation edits. Its acceptance and verification are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch477 has one discovered candidate:
+Batch476 is complete with F1097 at source/test commit `a7074fc`; its closeout was pushed to `origin/Qt-Rewrite` at `0cb01ef7`. Its acceptance and verification are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch477 has one accepted slice:
 
-1. F1098 - Type Calendar repeat-series identity: discovered; next for acceptance; not yet accepted.
+1. F1098 - Type Calendar repeat-series identity: accepted and selected for implementation.
 
 No other slices were found.
 

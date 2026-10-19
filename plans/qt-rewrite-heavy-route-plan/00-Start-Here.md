@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch476 is complete with F1097 at source/test commit `a7074fc`; its closeout commit and push remain pending these documentation edits. Batch477 has one discovered candidate, F1098, next for acceptance and not yet accepted. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch477-1-discovered-candidate) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch476 is complete and pushed to `origin/Qt-Rewrite` at `0cb01ef7`, with F1097 complete at source/test commit `a7074fc`. Batch477 has one accepted and selected slice, F1098; its acceptance was recorded before implementation. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch477-1-accepted-slice) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch477 — Discovered; one candidate, next for acceptance:**
+**Batch477 — Active; one accepted slice, selected for implementation:**
 
-1. **F1098 — Type Calendar repeat-series identity.** Discovered; next for acceptance; not yet accepted.
+1. **F1098 — Type Calendar repeat-series identity.** Accepted and selected for implementation.
 
 No other slices were found.
 

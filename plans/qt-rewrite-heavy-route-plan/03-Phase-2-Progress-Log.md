@@ -47081,3 +47081,47 @@ F629 remains separate Phase 0 work. The combined Phase 0 gate remains Open
 pending Windows x64 evidence; the Phase 2 exit gate remains Open, Gates 1 and 2
 remain Partial, and F1007 remains pending policy reconciliation. Batch477 has
 one candidate; no other slices were found.
+
+### F1098 Calendar repeat-series identity acceptance - recorded before implementation - 2026-10-19
+
+Batch476 is complete and pushed to `origin/Qt-Rewrite` at
+`0cb01ef705250f951f46a6b35428ee9b64588866`. F1098 is accepted and selected as
+the sole Batch477 slice. It is a Phase 2.1 type-contract gap, not a newly found
+runtime defect. The Batch276 observation that no runtime behavior defect was
+visible remains accurate; the explicit typed-identifier objective and F1097's
+focused occurrence-identity contract make F1098 actionable now.
+
+1. Add a distinct `Domain::CalendarEventSeriesId` using the existing typed-ID
+   pattern, separate from `Domain::CalendarEventId`.
+2. Carry `CalendarEventSeriesId` through Application series-identity
+   contracts: optional `CalendarEventSummary.repeatSeriesId`,
+   `CalendarEventEditDraft.repeatSeriesId`,
+   `CalendarEventSeriesCreateRequest.repeatSeriesId`,
+   `CalendarEventSeriesDeleteRequest.repeatSeriesId`,
+   `CalendarEventSeriesEditRequest.repeatSeriesId`, and required
+   `CalendarEventSeriesEditOccurrenceUpdate.repeatSeriesId`. Type
+   `planCalendarEventRepeatOccurrences` and `CalendarEventSeriesCreateUseCase`
+   parameters that currently pass a raw series-ID string as needed to keep the
+   flow typed within Application. Use optional typed request values where
+   needed so absent or empty input remains representable and produces the
+   existing `InvalidInput` outcome. Do not retain parallel raw-string identity
+   in these Application contracts.
+3. Preserve current boundaries and validation: blank, whitespace-only, or
+   oversized IDs remain `InvalidInput` with existing validation order and
+   messages. Projection keeps Qt `trimmed()` normalization and UTF-8/bounds
+   behavior; create/delete preserve their current ID text exactly without new
+   trimming; edit planning keeps its existing ASCII trim. Preserve optional
+   no-series behavior and event order. Convert legacy `QString` and stored
+   values to/from the type at existing UI/platform boundaries. Do not change
+   schema or persisted text format.
+4. Extend existing tests for typed series identity, absent/blank/oversized
+   validation, legacy normalization and preservation, and create/delete/edit,
+   projection, and UI behavior through current targets. Build `ClassMngr`,
+   `ClassMngrNextApplicationCalendarEventTests`,
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`,
+   `ClassMngrCalendarEventCacheTests`, `ClassMngrDialogShellTests`, and
+   `ClassMngrCalendarPageEventMutationParityTests`; run their focused CTests
+   and `git diff --check`. Add no CMake target.
+
+F1098 acceptance design was recorded before implementation. F54 and F1096
+event-type decisions are unchanged.
