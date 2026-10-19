@@ -7952,3 +7952,12 @@ When the macOS application link reported broad missing symbols despite compiled
 objects defining them, the existing generated build tree was inconsistent;
 clearing and reconfiguring the same preset restored the archive and link. This
 avoided an unnecessary source or CMake change.
+
+## 2026-10-20 - F1129 complete
+
+The raw teacher identity in the Class Details validation context has distinct
+Application semantics from the downstream `Domain::TeacherId`: it preserves
+the `-1` fallback, explicit `-2`, and wide signed values before the save
+workflow applies its existing conversion and validation. A permissive
+`ClassDetailsValidationContextTeacherId` makes that boundary explicit without
+moving or weakening downstream validation.

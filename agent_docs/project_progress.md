@@ -5655,3 +5655,15 @@ explicit `-2`, and `2147483648`. Keep the later `TeacherId` conversion and
 downstream validation unchanged. Implementation and tests have not started.
 Batch485 has one complete slice, one accepted/in progress, and eight discovered;
 F1130 is next. F629 and both phase gates remain open.
+
+## Phase 2 update - F1129 complete - 2026-10-20
+
+F1129 completed at source/test commit `596ed1f6`, following acceptance
+`53115d66`. The new permissive `ClassDetailsValidationContextTeacherId`
+types both context identity fields while preserving raw `-1`, `-2`, and wide
+int64 values. The platform adapter wraps `qint64`; the save workflow unwraps
+at the existing `TeacherId` conversion. `ClassMngr` and all three focused
+targets built; the Application query, platform adapter, and save-use-case
+CTests passed 3/3. Windows and full-suite verification were not run. Batch485
+has two complete slices and eight discovered; F1130 is next for acceptance.
+F629 and both phase gates remain open.
