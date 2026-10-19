@@ -998,9 +998,18 @@ QList<int> classIdsForDays(
                 );
             for (const ScheduleEntry& entry : cell.entries)
             {
+                const auto classId =
+                    ClassMngr::Next::Domain::ClassId::fromString(
+                        std::to_string(entry.classId)
+                        );
+                if (!classId)
+                {
+                    continue;
+                }
+
                 applicationCell.entries.push_back(
                     {
-                        .classId = entry.classId,
+                        .classId = *classId,
                         .kind = applicationEntryKind(entry.kind)
                     }
                     );
@@ -1010,15 +1019,20 @@ QList<int> classIdsForDays(
         scheduleRows.push_back(std::move(applicationRow));
     }
 
-    const std::vector<int> projectedIds = projectSubPrepSelectedClassIds(
-        selectedDayCodeUnits,
-        scheduleRows
-        );
+    const std::vector<ClassMngr::Next::Domain::ClassId> projectedIds =
+        projectSubPrepSelectedClassIds(
+            selectedDayCodeUnits,
+            scheduleRows
+            );
     QList<int> ids;
     ids.reserve(static_cast<qsizetype>(projectedIds.size()));
-    for (const int id : projectedIds)
+    for (const ClassMngr::Next::Domain::ClassId& id : projectedIds)
     {
-        ids.append(id);
+        const std::optional<int> legacyClassId = legacyId(id.value());
+        if (legacyClassId)
+        {
+            ids.append(*legacyClassId);
+        }
     }
     return ids;
 }

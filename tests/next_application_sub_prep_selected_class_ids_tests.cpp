@@ -2,13 +2,34 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next::Application;
+using ClassMngr::Next::Domain::ClassId;
 
 namespace
 {
+
+ClassId typedClassId(std::string_view value)
+{
+    return *ClassId::fromString(value);
+}
+
+using Projection = decltype(projectSubPrepSelectedClassIds(
+    std::declval<const std::vector<std::u16string>&>(),
+    std::declval<const std::vector<SubPrepSelectedClassScheduleRow>&>()
+    ));
+
+static_assert(std::is_same_v<
+    decltype(SubPrepSelectedClassScheduleEntry::classId),
+    ClassId
+    >);
+static_assert(std::is_same_v<Projection, std::vector<ClassId>>);
 
 bool emptyInputsReturnNoClassIds()
 {
@@ -19,7 +40,10 @@ bool emptyInputsReturnNoClassIds()
             ).empty()
         && projectSubPrepSelectedClassIds(
             {},
-            {{.cells = {{.day = u"Monday", .entries = {{42}}}}}}
+            {{.cells = {{
+                .day = u"Monday",
+                .entries = {{typedClassId("42")}}
+            }}}}
             ).empty();
 }
 
@@ -28,7 +52,10 @@ bool selectedDayMatchingIsCanonicalAndExact()
     const std::vector<SubPrepSelectedClassScheduleRow> rows{
         {
             .cells = {
-                {.day = u"Monday", .entries = {{42}}}
+                {
+                    .day = u"Monday",
+                    .entries = {{typedClassId("42")}}
+                }
             }
         }
     };
@@ -37,10 +64,10 @@ bool selectedDayMatchingIsCanonicalAndExact()
         && projectSubPrepSelectedClassIds({u" Monday"}, rows).empty()
         && projectSubPrepSelectedClassIds({u"Monday "}, rows).empty()
         && projectSubPrepSelectedClassIds({u"Monday"}, rows)
-            == std::vector<int>{42};
+            == std::vector<ClassId>{typedClassId("42")};
 }
 
-bool positiveIdsAreDeduplicatedGloballyAtTheirFirstOccurrence()
+bool positiveIdsAreDeduplicatedNumericallyAndCanonicalized()
 {
     const std::vector<SubPrepSelectedClassScheduleRow> rows{
         {
@@ -48,19 +75,20 @@ bool positiveIdsAreDeduplicatedGloballyAtTheirFirstOccurrence()
                 {
                     .day = u"Monday",
                     .entries = {
-                        {-3},
-                        {0},
-                        {42},
-                        {17},
-                        {42}
+                        {typedClassId("-3")},
+                        {typedClassId("0")},
+                        {typedClassId("00042")},
+                        {typedClassId("17")},
+                        {typedClassId("42")}
                     }
                 },
                 {
                     .day = u"Monday",
                     .entries = {
-                        {17},
-                        {99},
-                        {0}
+                        {typedClassId("017")},
+                        {typedClassId("99")},
+                        {typedClassId("00099")},
+                        {typedClassId("0")}
                     }
                 }
             }
@@ -69,14 +97,62 @@ bool positiveIdsAreDeduplicatedGloballyAtTheirFirstOccurrence()
             .cells = {
                 {
                     .day = u"Monday",
-                    .entries = {{42}, {101}}
+                    .entries = {
+                        {typedClassId("42")},
+                        {typedClassId("101")}
+                    }
                 }
             }
         }
     };
 
     return projectSubPrepSelectedClassIds({u"Monday"}, rows)
-        == std::vector<int>{42, 17, 99, 101};
+        == std::vector<ClassId>{
+            typedClassId("42"),
+            typedClassId("17"),
+            typedClassId("99"),
+            typedClassId("101")
+        };
+}
+
+bool onlyFullyParsedPositiveIntValuesAreReturned()
+{
+    const std::string maximum = std::to_string(
+        std::numeric_limits<int>::max()
+        );
+    const std::string overflow = std::to_string(
+        static_cast<long long>(std::numeric_limits<int>::max()) + 1
+        );
+    const std::string underflow = std::to_string(
+        static_cast<long long>(std::numeric_limits<int>::min()) - 1
+        );
+    const std::vector<SubPrepSelectedClassScheduleRow> rows{
+        {
+            .cells = {
+                {
+                    .day = u"Monday",
+                    .entries = {
+                        {typedClassId("1")},
+                        {typedClassId(maximum)},
+                        {typedClassId("not-a-number")},
+                        {typedClassId("42tail")},
+                        {typedClassId(" 42")},
+                        {typedClassId("42 ")},
+                        {typedClassId("0x2a")},
+                        {typedClassId("+42")},
+                        {typedClassId(overflow)},
+                        {typedClassId("0")},
+                        {typedClassId("-0")},
+                        {typedClassId("-42")},
+                        {typedClassId(underflow)}
+                    }
+                }
+            }
+        }
+    };
+
+    return projectSubPrepSelectedClassIds({u"Monday"}, rows)
+        == std::vector<ClassId>{typedClassId("1"), typedClassId(maximum)};
 }
 
 bool scheduleTraversalDefinesOutputOrderIndependentOfSelectionOrder()
@@ -84,14 +160,26 @@ bool scheduleTraversalDefinesOutputOrderIndependentOfSelectionOrder()
     const std::vector<SubPrepSelectedClassScheduleRow> rows{
         {
             .cells = {
-                {.day = u"Monday", .entries = {{10}, {11}}},
-                {.day = u"Wednesday", .entries = {{20}}}
+                {
+                    .day = u"Monday",
+                    .entries = {{typedClassId("10")}, {typedClassId("11")}}
+                },
+                {
+                    .day = u"Wednesday",
+                    .entries = {{typedClassId("20")}}
+                }
             }
         },
         {
             .cells = {
-                {.day = u"Friday", .entries = {{30}}},
-                {.day = u"Monday", .entries = {{12}}}
+                {
+                    .day = u"Friday",
+                    .entries = {{typedClassId("30")}}
+                },
+                {
+                    .day = u"Monday",
+                    .entries = {{typedClassId("12")}}
+                }
             }
         }
     };
@@ -99,7 +187,12 @@ bool scheduleTraversalDefinesOutputOrderIndependentOfSelectionOrder()
     return projectSubPrepSelectedClassIds(
         {u"Wednesday", u"Monday"},
         rows
-        ) == std::vector<int>{10, 11, 20, 12};
+        ) == std::vector<ClassId>{
+            typedClassId("10"),
+            typedClassId("11"),
+            typedClassId("20"),
+            typedClassId("12")
+        };
 }
 
 bool regularAndTestingEntriesAreBothIncluded()
@@ -111,12 +204,12 @@ bool regularAndTestingEntriesAreBothIncluded()
                     .day = u"Tuesday",
                     .entries = {
                         {
-                            .classId = 51,
+                            .classId = typedClassId("51"),
                             .kind = SubPrepSelectedClassScheduleEntryKind::
                                 RegularClass
                         },
                         {
-                            .classId = 62,
+                            .classId = typedClassId("62"),
                             .kind = SubPrepSelectedClassScheduleEntryKind::
                                 TestingClass
                         }
@@ -127,7 +220,7 @@ bool regularAndTestingEntriesAreBothIncluded()
     };
 
     return projectSubPrepSelectedClassIds({u"Tuesday"}, rows)
-        == std::vector<int>{51, 62};
+        == std::vector<ClassId>{typedClassId("51"), typedClassId("62")};
 }
 
 } // namespace
@@ -144,9 +237,14 @@ int main()
         std::fprintf(stderr, "Sub Prep selected days should match exact canonical text.\n");
         return EXIT_FAILURE;
     }
-    if (!positiveIdsAreDeduplicatedGloballyAtTheirFirstOccurrence())
+    if (!positiveIdsAreDeduplicatedNumericallyAndCanonicalized())
     {
-        std::fprintf(stderr, "Sub Prep IDs should be positive and globally first-seen.\n");
+        std::fprintf(stderr, "Sub Prep IDs should be positive, canonical, and first-seen.\n");
+        return EXIT_FAILURE;
+    }
+    if (!onlyFullyParsedPositiveIntValuesAreReturned())
+    {
+        std::fprintf(stderr, "Sub Prep IDs should be fully parsed positive ints.\n");
         return EXIT_FAILURE;
     }
     if (!scheduleTraversalDefinesOutputOrderIndependentOfSelectionOrder())

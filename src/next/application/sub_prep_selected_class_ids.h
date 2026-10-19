@@ -1,7 +1,11 @@
 #pragma once
 
+#include "next/domain/domain_types.h"
+
 #include <algorithm>
+#include <charconv>
 #include <string>
+#include <system_error>
 #include <unordered_set>
 #include <vector>
 
@@ -16,7 +20,7 @@ enum class SubPrepSelectedClassScheduleEntryKind
 
 struct SubPrepSelectedClassScheduleEntry final
 {
-    int classId{-1};
+    Domain::ClassId classId;
     SubPrepSelectedClassScheduleEntryKind kind =
         SubPrepSelectedClassScheduleEntryKind::RegularClass;
 };
@@ -35,7 +39,8 @@ struct SubPrepSelectedClassScheduleRow final
 // Projects selected class identifiers in schedule display order. Day values
 // are compared as exact UTF-16 code-unit sequences; every entry kind is
 // included, and the first positive occurrence of each ID wins.
-[[nodiscard]] inline std::vector<int> projectSubPrepSelectedClassIds(
+[[nodiscard]] inline std::vector<Domain::ClassId>
+projectSubPrepSelectedClassIds(
     const std::vector<std::u16string>& selectedDays,
     const std::vector<SubPrepSelectedClassScheduleRow>& scheduleRows
     )
@@ -45,7 +50,7 @@ struct SubPrepSelectedClassScheduleRow final
         return {};
     }
 
-    std::vector<int> classIds;
+    std::vector<Domain::ClassId> classIds;
     std::unordered_set<int> seenClassIds;
 
     for (const SubPrepSelectedClassScheduleRow& row : scheduleRows)
@@ -60,10 +65,28 @@ struct SubPrepSelectedClassScheduleRow final
 
             for (const SubPrepSelectedClassScheduleEntry& entry : cell.entries)
             {
-                if (entry.classId > 0
-                    && seenClassIds.insert(entry.classId).second)
+                const std::string& value = entry.classId.value();
+                int parsedId = 0;
+                const auto [end, error] = std::from_chars(
+                    value.data(),
+                    value.data() + value.size(),
+                    parsedId,
+                    10
+                    );
+                if (error != std::errc{}
+                    || end != value.data() + value.size()
+                    || parsedId <= 0
+                    || !seenClassIds.insert(parsedId).second)
                 {
-                    classIds.push_back(entry.classId);
+                    continue;
+                }
+
+                const auto canonicalId = Domain::ClassId::fromString(
+                    std::to_string(parsedId)
+                    );
+                if (canonicalId)
+                {
+                    classIds.push_back(*canonicalId);
                 }
             }
         }
