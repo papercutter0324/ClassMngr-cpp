@@ -5961,7 +5961,7 @@ case and unchanged Discard behavior, commit the slice, then close and push
 Batch463. Gates 1/2 remain Partial, F1007 remains pending policy reconciliation,
 and the Phase 2 exit gate remains Open.
 
-## Current continuation - 2026-10-19 (F1099 complete; F1100 selected)
+## Current continuation - 2026-10-19 (F1099 complete; F1100 accepted)
 
 Active deployment ID: `phase2-f1094-20261019`. Heavy remains the Phase 2 route.
 Batch477 is complete and pushed to `origin/Qt-Rewrite` at
@@ -5977,13 +5977,16 @@ and Calendar Page mutation parity tests. The three focused CTests passed 3/3;
 `git diff --check` passed. This was local macOS arm64/Qt 6.12 evidence; no fresh
 configure or full suite ran.
 
-Batch478 remains active with five entries: F1099 is complete; F1100 is selected
-next for acceptance; F1101 remains a lower-confidence CampusId snapshot typing
-decision under F23; F1102 remains discovered with the unassigned sentinel and
-wide teacher IDs to preserve; F1103 is deferred pending parity/policy
-reconciliation. The Phase 2 operational docs and main-owned progress/diary notes
-are being updated with this slice closeout. Two independent read-only explorers
-found no newly actionable Deferred/Gate-derived slice.
+Batch478 remains active with five entries: F1099 is complete; F1100 is accepted
+for typed `ClassId` through Sub Prep visible-class ordering; F1101 remains a
+lower-confidence CampusId snapshot typing decision under F23; F1102 remains
+discovered with the unassigned sentinel and wide teacher IDs to preserve; F1103
+is deferred pending parity/policy reconciliation. F1100 acceptance preserves
+the F1017 tuple order, lexical ID tie-break, literal sentinels, stable ties,
+model-owned label/rank/filtering, and sorted-first selection fallback. Its
+focused targets are the app-less ordering policy, model, and page tests. Two
+independent read-only explorers found no newly actionable Deferred/Gate-derived
+slice.
 
 Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2

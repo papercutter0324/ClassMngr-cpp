@@ -47270,3 +47270,53 @@ teacher IDs. F1103 remains deferred pending parity/policy reconciliation.
 The combined Phase 0 gate remains Open while Windows x64 evidence is
 unavailable; the Phase 2 exit gate remains Open, Gates 1 and 2 remain Partial,
 and F1007 remains pending policy reconciliation.
+
+### F1100 Sub Prep visible-class ordering identity acceptance - recorded before implementation - 2026-10-19
+
+F1100 is accepted and selected for implementation as the next Batch478
+slice. Direct source review confirmed that `ClassSummary.id` is
+`Domain::ClassId`, but `SubPrepClassInformationListModel::rebuildVisibleRows()`
+converts it to `.value()` for `SubPrepVisibleClassOrderingFact.classId`, a
+`std::string` compared lexically by the Qt-free ordering policy. The default
+three-way comparison for `Domain::TypedId` delegates to its underlying
+`std::string`, preserving this lexical order, including textual rather than
+numeric ordering.
+
+F1017 established the existing tuple priority and first-visible fallback:
+configured-level rank, navigation day, navigation minute, injected base-label
+comparison, then class ID; unknown numeric sentinels compare literally, and
+stable sorting preserves input order for exact tuple ties. Its page regression
+confirms that when selected class 42 disappears from ordered rows `[44, 43]`,
+row 44 is selected and loaded. The review found no conflicting F1100
+deferral.
+
+Acceptance criteria:
+
+1. Keep `Domain::ClassId` typed from `ClassSummary.id` through the Qt-free
+   ordering fact. Do not convert identity to a raw string in the Application
+   policy/model boundary.
+2. Preserve sort priority exactly: configured-level rank, navigation day,
+   navigation minute, injected base-label comparison, then lexical
+   `ClassId` order. Preserve literal numeric sentinel ordering (unknown 1000
+   before 1020) and stable input order for exact ties.
+3. Keep filtering, configured-level rank calculation, base-label preparation,
+   and `QString::localeAwareCompare` in the Qt feature model. Preserve the
+   current selection when it remains visible; if it disappears, select the
+   first sorted row and load its details.
+4. Update only existing tests needed for the production change: app-less
+   ordering policy tests and existing model/page targets. Add no CMake target
+   and make no test-only changes.
+5. Build `ClassMngr`,
+   `ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests`,
+   `ClassMngrSubPrepClassInformationListModelTests`, and
+   `ClassMngrSubPrepPageTests`; run only those three focused CTest selectors.
+   Do not run the full suite.
+
+F1100 acceptance is recorded before implementation. F1099 remains complete;
+F1101 remains unresolved at lower confidence under F23's owning UTF-8 snapshot
+contract; F1102 remains discovered for reassessment after preceding Batch478
+items, preserving the `-1` unassigned-teacher sentinel and wide teacher IDs;
+F1103 remains deferred pending parity/policy reconciliation. The combined
+Phase 0 gate remains Open while Windows x64 evidence is unavailable; the
+Phase 2 exit gate remains Open, Gates 1 and 2 remain Partial, and F1007 remains
+pending policy reconciliation.

@@ -4814,3 +4814,19 @@ reassessment after earlier entries, and F1103 remains deferred.
 The combined Phase 0 gate remains open because Windows x64 evidence is
 unavailable. The Phase 2 exit gate remains open, Gates 1/2 remain Partial, and
 F1007 remains pending policy reconciliation.
+
+## Phase 2 update - F1100 accepted - 2026-10-19
+
+F1100 is accepted as the next Batch478 slice. Keep `Domain::ClassId` typed
+through the Sub Prep visible-class ordering fact. `TypedId`'s default ordering
+compares the underlying string, preserving the existing lexical class-ID
+tie-break. Preserve the F1017 sort tuple, literal numeric sentinels, stable
+exact ties, model-owned rank/label/filtering, and sorted-first selection
+fallback. Focused verification will build the application, ordering policy,
+visible-class model, and Sub Prep page targets and run their exact CTests only.
+
+Batch478 remains active; F1099 is complete and F1100 is accepted before
+implementation. F1101 remains lower-confidence, F1102 remains to be
+reassessed, and F1103 remains deferred. The combined Phase 0 and Phase 2 exit
+gates remain open; Gates 1/2 remain Partial, and F1007 awaits policy
+reconciliation.
