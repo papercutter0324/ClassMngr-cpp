@@ -6108,7 +6108,13 @@ Batch479 closeout commit `8a2f11318b54425c58bfadc83fa1526af1d69091` was
 pushed to `origin/Qt-Rewrite`; the remote matched and the worktree is clean.
 Batch480 has two
 ordered candidates recorded: F1109 for typed Class Tab ordering facts, then
-F1110 for typed roster-transfer eligibility. F1109 is next for acceptance
-reassessment. The combined Phase 0 gate remains open because F629 still needs
-source-bound Windows x64 layout evidence, which the user cannot run right now;
-the Phase 2 gate also remains open.
+F1110 for typed roster-transfer eligibility. F1109 is accepted for
+implementation; implementation has not started. Type only the Application
+ordering fact ID and adapt the feature boundary; preserve signed numeric ID
+comparison, tuple priorities, and exact ties. Parse arbitrary typed text fully
+as `int32_t`, sorting valid IDs numerically before malformed text with
+deterministic lexical handling. Keep `-1` as the typed default and leave
+UI/persistence IDs as integers. Batch481 discovery is underway. The combined
+Phase 0 gate remains open because F629 still needs source-bound Windows x64
+layout evidence, which the user cannot run right now; the Phase 2 gate also
+remains open.

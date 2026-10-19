@@ -5117,3 +5117,15 @@ discovered. Batch479 closeout commit
 `origin/Qt-Rewrite`; the remote matched and the worktree is clean. F629 and the
 combined Phase 0 gate remain open pending Windows x64 evidence; Phase 2 also
 remains open.
+
+## Phase 2 update - F1109 accepted; Batch480 active - 2026-10-20
+
+F1109 is accepted for implementation; no implementation or tests have
+started. Type only `ClassTabNavigationOrderingFact.classId` as
+`Domain::ClassId` and adapt the existing feature boundary from its integer
+model. Preserve the signed numeric `int32_t` final tie-break, the prior tuple
+fields and injected label comparison, typed `-1` default, and exact-tie
+behavior. Parse full numeric strings and provide deterministic ordering for
+malformed/out-of-range typed values; keep UI and persistence IDs unchanged.
+Batch480 remains active with F1109 accepted and F1110 discovered. Batch481
+discovery is underway.

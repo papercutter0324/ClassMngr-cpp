@@ -47919,3 +47919,35 @@ clean, and the branch was up to date. Batch480 is active from the discovery
 record above, with F1109 next for acceptance reassessment and F1110 discovered.
 F629 remains active pending Windows x64 layout evidence, which the user cannot
 run now. The Phase 0 and Phase 2 gates remain Open.
+
+### F1109 Class Tab ordering fact identity accepted before implementation - 2026-10-20
+
+F1109 is accepted for Batch480, with implementation and tests not started,
+following main-agent review of Explorer report `F1109_ACCEPTANCE_SURFACE` and
+the source. Change only `Application::ClassTabNavigationOrderingFact.classId`
+from `std::int32_t` to `Domain::ClassId`, retaining a typed default of `"-1"`.
+At `orderingFact(ClassEntry)`, construct a canonical decimal ID from the
+existing int. Keep `ClassEntry.classId`, `ClassTab.classId`, selection models,
+and persistence integer-based. This slice is distinct from F1019 sorting
+behavior and F1107 Sub Prep ordering.
+
+Preserve all signed `int32_t` values, including the `-1` sentinel, and do not
+filter or change upstream visibility. Preserve tuple priority: grade, level,
+earliest schedule day, earliest start minute, injected locale-aware base
+label, then class ID. The final ID tie-break remains numeric. To handle
+arbitrary nonempty public typed facts, fully parse with `std::from_chars` into
+`int32_t`: parseable values sort before malformed/out-of-range text; parsed
+IDs compare numerically, numeric aliases compare lexically, and malformed or
+out-of-range values compare lexically. Keep this a deterministic strict weak
+order with identical facts false in both directions. Preserve exact
+`UnknownOrder=1000` collision fallthrough and all existing ranks and labels.
+
+Focused policy tests must retain 2-vs-10 ordering, tuple priority, injected
+label comparison, sentinel collision, and exact ties; adapt fixtures to typed
+IDs and cover signed boundaries, typed default `-1`, numeric aliases, and
+malformed/out-of-range deterministic ordering without throws. Add a feature
+model regression using reversed input with equal earlier tuple fields and IDs
+2 and 10, while keeping integer output unchanged. Targets are
+`ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests` and
+`ClassMngrClassTabNavigationModelTests`. Do not change UI/persistence models
+or unrelated sorting behavior. No execution results are recorded.

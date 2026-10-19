@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch479 is complete and its closeout was pushed to `origin/Qt-Rewrite` at `8a2f11318b54425c58bfadc83fa1526af1d69091`. Batch480 is active with F1109 next for acceptance reassessment and F1110 discovered. F629 remains active pending Windows x64 layout evidence, which the user cannot run now; the Phase 0 and Phase 2 gates remain Open. See the [active Batch480 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch480-2-candidates-1-next-for-reassessment-1-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification and closeout details.
+- Current milestone: Batch479 is complete and its closeout was pushed to `origin/Qt-Rewrite` at `8a2f11318b54425c58bfadc83fa1526af1d69091`. Batch480 is active with F1109 accepted but not implemented and F1110 discovered. F629 remains active pending Windows x64 layout evidence, which the user cannot run now; the Phase 0 and Phase 2 gates remain Open. See the [active Batch480 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch480-2-candidates-1-accepted-1-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for acceptance details.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,9 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch480 — Active; two candidates, one next for acceptance reassessment, one discovered:**
+**Batch480 — Active; two candidates, one accepted, one discovered:**
 
-1. **F1109 — Carry typed `ClassId` through Class Tab ordering facts.** Next for acceptance reassessment; preserve tuple priorities, numeric final ID tie-break, and exact-tie semantics.
+1. **F1109 — Carry typed `ClassId` through Class Tab ordering facts.** Accepted, implementation not started; preserve tuple priorities, numeric final ID tie-break, and exact-tie semantics.
 2. **F1110 — Carry typed `ClassId` through roster-transfer eligibility.** Discovered; preserve positive numeric validity, no reads for invalid/current targets, Qt-whitespace grade trimming, case-sensitive grade equality, candidate order, and duplicates.
 
 No other slices were found.

@@ -7572,3 +7572,13 @@ identity rules; returning canonical IDs prevents text aliases from leaking
 past the policy. Focused policy and service projection tests passed; no full
 suite ran. Batch479 closeout was pushed to `origin/Qt-Rewrite` at
 `8a2f11318b54425c58bfadc83fa1526af1d69091`; the remote matched.
+
+## 2026-10-20 - F1109 accepted
+
+Type the Class Tab ordering fact's class ID, adapting the existing integer
+feature model at the Application boundary. Preserve the full signed numeric
+tie-break after grade, level, schedule day, start minute, and injected
+locale-aware label comparison. Keep the `-1` default and exact-tie behavior.
+Because typed IDs allow arbitrary text, compare full `int32_t` parses
+numerically and order malformed/out-of-range values deterministically, while
+keeping UI and persistence models integer-based.
