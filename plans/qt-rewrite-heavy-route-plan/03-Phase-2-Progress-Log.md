@@ -50245,9 +50245,10 @@ focused test surfaces. This is discovery only; no Batch487 slice is accepted.
    `src/next/application/calendar_page_campus_directory_query_port.h:15` and
    `src/next/platform/calendar_page_campus_directory_query_adapter.h:71`.
    Focused evidence: `NextPlatformCalendarPageCampusDirectoryQuery`.
-5. **F1148 - Type the current-campus preference as a display name.** Keep it
-   distinct from campus IDs/codes; preserve empty fallback, read-error/retry/
-   correction behavior, and Calendar's all-events fallback. Evidence:
+5. **F1148 - Type the current-campus preference as opaque
+   `Application::CurrentCampusPreferenceValue`.** Stored values may be IDs,
+   display labels, or arbitrary legacy strings; preserve empty fallback,
+   read-error/retry/correction behavior, and Calendar's all-events fallback. Evidence:
    `src/next/application/current_campus_preferences.h:11`,
    `src/features/my_info/ui/personal_details_page_sections.cpp:970`, and
    `src/features/calendar/ui/calendar_page_upcoming_events.cpp:962`.
@@ -50764,3 +50765,72 @@ Batch487 has ten candidates: four complete (F1144–F1147), none accepted/in
 progress, and six discovered (F1148–F1153); F1148 is next. The batch is
 incomplete, so no push has occurred. F629 remains active pending source-bound
 Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
+
+### F1148 Current campus preference value accepted before implementation - 2026-10-20
+
+F1148 is accepted/in progress. Stored `myInfo/campus` values are opaque
+preferences, not guaranteed display names: Calendar accepts campus-ID aliases,
+and My Details accepts IDs, labels, and arbitrary legacy strings. Introduce
+owning `Application::CurrentCampusPreferenceValue` with explicit construction,
+`.value()`, equality, and a representable empty value. Do not trim, validate,
+case-fold, interpret, or reject values.
+
+Type both `CurrentCampusPreferencesPort::read/write` and
+`PersonalDetailsSaveRequest::campus` to this value so the aggregate writer is
+typed too. Keep exact Platform/UI boundary conversions, including the existing
+`QVariant::toString()` to UTF-8 behavior (`QVariant` integer `42` becomes
+`"42"`) and embedded-byte length. Preserve these contracts:
+
+1. Read missing, invalid, or unavailable preferences as successful empty;
+   unavailable writes remain successful no-ops; repository failures remain
+   technical errors. Keep the `myInfo/campus` key.
+2. Calendar keeps empty/read-error all-events fallback, campus-ID aliases,
+   and existing behavior for unknown nonempty values.
+3. My Details keeps ID/name correction, preserves the selection on read error,
+   and retries correction. Sub Prep keeps first-campus/empty behavior and its
+   read-error N/A/retry behavior.
+4. Initial Setup keeps retryable read failure blocking aggregate save and
+   preserves aggregate pass-through. Do not change consumer matching or
+   fallback logic.
+
+Evidence: `src/next/application/current_campus_preferences.h`,
+`src/next/application/personal_details_save.h`,
+`src/next/platform/application_services_current_campus_preferences_port.h`,
+`src/next/platform/application_services_personal_details_save_port.h`,
+Calendar `src/features/calendar/ui/calendar_page_upcoming_events.cpp`, My
+Details `src/features/my_info/ui/personal_details_page_sections.cpp`, Sub Prep
+`src/features/sub_prep/ui/sub_prep_page_settings.cpp`, Initial Setup
+`src/features/setup/ui/initial_setup_wizard.cpp`, and their focused test files
+`tests/next_platform_application_services_current_campus_preferences_port_tests.cpp`,
+`tests/next_platform_application_services_personal_details_save_port_tests.cpp`,
+`tests/my_workspace_page_tests.cpp`, `tests/sub_prep_page_tests.cpp`,
+`tests/calendar_page_event_mutation_parity_tests.cpp`, and
+`tests/initial_setup_wizard_tests.cpp`. Target registration is in
+`cmake/next.cmake`.
+
+Focused verification acceptance: incrementally build the existing
+`build/macos-clang-debug` targets `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrMyWorkspacePageTests`, `ClassMngrSubPrepPageTests`,
+`ClassMngrCalendarPageEventMutationParityTests`, and
+`ClassMngrInitialSetupWizardTests`. Run both port CTests and UI selectors:
+My Workspace `storedCampusPrefillsAndCorrectsThroughTypedPort`,
+`failedCampusCorrectionRetriesAndSuppressesRepeatedWarnings`,
+`failedMatchedCampusIdCorrectionWarnsAndRecovers`, and
+`settingsReadFailurePreservesDisplayedCampusChoice`; Sub Prep
+`emptyCampusDetailsDisplayNotAvailable`,
+`campusReadFailureShowsUnavailableDetailsAndWarning`, and
+`savedCampusSelectionUsesTypedRead` if present; Calendar
+`campusReadFailureKeepsAllEventsVisible` and
+`currentCampusIdAliasShowsMatchingCampusEvents`; Initial Setup
+`campusReadFailureBlocksAggregateSaveAndCanRetry` and
+`aggregateSavePreservesAllPersonalDetailsWithoutDataLoss`. Run
+`git diff --check`. If the existing macOS QWizard harness aborts before
+assertions, report those Initial Setup behaviors as unverified. No
+implementation or test results are recorded yet; no full-suite or Windows run
+is expected, and no push is due before Batch487 closes. F629 remains active
+pending Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
+
+Batch487 has ten candidates: four complete (F1144–F1147), one accepted/in
+progress (F1148), and five discovered (F1149–F1153); F1149 is next.

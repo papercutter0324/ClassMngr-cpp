@@ -53,7 +53,19 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1147 complete; Batch487 active; F1148 next; F629 open)
+### Current checkpoint - 2026-10-20 (F1148 accepted; Batch487 active; F629 open)
+
+F1148 is accepted/in progress. Type the persisted current-campus preference
+with an owning, exact `Application::CurrentCampusPreferenceValue`, including
+`PersonalDetailsSaveRequest::campus`; stored values can be campus-ID aliases
+or arbitrary legacy text, so do not interpret them as display names. Preserve
+empty values, exact UTF-8 bytes, QVariant string conversion, Calendar's
+all-events fallback, and the existing My Details, Sub Prep, and Initial Setup
+matching, correction, retry, and error behavior. Focused incremental macOS
+builds and targeted tests are assigned; no implementation or verification
+results are recorded yet. Batch487 has four complete slices, F1148 accepted,
+and five discovered candidates; F1149 follows. F629 remains active pending
+source-bound Windows layout evidence; Phase 0 and Phase 2 gates remain open.
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,

@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet). Batch487 is active with F1144–F1147 complete and six discovered candidates; F1148 is next (see [F1147 completion record](03-Phase-2-Progress-Log.md#f1147-shared-campus-code-and-calendar-page-metadata-complete-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is complete locally at F1143 source/test commit `686bdc2a5000709c6b5ab6cd6b632552d62577d6`; this update records Batch486's local closure, and the completed-batch push follows this closure commit (no push receipt yet). Batch487 is active with F1144–F1147 complete, F1148 accepted/in progress, and five discovered candidates; F1149 is next (see [F1148 acceptance record](03-Phase-2-Progress-Log.md#f1148-current-campus-preference-value-accepted-before-implementation-2026-10-20)). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,20 +38,20 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch487 — Active; ten candidates, four complete, none accepted/in progress, and six discovered:**
+**Batch487 — Active; ten candidates, four complete, one accepted/in progress, and five discovered:**
 
 1. **F1144 — Complete at `e523001d`:** Type personal-signature image save-request bytes, separate from F1140's read-result value.
 2. **F1145 — Complete at `119b961e`:** Type only Sub Prep's normalized calendar-interval query output with existing `Domain::CalendarEventType`; keep raw read-port input and Calendar create/edit and repeat-series inputs unchanged to preserve compatibility.
 3. **F1146 — Complete at `fcbeadee`:** Keep raw `startDate`, `editedStartDate`, and `editedEndDate` in an Application input, then pass three `Domain::GregorianDate` values in `CalendarEventSeriesEditRequest`; preserve `startDate` suffix selection and raw persisted snapshot dates.
 4. **F1147 — Complete at `6a89aa0f`:** Replace F1139's importer-specific wrapper with shared `Application::CampusCode` and type Calendar Page campus metadata as optional; preserve importer normalization and Calendar Page exact values and omission behavior.
-5. **F1148 — Discovered; next:** Type the current-campus preference as a display name. Keep it distinct from campus IDs/codes; preserve empty fallback, read-error/retry/correction behavior, and Calendar's all-events fallback.
-6. **F1149 — Discovered:** Type Class Transfer's canonical exported UTC timestamp. Keep serialization as `YYYY-MM-DDTHH:mm:ss.sssZ`.
+5. **F1148 — Accepted/in progress:** Introduce opaque `Application::CurrentCampusPreferenceValue`; type current-campus preference read/write and `PersonalDetailsSaveRequest::campus` while preserving exact legacy values and consumer behavior.
+6. **F1149 — Discovered; next:** Type Class Transfer's canonical exported UTC timestamp. Keep serialization as `YYYY-MM-DDTHH:mm:ss.sssZ`.
 7. **F1150 — Discovered:** Type Schedule Import room values and selected-room membership. Preserve adapter normalization, first-seen list, exact membership, and empty/foreign-room diagnostics.
 8. **F1151 — Discovered:** Type the Schedule Testing Assignment weekday/start-time key. Preserve accepted weekday/time forms, row order, and unassigned sentinel.
 9. **F1152 — Discovered:** Type Class Analytics evaluation selection. Distinguish All mode from a dynamic exact evaluation name; preserve blank/All and exact dynamic-name behavior.
 10. **F1153 — Discovered:** Type Class Analytics closed grade-label output. Preserve the C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-Batch487 has four complete candidates (F1144–F1147), none accepted/in progress, and six discovered; F1148 is next. See the [F1147 completion record](03-Phase-2-Progress-Log.md#f1147-shared-campus-code-and-calendar-page-metadata-complete-2026-10-20) and the [discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20) for current scope and remaining candidates.
+Batch487 has four complete candidates (F1144–F1147), one accepted/in progress (F1148), and five discovered; F1149 is next. See the [F1148 acceptance record](03-Phase-2-Progress-Log.md#f1148-current-campus-preference-value-accepted-before-implementation-2026-10-20) and the [discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20) for current scope and remaining candidates.
 
 The provisional discovery record and full acceptance, preservation, and verification details are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 

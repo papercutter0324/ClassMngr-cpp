@@ -2,6 +2,11 @@
 
 ## Decisions and Lessons
 
+- The persisted current-campus preference is an opaque legacy string: existing
+  readers accept campus IDs, display labels, and arbitrary stored text. Type
+  the exact value without normalization or display-name assumptions, and type
+  every writer boundary while keeping each reader's fallback and correction
+  behavior unchanged.
 - The repository is intentionally layered: domain models and validation are
   separate from SQLite repositories, feature services, and shared Qt UI. Keep
   new work at the narrowest appropriate layer.
