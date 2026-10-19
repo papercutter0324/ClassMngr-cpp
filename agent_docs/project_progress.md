@@ -5559,3 +5559,16 @@ empty-schedule behavior, directory snapshot/read-port strings, and Qt
 trimming unchanged. Focused Application and feature targets are recorded in
 the Phase 2 plan. Implementation has not started. F629 and both phase gates
 remain open.
+
+## Phase 2 update - F1125 complete; Batch484 active - 2026-10-20
+
+F1125 completed at source/test commit `7775df86`, following acceptance
+`5c427479`. `UpcomingBirthdayCandidate::birthdayMonthDay` now uses permissive
+opaque `UpcomingBirthdayMonthDayInput`; empty and malformed bytes remain
+representable and the existing parser skips them. Parsing, trimming,
+post-parse `BirthdayMonthDay`, leap fallback, schedule window, buckets, and
+ordering remain unchanged. Both focused build targets passed; the three
+focused CTests passed 3/3, as did direct selectors for invalid skipping,
+trimming, leap fallback, invalid reference dates, buckets, year rollover,
+range cap, and feature mapping. Windows and the full suite were not run. F1126
+is next for acceptance. F629 and both phase gates remain open.

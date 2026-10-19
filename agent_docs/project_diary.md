@@ -7900,3 +7900,12 @@ Type the raw upcoming-birthday `MM-dd` input as a permissive
 existing parser can skip it. Preserve Qt/ASCII trimming boundaries, leap-day
 fallback, occurrence bucketing and ordering. Leave the reference-date triple,
 directory snapshot strings, and validated `BirthdayMonthDay` unchanged.
+
+## 2026-10-20 - F1125 complete
+
+F1125 completed at source/test commit `7775df86`, following acceptance
+`5c427479`. The upcoming-birthday candidate now carries permissive opaque
+month/day input, preserving arbitrary bytes for the existing parser to skip.
+Focused macOS Application and feature targets built; the three relevant CTests
+and direct edge-case selectors passed. Windows and full-suite verification
+were not run.
