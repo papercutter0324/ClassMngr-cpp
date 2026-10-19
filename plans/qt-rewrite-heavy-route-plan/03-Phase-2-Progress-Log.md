@@ -49998,8 +49998,8 @@ run `ClassMngrNextDomainContractTests`,
 with exact-key coverage expanded to all six event types, and the existing
 `ClassMngrCalendarPageEventMutationParityTests` case
 `eventTypeColorPickerFailureResyncsAndRetries`; run `git diff --check`.
-Implementation and verification are pending. Full-suite and Windows runs are
-not expected.
+F1138 completed; see the completion record below. Full-suite and Windows runs
+were not expected.
 
 ### Batch485 close and Batch486 activation - 2026-10-20
 
@@ -50016,3 +50016,25 @@ user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 Batch485 closeout commit `192f676ae6736553c6fd4bed4788b71fdc5e5d96` was pushed
 to `origin/Qt-Rewrite`. At verification, local HEAD matched `origin/Qt-Rewrite`
 and the working tree was clean. Batch485 is complete and pushed.
+
+### F1138 Calendar event color preference identity complete - 2026-10-20
+
+F1138 completed at source/test commit
+`fd3c0462b2843b9ed7633f9e6e24fcff919dec57`, following acceptance in the
+preceding record. The Application preference port now uses
+`Domain::CalendarEventType` for event identity while retaining opaque color
+text. The UI's trimming and six-label normalization remain; Platform explicitly
+maps all six enum values to the existing key suffixes and maps invalid enum
+values to `Other`. Existing missing-read, invalid stored-color, UI fallback,
+invalid-picker no-save, write-error, warning, and retry behavior remain.
+
+An incremental macOS Debug build in `build/macos-clang-debug` passed for
+`ClassMngr`, `ClassMngrNextDomainContractTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`,
+and `ClassMngrCalendarPageEventMutationParityTests`. The focused Domain and
+Platform CTest selection passed 2/2; the UI case
+`eventTypeColorPickerFailureResyncsAndRetries` passed. `git diff --check`
+passed. The full suite and Windows verification were not run. Batch486 has six
+candidates: one complete (F1138), none accepted/in progress, and five
+discovered; F1139 is next for acceptance. F629 and the Phase 0 and Phase 2
+gates remain open.

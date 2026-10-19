@@ -8138,3 +8138,19 @@ opaque and retain invalid stored-color handling in the UI. Platform must map
 typed enum values to exact key suffixes without relying on their ordinal.
 Batch486 begins with F1138 accepted after two independent bounded scans found
 six distinct candidates; F1139-F1143 remain discovered.
+
+## 2026-10-20 - F1138 complete
+
+F1138 completed at source/test commit
+`fd3c0462b2843b9ed7633f9e6e24fcff919dec57`. The Application color-preference
+port now accepts `Domain::CalendarEventType`; Platform maps every value to its
+canonical key suffix, with invalid enum casts using the `Other` key. Existing
+UI normalization, opaque color text, color fallback, and picker save/retry
+behavior remain unchanged.
+
+The macOS arm64/x86_64 Debug tree built `ClassMngr` and the three affected
+targets. The Domain and Platform focused CTests passed 2/2; the selected UI
+case `eventTypeColorPickerFailureResyncsAndRetries` passed. `git diff --check`
+passed. Full-suite and Windows verification were not run. Batch486 has one
+complete slice and five discovered, with F1139 next; F629 and both phase gates
+remain open.

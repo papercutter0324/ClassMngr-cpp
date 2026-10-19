@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1137 complete; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1138 complete; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -220,15 +220,19 @@ behavior. The numeric version parse and literal suppression comparison remain
 separate; focused macOS verification passed all three policy, preferences-port,
 and automatic-startup controller CTests. F1137 completed Batch485 at
 `dcdc9be8`; focused macOS verification passed the Domain contract and Schedule
-Import plan-validation CTests (2/2; 38 Domain cases). Batch486 is active with
-F1138 accepted and five discovered. Batch485 was pushed to
-`origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound Windows
-layout evidence, which is unavailable in this session; the Phase 0 and Phase 2
-gates remain open.
+Import plan-validation CTests (2/2; 38 Domain cases). F1138 is complete at
+source/test commit `fd3c0462`; focused macOS Debug verification passed the
+Domain and Platform CTests (2/2) and the selected Calendar Page color-picker
+failure/resync/retry case. `ClassMngr` and the affected targets built, and
+`git diff --check` passed. Batch486 remains active with one complete slice and
+five discovered; F1139 is next. Batch485 was pushed to `origin/Qt-Rewrite` at
+`192f676a`. F629 remains active but awaits source-bound Windows layout evidence,
+which is unavailable in this session; the Phase 0 and Phase 2 gates remain
+open.
 
 ## Next Milestone
 
-Continue Batch486 with accepted F1138. F629 remains active and awaits a
+Continue Batch486 with F1139. F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -5950,3 +5954,22 @@ failure/resync/retry case, with `ClassMngr` and affected targets built. Full
 suite and Windows verification are not expected. Implementation and
 verification are pending. Batch486 has six candidates with F1138 accepted and
 five discovered; F629 and both phase gates remain open.
+
+## Phase 2 update - F1138 complete; Batch486 active - 2026-10-20
+
+F1138 completed at source/test commit
+`fd3c0462b2843b9ed7633f9e6e24fcff919dec57`. The Application color-preference
+port now takes `Domain::CalendarEventType`; the Platform adapter maps the six
+typed values to their unchanged canonical setting-key suffixes and maps an
+invalid enum cast to `Other`. UI normalization and opaque color text remain at
+their prior boundaries, as do missing/unavailable reads, invalid stored-color
+pass-through, QColor fallback, picker cancellation, save warnings, and retry
+behavior.
+
+The macOS Debug tree built `ClassMngr` and the three affected targets. The
+focused Domain and Platform CTests passed 2/2, and the selected Calendar Page
+color-picker failure/resync/retry QtTest case passed. Coverage includes all six
+exact setting keys, invalid-enum fallback, UI normalization, and the existing
+save failure flow. `git diff --check` passed. The full suite and Windows
+verification were not run. Batch486 has one complete slice and five discovered;
+F1139 is next. F629 and both phase gates remain open.

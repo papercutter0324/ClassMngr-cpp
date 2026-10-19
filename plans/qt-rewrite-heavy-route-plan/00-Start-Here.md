@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is active with six candidates, zero complete, F1138 accepted/in progress, and F1139–F1143 discovered. See the [active Batch486 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch486-6-candidates-0-complete-1-acceptedin-progress-5-discovered). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is complete and pushed at `c7c3e6153744f517172fc16cc7c5613d9c6b294e`; see its [push receipt](03-Phase-2-Progress-Log.md#batch484-push-receipt-2026-10-20). Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96`; see its [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20). Batch486 is active with six candidates, one complete, none accepted/in progress, and five discovered; F1139 is next for acceptance. See the [active Batch486 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch486-6-candidates-1-complete-0-acceptedin-progress-5-discovered). F629 awaits source-bound Windows x64 layout evidence; the user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,16 +38,16 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch486 — Active; six candidates, zero complete, one accepted/in progress, and five discovered:**
+**Batch486 — Active; six candidates, one complete, zero accepted/in progress, and five discovered:**
 
-1. **F1138 — Type calendar event color preference identity (accepted/in progress).** Use `Domain::CalendarEventType` for the Application preference port identity while retaining color text as opaque; preserve UI normalization, setting keys, and current read/write behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-accepted-before-implementation-2026-10-20).
+1. **F1138 — Type calendar event color preference identity (complete at `fd3c0462`).** Use `Domain::CalendarEventType` for the Application preference port identity while retaining color text as opaque; preserve UI normalization, setting keys, and current read/write behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-accepted-before-implementation-2026-10-20) and [completion record](03-Phase-2-Progress-Log.md#f1138-calendar-event-color-preference-identity-complete-2026-10-20).
 2. **F1139 — Type calendar-import campus codes (discovered).** Preserve repository order, UTF-8, trimming, blank filtering, and case-sensitive duplicate removal; assess reuse of `CalendarEventCampusCode` at acceptance.
 3. **F1140 — Type prepared personal-signature image bytes (discovered).** Preserve exact prepared bytes and the distinction between empty success and read error.
 4. **F1141 — Distinguish Sub Prep Zoom login ID and password values (discovered).** Preserve exact permissive UTF-8, defaults, preference precedence and migration, and errors.
 5. **F1142 — Type custom palette color entries (discovered).** Preserve all 16 entries, legacy encodings, read trimming/canonicalization/fallback, and write-time exact supplied text.
 6. **F1143 — Type academic-calendar schedule payload (discovered).** Use an opaque JSON string value; preserve UTF-8 round trip, fallback, exact key, repository and write errors, without parsing JSON in the value.
 
-F1138 is accepted/in progress. The provisional discovery record and full acceptance, preservation, and verification details are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1139 is next for acceptance. The provisional discovery record and full acceptance, preservation, and verification details are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 
