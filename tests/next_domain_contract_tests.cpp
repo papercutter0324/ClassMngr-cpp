@@ -261,11 +261,19 @@ calendarEventNamesClassifyKnownValuesAndRejectUnknownTokens()
         const auto actual = calendarEventTypeFromName(name);
         QVERIFY(actual.has_value());
         QVERIFY(*actual == expected);
+        QVERIFY(calendarEventTypeName(*actual) == name);
+        QVERIFY(calendarEventTypeName(expected) == name);
     }
+
+    QVERIFY(
+        calendarEventTypeName(static_cast<CalendarEventType>(-1))
+        == "Other"
+        );
 
     for (const std::string_view unknown : {
              "",
              "vacation",
+             " Vacation",
              "Workshop ",
              "CM2",
              "Conference"

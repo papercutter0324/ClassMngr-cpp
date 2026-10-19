@@ -44,7 +44,9 @@
 #include <QtTest/QtTest>
 
 #include <algorithm>
+#include <array>
 #include <functional>
+#include <utility>
 
 namespace
 {
@@ -4502,6 +4504,49 @@ completedEmptyNextTenSearchShowsItsEmptyLabel()
 void CalendarPageEventMutationParityTests::
 eventTypeColorPickerFailureResyncsAndRetries()
 {
+    const std::array normalizationCases = {
+        std::pair{
+            QStringLiteral("Vacation"),
+            QStringLiteral("Vacation")
+            },
+        std::pair{
+            QStringLiteral("Holiday"),
+            QStringLiteral("Holiday")
+            },
+        std::pair{
+            QStringLiteral("Workshop"),
+            QStringLiteral("Workshop")
+            },
+        std::pair{
+            QStringLiteral("CM"),
+            QStringLiteral("CM")
+            },
+        std::pair{
+            QStringLiteral("Meeting"),
+            QStringLiteral("Meeting")
+            },
+        std::pair{
+            QStringLiteral("Other"),
+            QStringLiteral("Other")
+            }
+    };
+    for (const auto& [input, expected] : normalizationCases)
+    {
+        QCOMPARE(normalizedCalendarEventType(input), expected);
+    }
+    QCOMPARE(
+        normalizedCalendarEventType(QStringLiteral(" \tHoliday \n")),
+        QStringLiteral("Holiday")
+        );
+    QCOMPARE(
+        normalizedCalendarEventType(QStringLiteral("holiday")),
+        QStringLiteral("Other")
+        );
+    QCOMPARE(
+        normalizedCalendarEventType(QStringLiteral(" Conference ")),
+        QStringLiteral("Other")
+        );
+
     CalendarWorkspace workspace;
     QString setupError;
     QVERIFY2(

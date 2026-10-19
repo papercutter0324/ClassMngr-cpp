@@ -63,6 +63,29 @@ calendarEventTypeFromName(
     return std::nullopt;
 }
 
+[[nodiscard]] inline std::string_view
+calendarEventTypeName(
+    const CalendarEventType eventType
+    ) noexcept
+{
+    switch (eventType)
+    {
+    case CalendarEventType::Vacation:
+        return "Vacation";
+    case CalendarEventType::Holiday:
+        return "Holiday";
+    case CalendarEventType::Workshop:
+        return "Workshop";
+    case CalendarEventType::CM:
+        return "CM";
+    case CalendarEventType::Meeting:
+        return "Meeting";
+    case CalendarEventType::Other:
+    default:
+        return "Other";
+    }
+}
+
 [[nodiscard]] inline std::optional<CalendarEventTimeStatus>
 calendarEventTimeStatusFromName(
     const std::string_view name

@@ -10,13 +10,14 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace ClassMngr::Next::Platform
 {
 
 // Qt-boundary adapter for dynamic calendar event-type colors. The caller
-// supplies a normalized event type and a hex-RGB string; this adapter
+// supplies a typed event type and a hex-RGB string; this adapter
 // owns only the exact dynamic key and settings persistence.
 class ApplicationServicesCalendarEventTypeColorPreferencesPort final
     : public Application::CalendarEventTypeColorPreferencesPort
@@ -50,7 +51,7 @@ public:
         ) = delete;
 
     [[nodiscard]] std::string read(
-        const std::string& normalizedEventType
+        const Domain::CalendarEventType eventType
         ) const override
     {
         if (!m_session || !m_session->isOpen())
@@ -64,7 +65,7 @@ public:
             return {};
         }
 
-        const auto setting = repository->loadSetting(key(normalizedEventType));
+        const auto setting = repository->loadSetting(key(eventType));
         const QByteArray storedColor = setting
             ? setting->toString().toUtf8()
             : QByteArray();
@@ -77,7 +78,7 @@ public:
 
     [[nodiscard]] Application::
         CalendarEventTypeColorPreferencesPort::SaveResult write(
-        const std::string& normalizedEventType,
+        const Domain::CalendarEventType eventType,
         const std::string& colorHexRgb
         ) const override
     {
@@ -101,7 +102,7 @@ public:
             static_cast<qsizetype>(colorHexRgb.size())
             );
         if (const Status saved = repository->saveSetting(
-                key(normalizedEventType),
+                key(eventType),
                 storedColor
                 ); !saved)
         {
@@ -132,13 +133,15 @@ private:
     }
 
     [[nodiscard]] static QString key(
-        const std::string& normalizedEventType
+        const Domain::CalendarEventType eventType
         )
     {
+        const std::string_view eventTypeName =
+            Domain::calendarEventTypeName(eventType);
         return QStringLiteral("calendar/eventTypeColor/")
             + QString::fromUtf8(
-                normalizedEventType.data(),
-                static_cast<qsizetype>(normalizedEventType.size())
+                eventTypeName.data(),
+                static_cast<qsizetype>(eventTypeName.size())
                 );
     }
 

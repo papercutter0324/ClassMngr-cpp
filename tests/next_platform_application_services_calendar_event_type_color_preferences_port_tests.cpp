@@ -11,10 +11,13 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <array>
 #include <cstddef>
 #include <string>
+#include <utility>
 
 using namespace ClassMngr::Next::Platform;
+using ClassMngr::Next::Domain::CalendarEventType;
 
 namespace
 {
@@ -23,6 +26,12 @@ constexpr auto VacationKey =
     "calendar/eventTypeColor/Vacation";
 constexpr auto HolidayKey =
     "calendar/eventTypeColor/Holiday";
+constexpr auto WorkshopKey =
+    "calendar/eventTypeColor/Workshop";
+constexpr auto CMKey =
+    "calendar/eventTypeColor/CM";
+constexpr auto MeetingKey =
+    "calendar/eventTypeColor/Meeting";
 constexpr auto OtherKey =
     "calendar/eventTypeColor/Other";
 constexpr auto UnrelatedKey = "calendar/unrelatedPreference";
@@ -77,7 +86,7 @@ class NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests
 
 private slots:
     void initTestCase();
-    void exactDynamicKeysUseNormalizedEventTypes();
+    void exactDynamicKeysCoverAllEventTypes();
     void validHexRgbRoundTripsAndPreservesUnrelatedSettings();
     void missingAndUnavailableReadEmptyAndIgnoreSave();
     void readErrorsDefaultEmpty();
@@ -96,7 +105,7 @@ initTestCase()
 }
 
 void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::
-exactDynamicKeysUseNormalizedEventTypes()
+exactDynamicKeysCoverAllEventTypes()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -107,26 +116,44 @@ exactDynamicKeysUseNormalizedEventTypes()
     SettingsRepository* const repository = session->settingsRepository();
     QVERIFY(repository);
 
-    const QString rawType = QStringLiteral("  Vacation ");
-    const QString normalizedType = normalizedCalendarEventType(rawType);
-    QCOMPARE(normalizedType, QStringLiteral("Vacation"));
-
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    QVERIFY(port.write(utf8(normalizedType), utf8(QStringLiteral("#123456"))));
+    const std::array eventTypes = {
+        std::pair{CalendarEventType::Vacation, VacationKey},
+        std::pair{CalendarEventType::Holiday, HolidayKey},
+        std::pair{CalendarEventType::Workshop, WorkshopKey},
+        std::pair{CalendarEventType::CM, CMKey},
+        std::pair{CalendarEventType::Meeting, MeetingKey},
+        std::pair{CalendarEventType::Other, OtherKey}
+    };
 
-    QCOMPARE(port.read(utf8(normalizedType)), utf8(QStringLiteral("#123456")));
+    int colorSuffix = 0;
+    for (const auto& [eventType, expectedKey] : eventTypes)
+    {
+        const QString color = QStringLiteral("#1234%1%2")
+            .arg(colorSuffix / 16, 1, 16)
+            .arg(colorSuffix % 16, 1, 16);
+        ++colorSuffix;
 
-    const auto stored = repository->loadSetting(
-        QString::fromUtf8(VacationKey)
+        QVERIFY(port.write(eventType, utf8(color)));
+        QCOMPARE(port.read(eventType), utf8(color));
+
+        const auto stored = repository->loadSetting(
+            QString::fromUtf8(expectedKey)
+            );
+        QVERIFY(stored);
+        QCOMPARE(stored->toString(), color);
+    }
+
+    const auto invalidEventType = static_cast<CalendarEventType>(-1);
+    const std::string invalidTypeColor = "#abcdef";
+    QVERIFY(port.write(invalidEventType, invalidTypeColor));
+    QCOMPARE(port.read(invalidEventType), invalidTypeColor);
+    QCOMPARE(port.read(CalendarEventType::Other), invalidTypeColor);
+    const auto invalidTypeStored = repository->loadSetting(
+        QString::fromUtf8(OtherKey)
         );
-    QVERIFY(stored);
-    QCOMPARE(stored->toString(), QStringLiteral("#123456"));
-
-    const auto nonNormalizedKey = repository->loadSetting(
-        QStringLiteral("calendar/eventTypeColor/  Vacation ")
-        );
-    QVERIFY(nonNormalizedKey);
-    QVERIFY(!nonNormalizedKey->isValid());
+    QVERIFY(invalidTypeStored);
+    QCOMPARE(invalidTypeStored->toString(), QStringLiteral("#abcdef"));
 }
 
 void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::
@@ -153,8 +180,8 @@ validHexRgbRoundTripsAndPreservesUnrelatedSettings()
         utf8(expectedColor.name(QColor::HexRgb));
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    QVERIFY(port.write(utf8(QStringLiteral("Holiday")), expectedHex));
-    QCOMPARE(port.read(utf8(QStringLiteral("Holiday"))), expectedHex);
+    QVERIFY(port.write(CalendarEventType::Holiday, expectedHex));
+    QCOMPARE(port.read(CalendarEventType::Holiday), expectedHex);
 
     const auto stored = repository->loadSetting(
         QString::fromUtf8(HolidayKey)
@@ -181,7 +208,7 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     QVERIFY(openSession->settingsRepository());
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    QVERIFY(port.read(utf8(QStringLiteral("Other"))).empty());
+    QVERIFY(port.read(CalendarEventType::Other).empty());
 
     ApplicationServices unavailableServices;
     QVERIFY(unavailableServices.dataService());
@@ -192,9 +219,9 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     ApplicationServicesCalendarEventTypeColorPreferencesPort unavailablePort(
         unavailableServices
         );
-    QVERIFY(unavailablePort.read(utf8(QStringLiteral("Other"))).empty());
+    QVERIFY(unavailablePort.read(CalendarEventType::Other).empty());
     const auto unavailableSave = unavailablePort.write(
-        utf8(QStringLiteral("Other")),
+        CalendarEventType::Other,
         utf8(QStringLiteral("#ffffff"))
         );
     QVERIFY(!unavailableSave);
@@ -204,7 +231,7 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
         );
     QVERIFY(!unavailableSave.error().message.empty());
     QVERIFY(!unavailableSave.error().recoverable);
-    QVERIFY(unavailablePort.read(utf8(QStringLiteral("Other"))).empty());
+    QVERIFY(unavailablePort.read(CalendarEventType::Other).empty());
 
     ApplicationServices closedServices;
     const QString closedDatabasePath = databasePath(m_directory);
@@ -227,9 +254,9 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
     closedServices.closeDatabase();
     QVERIFY(closedServices.dataService());
     QVERIFY(!closedSession->isOpen());
-    QVERIFY(closedPort.read(utf8(QStringLiteral("Vacation"))).empty());
+    QVERIFY(closedPort.read(CalendarEventType::Vacation).empty());
     const auto closedSave = closedPort.write(
-        utf8(QStringLiteral("Vacation")),
+        CalendarEventType::Vacation,
         utf8(QStringLiteral("#abcdef"))
         );
     QVERIFY(!closedSave);
@@ -239,7 +266,7 @@ missingAndUnavailableReadEmptyAndIgnoreSave()
         );
     QVERIFY(!closedSave.error().message.empty());
     QVERIFY(!closedSave.error().recoverable);
-    QVERIFY(closedPort.read(utf8(QStringLiteral("Vacation"))).empty());
+    QVERIFY(closedPort.read(CalendarEventType::Vacation).empty());
 
     QVERIFY(closedServices.openDatabase(closedDatabasePath));
     QVERIFY(closedSession->isOpen());
@@ -266,7 +293,7 @@ readErrorsDefaultEmpty()
     QVERIFY(executeSql(services, QStringLiteral("DROP TABLE app_settings")));
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    QVERIFY(port.read(utf8(QStringLiteral("Vacation"))).empty());
+    QVERIFY(port.read(CalendarEventType::Vacation).empty());
 }
 
 void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::
@@ -285,11 +312,11 @@ pointerAndNullServiceAccessPreserveFallbacks()
         availableServices
         );
     QVERIFY(port.write(
-        utf8(QStringLiteral("Vacation")),
+        CalendarEventType::Vacation,
         utf8(QStringLiteral("#123456"))
         ));
     QCOMPARE(
-        port.read(utf8(QStringLiteral("Vacation"))),
+        port.read(CalendarEventType::Vacation),
         utf8(QStringLiteral("#123456"))
         );
 
@@ -297,9 +324,9 @@ pointerAndNullServiceAccessPreserveFallbacks()
     ApplicationServicesCalendarEventTypeColorPreferencesPort nullPort(
         noServices
     );
-    QVERIFY(nullPort.read(utf8(QStringLiteral("Vacation"))).empty());
+    QVERIFY(nullPort.read(CalendarEventType::Vacation).empty());
     const auto nullSave = nullPort.write(
-        utf8(QStringLiteral("Vacation")),
+        CalendarEventType::Vacation,
         utf8(QStringLiteral("#abcdef"))
         );
     QVERIFY(!nullSave);
@@ -309,7 +336,7 @@ pointerAndNullServiceAccessPreserveFallbacks()
         );
     QVERIFY(!nullSave.error().message.empty());
     QVERIFY(!nullSave.error().recoverable);
-    QVERIFY(nullPort.read(utf8(QStringLiteral("Vacation"))).empty());
+    QVERIFY(nullPort.read(CalendarEventType::Vacation).empty());
 }
 
 void NextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests::
@@ -331,7 +358,7 @@ invalidStoredColorPassesThroughUnchanged()
         );
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
-    const std::string stored = port.read(utf8(QStringLiteral("Other")));
+    const std::string stored = port.read(CalendarEventType::Other);
     QCOMPARE(stored, utf8(QStringLiteral("not-a-color")));
     QVERIFY(!QColor(QString::fromUtf8(
         stored.data(),
@@ -357,7 +384,7 @@ saveFailureReturnsTechnicalFailureAndPreservesStoredValues()
 
     ApplicationServicesCalendarEventTypeColorPreferencesPort port(services);
     QVERIFY(port.write(
-        utf8(QStringLiteral("Vacation")),
+        CalendarEventType::Vacation,
         utf8(QStringLiteral("#123456"))
         ));
     QVERIFY(executeSql(
@@ -373,7 +400,7 @@ saveFailureReturnsTechnicalFailureAndPreservesStoredValues()
         ));
 
     const auto failed = port.write(
-        utf8(QStringLiteral("Vacation")),
+        CalendarEventType::Vacation,
         utf8(QStringLiteral("#abcdef"))
         );
     QVERIFY(!failed);
@@ -387,7 +414,7 @@ saveFailureReturnsTechnicalFailureAndPreservesStoredValues()
         ));
 
     QCOMPARE(
-        port.read(utf8(QStringLiteral("Vacation"))),
+        port.read(CalendarEventType::Vacation),
         utf8(QStringLiteral("#123456"))
         );
     const auto unrelated = repository->loadSetting(

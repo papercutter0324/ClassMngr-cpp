@@ -6,6 +6,7 @@
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "domain/models/calendar_event.h"
 #include "next/application/calendar_event_visibility_policy.h"
+#include "next/domain/calendar_event_timing.h"
 #include "next/platform/application_services_calendar_event_display_preferences_port.h"
 #include "next/platform/application_services_calendar_event_type_color_preferences_port.h"
 #include "next/platform/application_services_current_campus_preferences_port.h"
@@ -150,6 +151,15 @@ int upcomingEventRowHeight(
         UpcomingEventRowMinimumHeight,
         upcomingEventTagHeight(font) + 10
         );
+}
+
+ClassMngr::Next::Domain::CalendarEventType calendarEventTypeValue(
+    const QString& canonicalName
+    )
+{
+    const std::string normalizedName = canonicalName.toUtf8().toStdString();
+    return ClassMngr::Next::Domain::calendarEventTypeFromName(normalizedName)
+        .value_or(ClassMngr::Next::Domain::CalendarEventType::Other);
 }
 
 int scopeIndex(
@@ -1061,7 +1071,7 @@ QColor CalendarPage::calendarEventTypeColor(
         colorPreferencesPort(m_services);
     const std::string storedColorText =
         colorPreferencesPort.read(
-            normalized.toUtf8().toStdString()
+            calendarEventTypeValue(normalized)
             );
     const QColor storedColor(
         QString::fromUtf8(
@@ -1091,7 +1101,7 @@ void CalendarPage::saveCalendarEventTypeColor(
         ApplicationServicesCalendarEventTypeColorPreferencesPort
         colorPreferencesPort(m_services);
     const auto saved = colorPreferencesPort.write(
-        normalizedCalendarEventType(eventType).toUtf8().toStdString(),
+        calendarEventTypeValue(normalizedCalendarEventType(eventType)),
         color.name(QColor::HexRgb).toUtf8().toStdString()
         );
     if (!saved)
