@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-19 (F1104 accepted; Batch479 active)
+## Current continuation - 2026-10-20 (F1104 complete; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6026,15 +6026,22 @@ passed; no full suite ran.
 
 Batch478 is resolved: F1099-F1102 are complete and F1103 remains deferred.
 Its closeout was pushed to `origin/Qt-Rewrite` at
-`5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 has five candidates;
-F1104 is accepted for implementation, while F1105-F1108 remain discovered.
+`5877b296c0c9a032adeeeb9cbfb807e19765e40a`. F1104 completed at source/test
+commit `ddcb8bbb4110f14e7f601be9845b159122c11fee`, following acceptance commit
+`859ffef265bd640a68f81b76110e4db7f0bacc54`.
 
-F1104 types `ScheduleTestingAssignmentReadRow.classId` as `Domain::ClassId`.
-Keep the read query, repository record, and legacy UI models unchanged; adapt
-IDs at the Platform and Schedule widget boundaries. Preserve the exact `-1`
-unassigned sentinel, positive int-range IDs, rejection of zero, other
-negatives, malformed/trailing text, and overflow with the existing
-nonrecoverable Validation error. Row order, display fields, special-class
-metadata, read failures, and unassigned rendering stay the same. No F1104
-implementation has started. The combined Phase 0 and Phase 2 gates remain
-open; Windows x64 evidence remains unavailable.
+F1104 types `ScheduleTestingAssignmentReadRow.classId` as `Domain::ClassId`;
+the Platform and Schedule widget boundaries convert to/from the existing int
+models. The handler accepts only literal `-1` or positive int-range IDs and
+rejects zero, other negative spellings, malformed/trailing text, and overflow
+with the existing Validation error. Row order, display fields, metadata, read
+failures, and unassigned rendering remain covered.
+
+Independent focused verification built the Application, Platform, and Schedule
+widget test targets. Application and Platform read tests passed 8/8 and 6/6;
+the unassigned and assigned widget selectors passed 3/3 each.
+`git diff --check` passed. The broader widget interaction run stalled in a
+modal case and was interrupted; no full widget suite result is claimed. Batch479
+remains active with F1105 next for acceptance reassessment and F1106-F1108
+discovered. The combined Phase 0 and Phase 2 gates remain open; Windows x64
+evidence remains unavailable.

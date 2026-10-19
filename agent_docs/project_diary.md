@@ -7486,3 +7486,13 @@ rejects empty text, retain the handler's numeric int-range validation, exact
 `-1` unassigned sentinel, and existing error for zero, other negatives, and
 invalid values. This keeps a small typed application contract without
 expanding the slice into legacy models.
+
+## 2026-10-20 - F1104 complete
+
+F1104 completed at source/test commit
+`ddcb8bbb4110f14e7f601be9845b159122c11fee`. Focused Application and Platform
+read tests passed 8/8 and 6/6; unassigned and assigned Schedule widget cases
+passed 3/3 each. The strict literal `-1` check preserves the sentinel after
+typing the ID; `-01` remains invalid. The broader widget interaction run
+stalled in a modal case and was interrupted, so no full widget suite result is
+claimed. F1105 is next for reassessment in Batch479.

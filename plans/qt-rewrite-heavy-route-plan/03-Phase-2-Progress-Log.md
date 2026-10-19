@@ -47638,3 +47638,22 @@ reject zero, all other negative values, malformed or trailing text, and
 message. Preserve row order, display fields, special-class metadata behavior,
 read failures, and `-1` rendering. No implementation or test execution has
 begun.
+
+### F1104 complete; F1105 selected for reassessment - 2026-10-20
+
+F1104 is complete at source/test commit
+`ddcb8bbb4110f14e7f601be9845b159122c11fee`; its acceptance commit is
+`859ffef265bd640a68f81b76110e4db7f0bacc54`. On Darwin arm64/macOS 27.0.1
+with Apple Clang 21 and Qt 6.12.0, focused builds succeeded for
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. Application read tests passed 8/8 and
+Platform read tests passed 6/6. Focused widget selectors
+`testingModeFiltersClassesAndDisplaysSavedBlock` and
+`testingModeDisplaysAssignedTestingClassCard` each passed 3/3.
+
+The broader widget interaction run was interrupted after a modal interaction
+stalled; no full widget suite result is claimed. `git diff --check` passed.
+Batch479 remains active and unpushed: F1104 is complete, F1105 is next for
+acceptance reassessment, and F1106-F1108 remain discovered. Batch478's pushed
+closeout remains `5877b296c0c9a032adeeeb9cbfb807e19765e40a`.

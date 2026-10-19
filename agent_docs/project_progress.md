@@ -4953,3 +4953,24 @@ validation remains necessary because `TypedId::fromString` accepts any
 nonempty string. F1105-F1108 remain discovered. Batch478's closeout push is
 recorded at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`; the combined Phase 0
 gate and Phase 2 exit gate remain open.
+
+## Phase 2 update - F1104 complete; Batch479 active - 2026-10-20
+
+F1104 is complete at source/test commit
+`ddcb8bbb4110f14e7f601be9845b159122c11fee`, following acceptance commit
+`859ffef265bd640a68f81b76110e4db7f0bacc54`. The Schedule testing-assignment
+read row carries `Domain::ClassId`; the Platform adapter and Schedule widget
+convert at the boundaries while repository and legacy UI models remain
+integer-based. The handler accepts only literal `-1` or positive int-range
+IDs, rejects zero, other negative spellings, malformed/trailing text, and
+overflow with the existing nonrecoverable Validation error, and preserves
+ordering, metadata, display fields, read failures, and unassigned rendering.
+
+Focused verification on Darwin arm64 / Qt 6.12.0 built the Application,
+Platform, and Schedule widget test targets. Application and Platform read
+tests passed 8/8 and 6/6. The unassigned and assigned widget selectors passed
+3/3 each; independent `git diff --check` passed. A broader widget interaction
+run stalled in a modal case and was interrupted; no full widget suite result
+is claimed. Batch479 remains active, with F1105 next for acceptance
+reassessment and F1106-F1108 discovered. Batch479 has not been pushed; the
+Phase 0 gate and Phase 2 exit gate remain open.
