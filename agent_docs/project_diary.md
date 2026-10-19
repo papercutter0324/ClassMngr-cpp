@@ -8061,3 +8061,19 @@ already rounded value at 400 thousandths; ranking compares those same values
 before the existing locale-aware name tie-break. UI formatting continues to
 use the active locale, while grade and chart bounds remain at their current
 owners.
+
+## 2026-10-20 - F1135 complete
+
+F1135 completed at source/test commit
+`f88316206a36891e911ede1ff403ec79a6817a13`, following acceptance
+`305c8c413cfd7f55191d748734f93e486728d28f`. Class Analytics output averages
+now carry integer thousandths, and UI conversion occurs at its adapter. The
+focused test exposed a floating representation edge when the class mean was
+exactly halfway between 2399 and 2400 thousandths; integer half-up averaging
+of the already-rounded student values preserves the intended result for both
+class and YTD means.
+
+The five focused macOS CTests passed, including page parity and locale display;
+the full suite and Windows were not run. Batch485 has eight complete slices
+and two discovered, with F1136 next. The batch remains unpushed; F629 and both
+phase gates remain open.

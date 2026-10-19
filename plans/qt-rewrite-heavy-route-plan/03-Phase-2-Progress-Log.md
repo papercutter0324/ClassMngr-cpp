@@ -49836,3 +49836,24 @@ formatting, and Class Analytics page parity. Build affected targets, run the
 focused CTests, and run `git diff --check`; no full-suite or Windows run is
 expected. F1136 is next for acceptance. Batch485 remains unpushed; F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1135 Class Analytics rounded averages complete - 2026-10-20
+
+F1135 completed at source/test commit
+`f88316206a36891e911ede1ff403ec79a6817a13`, following acceptance
+`305c8c413cfd7f55191d748734f93e486728d28f`. The four rounded-average outputs
+use Application `ClassAnalyticsAverageThousandths`. A focused test exposed the
+2399/2400 half-thousandth class-mean edge; class and YTD means now round the
+integer-thousandths mean half-up, preserving eligibility and weighting. Raw
+score parsing, student averages, the 400-thousandths grade threshold, rank and
+extrema tie rules, locale formatting, and chart-position clamping remain
+unchanged.
+
+The existing macOS build tree built `ClassMngr` and five affected targets for
+the dashboard read query, ranking order, criterion extrema, Speaking Analytics,
+and Class Analytics page parity. All five focused CTests passed. Coverage
+includes the midpoint fix and existing rounding, aggregation, ranking, extrema,
+and UI behavior. `git diff --check` passed. The full suite and Windows
+verification were not run. Batch485 has eight complete slices and two
+discovered; F1136 is next for acceptance. The batch remains unpushed; F629 and
+the Phase 0 and Phase 2 gates remain open.

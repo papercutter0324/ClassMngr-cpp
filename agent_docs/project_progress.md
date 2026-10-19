@@ -5827,3 +5827,23 @@ criterion extrema ties/order, locale formatting, and grade/chart clamps. The
 focused query, ranking, extrema, and UI analytics tests are expected;
 implementation and verification are pending. F1136 is next for acceptance.
 Batch485 remains unpushed; F629 and both phase gates remain open.
+
+## Phase 2 update - F1135 complete - 2026-10-20
+
+F1135 completed at source/test commit
+`f88316206a36891e911ede1ff403ec79a6817a13`, following acceptance
+`305c8c413cfd7f55191d748734f93e486728d28f`. All four Application average
+outputs now use `ClassAnalyticsAverageThousandths`; raw score accumulation and
+per-student rounding remain unchanged. Class and YTD means of rounded student
+values now use integer thousandths with positive half-up rounding, removing a
+floating representation error at the 2399/2400 midpoint without changing
+weighting or eligibility.
+
+The macOS Debug tree built `ClassMngr` and five focused targets for dashboard
+query, ranking order, criterion extrema, SpeakingAnalytics, and page parity.
+All five focused CTests passed 5/5. Coverage includes type and scale, partial
+scoring and YTD eligibility, half-up grade boundaries, rank and extrema ties,
+and German-locale one-decimal display. `git diff --check` passed. The full
+suite and Windows verification were not run. Batch485 has eight complete
+slices and two discovered; F1136 is next for acceptance. The batch remains
+unpushed. F629 and both phase gates remain open.
