@@ -7830,3 +7830,12 @@ on the same typed key; leave other campus identifiers, metadata, adapters,
 and similarly named code fields unchanged. Cover the UTF-8 64-byte and
 65-byte boundaries in the focused Application test target. F629 and both
 phase gates remain open.
+
+## 2026-10-20 - F1121 complete
+
+F1121 completed at source/test commit `dbef700b`, following acceptance
+`57533c95`. `CampusSummary::key` now uses a permissive opaque
+`CampusDirectoryKey`; the projection retains byte-counted 64-byte validation,
+bytewise blank handling, exact uniqueness/lookups, order, and errors. Focused
+macOS verification passed 1/1, including multibyte boundaries and raw byte
+preservation. Windows and full-suite verification were not run.

@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1120 complete, F1121 accepted/in progress, and six discovered; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1121 complete and six discovered, with F1122 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,12 +68,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch484 (10 candidates; 3 complete; 1 accepted/in progress; 6 discovered)
+#### Active batch: Batch484 (10 candidates; 4 complete; 0 accepted/in progress; 6 discovered)
 
 1. F1118 - Complete at `f3f0b46e`: type generated `CalendarEventSeriesEditOccurrenceUpdate` dates as `Domain::GregorianDate`, converting to Qt at the platform adapter; preserve date and occurrence behavior. Raw request and snapshot date strings remain unchanged by design (verification in the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20)).
 2. F1119 - Complete at `4f19554d`: preserve opaque exact UTF-8 state keys and UTF-16 apply keys using separate Application values; retain current validation and identity behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1119-schedule-import-teacher-keys-complete-2026-10-20).
 3. F1120 - Complete at `1e9263a3`: reuse `ImportSourceKey` for UTF-8 validation keys across plan/use-case inputs, source records, and review groups; preserve exact per-source correspondence and validation behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1120-teacher-import-source-validation-keys-complete-2026-10-20).
-4. F1121 - Accepted/in progress: type only `CampusSummary::key` as byte-preserving `CampusDirectoryKey` with `.value()`; preserve current byte limit, blank check, uniqueness, lookup, and validation behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1121-campus-directory-key-accepted-before-implementation-2026-10-20).
+4. F1121 - Complete at `dbef700b`: type only `CampusSummary::key` as byte-preserving `CampusDirectoryKey`; preserve byte limit, blank check, uniqueness, lookups, order, and error behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1121-campus-directory-key-complete-2026-10-20).
 5. F1122 - Type Teacher Profile validation identifiers: preserve diagnostic values/order and adapter mapping.
 6. F1123 - Type Document Catalog paths: preserve hierarchy, parent resolution, and path limits.
 7. F1124 - Type Roster Save validation codes: preserve UI suffix/substring keys and issue order; distinct from F1116.
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 9. F1126 - Type Excel Import timeout choice: preserve supported values, default/fallback, and setting key.
 10. F1127 - Type update-artifact platform keys (lower confidence): screen aliases and enum suitability during acceptance.
 
-F1118–F1120 are complete, F1121 is accepted/in progress, and the other six candidates remain discovered. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1118–F1121 are complete; the other six candidates remain discovered, with F1122 next for acceptance. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

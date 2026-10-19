@@ -5464,3 +5464,14 @@ identifiers, metadata, adapters, and similarly named code fields remain out
 of scope. Implementation has not started; the focused target is
 `ClassMngrNextApplicationCampusDirectoryTests`. F629 and both phase gates
 remain open.
+
+## Phase 2 update - F1121 complete; Batch484 active - 2026-10-20
+
+F1121 completed at source/test commit `dbef700b`, following acceptance
+`57533c95`. `CampusSummary::key` now uses the opaque, byte-preserving
+`CampusDirectoryKey`; current projection validation and exact comparison
+behavior remain in place. The focused Application target built and its CTest
+passed 1/1, including 64/65-byte UTF-8 boundaries and raw malformed-byte plus
+embedded-NUL representation. Windows verification was unavailable and not
+run; the full suite was not run. F1122 is next for acceptance. F629 and both
+phase gates remain open.

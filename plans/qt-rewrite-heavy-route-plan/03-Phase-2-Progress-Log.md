@@ -49006,3 +49006,29 @@ Focused target: `ClassMngrNextApplicationCampusDirectoryTests`. Implementation
 and tests have not started. Batch484 remains active with three complete
 candidates, F1121 accepted/in progress, and six discovered. F629 and the Phase
 0 and Phase 2 gates remain open.
+
+### F1121 Campus Directory key complete - 2026-10-20
+
+F1121 is complete at source/test commit `dbef700b`, following acceptance
+`57533c95`. `CampusSummary::key` now uses byte-preserving
+`CampusDirectoryKey`. Projection validation retains the 64-byte and bytewise
+blank checks, exact lookup and uniqueness behavior, vector order, and existing
+errors.
+
+The 64/65-byte UTF-8 boundary and malformed UTF-8 plus embedded-NUL
+representation assertion are covered. Build passed:
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextApplicationCampusDirectoryTests --parallel 6
+```
+
+Focused CTest passed 1/1:
+
+```sh
+ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrNextApplicationCampusDirectoryTests$'
+```
+
+`git diff --check` passed. The full suite was not run; Windows verification
+was unavailable and not run. Batch484 remains active with four complete
+candidates, six discovered, and F1122 next for acceptance. F629 and the Phase
+0 and Phase 2 gates remain open.
