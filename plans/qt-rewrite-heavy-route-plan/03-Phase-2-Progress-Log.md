@@ -48000,3 +48000,34 @@ match. The Tester incrementally built
 passed. No full suite or Windows x64 run was performed. Batch480
 remains active with F1110 next for acceptance reassessment. F629 still awaits
 Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open.
+
+### F1110 roster-transfer eligibility identity accepted before implementation - 2026-10-20
+
+F1110 is accepted for Batch480, with implementation and tests not started,
+following two independent Explorer reviews and main source review. Type all
+roster-transfer Application eligibility helper ID parameters as
+`Domain::ClassId`. Since `Domain::ClassId` accepts arbitrary nonempty text,
+each eligibility helper must validate with the existing
+`parseCanonicalPositiveDecimalId` convention used by ClassesListReadQuery
+and the roster-transfer use case. Only canonical positive decimal int IDs
+are eligible; malformed, noncanonical, zero, negative, and out-of-range IDs
+fail eligibility and the pre-read guard. A source equal to target remains
+rejected before target metadata reads.
+
+At the feature boundary, wrap the existing source integer once. Preserve
+snapshot candidate `Domain::ClassId` values through pre-read filtering and
+the subtitle batch request, then unwrap only at the existing int-based
+menu/action/display edge. Keep existing no-read behavior for invalid source,
+current target, and invalid target. This is a transient Application
+eligibility contract, not a schema or action-map migration.
+
+Preserve Qt-compatible Unicode whitespace trimming, blank-grade rejection,
+exact case-sensitive comparison of trimmed grades, candidate vector order
+and duplicates, all user-facing labels, and menu sorting. Focused policy
+coverage must retain existing cases and add canonical, malformed,
+noncanonical, and overflow ID cases in
+`ClassMngrNextApplicationRosterTransferTargetEligibilityTests`. The
+`ClassMngrRosterTransferMenuTests` target must retain integration behavior
+and verify the typed-to-int adapter without UI changes. No production or
+test execution has occurred for F1110. F629 and the Phase 0 and Phase 2 gates
+remain open.

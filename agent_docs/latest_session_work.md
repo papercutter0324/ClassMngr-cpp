@@ -6107,14 +6107,17 @@ suite, fresh configure, or clean build ran.
 Batch479 closeout commit `8a2f11318b54425c58bfadc83fa1526af1d69091` was
 pushed to `origin/Qt-Rewrite`; the remote matched and the worktree is clean.
 F1109 is complete at source/test commit `d39a2cb1`, following acceptance
-commit `1fb1ef6d`. The Class Tab Application ordering fact carries
-`Domain::ClassId`; the feature adapter still consumes and emits integer IDs.
-The comparator preserves the existing tuple and numeric signed-int32 tie-break,
-with typed `-1` default and deterministic ordering for aliases and malformed
-text. Independent focused policy and model CTests passed 2/2 on the existing
-macOS Debug tree; no full suite ran. Batch480 remains active with F1110 next
-for acceptance reassessment. Batch481 discovery recorded F1111 as the
-Application correlation-key value candidate for Teacher Import review groups;
-it was discovered, not accepted. The combined Phase 0 gate remains open
-because F629 still needs source-bound Windows x64 layout evidence, which the
-user cannot run right now; the Phase 2 gate also remains open.
+commit `1fb1ef6d`; its completion and Batch481 discovery notes are committed
+at `2565f323`. Focused policy/model tests passed 2/2 on the existing macOS
+Debug tree; no full suite ran. F1110 is accepted for implementation, with
+implementation and tests not started. Type the roster-transfer Application
+eligibility IDs and retain the typed class-list IDs through the pre-read
+guard and subtitle batch query. Validate canonical positive decimal int IDs
+so malformed typed text cannot bypass current positive-ID behavior; preserve
+no-read rejection for invalid/current IDs, Qt whitespace trimming,
+case-sensitive grade matching, candidate order/duplicates, and int-based
+menu/action IDs. Batch481 discovery recorded F1111 as a transient Teacher
+Import review-group correlation-key value, discovered but not accepted. The
+combined Phase 0 gate remains open because F629 still needs source-bound
+Windows x64 layout evidence, which the user cannot run right now; the Phase 2
+gate also remains open.

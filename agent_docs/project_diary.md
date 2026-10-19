@@ -7591,3 +7591,13 @@ boundary remains integer-based. Preserve signed numeric tie-break behavior by
 fully parsing to int32; compare numeric aliases lexically and use deterministic
 lexical ordering for malformed or out-of-range typed text. The focused policy
 and feature-model CTests passed 2/2; no full suite ran.
+
+## 2026-10-20 - F1110 accepted
+
+Type roster-transfer eligibility IDs with `Domain::ClassId`, but validate the
+wrapped text as a canonical positive decimal int before eligibility or any
+candidate metadata read. A typed wrapper alone does not preserve the old
+positive-int contract. Keep integer UI/action state at the feature edge,
+retain typed class-list IDs through the Application pre-read guard, and
+preserve grade trimming, case-sensitive matching, candidate order, and
+duplicates.

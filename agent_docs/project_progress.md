@@ -5151,3 +5151,18 @@ acceptance reassessment. Batch481 discovery identified F1111, an Application
 value type for Teacher Import's transient review-group correlation key; it
 remains discovered, not accepted. F629 and the Phase 0 and Phase 2 gates
 remain open pending Windows x64 evidence.
+
+## Phase 2 update - F1110 accepted; Batch480 active - 2026-10-20
+
+F1109 is complete at source/test commit `d39a2cb1`, following acceptance
+commit `1fb1ef6d`; completion documentation is committed at `2565f323`.
+F1110 is accepted, with implementation and tests not started. Type the
+roster-transfer eligibility IDs as `Domain::ClassId` and preserve typed
+class-list IDs through the pre-read guard and subtitle batch query. Apply
+canonical positive decimal int validation because the wrapper itself accepts
+arbitrary nonempty strings. Keep invalid/current-ID no-read behavior,
+Qt-compatible whitespace trimming, case-sensitive grade equality, candidate
+order and duplicates, and int-based menu/action IDs. Focused targets are the
+Application eligibility tests and Roster Transfer Menu tests. Batch481's
+F1111 Teacher Import correlation-key value remains discovered, not accepted.
+F629 and the Phase 0 and Phase 2 gates remain open pending Windows x64 evidence.
