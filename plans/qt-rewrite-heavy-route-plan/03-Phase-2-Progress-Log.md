@@ -51005,3 +51005,36 @@ source-bound Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
 
 Batch487 has ten candidates: six complete (F1144–F1149), one accepted/in
 progress (F1150), and three discovered (F1151–F1153); F1151 is next.
+
+### F1150 Schedule Import review room value complete - 2026-10-20
+
+F1150 completed at source/test commit
+`801b4d441054acf1d2a7858e6d8d6b36cb25d047`, following acceptance commit
+`a508c8f71683f4140c176ff8634c23193347e5de`. Application
+`ScheduleImportReviewRoomValue` now types imported-room membership and
+selected-room review decisions. Adapter/UI trimming, first-seen order, empty
+filtering, and exact case-sensitive membership remain; display values,
+case-folded match keys, and UTF-16 `ScheduleImportApplyRequest` fields stay
+separate. A case-only mismatch remains `ForeignTeacherRoom`.
+
+The incremental build in the existing `build/macos-clang-debug` tree passed
+for `ClassMngr`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`, and
+`ClassMngrScheduleImportDialogTests`; no configure or clean build was run. Two
+focused Application CTests passed 2/2. The review-decision binary passed 37
+cases and the ApplyReviewDecisions binary passed. Dialog selectors
+`resolutionChoicesUseTypedSnapshotAndPreserveOrdering`,
+`reviewModelBuildsTypedApplyRequest`, and
+`reviewMatchingUsesNormalizedSnapshotFields` passed 3/3 (five QtTest entries
+including init/cleanup). `git diff --check` passed.
+
+The first build attempt found three raw-string test fixture initializers; the
+Tester converted them to typed wrappers and the retry passed. This test-only
+repair changed no production behavior. No full suite, fresh/clean configure,
+Windows run, or push was performed. Batch487 remains open, so no push is due.
+F629 remains active pending source-bound Windows x64 evidence; the Phase 0 and
+Phase 2 gates remain open.
+
+Batch487 has ten candidates: seven complete (F1144–F1150), none accepted/in
+progress, and three discovered (F1151–F1153); F1151 is next.
