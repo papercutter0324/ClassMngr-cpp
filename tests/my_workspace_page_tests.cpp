@@ -1527,13 +1527,13 @@ void MyWorkspacePageTests::storedZoomCredentialsPrefillAndRespectUnavailableStat
     QVERIFY(
         services.dataService()->saveSetting(
             QString::fromUtf8(ZoomLoginIdKey),
-            QStringLiteral("teacher@example.com")
+            QStringLiteral("  teacher / 김 선생님 📚  ")
             )
         );
     QVERIFY(
         services.dataService()->saveSetting(
             QString::fromUtf8(ZoomPasswordKey),
-            QStringLiteral("secret")
+            QStringLiteral("  secret / 비밀번호 🔒  ")
             )
         );
     QVERIFY(
@@ -1552,8 +1552,8 @@ void MyWorkspacePageTests::storedZoomCredentialsPrefillAndRespectUnavailableStat
     QVERIFY(login);
     QVERIFY(password);
     QVERIFY(unavailable);
-    QCOMPARE(login->text(), QStringLiteral("teacher@example.com"));
-    QCOMPARE(password->text(), QStringLiteral("secret"));
+    QCOMPARE(login->text(), QStringLiteral("  teacher / 김 선생님 📚  "));
+    QCOMPARE(password->text(), QStringLiteral("  secret / 비밀번호 🔒  "));
     QVERIFY(!unavailable->isChecked());
     QVERIFY(login->isEnabled());
     QVERIFY(password->isEnabled());
@@ -1574,8 +1574,8 @@ void MyWorkspacePageTests::storedZoomCredentialsPrefillAndRespectUnavailableStat
     QVERIFY(login);
     QVERIFY(password);
     QVERIFY(unavailable);
-    QCOMPARE(login->text(), QStringLiteral("teacher@example.com"));
-    QCOMPARE(password->text(), QStringLiteral("secret"));
+    QCOMPARE(login->text(), QStringLiteral("  teacher / 김 선생님 📚  "));
+    QCOMPARE(password->text(), QStringLiteral("  secret / 비밀번호 🔒  "));
     QVERIFY(unavailable->isChecked());
     QVERIFY(!login->isEnabled());
     QVERIFY(!password->isEnabled());

@@ -703,8 +703,8 @@ public:
                     ).save({
                         .name = toUtf8(m_name->text().trimmed()),
                         .campus = campus,
-                        .zoomLoginId = zoom.loginId,
-                        .zoomPassword = zoom.password,
+                        .zoomLoginId = zoom.loginId.value(),
+                        .zoomPassword = zoom.password.value(),
                         .zoomNotAvailable = zoom.unavailable,
                         .signatureImage = toOpaqueBytes(signatureImage),
                         .signatureMode = signaturePreferences.mode ==

@@ -1091,8 +1091,8 @@ bool PersonalDetailsPage::loadStoredSettings()
                 static_cast<qsizetype>(value.size())
                 );
         };
-        const QString loginId = fromUtf8(preferences.loginId);
-        const QString password = fromUtf8(preferences.password);
+        const QString loginId = fromUtf8(preferences.loginId.value());
+        const QString password = fromUtf8(preferences.password.value());
 
         m_zoomLoginIdEdit->setText(
             loginId.trimmed().isEmpty()

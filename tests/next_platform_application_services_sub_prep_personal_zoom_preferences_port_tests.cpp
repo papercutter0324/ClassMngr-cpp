@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <string>
+#include <type_traits>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -20,6 +21,11 @@ using namespace ClassMngr::Next::Platform;
 
 namespace
 {
+
+static_assert(!std::is_same_v<
+    SubPrepPersonalZoomLoginId,
+    SubPrepPersonalZoomPassword
+    >);
 
 constexpr auto PrimaryLoginIdKey = "myInfo/zoomLoginId";
 constexpr auto PrimaryPasswordKey = "myInfo/zoomPassword";
@@ -158,6 +164,7 @@ class NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests
 private slots:
     void initTestCase();
     void primaryValuesTakePrecedenceAndPreserveUtf8();
+    void credentialValuesPreserveEmbeddedNulBytes();
     void legacyValuesFallbackAndMigrate();
     void missingValuesUseNADefaults();
     void unavailableSettingsFailWithoutChangingCallerState();
@@ -220,8 +227,12 @@ primaryValuesTakePrecedenceAndPreserveUtf8()
     QCOMPARE(
         loaded.value(),
         (SubPrepPersonalZoomPreferences{
-            .loginId = utf8(QStringLiteral("  primary / 김 선생님  ")),
-            .password = utf8(QStringLiteral("pässword / 비밀번호 📚")),
+            .loginId = SubPrepPersonalZoomLoginId(
+                utf8(QStringLiteral("  primary / 김 선생님  "))
+                ),
+            .password = SubPrepPersonalZoomPassword(
+                utf8(QStringLiteral("pässword / 비밀번호 📚"))
+                ),
             .unavailable = false
         })
         );
@@ -230,6 +241,52 @@ primaryValuesTakePrecedenceAndPreserveUtf8()
             ->toString(),
         QStringLiteral("preserved")
         );
+}
+
+void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
+credentialValuesPreserveEmbeddedNulBytes()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+
+    const std::string loginBytes("login\0id", 8);
+    const std::string passwordBytes("pass\0word", 9);
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(PrimaryLoginIdKey),
+        QString::fromUtf8(
+            loginBytes.data(),
+            static_cast<int>(loginBytes.size())
+            )
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(PrimaryPasswordKey),
+        QString::fromUtf8(
+            passwordBytes.data(),
+            static_cast<int>(passwordBytes.size())
+            )
+        ));
+    QVERIFY(repository->saveSetting(
+        QString::fromUtf8(PrimaryUnavailableKey),
+        QStringLiteral("false")
+        ));
+
+    ApplicationServicesSubPrepPersonalZoomPreferencesPort port(services);
+    const auto loaded = port.load();
+
+    QVERIFY(loaded);
+    QCOMPARE(
+        loaded.value().loginId.value(),
+        loginBytes
+        );
+    QCOMPARE(
+        loaded.value().password.value(),
+        passwordBytes
+        );
+    QCOMPARE(loaded.value().loginId.value().size(), loginBytes.size());
+    QCOMPARE(loaded.value().password.value().size(), passwordBytes.size());
+    QCOMPARE(loaded.value().unavailable, false);
 }
 
 void NextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests::
@@ -264,8 +321,12 @@ legacyValuesFallbackAndMigrate()
     QCOMPARE(
         loaded.value(),
         (SubPrepPersonalZoomPreferences{
-            .loginId = utf8(QStringLiteral(" legacy@example.com ")),
-            .password = utf8(QStringLiteral(" legacy password ")),
+            .loginId = SubPrepPersonalZoomLoginId(
+                utf8(QStringLiteral(" legacy@example.com "))
+                ),
+            .password = SubPrepPersonalZoomPassword(
+                utf8(QStringLiteral(" legacy password "))
+                ),
             .unavailable = false
         })
         );
@@ -307,8 +368,8 @@ missingValuesUseNADefaults()
     QCOMPARE(
         loaded.value(),
         (SubPrepPersonalZoomPreferences{
-            .loginId = "N/A",
-            .password = "N/A",
+            .loginId = SubPrepPersonalZoomLoginId("N/A"),
+            .password = SubPrepPersonalZoomPassword("N/A"),
             .unavailable = true
         })
         );
@@ -467,8 +528,8 @@ migrationSaveFailureStillReturnsLegacyValues()
     QCOMPARE(
         loaded.value(),
         (SubPrepPersonalZoomPreferences{
-            .loginId = "legacy@example.com",
-            .password = "legacy password",
+            .loginId = SubPrepPersonalZoomLoginId("legacy@example.com"),
+            .password = SubPrepPersonalZoomPassword("legacy password"),
             .unavailable = false
         })
         );

@@ -169,12 +169,16 @@ ApplicationServicesSubPrepPersonalZoomPreferencesPort::load() const
 
     return Application::
         SubPrepPersonalZoomPreferencesResult::success({
-            .loginId = loginIdValue.value.isValid()
-                ? toUtf8(loginIdValue.value.toString())
-                : std::string("N/A"),
-            .password = passwordValue.value.isValid()
-                ? toUtf8(passwordValue.value.toString())
-                : std::string("N/A"),
+            .loginId = Application::SubPrepPersonalZoomLoginId(
+                loginIdValue.value.isValid()
+                    ? toUtf8(loginIdValue.value.toString())
+                    : std::string("N/A")
+                ),
+            .password = Application::SubPrepPersonalZoomPassword(
+                passwordValue.value.isValid()
+                    ? toUtf8(passwordValue.value.toString())
+                    : std::string("N/A")
+                ),
             .unavailable = unavailableValue.value.isValid()
                 ? unavailableValue.value.toBool()
                 : true

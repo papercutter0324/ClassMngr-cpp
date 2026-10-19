@@ -204,9 +204,9 @@ void SubPrepPage::loadPersonalZoomInformation()
             );
     };
     const QString loginId =
-        fromUtf8(preferences.loginId);
+        fromUtf8(preferences.loginId.value());
     const QString password =
-        fromUtf8(preferences.password);
+        fromUtf8(preferences.password.value());
 
     m_zoomLoginIdEdit->setText(
         preferences.unavailable
