@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`, and F1113 is complete at `d2e81f6c` following acceptance `67cd2da0`; F1114 is the final candidate and next for acceptance review. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-2-complete-1-discovered) for the full ordered list.
+- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`, F1113 is complete at `d2e81f6c` following acceptance `67cd2da0`, and F1114 is accepted before implementation and next. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-2-complete-1-accepted) for the full ordered list.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,11 +38,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch482 — Active; three candidates, two complete, and one discovered:**
+**Batch482 — Active; three candidates, two complete, and one accepted:**
 
 1. **F1112 — Type Schedule Import teacher review correlation keys.** Complete at `9110a8c8` following acceptance `17aadcb1`; typed the review decision keys while preserving exact bytes, validation/order behavior, and existing conversions.
 2. **F1113 — Type Class Transfer source correlation keys.** Complete at `d2e81f6c` following acceptance `67cd2da0`; distinct exact teacher/class key types now cover projection, preview, review/apply, and typed lookups while preserving path-specific behavior.
-3. **F1114 — Type generic import-review source keys.** Discovered, not accepted; next for acceptance review. Preserve blank/256-byte validation, exact bytes, category tagging, and validation outcomes.
+3. **F1114 — Type generic import-review source keys.** Accepted before implementation; next action is implementation of the typed key boundary and focused tests while preserving exact bytes and validation/category behavior.
 
 No other slices were found.
 

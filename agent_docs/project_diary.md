@@ -7668,3 +7668,12 @@ bytes while preventing cross-role use. Projection validation, preview's
 unknown/absent-teacher fallback, review's empty-only rule and first duplicate
 candidate, and adapter-specific blank normalization remained distinct.
 Focused macOS checks passed; the full suite and Windows were not run.
+
+## 2026-10-20 - F1114 accepted
+
+F1114 replaces the generic import-review source-key alias with an opaque
+Application value type across indexes, decisions, and diagnostics. The key
+retains exact bytes, default-empty behavior, equality/order, and the owning
+validator's current blank and 256-byte rules. Diagnostic category remains
+separate; existing entity IDs, validation outcomes, error precedence, and
+collection order stay in scope for preservation.

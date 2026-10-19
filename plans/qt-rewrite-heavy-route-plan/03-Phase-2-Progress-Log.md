@@ -48427,3 +48427,36 @@ and issue order, UTF-8 adapter round-trip, and dialog-versus-repository
 normalization. `git diff --check` passed. No full suite or Windows run was
 performed. F1114 is next for acceptance review; Batch483 remains provisional
 until Batch482 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1114 generic import-review source keys accepted before implementation - 2026-10-20
+
+F1114 is accepted for Batch482; implementation and tests have not started.
+Replace the `ImportSourceKey` alias in
+`src/next/application/import_review_session.h` with a final value wrapper that
+preserves exact `std::string` bytes, default-empty construction, explicit
+string construction, `value()`, `empty()`, equality, and lexicographic order.
+Construction remains permissive: no validation or normalization, and no
+implicit conversion from raw strings.
+
+Type every current alias slot in `TeacherMatchIndex`, `ClassMatchIndex`,
+`ImportWarning`, `ImportUnmatchedValue`, and `ImportConflict`, plus both
+`TeacherImportDecision` and `ClassImportDecision` create parameters,
+accessors, private constructors, and members. Leave candidate Domain IDs,
+field/message strings, and other source fields unchanged.
+
+Keep validation policy at the existing validation boundary: empty or
+all-byte-whitespace keys are invalid using current unsigned-char
+`std::isspace` semantics; 256 bytes is valid and longer values are invalid.
+Do not trim or normalize. Preserve validation error code/message/precedence,
+category/action/target rules, collection and candidate caps, vector order, and
+UTF-8/source bytes. Category remains independent from the key: add no
+uniqueness, category coupling, or cross-reference checks.
+
+Focused coverage belongs in the existing
+`tests/next_application_import_review_tests.cpp` target
+`ClassMngrNextApplicationImportReviewTests`. Verify typed boundaries,
+exact-byte/default-empty/equality/order behavior, and valid 256-byte, invalid
+257-byte, and all-whitespace keys across decision and session validation,
+retaining existing assertions. No tests or implementation have run for
+F1114. Batch483 remains provisional until Batch482 closes. F629 and the Phase
+0 and Phase 2 gates remain open.

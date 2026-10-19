@@ -5280,3 +5280,13 @@ repository blank-key behavior remain intact. Focused verification built three
 targets; the preview CTest passed 1/1 and selected Application and feature
 QTest cases passed. No full suite or Windows run occurred. F1114 is next for
 acceptance review; F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1114 accepted; Batch482 active - 2026-10-20
+
+F1114 is accepted before implementation. Replace the generic import-review
+source-key alias with an opaque `ImportSourceKey` value type across match
+indexes, decisions, and diagnostics. Preserve exact bytes, default-empty and
+explicit construction, equality/order, and the existing empty/all-whitespace
+and 256-byte validation rules. Keep category independent from the key and
+preserve issue/error behavior, collection order, and existing typed entity
+IDs. F629 and the Phase 0 and Phase 2 gates remain open.
