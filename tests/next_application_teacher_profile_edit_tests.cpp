@@ -5,11 +5,30 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
+
+static_assert(!std::is_same_v<
+    TeacherProfileValidationCode,
+    TeacherProfileValidationField>);
+static_assert(!std::is_same_v<
+    TeacherProfileValidationCode,
+    TeacherProfileValidationArgumentKey>);
+static_assert(!std::is_same_v<
+    TeacherProfileValidationField,
+    TeacherProfileValidationArgumentKey>);
+static_assert(!std::is_convertible_v<std::string, TeacherProfileValidationCode>);
+static_assert(!std::is_convertible_v<std::string, TeacherProfileValidationField>);
+static_assert(!std::is_convertible_v<
+    std::string,
+    TeacherProfileValidationArgumentKey>);
+static_assert(std::is_same_v<
+    decltype(TeacherProfileValidationArgument::value),
+    std::u16string>);
 
 namespace
 {
@@ -22,6 +41,17 @@ void require(bool condition, const char* message)
     }
 }
 
+TeacherProfileValidationArgument validationArgument(
+    std::string key,
+    std::u16string value
+    )
+{
+    return {
+        .key = TeacherProfileValidationArgumentKey(std::move(key)),
+        .value = std::move(value)
+    };
+}
+
 TeacherProfileValidationIssue validationIssue(
     std::string code,
     std::string field,
@@ -30,8 +60,8 @@ TeacherProfileValidationIssue validationIssue(
     )
 {
     TeacherProfileValidationIssue issue{
-        .code = std::move(code),
-        .field = std::move(field),
+        .code = TeacherProfileValidationCode(std::move(code)),
+        .field = TeacherProfileValidationField(std::move(field)),
         .severity = severity
     };
     for (const auto& argument : arguments)
@@ -136,14 +166,14 @@ void invalidInputsDoNotWrite()
             "teacher.name.unusual",
             "teacherEn",
             TeacherProfileValidationSeverity::Warning,
-            {{.key = "value", .value = u"Unknown name"}}
+            {validationArgument("value", u"Unknown name")}
             ),
         validationIssue(
             "teacher.name.required",
             "teacherEn",
             TeacherProfileValidationSeverity::Error,
-            {{.key = "value", .value = u""},
-             {.key = "allowedValues", .value = u"teacherKr,teacherEn"}}
+            {validationArgument("value", u""),
+             validationArgument("allowedValues", u"teacherKr,teacherEn")}
             )
     };
     policy.issues = expectedIssues;
@@ -156,11 +186,33 @@ void invalidInputsDoNotWrite()
         "invalid profile must not write or reload");
     require(result.error().validationIssues == expectedIssues,
         "validation failure should preserve all structured issues and arguments");
-    require(result.error().validationIssues[1].code == "teacher.name.required"
-                && result.error().validationIssues[1].field == "teacherEn"
+    require(result.error().validationIssues[1].code.value() == "teacher.name.required"
+                && result.error().validationIssues[1].field.value() == "teacherEn"
                 && result.error().validationIssues[1].severity
                     == TeacherProfileValidationSeverity::Error,
         "validation issue code, field, and severity should remain intact");
+
+    const auto& returnedIssues = result.error().validationIssues;
+    const auto firstArguments = returnedIssues[0].arguments.values();
+    const auto secondArguments = returnedIssues[1].arguments.values();
+    require(returnedIssues[0].code.value() == "teacher.name.unusual"
+                && returnedIssues[0].field.value() == "teacherEn"
+                && returnedIssues[0].severity
+                    == TeacherProfileValidationSeverity::Warning
+                && firstArguments.size() == 1
+                && firstArguments[0].key.value() == "value"
+                && firstArguments[0].value == u"Unknown name",
+            "first validation issue code, field, and argument payload should remain ordered");
+    require(returnedIssues[1].code.value() == "teacher.name.required"
+                && returnedIssues[1].field.value() == "teacherEn"
+                && returnedIssues[1].severity
+                    == TeacherProfileValidationSeverity::Error
+                && secondArguments.size() == 2
+                && secondArguments[0].key.value() == "value"
+                && secondArguments[0].value.empty()
+                && secondArguments[1].key.value() == "allowedValues"
+                && secondArguments[1].value == u"teacherKr,teacherEn",
+            "second validation issue should preserve complete ordered arguments");
 
     require(calls == std::vector<std::string>{"validate"},
         "validation rejection should call the policy without persistence");
@@ -214,8 +266,8 @@ void unknownValidationSeverityBlocksPersistence()
             "teacher.profile.unknown-severity",
             "teacherEn",
             static_cast<TeacherProfileValidationSeverity>(99),
-            {{.key = "submittedValue", .value = u"Unclassified"},
-             {.key = "policy", .value = u"legacy"}}
+            {validationArgument("submittedValue", u"Unclassified"),
+             validationArgument("policy", u"legacy")}
             )
     };
     policy.issues = expectedIssues;
@@ -285,7 +337,7 @@ void validSavePreservesFieldsOrderAndCanonicalReturn()
         "teacher.name.normalized",
         "teacherEn",
         TeacherProfileValidationSeverity::Warning,
-        {{.key = "canonicalValue", .value = u"Normalized EN"}}
+        {validationArgument("canonicalValue", u"Normalized EN")}
         )};
     port.canonical = profile(8, {
         .teacherKr = u"Canonical KR", .teacherEn = u"Canonical EN",
@@ -383,23 +435,94 @@ void reloadFailureReportsCompletedWrite()
 void validationIssueArgumentsAreBounded()
 {
     TeacherProfileValidationArguments arguments;
+    const std::vector<std::string> expectedKeys{
+        "", "duplicate", "middle", "duplicate", "tail", "fifth", "sixth", "seventh"
+    };
+    const std::vector<std::u16string> expectedValues{
+        u"", u"first", u"second", u"third", u"fourth", u"fifth", u"sixth", u"seventh"
+    };
     for (std::size_t index = 0;
          index < TeacherProfileValidationArguments::MaximumCount;
          ++index)
     {
-        require(arguments.add({.key = "value", .value = u"bounded"}),
+        require(arguments.add(validationArgument(
+                    expectedKeys[index], expectedValues[index])),
             "arguments within the configured bound should be retained");
     }
-    require(!arguments.add({.key = "overflow", .value = u"rejected"}),
+    const auto orderedValues = arguments.values();
+    require(orderedValues.size() == TeacherProfileValidationArguments::MaximumCount,
+        "the maximum argument count should be retained");
+    for (std::size_t index = 0; index < expectedKeys.size(); ++index)
+    {
+        require(orderedValues[index].key.value() == expectedKeys[index]
+                    && orderedValues[index].value == expectedValues[index],
+            "argument keys and UTF-16 values should retain vector order");
+    }
+    require(!arguments.add(validationArgument("overflow", u"rejected")),
         "argument count should be capped");
+
+    std::string exactKey;
+    for (int index = 0; index < 16; ++index)
+    {
+        exactKey.append("\xF0\x9F\x8C\x8D", 4);
+    }
+    require(exactKey.size() == 64,
+        "multibyte validation argument key should total 64 bytes");
+    TeacherProfileValidationArguments exactKeyArguments;
+    require(exactKeyArguments.add(validationArgument(exactKey, u"accepted")),
+        "64-byte UTF-8 argument key should be accepted");
+    require(exactKeyArguments.values().front().key.value() == exactKey,
+        "multibyte argument key should retain exact bytes");
+
+    TeacherProfileValidationArguments oversizedKeyArguments;
+    require(!oversizedKeyArguments.add(
+                validationArgument(exactKey + "x", u"rejected")),
+        "65-byte UTF-8 argument key should be rejected");
+
+    const std::u16string exactValue(
+        TeacherProfileValidationArguments::MaximumValueCodeUnits,
+        u'x');
+    TeacherProfileValidationArguments exactValueArguments;
+    require(exactValueArguments.add(validationArgument("value", exactValue)),
+        "256 UTF-16 code units should be accepted");
+    require(exactValueArguments.values().front().value == exactValue,
+        "UTF-16 argument value should be retained exactly");
 
     TeacherProfileValidationArguments oversized;
     const std::u16string longValue(
         TeacherProfileValidationArguments::MaximumValueCodeUnits + 1,
         u'x'
         );
-    require(!oversized.add({.key = "value", .value = longValue}),
+    require(!oversized.add(validationArgument("value", longValue)),
         "argument UTF-16 length should be capped");
+}
+
+void validationMetadataWrappersPreserveOpaqueValues()
+{
+    const TeacherProfileValidationCode emptyCode;
+    const TeacherProfileValidationField emptyField;
+    const TeacherProfileValidationArgumentKey emptyKey;
+    require(emptyCode.value().empty()
+                && emptyField.value().empty()
+                && emptyKey.value().empty(),
+        "validation metadata wrappers should permit empty values");
+
+    const std::string arbitraryBytes("\xFF\0\xC3", 3);
+    const TeacherProfileValidationCode arbitraryCode(arbitraryBytes);
+    const TeacherProfileValidationField arbitraryField(arbitraryBytes);
+    const TeacherProfileValidationArgumentKey arbitraryKey(arbitraryBytes);
+    require(arbitraryCode.value() == arbitraryBytes
+                && arbitraryField.value() == arbitraryBytes
+                && arbitraryKey.value() == arbitraryBytes,
+        "validation metadata wrappers should preserve arbitrary bytes exactly");
+
+    const TeacherProfileValidationCode unknownCode("future.validation.rule");
+    const TeacherProfileValidationField unknownField("futureProfileField");
+    const TeacherProfileValidationArgumentKey unknownKey("futureArgument");
+    require(unknownCode.value() == "future.validation.rule"
+                && unknownField.value() == "futureProfileField"
+                && unknownKey.value() == "futureArgument",
+        "validation metadata wrappers should preserve unknown values without filtering");
 }
 
 } // namespace
@@ -415,6 +538,7 @@ int main()
         updateFailureDoesNotReload();
         reloadIdentifierMismatchReportsCompletedWrite();
         reloadFailureReportsCompletedWrite();
+        validationMetadataWrappersPreserveOpaqueValues();
         validationIssueArgumentsAreBounded();
     }
     catch (const std::exception& exception)

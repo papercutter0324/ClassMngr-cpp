@@ -388,8 +388,10 @@ public:
         for (const ValidationIssue& issue : m_validation.issues())
         {
             NextApplication::TeacherProfileValidationIssue mapped{
-                .code = issue.code.toStdString(),
-                .field = issue.field.toStdString(),
+                .code = NextApplication::TeacherProfileValidationCode(
+                    issue.code.toStdString()),
+                .field = NextApplication::TeacherProfileValidationField(
+                    issue.field.toStdString()),
                 .severity = issue.isWarning()
                     ? NextApplication::TeacherProfileValidationSeverity::Warning
                     : NextApplication::TeacherProfileValidationSeverity::Error
@@ -402,7 +404,8 @@ public:
                 // cross the bounded application contract. Oversized legacy
                 // metadata is not needed by this form's message formatter.
                 const bool retained = mapped.arguments.add({
-                    .key = argument.key().toStdString(),
+                    .key = NextApplication::TeacherProfileValidationArgumentKey(
+                        argument.key().toStdString()),
                     .value = argument.value().toString().toStdU16String()
                 });
                 Q_UNUSED(retained);
@@ -434,8 +437,8 @@ ValidationResult uiValidationFromApplicationIssues(
     for (const auto& issue : issues)
     {
         ValidationIssue mapped{
-            .code = QString::fromStdString(issue.code),
-            .field = QString::fromStdString(issue.field),
+            .code = QString::fromStdString(issue.code.value()),
+            .field = QString::fromStdString(issue.field.value()),
             .severity = issue.severity
                     == NextApplication::TeacherProfileValidationSeverity::Warning
                 ? ValidationSeverity::Warning
@@ -444,7 +447,7 @@ ValidationResult uiValidationFromApplicationIssues(
         for (const auto& argument : issue.arguments.values())
         {
             mapped.arguments.insert(
-                QString::fromStdString(argument.key),
+                QString::fromStdString(argument.key.value()),
                 QString::fromStdU16String(argument.value)
                 );
         }

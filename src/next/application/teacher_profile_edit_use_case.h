@@ -43,9 +43,81 @@ enum class TeacherProfileValidationSeverity
     Error
 };
 
+class TeacherProfileValidationCode final
+{
+public:
+    TeacherProfileValidationCode() = default;
+
+    explicit TeacherProfileValidationCode(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const TeacherProfileValidationCode&,
+        const TeacherProfileValidationCode&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
+class TeacherProfileValidationField final
+{
+public:
+    TeacherProfileValidationField() = default;
+
+    explicit TeacherProfileValidationField(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const TeacherProfileValidationField&,
+        const TeacherProfileValidationField&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
+class TeacherProfileValidationArgumentKey final
+{
+public:
+    TeacherProfileValidationArgumentKey() = default;
+
+    explicit TeacherProfileValidationArgumentKey(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const TeacherProfileValidationArgumentKey&,
+        const TeacherProfileValidationArgumentKey&
+        ) = default;
+
+private:
+    std::string m_value;
+};
+
 struct TeacherProfileValidationArgument final
 {
-    std::string key;
+    TeacherProfileValidationArgumentKey key;
     std::u16string value;
 
     friend bool operator==(
@@ -64,7 +136,7 @@ public:
     [[nodiscard]] bool add(TeacherProfileValidationArgument argument)
     {
         if (m_values.size() >= MaximumCount
-            || argument.key.size() > MaximumKeyBytes
+            || argument.key.value().size() > MaximumKeyBytes
             || argument.value.size() > MaximumValueCodeUnits)
         {
             return false;
@@ -90,8 +162,8 @@ private:
 
 struct TeacherProfileValidationIssue final
 {
-    std::string code;
-    std::string field;
+    TeacherProfileValidationCode code;
+    TeacherProfileValidationField field;
     TeacherProfileValidationSeverity severity =
         TeacherProfileValidationSeverity::Error;
     // This bounded value type keeps legacy validation payloads from crossing
