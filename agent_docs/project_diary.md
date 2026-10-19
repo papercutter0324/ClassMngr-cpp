@@ -7808,3 +7808,13 @@ empty-key validation and malformed-byte representability remain at their
 owners. Preserve adapter normalization, per-source vector alignment, order,
 duplicate namespaces, and error precedence. Leave the native-English
 name-policy's UTF-16 derived values unchanged.
+
+## 2026-10-20 - F1120 complete
+
+F1120 completed at source/test commit `1e9263a3`, following acceptance
+`fd5f8d63`. The existing `ImportSourceKey` type now marks all accepted
+UTF-8 Teacher Import validation fields without changing normalization or
+validation ownership. The tester built `ClassMngr` and ran six focused CTests
+successfully. The dialog ran with Qt offscreen; its optional external sample
+case remained skipped because no sample path was configured. No full-suite
+run occurred.

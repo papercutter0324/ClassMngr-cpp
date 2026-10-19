@@ -48964,3 +48964,24 @@ Implementation and tests have not started. Batch484 remains active with two
 complete candidates, F1120 accepted/in progress, and seven discovered;
 F1121 is next after this slice. F629 and the Phase 0 and Phase 2 gates remain
 open.
+
+### F1120 Teacher Import source validation keys complete - 2026-10-20
+
+F1120 is complete at source/test commit `1e9263a3`, following acceptance
+`fd5f8d63`. Existing `ImportSourceKey` now types accepted UTF-8 validation
+fields across the plan validator, use-case inputs, Korean/GS source records,
+and review candidate keys. Byte-exact representation, current adapter
+normalization, source alignment and order, duplicate behavior, GS namespace
+separation, and failure precedence remain preserved.
+
+The independent Tester built `ClassMngr` and the six focused targets:
+`ClassMngrNextApplicationTeacherImportPlanValidationTests`,
+`ClassMngrNextApplicationTeacherImportUseCaseTests`,
+`ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests`,
+`ClassMngrTeacherImportTests`, `ClassMngrTeacherImportDialogTests`, and
+`ClassMngrNextApplicationImportReviewTests`. Their selected CTests passed
+6/6. The dialog test used `QT_QPA_PLATFORM=offscreen`; its optional external
+workbook test was skipped because `CLASSMNGR_TEACHER_IMPORT_SAMPLE` was unset.
+`git diff --check` passed; the full suite was not run. Batch484 remains active
+with three complete candidates, seven discovered, and F1121 next for
+acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
