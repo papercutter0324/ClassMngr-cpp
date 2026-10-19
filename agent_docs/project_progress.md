@@ -5405,3 +5405,14 @@ The Application calendar event and platform edit-port targets built, and both
 focused CTests passed (2/2). The full suite, UI page parity target, and Windows
 verification were not run. F1119 is next for acceptance; F629 and both phase
 gates remain open.
+
+## Phase 2 update - F1119 accepted; Batch484 active - 2026-10-20
+
+F1119 is accepted with distinct typed representations for Schedule Import
+correlation values: reuse the exact UTF-8 `ScheduleImportReviewTeacherKey`
+for the three state-projection keys, and add an opaque UTF-16 apply-key value
+for apply candidate, resolution, and target-issue keys. Preserve original
+bytes/code units, state exact-match behavior, Hangul-only validation at its
+current edges, conversion behavior, ordering, and diagnostic payloads. No
+implementation or tests have started. F629 and the Phase 0 and Phase 2 gates
+remain open.

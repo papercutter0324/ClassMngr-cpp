@@ -48874,3 +48874,39 @@ suite, `ClassMngrCalendarPageEventMutationParityTests`, and Windows
 verification were not run. Batch484 remains active with F1118 complete, nine
 discovered candidates, and F1119 next for acceptance. F629 and the Phase 0
 and Phase 2 gates remain open.
+
+### F1119 Schedule Import teacher keys accepted before implementation - 2026-10-20
+
+F1119 is accepted/in progress. Preserve the two existing key encodings and
+their separate semantics. Reuse `ScheduleImportReviewTeacherKey` for the
+opaque exact UTF-8 (`std::string`) fields in
+`ScheduleImportStateCandidate.teacherKey`,
+`ScheduleImportStateTeacherResolution.teacherKey`, and
+`ScheduleImportStateTeacherSnapshot.teacherKey`. Add an opaque exact
+`ScheduleImportApplyTeacherKey` for the UTF-16 fields in
+`ScheduleImportApplyCandidate.teacherKey`,
+`ScheduleImportApplyTeacher.teacherKey`, and
+`ScheduleImportApplyTeacherTargetIssue.teacherKey`. Both values must preserve
+arbitrary raw payloads, including empty and malformed encodings, without
+normalization.
+
+Do not type `ScheduleImportPlanCandidate.teacherKey`, `TeacherId`, or other
+fields. Keep `KoreanTeacherKey` filtering/name matching and Hangul-only apply
+validation in their current owners. Preserve exact UTF-8/UTF-16 conversion and
+equality (including composed/decomposed distinction and supplementary
+Unicode), resolution correspondence and collection order, diagnostics,
+precedence, errors, and state/apply behavior.
+
+Focused checklist: build and run
+`ClassMngrNextApplicationScheduleImportStateValidationTests`,
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`,
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests`,
+`ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests`, and
+`ClassMngrNextApplicationScheduleImportApplyUseCaseTests`; include
+`ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests` if the
+platform apply port changes. Add coverage for arbitrary state keys, exact
+byte/code-unit equality and Unicode cases, unchanged Hangul-only apply
+validation, resolution correspondence/order, and existing diagnostics/errors.
+Implementation and tests have not started. Batch484 remains active with
+F1118 complete, F1119 accepted/in progress, and eight discovered candidates;
+F629 and the Phase 0 and Phase 2 gates remain open.

@@ -7778,3 +7778,13 @@ they convert directly to `QDate`. Request and persisted snapshot strings
 remain unchanged so malformed request and corrupt-database error behavior is
 preserved. Both focused Application and platform CTests passed (2/2); no full
 suite, page-parity, or Windows run occurred.
+
+## 2026-10-20 - F1119 accepted
+
+Keep Schedule Import state correlation keys as opaque UTF-8 values using the
+existing `ScheduleImportReviewTeacherKey`; type the apply records separately
+with an opaque UTF-16 value. Do not use `KoreanTeacherKey` for either
+correlation contract: it filters to Hangul code units, while state keys allow
+arbitrary exact values and apply validation must retain malformed raw payloads
+for its existing diagnostics. Leave Hangul-only filtering and name matching
+at their existing parser/validation edges.
