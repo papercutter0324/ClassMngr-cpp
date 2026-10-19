@@ -47021,10 +47021,20 @@ the sole active Batch476 slice. The acceptance criteria are:
    behavior on an identity mismatch. Do not change schema or persisted numeric
    ID representation.
 4. Extend existing `NextApplicationCalendarEventTests` and
-   `NextPlatformApplicationServicesCalendarEventPortTests` for typed contracts,
-   ID preservation and order, successful suffix edit, and identity mismatch.
-   Build `ClassMngr` and both existing targets, run exactly their focused CTests
-   and `git diff --check`, and add no CMake target.
+   `NextPlatformApplicationServicesCalendarEventPortTests` to assert typed
+   planner contracts, exact ID preservation and occurrence order, and the
+   reachable successful platform suffix edit. Source review must confirm the
+   existing `Technical` identity-mismatch guard still runs before any update
+   persistence.
+5. Build `ClassMngr` and both existing targets, run exactly their focused CTests
+   and `git diff --check`; add no CMake target.
+
+2026-10-19 clarification: The independent Tester confirmed there is no existing
+seam to inject a mismatched planner result into
+`ApplicationServicesCalendarEventSeriesEditPort` without adding production API
+or a test-only branch. The executable assertions are therefore limited to the
+reachable success path, with source review covering the existing mismatch
+guard. No seam or API will be added solely to force that branch.
 
 F1096 remains a reviewed non-active near-miss under the explicit F54 event-type
 compatibility decision; F1097 does not broaden that scope.
