@@ -13,6 +13,7 @@
 #include "next/application/calendar_event_series_create_port.h"
 #include "next/application/calendar_event_series_edit_port.h"
 #include "next/application/calendar_event_series_delete_port.h"
+#include "next/domain/gregorian_date.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
 #include "next/platform/application_services_calendar_event_delete_port.h"
 #include "next/platform/application_services_calendar_event_delete_all_port.h"
@@ -221,9 +222,9 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
 {
     return CalendarEventSeriesEditRequest{
         calendarEventSeriesId("series-edit"),
-        "2026-12-08",
-        "2026-12-10",
-        "2026-12-12",
+        *GregorianDate::fromIsoString("2026-12-08"),
+        *GregorianDate::fromIsoString("2026-12-10"),
+        *GregorianDate::fromIsoString("2026-12-12"),
         "Edited repeat event",
         std::string("13:15"),
         std::string("14:45"),
@@ -2868,9 +2869,9 @@ reportsRepeatSeriesDateOverflowBeforePersistence()
     request.repeatSeriesId = calendarEventSeriesId(
         repeatSeriesId.toUtf8().toStdString()
         );
-    request.startDate = "9999-12-30";
-    request.editedStartDate = "9999-12-30";
-    request.editedEndDate = "9999-12-31";
+    request.startDate = *GregorianDate::fromIsoString("9999-12-30");
+    request.editedStartDate = *GregorianDate::fromIsoString("9999-12-30");
+    request.editedEndDate = *GregorianDate::fromIsoString("9999-12-31");
     request.startTime.reset();
     request.endTime.reset();
     request.allDay = true;
@@ -2930,9 +2931,9 @@ propagatesAllDayAndUnknownTimePolicy()
     ApplicationServicesCalendarEventSeriesEditPort port(services);
     CalendarEventSeriesEditRequest allDayRequest{
         calendarEventSeriesId(repeatSeriesId.toUtf8().toStdString()),
-        "2027-01-05",
-        "2027-01-06",
-        "2027-01-08",
+        *GregorianDate::fromIsoString("2027-01-05"),
+        *GregorianDate::fromIsoString("2027-01-06"),
+        *GregorianDate::fromIsoString("2027-01-08"),
         "All-day policy",
         std::nullopt,
         std::nullopt,
@@ -2959,9 +2960,9 @@ propagatesAllDayAndUnknownTimePolicy()
 
     CalendarEventSeriesEditRequest unknownRequest{
         calendarEventSeriesId(repeatSeriesId.toUtf8().toStdString()),
-        "2027-01-12",
-        "2027-01-14",
-        "2027-01-15",
+        *GregorianDate::fromIsoString("2027-01-12"),
+        *GregorianDate::fromIsoString("2027-01-14"),
+        *GregorianDate::fromIsoString("2027-01-15"),
         "Unknown policy",
         std::nullopt,
         std::nullopt,
@@ -3034,17 +3035,39 @@ reportsInvalidRepeatSeriesEditRequestStructurally()
     }
 
     invalid = validSeriesEditRequest();
-    invalid.startDate = "2026-02-30";
-    verifyFailure(
-        port.editRepeatSeriesFromDate(invalid),
-        ErrorCode::InvalidInput
+    invalid.editedStartDate = *GregorianDate::fromIsoString("2026-12-11");
+    invalid.editedEndDate = *GregorianDate::fromIsoString("2026-12-09");
+    const auto reversedRange = port.editRepeatSeriesFromDate(invalid);
+    verifyFailure(reversedRange, ErrorCode::InvalidInput);
+    QCOMPARE(
+        reversedRange.error().message,
+        std::string(
+            "Calendar repeat-series edit end date must not precede its start date."
+            )
         );
 
     invalid = validSeriesEditRequest();
-    invalid.editedEndDate = "2026-12-09";
-    verifyFailure(
-        port.editRepeatSeriesFromDate(invalid),
-        ErrorCode::InvalidInput
+    invalid.title = " \t ";
+    const auto invalidText = port.editRepeatSeriesFromDate(invalid);
+    verifyFailure(invalidText, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidText.error().message,
+        std::string(
+            "Calendar repeat-series edit text fields must be non-blank and bounded."
+            )
+        );
+
+    invalid = validSeriesEditRequest();
+    invalid.timeStatus = static_cast<CalendarEventTimeStatus>(99);
+    invalid.startTime.reset();
+    invalid.endTime.reset();
+    const auto invalidTimeStatus = port.editRepeatSeriesFromDate(invalid);
+    verifyFailure(invalidTimeStatus, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidTimeStatus.error().message,
+        std::string(
+            "Calendar repeat-series edit time status must be Timed, Unknown, or Unconfirmed."
+            )
         );
 
     invalid = validSeriesEditRequest();
@@ -4570,15 +4593,15 @@ boundaryIsTypedAndDoesNotExposeLegacyOwnership()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().editedStartDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().editedEndDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startTime),

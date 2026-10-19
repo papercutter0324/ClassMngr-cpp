@@ -91,25 +91,10 @@ planCalendarEventSeriesEditSuffix(
     }
 
     using namespace CalendarEventSeriesEditPlanDetail;
-    const std::optional<Date> selectedStartDate =
-        Date::fromIsoString(request.startDate);
-    const std::optional<Date> editedStartDate =
-        Date::fromIsoString(request.editedStartDate);
-    const std::optional<Date> editedEndDate =
-        Date::fromIsoString(request.editedEndDate);
-    if (!selectedStartDate || !editedStartDate || !editedEndDate)
-    {
-        return CalendarEventSeriesEditPlanResult::failure({
-            .code = Domain::ErrorCode::InvalidInput,
-            .message = "Calendar repeat-series edit dates must be valid canonical ISO dates.",
-            .recoverable = false
-        });
-    }
-
     const DayNumber startDateOffset =
-        editedStartDate->dayNumber() - selectedStartDate->dayNumber();
+        request.editedStartDate.dayNumber() - request.startDate.dayNumber();
     const DayNumber durationDays =
-        editedEndDate->dayNumber() - editedStartDate->dayNumber();
+        request.editedEndDate.dayNumber() - request.editedStartDate.dayNumber();
     const std::optional<Domain::CalendarEventSeriesId> repeatSeriesId =
         Domain::CalendarEventSeriesId::fromString(
             CalendarEventSeriesEditRequestDetail::trimAscii(

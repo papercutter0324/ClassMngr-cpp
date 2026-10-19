@@ -142,6 +142,22 @@ CalendarEventSeriesEditRequest validSeriesEditRequest()
 {
     return CalendarEventSeriesEditRequest{
         calendarEventSeriesId("series-1"),
+        *GregorianDate::fromIsoString("2026-09-20"),
+        *GregorianDate::fromIsoString("2026-09-22"),
+        *GregorianDate::fromIsoString("2026-09-23"),
+        "Edited event title",
+        std::string("09:00"),
+        std::string("10:00"),
+        false,
+        "Meeting",
+        CalendarEventTimeStatus::Timed
+    };
+}
+
+CalendarEventSeriesEditInput validSeriesEditInput()
+{
+    return CalendarEventSeriesEditInput{
+        calendarEventSeriesId("series-1"),
         "2026-09-20",
         "2026-09-22",
         "2026-09-23",
@@ -484,6 +500,7 @@ private slots:
     void singleEventDeleteUseCaseForwardsIdAndResultOnce();
     void singleEventDeleteUseCasePropagatesPortFailure();
     void seriesEditRequestBoundsAndDatesRemainTyped();
+    void seriesEditInputConvertsRawDatesWithExistingPrecedence();
     void seriesEditRequestAllDayAndTimeStatusPolicyIsExplicit();
     void seriesEditRequestContractHasNoQtOrLegacySurface();
     void repeatSeriesEditUseCaseForwardsRequestAndResultOnce();
@@ -1691,11 +1708,11 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
         seriesCases.emplace_back(std::move(request), message);
     };
     addSeriesCase(
-        [](auto& request) { request.editedStartDate = "2026-02-30"; },
-        "Calendar repeat-series edit dates must be valid canonical ISO dates."
-        );
-    addSeriesCase(
-        [](auto& request) { request.editedEndDate = "2026-09-21"; },
+        [](auto& request)
+        {
+            request.editedEndDate =
+                *GregorianDate::fromIsoString("2026-09-21");
+        },
         "Calendar repeat-series edit end date must not precede its start date."
         );
     addSeriesCase(
@@ -1746,24 +1763,18 @@ timingErrorsKeepFeatureMessagesAndValidationPrecedence()
 
     auto seriesTextPrecedence = validSeriesEditRequest();
     seriesTextPrecedence.title.clear();
-    seriesTextPrecedence.startDate = "2026-02-30";
+    seriesTextPrecedence.startTime = "9:00";
+    seriesTextPrecedence.endTime.reset();
     verifyInvalidValidation(
         seriesTextPrecedence.validate(),
         "Calendar repeat-series edit text fields must be non-blank and bounded."
         );
 
-    auto seriesSourceDatePrecedence = validSeriesEditRequest();
-    seriesSourceDatePrecedence.startDate = "2026-02-30";
-    seriesSourceDatePrecedence.editedStartDate = "2026-09-24";
-    seriesSourceDatePrecedence.editedEndDate = "2026-09-23";
-    seriesSourceDatePrecedence.endTime.reset();
-    verifyInvalidValidation(
-        seriesSourceDatePrecedence.validate(),
-        "Calendar repeat-series edit dates must be valid canonical ISO dates."
-        );
-
     auto seriesRangePrecedence = validSeriesEditRequest();
-    seriesRangePrecedence.editedEndDate = "2026-09-21";
+    seriesRangePrecedence.editedStartDate =
+        *GregorianDate::fromIsoString("2026-09-24");
+    seriesRangePrecedence.editedEndDate =
+        *GregorianDate::fromIsoString("2026-09-23");
     seriesRangePrecedence.endTime.reset();
     verifyInvalidValidation(
         seriesRangePrecedence.validate(),
@@ -1906,9 +1917,9 @@ timingAcceptsFullGregorianRangeAndCrossDayClocks()
     QVERIFY(draft.validate());
 
     auto series = validSeriesEditRequest();
-    series.startDate = "0001-01-01";
-    series.editedStartDate = "0001-01-01";
-    series.editedEndDate = "9999-12-31";
+    series.startDate = *GregorianDate::fromIsoString("0001-01-01");
+    series.editedStartDate = *GregorianDate::fromIsoString("0001-01-01");
+    series.editedEndDate = *GregorianDate::fromIsoString("9999-12-31");
     series.startTime = "23:59";
     series.endTime = "00:00";
     series.timeStatus = CalendarEventTimeStatus::Timed;
@@ -3293,17 +3304,15 @@ seriesEditRequestBoundsAndDatesRemainTyped()
     oversizedTitle.title.push_back('x');
     QVERIFY(!oversizedTitle.validate());
 
-    auto invalidSourceDate = request;
-    invalidSourceDate.startDate = "2026-02-30";
-    QVERIFY(!invalidSourceDate.validate());
-
-    auto invalidEditedDate = request;
-    invalidEditedDate.editedStartDate = "2026-13-01";
-    QVERIFY(!invalidEditedDate.validate());
-
     auto reversedEditedDates = request;
-    reversedEditedDates.editedEndDate = "2026-09-21";
-    QVERIFY(!reversedEditedDates.validate());
+    reversedEditedDates.editedStartDate =
+        *GregorianDate::fromIsoString("2026-09-24");
+    reversedEditedDates.editedEndDate =
+        *GregorianDate::fromIsoString("2026-09-23");
+    verifyInvalidValidation(
+        reversedEditedDates.validate(),
+        "Calendar repeat-series edit end date must not precede its start date."
+        );
 
     auto oversizedEventType = request;
     oversizedEventType.eventType = std::string(
@@ -3323,6 +3332,128 @@ seriesEditRequestBoundsAndDatesRemainTyped()
     invalidTime.startTime = "9:00";
     invalidTime.endTime = "10:00";
     QVERIFY(!invalidTime.validate());
+}
+
+void NextApplicationCalendarEventTests::
+seriesEditInputConvertsRawDatesWithExistingPrecedence()
+{
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditInput>().startDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditInput>().editedStartDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditInput>().editedEndDate),
+        std::string
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
+        GregorianDate
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().editedStartDate),
+        GregorianDate
+        >);
+    static_assert(std::is_same_v<
+        decltype(std::declval<CalendarEventSeriesEditRequest>().editedEndDate),
+        GregorianDate
+        >);
+
+    const CalendarEventSeriesEditInput input = validSeriesEditInput();
+    const auto converted = input.toRequest();
+    QVERIFY(converted);
+    QVERIFY(converted.value() == validSeriesEditRequest());
+    QVERIFY(converted.value().startDate ==
+        *GregorianDate::fromIsoString("2026-09-20"));
+    QVERIFY(converted.value().editedStartDate ==
+        *GregorianDate::fromIsoString("2026-09-22"));
+    QVERIFY(converted.value().editedEndDate ==
+        *GregorianDate::fromIsoString("2026-09-23"));
+
+    const auto verifyDateFailure = [](const CalendarEventSeriesEditInput& badInput)
+    {
+        const auto result = badInput.toRequest();
+        QVERIFY(!result);
+        QCOMPARE(result.error().code, ErrorCode::InvalidInput);
+        QCOMPARE(
+            result.error().message,
+            std::string(
+                "Calendar repeat-series edit dates must be valid canonical ISO dates."
+                )
+            );
+        QVERIFY(!result.error().recoverable);
+    };
+
+    auto malformedSelectedStart = input;
+    malformedSelectedStart.startDate = "2026-9-20";
+    verifyDateFailure(malformedSelectedStart);
+
+    auto impossibleEditedStart = input;
+    impossibleEditedStart.editedStartDate = "2026-02-30";
+    verifyDateFailure(impossibleEditedStart);
+
+    auto malformedEditedStart = input;
+    malformedEditedStart.editedStartDate = "not-a-date";
+    verifyDateFailure(malformedEditedStart);
+
+    auto nonCanonicalEditedEnd = input;
+    nonCanonicalEditedEnd.editedEndDate = "2026-09-23 ";
+    verifyDateFailure(nonCanonicalEditedEnd);
+
+    auto identifierPrecedesMalformedDate = input;
+    identifierPrecedesMalformedDate.repeatSeriesId =
+        CalendarEventSeriesId::fromString("");
+    identifierPrecedesMalformedDate.startDate = "2026-02-30";
+    const auto identifierPrecedenceResult =
+        identifierPrecedesMalformedDate.toRequest();
+    QVERIFY(!identifierPrecedenceResult);
+    QCOMPARE(identifierPrecedenceResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        identifierPrecedenceResult.error().message,
+        std::string(
+            "Calendar repeat-series identifier must be non-blank and bounded."
+            )
+        );
+    QVERIFY(!identifierPrecedenceResult.error().recoverable);
+
+    auto textPrecedesMalformedDate = input;
+    textPrecedesMalformedDate.title.clear();
+    textPrecedesMalformedDate.startDate = "2026-02-30";
+    const auto textPrecedenceResult = textPrecedesMalformedDate.toRequest();
+    QVERIFY(!textPrecedenceResult);
+    QCOMPARE(textPrecedenceResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        textPrecedenceResult.error().message,
+        std::string(
+            "Calendar repeat-series edit text fields must be non-blank and bounded."
+            )
+        );
+    QVERIFY(!textPrecedenceResult.error().recoverable);
+
+    auto selectedDatePrecedesRangeAndTimes = input;
+    selectedDatePrecedesRangeAndTimes.startDate = "2026-02-30";
+    selectedDatePrecedesRangeAndTimes.editedStartDate = "2026-09-24";
+    selectedDatePrecedesRangeAndTimes.editedEndDate = "2026-09-23";
+    selectedDatePrecedesRangeAndTimes.endTime.reset();
+    verifyDateFailure(selectedDatePrecedesRangeAndTimes);
+
+    auto rangePrecedesTimePairError = input;
+    rangePrecedesTimePairError.editedStartDate = "2026-09-24";
+    rangePrecedesTimePairError.editedEndDate = "2026-09-23";
+    rangePrecedesTimePairError.endTime.reset();
+    const auto rangePrecedenceResult = rangePrecedesTimePairError.toRequest();
+    QVERIFY(!rangePrecedenceResult);
+    QCOMPARE(rangePrecedenceResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        rangePrecedenceResult.error().message,
+        std::string(
+            "Calendar repeat-series edit end date must not precede its start date."
+            )
+        );
+    QVERIFY(!rangePrecedenceResult.error().recoverable);
 }
 
 void NextApplicationCalendarEventTests::
@@ -3403,15 +3534,15 @@ seriesEditRequestContractHasNoQtOrLegacySurface()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().editedStartDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().editedEndDate),
-        std::string
+        GregorianDate
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditRequest>().startTime),
@@ -3435,18 +3566,20 @@ seriesEditRequestContractHasNoQtOrLegacySurface()
 void NextApplicationCalendarEventTests::
 repeatSeriesEditUseCaseForwardsRequestAndResultOnce()
 {
-    auto request = validSeriesEditRequest();
-    request.repeatSeriesId = calendarEventSeriesId(" \t series-1 \t");
-    request.title = repeatedHangulTitle(86);
+    auto input = validSeriesEditInput();
+    input.repeatSeriesId = calendarEventSeriesId(" \t series-1 \t");
+    input.title = repeatedHangulTitle(86);
+    const auto expectedRequest = input.toRequest();
+    QVERIFY(expectedRequest);
     FakeCalendarEventSeriesEditPort port;
 
     const CalendarEventSeriesEditResult result =
-        CalendarEventSeriesEditUseCase::execute(port, request);
+        CalendarEventSeriesEditUseCase::execute(port, input);
 
     QVERIFY(result);
     QCOMPARE(port.editCalls, 1);
     QVERIFY(port.receivedRequest.has_value());
-    QVERIFY(*port.receivedRequest == request);
+    QVERIFY(*port.receivedRequest == expectedRequest.value());
 }
 
 void NextApplicationCalendarEventTests::
@@ -3462,7 +3595,7 @@ repeatSeriesEditUseCasePropagatesPortFailure()
     const CalendarEventSeriesEditResult result =
         CalendarEventSeriesEditUseCase::execute(
             port,
-            validSeriesEditRequest()
+            validSeriesEditInput()
             );
 
     QVERIFY(!result);
@@ -3484,7 +3617,7 @@ repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort()
 
     for (const std::string& repeatSeriesId : invalidIds)
     {
-        auto request = validSeriesEditRequest();
+        auto request = validSeriesEditInput();
         request.repeatSeriesId = calendarEventSeriesId(repeatSeriesId);
         const CalendarEventSeriesEditResult result =
             CalendarEventSeriesEditUseCase::execute(port, request);
@@ -3501,7 +3634,7 @@ repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort()
         QVERIFY(!result.error().recoverable);
     }
 
-    auto absentSeriesIdRequest = validSeriesEditRequest();
+    auto absentSeriesIdRequest = validSeriesEditInput();
     absentSeriesIdRequest.repeatSeriesId = CalendarEventSeriesId::fromString("");
     const CalendarEventSeriesEditResult absentSeriesIdResult =
         CalendarEventSeriesEditUseCase::execute(port, absentSeriesIdRequest);
@@ -3515,6 +3648,20 @@ repeatSeriesEditUseCaseRejectsInvalidRequestWithoutCallingPort()
             )
         );
     QVERIFY(!absentSeriesIdResult.error().recoverable);
+
+    auto invalidEditedDateInput = validSeriesEditInput();
+    invalidEditedDateInput.editedEndDate = "2026-02-30";
+    const CalendarEventSeriesEditResult invalidEditedDateResult =
+        CalendarEventSeriesEditUseCase::execute(port, invalidEditedDateInput);
+    QVERIFY(!invalidEditedDateResult);
+    QCOMPARE(invalidEditedDateResult.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidEditedDateResult.error().message,
+        std::string(
+            "Calendar repeat-series edit dates must be valid canonical ISO dates."
+            )
+        );
+    QVERIFY(!invalidEditedDateResult.error().recoverable);
 
     QCOMPARE(port.editCalls, 0);
     QVERIFY(!port.receivedRequest.has_value());
@@ -3546,9 +3693,9 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
 
     CalendarEventSeriesEditRequest request = validSeriesEditRequest();
     request.repeatSeriesId = calendarEventSeriesId("  series-1 \t");
-    request.startDate = "2026-09-20";
-    request.editedStartDate = "2026-09-22";
-    request.editedEndDate = "2026-09-25";
+    request.startDate = *GregorianDate::fromIsoString("2026-09-20");
+    request.editedStartDate = *GregorianDate::fromIsoString("2026-09-22");
+    request.editedEndDate = *GregorianDate::fromIsoString("2026-09-25");
     request.title = "Updated workshop";
     request.eventType = "Workshop";
     request.timeStatus = CalendarEventTimeStatus::Timed;
@@ -3636,9 +3783,12 @@ seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates()
     QVERIFY(!invalidSource.error().recoverable);
 
     CalendarEventSeriesEditRequest upperBoundaryRequest = request;
-    upperBoundaryRequest.startDate = "9999-12-30";
-    upperBoundaryRequest.editedStartDate = "9999-12-30";
-    upperBoundaryRequest.editedEndDate = "9999-12-31";
+    upperBoundaryRequest.startDate =
+        *GregorianDate::fromIsoString("9999-12-30");
+    upperBoundaryRequest.editedStartDate =
+        *GregorianDate::fromIsoString("9999-12-30");
+    upperBoundaryRequest.editedEndDate =
+        *GregorianDate::fromIsoString("9999-12-31");
     upperBoundaryRequest.allDay = true;
     upperBoundaryRequest.startTime.reset();
     upperBoundaryRequest.endTime.reset();
@@ -3650,9 +3800,12 @@ seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates()
     QCOMPARE(upperOverflow.error().code, ErrorCode::Technical);
 
     CalendarEventSeriesEditRequest lowerBoundaryRequest = request;
-    lowerBoundaryRequest.startDate = "0001-01-02";
-    lowerBoundaryRequest.editedStartDate = "0001-01-01";
-    lowerBoundaryRequest.editedEndDate = "0001-01-01";
+    lowerBoundaryRequest.startDate =
+        *GregorianDate::fromIsoString("0001-01-02");
+    lowerBoundaryRequest.editedStartDate =
+        *GregorianDate::fromIsoString("0001-01-01");
+    lowerBoundaryRequest.editedEndDate =
+        *GregorianDate::fromIsoString("0001-01-01");
     lowerBoundaryRequest.allDay = true;
     lowerBoundaryRequest.startTime.reset();
     lowerBoundaryRequest.endTime.reset();

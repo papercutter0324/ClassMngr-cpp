@@ -5,6 +5,7 @@
 
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/domain_types.h"
+#include "next/domain/gregorian_date.h"
 #include "next/domain/operation_result.h"
 
 #include <cctype>
@@ -12,6 +13,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace ClassMngr::Next::Application
 {
@@ -29,14 +31,14 @@ inline constexpr std::size_t kCalendarEventSeriesEditMaxEventTypeLength = 64;
 // A bounded, adapter-neutral request for editing the suffix of one repeat
 // series. startDate selects the first existing occurrence to edit;
 // editedStartDate and editedEndDate describe the new date and duration that
-// are propagated to every selected occurrence. Dates and times use canonical
-// ISO text so conversion to legacy Qt values stays in the platform adapter.
+// are propagated to every selected occurrence. The dates are valid domain
+// values before the request crosses the application port.
 struct CalendarEventSeriesEditRequest final
 {
     std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
-    std::string startDate;
-    std::string editedStartDate;
-    std::string editedEndDate;
+    Domain::GregorianDate startDate;
+    Domain::GregorianDate editedStartDate;
+    Domain::GregorianDate editedEndDate;
     std::string title;
     std::optional<std::string> startTime;
     std::optional<std::string> endTime;
@@ -51,6 +53,26 @@ struct CalendarEventSeriesEditRequest final
         const CalendarEventSeriesEditRequest&,
         const CalendarEventSeriesEditRequest&
         ) = default;
+};
+
+// Raw dates from UI drafts are converted at this boundary. Keeping them in a
+// separate input type prevents unvalidated ISO text from reaching the port.
+struct CalendarEventSeriesEditInput final
+{
+    std::optional<Domain::CalendarEventSeriesId> repeatSeriesId;
+    std::string startDate;
+    std::string editedStartDate;
+    std::string editedEndDate;
+    std::string title;
+    std::optional<std::string> startTime;
+    std::optional<std::string> endTime;
+    bool allDay = false;
+    std::string eventType = "Other";
+    Domain::CalendarEventTimeStatus timeStatus =
+        Domain::CalendarEventTimeStatus::Timed;
+
+    [[nodiscard]] Domain::Result<CalendarEventSeriesEditRequest>
+    toRequest() const;
 };
 
 using CalendarEventSeriesEditResult = Domain::Result<void>;
@@ -110,6 +132,52 @@ namespace CalendarEventSeriesEditRequestDetail
     });
 }
 
+[[nodiscard]] inline Domain::OperationError invalidError(
+    const char* message
+    )
+{
+    return {
+        .code = Domain::ErrorCode::InvalidInput,
+        .message = message,
+        .recoverable = false
+    };
+}
+
+[[nodiscard]] inline Domain::Result<void> validateTextFields(
+    const std::optional<Domain::CalendarEventSeriesId>& repeatSeriesId,
+    const std::string& title,
+    const std::string& eventType
+    )
+{
+    if (!repeatSeriesId.has_value()
+        || !isRequiredText(
+            repeatSeriesId->value(),
+            kCalendarEventSeriesEditMaxRepeatSeriesIdLength
+            ))
+    {
+        return invalid(
+            "Calendar repeat-series identifier must be non-blank and bounded."
+            );
+    }
+
+    if (CalendarEventTitleValidation::isBlankUtf8Title(title)
+        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
+            title,
+            kCalendarEventSeriesEditMaxTitleLength
+            )
+        || !Domain::calendarEventTypeFromName(
+                trimAscii(eventType)
+                ).has_value()
+        || eventType.size() > kCalendarEventSeriesEditMaxEventTypeLength)
+    {
+        return invalid(
+            "Calendar repeat-series edit text fields must be non-blank and bounded."
+            );
+    }
+
+    return Domain::Result<void>::success();
+}
+
 [[nodiscard]] inline const char* calendarEventTimingIssueMessage(
     const Domain::CalendarEventTimingIssue issue
     ) noexcept
@@ -149,43 +217,19 @@ validateCalendarEventSeriesEditRequest(
 {
     using namespace CalendarEventSeriesEditRequestDetail;
 
-    if (!request.repeatSeriesId.has_value()
-        || !isRequiredText(
-            request.repeatSeriesId->value(),
-            kCalendarEventSeriesEditMaxRepeatSeriesIdLength
-            ))
+    const Domain::Result<void> textValidation = validateTextFields(
+        request.repeatSeriesId,
+        request.title,
+        request.eventType
+        );
+    if (!textValidation)
     {
-        return invalid(
-            "Calendar repeat-series identifier must be non-blank and bounded."
-            );
-    }
-
-    if (CalendarEventTitleValidation::isBlankUtf8Title(request.title)
-        || !CalendarEventTitleValidation::isValidUtf8WithinUtf16Units(
-            request.title,
-            kCalendarEventSeriesEditMaxTitleLength
-            )
-        || !Domain::calendarEventTypeFromName(
-                trimAscii(request.eventType)
-                ).has_value()
-        || request.eventType.size()
-            > kCalendarEventSeriesEditMaxEventTypeLength)
-    {
-        return invalid(
-            "Calendar repeat-series edit text fields must be non-blank and bounded."
-            );
-    }
-
-    if (!Domain::CalendarEventTiming::isCanonicalDate(request.startDate))
-    {
-        return invalid(
-            "Calendar repeat-series edit dates must be valid canonical ISO dates."
-            );
+        return textValidation;
     }
 
     const Domain::CalendarEventTiming timing(
-        request.editedStartDate,
-        request.editedEndDate,
+        request.editedStartDate.toIsoString(),
+        request.editedEndDate.toIsoString(),
         request.startTime,
         request.endTime,
         request.allDay,
@@ -202,6 +246,72 @@ validateCalendarEventSeriesEditRequest(
 inline Domain::Result<void> CalendarEventSeriesEditRequest::validate() const
 {
     return validateCalendarEventSeriesEditRequest(*this);
+}
+
+inline Domain::Result<CalendarEventSeriesEditRequest>
+CalendarEventSeriesEditInput::toRequest() const
+{
+    using namespace CalendarEventSeriesEditRequestDetail;
+
+    const Domain::Result<void> textValidation = validateTextFields(
+        repeatSeriesId,
+        title,
+        eventType
+        );
+    if (!textValidation)
+    {
+        return Domain::Result<CalendarEventSeriesEditRequest>::failure(
+            textValidation.error()
+            );
+    }
+
+    const std::optional<Domain::GregorianDate> selectedStartDate =
+        Domain::GregorianDate::fromIsoString(startDate);
+    if (!selectedStartDate)
+    {
+        return Domain::Result<CalendarEventSeriesEditRequest>::failure(
+            invalidError(
+                "Calendar repeat-series edit dates must be valid canonical ISO dates."
+                )
+            );
+    }
+
+    const std::optional<Domain::GregorianDate> editedStartDate =
+        Domain::GregorianDate::fromIsoString(this->editedStartDate);
+    const std::optional<Domain::GregorianDate> editedEndDate =
+        Domain::GregorianDate::fromIsoString(this->editedEndDate);
+    if (!editedStartDate || !editedEndDate)
+    {
+        return Domain::Result<CalendarEventSeriesEditRequest>::failure(
+            invalidError(
+                "Calendar repeat-series edit dates must be valid canonical ISO dates."
+                )
+            );
+    }
+
+    CalendarEventSeriesEditRequest request{
+        repeatSeriesId,
+        *selectedStartDate,
+        *editedStartDate,
+        *editedEndDate,
+        title,
+        startTime,
+        endTime,
+        allDay,
+        eventType,
+        timeStatus
+    };
+    const Domain::Result<void> requestValidation = request.validate();
+    if (!requestValidation)
+    {
+        return Domain::Result<CalendarEventSeriesEditRequest>::failure(
+            requestValidation.error()
+            );
+    }
+
+    return Domain::Result<CalendarEventSeriesEditRequest>::success(
+        std::move(request)
+        );
 }
 
 // Adapter-neutral repeat-series edit. Legacy service pointers and Qt value

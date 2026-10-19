@@ -76,12 +76,7 @@ public:
             }
 
             const QDate startDate = legacyDate(request.startDate);
-            const QDate editedStartDate = legacyDate(request.editedStartDate);
-            const QDate editedEndDate = legacyDate(request.editedEndDate);
-            if (!startDate.isValid()
-                || !editedStartDate.isValid()
-                || !editedEndDate.isValid()
-                || editedEndDate < editedStartDate)
+            if (!startDate.isValid())
             {
                 return failure(
                     Domain::ErrorCode::InvalidInput,

@@ -12,16 +12,17 @@ class CalendarEventSeriesEditUseCase final
 public:
     [[nodiscard]] static CalendarEventSeriesEditResult execute(
         CalendarEventSeriesEditPort& editPort,
-        const CalendarEventSeriesEditRequest& request
+        const CalendarEventSeriesEditInput& input
         )
     {
-        const CalendarEventSeriesEditResult validation = request.validate();
-        if (!validation)
+        const Domain::Result<CalendarEventSeriesEditRequest> request =
+            input.toRequest();
+        if (!request)
         {
-            return validation;
+            return CalendarEventSeriesEditResult::failure(request.error());
         }
 
-        return editPort.editRepeatSeriesFromDate(request);
+        return editPort.editRepeatSeriesFromDate(request.value());
     }
 };
 

@@ -855,8 +855,8 @@ void CalendarPage::openCalendarDialog(
                     savedDraft.repeatSeriesId
                         ? savedDraft.repeatSeriesId
                         : draft.repeatSeriesId;
-                ClassMngr::Next::Application::CalendarEventSeriesEditRequest
-                    request{
+                ClassMngr::Next::Application::CalendarEventSeriesEditInput
+                    input{
                         repeatSeriesId,
                         draft.startDate,
                         savedDraft.startDate,
@@ -881,7 +881,7 @@ void CalendarPage::openCalendarDialog(
                     ClassMngr::Next::Application::
                         CalendarEventSeriesEditUseCase::execute(
                             editPort,
-                            request
+                            input
                             );
                 if (!typedSaved)
                 {
