@@ -7892,3 +7892,11 @@ F1124 completed at source/test commit `812692c6`, following acceptance
 keys, while the existing Qt adapter emits the same dotted strings for UI
 matching. Focused Application, platform, model, editor, and transfer tests
 passed 5/5. Windows and full-suite verification were not run.
+
+## 2026-10-20 - F1125 accepted
+
+Type the raw upcoming-birthday `MM-dd` input as a permissive
+`UpcomingBirthdayMonthDayInput`; keep invalid text representable so the
+existing parser can skip it. Preserve Qt/ASCII trimming boundaries, leap-day
+fallback, occurrence bucketing and ordering. Leave the reference-date triple,
+directory snapshot strings, and validated `BirthdayMonthDay` unchanged.

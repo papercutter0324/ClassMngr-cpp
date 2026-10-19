@@ -5546,3 +5546,16 @@ and row-transfer targets built; focused CTest passed 5/5. The Application
 target was rerun after a test-only cleanup and passed 1/1. Windows and
 full-suite verification were not run. F1125 is next for acceptance. F629 and
 both phase gates remain open.
+
+## Phase 2 update - F1125 accepted; Batch484 active - 2026-10-20
+
+F1125 is accepted to type only `UpcomingBirthdayCandidate::birthdayMonthDay`
+as a permissive opaque `UpcomingBirthdayMonthDayInput` over its current UTF-8
+string representation. Invalid or blank text must remain representable so
+the existing parser continues to skip it. Preserve ASCII `MM-dd` parsing and
+trimming, valid `BirthdayMonthDay` behavior, leap-day fallback, occurrence
+window/bucketing, and ordering. Keep `UpcomingBirthdayDate`, invalid-reference
+empty-schedule behavior, directory snapshot/read-port strings, and Qt
+trimming unchanged. Focused Application and feature targets are recorded in
+the Phase 2 plan. Implementation has not started. F629 and both phase gates
+remain open.

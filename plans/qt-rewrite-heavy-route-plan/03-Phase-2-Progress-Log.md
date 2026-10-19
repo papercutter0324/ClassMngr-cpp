@@ -49180,3 +49180,31 @@ CTest passed 1/1. `git diff --check` passed. Windows verification and the full
 suite were not run. Batch484 remains active with seven complete candidates,
 three discovered, and F1125 next for acceptance. F629 and the Phase 0 and
 Phase 2 gates remain open.
+
+### F1125 Upcoming Birthday month/day input accepted before implementation - 2026-10-20
+
+F1125 is accepted/in progress. Type only
+`UpcomingBirthdayCandidate::birthdayMonthDay` as a permissive opaque
+`UpcomingBirthdayMonthDayInput` over its existing UTF-8 string representation,
+with `.value()`. Its constructor must preserve empty and malformed values
+without validation or normalization so the existing parser remains the
+authority and continues silently skipping invalid or blank birthday text.
+
+Keep the exact ASCII `MM-dd` parsing and trimming behavior, invalid-date skip,
+and `Domain::BirthdayMonthDay` post-parse validation. Preserve Feb 29 support
+and the Feb 28 non-leap-year fallback, inclusive occurrence window and
+bucketing, and existing sort keys/order without adding an exact-tie guarantee.
+Leave the `UpcomingBirthdayDate` reference-date triple unchanged; an invalid
+reference date still yields an empty schedule. Do not change Korean,
+Native-English, or GS raw snapshot/read-port strings; feature Qt trimming;
+occurrence `GregorianDate`; calendar dates; names, positions, or groups; or
+unrelated schedule contracts.
+
+Focused targets: `ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests`
+and `ClassMngrUpcomingBirthdaysTests`. Focused CTests:
+`NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`,
+`UpcomingBirthdaysLocaleAwareOrderingTests`, and
+`UpcomingBirthdaysLeapDayFallbackBehavior`. Implementation and tests have not
+started. Batch484 remains active with seven complete candidates, F1125
+accepted/in progress, and two discovered; F1126 is next after this slice.
+F629 and the Phase 0 and Phase 2 gates remain open.
