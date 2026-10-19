@@ -5784,3 +5784,15 @@ and FileController startup/fallback behavior. `git diff --check` passed.
 The full suite and Windows verification were not run. Batch485 has six
 complete slices and four discovered; F1134 is next for acceptance. The batch
 remains unpushed. F629 and both phase gates remain open.
+
+## Phase 2 update - F1134 accepted; Batch485 active - 2026-10-20
+
+F1134 is accepted for dedicated export-only UTF-16 class and teacher
+correlation-key types used in the portable package. Keep them distinct from
+the UTF-16 payload type and from existing UTF-8 Class Transfer apply keys.
+Preserve exact code units, generated `class-N` selection order, first-seen
+teacher-ID `teacher-N` reuse and references, source identities, JSON schema,
+and legacy package mapping. Do not normalize, validate, trim, or transcode
+keys. Focused query, platform export-source, and legacy package adapter tests
+are expected; implementation and verification are pending. F1135 is next for
+acceptance. Batch485 remains unpushed; F629 and both phase gates remain open.

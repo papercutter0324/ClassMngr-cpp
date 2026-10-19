@@ -49761,3 +49761,29 @@ focused CTests passed 4/4. `git diff --check` passed. The full suite and Windows
 verification were not run. Batch485 has six complete slices and four
 discovered; F1134 is next for acceptance. The batch remains unpushed; F629 and
 the Phase 0 and Phase 2 gates remain open.
+
+### F1134 Class Transfer export correlation keys accepted before implementation - 2026-10-20
+
+F1134 is accepted/in progress; implementation and tests have not started. Add
+export-only UTF-16 key values `ClassExportClassKey` and
+`ClassExportTeacherKey`, each owning exact `std::u16string` code units. Keep
+them distinct from `ClassExportText` payload and the existing UTF-8 apply keys
+`ClassTransferClassKey` and `ClassTransferTeacherKey`. Use the new types for
+generated package class `key`, teacher `key`, and class `teacherKey`.
+
+Do not validate, normalize, trim, transcode, or change key generation or
+correspondence. Preserve `class-N` generation in selection order,
+`teacher-N` first-seen typed `TeacherId` reuse, exact UTF-16 payload/code units,
+JSON schema and serialization, legacy package adapter mappings, and source IDs.
+Keep all UTF-8 apply-key behavior, including blank teacher-key semantics,
+unchanged.
+
+Focused verification after implementation: extend
+`tests/next_application_class_transfer_export_query_tests.cpp`,
+`tests/next_platform_class_transfer_export_source_tests.cpp`, and
+`tests/class_transfer_apply_package_adapter_tests.cpp`. Cover separation among
+key, payload, and apply-key types; exact code units; generation, order, reuse,
+and correspondence; and stable JSON/legacy mappings. Run the three focused CTests and
+`git diff --check`; no full-suite or Windows run is expected. F1135 is next for
+acceptance. Batch485 remains unpushed; F629 and the Phase 0 and Phase 2 gates
+remain open.

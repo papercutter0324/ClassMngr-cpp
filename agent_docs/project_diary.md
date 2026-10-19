@@ -8025,3 +8025,13 @@ focused CTests and `git diff --check` passed. The full suite and Windows
 verification were not run. Batch485 now has six complete slices and four
 discovered, with F1134 next. The batch remains unpushed, and F629 and both
 phase gates remain open.
+
+## 2026-10-20 - F1134 accepted
+
+Class Transfer export correlation keys are UTF-16 code-unit values because the
+portable package preserves Qt text, while apply-side class and teacher keys
+are UTF-8 `std::string` values with separate behavior. Type only the export
+keys and keep payload, source IDs, key generation, correspondence, JSON
+serialization, legacy package mapping, and apply semantics intact. Generated
+class keys follow selected order; generated teacher keys reuse the first
+reference for each typed teacher identity.
