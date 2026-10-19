@@ -7522,3 +7522,14 @@ legacy page's numeric values at the caller boundary. Keep the literal
 `TeacherId("-1")` sentinel and map it to no assigned teacher in the typed
 port request. The use case still owns integer-range validation because typed
 IDs hold arbitrary nonempty text; preserve the wide `int64_t` teacher range.
+
+## 2026-10-20 - F1106 complete
+
+F1106 completed at source/test commit
+`8a6e8174233b502815f22c4ff3df55029986cc40`, following acceptance commit
+`fdc95c7c1aaef206c6650150405fb5d63a09c781`. The page now converts legacy
+numeric IDs at the boundary, while the use case keeps full decimal/range
+validation and the exact `-1` sentinel. Focused Application, Platform,
+persistence parity, and page verification passed; no full suite ran. Updating
+direct test callers kept the typed-only application entry without changing
+Platform production code.

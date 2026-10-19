@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1106 accepted; Batch479 active)
+## Current continuation - 2026-10-20 (F1106 complete; Batch479 active)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6053,17 +6053,25 @@ normalization or new malformed-UTF-8 rejection.
 
 Independent checks passed: the Application query executable exited 0, the
 non-ASCII UTF-8 and empty-list page selectors passed 4 QTest cases total, and
-`git diff --check` passed. No full suite ran. Batch479 remains active and
-unpushed: F1104-F1105 are complete, F1106 is accepted but not implemented,
-and F1107-F1108 are discovered. The combined Phase 0 and Phase 2 gates remain
-open; Windows x64 evidence remains unavailable.
+`git diff --check` passed. No full suite ran.
 
-F1106 types the Co-Teacher assignment use-case entry as `Domain::ClassId` and
-`Domain::TeacherId`. The page adapts its existing numeric values with
-`std::to_string`, keeping literal `-1` as the teacher sentinel; the use case
-maps that sentinel to an absent port teacher ID. Retain full decimal parsing
-and current ranges (positive `int` class IDs and positive `int64_t` teacher
-IDs), rejecting zero, other negatives, malformed/trailing values, and
-overflow before the port. Keep current recoverable `InvalidInput` messages,
-wide IDs, and existing Platform/persistence contracts. No F1106
-implementation has started.
+F1106 completed at source/test commit
+`8a6e8174233b502815f22c4ff3df55029986cc40`, following acceptance commit
+`fdc95c7c1aaef206c6650150405fb5d63a09c781`. The use-case entry now accepts
+`Domain::ClassId` and `Domain::TeacherId`; the page converts its legacy
+numeric values at the boundary. Full decimal/range validation stays in the
+use case, exact teacher `-1` maps to an absent port ID, and wide teacher IDs
+remain intact. Existing Platform and persistence test callers were adapted;
+there was no Platform production change.
+
+Focused independent verification on Darwin arm64 with Ninja Debug and
+Qt 6.12.0 passed the Application, Platform assignment, persistence parity,
+and wide-identity page CTests 4/4. Application and exact `INT_MAX`/
+`INT64_MAX` boundary cases passed; Platform integration passed 16 cases,
+parity passed 3, and the wide page selector passed 3. The page's default-port
+save/readback and manual-failure selectors also passed. `git diff --check`
+passed; no full suite ran.
+
+Batch479 remains active and unpushed: F1104-F1106 are complete, F1107 is next
+for acceptance reassessment, and F1108 is discovered. The combined Phase 0
+and Phase 2 gates remain open; Windows x64 evidence remains unavailable.

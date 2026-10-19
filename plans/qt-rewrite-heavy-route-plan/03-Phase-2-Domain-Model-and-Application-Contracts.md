@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch478 is complete with its closeout pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`; Batch479 is active and unpushed with F1104-F1105 complete, F1106 accepted but not implemented, and F1107-F1108 discovered, while the Phase 0 and Phase 2 gates remain Open.
+- Current note: Batch478 is complete with its closeout pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`; Batch479 is active and unpushed with F1104-F1106 complete, F1107 next for acceptance reassessment, and F1108 discovered, while the Phase 0 and Phase 2 gates remain Open.
 
 ### Slice discovery batches
 
@@ -68,12 +68,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch479 (5 candidates; 2 complete, 1 accepted, 2 discovered)
+#### Active batch: Batch479 (5 candidates; 3 complete, 1 next for reassessment, 1 discovered)
 
 1. F1104 - Type class identity in Schedule testing-assignment reads: complete at source/test commit `ddcb8bbb`; see the progress log for focused verification and limits.
 2. F1105 - Type the Campus Dashboard selected-campus read request: complete at source/test commit `1d86cc57`; see the progress log for focused verification and limits.
-3. F1106 - Keep Co-Teacher assignment identity typed at use-case entry: accepted, not implemented; preserve `-1` semantics and wide teacher IDs.
-4. F1107 - Carry typed IDs through Sub Prep print-order facts: discovered; preserve grouping and numeric class-ID tie-break order.
+3. F1106 - Keep Co-Teacher assignment identity typed at use-case entry: complete at source/test commit `8a6e8174`; see the progress log for focused verification and limits.
+4. F1107 - Carry typed IDs through Sub Prep print-order facts: next for acceptance reassessment; preserve grouping and numeric class-ID tie-break order.
 5. F1108 - Keep Sub Prep selected-class IDs typed through its selection policy: discovered; preserve positive filtering, first-seen deduplication, exact day match, schedule order, and both entry kinds.
 
 No other slices were found.

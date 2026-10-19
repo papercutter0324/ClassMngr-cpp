@@ -47730,3 +47730,28 @@ Focused tests must cover UI-boundary decimal conversion, mapping teacher
 `-1` to `std::nullopt`, wide teacher IDs, invalid numeric and malformed
 values, preserved `InvalidInput` messages, and no port call for rejected
 input. No implementation or test execution has started.
+
+### F1106 complete; F1107 next for reassessment - 2026-10-20
+
+F1106 is complete at source/test commit
+`8a6e8174233b502815f22c4ff3df55029986cc40`; its acceptance commit is
+`fdc95c7c1aaef206c6650150405fb5d63a09c781`. The public use-case entry now
+accepts typed class and teacher IDs; the page converts its legacy integer and
+`qint64` IDs at the boundary, and the application validates their numeric
+ranges, preserving the literal teacher `-1` as absence in the port request.
+No Platform production changes were made. The source/test commit left a clean
+worktree.
+
+On macOS arm64 with Ninja Debug, Qt 6.12.0, and Apple Clang 21, four focused
+CTest selectors passed 4/4 for Application assignment, Platform assignment
+integration, persistence parity, and `NextFeatureClassCoTeacherWideTeacherIdentity`.
+The Application boundary test passed; Platform integration reported 16
+passed/0 failed, persistence parity 3/0, and the wide page selector 3/0. Page
+selectors `defaultPortSavesAssignmentAndRefreshesTitle` and
+`manualFailureWarnsAndRetainsDirtyState` also passed. Exact `INT_MAX` class
+and `INT64_MAX` teacher cases passed independently. `git diff --check` passed;
+no full suite ran.
+
+Batch479 remains active and unpushed: F1104-F1106 are complete, F1107 is next
+for acceptance reassessment, and F1108 remains discovered. Batch478's pushed
+closeout remains `5877b296c0c9a032adeeeb9cbfb807e19765e40a`.

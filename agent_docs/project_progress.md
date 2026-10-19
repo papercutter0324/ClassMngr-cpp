@@ -5027,3 +5027,26 @@ models stay unchanged.
 Batch479 remains active and unpushed: F1104-F1105 are complete, F1106 is
 accepted, and F1107-F1108 are discovered. The combined Phase 0 gate and
 Phase 2 exit gate remain open; Windows x64 evidence remains unavailable.
+
+## Phase 2 update - F1106 complete; Batch479 active - 2026-10-20
+
+F1106 is complete at source/test commit
+`8a6e8174233b502815f22c4ff3df55029986cc40`, following acceptance commit
+`fdc95c7c1aaef206c6650150405fb5d63a09c781`. The Co-Teacher assignment
+use-case entry now accepts `Domain::ClassId` and `Domain::TeacherId`; the page
+converts its legacy numeric values at the UI boundary. The use case fully
+validates positive `int`/`int64_t` values, preserves exact `-1` as the
+unassigned sentinel, and forwards wide IDs. Existing integration test callers
+were adapted; no Platform production code changed.
+
+Focused independent verification on Darwin arm64, Ninja Debug, and Qt 6.12.0
+passed the Application assignment, Platform assignment integration,
+persistence parity, and wide-identity page CTests 4/4. Application maximum
+integer-boundary tests passed; Platform integration passed 16 cases, parity
+passed 3, and the wide page selector passed 3. The default-port page save and
+manual-failure selectors also passed. `git diff --check` passed. No full suite
+ran.
+
+Batch479 remains active and unpushed: F1104-F1106 are complete, F1107 is next
+for acceptance reassessment, and F1108 remains discovered. The Phase 0 and
+Phase 2 gates remain open; Windows x64 evidence is unavailable.
