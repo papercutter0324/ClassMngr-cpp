@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch487 is active with F1146 accepted/in progress at the raw-to-typed repeat-series date boundary and F1147 next after it completes; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch487 is active with F1147 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,12 +68,12 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch487 (10 candidates; 2 complete; 1 accepted/in progress; 7 discovered)
+#### Active batch: Batch487 (10 candidates; 3 complete; 0 accepted/in progress; 7 discovered)
 
 1. F1144 - **Complete at `e523001d`.** Type personal-signature image save-request bytes, separate from F1140's read-result value.
 2. F1145 - **Complete at `119b961e`.** Type only Sub Prep's normalized calendar-interval query output with existing `Domain::CalendarEventType`; split the raw text read-port input DTO from the typed result DTO. Keep Calendar create/edit and repeat-series inputs unchanged to preserve compatibility.
-3. F1146 - **Accepted/in progress.** Keep raw `startDate`, `editedStartDate`, and `editedEndDate` in an Application input/draft, validate them with the strict Gregorian parser, and pass three `Domain::GregorianDate` values in `CalendarEventSeriesEditRequest`; preserve raw persisted dates and `startDate` suffix selection.
-4. F1147 - **Discovered; next after F1146 completes.** Type Calendar Page campus-code query output while preserving optionality, exact text, UTF-8, empty-only omission, whitespace, and order.
+3. F1146 - **Complete at `fcbeadee`.** Keep raw input dates at the Application boundary and use three `Domain::GregorianDate` values in the edit request; preserve raw persisted dates and `startDate` suffix selection.
+4. F1147 - **Discovered; next.** Type Calendar Page campus-code query output while preserving optionality, exact text, UTF-8, empty-only omission, whitespace, and order.
 5. F1148 - **Discovered.** Type the current-campus display name distinctly from campus IDs/codes; preserve fallbacks, errors, retry/correction, and Calendar all-events behavior.
 6. F1149 - **Discovered.** Type Class Transfer's canonical exported UTC timestamp (`YYYY-MM-DDTHH:mm:ss.sssZ`).
 7. F1150 - **Discovered.** Type Schedule Import room values and selected-room membership; preserve normalization, first-seen order, exact membership, and diagnostics.
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 9. F1152 - **Discovered.** Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
 10. F1153 - **Discovered.** Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-Batch487 has two complete candidates (F1144–F1145), one accepted/in progress (F1146), and seven discovered; F1147 is next after F1146 completes. Detailed scope and evidence are in the [progress log](03-Phase-2-Progress-Log.md#f1146-calendar-series-edit-date-boundary-accepted-before-implementation-2026-10-20) and [Batch487 discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
+Batch487 has three complete candidates (F1144–F1146), none accepted/in progress, and seven discovered; F1147 is next. Detailed scope and evidence are in the [F1146 completion record](03-Phase-2-Progress-Log.md#f1146-calendar-series-edit-date-boundary-complete-2026-10-20) and [Batch487 discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
 
 #### Deferred candidates
 

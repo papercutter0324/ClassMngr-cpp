@@ -8279,3 +8279,23 @@ macOS Debug build and all nine focused CTests passed, including the missing
 Calendar Preferences parent CTest rerun; the full suite and Windows were not
 run. Batch486 is closed locally and its push is pending. F629 and both phase
 gates remain open.
+
+## 2026-10-20 - F1146 complete
+
+F1146 moves repeat-series edit dates from raw UI strings to typed
+`Domain::GregorianDate` values before the Application port. Keep raw ISO input
+in `CalendarEventSeriesEditInput` so malformed values still return the
+existing structured `InvalidInput` result in the same validation order.
+Persisted occurrence snapshot dates stay raw so invalid stored data continues
+to report `Technical`; the selected start date remains the suffix selector.
+
+The source/test slice completed at `fcbeadeeb61838d7829c0083715cd60556debf9e`,
+following acceptance `d6e785d7c10f2938c07d93a9ee0f009cbafb764c`. The existing
+macOS Debug build passed for four requested targets. Both focused Application
+and Platform CTests passed (73 QtTest cases each), and the selected repeat-
+series UI parity selector passed 3 entries. The first build caught three stale
+string assignments in the Application test fixture; after converting those
+fixtures to valid `GregorianDate` values, the same incremental build passed.
+`git diff --check` passed. No full suite or Windows build ran. F1147 is next in
+Batch487; F629 and both phase gates remain open. Batch486's push remains
+pending exact-payload approval.

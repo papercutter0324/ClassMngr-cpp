@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1145 complete; Batch486 complete locally; F1146 next; F629 open)
+### Current checkpoint - 2026-10-20 (F1146 complete; Batch487 active; F1147 next; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -253,17 +253,28 @@ create/edit text contracts remain unchanged. Three targets built
 incrementally, and both focused CTests passed (Query 10/10, Platform 73/73).
 The query suite covers padded labels and exact filtering; Platform trim and
 prefilter code remained unchanged and was source-reviewed, while its fixtures
-use canonical labels. F1146 is accepted/in progress: raw ISO input is converted
-to typed `GregorianDate` request fields after validation, while persisted
-occurrence dates remain raw for Technical failure reporting. Batch485 was
+use canonical labels. F1146 completed at source/test commit
+`fcbeadeeb61838d7829c0083715cd60556debf9e`, following acceptance commit
+`d6e785d7c10f2938c07d93a9ee0f009cbafb764c`. Raw UI ISO-date input now converts
+to typed `GregorianDate` request fields before the Application port; persisted
+occurrence dates remain raw for Technical failure reporting. The incremental
+build passed for `ClassMngr` and the Application, Platform, and UI parity test
+targets. Both focused CTests passed (2/2; 73 QtTest cases in each), as did the
+selected repeat-series suffix UI parity selector (3 entries). The first build
+found three stale test-fixture string assignments; these were updated to valid
+`GregorianDate` values and the same incremental build then passed.
+`git diff --check` passed. No configure, clean build, full suite, or Windows
+build ran. Batch487 has three complete slices (F1144–F1146), no accepted but
+incomplete slices, and seven discovered slices; F1147 is next. Batch485 was
 pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits
 source-bound Windows layout evidence, which the user cannot run now; the Phase
-0 and Phase 2 gates remain open.
+0 and Phase 2 gates remain open. Batch486's completed-batch push is still
+pending the user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete F1146, then accept F1147.
+Accept and complete F1147, then continue Batch487 in its recorded order.
 Batch486's push to `origin/Qt-Rewrite` is pending the user's response to the
 exact-payload approval request. F629 remains active and awaits source-bound
 Windows x64 layout evidence for commit `667ff54e`; the user cannot run Windows

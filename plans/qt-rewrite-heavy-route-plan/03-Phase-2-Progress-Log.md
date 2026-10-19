@@ -50657,3 +50657,30 @@ F629 remains open because the user cannot run Windows now.
 Batch487 has ten candidates: two complete (F1144–F1145), one accepted/in
 progress (F1146), and seven discovered (F1147–F1153); F1147 is next after
 F1146 completes. The Phase 0 and Phase 2 gates remain open.
+
+### F1146 Calendar series edit date boundary complete - 2026-10-20
+
+F1146 completed at source/test commit
+`fcbeadeeb61838d7829c0083715cd60556debf9e`, following acceptance commit
+`d6e785d7c10f2938c07d93a9ee0f009cbafb764c`. The Application now validates
+the raw input dates before constructing a request with three
+`Domain::GregorianDate` values. The planner and Platform adapter use typed
+dates; persisted occurrence date snapshots remain raw, and `startDate` remains
+the suffix selector. No production defect was found.
+
+The incremental build in the existing `build/macos-clang-debug` tree passed
+for `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+`ClassMngrCalendarPageEventMutationParityTests`. The first build found three
+stale fixture strings, which were corrected to `GregorianDate` values; the
+build then passed. Focused Application and Platform CTests passed 2/2, with
+73 QtTest cases in each suite. UI selector
+`repeatSeriesSuffixEditUsesCalendarPageSignalAndRefreshesProjection` passed
+three entries under `QT_QPA_PLATFORM=offscreen`. `git diff --check` passed.
+No configure or clean build, full suite, or Windows run was performed.
+
+Batch487 has ten candidates: three complete (F1144–F1146), none accepted/in
+progress, and seven discovered (F1147–F1153); F1147 is next. F629 remains
+active pending source-bound Windows x64 layout evidence. The Phase 0 and Phase
+2 gates remain open.
