@@ -15,6 +15,45 @@
 namespace ClassMngr::Next::Application
 {
 
+// The review-decision contract preserves the adapter-provided UTF-8 bytes as
+// an opaque grouping key. It deliberately does not validate or normalize them.
+class ScheduleImportReviewTeacherKey final
+{
+public:
+    ScheduleImportReviewTeacherKey() = default;
+
+    explicit ScheduleImportReviewTeacherKey(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return m_value.empty();
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const ScheduleImportReviewTeacherKey&,
+        const ScheduleImportReviewTeacherKey&
+        ) = default;
+
+    friend bool operator<(
+        const ScheduleImportReviewTeacherKey& left,
+        const ScheduleImportReviewTeacherKey& right
+        )
+    {
+        return left.m_value < right.m_value;
+    }
+
+private:
+    std::string m_value;
+};
+
 enum class ScheduleImportReviewTeacherAction
 {
     Unselected,
@@ -36,7 +75,7 @@ enum class ScheduleImportReviewClassAction
 
 struct ScheduleImportReviewDecisionCandidate final
 {
-    std::string teacherKey;
+    ScheduleImportReviewTeacherKey teacherKey;
     // Room values are normalized by the owning adapter before they cross the
     // Application boundary.
     std::vector<std::string> importedRooms;
@@ -44,7 +83,7 @@ struct ScheduleImportReviewDecisionCandidate final
 
 struct ScheduleImportReviewTeacherResolution final
 {
-    std::string teacherKey;
+    ScheduleImportReviewTeacherKey teacherKey;
     ScheduleImportReviewTeacherAction action =
         ScheduleImportReviewTeacherAction::Unselected;
     std::string selectedRoom;
@@ -89,7 +128,7 @@ enum class ScheduleImportReviewDecisionIssueCode
 struct ScheduleImportReviewDecisionIssue final
 {
     ScheduleImportReviewDecisionIssueCode code;
-    std::string teacherKey;
+    ScheduleImportReviewTeacherKey teacherKey;
     int candidateIndex = -1;
     std::optional<Domain::ClassId> targetClassId;
     std::vector<int> candidateIndexes;
@@ -116,9 +155,10 @@ validateScheduleImportReviewDecisions(
     using IssueCode = ScheduleImportReviewDecisionIssueCode;
 
     ScheduleImportReviewDecisionResult result;
-    std::vector<std::string> candidateTeacherKeys;
-    std::set<std::string> candidateTeacherKeySet;
-    std::map<std::string, std::vector<std::string>> importedRooms;
+    std::vector<ScheduleImportReviewTeacherKey> candidateTeacherKeys;
+    std::set<ScheduleImportReviewTeacherKey> candidateTeacherKeySet;
+    std::map<ScheduleImportReviewTeacherKey, std::vector<std::string>>
+        importedRooms;
 
     for (const auto& candidate : request.candidates)
     {
@@ -167,7 +207,8 @@ validateScheduleImportReviewDecisions(
         return false;
     };
 
-    std::map<std::string, const ScheduleImportReviewTeacherResolution*>
+    std::map<ScheduleImportReviewTeacherKey,
+             const ScheduleImportReviewTeacherResolution*>
         teacherResolutions;
     for (const auto& resolution : request.teachers)
     {

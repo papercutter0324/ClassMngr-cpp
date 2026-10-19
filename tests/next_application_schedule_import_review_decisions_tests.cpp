@@ -19,8 +19,23 @@ using TeacherAction = ScheduleImportReviewTeacherAction;
 using ClassAction = ScheduleImportReviewClassAction;
 using IssueCode = ScheduleImportReviewDecisionIssueCode;
 using Request = ScheduleImportReviewDecisionRequest;
+using TeacherKey = ScheduleImportReviewTeacherKey;
 using ClassId = ClassMngr::Next::Domain::ClassId;
 using TeacherId = ClassMngr::Next::Domain::TeacherId;
+
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionCandidate{}.teacherKey),
+    TeacherKey
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewTeacherResolution{}.teacherKey),
+    TeacherKey
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportReviewDecisionIssue{}.teacherKey),
+    TeacherKey
+    >);
+static_assert(!std::is_convertible_v<std::string, TeacherKey>);
 
 static_assert(std::is_same_v<
     decltype(ScheduleImportReviewClassResolution{}.targetClassId),
@@ -45,11 +60,11 @@ Request validRequest()
 {
     Request request;
     request.candidates = {
-        {"teacher-a", {"415", "416"}},
-        {"teacher-a", {"416"}}
+        {TeacherKey{"teacher-a"}, {"415", "416"}},
+        {TeacherKey{"teacher-a"}, {"416"}}
     };
     request.teachers = {
-        {"teacher-a", TeacherAction::Reuse, "415"}
+        {TeacherKey{"teacher-a"}, TeacherAction::Reuse, "415"}
     };
     request.classes = {
         {0, ClassAction::UpdateExisting, classId(21)},
@@ -99,6 +114,157 @@ int main()
     try
     {
         {
+            const TeacherKey empty;
+            require(empty.empty(), "default teacher key was not empty");
+            require(empty.value().empty(), "default teacher key lost its value");
+            ++cases;
+        }
+        {
+            const std::string composed = "\xC3\xA9-teacher-\xF0\x9F\xA7\xAA";
+            const std::string decomposed =
+                "e\xCC\x81-teacher-\xF0\x9F\xA7\xAA";
+            const TeacherKey first{composed};
+            const TeacherKey second{decomposed};
+            require(first.value() == composed, "teacher key bytes changed");
+            require(second.value() == decomposed, "second teacher key bytes changed");
+            require(first != second, "distinct Unicode keys were normalized");
+
+            Request request;
+            request.candidates = {
+                {first, {"room-a"}},
+                {second, {"room-b"}}
+            };
+            request.teachers = {
+                {first, TeacherAction::Reuse, {}},
+                {second, TeacherAction::Reuse, {}}
+            };
+            request.classes = {
+                {0, ClassAction::CreateNew, std::nullopt},
+                {1, ClassAction::CreateNew, std::nullopt}
+            };
+            require(
+                validateScheduleImportReviewDecisions(request).accepted(),
+                "arbitrary Unicode teacher keys did not remain distinct"
+                );
+
+            request.teachers[1].teacherKey = TeacherKey{
+                "unknown-\xC3\xA9-\xF0\x9F\x9A\x80"
+            };
+            const auto result = validateScheduleImportReviewDecisions(request);
+            const auto issue = std::find_if(
+                result.issues.begin(),
+                result.issues.end(),
+                [](const auto& value)
+                {
+                    return value.code == IssueCode::UnknownTeacherResolution;
+                }
+                );
+            const std::string unknown =
+                "unknown-\xC3\xA9-\xF0\x9F\x9A\x80";
+            require(
+                issue != result.issues.end()
+                    && issue->teacherKey.value() == unknown,
+                "unknown-teacher issue did not preserve the exact key payload"
+                );
+            ++cases;
+        }
+        {
+            const TeacherKey teacherB{"teacher-b"};
+            const TeacherKey teacherA{"teacher-a"};
+            const TeacherKey teacherC{"teacher-c"};
+            const TeacherKey unknown{"unknown-\xC3\xA9"};
+            Request request;
+            request.candidates = {
+                {teacherB, {"", "502", "502"}},
+                {teacherA, {"", "414", "414"}},
+                {teacherC, {"530"}},
+                {teacherA, {"900"}},
+                {teacherB, {"502"}}
+            };
+            request.teachers = {
+                {TeacherKey{}, TeacherAction::Invalid, {}},
+                {unknown, TeacherAction::Invalid, {}},
+                {teacherA, TeacherAction::Reuse, {}},
+                {teacherA, TeacherAction::Invalid, {}}
+            };
+            request.classes = {
+                {0, ClassAction::Invalid, std::nullopt},
+                {-1, ClassAction::CreateNew, std::nullopt},
+                {0, ClassAction::Skip, std::nullopt}
+            };
+
+            const auto result = validateScheduleImportReviewDecisions(request);
+            const std::vector<IssueCode> expectedCodes = {
+                IssueCode::EmptyTeacherKey,
+                IssueCode::InvalidTeacherAction,
+                IssueCode::InvalidTeacherAction,
+                IssueCode::UnknownTeacherResolution,
+                IssueCode::InvalidTeacherAction,
+                IssueCode::DuplicateTeacherResolution,
+                IssueCode::InvalidClassAction,
+                IssueCode::CandidateIndexOutOfRange,
+                IssueCode::DuplicateClassResolution,
+                IssueCode::MissingTeacherResolution,
+                IssueCode::MissingTeacherResolution,
+                IssueCode::MissingClassResolution,
+                IssueCode::MissingClassResolution,
+                IssueCode::MissingClassResolution,
+                IssueCode::MissingClassResolution,
+                IssueCode::MissingTeacherRoom
+            };
+            std::vector<IssueCode> actualCodes;
+            actualCodes.reserve(result.issues.size());
+            for (const auto& issue : result.issues)
+            {
+                actualCodes.push_back(issue.code);
+            }
+            require(!result.accepted(), "invalid ordered decisions were accepted");
+            require(actualCodes == expectedCodes, "decision issue order changed");
+            require(
+                result.issues[9].teacherKey == teacherB
+                    && result.issues[10].teacherKey == teacherC,
+                "missing teacher issues lost first-seen candidate order"
+                );
+            require(
+                result.issues[15].teacherKey == teacherA,
+                "aggregated multi-room issue omitted its teacher key"
+                );
+            ++cases;
+        }
+        {
+            const TeacherKey teacher{"teacher-room-aggregation"};
+            Request request;
+            request.candidates = {
+                {teacher, {"", "414", "414"}},
+                {teacher, {"414", ""}}
+            };
+            request.teachers = {
+                {teacher, TeacherAction::Reuse, {}}
+            };
+            request.classes = {
+                {0, ClassAction::CreateNew, std::nullopt},
+                {1, ClassAction::CreateNew, std::nullopt}
+            };
+            require(
+                validateScheduleImportReviewDecisions(request).accepted(),
+                "empty or repeated imported rooms changed single-room behavior"
+                );
+
+            request.candidates[1].importedRooms.push_back("502");
+            auto result = validateScheduleImportReviewDecisions(request);
+            require(
+                result.issues.size() == 1
+                    && result.issues[0].code == IssueCode::MissingTeacherRoom,
+                "distinct rooms across candidates were not aggregated"
+                );
+            request.teachers[0].selectedRoom = "502";
+            require(
+                validateScheduleImportReviewDecisions(request).accepted(),
+                "room selection from a later candidate was rejected"
+                );
+            ++cases;
+        }
+        {
             const auto result =
                 validateScheduleImportReviewDecisions(validRequest());
             require(result.accepted(), "complete valid decisions rejected");
@@ -126,9 +292,9 @@ int main()
         }
         {
             auto request = validRequest();
-            request.teachers.push_back(
-                {"teacher-a", TeacherAction::Reuse, "416"}
-                );
+            request.teachers.push_back({
+                TeacherKey{"teacher-a"}, TeacherAction::Reuse, "416"
+            });
             expectRejected(
                 "duplicate teacher decision",
                 request,
@@ -138,7 +304,7 @@ int main()
         }
         {
             auto request = validRequest();
-            request.teachers.push_back({"", TeacherAction::Skip, {}});
+            request.teachers.push_back({TeacherKey{}, TeacherAction::Skip, {}});
             expectRejected(
                 "empty teacher key",
                 request,
@@ -149,7 +315,7 @@ int main()
         {
             auto request = validRequest();
             request.teachers.push_back(
-                {"unknown", TeacherAction::Skip, {}}
+                {TeacherKey{"unknown"}, TeacherAction::Skip, {}}
                 );
             expectRejected(
                 "foreign teacher decision",

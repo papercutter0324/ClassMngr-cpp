@@ -225,12 +225,14 @@ QString decisionFailure(
             );
     }
 
-    std::set<std::string> candidateTeacherKeys;
+    std::set<ClassMngr::Next::Application::ScheduleImportReviewTeacherKey>
+        candidateTeacherKeys;
     for (const auto& candidate : request.candidates)
     {
         candidateTeacherKeys.insert(candidate.teacherKey);
     }
-    std::set<std::string> resolvedTeacherKeys;
+    std::set<ClassMngr::Next::Application::ScheduleImportReviewTeacherKey>
+        resolvedTeacherKeys;
     for (const auto& resolution : request.teachers)
     {
         if (!resolution.teacherKey.empty())
@@ -276,7 +278,9 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
 
         ScheduleImportReviewDecisionCandidate decisionCandidate;
         decisionCandidate.teacherKey =
-            QString::fromStdU16String(candidate.teacherKey).toStdString();
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
+                QString::fromStdU16String(candidate.teacherKey).toStdString()
+            };
         for (const auto& room : candidate.rooms)
         {
             const std::string value =
@@ -291,7 +295,9 @@ ScheduleImportPlanEligibilityRequest eligibilityRequest(
     for (const auto& teacher : applyRequest.teachers)
     {
         request.reviewDecisions.teachers.push_back({
-            QString::fromStdU16String(teacher.teacherKey).toStdString(),
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
+                QString::fromStdU16String(teacher.teacherKey).toStdString()
+            },
             teacher.action,
             QString::fromStdU16String(teacher.selectedRoom).toStdString()
         });
@@ -407,7 +413,10 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
 
         ClassMngr::Next::Application::ScheduleImportReviewDecisionCandidate
             decisionCandidate;
-        decisionCandidate.teacherKey = candidate.teacherKey.toStdString();
+        decisionCandidate.teacherKey =
+            ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
+                candidate.teacherKey.toStdString()
+            };
         decisionCandidate.importedRooms.reserve(
             static_cast<std::size_t>(candidate.rooms.size())
             );
@@ -433,7 +442,9 @@ Result<ValidatedScheduleImportPlan> ScheduleImportPlanValidator::validate(
     {
         request.reviewDecisions.teachers.push_back(
             ScheduleImportReviewTeacherResolution{
-                resolution.teacherKey.toStdString(),
+                ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
+                    resolution.teacherKey.toStdString()
+                },
                 decisionAction(resolution.action),
                 resolution.selectedRoom.trimmed().toStdString()
             }

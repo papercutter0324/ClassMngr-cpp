@@ -146,6 +146,7 @@ private slots:
     void applyUsesConfirmationAndReportsRepositoryOutcome();
     void applyDisplaysFreshStateValidationFailure();
     void policyFailureMessageRetainsLegacyText();
+    void featureValidatorMatchesQStringTeacherKeyConstruction();
     void reviewModelBuildsTypedApplyRequest();
 };
 
@@ -2852,6 +2853,10 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
     ScheduleImportClassCandidate candidate;
     candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
     candidate.teacherKr = candidate.teacherKey;
+    QCOMPARE(
+        candidate.teacherKey.toStdString(),
+        std::string("\xEA\xB9\x80\xEC\x84\xA0\xEC\x83\x9D")
+        );
     candidate.rooms = {QStringLiteral("414")};
     candidate.classGrade = QStringLiteral("E4");
     candidate.classLevel = QStringLiteral("Hercules");
@@ -2931,7 +2936,9 @@ void ScheduleImportDialogTests::reviewSummaryUsesApplicationProjection()
 
     ClassMngr::Next::Application::ScheduleImportReviewDecisionRequest decisions;
     decisions.teachers.push_back({
-        candidate.teacherKey.toStdString(),
+        ClassMngr::Next::Application::ScheduleImportReviewTeacherKey{
+            candidate.teacherKey.toStdString()
+        },
         ClassMngr::Next::Application::ScheduleImportReviewTeacherAction::Create
     });
     decisions.classes.push_back({
@@ -5761,6 +5768,46 @@ void ScheduleImportDialogTests::policyFailureMessageRetainsLegacyText()
     QCOMPARE(
         ScheduleImportPlanValidator::policyFailureMessage(request, issue),
         legacyValidation.error()
+        );
+}
+
+void ScheduleImportDialogTests::
+    featureValidatorMatchesQStringTeacherKeyConstruction()
+{
+    ScheduleImportPlan plan;
+    ScheduleImportClassCandidate candidate;
+    candidate.teacherKey = QStringLiteral("\uAE40\uC120\uC0DD");
+    candidate.teacherKr = candidate.teacherKey;
+    candidate.rooms = {QStringLiteral("414")};
+    candidate.classGrade = QStringLiteral("E4");
+    candidate.classLevel = QStringLiteral("Hercules");
+    candidate.times = {
+        {QStringLiteral("Monday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")},
+        {QStringLiteral("Wednesday"), QStringLiteral("4:00 PM"), QStringLiteral("4:50 PM")}
+    };
+    plan.candidates = {candidate};
+    plan.teachers = {{
+        candidate.teacherKey,
+        ScheduleImportTeacherAction::Reuse,
+        17,
+        QString()
+    }};
+    plan.classes = {{
+        0,
+        ScheduleImportClassAction::CreateNew,
+        -1,
+        QStringLiteral("#AABBCC"),
+        QStringLiteral("#000000")
+    }};
+
+    const auto validated = ScheduleImportPlanValidator::validate(plan);
+    QVERIFY2(
+        validated.has_value(),
+        qPrintable(validated.has_value() ? QString() : validated.error())
+        );
+    QCOMPARE(
+        validated->teacherResolutions.value(candidate.teacherKey).teacherKey,
+        candidate.teacherKey
         );
 }
 

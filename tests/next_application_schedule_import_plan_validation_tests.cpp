@@ -16,6 +16,7 @@ using IssueCode = ScheduleImportPlanEligibilityIssueCode;
 using ReviewClassAction = ScheduleImportReviewClassAction;
 using ReviewIssueCode = ScheduleImportReviewDecisionIssueCode;
 using ReviewTeacherAction = ScheduleImportReviewTeacherAction;
+using ReviewTeacherKey = ScheduleImportReviewTeacherKey;
 using Request = ScheduleImportPlanEligibilityRequest;
 
 void require(bool condition, const std::string& message)
@@ -43,10 +44,10 @@ Request validRequest(
         }
         );
     request.reviewDecisions.candidates.push_back(
-        {"teacher-1", {"Room 101"}}
+        {ReviewTeacherKey{"teacher-1"}, {"Room 101"}}
         );
     request.reviewDecisions.teachers.push_back(
-        {"teacher-1", ReviewTeacherAction::Reuse, {}}
+        {ReviewTeacherKey{"teacher-1"}, ReviewTeacherAction::Reuse, {}}
         );
     request.reviewDecisions.classes.push_back(
         {0, ReviewClassAction::CreateNew, std::nullopt}
@@ -92,7 +93,7 @@ void appendSecondCandidate(
         }
         );
     request.reviewDecisions.candidates.push_back(
-        {"teacher-1", {"Room 101"}}
+        {ReviewTeacherKey{"teacher-1"}, {"Room 101"}}
         );
     request.reviewDecisions.classes.push_back(
         {1, ReviewClassAction::CreateNew, std::nullopt}

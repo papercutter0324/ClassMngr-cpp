@@ -103,35 +103,39 @@ int main()
         projectScheduleImportApplyReviewDecisions(request);
 
     require(decisions.candidates.size() == 3);
-    require(decisions.candidates[0].teacherKey == KoreanTeacherAndTestTube);
+    require(
+        decisions.candidates[0].teacherKey.value() == KoreanTeacherAndTestTube
+        );
     require(decisions.candidates[0].importedRooms.size() == 2);
     require(decisions.candidates[0].importedRooms[0] == "414");
     require(decisions.candidates[0].importedRooms[1] == Rocket);
     require(
-        decisions.candidates[1].teacherKey
+        decisions.candidates[1].teacherKey.value()
         == "\xEC\x9D\xB4\xEC\x84\xA0\xEC\x83\x9D"
         );
     require(decisions.candidates[1].importedRooms.size() == 1);
     require(decisions.candidates[1].importedRooms[0] == "502");
-    require(decisions.candidates[2].teacherKey == "\xEB\xB0\x95\xEC\x83\x9D");
+    require(
+        decisions.candidates[2].teacherKey.value() == "\xEB\xB0\x95\xEC\x83\x9D"
+        );
     require(decisions.candidates[2].importedRooms.empty());
 
     require(decisions.teachers.size() == 3);
     require(
-        decisions.teachers[0].teacherKey
+        decisions.teachers[0].teacherKey.value()
         == "\xEC\x9D\xB4\xEC\x84\xA0\xEC\x83\x9D"
         );
     require(
         decisions.teachers[0].action
         == ScheduleImportReviewTeacherAction::Skip
         );
-    require(decisions.teachers[1].teacherKey == KoreanTeacherAndTestTube);
+    require(decisions.teachers[1].teacherKey.value() == KoreanTeacherAndTestTube);
     require(
         decisions.teachers[1].action
         == ScheduleImportReviewTeacherAction::UpdateRoom
         );
     require(decisions.teachers[1].selectedRoom == Rocket);
-    require(decisions.teachers[2].teacherKey == "\xEB\xB0\x95\xEC\x83\x9D");
+    require(decisions.teachers[2].teacherKey.value() == "\xEB\xB0\x95\xEC\x83\x9D");
     require(decisions.teachers[2].action == ScheduleImportReviewTeacherAction::Create);
 
     require(decisions.classes.size() == 3);
