@@ -221,15 +221,15 @@ separate; focused macOS verification passed all three policy, preferences-port,
 and automatic-startup controller CTests. F1137 completed Batch485 at
 `dcdc9be8`; focused macOS verification passed the Domain contract and Schedule
 Import plan-validation CTests (2/2; 38 Domain cases). Batch486 is active with
-F1138 accepted and five discovered. The completed batch is ready to push after
-its documentation closeout. F629 remains active but awaits source-bound Windows
+F1138 accepted and five discovered. Batch485 was pushed to
+`origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound Windows
 layout evidence, which is unavailable in this session; the Phase 0 and Phase 2
 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with accepted F1138 after pushing completed Batch485. F629
-remains active and awaits a Windows x64 host or retained source-bound output
+Continue Batch486 with accepted F1138. F629 remains active and awaits a
+Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
 evidence-supported renderer change and rerun the macOS universal matrix without
@@ -5927,9 +5927,9 @@ grades, weekly-day rules, and Schedule Import's raw-string validation remain.
 The two focused macOS arm64 Qt 6.12 Debug CTests passed 2/2 for Domain
 contracts and Schedule Import plan validation; the Domain target reported 38
 cases. `git diff --check` passed. The full suite and Windows verification were
-not run. Batch485 is locally complete and awaits its push; Batch486 is active
-with accepted F1138 and five discovered candidates. F629 and both phase gates
-remain open.
+not run. Batch485 was pushed to `origin/Qt-Rewrite` at
+`192f676ae6736553c6fd4bed4788b71fdc5e5d96`; Batch486 is active with accepted
+F1138 and five discovered candidates. F629 and both phase gates remain open.
 
 ## Phase 2 update - F1138 accepted; Batch486 active - 2026-10-20
 

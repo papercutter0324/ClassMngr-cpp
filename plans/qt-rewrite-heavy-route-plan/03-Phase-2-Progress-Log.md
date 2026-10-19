@@ -49970,9 +49970,10 @@ The macOS arm64 Qt 6.12 Debug build compiled
 `ClassMngrNextApplicationScheduleImportPlanValidationTests`. Both focused
 CTests passed (2/2); the domain QtTest reported 38 passed and 0 failed, and
 `git diff --check` passed. The full suite and Windows verification were not
-run. Batch485 is complete locally and unpushed; F629 awaits source-bound
-Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0
-and Phase 2 gates remain open.
+run. Batch485 was complete locally at this point and was subsequently pushed;
+see the [push receipt](#batch485-push-receipt-2026-10-20). F629 awaits
+source-bound Windows x64 layout evidence, the user cannot run Windows now, and
+the Phase 0 and Phase 2 gates remain open.
 
 ### F1138 Calendar event color preference identity accepted before implementation - 2026-10-20
 
@@ -50002,10 +50003,16 @@ not expected.
 
 ### Batch485 close and Batch486 activation - 2026-10-20
 
-Batch485 is complete locally and unpushed with F1128–F1137 complete. No push
-receipt is recorded; a separate Git-only push will follow. Batch486 uses the
-six candidates from the provisional [early discovery record](#batch486-early-discovery-at-f1136-start-2026-10-20):
+Batch485 was complete locally at Batch486 activation with F1128–F1137 complete
+and was subsequently pushed; see the [push receipt](#batch485-push-receipt-2026-10-20).
+Batch486 uses the six candidates from the provisional [early discovery record](#batch486-early-discovery-at-f1136-start-2026-10-20):
 F1138 is accepted/in progress and F1139–F1143 remain discovered, for six
 candidates total, zero complete, one accepted/in progress, and five
 discovered. F629 still awaits source-bound Windows x64 layout evidence, the
 user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+
+### Batch485 push receipt - 2026-10-20
+
+Batch485 closeout commit `192f676ae6736553c6fd4bed4788b71fdc5e5d96` was pushed
+to `origin/Qt-Rewrite`. At verification, local HEAD matched `origin/Qt-Rewrite`
+and the working tree was clean. Batch485 is complete and pushed.

@@ -8125,7 +8125,8 @@ closed `CourseCatalogIdentity` enum, separating full grade/level identity from
 the coarser grade classification. Existing exact catalog names/order and
 weekly-day policy remain unchanged. The focused Domain contract and Schedule
 Import plan-validation tests passed 2/2 on macOS; no full suite or Windows run.
-This closes Batch485 locally, with its push pending documentation closeout.
+Batch485 was pushed to `origin/Qt-Rewrite` at
+`192f676ae6736553c6fd4bed4788b71fdc5e5d96` after its documentation closeout.
 
 ## 2026-10-20 - F1138 accepted
 

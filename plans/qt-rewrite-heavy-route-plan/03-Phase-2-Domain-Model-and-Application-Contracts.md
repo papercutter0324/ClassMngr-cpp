@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch485 is complete locally and unpushed; Batch486 is active with F1138 accepted/in progress and F1139–F1143 discovered; F629 awaits source-bound Windows x64 layout evidence while the user cannot run Windows, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch485 is complete and pushed at `192f676ae6736553c6fd4bed4788b71fdc5e5d96` (see [push receipt](03-Phase-2-Progress-Log.md#batch485-push-receipt-2026-10-20)); Batch486 is active with F1138 accepted/in progress and F1139–F1143 discovered; F629 awaits source-bound Windows x64 layout evidence while the user cannot run Windows, and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
