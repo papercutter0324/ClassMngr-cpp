@@ -10,6 +10,10 @@
 - When a UI page reads several preferences, disabling the shared repository
   can trigger unrelated warnings too. Assert the warning for the behavior under
   test by its title/content rather than assuming it is the only prompt.
+- Keep a canonical UTC timestamp string at the portable serialization boundary
+  distinct from raw imported timestamp text, Qt date-time values, and epoch
+  milliseconds; typing the output must preserve import normalization and empty
+  legacy sentinels.
 - The repository is intentionally layered: domain models and validation are
   separate from SQLite repositories, feature services, and shared Qt UI. Keep
   new work at the narrowest appropriate layer.

@@ -50874,3 +50874,53 @@ Batch487 has ten candidates: five complete (F1144–F1148), none accepted/in
 progress, and five discovered (F1149–F1153); F1149 is next. The batch remains
 open, so no push is due yet. F629 remains active pending Windows x64 evidence;
 the Phase 0 and Phase 2 gates remain open.
+
+### F1149 Class Transfer exported-at-UTC value accepted before implementation - 2026-10-20
+
+F1149 is accepted/in progress. Add owning exact-text
+`Application::ClassTransferExportedAtUtc` with default empty state, explicit
+owning `std::string` construction, `.value()`, and equality. This is the
+canonical serialized timestamp string at the export-output boundary, not a
+general time-point type; the value must not parse, validate, normalize, or
+format. Type `ClassTransferPortablePackage::exportedAtUtc`, construct it in
+the export query, and unwrap/wrap it at the existing Platform serialization
+and legacy-package adapter boundaries.
+
+Preserve these boundaries and behaviors:
+
+1. Keep export output exactly `YYYY-MM-DDTHH:mm:ss.sssZ`, including existing
+   UTC/epoch-millisecond conversion, locale, precision, rounding/representation,
+   and no new year/range validation.
+2. The portable package is shared by export and apply/import. Leave raw JSON
+   timestamp parsing and QDateTime boundaries unchanged, including offset
+   normalization (`2026-10-14T09:23:45.678+09:00` to
+   `2026-10-14T00:23:45.678Z`).
+3. Preserve legacy-adapter invalid-QDateTime to empty portable text to
+   invalid-QDateTime behavior, and the legacy codec's invalid-timestamp
+   fallback to current UTC.
+4. Do not type the raw millisecond source DTO or raw JSON timestamp string.
+   No shared timestamp value type was found.
+
+Evidence: `src/next/application/class_transfer_package.h`,
+`src/next/application/class_transfer_export_query.h:94,148`,
+`src/next/platform/application_services_class_transfer_export_source_read_port.h:35`,
+`src/features/classes/services/class_transfer_json_codec.cpp:765-772,965-986`,
+and `src/data/repositories/class_transfer_legacy_package_adapter.h:63-71,123-130`.
+
+Focused verification acceptance: incrementally build in the existing
+`build/macos-clang-debug` tree `ClassMngr`,
+`ClassMngrNextApplicationClassTransferExportQueryTests`,
+`ClassMngrNextPlatformClassTransferExportSourceTests`,
+`ClassMngrClassTransferApplyPackageAdapterTests`, and
+`ClassMngrClassTransferExportCodecParityTests`. Add the smallest compile-time
+field-type/accessor assertion to the export-query tests and retain the exact
+`1970-01-01T00:00:01.234Z` output assertion. Run focused CTests for the export
+query, Platform source adapter, apply-package adapter, and export codec parity;
+existing apply-adapter cases cover offset normalization and invalid/empty
+round-trip. Run `git diff --check`. No implementation or test results are
+recorded yet. No full suite, fresh/clean configure, Windows run, or push is
+expected before Batch487 closes. F629 remains active pending Windows x64
+evidence; the Phase 0 and Phase 2 gates remain open.
+
+Batch487 has ten candidates: five complete (F1144–F1148), one accepted/in
+progress (F1149), and four discovered (F1150–F1153); F1150 is next.
