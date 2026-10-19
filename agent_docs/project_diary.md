@@ -8115,3 +8115,25 @@ separate from `CourseGradeBand`: the latter classifies grades and includes
 `Other`, while `CourseCatalogIdentity` distinguishes full catalog pairs such
 as M1/Major and M2/Major. Schedule Import continues to validate its raw
 string candidates through `Course::fromNames()`.
+
+## 2026-10-20 - F1137 complete
+
+F1137 completed at source/test commit
+`dcdc9be831b7c4b19e9c6fcbfea0d501c0ab91d4`, following acceptance
+`aca313bd7973fcfa1bc8fd392eca33e5461d81e0`. `Course` now stores and exposes a
+closed `CourseCatalogIdentity` enum, separating full grade/level identity from
+the coarser grade classification. Existing exact catalog names/order and
+weekly-day policy remain unchanged. The focused Domain contract and Schedule
+Import plan-validation tests passed 2/2 on macOS; no full suite or Windows run.
+This closes Batch485 locally, with its push pending documentation closeout.
+
+## 2026-10-20 - F1138 accepted
+
+Use `Domain::CalendarEventType` for the event identity in the Application
+calendar color-preference port. Keep normalization in the existing Qt UI
+helper and preserve the exact six canonical names (unknown names map to
+`Other`) when forming the legacy preference keys. Leave color payload text
+opaque and retain invalid stored-color handling in the UI. Platform must map
+typed enum values to exact key suffixes without relying on their ordinal.
+Batch486 begins with F1138 accepted after two independent bounded scans found
+six distinct candidates; F1139-F1143 remain discovered.

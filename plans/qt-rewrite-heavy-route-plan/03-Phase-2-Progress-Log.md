@@ -49954,3 +49954,58 @@ and verification are pending. Batch485 remains active with nine complete,
 one accepted/in progress, and zero discovered; F629 awaits source-bound
 Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0
 and Phase 2 gates remain open.
+
+### F1137 Course catalog identity complete - 2026-10-20
+
+F1137 completed at source/test commit
+`dcdc9be831b7c4b19e9c6fcbfea0d501c0ab91d4`, following acceptance
+`aca313bd7973fcfa1bc8fd392eca33e5461d81e0`. `Course` now stores and exposes
+closed `CourseCatalogIdentity` values for all 25 official grade/level pairs.
+Exact catalog mapping, canonical names and ordering, equality, distinct
+repeated level labels across grades, weekly-day behavior, and Schedule Import's
+raw-string validation boundary remain preserved.
+
+The macOS arm64 Qt 6.12 Debug build compiled
+`ClassMngrNextDomainContractTests` and
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`. Both focused
+CTests passed (2/2); the domain QtTest reported 38 passed and 0 failed, and
+`git diff --check` passed. The full suite and Windows verification were not
+run. Batch485 is complete locally and unpushed; F629 awaits source-bound
+Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.
+
+### F1138 Calendar event color preference identity accepted before implementation - 2026-10-20
+
+Type only the Application calendar-event color preference port event identity
+as existing `Domain::CalendarEventType`; retain the color text as an opaque
+string. Keep `normalizedCalendarEventType()` behavior exactly: Qt trimming,
+the six canonical labels, and unknown values mapping to `Other`. Convert the
+already-normalized label to the enum at the UI boundary.
+
+In Platform, map all six enum values explicitly to the existing canonical
+setting-key suffixes; do not use enum ordinals. Preserve the key prefix and all
+six keys, missing/unavailable reads as empty, raw invalid stored-color
+pass-through, the UI `QColor` default fallback, invalid-picker no-save,
+existing write-error behavior, and warning/retry semantics. Keep current UI and
+persistence boundaries. If a `CalendarEventType` contains an invalid value
+(including one created by cast), map it to the canonical `Other` key so the
+adapter never builds an arbitrary dynamic key.
+
+Planned focused verification: build `ClassMngr` and affected test targets;
+run `ClassMngrNextDomainContractTests`,
+`ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests`
+with exact-key coverage expanded to all six event types, and the existing
+`ClassMngrCalendarPageEventMutationParityTests` case
+`eventTypeColorPickerFailureResyncsAndRetries`; run `git diff --check`.
+Implementation and verification are pending. Full-suite and Windows runs are
+not expected.
+
+### Batch485 close and Batch486 activation - 2026-10-20
+
+Batch485 is complete locally and unpushed with F1128–F1137 complete. No push
+receipt is recorded; a separate Git-only push will follow. Batch486 uses the
+six candidates from the provisional [early discovery record](#batch486-early-discovery-at-f1136-start-2026-10-20):
+F1138 is accepted/in progress and F1139–F1143 remain discovered, for six
+candidates total, zero complete, one accepted/in progress, and five
+discovered. F629 still awaits source-bound Windows x64 layout evidence, the
+user cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.

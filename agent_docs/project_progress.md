@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1137 accepted; F629 open)
+### Current checkpoint - 2026-10-20 (F1137 complete; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -218,23 +218,25 @@ F1136 is complete at source/test commit `98ed1894`, following acceptance
 stored text, while the Platform adapter keeps trimming and blank-to-missing
 behavior. The numeric version parse and literal suppression comparison remain
 separate; focused macOS verification passed all three policy, preferences-port,
-and automatic-startup controller CTests. F1137 is accepted and in progress;
-Batch485 has nine complete slices. Provisional Batch486 discovery is recorded
-in the Phase 2 progress log. F629 remains active but awaits source-bound Windows
+and automatic-startup controller CTests. F1137 completed Batch485 at
+`dcdc9be8`; focused macOS verification passed the Domain contract and Schedule
+Import plan-validation CTests (2/2; 38 Domain cases). Batch486 is active with
+F1138 accepted and five discovered. The completed batch is ready to push after
+its documentation closeout. F629 remains active but awaits source-bound Windows
 layout evidence, which is unavailable in this session; the Phase 0 and Phase 2
-gates remain open. Batch485 is not pushed until F1137 closes it.
+gates remain open.
 
 ## Next Milestone
 
-Continue F629 by obtaining a Windows x64 host or retained source-bound output
-for commit `667ff54e` and comparing its layout inputs and page assignments with
-the Mac trace. If that evidence establishes a product defect, make an
+Continue Batch486 with accepted F1138 after pushing completed Batch485. F629
+remains active and awaits a Windows x64 host or retained source-bound output
+for commit `667ff54e` so the layout inputs and page assignments can be compared
+with the Mac trace. If that evidence establishes a product defect, make an
 evidence-supported renderer change and rerun the macOS universal matrix without
-weakening the comparator. The Mac run had sufficient disk space; the 18 GiB
-value is only the runner preflight minimum. F628's full Windows evidence root
-also remains unavailable in this Mac session, so the combined Phase 0 exit
-gate cannot be claimed. Preserve the open Phase 2 exit gate and unresolved
-policy reconciliation.
+weakening the comparator. The user cannot run Windows in this session. F628's
+full Windows evidence root is also unavailable, so the combined Phase 0 exit
+gate cannot be claimed. Keep the Phase 2 exit gate and policy reconciliation
+open.
 Detailed historical slice evidence remains in
 plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md.
 
@@ -5912,3 +5914,39 @@ these boundaries. Implementation and verification are pending. Batch485 has
 nine complete slices and one accepted/in progress; Batch486's six-candidate
 discovery is provisional. The batch remains unpushed; F629 and both phase gates
 remain open.
+
+## Phase 2 update - F1137 complete; Batch486 active - 2026-10-20
+
+F1137 completed Batch485 at source/test commit
+`dcdc9be831b7c4b19e9c6fcbfea0d501c0ab91d4`, following acceptance
+`aca313bd7973fcfa1bc8fd392eca33e5461d81e0`. `Course` now stores and exposes
+the closed `CourseCatalogIdentity` for all 25 official grade/level pairs.
+Exact matching, canonical names/order, equality, same-level distinctions across
+grades, weekly-day rules, and Schedule Import's raw-string validation remain.
+
+The two focused macOS arm64 Qt 6.12 Debug CTests passed 2/2 for Domain
+contracts and Schedule Import plan validation; the Domain target reported 38
+cases. `git diff --check` passed. The full suite and Windows verification were
+not run. Batch485 is locally complete and awaits its push; Batch486 is active
+with accepted F1138 and five discovered candidates. F629 and both phase gates
+remain open.
+
+## Phase 2 update - F1138 accepted; Batch486 active - 2026-10-20
+
+F1138 is accepted to type the Application calendar color-preference port's
+event identity as existing Domain `CalendarEventType`, leaving color text
+opaque. Preserve Qt normalization at the UI boundary (trim, exact six labels,
+unknown to `Other`) and convert normalized names to the enum there. Platform
+must map enum values explicitly to the existing six canonical setting-key
+suffixes; do not use enum ordinals. An invalid enum value created by cast also
+maps to the `Other` key so the adapter never constructs an arbitrary key.
+Preserve the key prefix, missing/unavailable read as empty, invalid stored-color
+pass-through, UI `QColor` fallback, invalid-picker no-save, write error
+handling, and warning/retry behavior.
+
+Focused verification is planned for the Domain contract, Platform preferences
+port including all six exact keys, and the existing Calendar Page color picker
+failure/resync/retry case, with `ClassMngr` and affected targets built. Full
+suite and Windows verification are not expected. Implementation and
+verification are pending. Batch486 has six candidates with F1138 accepted and
+five discovered; F629 and both phase gates remain open.
