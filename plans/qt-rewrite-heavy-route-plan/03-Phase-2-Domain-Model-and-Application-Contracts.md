@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch487 is active with F1151 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch487 is active with F1151 accepted and F1152 next; F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 ### Slice discovery batches
 
@@ -68,7 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch487 (10 candidates; 7 complete; 0 accepted/in progress; 3 discovered)
+#### Active batch: Batch487 (10 candidates; 7 complete; 1 accepted/in progress; 2 discovered)
 
 1. F1144 - **Complete at `e523001d`.** Type personal-signature image save-request bytes, separate from F1140's read-result value.
 2. F1145 - **Complete at `119b961e`.** Type only Sub Prep's normalized calendar-interval query output with existing `Domain::CalendarEventType`; split the raw text read-port input DTO from the typed result DTO. Keep Calendar create/edit and repeat-series inputs unchanged to preserve compatibility.
@@ -77,11 +77,11 @@ Treat this plan as an operational summary, not a history:
 5. F1148 - **Complete at `5a1756f5`.** Type current-campus preference read/write and `PersonalDetailsSaveRequest::campus` with opaque `Application::CurrentCampusPreferenceValue`; preserve exact values and consumer behavior.
 6. F1149 - **Complete at `91306a84`.** Type `ClassTransferPortablePackage::exportedAtUtc` with exact-text `Application::ClassTransferExportedAtUtc`; preserve canonical export text and raw import/legacy timestamp behavior.
 7. F1150 - **Complete at `801b4d44`.** Type imported-room membership and selected-room review decision values with `Application::ScheduleImportReviewRoomValue`; preserve normalization boundaries, exact membership, and diagnostics.
-8. F1151 - **Discovered; next.** Type Schedule Testing's weekday/start-time assignment key; preserve accepted forms, row order, and unassigned sentinel.
-9. F1152 - **Discovered.** Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
+8. F1151 - **Accepted/in progress.** Add exact owning `Application::ScheduleTestingAssignmentKey` for raw UTF-16 weekday/start-time values; preserve row text, order, and UI lookup behavior.
+9. F1152 - **Discovered; next.** Type Class Analytics evaluation selection (All mode or an exact dynamic evaluation name).
 10. F1153 - **Discovered.** Type Class Analytics closed grade-label output; preserve C/B/B+/A/A+ mapping and unknown-to-C fallback.
 
-Batch487 has seven complete candidates (F1144–F1150), none accepted/in progress, and three discovered; F1151 is next. Detailed scope and evidence are in the [F1150 completion record](03-Phase-2-Progress-Log.md#f1150-schedule-import-review-room-value-complete-2026-10-20) and [Batch487 discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
+Batch487 has seven complete candidates (F1144–F1150), one accepted/in progress (F1151), and two discovered; F1152 is next. Detailed scope and evidence are in the [F1151 acceptance record](03-Phase-2-Progress-Log.md#f1151-schedule-testing-assignment-key-accepted-before-implementation-2026-10-20) and [Batch487 discovery record](03-Phase-2-Progress-Log.md#batch487-discovery-at-f1142-start-2026-10-20).
 
 #### Deferred candidates
 

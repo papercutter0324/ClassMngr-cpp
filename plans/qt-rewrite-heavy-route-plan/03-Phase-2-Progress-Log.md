@@ -51038,3 +51038,51 @@ Phase 2 gates remain open.
 
 Batch487 has ten candidates: seven complete (F1144–F1150), none accepted/in
 progress, and three discovered (F1151–F1153); F1151 is next.
+
+### F1151 Schedule Testing assignment key accepted before implementation - 2026-10-20
+
+F1151 is accepted/in progress. Add exact owning Qt-free
+`Application::ScheduleTestingAssignmentKey` for the weekday/start-time pair in
+UTF-16, and replace the separate raw `day`/`startTime` fields in
+`ScheduleTestingAssignmentReadRow` with this key. Provide a default empty key,
+explicit two-string construction, const accessors, and exact equality. Do not
+parse, trim, case-fold, or canonicalize. Keep read row text code-unit exact and
+preserve repository order. Keep the `-1` unassigned `ClassId` sentinel
+separate and unchanged.
+
+The UI unwraps `day` and `startTime` and continues to build the same U+001F
+`scheduleSlotKey` for map lookup; do not refactor that helper or slot-state
+keys. Do not change write/save requests or their validation. Save validation
+continues to trim only temporary copies, accept case-insensitive full English
+weekday names and strict 24-hour `HH:mm`, then forward original strings;
+Platform save continues canonicalizing weekday/time for storage. Do not reparse
+or validate row weekday/time. Preserve schedule source-time parsing, generated
+grid labels, UI display, flattened lookup semantics, raw trailing whitespace,
+and existing read behavior.
+
+Evidence: `src/next/application/schedule_testing_assignment_read_query.h:33,39-45`,
+`src/next/platform/application_services_schedule_testing_assignment_read_port.h:67-73`,
+`src/data/repositories/testing_block_repository.cpp:351,361`,
+`src/features/schedule/ui/schedule_widget.cpp:1159-1170`,
+`src/features/schedule/ui/schedule_view_model.cpp:213,328-350`, and save rules
+`src/next/application/schedule_testing_assignment_save.h:46-82` and
+`src/domain/rules/schedule_key_rules.h:33-79`.
+
+Focused verification acceptance: incrementally build in the existing
+`build/macos-clang-debug` tree `ClassMngr`,
+`ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests`,
+`ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests`,
+and `ClassMngrScheduleWidgetTests`. Add a compile-time assertion that the read
+row uses the new key type; retain exact raw trailing-space and ordered-row
+assertions plus `-1` sentinel coverage. Run focused Application and Platform
+read CTests and widget selectors
+`testingAssignmentWritesMapActionsAndReloadSuccessfulState`,
+`testingModeDisplaysAssignedTestingClassCard`, and
+`missingTestingClassWarnsAndSkipsOnlyThatAssignment`. These selector names are
+present in the current test file. Run `git diff --check`. No implementation or
+test results are recorded yet; no full suite, fresh/clean configure, Windows
+run, or push is expected before Batch487 closes. F629 remains active pending
+source-bound Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
+
+Batch487 has ten candidates: seven complete (F1144–F1150), one accepted/in
+progress (F1151), and two discovered (F1152–F1153); F1152 is next.

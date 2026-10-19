@@ -8352,3 +8352,16 @@ guard before the passing retry. Focused CTests passed 3/3 (21, 5, and 6 QtTest
 cases); `git diff --check` passed. No full suite or Windows build ran. F1148 is
 next in Batch487; F629 and both phase gates remain open. Batch486's push is
 still pending exact-payload approval.
+
+## 2026-10-20 - F1151 accepted
+
+Type Schedule Testing assignment identity as an exact owning
+`Application::ScheduleTestingAssignmentKey` containing the raw UTF-16 weekday
+and start-time pair. Preserve read-row text and repository ordering, and keep
+the class ID `-1` unassigned sentinel separate. The widget may continue using
+its existing U+001F lookup projection through the key accessors; do not alter
+save-request validation/canonicalization or generated schedule labels. Focused
+Application, Platform, and Schedule widget verification is pending. Batch487
+has seven complete slices, F1151 accepted/in progress, and F1152/F1153
+discovered. F629 and both phase gates remain open; Batch486's push still awaits
+exact-payload approval.

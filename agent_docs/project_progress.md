@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1148-F1150 complete; Batch487 active; F1151 next; F629 open)
+### Current checkpoint - 2026-10-20 (F1148-F1150 complete; F1151 accepted/in progress; F629 open)
 
 F1148 completed at source/test commit
 `5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
@@ -91,9 +91,14 @@ selectors passed 3/3 (5 QtTest cases including setup/cleanup). A new case-only
 mismatch returns `ForeignTeacherRoom`. The first build caught three raw-string
 test fixture initializers, corrected before the passing retry. `git diff --check`
 passed. No full suite, Windows run, fresh configure, or clean build.
-Batch487 has seven complete slices and three discovered candidates; F1151 is
-next. F629 remains active pending source-bound Windows layout evidence; Phase
-0 and Phase 2 gates remain open.
+Batch487 has seven complete slices, one accepted/in-progress slice (F1151), and
+two discovered candidates; F1152 is next. F1151 will add an exact owning
+`Application::ScheduleTestingAssignmentKey` for raw UTF-16 weekday and start
+time text in read rows. It leaves repository order, UI lookup projection,
+save-time accepted forms/canonicalization, and the `-1` unassigned class ID
+sentinel unchanged. Focused verification is pending. F629 remains active
+pending source-bound Windows layout evidence; Phase 0 and Phase 2 gates remain
+open.
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
