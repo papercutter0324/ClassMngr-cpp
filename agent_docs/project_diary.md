@@ -7849,3 +7849,12 @@ issue/argument order, current severity and failure behavior, argument count,
 64-byte key and 256 UTF-16 code-unit limits, and Qt conversion/mapping at the
 existing adapter. Leave `TeacherId`, profile fields, legacy validation logic,
 and persistence unchanged.
+
+## 2026-10-20 - F1122 complete
+
+F1122 completed at source/test commit `93f38196`, following acceptance
+`4f9df35d`. Distinct opaque values now type Teacher Profile issue codes,
+field names, and argument keys; the Qt adapter remains the conversion owner.
+Focused Application and UI verification passed 3/3, including ordering,
+limits, and empty, duplicate, unknown, and arbitrary-byte values. Windows
+and full-suite verification were not run.

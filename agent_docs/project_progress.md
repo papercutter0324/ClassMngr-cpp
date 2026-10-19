@@ -5489,3 +5489,13 @@ validation logic, profile IDs/fields, and persistence out of scope. Focused
 Application, Teacher Info Page, and persistence parity targets are recorded
 in the Phase 2 plan. Implementation has not started. F629 and both phase
 gates remain open.
+
+## Phase 2 update - F1122 complete; Batch484 active - 2026-10-20
+
+F1122 completed at source/test commit `93f38196`, following acceptance
+`4f9df35d`. Teacher Profile validation codes, field identifiers, and
+argument keys now use distinct opaque byte-preserving values; current payload
+ordering, adapter conversion, and argument limits remain intact. The focused
+Application, Teacher Info Page, and persistence parity targets built and
+their CTests passed 3/3. Windows and full-suite verification were not run.
+F1123 is next for acceptance. F629 and both phase gates remain open.

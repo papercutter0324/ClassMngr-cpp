@@ -49057,3 +49057,23 @@ Focused targets: `ClassMngrNextApplicationTeacherProfileEditTests`,
 have not started. Batch484 remains active with four complete candidates,
 F1122 accepted/in progress, and five discovered; F1123 is next after this
 slice. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1122 Teacher Profile validation identifiers complete - 2026-10-20
+
+F1122 is complete at source/test commit `93f38196`, following acceptance
+`4f9df35d`. The Application now uses distinct opaque byte-preserving
+`TeacherProfileValidationCode`, `TeacherProfileValidationField`, and
+`TeacherProfileValidationArgumentKey` values for the issue code, issue field,
+and argument key. Qt adapter mappings, issue order, and argument behavior and
+limits remain unchanged.
+
+Build passed for `ClassMngrNextApplicationTeacherProfileEditTests`,
+`ClassMngrTeacherInfoPageTests`, and
+`ClassMngrTeacherInfoPagePersistenceParityTests`. Focused CTest passed 3/3
+(registrations #332, #18, and #82; registered names verified by Tester).
+Coverage includes empty, unknown, and arbitrary-byte metadata; duplicate and
+empty argument keys; vector ordering; the 8-argument cap; 64/65-byte UTF-8
+keys; the 256 UTF-16 code-unit value cap; and UI mapping. `git diff --check`
+passed. Windows verification and the full suite were not run. Batch484 remains
+active with five complete candidates, five discovered, and F1123 next for
+acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
