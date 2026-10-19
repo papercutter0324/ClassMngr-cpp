@@ -3,6 +3,7 @@
 
 #include <QtTest/QtTest>
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,6 +21,13 @@ Domain::ClassId typedClassId(const std::string& value)
 Domain::TeacherId typedTeacherId(const std::string& value)
 {
     return *Domain::TeacherId::fromString(value);
+}
+
+Application::ClassDetailsValidationContextTeacherId contextTeacherId(
+    const std::int64_t value
+    )
+{
+    return Application::ClassDetailsValidationContextTeacherId(value);
 }
 
 Application::ClassDetailsSaveRequest request(std::string classId)
@@ -90,7 +98,8 @@ public:
     mutable std::optional<Application::ClassDetailsSaveRequest> saved;
     Application::ClassDetailsValidationContextPortResult context =
         Application::ClassDetailsValidationContextPortResult::success({
-            *Domain::ClassId::fromString("42"), -1, u"  Fresh notes  ", u" Fresh activities "});
+            *Domain::ClassId::fromString("42"), contextTeacherId(-1),
+            u"  Fresh notes  ", u" Fresh activities "});
     Application::ClassDetailsScheduleConflictResult regular =
         Application::ClassDetailsScheduleConflictResult::success({});
     Application::ClassDetailsScheduleConflictResult intensive =
@@ -145,6 +154,7 @@ private slots:
     void invalidOptionalTeacherIdsDoNotReachPort();
     void preservesPortFailure();
     void workflowSuccessNormalizesAndPreservesStageOrder();
+    void workflowUnwrapsWideContextTeacherIdWithoutNarrowing();
     void workflowQueriesEmptySchedulesAndKeepsOptionalPayload();
     void workflowContextFailureAndMismatchFallBack();
     void workflowPreservesContextSnapshotTextDecoding();
@@ -327,6 +337,22 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowSuccessNormalizesAndPr
     QCOMPARE(input.input.notes.size(), std::size_t(10001));
 }
 
+void NextApplicationClassDetailsSaveUseCaseTests::
+workflowUnwrapsWideContextTeacherIdWithoutNarrowing()
+{
+    constexpr std::int64_t wideTeacherId = 2147483648LL;
+    WorkflowPorts ports;
+    ports.context = Application::ClassDetailsValidationContextPortResult::success({
+        *Domain::ClassId::fromString("42"), contextTeacherId(wideTeacherId),
+        u"Fresh notes", u"Fresh activities"});
+
+    const auto result = runWorkflow(workflowRequest(), ports);
+    const auto* success = std::get_if<Application::ClassDetailsSaveWorkflowSuccess>(&result);
+    QVERIFY(success);
+    QCOMPARE(success->normalized.teacherId.value(), std::string("2147483648"));
+    QCOMPARE(ports.calls, (std::vector<std::string>{"context","regular","intensive","save"}));
+}
+
 void NextApplicationClassDetailsSaveUseCaseTests::workflowQueriesEmptySchedulesAndKeepsOptionalPayload()
 {
     for (bool present : {true,false})
@@ -358,7 +384,8 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowContextFailureAndMisma
         WorkflowPorts ports;
         ports.context = mismatch
             ? Application::ClassDetailsValidationContextPortResult::success({
-                *Domain::ClassId::fromString("43"), 0, std::u16string(10001,u'x'), {}})
+                *Domain::ClassId::fromString("43"), contextTeacherId(0),
+                std::u16string(10001,u'x'), {}})
             : Application::ClassDetailsValidationContextPortResult::failure(workflowError);
         const auto result = runWorkflow(workflowRequest(), ports);
         const auto* success = std::get_if<Application::ClassDetailsSaveWorkflowSuccess>(&result);
@@ -374,7 +401,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowPreservesContextSnapsh
 {
     WorkflowPorts ports;
     ports.context = Application::ClassDetailsValidationContextPortResult::success({
-        *Domain::ClassId::fromString("42"), -1,
+        *Domain::ClassId::fromString("42"), contextTeacherId(-1),
         std::u16string(u"\uFEFF") + std::u16string(10000, u'n'),
         u"\uFFFE\u2000\u4100\u2000"});
     const auto result = runWorkflow(workflowRequest(), ports);
@@ -392,7 +419,7 @@ void NextApplicationClassDetailsSaveUseCaseTests::workflowInvalidContextAndField
         auto input = workflowRequest();
         if (badContext)
             ports.context = Application::ClassDetailsValidationContextPortResult::success({
-                *Domain::ClassId::fromString("42"), 0, {}, {}});
+                *Domain::ClassId::fromString("42"), contextTeacherId(0), {}, {}});
         else input.input.classGrade = u"Unknown grade";
         const auto result = runWorkflow(input, ports);
         const auto* validation = std::get_if<Application::ClassDetailsValidationOutput>(&result);

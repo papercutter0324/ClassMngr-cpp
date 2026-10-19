@@ -10,10 +10,36 @@
 namespace ClassMngr::Next::Application
 {
 
+class ClassDetailsValidationContextTeacherId final
+{
+public:
+    ClassDetailsValidationContextTeacherId() = default;
+
+    explicit constexpr ClassDetailsValidationContextTeacherId(
+        const std::int64_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::int64_t value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassDetailsValidationContextTeacherId&,
+        const ClassDetailsValidationContextTeacherId&
+        ) = default;
+
+private:
+    std::int64_t m_value = -1;
+};
+
 struct ClassDetailsValidationContextData final
 {
     Domain::ClassId matchedClassId;
-    std::int64_t teacherId = -1;
+    ClassDetailsValidationContextTeacherId teacherId;
     std::u16string notes;
     std::u16string timeFillerActivities;
 };
@@ -22,7 +48,7 @@ struct ClassDetailsValidationContextSnapshot final
 {
     Domain::ClassId requestedClassId;
     Domain::ClassId matchedClassId;
-    std::int64_t teacherId = -1;
+    ClassDetailsValidationContextTeacherId teacherId;
     std::u16string notes;
     std::u16string timeFillerActivities;
 };

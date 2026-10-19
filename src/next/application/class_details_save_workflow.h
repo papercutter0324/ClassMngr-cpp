@@ -72,9 +72,11 @@ public:
         const auto context = ClassDetailsValidationContextQuery::execute(classId, contextPort);
         // The form historically continued with default hidden fields if the
         // fresh context was unavailable or belonged to another class.
-        const std::int64_t teacherId = context ? context.value().teacherId : -1;
+        const ClassDetailsValidationContextTeacherId teacherId = context
+            ? context.value().teacherId
+            : ClassDetailsValidationContextTeacherId{};
         input.teacherId = Domain::TeacherId::fromString(
-            std::to_string(teacherId)
+            std::to_string(teacherId.value())
             ).value();
         input.notes = context ? contextText(context.value().notes) : std::u16string{};
         input.timeFillerActivities = context

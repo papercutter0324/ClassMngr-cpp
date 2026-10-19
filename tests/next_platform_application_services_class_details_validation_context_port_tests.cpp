@@ -10,6 +10,7 @@
 #include <QUuid>
 #include <QtTest/QtTest>
 
+#include <cstdint>
 #include <string>
 
 using namespace ClassMngr::Next;
@@ -121,7 +122,7 @@ readsSentinelTeacherIdAndExactTextFromActiveRepository()
     QVERIFY(result);
     QCOMPARE(result.value().requestedClassId.value(), std::to_string(id));
     QCOMPARE(result.value().matchedClassId.value(), std::to_string(id));
-    QCOMPARE(result.value().teacherId, 0);
+    QCOMPARE(result.value().teacherId.value(), std::int64_t(0));
     QCOMPARE(result.value().notes, notes.toStdU16String());
     QCOMPARE(
         result.value().timeFillerActivities,
@@ -140,7 +141,7 @@ readsSentinelTeacherIdAndExactTextFromActiveRepository()
 
     const auto negativeResult = readContext(&services, classId(id));
     QVERIFY(negativeResult);
-    QCOMPARE(negativeResult.value().teacherId, -2);
+    QCOMPARE(negativeResult.value().teacherId.value(), std::int64_t(-2));
     QCOMPARE(negativeResult.value().notes, notes.toStdU16String());
     QCOMPARE(
         negativeResult.value().timeFillerActivities,
@@ -196,7 +197,7 @@ preservesWideTeacherIdFromActiveRepository()
 
     const auto result = readContext(&services, classId(id));
     QVERIFY(result);
-    QCOMPARE(result.value().teacherId, wideTeacherId);
+    QCOMPARE(result.value().teacherId.value(), wideTeacherId);
 }
 
 void NextPlatformApplicationServicesClassDetailsValidationContextPortTests::
@@ -313,7 +314,7 @@ missingClassInfoRowPreservesRepositoryDefaults()
     QVERIFY(result);
     QCOMPARE(result.value().requestedClassId.value(), std::to_string(id));
     QCOMPARE(result.value().matchedClassId.value(), std::to_string(id));
-    QCOMPARE(result.value().teacherId, -1);
+    QCOMPARE(result.value().teacherId.value(), std::int64_t(-1));
     QVERIFY(result.value().notes.empty());
     QVERIFY(result.value().timeFillerActivities.empty());
 

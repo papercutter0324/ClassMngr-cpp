@@ -99,7 +99,9 @@ public:
 
             return Application::ClassDetailsValidationContextPortResult::success({
                 .matchedClassId = *matchedClassId,
-                .teacherId = record.teacherId,
+                .teacherId = Application::ClassDetailsValidationContextTeacherId(
+                    static_cast<std::int64_t>(record.teacherId)
+                    ),
                 .notes = record.notes.toStdU16String(),
                 .timeFillerActivities =
                     record.timeFillerActivities.toStdU16String()

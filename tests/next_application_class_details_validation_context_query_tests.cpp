@@ -68,11 +68,11 @@ contractUsesTypedQtFreeContextValues()
         >);
     static_assert(std::is_same_v<
         decltype(Application::ClassDetailsValidationContextData::teacherId),
-        std::int64_t
+        Application::ClassDetailsValidationContextTeacherId
         >);
     static_assert(std::is_same_v<
         decltype(Application::ClassDetailsValidationContextSnapshot::teacherId),
-        std::int64_t
+        Application::ClassDetailsValidationContextTeacherId
         >);
     static_assert(std::is_same_v<
         decltype(Application::ClassDetailsValidationContextSnapshot::notes),
@@ -83,14 +83,24 @@ contractUsesTypedQtFreeContextValues()
         std::u16string
         >);
 
+    const Application::ClassDetailsValidationContextData defaultContext{
+        .matchedClassId = classId("42")
+    };
+    const Application::ClassDetailsValidationContextSnapshot defaultSnapshot{
+        .requestedClassId = classId("42"),
+        .matchedClassId = classId("42")
+    };
+    QCOMPARE(defaultContext.teacherId.value(), std::int64_t(-1));
+    QCOMPARE(defaultSnapshot.teacherId.value(), std::int64_t(-1));
+
     const Application::ClassDetailsValidationContextData context{
         .matchedClassId = classId("42"),
-        .teacherId = -1,
+        .teacherId = Application::ClassDetailsValidationContextTeacherId(-1),
         .notes = u" raw notes ",
         .timeFillerActivities = u" raw activities "
     };
     QCOMPARE(context.matchedClassId.value(), std::string("42"));
-    QCOMPARE(context.teacherId, -1);
+    QCOMPARE(context.teacherId.value(), std::int64_t(-1));
     QCOMPARE(context.notes, std::u16string(u" raw notes "));
     QCOMPARE(
         context.timeFillerActivities,
@@ -104,7 +114,7 @@ callsPortOnceAndPreservesIdentitySentinelsAndRawText()
     RecordingPort port;
     port.result = Application::ClassDetailsValidationContextPortResult::success({
         .matchedClassId = classId("42"),
-        .teacherId = -2,
+        .teacherId = Application::ClassDetailsValidationContextTeacherId(-2),
         .notes = u"  \uC548\uB155\uD558\uC138\uC694\nnotes  ",
         .timeFillerActivities = u"\u00a0activities\u00a0"
     });
@@ -120,7 +130,7 @@ callsPortOnceAndPreservesIdentitySentinelsAndRawText()
     QCOMPARE(port.requestedClassId->value(), std::string("42"));
     QCOMPARE(result.value().requestedClassId.value(), std::string("42"));
     QCOMPARE(result.value().matchedClassId.value(), std::string("42"));
-    QCOMPARE(result.value().teacherId, -2);
+    QCOMPARE(result.value().teacherId.value(), std::int64_t(-2));
     QCOMPARE(
         result.value().notes,
         std::u16string(u"  \uC548\uB155\uD558\uC138\uC694\nnotes  ")
@@ -160,7 +170,7 @@ rejectsMismatchedClassIdentity()
     RecordingPort port;
     port.result = Application::ClassDetailsValidationContextPortResult::success({
         .matchedClassId = classId("43"),
-        .teacherId = 7,
+        .teacherId = Application::ClassDetailsValidationContextTeacherId(7),
         .notes = u"wrong class",
         .timeFillerActivities = u"wrong class"
     });
@@ -207,7 +217,7 @@ acceptsMaximumClassIdAndPreservesMatchedIdentity()
     RecordingPort port;
     port.result = Application::ClassDetailsValidationContextPortResult::success({
         .matchedClassId = classId("2147483647"),
-        .teacherId = 7,
+        .teacherId = Application::ClassDetailsValidationContextTeacherId(7),
         .notes = u"maximum id",
         .timeFillerActivities = u"activities"
     });
@@ -231,7 +241,9 @@ preservesWideTeacherIdThroughContextQuery()
     RecordingPort port;
     port.result = Application::ClassDetailsValidationContextPortResult::success({
         .matchedClassId = classId("42"),
-        .teacherId = wideTeacherId,
+        .teacherId = Application::ClassDetailsValidationContextTeacherId(
+            wideTeacherId
+            ),
         .notes = u"wide teacher",
         .timeFillerActivities = u"activities"
     });
@@ -242,7 +254,7 @@ preservesWideTeacherIdThroughContextQuery()
         );
 
     QVERIFY(result);
-    QCOMPARE(result.value().teacherId, wideTeacherId);
+    QCOMPARE(result.value().teacherId.value(), wideTeacherId);
 }
 
 QTEST_APPLESS_MAIN(NextApplicationClassDetailsValidationContextQueryTests)
