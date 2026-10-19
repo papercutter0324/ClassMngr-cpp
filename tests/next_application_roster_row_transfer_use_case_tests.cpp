@@ -1,7 +1,9 @@
 #include "next/application/roster_row_transfer_use_case.h"
 
+#include <array>
 #include <cstdio>
 #include <optional>
+#include <string_view>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
@@ -288,53 +290,77 @@ bool emptyTargetUsesCanonicalBaseAndRowZero()
 
 bool warningOnlySnapshotPreparationStillSaves()
 {
-    auto req = request();
-    req.sourceQuestionableKoreanNameLengthsConfirmed = true;
-    req.sourceRoster.rows[0][1] = u"\uAE40";
-    Ports ports;
-    Confirmation confirmation;
-    confirmation.accepted = true;
-    const auto result = RosterRowTransferUseCase::execute(
-        req, ports, ports, equals, &confirmation);
-    const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
-    if (!ok || !ports.saved || ports.calls != std::vector<std::string>{"read", "save"}
-        || confirmation.calls != 1 || !confirmation.target
-        || confirmation.issues.size() != 1)
-        return false;
-    const auto& issue = confirmation.issues.front();
-    if (issue.code != "student_name.korean.too_short" || issue.row != 0
-        || issue.column != 1 || issue.severity != RosterSaveIssueSeverity::Warning
-        || confirmation.target->rows[0][1] != u"\uAE40"
-        || *confirmation.target != ports.saved->targetRoster)
-        return false;
-    if (ok->destinationRow >= ports.saved->targetRoster.rows.size()
-        || ports.saved->targetRoster.rows[ok->destinationRow][1] != u"\uAE40")
-        return false;
+    constexpr std::array questionableNames{
+        std::pair{std::u16string_view(u"\uAE40"),
+                  std::string_view("student_name.korean.too_short")},
+        std::pair{std::u16string_view(u"\uAE40\uBBFC\uC11C\uC9C0\uC6B0"),
+                  std::string_view("student_name.korean.too_long")}
+    };
+    for (const auto& [name, expectedCode] : questionableNames)
+    {
+        auto req = request();
+        req.sourceQuestionableKoreanNameLengthsConfirmed = true;
+        req.sourceRoster.rows[0][1] = name;
+        Ports ports;
+        Confirmation confirmation;
+        confirmation.accepted = true;
+        const auto result = RosterRowTransferUseCase::execute(
+            req, ports, ports, equals, &confirmation);
+        const auto* ok = std::get_if<RosterRowTransferSuccess>(&result);
+        if (!ok || !ports.saved
+            || ports.calls != std::vector<std::string>{"read", "save"}
+            || confirmation.calls != 1 || !confirmation.target
+            || confirmation.issues.size() != 1)
+            return false;
+        const auto& issue = confirmation.issues.front();
+        if (rosterSaveIssueCodeKey(issue.code) != expectedCode || issue.row != 0
+            || issue.column != 1 || issue.severity != RosterSaveIssueSeverity::Warning
+            || confirmation.target->rows[0][1] != name
+            || *confirmation.target != ports.saved->targetRoster)
+            return false;
+        if (ok->destinationRow >= ports.saved->targetRoster.rows.size()
+            || ports.saved->targetRoster.rows[ok->destinationRow][1] != name)
+            return false;
 
-    const auto prepared = prepareRosterSaveText(
-        ports.saved->targetRoster, true, RosterSaveCaseInsensitiveEquals{equals});
-    return !prepared.issues.empty() && !prepared.hasErrors();
+        const auto prepared = prepareRosterSaveText(
+            ports.saved->targetRoster, true,
+            RosterSaveCaseInsensitiveEquals{equals});
+        if (prepared.issues.empty() || prepared.hasErrors())
+            return false;
+    }
+    return true;
 }
 
 bool rejectedTargetQuestionableKoreanLengthCancelsBeforeSave()
 {
-    auto req = request();
-    req.sourceQuestionableKoreanNameLengthsConfirmed = true;
-    req.sourceRoster.rows[0][1] = u"\uAE40";
-    Ports ports;
-    Confirmation confirmation;
+    constexpr std::array questionableNames{
+        std::pair{std::u16string_view(u"\uAE40"),
+                  std::string_view("student_name.korean.too_short")},
+        std::pair{std::u16string_view(u"\uAE40\uBBFC\uC11C\uC9C0\uC6B0"),
+                  std::string_view("student_name.korean.too_long")}
+    };
+    for (const auto& [name, expectedCode] : questionableNames)
+    {
+        auto req = request();
+        req.sourceQuestionableKoreanNameLengthsConfirmed = true;
+        req.sourceRoster.rows[0][1] = name;
+        Ports ports;
+        Confirmation confirmation;
 
-    const auto result = RosterRowTransferUseCase::execute(
-        req, ports, ports, equals, &confirmation);
-    const auto* error = std::get_if<Domain::OperationError>(&result);
-    return error && error->code == Domain::ErrorCode::Canceled
-        && error->recoverable
-        && confirmation.calls == 1
-        && confirmation.issues.size() == 1
-        && confirmation.issues.front().code == "student_name.korean.too_short"
-        && confirmation.target
-        && ports.calls == std::vector<std::string>{"read"}
-        && !ports.saved;
+        const auto result = RosterRowTransferUseCase::execute(
+            req, ports, ports, equals, &confirmation);
+        const auto* error = std::get_if<Domain::OperationError>(&result);
+        if (!error || error->code != Domain::ErrorCode::Canceled
+            || !error->recoverable || confirmation.calls != 1
+            || confirmation.issues.size() != 1
+            || rosterSaveIssueCodeKey(confirmation.issues.front().code)
+                != expectedCode
+            || !confirmation.target
+            || ports.calls != std::vector<std::string>{"read"}
+            || ports.saved)
+            return false;
+    }
+    return true;
 }
 
 bool missingTargetConfirmationPortCancelsBeforeSave()

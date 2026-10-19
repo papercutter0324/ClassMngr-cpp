@@ -140,8 +140,8 @@ public:
         std::vector<RosterSaveIssue> questionableKoreanNameIssues;
         for (const auto& issue : preparedTarget.issues)
         {
-            if (issue.code == "student_name.korean.too_short"
-                || issue.code == "student_name.korean.too_long")
+            if (issue.code == RosterSaveIssueCode::StudentNameKoreanTooShort
+                || issue.code == RosterSaveIssueCode::StudentNameKoreanTooLong)
                 questionableKoreanNameIssues.push_back(issue);
         }
         if (!questionableKoreanNameIssues.empty()

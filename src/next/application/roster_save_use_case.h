@@ -140,7 +140,7 @@ private:
                 result += "row " + std::to_string(issue.row + 1) + ", ";
             if (!issue.field.empty())
                 result += utf8(issue.field) + ": ";
-            result += issue.code;
+            result += std::string(rosterSaveIssueCodeKey(issue.code));
         }
         return result;
     }

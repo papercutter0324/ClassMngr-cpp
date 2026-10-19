@@ -117,8 +117,10 @@ bool hasOnlyQuestionableKoreanNameLengthErrors(
             continue;
         }
 
-        if (issue.code == "student_name.korean.too_short"
-            || issue.code == "student_name.korean.too_long")
+        if (issue.code
+                == ClassMngr::Next::Application::RosterSaveIssueCode::StudentNameKoreanTooShort
+            || issue.code
+                == ClassMngr::Next::Application::RosterSaveIssueCode::StudentNameKoreanTooLong)
         {
             foundQuestionableLengthError = true;
             continue;
@@ -556,8 +558,10 @@ QStringList RosterEditorWidget::questionableKoreanNameRows() const
         ClassMngr::Next::Platform::rosterSaveCaseInsensitiveEquals);
     for (const auto& issue : prepared.issues)
     {
-        if (issue.code != "student_name.korean.too_short"
-            && issue.code != "student_name.korean.too_long")
+        if (issue.code
+                != ClassMngr::Next::Application::RosterSaveIssueCode::StudentNameKoreanTooShort
+            && issue.code
+                != ClassMngr::Next::Application::RosterSaveIssueCode::StudentNameKoreanTooLong)
         {
             continue;
         }

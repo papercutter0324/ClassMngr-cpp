@@ -789,6 +789,9 @@ manualSaveButtonConfirmsQuestionableKoreanNameLengths()
             saveButton->click();
 
             QCOMPARE(prompts.confirmations.size(), 1);
+            QVERIFY(prompts.confirmations.constFirst().message.contains(
+                QStringLiteral("Row 1: ") + koreanName
+                ));
             QVERIFY(prompts.messages.isEmpty());
             const int koreanColumn = columnByName(
                 model,

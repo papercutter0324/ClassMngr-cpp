@@ -2,12 +2,20 @@
 
 #include <QtTest/QtTest>
 
+#include <array>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
+
+static_assert(!std::is_same_v<
+    Application::RosterSaveIssueCode,
+    Application::SpeakingEvaluationValidationCode
+    >);
 
 namespace
 {
@@ -64,6 +72,7 @@ class NextApplicationRosterSaveUseCaseTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void issueCodesKeepStableLegacyKeys();
     void invalidClassIdsDoNotReachPort();
     void acceptsMaximumClassIdAndForwardsUnchanged();
     void preservesCompleteSnapshotAndAllowFlag();
@@ -74,6 +83,52 @@ private slots:
     void rawBomConversionDoesNotMutateRequestOrAddSentinels();
     void policyAcceptsBoundarySizesAndCountsUtf16Units();
 };
+
+void NextApplicationRosterSaveUseCaseTests::issueCodesKeepStableLegacyKeys()
+{
+    using Application::RosterSaveIssueCode;
+    constexpr std::array mapping{
+        std::pair{RosterSaveIssueCode::ValidationLengthOutOfBounds,
+                  std::string_view("validation.length.out_of_bounds")},
+        std::pair{RosterSaveIssueCode::StudentNameEnglishTooLong,
+                  std::string_view("student_name.english.too_long")},
+        std::pair{RosterSaveIssueCode::StudentNameEnglishNonAscii,
+                  std::string_view("student_name.english.non_ascii")},
+        std::pair{RosterSaveIssueCode::StudentNameEnglishInvalidCharacters,
+                  std::string_view("student_name.english.invalid_characters")},
+        std::pair{RosterSaveIssueCode::StudentNameKoreanInvalidCharacters,
+                  std::string_view("student_name.korean.invalid_characters")},
+        std::pair{RosterSaveIssueCode::StudentNameKoreanTooShort,
+                  std::string_view("student_name.korean.too_short")},
+        std::pair{RosterSaveIssueCode::StudentNameKoreanTooLong,
+                  std::string_view("student_name.korean.too_long")},
+        std::pair{RosterSaveIssueCode::StudentNameKoreanUnusualLength,
+                  std::string_view("student_name.korean.unusual_length")},
+        std::pair{RosterSaveIssueCode::RosterColumnRequired,
+                  std::string_view("roster.column.required")},
+        std::pair{RosterSaveIssueCode::RosterColumnDuplicate,
+                  std::string_view("roster.column.duplicate")},
+        std::pair{RosterSaveIssueCode::RosterColumnWidthsInvalidCount,
+                  std::string_view("roster.column_widths.invalid_count")},
+        std::pair{RosterSaveIssueCode::RosterRowsTooMany,
+                  std::string_view("roster.rows.too_many")},
+        std::pair{RosterSaveIssueCode::RosterRowTooManyCells,
+                  std::string_view("roster.row.too_many_cells")},
+        std::pair{RosterSaveIssueCode::RosterStudentNameRequired,
+                  std::string_view("roster.student_name.required")},
+        std::pair{RosterSaveIssueCode::StudentNameDuplicatePair,
+                  std::string_view("student_name.duplicate_pair")}
+    };
+    static_assert(mapping.size() == 15);
+
+    for (const auto& [code, expectedKey] : mapping)
+    {
+        QCOMPARE(
+            std::string(Application::rosterSaveIssueCodeKey(code)),
+            std::string(expectedKey)
+            );
+    }
+}
 
 void NextApplicationRosterSaveUseCaseTests::invalidClassIdsDoNotReachPort()
 {
@@ -229,9 +284,10 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
     QCOMPARE(prepared.roster.rows[0].size(), std::size_t(5));
     QCOMPARE(prepared.roster.rows[0][0], std::u16string(u"A2"));
     QVERIFY(prepared.roster.rows[1].empty());
-    std::vector<std::string> codes;
-    for (const auto& issue : prepared.issues) codes.push_back(issue.code);
-    QVERIFY(codes == std::vector<std::string>({
+    std::vector<std::string_view> codes;
+    for (const auto& issue : prepared.issues)
+        codes.push_back(Application::rosterSaveIssueCodeKey(issue.code));
+    QVERIFY(codes == std::vector<std::string_view>({
         "roster.column.required", "roster.column.required", "roster.column.required",
         "roster.column.required", "roster.column.required", "roster.column.duplicate",
         "validation.length.out_of_bounds", "validation.length.out_of_bounds",
@@ -292,11 +348,23 @@ void NextApplicationRosterSaveUseCaseTests::policyAcceptsBoundarySizesAndCountsU
     const auto rejected = Application::prepareRosterSave(beyond, false, equals);
     QVERIFY(rejected.hasErrors());
     QCOMPARE(rejected.issues.size(), std::size_t(4));
-    QCOMPARE(rejected.issues[0].code, std::string("validation.length.out_of_bounds"));
+    QCOMPARE(
+        std::string(Application::rosterSaveIssueCodeKey(rejected.issues[0].code)),
+        std::string("validation.length.out_of_bounds")
+        );
     QCOMPARE(std::get<std::int64_t>(rejected.issues[0].arguments.at("length")), std::int64_t(65));
-    QCOMPARE(rejected.issues[1].code, std::string("roster.rows.too_many"));
-    QCOMPARE(rejected.issues[2].code, std::string("validation.length.out_of_bounds"));
-    QCOMPARE(rejected.issues[3].code, std::string("student_name.english.too_long"));
+    QCOMPARE(
+        std::string(Application::rosterSaveIssueCodeKey(rejected.issues[1].code)),
+        std::string("roster.rows.too_many")
+        );
+    QCOMPARE(
+        std::string(Application::rosterSaveIssueCodeKey(rejected.issues[2].code)),
+        std::string("validation.length.out_of_bounds")
+        );
+    QCOMPARE(
+        std::string(Application::rosterSaveIssueCodeKey(rejected.issues[3].code)),
+        std::string("student_name.english.too_long")
+        );
 }
 
 QTEST_APPLESS_MAIN(NextApplicationRosterSaveUseCaseTests)

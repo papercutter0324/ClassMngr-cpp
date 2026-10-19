@@ -44,7 +44,8 @@ inline ValidationResult validation(
                 }
             }, argument));
         }
-        result.add({.code = QString::fromStdString(source.code), .field = text(source.field),
+        result.add({.code = QString::fromStdString(
+                std::string(rosterSaveIssueCodeKey(source.code))), .field = text(source.field),
             .row = source.row, .column = source.column,
             .severity = source.severity == RosterSaveIssueSeverity::Error
                 ? ValidationSeverity::Error : ValidationSeverity::Warning,

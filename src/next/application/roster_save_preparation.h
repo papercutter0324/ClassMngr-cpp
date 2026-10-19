@@ -25,12 +25,71 @@ using RosterSaveCaseInsensitiveEquals =
     std::function<bool(std::u16string_view, std::u16string_view)>;
 
 enum class RosterSaveIssueSeverity { Warning, Error };
+
+enum class RosterSaveIssueCode
+{
+    ValidationLengthOutOfBounds,
+    StudentNameEnglishTooLong,
+    StudentNameEnglishNonAscii,
+    StudentNameEnglishInvalidCharacters,
+    StudentNameKoreanInvalidCharacters,
+    StudentNameKoreanTooShort,
+    StudentNameKoreanTooLong,
+    StudentNameKoreanUnusualLength,
+    RosterColumnRequired,
+    RosterColumnDuplicate,
+    RosterColumnWidthsInvalidCount,
+    RosterRowsTooMany,
+    RosterRowTooManyCells,
+    RosterStudentNameRequired,
+    StudentNameDuplicatePair
+};
+
+[[nodiscard]] inline constexpr std::string_view rosterSaveIssueCodeKey(
+    const RosterSaveIssueCode code) noexcept
+{
+    switch (code)
+    {
+    case RosterSaveIssueCode::ValidationLengthOutOfBounds:
+        return "validation.length.out_of_bounds";
+    case RosterSaveIssueCode::StudentNameEnglishTooLong:
+        return "student_name.english.too_long";
+    case RosterSaveIssueCode::StudentNameEnglishNonAscii:
+        return "student_name.english.non_ascii";
+    case RosterSaveIssueCode::StudentNameEnglishInvalidCharacters:
+        return "student_name.english.invalid_characters";
+    case RosterSaveIssueCode::StudentNameKoreanInvalidCharacters:
+        return "student_name.korean.invalid_characters";
+    case RosterSaveIssueCode::StudentNameKoreanTooShort:
+        return "student_name.korean.too_short";
+    case RosterSaveIssueCode::StudentNameKoreanTooLong:
+        return "student_name.korean.too_long";
+    case RosterSaveIssueCode::StudentNameKoreanUnusualLength:
+        return "student_name.korean.unusual_length";
+    case RosterSaveIssueCode::RosterColumnRequired:
+        return "roster.column.required";
+    case RosterSaveIssueCode::RosterColumnDuplicate:
+        return "roster.column.duplicate";
+    case RosterSaveIssueCode::RosterColumnWidthsInvalidCount:
+        return "roster.column_widths.invalid_count";
+    case RosterSaveIssueCode::RosterRowsTooMany:
+        return "roster.rows.too_many";
+    case RosterSaveIssueCode::RosterRowTooManyCells:
+        return "roster.row.too_many_cells";
+    case RosterSaveIssueCode::RosterStudentNameRequired:
+        return "roster.student_name.required";
+    case RosterSaveIssueCode::StudentNameDuplicatePair:
+        return "student_name.duplicate_pair";
+    }
+    return {};
+}
+
 using RosterSaveIssueArgument =
     std::variant<std::int64_t, std::u16string, std::vector<int>>;
 
 struct RosterSaveIssue final
 {
-    std::string code;
+    RosterSaveIssueCode code;
     std::u16string field;
     int row = -1;
     int column = -1;
@@ -148,7 +207,7 @@ inline void lengthIssue(RosterSavePreparation& result, const std::u16string_view
     if (value.size() < minimum || value.size() > maximum)
     {
         result.issues.push_back({
-            .code = "validation.length.out_of_bounds", .field = field,
+            .code = RosterSaveIssueCode::ValidationLengthOutOfBounds, .field = field,
             .row = row, .column = column,
             .arguments = {{"length", static_cast<std::int64_t>(value.size())},
                           {"minimum", static_cast<std::int64_t>(minimum)},
@@ -161,7 +220,7 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
                        const std::u16string& field, const int row, const int column,
                        const bool korean, const bool allowQuestionableLengths)
 {
-    const auto append = [&](const std::string& code,
+    const auto append = [&](const RosterSaveIssueCode code,
                             const RosterSaveIssueSeverity severity = RosterSaveIssueSeverity::Error,
                             std::map<std::string, RosterSaveIssueArgument> arguments = {})
     {
@@ -171,28 +230,29 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
     {
         if (value.size() > SpeakingEvaluationMaximumEnglishNameLength)
         {
-            append("student_name.english.too_long", RosterSaveIssueSeverity::Error,
+            append(RosterSaveIssueCode::StudentNameEnglishTooLong, RosterSaveIssueSeverity::Error,
                    {{"maximumLength", std::int64_t{20}}});
         }
         if (Names::containsNonAscii(value))
-            append("student_name.english.non_ascii");
+            append(RosterSaveIssueCode::StudentNameEnglishNonAscii);
         if (Names::containsInvalidEnglishCharacters(value))
-            append("student_name.english.invalid_characters");
+            append(RosterSaveIssueCode::StudentNameEnglishInvalidCharacters);
         return;
     }
     if (!validKoreanCharacters(value))
-        append("student_name.korean.invalid_characters");
+        append(RosterSaveIssueCode::StudentNameKoreanInvalidCharacters);
     const std::size_t length = koreanBaseNameLength(value);
     if (length == 0 || length == 3)
         return;
     const auto severity = allowQuestionableLengths
         ? RosterSaveIssueSeverity::Warning : RosterSaveIssueSeverity::Error;
     if (length <= 1)
-        append("student_name.korean.too_short", severity);
+        append(RosterSaveIssueCode::StudentNameKoreanTooShort, severity);
     else if (length >= 5)
-        append("student_name.korean.too_long", severity);
+        append(RosterSaveIssueCode::StudentNameKoreanTooLong, severity);
     else
-        append("student_name.korean.unusual_length", RosterSaveIssueSeverity::Warning);
+        append(RosterSaveIssueCode::StudentNameKoreanUnusualLength,
+               RosterSaveIssueSeverity::Warning);
 }
 } // namespace RosterSavePreparationDetail
 
@@ -236,7 +296,8 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
     {
         if (columnIndex(roster.columns, required, equals) < 0)
         {
-            result.issues.push_back({.code = "roster.column.required", .field = u"columns",
+            result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnRequired,
+                                    .field = u"columns",
                                     .arguments = {{"column", std::u16string(required)}}});
         }
     }
@@ -249,7 +310,8 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
         {
             if (equals(roster.columns[column], roster.columns[previous]))
             {
-                result.issues.push_back({.code = "roster.column.duplicate", .field = field,
+                result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnDuplicate,
+                    .field = field,
                     .column = static_cast<int>(column),
                     .arguments = {{"duplicateColumn", static_cast<std::int64_t>(previous)}}});
                 break;
@@ -258,13 +320,14 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
     }
     if (roster.columnWidths.size() > roster.columns.size())
     {
-        result.issues.push_back({.code = "roster.column_widths.invalid_count", .field = u"columnWidths",
+        result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnWidthsInvalidCount,
+            .field = u"columnWidths",
             .arguments = {{"widthCount", static_cast<std::int64_t>(roster.columnWidths.size())},
                           {"columnCount", static_cast<std::int64_t>(roster.columns.size())}}});
     }
     if (roster.rows.size() > RosterSaveMaximumRows)
     {
-        result.issues.push_back({.code = "roster.rows.too_many", .field = u"rows",
+        result.issues.push_back({.code = RosterSaveIssueCode::RosterRowsTooMany, .field = u"rows",
             .arguments = {{"maximumRows", static_cast<std::int64_t>(RosterSaveMaximumRows)},
                           {"rowCount", static_cast<std::int64_t>(roster.rows.size())}}});
     }
@@ -275,7 +338,8 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
         const auto rowField = u"rows[" + number(rowIndex) + u"]";
         if (row.size() > roster.columns.size())
         {
-            result.issues.push_back({.code = "roster.row.too_many_cells", .field = rowField, .row = r,
+            result.issues.push_back({.code = RosterSaveIssueCode::RosterRowTooManyCells,
+                .field = rowField, .row = r,
                 .arguments = {{"cellCount", static_cast<std::int64_t>(row.size())},
                               {"columnCount", static_cast<std::int64_t>(roster.columns.size())}}});
         }
@@ -295,7 +359,8 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
             const auto field = rowField + u"." + std::u16string(name);
             if (trimQtWhitespace(Names::cell(row, column)).empty())
             {
-                result.issues.push_back({.code = "roster.student_name.required", .field = field,
+                result.issues.push_back({.code = RosterSaveIssueCode::RosterStudentNameRequired,
+                    .field = field,
                     .row = r, .column = column, .arguments = {{"field", field}}});
             }
         }
@@ -320,9 +385,11 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
                 rows.push_back(static_cast<int>(row));
             for (const int row : rows)
             {
-                result.issues.push_back({.code = "student_name.duplicate_pair", .field = u"English",
+                result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
+                    .field = u"English",
                     .row = row, .column = english, .arguments = {{"duplicateRows", rows}}});
-                result.issues.push_back({.code = "student_name.duplicate_pair", .field = u"Korean",
+                result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
+                    .field = u"Korean",
                     .row = row, .column = korean, .arguments = {{"duplicateRows", rows}}});
             }
         }
