@@ -8222,3 +8222,9 @@ Platform and selected UI verification is planned; implementation and
 verification are pending. Batch486 has F1138–F1140 complete, F1141 accepted/in
 progress, and two discovered candidates. F629 and both phase gates remain
 open.
+
+The My Info page is a second consumer of the typed Zoom credentials. Preserve
+its length-aware decode, exact nonblank display text (including surrounding
+spaces), blank-to-`N/A` presentation, and stored values while unavailable. Its
+existing My Workspace page case will cover spaced UTF-8 display and unavailable
+field behavior.

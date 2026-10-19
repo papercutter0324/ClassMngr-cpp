@@ -50143,16 +50143,24 @@ missing or invalid. Keep length-aware UTF-8 conversion. Attempt legacy
 migration only after all three reads succeed; ignore migration-write errors
 and retain nonrecoverable Technical read failures.
 
-At the UI boundary, preserve length-aware decoding, hide-when-unavailable,
+In Sub Prep, preserve length-aware decoding, hide-when-unavailable,
 `valueOrNa()` trimming and blank-to-`N/A` presentation, and current warning
-and read-failure field-preservation behavior.
+and read-failure field-preservation behavior. In My Info
+(`src/features/my_info/ui/personal_details_page_sections.cpp`), preserve
+length-aware UTF-8 decoding and exact display of nonblank decoded text,
+including surrounding spaces; trim only to detect blank text for `N/A`.
+Keep credentials visible while unavailable and disable their fields.
 
 Focused verification: add exact-byte and embedded-NUL coverage for both
 values; build `ClassMngr`,
 `ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
-and `ClassMngrSubPrepPageTests`; run the Platform CTest and selected UI cases
+`ClassMngrSubPrepPageTests`, and `ClassMngrMyWorkspacePageTests`; run the
+Platform CTest and selected UI cases
 `zoomUnavailableHidesStoredCredentials` and
-`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`; run
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`. Strengthen
+`MyWorkspacePageTests::storedZoomCredentialsPrefillAndRespectUnavailableState`
+with UTF-8 values containing surrounding spaces, asserting exact displayed
+text while checking unavailable state. Run
 `git diff --check`. Implementation and verification are pending. Full-suite
 and Windows runs are not expected. Batch486 has six candidates: F1138–F1140
 complete, F1141 accepted/in progress, and F1142–F1143 discovered. F1142 is
