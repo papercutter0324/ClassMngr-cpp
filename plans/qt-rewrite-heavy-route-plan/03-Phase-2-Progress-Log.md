@@ -49881,3 +49881,76 @@ no full-suite or Windows run is expected. F1137 is next for acceptance.
 Batch485 has eight complete slices, one accepted/in progress, and one
 discovered; it remains unpushed. F629 and the Phase 0 and Phase 2 gates remain
 open.
+
+### Batch486 early discovery at F1136 start - 2026-10-20
+
+Two independent bounded Heavy-route scans were compared. Six distinct
+Batch486 candidates are provisionally supportable; all are discovered and not
+accepted. Batch485 remains active.
+
+1. **F1138 - Type calendar event color preference identity.** Use existing
+   `Domain::CalendarEventType` in the preference port; preserve normalized UI
+   names, exact dynamic key strings, and invalid stored-color pass-through.
+2. **F1139 - Type calendar-import campus codes.** Preserve repository order,
+   UTF-8, trimming, blank filtering, and case-sensitive duplicate removal.
+   Acceptance must assess reusing `CalendarEventCampusCode` versus a simpler
+   value.
+3. **F1140 - Type prepared personal-signature image bytes.** Preserve exact
+   prepared bytes and the distinction between empty success and read error.
+4. **F1141 - Distinguish Sub Prep Zoom login ID and password values.** Preserve
+   exact permissive UTF-8, defaults, preference precedence and migration, and
+   errors.
+5. **F1142 - Type custom palette color entries.** Preserve all 16 entries,
+   legacy encodings, read trimming/canonicalization/fallback, and write-time
+   exact supplied text.
+6. **F1143 - Type academic-calendar schedule payload.** Use an opaque JSON
+   string value; preserve UTF-8 round trip, fallback, exact key, repository
+   and write errors. Do not parse JSON in this value.
+
+No other slices were found.
+
+The independent domain scan also returned an Upcoming Birthday date candidate,
+but it was excluded because it is too close to F1132's recent
+`GregorianDate` representation change. This is a bounded discovery shortfall,
+not repo-wide exhaustion.
+
+### F1136 Skipped-update stored version text complete - 2026-10-20
+
+F1136 completed at source/test commit
+`98ed18944ad2f3f82b7c83c03c5f48f475129efb`, following acceptance
+`6b456bff16c940d924f7baea94dea591d8c49347`. Application preferences and policy
+input now use permissive `SkippedUpdateVersionText` for exact stored version
+bytes; Platform trimming and blank-to-missing behavior remain. Numeric parsing
+and literal suppression comparison remain separate, so `01.2.3` does not
+suppress canonical `1.2.3`. Controller clear/write rollback, retry, canonical
+Skip writes, and prompt behavior remain.
+
+The focused build of `ClassMngr` and three targets passed, as did all three
+focused CTests and `git diff --check`. The first sandboxed controller CTest
+could not bind its local HTTP server; rerunning the identical CTest command
+outside the sandbox passed. The full suite and Windows verification were not
+run. At F1136 completion, Batch485 had nine complete, zero accepted/in
+progress, and one discovered; F1137 was next for acceptance. The batch remains
+unpushed. F629 awaits source-bound Windows x64 layout evidence, the user
+cannot run Windows now, and the Phase 0 and Phase 2 gates remain open.
+
+### F1137 Course catalog identity accepted before implementation - 2026-10-20
+
+F1137 is accepted/in progress. Introduce closed Domain `CourseCatalogIdentity`
+for the 25 official grade/level pairs, store it in `Course`, and expose
+identity as a typed catalog value. Keep `CourseGradeBand` distinct: it is a
+grade classification that includes `Other` and is used by F1128.
+
+Preserve exact `fromNames()` spelling and case matching, with no trimming or
+normalization; canonical grade/level strings and grade/level ordering;
+distinction between repeated level names under different grades; equality; and
+all weekly meeting-day rules and invalid-day behavior. Keep Schedule Import's
+raw string candidate input, validation and error behavior, and boundaries
+unchanged.
+
+Focused tests are planned for `ClassMngrNextDomainContractTests` and
+`ClassMngrNextApplicationScheduleImportPlanValidationTests`. Implementation
+and verification are pending. Batch485 remains active with nine complete,
+one accepted/in progress, and zero discovered; F629 awaits source-bound
+Windows x64 layout evidence, the user cannot run Windows now, and the Phase 0
+and Phase 2 gates remain open.

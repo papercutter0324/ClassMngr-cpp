@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-19 (F1090 complete; F629 open)
+### Current checkpoint - 2026-10-20 (F1137 accepted; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -212,6 +212,17 @@ Phase 2 remains In Progress/Open. Gates 1 and 2 remain Partial, and F1007
 remains pending policy reconciliation. Exact acceptance, verification,
 commit, and discovery evidence is in
 `plans/qt-rewrite-heavy-route-plan/03-Phase-2-Progress-Log.md`.
+
+F1136 is complete at source/test commit `98ed1894`, following acceptance
+`6b456bff`. The Application skipped-update preference now carries exact
+stored text, while the Platform adapter keeps trimming and blank-to-missing
+behavior. The numeric version parse and literal suppression comparison remain
+separate; focused macOS verification passed all three policy, preferences-port,
+and automatic-startup controller CTests. F1137 is accepted and in progress;
+Batch485 has nine complete slices. Provisional Batch486 discovery is recorded
+in the Phase 2 progress log. F629 remains active but awaits source-bound Windows
+layout evidence, which is unavailable in this session; the Phase 0 and Phase 2
+gates remain open. Batch485 is not pushed until F1137 closes it.
 
 ## Next Milestone
 
@@ -5866,4 +5877,38 @@ written by a user Skip action. F1127 `UpdateArtifactPlatformKey` remains
 unrelated. Focused policy, platform port, and automatic-startup controller
 tests are expected; implementation and verification are pending. F1137 is
 next for acceptance. Batch485 remains unpushed; F629 and both phase gates
+remain open.
+
+## Phase 2 update - F1136 complete - 2026-10-20
+
+F1136 completed at source/test commit
+`98ed18944ad2f3f82b7c83c03c5f48f475129efb`, following acceptance
+`6b456bff16c940d924f7baea94dea591d8c49347`. `SkippedUpdateVersionText` now
+types exact stored version text in the Application preferences and policy
+contracts. The settings adapter still trims and maps blank text to missing;
+numeric version parsing remains separate from literal suppression comparison.
+Controller clear/write recovery, retry, canonical Skip writes, and prompt
+behavior remain preserved.
+
+`ClassMngr` and the three focused macOS targets built; the Application policy,
+Platform preferences-port, and automatic-startup controller CTests passed 3/3.
+The first sandboxed controller test could not bind its local HTTP server; the
+same requested CTest command passed outside the sandbox. `git diff --check`
+passed. Full-suite and Windows verification were not run. Batch485 has nine
+complete slices and one discovered candidate, with F1137 next for acceptance.
+The batch remains unpushed; F629 and both phase gates remain open.
+
+## Phase 2 update - F1137 accepted; Batch485 active - 2026-10-20
+
+F1137 is accepted to add a closed Domain `CourseCatalogIdentity` for the 25
+official grade/level pairs and store that typed identity in `Course`. Keep
+`CourseGradeBand` separate as a grade classification, including `Other`.
+Preserve exact, unnormalized `fromNames()` matching, canonical grade and level
+text and ordering, distinct identities for repeated level names in different
+grades, equality, and every existing weekly meeting-day rule. Keep Schedule
+Import's raw string candidate boundary and validation/error behavior intact.
+Focused Domain contract and Schedule Import plan-validation tests will verify
+these boundaries. Implementation and verification are pending. Batch485 has
+nine complete slices and one accepted/in progress; Batch486's six-candidate
+discovery is provisional. The batch remains unpushed; F629 and both phase gates
 remain open.

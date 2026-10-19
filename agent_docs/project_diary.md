@@ -8087,3 +8087,31 @@ The five focused macOS CTests passed, including page parity and locale display;
 the full suite and Windows were not run. Batch485 has eight complete slices
 and two discovered, with F1136 next. The batch remains unpushed; F629 and both
 phase gates remain open.
+
+## 2026-10-20 - F1136 complete
+
+F1136 completed at source/test commit
+`98ed18944ad2f3f82b7c83c03c5f48f475129efb`, following acceptance
+`6b456bff16c940d924f7baea94dea591d8c49347`. Keep stored version text and its
+numeric parse as separate concerns: `01.2.3` parses as version 1.2.3 but does
+not match canonical text `1.2.3` for prompt suppression. The value type owns
+exact bytes, while trimming and blank-to-missing behavior remain in the
+settings adapter.
+
+The focused macOS build and three CTests passed. A sandbox loopback bind
+failure was resolved by rerunning the same CTest outside the sandbox;
+`git diff --check` passed. The full suite and Windows were not run. Batch485
+has nine complete slices, with F1137 next; the batch remains unpushed. F629 and
+both phase gates remain open.
+
+## 2026-10-20 - F1137 accepted
+
+`Course` already guarantees a valid catalog pair through its private
+constructor and exact `fromNames()` lookup, but its stored identity is still
+the pair of catalog string views. F1137 will encode the 25 pairs as a closed
+`CourseCatalogIdentity` stored by `Course`, while preserving canonical string
+access, exact matching, ordering, and weekly-day policy. Keep this identity
+separate from `CourseGradeBand`: the latter classifies grades and includes
+`Other`, while `CourseCatalogIdentity` distinguishes full catalog pairs such
+as M1/Major and M2/Major. Schedule Import continues to validate its raw
+string candidates through `Course::fromNames()`.
