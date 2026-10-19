@@ -5679,3 +5679,18 @@ existing boundaries. `Domain::ScheduleTime` is unsuitable because it models
 a weekday interval with start and end. Implementation and verification are
 pending; F1131 is next for acceptance. Batch485 remains unpushed. F629 and
 both phase gates remain open.
+
+## Phase 2 update - F1130 complete - 2026-10-20
+
+F1130 completed at source/test commit
+`08d614eed4e385e9a2f2007d115b04bd1f3d2262`, following acceptance
+`849dd0fb`. `ScheduleSlotStartMinute` now types the Application save request;
+the existing validator keeps its weekday/minute/state order, `[0,1440)`
+bounds, exact error, and no-port-call behavior. The UI parser retains its
+strict input rules, and the Platform adapter preserves zero-padded `HH:mm`.
+`ClassMngr` and both focused test targets built; both focused CTests passed
+2/2. Coverage includes typed value/equality/default, 0 and 1439, invalid -1
+and 1440, validation order, and persisted `00:00`, `09:05`, and `23:59`.
+`git diff --check` passed. Windows and full-suite verification were not run.
+Batch485 has three complete slices and seven discovered; F1131 is next for
+acceptance. F629 and both phase gates remain open.

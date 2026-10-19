@@ -7967,3 +7967,9 @@ slot start minute: it requires a weekday interval with an end after the start,
 so it cannot represent 23:59. Use a dedicated permissive Application wrapper
 and retain the existing request validator as the range and error-order
 boundary.
+
+F1130 verification confirmed why construction stays permissive: invalid raw
+minutes must still reach the save request's established validator so weekday,
+minute, and state failures keep their observable precedence. The UI can parse
+directly into the wrapper, while the Platform adapter unwraps only when
+formatting the legacy `HH:mm` value.
