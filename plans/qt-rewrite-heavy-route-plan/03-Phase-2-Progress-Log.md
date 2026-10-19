@@ -50349,3 +50349,68 @@ Windows verification were not run.
 Batch486 has six candidates: five complete (F1138–F1142), none accepted/in
 progress, and one discovered (F1143); F1143 is next. Batch487 remains
 discovered and inactive. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1143 Academic calendar schedule JSON text accepted before implementation - 2026-10-20
+
+F1143 is accepted/in progress. Add the Qt-free owning Application value
+`AcademicCalendarScheduleJsonText` with an empty default, explicit
+`std::string` constructor, `value() const&`, `empty()`, and equality. It must
+not depend on Qt, parse or validate JSON, trim, or canonicalize. Change the
+Application academic-calendar preferences port read result and write input to
+this nominal type. Keep JSON parsing and compact serialization in
+`AcademicCalendarProvider`.
+
+The Platform adapter owns the `calendar/academicSchedule/v1` key,
+length-aware QString/QVariant UTF-8 conversions, settings lookup, and
+repository interaction. Valid UTF-8 payload text must round-trip unchanged;
+add a non-ASCII JSON-text regression because current adapter fixtures are
+ASCII. Do not add JSON validation to the adapter. A missing key, null/closed/
+unavailable session, or missing repository remains a successful empty value.
+Repository read failure remains nonrecoverable `Technical` and preserves its
+message and fallback behavior.
+
+The provider parses only during reload. Empty, syntactically invalid,
+non-object, and schema-invalid successful reads preserve existing default and
+fallback behavior; invalid or schema-invalid content returns the cleared
+default schedule. A read failure preserves the loaded schedule, marks
+persistence unknown, and blocks saves until reload succeeds. Writes on a
+null/closed/repository-less session remain nonrecoverable `Technical`; a
+repository save error propagates its message and fallback. The provider
+updates its in-memory schedule and revision only after persistence succeeds.
+
+Update direct users and fakes in `tests/academic_calendar_tests.cpp` and
+`tests/calendar_preferences_restore_defaults_tests.cpp`, and adapt the direct
+port write in `tests/evaluation_default_selection_integration_tests.cpp`.
+Existing port tests cover empty/unavailable/closed/null reads, read errors,
+the exact key and replacement with unrelated-setting preservation, and write
+error preservation. Existing provider tests cover reload/save/error state and
+JSON/schema fallback.
+
+Focused verification: build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`,
+`ClassMngrAcademicCalendarTests`,
+`ClassMngrCalendarPreferencesRestoreDefaultsTests`, and
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`; run focused CTests:
+`ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests`;
+`ClassMngrAcademicCalendarTests` cases
+`AcademicCalendarScheduleValidityPolicy`,
+`AcademicCalendarJsonRoundTripAndMalformedFallback`, and
+`AcademicCalendarInvalidWinterContinuityIsAtomic`;
+`ClassMngrCalendarPreferencesRestoreDefaultsTests` cases
+`CalendarPreferencesRejectsOutOfRangeWinterStart` and
+`CalendarPreferencesRejectsOutOfRangeInternalTermStart`; and
+`ClassMngrEvaluationDefaultSelectionIntegrationTests`. Run
+`git diff --check`. Full-suite and Windows runs are not expected. F1143 is
+academic-calendar-specific and does not overlap Batch487
+F1144–F1153; keep Batch487's ten candidates unchanged and inactive. Evidence:
+`src/next/application/academic_calendar_schedule_preferences.h:10`,
+`src/next/platform/application_services_academic_calendar_schedule_preferences_port.h:19,56,69,94,147`,
+`src/features/calendar/ui/academic_calendar_provider.cpp:201,218,292,305,466`,
+`src/features/calendar/academic_calendar_schedule.cpp:428`, and
+`cmake/tests/next.cmake:3646`. Focused test files are
+`tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp`,
+`tests/academic_calendar_tests.cpp`,
+`tests/calendar_preferences_restore_defaults_tests.cpp`, and
+`tests/evaluation_default_selection_integration_tests.cpp`. Batch486 has six
+candidates: five complete, one accepted/in progress (F1143), and none
+discovered. F629 and the Phase 0 and Phase 2 gates remain open.

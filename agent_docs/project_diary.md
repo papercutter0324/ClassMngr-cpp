@@ -8263,5 +8263,6 @@ HexRgb canonicalization, fallback, padding, truncation, and compact-JSON writes.
 The focused Platform regression confirms that noncanonical caller text is
 stored verbatim and normalized only by a later read. The incremental macOS
 Debug build and both focused CTests passed; full-suite and Windows verification
-were not run. F1143 is next to close Batch486. F629 and both phase gates remain
-open.
+were not run. F1143 is accepted to type academic-calendar schedule JSON text
+without moving parsing from `AcademicCalendarProvider`; F629 and both phase
+gates remain open.

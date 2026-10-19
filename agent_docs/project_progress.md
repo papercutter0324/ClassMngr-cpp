@@ -234,11 +234,13 @@ the selected Sub Prep and My Workspace cases passed. The Initial Setup case
 could not reach its assertions because the registered offscreen Qt Widgets /
 QWizard test aborts with an `NSBundle initWithURL: nil URL argument` exception
 in both the Phase 0 and standard preset trees; its cause is unresolved. The
-Initial Setup target compiled, but behavior remains unverified. F1142 is now
+Initial Setup target compiled, but behavior remains unverified. F1142 is
 complete at source/test commit `67f7277a`; the focused Platform and ColorUtils
-CTests passed 2/2 after the incremental macOS Debug build. Batch486 has five
-complete slices and one discovered candidate, F1143. Batch487 is discovered
-with ten candidates and is not active.
+CTests passed 2/2 after the incremental macOS Debug build. F1143 is
+accepted/in progress to add an opaque Application value for academic-calendar
+schedule JSON text while preserving the Platform and provider boundaries.
+Batch486 has five complete slices and F1143 accepted/in progress; Batch487 is
+discovered with ten candidates and remains inactive.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -246,8 +248,8 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Accept and complete F1143 to close Batch486, then commit and push the completed
-batch before starting Batch487's first candidate, F1144. F629 remains active
+Complete F1143 to close Batch486, then commit and push the completed batch
+before starting Batch487's first candidate, F1144. F629 remains active
 and awaits source-bound Windows x64 layout evidence for commit `667ff54e`; the
 user cannot run Windows now. The Phase 0 and Phase 2 exit gates remain open.
 Detailed historical slice evidence remains in
@@ -6122,3 +6124,20 @@ confirms that the next read applies existing normalization. `git diff --check`
 passed. Full-suite and Windows verification were not run. Batch486 has five
 complete slices and one discovered candidate; F1143 is next. Batch487 has ten
 discovered candidates and is not active. F629 and both phase gates remain open.
+
+## Phase 2 update - F1143 accepted; Batch486 active - 2026-10-20
+
+F1143 is accepted to add Qt-free Application `AcademicCalendarScheduleJsonText`
+for exact JSON text. The value owns its text and does not parse, validate,
+trim, or canonicalize it; Platform retains the existing settings key and
+length-aware UTF-8 conversions, while `AcademicCalendarProvider` retains
+compact serialization and parsing. Preserve successful empty reads and
+invalid/schema fallback, Technical read errors and provider state retention,
+and write-error propagation and provider rollback behavior. Add non-ASCII
+valid UTF-8 adapter round-trip coverage; update direct ports and fakes. Focused
+verification will build `ClassMngr` and the Platform port, Academic Calendar,
+Calendar Preferences Restore Defaults, and Evaluation Default Selection test
+targets, then run their CTests and `git diff --check`. Full-suite and Windows
+verification are not expected. Batch486 has five complete and F1143
+accepted/in progress; Batch487 remains discovered and inactive. F629 and both
+phase gates remain open.
