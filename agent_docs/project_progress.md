@@ -5394,3 +5394,14 @@ snapshot dates raw so invalid database dates still return `Technical` before
 persistence. Preserve inclusive suffix selection, occurrence order, date
 offset/duration, supported range, and projection behavior. Implementation and
 tests have not started. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1118 complete; Batch484 active - 2026-10-20
+
+F1118 completed at source/test commit `f3f0b46e`, following acceptance
+`3039bf25`. Planner-generated repeat-series update dates now remain
+`GregorianDate` values through the Application contract and convert to `QDate`
+in the platform adapter; request and snapshot input strings remain unchanged.
+The Application calendar event and platform edit-port targets built, and both
+focused CTests passed (2/2). The full suite, UI page parity target, and Windows
+verification were not run. F1119 is next for acceptance; F629 and both phase
+gates remain open.

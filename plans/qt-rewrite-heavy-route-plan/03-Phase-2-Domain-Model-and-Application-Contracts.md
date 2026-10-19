@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118 accepted/in progress and nine discovered; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118 complete and nine discovered, with F1119 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,9 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch484 (10 candidates; 0 complete; 1 accepted/in progress; 9 discovered)
+#### Active batch: Batch484 (10 candidates; 1 complete; 0 accepted/in progress; 9 discovered)
 
-1. F1118 - Accepted/in progress: type only generated `CalendarEventSeriesEditOccurrenceUpdate` dates as `Domain::GregorianDate`, converting to Qt at the platform adapter; preserve date and occurrence behavior. Raw request and snapshot date strings remain unchanged by design (details and checks in the [progress log](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-accepted-before-implementation-2026-10-20)).
+1. F1118 - Complete at `f3f0b46e`: type generated `CalendarEventSeriesEditOccurrenceUpdate` dates as `Domain::GregorianDate`, converting to Qt at the platform adapter; preserve date and occurrence behavior. Raw request and snapshot date strings remain unchanged by design (verification in the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20)).
 2. F1119 - Type Schedule Import apply/state teacher correlation keys: preserve exact identity across state and apply requests.
 3. F1120 - Type Teacher Import source validation keys: preserve per-source exact/parallel keys, normalization, and order.
 4. F1121 - Type Campus Directory key/code: preserve exact code, byte length, and uniqueness.
@@ -81,7 +81,7 @@ Treat this plan as an operational summary, not a history:
 9. F1126 - Type Excel Import timeout choice: preserve supported values, default/fallback, and setting key.
 10. F1127 - Type update-artifact platform keys (lower confidence): screen aliases and enum suitability during acceptance.
 
-F1118 is accepted/in progress; the other nine candidates remain discovered. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1118 is complete; the other nine candidates remain discovered, with F1119 next for acceptance. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

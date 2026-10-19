@@ -7768,3 +7768,13 @@ validation retains its current `InvalidInput` behavior, and keep persisted
 snapshot text raw so corrupt stored dates still produce `Technical` failures
 before persistence. This avoids a wrapper with mutable raw text and parsed
 state that could drift out of sync.
+
+## 2026-10-20 - F1118 complete
+
+F1118 completed at source/test commit `f3f0b46e`, following acceptance
+`3039bf25`. The Application plan now carries its already-valid generated
+repeat-series dates as `GregorianDate` through the platform adapter, where
+they convert directly to `QDate`. Request and persisted snapshot strings
+remain unchanged so malformed request and corrupt-database error behavior is
+preserved. Both focused Application and platform CTests passed (2/2); no full
+suite, page-parity, or Windows run occurred.

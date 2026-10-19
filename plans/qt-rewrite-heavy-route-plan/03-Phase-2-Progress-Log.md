@@ -48853,3 +48853,24 @@ and CTest `NextApplicationCalendarEvent`, plus
 `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests` and its
 registered CTest. Run `ClassMngrCalendarPageEventMutationParityTests` if API
 integration requires it. Implementation and tests have not started.
+
+### F1118 Calendar repeat-series generated dates complete - 2026-10-20
+
+F1118 is complete at source/test commit `f3f0b46e`, following acceptance
+`3039bf25`. The implementation types only
+`CalendarEventSeriesEditOccurrenceUpdate.startDate` and `.endDate` as
+`Domain::GregorianDate` and converts them directly to `QDate` in the platform
+adapter. Request date fields and snapshot `startDate` remain raw strings.
+Existing invalid-request codes, messages, and precedence; technical failure
+for invalid persisted dates; inclusive suffix selection, occurrence order,
+date offset/duration, full Gregorian range, errors, persistence, and UI
+projection behavior are preserved.
+
+The independent Tester built
+`ClassMngrNextApplicationCalendarEventTests` and
+`ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`; their
+registered focused CTests passed 2/2. `git diff --check` passed. The full
+suite, `ClassMngrCalendarPageEventMutationParityTests`, and Windows
+verification were not run. Batch484 remains active with F1118 complete, nine
+discovered candidates, and F1119 next for acceptance. F629 and the Phase 0
+and Phase 2 gates remain open.
