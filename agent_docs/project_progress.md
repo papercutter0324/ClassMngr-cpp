@@ -53,7 +53,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1140 complete; Batch486 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1141 accepted; Batch486 active; F629 open)
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472
 is now complete: F1081-F1085 are committed at `a9066ae7`, `c48d43a4`,
@@ -228,7 +228,7 @@ failure/resync/retry case. `ClassMngr` and the affected targets built, and
 the focused Platform adapter and Calendar Import CTests passed 2/2. F1140
 completed at source/test commit `230f7a00`; its Platform CTest passed 1/1 and
 both selected UI read-error cases passed. Batch486 remains active with three
-complete slices and three discovered; F1141 is next.
+complete slices, F1141 accepted/in progress, and two discovered.
 Batch485 was pushed to
 `origin/Qt-Rewrite` at `192f676a`. F629 remains active but awaits source-bound
 Windows layout evidence, which is unavailable in this session; the Phase 0 and
@@ -236,7 +236,7 @@ Phase 2 gates remain open.
 
 ## Next Milestone
 
-Continue Batch486 with F1141. F629 remains active and awaits a
+Continue Batch486 with accepted F1141. F629 remains active and awaits a
 Windows x64 host or retained source-bound output
 for commit `667ff54e` so the layout inputs and page assignments can be compared
 with the Mac trace. If that evidence establishes a product defect, make an
@@ -6056,3 +6056,30 @@ focused Platform CTest passed 1/1, and the two selected UI read-error cases
 passed. `git diff --check` passed. Full-suite and Windows verification were not
 run. Batch486 has three complete slices and three discovered; F1141 is next for
 acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1141 accepted; Batch486 active - 2026-10-20
+
+F1141 is accepted to distinguish the Sub Prep Zoom login ID and password with
+two Qt-free owning Application values. Preserve exact permissive UTF-8 bytes,
+including spaces and embedded NULs; apply no validation, trimming, or case
+folding in the values, and treat `N/A` as ordinary text. Keep the existing
+defaults (`N/A`, `N/A`, and `unavailable=true`) and boolean availability field.
+
+Platform retains primary and legacy keys, valid-primary precedence, fallback
+only for missing or invalid primary values, length-aware UTF-8 conversion, and
+best-effort migration only after all three settings read successfully. Ignore
+migration-write failures as before; repository read failures remain
+nonrecoverable `Technical` errors and do not trigger fallback or migration.
+The UI continues to decode by explicit length, hide values when unavailable,
+and trim/map blank values to `N/A` only for presentation. Preserve current
+read-error warning and field-retention behavior.
+
+Focused verification will build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
+and `ClassMngrSubPrepPageTests`; run the Platform CTest and selected UI cases
+`zoomUnavailableHidesStoredCredentials` and
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`; run
+`git diff --check`. Full-suite and Windows verification are not expected.
+Batch486 has three complete slices, one accepted/in-progress F1141, and two
+discovered candidates; F1142 is next for acceptance. F629 and both phase gates
+remain open.

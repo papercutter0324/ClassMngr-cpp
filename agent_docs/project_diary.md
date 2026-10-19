@@ -8210,3 +8210,15 @@ Platform CTest passed 1/1, and both selected Initial Setup and My Workspace
 read-error cases passed. `git diff --check` passed. Full suite and Windows were
 not run. Batch486 now has three complete slices and three discovered, with
 F1141 next; F629 and both phase gates remain open.
+
+## 2026-10-20 - F1141 accepted
+
+Use distinct Qt-free Application values for Sub Prep Zoom login ID and
+password, preserving exact permissive UTF-8 bytes including spaces and
+embedded NULs. Keep current defaults, primary/legacy precedence, read behavior,
+best-effort migration, and error handling. The UI continues to trim only for
+display and preserve the existing unavailable and read-error behavior. Focused
+Platform and selected UI verification is planned; implementation and
+verification are pending. Batch486 has F1138–F1140 complete, F1141 accepted/in
+progress, and two discovered candidates. F629 and both phase gates remain
+open.

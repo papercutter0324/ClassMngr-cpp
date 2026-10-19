@@ -50125,3 +50125,35 @@ focused adapter CTest passed (1/1); selected UI cases
 run. Batch486 has six candidates: three complete (F1138–F1140), none
 accepted/in progress, and three discovered (F1141–F1143); F1141 is next for
 acceptance. F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1141 Sub Prep personal Zoom credential values accepted before implementation - 2026-10-20
+
+F1141 is accepted/in progress. Add distinct Qt-free Application owning values
+`SubPrepPersonalZoomLoginId` and `SubPrepPersonalZoomPassword`. They preserve
+exact permissive UTF-8 bytes, with no validation, trimming, or case folding;
+`N/A` is ordinary text. Use both in
+`SubPrepPersonalZoomPreferences`, retaining its `N/A` defaults and unchanged
+`unavailable = true`. Do not use `TypedId`.
+
+Keep primary keys `myInfo/zoomLoginId`, `myInfo/zoomPassword`, and
+`myInfo/zoomNotAvailable`, plus legacy keys `subPrep/personalZoomEmail`,
+`subPrep/personalZoomPassword`, and `subPrep/personalZoomNotAvailable`.
+Preserve valid-primary precedence and legacy fallback only when a primary is
+missing or invalid. Keep length-aware UTF-8 conversion. Attempt legacy
+migration only after all three reads succeed; ignore migration-write errors
+and retain nonrecoverable Technical read failures.
+
+At the UI boundary, preserve length-aware decoding, hide-when-unavailable,
+`valueOrNa()` trimming and blank-to-`N/A` presentation, and current warning
+and read-failure field-preservation behavior.
+
+Focused verification: add exact-byte and embedded-NUL coverage for both
+values; build `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests`,
+and `ClassMngrSubPrepPageTests`; run the Platform CTest and selected UI cases
+`zoomUnavailableHidesStoredCredentials` and
+`zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic`; run
+`git diff --check`. Implementation and verification are pending. Full-suite
+and Windows runs are not expected. Batch486 has six candidates: F1138–F1140
+complete, F1141 accepted/in progress, and F1142–F1143 discovered. F1142 is
+next for acceptance; F629 and the Phase 0 and Phase 2 gates remain open.
