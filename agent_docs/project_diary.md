@@ -7961,3 +7961,9 @@ the `-1` fallback, explicit `-2`, and wide signed values before the save
 workflow applies its existing conversion and validation. A permissive
 `ClassDetailsValidationContextTeacherId` makes that boundary explicit without
 moving or weakening downstream validation.
+
+For F1130, `Domain::ScheduleTime` is not reusable for a standalone schedule
+slot start minute: it requires a weekday interval with an end after the start,
+so it cannot represent 23:59. Use a dedicated permissive Application wrapper
+and retain the existing request validator as the range and error-order
+boundary.

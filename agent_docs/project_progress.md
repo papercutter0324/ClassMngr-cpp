@@ -5667,3 +5667,15 @@ targets built; the Application query, platform adapter, and save-use-case
 CTests passed 3/3. Windows and full-suite verification were not run. Batch485
 has two complete slices and eight discovered; F1130 is next for acceptance.
 F629 and both phase gates remain open.
+
+## Phase 2 update - F1130 accepted; Batch485 active - 2026-10-20
+
+F1130 is accepted for a dedicated Application `ScheduleSlotStartMinute`
+wrapper on `ScheduleSlotStateSaveRequest::startMinute`. Keep construction
+permissive so the existing request validator retains the `[0,1440)` check,
+weekday/minute/state failure order, exact error, and no-port-call behavior.
+Adapt the strict UI time parser and platform `HH:mm` formatter at their
+existing boundaries. `Domain::ScheduleTime` is unsuitable because it models
+a weekday interval with start and end. Implementation and verification are
+pending; F1131 is next for acceptance. Batch485 remains unpushed. F629 and
+both phase gates remain open.
