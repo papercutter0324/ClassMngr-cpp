@@ -4,6 +4,7 @@
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/ui/speaking_eval_model.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
+#include "features/speaking_eval/ui/speaking_eval_page_validation_adapter.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -13,6 +14,10 @@
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 #include <QUuid>
+
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -87,6 +92,7 @@ class SpeakingEvalPageSaveParityTests final : public QObject
 
 private slots:
     void manualSavePreservesVisibleAndPersistedValues();
+    void toFormValidationPreservesValidationCodeKeys();
 };
 
 void SpeakingEvalPageSaveParityTests::
@@ -209,6 +215,140 @@ manualSavePreservesVisibleAndPersistedValues()
          }}
     };
     qInfo().noquote() << QJsonDocument(snapshot).toJson(QJsonDocument::Compact);
+}
+
+void SpeakingEvalPageSaveParityTests::
+toFormValidationPreservesValidationCodeKeys()
+{
+    using Code =
+        ClassMngr::Next::Application::SpeakingEvaluationValidationCode;
+    using ApplicationValidationResult =
+        ClassMngr::Next::Application::SpeakingEvaluationValidationResult;
+    using ApplicationSaveRequest =
+        ClassMngr::Next::Application::SpeakingEvaluationSaveRequest;
+    using Severity =
+        ClassMngr::Next::Application::SpeakingEvaluationValidationSeverity;
+
+    const std::vector<Code> codes{
+        Code::StudentNameEnglishTooLong,
+        Code::StudentNameEnglishNonAscii,
+        Code::StudentNameEnglishInvalidCharacters,
+        Code::StudentNameKoreanInvalidCharacters,
+        Code::StudentNameKoreanTooShort,
+        Code::StudentNameKoreanTooLong,
+        Code::StudentNameKoreanUnusualLength,
+        Code::StudentNameDuplicatePair,
+        Code::SpeakingEvaluationClassIdInvalid,
+        Code::ValidationLengthOutOfBounds,
+        Code::SpeakingEvaluationRowsTooMany,
+        Code::SpeakingEvaluationRowTooManyCells,
+        Code::SpeakingEvaluationStudentNameRequired,
+        Code::ValidationEnumInvalidValue
+    };
+    const std::vector<QString> expectedKeys{
+        QStringLiteral("student_name.english.too_long"),
+        QStringLiteral("student_name.english.non_ascii"),
+        QStringLiteral("student_name.english.invalid_characters"),
+        QStringLiteral("student_name.korean.invalid_characters"),
+        QStringLiteral("student_name.korean.too_short"),
+        QStringLiteral("student_name.korean.too_long"),
+        QStringLiteral("student_name.korean.unusual_length"),
+        QStringLiteral("student_name.duplicate_pair"),
+        QStringLiteral("speaking_evaluation.class_id.invalid"),
+        QStringLiteral("validation.length.out_of_bounds"),
+        QStringLiteral("speaking_evaluation.rows.too_many"),
+        QStringLiteral("speaking_evaluation.row.too_many_cells"),
+        QStringLiteral("speaking_evaluation.student_name.required"),
+        QStringLiteral("validation.enum.invalid_value")
+    };
+
+    const auto classId = ClassMngr::Next::Domain::ClassId::fromString("42");
+    QVERIFY(classId.has_value());
+    ApplicationValidationResult input{
+        .normalizedRequest = ApplicationSaveRequest{
+            .classId = *classId,
+            .evaluationName = u"Evaluation",
+            .evaluation = {},
+            .allowQuestionableKoreanNameLengths = false
+        },
+        .issues = {}
+    };
+
+    for (std::size_t index = 0; index < codes.size(); ++index)
+    {
+        const std::string token = "issue-" + std::to_string(index);
+        const std::u16string token16(token.begin(), token.end());
+        input.issues.push_back({
+            .code = codes[index],
+            .field = "field-" + std::to_string(index),
+            .row = static_cast<int>(100 + index),
+            .column = static_cast<int>(200 + index),
+            .severity = index % 2 == 0 ? Severity::Error : Severity::Warning,
+            .arguments = {
+                {"count", static_cast<std::int64_t>(1000 + index)},
+                {"text", token16},
+                {"rows", std::vector<int>{
+                    static_cast<int>(index + 1),
+                    static_cast<int>(index + 11)
+                }},
+                {"labels", std::vector<std::u16string>{
+                    token16,
+                    token16 + u"-second"
+                }}
+            }
+        });
+    }
+
+    const ValidationResult converted =
+        SpeakingEvalPageValidationAdapter::toFormValidation(input);
+    QCOMPARE(
+        converted.issues().size(),
+        static_cast<qsizetype>(expectedKeys.size())
+        );
+
+    for (std::size_t index = 0; index < expectedKeys.size(); ++index)
+    {
+        const ValidationIssue& issue =
+            converted.issues().at(static_cast<qsizetype>(index));
+        QCOMPARE(issue.code, expectedKeys[index]);
+        QCOMPARE(
+            issue.field,
+            QString::fromStdString("field-" + std::to_string(index))
+            );
+        QCOMPARE(issue.row, static_cast<int>(100 + index));
+        QCOMPARE(issue.column, static_cast<int>(200 + index));
+        QCOMPARE(
+            issue.severity,
+            index % 2 == 0 ? ValidationSeverity::Error : ValidationSeverity::Warning
+            );
+        QCOMPARE(issue.arguments.size(), 4);
+
+        const QString token =
+            QString::fromStdString("issue-" + std::to_string(index));
+        QCOMPARE(
+            issue.arguments.value(QStringLiteral("count")).toLongLong(),
+            static_cast<qlonglong>(1000 + index)
+            );
+        QCOMPARE(
+            issue.arguments.value(QStringLiteral("text")).toString(),
+            token
+            );
+
+        const QVariantList rows =
+            issue.arguments.value(QStringLiteral("rows")).toList();
+        QCOMPARE(rows.size(), 2);
+        QCOMPARE(rows[0].toInt(), static_cast<int>(index + 1));
+        QCOMPARE(rows[1].toInt(), static_cast<int>(index + 11));
+
+        const QVariantList labels =
+            issue.arguments.value(QStringLiteral("labels")).toList();
+        QCOMPARE(labels.size(), 2);
+        QCOMPARE(labels[0].toString(), token);
+        QCOMPARE(
+            labels[1].toString(),
+            token + QStringLiteral("-second")
+            );
+    }
 }
 
 QTEST_MAIN(SpeakingEvalPageSaveParityTests)

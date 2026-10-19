@@ -157,8 +157,10 @@ QStringList SpeakingEvalPage::questionableKoreanNameRows(
     QList<int> questionableRows;
     for (const auto& issue : validation.issues)
     {
-        if ((issue.code != "student_name.korean.too_short"
-             && issue.code != "student_name.korean.too_long")
+        if ((issue.code
+                 != ClassMngr::Next::Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooShort
+             && issue.code
+                 != ClassMngr::Next::Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooLong)
             || issue.row < 0
             || issue.row >= rows.size()
             || questionableRows.contains(issue.row))

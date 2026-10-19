@@ -12,6 +12,49 @@
 namespace
 {
 
+QString validationCodeKey(
+    const ClassMngr::Next::Application::SpeakingEvaluationValidationCode code
+    )
+{
+    using Code =
+        ClassMngr::Next::Application::SpeakingEvaluationValidationCode;
+
+    switch (code)
+    {
+    case Code::StudentNameEnglishTooLong:
+        return QStringLiteral("student_name.english.too_long");
+    case Code::StudentNameEnglishNonAscii:
+        return QStringLiteral("student_name.english.non_ascii");
+    case Code::StudentNameEnglishInvalidCharacters:
+        return QStringLiteral("student_name.english.invalid_characters");
+    case Code::StudentNameKoreanInvalidCharacters:
+        return QStringLiteral("student_name.korean.invalid_characters");
+    case Code::StudentNameKoreanTooShort:
+        return QStringLiteral("student_name.korean.too_short");
+    case Code::StudentNameKoreanTooLong:
+        return QStringLiteral("student_name.korean.too_long");
+    case Code::StudentNameKoreanUnusualLength:
+        return QStringLiteral("student_name.korean.unusual_length");
+    case Code::StudentNameDuplicatePair:
+        return QStringLiteral("student_name.duplicate_pair");
+    case Code::SpeakingEvaluationClassIdInvalid:
+        return QStringLiteral("speaking_evaluation.class_id.invalid");
+    case Code::ValidationLengthOutOfBounds:
+        return QStringLiteral("validation.length.out_of_bounds");
+    case Code::SpeakingEvaluationRowsTooMany:
+        return QStringLiteral("speaking_evaluation.rows.too_many");
+    case Code::SpeakingEvaluationRowTooManyCells:
+        return QStringLiteral("speaking_evaluation.row.too_many_cells");
+    case Code::SpeakingEvaluationStudentNameRequired:
+        return QStringLiteral("speaking_evaluation.student_name.required");
+    case Code::ValidationEnumInvalidValue:
+        return QStringLiteral("validation.enum.invalid_value");
+    }
+
+    Q_UNREACHABLE();
+    return {};
+}
+
 QString fromUtf16(const std::u16string& value)
 {
     return QString::fromStdU16String(value);
@@ -129,7 +172,7 @@ ValidationResult toFormValidation(
         }
 
         issues.append({
-            .code = QString::fromStdString(issue.code),
+            .code = validationCodeKey(issue.code),
             .field = QString::fromStdString(issue.field),
             .row = issue.row,
             .column = issue.column,

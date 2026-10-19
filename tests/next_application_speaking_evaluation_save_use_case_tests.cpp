@@ -73,7 +73,7 @@ public:
 
 bool hasIssue(
     const Application::SpeakingEvaluationValidationResult& validation,
-    const std::string_view code,
+    const Application::SpeakingEvaluationValidationCode code,
     const std::string_view field = {},
     const int row = -1,
     const int column = -1,
@@ -124,6 +124,7 @@ private slots:
     void rejectsNoncanonicalLeadingZeroClassIdDirectly();
     void acceptsMaximumClassIdAndForwardsUnchanged();
     void rejectsIncompleteMatrixAndInvalidCoordinates();
+    void rejectsOversizedMatrixRowsAndCellsBeforeCallingPort();
     void normalizesValidRequestBeforePortAndPreservesUnicodeAndCellOrder();
     void rejectsInvalidContentBeforeCallingPort();
     void groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder();
@@ -197,7 +198,10 @@ rejectsNoncanonicalLeadingZeroClassIdDirectly()
 
     const Application::SpeakingEvaluationValidationIssue& issue =
         validation.issues.front();
-    QCOMPARE(issue.code, std::string("speaking_evaluation.class_id.invalid"));
+    QCOMPARE(
+        issue.code,
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationClassIdInvalid
+        );
     QCOMPARE(issue.field, std::string("classId"));
     QCOMPARE(issue.row, -1);
     QCOMPARE(issue.column, -1);
@@ -259,6 +263,50 @@ rejectsIncompleteMatrixAndInvalidCoordinates()
     QVERIFY(!result);
     QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
     QCOMPARE(port.callCount, 0);
+}
+
+void NextApplicationSpeakingEvaluationSaveUseCaseTests::
+rejectsOversizedMatrixRowsAndCellsBeforeCallingPort()
+{
+    RecordingSpeakingEvaluationSavePort port;
+
+    Application::SpeakingEvaluationSaveRequest tooManyRows = request("42");
+    tooManyRows.evaluation.rows.emplace_back(
+        Application::SpeakingEvaluationColumnCount
+        );
+    auto result = Application::SpeakingEvaluationSaveUseCase::execute(
+        tooManyRows,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    const auto rowsValidation =
+        Application::validateAndNormalizeSpeakingEvaluation(tooManyRows);
+    QVERIFY(hasIssue(
+        rowsValidation,
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationRowsTooMany,
+        "rows"
+        ));
+    QCOMPARE(port.callCount, 0);
+
+    Application::SpeakingEvaluationSaveRequest tooManyCells = request("42");
+    tooManyCells.evaluation.rows[6].push_back(u"unexpected");
+    result = Application::SpeakingEvaluationSaveUseCase::execute(
+        tooManyCells,
+        port
+        );
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::InvalidInput);
+    const auto cellsValidation =
+        Application::validateAndNormalizeSpeakingEvaluation(tooManyCells);
+    QVERIFY(hasIssue(
+        cellsValidation,
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationRowTooManyCells,
+        "rows[6]",
+        6
+        ));
+    QCOMPARE(port.callCount, 0);
+    QVERIFY(!port.lastRequest.has_value());
 }
 
 void NextApplicationSpeakingEvaluationSaveUseCaseTests::
@@ -364,82 +412,82 @@ rejectsInvalidContentBeforeCallingPort()
     QVERIFY(validation.hasErrors());
     QVERIFY(hasIssue(
         validation,
-        "validation.length.out_of_bounds",
+        Application::SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
         "evaluationName"
         ));
     QVERIFY(hasIssue(
         validation,
-        "speaking_evaluation.student_name.required",
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired,
         "rows[0].English Name",
         0,
         1
         ));
     QVERIFY(hasIssue(
         validation,
-        "speaking_evaluation.student_name.required",
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired,
         "rows[0].Korean Name",
         0,
         2
         ));
     QVERIFY(hasIssue(
         validation,
-        "student_name.english.non_ascii",
+        Application::SpeakingEvaluationValidationCode::StudentNameEnglishNonAscii,
         "rows[1].English Name",
         1,
         1
         ));
     QVERIFY(hasIssue(
         validation,
-        "student_name.english.invalid_characters",
+        Application::SpeakingEvaluationValidationCode::StudentNameEnglishInvalidCharacters,
         "rows[1].English Name",
         1,
         1
         ));
     QVERIFY(hasIssue(
         validation,
-        "student_name.korean.invalid_characters",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanInvalidCharacters,
         "rows[1].Korean Name",
         1,
         2
         ));
     QVERIFY(hasIssue(
         validation,
-        "student_name.duplicate_pair",
+        Application::SpeakingEvaluationValidationCode::StudentNameDuplicatePair,
         "English Name",
         2,
         1
         ));
     QVERIFY(hasIssue(
         validation,
-        "validation.enum.invalid_value",
+        Application::SpeakingEvaluationValidationCode::ValidationEnumInvalidValue,
         "rows[4].Grammar",
         4,
         3
         ));
     QVERIFY(hasIssue(
         validation,
-        "validation.length.out_of_bounds",
+        Application::SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
         "rows[5].Comments",
         5,
         9
         ));
     QVERIFY(hasIssue(
         validation,
-        "validation.length.out_of_bounds",
+        Application::SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
         "rows[6].Notes",
         6,
         10
         ));
     QVERIFY(hasIssue(
         validation,
-        "student_name.english.too_long",
+        Application::SpeakingEvaluationValidationCode::StudentNameEnglishTooLong,
         "rows[7].English Name",
         7,
         1
         ));
     QVERIFY(hasIssue(
         validation,
-        "student_name.korean.invalid_characters",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanInvalidCharacters,
         "rows[8].Korean Name",
         8,
         2
@@ -461,7 +509,7 @@ rejectsInvalidContentBeforeCallingPort()
         Application::validateAndNormalizeSpeakingEvaluation(blankRows);
     QVERIFY(hasIssue(
         emptyNameValidation,
-        "validation.length.out_of_bounds",
+        Application::SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
         "evaluationName"
         ));
 }
@@ -552,7 +600,7 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
     const auto& incompleteEnglish = validation.issues[0];
     QCOMPARE(
         incompleteEnglish.code,
-        std::string("speaking_evaluation.student_name.required")
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired
         );
     QCOMPARE(incompleteEnglish.field, std::string("rows[4].Korean Name"));
     QCOMPARE(incompleteEnglish.row, 4);
@@ -566,7 +614,7 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
     const auto& incompleteKorean = validation.issues[1];
     QCOMPARE(
         incompleteKorean.code,
-        std::string("speaking_evaluation.student_name.required")
+        Application::SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired
         );
     QCOMPARE(incompleteKorean.field, std::string("rows[7].English Name"));
     QCOMPARE(incompleteKorean.row, 7);
@@ -585,7 +633,10 @@ groupsDuplicateNamesAfterUnicodeTrimmingInFirstSeenOrder()
             ? "English Name"
             : "Korean Name";
 
-        QCOMPARE(issue.code, std::string("student_name.duplicate_pair"));
+        QCOMPARE(
+            issue.code,
+            Application::SpeakingEvaluationValidationCode::StudentNameDuplicatePair
+            );
         QCOMPARE(issue.field, expectedField);
         QCOMPARE(issue.row, expected.row);
         QCOMPARE(issue.column, expected.column);
@@ -624,21 +675,21 @@ preservesQuestionableKoreanLengthWarningAndAllowSemantics()
     QVERIFY(strict.hasWarnings());
     QVERIFY(hasIssue(
         strict,
-        "student_name.korean.too_short",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooShort,
         "rows[0].Korean Name",
         0,
         2
         ));
     QVERIFY(hasIssue(
         strict,
-        "student_name.korean.too_long",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooLong,
         "rows[1].Korean Name",
         1,
         2
         ));
     QVERIFY(hasIssue(
         strict,
-        "student_name.korean.unusual_length",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanUnusualLength,
         "rows[2].Korean Name",
         2,
         2,
@@ -651,7 +702,7 @@ preservesQuestionableKoreanLengthWarningAndAllowSemantics()
     QVERIFY(allowed.hasWarnings());
     QVERIFY(hasIssue(
         allowed,
-        "student_name.korean.too_short",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooShort,
         "rows[0].Korean Name",
         0,
         2,
@@ -659,7 +710,7 @@ preservesQuestionableKoreanLengthWarningAndAllowSemantics()
         ));
     QVERIFY(hasIssue(
         allowed,
-        "student_name.korean.too_long",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanTooLong,
         "rows[1].Korean Name",
         1,
         2,
@@ -667,7 +718,7 @@ preservesQuestionableKoreanLengthWarningAndAllowSemantics()
         ));
     QVERIFY(hasIssue(
         allowed,
-        "student_name.korean.unusual_length",
+        Application::SpeakingEvaluationValidationCode::StudentNameKoreanUnusualLength,
         "rows[2].Korean Name",
         2,
         2,

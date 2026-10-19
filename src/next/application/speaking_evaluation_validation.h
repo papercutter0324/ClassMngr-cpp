@@ -69,6 +69,24 @@ enum class SpeakingEvaluationValidationSeverity
     Error
 };
 
+enum class SpeakingEvaluationValidationCode
+{
+    StudentNameEnglishTooLong,
+    StudentNameEnglishNonAscii,
+    StudentNameEnglishInvalidCharacters,
+    StudentNameKoreanInvalidCharacters,
+    StudentNameKoreanTooShort,
+    StudentNameKoreanTooLong,
+    StudentNameKoreanUnusualLength,
+    StudentNameDuplicatePair,
+    SpeakingEvaluationClassIdInvalid,
+    ValidationLengthOutOfBounds,
+    SpeakingEvaluationRowsTooMany,
+    SpeakingEvaluationRowTooManyCells,
+    SpeakingEvaluationStudentNameRequired,
+    ValidationEnumInvalidValue
+};
+
 using SpeakingEvaluationValidationArgument = std::variant<
     std::int64_t,
     std::u16string,
@@ -78,7 +96,7 @@ using SpeakingEvaluationValidationArgument = std::variant<
 
 struct SpeakingEvaluationValidationIssue final
 {
-    std::string code;
+    SpeakingEvaluationValidationCode code;
     std::string field;
     int row = -1;
     int column = -1;
@@ -565,7 +583,7 @@ inline bool rowHasEditableData(
 
 inline void appendIssue(
     SpeakingEvaluationValidationResult& result,
-    std::string code,
+    const SpeakingEvaluationValidationCode code,
     std::string field,
     const int row = -1,
     const int column = -1,
@@ -575,7 +593,7 @@ inline void appendIssue(
     )
 {
     result.issues.push_back({
-        .code = std::move(code),
+        .code = code,
         .field = std::move(field),
         .row = row,
         .column = column,
@@ -621,7 +639,7 @@ inline void validateEnglishName(
     {
         appendIssue(
             result,
-            "student_name.english.too_long",
+            SpeakingEvaluationValidationCode::StudentNameEnglishTooLong,
             field,
             row,
             column,
@@ -634,7 +652,7 @@ inline void validateEnglishName(
     {
         appendIssue(
             result,
-            "student_name.english.non_ascii",
+            SpeakingEvaluationValidationCode::StudentNameEnglishNonAscii,
             field,
             row,
             column
@@ -644,7 +662,7 @@ inline void validateEnglishName(
     {
         appendIssue(
             result,
-            "student_name.english.invalid_characters",
+            SpeakingEvaluationValidationCode::StudentNameEnglishInvalidCharacters,
             field,
             row,
             column
@@ -665,7 +683,7 @@ inline void validateKoreanName(
     {
         appendIssue(
             result,
-            "student_name.korean.invalid_characters",
+            SpeakingEvaluationValidationCode::StudentNameKoreanInvalidCharacters,
             field,
             row,
             column
@@ -682,7 +700,7 @@ inline void validateKoreanName(
     {
         appendIssue(
             result,
-            "student_name.korean.too_short",
+            SpeakingEvaluationValidationCode::StudentNameKoreanTooShort,
             field,
             row,
             column,
@@ -695,7 +713,7 @@ inline void validateKoreanName(
     {
         appendIssue(
             result,
-            "student_name.korean.too_long",
+            SpeakingEvaluationValidationCode::StudentNameKoreanTooLong,
             field,
             row,
             column,
@@ -708,7 +726,7 @@ inline void validateKoreanName(
     {
         appendIssue(
             result,
-            "student_name.korean.unusual_length",
+            SpeakingEvaluationValidationCode::StudentNameKoreanUnusualLength,
             field,
             row,
             column,
@@ -759,7 +777,7 @@ inline void appendDuplicateNameIssues(
             {
                 appendIssue(
                     result,
-                    "student_name.duplicate_pair",
+                    SpeakingEvaluationValidationCode::StudentNameDuplicatePair,
                     std::string(ColumnNames[static_cast<std::size_t>(column)]),
                     row,
                     column,
@@ -834,7 +852,7 @@ validateAndNormalizeSpeakingEvaluation(
             );
         appendIssue(
             result,
-            "speaking_evaluation.class_id.invalid",
+            SpeakingEvaluationValidationCode::SpeakingEvaluationClassIdInvalid,
             "classId",
             -1,
             -1,
@@ -850,7 +868,7 @@ validateAndNormalizeSpeakingEvaluation(
     {
         appendIssue(
             result,
-            "validation.length.out_of_bounds",
+            SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
             "evaluationName",
             -1,
             -1,
@@ -868,7 +886,7 @@ validateAndNormalizeSpeakingEvaluation(
     {
         appendIssue(
             result,
-            "speaking_evaluation.rows.too_many",
+            SpeakingEvaluationValidationCode::SpeakingEvaluationRowsTooMany,
             "rows",
             -1,
             -1,
@@ -888,7 +906,7 @@ validateAndNormalizeSpeakingEvaluation(
         {
             appendIssue(
                 result,
-                "speaking_evaluation.row.too_many_cells",
+                SpeakingEvaluationValidationCode::SpeakingEvaluationRowTooManyCells,
                 "rows[" + std::to_string(rowNumber) + "]",
                 rowNumber,
                 -1,
@@ -910,7 +928,7 @@ validateAndNormalizeSpeakingEvaluation(
             {
                 appendIssue(
                     result,
-                    "speaking_evaluation.student_name.required",
+                    SpeakingEvaluationValidationCode::SpeakingEvaluationStudentNameRequired,
                     fieldName(rowNumber, column),
                     rowNumber,
                     column,
@@ -961,7 +979,7 @@ validateAndNormalizeSpeakingEvaluation(
                 {
                     appendIssue(
                         result,
-                        "validation.enum.invalid_value",
+                        SpeakingEvaluationValidationCode::ValidationEnumInvalidValue,
                         field,
                         rowNumber,
                         columnNumber,
@@ -977,7 +995,7 @@ validateAndNormalizeSpeakingEvaluation(
             {
                 appendIssue(
                     result,
-                    "validation.length.out_of_bounds",
+                    SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
                     field,
                     rowNumber,
                     columnNumber,
@@ -994,7 +1012,7 @@ validateAndNormalizeSpeakingEvaluation(
             {
                 appendIssue(
                     result,
-                    "validation.length.out_of_bounds",
+                    SpeakingEvaluationValidationCode::ValidationLengthOutOfBounds,
                     field,
                     rowNumber,
                     columnNumber,
