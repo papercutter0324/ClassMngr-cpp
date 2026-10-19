@@ -11798,6 +11798,72 @@ Batch 7, ranked as follows:
 
 No other slices were found.
 
+### F629 complete; Batch473 closed - 2026-10-19
+
+F629 is complete at source commit `31a71e90`. The renderer now adds a manual
+page break before a teacher card when the preceding card crosses a page and
+the next card begins within the configured page-start clearance. The rule is
+based on layout bounds and the existing page margin; it does not name a
+teacher index or inspect teacher/class text. The Phase 0 startup-profiler
+single-shot timers now use `Qt::PreciseTimer`, preventing the unchanged
+five-second settle assertion from observing a timer up to 5% early. No test
+threshold or parity assertion was weakened.
+
+Fresh evidence is in
+`/private/tmp/classmngr-f629-macos-universal-20261019-run8`. The Release app
+and Debug harness were configured and built from a clean temporary source
+snapshot based on `07aa1f00` plus the F629 changes; the snapshot commit is
+`53616271959bea224e1efbb2e454b3205159227e`. The app and harness are universal
+`arm64`/`x86_64`, with deployment target and plist minimum 14.4. Package
+signature verification and the embedded-Mach-O audit passed for 93 files. The
+full macOS matrix completed all 24/24 routes, and the evidence validator
+reported `status=pass` with no failed route IDs. `output-sub-prep` completed in
+13.188 seconds. Its strict semantic comparison matched all 12 Sub Prep pages
+and all five roster pages by normalized text and dimensions; generated output
+is 17 pages across the two PDFs. The comparator remains semantic because byte
+equality is not required, and the historical reference remains
+`sourceBound=false`/`semanticOracleOnly=true`.
+
+The output-route workflow recorded `workflow-complete=6642 ms`,
+`settled-1s=7646 ms`, and `settled-5s=11645 ms`, so the final interval is
+5003 ms. Run8 began with 36.7 GiB free, above the 18 GiB runner preflight
+minimum. The supplied Windows x64 Sub Prep route at `07aa1f00` remains the
+cross-platform comparison for the same fixture; the F629 production change
+was not built or run on Windows because no Windows host was available. Thus
+F629's macOS universal route-matrix slice is complete, but the combined Phase
+0 exit gate remains Open pending Windows x64 full-matrix evidence. The Phase 2
+exit gate remains Open; Gates 1/2 are Partial and F1007 awaits policy
+reconciliation. Batch473 is closed after F1086-F1090 and F629 completed.
+
+### F1091 accepted and selected - 2026-10-19
+
+F1091 covers the shared signature-image read port and both aggregate personal
+details writers. The current adapter logs and returns empty bytes when
+`SettingsRepository::loadSetting("myInfo/signatureImage")` returns a
+technical error. Initial Setup may then submit those empty bytes through
+`PersonalDetailsSavePort`; My Details has the same image field in its
+aggregate save and does not track whether the image read succeeded. Existing
+port tests lock the empty fallback on repository failure, and existing
+Initial Setup/My Details tests cover typed-signature-preference read failures
+but not signature-image read failures. A SQLite view can inject an error only
+for the image key while other preference reads remain successful, providing a
+deterministic regression seam.
+
+Accepted behavior: return a structured `Technical` error from the signature
+image port for repository read failures while preserving the current
+success-with-empty behavior for missing/corrupt image data and unavailable
+service/session cases. Initial Setup must stop before aggregate save and keep
+its draft when the image read fails; retry after the repository recovers must
+save the stored image. My Details must preserve the displayed image/draft,
+report the read error, and block aggregate save until refresh successfully
+reloads the image. Speaking Evaluation report callers retain their existing
+empty-image fallback on read failure. Do not change signature encoding,
+save-port transaction behavior, or report rendering. Build `ClassMngr` and the
+existing signature-image port, Initial Setup wizard, and My Workspace tests;
+run the matching focused CTests and `git diff --check`. Batch474 is active in
+its recorded order with F1091 selected; F1092-F1094 remain provisional, and
+no other slices were found.
+
 ### F332 accepted / F333 selected - 2026-10-05
 
 F332, committed as
@@ -46517,11 +46583,9 @@ frame bounds and accumulated page-break decisions, and loads bundled fonts;
 evidence does not show identical glyph metrics across platforms. Qt's rich-text
 CSS documentation lists `page-break-before` and `page-break-after`, but not
 `page-break-inside`; this is a documentation-based inference, not evidence of
-the exact runtime behavior. No source-bound Windows output for
-`667ff54e` is checked in or available locally, and the existing Windows run is
-an uncommitted compact summary that cannot be tied to that commit. This Mac has
-no Windows route runner. Next, obtain source-bound Windows layout evidence or
-another evidence-backed resolution without changing the strict comparator.
+the exact runtime behavior. At this checkpoint, no source-bound Windows output
+was available locally, and this Mac had no Windows route runner. Subsequent
+Windows evidence and the next investigation step are recorded below.
 
 Run4 began with 48 GiB free and ended with 44 GiB free. The 18 GiB figure is
 the runner's preflight minimum, not observed consumption. F629 is selected/in
@@ -46531,3 +46595,119 @@ its recorded order with all five discovered slices F1086-F1090 and the
 separately reactivated F629; F1086-F1090 are complete, while F629 remains
 open/unaccepted. Gates 1/2 remain Partial, F1007 is pending policy
 reconciliation, and push remains deferred until Batch473 closes.
+
+### F629 source-bound Windows Sub Prep evidence - 2026-10-19
+
+User-provided evidence at
+`/Volumes/Untitled/MacOS-evidence/ClassMngr-Pase0-Evidence/phase0-20261018T175026315Z`
+records a clean Windows x64 source build at commit
+`07aa1f005f100b747780ed4c11fc35bc73517014`. The requested `output-sub-prep`
+route completed with exit code 0. Its parity report says `semanticParity=match`;
+all 12 Sub Prep PDF pages and all 5 roster PDF pages match the historical
+reference semantically. The fixture SHA-256
+`1b2f09be03cce809e239112b3f7b4f2af405bad83a420db0c6ffe5ef0eb597e3` matches
+Mac run5. The source change from Mac run5 commit `667ff54e` is docs-only; the
+production and test source is unchanged. This establishes a platform-dependent
+output difference against the same fixture, not which platform's pagination
+is product-correct: the historical reference remains `sourceBound=false` and
+`semanticOracleOnly=true`.
+
+F629 remains selected, open, and unaccepted because the Mac route still fails
+strict parity. The design-metrics experiment and its outcome are recorded below.
+Batch473 remains open with its five discovered slices F1086-F1090 and F629
+separately reactivated from Deferred; push remains deferred until the batch closes.
+
+### F629 design-metrics pagination experiment - 2026-10-19
+
+A fresh universal Release configure, build, and install succeeded in
+`/private/tmp/classmngr-f629-design-metrics-20261019-run1`; package signature
+verification also succeeded. The first focused invocation stopped before parity
+at the existing five-second settle-timing assertion. The retry reached strict
+parity and still failed only Sub Prep pages 9-10: generated page 9 has Teachers
+18-20 and page 10 has Teacher 21, matching the prior Mac grouping. All five
+roster pages matched. Evidence is in
+`/private/tmp/classmngr-f629-design-metrics-20261019-run1/experiment-outcome.json`
+and
+`/private/tmp/classmngr-f629-design-metrics-20261019-run1/retry-output-sub-prep/sub-prep-output-parity.json`.
+
+The `setUseDesignMetrics(true)` candidate was tested and rejected as a parity
+fix. That call was removed; the renderer is clean. Strict parity remains
+unchanged. F629 is selected, open, and unaccepted. Next, compare page geometry,
+card wrapping, and break decisions using the Mac and Windows outputs; this next
+step awaits the main agent's investigation decision. Batch473 remains open.
+
+### F629 opt-in layout trace - 2026-10-19
+
+To identify the platform-dependent page assignment without changing layout
+behavior, a temporary opt-in diagnostic was added to
+`src/features/sub_prep/services/sub_prep_pdf_renderer.cpp`. It runs only when
+`CLASSMNGR_SUB_PREP_PAGINATION_TRACE_PATH` is set and records Qt/writer/font
+metadata, per-pass teacher-card bounds and spans, manual break sets, the Sub
+Notes decision, and final card assignments. The trace contains no teacher or
+class text. Its source patch SHA-256 is
+`a9a6f59e81cbe2d1d6c473b4bba74b2f3c7926cde2ef317b6f8c7cadcd4c1387`.
+
+A fresh macOS universal Release configure/build/install and package signature
+check passed. The focused `output-sub-prep` route produced a trace and reached
+the unchanged strict parity assertion; its only acceptance failure remained
+page assignment parity. The trace reports Qt 6.12.0, a 300 dpi 2479x3508 px
+writer with a 2359x3388 px body, and three layout passes. On pass 1, card group
+index 20 (Teacher 21) spans pages 8-9 and is added to the manual break set;
+the final break is before Teacher 21. Groups 18 and 19 remain with Teacher 18
+on page 9 in the Mac output. Trace SHA-256 is
+`38ce3cf811c7624bc630d32b8b1c3aaa3e79ed5edfcd3b30bc488d8736476773` at
+`/private/tmp/classmngr-f629-layout-diagnostics-20261019-run1/output/sub-prep/sub-prep-pagination-trace.json`.
+
+The user-provided Windows run remains valid output evidence but contains no
+internal pagination trace. A one-route PowerShell wrapper and diagnostic patch
+are available under
+`/private/tmp/classmngr-f629-layout-diagnostics-20261019-run1` for a Windows
+x64 run at source commit `07aa1f00`; the runner may exit nonzero at strict
+page parity while still writing the trace. The Mac host has no PowerShell or
+Wine runtime. No product pagination fix is selected pending the matching
+Windows per-card geometry and break decisions. The diagnostic-only renderer
+change remains uncommitted and is not acceptance evidence. F629 and Batch473
+remain open; push remains deferred until Batch473 closes.
+
+### Batch474 discovery - 2026-10-19
+
+A read-only pass over remaining settings-backed preference adapters and their
+production consumers found four candidates. A separate review of the current
+Deferred list found no newly met trigger. These remain provisional until
+Batch473 closes and the next active slice is accepted before implementation.
+
+1. F1091 - Preserve the saved signature image after a technical read failure.
+   `ApplicationServicesPersonalSignatureImagePort::read()` warns and returns
+   empty bytes on a `SettingsRepository::loadSetting()` error. Initial Setup
+   uses that value as the fallback for `m_signature` and includes it in the
+   aggregate `PersonalDetailsSavePort::save()` request. Existing port coverage
+   asserts the empty fallback; no Initial Setup regression covers preserving
+   the stored image when this read fails. This is separate from F1089's typed
+   mode/font/text preference bundle.
+2. F1092 - Preserve Sidebar Display settings when their settings file cannot
+   be read. `SettingsManagerSidebarDisplayPreferencesPort::load()` always
+   returns values from `SettingsManager::get()` and maps invalid values to the
+   enabled default. `ActionRegistry` loads both values as one state and saves
+   both after either toggle; if a QSettings access failure is collapsed to
+   defaults, changing one action can persist an unknown value for the other.
+   Existing tests cover missing/invalid values, QVariant coercion, and save
+   failures, but not read errors. The access-error path remains a hypothesis to
+   reproduce before implementation.
+3. F1093 - Preserve Class Visibility scope after a technical read failure.
+   `ApplicationServicesClassVisibilityPreferencesPort::load()` treats a failed
+   repository result like a missing key, returns `ActiveSchedule`, and attempts
+   to materialize that default. `ClassesPage` uses the result during load and
+   refresh to choose which classes are visible. Existing adapter tests cover a
+   silent fallback on repository error; page behavior on that fault is not
+   covered.
+4. F1094 - Preserve both Classes page reset preferences after technical read
+   failures. The Class Day Filter and Class Selection reset-policy ports each
+   conflate repository errors with missing settings and attempt to materialize
+   `OnApplicationClose`. `ClassesPage::hideEvent()` loads them to decide whether
+   to discard the in-memory day filter and class selection. Existing adapter
+   tests lock the fallback; no page-level failure-preservation test exists.
+
+The pass also reviewed other remaining `loadSetting()` call sites. Calendar
+event-type color is only written after an explicit valid color-picker choice,
+so the fallback alone does not establish an accidental aggregate overwrite.
+No other slices were found.

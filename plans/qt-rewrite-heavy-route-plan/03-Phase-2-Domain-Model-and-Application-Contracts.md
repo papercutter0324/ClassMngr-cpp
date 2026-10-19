@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F629 is selected/in progress: run5 from clean source `667ff54e` attempted all 24 routes, with 23 completed and only `output-sub-prep` failing strict page parity; source-bound Windows layout evidence or another evidence-backed resolution is needed, so the combined Phase 0 evidence gate remains open; Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the Phase 2 exit gate is Open.
+- Current note: F1091 is selected for implementation to preserve signature-image data after technical read errors; the combined Phase 0 gate remains Open pending Windows x64 full-matrix evidence, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,16 +68,16 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch473 (5 discovered candidates and 1 reactivated Deferred item)
+#### Active batch: Batch474 (4 discovered candidates)
 
-Batch473's ordered active slices contain five candidates from the discovery pass plus F629 reactivated from Deferred; F629 was not found by that pass:
+Batch473 is closed with F1086-F1090 complete and reactivated F629 complete at source commit `31a71e90`. Its macOS universal evidence and the still-open combined Phase 0 gate are recorded in the [progress log](03-Phase-2-Progress-Log.md). Batch474 contains four candidates, with F1091 selected first:
 
-1. F1086 - Preserve Schedule display mode after a technical read failure: complete at source/test commit `aeb2a46f`.
-2. F629 - Run the macOS universal Phase 0 route matrix: reactivated from Deferred, not found by Batch473 discovery. Run5 from clean source `667ff54e` attempted all 24 routes, completed 23, and only `output-sub-prep` failed strict page-by-page PDF parity on pages 9-10. The reference is `sourceBound=false` and `semanticOracleOnly=true`: the page-placement mismatch is real against that reference but does not prove a renderer defect. No source-bound Windows output for this commit is available locally; obtain such layout evidence or another evidence-backed resolution while retaining the strict comparator. Selected/in progress and open/unaccepted. Run4 began with 48 GiB free and ended with 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
-3. F1087 - Preserve Middle School Analytics visibility after a technical preference-read failure: complete at source/test commit `7ec8ba7a`.
-4. F1088 - Preserve Evaluation default policy after a technical preference-read failure: complete at source/test commit `53c43e75`.
-5. F1089 - Preserve personal signature settings after technical read errors: complete at source/test commit `15c5d035`.
-6. F1090 - Preserve Sub Prep Zoom preference after a technical primary read failure: complete at source/test commit `f78791a9`.
+1. F1091 - Preserve the saved signature image after a technical read failure: selected for implementation. Return a structured error from the signature-image read port; preserve the user's current image draft and block aggregate personal-details saves in Initial Setup and My Details until a successful reload. Preserve missing/corrupt-image fallback behavior and the report-generation fallback.
+2. F1092 - Preserve Sidebar Display settings when their settings file cannot be read: provisional; reproduce the QSettings access-error path before implementation.
+3. F1093 - Preserve Class Visibility scope after a technical read failure: provisional; define page behavior and verify the read-error path before implementation.
+4. F1094 - Preserve both Classes page reset preferences after technical read failures: provisional; define page behavior and verify the read-error paths before implementation.
+
+No other slices were found.
 
 #### Deferred candidates
 

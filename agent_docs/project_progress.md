@@ -94,6 +94,19 @@ the combined Phase 0 exit gate remain open. Full evidence is under
 `/private/tmp/classmngr-f629-macos-universal-20261019-run3`; the focused trace
 is under `/private/tmp/classmngr-f629-subprep-pagination-trace-20261019`.
 
+Follow-up evidence changes the diagnosis. Clean Windows run
+`07aa1f005f100b747780ed4c11fc35bc73517014` used the same fixture as Mac run5
+(`667ff54e`) and passed `output-sub-prep`: all 12 Sub Prep pages and all five
+roster pages matched the historical reference. Production and test sources
+are unchanged between those commits; the historical reference is still
+`sourceBound=false` and `semanticOracleOnly=true`, so this proves a
+platform-dependent output difference, not which pagination is the product
+contract. The `QTextDocument::setUseDesignMetrics(true)` candidate built and
+passed signature checks, but its focused retry still failed strict parity on
+pages 9-10 with the same Mac assignments; it was removed. F629 remains open.
+Next compare Windows and Mac page geometry, card wrapping, and break decisions
+before selecting another renderer change. The strict comparator stays intact.
+
 F1087 is complete at source/test commit `7ec8ba7a`. The Middle School Analytics
 preference port now returns a typed `Result<bool>` and propagates technical
 read errors without writing a false fallback. Missing, invalid, and unavailable
@@ -4668,3 +4681,28 @@ measurement, source-seam, and policy prerequisites are unchanged. Batch424 is
 closed after accepting F1040; Batch425 discovery is active. Gates 1/2 remain
 Partial, F1007 remains pending policy reconciliation, and Phase 2 remains
 Open. Preserve unrelated user work.
+
+
+A temporary environment-gated pagination trace is now present in the dirty
+renderer source. It leaves layout behavior unchanged and records per-pass card
+bounds, spans, break sets, and final assignments. The fresh Mac universal
+Release build/install and signature check passed; the focused route reached
+the strict parity assertion. Trace shows pass 1 inserts a break before Teacher
+21 after its card spans pages 8-9; final Mac assignments still differ on
+pages 9-10. Trace SHA-256 is
+`38ce3cf811c7624bc630d32b8b1c3aaa3e79ed5edfcd3b30bc488d8736476773`.
+The user-provided Windows run contains no per-card trace, so the matching
+one-route Windows rerun is pending. No functional fix or acceptance is claimed.
+
+## Phase 2 update - F629 complete; F1091 selected - 2026-10-19
+
+F629 source commit `31a71e90` fixes Sub Prep page assignment using a generic
+card-boundary rule and makes startup-profiler settle timers precise. Fresh
+macOS universal run8 passed Release/Debug builds, package signature and the
+93-file universal audit, plus all 24/24 routes. Strict semantic output parity
+matches 12/12 Sub Prep pages and 5/5 roster pages. The combined Phase 0 gate
+remains open because Windows x64 full-matrix evidence is missing; Phase 2 also
+remains open. Batch473 is closed. Batch474 is active, with F1091 selected to
+propagate signature-image technical read failures and prevent aggregate saves
+from replacing the stored image; F1092-F1094 remain provisional. Details and
+evidence paths are in the Phase 2 plan and progress log.

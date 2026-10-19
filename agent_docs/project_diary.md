@@ -7253,3 +7253,69 @@ consumption. Batch473 remains active with F1086-F1090 complete and reactivated
 F629 open/unaccepted; the list of five discovered slices remains F1086-F1090.
 Push remains deferred until Batch473 closes. Gates 1/2 remain Partial, F1007
 is pending policy reconciliation, and the Phase 2 exit gate remains Open.
+
+## F629 Windows parity evidence and design-metrics experiment - 2026-10-19
+
+The clean source-bound Windows x64 run at `07aa1f00` used the same fixture as
+Mac run5 at `667ff54e` and matched all 12 Sub Prep pages and all five roster
+pages. Production/test sources are unchanged between commits, establishing a
+platform-dependent output difference. The semantic-only historical reference
+remains non-authoritative for product pagination.
+
+Testing `QTextDocument::setUseDesignMetrics(true)` on both Sub Prep PDF
+documents did not change Mac's page assignments: pages 9-10 still group
+Teachers 18-20 and Teacher 21, while all roster pages match. The focused retry
+reached the unchanged strict comparator and failed only Sub Prep parity. The
+candidate was removed; it does not justify accepting the Mac output or
+weakening the comparison. The first invocation also exposed an existing settle
+checkpoint timing failure before parity, so a route failure must be separated
+from an output parity result. Evidence is retained under
+`/private/tmp/classmngr-f629-design-metrics-20261019-run1`.
+
+Next compare per-card geometry, wrapping, and break decisions across the
+source-bound Windows and Mac outputs before choosing a renderer fix. F629 and
+Batch473 remain open; push stays deferred until Batch473 closes.
+
+
+## F629 opt-in Mac pagination trace - 2026-10-19
+
+A temporary opt-in trace was added to the Sub Prep PDF renderer. It records
+Qt/writer/font metadata, per-pass teacher-card bounds and page spans, inserted
+break sets, the Sub Notes decision, and final card assignments. It is enabled
+only by `CLASSMNGR_SUB_PREP_PAGINATION_TRACE_PATH` and emits no teacher or class
+text. The trace patch SHA-256 is
+`a9a6f59e81cbe2d1d6c473b4bba74b2f3c7926cde2ef317b6f8c7cadcd4c1387`.
+
+The Mac universal Release configure/build/install and signature check passed.
+The focused route reached the strict page-parity assertion. Its trace shows
+three layout passes; on pass 1, group index 20 (Teacher 21) spans pages 8-9 and
+is added to the manual break set. The final break before Teacher 21 preserves
+the Mac assignment of Teachers 18-20 on page 9 and Teacher 21 on page 10. The
+trace is at
+`/private/tmp/classmngr-f629-layout-diagnostics-20261019-run1/output/sub-prep/sub-prep-pagination-trace.json`
+with SHA-256
+`38ce3cf811c7624bc630d32b8b1c3aaa3e79ed5edfcd3b30bc488d8736476773`.
+
+The supplied Windows route artifacts contain no internal pagination trace. A
+one-route Windows wrapper and source patch are ready for the same fixture but
+must be run on Windows x64 from source `07aa1f00`. Its strict parity assertion
+may fail after writing the requested trace. No functional renderer fix is
+selected until the Windows per-card bounds and break sets can be compared.
+F629 remains open and Batch473 push remains deferred.
+
+## Phase 2 Batch473 close and F1091 start - 2026-10-19
+
+F629's macOS universal matrix is now complete in source commit `31a71e90`.
+Run8 used a clean temporary source snapshot with the pagination and precise
+settle-timer changes, built and signed the universal Release app, passed the
+93-file package audit, and completed all 24 routes. The strict Sub Prep output
+route matches all 12 pages, and the roster output matches all five. The full
+Phase 0 combined gate still needs Windows x64 matrix evidence; this result
+closes only F629's macOS route-matrix slice.
+
+I started Batch474 at F1091. The existing signature-image adapter converts a
+technical settings read error into empty bytes, while Initial Setup and My
+Details include those bytes in aggregate personal-information saves. A
+key-specific SQLite-view fault seam exists in the current UI test setup, so
+the preservation and retry behavior can be exercised without making other
+preference reads fail. F1092-F1094 remain provisional.

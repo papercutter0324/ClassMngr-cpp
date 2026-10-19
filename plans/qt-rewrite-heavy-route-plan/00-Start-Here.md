@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch467 is closed and pushed at `537e420b`; Batch468 is closed and pushed at `8f921a91`, with F1069-F1073 complete at `46780e00`, `6712a57d`, `760511ab`, `684c49c7`, and `f686e596`. Batch469 is closed with F1074-F1077 complete at `cbe7be5c`, `8c0dbc24`, `7a938cc4`, and `bc87ffa8`; Batch470 is closed with F1078 complete at `fbca6d4e`. Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`, with F1079 and F1080 complete at `5ad80284` and `82eaa317`. Batch472 is closed with F1081-F1085 complete; F1085 is at source/test commit `116719e1`. Batch473 is active: F1086-F1089 are complete at their recorded commits, F1090 is complete at `f78791a9`, and reactivated F629 remains open/unaccepted after clean-source revalidation from `667ff54eb716e4669fb2aa44bd6f9470d0572dbc` reproduced the Sub Prep page-parity failure; F629 is selected for diagnosis. Run5 attempted all 24 routes, with 23 completed and only `output-sub-prep` failing; the PDF has matching page counts/dimensions but different Teacher placements on pages 9-10. Run4 started at 48 GiB free and ended at 44 GiB; 18 GiB is only the preflight minimum. The active list retains five discovered candidates plus F629 reactivated from Deferred. Gates 1/2 remain Partial, F1007 is pending policy reconciliation, and the combined Phase 0 evidence gate and Phase 2 exit gate remain Open. Push is deferred until Batch473 closes. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch473-5-discovery-candidates-and-1-reactivated-deferred-item) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch473 is closed, with F1086-F1090 complete and reactivated F629 complete in source commit `31a71e90`. The clean macOS universal run8 built and signed a fresh Release app plus Debug harness, passed the 93-file arm64/x86_64 package audit, and completed all 24/24 routes; strict output parity matched all 12 Sub Prep pages and all 5 roster pages. The Windows x64 full matrix is still missing, so the combined Phase 0 exit gate remains Open; the Phase 2 exit gate also remains Open. Batch474 is active with four discovered slices, F1091 selected first, and F1092-F1094 provisional. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch474-4-discovered-candidates) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,14 +38,14 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch473 — Active; 5 discovered candidates plus 1 reactivated Deferred item, in current active work order:**
+**Batch474 — Active; four discovered candidates, in current work order:**
 
-1. **F1086 — Preserve Schedule display mode after a technical read failure.** Complete at source/test commit `aeb2a46f`.
-2. **F629 — Run the macOS universal Phase 0 route matrix.** Reactivated from Deferred, not found by Batch473 discovery. From clean source commit `667ff54e`, run5 attempted all 24 routes; 23 completed and only `output-sub-prep` failed strict PDF page parity on pages 9-10. The semantic-only reference differs, but does not establish a renderer defect. Open/unaccepted; selected/in progress. Next: obtain source-bound Windows layout evidence or another evidence-backed resolution, keeping the comparator strict. Run4 began with 48 GiB free and ended with 44 GiB; 18 GiB is the preflight minimum, not observed consumption.
-3. **F1087 — Preserve Middle School Analytics visibility after a technical preference-read failure.** Complete at source/test commit `7ec8ba7a`.
-4. **F1088 — Preserve Evaluation default policy after a technical preference-read failure.** Complete at source/test commit `53c43e75`.
-5. **F1089 — Preserve personal signature settings after technical read errors.** Complete at source/test commit `15c5d035`.
-6. **F1090 — Preserve Sub Prep Zoom preference after a technical primary read failure.** Complete at source/test commit `f78791a9`.
+1. **F1091 — Preserve the saved signature image after a technical read failure.** Selected for implementation. Return a structured error from the signature-image read port, preserve the current image draft, and block aggregate personal-details saves in Initial Setup and My Details until a successful reload. Keep missing/corrupt-image fallback behavior and report generation behavior unchanged.
+2. **F1092 — Preserve Sidebar Display settings when their settings file cannot be read.** Provisional; reproduce the QSettings access-error path before implementation.
+3. **F1093 — Preserve Class Visibility scope after a technical read failure.** Provisional; define page behavior and verify the read-error path before implementation.
+4. **F1094 — Preserve both Classes page reset preferences after technical read failures.** Provisional; define page behavior and verify the read-error paths before implementation.
+
+No other slices were found.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.
 
