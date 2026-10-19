@@ -48300,3 +48300,93 @@ remains active with all three candidates: F1112 complete, F1113 next for
 acceptance reassessment, and F1114 discovered. F629 still awaits Windows x64
 layout evidence, and the Phase 0 and Phase 2 gates remain open. Batch483 has
 not been added while its independent discovery review continues.
+
+### Batch483 discovery - 2026-10-20
+
+Batch483 discovery began early when work started on the second-last Batch482
+candidate, following the early-discovery rule in `00-Start-Here.md`. Two independent Heavy-route
+scans reconciled the following three candidates. Each is discovered, not
+accepted; no acceptance review or tests have occurred.
+
+1. **F1115 — Type personal-signature font choice.** Next Application exposes
+   `typedSignatureFont` as `int` in
+   `src/next/application/personal_signature_preferences.h:16` and
+   `personal_details_save.h:11`; its four named 0–3 choices remain in the
+   Qt-bearing `src/features/my_info/data/typed_signature_renderer.h:3`.
+   Existing preference/save ports and My Details/Initial Setup callers are
+   adapters. Preserve persisted integers, keys, defaults, and invalid-value
+   fallback to font 0. Focused targets: Next Platform preference/save port
+   tests and My Workspace page tests. Evidence: `BATCH483_DOMAIN_CONTRACT_SCAN`.
+2. **F1116 — Type closed Speaking Evaluation validation codes.**
+   `SpeakingEvaluationValidationIssue.code` and `appendIssue` take strings in
+   `src/next/application/speaking_evaluation_validation.h:79,566`; producers
+   use a finite literal set (622–997), and the UI adapter maps codes to UI
+   validation keys in
+   `src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.cpp:118`.
+   Preserve exact keys, order, fields, row/column, severity, and arguments.
+   Focused target: `ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`.
+   Evidence: `BATCH483_DOMAIN_CONTRACT_SCAN`.
+3. **F1117 — Type Calendar event query database path.**
+   `CalendarEventCache::load()` converts `QString databasePath` to UTF-8 and
+   passes it to both request paths in
+   `src/features/calendar/ui/calendar_event_cache.cpp:733`; request fields
+   are raw `std::string` in
+   `src/next/application/calendar_event_query_port.h:81,93`. The existing
+   Qt-free `WorkspaceLocation` is in
+   `src/next/application/workspace_contracts.h:12`. Preserve existing UTF-8
+   bytes and query-port behavior. The older query-port migration covered the
+   port and tests but not the request path field; deferred F709 concerns
+   malformed query-time injection, not this path type. Focused targets: Next
+   Application CalendarEventQueryPort tests and
+   `ClassMngrCalendarEventCacheTests`. Evidence: `BATCH483_ADAPTER_SCAN`.
+
+No other slices were found.
+
+Batch482 remains active. Batch483 is provisional and not active until Batch482
+closes; the active Batch482 list and current plan batch list remain unchanged.
+
+
+### F1113 Class Transfer source correlation keys accepted before implementation - 2026-10-20
+
+F1113 is accepted for Batch482; implementation and tests have not started. Add
+two distinct opaque Application value types, `ClassTransferTeacherKey` and
+`ClassTransferClassKey`, retaining exact `std::string` bytes, default-empty
+values, exact equality/order, and permissive construction with no validation or
+normalization. Use them through projection, preview matching, review/apply
+records, and typed lookup parameters: `findTeacher`/`lookupTeacher`,
+`findClass`/`lookupClass`, and `findTimes`/`lookupTimes`. Adapt only at the
+existing platform boundaries and repository source-teacher comparisons.
+Equal text in the teacher and class namespaces remains independent.
+
+Preserve projection-creation rules: reject empty/all-whitespace and keys over
+256 bytes, enforce separate exact teacher/class uniqueness, and resolve a
+present optional teacher reference exactly. Preserve preview exact lookup,
+first-source-teacher behavior on duplicate lookup, source/destination order,
+and the rule that absent or unknown source-teacher keys match only unassigned
+destination classes. Keep review validation separate: reject empty teacher
+keys only, add no blank/size rules, retain the first candidate for duplicate
+teacher keys, and preserve existing duplicate/unknown/missing/action issue
+payloads and order. Preserve `normalizeBlankTeacherKeys` behavior (dialog
+default false, repository true), repository whitespace handling, and UTF-8
+conversions. Keep UTF-16 portable package/export/codec fields, JSON, legacy
+package/UI models, and database persistence maps unchanged.
+
+Evidence: fields in `class_transfer_projection.h`,
+`class_transfer_matching_policy.h`, `class_transfer_preview_query.h`, and
+`class_transfer_apply_request.h` carry the typed keys. Typed lookup signatures
+are `findTeacher`/`lookupTeacher`, `findClass`/`lookupClass`, and
+`findTimes`/`lookupTimes`. Existing boundary work is in
+`class_transfer_preview_legacy_adapter.h`,
+`class_transfer_apply_legacy_adapter.h`, and the two source-teacher
+comparisons in `class_transfer_repository.cpp`.
+
+Focused verification should cover type assertions and lookup signatures; exact
+and normalization-sensitive keys, separate namespaces, empty/default values,
+256-byte and blank validation, unknown/optional teacher mapping, preview
+fallback and order, review issue behavior/order, and dialog-versus-repository
+blank paths. Intended targets are
+`ClassMngrNextApplicationClassTransferTests`,
+`ClassMngrNextApplicationClassTransferPreviewQueryTests`, and
+`ClassMngrClassTransferTests`, using selected focused CTests/QTest selectors
+in the existing `build/macos-clang-debug` tree. No full-suite or Windows
+verification is requested. F629 and the Phase 0 and Phase 2 gates remain open.

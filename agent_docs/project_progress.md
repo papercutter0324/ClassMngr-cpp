@@ -5256,3 +5256,15 @@ Focused review-decision, apply-projection, and plan-validation CTests passed
 3/3; the Schedule Import dialog adapter selector also passed. No full suite or
 Windows run occurred. F1113 is next for acceptance review; F1114 remains
 discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1113 accepted; Batch482 active - 2026-10-20
+
+F1113 is accepted before implementation. Use distinct exact Application key
+types for Class Transfer package class and teacher correlation keys, carrying
+them through projection, preview matching, and review/apply records and
+lookups. Keep construction permissive and preserve path-specific blank,
+256-byte, uniqueness, exact-reference, fallback, and issue-order rules.
+Preserve the repository-versus-dialog blank-key normalization boundary and
+legacy UTF-8 conversions; leave portable-package wire fields, JSON, legacy
+models, and persistence maps unchanged. F1114 remains discovered. F629 and
+the Phase 0 and Phase 2 gates remain open.

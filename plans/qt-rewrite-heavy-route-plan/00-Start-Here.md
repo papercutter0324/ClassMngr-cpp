@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`. F1113 is next for acceptance reassessment, and F1114 remains discovered, not accepted. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-1-complete-2-discovered) for the full ordered list.
+- Current milestone: Batch481 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch482 is active; F1112 is complete at `9110a8c8` following acceptance `17aadcb1`; F1113 is accepted before implementation; F1114 remains discovered, not accepted. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-1-complete-1-accepted-1-discovered) for the full ordered list.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,10 +38,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch482 — Active; three candidates, one complete and two discovered:**
+**Batch482 — Active; three candidates, one complete, one accepted, and one discovered:**
 
 1. **F1112 — Type Schedule Import teacher review correlation keys.** Complete at `9110a8c8` following acceptance `17aadcb1`; typed the review decision keys while preserving exact bytes, validation/order behavior, and existing conversions.
-2. **F1113 — Type Class Transfer source correlation keys.** Discovered, not accepted; next for acceptance reassessment, preserving package-key validation, matching, missing-teacher semantics, and order.
+2. **F1113 — Type Class Transfer source correlation keys.** Accepted before implementation; next action is implementation with the accepted package-key, matching, review, apply, and wire-format contracts preserved.
 3. **F1114 — Type generic import-review source keys.** Discovered, not accepted; preserve blank/256-byte validation, exact bytes, category tagging, and validation outcomes.
 
 No other slices were found.
