@@ -49208,3 +49208,25 @@ and `ClassMngrUpcomingBirthdaysTests`. Focused CTests:
 started. Batch484 remains active with seven complete candidates, F1125
 accepted/in progress, and two discovered; F1126 is next after this slice.
 F629 and the Phase 0 and Phase 2 gates remain open.
+
+### F1125 Upcoming Birthday month/day input complete - 2026-10-20
+
+F1125 is complete at source/test commit `7775df86`. The candidate's UTF-8
+month/day now uses permissive `UpcomingBirthdayMonthDayInput`; the feature
+adapter wraps its existing Qt-trimmed value. Parsing, invalid/blank skips,
+post-parse `BirthdayMonthDay` validation, leap-day fallback, inclusive window,
+bucketing, and ordering remain unchanged.
+
+The Application test covers empty and malformed UTF-8 retention and skip
+behavior. Builds passed for
+`ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests` and
+`ClassMngrUpcomingBirthdaysTests`; focused CTests
+`NextApplicationUpcomingBirthdayScheduleUseCaseOrdering`,
+`UpcomingBirthdaysLocaleAwareOrderingTests`, and
+`UpcomingBirthdaysLeapDayFallbackBehavior` passed 3/3. Direct selectors for
+invalid skip, ASCII trim, leap fallback, invalid reference, buckets, year
+rollover, date cap, feature display mapping, and Qt non-padded formatting
+passed. Verification used the existing macOS arm64 Debug tree with Qt 6.12.0.
+`git diff --check` passed. Windows verification and the full suite were not
+run. Batch484 remains active with eight complete and two discovered; F1126 is
+next. F629 and the Phase 0 and Phase 2 gates remain open.

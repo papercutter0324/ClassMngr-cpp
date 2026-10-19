@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1124 complete, F1125 accepted/in progress, and two discovered, with F1126 next; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is closed and pushed; Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03` (see [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20)); Batch484 is active with ten candidates, F1118–F1125 complete, and two discovered, with F1126 next for acceptance; keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,7 +68,7 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch484 (10 candidates; 7 complete; 1 accepted/in progress; 2 discovered)
+#### Active batch: Batch484 (10 candidates; 8 complete; 0 accepted/in progress; 2 discovered)
 
 1. F1118 - Complete at `f3f0b46e`: type generated `CalendarEventSeriesEditOccurrenceUpdate` dates as `Domain::GregorianDate`, converting to Qt at the platform adapter; preserve date and occurrence behavior. Raw request and snapshot date strings remain unchanged by design (verification in the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20)).
 2. F1119 - Complete at `4f19554d`: preserve opaque exact UTF-8 state keys and UTF-16 apply keys using separate Application values; retain current validation and identity behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1119-schedule-import-teacher-keys-complete-2026-10-20).
@@ -77,11 +77,11 @@ Treat this plan as an operational summary, not a history:
 5. F1122 - Complete at `93f38196`: type the Application issue code, field, and argument key as distinct opaque values; preserve payload, limits, order, and adapter mapping. See the [completion record](03-Phase-2-Progress-Log.md#f1122-teacher-profile-validation-identifiers-complete-2026-10-20).
 6. F1123 - Complete at `e21fb087`: use opaque byte-preserving `DocumentCatalogPath` for folder paths, parent paths, and document paths in catalog metadata; preserve projection validation and path behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1123-document-catalog-path-complete-2026-10-20).
 7. F1124 - Complete at `812692c6`: type `RosterSaveIssue.code` as a separate closed `RosterSaveIssueCode` with stable outward-key mapping; preserve validation, serialization, and UI behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1124-roster-save-validation-codes-complete-2026-10-20).
-8. F1125 - Accepted/in progress: use permissive `UpcomingBirthdayMonthDayInput` for the candidate's UTF-8 month/day value, retaining parser validation and existing schedule behavior. See the [acceptance record](03-Phase-2-Progress-Log.md#f1125-upcoming-birthday-month-day-input-accepted-before-implementation-2026-10-20).
+8. F1125 - Complete at `7775df86`: use permissive `UpcomingBirthdayMonthDayInput` for the candidate's UTF-8 month/day value, retaining parser validation and existing schedule behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1125-upcoming-birthday-month-day-input-complete-2026-10-20).
 9. F1126 - Type Excel Import timeout choice: preserve supported values, default/fallback, and setting key.
 10. F1127 - Type update-artifact platform keys (lower confidence): screen aliases and enum suitability during acceptance.
 
-F1118–F1124 are complete, F1125 is accepted/in progress, and the other two candidates remain discovered. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
+F1118–F1125 are complete, and F1126 and F1127 remain discovered; F1126 is next for acceptance. Detailed evidence and focused targets are in the [Phase 2 progress log](03-Phase-2-Progress-Log.md).
 
 #### Deferred candidates
 

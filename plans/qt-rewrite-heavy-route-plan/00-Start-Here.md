@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is active with ten candidates: F1118–F1124 are complete, F1125 is accepted/in progress, and two remain discovered; F1126 is next. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-7-complete-1-acceptedin-progress-2-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch481 and Batch482 are closed and pushed; the Batch482 push receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch483 is closed and pushed at `0f47ad3241c727002c2cdb68a81c38145141dc03`; see its [push receipt](03-Phase-2-Progress-Log.md#batch483-push-receipt-2026-10-20). Batch484 is active with ten candidates: F1118–F1125 are complete and two remain discovered; F1126 is next for acceptance. See the [active Batch484 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch484-10-candidates-8-complete-0-acceptedin-progress-2-discovered). F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch484 — Active; ten candidates, seven complete, one accepted/in progress, and two discovered:**
+**Batch484 — Active; ten candidates, eight complete, and two discovered:**
 
 1. **F1118 — Type Calendar repeat-series edit dates (complete).** Type generated occurrence updates as `GregorianDate`; preserve date behavior and occurrence shifting. See the [completion record](03-Phase-2-Progress-Log.md#f1118-calendar-repeat-series-generated-dates-complete-2026-10-20).
 2. **F1119 — Type Schedule Import apply/state teacher correlation keys (complete).** Preserve exact UTF-8 state-key and UTF-16 apply-key identity. See the [completion record](03-Phase-2-Progress-Log.md#f1119-schedule-import-teacher-keys-complete-2026-10-20).
@@ -47,7 +47,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 5. **F1122 — Type Teacher Profile validation identifiers (complete).** Type issue code, field, and argument key while preserving payload, limits, and adapter behavior. See the [completion record](03-Phase-2-Progress-Log.md#f1122-teacher-profile-validation-identifiers-complete-2026-10-20).
 6. **F1123 — Type Document Catalog paths (complete).** Type catalog metadata paths while preserving byte limits, validation, parent resolution, and order. See the [completion record](03-Phase-2-Progress-Log.md#f1123-document-catalog-path-complete-2026-10-20).
 7. **F1124 — Type Roster Save validation codes (complete).** Use a separate closed Application enum with explicit stable outward-key mapping; preserve issue order and UI mapping. See the [completion record](03-Phase-2-Progress-Log.md#f1124-roster-save-validation-codes-complete-2026-10-20).
-8. **F1125 — Type Upcoming Birthday schedule date inputs (accepted/in progress).** Keep the month/day input permissive until existing parsing; preserve invalid-date skipping, leap-day fallback, windowing, and ordering. See the [acceptance record](03-Phase-2-Progress-Log.md#f1125-upcoming-birthday-month-day-input-accepted-before-implementation-2026-10-20).
+8. **F1125 — Type Upcoming Birthday schedule date inputs (complete).** Keep the month/day input permissive until existing parsing; preserve invalid-date skipping, leap-day fallback, windowing, and ordering. See the [completion record](03-Phase-2-Progress-Log.md#f1125-upcoming-birthday-month-day-input-complete-2026-10-20).
 9. **F1126 — Type Excel Import timeout choice.** Preserve supported values, default/fallback, and setting key.
 10. **F1127 — Type update-artifact platform keys (lower confidence).** Screen aliases and enum suitability during acceptance.
 
