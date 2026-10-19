@@ -47841,8 +47841,79 @@ normalization.
 Focused coverage must verify typed fact/result contracts, positive filtering,
 malformed/overflow/nonpositive handling, numeric-alias deduplication and
 canonical output, schedule order, and exact-day behavior. Retain the existing
-package-service projection case `SubPrepPackageServiceClassIdsForDaysProjection`
-to cover the int/typed/int adapter bridge. Focused targets are
+`SubPrepPackageServiceClassIdsForDaysProjection` case in
+`SubPrepPackageServiceTests` to cover the int/typed/int adapter bridge. Focused
+coverage uses target `ClassMngrNextApplicationSubPrepSelectedClassIdsTests`
+and that existing package-service case; no execution results are recorded yet.
+
+### Batch480 discovery - 2026-10-20
+
+Two independent Explorers agreed on two eligible candidates. Discovery began
+when F1107 was the second-last Batch479 item. Batch479 was still active during
+this pass; Batch480 becomes active only after Batch479 closes. The following
+ordered candidates are discovered, not accepted or started:
+
+1. **F1109 - Carry typed `ClassId` through Class Tab ordering facts.**
+   `ClassTabNavigationOrderingFact.classId` is `std::int32_t`; the feature
+   adapter maps legacy `ClassEntry.classId` int into it. Type the fact while
+   preserving tuple priorities, numeric final-ID tie-break, and exact-tie
+   semantics. This is distinct from F1019 sorting behavior and F1107 Sub Prep
+   ordering. Sources:
+   `src/next/application/class_tab_navigation_ordering_policy.h`,
+   `src/features/classes/models/class_tab_navigation_model.cpp`, and
+   `src/features/classes/models/class_tab_navigation_model.h`.
+   Existing policy and model tests are registered through existing CMake
+   targets `ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests`
+   and `ClassMngrClassTabNavigationModelTests`.
+2. **F1110 - Carry typed `ClassId` through roster-transfer eligibility.**
+   Application eligibility helpers use raw ints for source/target positivity
+   and same-class checks; the UI calls them before a typed subtitle read.
+   Preserve numeric validity, no-read behavior for invalid/current targets,
+   Qt-whitespace grade trimming, case-sensitive grade equality, candidate
+   order, and duplicates. Sources:
+   `src/next/application/roster_transfer_target_eligibility.h` and
+   `src/features/roster/ui/roster_editor_widget_transfer.cpp`. Existing
+   targets are `ClassMngrNextApplicationRosterTransferTargetEligibilityTests`
+   and `ClassMngrRosterTransferMenuTests`.
+
+No other slices were found.
+
+The potential Teacher Import profile-ID cleanup was excluded. A feature-side
+check found profile IDs remain wide `std::int64_t`, while the existing domain
+wrappers store only int and cannot represent that profile range. Batch197's
+discovery record (2026-10-13) deferred raw-int ID cleanup as lower-confidence;
+F823 later resolved that disposition by preserving wide Native English and
+GS Team persisted profile IDs (source/test commit
+`c6fb666b6f29dbe76c77829d3599a122bbcda50f`; see the F823 record and
+`src/data/repositories/teacher_import_sql_persistence_adapter.cpp`). Do not
+reopen this lead without explicit reconsideration.
+
+No tests were run for Batch480 discovery.
+
+### F1108 complete; Batch479 closed; Batch480 active - 2026-10-20
+
+F1108 is complete at source/test commit
+`ef431808732e3d5e385a7a509574a70224083379`, following acceptance commit
+`98b22b7fc3379d454010ac031fd4c115a3a3237b`. The selected-class policy
+fact and result now use typed `ClassId` values; the existing feature adapter
+wraps legacy ints as canonical decimal IDs and unwraps the policy result back
+to `QList<int>`. Positive-only full-integer parsing, numeric deduplication,
+first-seen schedule order, canonical output IDs, exact UTF-16 day matching,
+selected-day membership, traversal order, both entry kinds, and empty-input
+behavior remain covered by the slice.
+
+The incremental production build
+`cmake --build build/macos-clang-debug --target ClassMngrFeatures -j 6`
+succeeded. The focused build included
 `ClassMngrNextApplicationSubPrepSelectedClassIdsTests` and
-`ClassMngrSubPrepClassInformationModelTests`; no execution results are
-recorded yet.
+`ClassMngrSubPrepPackageServiceTests`. On macOS arm64, Apple Clang 21.0.0,
+Qt 6.12.0, Ninja Debug, the exact CTest expression
+`^(ClassMngrNextApplicationSubPrepSelectedClassIdsTests|SubPrepPackageServiceClassIdsForDaysProjection)$`
+passed 2/2. `git diff --check` passed. No full suite, clean build, or fresh
+configure ran.
+
+Batch479 is complete. Its closeout commit and push are the next operation; no
+closeout SHA is recorded yet. Batch480 is now active from the discovery record
+above, with F1109 next for acceptance reassessment and F1110 discovered. F629
+remains active pending Windows x64 layout evidence, which the user cannot run
+now. The Phase 0 and Phase 2 gates remain Open.

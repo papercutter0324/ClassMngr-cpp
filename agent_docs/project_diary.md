@@ -7560,3 +7560,14 @@ values, preserve the positive-only rule and numeric deduplication, and return
 canonical decimal IDs. Invalid, nonpositive, or out-of-range values are
 skipped without throwing; preserve traversal order, exact day matching, and
 both schedule entry kinds.
+
+## 2026-10-20 - F1108 complete
+
+F1108 completed at source/test commit
+`ef431808732e3d5e385a7a509574a70224083379`, following acceptance commit
+`98b22b7fc3379d454010ac031fd4c115a3a3237b`. The policy keeps class IDs
+typed through selection while the feature adapter preserves its legacy
+integer API. Parsing through `int` retains the existing positive and numeric
+identity rules; returning canonical IDs prevents text aliases from leaking
+past the policy. Focused policy and service projection tests passed; no full
+suite ran.

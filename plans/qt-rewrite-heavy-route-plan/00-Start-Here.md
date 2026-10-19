@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch478 is complete; its closeout was pushed to `origin/Qt-Rewrite` at `5877b296c0c9a032adeeeb9cbfb807e19765e40a`. Batch479 is active and unpushed: F1104-F1107 are complete, and F1108 is accepted with implementation not started. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [active Batch479 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch479-5-candidates-4-complete-1-accepted) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification and acceptance evidence.
+- Current milestone: Batch479 is complete at F1108 source/test commit `ef431808`; its closeout commit/push is next. Batch480 is active with F1109 next for acceptance reassessment and F1110 discovered. F629 remains active pending Windows x64 layout evidence, which the user cannot run now; the Phase 0 and Phase 2 gates remain Open. See the [active Batch480 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch480-2-candidates-1-next-for-reassessment-1-discovered) and [Phase 2 progress log](03-Phase-2-Progress-Log.md) for verification and closeout details.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,13 +38,10 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch479 — Active and unpushed; five candidates, four complete, one accepted:**
+**Batch480 — Active; two candidates, one next for acceptance reassessment, one discovered:**
 
-1. **F1104 — Type class identity in Schedule testing-assignment reads.** Complete at source/test commit `ddcb8bbb`; see the progress log for focused verification and limits.
-2. **F1105 — Type the Campus Dashboard selected-campus read request.** Complete at source/test commit `1d86cc57`; see the progress log for focused verification and limits.
-3. **F1106 — Keep Co-Teacher assignment identity typed at use-case entry.** Complete at source/test commit `8a6e8174`; see the progress log for focused verification and limits.
-4. **F1107 — Carry typed IDs through Sub Prep print-order facts.** Complete at source/test commit `600c119c`; see the progress log for verification details.
-5. **F1108 — Keep Sub Prep selected-class IDs typed through its selection policy.** Accepted, implementation not started; preserve positive filtering, first-seen deduplication, exact day match, schedule order, and both entry kinds.
+1. **F1109 — Carry typed `ClassId` through Class Tab ordering facts.** Next for acceptance reassessment; preserve tuple priorities, numeric final ID tie-break, and exact-tie semantics.
+2. **F1110 — Carry typed `ClassId` through roster-transfer eligibility.** Discovered; preserve positive numeric validity, no reads for invalid/current targets, Qt-whitespace grade trimming, case-sensitive grade equality, candidate order, and duplicates.
 
 No other slices were found.
 

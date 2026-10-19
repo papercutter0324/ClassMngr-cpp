@@ -5094,3 +5094,24 @@ adapter bridges legacy integer IDs without changing exact day matching,
 schedule order, or inclusion of both entry kinds. Batch479 remains active
 and unpushed; Windows x64 evidence is unavailable and the Phase 0 and Phase 2
 gates remain open.
+
+## Phase 2 update - F1108 complete; Batch479 closed - 2026-10-20
+
+F1108 completed at source/test commit
+`ef431808732e3d5e385a7a509574a70224083379`, following acceptance commit
+`98b22b7fc3379d454010ac031fd4c115a3a3237b`. The selected-class schedule
+fact and Application policy result now carry `Domain::ClassId`; the existing
+service and UI `QList<int>` API remains the legacy edge. Full base-10 int
+parsing preserves positive-only filtering and numeric deduplication, with
+canonical typed results. Malformed, trailing, overflow, zero, and negative
+IDs are skipped without throwing. Exact day matching, schedule order, and
+both entry kinds remain unchanged.
+
+On macOS arm64 with Apple Clang 21, Qt 6.12.0, and Ninja Debug, the incremental
+`ClassMngrFeatures` build succeeded. Focused Application policy and package
+service projection CTests passed 2/2; `git diff --check` passed. No full suite,
+fresh configure, or clean build ran. Batch479 is complete. Batch480 has two
+ordered candidates, with F1109 next for acceptance reassessment and F1110
+discovered. The closeout is being prepared for push to GitHub. F629 and the
+combined Phase 0 gate remain open pending Windows x64 evidence; Phase 2 also
+remains open.

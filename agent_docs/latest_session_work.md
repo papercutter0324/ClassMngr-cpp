@@ -6008,7 +6008,7 @@ Windows x64 evidence remains unavailable and the user cannot run Windows now.
 The combined Phase 0 gate remains open, Phase 2 exit remains open, Gates 1/2
 remain Partial, and F1007 awaits policy reconciliation.
 
-## Current continuation - 2026-10-20 (F1108 accepted; Batch479 active)
+## Current continuation - 2026-10-20 (F1108 complete; Batch479 closed)
 
 Heavy remains the mandatory Phase 2 route. F1101 completed at source/test
 commit `cd64b46becee89c10faec37194482615fe1876d5` and documentation commit
@@ -6087,13 +6087,26 @@ reported no work after the Executor built both targets. `git diff --check`
 passed; no full suite ran.
 
 F1107 closeout documentation was committed as
-`114cc86cdc7cd2262dbb5869187cc0a6fa58ff34`; Batch479 remains active and
-unpushed. F1108 is accepted for implementation, which has not started. Type
-the selected-class schedule fact and Application projection result as
-`Domain::ClassId`, while retaining the legacy `QList<int>` dialog/service API.
-Parse only full base-10 `int` values; keep positive values, deduplicate by
-numeric ID, and return canonical decimal typed IDs. Skip malformed, trailing,
-overflow, zero, and negative IDs without throwing. Preserve first-seen
-schedule order, exact UTF-16 day matching, and both entry kinds. The feature
-adapter owns the int-to-typed-to-int bridge. The combined Phase 0 and Phase 2
-gates remain open; Windows x64 evidence remains unavailable.
+`114cc86cdc7cd2262dbb5869187cc0a6fa58ff34`. F1108 completed at source/test
+commit `ef431808732e3d5e385a7a509574a70224083379`, following acceptance
+commit `98b22b7fc3379d454010ac031fd4c115a3a3237b`. The Application policy
+fact/result now use `Domain::ClassId`; the service and UI keep their `QList<int>`
+API. The policy fully parses base-10 `int` values, keeps positive IDs,
+deduplicates by numeric value, and returns canonical decimal IDs. The feature
+adapter bridges the legacy integer model. Malformed, trailing, overflow,
+zero, and negative values are skipped without throwing; day matching,
+first-seen schedule order, and both entry kinds remain intact.
+
+On macOS arm64, Apple Clang 21, Qt 6.12.0, and Ninja Debug, the incremental
+`ClassMngrFeatures` build succeeded. The independent Tester built
+`ClassMngrNextApplicationSubPrepSelectedClassIdsTests` and
+`ClassMngrSubPrepPackageServiceTests`; the policy CTest and exact package
+service projection selector passed 2/2. `git diff --check` passed. No full
+suite, fresh configure, or clean build ran.
+
+Batch479 is complete; its closeout and push are in progress. Batch480 has two
+ordered candidates recorded: F1109 for typed Class Tab ordering facts, then
+F1110 for typed roster-transfer eligibility. F1109 is next for acceptance
+reassessment. The combined Phase 0 gate remains open because F629 still needs
+source-bound Windows x64 layout evidence, which the user cannot run right now;
+the Phase 2 gate also remains open.
