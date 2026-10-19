@@ -53,18 +53,23 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint - 2026-10-20 (F1148 accepted; Batch487 active; F629 open)
+### Current checkpoint - 2026-10-20 (F1148 complete; Batch487 active; F1149 next; F629 open)
 
-F1148 is accepted/in progress. Type the persisted current-campus preference
-with an owning, exact `Application::CurrentCampusPreferenceValue`, including
-`PersonalDetailsSaveRequest::campus`; stored values can be campus-ID aliases
-or arbitrary legacy text, so do not interpret them as display names. Preserve
-empty values, exact UTF-8 bytes, QVariant string conversion, Calendar's
-all-events fallback, and the existing My Details, Sub Prep, and Initial Setup
-matching, correction, retry, and error behavior. Focused incremental macOS
-builds and targeted tests are assigned; no implementation or verification
-results are recorded yet. Batch487 has four complete slices, F1148 accepted,
-and five discovered candidates; F1149 follows. F629 remains active pending
+F1148 completed at source/test commit
+`5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, after acceptance commit
+`2320a316750090983dd0ec424d4eee9fd4ca0147`. The current-campus preference
+and `PersonalDetailsSaveRequest::campus` now use exact opaque
+`Application::CurrentCampusPreferenceValue`; missing/unavailable fallbacks,
+legacy aliases, and Calendar, My Details, Sub Prep, and Initial Setup behavior
+remain unchanged. Incremental macOS builds passed for all seven assigned
+targets. Both port CTests passed 2/2; My Workspace passed 4 selectors (6
+QtTest cases), Sub Prep 3 selectors (5 cases), and Calendar 3 selectors
+(5 cases), including exact embedded-NUL persistence and unknown nonempty
+Calendar behavior. `git diff --check` passed. Both Initial Setup selectors
+abort before assertions in the known macOS QWizard/NSBundle harness and remain
+unverified; no full suite, Windows run, fresh configure, or clean build was
+performed. Batch487 has five complete slices, no accepted/in-progress slice,
+and five discovered candidates; F1149 is next. F629 remains active pending
 source-bound Windows layout evidence; Phase 0 and Phase 2 gates remain open.
 
 Batch471 is closed and pushed to `origin/Qt-Rewrite` at `0a570252`. Batch472

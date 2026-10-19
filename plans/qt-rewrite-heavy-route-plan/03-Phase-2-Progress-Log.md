@@ -50834,3 +50834,43 @@ pending Windows x64 evidence; the Phase 0 and Phase 2 gates remain open.
 
 Batch487 has ten candidates: four complete (F1144–F1147), one accepted/in
 progress (F1148), and five discovered (F1149–F1153); F1149 is next.
+
+### F1148 Current campus preference value complete - 2026-10-20
+
+F1148 completed at source/test commit
+`5a1756f54173affb33853f3e5dd0b8d8b3ce793d`, following acceptance commit
+`2320a316750090983dd0ec424d4eee9fd4ca0147`. Owning
+`Application::CurrentCampusPreferenceValue` now types both
+`CurrentCampusPreferencesPort::read/write` and
+`PersonalDetailsSaveRequest::campus`. Exact opaque values, embedded NULs,
+`QVariant` integer `42` to text `"42"`, campus-ID aliases, empty/error
+fallbacks, and consumer behavior remain. A Calendar regression confirms an
+unknown nonempty preference remains distinct from the empty fallback; the
+aggregate save test confirms opaque campus bytes.
+
+The incremental build in the existing `build/macos-clang-debug` tree passed
+for `ClassMngr`,
+`ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests`,
+`ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests`,
+`ClassMngrMyWorkspacePageTests`, `ClassMngrSubPrepPageTests`,
+`ClassMngrCalendarPageEventMutationParityTests`, and
+`ClassMngrInitialSetupWizardTests`. Focused port CTests passed 2/2. Direct
+QtTest results: current-campus preferences port 12 passed; aggregate save port
+9 passed; My Workspace 4 selectors/6 cases passed; Sub Prep 3 selectors/5
+cases passed; Calendar 3 selectors/5 cases passed, including the unknown-value
+regression. `git diff --check` passed.
+
+The first Sub Prep run used a fixture that disabled the shared repository and
+therefore produced both Personal Zoom and Campus warnings. The test now checks
+for exactly one Campus Details Unavailable warning by title/content; its
+campus error, N/A fields, and warning assertions pass. This was a test fixture
+adjustment; production behavior did not change. Both requested Initial Setup
+selectors abort before assertions with `NSInvalidArgumentException` at
+`NSBundle initWithURL:nil` through QWizard on macOS; mark those behaviors
+unverified due to the known harness limitation. No fresh configure/clean
+build, full suite, or Windows run was performed.
+
+Batch487 has ten candidates: five complete (F1144–F1148), none accepted/in
+progress, and five discovered (F1149–F1153); F1149 is next. The batch remains
+open, so no push is due yet. F629 remains active pending Windows x64 evidence;
+the Phase 0 and Phase 2 gates remain open.

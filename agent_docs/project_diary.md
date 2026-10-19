@@ -7,6 +7,9 @@
   the exact value without normalization or display-name assumptions, and type
   every writer boundary while keeping each reader's fallback and correction
   behavior unchanged.
+- When a UI page reads several preferences, disabling the shared repository
+  can trigger unrelated warnings too. Assert the warning for the behavior under
+  test by its title/content rather than assuming it is the only prompt.
 - The repository is intentionally layered: domain models and validation are
   separate from SQLite repositories, feature services, and shared Qt UI. Keep
   new work at the narrowest appropriate layer.
