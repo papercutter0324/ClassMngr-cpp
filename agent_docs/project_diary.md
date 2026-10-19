@@ -7973,3 +7973,9 @@ minutes must still reach the save request's established validator so weekday,
 minute, and state failures keep their observable precedence. The UI can parse
 directly into the wrapper, while the Platform adapter unwraps only when
 formatting the legacy `HH:mm` value.
+
+For F1131, exact seconds-of-day are the grouping key, but the current Sub Prep
+summary converts the group back to `QTime` and formats a compact label without
+seconds. Keep the typed value across both Application fact and result, preserve
+invalid-fact skipping at the policy boundary, and leave the separate
+minute-based navigation-order contract unchanged.

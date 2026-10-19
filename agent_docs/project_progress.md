@@ -5694,3 +5694,15 @@ and 1440, validation order, and persisted `00:00`, `09:05`, and `23:59`.
 `git diff --check` passed. Windows and full-suite verification were not run.
 Batch485 has three complete slices and seven discovered; F1131 is next for
 acceptance. F629 and both phase gates remain open.
+
+## Phase 2 update - F1131 accepted; Batch485 active - 2026-10-20
+
+F1131 is accepted for a permissive Application `SubPrepMeetingSecondsOfDay`
+wrapper backed by `std::int32_t`, used on both meeting facts and grouping
+results. Keep invalid raw values representable so the grouping policy retains
+its current skip behavior; preserve exact-second grouping/order, selected-day
+filtering, canonical weekday/group ordering, and cross-day deduplication. The
+Platform adapter continues compact labels that omit seconds, while the
+separate navigation path continues minute-based ordering. Implementation and
+verification are pending; F1132 is next for acceptance. Batch485 remains
+unpushed. F629 and both phase gates remain open.
