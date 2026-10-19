@@ -78,11 +78,13 @@ private:
     {
         const auto defaults = Application::defaultCustomColorPalette();
         QStringList colors;
-        for (const std::string& color : defaults.hexColors)
+        for (const Application::CustomColorPaletteEntry& color
+             : defaults.hexColors)
         {
+            const std::string& value = color.value();
             colors.append(QString::fromUtf8(
-                color.data(),
-                static_cast<qsizetype>(color.size())
+                value.data(),
+                static_cast<qsizetype>(value.size())
                 ));
         }
         return colors;
@@ -170,11 +172,13 @@ private:
         )
     {
         QStringList colors;
-        for (const std::string& color : palette.hexColors)
+        for (const Application::CustomColorPaletteEntry& color
+             : palette.hexColors)
         {
+            const std::string& value = color.value();
             colors.append(QString::fromUtf8(
-                color.data(),
-                static_cast<qsizetype>(color.size())
+                value.data(),
+                static_cast<qsizetype>(value.size())
                 ));
         }
         return colors;
@@ -193,9 +197,11 @@ private:
             const QByteArray encoded = colors.at(
                 static_cast<qsizetype>(index)
                 ).toUtf8();
-            palette.hexColors[index] = std::string(
-                encoded.constData(),
-                static_cast<std::size_t>(encoded.size())
+            palette.hexColors[index] =
+                Application::CustomColorPaletteEntry(std::string(
+                    encoded.constData(),
+                    static_cast<std::size_t>(encoded.size())
+                    )
                 );
         }
         return palette;

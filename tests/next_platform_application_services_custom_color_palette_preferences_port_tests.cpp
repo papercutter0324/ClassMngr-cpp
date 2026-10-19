@@ -15,12 +15,23 @@
 #include <QtTest/QtTest>
 
 #include <array>
+#include <string>
+#include <type_traits>
 
 using namespace ClassMngr::Next::Application;
 using namespace ClassMngr::Next::Platform;
 
 namespace
 {
+
+static_assert(!std::is_convertible_v<
+    std::string,
+    CustomColorPaletteEntry
+    >);
+static_assert(!std::is_convertible_v<
+    CustomColorPaletteEntry,
+    std::string
+    >);
 
 constexpr auto CustomColorsKey = "custom_colors";
 constexpr auto UnrelatedKey = "custom_colors_unrelated";
@@ -68,9 +79,9 @@ bool executeSql(
 QString compactJson(const CustomColorPalette& palette)
 {
     QJsonArray array;
-    for (const std::string& color : palette.hexColors)
+    for (const CustomColorPaletteEntry& color : palette.hexColors)
     {
-        array.append(QString::fromStdString(color));
+        array.append(QString::fromStdString(color.value()));
     }
     return QString::fromUtf8(
         QJsonDocument(array).toJson(QJsonDocument::Compact)
@@ -80,8 +91,8 @@ QString compactJson(const CustomColorPalette& palette)
 CustomColorPalette paletteWithTwoColors()
 {
     auto palette = defaultCustomColorPalette();
-    palette.hexColors[0] = "#123456";
-    palette.hexColors[1] = "#abcdef";
+    palette.hexColors[0] = CustomColorPaletteEntry("#123456");
+    palette.hexColors[1] = CustomColorPaletteEntry("#abcdef");
     return palette;
 }
 
@@ -95,13 +106,13 @@ CustomColorPalette canonicalizedPalette(
          ++index)
     {
         const QColor color(
-            QString::fromStdString(source.hexColors[index])
+            QString::fromStdString(source.hexColors[index].value()).trimmed()
             );
         if (color.isValid())
         {
-            result.hexColors[index] = color.name(
-                QColor::HexRgb
-                ).toStdString();
+            result.hexColors[index] = CustomColorPaletteEntry(
+                color.name(QColor::HexRgb).toStdString()
+                );
         }
     }
     return result;
@@ -119,6 +130,7 @@ private slots:
     void missingAndUnavailableReadDefaults();
     void invalidSettingValueDefaultsSuccessfully();
     void compactJsonRoundTripUsesExactKey();
+    void writePreservesExactTextAndReadCanonicalizes();
     void legacyQStringListJsonAndSeparatorPayloadsLoad();
     void invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors();
     void saveFailurePreservesStoredPaletteAndWarning();
@@ -236,6 +248,53 @@ compactJsonRoundTripUsesExactKey()
 }
 
 void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
+writePreservesExactTextAndReadCanonicalizes()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.dataService());
+    SettingsRepository* const repository = settingsRepository(services);
+    QVERIFY(repository);
+
+    auto suppliedPalette = defaultCustomColorPalette();
+    const std::string suppliedText = "  #abcdef  ";
+    suppliedPalette.hexColors[0] = CustomColorPaletteEntry(suppliedText);
+
+    ApplicationServicesCustomColorPalettePreferencesPort port(services);
+    QVERIFY(port.write(suppliedPalette));
+
+    const auto stored = repository->loadSetting(
+        QString::fromUtf8(CustomColorsKey)
+        );
+    QVERIFY(stored);
+    QCOMPARE(stored->toString(), compactJson(suppliedPalette));
+    const QJsonDocument storedJson = QJsonDocument::fromJson(
+        stored->toString().toUtf8()
+        );
+    QVERIFY(storedJson.isArray());
+    QCOMPARE(
+        storedJson.array().size(),
+        static_cast<int>(CustomColorPalette::EntryCount)
+        );
+    QCOMPARE(
+        storedJson.array().at(0).toString().toStdString(),
+        suppliedText
+        );
+
+    ApplicationServicesCustomColorPalettePreferencesPort reader(services);
+    const auto loaded = reader.read();
+    QVERIFY(loaded);
+    const auto expectedRead = canonicalizedPalette(suppliedPalette);
+    QVERIFY(loaded.value() == expectedRead);
+    QCOMPARE(
+        loaded.value().hexColors[0].value(),
+        QColor(QStringLiteral("#abcdef"))
+            .name(QColor::HexRgb)
+            .toStdString()
+        );
+}
+
+void NextPlatformApplicationServicesCustomColorPalettePreferencesPortTests::
 legacyQStringListJsonAndSeparatorPayloadsLoad()
 {
     ApplicationServices services;
@@ -303,12 +362,13 @@ invalidEntriesUseFallbackAndNormalizeToSixteenCanonicalColors()
         );
 
     auto expected = defaultCustomColorPalette();
-    expected.hexColors[1] = "#abcdef";
+    expected.hexColors[1] = CustomColorPaletteEntry("#abcdef");
     for (int index = 2; index < 15; ++index)
     {
-        expected.hexColors[static_cast<std::size_t>(index)] = "#010203";
+        expected.hexColors[static_cast<std::size_t>(index)] =
+            CustomColorPaletteEntry("#010203");
     }
-    expected.hexColors[15] = "#123456";
+    expected.hexColors[15] = CustomColorPaletteEntry("#123456");
 
     ApplicationServicesCustomColorPalettePreferencesPort port(services);
     const auto actual = port.read();
@@ -355,7 +415,7 @@ saveFailurePreservesStoredPaletteAndWarning()
         QRegularExpression(QStringLiteral("Failed to save custom colors:.*"))
         );
     auto attempted = paletteWithTwoColors();
-    attempted.hexColors[0] = "#fedcba";
+    attempted.hexColors[0] = CustomColorPaletteEntry("#fedcba");
     const auto saveResult = port.write(attempted);
     QVERIFY(!saveResult);
     QCOMPARE(
@@ -439,7 +499,7 @@ closedSessionDefaultsAndIgnoresWritesWithoutFallback()
     QVERIFY(read);
     QVERIFY(read.value() == defaultCustomColorPalette());
     auto attempted = paletteWithTwoColors();
-    attempted.hexColors[0] = "#fedcba";
+    attempted.hexColors[0] = CustomColorPaletteEntry("#fedcba");
     QVERIFY(port.write(attempted));
 
     QVERIFY(services.openDatabase(path));

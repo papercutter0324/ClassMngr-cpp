@@ -52,8 +52,9 @@ QStringList colorsForDialog(
     )
 {
     QStringList colors;
-    for (const std::string& color : palette.hexColors)
+    for (const auto& entry : palette.hexColors)
     {
+        const std::string& color = entry.value();
         colors.append(QString::fromUtf8(
             color.data(),
             static_cast<qsizetype>(color.size())
@@ -75,9 +76,10 @@ ClassMngr::Next::Application::CustomColorPalette paletteFromDialog()
             );
         if (color.isValid())
         {
-            palette.hexColors[index] = color.name(
-                QColor::HexRgb
-                ).toStdString();
+            palette.hexColors[index] =
+                ClassMngr::Next::Application::CustomColorPaletteEntry(
+                    color.name(QColor::HexRgb).toStdString()
+                    );
         }
     }
     return palette;

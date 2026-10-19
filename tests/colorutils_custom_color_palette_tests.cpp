@@ -18,6 +18,7 @@ namespace
 {
 
 using ClassMngr::Next::Application::CustomColorPalette;
+using ClassMngr::Next::Application::CustomColorPaletteEntry;
 using ClassMngr::Next::Application::CustomColorPalettePreferencesPort;
 using ClassMngr::Next::Domain::ErrorCode;
 using ClassMngr::Next::Domain::OperationError;
@@ -47,7 +48,7 @@ CustomColorPalette paletteWithDistinctColors()
     CustomColorPalette palette;
     for (std::size_t index = 0; index < ColorHexes.size(); ++index)
     {
-        palette.hexColors[index] = ColorHexes[index];
+        palette.hexColors[index] = CustomColorPaletteEntry(ColorHexes[index]);
     }
     return palette;
 }
@@ -57,7 +58,9 @@ bool dialogShowsPalette(const CustomColorPalette& expected)
     for (std::size_t index = 0; index < expected.hexColors.size(); ++index)
     {
         if (QColorDialog::customColor(static_cast<int>(index))
-            != QColor(QString::fromStdString(expected.hexColors[index])))
+            != QColor(QString::fromStdString(
+                expected.hexColors[index].value()
+                )))
         {
             return false;
         }
@@ -210,7 +213,9 @@ loadCopiesEveryPaletteEntryToTheDialog()
     {
         QCOMPARE(
             QColorDialog::customColor(static_cast<int>(index)),
-            QColor(QString::fromStdString(expected.hexColors[index]))
+            QColor(QString::fromStdString(
+                expected.hexColors[index].value()
+                ))
             );
     }
 }
@@ -223,7 +228,9 @@ saveWritesEveryDialogSlotAsOneCanonicalPalette()
     {
         QColorDialog::setCustomColor(
             static_cast<int>(index),
-            QColor(QString::fromStdString(expected.hexColors[index]))
+            QColor(QString::fromStdString(
+                expected.hexColors[index].value()
+                ))
             );
     }
     FakeCustomColorPalettePreferencesPort port;
@@ -235,9 +242,11 @@ saveWritesEveryDialogSlotAsOneCanonicalPalette()
     QCOMPARE(port.writeCount(), 1);
     for (std::size_t index = 0; index < expected.hexColors.size(); ++index)
     {
-        const QColor color(QString::fromStdString(expected.hexColors[index]));
+        const QColor color(QString::fromStdString(
+            expected.hexColors[index].value()
+            ));
         QVERIFY(
-            port.writtenPalette().hexColors[index]
+            port.writtenPalette().hexColors[index].value()
             == color.name(QColor::HexRgb).toStdString()
             );
     }
@@ -528,7 +537,7 @@ getColorPersistsDefaultsAfterCanceledMissingRead()
     QCOMPARE(port.readCount(), 1);
     QCOMPARE(port.writeCount(), 1);
     QCOMPARE(
-        port.writtenPalette().hexColors[0],
+        port.writtenPalette().hexColors[0].value(),
         changedCustomColor.name(QColor::HexRgb).toStdString()
         );
 }
