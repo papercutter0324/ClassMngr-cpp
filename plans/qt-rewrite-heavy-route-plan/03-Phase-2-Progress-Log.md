@@ -48106,3 +48106,105 @@ index behavior; and application resolver/use-case plus UI adapter behavior.
 No full-suite or Windows verification is claimed. F629 still requires
 external Windows x64 layout evidence; the Phase 0 and Phase 2 gates remain
 Open.
+
+### Batch482 discovery - 2026-10-20
+
+Two independent scans converged on Schedule Import review correlation as the
+first candidate, F1112. The bounded adapter scan found only this lead; the
+independent Domain/Application scan also found F1113 and F1114. The candidates
+below are discovered, not accepted. Batch481 remains active with F1111
+accepted and implementation underway; Batch482 does not replace it in the
+active batch list before Batch481 closes.
+
+1. **F1112 - Type Schedule Import teacher review correlation keys.** The
+   review candidate, teacher resolution, and issue `teacherKey` fields are
+   strings in `src/next/application/schedule_import_review_decisions.h:37-51,89-95`.
+   The adapter scan traced the same key through apply and state validation in
+   `src/next/application/schedule_import_apply_request.h:21`,
+   `src/next/application/schedule_import_state_projection.h:47`,
+   `src/next/application/schedule_import_apply_review_decisions.h:57-84`, and
+   `src/data/repositories/schedule_import_repository.cpp:558`; the feature
+   projects it with `toStdString()` in
+   `src/features/schedule/services/schedule_import_plan_validator.cpp:408`.
+   Scope is the transient teacher review key across review, apply, and
+   state-validation contracts. Preserve exact Hangul/equality and conversion,
+   empty-key behavior and error ordering, group/candidate order, room
+   aggregation, and persisted text. F84's `Domain::KoreanTeacherKey` belongs
+   to a distinct matching projection: this key may contain non-Hangul text
+   and is not a teacher identity. Existing tests cover empty and exact UTF-8,
+   including a supplementary symbol, in
+   `tests/next_application_schedule_import_review_decisions_tests.cpp:140-158`
+   and `tests/next_application_schedule_import_apply_review_decisions_tests.cpp:102-134`.
+
+2. **F1113 - Type Class Transfer source correlation keys.** The Application
+   flow carries teacher/class source keys through transfer matching and review
+   contracts in `src/next/application/class_transfer_projection.h:242-280,909-970`
+   and `src/next/application/class_transfer_matching_policy.h:29-60`.
+   Validation establishes nonblank and bounded rules, uniqueness, exact
+   teacher-reference matching, optional missing-teacher semantics, and
+   ordering in `class_transfer_projection.h:455-468,492-569`. Existing tests
+   cover blank, oversized, and unknown cases in
+   `tests/next_application_class_transfer_tests.cpp:359-406,436-441`. These
+   keys identify records within a transfer package, not durable entity IDs;
+   they are distinct from F1112 and F1114.
+
+3. **F1114 - Type generic import-review source keys.**
+   `ImportSourceKey` remains `using ImportSourceKey = std::string` in
+   `src/next/application/import_review_session.h:18`, where it is used by
+   match indexes, decisions, and diagnostics (`:70-130`). Validation rejects
+   blank keys and keys over 256 bytes (`:426-432,655-668,708-752`); existing
+   limit tests are in `tests/next_application_import_review_tests.cpp:50-56,282-305`.
+   The key correlates imported source records across indexes, decisions, and
+   diagnostics while candidate entity IDs are already typed. This is its own
+   generic import-review contract, distinct from F1111 and F1112.
+
+No other slices were found.
+
+Batch482 remains discovery-only; no candidate is accepted. F629 and the
+Phase 0 and Phase 2 gates remain open. No tests were run for Batch482
+discovery.
+
+### F1111 complete; Batch481 closed - 2026-10-20
+
+F1111 is complete at source/test commit `4a9dfd44`, following acceptance
+commit `5515158a`. Application now uses `TeacherImportGroupKey` for candidate
+group, decision, and review keys. The wrapper preserves exact string bytes and
+equality and allows default-empty values; F44 retains empty, duplicate,
+unknown, missing, and index validation and error precedence. Candidate order
+and selected-index behavior are unchanged. Both legacy paths retain their
+existing `toUtf8().toStdString()` conversion. No Domain ID, persistence, or UI
+model changed.
+
+The original acceptance requested non-ASCII byte-preservation tests at each
+boundary. The Tester verified that valid UI review levels come from the fixed
+ASCII marker/`LevelOrder` set in
+`src/features/teacher/import/sectioned_contact_list_template.cpp:16,37`, so
+an arbitrary non-ASCII group level cannot reach the file-private UI
+`reviewRequest()` through a valid workbook. The checked-in workbook dialog
+test exercises supported M1/M2/H1 selections through `importPlan()` and the
+resolver. Since F1111 only wraps the existing UTF-8 conversion result, the
+main accepted this scoped limit: arbitrary UTF-8 is tested through the
+Application resolver/use case and data legacy-plan adapter; the private UI
+helper was not directly tested with non-ASCII input. Extracting a production
+test helper solely to inject an unreachable UI value would add surface without
+covering a reachable path.
+
+The independent Tester built `ClassMngr`,
+`ClassMngrTeacherImportTests`, `ClassMngrTeacherImportDialogTests`, and
+`ClassMngrNextApplicationTeacherImportUseCaseTests` in the standard
+`build/macos-clang-debug` tree with
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrTeacherImportTests ClassMngrTeacherImportDialogTests ClassMngrNextApplicationTeacherImportUseCaseTests --parallel 8`.
+With `QT_QPA_PLATFORM=offscreen`, the focused CTest command
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^(ClassMngrTeacherImportTests|ClassMngrTeacherImportDialogTests|ClassMngrNextApplicationTeacherImportUseCaseTests)$'`
+passed 3/3. Coverage includes empty/default resolver precedence, existing
+validation errors, composed/decomposed UTF-8 keys, exact matching, candidate
+order and selected indexes, reversed-order use-case decisions, and exact
+non-ASCII bytes through the repository legacy-plan adapter.
+
+Verification used macOS/Darwin 27.0 arm64, Apple clang 21.0.0, Qt 6.12.0,
+CMake 4.3.3, Ninja Debug. `git diff --check` passed. This is focused local
+verification; no full suite or Windows x64 run was performed. Batch481 is
+closed. Batch482 is active with three discovered candidates; F1112 is next
+for acceptance reassessment, while F1113 and F1114 remain discovered and not
+accepted. F629 still awaits external Windows x64 layout evidence, and the
+Phase 0 and Phase 2 gates remain open. The Batch481 closeout push is pending.

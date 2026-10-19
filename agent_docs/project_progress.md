@@ -5208,3 +5208,18 @@ adapter boundaries, and legacy UI/persistence representations unchanged; do
 not normalize or use `Domain::TypedId`. Batch482 discovery is underway.
 F629 still needs source-bound Windows x64 layout evidence; the Phase 0 and
 Phase 2 gates remain open.
+
+## Phase 2 update - F1111 complete; Batch481 closeout pending - 2026-10-20
+
+F1111 completed at source/test commit `4a9dfd44`, following acceptance commit
+`5515158a`. The Application `TeacherImportGroupKey` now carries the three
+Teacher Import review-group keys with exact byte equality and default-empty
+support; F44 retains empty, duplicate, unknown, missing, and index validation.
+The UI and repository adapters keep their UTF-8 conversion, and legacy UI and
+persistence representations are unchanged. Focused macOS build and tests
+passed 3/3. Arbitrary UTF-8 is verified through the resolver, use case, and
+repository adapter; UI dialog coverage exercises its fixed supported ASCII
+levels because the parser cannot emit arbitrary non-ASCII group levels. No
+full suite or Windows x64 run occurred. Batch481 closeout documentation is
+pending; Batch482 has F1112-F1114 discovered, with F1112 next for acceptance.
+F629 and the Phase 0 and Phase 2 gates remain open.

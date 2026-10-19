@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batch480 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch481 is active with F1111 accepted before implementation. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch481 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch481-1-candidate-1-discovered) for the next action.
+- Current milestone: Batch480 is closed and pushed; its receipt is recorded in the [Phase 2 progress log](03-Phase-2-Progress-Log.md). Batch481/F1111 is complete, and Batch482 is active with F1112 next for acceptance reassessment. F629 still awaits Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain Open. See the [active Batch482 list](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch482-3-candidates-3-discovered) for the next action.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,9 +38,11 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Discovered slices for the current Phase 2 batch
 
-**Batch481 — Active; one candidate, one discovered:**
+**Batch482 — Active; three candidates, three discovered:**
 
-1. **F1111 — Type Teacher Import review-group correlation keys.** Accepted before implementation; add an Application value type for the three review-group keys while preserving exact matching, ordering, empty-value resolver behavior, and UTF-8 adapter semantics.
+1. **F1112 — Type Schedule Import teacher review correlation keys.** Discovered, not accepted; next for acceptance reassessment across review, apply, and state-validation contracts.
+2. **F1113 — Type Class Transfer source correlation keys.** Discovered, not accepted; preserve package-key validation, matching, missing-teacher semantics, and order.
+3. **F1114 — Type generic import-review source keys.** Discovered, not accepted; preserve blank/256-byte validation, exact bytes, category tagging, and validation outcomes.
 
 No other slices were found.
 

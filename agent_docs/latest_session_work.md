@@ -6117,11 +6117,19 @@ query while retaining integer action IDs. The focused eligibility and menu
 CTests passed 2/2 on macOS; no full suite ran. Batch480 closeout was pushed
 without force to `origin/Qt-Rewrite` at
 `7acd5fac0646b9868c7b66659f617e5cf300926d`; the remote SHA matched, the
-worktree is clean, and the branch is up to date. Batch481's F1111 review has
-now accepted an Application `TeacherImportGroupKey` for the transient Teacher
-Import group correlation key. The type must preserve exact bytes and permit
-empty values so F44 retains its established validation. Phase-plan acceptance
-documentation is being recorded; implementation and tests have not started.
-Batch482 discovery is underway. The combined Phase 0 gate remains open because
-F629 still needs source-bound Windows x64 layout evidence, which the user
-cannot run right now; the Phase 2 gate also remains open.
+worktree is clean, and the branch is up to date. F1111 completed at source/test
+commit `4a9dfd44`, following acceptance commit `5515158a`. The Application
+`TeacherImportGroupKey` carries candidate, decision, and review keys, preserves
+exact bytes/default-empty values, and leaves validation with F44. The UI and
+data adapter retain their UTF-8 conversions. The focused macOS build
+completed; Teacher Import, dialog, and use-case CTests passed 3/3. Coverage
+includes resolver error precedence, composed/decomposed UTF-8 exact matching,
+candidate order/index selection, reverse-order use-case decisions, and
+non-ASCII data adapter projection. The checked-in workbook dialog test covers
+supported M1/M2/H1 levels. The parser emits only fixed ASCII group markers, so
+arbitrary non-ASCII cannot reach the private UI projection; no test-only
+production helper was added. No full suite or Windows x64 run occurred.
+Batch481 closeout is pending, with Batch482 discovered as F1112-F1114 and
+F1112 next for acceptance reassessment. The combined Phase 0 gate remains open
+because F629 still needs source-bound Windows x64 layout evidence, which the
+user cannot run right now; the Phase 2 gate also remains open.

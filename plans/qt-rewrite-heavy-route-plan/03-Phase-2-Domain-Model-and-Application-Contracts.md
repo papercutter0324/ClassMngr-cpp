@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch481 is active with F1111 accepted before implementation; implement the Application review-group key value type while preserving F44 resolver behavior, and keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
+- Current note: Batch482 is active with F1112 next for acceptance reassessment; keep F1113 and F1114 discovered, not accepted, and keep F629's Windows x64 evidence and the Phase 0 and Phase 2 gates open.
 
 ### Slice discovery batches
 
@@ -68,9 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch481 (1 candidate; 1 discovered)
+#### Active batch: Batch482 (3 candidates; 3 discovered)
 
-1. F1111 - Type Teacher Import review-group correlation keys: accepted before implementation; add the Application value type for candidate, decision, and review keys, preserving exact matching, order, resolver validation, and UTF-8 adapter behavior.
+1. F1112 - Type Schedule Import teacher review correlation keys: discovered, not accepted; next for acceptance reassessment. Preserve exact key bytes and matching, empty/error behavior and ordering, and conversion across review/apply/state contracts; do not conflate the key with `Domain::KoreanTeacherKey`.
+2. F1113 - Type Class Transfer source correlation keys: discovered, not accepted. Preserve nonblank/bounded validation, uniqueness, exact teacher-reference mapping, missing-teacher semantics, and ordering.
+3. F1114 - Type generic import-review source keys: discovered, not accepted. Preserve blank/256-byte validation, exact bytes, category tagging, and current validation outcomes.
 
 #### Deferred candidates
 

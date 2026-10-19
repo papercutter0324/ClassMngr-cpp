@@ -7619,3 +7619,13 @@ Domain entity IDs. Use an Application value type while allowing empty keys to
 reach F44, which owns the established structured validation and its error
 ordering. Preserve UTF-8 bytes and exact equality at the legacy adapters; do
 not trim or normalize the source level text.
+
+## 2026-10-20 - F1111 complete
+
+F1111 completed at source/test commit `4a9dfd44`, following acceptance commit
+`5515158a`. Focused Application, use-case, repository-adapter, and dialog
+verification passed. The UI parser only emits its supported ASCII level
+markers, so arbitrary Unicode cannot reach its private projection; the
+existing dialog flow covers supported levels, while UTF-8 exactness is tested
+at the resolver, use-case, and data adapter. No production seam was added for
+an unreachable UI input. No full suite ran.
