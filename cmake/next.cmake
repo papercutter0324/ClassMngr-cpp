@@ -67,6 +67,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/calendar_event_import_signature.h
     src/next/application/calendar_event_import_use_case.h
     src/next/application/calendar_event_import_campus_code_query_port.h
+    src/next/application/campus_code.h
     src/next/application/calendar_page_campus_directory_query_port.h
     src/next/application/campus_dashboard_campus_snapshot.h
     src/next/application/campus_dashboard_campus_save_port.h

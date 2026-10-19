@@ -70,8 +70,9 @@ public:
 
             if (!campus.campusCode.isEmpty())
             {
-                metadata.campusCode =
-                    campus.campusCode.toUtf8().toStdString();
+                metadata.campusCode.emplace(
+                    campus.campusCode.toUtf8().toStdString()
+                    );
             }
 
             campuses.push_back(std::move(metadata));

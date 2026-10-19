@@ -69,8 +69,7 @@ QStringList calendarImportCampusCodes(
         CalendarEventImportCampusCodeQueryPort& campusCodeQueryPort
     )
 {
-    using CampusCode =
-        ClassMngr::Next::Application::CalendarEventImportCampusCode;
+    using CampusCode = ClassMngr::Next::Application::CampusCode;
     QStringList codes;
     for (const CampusCode& campusCode :
          campusCodeQueryPort.loadCampusCodes())

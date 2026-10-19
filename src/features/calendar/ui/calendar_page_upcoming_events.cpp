@@ -979,7 +979,7 @@ CalendarPage::calendarEventDisplayOptions() const
             if (campus.campusCode)
             {
                 options.allCampusCodes.append(
-                    projectionText(*campus.campusCode)
+                    projectionText(campus.campusCode->value())
                     );
             }
             options.allCampusCodes.append(
@@ -1000,7 +1000,7 @@ CalendarPage::calendarEventDisplayOptions() const
                 if (campus.campusCode)
                 {
                     options.currentCampusCodes.append(
-                        projectionText(*campus.campusCode)
+                        projectionText(campus.campusCode->value())
                         );
                 }
                 options.currentCampusCodes.append(

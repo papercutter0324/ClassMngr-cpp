@@ -1,4 +1,5 @@
 #include "next/application/calendar_event_import_campus_code_query_port.h"
+#include "next/application/campus_code.h"
 #include "next/platform/calendar_event_import_campus_code_query_adapter.h"
 
 #include <QDir>
@@ -161,8 +162,7 @@ void NextPlatformCalendarEventImportCampusCodeQueryTests::codesPreserveRepositor
     const ClassMngr::Next::Platform::
         CalendarEventImportCampusCodeQueryAdapter adapter(directory.path());
 
-    using CampusCode =
-        ClassMngr::Next::Application::CalendarEventImportCampusCode;
+    using CampusCode = ClassMngr::Next::Application::CampusCode;
     const std::vector<CampusCode> codes = adapter.loadCampusCodes();
     QCOMPARE(codes.size(), std::size_t(5));
     QCOMPARE(
@@ -198,14 +198,19 @@ void NextPlatformCalendarEventImportCampusCodeQueryTests::emptyAndMissingDirecto
 
 void NextPlatformCalendarEventImportCampusCodeQueryTests::portReturnsOwningUtf8Values()
 {
+    using CampusCode = ClassMngr::Next::Application::CampusCode;
     using Port =
         ClassMngr::Next::Application::CalendarEventImportCampusCodeQueryPort;
     static_assert(
         std::is_same_v<
             decltype(std::declval<const Port&>().loadCampusCodes()),
-            std::vector<
-                ClassMngr::Next::Application::CalendarEventImportCampusCode
-                >
+            std::vector<CampusCode>
+        >
+    );
+    static_assert(
+        std::is_same_v<
+            decltype(std::declval<const CampusCode&>().value()),
+            const std::string&
             >
         );
 

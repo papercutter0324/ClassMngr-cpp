@@ -143,7 +143,7 @@ void CampusDashboardPage::loadCampuses()
         if (campusMetadata.campusCode.has_value())
         {
             campus.campusCode =
-                QString::fromStdString(*campusMetadata.campusCode);
+                QString::fromStdString(campusMetadata.campusCode->value());
         }
 
         m_campusCombo->addItem(

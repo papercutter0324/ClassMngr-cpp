@@ -1,4 +1,5 @@
 #include "next/application/calendar_page_campus_directory_query_port.h"
+#include "next/application/campus_code.h"
 #include "next/domain/domain_types.h"
 #include "next/platform/calendar_page_campus_directory_query_adapter.h"
 
@@ -98,6 +99,15 @@ campusesPreserveRepositoryOrderAndOwningUtf8Metadata()
         );
     writeFile(
         directory.path(),
+        QStringLiteral("gamma.json"),
+        campusRecord(
+            QStringLiteral("id-gamma"),
+            QStringLiteral("Gamma Campus"),
+            QString::fromUtf8("pre\0post", 8)
+            )
+        );
+    writeFile(
+        directory.path(),
         QStringLiteral("alpha.json"),
         campusRecord(
             QString::fromUtf8(
@@ -124,7 +134,7 @@ campusesPreserveRepositoryOrderAndOwningUtf8Metadata()
         CalendarPageCampusDirectoryQueryAdapter adapter(directory.path());
 
     const auto campuses = adapter.loadCampuses();
-    QCOMPARE(campuses.size(), std::size_t(4));
+    QCOMPARE(campuses.size(), std::size_t(5));
     const std::string utf8Id =
         QString::fromUtf8("id-\xEC\x84\x9C\xEC\x9A\xB8-01")
             .toUtf8().toStdString();
@@ -142,7 +152,7 @@ campusesPreserveRepositoryOrderAndOwningUtf8Metadata()
         );
     QVERIFY(campuses.at(0).campusCode.has_value());
     QCOMPARE(
-        *campuses.at(0).campusCode,
+        campuses.at(0).campusCode->value(),
         QString::fromUtf8("\xEC\x84\x9C\xEC\x9A\xB8-01")
             .toUtf8().toStdString()
         );
@@ -151,19 +161,27 @@ campusesPreserveRepositoryOrderAndOwningUtf8Metadata()
     QCOMPARE(campuses.at(1).id.value(), std::string("id-beta"));
     QCOMPARE(campuses.at(1).campusName, std::string("Beta Campus"));
     QVERIFY(campuses.at(1).campusCode.has_value());
-    QCOMPARE(*campuses.at(1).campusCode, std::string(" \t "));
+    QCOMPARE(campuses.at(1).campusCode->value(), std::string(" \t "));
 
-    QVERIFY(campuses.at(2).id == campusId("id-missing"));
-    QCOMPARE(campuses.at(2).id.value(), std::string("id-missing"));
-    QCOMPARE(campuses.at(2).campusName, std::string("Missing Code"));
-    QVERIFY(!campuses.at(2).campusCode.has_value());
+    QVERIFY(campuses.at(2).id == campusId("id-gamma"));
+    QCOMPARE(campuses.at(2).id.value(), std::string("id-gamma"));
+    QCOMPARE(campuses.at(2).campusName, std::string("Gamma Campus"));
+    QVERIFY(campuses.at(2).campusCode.has_value());
+    const std::string& embeddedCode = campuses.at(2).campusCode->value();
+    QCOMPARE(embeddedCode.size(), std::size_t(8));
+    QVERIFY(embeddedCode == std::string("pre\0post", 8));
 
-    QVERIFY(campuses.at(3).id == campusId("id-zulu"));
-    QCOMPARE(campuses.at(3).id.value(), std::string("id-zulu"));
-    QCOMPARE(campuses.at(3).campusName, std::string("Zulu Campus"));
-    QVERIFY(campuses.at(3).campusCode.has_value());
+    QVERIFY(campuses.at(3).id == campusId("id-missing"));
+    QCOMPARE(campuses.at(3).id.value(), std::string("id-missing"));
+    QCOMPARE(campuses.at(3).campusName, std::string("Missing Code"));
+    QVERIFY(!campuses.at(3).campusCode.has_value());
+
+    QVERIFY(campuses.at(4).id == campusId("id-zulu"));
+    QCOMPARE(campuses.at(4).id.value(), std::string("id-zulu"));
+    QCOMPARE(campuses.at(4).campusName, std::string("Zulu Campus"));
+    QVERIFY(campuses.at(4).campusCode.has_value());
     QCOMPARE(
-        *campuses.at(3).campusCode,
+        campuses.at(4).campusCode->value(),
         QString::fromUtf8("\xEC\xBD\x94\xEB\x93\x9C-Z")
             .toUtf8().toStdString()
         );
@@ -241,6 +259,7 @@ portExposesOnlyOwningUtf8Metadata()
 {
     using Metadata =
         ClassMngr::Next::Application::CalendarPageCampusMetadata;
+    using CampusCode = ClassMngr::Next::Application::CampusCode;
     using Port =
         ClassMngr::Next::Application::CalendarPageCampusDirectoryQueryPort;
     static_assert(
@@ -261,7 +280,13 @@ portExposesOnlyOwningUtf8Metadata()
     static_assert(
         std::is_same_v<
             decltype(Metadata::campusCode),
-            std::optional<std::string>
+            std::optional<CampusCode>
+        >
+    );
+    static_assert(
+        std::is_same_v<
+            decltype(std::declval<const CampusCode&>().value()),
+            const std::string&
             >
         );
 

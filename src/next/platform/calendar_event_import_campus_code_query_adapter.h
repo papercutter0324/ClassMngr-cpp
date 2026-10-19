@@ -47,10 +47,10 @@ public:
         CalendarEventImportCampusCodeQueryAdapter&&
         ) = delete;
 
-    [[nodiscard]] std::vector<Application::CalendarEventImportCampusCode>
+    [[nodiscard]] std::vector<Application::CampusCode>
     loadCampusCodes() const override
     {
-        using CampusCode = Application::CalendarEventImportCampusCode;
+        using CampusCode = Application::CampusCode;
         std::vector<CampusCode> codes;
 
         for (const CampusInfo& campus : m_repository.loadCampuses())

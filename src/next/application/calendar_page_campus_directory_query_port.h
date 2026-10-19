@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/campus_code.h"
 #include "next/domain/domain_types.h"
 
 #include <optional>
@@ -16,7 +17,7 @@ struct CalendarPageCampusMetadata final
 {
     Domain::CampusId id;
     std::string campusName;
-    std::optional<std::string> campusCode;
+    std::optional<CampusCode> campusCode;
 };
 
 class CalendarPageCampusDirectoryQueryPort
