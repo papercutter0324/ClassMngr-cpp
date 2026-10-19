@@ -1755,7 +1755,7 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
             );
     const auto initialSave = policyPort.save(
         ClassMngr::Next::Application::
-            ClassDayFilterResetPolicy::OnApplicationClose
+            ClassDayFilterResetPolicy::OnPageLeave
         );
     QVERIFY(initialSave);
 
@@ -1825,11 +1825,12 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     QString warningTitle;
     QString warningText;
     QString scriptFailure;
-    QString policyAfterFailure;
     QString policyAfterRetry;
     QString unrelatedAfterFailure;
+    bool followupReadFailed = false;
     int classQueriesAfterFailure = -1;
     int classQueriesAfterRetry = -1;
+    int auditsAfterSuccessfulSwitch = -1;
     int auditsAfterFailure = -1;
     int auditsAfterRetry = -1;
 
@@ -1891,13 +1892,31 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
 
             preferencesDialogObserved = true;
             tabs->setCurrentWidget(navigationTab);
-            if (!dayFilterOnClose->isChecked()
-                || dayFilterOnLeave->isChecked()
+            if (dayFilterOnClose->isChecked()
+                || !dayFilterOnLeave->isChecked()
                 || !classSelectionOnClose->isChecked()
                 || classSelectionOnLeave->isChecked())
             {
                 fail(QStringLiteral(
                     "Initial reset policy radios did not match persisted defaults."
+                    ));
+                return;
+            }
+
+            dayFilterOnClose->click();
+            const auto policyAfterSuccessfulSwitch = policyPort.load();
+            auditsAfterSuccessfulSwitch =
+                dayFilterResetPolicyAuditRowCount(session);
+            if (!dayFilterOnClose->isChecked()
+                || dayFilterOnLeave->isChecked()
+                || !policyAfterSuccessfulSwitch
+                || policyAfterSuccessfulSwitch.value()
+                    != ClassMngr::Next::Application::
+                        ClassDayFilterResetPolicy::OnApplicationClose
+                || auditsAfterSuccessfulSwitch != 1)
+            {
+                fail(QStringLiteral(
+                    "A successful day-filter policy switch was not persisted once."
                     ));
                 return;
             }
@@ -1928,6 +1947,15 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                     warningObserved = true;
                     warningTitle = warning->windowTitle();
                     warningText = warning->text();
+                    if (!executeSql(
+                            session,
+                            QStringLiteral("DROP TABLE app_settings")
+                            ))
+                    {
+                        scriptFailure = QStringLiteral(
+                            "Could not inject the day-filter policy read failure."
+                            );
+                    }
                     warning->accept();
                 }
                 );
@@ -1947,18 +1975,10 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                 && !classSelectionOnLeave->isChecked();
             classQueriesAfterFailure =
                 classesPage->runtimeMetrics().classQueryCount;
-            const auto persistedAfterFailure =
-                repository->loadSetting(QStringLiteral(
-                    "classes_navigation_day_filter_reset_policy"
-                    ));
-            policyAfterFailure = persistedAfterFailure
-                && persistedAfterFailure->isValid()
-                ? persistedAfterFailure->toString()
-                : QString();
-            const auto unrelated = repository->loadSetting(unrelatedKey);
-            unrelatedAfterFailure = unrelated && unrelated->isValid()
-                ? unrelated->toString()
-                : QString();
+            const auto postFailureLoad = policyPort.load();
+            followupReadFailed = !postFailureLoad
+                && postFailureLoad.error().code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical;
             auditsAfterFailure = dayFilterResetPolicyAuditRowCount(session);
             if (!warningObserved
                 || warningCount != 1
@@ -1969,12 +1989,11 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                 || !failedSelectionRestored
                 || !classSelectionUntouched
                 || classQueriesAfterFailure != initialClassQueryCount
-                || policyAfterFailure != QStringLiteral("on_application_close")
-                || unrelatedAfterFailure != QStringLiteral("preserved")
-                || auditsAfterFailure != 0)
+                || !followupReadFailed
+                || auditsAfterFailure != 1)
             {
                 fail(QStringLiteral(
-                    "Failed day-filter policy write did not restore and preserve state."
+                    "Failed day-filter policy save and read did not restore its last known selection."
                     ));
                 return;
             }
@@ -1982,12 +2001,55 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
             if (!executeSql(
                     session,
                     QStringLiteral(
-                        "DROP TRIGGER fail_day_filter_reset_policy_preference_write"
+                        "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT)"
                         )
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        INSERT INTO app_settings(key, value)
+                        VALUES('classes_navigation_day_filter_reset_policy', 'on_application_close')
+                        )")
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        INSERT INTO app_settings(key, value)
+                        VALUES('classes_navigation_unrelated_preference', 'preserved')
+                        )")
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        CREATE TRIGGER audit_day_filter_reset_policy_preference_update
+                        AFTER UPDATE ON app_settings
+                        WHEN NEW.key = 'classes_navigation_day_filter_reset_policy'
+                        BEGIN
+                            INSERT INTO f666_day_filter_reset_policy_save_audit(value)
+                            VALUES (NEW.value);
+                        END
+                        )")
                     ))
             {
                 fail(QStringLiteral(
-                    "Could not remove the day-filter policy failure trigger."
+                    "Could not restore day-filter settings after the injected read failure."
+                    ));
+                return;
+            }
+
+            const auto unrelated = repository->loadSetting(unrelatedKey);
+            unrelatedAfterFailure = unrelated && unrelated->isValid()
+                ? unrelated->toString()
+                : QString();
+
+            const auto policyAfterRestore = policyPort.load();
+            if (!policyAfterRestore
+                || policyAfterRestore.value()
+                    != ClassMngr::Next::Application::
+                        ClassDayFilterResetPolicy::OnApplicationClose)
+            {
+                fail(QStringLiteral(
+                    "Restored day-filter policy was not readable before retry."
                     ));
                 return;
             }
@@ -2010,7 +2072,7 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                 || classSelectionOnLeave->isChecked()
                 || classQueriesAfterRetry != initialClassQueryCount
                 || policyAfterRetry != QStringLiteral("on_page_leave")
-                || auditsAfterRetry != 1)
+                || auditsAfterRetry != 2)
             {
                 fail(QStringLiteral(
                     "Day-filter policy retry did not persist exactly once."
@@ -2035,12 +2097,13 @@ dayFilterResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     QVERIFY(failedSelectionRestored);
     QVERIFY(classSelectionUntouched);
     QCOMPARE(classQueriesAfterFailure, initialClassQueryCount);
-    QCOMPARE(policyAfterFailure, QStringLiteral("on_application_close"));
+    QVERIFY(followupReadFailed);
+    QCOMPARE(auditsAfterSuccessfulSwitch, 1);
     QCOMPARE(unrelatedAfterFailure, QStringLiteral("preserved"));
-    QCOMPARE(auditsAfterFailure, 0);
+    QCOMPARE(auditsAfterFailure, 1);
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount);
     QCOMPARE(policyAfterRetry, QStringLiteral("on_page_leave"));
-    QCOMPARE(auditsAfterRetry, 1);
+    QCOMPARE(auditsAfterRetry, 2);
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::
@@ -2073,7 +2136,7 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
             );
     const auto initialSave = policyPort.save(
         ClassMngr::Next::Application::
-            ClassSelectionResetPolicy::OnApplicationClose
+            ClassSelectionResetPolicy::OnPageLeave
         );
     QVERIFY(initialSave);
 
@@ -2143,11 +2206,12 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     QString warningTitle;
     QString warningText;
     QString scriptFailure;
-    QString policyAfterFailure;
     QString policyAfterRetry;
     QString unrelatedAfterFailure;
+    bool followupReadFailed = false;
     int classQueriesAfterFailure = -1;
     int classQueriesAfterRetry = -1;
+    int auditsAfterSuccessfulSwitch = -1;
     int auditsAfterFailure = -1;
     int auditsAfterRetry = -1;
 
@@ -2211,11 +2275,29 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
             tabs->setCurrentWidget(navigationTab);
             if (!dayFilterOnClose->isChecked()
                 || dayFilterOnLeave->isChecked()
-                || !classSelectionOnClose->isChecked()
-                || classSelectionOnLeave->isChecked())
+                || classSelectionOnClose->isChecked()
+                || !classSelectionOnLeave->isChecked())
             {
                 fail(QStringLiteral(
                     "Initial reset policy radios did not match persisted defaults."
+                    ));
+                return;
+            }
+
+            classSelectionOnClose->click();
+            const auto policyAfterSuccessfulSwitch = policyPort.load();
+            auditsAfterSuccessfulSwitch =
+                classSelectionResetPolicyAuditRowCount(session);
+            if (!classSelectionOnClose->isChecked()
+                || classSelectionOnLeave->isChecked()
+                || !policyAfterSuccessfulSwitch
+                || policyAfterSuccessfulSwitch.value()
+                    != ClassMngr::Next::Application::
+                        ClassSelectionResetPolicy::OnApplicationClose
+                || auditsAfterSuccessfulSwitch != 1)
+            {
+                fail(QStringLiteral(
+                    "A successful class-selection policy switch was not persisted once."
                     ));
                 return;
             }
@@ -2246,6 +2328,15 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                     warningObserved = true;
                     warningTitle = warning->windowTitle();
                     warningText = warning->text();
+                    if (!executeSql(
+                            session,
+                            QStringLiteral("DROP TABLE app_settings")
+                            ))
+                    {
+                        scriptFailure = QStringLiteral(
+                            "Could not inject the class-selection policy read failure."
+                            );
+                    }
                     warning->accept();
                 }
                 );
@@ -2265,18 +2356,10 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                 && !dayFilterOnLeave->isChecked();
             classQueriesAfterFailure =
                 classesPage->runtimeMetrics().classQueryCount;
-            const auto persistedAfterFailure =
-                repository->loadSetting(QStringLiteral(
-                    "classes_navigation_class_selection_reset_policy"
-                    ));
-            policyAfterFailure = persistedAfterFailure
-                && persistedAfterFailure->isValid()
-                ? persistedAfterFailure->toString()
-                : QString();
-            const auto unrelated = repository->loadSetting(unrelatedKey);
-            unrelatedAfterFailure = unrelated && unrelated->isValid()
-                ? unrelated->toString()
-                : QString();
+            const auto postFailureLoad = policyPort.load();
+            followupReadFailed = !postFailureLoad
+                && postFailureLoad.error().code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical;
             auditsAfterFailure = classSelectionResetPolicyAuditRowCount(session);
             if (!warningObserved
                 || warningCount != 1
@@ -2287,12 +2370,11 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                 || !failedSelectionRestored
                 || !dayFiltersUntouched
                 || classQueriesAfterFailure != initialClassQueryCount
-                || policyAfterFailure != QStringLiteral("on_application_close")
-                || unrelatedAfterFailure != QStringLiteral("preserved")
-                || auditsAfterFailure != 0)
+                || !followupReadFailed
+                || auditsAfterFailure != 1)
             {
                 fail(QStringLiteral(
-                    "Failed class-selection policy write did not restore and preserve state."
+                    "Failed class-selection policy save and read did not restore its last known selection."
                     ));
                 return;
             }
@@ -2300,12 +2382,55 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
             if (!executeSql(
                     session,
                     QStringLiteral(
-                        "DROP TRIGGER fail_class_selection_reset_policy_preference_write"
+                        "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT)"
                         )
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        INSERT INTO app_settings(key, value)
+                        VALUES('classes_navigation_class_selection_reset_policy', 'on_application_close')
+                        )")
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        INSERT INTO app_settings(key, value)
+                        VALUES('classes_navigation_unrelated_preference', 'preserved')
+                        )")
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        CREATE TRIGGER audit_class_selection_reset_policy_preference_update
+                        AFTER UPDATE ON app_settings
+                        WHEN NEW.key = 'classes_navigation_class_selection_reset_policy'
+                        BEGIN
+                            INSERT INTO f667_class_selection_reset_policy_save_audit(value)
+                            VALUES (NEW.value);
+                        END
+                        )")
                     ))
             {
                 fail(QStringLiteral(
-                    "Could not remove the class-selection policy failure trigger."
+                    "Could not restore class-selection settings after the injected read failure."
+                    ));
+                return;
+            }
+
+            const auto unrelated = repository->loadSetting(unrelatedKey);
+            unrelatedAfterFailure = unrelated && unrelated->isValid()
+                ? unrelated->toString()
+                : QString();
+
+            const auto policyAfterRestore = policyPort.load();
+            if (!policyAfterRestore
+                || policyAfterRestore.value()
+                    != ClassMngr::Next::Application::
+                        ClassSelectionResetPolicy::OnApplicationClose)
+            {
+                fail(QStringLiteral(
+                    "Restored class-selection policy was not readable before retry."
                     ));
                 return;
             }
@@ -2328,7 +2453,7 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
                 || dayFilterOnLeave->isChecked()
                 || classQueriesAfterRetry != initialClassQueryCount
                 || policyAfterRetry != QStringLiteral("on_page_leave")
-                || auditsAfterRetry != 1)
+                || auditsAfterRetry != 2)
             {
                 fail(QStringLiteral(
                     "Class-selection policy retry did not persist exactly once."
@@ -2353,12 +2478,13 @@ classSelectionResetPolicyFailureRestoresSelectionAndRetryPersistsOnce()
     QVERIFY(failedSelectionRestored);
     QVERIFY(dayFiltersUntouched);
     QCOMPARE(classQueriesAfterFailure, initialClassQueryCount);
-    QCOMPARE(policyAfterFailure, QStringLiteral("on_application_close"));
+    QVERIFY(followupReadFailed);
+    QCOMPARE(auditsAfterSuccessfulSwitch, 1);
     QCOMPARE(unrelatedAfterFailure, QStringLiteral("preserved"));
-    QCOMPARE(auditsAfterFailure, 0);
+    QCOMPARE(auditsAfterFailure, 1);
     QCOMPARE(classQueriesAfterRetry, initialClassQueryCount);
     QCOMPARE(policyAfterRetry, QStringLiteral("on_page_leave"));
-    QCOMPARE(auditsAfterRetry, 1);
+    QCOMPARE(auditsAfterRetry, 2);
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::

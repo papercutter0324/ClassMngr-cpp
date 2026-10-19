@@ -5,6 +5,7 @@
 #include "data/repositories/settings_repository.h"
 #include "next/application/class_selection_reset_policy.h"
 
+#include <QByteArray>
 #include <QString>
 #include <QVariant>
 
@@ -41,22 +42,38 @@ public:
         ApplicationServicesClassSelectionResetPolicyPort&&
         ) = delete;
 
-    [[nodiscard]] Application::ClassSelectionResetPolicy load()
+    [[nodiscard]] Application::ClassSelectionResetPolicyLoadResult load()
         const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return Application::ClassSelectionResetPolicy::OnApplicationClose;
+            return Application::ClassSelectionResetPolicyLoadResult::success(
+                Application::ClassSelectionResetPolicy::OnApplicationClose
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return Application::ClassSelectionResetPolicy::OnApplicationClose;
+            return Application::ClassSelectionResetPolicyLoadResult::success(
+                Application::ClassSelectionResetPolicy::OnApplicationClose
+                );
         }
 
         const auto storedPolicy = repository->loadSetting(key());
-        if (!storedPolicy || !storedPolicy->isValid())
+        if (!storedPolicy)
+        {
+            const QByteArray errorBytes = storedPolicy.error().toUtf8();
+            return Application::ClassSelectionResetPolicyLoadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = errorBytes.isEmpty()
+                    ? "Class selection reset policy could not be loaded."
+                    : errorBytes.toStdString(),
+                .recoverable = true
+            });
+        }
+
+        if (!storedPolicy->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
@@ -68,13 +85,17 @@ public:
                         )
                     )
                 );
-            return Application::ClassSelectionResetPolicy::OnApplicationClose;
+            return Application::ClassSelectionResetPolicyLoadResult::success(
+                Application::ClassSelectionResetPolicy::OnApplicationClose
+                );
         }
 
-        return storedPolicy->toString().trimmed().toLower()
-            == QStringLiteral("on_page_leave")
-            ? Application::ClassSelectionResetPolicy::OnPageLeave
-            : Application::ClassSelectionResetPolicy::OnApplicationClose;
+        return Application::ClassSelectionResetPolicyLoadResult::success(
+            storedPolicy->toString().trimmed().toLower()
+                    == QStringLiteral("on_page_leave")
+                ? Application::ClassSelectionResetPolicy::OnPageLeave
+                : Application::ClassSelectionResetPolicy::OnApplicationClose
+            );
     }
 
     [[nodiscard]] Application::ClassSelectionResetPolicySaveResult save(

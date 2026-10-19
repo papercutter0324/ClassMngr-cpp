@@ -358,6 +358,7 @@ private slots:
     void weekendFilterUsesRegularAndIntensiveScheduleRows_data();
     void weekendFilterUsesRegularAndIntensiveScheduleRows();
     void dayFiltersResetOnPageLeaveAfterHideAndShow();
+    void resetPolicyReadFailuresPreserveStoredPreferencesAndPageState();
     void navigationReleaseCachesSnapshotAndEditorsAcrossReentry();
     void diagnosticMetricsTrackDeferredScheduleRowsAndNavigationRoots();
     void classSelectionResetOnPageLeaveClearsOnlyClassStateAfterHideAndShow();
@@ -999,8 +1000,10 @@ void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
             ClassDayFilterResetPolicy::OnPageLeave
         );
     QVERIFY(policySaved);
+    const auto loadedPolicy = policyPort.load();
+    QVERIFY(loadedPolicy);
     QCOMPARE(
-        policyPort.load(),
+        loadedPolicy.value(),
         ClassMngr::Next::Application::
             ClassDayFilterResetPolicy::OnPageLeave
         );
@@ -1037,6 +1040,128 @@ void ClassesPageTests::dayFiltersResetOnPageLeaveAfterHideAndShow()
     QVERIFY(tuesday);
     QVERIFY(!tuesday->isChecked());
     QCOMPARE(page.currentClassId(), 42);
+}
+
+void ClassesPageTests::
+resetPolicyReadFailuresPreserveStoredPreferencesAndPageState()
+{
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassDayFilterResetPolicyPort dayFilterPolicy(
+            services
+            );
+    QVERIFY(dayFilterPolicy.save(
+        ClassMngr::Next::Application::ClassDayFilterResetPolicy::OnPageLeave
+        ));
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassSelectionResetPolicyPort classSelectionPolicy(
+            services
+            );
+    QVERIFY(classSelectionPolicy.save(
+        ClassMngr::Next::Application::ClassSelectionResetPolicy::OnPageLeave
+        ));
+
+    const QString dayFilterKey = QStringLiteral(
+        "classes_navigation_day_filter_reset_policy"
+        );
+    const QString classSelectionKey = QStringLiteral(
+        "classes_navigation_class_selection_reset_policy"
+        );
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        classSelectionKey,
+        QStringLiteral("forced class-selection reset policy read failure")
+        );
+    const auto selectionReadFailure = classSelectionPolicy.load();
+    QVERIFY(!selectionReadFailure);
+    QCOMPARE(
+        selectionReadFailure.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(selectionReadFailure.error().recoverable);
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(classSelectionKey),
+        QStringLiteral("on_page_leave")
+        );
+    ScheduleWidgetTestStubs::setSettingsLoadFailure({}, {});
+
+    ClassesPage page(&services);
+    page.resize(1200, 800);
+    QVERIFY(page.openClass(42));
+    page.show();
+    QApplication::processEvents();
+
+    auto* tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    tuesday->click();
+    QApplication::processEvents();
+    QVERIFY(tuesday->isChecked());
+    QCOMPARE(page.currentClassId(), 42);
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        dayFilterKey,
+        QStringLiteral("forced day-filter reset policy read failure")
+        );
+    page.hide();
+    QApplication::processEvents();
+    ScheduleWidgetTestStubs::setSettingsLoadFailure({}, {});
+
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(dayFilterKey),
+        QStringLiteral("on_page_leave")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(classSelectionKey),
+        QStringLiteral("on_page_leave")
+        );
+    QCOMPARE(page.currentClassId(), -1);
+    tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(tuesday->isChecked());
+
+    page.show();
+    QApplication::processEvents();
+    QVERIFY(page.openClass(42));
+    QApplication::processEvents();
+    tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(tuesday->isChecked());
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        classSelectionKey,
+        QStringLiteral("forced class-selection reset policy read failure")
+        );
+    page.hide();
+    QApplication::processEvents();
+    ScheduleWidgetTestStubs::setSettingsLoadFailure({}, {});
+
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(dayFilterKey),
+        QStringLiteral("on_page_leave")
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::settingValue(classSelectionKey),
+        QStringLiteral("on_page_leave")
+        );
+    page.show();
+    QApplication::processEvents();
+    QVERIFY(page.openClass(42));
+    QApplication::processEvents();
+    QCOMPARE(page.currentClassId(), 42);
+    tuesday = dayFilterButton(
+        &page,
+        QStringLiteral("classesTuesdayFilterButton")
+        );
+    QVERIFY(tuesday);
+    QVERIFY(!tuesday->isChecked());
 }
 
 void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()

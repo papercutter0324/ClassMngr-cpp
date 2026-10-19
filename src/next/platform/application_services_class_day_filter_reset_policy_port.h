@@ -5,6 +5,7 @@
 #include "data/repositories/settings_repository.h"
 #include "next/application/class_day_filter_reset_policy.h"
 
+#include <QByteArray>
 #include <QString>
 #include <QVariant>
 
@@ -41,22 +42,38 @@ public:
         ApplicationServicesClassDayFilterResetPolicyPort&&
         ) = delete;
 
-    [[nodiscard]] Application::ClassDayFilterResetPolicy load()
+    [[nodiscard]] Application::ClassDayFilterResetPolicyLoadResult load()
         const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return Application::ClassDayFilterResetPolicy::OnApplicationClose;
+            return Application::ClassDayFilterResetPolicyLoadResult::success(
+                Application::ClassDayFilterResetPolicy::OnApplicationClose
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return Application::ClassDayFilterResetPolicy::OnApplicationClose;
+            return Application::ClassDayFilterResetPolicyLoadResult::success(
+                Application::ClassDayFilterResetPolicy::OnApplicationClose
+                );
         }
 
         const auto storedPolicy = repository->loadSetting(key());
-        if (!storedPolicy || !storedPolicy->isValid())
+        if (!storedPolicy)
+        {
+            const QByteArray errorBytes = storedPolicy.error().toUtf8();
+            return Application::ClassDayFilterResetPolicyLoadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = errorBytes.isEmpty()
+                    ? "Class day-filter reset policy could not be loaded."
+                    : errorBytes.toStdString(),
+                .recoverable = true
+            });
+        }
+
+        if (!storedPolicy->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
@@ -68,13 +85,17 @@ public:
                         )
                     )
                 );
-            return Application::ClassDayFilterResetPolicy::OnApplicationClose;
+            return Application::ClassDayFilterResetPolicyLoadResult::success(
+                Application::ClassDayFilterResetPolicy::OnApplicationClose
+                );
         }
 
-        return storedPolicy->toString().trimmed().toLower()
-            == QStringLiteral("on_page_leave")
-            ? Application::ClassDayFilterResetPolicy::OnPageLeave
-            : Application::ClassDayFilterResetPolicy::OnApplicationClose;
+        return Application::ClassDayFilterResetPolicyLoadResult::success(
+            storedPolicy->toString().trimmed().toLower()
+                    == QStringLiteral("on_page_leave")
+                ? Application::ClassDayFilterResetPolicy::OnPageLeave
+                : Application::ClassDayFilterResetPolicy::OnApplicationClose
+            );
     }
 
     [[nodiscard]] Application::ClassDayFilterResetPolicySaveResult save(

@@ -94,7 +94,7 @@ private slots:
     void invalidEnumIsRejectedWithoutChangingStoredValue();
     void closedSessionReturnsTechnicalFailureAndPreservesSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
-    void repositoryReadFailureDefaultsAndRemainsSilent();
+    void repositoryReadFailureReturnsTechnicalErrorWithoutMaterializingDefault();
 
 private:
     QTemporaryDir m_directory;
@@ -115,10 +115,9 @@ missingSettingDefaultsToApplicationCloseAndPersists()
     QVERIFY(repository);
 
     ApplicationServicesClassSelectionResetPolicyPort port(services);
-    QCOMPARE(
-        port.load(),
-        ClassSelectionResetPolicy::OnApplicationClose
-        );
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassSelectionResetPolicy::OnApplicationClose);
 
     const auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
@@ -143,10 +142,9 @@ validUnknownValuesDefaultWithoutRewrite()
     for (const QVariant& value : unknownValues)
     {
         QVERIFY(repository->saveSetting(policyKey(), value));
-        QCOMPARE(
-            port.load(),
-            ClassSelectionResetPolicy::OnApplicationClose
-            );
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), ClassSelectionResetPolicy::OnApplicationClose);
 
         const auto stored = repository->loadSetting(policyKey());
         QVERIFY(stored);
@@ -164,20 +162,18 @@ unavailableSettingsReturnTechnicalFailure()
     QVERIFY(!services.databaseSession()->isOpen());
     QVERIFY(!services.databaseSession()->settingsRepository());
 
-    QCOMPARE(
-        port.load(),
-        ClassSelectionResetPolicy::OnApplicationClose
-        );
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassSelectionResetPolicy::OnApplicationClose);
     const auto saved = port.save(ClassSelectionResetPolicy::OnPageLeave);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!saved.error().recoverable);
     QVERIFY(saved.error().message.find("no database session is open")
         != std::string::npos);
-    QCOMPARE(
-        port.load(),
-        ClassSelectionResetPolicy::OnApplicationClose
-        );
+    const auto reloaded = port.load();
+    QVERIFY(reloaded);
+    QCOMPARE(reloaded.value(), ClassSelectionResetPolicy::OnApplicationClose);
 }
 
 void NextPlatformApplicationServicesClassSelectionResetPolicyPortTests::
@@ -195,7 +191,9 @@ loadsPageLeaveValue()
         );
 
     ApplicationServicesClassSelectionResetPolicyPort port(services);
-    QCOMPARE(port.load(), ClassSelectionResetPolicy::OnPageLeave);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassSelectionResetPolicy::OnPageLeave);
 }
 
 void NextPlatformApplicationServicesClassSelectionResetPolicyPortTests::
@@ -220,7 +218,9 @@ roundTripsBothValuesUsingTheExactLegacyKey()
     {
         const auto saved = port.save(expected);
         QVERIFY(saved);
-        QCOMPARE(port.load(), expected);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), expected);
 
         const auto stored = repository->loadSetting(policyKey());
         QVERIFY(stored);
@@ -294,7 +294,9 @@ closedSessionReturnsTechnicalFailureAndPreservesSettings()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QCOMPARE(port.load(), ClassSelectionResetPolicy::OnApplicationClose);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassSelectionResetPolicy::OnApplicationClose);
     const auto saved = port.save(
         ClassSelectionResetPolicy::OnApplicationClose
         );
@@ -366,7 +368,7 @@ failedSaveReturnsTechnicalDiagnosticAndPreservesSettings()
 }
 
 void NextPlatformApplicationServicesClassSelectionResetPolicyPortTests::
-repositoryReadFailureDefaultsAndRemainsSilent()
+repositoryReadFailureReturnsTechnicalErrorWithoutMaterializingDefault()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -375,7 +377,11 @@ repositoryReadFailureDefaultsAndRemainsSilent()
 
     ApplicationServicesClassSelectionResetPolicyPort port(services);
     QTest::failOnWarning();
-    QCOMPARE(port.load(), ClassSelectionResetPolicy::OnApplicationClose);
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(loaded.error().recoverable);
+    QVERIFY(!loaded.error().message.empty());
 }
 
 QTEST_MAIN(

@@ -14,6 +14,8 @@ enum class ClassDayFilterResetPolicy
     OnPageLeave
 };
 
+using ClassDayFilterResetPolicyLoadResult =
+    Domain::Result<ClassDayFilterResetPolicy>;
 using ClassDayFilterResetPolicySaveResult = Domain::Result<void>;
 using ClassDayFilterResetPolicySaveError = Domain::OperationError;
 
@@ -22,7 +24,8 @@ class ClassDayFilterResetPolicyPort
 public:
     virtual ~ClassDayFilterResetPolicyPort() = default;
 
-    [[nodiscard]] virtual ClassDayFilterResetPolicy load() const = 0;
+    [[nodiscard]] virtual ClassDayFilterResetPolicyLoadResult load()
+        const = 0;
 
     [[nodiscard]] virtual ClassDayFilterResetPolicySaveResult save(
         ClassDayFilterResetPolicy policy

@@ -94,7 +94,7 @@ private slots:
     void roundTripsBothValuesUsingTheExactLegacyKey();
     void closedSessionReturnsTechnicalFailureAndPreservesSettings();
     void failedSaveReturnsTechnicalDiagnosticAndPreservesSettings();
-    void repositoryReadFailureDefaultsAndRemainsSilent();
+    void repositoryReadFailureReturnsTechnicalErrorWithoutMaterializingDefault();
 
 private:
     QTemporaryDir m_directory;
@@ -115,10 +115,9 @@ missingSettingDefaultsToApplicationCloseAndPersists()
     QVERIFY(repository);
 
     ApplicationServicesClassDayFilterResetPolicyPort port(services);
-    QCOMPARE(
-        port.load(),
-        ClassDayFilterResetPolicy::OnApplicationClose
-        );
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassDayFilterResetPolicy::OnApplicationClose);
 
     const auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
@@ -143,10 +142,9 @@ validUnsupportedValuesDefaultWithoutRewrite()
     for (const QVariant& value : unsupportedValues)
     {
         QVERIFY(repository->saveSetting(policyKey(), value));
-        QCOMPARE(
-            port.load(),
-            ClassDayFilterResetPolicy::OnApplicationClose
-            );
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), ClassDayFilterResetPolicy::OnApplicationClose);
 
         const auto stored = repository->loadSetting(policyKey());
         QVERIFY(stored);
@@ -164,20 +162,18 @@ unavailableSettingsReturnTechnicalFailure()
     QVERIFY(!services.databaseSession()->isOpen());
     QVERIFY(!services.databaseSession()->settingsRepository());
 
-    QCOMPARE(
-        port.load(),
-        ClassDayFilterResetPolicy::OnApplicationClose
-        );
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassDayFilterResetPolicy::OnApplicationClose);
     const auto saved = port.save(ClassDayFilterResetPolicy::OnPageLeave);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!saved.error().recoverable);
     QVERIFY(saved.error().message.find("no database session is open")
         != std::string::npos);
-    QCOMPARE(
-        port.load(),
-        ClassDayFilterResetPolicy::OnApplicationClose
-        );
+    const auto reloaded = port.load();
+    QVERIFY(reloaded);
+    QCOMPARE(reloaded.value(), ClassDayFilterResetPolicy::OnApplicationClose);
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
@@ -195,7 +191,9 @@ loadsPageLeaveValue()
         );
 
     ApplicationServicesClassDayFilterResetPolicyPort port(services);
-    QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnPageLeave);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassDayFilterResetPolicy::OnPageLeave);
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
@@ -236,7 +234,9 @@ invalidEnumFailsAndPreservesStoredPageLeave()
     const auto stored = repository->loadSetting(policyKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("on_page_leave"));
-    QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnPageLeave);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassDayFilterResetPolicy::OnPageLeave);
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
@@ -261,7 +261,9 @@ roundTripsBothValuesUsingTheExactLegacyKey()
     {
         const auto saved = port.save(expected);
         QVERIFY(saved);
-        QCOMPARE(port.load(), expected);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), expected);
 
         const auto stored = repository->loadSetting(policyKey());
         QVERIFY(stored);
@@ -307,7 +309,9 @@ closedSessionReturnsTechnicalFailureAndPreservesSettings()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnApplicationClose);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassDayFilterResetPolicy::OnApplicationClose);
     const auto saved = port.save(
         ClassDayFilterResetPolicy::OnApplicationClose
         );
@@ -379,7 +383,7 @@ failedSaveReturnsTechnicalDiagnosticAndPreservesSettings()
 }
 
 void NextPlatformApplicationServicesClassDayFilterResetPolicyPortTests::
-repositoryReadFailureDefaultsAndRemainsSilent()
+repositoryReadFailureReturnsTechnicalErrorWithoutMaterializingDefault()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -388,7 +392,11 @@ repositoryReadFailureDefaultsAndRemainsSilent()
 
     ApplicationServicesClassDayFilterResetPolicyPort port(services);
     QTest::failOnWarning();
-    QCOMPARE(port.load(), ClassDayFilterResetPolicy::OnApplicationClose);
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(loaded.error().recoverable);
+    QVERIFY(!loaded.error().message.empty());
 }
 
 QTEST_MAIN(

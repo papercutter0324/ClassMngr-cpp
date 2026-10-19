@@ -40,6 +40,7 @@
 #include <QVBoxLayout>
 
 #include <initializer_list>
+#include <memory>
 #include <string>
 
 namespace
@@ -668,28 +669,33 @@ void addNavigationPreferencesTab(
     navigationLayout->addWidget(evaluationDefaultGroup);
 
     const auto resetOnPageLeave =
-        [window](bool dayFilters)
+        [window](const bool dayFilters)
         {
-            if (dayFilters)
+            if (!window || !window->services())
             {
-                return window && window->services()
-                    ? ClassMngr::Next::Platform::
-                        ApplicationServicesClassDayFilterResetPolicyPort(
-                            *window->services()
-                            ).load()
-                        == ClassMngr::Next::Application::
-                            ClassDayFilterResetPolicy::OnPageLeave
-                    : false;
+                return false;
             }
 
-            return window && window->services()
-                ? ClassMngr::Next::Platform::
-                    ApplicationServicesClassSelectionResetPolicyPort(
+            if (dayFilters)
+            {
+                const auto loaded = ClassMngr::Next::Platform::
+                    ApplicationServicesClassDayFilterResetPolicyPort(
                         *window->services()
-                        ).load()
+                        ).load();
+                return loaded
+                    && loaded.value()
+                        == ClassMngr::Next::Application::
+                            ClassDayFilterResetPolicy::OnPageLeave;
+            }
+
+            const auto loaded = ClassMngr::Next::Platform::
+                ApplicationServicesClassSelectionResetPolicyPort(
+                    *window->services()
+                    ).load();
+            return loaded
+                && loaded.value()
                     == ClassMngr::Next::Application::
-                        ClassSelectionResetPolicy::OnPageLeave
-                : false;
+                        ClassSelectionResetPolicy::OnPageLeave;
         };
     const auto addResetPolicyControls =
         [navigationGroup, navigationLayout, window, resetOnPageLeave](
@@ -704,6 +710,8 @@ void addNavigationPreferencesTab(
             groupLayout->setSpacing(12);
 
             const bool resetOnLeave = resetOnPageLeave(dayFilters);
+            auto lastSavedResetOnLeave =
+                std::make_shared<bool>(resetOnLeave);
             auto* onClose = new QRadioButton(
                 preferencesText("Reset when the application closes"),
                 group
@@ -724,12 +732,26 @@ void addNavigationPreferencesTab(
                 );
             groupLayout->addWidget(onLeave);
 
-            const auto savePolicy = [window, onClose, onLeave, dayFilters](bool checked)
+            const auto savePolicy = [
+                window,
+                onClose,
+                onLeave,
+                dayFilters,
+                lastSavedResetOnLeave
+                ](bool checked)
             {
                 if (!checked)
                 {
                     return;
                 }
+
+                const auto restoreSelection = [&](const bool resetOnLeave)
+                {
+                    const QSignalBlocker onCloseSignals(onClose);
+                    const QSignalBlocker onLeaveSignals(onLeave);
+                    onClose->setChecked(!resetOnLeave);
+                    onLeave->setChecked(resetOnLeave);
+                };
 
                 if (dayFilters)
                 {
@@ -755,20 +777,20 @@ void addNavigationPreferencesTab(
                                 );
 
                             const auto persistedPolicy = port.load();
-                            const QSignalBlocker onCloseSignals(onClose);
-                            const QSignalBlocker onLeaveSignals(onLeave);
-                            onClose->setChecked(
-                                persistedPolicy
-                                    == ClassMngr::Next::Application::
-                                        ClassDayFilterResetPolicy::OnApplicationClose
-                                );
-                            onLeave->setChecked(
-                                persistedPolicy
-                                    == ClassMngr::Next::Application::
-                                        ClassDayFilterResetPolicy::OnPageLeave
-                                );
+                            const bool resetOnLeave = persistedPolicy
+                                ? persistedPolicy.value()
+                                        == ClassMngr::Next::Application::
+                                            ClassDayFilterResetPolicy::OnPageLeave
+                                : *lastSavedResetOnLeave;
+                            if (persistedPolicy)
+                            {
+                                *lastSavedResetOnLeave = resetOnLeave;
+                            }
+                            restoreSelection(resetOnLeave);
                             return;
                         }
+
+                        *lastSavedResetOnLeave = !onClose->isChecked();
                     }
                 }
                 else
@@ -795,20 +817,20 @@ void addNavigationPreferencesTab(
                                 );
 
                             const auto persistedPolicy = port.load();
-                            const QSignalBlocker onCloseSignals(onClose);
-                            const QSignalBlocker onLeaveSignals(onLeave);
-                            onClose->setChecked(
-                                persistedPolicy
-                                    == ClassMngr::Next::Application::
-                                        ClassSelectionResetPolicy::OnApplicationClose
-                                );
-                            onLeave->setChecked(
-                                persistedPolicy
-                                    == ClassMngr::Next::Application::
-                                        ClassSelectionResetPolicy::OnPageLeave
-                                );
+                            const bool resetOnLeave = persistedPolicy
+                                ? persistedPolicy.value()
+                                        == ClassMngr::Next::Application::
+                                            ClassSelectionResetPolicy::OnPageLeave
+                                : *lastSavedResetOnLeave;
+                            if (persistedPolicy)
+                            {
+                                *lastSavedResetOnLeave = resetOnLeave;
+                            }
+                            restoreSelection(resetOnLeave);
                             return;
                         }
+
+                        *lastSavedResetOnLeave = !onClose->isChecked();
                     }
                 }
             };

@@ -14,6 +14,8 @@ enum class ClassSelectionResetPolicy
     OnPageLeave
 };
 
+using ClassSelectionResetPolicyLoadResult =
+    Domain::Result<ClassSelectionResetPolicy>;
 using ClassSelectionResetPolicySaveResult = Domain::Result<void>;
 using ClassSelectionResetPolicySaveError = Domain::OperationError;
 
@@ -22,7 +24,8 @@ class ClassSelectionResetPolicyPort
 public:
     virtual ~ClassSelectionResetPolicyPort() = default;
 
-    [[nodiscard]] virtual ClassSelectionResetPolicy load() const = 0;
+    [[nodiscard]] virtual ClassSelectionResetPolicyLoadResult load()
+        const = 0;
 
     [[nodiscard]] virtual ClassSelectionResetPolicySaveResult save(
         ClassSelectionResetPolicy policy

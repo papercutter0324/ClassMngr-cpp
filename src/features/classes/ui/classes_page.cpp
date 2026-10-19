@@ -1115,26 +1115,29 @@ void ClassesPage::hideEvent(QHideEvent* event)
 {
     BasePage::hideEvent(event);
 
-    if (
-        m_services
-        && ClassMngr::Next::Platform::
-            ApplicationServicesClassDayFilterResetPolicyPort(*m_services).load()
-            == ClassMngr::Next::Application::
-                ClassDayFilterResetPolicy::OnPageLeave
-        )
+    if (m_services)
     {
-        discardDayFilterState();
-    }
+        const auto dayFilterPolicy = ClassMngr::Next::Platform::
+            ApplicationServicesClassDayFilterResetPolicyPort(*m_services)
+                .load();
+        if (dayFilterPolicy
+            && dayFilterPolicy.value()
+                == ClassMngr::Next::Application::
+                    ClassDayFilterResetPolicy::OnPageLeave)
+        {
+            discardDayFilterState();
+        }
 
-    if (
-        m_services
-        && ClassMngr::Next::Platform::
-            ApplicationServicesClassSelectionResetPolicyPort(*m_services).load()
-            == ClassMngr::Next::Application::
-                ClassSelectionResetPolicy::OnPageLeave
-        )
-    {
-        discardClassSelectionState();
+        const auto classSelectionPolicy = ClassMngr::Next::Platform::
+            ApplicationServicesClassSelectionResetPolicyPort(*m_services)
+                .load();
+        if (classSelectionPolicy
+            && classSelectionPolicy.value()
+                == ClassMngr::Next::Application::
+                    ClassSelectionResetPolicy::OnPageLeave)
+        {
+            discardClassSelectionState();
+        }
     }
 }
 
