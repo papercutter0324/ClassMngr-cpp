@@ -5814,3 +5814,16 @@ JSON/legacy mappings. `git diff --check` passed. The full suite and Windows
 verification were not run. Batch485 has seven complete slices and three
 discovered; F1135 is next for acceptance. The batch remains unpushed. F629 and
 both phase gates remain open.
+
+## Phase 2 update - F1135 accepted; Batch485 active - 2026-10-20
+
+F1135 is accepted for `ClassAnalyticsAverageThousandths`, an Application value
+backed by integer thousandths, with a zero default, an explicit
+thousandths construction, accessors, equality, and no validation or clamping
+in the value type. Use it for rounded criterion, student, class, and year-to-
+date average outputs. Preserve the existing raw calculations and weighting,
+positive half-up rounding, the 400-thousandths grade threshold, rank tie-breaks,
+criterion extrema ties/order, locale formatting, and grade/chart clamps. The
+focused query, ranking, extrema, and UI analytics tests are expected;
+implementation and verification are pending. F1136 is next for acceptance.
+Batch485 remains unpushed; F629 and both phase gates remain open.

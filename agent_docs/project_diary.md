@@ -8050,3 +8050,14 @@ their CTests passed 3/3, and `git diff --check` passed. The full suite and
 Windows were not run. Batch485 now has seven complete slices and three
 discovered, with F1135 next. The batch remains unpushed; F629 and both phase
 gates remain open.
+
+## 2026-10-20 - F1135 accepted
+
+Class Analytics rounded averages have fixed thousandth precision; encode that
+scale in an Application value instead of carrying rounded averages as doubles.
+Keep raw score parsing and weighted accumulation unchanged, and preserve the
+positive half-up conversion into thousandths. Grade advancement uses the
+already rounded value at 400 thousandths; ranking compares those same values
+before the existing locale-aware name tie-break. UI formatting continues to
+use the active locale, while grade and chart bounds remain at their current
+owners.

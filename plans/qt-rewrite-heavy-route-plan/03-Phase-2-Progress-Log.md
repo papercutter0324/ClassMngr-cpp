@@ -49805,3 +49805,34 @@ Platform export-source, and legacy apply-package adapter CTests passed 3/3.
 run. Batch485 has seven complete slices and three discovered; F1135 is next for
 acceptance. The batch remains unpushed; F629 and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1135 Class Analytics rounded averages accepted before implementation - 2026-10-20
+
+F1135 is accepted/in progress; implementation and tests have not started. Add
+Application `ClassAnalyticsAverageThousandths`, backed by integer thousandths,
+with default `0`, an explicit constructor from thousandths, `.thousandths()`,
+`.toDouble()`, and equality. It performs no validation, rounding, or clamping.
+Use it for `ClassAnalyticsCriterionSlice.average3`,
+`ClassAnalyticsStudentRank.overall3`, `ClassAnalyticsSnapshot.classAverage3`,
+and `ClassAnalyticsYearToDatePoint.classAverage3`.
+
+Keep raw score parsing and the accumulation/rounding sequence unchanged: each
+scored cell is equally weighted within a student; overall average is per student
+across scored cells; class mean uses already-rounded student averages and
+includes partial students; YTD mean uses fully scored students only. Preserve
+positive half-up conversion `floor(x*1000+0.5)`. Apply the grade threshold after
+rounding at 400 thousandths, so `2.399` maps to grade 2 while `2.3995` rounds
+to `2.400` and maps to grade 3. Rank descending by thousandths, then use the
+current locale-aware English-name tie-break. Criterion extrema ties among the
+same rounded values retain input order.
+
+Unwrap only at the existing UI boundary and keep `QLocale()` one-decimal
+formatting. Grade conversion and chart-position clamping remain unchanged; the
+average value itself is not clamped.
+
+Focused verification after implementation: cover the dashboard read query,
+ranking order, criterion-extrema policies, Speaking Evaluation analytics
+formatting, and Class Analytics page parity. Build affected targets, run the
+focused CTests, and run `git diff --check`; no full-suite or Windows run is
+expected. F1136 is next for acceptance. Batch485 remains unpushed; F629 and
+the Phase 0 and Phase 2 gates remain open.
