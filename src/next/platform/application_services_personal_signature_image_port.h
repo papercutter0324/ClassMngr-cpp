@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <string>
+#include <utility>
 
 namespace ClassMngr::Next::Platform
 {
@@ -52,29 +53,28 @@ public:
         ApplicationServicesPersonalSignatureImagePort&&
         ) = delete;
 
-    [[nodiscard]] std::string read() const override
+    [[nodiscard]] Application::PersonalSignatureImageResult read()
+        const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return {};
+            return Application::PersonalSignatureImageResult::success({});
         }
 
         SettingsRepository* const repository =
             m_session->settingsRepository();
         if (!repository)
         {
-            return {};
+            return Application::PersonalSignatureImageResult::success({});
         }
 
         const auto stored = repository->loadSetting(key());
         QVariant encodedValue = QString();
         if (!stored)
         {
-            qWarning()
-                << "Failed to load setting"
-                << key()
-                << ':'
-                << stored.error();
+            return Application::PersonalSignatureImageResult::failure(
+                settingLoadError(key(), stored.error())
+                );
         }
         else if (stored->isValid())
         {
@@ -88,13 +88,50 @@ public:
         const QByteArray preparedImage =
             SignatureImage::prepareForEmbedding(encodedImage);
 
-        return std::string(
-            preparedImage.constData(),
-            static_cast<std::size_t>(preparedImage.size())
+        if (preparedImage.isEmpty())
+        {
+            return Application::PersonalSignatureImageResult::success({});
+        }
+
+        return Application::PersonalSignatureImageResult::success(
+            std::string(
+                preparedImage.constData(),
+                static_cast<std::size_t>(preparedImage.size())
+                )
             );
     }
 
 private:
+    [[nodiscard]] static Domain::OperationError settingLoadError(
+        const QString& settingKey,
+        const QString& diagnostic
+        )
+    {
+        qWarning()
+            << "Failed to load setting"
+            << settingKey
+            << ':'
+            << diagnostic;
+
+        std::string message = "Personal signature image could not be loaded";
+        if (!diagnostic.isEmpty())
+        {
+            message.append(": ");
+            const QByteArray diagnosticBytes = diagnostic.toUtf8();
+            message.append(
+                diagnosticBytes.constData(),
+                static_cast<std::size_t>(diagnosticBytes.size())
+                );
+        }
+        message.push_back('.');
+
+        return {
+            .code = Domain::ErrorCode::Technical,
+            .message = std::move(message),
+            .recoverable = false
+        };
+    }
+
     [[nodiscard]] static QString key()
     {
         return QStringLiteral("myInfo/signatureImage");

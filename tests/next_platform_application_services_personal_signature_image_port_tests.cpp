@@ -13,6 +13,7 @@
 #include <QtTest/QtTest>
 
 #include <cstddef>
+#include <string>
 
 using namespace ClassMngr::Next::Platform;
 
@@ -92,7 +93,7 @@ private slots:
     void corruptBase64ReturnsEmpty();
     void preservesUnrelatedSettingsAndDoesNotWrite();
     void closedSessionReturnsEmptyAndPreservesSettingsOnReopen();
-    void repositoryReadFailureWarnsAndReturnsEmpty();
+    void repositoryReadFailureReturnsTechnicalError();
 
 private:
     QTemporaryDir m_directory;
@@ -121,7 +122,9 @@ validBase64ImageIsPreparedOnceForTheExactKey()
         );
 
     ApplicationServicesPersonalSignatureImagePort port(services);
-    const QByteArray actual = preparedBytes(port.read());
+    const auto result = port.read();
+    QVERIFY(result);
+    const QByteArray actual = preparedBytes(result.value());
     const QByteArray expected =
         SignatureImage::prepareForEmbedding(source);
 
@@ -148,7 +151,9 @@ missingAndUnavailableSettingsReturnEmpty()
     QVERIFY(openDatabase(services, m_directory));
 
     ApplicationServicesPersonalSignatureImagePort port(services);
-    QVERIFY(port.read().empty());
+    const auto missingImage = port.read();
+    QVERIFY(missingImage);
+    QVERIFY(missingImage.value().empty());
 
     const auto missing = services.dataService()->loadSetting(
         QString::fromUtf8(SignatureImageKey)
@@ -160,11 +165,15 @@ missingAndUnavailableSettingsReturnEmpty()
     ApplicationServicesPersonalSignatureImagePort unavailablePort(
         unavailableServices
         );
-    QVERIFY(unavailablePort.read().empty());
+    const auto unavailableImage = unavailablePort.read();
+    QVERIFY(unavailableImage);
+    QVERIFY(unavailableImage.value().empty());
 
     ApplicationServices* nullServices = nullptr;
     ApplicationServicesPersonalSignatureImagePort nullPort(nullServices);
-    QVERIFY(nullPort.read().empty());
+    const auto nullImage = nullPort.read();
+    QVERIFY(nullImage);
+    QVERIFY(nullImage.value().empty());
 }
 
 void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
@@ -181,7 +190,9 @@ corruptBase64ReturnsEmpty()
         );
 
     ApplicationServicesPersonalSignatureImagePort port(services);
-    QVERIFY(port.read().empty());
+    const auto corruptImage = port.read();
+    QVERIFY(corruptImage);
+    QVERIFY(corruptImage.value().empty());
 }
 
 void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
@@ -198,7 +209,9 @@ preservesUnrelatedSettingsAndDoesNotWrite()
         );
 
     ApplicationServicesPersonalSignatureImagePort port(services);
-    QVERIFY(port.read().empty());
+    const auto missingImage = port.read();
+    QVERIFY(missingImage);
+    QVERIFY(missingImage.value().empty());
 
     const auto unrelated = services.dataService()->loadSetting(
         QString::fromUtf8(UnrelatedKey)
@@ -242,7 +255,9 @@ closedSessionReturnsEmptyAndPreservesSettingsOnReopen()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!services.databaseSession()->isOpen());
-    QVERIFY(port.read().empty());
+    const auto unavailableImage = port.read();
+    QVERIFY(unavailableImage);
+    QVERIFY(unavailableImage.value().empty());
 
     QVERIFY(services.openDatabase(path));
     const auto storedImage = services.dataService()->loadSetting(
@@ -258,7 +273,7 @@ closedSessionReturnsEmptyAndPreservesSettingsOnReopen()
 }
 
 void NextPlatformApplicationServicesPersonalSignatureImagePortTests::
-repositoryReadFailureWarnsAndReturnsEmpty()
+repositoryReadFailureReturnsTechnicalError()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -272,7 +287,13 @@ repositoryReadFailureWarnsAndReturnsEmpty()
             QStringLiteral("Failed to load setting.*myInfo/signatureImage.*")
             )
         );
-    QVERIFY(port.read().empty());
+    const auto result = port.read();
+    QVERIFY(!result);
+    QCOMPARE(
+        result.error().code,
+        ClassMngr::Next::Domain::ErrorCode::Technical
+        );
+    QVERIFY(result.error().message.find("signature image") != std::string::npos);
 }
 
 QTEST_MAIN(NextPlatformApplicationServicesPersonalSignatureImagePortTests)

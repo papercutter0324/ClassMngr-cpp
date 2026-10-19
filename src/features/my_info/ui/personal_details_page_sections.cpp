@@ -1088,12 +1088,43 @@ bool PersonalDetailsPage::loadStoredSettings()
             diagnostic
             );
     }
-    m_signatureImageData = QByteArray::fromStdString(
+    m_signatureImageKnown = false;
+    const auto storedSignatureImage =
         ClassMngr::Next::Platform::
             ApplicationServicesPersonalSignatureImagePort(
                 m_services
-                ).read()
-        );
+                ).read();
+    if (storedSignatureImage)
+    {
+        m_signatureImageKnown = true;
+        m_signatureImageData = QByteArray::fromStdString(
+            storedSignatureImage.value()
+            );
+    }
+    else
+    {
+        const auto& error = storedSignatureImage.error();
+        QString diagnostic = QString::fromUtf8(
+            error.message.data(),
+            static_cast<qsizetype>(error.message.size())
+            );
+        if (diagnostic.isEmpty())
+        {
+            diagnostic =
+                tr("No additional error details are available.");
+        }
+
+        DialogServices::showWarning(
+            this,
+            tr("Signature Image Could Not Be Loaded"),
+            tr(
+                "The stored signature image could not be read. Your current "
+                "signature image has been preserved, and saving is paused "
+                "until a successful reload. Refresh this page to try again."
+                ),
+            diagnostic
+            );
+    }
 
     ClassMngr::Next::Platform::
         ApplicationServicesPersonalSignaturePreferencesPort
@@ -1183,6 +1214,18 @@ bool PersonalDetailsPage::saveMyInfoInternal(QString* errorMessage)
             *errorMessage = tr(
                 "The stored signature preferences are unknown. Reload My "
                 "Details successfully before saving."
+                );
+        }
+        return false;
+    }
+
+    if (!m_signatureImageKnown)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = tr(
+                "The stored signature image is unknown. Reload My Details "
+                "successfully before saving."
                 );
         }
         return false;

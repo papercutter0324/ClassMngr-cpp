@@ -312,12 +312,17 @@ void SpeakingEvalPage::showReports()
             m_services,
             m_classroom.id
             );
-        signatureImage = QByteArray::fromStdString(
+        const auto signatureImageResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
                     m_services
-                    ).read()
-            );
+                    ).read();
+        if (signatureImageResult)
+        {
+            signatureImage = QByteArray::fromStdString(
+                signatureImageResult.value()
+                );
+        }
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
@@ -455,12 +460,17 @@ void SpeakingEvalPage::outputReports(
             m_services,
             m_classroom.id
             );
-        signatureImage = QByteArray::fromStdString(
+        const auto signatureImageResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
                     m_services
-                    ).read()
-            );
+                    ).read();
+        if (signatureImageResult)
+        {
+            signatureImage = QByteArray::fromStdString(
+                signatureImageResult.value()
+                );
+        }
     }
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =

@@ -134,6 +134,33 @@ bool installFailingSignaturePreferenceReadView(
             );
 }
 
+bool installFailingSignatureImageReadView(
+    ApplicationServices& services
+    )
+{
+    return executeSql(
+               services,
+               QStringLiteral(
+                   "ALTER TABLE app_settings "
+                   "RENAME TO app_settings_preserved"
+                   )
+               )
+        && executeSql(
+            services,
+            QStringLiteral(R"(
+                CREATE VIEW app_settings AS
+                SELECT
+                    key,
+                    CASE
+                        WHEN key = 'myInfo/signatureImage'
+                        THEN abs(-9223372036854775807 - 1)
+                        ELSE value
+                    END AS value
+                FROM app_settings_preserved
+            )")
+            );
+}
+
 bool installFailingZoomUnavailableReadView(
     ApplicationServices& services
     )
@@ -223,6 +250,7 @@ private slots:
     void unavailableSettingsBlockPersonalDetailsValidationWithoutMutation();
     void campusReadFailureBlocksAggregateSaveAndCanRetry();
     void signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry();
+    void signatureImageReadFailureBlocksAggregateSaveAndCanRetry();
     void zoomPreferenceReadFailureBlocksAggregateSaveAndCanRetry();
     void aggregateSavePreservesAllPersonalDetailsWithoutDataLoss();
     void aggregateSaveFailureLeavesAllPersonalDetailsUnchanged();
@@ -1088,6 +1116,87 @@ signaturePreferenceReadFailureBlocksAggregateSaveAndCanRetry()
             QString::fromUtf8(TypedSignatureFontKey), QVariant()
             ).toInt(),
         2
+        );
+}
+
+void InitialSetupWizardTests::
+signatureImageReadFailureBlocksAggregateSaveAndCanRetry()
+{
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    QVERIFY(services.settingsService());
+
+    const QByteArray source = sourcePng();
+    QVERIFY(!source.isEmpty());
+    const QString encodedImage = QString::fromLatin1(source.toBase64());
+    const QVariantMap initialValues = {
+        {QString::fromUtf8(DisplayNameKey), QStringLiteral("Old Name")},
+        {QString::fromUtf8(CampusKey), QStringLiteral("Bundang")},
+        {QString::fromUtf8(ZoomLoginIdKey), QStringLiteral("old-login")},
+        {QString::fromUtf8(ZoomPasswordKey), QStringLiteral("old-password")},
+        {QString::fromUtf8(ZoomNotAvailableKey), false},
+        {QString::fromUtf8(SignatureImageKey), encodedImage},
+        {QString::fromUtf8(SignatureModeKey), 0},
+        {QString::fromUtf8(TypedSignatureTextKey), QStringLiteral("old text")},
+        {QString::fromUtf8(TypedSignatureFontKey), 1}
+    };
+    QVERIFY(services.settingsService()->saveAll(initialValues));
+
+    FakeUserPromptService prompts;
+    [[maybe_unused]] const ScopedUserPromptService promptService(&prompts);
+
+    InitialSetupWizard wizard(&services);
+    wizard.setStartId(InitialSetupWizard::PersonalDetailsPage);
+    QWizardPage* const personalDetailsPage =
+        wizard.page(InitialSetupWizard::PersonalDetailsPage);
+    QVERIFY(personalDetailsPage);
+    personalDetailsPage->initializePage();
+
+    auto* const name = wizard.findChild<QLineEdit*>(
+        QStringLiteral("setupUserName")
+        );
+    auto* const preview = signaturePreview(wizard);
+    QVERIFY(name);
+    QVERIFY(preview);
+    QVERIFY(!preview->pixmap().isNull());
+    name->setText(QStringLiteral("New Name"));
+
+    QVERIFY(installFailingSignatureImageReadView(services));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(
+            QStringLiteral("Failed to load setting.*myInfo/signatureImage.*")
+            )
+        );
+    QVERIFY(!personalDetailsPage->validatePage());
+
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(prompts.messages.constFirst().title, QStringLiteral("Initial Setup"));
+    QVERIFY(prompts.messages.constFirst().message.contains(
+        QStringLiteral("signature image could not be read")
+        ));
+    QSqlQuery preservedSettings(services.databaseSession()->database());
+    QVERIFY(preservedSettings.exec(QStringLiteral(
+        "SELECT value FROM app_settings_preserved WHERE key='myInfo/name'"
+        )));
+    QVERIFY(preservedSettings.next());
+    QCOMPARE(preservedSettings.value(0).toString(), QStringLiteral("Old Name"));
+    QVERIFY(preservedSettings.exec(QStringLiteral(
+        "SELECT value FROM app_settings_preserved "
+        "WHERE key='myInfo/signatureImage'"
+        )));
+    QVERIFY(preservedSettings.next());
+    QCOMPARE(preservedSettings.value(0).toString(), encodedImage);
+
+    QVERIFY(restoreSettingsTable(services));
+    QVERIFY(personalDetailsPage->validatePage());
+    QCOMPARE(prompts.messages.size(), 1);
+    const QByteArray expectedImage = SignatureImage::prepareForEmbedding(source);
+    QCOMPARE(
+        services.settingsService()->loadOrDefault(
+            QString::fromUtf8(SignatureImageKey), QVariant()
+            ).toString().toLatin1(),
+        expectedImage.toBase64()
         );
 }
 

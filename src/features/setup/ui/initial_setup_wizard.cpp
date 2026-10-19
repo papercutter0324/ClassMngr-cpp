@@ -499,16 +499,21 @@ public:
                 static_cast<qsizetype>(storedName.size())
                 ));
         }
-        const QByteArray storedSignature = QByteArray::fromStdString(
+        const auto storedSignatureResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
                     setup->services()
-                    ).read()
-            );
-        if (m_signature.isEmpty() && !storedSignature.isEmpty())
+                    ).read();
+        if (storedSignatureResult && m_signature.isEmpty())
         {
-            m_signature = storedSignature;
-            updateSignaturePreview();
+            const QByteArray storedSignature = QByteArray::fromStdString(
+                storedSignatureResult.value()
+                );
+            if (!storedSignature.isEmpty())
+            {
+                m_signature = storedSignature;
+                updateSignaturePreview();
+            }
         }
     }
 
@@ -620,11 +625,38 @@ public:
         }
         const auto& zoom = zoomResult.value();
 
-        const QByteArray storedSignature = QByteArray::fromStdString(
+        const auto storedSignatureResult =
             ClassMngr::Next::Platform::
                 ApplicationServicesPersonalSignatureImagePort(
                     setup->services()
-                    ).read()
+                    ).read();
+        if (!storedSignatureResult)
+        {
+            const auto& error = storedSignatureResult.error();
+            QString diagnostic = QString::fromUtf8(
+                error.message.data(),
+                static_cast<qsizetype>(error.message.size())
+                );
+            if (diagnostic.isEmpty())
+            {
+                diagnostic =
+                    tr("No additional error details are available.");
+            }
+
+            DialogServices::showWarning(
+                this,
+                tr("Initial Setup"),
+                tr(
+                    "The stored signature image could not be read. Your "
+                    "information was not saved. Retry by selecting Next "
+                    "again."
+                    ),
+                diagnostic
+                );
+            return false;
+        }
+        const QByteArray storedSignature = QByteArray::fromStdString(
+            storedSignatureResult.value()
             );
         const QByteArray signatureImage =
             m_signature.isEmpty()
