@@ -48588,3 +48588,54 @@ Batch483 remains active with F1116 next for acceptance and F1117 discovered.
 Batch484 discovery has started under the early-discovery rule; its candidate
 list is not recorded yet. No other slices were found. F629 and the Phase 0
 and Phase 2 gates remain open.
+
+### F1116 Speaking Evaluation validation codes accepted before implementation - 2026-10-20
+
+F1116 is accepted/in progress for Batch483; implementation and tests have not
+started. In `src/next/application/speaking_evaluation_validation.h`, replace
+string issue codes and `appendIssue` codes with a closed typed Application
+enum, and use that enum at every producer. Update the two direct comparisons
+of `SpeakingEvaluationValidationIssue.code` in
+`src/features/speaking_eval/ui/speaking_eval_page_persistence.cpp:160-161`
+to use the typed codes; leave the matching UI `QString` consumers unchanged.
+The finite producer set is:
+
+- `student_name.english.too_long`
+- `student_name.english.non_ascii`
+- `student_name.english.invalid_characters`
+- `student_name.korean.invalid_characters`
+- `student_name.korean.too_short`
+- `student_name.korean.too_long`
+- `student_name.korean.unusual_length`
+- `student_name.duplicate_pair`
+- `speaking_evaluation.class_id.invalid`
+- `validation.length.out_of_bounds`
+- `speaking_evaluation.rows.too_many`
+- `speaking_evaluation.row.too_many_cells`
+- `speaking_evaluation.student_name.required`
+- `validation.enum.invalid_value`
+
+Map every Application enum value explicitly and exhaustively in the UI
+validation adapter to the same outward string keys. Preserve issue order,
+`validation.length.out_of_bounds`'s shared semantics, field, row, column,
+severity, arguments, and all existing validation behavior.
+
+Add Application coverage for every emitted code, especially the currently
+missing `speaking_evaluation.rows.too_many` and
+`speaking_evaluation.row.too_many_cells` cases, in
+`ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests`. Add
+`toFormValidationPreservesValidationCodeKeys` to the existing
+`ClassMngrSpeakingEvalPageSaveParityTests` in
+`tests/speaking_eval_page_save_parity_tests.cpp`; assert every exact outward
+mapping and preserved issue payload/order. This target compiles and links
+`toFormValidation` through `ClassMngrRuntime`, so no CMake change is needed.
+Build and run both focused targets after implementation; report focused
+results as focused. Evidence: the F1116 discovery record above and the
+Application producers at `speaking_evaluation_validation.h:622-997`, UI
+mapping at `src/features/speaking_eval/ui/speaking_eval_page_validation_adapter.cpp:118`.
+
+Batch483 remains active: F1115 is complete, F1116 is accepted/in progress, and
+F1117 remains discovered. Batch484 discovery is provisional; its candidate
+scans are running and the list is not recorded. The Batch483 discovery record
+supports that no other slices were found. F629 and the Phase 0 and Phase 2
+gates remain open.

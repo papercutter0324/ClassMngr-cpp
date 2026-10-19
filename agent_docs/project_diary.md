@@ -7708,3 +7708,11 @@ selector passed. The broader Initial Setup target aborted in its existing
 keyboard-availability test with a Qt/macOS `NSBundle initWithURL:` exception.
 No full suite or Windows run occurred. Batch484 discovery has started while
 F1116 is next for acceptance.
+
+## 2026-10-20 - F1116 accepted
+
+Type the finite set of Speaking Evaluation Application validation keys as a
+closed enum and map them explicitly back to the existing UI keys. Keep the
+shared `validation.length.out_of_bounds` key and issue order, location,
+severity, and arguments unchanged; the adapter boundary is where the typed
+codes become UI strings.

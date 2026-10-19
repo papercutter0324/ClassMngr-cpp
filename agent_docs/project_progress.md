@@ -5326,3 +5326,14 @@ existing keyboard-availability test with a Qt/macOS `NSBundle initWithURL:`
 exception; no full suite or Windows run occurred. F1116 is next for acceptance,
 F1117 remains discovered, and Batch484 discovery has started. F629 and the
 Phase 0 and Phase 2 gates remain open.
+
+## Phase 2 update - F1116 accepted; Batch483 active - 2026-10-20
+
+F1116 is accepted before implementation. Replace the finite set of 14
+Speaking Evaluation Application validation-code strings with a closed typed
+code enum. Preserve each outward UI string key, issue ordering, shared length
+code behavior, field/location/severity/arguments, and all validation results.
+Cover every emitted code in the Application tests, including row and cell
+overflow, and test the explicit UI adapter mapping and payload preservation.
+F1115 is complete, F1117 remains discovered, and Batch484 discovery is
+underway. F629 and the Phase 0 and Phase 2 gates remain open.
