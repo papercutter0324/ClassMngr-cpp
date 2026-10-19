@@ -15,7 +15,44 @@
 namespace ClassMngr::Next::Application
 {
 
-using ImportSourceKey = std::string;
+// Preserve the adapter-provided source-key bytes as an opaque Application
+// value. Validation belongs to the import-review workflow that owns it.
+class ImportSourceKey final
+{
+public:
+    ImportSourceKey() = default;
+
+    explicit ImportSourceKey(std::string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    [[nodiscard]] bool empty() const noexcept
+    {
+        return m_value.empty();
+    }
+
+    friend bool operator==(
+        const ImportSourceKey&,
+        const ImportSourceKey&
+        ) = default;
+
+    friend bool operator<(
+        const ImportSourceKey& left,
+        const ImportSourceKey& right
+        )
+    {
+        return left.m_value < right.m_value;
+    }
+
+private:
+    std::string m_value;
+};
 
 // These limits keep one review projection deliberately compact. The import
 // adapter owns larger inputs and must paginate or stage them before creating a
@@ -448,11 +485,11 @@ namespace Detail
 }
 
 [[nodiscard]] inline bool isValidSourceKey(
-    const std::string& value
+    const ImportSourceKey& sourceKey
     ) noexcept
 {
-    return !isBlank(value)
-        && value.size() <= kImportReviewMaxSourceKeyLength;
+    return !isBlank(sourceKey.value())
+        && sourceKey.value().size() <= kImportReviewMaxSourceKeyLength;
 }
 
 template <typename TypedId>
@@ -635,7 +672,7 @@ template <typename Decision>
 
 [[nodiscard]] inline Domain::Result<void> validateDiagnosticText(
     const ImportReviewCategory category,
-    const std::string& sourceKey,
+    const ImportSourceKey& sourceKey,
     const std::string& field,
     const std::string& message
     )
