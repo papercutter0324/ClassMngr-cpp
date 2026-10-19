@@ -532,12 +532,19 @@ void addNavigationPreferencesTab(
         );
     auto* classesShownLayout = new QVBoxLayout(classesShownGroup);
     classesShownLayout->setSpacing(12);
-    const auto scope = window && window->services()
-        ? ClassMngr::Next::Platform::
+    auto scope =
+        ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule;
+    if (window && window->services())
+    {
+        const auto loadedScope = ClassMngr::Next::Platform::
             ApplicationServicesClassVisibilityPreferencesPort(
                 *window->services()
-                ).load()
-        : ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule;
+                ).load();
+        if (loadedScope)
+        {
+            scope = loadedScope.value();
+        }
+    }
     auto* allClasses = new QRadioButton(
         preferencesText("All Classes"),
         classesShownGroup
@@ -823,7 +830,12 @@ void addNavigationPreferencesTab(
         );
     layout->addWidget(navigationGroup);
 
-    const auto save = [window, allClasses, activeSchedule](bool checked)
+    const auto save = [
+        window,
+        allClasses,
+        activeSchedule,
+        lastSavedScope = scope
+        ](bool checked) mutable
     {
         if (!checked)
         {
@@ -849,18 +861,27 @@ void addNavigationPreferencesTab(
                     );
 
                 const auto persistedScope = port.load();
+                const auto scopeToRestore = persistedScope
+                    ? persistedScope.value()
+                    : lastSavedScope;
+                if (persistedScope)
+                {
+                    lastSavedScope = persistedScope.value();
+                }
                 const QSignalBlocker allClassesSignals(allClasses);
                 const QSignalBlocker activeScheduleSignals(activeSchedule);
                 allClasses->setChecked(
-                    persistedScope
+                    scopeToRestore
                         == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
                     );
                 activeSchedule->setChecked(
-                    persistedScope
+                    scopeToRestore
                         == ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
                     );
                 return;
             }
+
+            lastSavedScope = selectedScope;
         }
 
         if (window)

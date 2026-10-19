@@ -93,7 +93,7 @@ private slots:
     void invalidScopeReturnsInvalidInputWithoutChangingSettings();
     void closedSessionDefaultsAndReportsSaveFailureWithoutChangingSettings();
     void failedSaveReturnsTechnicalFailureAndPreservesSettings();
-    void repositoryReadFailureDefaultsAndRemainsSilent();
+    void repositoryReadFailureReturnsTechnical();
 
 private:
     QTemporaryDir m_directory;
@@ -114,10 +114,9 @@ missingSettingDefaultsToActiveScheduleAndPersists()
     QVERIFY(repository);
 
     ApplicationServicesClassVisibilityPreferencesPort port(services);
-    QCOMPARE(
-        port.load(),
-        ClassVisibilityScope::ActiveSchedule
-        );
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassVisibilityScope::ActiveSchedule);
 
     const auto stored = repository->loadSetting(preferenceKey());
     QVERIFY(stored);
@@ -142,10 +141,9 @@ unsupportedSettingDefaultsToActiveScheduleWithoutRewrite()
     for (const QVariant& value : unsupportedValues)
     {
         QVERIFY(repository->saveSetting(preferenceKey(), value));
-        QCOMPARE(
-            port.load(),
-            ClassVisibilityScope::ActiveSchedule
-            );
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), ClassVisibilityScope::ActiveSchedule);
 
         const auto stored = repository->loadSetting(preferenceKey());
         QVERIFY(stored);
@@ -164,16 +162,17 @@ unavailableSettingsDefaultToActiveScheduleAndReportSaveFailure()
     QVERIFY(!services.databaseSession()->isOpen());
     QVERIFY(!services.databaseSession()->settingsRepository());
 
-    QCOMPARE(
-        port.load(),
-        ClassVisibilityScope::ActiveSchedule
-        );
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassVisibilityScope::ActiveSchedule);
     const auto saved = port.save(ClassVisibilityScope::AllClasses);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
     QVERIFY(!saved.error().message.empty());
+    const auto loadedAfterSaveFailure = port.load();
+    QVERIFY(loadedAfterSaveFailure);
     QCOMPARE(
-        port.load(),
+        loadedAfterSaveFailure.value(),
         ClassVisibilityScope::ActiveSchedule
         );
 }
@@ -193,7 +192,9 @@ loadsAllClassesValue()
         );
 
     ApplicationServicesClassVisibilityPreferencesPort port(services);
-    QCOMPARE(port.load(), ClassVisibilityScope::AllClasses);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassVisibilityScope::AllClasses);
 }
 
 void NextPlatformApplicationServicesClassVisibilityPreferencesPortTests::
@@ -217,7 +218,9 @@ roundTripsBothValuesUsingTheExactLegacyKey()
          })
     {
         QVERIFY(port.save(expected));
-        QCOMPARE(port.load(), expected);
+        const auto loaded = port.load();
+        QVERIFY(loaded);
+        QCOMPARE(loaded.value(), expected);
 
         const auto stored = repository->loadSetting(preferenceKey());
         QVERIFY(stored);
@@ -270,7 +273,9 @@ invalidScopeReturnsInvalidInputWithoutChangingSettings()
     const auto stored = repository->loadSetting(preferenceKey());
     QVERIFY(stored);
     QCOMPARE(stored->toString(), QStringLiteral("all_classes"));
-    QCOMPARE(port.load(), ClassVisibilityScope::AllClasses);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassVisibilityScope::AllClasses);
 }
 
 void NextPlatformApplicationServicesClassVisibilityPreferencesPortTests::
@@ -300,7 +305,9 @@ closedSessionDefaultsAndReportsSaveFailureWithoutChangingSettings()
     services.closeDatabase();
     QVERIFY(services.dataService());
     QVERIFY(!session->isOpen());
-    QCOMPARE(port.load(), ClassVisibilityScope::ActiveSchedule);
+    const auto loaded = port.load();
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value(), ClassVisibilityScope::ActiveSchedule);
     const auto saved = port.save(ClassVisibilityScope::ActiveSchedule);
     QVERIFY(!saved);
     QCOMPARE(saved.error().code, Domain::ErrorCode::Technical);
@@ -363,7 +370,7 @@ failedSaveReturnsTechnicalFailureAndPreservesSettings()
 }
 
 void NextPlatformApplicationServicesClassVisibilityPreferencesPortTests::
-repositoryReadFailureDefaultsAndRemainsSilent()
+repositoryReadFailureReturnsTechnical()
 {
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -372,7 +379,11 @@ repositoryReadFailureDefaultsAndRemainsSilent()
 
     ApplicationServicesClassVisibilityPreferencesPort port(services);
     QTest::failOnWarning();
-    QCOMPARE(port.load(), ClassVisibilityScope::ActiveSchedule);
+    const auto loaded = port.load();
+    QVERIFY(!loaded);
+    QCOMPARE(loaded.error().code, Domain::ErrorCode::Technical);
+    QVERIFY(loaded.error().recoverable);
+    QVERIFY(!loaded.error().message.empty());
 }
 
 QTEST_MAIN(

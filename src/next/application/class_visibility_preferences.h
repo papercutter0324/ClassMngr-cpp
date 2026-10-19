@@ -13,6 +13,8 @@ enum class ClassVisibilityScope
     AllClasses
 };
 
+using ClassVisibilityPreferencesLoadResult =
+    Domain::Result<ClassVisibilityScope>;
 using ClassVisibilityPreferencesSaveResult = Domain::Result<void>;
 using ClassVisibilityPreferencesSaveError = Domain::OperationError;
 
@@ -21,7 +23,8 @@ class ClassVisibilityPreferencesPort
 public:
     virtual ~ClassVisibilityPreferencesPort() = default;
 
-    [[nodiscard]] virtual ClassVisibilityScope load() const = 0;
+    [[nodiscard]] virtual ClassVisibilityPreferencesLoadResult load()
+        const = 0;
 
     [[nodiscard]] virtual ClassVisibilityPreferencesSaveResult save(
         ClassVisibilityScope scope

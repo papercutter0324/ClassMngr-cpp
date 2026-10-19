@@ -360,6 +360,7 @@ private slots:
     void automaticModeDoesNotSaveQuestionableKoreanNamesSilently();
     void failedClassAndEvaluationSwitchesRestoreTheCurrentSelection();
     void classTabsKeepOrderAndSelectedClass();
+    void visibilityScopeReadFailurePreservesCurrentViewAndRecovers();
     void groupedNavigationUsesBoundedPagesAndRestoresSelection();
     void headerSubtitlePreservesClassAndTeacherDisplayMetadata();
     void scheduleModesAndVisibilityScopeFilterNavigationTabs();
@@ -949,6 +950,55 @@ classTabsKeepOrderAndSelectedClass()
         classIdAtTab(*classTabs, classTabs->currentIndex()),
         fixture.classIds.at(0)
         );
+}
+
+void SpeakingEvalPageSaveTests::
+visibilityScopeReadFailurePreservesCurrentViewAndRecovers()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(3, &error), qPrintable(error));
+
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort visibilityPreferences(
+            fixture.services
+            );
+    QVERIFY(visibilityPreferences.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+        ));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.loadEvaluations();
+
+    auto visibleClassCount = [&page]()
+    {
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        NavigationTabStrip* const classTabs = activeClassTabStrip(page);
+        return classTabs ? classTabs->count() : -1;
+    };
+    QCOMPARE(visibleClassCount(), 3);
+
+    QSqlQuery settingsQuery(
+        fixture.services.databaseSession()->database()
+        );
+    QVERIFY(settingsQuery.exec(QStringLiteral("DROP TABLE app_settings")));
+    page.refreshNavigationPreferences();
+    QCOMPARE(visibleClassCount(), 3);
+
+    QVERIFY(settingsQuery.exec(QStringLiteral(
+        "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT)"
+        )));
+    settingsQuery.prepare(QStringLiteral(
+        "INSERT INTO app_settings (key, value) VALUES (?, ?)"
+        ));
+    settingsQuery.addBindValue(QStringLiteral(
+        "classes_navigation_visibility_scope"
+        ));
+    settingsQuery.addBindValue(QStringLiteral("active_schedule"));
+    QVERIFY(settingsQuery.exec());
+
+    page.refreshNavigationPreferences();
+    QCOMPARE(visibleClassCount(), 0);
 }
 
 void SpeakingEvalPageSaveTests::

@@ -156,14 +156,17 @@ void SpeakingEvalPage::loadEvaluations(
         }
     }
     setScheduleSource(scheduleSourceForMode(displayMode));
-    setVisibilityScope(
-        ClassMngr::Next::Platform::
-            ApplicationServicesClassVisibilityPreferencesPort(*m_services)
-            .load()
-            == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
-            ? ClassTabNavigation::VisibilityScope::AllClasses
-            : ClassTabNavigation::VisibilityScope::ActiveSchedule
-        );
+    const auto loadedVisibilityScope = ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort(*m_services).load();
+    if (loadedVisibilityScope)
+    {
+        setVisibilityScope(
+            loadedVisibilityScope.value()
+                    == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                ? ClassTabNavigation::VisibilityScope::AllClasses
+                : ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
+    }
 
     int classId =
         selectedClassId > 0
@@ -245,15 +248,25 @@ void SpeakingEvalPage::setScheduleDisplayMode(
 
 void SpeakingEvalPage::refreshNavigationPreferences()
 {
-    setVisibilityScope(
-        m_services
-            && ClassMngr::Next::Platform::
-                ApplicationServicesClassVisibilityPreferencesPort(*m_services)
-                    .load()
-                == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
-            ? ClassTabNavigation::VisibilityScope::AllClasses
-            : ClassTabNavigation::VisibilityScope::ActiveSchedule
-        );
+    if (!m_services)
+    {
+        setVisibilityScope(
+            ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
+        return;
+    }
+
+    const auto loadedVisibilityScope = ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort(*m_services).load();
+    if (loadedVisibilityScope)
+    {
+        setVisibilityScope(
+            loadedVisibilityScope.value()
+                    == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                ? ClassTabNavigation::VisibilityScope::AllClasses
+                : ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
+    }
 }
 
 void SpeakingEvalPage::loadEvaluationData(

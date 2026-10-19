@@ -41,21 +41,38 @@ public:
         ApplicationServicesClassVisibilityPreferencesPort&&
         ) = delete;
 
-    [[nodiscard]] Application::ClassVisibilityScope load() const override
+    [[nodiscard]] Application::ClassVisibilityPreferencesLoadResult load()
+        const override
     {
         if (!m_session || !m_session->isOpen())
         {
-            return Application::ClassVisibilityScope::ActiveSchedule;
+            return Application::ClassVisibilityPreferencesLoadResult::success(
+                Application::ClassVisibilityScope::ActiveSchedule
+                );
         }
 
         SettingsRepository* const repository = m_session->settingsRepository();
         if (!repository)
         {
-            return Application::ClassVisibilityScope::ActiveSchedule;
+            return Application::ClassVisibilityPreferencesLoadResult::success(
+                Application::ClassVisibilityScope::ActiveSchedule
+                );
         }
 
         const auto storedScope = repository->loadSetting(key());
-        if (!storedScope || !storedScope->isValid())
+        if (!storedScope)
+        {
+            const QByteArray errorBytes = storedScope.error().toUtf8();
+            return Application::ClassVisibilityPreferencesLoadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = errorBytes.isEmpty()
+                    ? "Class visibility preference could not be loaded."
+                    : errorBytes.toStdString(),
+                .recoverable = true
+            });
+        }
+
+        if (!storedScope->isValid())
         {
             // Preserve the legacy preference boundary's default materializing
             // behavior when storage is available.
@@ -67,13 +84,17 @@ public:
                         )
                     )
                 );
-            return Application::ClassVisibilityScope::ActiveSchedule;
+            return Application::ClassVisibilityPreferencesLoadResult::success(
+                Application::ClassVisibilityScope::ActiveSchedule
+                );
         }
 
-        return storedScope->toString().trimmed().toLower()
-            == QStringLiteral("all_classes")
-            ? Application::ClassVisibilityScope::AllClasses
-            : Application::ClassVisibilityScope::ActiveSchedule;
+        return Application::ClassVisibilityPreferencesLoadResult::success(
+            storedScope->toString().trimmed().toLower()
+                    == QStringLiteral("all_classes")
+                ? Application::ClassVisibilityScope::AllClasses
+                : Application::ClassVisibilityScope::ActiveSchedule
+            );
     }
 
     [[nodiscard]] Application::ClassVisibilityPreferencesSaveResult save(

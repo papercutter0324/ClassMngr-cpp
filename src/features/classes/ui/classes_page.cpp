@@ -297,16 +297,20 @@ bool ClassesPage::openClass(
         }
     }
     setScheduleSource(scheduleSourceForMode(displayMode));
-    setVisibilityScope(
-        m_services
-            && ClassMngr::Next::Platform::
-                ApplicationServicesClassVisibilityPreferencesPort(
-                    *m_services
-                    ).load()
-                == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
-            ? ClassTabNavigation::VisibilityScope::AllClasses
-            : ClassTabNavigation::VisibilityScope::ActiveSchedule
-        );
+    const auto loadedVisibilityScope =
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassVisibilityPreferencesPort(
+                *m_services
+                ).load();
+    if (loadedVisibilityScope)
+    {
+        setVisibilityScope(
+            loadedVisibilityScope.value()
+                    == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                ? ClassTabNavigation::VisibilityScope::AllClasses
+                : ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
+    }
 
     if (!commitActiveEditor())
     {
@@ -708,20 +712,28 @@ void ClassesPage::refresh()
 
 void ClassesPage::refreshNavigationPreferences()
 {
-    setVisibilityScope(
-        m_services
-            && ClassMngr::Next::Platform::
-                ApplicationServicesClassVisibilityPreferencesPort(
-                    *m_services
-                    ).load()
-                == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
-            ? ClassTabNavigation::VisibilityScope::AllClasses
-            : ClassTabNavigation::VisibilityScope::ActiveSchedule
-        );
     if (!m_services)
     {
+        setVisibilityScope(
+            ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
         setShowMiddleSchoolAnalyticsAndEvaluations(false);
         return;
+    }
+
+    const auto loadedVisibilityScope =
+        ClassMngr::Next::Platform::
+            ApplicationServicesClassVisibilityPreferencesPort(
+                *m_services
+                ).load();
+    if (loadedVisibilityScope)
+    {
+        setVisibilityScope(
+            loadedVisibilityScope.value()
+                    == ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+                ? ClassTabNavigation::VisibilityScope::AllClasses
+                : ClassTabNavigation::VisibilityScope::ActiveSchedule
+            );
     }
 
     const auto showMiddleSchoolAnalyticsAndEvaluations =

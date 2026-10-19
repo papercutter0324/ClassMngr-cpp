@@ -60,6 +60,7 @@ namespace ScheduleWidgetTestStubs
 void reset();
 void setIncludeAdditionalClass(bool include);
 void setClassesVisibilityAll();
+void setSettingsLoadFailure(const QString& key, const QString& error);
 void setDatabaseSessionOpen(bool open);
 void setClassName(int classId, const QString& name);
 void setClassGrade(int classId, const QString& grade);
@@ -352,6 +353,7 @@ private slots:
     void sectionSelectionSurvivesGradeTabRebuilds();
     void evaluationDefaultPolicyDefaultsToAllAndPersists();
     void visibilityScopePortIsAppliedOnInitialLoadAndRefresh();
+    void visibilityScopeReadFailurePreservesCurrentViewAndRecovers();
     void dayFiltersToggleIndependentlyAndRetainHiddenEditor();
     void weekendFilterUsesRegularAndIntensiveScheduleRows_data();
     void weekendFilterUsesRegularAndIntensiveScheduleRows();
@@ -698,8 +700,10 @@ void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()
 
     ClassMngr::Next::Platform::
         ApplicationServicesEvaluationDefaultPolicyPort port(services);
+    const auto initialPolicy = port.load();
+    QVERIFY(initialPolicy);
     QCOMPARE(
-        port.load(),
+        initialPolicy.value(),
         ClassMngr::Next::Application::EvaluationDefaultPolicy::All
         );
 
@@ -707,8 +711,10 @@ void ClassesPageTests::evaluationDefaultPolicyDefaultsToAllAndPersists()
         ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
     QVERIFY(saved);
+    const auto persistedPolicy = port.load();
+    QVERIFY(persistedPolicy);
     QCOMPARE(
-        port.load(),
+        persistedPolicy.value(),
         ClassMngr::Next::Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm
         );
     const auto stored = services.dataService()->loadSetting(
@@ -748,6 +754,51 @@ void ClassesPageTests::visibilityScopePortIsAppliedOnInitialLoadAndRefresh()
     QVERIFY(activeScheduleSavedAgain);
     page.refreshNavigationPreferences();
     QCOMPARE(page.runtimeMetrics().visibleClassCount, 0);
+}
+
+void ClassesPageTests::
+visibilityScopeReadFailurePreservesCurrentViewAndRecovers()
+{
+    ApplicationServices services;
+    ClassMngr::Next::Platform::
+        ApplicationServicesClassVisibilityPreferencesPort visibilityPolicy(
+            services
+            );
+    QVERIFY(visibilityPolicy.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::AllClasses
+        ));
+    ScheduleWidgetTestStubs::setClassNavigationScheduleRows(
+        42,
+        {
+            ClassTime{
+                .day = QStringLiteral("Monday"),
+                .startTime = QStringLiteral("4:00 PM"),
+                .endTime = QStringLiteral("4:50 PM")
+            }
+        },
+        {}
+        );
+    ScheduleWidgetTestStubs::setClassNavigationScheduleRows(43, {}, {});
+
+    ClassesPage page(&services);
+    QVERIFY(page.openClass(42));
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 2);
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure(
+        QStringLiteral("classes_navigation_visibility_scope"),
+        QStringLiteral("forced Class Visibility read failure")
+        );
+    page.refreshNavigationPreferences();
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 2);
+    QVERIFY(page.openClass(42));
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 2);
+
+    ScheduleWidgetTestStubs::setSettingsLoadFailure({}, {});
+    QVERIFY(visibilityPolicy.save(
+        ClassMngr::Next::Application::ClassVisibilityScope::ActiveSchedule
+        ));
+    page.refreshNavigationPreferences();
+    QCOMPARE(page.runtimeMetrics().visibleClassCount, 1);
 }
 
 void ClassesPageTests::dayFiltersToggleIndependentlyAndRetainHiddenEditor()

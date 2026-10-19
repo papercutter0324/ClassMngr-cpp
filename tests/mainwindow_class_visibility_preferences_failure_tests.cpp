@@ -181,7 +181,7 @@ class MainWindowClassVisibilityPreferencesFailureTests final : public QObject
 private slots:
     void initTestCase();
     void noDatabaseScheduleDisplayPreferenceFailureRestoresDefaultsWithoutRefreshingSchedule();
-    void preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
+    void preferenceWriteAndReadFailureRestoresSelectionAndRetryRefreshesOnce();
     void middleSchoolPreferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce();
     void middleSchoolPreferenceReadFailurePreservesKnownVisibleState();
     void evaluationDefaultPolicyReadFailureShowsWarningAndDisablesControls();
@@ -428,7 +428,7 @@ noDatabaseScheduleDisplayPreferenceFailureRestoresDefaultsWithoutRefreshingSched
 }
 
 void MainWindowClassVisibilityPreferencesFailureTests::
-preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
+preferenceWriteAndReadFailureRestoresSelectionAndRetryRefreshesOnce()
 {
     LanguageService languageService;
     QVERIFY(languageService.setLanguage(Language::English));
@@ -606,6 +606,15 @@ preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
                     warningObserved = true;
                     warningTitle = warning->windowTitle();
                     warningText = warning->text();
+                    if (!executeSql(
+                            session,
+                            QStringLiteral("DROP TABLE app_settings")
+                            ))
+                    {
+                        scriptFailure = QStringLiteral(
+                            "Could not inject the follow-up class visibility read failure."
+                            );
+                    }
                     warning->accept();
                 }
                 );
@@ -621,9 +630,44 @@ preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
                 !allClasses->isChecked() && activeSchedule->isChecked();
             classQueriesAfterFailure =
                 classesPage->runtimeMetrics().classQueryCount;
-            scopeAfterFailure = persistedScope(
-                session->settingsRepository()
-                );
+            const auto readAfterFailure = preferences.load();
+            const bool technicalReadFailure = !readAfterFailure
+                && readAfterFailure.error().code
+                    == ClassMngr::Next::Domain::ErrorCode::Technical;
+
+            if (!executeSql(
+                    session,
+                    QStringLiteral(
+                        "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT)"
+                        )
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        INSERT INTO app_settings(key, value)
+                        VALUES('classes_navigation_visibility_scope', 'active_schedule')
+                    )")
+                    )
+                || !executeSql(
+                    session,
+                    QStringLiteral(R"(
+                        CREATE TRIGGER audit_class_visibility_preference_update
+                        AFTER UPDATE ON app_settings
+                        WHEN NEW.key = 'classes_navigation_visibility_scope'
+                        BEGIN
+                            INSERT INTO f659_class_visibility_save_audit(value)
+                            VALUES (NEW.value);
+                        END
+                    )")
+                    ))
+            {
+                fail(QStringLiteral(
+                    "Could not restore class visibility settings after the injected read failure."
+                    ));
+                return;
+            }
+
+            scopeAfterFailure = persistedScope(session->settingsRepository());
             auditsAfterFailure = auditRowCount(session);
             if (!warningObserved
                 || warningCount != 1
@@ -632,6 +676,7 @@ preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
                     QStringLiteral("forced class visibility write failure")
                     )
                 || !failedSelectionRestored
+                || !technicalReadFailure
                 || classQueriesAfterFailure != initialClassQueryCount
                 || scopeAfterFailure != QStringLiteral("active_schedule")
                 || auditsAfterFailure != 0)
@@ -639,17 +684,6 @@ preferenceFailureRestoresSelectionAndSuccessfulRetryRefreshesOnce()
                 fail(QStringLiteral(
                     "Failed preference write did not preserve persisted and displayed state."
                     ));
-                return;
-            }
-
-            if (!executeSql(
-                    session,
-                    QStringLiteral(
-                        "DROP TRIGGER fail_class_visibility_preference_write"
-                        )
-                    ))
-            {
-                fail(QStringLiteral("Could not remove the test failure trigger."));
                 return;
             }
 
