@@ -24,6 +24,14 @@ static_assert(std::is_same_v<
     decltype(ScheduleImportPlanEligibilityCandidate{}.teacherKey),
     std::u16string
     >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportPlanEligibilityCandidate{}.grade),
+    std::string
+    >);
+static_assert(std::is_same_v<
+    decltype(ScheduleImportPlanEligibilityCandidate{}.level),
+    std::string
+    >);
 
 void require(bool condition, const std::string& message)
 {
@@ -139,6 +147,16 @@ void verifyRejectionsAndSkipRules()
     expectIssue(
         "invalid course",
         validRequest("E4", "Not a catalog level"),
+        IssueCode::InvalidCourse
+        );
+    expectIssue(
+        "course grade case is exact",
+        validRequest("e4", "Theseus"),
+        IssueCode::InvalidCourse
+        );
+    expectIssue(
+        "course level whitespace is preserved",
+        validRequest("E4", "Theseus "),
         IssueCode::InvalidCourse
         );
 

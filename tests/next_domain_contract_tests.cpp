@@ -1,6 +1,7 @@
 #include "next/domain/birthday_month_day.h"
 #include "next/domain/calendar_event_timing.h"
 #include "next/domain/course.h"
+#include "next/domain/course_catalog_identity.h"
 #include "next/domain/document_content_reference.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/korean_teacher_key.h"
@@ -635,6 +636,33 @@ void NextDomainContractTests::coursesExposeOrderedSupportedPairs()
         {"M2", "Song's"},
         {"M3", "Song's"}
     }};
+    const std::array<CourseCatalogIdentity, 25> expectedIdentities{{
+        CourseCatalogIdentity::E4Theseus,
+        CourseCatalogIdentity::E4Perseus,
+        CourseCatalogIdentity::E4Odysseus,
+        CourseCatalogIdentity::E4Hercules,
+        CourseCatalogIdentity::E5Artemis,
+        CourseCatalogIdentity::E5Hermes,
+        CourseCatalogIdentity::E5Apollo,
+        CourseCatalogIdentity::E5Zeus,
+        CourseCatalogIdentity::E5Athena,
+        CourseCatalogIdentity::E6Helios,
+        CourseCatalogIdentity::E6Poseidon,
+        CourseCatalogIdentity::E6Gaia,
+        CourseCatalogIdentity::E6Hera,
+        CourseCatalogIdentity::E6Songs,
+        CourseCatalogIdentity::M1Elephantus,
+        CourseCatalogIdentity::M1Galaxia,
+        CourseCatalogIdentity::M1Solis,
+        CourseCatalogIdentity::M1Major,
+        CourseCatalogIdentity::M1Songs,
+        CourseCatalogIdentity::M2Ursa,
+        CourseCatalogIdentity::M2Leo,
+        CourseCatalogIdentity::M2Tigris,
+        CourseCatalogIdentity::M2Major,
+        CourseCatalogIdentity::M2Songs,
+        CourseCatalogIdentity::M3Songs
+    }};
     const std::array<std::string_view, 6> expectedGrades{
         "E4", "E5", "E6", "M1", "M2", "M3"
     };
@@ -659,13 +687,29 @@ void NextDomainContractTests::coursesExposeOrderedSupportedPairs()
             );
     }
 
-    for (const CourseNames& names : supportedPairs)
+    static_assert(std::is_same_v<
+        decltype(std::declval<const Course&>().catalogIdentity()),
+        CourseCatalogIdentity
+        >);
+
+    std::vector<CourseCatalogIdentity> observedIdentities;
+    observedIdentities.reserve(supportedPairs.size());
+    for (std::size_t index = 0; index < supportedPairs.size(); ++index)
     {
+        const CourseNames& names = supportedPairs[index];
         const auto course = Course::fromNames(names.first, names.second);
         QVERIFY(course.has_value());
         QVERIFY(course->grade() == names.first);
         QVERIFY(course->level() == names.second);
+        QVERIFY(course->catalogIdentity() == expectedIdentities[index]);
+        QVERIFY(std::find(
+            observedIdentities.begin(),
+            observedIdentities.end(),
+            course->catalogIdentity()
+            ) == observedIdentities.end());
+        observedIdentities.push_back(course->catalogIdentity());
     }
+    QCOMPARE(static_cast<int>(observedIdentities.size()), 25);
 }
 
 void NextDomainContractTests::coursesHaveValueAndAccessorSemantics()
@@ -673,13 +717,37 @@ void NextDomainContractTests::coursesHaveValueAndAccessorSemantics()
     const auto first = Course::fromNames("E4", "Theseus");
     const auto sameValue = Course::fromNames("E4", "Theseus");
     const auto otherLevel = Course::fromNames("E4", "Perseus");
+    const auto e6Songs = Course::fromNames("E6", "Song's");
+    const auto m1Songs = Course::fromNames("M1", "Song's");
+    const auto m2Songs = Course::fromNames("M2", "Song's");
+    const auto m3Songs = Course::fromNames("M3", "Song's");
+    const auto m1Major = Course::fromNames("M1", "Major");
+    const auto m2Major = Course::fromNames("M2", "Major");
     QVERIFY(first.has_value());
     QVERIFY(sameValue.has_value());
     QVERIFY(otherLevel.has_value());
+    QVERIFY(e6Songs.has_value());
+    QVERIFY(m1Songs.has_value());
+    QVERIFY(m2Songs.has_value());
+    QVERIFY(m3Songs.has_value());
+    QVERIFY(m1Major.has_value());
+    QVERIFY(m2Major.has_value());
     QVERIFY(*first == *sameValue);
     QVERIFY(*first != *otherLevel);
     QVERIFY(first->grade() == "E4");
     QVERIFY(first->level() == "Theseus");
+    QVERIFY(e6Songs->level() == m1Songs->level());
+    QVERIFY(m1Songs->level() == m2Songs->level());
+    QVERIFY(m2Songs->level() == m3Songs->level());
+    QVERIFY(e6Songs->catalogIdentity() != m1Songs->catalogIdentity());
+    QVERIFY(m1Songs->catalogIdentity() != m2Songs->catalogIdentity());
+    QVERIFY(m2Songs->catalogIdentity() != m3Songs->catalogIdentity());
+    QVERIFY(*e6Songs != *m1Songs);
+    QVERIFY(*m1Songs != *m2Songs);
+    QVERIFY(*m2Songs != *m3Songs);
+    QVERIFY(m1Major->level() == m2Major->level());
+    QVERIFY(m1Major->catalogIdentity() != m2Major->catalogIdentity());
+    QVERIFY(*m1Major != *m2Major);
 }
 
 void NextDomainContractTests::coursesRejectInvalidNamesAndCrossGradePairs()
@@ -691,6 +759,12 @@ void NextDomainContractTests::coursesRejectInvalidNamesAndCrossGradePairs()
     QVERIFY(!Course::fromNames("M3", "Zeus").has_value());
     QVERIFY(!Course::fromNames("e4", "Theseus").has_value());
     QVERIFY(!Course::fromNames("E4", "theseus").has_value());
+    QVERIFY(!Course::fromNames(" E4", "Theseus").has_value());
+    QVERIFY(!Course::fromNames("E4 ", "Theseus").has_value());
+    QVERIFY(!Course::fromNames("E4", " Theseus").has_value());
+    QVERIFY(!Course::fromNames("E4", "Theseus ").has_value());
+    QVERIFY(!Course::fromNames("E4", "TheSeus").has_value());
+    QVERIFY(!Course::fromNames("E4", "Theeseus").has_value());
     QVERIFY(Course::levelsForGrade("E7").empty());
 }
 
@@ -889,6 +963,24 @@ void NextDomainContractTests::
 
 void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
 {
+    const std::vector<Course::WeeklyMeetingDayPattern> pairedPatterns{
+        {Weekday::Monday, Weekday::Wednesday},
+        {Weekday::Monday, Weekday::Friday},
+        {Weekday::Wednesday, Weekday::Friday},
+        {Weekday::Tuesday, Weekday::Thursday}
+    };
+    const std::vector<Course::WeeklyMeetingDayPattern> threeDayPatterns{
+        {Weekday::Monday, Weekday::Wednesday, Weekday::Friday},
+        {Weekday::Tuesday, Weekday::Thursday}
+    };
+    const std::vector<Course::WeeklyMeetingDayPattern> singleDayPatterns{
+        {Weekday::Monday},
+        {Weekday::Tuesday},
+        {Weekday::Wednesday},
+        {Weekday::Thursday},
+        {Weekday::Friday}
+    };
+
     const auto theseus = Course::fromNames("E4", "Theseus");
     const auto athena = Course::fromNames("E5", "Athena");
     const auto standardE5 = Course::fromNames("E5", "Zeus");
@@ -912,7 +1004,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         pairedRule->kind()
         == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
         );
-    QVERIFY(pairedRule->allowedPatterns().size() == 4);
+    QVERIFY(pairedRule->allowedPatterns() == pairedPatterns);
     QVERIFY(pairedRule->allows({Weekday::Monday, Weekday::Wednesday}));
     QVERIFY(pairedRule->allows({Weekday::Tuesday, Weekday::Thursday}));
     QVERIFY(!pairedRule->allows({Weekday::Monday}));
@@ -923,6 +1015,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         athenaRule->kind()
         == Course::WeeklyMeetingDayRuleKind::ThreeDayOrTuesdayThursday
         );
+    QVERIFY(athenaRule->allowedPatterns() == threeDayPatterns);
     QVERIFY(athenaRule->allows(
         {Weekday::Monday, Weekday::Wednesday, Weekday::Friday}
         ));
@@ -935,6 +1028,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         standardE5Rule->kind()
         == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
         );
+    QVERIFY(standardE5Rule->allowedPatterns() == pairedPatterns);
     QVERIFY(standardE5Rule->allows({Weekday::Monday, Weekday::Friday}));
     QVERIFY(!standardE5Rule->allows(
         {Weekday::Monday, Weekday::Wednesday, Weekday::Friday}
@@ -946,6 +1040,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         standardE6Rule->kind()
         == Course::WeeklyMeetingDayRuleKind::SingleWeekday
         );
+    QVERIFY(standardE6Rule->allowedPatterns() == singleDayPatterns);
     QVERIFY(standardE6Rule->allows({Weekday::Friday}));
     QVERIFY(!standardE6Rule->allows({Weekday::Monday, Weekday::Wednesday}));
 
@@ -955,6 +1050,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         songsE6Rule->kind()
         == Course::WeeklyMeetingDayRuleKind::ThreeDayOrTuesdayThursday
         );
+    QVERIFY(songsE6Rule->allowedPatterns() == threeDayPatterns);
     QVERIFY(songsE6Rule->allows(
         {Weekday::Monday, Weekday::Wednesday, Weekday::Friday}
         ));
@@ -965,6 +1061,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         standardM1Rule->kind()
         == Course::WeeklyMeetingDayRuleKind::SingleWeekday
         );
+    QVERIFY(standardM1Rule->allowedPatterns() == singleDayPatterns);
     QVERIFY(standardM1Rule->allows({Weekday::Tuesday}));
     QVERIFY(!standardM1Rule->allows({Weekday::Monday, Weekday::Friday}));
 
@@ -974,6 +1071,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         songsM1Rule->kind()
         == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
         );
+    QVERIFY(songsM1Rule->allowedPatterns() == pairedPatterns);
     QVERIFY(songsM1Rule->allows({Weekday::Wednesday, Weekday::Friday}));
 
     const auto songsM3Rule = songsM3->weeklyMeetingDayRule();
@@ -982,6 +1080,7 @@ void NextDomainContractTests::coursesExposeWeeklyMeetingDayRules()
         songsM3Rule->kind()
         == Course::WeeklyMeetingDayRuleKind::PairedWeekdays
         );
+    QVERIFY(songsM3Rule->allowedPatterns() == pairedPatterns);
     QVERIFY(songsM3Rule->allows({Weekday::Monday, Weekday::Friday}));
 
     QVERIFY(!Course::weeklyMeetingDayRuleFor(

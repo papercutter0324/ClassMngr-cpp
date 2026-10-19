@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/domain/course_catalog_identity.h"
 #include "next/domain/schedule_time.h"
 
 #include <algorithm>
@@ -112,7 +113,7 @@ public:
         {
             if (entry.grade == grade && entry.level == level)
             {
-                return Course(entry.grade, entry.level);
+                return Course(entry);
             }
         }
         return std::nullopt;
@@ -179,20 +180,27 @@ public:
 
     [[nodiscard]] std::string_view grade() const noexcept
     {
-        return m_grade;
+        const CatalogEntry* entry = catalogEntryForIdentity(m_catalogIdentity);
+        return entry == nullptr ? std::string_view{} : entry->grade;
     }
 
     [[nodiscard]] std::string_view level() const noexcept
     {
-        return m_level;
+        const CatalogEntry* entry = catalogEntryForIdentity(m_catalogIdentity);
+        return entry == nullptr ? std::string_view{} : entry->level;
+    }
+
+    [[nodiscard]] CourseCatalogIdentity catalogIdentity() const noexcept
+    {
+        return m_catalogIdentity;
     }
 
     [[nodiscard]] std::optional<WeeklyMeetingDayRule>
     weeklyMeetingDayRule() const
     {
         return weeklyMeetingDayRuleFor(
-            gradeBandForName(m_grade),
-            levelCategoryForName(m_level)
+            gradeBandForName(grade()),
+            levelCategoryForName(level())
             );
     }
 
@@ -338,49 +346,60 @@ private:
 
     struct CatalogEntry final
     {
+        CourseCatalogIdentity identity;
         std::string_view grade;
         std::string_view level;
     };
 
     inline static constexpr std::array<CatalogEntry, 25> catalog{{
-        {"E4", "Theseus"},
-        {"E4", "Perseus"},
-        {"E4", "Odysseus"},
-        {"E4", "Hercules"},
-        {"E5", "Artemis"},
-        {"E5", "Hermes"},
-        {"E5", "Apollo"},
-        {"E5", "Zeus"},
-        {"E5", "Athena"},
-        {"E6", "Helios"},
-        {"E6", "Poseidon"},
-        {"E6", "Gaia"},
-        {"E6", "Hera"},
-        {"E6", "Song's"},
-        {"M1", "Elephantus"},
-        {"M1", "Galaxia"},
-        {"M1", "Solis"},
-        {"M1", "Major"},
-        {"M1", "Song's"},
-        {"M2", "Ursa"},
-        {"M2", "Leo"},
-        {"M2", "Tigris"},
-        {"M2", "Major"},
-        {"M2", "Song's"},
-        {"M3", "Song's"}
+        {CourseCatalogIdentity::E4Theseus, "E4", "Theseus"},
+        {CourseCatalogIdentity::E4Perseus, "E4", "Perseus"},
+        {CourseCatalogIdentity::E4Odysseus, "E4", "Odysseus"},
+        {CourseCatalogIdentity::E4Hercules, "E4", "Hercules"},
+        {CourseCatalogIdentity::E5Artemis, "E5", "Artemis"},
+        {CourseCatalogIdentity::E5Hermes, "E5", "Hermes"},
+        {CourseCatalogIdentity::E5Apollo, "E5", "Apollo"},
+        {CourseCatalogIdentity::E5Zeus, "E5", "Zeus"},
+        {CourseCatalogIdentity::E5Athena, "E5", "Athena"},
+        {CourseCatalogIdentity::E6Helios, "E6", "Helios"},
+        {CourseCatalogIdentity::E6Poseidon, "E6", "Poseidon"},
+        {CourseCatalogIdentity::E6Gaia, "E6", "Gaia"},
+        {CourseCatalogIdentity::E6Hera, "E6", "Hera"},
+        {CourseCatalogIdentity::E6Songs, "E6", "Song's"},
+        {CourseCatalogIdentity::M1Elephantus, "M1", "Elephantus"},
+        {CourseCatalogIdentity::M1Galaxia, "M1", "Galaxia"},
+        {CourseCatalogIdentity::M1Solis, "M1", "Solis"},
+        {CourseCatalogIdentity::M1Major, "M1", "Major"},
+        {CourseCatalogIdentity::M1Songs, "M1", "Song's"},
+        {CourseCatalogIdentity::M2Ursa, "M2", "Ursa"},
+        {CourseCatalogIdentity::M2Leo, "M2", "Leo"},
+        {CourseCatalogIdentity::M2Tigris, "M2", "Tigris"},
+        {CourseCatalogIdentity::M2Major, "M2", "Major"},
+        {CourseCatalogIdentity::M2Songs, "M2", "Song's"},
+        {CourseCatalogIdentity::M3Songs, "M3", "Song's"}
     }};
 
-    Course(
-        std::string_view grade,
-        std::string_view level
+    [[nodiscard]] static const CatalogEntry* catalogEntryForIdentity(
+        CourseCatalogIdentity identity
         ) noexcept
-        : m_grade(grade)
-        , m_level(level)
+    {
+        const auto entry = std::find_if(
+            catalog.begin(),
+            catalog.end(),
+            [identity](const CatalogEntry& candidate)
+            {
+                return candidate.identity == identity;
+            }
+            );
+        return entry == catalog.end() ? nullptr : &*entry;
+    }
+
+    explicit Course(const CatalogEntry& entry) noexcept
+        : m_catalogIdentity(entry.identity)
     {
     }
 
-    std::string_view m_grade;
-    std::string_view m_level;
+    CourseCatalogIdentity m_catalogIdentity;
 };
 
 } // namespace ClassMngr::Next::Domain
