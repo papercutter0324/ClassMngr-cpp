@@ -53,7 +53,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-19
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: F1098 completed Batch477; its closeout commit and push are pending, and F1099 is selected next in Batch478 with acceptance pending closeout. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
+- Current note: Batch477 is complete and pushed to `origin/Qt-Rewrite` at `60e7bc42`; F1099 is accepted and selected for implementation in Batch478. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable, and the Phase 2 exit gate remains Open.
 
 ### Slice discovery batches
 
@@ -68,11 +68,11 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch478 (5 discovered candidates)
+#### Active batch: Batch478 (5 candidates; 1 accepted)
 
-Batch477 is complete with F1098 at source/test commit `fb92cddd`; its closeout commit and push are pending. Batch478's complete ordered list is:
+Batch477 is complete with F1098 at source/test commit `fb92cddd`; its closeout was pushed to `origin/Qt-Rewrite` at `60e7bc42`. Batch478's complete ordered list is:
 
-1. F1099 - Type Calendar event-by-ID query request: selected next; acceptance pending Batch477 closeout. Then record acceptance criteria and implement.
+1. F1099 - Type Calendar event-by-ID query request: accepted and selected for implementation; acceptance recorded before implementation.
 2. F1100 - Keep `ClassId` typed through Sub Prep visible-class ordering: discovered; reassess and accept after F1099.
 3. F1101 - Carry `CampusId` in feature campus metadata contracts: unresolved, lower confidence; decide whether identity typing applies without changing the established owning UTF-8 snapshot contract.
 4. F1102 - Type identity in Class Details validation contract: discovered; reassess and accept after earlier Batch478 items, preserving the unassigned sentinel and wide teacher IDs.

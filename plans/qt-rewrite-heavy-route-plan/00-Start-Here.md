@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-19
-- Current milestone: Batch477 is complete with F1098 at source/test commit `fb92cddd`; its closeout commit and push are pending. Batch478 has five discovered candidates, with F1099 selected next and acceptance pending the Batch477 closeout. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch478-5-discovered-candidates) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
+- Current milestone: Batch477 is complete and pushed to `origin/Qt-Rewrite` at `60e7bc42`, with F1098 complete at source/test commit `fb92cddd`. Batch478 has five candidates; F1099 is accepted and selected for implementation. The combined Phase 0 gate remains Open while Windows x64 evidence is unavailable; the Phase 2 exit gate also remains Open. See the [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md#active-batch-batch478-5-candidates-1-accepted) for the current list and the [Phase 2 progress log](03-Phase-2-Progress-Log.md) for evidence.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -40,7 +40,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 **Batch478 — Active; five discovered candidates:**
 
-1. **F1099 — Type Calendar event-by-ID query request.** Selected next; acceptance is pending Batch477 closeout. Then record acceptance criteria and implement.
+1. **F1099 — Type Calendar event-by-ID query request.** Accepted and selected for implementation; acceptance was recorded before implementation.
 2. **F1100 — Keep `ClassId` typed through Sub Prep visible-class ordering.** Discovered; reassess and accept after F1099.
 3. **F1101 — Carry `CampusId` in feature campus metadata contracts.** Unresolved, lower confidence; decide whether typed identity applies without changing the established owning UTF-8 snapshot contract.
 4. **F1102 — Type identity in Class Details validation contract.** Discovered; reassess and accept after earlier Batch478 items, preserving the unassigned sentinel and wide teacher IDs.

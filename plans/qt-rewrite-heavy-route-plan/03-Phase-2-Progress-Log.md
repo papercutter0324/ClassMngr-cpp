@@ -47146,8 +47146,8 @@ The Tester built `ClassMngr` and the five existing focused Calendar targets:
 Next Application event, Next Platform event port, Calendar event cache,
 DialogShell, and Calendar Page mutation parity. All five focused CTests passed
 (5/5), and `git diff --check` passed. This is local macOS arm64/Qt 6.12
-evidence; no full suite ran. Batch477 is complete; its closeout commit and push
-remain pending.
+evidence; no full suite ran. Batch477 is complete; its closeout was pushed to
+`origin/Qt-Rewrite` at `60e7bc42b8c4034eec5102d01af7455574b55411`.
 
 Batch478 discovery used two independent read-only reviews of current
 Application/domain identity contracts and deferred/gate items. Five candidates
@@ -47196,3 +47196,42 @@ runtime defect for F1100, F1101, or F1102. The combined Phase 0 gate remains
 Open because Windows x64 evidence is unavailable; the Phase 2 exit gate
 remains Open, Gates 1 and 2 remain Partial, and F1007 remains pending policy
 reconciliation.
+
+### F1099 Calendar event-by-ID query request acceptance - recorded before implementation - 2026-10-19
+
+F1099 is accepted and selected for implementation as the next Batch478 slice.
+The Calendar event-by-ID request currently carries raw text even though its
+port and returned summary use `Domain::CalendarEventId`. Acceptance criteria:
+
+1. Change `CalendarEventByIdQueryRequest.eventId` from `std::string` to
+   `std::optional<Domain::CalendarEventId>` so absent input remains
+   representable. Do not retain parallel raw identity; keep the public port and
+   returned summary typed.
+2. Preserve validation exactly: missing, ASCII/Unicode-whitespace-only, and
+   IDs over 256 bytes return the existing nonrecoverable `InvalidInput`
+   message; exact-bound IDs remain valid. Do not trim or normalize. Preserve
+   nonblank opaque ID bytes exactly, including leading zeroes and malformed
+   UTF-8, matching `TypedId::fromString` and existing behavior.
+3. `CalendarEventByIdQueryUseCase` validates and forwards the exact typed ID
+   without reparsing. Preserve one port call for valid input, unchanged port
+   error propagation, and the existing nonrecoverable `Validation` mismatch
+   check and message when the returned summary has a different ID.
+4. At `CalendarPage::handleCalendarEventActivated`, convert the legacy
+   `QString` to `CalendarEventId` at the UI boundary and pass the typed value
+   in the request. Preserve the existing no-services and empty-string early
+   return, exact text without trimming, silent failure return, and downstream
+   canonical-positive-decimal Platform adapter behavior. Do not change
+   storage or schema.
+5. Extend existing `NextApplicationCalendarEventTests` for the typed request
+   field and validation, forwarding, mismatch, and error cases. Build
+   `ClassMngr`, `ClassMngrNextApplicationCalendarEventTests`,
+   `ClassMngrNextPlatformApplicationServicesCalendarEventPortTests`, and
+   `ClassMngrCalendarPageEventMutationParityTests`; run their focused CTests
+   and `git diff --check`. Add no CMake target and run no full suite.
+
+F1099 acceptance was recorded before implementation. F1100 remains next for
+reassessment after F1099; F1101 remains unresolved at lower confidence under
+the F23 owning UTF-8 snapshot contract; F1102 remains for reassessment with
+the `-1` sentinel and wide teacher IDs preserved; F1103 remains deferred
+pending parity/policy reconciliation. Batch478's five-item list and
+discovery evidence remain above.
