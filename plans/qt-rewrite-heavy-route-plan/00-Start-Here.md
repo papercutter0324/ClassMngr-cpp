@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-20
-- Current milestone: Batches 481–489 are complete and pushed. Batch490 has F1171 and F1172 complete, with F1173–F1177 discovered and F1173 next; it remains unpushed until F1177 closes. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batches 481–489 are complete and pushed. Batch490 has F1171 and F1172 complete, F1173 accepted/in progress, and F1174–F1177 discovered, with F1174 next; it remains unpushed until F1177 closes. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,17 +38,17 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch490 — Active; seven candidates, two complete and five discovered:**
+**Batch490 — Active; seven candidates, two complete, one accepted/in progress, and four discovered:**
 
 1. **F1171 — Complete:** Use `Application::UpdateArtifactSizeBytes` for manual/startup artifact sizes; preserve exact signed values through adapters and keep positivity policy in the existing parser/downloader (see the [completion record](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-complete-2026-10-20)).
 2. **F1172 — Complete:** Add typed update-check UTC millisecond values; preserve signed values, ordinary zero defaults, and adapter/UI conversion boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-complete-2026-10-20)).
-3. **F1173 — Discovered; next:** Type Calendar Import counts without adding range policy; preserve defaults and count transitions.
-4. **F1174 — Discovered:** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
+3. **F1173 — Accepted/in progress:** Add an Application Calendar Import count wrapper without adding range policy; preserve defaults, count transitions, and legacy `int` boundaries (see the [acceptance record](03-Phase-2-Progress-Log.md#f1173-calendar-import-counts-accepted-before-implementation-2026-10-20)).
+4. **F1174 — Discovered; next:** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
 5. **F1175 — Discovered:** Type the Class Transfer package version; preserve the serialized integer and unsupported-version diagnostics.
 6. **F1176 — Discovered:** Type Schedule-slot canonical hour; preserve the 15/16 cutoff and absence, without broadening parsing.
 7. **F1177 — Discovered:** Review Academic-term week-count typing carefully; preserve invalid-input rejection and four-term cardinality.
 
-Batch490 has F1171 and F1172 complete, with F1173–F1177 discovered and F1173 next; it remains unpushed until F1177 closes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch490 has F1171 and F1172 complete, F1173 accepted/in progress, and F1174–F1177 discovered, with F1174 next; it remains unpushed until F1177 closes. Batch489 is complete and pushed at `e329f92b`; see its [push receipt](03-Phase-2-Progress-Log.md#batch489-push-receipt-2026-10-20). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 
 Batch470 closed with F1078 complete at `fbca6d4e`; Batch469 closed with F1074-F1077 complete. See the progress log for their ordered commits and verification.

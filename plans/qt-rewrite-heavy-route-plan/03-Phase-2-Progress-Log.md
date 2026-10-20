@@ -52775,3 +52775,45 @@ Batch490 now has F1171 and F1172 complete, with F1173–F1177 discovered and
 F1173 next; the batch remains unpushed until F1177 closes. F629 awaits
 source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates
 remain open.
+
+### F1173 Calendar Import counts accepted before implementation - 2026-10-20
+
+F1173 is accepted/in progress. Add Qt-free
+`Application::CalendarEventImportCount` in
+`src/next/application/calendar_event_import_count.h` and register it in
+`cmake/next.cmake`. Store exact signed `int` with a zero default, explicit
+constructor, `rawValue()`, exact equality, and prefix increment. Add no
+validation, clamping, range policy, or implicit conversion.
+
+Replace only the six Application semantic counters: planner request
+`initiallySkippedCount` and plan `skippedCount` in
+`calendar_event_import_plan.h`; use-case request `initiallySkippedCount`,
+result `importedCount` and `skippedCount`, and observer
+`savePrepared(..., skippedCount)` in `calendar_event_import_use_case.h`.
+Preserve `std::size_t` collection cardinalities and indices. At the feature
+service boundary, wrap parser `int` skips into the Application type and
+explicitly unwrap for the existing profiler and completion signal/UI `int`
+boundaries. Keep parser fields, UI signals, profiler contracts, and the
+existing 4,096-event save-request vector limit unchanged.
+
+Preserve defaults, parser-skip carry-through, duplicate skip increments,
+imported count derived from returned save IDs, observer reporting, and failure
+and cancellation outcomes. Coverage must retain `INT_MIN`/`INT_MAX`, zero
+default, equality, explicit construction, and increment; planner empty/default
+and initial-skip cases (6, and 7 plus 3 duplicates = 10); and use-case empty
+input (4), 2 imported/6 skipped, duplicate-only 0/3, and observer reporting on
+save failure. Do not add increment-overflow coverage or range policy.
+
+Build `ClassMngr`,
+`ClassMngrNextApplicationCalendarEventImportPlanTests`,
+`ClassMngrNextApplicationCalendarEventImportUseCaseTests`, and
+`ClassMngrCalendarEventImportParityTests`; run the matching focused offscreen
+CTests, independent Tester review, and `git diff --check`. The parity test
+must continue to assert legacy service completion counts of 3 imported/2
+skipped. No full-suite or Windows claim is in scope. Implementation and
+verification have not started.
+
+Batch490 has F1171 and F1172 complete, F1173 accepted/in progress, and
+F1174–F1177 discovered, with F1174 next; it remains unpushed until F1177
+closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0
+and Phase 2 gates remain open.

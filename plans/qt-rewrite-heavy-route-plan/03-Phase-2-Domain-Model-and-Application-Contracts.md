@@ -53,11 +53,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-20
 - Historical progress log: [03-Phase-2-Progress-Log.md](03-Phase-2-Progress-Log.md)
 - Exit gate: Open
-- Current note: Batch490 F1173 is next after F1171 and F1172 completed; the batch remains unpushed until F1177 closes, while F629 and the Phase 0 and Phase 2 gates remain open.
+- Current note: Batch490 F1173 is accepted/in progress, with F1174 next and the batch unpushed until F1177 closes; F629 and the Phase 0 and Phase 2 gates remain open.
 
 ### Latest Progress Update
 
-F1172 completed at source/test commit `319c7a8b`, following acceptance commit `a06421a3` (see the [completion record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-complete-2026-10-20)).
+F1173 is accepted/in progress: type Calendar Import semantic counts while preserving defaults, count transitions, and legacy boundaries (see the [acceptance record](03-Phase-2-Progress-Log.md#f1173-calendar-import-counts-accepted-before-implementation-2026-10-20)).
 
 ### Slice discovery batches
 
@@ -72,17 +72,17 @@ Treat this plan as an operational summary, not a history:
 - Record a discovery shortfall in the progress log only; do not add a historical marker to this plan.
 - Keep `Deferred candidates` limited to unresolved items; remove entries when resolved or superseded.
 
-#### Active batch: Batch490 (7 candidates; 2 complete; 5 discovered)
+#### Active batch: Batch490 (7 candidates; 2 complete; 1 accepted/in progress; 4 discovered)
 
 1. F1171 - **Complete.** Use `Application::UpdateArtifactSizeBytes` for manual/startup artifact sizes; preserve exact signed values and existing parser/downloader positivity policy (see the [completion record](03-Phase-2-Progress-Log.md#f1171-updater-artifact-size-complete-2026-10-20)).
 2. F1172 - **Complete.** Add the typed update-check UTC millisecond value, preserving signed values, ordinary zero defaults, and adapter/UI conversion boundaries (see the [completion record](03-Phase-2-Progress-Log.md#f1172-update-check-utc-milliseconds-complete-2026-10-20)).
-3. F1173 - **Discovered; next.** Type Calendar Import counts without range policy; preserve defaults and count transitions.
-4. F1174 - **Discovered.** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
+3. F1173 - **Accepted/in progress.** Add an Application Calendar Import count wrapper without range policy; preserve defaults, count transitions, and legacy `int` boundaries (see the [acceptance record](03-Phase-2-Progress-Log.md#f1173-calendar-import-counts-accepted-before-implementation-2026-10-20)).
+4. F1174 - **Discovered; next.** Type the Class Transfer export timestamp input; preserve epoch and serialized timestamp formatting.
 5. F1175 - **Discovered.** Type the Class Transfer package version; preserve its serialized integer and unsupported-version diagnostics.
 6. F1176 - **Discovered.** Type Schedule-slot canonical hour; preserve the 15/16 cutoff and absence, without broadening parsing.
 7. F1177 - **Discovered.** Review Academic-term week-count typing carefully; preserve invalid-input rejection and four-term cardinality.
 
-Batch490 has F1171 and F1172 complete, with F1173–F1177 discovered and F1173 next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
+Batch490 has F1171 and F1172 complete, F1173 accepted/in progress, and F1174–F1177 discovered, with F1174 next; it remains unpushed until F1177 closes. F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
 #### Deferred candidates
 

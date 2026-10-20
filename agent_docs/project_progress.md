@@ -6475,3 +6475,15 @@ Qt-representable values at adapters/UI; it does not claim the full int64 range
 through `QDateTime`. No full suite or Windows build ran. Batch490 has F1171–F1172
 complete and F1173 next; it remains unpushed until F1177 closes. F629 and both
 phase gates remain open.
+
+## Phase 2 update - F1173 accepted; Batch490 active - 2026-10-20
+
+F1173 is accepted to type the Calendar Import Application counters with an
+exact signed-`int` `CalendarEventImportCount`, preserving default zero,
+initial skipped-count carry-through, duplicate increments, imported and
+skipped result counts, and observer reporting. Keep parser, feature/UI, and
+profiler interfaces as legacy `int` boundaries, collection cardinalities as
+`std::size_t`, and the existing 4096 save-event policy unchanged. Add no new
+range validation. Implementation and verification have not started. F1171–
+F1172 are complete; F1174 is next after F1173. Batch490 remains unpushed until
+F1177 closes. F629 and both phase gates remain open.
