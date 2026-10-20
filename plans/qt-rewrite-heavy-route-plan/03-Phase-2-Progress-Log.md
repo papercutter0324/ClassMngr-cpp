@@ -53443,3 +53443,39 @@ Batch491 has F1178–F1181 complete, F1182 next, and F1182–F1185 discovered.
 Batch491 remains unpushed. Batch490 is complete and pushed at `69be43a7`. F629
 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2
 gates remain open.
+
+### F1182 Updater encoded URL text accepted before implementation - 2026-10-20
+
+F1182 is accepted/in progress. Add Qt-free
+`Application::EncodedUrlText` with exact `std::string` storage, empty default,
+explicit construction, `value()`, `empty()`, and equality. It has no implicit
+string conversions and performs no validation or canonicalization. Store it
+in exactly four Application fields in `startup_update_check.h` and
+`manual_update_check.h`: startup artifact `url` and `releaseUrl`, and manual
+artifact `url` and `releaseUrl`. Add an Application header and production
+source-ownership entry if required.
+
+At the startup and manual Platform result adapters, explicitly wrap
+`QUrl::toEncoded().toStdString()`. Unwrap `.value()` where the controller and
+manual dialog rebuild URLs with `QUrl::fromEncoded`. Preserve encoded bytes,
+parsing, downstream HTTPS validation, invalid/empty behavior, and release-link
+display. Keep GitHub response parsing/validation, API configuration URL,
+`releaseDateIso` (F1183), all other strings, and QUrl ownership out of scope.
+
+Acceptance coverage in
+`tests/update_controller_automatic_startup_tests.cpp` checks exact wrapper
+storage, empty default/state, equality, and no implicit string conversion. It
+also verifies both startup adapter URL fields and both manual adapter URL
+fields against legacy `QUrl::toEncoded()` bytes while retaining dialog
+presentation behavior. Build `ClassMngr` and
+`ClassMngrUpdateControllerAutomaticStartupTests`; run the registered CTest for
+that target and focused selectors `bridgeMapsSuccessAndForcesFreshCheck`,
+`manualAdapterDistinguishesFreshBusyForceAndFailure`, and
+`dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale`. The independent
+Tester will clean and rebuild the affected target. Implementation and
+verification have not started; no full-suite or Windows run is in scope.
+
+Batch491 has F1178–F1181 complete, F1182 accepted/in progress, and F1183 next;
+F1183–F1185 remain discovered. Batch491 remains unpushed. Batch490 is complete
+and pushed at `69be43a7`. F629 awaits source-bound Windows x64 layout evidence,
+and the Phase 0 and Phase 2 gates remain open.
