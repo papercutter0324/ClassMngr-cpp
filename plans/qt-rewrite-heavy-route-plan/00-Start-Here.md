@@ -6,7 +6,7 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-21
-- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). In active Batch500, F1243–F1248 are complete and F1249 is next for acceptance (see [F1248 verification](03-Phase-2-Progress-Log.md#f1248-class-summary-navigation-ranks-complete-2026-10-21)); F1250–F1252 remain discovered. F629 and the Phase 0 and Phase 2 gates remain open.
+- Current milestone: Batch495 is complete and pushed at `e84c332d` (see its [push receipt](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21)). Batch496 is complete and pushed at `c6fd2458` (see its [push receipt](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21)). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). Batch499 is complete and pushed at `cc38c959` (see its [push receipt](03-Phase-2-Progress-Log.md#batch499-push-receipt-2026-10-21)). In active Batch500, F1243–F1248 are complete and F1249 is accepted awaiting implementation (see [F1249 acceptance](03-Phase-2-Progress-Log.md#f1249-testing-classes-grade-and-level-ranks-accepted-before-implementation-2026-10-21)); F1250–F1252 remain discovered. F629 and the Phase 0 and Phase 2 gates remain open.
 - Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
   baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
   and Dialog policy workflows, and packaged Release workflows. Linux x64 and
@@ -38,7 +38,7 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 
 ## Current Phase 2 batch
 
-**Batch500 — Active (F1243–F1248 complete; F1249–F1252 discovered):**
+**Batch500 — Active (F1243–F1248 complete; F1249 accepted; F1250–F1252 discovered):**
 
 1. **F1243 — Complete:** Replace the `GregorianDate::DayNumber` alias with an explicit typed ordinal; preserve epoch, maximum date, formatting, and factory range validation.
 2. **F1244 — Complete:** Type only the legacy Schedule Import target ID as optional `Domain::ClassId`; preserve UI raw integers, absent-value handling, action semantics, and validation behavior.
@@ -46,14 +46,14 @@ Statuses are intentionally conservative. A phase is not In progress until its wo
 4. **F1246 — Complete:** Type the Calendar parser's skipped-row count while preserving parser count and duplicate-skip aggregation.
 5. **F1247 — Complete:** Preserve Teacher Import created/updated/unchanged result counts across the Platform boundary.
 6. **F1248 — Complete:** Reuse the typed navigation rank for Class Summary day and time fields while preserving validation and numeric sentinel behavior.
-7. **F1249 — Discovered:** Type Testing Classes grade and level ranks while preserving configured indexes, unknown values, and comparator behavior.
+7. **F1249 — Accepted; awaiting implementation:** Add a Testing Classes-specific typed rank for grade and level facts while preserving configured indexes, unknown values, and comparator behavior.
 8. **F1250 — Discovered:** Type ScheduleTime endpoint minute values while preserving bounds, strict start-before-end, and half-open overlap.
 9. **F1251 — Discovered:** Type Class Transfer export roster widths while preserving values and order without range checks or clamping.
 10. **F1252 — Discovered:** Type Document Catalog folder/document order metadata while preserving default, negative-value rejection, and input order.
 
 Batch495 and Batch496 are complete and pushed (see the [Batch495](03-Phase-2-Progress-Log.md#batch495-push-receipt-2026-10-21) and [Batch496](03-Phase-2-Progress-Log.md#batch496-push-receipt-2026-10-21) receipts). Batch497 is complete and pushed at `75788b64` (see its [push receipt](03-Phase-2-Progress-Log.md#batch497-push-receipt-2026-10-21)). Batch498 is complete and pushed at `2348ee37` (see its [push receipt](03-Phase-2-Progress-Log.md#batch498-push-receipt-2026-10-21)). F629 awaits source-bound Windows x64 layout evidence, and the Phase 0 and Phase 2 gates remain open.
 
-Batch499 is complete and pushed at `cc38c959`. In active Batch500, F1243–F1248 are complete, F1249 is next for acceptance, and F1250–F1252 remain discovered. No broad Schedule Import feature completion is claimed for F1244.
+Batch499 is complete and pushed at `cc38c959`. In active Batch500, F1243–F1248 are complete, F1249 is accepted awaiting implementation, and F1250–F1252 remain discovered. No broad Schedule Import feature completion is claimed for F1244.
 
 The Phase 2 progress log holds full acceptance, preservation, verification details, and prior-batch history.
 

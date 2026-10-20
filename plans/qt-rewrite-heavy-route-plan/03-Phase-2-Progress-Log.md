@@ -58090,3 +58090,42 @@ run.
 
 Batch500 remains active with F1243–F1248 complete, F1249 next for acceptance,
 and F1250–F1252 discovered.
+
+### F1249 Testing Classes grade and level ranks accepted before implementation - 2026-10-21
+
+F1249 is accepted before implementation. The existing
+`ClassTabNavigationOrderRank` fits the numeric representation and default,
+but its name and role belong to Class Tab navigation. Keep Testing Classes
+semantics distinct by adding a local `TestingClassesOrderingRank` in
+`src/next/application/testing_classes_ordering_policy.h`: explicit
+`std::int32_t` construction, `.rawValue()`, equality, default `1000`, and no
+implicit conversions. Use it for both
+`TestingClassesOrderingFact::gradeRank` and `levelRank`.
+
+Leave producer `gradeOrder` and `levelOrder` configured-list lookups
+unchanged; explicitly wrap their results when facts are constructed. The
+policy compares raw values in the existing sequence: grade rank, level rank,
+injected locale-aware level text, then class name. Exact ties remain
+unspecified. Preserve the sentinel `1000` as a literal numeric rank after
+known ranks. Add no validation, clamping, or range policy.
+
+Tests should assert field types and conversion semantics, rank values,
+equality, and default sentinel; retain precedence, unknown-sentinel, injected
+comparator, and tie-permutation coverage. Keep the Testing Classes page
+regression for configured ordering, unknown levels, and selection. Evidence:
+the Batch500 discovery entry above; policy fields/comparator in
+`src/next/application/testing_classes_ordering_policy.h:17,61`, producer in
+`src/features/classes/ui/testing_classes_page.cpp:73,86,1264-1279`, existing
+Class Tab rank type in `src/next/application/navigation_order_rank.h:8`,
+policy tests in
+`tests/next_application_testing_classes_ordering_policy_tests.cpp:64`, and
+page regression in `tests/testing_classes_page_tests.cpp:1060`.
+
+Build `ClassMngr` and
+`ClassMngrNextApplicationTestingClassesOrderingPolicyTests`; run only the
+focused CTest `ClassMngrNextApplicationTestingClassesOrderingPolicyTests`.
+At acceptance, no implementation, build, or tests had started. No Windows or
+full-suite result is claimed.
+
+Batch500 remains active with F1243–F1248 complete, F1249 accepted awaiting
+implementation, and F1250–F1252 discovered.
