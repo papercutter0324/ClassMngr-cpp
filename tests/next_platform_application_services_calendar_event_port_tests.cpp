@@ -596,8 +596,14 @@ void NextPlatformApplicationServicesCalendarEventPortTests::generatedWideIdentit
     QCOMPARE(series.value().at(1).value(), std::to_string(sequence + 8));
     const auto editRequest = validSeriesEditRequest();
     const auto plan = planCalendarEventSeriesEditSuffix(editRequest, {
-        {.eventId = calendarEventId(sequence + 7), .startDate = "2026-12-08"},
-        {.eventId = calendarEventId(sequence + 8), .startDate = "2026-12-09"}
+        {
+            .eventId = calendarEventId(sequence + 7),
+            .startDate = gregorianDate("2026-12-08")
+        },
+        {
+            .eventId = calendarEventId(sequence + 8),
+            .startDate = gregorianDate("2026-12-09")
+        }
     });
     QVERIFY(plan);
     QVERIFY(plan.value().at(0).eventId == calendarEventId(sequence + 7));

@@ -20,7 +20,7 @@ namespace ClassMngr::Next::Application
 struct CalendarEventSeriesEditOccurrenceSnapshot final
 {
     Domain::CalendarEventId eventId;
-    std::string startDate;
+    std::optional<Domain::GregorianDate> startDate;
 
     friend bool operator==(
         const CalendarEventSeriesEditOccurrenceSnapshot&,
@@ -113,9 +113,7 @@ planCalendarEventSeriesEditSuffix(
     plan.reserve(occurrences.size());
     for (const CalendarEventSeriesEditOccurrenceSnapshot& occurrence : occurrences)
     {
-        const std::optional<Date> sourceStartDate =
-            Date::fromIsoString(occurrence.startDate);
-        if (!sourceStartDate)
+        if (!occurrence.startDate)
         {
             return technicalFailure(
                 "A calendar repeat-series occurrence has an invalid start date."
@@ -123,7 +121,7 @@ planCalendarEventSeriesEditSuffix(
         }
 
         const DayNumber shiftedStartDate =
-            sourceStartDate->dayNumber() + startDateOffset;
+            occurrence.startDate->dayNumber() + startDateOffset;
         const DayNumber shiftedEndDate = shiftedStartDate + durationDays;
         const std::optional<Date> shiftedStart =
             Date::fromDayNumber(shiftedStartDate);

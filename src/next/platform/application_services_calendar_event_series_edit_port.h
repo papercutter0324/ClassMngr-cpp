@@ -136,9 +136,11 @@ public:
 
                 occurrences.push_back({
                     .eventId = *eventId,
-                    .startDate = seriesEvent.startDate
-                        .toString(Qt::ISODate)
-                        .toStdString()
+                    .startDate = Domain::GregorianDate::fromComponents(
+                        seriesEvent.startDate.year(),
+                        seriesEvent.startDate.month(),
+                        seriesEvent.startDate.day()
+                        )
                 });
             }
 

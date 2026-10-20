@@ -4072,7 +4072,7 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditOccurrenceSnapshot>().startDate),
-        std::string
+        std::optional<GregorianDate>
         >);
     static_assert(std::is_same_v<
         decltype(std::declval<CalendarEventSeriesEditOccurrenceUpdate>().eventId),
@@ -4107,10 +4107,12 @@ seriesEditPlanPreservesOrderAndPropagatesRequestFields()
     const CalendarEventId secondOccurrenceId = calendarEventId("occurrence-7");
     const CalendarEventId thirdOccurrenceId = calendarEventId("occurrence-9");
     const std::vector<CalendarEventSeriesEditOccurrenceSnapshot> occurrences{
-        {firstOccurrenceId, "2026-09-21"},
-        {secondOccurrenceId, "2026-10-01"},
-        {thirdOccurrenceId, "2026-09-25"}
+        {firstOccurrenceId, gregorianDate("2026-09-21")},
+        {secondOccurrenceId, gregorianDate("2026-10-01")},
+        {thirdOccurrenceId, gregorianDate("2026-09-25")}
     };
+    QVERIFY(occurrences.at(0).startDate.has_value());
+    QVERIFY(*occurrences.at(0).startDate == gregorianDate("2026-09-21"));
     const CalendarEventSeriesEditPlanResult plan =
         planCalendarEventSeriesEditSuffix(request, occurrences);
 
@@ -4159,7 +4161,7 @@ seriesEditPlanHandlesEmptyAndAllDaySuffixes()
     request.endTime.reset();
     const auto allDayPlan = planCalendarEventSeriesEditSuffix(
         request,
-        {{calendarEventId("18"), "2026-09-21"}}
+        {{calendarEventId("18"), gregorianDate("2026-09-21")}}
         );
 
     QVERIFY(allDayPlan);
@@ -4175,12 +4177,33 @@ seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates()
     const CalendarEventSeriesEditRequest request = validSeriesEditRequest();
     const auto invalidSource = planCalendarEventSeriesEditSuffix(
         request,
-        {{calendarEventId("42"), "2026-02-30"}}
+        {{calendarEventId("42"), std::nullopt}}
         );
     QVERIFY(!invalidSource);
     QCOMPARE(invalidSource.error().code, ErrorCode::Technical);
-    QVERIFY(!invalidSource.error().message.empty());
+    QCOMPARE(
+        invalidSource.error().message,
+        std::string(
+            "A calendar repeat-series occurrence has an invalid start date."
+            )
+        );
     QVERIFY(!invalidSource.error().recoverable);
+
+    CalendarEventSeriesEditRequest invalidRequest = request;
+    invalidRequest.title.clear();
+    const auto invalidRequestBeforeSource = planCalendarEventSeriesEditSuffix(
+        invalidRequest,
+        {{calendarEventId("42"), std::nullopt}}
+        );
+    QVERIFY(!invalidRequestBeforeSource);
+    QCOMPARE(invalidRequestBeforeSource.error().code, ErrorCode::InvalidInput);
+    QCOMPARE(
+        invalidRequestBeforeSource.error().message,
+        std::string(
+            "Calendar repeat-series edit text fields must be non-blank and bounded."
+            )
+        );
+    QVERIFY(!invalidRequestBeforeSource.error().recoverable);
 
     CalendarEventSeriesEditRequest upperBoundaryRequest = request;
     upperBoundaryRequest.startDate =
@@ -4194,7 +4217,7 @@ seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates()
     upperBoundaryRequest.endTime.reset();
     const auto upperOverflow = planCalendarEventSeriesEditSuffix(
         upperBoundaryRequest,
-        {{calendarEventId("42"), "9999-12-31"}}
+        {{calendarEventId("42"), gregorianDate("9999-12-31")}}
         );
     QVERIFY(!upperOverflow);
     QCOMPARE(upperOverflow.error().code, ErrorCode::Technical);
@@ -4211,7 +4234,7 @@ seriesEditPlanRejectsInvalidSourceAndOutOfRangeDates()
     lowerBoundaryRequest.endTime.reset();
     const auto lowerOverflow = planCalendarEventSeriesEditSuffix(
         lowerBoundaryRequest,
-        {{calendarEventId("17"), "0001-01-01"}}
+        {{calendarEventId("17"), gregorianDate("0001-01-01")}}
         );
     QVERIFY(!lowerOverflow);
     QCOMPARE(lowerOverflow.error().code, ErrorCode::Technical);
