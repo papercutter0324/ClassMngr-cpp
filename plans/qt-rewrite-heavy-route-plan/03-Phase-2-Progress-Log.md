@@ -57779,3 +57779,39 @@ is claimed.
 
 Batch500 remains active with F1243 complete, F1244 accepted awaiting
 implementation, and F1245–F1252 discovered.
+
+### F1244 Schedule Import target class IDs complete - 2026-10-21
+
+F1244 completed in implementation commit
+`a55f171373bdd2a0a4230cad7c7f460d8857477a` and the mixed-target-claim test
+follow-up `65b9035be30f8c6831aa642e818d4ab55885de0e`. The implementation
+commit changed nine scoped files:
+`src/domain/models/schedule_import.h`,
+`src/features/schedule/ui/schedule_import_resolution_controls.cpp`,
+`src/features/schedule/ui/schedule_import_review_dialog.cpp`,
+`src/features/schedule/services/schedule_import_review_model.cpp`,
+`src/features/schedule/services/schedule_import_plan_validator.cpp`,
+`src/data/repositories/schedule_import_repository.cpp`,
+`tests/schedule_import_dialog_tests.cpp`,
+`tests/schedule_import_tests.cpp`, and
+`tests/next_platform_application_services_schedule_import_apply_port_tests.cpp`.
+The follow-up adds mixed Update/targeted-Skip duplicate-claim coverage in
+`tests/next_application_schedule_import_review_decisions_tests.cpp`.
+
+The legacy resolution target is now an optional typed `Domain::ClassId`; raw
+UI target values are converted at extraction, typed values pass through the
+Application flow and repository adapter, and integer conversion remains at
+the database boundary. Existing action and validation behavior is preserved.
+This closes only the accepted target-ID contract; it does not claim broad
+Schedule Import feature completion.
+
+The incremental existing macOS Clang build succeeded for `ClassMngr` and
+the six scoped test targets. Their focused CTests passed 6/6. The follow-up
+`ClassMngrNextApplicationScheduleImportReviewDecisionsTests` target built
+and its CTest passed 1/1, covering both mixed Update/targeted-Skip claim
+orders and the existing later-claim issue-code choice. `git diff --check`
+passed. This is incremental macOS verification only; Windows x64 and the full
+suite were not run.
+
+Batch500 remains active with F1243–F1244 complete. F1245 is next for
+acceptance; F1246–F1252 remain discovered.
