@@ -25,7 +25,11 @@ ScheduleBuilderSourceScheduleRow time(
     const std::u16string& end
     )
 {
-    return {day, start, end};
+    return {
+        ScheduleBuilderSourceScheduleText(day),
+        ScheduleBuilderSourceScheduleText(start),
+        ScheduleBuilderSourceScheduleText(end)
+    };
 }
 
 ScheduleBuildResult build(

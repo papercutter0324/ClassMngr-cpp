@@ -140,9 +140,15 @@ private:
         for (const ClassTime& time : times)
         {
             result.push_back({
-                .day = time.day.toStdU16String(),
-                .startTime = time.startTime.toStdU16String(),
-                .endTime = time.endTime.toStdU16String()
+                .day = Application::ScheduleBuilderSourceScheduleText(
+                    time.day.toStdU16String()
+                    ),
+                .startTime = Application::ScheduleBuilderSourceScheduleText(
+                    time.startTime.toStdU16String()
+                    ),
+                .endTime = Application::ScheduleBuilderSourceScheduleText(
+                    time.endTime.toStdU16String()
+                    )
             });
         }
         return result;

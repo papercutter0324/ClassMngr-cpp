@@ -86,9 +86,9 @@ ScheduleBuildResult ScheduleBuilder::build(
         for (const auto& time : times)
         {
             const QString day =
-                QString::fromStdU16String(time.day).trimmed().isEmpty()
+                QString::fromStdU16String(time.day.value()).trimmed().isEmpty()
                     ? QStringLiteral("Monday")
-                    : QString::fromStdU16String(time.day).trimmed();
+                    : QString::fromStdU16String(time.day.value()).trimmed();
 
             if (!visibleDays.contains(day))
             {
@@ -96,7 +96,7 @@ ScheduleBuildResult ScheduleBuilder::build(
             }
 
             const QString startText =
-                QString::fromStdU16String(time.startTime);
+                QString::fromStdU16String(time.startTime.value());
             const auto parsedStartTime =
                 ScheduleValueParser::parseDisplayTime(startText);
 
@@ -107,7 +107,7 @@ ScheduleBuildResult ScheduleBuilder::build(
             const QTime startTime = *parsedStartTime;
 
             const QString endText =
-                QString::fromStdU16String(time.endTime);
+                QString::fromStdU16String(time.endTime.value());
             const auto parsedEndTime =
                 ScheduleValueParser::parseDisplayTime(endText);
             const QTime endTime =

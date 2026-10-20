@@ -12,11 +12,35 @@
 namespace ClassMngr::Next::Application
 {
 
+class ScheduleBuilderSourceScheduleText final
+{
+public:
+    ScheduleBuilderSourceScheduleText() = default;
+
+    explicit ScheduleBuilderSourceScheduleText(std::u16string value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] const std::u16string& value() const noexcept
+    {
+        return m_value;
+    }
+
+    friend bool operator==(
+        const ScheduleBuilderSourceScheduleText&,
+        const ScheduleBuilderSourceScheduleText&
+        ) = default;
+
+private:
+    std::u16string m_value;
+};
+
 struct ScheduleBuilderSourceScheduleRow final
 {
-    std::u16string day;
-    std::u16string startTime;
-    std::u16string endTime;
+    ScheduleBuilderSourceScheduleText day;
+    ScheduleBuilderSourceScheduleText startTime;
+    ScheduleBuilderSourceScheduleText endTime;
 
     friend bool operator==(
         const ScheduleBuilderSourceScheduleRow&,

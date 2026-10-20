@@ -3,11 +3,22 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 using namespace ClassMngr::Next;
 using namespace ClassMngr::Next::Application;
+
+using ScheduleText = ScheduleBuilderSourceScheduleText;
+
+static_assert(std::is_default_constructible_v<ScheduleText>);
+static_assert(std::is_constructible_v<ScheduleText, std::u16string>);
+static_assert(!std::is_convertible_v<std::u16string, ScheduleText>);
+static_assert(!std::is_convertible_v<ScheduleText, std::u16string>);
+static_assert(std::is_same_v<
+              decltype(std::declval<ScheduleBuilderSourceScheduleRow>().day),
+              ScheduleText>);
 
 namespace
 {
@@ -21,6 +32,19 @@ ScheduleBuilderSourceClass sourceClass(const std::string& id)
 {
     return {
         .classId = classId(id)
+    };
+}
+
+ScheduleBuilderSourceScheduleRow scheduleRow(
+    std::u16string day,
+    std::u16string startTime,
+    std::u16string endTime
+    )
+{
+    return {
+        ScheduleText(std::move(day)),
+        ScheduleText(std::move(startTime)),
+        ScheduleText(std::move(endTime))
     };
 }
 
@@ -52,6 +76,7 @@ class NextApplicationScheduleBuilderSourceSnapshotTests final
 
 private slots:
     void preservesCompactFieldsAndSourceAndTimeOrder();
+    void scheduleTextIsRawAndDefaultsToEmpty();
     void acceptsEmptySourceSnapshot();
     void propagatesReadErrorsAndRejectsInvalidIdentifiers();
 };
@@ -71,12 +96,12 @@ preservesCompactFieldsAndSourceAndTimeOrder()
     first.classColor = u" #112233 ";
     first.fontColor = u" #445566 ";
     first.regularSchedule = {
-        {u"  Monday ", u"4:00 PM", u"4:55 PM"},
-        {u"Raw Day", u" invalid start \U0001F9ED", u" opaque end "}
+        scheduleRow(u"  Monday ", u"4:00 PM", u"4:55 PM"),
+        scheduleRow(u"Raw Day", u" invalid start \U0001F9ED", u" opaque end ")
     };
     first.intensiveSchedule = {
-        {u" Friday ", u"09:00", u"09:50"},
-        {u"  ", u"9:05 AM", u"bad end"}
+        scheduleRow(u" Friday ", u"09:00", u"09:50"),
+        scheduleRow(u"  ", u"9:05 AM", u"bad end")
     };
 
     ScheduleBuilderSourceClass second = sourceClass("42");
@@ -101,10 +126,20 @@ preservesCompactFieldsAndSourceAndTimeOrder()
              std::u16string(u"  Teacher \U0001F9ED  "));
     QCOMPARE(result.value().classes[0].teacherKoreanName,
              std::u16string(u" \uAE40\uC9C0 "));
-    QCOMPARE(result.value().classes[0].regularSchedule[1].startTime,
+    QCOMPARE(result.value().classes[0].regularSchedule[1].startTime.value(),
              std::u16string(u" invalid start \U0001F9ED"));
-    QCOMPARE(result.value().classes[0].intensiveSchedule[1].day,
+    QCOMPARE(result.value().classes[0].intensiveSchedule[1].day.value(),
              std::u16string(u"  "));
+}
+
+void NextApplicationScheduleBuilderSourceSnapshotTests::
+scheduleTextIsRawAndDefaultsToEmpty()
+{
+    const ScheduleText empty;
+    QVERIFY(empty.value().empty());
+
+    const ScheduleText raw(std::u16string(u" \U0001F9ED invalid "));
+    QCOMPARE(raw.value(), std::u16string(u" \U0001F9ED invalid "));
 }
 
 void NextApplicationScheduleBuilderSourceSnapshotTests::

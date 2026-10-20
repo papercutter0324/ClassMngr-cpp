@@ -249,9 +249,9 @@ readsActiveSessionCompactSourceInRepositoryOrder()
         database,
         QStringLiteral("class_times"),
         *assignedClass,
-        QStringLiteral(" Raw Monday "),
+        QString::fromUcs4(U" Raw \U0001F9ED Monday "),
         QStringLiteral("invalid start"),
-        QStringLiteral(" opaque end ")
+        QStringLiteral("")
         ));
     QVERIFY(insertSchedule(
         database,
@@ -340,19 +340,18 @@ readsActiveSessionCompactSourceInRepositoryOrder()
     QCOMPARE(assigned.classColor, std::u16string(u"#123456"));
     QCOMPARE(assigned.fontColor, std::u16string(u"#ABCDEF"));
     QCOMPARE(assigned.regularSchedule.size(), std::size_t(2));
-    QCOMPARE(assigned.regularSchedule[0].day,
-             std::u16string(u" Raw Monday "));
-    QCOMPARE(assigned.regularSchedule[0].startTime,
+    QCOMPARE(assigned.regularSchedule[0].day.value(),
+             std::u16string(u" Raw \U0001F9ED Monday "));
+    QCOMPARE(assigned.regularSchedule[0].startTime.value(),
              std::u16string(u"invalid start"));
-    QCOMPARE(assigned.regularSchedule[0].endTime,
-             std::u16string(u" opaque end "));
-    QCOMPARE(assigned.regularSchedule[1].day, std::u16string(u"Monday"));
+    QVERIFY(assigned.regularSchedule[0].endTime.value().empty());
+    QCOMPARE(assigned.regularSchedule[1].day.value(), std::u16string(u"Monday"));
     QCOMPARE(assigned.intensiveSchedule.size(), std::size_t(1));
-    QCOMPARE(assigned.intensiveSchedule[0].day,
+    QCOMPARE(assigned.intensiveSchedule[0].day.value(),
              std::u16string(u"Not a weekday"));
-    QCOMPARE(assigned.intensiveSchedule[0].startTime,
+    QCOMPARE(assigned.intensiveSchedule[0].startTime.value(),
              std::u16string(u"09:05"));
-    QCOMPARE(assigned.intensiveSchedule[0].endTime,
+    QCOMPARE(assigned.intensiveSchedule[0].endTime.value(),
              std::u16string(u"end? "));
 
     const auto& invalidTeacher = result.value().classes[1];
@@ -367,7 +366,7 @@ readsActiveSessionCompactSourceInRepositoryOrder()
     QVERIFY(noProfile.grade.empty());
     QVERIFY(noProfile.teacherEnglishName.empty());
     QCOMPARE(noProfile.regularSchedule.size(), std::size_t(1));
-    QCOMPARE(noProfile.regularSchedule[0].day,
+    QCOMPARE(noProfile.regularSchedule[0].day.value(),
              std::u16string(u"No class info"));
 
     const auto& noTeacher = result.value().classes[3];
@@ -441,9 +440,9 @@ validatesStoredScheduleClassIdsBeforeNarrowing()
              std::size_t(1));
     QCOMPARE(validPortResult.value().classes[1].regularSchedule.size(),
              std::size_t(1));
-    QCOMPARE(validPortResult.value().classes[0].regularSchedule[0].day,
+    QCOMPARE(validPortResult.value().classes[0].regularSchedule[0].day.value(),
              std::u16string(u"Monday"));
-    QCOMPARE(validPortResult.value().classes[1].regularSchedule[0].day,
+    QCOMPARE(validPortResult.value().classes[1].regularSchedule[0].day.value(),
              std::u16string(u"Tuesday"));
 
     const auto validHandlerResult =
